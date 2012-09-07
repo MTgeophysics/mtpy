@@ -16,30 +16,49 @@ from matplotlib.colors import LinearSegmentedColormap,Normalize
 from matplotlib.colorbar import *
 import matplotlib.gridspec as gridspec
 
-#make a custom colormap to use for plotting
+#==============================================================================
+# Make some color maps for plotting
+#==============================================================================
+#yellow to red
 ptcmapdict={'red':((0.0,1.0,1.0),(1.0,1.0,1.0)),
             'green':((0.0,0.0,1.0),(1.0,0.0,1.0)),
             'blue':((0.0,0.0,0.0),(1.0,0.0,0.0))}
 ptcmap=LinearSegmentedColormap('ptcmap',ptcmapdict,256)
 
-#make a custom colormap to use for plotting
-#ptcmapdict2={'red':((0.0,0.1,0.1),(.49,0.1,0.1),(0.5,1.0,1.0),(1.0,1.0,1.0)),
-#            'green':((0.0,1.0,0.0),(.49,1.0,0.0),(.5,0.0,1.0),(1.0,0.0,1.0)),
-#            'blue':((0.0,0.0,1.0),(.49,0.0,1.0),(0.5,0.1,0.1),(1.0,0.1,0.1))}
-ptcmapdict2={'red':((0.0,0.1,0.1),(.5,0.1,0.1),(0.5,1.0,1.0),(1.0,1.0,1.0)),
+#blue to red
+skcmapdict={'red':((0.0,0.0,0.0),(.5,1.0,1.0),(0.5,0.0,1.0),(1.0,1.0,1.0)),
             'green':((0.0,1.0,0.0),(.5,1.0,0.0),(.5,0.0,1.0),(1.0,0.0,1.0)),
             'blue':((0.0,0.0,1.0),(.5,0.0,1.0),(0.5,0.1,0.1),(1.0,0.1,0.1))}
-ptcmap2=LinearSegmentedColormap('ptcmap2',ptcmapdict2,256)
+skcmap=LinearSegmentedColormap('skcmap',skcmapdict,256)
 
+#blue to white to red
+skcmapdict2={'red':((0.0,0.0,0.0),(.5,1.0,1.0),(0.5,0.0,1.0),(1.0,1.0,1.0)),
+            'green':((0.0,1.0,0.0),(.5,1.0,0.0),(.5,0.0,1.0),(1.0,0.0,1.0)),
+            'blue':((0.0,0.0,1.0),(.5,1.0,1.0),(0.5,0.0,1.0),(1.0,0.0,0.0))}
+skcmap2=LinearSegmentedColormap('skcmap2',skcmapdict2,256)
+
+
+#white to blue
 ptcmapdict3={'red':((0.0,1.0,1.0),(1.0,0.0,0.0)),
             'green':((0.0,1.0,1.0),(1.0,0.0,0.0)),
             'blue':((0.0,1.0,1.0),(1.0,1.0,1.0))}
 ptcmap3=LinearSegmentedColormap('ptcmap3',ptcmapdict3,256)
 
+#red to blue
 rtcmapdict={'red':((0.0,0.0,1.0),(1.0,0.0,1.0)),
             'green':((0.0,0.0,0.0),(1.0,0.0,0.0)),
             'blue':((0.0,1.0,0.0),(1.0,1.0,0.0))}
 rtcmap=LinearSegmentedColormap('rtcmap',rtcmapdict,256)
+
+ckdict={'phiminang':'$\Phi_{min}$ (deg)','phimin':'$\Phi_{min}$ (deg)',
+        'phimaxang':'$\Phi_{max}$ (deg)','phimax':'$\Phi_{max}$ (deg)',
+        'phidet':'Det{$\Phi$} (deg)','beta':'Skew (deg)',
+        'ellipticity':'Ellipticity'}
+
+#==============================================================================
+# Plotting tools
+#==============================================================================
+
 
 def plotcoh(filename,fignum=1,savefigfilename=None,dpi=None,format=None,
             orientation=None):
@@ -831,7 +850,8 @@ def plotTS(combinefilelst,df=1.0,fignum=1,start=None,stop=None,
     
 def plotPTpseudoSection(filenamelst,colorkey='phiminang',esize=2,
                         offsetscaling=.005,colorkeymm=[0,90],stationid=[0,4],
-                        title=None,cbshrink=.8,linedir='ns',fignum=1,rotz=0):
+                        title=None,cbshrink=.8,linedir='ns',fignum=1,rotz=0,
+                        yscale='period',pxy=[8,8],dpi=300):
     
     """
     plotPTpseudoSection(filenamelst,colorkey='beta',esize=2,offsetscaling=
@@ -859,7 +879,8 @@ def plotPTpseudoSection(filenamelst,colorkey='phiminang',esize=2,
     
     """
     
-    plt.rcParams['font.size']=7
+    fs=int(dpi/30.)
+    plt.rcParams['font.size']=fs
     plt.rcParams['figure.subplot.left']=.08
     plt.rcParams['figure.subplot.right']=.98
     plt.rcParams['figure.subplot.bottom']=.06
@@ -870,7 +891,7 @@ def plotPTpseudoSection(filenamelst,colorkey='phiminang',esize=2,
     
     
     #create a plot instance
-    fig=plt.figure(fignum,dpi=300)
+    fig=plt.figure(fignum,pxy,dpi=300)
     ax=fig.add_subplot(1,1,1,aspect='equal')
     stationlst=[]
     offsetlst=[]
@@ -909,10 +930,10 @@ def plotPTpseudoSection(filenamelst,colorkey='phiminang',esize=2,
         phimax=pt.phimax[::-1]
         phimin=pt.phimin[::-1]
         azimuth=pt.azimuth[::-1]
-        if colorkey=='phiminang':
+        if colorkey=='phiminang' or colorkey=='phimin':
             colorarray=pt.phiminang[::-1]
         if colorkey=='phidet':
-            colorarray=pt.phidet[::-1]
+            colorarray=np.sqrt(abs(pt.phidet[::-1]))*(180/np.pi)
         if colorkey=='beta':
             colorarray=pt.beta[::-1]
         if colorkey=='ellipticity':
@@ -979,19 +1000,26 @@ def plotPTpseudoSection(filenamelst,colorkey='phiminang',esize=2,
                     
     offsetlst=np.array(offsetlst)
     ax.set_xlim(min(offsetlst)*offsetscaling-4,max(offsetlst)*offsetscaling+4)
-    ax.set_ylim(-5,n*3+5)   
-    yticklabels=['%2.3g' % periodlst[ii] for ii in np.arange(start=0,stop=n,
-                 step=2)]
-    plt.xlabel('Station',fontsize=14,fontweight='bold')
-    plt.ylabel('Period (s)',fontsize=14,fontweight='bold')
+    ax.set_ylim(-5,n*3+5)
+    if yscale=='period':
+        yticklabels=['{0:.3g}'.format(periodlst[ii]) for ii in np.arange(start=0,stop=n,
+                     step=2)]
+        ax.set_ylabel('Period (s)',fontsize=fs+5,fontweight='bold')
+    elif yscale=='frequency':
+        yticklabels=['{0:.4g}'.format(1./periodlst[ii]) for ii in np.arange(start=0,stop=n,
+                     step=2)]
+        ax.set_ylabel('Frequency (Hz)',fontsize=fs+5,fontweight='bold')
+    ax.set_xlabel('Station',fontsize=fs+5,fontweight='bold')
+    
     if title==None:
         pass
 #        plt.title('Phase Tensor Pseudo Section '+title,fontsize=16)
     else:
-        plt.title(title,fontsize=16)
+        ax.set_title(title,fontsize=fs+4)
     plt.yticks(np.arange(start=0,stop=3*n,step=6),yticklabels)
     plt.xticks(np.array(offsetlst)*offsetscaling,stationlst)
-    plt.grid()
+    
+    ax.grid(alpha=.25,which='both')
     
     print 'Colorkey min = ',min(minlst)
     print 'Colorkey max = ',max(maxlst)
@@ -1008,13 +1036,15 @@ def plotPTpseudoSection(filenamelst,colorkey='phiminang',esize=2,
     else:
         cb=ColorbarBase(ax2[0],cmap=ptcmap2,norm=Normalize(vmin=colorkeymm[0],
                         vmax=colorkeymm[1]))
-    cb.set_label(colorkey,fontdict={'size':14,'weight':'bold'})
+    
+    cb.set_label(ckdict[colorkey],fontdict={'size':fs+5,'weight':'bold'})
     
     plt.show()
 
 def plotRTpseudoSection(filenamelst,colorkey='rhodet',esize=2,
-                        offsetscaling=.005,colorkeymm=[0,3],stationid=[0,4],
-                        title=None,cbshrink=.8,linedir='ns',fignum=1,rotz=0):
+                        offsetscaling=.005,colorkeymm=[0,90],stationid=[0,4],
+                        title=None,cbshrink=.8,linedir='ns',fignum=1,rotz=0,
+                        yscale='period',pxy=[8,8],dpi=300):
     
     """
     plotRTpseudoSection(filenamelst,colorkey='beta',esize=2,offsetscaling=
@@ -1042,7 +1072,8 @@ def plotRTpseudoSection(filenamelst,colorkey='rhodet',esize=2,
     
     """
     
-    plt.rcParams['font.size']=12
+    fs=int(dpi/30.)
+    plt.rcParams['font.size']=fs
     plt.rcParams['figure.subplot.left']=.08
     plt.rcParams['figure.subplot.right']=.98
     plt.rcParams['figure.subplot.bottom']=.06
@@ -1053,7 +1084,7 @@ def plotRTpseudoSection(filenamelst,colorkey='rhodet',esize=2,
     
     
     #create a plot instance
-    fig=plt.figure(fignum,dpi=100)
+    fig=plt.figure(fignum,pxy,dpi=dpi)
     ax=fig.add_subplot(1,1,1,aspect='equal')
     stationlst=[]
     offsetlst=[]
@@ -1131,19 +1162,26 @@ def plotRTpseudoSection(filenamelst,colorkey='rhodet',esize=2,
             
     offsetlst=np.array(offsetlst)
     ax.set_xlim(min(offsetlst)*offsetscaling-4,max(offsetlst)*offsetscaling+4)
-    ax.set_ylim(-5,n*3+5)   
-    yticklabels=['%2.3g' % periodlst[ii] for ii in np.arange(start=0,stop=n,
-                 step=2)]
-    plt.xlabel('Station',fontsize=14,fontweight='bold')
-    plt.ylabel('Period (s)',fontsize=14,fontweight='bold')
+    ax.set_ylim(-5,n*3+5)
+    if yscale=='period':
+        yticklabels=['{0:.3g}'.format(periodlst[ii]) for ii in np.arange(start=0,stop=n,
+                     step=2)]
+        ax.set_ylabel('Period (s)',fontsize=fs+5,fontweight='bold')
+    elif yscale=='frequency':
+        yticklabels=['{0:.4g}'.format(1./periodlst[ii]) for ii in np.arange(start=0,stop=n,
+                     step=2)]
+        ax.set_ylabel('Frequency (Hz)',fontsize=fs+5,fontweight='bold')
+    ax.set_xlabel('Station',fontsize=fs+5,fontweight='bold')
+    
     if title==None:
         pass
 #        plt.title('Phase Tensor Pseudo Section '+title,fontsize=16)
     else:
-        plt.title(title,fontsize=16)
+        ax.set_title(title,fontsize=fs+4)
     plt.yticks(np.arange(start=0,stop=3*n,step=6),yticklabels)
     plt.xticks(np.array(offsetlst)*offsetscaling,stationlst)
-    plt.grid()
+    
+    ax.grid(alpha=.25,which='both')
     
     print 'Colorkey min = ',min(minlst)
     print 'Colorkey max = ',max(maxlst)
@@ -1157,9 +1195,10 @@ def plotRTpseudoSection(filenamelst,colorkey='rhodet',esize=2,
     plt.show()
 
 def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
-               ypad=.2,tickstrfmt='%2.4f',cborientation='vertical',
+               ypad=.2,tickstrfmt='%2.2f',cborientation='vertical',
                colorkeymm=[0,90.],figsave='y',fmt=['png'],rotz=0,pxy=[10,12],
-                galpha=.25):
+                galpha=.25,stationid=None,indarrows='n',cmap='ptcmap',
+                tscale='period'):
     """ 
     plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
                ypad=.2,tickstrfmt='%2.4f',cborientation='vertical',
@@ -1169,12 +1208,11 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
         
         freqspot = position in frequency list for plotting, an integer
         esize = size of ellipse, float
-        colorkey =  the fill color of the ellipses and can be any of the 
-        dictionary keys returned by Z.getPhaseTensor(), note skew is beta:
-        'phimin','phi', 'phiminvar', 'azimuthvar', 'azimuth', 'betavar', 
-        'phivar', 'alphavar', 'beta', 'ellipticityvar', 'phiminangvar', 
-        'ellipticity', 'phimaxangvar', 'alpha', 'phiminang', 'phimaxvar', 
-        'phimaxang', 'phimax'
+        colorkey =  the fill color of the ellipses and can be:
+            'phimin' for minimum phase
+            'beta'  for phase tensor skew angle
+            'ellipticity' for phase tensor ellipticity
+            'phidet' for the determinant of the phase tensor
         colorkeymm = [min,max] min and max of colorkey to which colorbar is
                     normalized to.
         xpad = pad from xmin and xmax on plot
@@ -1186,10 +1224,24 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
         fmt = ['png'] is format of save figure can be pdf,eps or any other 
             formats supported by matplotlib. Can be a list of multiple formats.
             Note that pdf and eps do not properly yet.
+        rotz = rotation angle clockwise from north
+        pxy = dimensions of the figure in inches
+        galpha = opacity of the grid
+        stationid = first and last index of the station name, default is None
+                    which is no station names.  If input use 
+                    stationid=(0,4) for the 1st through 4th characters
+        indarrow = 'y' to plot induction arrows and 'n' to not plot them
+        cmap = color map of ellipse facecolor.  So far the colormaps are:
+            ptcmap = yellow (low phase) to red (high phase)
+            ptcmap3 = white (low numbers) to blue (high numbers)
+            skcmap = blue to yellow to red
+            skcmap2 = blue to white to red
+            rtcmap = blue to purple to red
+        tscale = period or frequency for the title of the plot
         
     """
     jj=freqspot
-    fig=plt.figure(1,pxy,dpi=150)
+    fig=plt.figure(1,pxy,dpi=200)
     ax=fig.add_subplot(1,1,1,aspect='equal')
     elliplst=[]
     latlst=[]
@@ -1212,6 +1264,7 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
     for ii,filename in enumerate(edifilelst):
         #get phase tensor info
         imp=Z.Z(filename)
+        #check to see if the period is there
         try:
             freq=1./imp.period[jj]
             latlst.append(imp.lat)
@@ -1229,39 +1282,90 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
             #print imp.lon,imp.lat,scaling,ewidth,eheight,phimin,phimax
             elliplst.append(ellipd)
             ax.add_artist(ellipd)
-            #get face color info
-            if colorkey=='phiminang':
-                cvar=(pt.phiminang[jj]-ckmin)/(ckmax-ckmin)
-                if abs(cvar)>1:
-                    ellipd.set_facecolor((1,0,0))
-                elif cvar<0:
-                    ellipd.set_facecolor((1-abs(cvar),1,abs(cvar)))
-                else:
-                    ellipd.set_facecolor((1,1-abs(cvar),.1))
-            if colorkey=='phidet':
-                cvar=(pt.phidet[jj]-ckmin)/(ckmax-ckmin)
-                if abs(cvar)>1:
-                    ellipd.set_facecolor((1,0,0))
-                elif cvar<0:
-                    ellipd.set_facecolor((1-abs(cvar),1,abs(cvar)))
-                else:
-                    ellipd.set_facecolor((1,1-abs(cvar),.1))
-            if colorkey=='beta':
-                cvar=(abs(pt.beta[jj])-ckmin)/(ckmax-ckmin)
-                if abs(cvar)>1:
-                    ellipd.set_facecolor((0,0,1))
-                else:
-                    ellipd.set_facecolor((1-abs(cvar),1-abs(cvar),1))
-            if colorkey=='ellipticity':
-                cvar=(abs(pt.ellipticity[jj])-ckmin)/(ckmax-ckmin)
-                if abs(cvar)>1:
-                    ellipd.set_facecolor((0,0,1))
-                else:
-                    ellipd.set_facecolor((1-abs(cvar),1-abs(cvar),1))
-
             
+            #get face color info
+            if colorkey=='phiminang' or  colorkey=='phimin':
+                cvar=(pt.phiminang[jj]-ckmin)/(ckmax-ckmin)
+            elif colorkey=='phidet':
+                cvar=(pt.phidet[jj]-ckmin)/(ckmax-ckmin)
+            elif colorkey=='beta':
+                cvar=(pt.beta[jj]-ckmin)/(ckmax-ckmin)
+            elif colorkey=='ellipticity':
+                cvar=(pt.ellipticity[jj]-ckmin)/(ckmax-ckmin)
+            else:
+                raise NameError('color key '+colorkey+' not supported')
+            
+            #set facecolor depending on the colormap
+            #yellow to red
+            if cmap=='ptcmap':
+                if abs(cvar)>1:
+                    ellipd.set_facecolor((1,0,0))
+                elif cvar<0:
+                    ellipd.set_facecolor((1-abs(cvar),1,abs(cvar)))
+                else:
+                    ellipd.set_facecolor((1,1-abs(cvar),.1))
+            #white to blue
+            elif cmap=='ptcmap3':
+                if abs(cvar)>1:
+                    ellipd.set_facecolor((0,0,0))
+                else:
+                    ellipd.set_facecolor((1-abs(cvar),1-abs(cvar),1))
+            #blue to yellow to red
+            elif cmap=='skcmap2':
+                if cvar<0 and cvar>-1:
+                    ellipd.set_facecolor((1-abs(cvar),1-abs(cvar),1))
+                else:
+                    ellipd.set_facecolor((0,0,1))
+                if cvar>0 and cvar<1:
+                    ellipd.set_facecolor((1,1-abs(cvar),1-abs(cvar)))
+                else:
+                    ellipd.set_facecolor((1,0,0))
+            #blue to white to red
+            elif cmap=='skcmap':
+                if abs(cvar)>1:
+                    ellipd.set_facecolor((0,0,0))
+                elif cvar<0:
+                    ellipd.set_facecolor((1-abs(cvar),1-abs(cvar),1))
+                elif cvar>0:
+                    ellipd.set_facecolor((1,1-abs(cvar),1-abs(cvar)))
+                    
+            #-----------Plot Induction Arrows---------------------------
+            if indarrows=='y':
+                tip=imp.getTipper(thetar=rotz)
+                txr=tip.magreal[jj]*np.cos(tip.anglereal[jj]*np.pi/180)*xpad
+                tyr=tip.magreal[jj]*np.sin(tip.anglereal[jj]*np.pi/180)*xpad
+
+                txi=tip.magimag[jj]*np.cos(tip.angleimag[jj]*np.pi/180)*xpad
+                tyi=tip.magimag[jj]*np.sin(tip.angleimag[jj]*np.pi/180)*xpad
+                
+                aheight=.25*esize
+                awidth=.1*esize
+                
+#                ax.arrow(imp.lon,imp.lat,txr,tyr,lw=.05*awidth,shape='full',
+#                         facecolor='k',edgecolor='k',
+#                         length_includes_head=False,
+#                         head_width=awidth,head_length=aheight)
+#                ax.arrow(imp.lon,imp.lat,txi,tyi,lw=.5*awidth,
+#                         facecolor='b',edgecolor='b',length_includes_head=False,
+#                          head_width=awidth,head_length=aheight)
+#                ax.arrow(imp.lon,imp.lat,txr,tyr,facecolor='k',
+#                          edgecolor='k',shape='full',)
+#                ax.arrow(imp.lon,imp.lat,txi,tyi,facecolor='b',
+#                          edgecolor='b',shape='full',lw=.000001)
+#          width : the width of the arrow in points
+#          frac  : the fraction of the arrow length occupied by the head
+#          headwidth : the width of the base of the arrow head in points
+#          shrink : move the tip and base some percent away from the
+#                   annotated point and text
+                          
+                ax.annotate('', xy=(imp.lon,imp.lat),
+                            xytext=(imp.lon+txr,imp.lat+tyr),
+                            arrowprops=dict(facecolor='black', shrink=esize,
+                                            frac=.01))
+                
+        #if the period is not there 
         except IndexError:
-            pass
+            print 'Did not find index for station'.format(jj)+imp.station
         
     ax.set_xlabel('longitude',fontsize=10,fontweight='bold')
     ax.set_ylabel('latitude',fontsize=10,fontweight='bold')
@@ -1269,22 +1373,46 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
     ax.xaxis.set_major_formatter(FormatStrFormatter(tickstrfmt))
     ax.set_ylim(min(latlst)-xpad,max(latlst)+xpad)
     ax.yaxis.set_major_formatter(FormatStrFormatter(tickstrfmt))
-    titlefreq='%2.3f' % (1/freq)
+    if tscale=='period':
+        titlefreq='{0:.5g}'.format(1./freq)
+    else:
+        titlefreq='{0:.5g}'.format(freq)
     ax.set_title('Phase Tensor for '+titlefreq+'(s)',
                  fontsize=10,fontweight='bold')
     ax.grid(alpha=galpha)
-                 
+    
+    #make a colorbar with appropriate colors             
     ax2=make_axes(ax,shrink=.8)
-    if colorkey=='phiminang' or colorkey=='phidet':
+    if cmap=='ptcmap': 
         cb=ColorbarBase(ax2[0],cmap=ptcmap,norm=Normalize(vmin=ckmin,vmax=ckmax))
         cb.set_label(colorkey+' (deg)')
-    elif colorkey=='beta' or colorkey=='ellipticity':
+    elif cmap=='ptcmap3': 
         cb=ColorbarBase(ax2[0],cmap=ptcmap3,norm=Normalize(vmin=ckmin,vmax=ckmax))
         cb.set_label(colorkey+' (deg)')
+    elif cmap=='skcmap': 
+        cb=ColorbarBase(ax2[0],cmap=skcmap,norm=Normalize(vmin=ckmin,vmax=ckmax))
+        cb.set_label(colorkey+' (deg)')
+    elif cmap=='skcmap2': 
+        cb=ColorbarBase(ax2[0],cmap=skcmap2,norm=Normalize(vmin=ckmin,vmax=ckmax))
+        cb.set_label(colorkey+' (deg)')
+    elif cmap=='rtcmap': 
+        cb=ColorbarBase(ax2[0],cmap=rtcmap,norm=Normalize(vmin=ckmin,vmax=ckmax))
+
+    #label the color bar accordingly
+    if colorkey=='phimin' or colorkey=='phiminang':
+        cb.set_label('$\Phi_{min}$ (deg)',fontdict={'size':10,'weight':'bold'})
+    elif colorkey=='beta':
+        cb.set_label('Skew (deg)',fontdict={'size':10,'weight':'bold'})
+    elif colorkey=='phidet':
+        cb.set_label('Det{$\Phi$} (deg)',fontdict={'size':10,'weight':'bold'})
+    elif colorkey=='ellipticity':
+        cb.set_label('Ellipticity',fontdict={'size':10,'weight':'bold'})
+        
     plt.show()
     
+    #save the figure if desired
     if figsave=='y':
-        sf='%2.3g' % freq
+        sf='{0:.5g}'.format(int(np.round(freq)))
         savepath=os.path.join(os.path.dirname(edifilelst[0]),'PTfigures')
         if not os.path.exists(savepath):
             os.mkdir(savepath)
@@ -1300,9 +1428,9 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
         plt.close()
         
 
-def plotResPhasePseudoSection(edifilelst,stationid=[0,4],ffactor=1,df=100.,
+def plotResPhasePseudoSection(edifilelst,stationid=[0,4],ffactor=1,
                               maxperiod=60,aspect=4,cmap='jet_r',xtickspace=2,
-                              linedir='ns',rotz=0):
+                              linedir='ns',rotz=0,dpi=300):
     """
     plotResPhasePseudoSection(edifilelst,stationid=4,ffactor=10E3,df=100.,
                               maxperiod=24,aspect=4,cmap='jet_r') plots a 
@@ -1317,7 +1445,8 @@ def plotResPhasePseudoSection(edifilelst,stationid=[0,4],ffactor=1,df=100.,
         cmap = colormap of image
     """
     
-    plt.rcParams['font.size']=6
+    fs=int(dpi/40)
+    plt.rcParams['font.size']=fs
     plt.rcParams['figure.subplot.left']=.07
     plt.rcParams['figure.subplot.right']=.98
     plt.rcParams['figure.subplot.bottom']=.06
@@ -1410,9 +1539,10 @@ def plotResPhasePseudoSection(edifilelst,stationid=[0,4],ffactor=1,df=100.,
     extent=(0,n,period[-1],period[0])
     aspect=aspect
     cmap=cmap
+    pad=.2
     kwargs={'aspect':aspect,'cmap':cmap,'extent':extent}
-    cbarkwargs={'shrink':.9,'orientation':'horizontal'}
-    pad=.25
+    cbarkwargs={'shrink':.7,'orientation':'horizontal','pad':pad}
+
     
     ax2=plt.subplot(2,4,2)
     plt.imshow(resxy[0:nperiod,:],**kwargs)
@@ -1420,8 +1550,8 @@ def plotResPhasePseudoSection(edifilelst,stationid=[0,4],ffactor=1,df=100.,
     plt.xticks(np.arange(0,n,xtickspace),
                [stationlst[st] for st in range(0,n,xtickspace)])
 #    plt.ylabel('Log$_{10}$ Period',fontsize=10,fontweight='bold')
-#    plt.xlabel('Station',fontsize=10,fontweight='bold')
-    plt.title('Log$_{10}\mathbf{(1/\sigma_{xy})}$',fontsize=10,fontweight='bold')
+    plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+    plt.title('Log$_{10}\mathbf{(1/\sigma_{xy})}$',fontsize=fs+4,fontweight='bold')
     ax2.yaxis.set_minor_locator(MultipleLocator(.2))
     plt.grid()
     
@@ -1430,31 +1560,31 @@ def plotResPhasePseudoSection(edifilelst,stationid=[0,4],ffactor=1,df=100.,
     plt.colorbar(**cbarkwargs)
     plt.xticks(np.arange(0,n,xtickspace),
                [stationlst[st] for st in range(0,n,xtickspace)])
-#    plt.ylabel('Log$_{10}$ Period',fontsize=10,fontweight='bold')
-#    plt.xlabel('Station',fontsize=10,fontweight='bold')
-    plt.title('Log$_{10}\mathbf{(1/\sigma_{yx})}$',fontsize=10,fontweight='bold')
+#    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
+    plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+    plt.title('Log$_{10}\mathbf{(1/\sigma_{yx})}$',fontsize=fs+4,fontweight='bold')
     ax3.yaxis.set_minor_locator(MultipleLocator(.2))
     plt.grid()
     
     ax6=plt.subplot(2,4,6)
     plt.imshow(phasexy[0:nperiod,:],vmin=0,vmax=90,**kwargs)
-    plt.colorbar(pad=pad,**cbarkwargs)
+    plt.colorbar(**cbarkwargs)
     plt.xticks(np.arange(0,n,xtickspace),
                [stationlst[st] for st in range(0,n,xtickspace)])
-#    plt.ylabel('Log$_{10}$ Period',fontsize=10,fontweight='bold')
-    plt.xlabel('Station',fontsize=10,fontweight='bold')
-    plt.title('$\mathbf{\phi_{xy}}$',fontsize=10)
+#    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
+    plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+    plt.title('$\mathbf{\phi_{xy}}$',fontsize=fs+4)
     ax6.yaxis.set_minor_locator(MultipleLocator(.2))
     plt.grid()
     
     ax7=plt.subplot(2,4,7)
     plt.imshow(phaseyx[0:nperiod,:],vmin=0,vmax=90,**kwargs)
-    plt.colorbar(pad=pad,**cbarkwargs)
+    plt.colorbar(**cbarkwargs)
     plt.xticks(np.arange(0,n,xtickspace),
                [stationlst[st] for st in range(0,n,xtickspace)])
-#    plt.ylabel('Log$_{10}$ Period',fontsize=10,fontweight='bold')
-    plt.xlabel('Station',fontsize=10,fontweight='bold')
-    plt.title('$\mathbf{\phi_{yx}}$',fontsize=10)
+#    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
+    plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+    plt.title('$\mathbf{\phi_{yx}}$',fontsize=fs+4)
     ax7.yaxis.set_minor_locator(MultipleLocator(.2))
     plt.grid()
     
@@ -1465,9 +1595,9 @@ def plotResPhasePseudoSection(edifilelst,stationid=[0,4],ffactor=1,df=100.,
     plt.colorbar(**cbarkwargs)
     plt.xticks(np.arange(0,n,xtickspace),
                [stationlst[st] for st in range(0,n,xtickspace)])
-    plt.ylabel('Log$_{10}$ Period',fontsize=10,fontweight='bold')
-#    plt.xlabel('Station',fontsize=10,fontweight='bold')
-    plt.title('Log$_{10}\mathbf{(1/\sigma_{xx})}$',fontsize=10,fontweight='bold')
+    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
+    plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+    plt.title('Log$_{10}\mathbf{(1/\sigma_{xx})}$',fontsize=fs+4,fontweight='bold')
     ax1.yaxis.set_minor_locator(MultipleLocator(.2))
     plt.grid()
     
@@ -1476,31 +1606,31 @@ def plotResPhasePseudoSection(edifilelst,stationid=[0,4],ffactor=1,df=100.,
     plt.colorbar(**cbarkwargs)
     plt.xticks(np.arange(0,n,xtickspace),
                [stationlst[st] for st in range(0,n,xtickspace)])
-#    plt.ylabel('Log$_{10}$ Period',fontsize=10,fontweight='bold')
-#    plt.xlabel('Station',fontsize=10,fontweight='bold')
-    plt.title('Log$_{10}\mathbf{(1/\sigma_{yy})}$',fontsize=10,fontweight='bold')
+#    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
+    plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+    plt.title('Log$_{10}\mathbf{(1/\sigma_{yy})}$',fontsize=fs+4,fontweight='bold')
     ax4.yaxis.set_minor_locator(MultipleLocator(.2))
     plt.grid()
     
     ax5=plt.subplot(2,4,5)
     plt.imshow(phasexx[0:nperiod,:],**kwargs)
-    plt.colorbar(pad=pad,**cbarkwargs)
+    plt.colorbar(**cbarkwargs)
     plt.xticks(np.arange(0,n,xtickspace),
                [stationlst[st] for st in range(0,n,xtickspace)])
-    plt.ylabel('Log$_{10}$ Period',fontsize=10,fontweight='bold')
-    plt.xlabel('Station',fontsize=10,fontweight='bold')
-    plt.title('$\mathbf{\phi_{xx}}$',fontsize=10)
+    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
+    plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+    plt.title('$\mathbf{\phi_{xx}}$',fontsize=fs+4)
     ax5.yaxis.set_minor_locator(MultipleLocator(.2))
     plt.grid()
     
     ax8=plt.subplot(2,4,8)
     plt.imshow(phaseyy[0:nperiod,:],**kwargs)
-    plt.colorbar(pad=pad,**cbarkwargs)
+    plt.colorbar(**cbarkwargs)
     plt.xticks(np.arange(0,n,xtickspace),
                [stationlst[st] for st in range(0,n,xtickspace)])
-#    plt.ylabel('Log$_{10}$ Period',fontsize=10,fontweight='bold')
-    plt.xlabel('Station',fontsize=10,fontweight='bold')
-    plt.title('$\mathbf{\phi_{yy}}$',fontsize=10)
+#    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
+    plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+    plt.title('$\mathbf{\phi_{yy}}$',fontsize=fs+4)
     ax8.yaxis.set_minor_locator(MultipleLocator(.2))
     plt.grid()
     plt.show()
