@@ -258,8 +258,8 @@ class Z:
                             (Xvar[1,1]/X[1,1])**2))**2)
             #make new edi file. need to flip zdr and zvardr back to normal order 
             #for edi file.
-            newedifn=mt.rewriteedi(self.filename,zdr,
-                                   zvardr.real)
+            newedifn=mt.rewriteedi(self.filename,znew=zdr,
+                                   zvarnew=zvardr.real)
             
         return D,newedifn
   
@@ -1082,11 +1082,20 @@ class PhaseTensor:
             #calculate phase tensor and rotate  to align x pointing 
             #east and y pointing north following convention of Caldwell (2004)
             if rotate==90:
-                phi=np.rot90(np.dot(np.linalg.inv(X),Y),1)
+                try:
+                    phi=np.rot90(np.dot(np.linalg.inv(X),Y),1)
+                except np.linalg.LinAlgError:
+                    phi=np.zeros((2,2))
             elif rotate==180:
-                phi=np.rot90(np.dot(np.linalg.inv(X),Y),2)
+                try:
+                    phi=np.rot90(np.dot(np.linalg.inv(X),Y),2)
+                except np.linalg.LinAlgError:
+                    phi=np.zeros((2,2))
             elif rotate==270:
-                phi=np.rot90(np.dot(np.linalg.inv(X),Y),3)
+                try:
+                    phi=np.rot90(np.dot(np.linalg.inv(X),Y),3)
+                except np.linalg.LinAlgError:
+                    phi=np.zeros((2,2))
             else:
                 phi=np.dot(np.linalg.inv(X),Y)
             #put variance into standard deviation
@@ -1484,8 +1493,14 @@ class ResistivityTensor:
             #rotate the data
             for rr in range(nz):
                 self.z[rr]=np.dot(rotmatrix,np.dot(self.z[rr],rotmatrix.T))
-                
-        Y=np.array([np.linalg.inv(zz) for zz in self.z])
+
+        Y=np.zeros_like(self.z)
+        for ii,zz in enumerate(self.z):
+            try:            
+                Y[ii]=np.linalg.inv(zz)
+            except np.linalg.LinAlgError:
+                pass
+            
         
         self.gamma=np.zeros_like(self.z)
         self.gamma[:,0,0]=-frequency**2*(Y[:,1,1]*Y[:,0,0]-Y[:,1,0]*Y[:,1,0])
@@ -1493,9 +1508,13 @@ class ResistivityTensor:
         self.gamma[:,1,0]=-frequency**2*(Y[:,0,0]*(Y[:,1,0]-Y[:,0,1]))
         self.gamma[:,1,1]=-frequency**2*(Y[:,1,1]*Y[:,0,0]-Y[:,0,1]*Y[:,0,1])
         
-        
-        self.rho=.2*np.array([frequency[ii]*np.linalg.inv(gg.imag) 
-                                        for ii,gg in enumerate(self.gamma)])
+        self.rho=np.zeros_like(self.gamma.imag)
+        for ii,gg in enumerate(self.gamma):
+            try:                
+                self.rho[ii]=.2*frequency[ii]*np.linalg.inv(gg.imag) 
+            except np.linalg.LinAlgError:
+                pass
+                                        
         self.rhodet=np.sqrt(abs(np.array([np.linalg.det(rr) 
                             for rr in self.rho])))
         
@@ -1513,9 +1532,13 @@ class ResistivityTensor:
                                  (self.rho[:,0,0]-self.rho[:,1,1]))*(180/np.pi)
         self.rhoazimuth=self.rhoalpha-self.rhobeta
         
-        self.eps=.2*np.array([frequency[ii]*np.linalg.inv(gg.real) 
-                                        for ii,gg in enumerate(self.gamma)])
-        
+        self.eps=np.zeros_like(self.gamma.real)
+        for ii,gg in enumerate(self.gamma):
+            try:                
+                self.eps[ii]=.2*frequency[ii]*np.linalg.inv(gg.real) 
+            except np.linalg.LinAlgError:
+                pass
+            
         self.epsdet=np.sqrt(abs(np.array([np.linalg.det(rr) 
                             for rr in self.eps])))
         
