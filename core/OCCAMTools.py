@@ -1148,7 +1148,7 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
         
     datfid=open(datfilename,'w')
     datfid.write('FORMAT:'+' '*11+'OCCAM2MTDATA_1.0'+'\n')
-    datfid.write('TITLE:'+' '*12+'{0:.4g}--'.format(theta*180/np.pi)+' '+title+'\n')
+    datfid.write('TITLE:            %1.4f-- %s\n'%(theta*180/np.pi,title))
     
     #write station sites
     datfid.write('SITES:'+' '*12+str(nstat)+'\n')
@@ -1184,8 +1184,8 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
     return datfilename
     
 def makeModel(datafilename,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
-              z1layer=50,bwidth=200,trigger=.75,savepath=None,rhostart=100,
-              occampath=r"c:\Peacock\PHD\OCCAM\MakeFiles"):
+              z1layer=50,bwidth=200,trigger=.75,cwd='.',rhostart=100,
+              makemodelexe=None, modelname=""):
     """
     makeModel will make an the input files for occam using Steve Constable's
     MakeModel2DMT.f code.
@@ -1199,9 +1199,10 @@ def makeModel(datafilename,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
         z1layer = thickness of the first layer in meters
         bwidth = maximum block width for regularization grid in meters
         trigger = triger point to amalgamate blocks
-        savepath = path to save files to
+        cwd     = working directory, files are saved here
         rhostart = starting resistivity for homogeneous half space in ohm-m
-        occampath = path to MakeModel2DMT.exe
+        makemodelexe = executable Make2DModel file
+        
         
     Outputs:
         meshfn = mesh file for finite element grid saved ats MESH
@@ -1210,14 +1211,20 @@ def makeModel(datafilename,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
         startupfn = start up filepath, saved as startup
     """
     #get the base name of data file    
-    dfnb=os.path.basename(datafilename)
     
+    olddir = os.path.abspath(os.curdir)
+    os.chdir(cwd)
+
+    dfnb=os.path.basename(datafilename)
+
+
+    #deprecated....not necessary, if path is given in excplicit form
     #put data file into the same directory as MakeModel2DMT
-    if os.path.dirname(datafilename)!=occampath:
-        shutil.copy(datafilename,os.path.join(occampath,dfnb))
+    #if os.path.dirname(datafilename)!=occampath:
+    #    shutil.copy(datafilename,os.path.join(occampath,dfnb))
     
     #write input file for MakeModel2DMT
-    mmfid=open(os.path.join(occampath,'inputMakeModel.txt'),'w')
+    mmfid=file(os.path.join(cwd,'inputMakeModel.txt'),'w')
     mmfid.write(dfnb+'\n')
     mmfid.write(str(niter)+'\n')    
     mmfid.write(str(targetrms)+'\n')    
@@ -1228,47 +1235,68 @@ def makeModel(datafilename,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
     mmfid.write(str(trigger)+'\n')
     mmfid.write('\n')
     mmfid.close()
+
+    #WRite parameters to local dict for passing to functions:
+    parameter_dict={}
+    parameter_dict['datafile'] = datafilename
+    parameter_dict['n_max_iterations'] = niter
+    parameter_dict['targetrms'] = targetrms
+    parameter_dict['n_layers'] = nlayers
+    parameter_dict['n_layersperdecade'] = nlperdec
+    parameter_dict['firstlayer_thickness'] = z1layer
+    parameter_dict['max_blockwidth'] = bwidth
+    parameter_dict['trigger'] = trigger
+    parameter_dict['cwd'] = cwd
+    parameter_dict['rho_start'] = rhostart
+    parameter_dict['modelname'] = modelname
+
+    #shutil.copy(os.path.join(occampath,'inputMakeModel.txt'),
+                #os.path.join(os.path.dirname(datafilename),
+                             #'inputMakeModel.txt'))
     
-    shutil.copy(os.path.join(occampath,'inputMakeModel.txt'),
-                os.path.join(os.path.dirname(datafilename),
-                             'inputMakeModel.txt'))
-    #get current working directory
-    cdir=os.getcwd() 
-    
-    #change directory path to occam path
-    os.chdir(occampath) 
+    ##change directory path to occam path
+    #os.chdir(occampath) 
     
     #---call MakeModel2DMT---
-    subprocess.os.system("MakeModel2DMT < inputMakeModel.txt")
+    #subprocess.os.system("%s < inputMakeModel.txt"%(makemodelexe))
+
     
     #change back to original working directory    
-    os.chdir(cdir)
+    #os.chdir(cdir)
     
-    if savepath==None:
-        savepath=os.path.dirname(datafilename)
+    #deprecated....path given as input....has to be checked for externally
+    #if savepath==None:
+    #    savepath=os.path.dirname(datafilename)
     
-    if not os.path.exists(savepath):
-        os.mkdir(savepath)
+    #if not os.path.exists(savepath):
+    #    os.mkdir(savepath)
     
-    meshfn=os.path.join(savepath,'MESH')    
-    inmodelfn=os.path.join(savepath,'INMODEL')    
-    startupfn=os.path.join(savepath,'startup')    
+    meshfn=os.path.join(cwd,'MESH')
+    inmodelfn=os.path.join(cwd,'INMODEL')
+    startupfn=os.path.join(cwd,'startup')
+    parameter_dict['meshfn']  = meshfn
+    parameter_dict['inmodelfn']  = inmodelfn
+    parameter_dict['startupfn']  = startupfn
     
+    #write OCCAM input files directly - no external function needed:
+    filelist= makestartfiles(parameter_dict)
+
+    #deprecated....not necessary
     #copy ouput files to savepath
-    shutil.copy(os.path.join(occampath,'MESH'),meshfn)
-    shutil.copy(os.path.join(occampath,'INMODEL'),inmodelfn)
-    shutil.copy(os.path.join(occampath,'startup'),startupfn)
-    if not os.path.exists(os.path.join(savepath,dfnb)):
-        shutil.copy(datafilename,os.path.join(savepath,dfnb))
-    if os.path.getctime(os.path.join(savepath,dfnb))<\
-        os.path.getctime(datafilename):
-        shutil.copy(datafilename,os.path.join(savepath,dfnb))
+    #shutil.copy(os.path.join(occampath,'MESH'),meshfn)
+    #shutil.copy(os.path.join(occampath,'INMODEL'),inmodelfn)
+    #shutil.copy(os.path.join(occampath,'startup'),startupfn)
+    #if not os.path.exists(os.path.join(savepath,dfnb)):
+        #shutil.copy(datafilename,os.path.join(savepath,dfnb))
+    #if os.path.getctime(os.path.join(savepath,dfnb))<\
+        #os.path.getctime(datafilename):
+        #shutil.copy(datafilename,os.path.join(savepath,dfnb))
     
     #rewrite mesh so it contains the right number of columns and rows
-    rewriteMesh(meshfn)
+    #rewriteMesh(meshfn)
     
     #write startup file to have the starting desired starting rho value
-    ifid=open(startupfn,'r')
+    ifid=file(startupfn,'r')
     ilines=ifid.readlines()
     ifid.close()
     
@@ -1284,8 +1312,11 @@ def makeModel(datafilename,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
     
     print 'Be sure to check the INMODEL file for clumped numbers near the bottom.'
     print 'Also, check the MESH and startup files to make sure they are correct.'
+
+    #go back to old path:
+    os.chdir(olddir)
     
-    return meshfn,inmodelfn,startupfn
+    return filelist
 
 
 def rewriteMesh(meshfn):
@@ -1295,7 +1326,7 @@ def rewriteMesh(meshfn):
     """
     
     #check the mesh
-    mfid=open(meshfn,'r')
+    mfid=file(meshfn,'r')
     mlines=mfid.readlines()
     mfid.close()
     
@@ -1313,7 +1344,7 @@ def rewriteMesh(meshfn):
             break
 
     #rewrite the file to have the proper amount of stuff
-    mfid=open(meshfn,'w')
+    mfid=file(meshfn,'w')
     for line in mlines[0:qspot]:
         mfid.write(line)
     
@@ -2550,3 +2581,510 @@ def plotModel(iterfile,meshfile):
     """
     plot the mode as an image
     """
+
+    pass
+
+
+def getdatetime():
+
+
+    return time.asctime(time.gmtime())
+
+
+#==================================================================
+#replacing Fortran program Make2DModel....:
+
+
+def makestartfiles(parameter_dict):
+
+    read_datafile(parameter_dict)
+
+    parameter_dict['n_sideblockelements'] = 7
+    parameter_dict['n_bottomlayerelements'] = 4
+
+    parameter_dict['itform'] = 'not specified'
+    parameter_dict['description'] = 'N/A'
+
+    parameter_dict['datetime'] = getdatetime()
+    
+
+    parameter_dict['iruf'] = 1
+    parameter_dict['idebug'] = 1
+    parameter_dict['nit'] = 0
+    parameter_dict['pmu'] = 5.0
+    parameter_dict['rlast'] = 1.0E+07
+    parameter_dict['tobt'] = 100.
+    parameter_dict['ifftol'] = 0
+    
+    blocks_elements_setup(parameter_dict)
+    
+    get_model_setup(parameter_dict)
+    
+    writemeshfile(parameter_dict)
+    writemodelfile(parameter_dict)
+    writestartupfile(parameter_dict)
+
+    MeshF = parameter_dict['meshfn']
+    ModF  = parameter_dict['inmodelfn']
+    SF    = parameter_dict['startupfn']
+    
+    return (MeshF,ModF,SF)
+
+def writemeshfile(parameter_dict):
+
+    mesh_positions_vert = parameter_dict['mesh_positions_vert']
+    mesh_positions_hor  = parameter_dict['mesh_positions_hor']
+    n_nodes_hor         = parameter_dict['n_nodes_hor']
+    n_nodes_vert        = parameter_dict['n_nodes_vert']
+    
+    fh_mesh = file(parameter_dict['meshfn'],'w')
+    mesh_outstring =''
+
+    temptext = "MESH FILE FROM MTpy\n"
+    mesh_outstring += temptext
+
+    temptext = "%i %i %i %i %i %i\n"%(0,n_nodes_hor,n_nodes_vert,0,0,2)
+    mesh_outstring += temptext
+
+    temptext = ""
+    for i in range(n_nodes_hor-1):
+        temptext += "%.1f "%(mesh_positions_hor[i])
+    temptext +="\n"
+    mesh_outstring += temptext
+
+    temptext = ""
+    for i in range(n_nodes_vert-1):
+        temptext += "%.1f "%(mesh_positions_vert[i])
+    temptext +="\n"
+    mesh_outstring += temptext
+
+    mesh_outstring +="%i\n"%(0)
+
+    for j in range(4*(n_nodes_vert-1)):
+        tempstring=''
+        tempstring += (n_nodes_hor-1)*"?"
+        tempstring += '\n'
+        mesh_outstring += tempstring
+    
+
+    fh_mesh.write(mesh_outstring)
+    fh_mesh.close()
+
+
+
+def writemodelfile(parameter_dict):
+    "needed : filename,binding_offset,startcolumn, n_layers,layer_thickness,block_width"
+
+    modelblockstrings = parameter_dict['modelblockstrings']
+    nfev              = parameter_dict['nfev']
+    lo_colnumbers     = parameter_dict['lo_colnumbers']
+    boffset           = float(parameter_dict['binding_offset'])
+    n_layers          = int(float(parameter_dict['n_layers']))
+
+    
+    fh_model = file(parameter_dict['inmodelfn'],'w')
+    model_outstring =''
+
+    temptext = "Format:           %s\n"%("OCCAM2MTMOD_1.0")
+    model_outstring += temptext
+    temptext = "Model Name:       %s\n"%(parameter_dict['modelname'])
+    model_outstring += temptext
+    temptext = "Description:      %s\n"%("Random Text")
+    model_outstring += temptext
+    temptext = "Mesh File:        %s\n"%(os.path.basename(parameter_dict['meshfn']))
+    model_outstring += temptext
+    temptext = "Mesh Type:        %s\n"%("PW2D")
+    model_outstring += temptext
+    temptext = "Statics File:     %s\n"%("none")
+    model_outstring += temptext
+    temptext = "Prejudice File:   %s\n"%("none")
+    model_outstring += temptext
+    temptext = "Binding Offset:   %.1f\n"%(boffset)
+    model_outstring += temptext
+    temptext = "Num Layers:       %i\n"%(n_layers)
+    model_outstring += temptext
+
+    for k in range(n_layers):
+        n_meshlayers  = nfev[k]
+        n_meshcolumns = lo_colnumbers[k]
+        temptext="%i %i\n"%(n_meshlayers, n_meshcolumns)
+        model_outstring += temptext
+
+        temptext = modelblockstrings[k]
+        model_outstring += temptext
+        #model_outstring += "\n"
+        
+
+    temptext = "Number Exceptions:%i\n"%(0)
+    model_outstring += temptext
+    
+
+    fh_model.write(model_outstring)
+    fh_model.close()
+
+
+
+def writestartupfile(parameter_dict):
+
+
+    fh_startup = file(parameter_dict['startupfn'],'w')
+    startup_outstring =''
+
+    temptext = "Format:           %s\n"%(parameter_dict['itform'])
+    startup_outstring += temptext
+    temptext = "Description:      %s\n"%(parameter_dict['description'])
+    startup_outstring += temptext
+    temptext = "Model File:       %s\n"%(os.path.basename(parameter_dict['inmodelfn']))
+    startup_outstring += temptext
+    temptext = "Data File:        %s\n"%(os.path.basename(parameter_dict['datafile']))
+    startup_outstring += temptext
+    temptext = "Date/Time:        %s\n"%(parameter_dict['datetime'])
+    startup_outstring += temptext
+    temptext = "Max Iter:         %i\n"%(int(float(parameter_dict['n_max_iterations'])))
+    startup_outstring += temptext
+    temptext = "Req Tol:          %.1g\n"%(float(parameter_dict['targetrms']))
+    startup_outstring += temptext
+    temptext = "IRUF:             %s\n"%(parameter_dict['iruf'])
+    startup_outstring += temptext
+    temptext = "Debug Level:      %s\n"%(parameter_dict['idebug'])
+    startup_outstring += temptext
+    temptext = "Iteration:        %i\n"%(int(float(parameter_dict['n_max_iterations'])))
+    startup_outstring += temptext
+    temptext = "PMU:              %s\n"%(parameter_dict['pmu'])
+    startup_outstring += temptext
+    temptext = "Rlast:            %s\n"%(parameter_dict['rlast'])
+    startup_outstring += temptext
+    temptext = "Tlast:            %s\n"%(parameter_dict['tobt'])
+    startup_outstring += temptext
+    temptext = "IffTol:           %s\n"%(parameter_dict['ifftol'])
+    startup_outstring += temptext
+    temptext = "No. Parms:        %i\n"%(int(float(parameter_dict['n_parameters'])))
+    startup_outstring += temptext
+    temptext = ""
+    for l in range(int(float(parameter_dict['n_parameters']))):
+        temptext += "%.1g  "%(2.0)
+    temptext += "\n"
+    startup_outstring += temptext
+     
+
+    fh_startup.write(startup_outstring)
+    fh_startup.close()
+
+def read_datafile(parameter_dict):
+
+
+    df = parameter_dict['datafile']
+    F  = file(df,'r')
+    datafile_content = F.readlines()
+    F.close()
+
+    #RELYING ON A CONSTANT FORMAT, ACCESSING THE PARTS BY COUNTING OF LINES!!!:
+    
+    n_sites = int(datafile_content[2].strip().split()[1])
+    sitenames = []
+    for i in range(n_sites):
+        sitenames.append(datafile_content[3+i].strip())
+
+    sitelocations=[]
+    for i in range(n_sites):
+        idx = 4+n_sites+i
+        sitelocations.append(float(datafile_content[idx].strip()))
+
+    n_freqs = int(datafile_content[2*n_sites+4].strip().split()[1])
+    freqs=[]
+    for i in range(n_freqs):
+        idx = 2*n_sites+5+i
+        freqs.append(float(datafile_content[idx].strip()))
+
+
+    n_data = int(datafile_content[2*n_sites+5+n_freqs].strip().split()[2])
+    
+
+    parameter_dict['lo_site_names']     = sitenames
+    parameter_dict['lo_site_locations'] = sitelocations
+    parameter_dict['n_sites']           = n_sites
+    parameter_dict['n_datapoints']      = n_data
+    parameter_dict['n_freqs']           = n_freqs
+    parameter_dict['lo_freqs']          = freqs
+    
+    
+
+def get_model_setup(parameter_dict):
+
+    ncol0      = int(float(parameter_dict['ncol0']))
+    n_layer    = int(float(parameter_dict['n_layers']))
+    nfe        = parameter_dict['nfe']
+    thickness  = parameter_dict['thickness']
+    width      = parameter_dict['width']
+    trigger    =  float(parameter_dict['trigger'])
+    dlz = parameter_dict['dlz']
+
+    modelblockstrings = []
+    lo_colnumbers     = []
+
+    ncol     = ncol0
+    np       = 0
+
+    
+    for layer_idx in range(n_layer):
+        block_idx = 1
+
+        #print layer_idx,len(thickness),len(width),ncol,len(dlz)
+    
+        while block_idx+2 < ncol-1 :
+
+            #PROBLEM : 'thickness' has only "n_layer'-1 entries!!
+            if not dlz[layer_idx] > (trigger*(width[block_idx]+width[block_idx+1])):
+                block_idx += 1
+                continue
+
+            else:
+                width[block_idx] += width[block_idx+1]
+                nfe[block_idx]   += nfe[block_idx+1]
+
+                for m in range(block_idx+2,ncol):
+                    width[m-1] = width[m]
+                    nfe[m-1]   = nfe[m]
+
+                ncol -=1
+
+        lo_colnumbers.append(ncol)
+
+        tempstring = ""
+        for j in range(ncol):
+            tempstring += "%i "%(nfe[j])
+        tempstring += "\n"
+        modelblockstrings.append(tempstring)
+
+        np = np + ncol
+
+        #completely unnecessary!!! :
+        if layer_idx == 0:
+            mcol = ncol
+        
+
+    parameter_dict['modelblockstrings'] = modelblockstrings
+    parameter_dict['lo_colnumbers']     = lo_colnumbers
+    parameter_dict['n_parameters']      = np
+    parameter_dict['n_cols_max']        = mcol
+    
+
+def blocks_elements_setup(parameter_dict):
+    
+
+    lo_sites = parameter_dict['lo_site_locations']
+    n_sites  = len(lo_sites)
+    maxwidth = float(parameter_dict['max_blockwidth'])
+
+    nbot     = int(float(parameter_dict['n_bottomlayerelements']))
+    nside    = int(float(parameter_dict['n_sideblockelements']))
+
+    # j: index for finite elements
+    # k: index for regularisation bricks
+    # Python style: start with 0 instead of 1
+
+    sitlok      = []
+    sides       = []
+    width       = []
+    dly         = []
+    nfe         = []
+    thickness   = []
+    nfev        = []
+    dlz         = []
+    bot         = []
+
+    
+    j = 0
+    sitlok.append(lo_sites[0])
+
+    for idx in range(1,n_sites-1):
+        
+        spacing           = lo_sites[idx] - lo_sites[idx-1]
+        n_localextrasites = int(spacing/maxwidth) + 1
+
+        for idx2 in range(n_localextrasites):
+            sitlok.append(lo_sites[idx-1] + (idx2+1.)/float(n_localextrasites)*spacing )
+            j += 1
+
+    # nrk: number of total dummy stations
+    nrk = j
+    print "%i dummy stations defined"%(nrk)
+
+    
+    spacing1 = (sitlok[1]-sitlok[0])/2.
+    sides.append(3*spacing1)
+
+
+    for idx in range(1,nside):
+        curr_side = 3*sides[idx-1]
+        if curr_side > 1000000.:
+            curr_side = 1000000.
+        sides.append(curr_side)
+        
+    #-------------------------------------------
+
+    j = 0
+    k = 0
+
+    firstblockwidth = 0.
+    
+    for idx in range(nside-1,-1,-1):
+        firstblockwidth += sides[idx]
+        dly.append(sides[idx])
+        j += 1
+        
+    width.append(firstblockwidth)
+    nfe.append(nside)
+    
+    dly.append(spacing1)
+    dly.append(spacing1)
+    j += 2
+    nfe.append(2)
+    width.append(2*spacing1)
+
+    block_offset = width[1]
+
+    k += 1
+
+    dly.append(spacing1)
+    dly.append(spacing1)
+    j += 2
+    nfe.append(2)
+    width.append(2*spacing1)
+    
+    block_offset += spacing1
+
+    k += 1
+
+    #------------------------
+    
+    for idx in range(1,nrk-1):
+        spacing2 = (sitlok[idx+1]-sitlok[idx])/2.
+        dly.append(spacing1)
+        dly.append(spacing2)
+        j += 2
+        nfe.append(2)
+        width.append(spacing1+spacing2)
+        k += 1
+        spacing1 = spacing2
+
+    dly.append(spacing2)
+    dly.append(spacing2)
+
+    j += 2
+    nfe.append(2)
+    width.append(2*spacing2)
+    k += 1
+
+    dly.append(spacing2)
+    dly.append(spacing2)
+    
+    j += 2
+    nfe.append(2)
+    width.append(2*spacing2)
+    k += 1
+
+    width[-1] = 0.
+    sides[0] = 3*spacing2
+
+    #------------------------------
+    
+    for idx in range(1,nside):
+        curr_side = 3*sides[idx-1]
+        if curr_side > 1000000.:
+            curr_side = 1000000.
+        sides[idx] = curr_side
+
+
+    lastblockwidth= 0.
+    for idx in range(nside):
+        j += 1
+        lastblockwidth += sides[idx]
+        dly.append(sides[idx])
+
+    width[-1] = lastblockwidth
+
+    #---------------------------------
+
+    k+= 1
+    nfe.append(nside)
+
+    nodey = j+1
+    ncol0 = k
+
+    block_offset = sitlok[0] - block_offset
+
+    #----------------------------------
+
+    layers_per_decade     = float(parameter_dict['n_layersperdecade'])
+    first_layer_thickness = float(parameter_dict['firstlayer_thickness'])
+
+    t          = 10.**(1./layers_per_decade)
+    t1         = first_layer_thickness
+    thickness.append(t1)
+    
+    d1 = t1
+    
+    n_layers = int(float(parameter_dict['n_layers']))
+
+    for idx in range(1,n_layers-1):
+        d2 = d1*t
+        curr_thickness = d2 - d1
+        if curr_thickness < t1:
+            curr_thickness = t1
+        thickness.append(curr_thickness)
+        d1 += curr_thickness
+    
+    
+    bot.append(3*thickness[n_layers-2])
+
+    for idx in range(1,nbot):
+        bot.append(bot[idx-1]*3)
+
+    #--------------------------------------------------
+
+    k = 0
+    
+    dlz.append(thickness[0]/2.)
+    dlz.append(thickness[0]/2.)
+    nfev.append(2)
+
+    k += 2
+
+    dlz.append(thickness[1]/2.)
+    dlz.append(thickness[1]/2.)
+    nfev.append(2)
+
+    k += 2
+
+    for idx in range(2,n_layers-1):
+        k += 1
+        nfev.append(1.)
+        dlz.append(thickness[idx])
+
+    for idx in range(nbot):
+        k += 1
+        dlz.append(bot[idx])
+
+    nfev.append(nbot)
+
+    nodez = k+1
+    
+
+    parameter_dict['ncol0']             = ncol0
+    parameter_dict['nfe']               = nfe
+    parameter_dict['nfev']              = nfev
+    parameter_dict['thickness']         = thickness
+    parameter_dict['width']             = width
+    parameter_dict['binding_offset']    = block_offset
+    #parameter_dict['y_nodes']           = nodey 
+    #parameter_dict['z_nodes']           = nodez
+    parameter_dict['dlz']               = dlz
+    #parameter_dict['dly']               = dly
+    parameter_dict['mesh_positions_vert'] = dlz
+    parameter_dict['mesh_positions_hor']  = dly
+    parameter_dict['n_nodes_hor']         = nodey
+    parameter_dict['n_nodes_vert']        = nodez
+    
+    
+    
