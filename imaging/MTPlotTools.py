@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 This module contains functions to plot different MT things.
 '''
@@ -5,12 +6,12 @@ This module contains functions to plot different MT things.
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
 import numpy as np
-import BIRRPTools as brp
+import MTpy.core.BIRRPTools as brp
 import os
-import MTtools as mt
+import MTpy.core.MTtools as mt
 from matplotlib.ticker import MultipleLocator,FormatStrFormatter
-import Z
-import LatLongUTMconversion as utm2ll
+import MTpy.core.Z
+import MTpy.utils.LatLongUTMconversion as utm2ll
 from matplotlib.patches import Ellipse,Rectangle,Arrow
 from matplotlib.colors import LinearSegmentedColormap,Normalize
 from matplotlib.colorbar import *

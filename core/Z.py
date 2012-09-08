@@ -6,8 +6,8 @@ Created on Mon May 03 13:44:51 2010
 """
 
 import numpy as np
-import MTtools as mt
-import MTPlotTools as mtplot
+import MTpy.core.MTtools as mt
+#import MTpy.imaging.MTPlotTools as mtplot
 import os
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab

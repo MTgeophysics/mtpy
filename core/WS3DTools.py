@@ -7,7 +7,7 @@ Created on Mon Apr 02 11:54:33 2012
 
 import os
 import numpy as np
-import Z
+import MTpy.core.Z as Z
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
 from matplotlib.ticker import MultipleLocator,FormatStrFormatter
@@ -94,45 +94,50 @@ def readWLOutFile(outfn,ncol=5):
                     and y is to the north.)
     """
     
-    rfid=file(outfn,'r')
-    rlines=rfid.readlines()
-    nx,ny,nz,rhostart,values=rlines[0].strip().split()
-    nx=int(nx)
-    ny=int(ny)
-    nz=int(nz)
+    wingLinkDataFH = file(outfn,'r')
+    raw_data       = wingLinkDataFH.read().strip().split()
+    
+    nx = int(raw_data[0])
+    ny = int(raw_data[1])
+    nz = int(raw_data[2])
+
     dx=np.zeros(nx)
     dy=np.zeros(ny)
     dz=np.zeros(nz)
     
-    #indices to read from 
-    rx=int(round(nx/float(ncol))+1)
-    ry=rx+int(np.ceil(ny/float(ncol)))
-    rz=ry+int(np.ceil(nz/float(ncol)))
+    for x_idx in range(nx):     
+      dx[x_idx] = raw_data[x_idx + 5]
+    for y_idx in range(ny):
+      dy[y_idx] = raw_data[y_idx + 5 + nx]
+    for z_idx in range(nz):
+      dz[z_idx] = raw_data[z_idx + 5 + nx + ny]
+
+    #dx[0:nx/2]=-dx[0:nx/2]
+    #dy[0:ny/2]=-dy[0:ny/2]
     
-#    print 'rx:{0}; ry:{1}; rz:{2}'.format(rx,ry,rz)
+##    print 'rx:{0}; ry:{1}; rz:{2}'.format(rx,ry,rz)
     
-    #get x distances
-    for ii,ll in enumerate(rlines[1:rx]):
-        line=ll.strip().split()
-        for jj,kk in enumerate(line):
-            dx[ii*ncol+jj]=float(kk)
-    #get y distances
-    for ii,ll in enumerate(rlines[rx:ry]):
-        line=ll.strip().split()
-#        print line
-        for jj,kk in enumerate(line):
-            dy[ii*ncol+jj]=float(kk)
+    ##get x distances
+    #for ii,ll in enumerate(rlines[1:rx]):
+        #line=ll.strip().split()
+        #for jj,kk in enumerate(line):
+            #dx[ii*ncol+jj]=float(kk)
+    ##get y distances
+    #for ii,ll in enumerate(rlines[rx:ry]):
+        #line=ll.strip().split()
+##        print line
+        #for jj,kk in enumerate(line):
+            #dy[ii*ncol+jj]=float(kk)
     
-    #get z distances
-    for ii,ll in enumerate(rlines[ry:rz]):
-        line=ll.strip().split()
-        for jj,kk in enumerate(line):
-            dz[ii*ncol+jj]=float(kk)
+    ##get z distances
+    #for ii,ll in enumerate(rlines[ry:rz]):
+        #line=ll.strip().split()
+        #for jj,kk in enumerate(line):
+            #dz[ii*ncol+jj]=float(kk)
       
     #make cells to the west and south negative      
-    dx[0:nx/2]=-dx[0:nx/2]
-    dy[0:ny/2]=-dy[0:ny/2]
-    dz[0:nz/2]=-dz[0:nz/2]
+
+    #dz[0:nz/2]=-dz[0:nz/2]
             
     return dx,dy,dz
     
@@ -491,42 +496,83 @@ def writeInit3DFile(outfn,rhostart=100,ncol=5,savepath=None):
     ny=len(dy)
     nz=len(dz)
     
-    ifid=file(ifile,'w')
-    ifid.write('#Initial model \n')
-    ifid.write('{0} {1} {2} 1 \n'.format(ny,nx,nz))
+    init_modelFH = open(ifile,'w')
+    init_modelFH.write('#Initial model \n')
+    init_modelFH.write('%i %i %i 1 \n'%(ny,nx,nz))
         
     #write y locations
-    for ii in range(ny/8+1):
-        for jj in range(8):
-            try:
-                ifid.write('{0:+.4e} '.format(abs(dy[ii*8+jj])))
-            except IndexError:
-                pass
-        ifid.write('\n')
-        
+    y_string=''
+    y_counter=0 
+    for y_idx in range(ny):
+        y_string += '%.3e  '%(dy[y_idx])
+        y_counter+=1
+        if y_counter == 8:
+            y_string += '\n'
+            y_counter = 0
+    if ny%8:
+        y_string +='\n'
+    init_modelFH.write(y_string)
+    
     #write x locations
-    for ii in range(nx/8+1):
-        for jj in range(8):
-            try:
-                ifid.write('{0:+.4e} '.format(abs(dx[ii*8+jj])))
-            except IndexError:
-                pass
-        ifid.write('\n')
-        
+    x_string=''
+    x_counter=0 
+    for x_idx in range(nx):
+        x_string += '%.3e  '%(dx[x_idx])
+        x_counter+=1
+        if x_counter == 8:
+            x_string += '\n'
+            x_counter = 0
+    if nx%8:		    
+	x_string +='\n'
+    init_modelFH.write(x_string)
+
     #write z locations
-    for ii in range(nz/8+1):
-        for jj in range(8):
-            try:
-                ifid.write('{0:+.4e} '.format(abs(dz[ii*8+jj])))
-            except IndexError:
-                pass
-        ifid.write('\n')
+    z_string=''
+    z_counter=0 
+    for z_idx in range(nz):
+        z_string += '%.3e  '%(dz[z_idx])
+        z_counter+=1
+        if z_counter == 8:
+            z_string += '\n'
+            z_counter = 0   
+    if nz%8:
+        z_string +='\n'
+    init_modelFH.write(z_string)
+   
+
+
+
+    #for ii in range(ny/8+1):
+        #for jj in range(8):
+            #try:
+                #ifid.write('{0:+.4e} '.format(abs(dy[ii*8+jj])))
+            #except IndexError:
+                #pass
+        #ifid.write('\n')
         
-    ifid.write('{0} \n'.format(rhostart))
+    ##write x locations
+    #for ii in range(nx/8+1):
+        #for jj in range(8):
+            #try:
+                #ifid.write('{0:+.4e} '.format(abs(dx[ii*8+jj])))
+            #except IndexError:
+                #pass
+        #ifid.write('\n')
+        
+    ##write z locations
+    #for ii in range(nz/8+1):
+        #for jj in range(8):
+            #try:
+                #ifid.write('{0:+.4e} '.format(abs(dz[ii*8+jj])))
+            #except IndexError:
+                #pass    
+        #ifid.write('\n')
+        
+    init_modelFH.write('%i \n'%int(rhostart))
     
-    ifid.close()
+    init_modelFH.close()
     
-    print 'Wrote init file to: '+ifile
+    print 'Wrote init file to: '+ ifile
     
     return ifile
         

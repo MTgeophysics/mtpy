@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #module for MT calculations
 
 import math
@@ -7,7 +8,7 @@ import fnmatch
 import time
 import datetime
 import shutil
-import LatLongUTMconversion as utm2ll
+import MTpy.utils.LatLongUTMconversion as utm2ll
 import scipy as sp
 import scipy.signal as sps
 

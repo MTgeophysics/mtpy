@@ -13,11 +13,11 @@ import fnmatch
 import datetime
 from scipy import interpolate
 import time
-import MTtools as mt
+import MTpy.core.MTtools as mt
 import shutil
-import MTPlotTools as mtplot
+#import MTpy.imaging.MTPlotTools as mtplot
 import subprocess
-import winsound as ws
+#import winsound as ws
 
 #short spaces 3 spaces
 tsp='   '
@@ -25,14 +25,15 @@ tsp='   '
 lsp='      '
 
 def finishBeep():
-    ws.Beep(1000,80)
-    ws.Beep(300,150)
+    pass
+    #ws.Beep(1000,80)
+    #ws.Beep(300,150)
 #    ws.Beep(150,40)
 #    ws.Beep(200,40)
 #    ws.Beep(300,80)
 #    ws.Beep(1000,100)
-    for ii in np.arange(50,1200,100):
-        ws.Beep(ii,25)
+    #for ii in np.arange(50,1200,100):
+        #ws.Beep(ii,25)
 #    ws.Beep(523,50)
 #    ws.Beep(100,25)
 #    ws.Beep(264,50)
@@ -1280,6 +1281,7 @@ def plotBFfiles(edifile,cohfile=None,cfilelst=None,save='y',
         stationdir=os.path.dirname(stationdir)
     
     if save=='y':
+	import MTpy.imaging.MTPlotTools as mtplot
         #plot the coherence and apparent resistivity and phase
         if not os.path.exists(os.path.join(os.path.dirname(stationdir),'Plots')):
             os.mkdir(os.path.join(os.path.dirname(stationdir),'Plots'))
@@ -1311,6 +1313,7 @@ def plotBFfiles(edifile,cohfile=None,cfilelst=None,save='y',
                           savefigname=os.path.join(plotpath,station+'TS.pdf'))
     
     if show=='y':
+	import MTpy.imaging.MTPlotTools as mtplot
         if cohfile!=None:
             mtplot.plotcoh(cohfile,fignum=1)
         mtplot.plotResPhase(edifile,fignum=2,plotnum=2,ffactor=ffactor)
