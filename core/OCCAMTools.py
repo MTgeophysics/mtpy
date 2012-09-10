@@ -20,6 +20,8 @@ import WinglinkTools as wlt
 import shutil
 import subprocess
 import time
+import matplotlib.colorbar as mcb
+from matplotlib.colors import LinearSegmentedColormap,Normalize 
 
 occamdict={'1':'resxy','2':'phasexy','3':'realtip','4':'imagtip','5':'resyx',
            '6':'phaseyx'}
@@ -119,16 +121,13 @@ def make1DdataFile(station,edipath=None,savepath=None,polarization='both',
                           
             #put the yx phase component in the first quadrant as prescribed
             if pol=='yx':
-                rp.phaseyx=rp.phaseyx+180
-                #check if there are any negative phases
-#                negphase=np.where(rp.phaseyx>180)
-#                if len(negphase)>0:
-#                    rp.phaseyx[negphase[0]]=rp.phaseyx\
-#                                                    [negphase[0]]-360
-            if pol=='xy':
-                negphase=np.where(rp.phaseyx<0)
-                if len(negphase)>0:
-                    rp.phasexy[negphase[0]]=rp.phasexx[negphase[0]]+180
+                    rp.phaseyx=rp.phaseyx+180
+                    #check if there are any negative phases
+                    negphase=np.where(rp.phaseyx>180)
+                    if len(negphase)>0:
+                        rp.phaseyx[negphase[0]]=rp.phaseyx\
+                                                        [negphase[0]]-360
+                    
             #write the resistivity and phase components
             for ii in range(nf):
                 #write resistivity components
@@ -209,8 +208,13 @@ def make1DdataFile(station,edipath=None,savepath=None,polarization='both',
                       'Data'+2*ss+'Std_Error'+'\n')
                       
         #put the yx phase component in the first quadrant as prescribed
-        if pol=='TM':
+        if pol=='yx':
                 rp.phaseyx=rp.phaseyx+180
+                #check if there are any negative phases
+                negphase=np.where(rp.phaseyx>180)
+                if len(negphase)>0:
+                    rp.phaseyx[negphase[0]]=rp.phaseyx\
+                                                    [negphase[0]]-360
                 
         #write the resistivity and phase components
         for ii in range(nf):
@@ -289,24 +293,71 @@ def make1DModelFile(savepath,nlayers=100,bottomlayer=10000,basestep=10,
     
     #---------need to refine this-------------------- 
     #make an array of layer depths on a scale specified by base
-    layers=np.zeros(nlayers+1)
-    layers[0]=z1layer
+#    layers=np.zeros(nlayers+1)
+#    layers[0]=z1layer
     
-    if basestep==10:
-    #    l=np.log10(np.logspace(0,np.log10(bottomlayer),num=nlayers))
-        l=np.linspace(1,np.log10(bottomlayer)+1,num=nlayers+1)
+    layers=np.logspace(np.log10(z1layer),np.log10(bottomlayer),num=nlayers)   
+#    if basestep==10:
+#    #    l=np.log10(np.logspace(0,np.log10(bottomlayer),num=nlayers))
+#        l=np.linspace(1,np.log10(bottomlayer)+1,num=nlayers+1)
+#    
+#    elif basestep==2:
+#    #    l=np.log2(np.logspace(0,np.log2(bottomlayer),num=nlayers)
+#        l=np.linspace(1,np.log2(bottomlayer)+1,num=nlayers+1)
+#    elif basestep==1:
+#        l=np.linspace(1,np.log10(bottomlayer)+1,num=nlayers+1)
+#    else:
+#        raise ValueError('Base '+str(basestep)+' not supported')
+#    
+#    for ll in range(1,nlayers+1):
+#        layers[ll]=layers[0:ll].sum()+z1layer*np.floor(l[ll])
+        
     
-    elif basestep==2:
-    #    l=np.log2(np.logspace(0,np.log2(bottomlayer),num=nlayers)
-        l=np.linspace(1,np.log2(bottomlayer)+1,num=nlayers+1)
-    elif basestep==1:
-        l=np.linspace(1,np.log10(bottomlayer)+1,num=nlayers+1)
-    else:
-        raise ValueError('Base '+str(basestep)+' not supported')
     
-    for ll in range(1,nlayers+1):
-        layers[ll]=layers[ll-1]+z1layer*np.floor(l[ll])
     
+#% Create seabed layers:
+#    switch lower(zScale)
+#        case 'uniform'
+#            z = linspace(oceanDepth,maxDepth, nSeaBedLay);
+#        case {'log','logarithmic'}
+#            z = logspace(log10(oceanDepth),log10(maxDepth), nSeaBedLay);
+#    end
+#    r = z*0 - 1; % make vector of -1's
+#    
+#
+#    Model(:,1) = [zsea; z(:)];
+#    Model(:,2) = [rsea; r(:)];
+#    
+#    Model(:,3) = 1;
+#    Model(1:length(zsea)+1,3) = 0;  % +1 is for top of first seabed layer. 
+#    Model(:,4) = 0; % pref penalty
+#    Model(:,5) = 0; % pref penalty
+#
+#% Write Model File:
+#
+#% Open file:
+#    fid = fopen(filename,'w');
+#    if fid <= 0 
+#        fprintf('Error creating model file: %s\n',filename); 
+#        status = -1;
+#        return
+#    end
+#
+#% Format:
+#  fprintf(fid,'Format:     Resistivity1DMod_1.0\n');
+#  
+#% Num Layers:
+# nlay = length(Model(:,1));
+# fprintf(fid,'#Layers:    %i\n',nlay);
+#    
+#% Comments with column labels:
+#    fprintf(fid,'! top_depth 	resistivity  penalty	preference   pref_penalty\n');
+#
+#% Write out the array:
+#  fprintf(fid,'%12g %12g %12g %12g %12g\n',Model'); 
+#
+#% Close the file:
+#   fclose(fid);    
     
     #make the model file
     modfid=open(modfn,'w')
@@ -673,11 +724,22 @@ def read1DRespFile(respfile):
     
     return rpdict
     
-def plot1D(respfile,iterfile,modelfile,fignum=1,ms=4):
+def plot1D(respfile,iterfile,modelfile,fignum=1,ms=4,dpi=150):
     """
     
     """
     
+    #color for data
+    cted=(0,0,1)
+    ctmd=(1,0,0)
+    
+    #color for occam model
+    ctem=(0,.1,.8)
+    ctmm=(.8,.1,0)
+    
+    #color for Wingling model
+    ctewl=(0,.5,.5)
+    ctmwl=(.5,.5,0)
     #read in data
     rpdict=read1DRespFile(respfile)
     mdict=read1DIterFile(iterfile,modelfile)
@@ -685,10 +747,10 @@ def plot1D(respfile,iterfile,modelfile,fignum=1,ms=4):
     period=1/rpdict['freq']
     
     #make a grid of subplots
-    gs=gridspec.GridSpec(6,5,hspace=.15,wspace=.35)
+    gs=gridspec.GridSpec(6,5,hspace=.25,wspace=.75)
     
     #make a figure
-    fig=plt.figure(fignum,[8,8])
+    fig=plt.figure(fignum,[8,8],dpi=dpi)
     
     #plot resistivity
     axr=fig.add_subplot(gs[:4,:4])
@@ -737,9 +799,9 @@ def plot1D(respfile,iterfile,modelfile,fignum=1,ms=4):
         p2=axp.semilogx(period[pyxm],rpdict['phaseyx'][2][pyxm],
                       ls=':',color='b')
                       
-    axr.grid(True)
+    axr.grid(True,alpha=.4)
     axr.set_xticklabels(['' for ii in range(10)])
-    axp.grid(True)
+    axp.grid(True,alpha=.4)
     axp.yaxis.set_major_locator(MultipleLocator(10))
     axp.yaxis.set_minor_locator(MultipleLocator(1))
     
@@ -754,10 +816,11 @@ def plot1D(respfile,iterfile,modelfile,fignum=1,ms=4):
     
     #plot 1D inversion
     axm=fig.add_subplot(gs[:,4])
-    modelresp=abs(mdict['modelres'][1:])
-    depthp=mdict['depth'][1:]
-    axm.loglog(modelresp[::-1],depthp[::-1])
-    axm.set_ylim(ymin=depthp[-1],ymax=depthp[1])
+    modelresp=abs(10**mdict['modelres'][1:])
+    depthp=np.array([mdict['depth'][0:ii+1].sum() for ii in range(len(mdict['depth']))])[1:]
+    axm.loglog(modelresp[::-1],depthp[::-1],ls='steps-')
+    print (depthp[-1],depthp[0])
+    axm.set_ylim(ymin=depthp[-1],ymax=depthp[0])
 #    axm.set_xlim(xmax=10**3)
     axm.set_ylabel('Depth (m)',fontdict={'size':12,'weight':'bold'})
     axm.set_xlabel('Resistivity ($\Omega \cdot m$)',
@@ -772,7 +835,7 @@ def plot1D(respfile,iterfile,modelfile,fignum=1,ms=4):
 def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None,
                    thetar=0,resxyerr=10,resyxerr=10,phasexyerr=10,phaseyxerr=10,
                    ss=3*' ',fmt='%2.6f',freqstep=1,plotyn='y',lineori='ew',
-                   tippererr=None):
+                   tippererr=None,ftol=.05):
     """
     make2DdataFile will make a data file for occam2D.  
     
@@ -909,6 +972,8 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
         plt.plot(eastlst,sp.polyval(p,eastlst),'-b',lw=2)
         
     for ii in range(len(surveylst)):
+        if surveylst[ii]['zone']!=surveylst[0]['zone']:
+            print surveylst[ii]['station']
         d=(northlst[ii]-sp.polyval(p,eastlst[ii]))*np.cos(theta)
         x0=eastlst[ii]+d*np.sin(theta)
         y0=northlst[ii]-d*np.cos(theta)
@@ -916,7 +981,7 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
         surveylst[ii]['north']=y0
         if plotyn=='y':
             plt.plot(x0,y0,'v',color='k',ms=8,mew=3)
-            plt.text(x0,y0+y0*.0005,pstationlst[ii],horizontalalignment='center',
+            plt.text(x0,y0+.0005,pstationlst[ii],horizontalalignment='center',
                  verticalalignment='baseline',fontdict={'size':12,
                                                         'weight':'bold'})
         
@@ -1012,6 +1077,7 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
         tip=surveylst[kk]['tipper']
         tipvar=surveylst[kk]['tippervar']
         #loop over frequencies to pick out the ones desired
+        dflst=range(len(klst))
         for jj,ff in enumerate(freq):
             #jj is the index of edi file frequency list, this index corresponds
             #to the impedance tensor component index
@@ -1019,8 +1085,7 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
             try:
                 #nn is the frequency number out of extracted frequency list
                 nn=fdict['%.6g' % ff]
-                
-                #calculate resistivity 
+                            #calculate resistivity 
                 wt=.2/(ff)
                 resxy=wt*abs(z[jj,0,1])**2
                 resyx=wt*abs(z[jj,1,0])**2
@@ -1087,8 +1152,8 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
                         projtiperr=tippererr/100.
                         
                         tipyn='y'
+                        
                     
-                
                 #make a list of lines to write to the data file
                 if mmode=='both':
                     reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'1'+ss+
@@ -1127,12 +1192,130 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
                 else:
                     raise NameError('mmode' +mmode+' not defined')
             except KeyError:
-                pass
+                #search around the frequency given by ftol
+                try:
+                    for key in fdict.keys():
+                        if ff>float(key)*(1-ftol) and ff<float(key)*(1+ftol):
+                            nn=fdict[key]                           
+                            wt=.2/(ff)
+                            resxy=wt*abs(z[jj,0,1])**2
+                            resyx=wt*abs(z[jj,1,0])**2
+                    
+                            #calculate the phase putting the yx in the 1st quadrant        
+                            phasexy=np.arctan2(z[jj,0,1].imag,z[jj,0,1].real)*\
+                                    (180/np.pi)
+                            phaseyx=np.arctan2(z[jj,1,0].imag,z[jj,1,0].real)*\
+                                    (180/np.pi)+180
+                            #put phases in correct quadrant if should be negative
+                            if phaseyx>180:
+                                phaseyx=phaseyx-360
+                                print 'Found Negative Phase',surveylst[kk]['station'],ff    
+                            
+                            #calculate errors
+                            #res_xy (TE)
+                            if resxyerr=='data':
+                                dresxyerr=wt*(abs(z[jj,0,1])+zvar[jj,0,1])**2-resxy
+                                lresxyerr=(dresxyerr/resxy)/np.log(10)
+                            
+                            else:
+                                lresxyerr=(resxyerr/100.)/np.log(10)
+                            
+                            #Res_yx(TM)
+                            if resyxerr=='data':
+                                dresyxerr=wt*(abs(z[jj,1,0])+zvar[jj,1,0])**2-resyx
+                                lresyxerr=(dresyxerr/resyx)/np.log(10)
+                            else:
+                                lresyxerr=(resyxerr/100.)/np.log(10)
+                            
+                            #phase_xy(TE)
+                            if phasexyerr=='data':
+                                dphasexyerr=np.arcsin(zvar[jj,0,1]/abs(z[jj,0,1]))*\
+                                            (180/np.pi)
+                            else:
+                                dphasexyerr=(phasexyerr/100.)*57/2.
+                                
+                            #phase_yx (TM)
+                            if phaseyxerr=='data':
+                                dphaseyxerr=np.arcsin(zvar[jj,1,0]/abs(z[jj,1,0]))*\
+                                            (180/np.pi)
+                            else:
+                                dphaseyxerr=(phaseyxerr/100.)*57/2.
+                            
+                            #calculate log10 of resistivity as prescribed by OCCAM
+                            lresyx=np.log10(resyx)
+                            lresxy=np.log10(resxy)
+                            
+                            #if include the tipper
+                            if tippererr!=None:
+                                if tip[jj,0].real==0.0 or tip[jj,1]==0.0:
+                                    tipyn='n'
+                                else:
+                                    #calculate the projection angle for real and imaginary
+                                    tipphir=np.arctan(tip[jj,0].real/tip[jj,1].real)-theta
+                                    tipphii=np.arctan(tip[jj,0].imag/tip[jj,1].imag)-theta
+                                    
+                                    #project the tipper onto the profile line
+                                    projtipr=np.sqrt(tip[jj,0].real**2+tip[jj,1].real**2)*\
+                                              np.cos(tipphir)
+                                    projtipi=np.sqrt(tip[jj,0].imag**2+tip[jj,1].imag**2)*\
+                                              np.cos(tipphii)
+                                              
+                                    #error of tipper is a decimal percentage
+                                    projtiperr=tippererr/100.
+                                    
+                                    tipyn='y'
+                                    
+                                
+                            #make a list of lines to write to the data file
+                            if mmode=='both':
+                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'1'+ss+
+                                                fmt % lresxy +ss+fmt % lresxyerr+'\n')
+                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'2'+ss+
+                                                fmt % phasexy +ss+fmt % dphasexyerr+'\n')
+                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'5'+ss+
+                                                fmt % lresyx+ss+fmt % lresyxerr+'\n')
+                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'6'+ss+
+                                                fmt % phaseyx +ss+fmt % dphaseyxerr+'\n')
+                                if tippererr!=None and tipyn=='y':
+                                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'3'+ss+
+                                                fmt % projtipr +ss+fmt % projtiperr+'\n')
+                                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'4'+ss+
+                                                fmt % projtipi +ss+fmt % projtiperr+'\n')
+                            elif mmode=='TM':
+                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'5'+ss+
+                                                fmt % lresyx +ss+fmt % lresyxerr+'\n')
+                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'6'+ss+
+                                                fmt % phaseyx +ss+fmt % dphaseyxerr+'\n')
+                                if tippererr!=None and tipyn=='y':
+                                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'3'+ss+
+                                                fmt % projtipr +ss+fmt % projtiperr+'\n')
+                                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'4'+ss+
+                                                fmt % projtipi +ss+fmt % projtiperr+'\n')
+                            elif mmode=='TE':
+                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'1'+ss+
+                                                fmt % lresxy+ss+fmt % lresxyerr+'\n')
+                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'2'+ss+
+                                                fmt % phasexy+ss+fmt % dphasexyerr+'\n')
+                                if tippererr!=None and tipyn=='y':
+                                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'3'+ss+
+                                                fmt % projtipr +ss+fmt % projtiperr+'\n')
+                                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'4'+ss+
+                                                fmt % projtipi +ss+fmt % projtiperr+'\n')
+                            else:
+                                raise NameError('mmode' +mmode+' not defined')    
+                        
+                            break                         
+                        else:
+                            pass
+        #                           print 'Did not find frequency {0} for station {1}'.format(ff,surveylst[kk]['station'])
+                            #calculate resistivity 
+                               
+                except KeyError:
+                    pass
     
     #===========================================================================
     #                             write dat file
     #===========================================================================
-    
     if savepath!=None:
         if savepath.find('.')>0:
             datfilename=savepath
@@ -1183,7 +1366,7 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
     
     return datfilename
     
-def makeModel(datafilename,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
+def makeModel(datafn,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
               z1layer=50,bwidth=200,trigger=.75,savepath=None,rhostart=100,
               occampath=r"c:\Peacock\PHD\OCCAM\MakeFiles"):
     """
@@ -1191,7 +1374,7 @@ def makeModel(datafilename,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
     MakeModel2DMT.f code.
     
     Inputs:
-        datafilename = full path to data file
+        datafn = full path to data file
         niter = maximum number of iterations
         targetrms = target root mean square error
         nlayers = total number of layers in mesh
@@ -1210,11 +1393,11 @@ def makeModel(datafilename,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
         startupfn = start up filepath, saved as startup
     """
     #get the base name of data file    
-    dfnb=os.path.basename(datafilename)
+    dfnb=os.path.basename(datafn)
     
     #put data file into the same directory as MakeModel2DMT
-    if os.path.dirname(datafilename)!=occampath:
-        shutil.copy(datafilename,os.path.join(occampath,dfnb))
+    if os.path.dirname(datafn)!=occampath:
+        shutil.copy(datafn,os.path.join(occampath,dfnb))
     
     #write input file for MakeModel2DMT
     mmfid=open(os.path.join(occampath,'inputMakeModel.txt'),'w')
@@ -1229,9 +1412,6 @@ def makeModel(datafilename,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
     mmfid.write('\n')
     mmfid.close()
     
-    shutil.copy(os.path.join(occampath,'inputMakeModel.txt'),
-                os.path.join(os.path.dirname(datafilename),
-                             'inputMakeModel.txt'))
     #get current working directory
     cdir=os.getcwd() 
     
@@ -1245,7 +1425,7 @@ def makeModel(datafilename,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
     os.chdir(cdir)
     
     if savepath==None:
-        savepath=os.path.dirname(datafilename)
+        savepath=os.path.dirname(datafn)
     
     if not os.path.exists(savepath):
         os.mkdir(savepath)
@@ -1259,10 +1439,10 @@ def makeModel(datafilename,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
     shutil.copy(os.path.join(occampath,'INMODEL'),inmodelfn)
     shutil.copy(os.path.join(occampath,'startup'),startupfn)
     if not os.path.exists(os.path.join(savepath,dfnb)):
-        shutil.copy(datafilename,os.path.join(savepath,dfnb))
+        shutil.copy(datafn,os.path.join(savepath,dfnb))
     if os.path.getctime(os.path.join(savepath,dfnb))<\
-        os.path.getctime(datafilename):
-        shutil.copy(datafilename,os.path.join(savepath,dfnb))
+        os.path.getctime(datafn):
+        shutil.copy(datafn,os.path.join(savepath,dfnb))
     
     #rewrite mesh so it contains the right number of columns and rows
     rewriteMesh(meshfn)
@@ -1331,8 +1511,6 @@ def read2Dmesh(meshfile,ncol=8):
     
     mlines=mfid.readlines()
     
-    nm=len(mlines)
-    
     nh=int(mlines[1].strip().split()[1])-1
     nv=int(mlines[1].strip().split()[2])-1
     
@@ -1340,27 +1518,31 @@ def read2Dmesh(meshfile,ncol=8):
     vnodes=np.zeros(nv)
     mdata=np.zeros((nh,nv,4),dtype=str)    
     
-    
-    for ii,mm in enumerate(mlines[2:nh/ncol+2]):
+    #get horizontal nodes        
+    for ii,mm in enumerate(mlines[2:nh/ncol+3]):
         hline=mm.strip().split()
         for jj,hh in enumerate(hline):
             try:
                 hnodes[ii*8+jj]=float(hh)
             except IndexError:
                 pass
-    
-    for ii,mm in enumerate(mlines[nh/ncol+2:nv/ncol+nh/ncol+3]):
+            
+    #get vertical nodes
+    for ii,mm in enumerate(mlines[nh/ncol+2:nv/ncol+nh/ncol+4]):
         vline=mm.strip().split()
         for jj,hh in enumerate(vline):
             try:
                 vnodes[ii*8+jj]=float(hh)
             except IndexError:
                 pass
-            
+    
+    #get free parameters        
     for ii,mm in enumerate(mlines[nv/ncol+nh/ncol+4:]):
         kk=0
         while kk<4:        
             mline=mm.rstrip()
+            if mline.find('EXCEPTION')>0:
+                break
             for jj in range(nh):
                 try:
                     mdata[jj,ii,kk]=mline[jj]
@@ -1370,15 +1552,45 @@ def read2Dmesh(meshfile,ncol=8):
     
     return hnodes,vnodes,mdata
     
+def read2DInmodel(inmodelfn):
+    """
+    read an INMODEL file for occam 2D
+    """
     
-
-def read2DdataFile(datafilename):
+    ifid=open(inmodelfn,'r')
+    
+    headerdict={}
+    rows=[]
+    cols=[]    
+    ncols=[]
+    
+    ilines=ifid.readlines()
+    
+    for ii,iline in enumerate(ilines):
+        if iline.find(':')>0:
+            iline=iline.strip().split(':')
+            headerdict[iline[0]]=iline[1]
+        else:
+            iline=iline.strip().split()
+            iline=[int(jj) for jj in iline]
+            if len(iline)==2:
+                if len(ncols)>0:
+                    cols.append(ncols)
+                rows.append(iline)
+                ncols=[]
+            elif len(iline)>2:
+                ncols=ncols+iline
+    
+    return rows,cols,headerdict
+                
+    
+def read2DdataFile(datafn):
     """
     read2DdataFile will read in data from a 2D occam data file.  Only supports
     the first 6 data types of occam2D
     
     Input: 
-        datafilename = full path to data file
+        datafn = full path to data file
     
     Output:
         rplst = list of dictionaries for each station with keywords:
@@ -1401,7 +1613,7 @@ def read2DdataFile(datafilename):
         title = title, could be useful for plotting.
     """
     
-    dfid=open(datafilename,'r')
+    dfid=open(datafn,'r')
     
     dlines=dfid.readlines()
     #get format of input data
@@ -1464,7 +1676,7 @@ def read2DdataFile(datafilename):
     
     return rplst,stationlst,np.array(freq),title,theta
     
-def rewrite2DdataFile(datafilename,edipath=None,thetar=0,resxyerr=None,
+def rewrite2DdataFile(datafn,edipath=None,thetar=0,resxyerr=None,
                       resyxerr=None,phasexyerr=None,phaseyxerr=None,
                       tippererr=None,mmode='both',flst=None,removestation=None):
     """
@@ -1474,8 +1686,8 @@ def rewrite2DdataFile(datafilename,edipath=None,thetar=0,resxyerr=None,
     tipper.
     
     Inputs:
-        datafilename = full path to data file to rewrite
-        thetar = rotation angle with positive clockwise
+        datafn = full path to data file to rewrite
+        rotz = rotation angle with positive clockwise
         resxyerr = error for TE mode resistivity (percent) or 'data' for data
         resyxerr = error for TM mode resistivity (percent) or 'data' for data
         phasexyerr = error for TE mode phase (percent) or 'data' for data
@@ -1493,7 +1705,7 @@ def rewrite2DdataFile(datafilename,edipath=None,thetar=0,resxyerr=None,
     fmt='%2.6f'
     
     #load the data for the data file    
-    rplst,stationlst,freq,title,theta=read2DdataFile(datafilename)
+    rplst,stationlst,freq,title,theta=read2DdataFile(datafn)
     
     #make a dictionary of rplst for easier extraction of data
     rpdict=dict([(station,rplst[ii]) for ii,station in enumerate(stationlst)])
@@ -1774,7 +1986,7 @@ def rewrite2DdataFile(datafilename,edipath=None,thetar=0,resxyerr=None,
     #                             write dat file
     #===========================================================================
     
-    dfn=datafilename[:-4]+'RW.dat'
+    dfn=datafn[:-4]+'RW.dat'
     nstat=len(stationlst)
         
     if title==None:
@@ -1820,14 +2032,14 @@ def rewrite2DdataFile(datafilename,edipath=None,thetar=0,resxyerr=None,
     
     
                                 
-def read2DRespFile(respfilename,datafilename):
+def read2DRespFile(respfn,datafn):
     """
     read2DRespFile will read in a response file and combine the data with info 
     from the data file.
 
     Input:
-        respfilename = full path to the response file
-        datafilename = full path to data file
+        respfn = full path to the response file
+        datafn = full path to data file
 
     Outputs:
         for each data array, the rows are ordered as:
@@ -1857,9 +2069,9 @@ def read2DRespFile(respfilename,datafilename):
         
     """
     
-    rplst,stationlst,freq,title,theta=read2DdataFile(datafilename)
+    rplst,stationlst,freq,title,theta=read2DdataFile(datafn)
     
-    rfid=open(respfilename,'r')
+    rfid=open(respfn,'r')
     
     rlines=rfid.readlines()
     for line in rlines:
@@ -1878,51 +2090,151 @@ def read2DRespFile(respfilename,datafilename):
         
     return rplst,stationlst,np.array(freq),title
 
-def read2DIterFile(iterfilename,datafilename,iterpath=None):
+def read2DIterFile(iterfn,iterpath=None):
     """
     read2DIterFile will read an iteration file and combine that info from the 
-    datafilename and return a dictionary of variables.
+    datafn and return a dictionary of variables.
     
     Inputs:
-        iterfilename = full path to iteration file if iterpath=None.  If 
-                       iterpath is input then iterfilename is just the name
-                       of the file without the full path.
-        datafilename = full path to data file if iterpath=None.  If 
-                       iterpath is input then datafilename is just the name
+        iterfn = full path to iteration file if iterpath=None.  If 
+                       iterpath is input then iterfn is just the name
                        of the file without the full path.
     
     Outputs:
+        idict = dictionary of parameters, keys are verbatim from the file, 
+                except for the key 'model' which is the contains the model
+                numbers in a 1D array.
         
     """
 
     #get full paths if not already input
-    if iterpath!=None and os.path.dirname(iterfilename)=='':
-        ifn=os.path.join(iterpath,iterfilename)
+    if iterpath!=None and os.path.dirname(iterfn)=='':
+        ifn=os.path.join(iterpath,iterfn)
     else:
-        ifn=iterfilename
+        ifn=iterfn
     if os.path.exists(ifn)==False:
         raise IOError('File: '+ifn+' does not exist, check name and path')
         
-    if iterpath!=None and os.path.dirname(datafilename)=='':
-        dfn=os.path.join(iterpath,datafilename)
+#    if iterpath!=None and os.path.dirname(datafn)=='':
+#        dfn=os.path.join(iterpath,datafn)
+#    else:
+#        dfn=datafn
+#    if os.path.exists(dfn)==False:
+#        raise IOError('File: '+dfn+' does not exist, check name and path')
+    
+    #open file
+    ifid=file(ifn,'r')
+    ilines=ifid.readlines()
+    ifid.close()
+    
+    #create dictionary to put things
+    idict={}
+    ii=0
+    #put header info into dictionary with similar keys
+    while ilines[ii].find('Param')!=0:
+        iline=ilines[ii].strip().split(':')
+        idict[iline[0]]=iline[1]
+        ii+=1
+    
+    #get number of parameters
+    iline=ilines[ii].strip().split(':')
+    nparam=int(iline[1].strip())
+    idict[iline[0]]=nparam
+    idict['model']=np.zeros(nparam)
+    kk=int(ii+1)
+    
+    jj=0
+    while jj<len(ilines)-kk:
+        iline=ilines[jj+kk].strip().split()
+        for ll in range(4):
+            try:
+                idict['model'][jj*4+ll]=float(iline[ll])
+            except IndexError:
+                pass
+        jj+=1
+            
+    return idict
+
+
+def compareIter(iterfn1,iterfn2,savepath=None):
+    """
+    compareIter will take the difference between two iteration and make a 
+    difference iter file
+    
+    Inputs:
+        iterfn1 = full path to iteration file 1
+        iterfn2 = full path to iteration file 2
+        savepath = path to save the difference iteration file, can be full or
+                  just a directory
+                  
+    Outputs:
+        diterfn = file name of iteration difference either:
+            savepath/iterdiff##and##.iter
+            or os.path.dirname(iterfn1,iterdiff##and##.iter)
+            or savepath
+    """
+
+    #get number of iteration
+    inum1=iterfn1[-7:-5]    
+    inum2=iterfn2[-7:-5]    
+    
+    #make file name to save difference to
+    if savepath==None:
+        svdir=os.path.dirname(iterfn1)
+        diterfn=os.path.join(svdir,
+                              'iterdiff{0}and{1}.iter'.format(inum1,inum2))
+    elif savepath.find('.')==-1:
+        diterfn=os.path.join(savepath,
+                              'iterdiff{0}and{1}.iter'.format(inum1,inum2))
     else:
-        dfn=datafilename
-    if os.path.exists(dfn)==False:
-        raise IOError('File: '+dfn+' does not exist, check name and path')
+        diterfn=savepath
+    
+    #read the iter files
+    idict1=read2DIterFile(iterfn1)
+    idict2=read2DIterFile(iterfn2)
+    
+    #calculate difference this way it will plot as red going conductive and
+    #blues being a resistive change
+    mdiff=-idict1['model']+idict2['model']
+    nd=len(mdiff)
+    
+    ifid=file(iterfn1,'r')
+    ilines=ifid.readlines()
+    ifid.close()    
+    
+    #write iterfile
+    dfid=file(diterfn,'w')
+    ii=0
+    while ilines[ii].find('Param')!=0:
+        dfid.write(ilines[ii])
+        ii+=1
+    
+    dfid.write('Param Count:        {0}\n'.format(nd))
+    
+    for jj in range(nd/4+1):
+        for kk in range(4):
+            try:
+                dfid.write('   {0:+.6f}'.format(mdiff[4*jj+kk]))
+                if kk==3:
+                    dfid.write('\n')
+            except IndexError:
+                dfid.write('\n')
+            
+    dfid.close()
+    
+    return diterfn
         
-    pass
-
-
-def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
-                    maxcol=8,plottype='1',ms=4,**kwargs):
+def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
+                    phaselimits=(-5,95),colormode='color',reslimits=None,
+                    **kwargs):
     """
     plotResponse will plot the responses modeled from winglink against the 
     observed data.
     
     Inputs:
-        respfilename = full path to response file
-        datafilename = full path to data file
-        winglinkdatfile = full path to a winglink data file used for a similar
+        respfn = full path to response file
+        datafn = full path to data file
+        wlfn = full path to a winglink data file used for a similar
                           inversion.  This will be plotted on the response
                           plots for comparison of fits.
         maxcol = maximum number of columns for the plot
@@ -1936,14 +2248,58 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
         None
     """
     
-    if respfilename!=None:
+    plt.rcParams['font.size']=10
+    
+    try:
+        dpi=kwargs['dpi']
+    except KeyError:
+        dpi=200
+    if colormode=='color':
+        #color for data
+        cted=(0,0,1)
+        ctmd=(1,0,0)
+        mted='*'
+        mtmd='*'
+        
+        #color for occam model
+        ctem=(0,.3,1.0)
+        ctmm=(1,.3,0)
+        mtem='+'
+        mtmm='+'
+        
+        #color for Wingling model
+        ctewl=(0,.6,.8)
+        ctmwl=(.8,.7,0)
+        mtewl='x'
+        mtmwl='x'
+        
+    elif colormode=='bw':
+        #color for data
+        cted=(0,0,0)
+        ctmd=(0,0,0)
+        mted='*'
+        mtmd='v'
+        
+        #color for occam model
+        ctem=(0.6,.6,.6)
+        ctmm=(.6,.6,.6)
+        mtem='+'
+        mtmm='x'
+        
+        #color for Wingling model
+        ctewl=(.3,.3,.3)
+        ctmwl=(.3,.3,.3)    
+        mtewl='|'
+        mtmwl='_'
+        
+    if respfn!=None:
         #read in the data    
-        rplst,stationlst,freq,title=read2DRespFile(respfilename,datafilename)
+        rplst,stationlst,freq,title=read2DRespFile(respfn,datafn)
         #make a legend list for plotting
         legendlst=['$Obs_{xy}$','$Obs_{yx}$','$Mod_{xy}$','$Mod_{yx}$']
         plotresp=True
     else:
-        rplst,stationlst,freq,title,theta=read2DdataFile(datafilename)
+        rplst,stationlst,freq,title,theta=read2DdataFile(datafn)
         #make a legend list for plotting
         legendlst=['$Obs_{xy}$','$Obs_{yx}$']
         plotresp=False
@@ -1952,13 +2308,13 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
     addwl=0
     hspace=.15
     #read in winglink data file
-    if winglinkdatafile!=None:
+    if wlfn!=None:
         addwl=1
         hspace=.25
-        wld,wlrplst,plst,slst,tlst=wlt.readOutputFile(winglinkdatafile)
+        wld,wlrplst,wlplst,wlslst,wltlst=wlt.readOutputFile(wlfn)
         legendlst=['$Obs_{xy}$','$Obs_{yx}$','Occ_$Mod_{xy}$','Occ_$Mod_{yx}$',
                    'Wl_$Mod_{xy}$','Wl_$Mod_{yx}$']
-        sdict=dict([(ostation,wlstation) for wlstation in slst 
+        sdict=dict([(ostation,wlstation) for wlstation in wlslst 
                     for ostation in stationlst if wlstation.find(ostation)>=0])
     period=1./freq
     nf=len(period)
@@ -1970,7 +2326,7 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
         maxcol=8         
         nrows=int(np.ceil(nstations/float(maxcol)))
         
-        fig=plt.figure(1,[14,10])
+        fig=plt.figure(1,[14,10],dpi=dpi)
         gs=gridspec.GridSpec(nrows,1,hspace=hspace,left=.05,right=.98)
         count=0
         for rr in range(nrows):
@@ -1998,14 +2354,14 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
                 r1=axr.loglog(period[rxy],10**rplst[ii]['resxy'][0][rxy],
                               ls=':',marker='s',ms=ms,color='b',mfc='b')
                 r2=axr.loglog(period[ryx],10**rplst[ii]['resyx'][0][ryx],
-                              ls=':',marker='o',ms=ms,color='r',mfc='r')
+                              ls=':',marker='o',ms=ms,color=ctmd,mfc=ctmd)
                 if plotresp==True:
                     mrxy=[np.where(rplst[ii]['resxy'][2]!=0)[0]]
                     mryx=[np.where(rplst[ii]['resyx'][2]!=0)[0]]
                     r3=axr.loglog(period[mrxy],10**rplst[ii]['resxy'][2][mrxy],
-                                  ls='--',marker='+', ms=2*ms,color='g',mfc='g')
+                                  ls='--',marker='+', ms=2*ms,color=ctem,mfc=ctem)
                     r4=axr.loglog(period[mryx],10**rplst[ii]['resyx'][2][mryx],
-                                  ls='--',marker='+',ms=2*ms,color='m',mfc='m')
+                                  ls='--',marker='+',ms=2*ms,color=ctmm,mfc=ctmm)
                 
                     rlst=[r1,r2,r3,r4]
                 else:
@@ -2019,14 +2375,14 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
                 axp.semilogx(period[pxy],rplst[ii]['phasexy'][0][pxy],
                              ls=':',marker='s',ms=ms,color='b',mfc='b')
                 axp.semilogx(period[pyx],rplst[ii]['phaseyx'][0][pyx],
-                             ls=':',marker='o',ms=ms,color='r',mfc='r')
+                             ls=':',marker='o',ms=ms,color=ctmd,mfc=ctmd)
                 if plotresp==True:
                     mpxy=[np.where(rplst[ii]['phasexy'][2]!=0)[0]]
                     mpyx=[np.where(rplst[ii]['phaseyx'][2]!=0)[0]]
                     axp.semilogx(period[mpxy],rplst[ii]['phasexy'][2][mpxy],
-                                 ls='--',marker='+',ms=2*ms,color='g',mfc='g')
+                                 ls='--',marker='+',ms=2*ms,color=ctem,mfc=ctem)
                     axp.semilogx(period[mpyx],rplst[ii]['phaseyx'][2][mpyx],
-                                 ls='--',marker='+',ms=2*ms,color='m',mfc='m')
+                                 ls='--',marker='+',ms=2*ms,color=ctmm,mfc=ctmm)
                 
                 #add in winglink responses
                 if addwl==1:
@@ -2037,22 +2393,22 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
                                      fontdict={'size':12,'weight':'bold'})
                         r5=axr.loglog(wld[sdict[stationlst[ii]]]['period'],
                                    wld[sdict[stationlst[ii]]]['modresxy'],
-                                   ls='-.',marker='x',ms=2*ms,color='cyan',
-                                   mfc='cyan')
+                                   ls='-.',marker='x',ms=2*ms,color=ctewl,
+                                   mfc=ctewl)
                         r6=axr.loglog(wld[sdict[stationlst[ii]]]['period'],
                                    wld[sdict[stationlst[ii]]]['modresyx'],
-                                   ls='-.',marker='x',ms=2*ms,color='orange',
-                                   mfc='orange')
+                                   ls='-.',marker='x',ms=2*ms,color=ctmwl,
+                                   mfc=ctmwl)
                         axp.semilogx(wld[sdict[stationlst[ii]]]['period'],
                                      wld[sdict[stationlst[ii]]]['modphasexy'],
-                                     ls='-.',marker='x',ms=2*ms,color='cyan',
-                                     mfc='cyan')
+                                     ls='-.',marker='x',ms=2*ms,color=ctewl,
+                                     mfc=ctewl)
                         axp.semilogx(wld[sdict[stationlst[ii]]]['period'],
                                      wld[sdict[stationlst[ii]]]['modphaseyx'],
-                                     ls='-.',marker='x',ms=2*ms,color='orange',
-                                     mfc='orange')
-                        rlst.append(r5)
-                        rlst.append(r6)
+                                     ls='-.',marker='x',ms=2*ms,color=ctmwl,
+                                     mfc=ctmwl)
+                        rlst.append(r5[0])
+                        rlst.append(r6[0])
                     except IndexError:
                         print 'Station not present'
                 else:
@@ -2071,13 +2427,15 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
                                 labelspacing=.08,
                                 handletextpad=.15,borderpad=.1,
                                 ncol=len(rlst))
-                axr.grid(True)
+                axr.grid(True,alpha=.4)
                 axr.set_xticklabels(['' for ii in range(10)])
                 if cc>0:
                     axr.set_yticklabels(['' for ii in range(6)])
                     
-                axp.set_ylim(-10,120)
-                axp.grid(True)
+                axp.set_ylim(phaselimits)
+                if reslimits!=None:
+                    axr.set_ylim(reslimits)
+                axp.grid(True,alpha=.4)
                 axp.yaxis.set_major_locator(MultipleLocator(30))
                 axp.yaxis.set_minor_locator(MultipleLocator(5))
                 
@@ -2096,9 +2454,12 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
                     axp.set_xlabel('Period (s)',
                                    fontdict={'size':12,'weight':'bold'})
                                    
-    #plot each respones in a different figure
+    #---------------plot each respones in a different figure------------------
     elif plottype=='1':
         gs=gridspec.GridSpec(6,2,wspace=.05)
+         
+        
+
         for ii,station in enumerate(stationlst):
             
             rlst=[]
@@ -2109,7 +2470,7 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
                                         rplst[ii]['phasexy'][3],
                                         rplst[ii]['phaseyx'][3]))
             rms=np.sqrt(np.sum(ms**2 for ms in rmslst)/len(rmslst))
-            fig=plt.figure(ii+1,[7,8])
+            fig=plt.figure(ii+1,[9,10],dpi=dpi)
             
             #plot resistivity
             axr=fig.add_subplot(gs[:4,:])
@@ -2117,12 +2478,12 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
             rxy=np.where(rplst[ii]['resxy'][0]!=0)[0]
             ryx=np.where(rplst[ii]['resyx'][0]!=0)[0]
             
-            #check to see if there is a yx component
+            #check to see if there is a xy component
             if len(rxy)>0:
                 r1=axr.errorbar(period[rxy],10**rplst[ii]['resxy'][0][rxy],
-                                ls=':',marker='s',ms=ms,mfc='b',mec='b',
-                                color='b',yerr=rplst[ii]['resxy'][1][rxy],
-                                ecolor='b')
+                                ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
+                                color=cted,yerr=rplst[ii]['resxy'][1][rxy],
+                                ecolor=cted)
                 rlst.append(r1[0])
                 llst.append('$Obs_{xy}$')
             else:
@@ -2131,9 +2492,9 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
             #check to see if there is a yx component
             if len(ryx)>0:
                 r2=axr.errorbar(period[ryx],10**rplst[ii]['resyx'][0][ryx],
-                                ls=':',marker='o',ms=ms,mfc='r',mec='r',
-                                color='r',yerr=rplst[ii]['resyx'][1][ryx],
-                                ecolor='r')
+                                ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
+                                color=ctmd,yerr=rplst[ii]['resyx'][1][ryx],
+                                ecolor=ctmd)
                 rlst.append(r2[0])
                 llst.append('$Obs_{yx}$')
             else:
@@ -2146,9 +2507,9 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
                 #check for the xy of model component
                 if len(mrxy)>0:
                     r3=axr.errorbar(period[mrxy],10**rplst[ii]['resxy'][2][mrxy],
-                                    ls='--',marker='+',ms=ms,mfc='g',mec='g',
-                                    color='g',yerr=rplst[ii]['resxy'][3][mrxy],
-                                    ecolor='g')
+                                    ls='--',marker=mtem,ms=ms,mfc=ctem,mec=ctem,
+                                    color=ctem,yerr=rplst[ii]['resxy'][3][mrxy],
+                                    ecolor=ctem)
                     rlst.append(r3[0])
                     llst.append('$Mod_{xy}$')
                 else:
@@ -2157,9 +2518,9 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
                 #check for the yx model component  of resisitivity
                 if len(mryx)>0:
                     r4=axr.errorbar(period[mryx],10**rplst[ii]['resyx'][2][mryx],
-                                    ls='--',marker='+',ms=ms,mfc='m',mec='m',
-                                    color='m',yerr=rplst[ii]['resyx'][3][mryx],
-                                    ecolor='m')
+                                    ls='--',marker=mtmm,ms=ms,mfc=ctmm,mec=ctmm,
+                                    color=ctmm,yerr=rplst[ii]['resyx'][3][mryx],
+                                    ecolor=ctmm)
                     rlst.append(r4[0])
                     llst.append('$Mod_{yx}$')
                                 
@@ -2172,15 +2533,15 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
 
             if len(pxy)>0:
                 axp.errorbar(period[pxy],rplst[ii]['phasexy'][0][pxy],
-                             ls=':',marker='s',ms=ms,mfc='b',mec='b',color='b',
-                             yerr=rplst[ii]['phasexy'][1][pxy],ecolor='b')
+                             ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,color=cted,
+                             yerr=rplst[ii]['phasexy'][1][pxy],ecolor=cted)
             else:
                 pass
             
             if len(pyx)>0:
                 axp.errorbar(period[pyx],rplst[ii]['phaseyx'][0][pyx],
-                             ls=':',marker='o',ms=ms,mfc='r',mec='r',color='r',
-                             yerr=rplst[ii]['phaseyx'][1][pyx],ecolor='r')
+                             ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,color=ctmd,
+                             yerr=rplst[ii]['phaseyx'][1][pyx],ecolor=ctmd)
             else:
                 pass
             
@@ -2190,23 +2551,23 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
                 
                 if len(mpxy)>0:
                     axp.errorbar(period[mpxy],rplst[ii]['phasexy'][2][mpxy],
-                                 ls='--',marker='+',ms=ms,mfc='g',mec='g',
-                                 color='g',yerr=rplst[ii]['phasexy'][3][mpxy],
-                                 ecolor='g')
+                                 ls='--',marker=mtem,ms=ms,mfc=ctem,mec=ctem,
+                                 color=ctem,yerr=rplst[ii]['phasexy'][3][mpxy],
+                                 ecolor=ctem)
                 else:
                     pass
                 
                 if len(mpyx)>0:
                     axp.errorbar(period[mpyx],rplst[ii]['phaseyx'][2][mpyx],
-                                 ls='--',marker='+',ms=ms,mfc='m',mec='m',
-                                 color='m',yerr=rplst[ii]['phaseyx'][3][mpyx],
-                                 ecolor='m')
+                                 ls='--',marker=mtmm,ms=ms,mfc=ctmm,mec=ctmm,
+                                 color=ctmm,yerr=rplst[ii]['phaseyx'][3][mpyx],
+                                 ecolor=ctmm)
                 else:
                     pass
 #                axp.semilogx(period[mpxy],rplst[ii]['phasexy'][2][mpxy],
-#                             ls='--',marker='+',ms=2*ms,color='g',mfc='g')
+#                             ls='--',marker='+',ms=2*ms,color=ctem,mfc=ctem)
 #                axp.semilogx(period[mpyx],rplst[ii]['phaseyx'][2][mpyx],
-#                             ls='--',marker='+',ms=2*ms,color='m',mfc='m')
+#                             ls='--',marker='+',ms=2*ms,color=ctmm,mfc=ctmm)
                          
             #add in winglink responses
             if addwl==1:
@@ -2215,39 +2576,74 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
                     axr.set_title(stationlst[ii]+'\n'+\
                                 'rms_occ, rms_wl= %.2f, %.2f' % (rms,wlrms),
                                  fontdict={'size':12,'weight':'bold'})
+                    for ww,wlstation in enumerate(wlslst):
+#                        print station,wlstation
+                        if wlstation.find(station)==0:
+                            print station,wlstation
+                            wlrpdict=wlrplst[ww]
                     
-                                 
-                    r5=axr.loglog(wld[sdict[station]]['period'],
-                               wld[sdict[station]]['modresxy'],
-                               ls='-.',marker='x',ms=2*ms,color='cyan',
-                               mfc='cyan')
-                    r6=axr.loglog(wld[sdict[station]]['period'],
-                               wld[sdict[stationlst[ii]]]['modresyx'],
-                               ls='-.',marker='x',ms=2*ms,color='orange',
-                               mfc='orange')
-                    axp.semilogx(wld[sdict[station]]['period'],
-                                 wld[sdict[station]]['modphasexy'],
-                                 ls='-.',marker='x',ms=2*ms,color='cyan',
-                                 mfc='cyan')
-                    axp.semilogx(wld[sdict[station]]['period'],
-                                 wld[sdict[station]]['modphaseyx'],
-                                 ls='-.',marker='x',ms=2*ms,color='orange',
-                                 mfc='orange')
+                    zrxy=[np.where(wlrpdict['resxy'][0]!=0)[0]]
+                    zryx=[np.where(wlrpdict['resyx'][0]!=0)[0]]
+                    
+                     #plot resistivity
+#                    axr=fig.add_subplot(gs[:4,:])
+                    
+                    r5=axr.loglog(wlplst[zrxy],wlrpdict['resxy'][1][zrxy],
+                                  ls='-.',marker=mtewl,ms=5,color=ctewl,
+                                  mfc=ctewl)
+                    r6=axr.loglog(wlplst[zryx],wlrpdict['resyx'][1][zryx],
+                                  ls='-.',marker=mtmwl,ms=5,color=ctmwl,
+                                  mfc=ctmwl)
+#                    axr.loglog(wlplst[zrxy],wlrpdict['resxy'][0][zrxy],
+#                                  ls=':',marker='v',ms=5,color='purple',
+#                                  mfc='purple')
+#                    axr.loglog(wlplst[zryx],wlrpdict['resyx'][0][zryx],
+#                                  ls=':',marker='v',ms=5,color='brown',
+#                                  mfc='brown')
+                               
+#                    axr.set_title(station+'; rms= %.2f' % idict[station]['rms'],
+#                                  fontdict={'size':12,'weight':'bold'})
+#                    axr.grid(True,alpha=.4)
+#                    axr.set_xticklabels(['' for ii in range(10)])
+                                    
+                    #plot phase
+#                    axp=fig.add_subplot(gs[-2:,:])
+                    
+                    axp.semilogx(wlplst[zrxy],wlrpdict['phasexy'][1][zrxy],
+                                 ls='-.',marker=mtewl,ms=5,color=ctewl,
+                                 mfc=ctewl)
+                    axp.semilogx(wlplst[zryx],wlrpdict['phaseyx'][1][zryx],
+                                 ls='-.',marker=mtmwl,ms=5,color=ctmwl,
+                                 mfc=ctmwl)
+#                    axp.semilogx(wlplst[zrxy],wlrpdict['phasexy'][0][zrxy],
+#                                 ls=':',marker='v',ms=5,color='purple',
+#                                 mfc='purple')
+#                    axp.semilogx(wlplst[zryx],wlrpdict['phaseyx'][0][zryx],
+#                                 ls=':',marker='v',ms=5,color='brown',
+#                                 mfc='brown')
+                    
+                    rlst.append(r5[0])
+                    rlst.append(r6[0])
+                    llst.append('$WLMod_{xy}$')
+                    llst.append('$WLMod_{yx}$')
                 except IndexError:
                     print 'Station not present'
             else:
                 axr.set_title(stationlst[ii]+'; rms= %.2f' % rms,
-                              fontdict={'size':12,'weight':'bold'})
-                              
+                              fontdict={'size':16,'weight':'bold'})
+                             
             axr.set_xscale('log')
             axp.set_xscale('log')
             axr.set_yscale('log')
-            axr.grid(True)
-            axr.set_xticklabels(['' for ii in range(10)])
-            axp.set_ylim(-10,120)
-            axp.grid(True)
+            axr.grid(True,alpha=.4)
+#            axr.set_xticklabels(['' for ii in range(10)])
+            axp.set_ylim(phaselimits)
+            if reslimits!=None:
+                axr.set_ylim(reslimits)
+            axp.grid(True,alpha=.4)
             axp.yaxis.set_major_locator(MultipleLocator(10))
             axp.yaxis.set_minor_locator(MultipleLocator(1))
+            plt.setp(axr.xaxis.get_ticklabels(),visible=False)
             
             axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
                            fontdict={'size':12,'weight':'bold'})
@@ -2257,22 +2653,30 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
             axr.legend(rlst,llst,
                        loc=2,markerscale=1,borderaxespad=.05,
                        labelspacing=.08,
-                       handletextpad=.15,borderpad=.05)
-            axr.yaxis.set_label_coords(-.05,.5)
-            axp.yaxis.set_label_coords(-.05,.5)
+                       handletextpad=.15,borderpad=.05,prop={'size':12})
+            axr.yaxis.set_label_coords(-.07,.5)
+            axp.yaxis.set_label_coords(-.07,.5)
     
     else:
         pstationlst=[]
+
         if type(plottype) is not list:
             plottype=[plottype]
         for ii,station in enumerate(stationlst):
             for pstation in plottype:
                 if station.find(pstation)>=0:
-                    print 'plotting ',station
+#                    print 'plotting ',station
                     pstationlst.append(ii)
+        if addwl==1:
+            pwlstationlst=[]
+            for ww,wlstation in enumerate(wlslst):
+                for pstation in plottype:
+                    if wlstation.find(pstation)>=0:
+#                        print 'plotting ',wlstation
+                        pwlstationlst.append(ww)  
 
         gs=gridspec.GridSpec(6,2,wspace=.05,left=.1,top=.93,bottom=.07)
-        for ii in pstationlst:
+        for jj,ii in enumerate(pstationlst):
             rlst=[]
             pstation=stationlst[ii]
             rmslst=np.hstack((rplst[ii]['resxy'][3],
@@ -2280,7 +2684,7 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
                                         rplst[ii]['phasexy'][3],
                                         rplst[ii]['phaseyx'][3]))
             rms=np.sqrt(np.sum(ms**2 for ms in rmslst)/len(rmslst))
-            fig=plt.figure(ii+1,[7,7])
+            fig=plt.figure(ii+1,dpi=dpi)
             
             #plot resistivity
             #cut out missing data points first
@@ -2288,28 +2692,28 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
             rxy=np.where(rplst[ii]['resxy'][0]!=0)[0]
             ryx=np.where(rplst[ii]['resyx'][0]!=0)[0]
             r1=axr.errorbar(period[rxy],10**rplst[ii]['resxy'][0][rxy],
-                            ls=':',marker='s',ms=ms,mfc='b',mec='b',color='b',
-                            yerr=rplst[ii]['resxy'][1][rxy],ecolor='b')
+                            ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,color=cted,
+                            yerr=rplst[ii]['resxy'][1][rxy],ecolor=cted)
             r2=axr.errorbar(period[ryx],10**rplst[ii]['resyx'][0][ryx],
-                            ls=':',marker='o',ms=ms,mfc='r',mec='r',color='r',
-                            yerr=rplst[ii]['resyx'][1][ryx],ecolor='r')
+                            ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,color=ctmd,
+                            yerr=rplst[ii]['resyx'][1][ryx],ecolor=ctmd)
 #            r1=axr.loglog(period[rxy],10**rplst[ii]['resxy'][0][rxy],
-#                          ls=':',marker='s',ms=ms,color='b',mfc='b')
+#                          ls=':',marker='s',ms=ms,color=cted,mfc=cted)
 #            r2=axr.loglog(period[ryx],10**rplst[ii]['resyx'][0][ryx],
-#                          ls=':',marker='o',ms=ms,color='r',mfc='r')
+#                          ls=':',marker='o',ms=ms,color=ctmd,mfc=ctmd)
             if plotresp==True:
                 mrxy=[np.where(rplst[ii]['resxy'][2]!=0)[0]]
                 mryx=[np.where(rplst[ii]['resyx'][2]!=0)[0]]
                 r3=axr.errorbar(period[mrxy],10**rplst[ii]['resxy'][2][mrxy],
-                                ls='--',marker='+',ms=ms,mfc='g',mec='g',color='g',
-                                yerr=rplst[ii]['resxy'][3][mrxy],ecolor='g')
+                                ls='--',marker=mtem,ms=ms,mfc=ctem,mec=ctem,color=ctem,
+                                yerr=rplst[ii]['resxy'][3][mrxy],ecolor=ctem)
                 r4=axr.errorbar(period[mryx],10**rplst[ii]['resyx'][2][mryx],
-                                ls='--',marker='+',ms=ms,mfc='m',mec='m',color='m',
-                                yerr=rplst[ii]['resyx'][3][mryx],ecolor='m')
+                                ls='--',marker=mtmm,ms=ms,mfc=ctmm,mec=ctmm,color=ctmm,
+                                yerr=rplst[ii]['resyx'][3][mryx],ecolor=ctmm)
 #                r3=axr.loglog(period[mrxy],10**rplst[ii]['resxy'][2][mrxy],
-#                              ls='--',marker='+', ms=2*ms,color='g',mfc='g')
+#                              ls='--',marker='+', ms=2*ms,color=ctem,mfc=ctem)
 #                r4=axr.loglog(period[mryx],10**rplst[ii]['resyx'][2][mryx],
-#                              ls='--',marker='+',ms=2*ms,color='m',mfc='m')
+#                              ls='--',marker='+',ms=2*ms,color=ctmm,mfc=ctmm)
             
                 rlst=[r1[0],r2[0],r3[0],r4[0]]
             else:
@@ -2321,29 +2725,29 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
             pxy=[np.where(rplst[ii]['phasexy'][0]!=0)[0]]
             pyx=[np.where(rplst[ii]['phaseyx'][0]!=0)[0]]
             axp.errorbar(period[pxy],rplst[ii]['phasexy'][0][pxy],
-                            ls=':',marker='s',ms=ms,mfc='b',mec='b',color='b',
-                            yerr=rplst[ii]['phasexy'][1][pxy],ecolor='b')
+                            ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,color=cted,
+                            yerr=rplst[ii]['phasexy'][1][pxy],ecolor=cted)
             axp.errorbar(period[pyx],rplst[ii]['phaseyx'][0][pyx],
-                            ls=':',marker='o',ms=ms,mfc='r',mec='r',color='r',
-                            yerr=rplst[ii]['phaseyx'][1][pyx],ecolor='r')
+                            ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,color=ctmd,
+                            yerr=rplst[ii]['phaseyx'][1][pyx],ecolor=ctmd)
 #            axp.semilogx(period[pxy],rplst[ii]['phasexy'][0][pxy],
-#                         ls=':',marker='s',ms=ms,color='b',mfc='b')
+#                         ls=':',marker='s',ms=ms,color=cted,mfc=cted)
 #            axp.semilogx(period[pyx],rplst[ii]['phaseyx'][0][pyx],
-#                         ls=':',marker='o',ms=ms,color='r',mfc='r')
+#                         ls=':',marker='o',ms=ms,color=ctmd,mfc=ctmd)
             if plotresp==True:
                 mpxy=[np.where(rplst[ii]['phasexy'][2]!=0)[0]]
                 mpyx=[np.where(rplst[ii]['phaseyx'][2]!=0)[0]]
                 
                 axp.errorbar(period[mpxy],rplst[ii]['phasexy'][2][mpxy],
-                            ls='--',marker='+',ms=ms,mfc='g',mec='g',color='g',
-                            yerr=rplst[ii]['phasexy'][3][mpxy],ecolor='g')
+                            ls='--',marker=mtem,ms=ms,mfc=ctem,mec=ctem,color=ctem,
+                            yerr=rplst[ii]['phasexy'][3][mpxy],ecolor=ctem)
                 axp.errorbar(period[mpyx],rplst[ii]['phaseyx'][2][mpyx],
-                            ls='--',marker='+',ms=ms,mfc='m',mec='m',color='m',
-                            yerr=rplst[ii]['phaseyx'][3][mpyx],ecolor='m')
+                            ls='--',marker=mtmm,ms=ms,mfc=ctmm,mec=ctmm,color=ctmm,
+                            yerr=rplst[ii]['phaseyx'][3][mpyx],ecolor=ctmm)
 #                axp.semilogx(period[mpxy],rplst[ii]['phasexy'][2][mpxy],
-#                             ls='--',marker='+',ms=2*ms,color='g',mfc='g')
+#                             ls='--',marker='+',ms=2*ms,color=ctem,mfc=ctem)
 #                axp.semilogx(period[mpyx],rplst[ii]['phaseyx'][2][mpyx],
-#                             ls='--',marker='+',ms=2*ms,color='m',mfc='m')
+#                             ls='--',marker='+',ms=2*ms,color=ctmm,mfc=ctmm)
                          
             #add in winglink responses
             if addwl==1:
@@ -2353,42 +2757,85 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
                     axr.set_title(pstation+'\n'+\
                                 'rms_occ, rms_wl= %.2f, %.2f' % (rms,wlrms),
                                  fontdict={'size':12,'weight':'bold'})
+                    wlrpdict=wlrplst[pwlstationlst[jj]]
+                    zrxy=[np.where(wlrpdict['resxy'][0]!=0)[0]]
+                    zryx=[np.where(wlrpdict['resyx'][0]!=0)[0]]
                     
-                    r5=axr.loglog(wld[sdict[pstation]]['period'],
-                               wld[sdict[pstation]]['modresxy'],
-                               ls='-.',marker='x',ms=2*ms,color='cyan',
-                               mfc='cyan')
-                    r6=axr.loglog(wld[sdict[pstation]]['period'],
-                               wld[sdict[pstation]]['modresyx'],
-                               ls='-.',marker='x',ms=2*ms,color='orange',
-                               mfc='orange')
-                    axp.semilogx(wld[sdict[pstation]]['period'],
-                                 wld[sdict[pstation]]['modphasexy'],
-                                 ls='-.',marker='x',ms=2*ms,color='cyan',
-                                 mfc='cyan')
-                    axp.semilogx(wld[sdict[pstation]]['period'],
-                                 wld[sdict[pstation]]['modphaseyx'],
-                                 ls='-.',marker='x',ms=2*ms,color='orange',
-                                 mfc='orange')
-                    rlst.append(r5)
-                    rlst.append(r6)
+                     #plot resistivity
+#                    axr=fig.add_subplot(gs[:4,:])
+                    
+                    r5=axr.loglog(wlplst[zrxy],wlrpdict['resxy'][1][zrxy],
+                                  ls='-.',marker=mtewl,ms=5,color=ctewl,
+                                  mfc=ctewl)
+                    r6=axr.loglog(wlplst[zryx],wlrpdict['resyx'][1][zryx],
+                                  ls='-.',marker=mtmwl,ms=5,color=ctmwl,
+                                  mfc=ctmwl)
+#                    axr.loglog(wlplst[zrxy],wlrpdict['resxy'][0][zrxy],
+#                                  ls=':',marker='v',ms=5,color='purple',
+#                                  mfc='purple')
+#                    axr.loglog(wlplst[zryx],wlrpdict['resyx'][0][zryx],
+#                                  ls=':',marker='v',ms=5,color='brown',
+#                                  mfc='brown')
+                               
+#                    axr.set_title(station+'; rms= %.2f' % idict[station]['rms'],
+#                                  fontdict={'size':12,'weight':'bold'})
+#                    axr.grid(True,alpha=.4)
+#                    axr.set_xticklabels(['' for ii in range(10)])
+                                    
+                    #plot phase
+#                    axp=fig.add_subplot(gs[-2:,:])
+                    
+                    axp.semilogx(wlplst[zrxy],wlrpdict['phasexy'][1][zrxy],
+                                 ls='-.',marker=mtewl,ms=5,color=ctewl,
+                                 mfc=ctewl)
+                    axp.semilogx(wlplst[zryx],wlrpdict['phaseyx'][1][zryx],
+                                 ls='-.',marker=mtmwl,ms=5,color=ctmwl,
+                                 mfc=ctmwl)
+#                    axp.semilogx(wlplst[zrxy],wlrpdict['phasexy'][0][zrxy],
+#                                 ls=':',marker='v',ms=5,color='purple',
+#                                 mfc='purple')
+#                    axp.semilogx(wlplst[zryx],wlrpdict['phaseyx'][0][zryx],
+#                                 ls=':',marker='v',ms=5,color='brown',
+#                                 mfc='brown')
+                    
+#                    r5=axr.loglog(wld[sdict[pstation]]['period'],
+#                               wld[sdict[pstation]]['modresxy'],
+#                               ls='-.',marker='x',ms=2*ms,color=ctewl,
+#                               mfc=ctewl)
+#                    r6=axr.loglog(wld[sdict[pstation]]['period'],
+#                               wld[sdict[pstation]]['modresyx'],
+#                               ls='-.',marker='x',ms=2*ms,color=ctmwl,
+#                               mfc=ctmwl)
+#                    axp.semilogx(wld[sdict[pstation]]['period'],
+#                                 wld[sdict[pstation]]['modphasexy'],
+#                                 ls='-.',marker='x',ms=2*ms,color=ctewl,
+#                                 mfc=ctewl)
+#                    axp.semilogx(wld[sdict[pstation]]['period'],
+#                                 wld[sdict[pstation]]['modphaseyx'],
+#                                 ls='-.',marker='x',ms=2*ms,color=ctmwl,
+#                                 mfc=ctmwl)
+                    rlst.append(r5[0])
+                    rlst.append(r6[0])
                 except IndexError:
                     print 'Station not present'
             else:
                 if plotresp==True:
                     axr.set_title(pstation+'; rms= %.2f' % rms,
-                                  fontdict={'size':12,'weight':'bold'})
+                                  fontdict={'size':16,'weight':'bold'})
                 else:
                     axr.set_title(pstation,
-                                  fontdict={'size':12,'weight':'bold'})
+                                  fontdict={'size':16,'weight':'bold'})
             
             axr.set_xscale('log')
             axr.set_yscale('log')
-            axp.set_xscale('log')                  
-            axr.grid(True)
-            axr.set_xticklabels(['' for ii in range(10)])
-            axp.set_ylim(-10,120)
-            axp.grid(True)
+            axp.set_xscale('log') 
+            plt.setp(axr.xaxis.get_ticklabels(),visible=False)                 
+            axr.grid(True,alpha=.4)
+#            axr.set_xticklabels(['' for ii in range(10)])
+            axp.set_ylim(phaselimits)
+            if reslimits!=None:
+                axr.set_ylim(reslimits)
+            axp.grid(True,alpha=.4)
             axp.yaxis.set_major_locator(MultipleLocator(10))
             axp.yaxis.set_minor_locator(MultipleLocator(1))
             
@@ -2400,9 +2847,9 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
             axr.legend(rlst,legendlst,
                        loc=2,markerscale=2,borderaxespad=.05,
                        labelspacing=.08,
-                       handletextpad=.15,borderpad=.05)
-            axr.yaxis.set_label_coords(-.05,.5)
-            axp.yaxis.set_label_coords(-.05,.5)
+                       handletextpad=.15,borderpad=.05,prop={'size':12})
+            axr.yaxis.set_label_coords(-.075,.5)
+            axp.yaxis.set_label_coords(-.075,.5)
             
 def plotTipper(datafile,):
     pass
@@ -2504,8 +2951,8 @@ def plotAllResponses(datafile,station,fignum=1):
                labelspacing=.08,
                handletextpad=.15,borderpad=.05)
                    
-    axrte.grid(True)
-    axrtm.grid(True)
+    axrte.grid(True,alpha=.4)
+    axrtm.grid(True,alpha=.4)
     
     
     axrtm.set_xticklabels(['' for ii in range(10)])
@@ -2515,7 +2962,7 @@ def plotAllResponses(datafile,station,fignum=1):
     axrte.set_title('TE')
     axrtm.set_title('TM')
     
-    axpte.grid(True)
+    axpte.grid(True,alpha=.4)
     axpte.yaxis.set_major_locator(MultipleLocator(10))
     axpte.yaxis.set_minor_locator(MultipleLocator(1))
     
@@ -2530,7 +2977,7 @@ def plotAllResponses(datafile,station,fignum=1):
     
     axrtm.set_xticklabels(['' for ii in range(10)])
     axptm.set_ylim(-10,120)
-    axptm.grid(True)
+    axptm.grid(True,alpha=.4)
     axptm.yaxis.set_major_locator(MultipleLocator(10))
     axptm.yaxis.set_minor_locator(MultipleLocator(1))
     
@@ -2550,3 +2997,201 @@ def plotModel(iterfile,meshfile):
     """
     plot the mode as an image
     """
+    
+def plotPseudoSection(datafn,respfn=None,fignum=1,rcmap='jet_r',pcmap='jet',
+                      rlim=((0,4),(0,4)),plim=((0,90),(0,90)),ml=2,
+                      stationid=[0,4]):
+    """
+    plots a pseudo section of the data
+    
+    datafn = full path to data file
+    respfn = full path to response file
+    """
+    
+    if respfn!=None:
+        rplst,slst,freq,title=read2DRespFile(respfn,datafn)
+        nr=2
+    else:
+        rplst,slst,freq,title,thetal=read2DdataFile(datafn)
+        nr=1
+    ns=len(slst)
+    nf=len(freq)
+    ylimits=(1./freq.min(),1./freq.max())
+#    print ylimits
+    
+    #make a grid for pcolormesh so you can have a log scale
+    #get things into arrays for plotting
+    offsetlst=np.zeros(ns)
+    resxyarr=np.zeros((nf,ns,nr))    
+    resyxarr=np.zeros((nf,ns,nr))    
+    phasexyarr=np.zeros((nf,ns,nr))    
+    phaseyxarr=np.zeros((nf,ns,nr))
+
+    for ii,rpdict in enumerate(rplst):
+        offsetlst[ii]=rpdict['offset']     
+        resxyarr[:,ii,0]=rpdict['resxy'][0]
+        resyxarr[:,ii,0]=rpdict['resyx'][0]
+        phasexyarr[:,ii,0]=rpdict['phasexy'][0]
+        phaseyxarr[:,ii,0]=rpdict['phaseyx'][0]
+        if respfn!=None:
+            resxyarr[:,ii,1]=rpdict['resxy'][2]
+            resyxarr[:,ii,1]=rpdict['resyx'][2]
+            phasexyarr[:,ii,1]=rpdict['phasexy'][2]
+            phaseyxarr[:,ii,1]=rpdict['phaseyx'][2]
+            
+            
+    #make a meshgrid for plotting
+    #flip frequency so bottom corner is long period
+    dgrid,fgrid=np.meshgrid(offsetlst,1./freq[::-1])
+
+    #make list for station labels
+    slabel=[slst[ss][stationid[0]:stationid[1]] for ss in range(0,ns,ml)]
+    labellst=['$r_{TE-Data}$','$r_{TE-Model}$',
+              '$r_{TM-Data}$','$r_{TM-Model}$',
+              '$\phi_{TE-Data}$','$\phi_{TE-Model}$',
+              '$\phi_{TM-Data}$','$\phi_{TM-Model}$']
+    xloc=offsetlst[0]+abs(offsetlst[0]-offsetlst[1])/5
+    yloc=1./freq[1]
+    
+    if respfn!=None:
+        
+
+        plt.rcParams['font.size']=7
+        plt.rcParams['figure.subplot.bottom']=.09
+        plt.rcParams['figure.subplot.top']=.96        
+        
+        fig=plt.figure(fignum,dpi=200)
+        gs1=gridspec.GridSpec(2,2,left=0.06,right=.48,hspace=.1,wspace=.005)
+        gs2=gridspec.GridSpec(2,2,left=0.52,right=.98,hspace=.1,wspace=.005)
+        
+#        ax1r=fig.add_subplot(2,4,1)
+        ax1r=fig.add_subplot(gs1[0,0])
+        ax1r.pcolormesh(dgrid,fgrid,np.flipud(resxyarr[:,:,0]),cmap=rcmap,
+                       vmin=rlim[0][0],vmax=rlim[0][1])
+        
+#        ax2r=fig.add_subplot(2,4,2)
+        ax2r=fig.add_subplot(gs1[0,1])
+        ax2r.pcolormesh(dgrid,fgrid,np.flipud(resxyarr[:,:,1]),cmap=rcmap,
+                       vmin=rlim[0][0],vmax=rlim[0][1])
+                       
+#        ax3r=fig.add_subplot(2,4,3)
+        ax3r=fig.add_subplot(gs2[0,0])
+        ax3r.pcolormesh(dgrid,fgrid,np.flipud(resyxarr[:,:,0]),cmap=rcmap,
+                       vmin=rlim[1][0],vmax=rlim[1][1])
+        
+#        ax4r=fig.add_subplot(2,4,4)
+        ax4r=fig.add_subplot(gs2[0,1])
+        ax4r.pcolormesh(dgrid,fgrid,np.flipud(resyxarr[:,:,1]),cmap=rcmap,
+                       vmin=rlim[1][0],vmax=rlim[1][1])
+
+#        ax1p=fig.add_subplot(2,4,5)
+        ax1p=fig.add_subplot(gs1[1,0])
+        ax1p.pcolormesh(dgrid,fgrid,np.flipud(phasexyarr[:,:,0]),cmap=pcmap,
+                       vmin=plim[0][0],vmax=plim[0][1])
+        
+#        ax2p=fig.add_subplot(2,4,6)
+        ax2p=fig.add_subplot(gs1[1,1])
+        ax2p.pcolormesh(dgrid,fgrid,np.flipud(phasexyarr[:,:,1]),cmap=pcmap,
+                       vmin=plim[0][0],vmax=plim[0][1])
+                       
+#        ax3p=fig.add_subplot(2,4,7)
+        ax3p=fig.add_subplot(gs2[1,0])
+        ax3p.pcolormesh(dgrid,fgrid,np.flipud(phaseyxarr[:,:,0]),cmap=pcmap,
+                       vmin=plim[1][0],vmax=plim[1][1])
+        
+#        ax4p=fig.add_subplot(2,4,8)
+        ax4p=fig.add_subplot(gs2[1,1])
+        ax4p.pcolormesh(dgrid,fgrid,np.flipud(phaseyxarr[:,:,1]),cmap=pcmap,
+                       vmin=plim[1][0],vmax=plim[1][1])
+        
+        axlst=[ax1r,ax2r,ax3r,ax4r,ax1p,ax2p,ax3p,ax4p]
+        
+        for xx,ax in enumerate(axlst):
+            ax.semilogy()
+            ax.set_ylim(ylimits)
+#            ax.xaxis.set_major_locator(MultipleLocator(ml))
+            ax.xaxis.set_ticks(offsetlst[np.arange(0,ns,ml)])
+            ax.xaxis.set_ticks(offsetlst,minor=True)
+            ax.xaxis.set_ticklabels(slabel)
+            ax.set_xlim(offsetlst.min(),offsetlst.max())
+            if np.remainder(xx,2.0)==1:
+                plt.setp(ax.yaxis.get_ticklabels(),visible=False)
+                cbx=mcb.make_axes(ax,shrink=.7,pad=.015)
+                if xx<4:
+                    if xx==1:
+                        cb=mcb.ColorbarBase(cbx[0],cmap=rcmap,
+                                        norm=Normalize(vmin=rlim[0][0],
+                                                       vmax=rlim[0][1]))
+#                        cb.set_label('Resistivity ($\Omega \cdot$m)',
+#                                     fontdict={'size':9})
+                    if xx==3:
+                        cb=mcb.ColorbarBase(cbx[0],cmap=rcmap,
+                                        norm=Normalize(vmin=rlim[1][0],
+                                                       vmax=rlim[1][1]))
+                        cb.set_label('App. Res. ($\Omega \cdot$m)',
+                                     fontdict={'size':9})
+                else:
+                    if xx==5:
+                        cb=mcb.ColorbarBase(cbx[0],cmap=pcmap,
+                                        norm=Normalize(vmin=plim[0][0],
+                                                       vmax=plim[0][1]))
+#                        cb.set_label('Phase (deg)',fontdict={'size':9})
+                    if xx==7:
+                        cb=mcb.ColorbarBase(cbx[0],cmap=pcmap,
+                                        norm=Normalize(vmin=plim[1][0],
+                                                       vmax=plim[1][1]))
+                        cb.set_label('Phase (deg)',fontdict={'size':9})
+            ax.text(xloc,yloc,labellst[xx],
+                    fontdict={'size':10},
+                    bbox={'facecolor':'white'},
+                    horizontalalignment='left',
+                    verticalalignment='top')
+            if xx==0 or xx==4:
+                ax.set_ylabel('Period (s)',
+                              fontdict={'size':10,'weight':'bold'})
+            if xx>3:
+                ax.set_xlabel('Station',fontdict={'size':10,'weight':'bold'})
+            
+                
+        plt.show()
+        
+def plotDepthModel(iterfn,meshfn,slst,lm,fignum=1,dpi=300,depth=10000,
+                   stations=None):
+    """
+    will plot a depth section as a line for the block numbers given by slst and
+    the layer multiplier lm
+    """
+                       
+    idict=read2DIterFile(iterfn)
+    harr,varr,marr=read2Dmesh(meshfn)
+    
+    v=np.array([varr[0:ii+1].sum() for ii in range(len(varr))])
+#    print varr
+    
+    nv=len(np.where(v<depth)[0])
+
+    v=v[::-1]
+    
+    fig=plt.figure(fignum,dpi=dpi)
+    ax=fig.add_subplot(1,1,1)
+    
+    rholst=[]
+    for ss in slst:
+        ilst=np.arange(nv)*lm+(ss-1)
+        print v[len(v)-len(ilst):]
+        rho=idict['model'][ilst]
+        p1=ax.loglog(10**(rho[::-1]),v[len(varr)-len(ilst):]+1000,ls='steps-')
+        rholst.append(p1)
+    ax.set_ylim(depth,varr.min())
+    if stations==None:
+        ax.legend(rholst,np.arange(len(rholst)),loc=0)
+    else:
+        ax.legend(rholst,stations,loc=0)
+    ax.set_ylabel('Depth (m)',fontdict={'size':8,'weight':'bold'})
+    ax.set_xlabel('Resistivity ($\Omega \cdot$m)',fontdict={'size':8,'weight':'bold'})
+    ax.grid(True,alpha=.3,which='both')
+        
+        
+        
+    
+    
