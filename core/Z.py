@@ -29,92 +29,543 @@ rtcmapdict={'red':((0.0,1.0,1.0),(0.5,1.0,1.0),(1.0,0.0,0.0)),
             'blue':((0.0,0.0,0.0),(0.5,1.0,1.0),(1.0,1.0,1.0))}
 rtcmap=LinearSegmentedColormap('rtcmap',rtcmapdict,256)
 
-class Z:
-    """Z is an impedance tensor class that can calculate invariants according to
-    Weaver et al. 2003 and phase tensor components according to Caldwell et al.
-    2004. Input is an .edi or .imp file or a dictionary with keys:
-    impvar['station']
-    impvar['lat']
-    impvar['lon']
-    impvar['period']
-    impvar['z']
-    impvar['zvar']
-    impvar['tip']
-    impvar['tipvar']"""
-    def __init__(self,impvar):
-        if type(impvar) is str:
-            if impvar[-3:].find('imp')>=0:
-                self.filename=impvar
-                self.station,self.period,self.z=mt.readimp(impvar)
-                self.lat='NaN'
-                self.lon='NaN'
-                self.zvar=np.zeros_like(self.z)
-                self.tip=np.zeros((len(self.z),2))
-                self.tipvar=np.zeros_like(self.tip)
-            elif impvar[-3:].find('edi')>=0:
-                self.filename=impvar
-                self.station=os.path.basename(impvar)[:-4]
-                impdict=mt.readedi(impvar)
-                self.lat=impdict['lat']
-                self.lon=impdict['lon']
-                #print impdict['frequency']
-                #flip things around to order from short period to long period
-                if impdict['frequency'][0]<impdict['frequency'][-1]:
-                    self.frequency=impdict['frequency'][::-1]
-                    self.period=1/impdict['frequency'][::-1] 
-                    self.z=impdict['z'][::-1,:,:]    
-                    self.zvar=impdict['zvar'][::-1,:,:] 
-                    self.tip=impdict['tipper'][::-1,:]      
-                    self.tipvar=impdict['tippervar'][::-1,:] 
-                    print 'Flipped arrays so frequency is decending'
+class Edi(object):
+    """
+    This is a data type for edi files.  Included are 
+    self.edifn=edifilename
+        Edi.header = header information about the survey area (dictionary)
+        Edi.info = information about data processing (dictionary)
+        Edi.measurement = information about measurement setup (dictionary)
+        Edi.lat = latitude in decimal degrees
+        Edi.lon = longitude in decimal degrees
+        Edi.elevation = elevation in meters
+        Edi.frequency = array of frequencies for estimated transfer functions
+        Edi.z = array (nf,2,2) of impedance components (nf=# of frequencies)
+        Edi.zvar = array (nf,2,2) of variance estimation of Z
+        Edi.zrot = array (nf) of rotation angles used
+        Edi.tipper = array (nf,2) of tipper components
+        Edi.tippervar = array (nf,2) of variance estimation of tipper
+        Edi.trot = array (nf) of rotation angles used
+        
+    """
+    def __init__(self,edifilename):
+        self.edifn=edifilename
+        self.header={'text':[]}
+        self.info={'text':[]}
+        self.measurement={'text':[]}
+        self.lat=0
+        self.lon=0
+        self.elevation=0
+        self.frequency=0
+        self.z=0
+        self.zvar=0
+        self.zrot=0
+        self.tipper=0
+        self.tippervar=0
+        self.ncol=5
+
+    def getInfo(self):
+        ncol=self.ncol
+        #open up file
+        edifid=file(self.edifn,'r')
+        #read all the lines from that file
+        edilines=edifid.readlines()
+        
+        #---Read in the information about the measurement---------
+        gdict={'head':self.header,
+               'info':self.info,
+               'definemeas':self.measurement,
+               'mtsect':{'text':[]},
+               'emapsect':{'text':[]},
+               'comp':{}}
+        
+        ii=0               
+        while type(ii) is int:
+            eline=edilines[ii]
+            if eline.find('SPECTRA')>0:
+                jj=ii        
+                ii=None
+                specimp='spectra'
+            elif eline.find('IMPEDANCE')>0:
+                jj=ii        
+                ii=None
+                specimp='impedance'
+            elif eline.find('FREQUENCIES')>0:
+                jj=ii        
+                ii=None
+                specimp='frequency'
+            else:
+                #get the block header
+                if eline.find('>')==0:
+                    #For definemeas
+                    if eline.find('=')>0 and eline.find('ACQCHAN')==-1:
+                        gkey=eline[2:].strip().lower()
+                    #for a comment block
+                    elif eline.find('!')>0:
+                        pass
+                    #for the measurement channels
+                    elif eline.find('ACQCHAN')>0:
+                        gkey='comp'
+                        eline=eline.strip().split()
+                        mid=eline[1].split('=')[1]
+                        mtype=eline[2].split('=')[1]
+                        gdict['comp'][mid]=mtype
+                    #for the normal block header
+                    else:
+                        gkey=eline[1:].strip().lower()
+                #for each block header put the information into a dictionary
                 else:
-                    self.frequency=impdict['frequency']
-                    self.period=1/impdict['frequency']
-                    self.z=impdict['z']
-                    self.zvar=impdict['zvar']
-                    self.tip=impdict['tipper']
-                    self.tipvar=impdict['tippervar']
-            print 'Opened impedance file: '+impvar
+                    eline=eline.strip()
+                    #for a line with that can be separated by an =
+                    if eline.find('=')>0 and eline.find('CHTYPE')==-1 and \
+                        eline.find('mV')==-1:
+                        eline=eline.split('=')
+                        gdict[gkey][eline[0]]=eline[1].replace('"','')
+                    #all other lines
+                    elif eline.find('=')==-1 and eline.find(':')>0:
+                        gdict[gkey]['text'].append(eline.strip())
+                ii+=1
+        
+        latstr=gdict['head']['LAT']
+        #change from hh:mm:ss to decimal deg
+        if latstr.find(':')>=0:
+            latlst=latstr.split(':')
+            latstr=str(int(latlst[0]))+'.'+str(float(latlst[1])/60
+                +float(latlst[2])/3600)[2:]
+            self.lat=float(latstr)
         else:
-            try:
-                impvar['station']
-            except KeyError:
-                impvar['station']='n/a'
-            try:
-                impvar['lat']
-            except KeyError:
-                impvar['lat']='NaN'
-            try:
-                impvar['lon']
-            except KeyError:
-                impvar['lon']='NaN'
-            try:
-                impvar['period']
-            except KeyError:
-                impvar['period']=np.range(len(impvar['z']))
-            try:
-                impvar['zvar']
-            except KeyError:
-                impvar['zvar']=np.zeros_like(impvar['z'])
-            try:
-                impvar['tip']
-            except KeyError:
-                impvar['tip']=np.zeros((len(impvar['z']),2))
-            try:
-                impvar['tipvar']
-            except KeyError:
-                impvar['tipvar']=np.zeros((len(impvar['z']),2))
-  
-            self.station=impvar['station']
-            self.lat=impvar['lat']
-            self.lon=impvar['lon']
-            self.period=impvar['period']
-            self.z=impvar['z']
-            self.zvar=impvar['zvar']
-            self.tip=impvar['tip']
-            self.tipvar=impvar['tipvar']
-            print 'Impedance tensor read.'
+            self.lat=float(latstr)
+            
+        lonstr=gdict['head']['LONG']
+        #change from hh:mm:ss to decimal deg
+        if lonstr.find(':')>=0:
+            lonlst=lonstr.split(':')
+            lonstr=str(int(lonlst[0]))+'.'+str(float(lonlst[1])/60
+                +float(lonlst[2])/3600)[2:]
+            self.lon=float(lonstr)
+        else:
+            self.lon=float(lonstr)
+        
+        
+        #++++++++++++Get impedences and frequencies+++++++++++++++++++
+        
+        #=========Get impedance from spectra=============================
+        if specimp=='spectra':
+            #make a dictionary with a list to put the component order into
+            gdict['spectraset']={'comporder':{}}
+            #counter
+            ii=jj+1
+            cc=0
+            #get header information about how the spectra is stored
+            while type(ii) is int:
+                eline=edilines[ii]
+                #stop at the first spectra block
+                if eline.find('>SPECTRA')==0:
+                    jj=ii
+                    ii=None
+                #get the spectraset information
+                else:
+                    gkey='spectraset'
+                    #general information
+                    if eline.find('=')>0:
+                        eline=eline.strip().split('=')
+                        gdict[gkey][eline[0]]=eline[1].replace('"','')
+                    #get component order
+                    else:
+                        try:
+                            estr=eline.strip()
+                            try:
+                                gdict[gkey]['comporder'][gdict['comp'][estr]]
+                                gdict[gkey]['comporder'][gdict['comp'][estr]+'R']=cc
+                            except KeyError:
+                                gdict[gkey]['comporder'][gdict['comp'][estr]]=cc
+                                
+                            cc+=1
+                        except KeyError:
+                            pass
+                    ii+=1
+            #defind values of number of frequencies and number of channels
+            nf=int(gdict['spectraset']['NFREQ'])
+            nc=int(gdict['spectraset']['NCHAN'])
+        
+            #set some empty arrays to put stuff into    
+            self.z=np.zeros((nf,2,2),dtype='complex')
+            self.zvar=np.zeros((nf,2,2))
+            self.tipper=np.zeros((nf,2),dtype='complex')
+            self.tippervar=np.zeros((nf,2))
+            self.frequency=np.zeros(nf)
+            bw=np.zeros(nf)
+            avgt=np.zeros(nf)
+            self.zrot=np.zeros(nf)
+            self.trot=np.zeros(nf)
+            
+            kk=0
+            while type(kk) is int:
+                eline=edilines[jj]
+                #get information from the spectra line block
+                if eline.find('>SPECTRA')==0:
+                    eline=eline.strip().split()
+                    for ee in eline:
+                        estr=ee.split('=')
+                        if estr[0]=='FREQ':
+                            self.frequency[kk]=float(estr[1])
+                        elif estr[0]=='ROTSPEC':
+                            self.zrot[kk]=float(estr[1])
+                        elif estr[0]=='BW':
+                            bw[kk]=float(estr[1])
+                        elif estr[0]=='AVGT':
+                            avgt[kk]=float(estr[1])
+                        else:
+                            pass
+                    #make and empty array to put spectra into for easy calculation
+                    spectra=np.zeros((nc,nc))
+                    kk+=1
+                    jj+=1
+                #stop once all the spectra have been read
+                elif eline.find('>')==0 and eline.find('SPECTRA')==-1:
+                    kk=None
+                #put the spectra values into the pre-defined array
+                else:
+                    for ll in range(nc):
+                        eline=edilines[jj].strip().split()
+                        jj+=1
+                        for nn in range(nc):
+                            spectra[ll,nn]=float(eline[nn])
+                    #get spectra in a useable order such that all values are complex 
+                    #in the upper right hand triangle
+                    spect=np.zeros((nc,nc),dtype='complex')
+                    for ll in range(nc):
+                        for nn in range(ll,nc):
+                            spect[ll,nn]=spectra[nn,ll]-1j*spectra[ll,nn]
+                            
+                    
+                    #calculate the impedance from the spectra
+                    cdict=gdict['spectraset']['comporder']
+                    bx=cdict['HX']            
+                    by=cdict['HY']
+                    ex=cdict['EX']            
+                    ey=cdict['EY']
+                    try:
+                        bz=cdict['HZ']
+                    except KeyError:
+                        print 'No HZ'
+                    try: 
+                        bxr=cdict['HXR']            
+                        byr=cdict['HYR']
+                    except KeyError:
+                        print 'No remote reference'
+                        
+                    #get impedance from the spectra
+                    zdet=(spect[bx,bxr]*spect[by,byr])-\
+                            (spect[bx,byr]*spect[by,bxr])
+                    self.z[kk-1,0,0]=((spect[ex,bxr]*spect[by,byr])-
+                                (spect[ex,byr]*spect[by,bxr]))/zdet
+                    self.z[kk-1,0,1]=((spect[ex,byr]*spect[bx,bxr])-
+                                (spect[ex,bxr]*spect[bx,byr]))/zdet
+                    self.z[kk-1,1,0]=((spect[ey,bxr]*spect[by,byr])-
+                                (spect[ey,byr]*spect[by,bxr]))/zdet
+                    self.z[kk-1,1,1]=((spect[ey,byr]*spect[bx,bxr])-
+                                (spect[ey,bxr]*spect[bx,byr]))/zdet
+                                
+                    #get tipper from the spectra
+                    self.tipper[kk-1,0]=((spect[bx,bz]*spect[by,by].real)-
+                                    (spect[by,bz]*spect[bx,by]))/zdet
+                    
+                    #need to put in conjugate because of coordinate system
+                    self.tipper[kk-1,1]=((spect[by,bz].conj()*spect[bx,bx].real)-
+                                    (spect[bx,bz].conj()*spect[bx,by]))/zdet
+        
+        #========Get impedance ====================================                            
+        elif specimp=='frequency':
+            #get number of frequencies
+            nf=int(edilines[jj+1].strip().split('//')[1])
+            
+            #initialize some arrays    
+            self.frequency=np.zeros(nf)
+            
+            #get frequencies
+            kk=0
+            ii=jj+2
+            while type(kk) is int:
+                eline=edilines[ii]
+                #if past the impedance information end loop
+                if eline.find('>')==0 and eline.find('FREQ')==-1:
+                    kk=None
+                    jj=ii
+                    specimp='impedance'
+                else:
+                    eline=eline.strip().split()
+                    for nn,estr in enumerate(eline):
+                        try:
+                            self.frequency[kk*ncol+nn+kk]=float(estr)
+                        except IndexError:
+                            pass
+                    kk+=1
+                    ii+=1
+                    
+            #------Get Impedance information-----------------
+            zdict=dict([('ZXX',(0,0)),('ZXY',(0,1)),('ZYX',(1,0)),('ZYY',(1,1))])
+            
+            #initialize some arrays
+            nf=int(edilines[jj+1].strip().split('//')[1])
+            self.z=np.zeros((nf,2,2),dtype='complex')
+            self.zrot=np.zeros(nf)
+            self.zvar=np.zeros((nf,2,2))
+            self.tipper=np.zeros((nf,2),dtype='complex')
+            self.tippervar=np.zeros((nf,2))
+            self.trot=np.zeros(nf)
+        
+            
+            kk=0
+            ii=jj+1
+            while type(kk) is int:
+                eline=edilines[ii]
+                if eline.find('>')==0:
+                    if eline.find('Z')==-1 and eline.find('IMP')==-1:
+                            kk=None
+                            jj=ii
+                    else:
+                        eline=eline.strip().split()
+                        zkey=eline[0][1:4]
+                        zcomp=eline[0][4:]
+                        if zkey!='ZRO' and zkey.find('!')==-1:
+                            z0=zdict[zkey][0]
+                            z1=zdict[zkey][1]
+                            
+                        kk=0
+                        ii+=1
+                else:
+                    eline=eline.strip().split()
+                    if zkey=='ZRO':
+                        for nn,estr in enumerate(eline):
+                            try:
+                                self.zrot[kk*ncol+nn+kk]=float(estr)
+                            except IndexError:
+                                pass
+                    elif zcomp=='R':
+                        for nn,estr in enumerate(eline):
+                            try:
+                                self.z[kk*ncol+nn+kk,z0,z1]=float(estr)
+                            except IndexError:
+                                pass
+                    elif zcomp=='I':
+                        for nn,estr in enumerate(eline):
+                            try:
+                                self.z[kk*ncol+nn+kk,z0,z1]=self.z[kk*ncol+nn+kk,z0,z1]+\
+                                                            1j*float(estr)
+                            except IndexError:
+                                pass
+                    elif zcomp=='.VAR':
+                        for nn,estr in enumerate(eline):
+                            try:
+                                self.zvar[kk*ncol+nn+kk,z0,z1]=float(estr)
+                            except IndexError:
+                                pass
+                    ii+=1
+                    kk+=1
+                    
+            #-----Get Tipper Information-----------
+            tdict=dict([('TX',0),('TY',1)])
+            
+            kk=0
+            ii=jj+1
+            while type(kk) is int:
+                eline=edilines[ii]
+                if eline.find('>')==0:
+                    if eline.find('T')==-1:
+                            kk=None
+                            jj=ii
+                    else:
+                        eline=eline.strip().split()
+                        tkey=eline[0][1:3]
+                        tcomp=eline[0][3:]
+                        if tkey!='TR' and tkey.find('!')==-1:
+                            z0=tdict[tkey]
+                            
+                        kk=0
+                        ii+=1
+                else:
+                    eline=eline.strip().split()
+                    if tkey=='TR':
+                        for nn,estr in enumerate(eline):
+                            try:
+                                self.trot[kk*ncol+nn+kk]=float(estr)
+                            except IndexError:
+                                pass
+                    elif tcomp=='R' or tcomp=='R.EXP':
+                        for nn,estr in enumerate(eline):
+                            try:
+                                self.tipper[kk*ncol+nn+kk,z0]=float(estr)
+                            except IndexError:
+                                pass
+                    elif tcomp=='I' or tcomp=='I.EXP':
+                        for nn,estr in enumerate(eline):
+                            try:
+                                self.tipper[kk*ncol+nn+kk,z0]=self.tipper[kk*ncol+nn+kk,z0]+\
+                                                              1j*float(estr)
+                            except IndexError:
+                                pass
+                    elif tcomp=='VAR.EXP' or '.VAR':
+                        for nn,estr in enumerate(eline):
+                            try:
+                                self.tippervar[kk*ncol+nn+kk,z0]=float(estr)
+                            except IndexError:
+                                pass
+                    ii+=1
+                    kk+=1
+        
+        #=========get impedance components=================================
+        elif specimp=='impedance':
+            #defind a dictionary to place components
+            zdict=dict([('ZXX',(0,0)),('ZXY',(0,1)),('ZYX',(1,0)),('ZYY',(1,1))])
+            
+            #if nf is already defined    
+            if nf:
+                self.z=np.zeros((nf,2,2),dtype='complex')
+                self.zvar=np.zeros((nf,2,2))
+                self.tipper=np.zeros((nf,2))
+                self.tippervar=np.zeros((nf,2))
+            else:
+                nf=int(edilines[jj+1].strip().split('//')[1])
+                self.z=np.zeros((nf,2,2),dtype='complex')
+                self.zvar=np.zeros((nf,2,2))
+                self.tipper=np.zeros((nf,2))
+                self.tippervar=np.zeros((nf,2))
+                
+            #------Get Impedance information-----------------
+            kk=0
+            ii=jj+1
+            while type(kk) is int:
+                eline=edilines[ii]
+                if eline.find('>')==0:
+                    if eline.find('Z')==-1 and eline.find('IMP')==-1:
+                            kk=None
+                            jj=ii
+                    else:
+                        eline=eline.strip().split()
+                        zkey=eline[0][1:4]
+                        zcomp=eline[0][4:]
+                        if zkey!='ZRO' and zkey.find('!')==-1:
+                            z0=zdict[zkey][0]
+                            z1=zdict[zkey][1]
+                            
+                        kk=0
+                        ii+=1
+                else:
+                    eline=eline.strip().split()
+                    if zkey=='ZRO':
+                        for nn,estr in enumerate(eline):
+                            try:
+                                self.zrot[kk*ncol+nn+kk]=float(estr)
+                            except IndexError:
+                                pass
+                    elif zcomp=='R':
+                        for nn,estr in enumerate(eline):
+                            try:
+                               self.z[kk*ncol+nn+kk,z0,z1]=float(estr)
+                            except IndexError:
+                                pass
+                    elif zcomp=='I':
+                        for nn,estr in enumerate(eline):
+                            try:
+                                self.z[kk*ncol+nn+kk,z0,z1]=z[kk*ncol+nn+kk,z0,z1]+1j*float(estr)
+                            except IndexError:
+                                pass
+                    elif zcomp=='.VAR':
+                        for nn,estr in enumerate(eline):
+                            try:
+                                self.zvar[kk*ncol+nn+kk,z0,z1]=float(estr)
+                            except IndexError:
+                                pass
+                    ii+=1
+                    kk+=1
+                    
+            #-----Get Tipper Information-----------
+            tdict=dict([('TX',0),('TY',1)])
+            
+            kk=0
+            ii=jj+1
+            while type(kk) is int:
+                eline=edilines[ii]
+                if eline.find('>')==0:
+                    if eline.find('T')==-1:
+                            kk=None
+                            jj=ii
+                    else:
+                        eline=eline.strip().split()
+                        tkey=eline[0][1:3]
+                        tcomp=eline[0][3:]
+                        if zkey!='TR' and zkey.find('!')==-1:
+                            z0=zdict[zkey][0]
+                            
+                        kk=0
+                        ii+=1
+                else:
+                    eline=eline.strip().split()
+                    if tkey=='TR':
+                        for nn,estr in enumerate(eline):
+                            try:
+                                self.trot[kk*ncol+nn+kk]=float(estr)
+                            except IndexError:
+                                pass
+                    elif tcomp=='R' or tcomp=='R.EXP':
+                        for nn,estr in enumerate(eline):
+                            try:
+                                self.tipper[kk*ncol+nn+kk,z0]=float(estr)
+                            except IndexError:
+                                pass
+                    elif tcomp=='I' or tcomp=='I.EXP':
+                        for nn,estr in enumerate(eline):
+                            try:
+                                self.tipper[kk*ncol+nn+kk,z0]=self.tipper[kk*ncol+nn+kk,z0]+\
+                                                                1j*float(estr)
+                            except IndexError:
+                                pass
+                    elif tcomp=='VAR.EXP' or '.VAR':
+                        for nn,estr in enumerate(eline):
+                            try:
+                                self.tippervar[kk*ncol+nn+kk,z0]=float(estr)
+                            except IndexError:
+                                pass
+                    ii+=1
+                    kk+=1
+
+class Z(Edi):
+    """
+    Z is a data type to deal with edifiles and manipulate them to do 
+    informative characterization.
     
+    The methods are:
+        
+        
+    """
+    def __init__(self,edifn):
+        super(Edi,self).__init__()
+        
+        #define some parameters to be filled
+        self.edifn=edifn
+        self.header={'text':[]}
+        self.info={'text':[]}
+        self.measurement={'text':[]}
+        self.lat=0
+        self.lon=0
+        self.elevation=0
+        self.frequency=0
+        self.z=0
+        self.zvar=0
+        self.zrot=0
+        self.tipper=0
+        self.tippervar=0
+        self.ncol=5
+        
+        #get information from edifile as a datatype Edi
+        Edi.getInfo(self)
+        
+        #define some parameters needed from older version
+        self.period=1./self.frequency
+        self.station=self.header['DATAID']
+        
+                    
     def getInvariants(self,thetar=0):
         """Calculate the invariants according to Weaver et al. (2003) output is:
         a class with attributes:
@@ -177,7 +628,7 @@ class Z:
         """
         
            
-        return Tipper(self.tip,rott=thetar)
+        return Tipper(self.tipper,rott=thetar)
    
     def removeDistortion(self,thetar=0):
         """
@@ -258,8 +709,8 @@ class Z:
                             (Xvar[1,1]/X[1,1])**2))**2)
             #make new edi file. need to flip zdr and zvardr back to normal order 
             #for edi file.
-            newedifn=mt.rewriteedi(self.filename,zdr,
-                                   zvardr.real)
+            newedifn=mt.rewriteedi(self.filename,znew=zdr,
+                                   zvarnew=zvardr.real)
             
         return D,newedifn
   
@@ -330,7 +781,7 @@ class Z:
                 
         rp=ResPhase(self.z,self.period,zvar=self.zvar,rotz=thetar,
                        ffactor=ffactor)
-        tp=Tipper(self.tip,rott=thetar)
+        tp=Tipper(self.tipper,rott=thetar)
         if tp.magreal[0]==0.0 and tp.magimag[0]==0.0:
             tpyn='n'
         else:
@@ -596,7 +1047,7 @@ class Z:
         pt=PhaseTensor(self.z,self.zvar,rotate=coordrot,rotz=thetar)
         rp=ResistivityTensor(self.z,self.frequency,rotate=coordrot,rotz=thetar)
         zinv=Zinvariants(self.z,rotz=thetar)
-        #tip=Tipper(rott=thetar)
+        #tipper=Tipper(rott=thetar)
         period=self.period
         n=len(period)
         
@@ -669,7 +1120,7 @@ class Z:
 #        xticklabels=['%.0g' % period[ii] for ii in np.arange(start=0,stop=n,
 #                     step=3)]
         xticklabels=[]
-        for xx in np.arange(start=0,stop=n,step=3):
+        for xx in np.arange(start=0,stop=n,step=5):
             if period[xx]<100:
                 xticklabels.append('{0:.2g}'.format(period[xx]))
             elif period[xx]>100 and period[xx]<1000:
@@ -678,7 +1129,7 @@ class Z:
                 xticklabels.append('{0:.4g}'.format(period[xx]))
         plt.xlabel('Period (s)',fontsize=8,fontweight='bold')
         #plt.title('Phase Tensor Ellipses for '+stationstr,fontsize=14)
-        plt.xticks(np.arange(start=0,stop=xspacing*n,step=3*xspacing),
+        plt.xticks(np.arange(start=0,stop=xspacing*n,step=5*xspacing),
                    xticklabels)
         ax1.set_ylim(-esize,2*esize+3)
         ax1.set_xlim(-xspacing,n*xspacing+3)
@@ -738,7 +1189,7 @@ class Z:
         
         az=90-np.array(pt.azimuth)
         azvar=np.array(pt.azimuthvar)
-#        realarrow=tip.magreal
+#        realarrow=tipper.magreal
 #        realarrowvar=np.zeros(len(realarrow))+.00000001
         
         ax2=plt.subplot(3,2,3)
@@ -876,7 +1327,7 @@ class Z:
 
         rp=ResPhase(self.z,self.zvar,self.period,rotz=thetar,
                        ffactor=1)
-        tip=Tipper(self.tip,rott=thetar)
+        tip=Tipper(self.tipper,rott=thetar)
         
         period=self.period
         nt=len(tip.tipper)
@@ -989,7 +1440,7 @@ class Z:
             ax3.arrow(period[aa],0,txr[aa],tyr[aa],lw=2,facecolor='k',
                       edgecolor='k',head_width=hwidth,head_length=hheight,
                       length_includes_head=False,overhang=overhang)
-            ax3.arrow(period[aa],0,txi[aa],txi[aa],lw=2,facecolor='b',
+            ax3.arrow(period[aa],0,txi[aa],tyi[aa],lw=2,facecolor='b',
                       edgecolor='b',length_includes_head=False)
         
         
@@ -1082,11 +1533,20 @@ class PhaseTensor:
             #calculate phase tensor and rotate  to align x pointing 
             #east and y pointing north following convention of Caldwell (2004)
             if rotate==90:
-                phi=np.rot90(np.dot(np.linalg.inv(X),Y),1)
+                try:
+                    phi=np.rot90(np.dot(np.linalg.inv(X),Y),1)
+                except np.linalg.LinAlgError:
+                    phi=np.zeros((2,2))
             elif rotate==180:
-                phi=np.rot90(np.dot(np.linalg.inv(X),Y),2)
+                try:
+                    phi=np.rot90(np.dot(np.linalg.inv(X),Y),2)
+                except np.linalg.LinAlgError:
+                    phi=np.zeros((2,2))
             elif rotate==270:
-                phi=np.rot90(np.dot(np.linalg.inv(X),Y),3)
+                try:
+                    phi=np.rot90(np.dot(np.linalg.inv(X),Y),3)
+                except np.linalg.LinAlgError:
+                    phi=np.zeros((2,2))
             else:
                 phi=np.dot(np.linalg.inv(X),Y)
             #put variance into standard deviation
@@ -1484,8 +1944,14 @@ class ResistivityTensor:
             #rotate the data
             for rr in range(nz):
                 self.z[rr]=np.dot(rotmatrix,np.dot(self.z[rr],rotmatrix.T))
-                
-        Y=np.array([np.linalg.inv(zz) for zz in self.z])
+
+        Y=np.zeros_like(self.z)
+        for ii,zz in enumerate(self.z):
+            try:            
+                Y[ii]=np.linalg.inv(zz)
+            except np.linalg.LinAlgError:
+                pass
+            
         
         self.gamma=np.zeros_like(self.z)
         self.gamma[:,0,0]=-frequency**2*(Y[:,1,1]*Y[:,0,0]-Y[:,1,0]*Y[:,1,0])
@@ -1493,9 +1959,13 @@ class ResistivityTensor:
         self.gamma[:,1,0]=-frequency**2*(Y[:,0,0]*(Y[:,1,0]-Y[:,0,1]))
         self.gamma[:,1,1]=-frequency**2*(Y[:,1,1]*Y[:,0,0]-Y[:,0,1]*Y[:,0,1])
         
-        
-        self.rho=.2*np.array([frequency[ii]*np.linalg.inv(gg.imag) 
-                                        for ii,gg in enumerate(self.gamma)])
+        self.rho=np.zeros_like(self.gamma.imag)
+        for ii,gg in enumerate(self.gamma):
+            try:                
+                self.rho[ii]=.2*frequency[ii]*np.linalg.inv(gg.imag) 
+            except np.linalg.LinAlgError:
+                pass
+                                        
         self.rhodet=np.sqrt(abs(np.array([np.linalg.det(rr) 
                             for rr in self.rho])))
         
@@ -1513,9 +1983,13 @@ class ResistivityTensor:
                                  (self.rho[:,0,0]-self.rho[:,1,1]))*(180/np.pi)
         self.rhoazimuth=self.rhoalpha-self.rhobeta
         
-        self.eps=.2*np.array([frequency[ii]*np.linalg.inv(gg.real) 
-                                        for ii,gg in enumerate(self.gamma)])
-        
+        self.eps=np.zeros_like(self.gamma.real)
+        for ii,gg in enumerate(self.gamma):
+            try:                
+                self.eps[ii]=.2*frequency[ii]*np.linalg.inv(gg.real) 
+            except np.linalg.LinAlgError:
+                pass
+            
         self.epsdet=np.sqrt(abs(np.array([np.linalg.det(rr) 
                             for rr in self.eps])))
         

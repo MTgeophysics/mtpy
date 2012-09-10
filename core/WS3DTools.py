@@ -8,6 +8,7 @@ Created on Mon Apr 02 11:54:33 2012
 import os
 import numpy as np
 import MTpy.core.Z as Z
+
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
 from matplotlib.ticker import MultipleLocator,FormatStrFormatter
@@ -101,11 +102,12 @@ def readWLOutFile(outfn,ncol=5):
     ny = int(raw_data[1])
     nz = int(raw_data[2])
 
+
     dx=np.zeros(nx)
     dy=np.zeros(ny)
     dz=np.zeros(nz)
     
-    for x_idx in range(nx):     
+    for x_idx in range(nx):
       dx[x_idx] = raw_data[x_idx + 5]
     for y_idx in range(ny):
       dy[y_idx] = raw_data[y_idx + 5 + nx]
@@ -115,29 +117,8 @@ def readWLOutFile(outfn,ncol=5):
     #dx[0:nx/2]=-dx[0:nx/2]
     #dy[0:ny/2]=-dy[0:ny/2]
     
-##    print 'rx:{0}; ry:{1}; rz:{2}'.format(rx,ry,rz)
-    
-    ##get x distances
-    #for ii,ll in enumerate(rlines[1:rx]):
-        #line=ll.strip().split()
-        #for jj,kk in enumerate(line):
-            #dx[ii*ncol+jj]=float(kk)
-    ##get y distances
-    #for ii,ll in enumerate(rlines[rx:ry]):
-        #line=ll.strip().split()
-##        print line
-        #for jj,kk in enumerate(line):
-            #dy[ii*ncol+jj]=float(kk)
-    
-    ##get z distances
-    #for ii,ll in enumerate(rlines[ry:rz]):
-        #line=ll.strip().split()
-        #for jj,kk in enumerate(line):
-            #dz[ii*ncol+jj]=float(kk)
-      
-    #make cells to the west and south negative      
 
-    #dz[0:nz/2]=-dz[0:nz/2]
+
             
     return dx,dy,dz
     
@@ -540,39 +521,13 @@ def writeInit3DFile(outfn,rhostart=100,ncol=5,savepath=None):
     init_modelFH.write(z_string)
    
 
-
-
-    #for ii in range(ny/8+1):
-        #for jj in range(8):
-            #try:
-                #ifid.write('{0:+.4e} '.format(abs(dy[ii*8+jj])))
-            #except IndexError:
-                #pass
-        #ifid.write('\n')
-        
-    ##write x locations
-    #for ii in range(nx/8+1):
-        #for jj in range(8):
-            #try:
-                #ifid.write('{0:+.4e} '.format(abs(dx[ii*8+jj])))
-            #except IndexError:
-                #pass
-        #ifid.write('\n')
-        
-    ##write z locations
-    #for ii in range(nz/8+1):
-        #for jj in range(8):
-            #try:
-                #ifid.write('{0:+.4e} '.format(abs(dz[ii*8+jj])))
-            #except IndexError:
-                #pass    
-        #ifid.write('\n')
         
     init_modelFH.write('%i \n'%int(rhostart))
     
     init_modelFH.close()
     
     print 'Wrote init file to: '+ ifile
+
     
     return ifile
         
@@ -1605,4 +1560,3 @@ def readModelFile(mfile,ncol=7):
         
     
     
-

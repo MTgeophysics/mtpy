@@ -735,8 +735,7 @@ def combineFiles(dirpath,station,daylst,cacherate,
         print 'Files already combined'
         return cfilelst,[]
     
-def adaptiveNotchFilter(bx,df=100,notches=[50,100],notchradius=.5,freqrad=.9,
-                        rp=.1):
+def adaptiveNotchFilter(bx,df=100,notches=[50,100],notchradius=.5,freqrad=.9,rp=.1):
     """
     adaptiveNotchFilter(bx,df,notches=[50,100],notchradius=.3,freqrad=.9)
     will apply a notch filter to the array bx by finding the nearest peak around
@@ -1276,7 +1275,7 @@ def writeedi(z,zvar,freq,stationinfofile,station,edidir=None,rrstation=None,
     for tip in tiplst:
         edifid.write('>'+tip+' // '+nfreq+'\n')
         for kk in range(int(nfreq)):
-            edifid.write(tsp+'%2.6f' % 0.0)
+            edifid.write(tsp+'%2.6e' % 0.0)
             if np.remainder(float(kk),5.)==np.remainder(float(nfreq),5.):
                 edifid.write('\n')
         edifid.write('\n')
@@ -1286,16 +1285,36 @@ def writeedi(z,zvar,freq,stationinfofile,station,edidir=None,rrstation=None,
     
     return edipath
     
-def rewriteedi(edifile,znew,zvarnew,freqnew=None,newfile='y',tipnew=None,
-               tipvarnew=None):
-    """rewriteedi(edifile) will remove distortion from the impedance tensor and
-    rewrite the edifile with the new impedances.  Save the file as edifile+dr.edi
-    in a new directory nominated DR. Will return the filename with full path."""
+def rewriteedi(edifile,znew=None,zvarnew=None,freqnew=None,newfile='y',
+               tipnew=None,tipvarnew=None,thetar=0,dr='n'):
+    """
+    rewriteedi(edifile) will rewrite an edifile say if it needs to be rotated 
+    or distortion removed.
+
+    Inputs:
+        edifile = full path to edifile to be rewritten
+        znew = impedance tensor if a new one has been created
+        zvarnew = errors in impedance tensor if a new one has been created
+        freqnew = new frequency list if one has been created
+        newfile = 'y' for yes or 'n' for no if you want a new file to be
+                 created.
+        tipnew = new tipper array
+        tipvarnew = new tipper error array
+        thetar = rotation angle counter clockwise (N=0, E=-90)
+        dr = 'n' if no distortion removal and 'y' for distortion removal
+    
+    Outputs:
+        nedi = dirpath(edifile)+basename(edifile)+rw or dr if dr='y'
+    
+    """
 
     #get direcotry path make one if not there    
     dirpath=os.path.dirname(edifile)
     if newfile=='y':
-        drdirpath=os.path.join(dirpath,'DR')
+        if dr=='y':
+            drdirpath=os.path.join(dirpath,'DR')
+        else:
+            drdirpath=os.path.join(dirpath,'Rot{0:.0f}'.format(thetar))
         if not os.path.exists(drdirpath):
             os.mkdir(drdirpath)
             print 'Made directory: ',drdirpath
@@ -1320,7 +1339,10 @@ def rewriteedi(edifile,znew,zvarnew,freqnew=None,newfile='y',tipnew=None,
             count+=1
         
         #get new file name
-        newedifile=os.path.basename(edifile)[:-4]+'dr.edi'
+        if dr=='y':
+            newedifile=os.path.basename(edifile)[:-4]+'dr.edi'
+        else:
+            newedifile=os.path.basename(edifile)[:-4]+'rw.edi'
         #open a new edifile
         newedifid=open(os.path.join(drdirpath,newedifile),'w')
         
@@ -1328,6 +1350,27 @@ def rewriteedi(edifile,znew,zvarnew,freqnew=None,newfile='y',tipnew=None,
         newedifile=os.path.basename(edifile)[:-4]+'c.edi'
         newedifid=open(os.path.join(dirpath,newedifile),'w')
         edifolderyn='n'
+        
+    if znew==None:
+        edidict=readedi(edifile)
+        #rotate data if desired
+        if thetar!=0:
+            znew=np.zeros_like(edidict['z'])
+            zvarnew=np.zeros_like(edidict['z'])
+            #convert thetar into radians
+            if abs(thetar)>2*np.pi:
+                thetar=thetar*(np.pi/180)
+            #make rotation matrix
+            rotmatrix=np.array([[np.cos(thetar), np.sin(thetar)],
+                         [-np.sin(thetar), np.cos(thetar)]])
+            #rotate the data
+            for rr in range(len(edidict['frequency'])):
+                znew[rr]=np.dot(rotmatrix,np.dot(edidict['z'][rr],rotmatrix.T))
+                zvarnew[rr]=np.dot(rotmatrix,np.dot(edidict['zvar'][rr],
+                                        rotmatrix.T))
+        else:
+            znew=edidict['z']
+            zvarnew=edidict['zvar']
     
     #open existing edi file
     edifid=open(edifile,'r')
@@ -1368,11 +1411,12 @@ def rewriteedi(edifile,znew,zvarnew,freqnew=None,newfile='y',tipnew=None,
             if np.remainder(float(kk)+1,5.)==0:
                 newedifid.write('\n')
         newedifid.write('\n')
-        newedifid.write('>!****IMPEDANCES****!'+'\n')
+        newedifid.write('>!****IMPEDANCES****!'+' Rotated {0:.0f} counterclockwise\n'.format(thetar*180/np.pi))
     #from the start of file to where impedances start write from existing edifile
     else:
-        for line in edilines[0:spot[1]+1]:
+        for line in edilines[0:spot[1]]:
             newedifid.write(line)
+    newedifid.write('>!****IMPEDANCES****!'+' Rotated {0:.0f} counterclockwise\n'.format(thetar*180/np.pi))
     
     #create an implst to make code simpler
     implst=[['ZXXR',0,0],['ZXXI',0,0],['ZXX.VAR',0,0],['ZXYR',0,1],['ZXYI',0,1],\
@@ -1386,7 +1430,7 @@ def rewriteedi(edifile,znew,zvarnew,freqnew=None,newfile='y',tipnew=None,
         if imp[0].find('.')==-1:
             if imp[0].find('R')>=0:
                 for kk in range(int(nfreq)):
-                    newedifid.write(tsp+'%.7E' % znew.real[kk,mm,nn])
+                    newedifid.write(tsp+'%+.7E' % znew.real[kk,mm,nn])
                     if kk>0:
                         if np.remainder(float(kk)+1,5.)==0:
                             newedifid.write('\n')
@@ -1394,7 +1438,7 @@ def rewriteedi(edifile,znew,zvarnew,freqnew=None,newfile='y',tipnew=None,
                         pass
             elif imp[0].find('I')>=0:
                 for kk in range(int(nfreq)):
-                    newedifid.write(tsp+'%.7E' % znew.imag[kk,mm,nn])
+                    newedifid.write(tsp+'%+.7E' % znew.imag[kk,mm,nn])
                     if kk>0:
                         if np.remainder(float(kk)+1,5.)==0:
                             newedifid.write('\n')
@@ -1402,7 +1446,7 @@ def rewriteedi(edifile,znew,zvarnew,freqnew=None,newfile='y',tipnew=None,
                         pass
         else:
             for kk in range(int(nfreq)):
-                newedifid.write(tsp+'%.7E' % zvarnew[kk,mm,nn])
+                newedifid.write(tsp+'%+.7E' % zvarnew[kk,mm,nn])
                 if kk>0:
                     if np.remainder(float(kk)+1,5.)==0:
                         newedifid.write('\n')
@@ -1424,7 +1468,7 @@ def rewriteedi(edifile,znew,zvarnew,freqnew=None,newfile='y',tipnew=None,
             if tip[0].find('.')==-1:
                 if tip[0].find('R')>=0:
                     for kk in range(int(nfreq)):
-                        newedifid.write(tsp+'%.7E' % tipnew.real[kk,mm])
+                        newedifid.write(tsp+'%+.7E' % tipnew.real[kk,mm])
                         if kk>0:
                             if np.remainder(float(kk)+1,5.)==0:
                                 newedifid.write('\n')
@@ -1432,7 +1476,7 @@ def rewriteedi(edifile,znew,zvarnew,freqnew=None,newfile='y',tipnew=None,
                             pass
                 elif tip[0].find('I')>=0:
                     for kk in range(int(nfreq)):
-                        newedifid.write(tsp+'%.7E' % tipnew.imag[kk,mm])
+                        newedifid.write(tsp+'%+.7E' % tipnew.imag[kk,mm])
                         if kk>0:
                             if np.remainder(float(kk)+1,5.)==0:
                                 newedifid.write('\n')
@@ -1440,7 +1484,7 @@ def rewriteedi(edifile,znew,zvarnew,freqnew=None,newfile='y',tipnew=None,
                             pass
             else:
                 for kk in range(int(nfreq)):
-                    newedifid.write(tsp+'%.7E' % tipvarnew.real[kk,mm])
+                    newedifid.write(tsp+'%+.7E' % tipvarnew.real[kk,mm])
                     if kk>0:
                         if np.remainder(float(kk)+1,5.)==0:
                             newedifid.write('\n')
@@ -1458,8 +1502,12 @@ def rewriteedi(edifile,znew,zvarnew,freqnew=None,newfile='y',tipnew=None,
     #copy file to a common folder
     if edifolderyn=='y':
         if newfile=='y':
-            shutil.copy(os.path.join(drdirpath,newedifile),
-                        os.path.join(drcopypath,'DR',newedifile))
+            if dr=='y':
+                shutil.copy(os.path.join(drdirpath,newedifile),
+                            os.path.join(drcopypath,'DR',newedifile))
+            else:
+                shutil.copy(os.path.join(drdirpath,newedifile),
+                            os.path.join(drcopypath,'RW',newedifile))
         else:
             shutil.copy(os.path.join(dirpath,newedifile),
                     os.path.join(drcopypath,newedifile))
@@ -2046,7 +2094,7 @@ def removeStaticShift(edifile,stol=.2,dm=1000):
     reslst=np.array(reslst)
     
     #calculate static shift of x-components
-    staticx=np.mean(res[1,0,0:20]/np.median(reslst[:,1,0,0:20],axis=0))
+    staticx=np.mean(res[1,0,:]/np.median(reslst[:,1,0,:],axis=0))
     
     #see if it is within the tolerance level    
     if staticx<1-stol or staticx>1+stol:
