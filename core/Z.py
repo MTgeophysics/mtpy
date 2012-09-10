@@ -379,8 +379,8 @@ class Edi(object):
                         eline=eline.strip().split()
                         tkey=eline[0][1:3]
                         tcomp=eline[0][3:]
-                        if zkey!='TR' and zkey.find('!')==-1:
-                            z0=zdict[zkey][0]
+                        if tkey!='TR' and tkey.find('!')==-1:
+                            z0=tdict[tkey]
                             
                         kk=0
                         ii+=1

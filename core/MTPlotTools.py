@@ -25,7 +25,7 @@ ptcmapdict={'red':((0.0,1.0,1.0),(1.0,1.0,1.0)),
             'blue':((0.0,0.0,0.0),(1.0,0.0,0.0))}
 ptcmap=LinearSegmentedColormap('ptcmap',ptcmapdict,256)
 
-#blue to red
+#blue to yellow to red
 skcmapdict={'red':((0.0,0.0,0.0),(.5,1.0,1.0),(0.5,0.0,1.0),(1.0,1.0,1.0)),
             'green':((0.0,1.0,0.0),(.5,1.0,0.0),(.5,0.0,1.0),(1.0,0.0,1.0)),
             'blue':((0.0,0.0,1.0),(.5,0.0,1.0),(0.5,0.1,0.1),(1.0,0.1,0.1))}
@@ -54,6 +54,10 @@ ckdict={'phiminang':'$\Phi_{min}$ (deg)','phimin':'$\Phi_{min}$ (deg)',
         'phimaxang':'$\Phi_{max}$ (deg)','phimax':'$\Phi_{max}$ (deg)',
         'phidet':'Det{$\Phi$} (deg)','beta':'Skew (deg)',
         'ellipticity':'Ellipticity'}
+
+zonedict=dict([(a,ii) for ii,a in enumerate(['a','b','c','d','e','f','g','h',
+               'i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x',
+               'y','z'])])
 
 #==============================================================================
 # Plotting tools
@@ -1197,8 +1201,9 @@ def plotRTpseudoSection(filenamelst,colorkey='rhodet',esize=2,
 def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
                ypad=.2,tickstrfmt='%2.2f',cborientation='vertical',
                colorkeymm=[0,90.],figsave='y',fmt=['png'],rotz=0,pxy=[10,12],
-                galpha=.25,stationid=None,indarrows='n',cmap='ptcmap',
-                tscale='period'):
+                galpha=.25,stationid=None,stationpad=.0005,
+                sfdict={'size':12,'weight':'bold'},indarrows='n',
+                cmap='ptcmap',tscale='period',mapscale='latlon',fignum=1):
     """ 
     plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
                ypad=.2,tickstrfmt='%2.4f',cborientation='vertical',
@@ -1230,7 +1235,11 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
         stationid = first and last index of the station name, default is None
                     which is no station names.  If input use 
                     stationid=(0,4) for the 1st through 4th characters
+        stationpad = padding for station name in the y direction
+        sfdict = dictionary for station name where size is the font size
+                and weight is the font weight
         indarrow = 'y' to plot induction arrows and 'n' to not plot them
+                    convention is to point towards a conductor
         cmap = color map of ellipse facecolor.  So far the colormaps are:
             ptcmap = yellow (low phase) to red (high phase)
             ptcmap3 = white (low numbers) to blue (high numbers)
@@ -1238,16 +1247,24 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
             skcmap2 = blue to white to red
             rtcmap = blue to purple to red
         tscale = period or frequency for the title of the plot
+        mapscale = latlon for lats and lons or
+                   eastnorth for easting and northing, this is recomended if
+                   you want to plot tipper data for small surveys.
         
     """
     jj=freqspot
-    fig=plt.figure(1,pxy,dpi=200)
+    fig=plt.figure(fignum,pxy,dpi=200)
     ax=fig.add_subplot(1,1,1,aspect='equal')
     elliplst=[]
     latlst=[]
     lonlst=[]
     if not esize is float:
         esize=float(esize)
+    
+    if mapscale=='latlon':
+        tickstrfmt='%.3f'
+    elif mapscale=='eastnorth':
+        tickstrfmt='%.0f'
     
     ckmin=colorkeymm[0]
     ckmax=colorkeymm[1]
@@ -1267,8 +1284,34 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
         #check to see if the period is there
         try:
             freq=1./imp.period[jj]
-            latlst.append(imp.lat)
-            lonlst.append(imp.lon)
+            if mapscale=='latlon':
+                latlst.append(imp.lat)
+                lonlst.append(imp.lon)
+                plotx=imp.lon
+                ploty=imp.lat
+            elif mapscale=='eastnorth':
+                zone,east,north=utm2ll.LLtoUTM(23,imp.lat,imp.lon)
+                if ii==0:
+                    zone1=zone
+                    plotx=east
+                    ploty=north
+                else:
+                    if zone1!=zone:
+                        if zone1[0:2]==zone[0:2]:
+                            pass
+                        elif int(zone1[0:2])<int(zone[0:2]):
+                            east=east+500000
+                        else:
+                            east=east-500000
+                        latlst.append(north)
+                        lonlst.append(east)
+                        plotx=east
+                        ploty=north
+                    else:
+                        latlst.append(north)
+                        lonlst.append(east)
+                        plotx=east
+                        ploty=north
             pt=imp.getPhaseTensor(thetar=rotz)
             phimin=pt.phimin[jj]
             phimax=pt.phimax[jj]
@@ -1277,7 +1320,7 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
             scaling=esize/phimax
             eheight=phimin*scaling
             ewidth=phimax*scaling
-            ellipd=Ellipse((imp.lon,imp.lat),width=ewidth,height=eheight,
+            ellipd=Ellipse((plotx,ploty),width=ewidth,height=eheight,
                           angle=eangle)
             #print imp.lon,imp.lat,scaling,ewidth,eheight,phimin,phimax
             elliplst.append(ellipd)
@@ -1289,7 +1332,7 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
             elif colorkey=='phidet':
                 cvar=(pt.phidet[jj]-ckmin)/(ckmax-ckmin)
             elif colorkey=='beta':
-                cvar=(pt.beta[jj]-ckmin)/(ckmax-ckmin)
+                cvar=(pt.beta[jj]-abs(ckmin))/(ckmax-ckmin)
             elif colorkey=='ellipticity':
                 cvar=(pt.ellipticity[jj]-ckmin)/(ckmax-ckmin)
             else:
@@ -1314,65 +1357,74 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
             elif cmap=='skcmap2':
                 if cvar<0 and cvar>-1:
                     ellipd.set_facecolor((1-abs(cvar),1-abs(cvar),1))
-                else:
+                elif cvar<-1:
                     ellipd.set_facecolor((0,0,1))
-                if cvar>0 and cvar<1:
+                elif cvar>0 and cvar<1:
                     ellipd.set_facecolor((1,1-abs(cvar),1-abs(cvar)))
-                else:
+                elif cvar>1:
                     ellipd.set_facecolor((1,0,0))
             #blue to white to red
             elif cmap=='skcmap':
-                if abs(cvar)>1:
-                    ellipd.set_facecolor((0,0,0))
-                elif cvar<0:
-                    ellipd.set_facecolor((1-abs(cvar),1-abs(cvar),1))
-                elif cvar>0:
-                    ellipd.set_facecolor((1,1-abs(cvar),1-abs(cvar)))
+                if cvar<0 and cvar>-1:
+                    ellipd.set_facecolor((abs(cvar),abs(cvar),1-abs(cvar)))
+                elif cvar<-1:
+                    ellipd.set_facecolor((0,0,1))
+                elif cvar>0 and cvar<1:
+                    ellipd.set_facecolor((1,1-abs(cvar),.01))
+                elif cvar>1:
+                    ellipd.set_facecolor((1,0,0))
                     
             #-----------Plot Induction Arrows---------------------------
             if indarrows=='y':
+                if mapscale=='latlon':
+                    print 'Might try mapscale=latlon for better scale of arrows'
+                    
                 tip=imp.getTipper(thetar=rotz)
-                txr=tip.magreal[jj]*np.cos(tip.anglereal[jj]*np.pi/180)*xpad
-                tyr=tip.magreal[jj]*np.sin(tip.anglereal[jj]*np.pi/180)*xpad
+                txr=tip.magreal[jj]*np.cos(tip.anglereal[jj]*np.pi/180)*scaling
+                tyr=tip.magreal[jj]*np.sin(tip.anglereal[jj]*np.pi/180)*scaling
 
-                txi=tip.magimag[jj]*np.cos(tip.angleimag[jj]*np.pi/180)*xpad
-                tyi=tip.magimag[jj]*np.sin(tip.angleimag[jj]*np.pi/180)*xpad
+                txi=tip.magimag[jj]*np.cos(tip.angleimag[jj]*np.pi/180)*scaling
+                tyi=tip.magimag[jj]*np.sin(tip.angleimag[jj]*np.pi/180)*scaling
                 
                 aheight=.25*esize
-                awidth=.1*esize
+                awidth=.075*esize
                 
-#                ax.arrow(imp.lon,imp.lat,txr,tyr,lw=.05*awidth,shape='full',
-#                         facecolor='k',edgecolor='k',
-#                         length_includes_head=False,
-#                         head_width=awidth,head_length=aheight)
-#                ax.arrow(imp.lon,imp.lat,txi,tyi,lw=.5*awidth,
-#                         facecolor='b',edgecolor='b',length_includes_head=False,
-#                          head_width=awidth,head_length=aheight)
-#                ax.arrow(imp.lon,imp.lat,txr,tyr,facecolor='k',
-#                          edgecolor='k',shape='full',)
-#                ax.arrow(imp.lon,imp.lat,txi,tyi,facecolor='b',
-#                          edgecolor='b',shape='full',lw=.000001)
-#          width : the width of the arrow in points
-#          frac  : the fraction of the arrow length occupied by the head
-#          headwidth : the width of the base of the arrow head in points
-#          shrink : move the tip and base some percent away from the
-#                   annotated point and text
-                          
-                ax.annotate('', xy=(imp.lon,imp.lat),
-                            xytext=(imp.lon+txr,imp.lat+tyr),
-                            arrowprops=dict(facecolor='black', shrink=esize,
-                                            frac=.01))
+                ax.arrow(plotx,ploty,txr,tyr,lw=.075*awidth,shape='full',
+                         facecolor='k',edgecolor='k',
+                         length_includes_head=False,
+                         head_width=awidth,head_length=aheight)
+                ax.arrow(plotx,ploty,txi,tyi,lw=.05*awidth,
+                         facecolor='b',edgecolor='b',
+                         length_includes_head=False,
+                         head_width=awidth,head_length=aheight)
+                         
+            
+            #------------Plot station name------------------------------
+            if stationid!=None:
+                ax.text(plotx,ploty+stationpad,
+                        imp.station[stationid[0]:stationid[1]],
+                        horizontalalignment='center',
+                        verticalalignment='baseline',
+                        fontdict=sfdict)
                 
         #if the period is not there 
         except IndexError:
             print 'Did not find index for station'.format(jj)+imp.station
-        
-    ax.set_xlabel('longitude',fontsize=10,fontweight='bold')
-    ax.set_ylabel('latitude',fontsize=10,fontweight='bold')
-    ax.set_xlim(min(lonlst)-xpad,max(lonlst)+xpad)
-    ax.xaxis.set_major_formatter(FormatStrFormatter(tickstrfmt))
-    ax.set_ylim(min(latlst)-xpad,max(latlst)+xpad)
-    ax.yaxis.set_major_formatter(FormatStrFormatter(tickstrfmt))
+    
+    if mapscale=='latlon':    
+        ax.set_xlabel('longitude',fontsize=10,fontweight='bold')
+        ax.set_ylabel('latitude',fontsize=10,fontweight='bold')
+        ax.set_xlim(min(lonlst)-xpad,max(lonlst)+xpad)
+        ax.xaxis.set_major_formatter(FormatStrFormatter(tickstrfmt))
+        ax.set_ylim(min(latlst)-xpad,max(latlst)+xpad)
+        ax.yaxis.set_major_formatter(FormatStrFormatter(tickstrfmt))
+    elif mapscale=='eastnorth':
+        ax.set_xlabel('Easting (m)',fontsize=10,fontweight='bold')
+        ax.set_ylabel('Northing (m)',fontsize=10,fontweight='bold')
+        ax.set_xlim(min(lonlst)-xpad,max(lonlst)+xpad)
+        ax.xaxis.set_major_formatter(FormatStrFormatter(tickstrfmt))
+        ax.set_ylim(min(latlst)-xpad,max(latlst)+xpad)
+        ax.yaxis.set_major_formatter(FormatStrFormatter(tickstrfmt))
     if tscale=='period':
         titlefreq='{0:.5g}'.format(1./freq)
     else:
@@ -1380,6 +1432,15 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
     ax.set_title('Phase Tensor for '+titlefreq+'(s)',
                  fontsize=10,fontweight='bold')
     ax.grid(alpha=galpha)
+    
+    if indarrows=='y':
+        treal=ax.plot(np.arange(10)*.000005,np.arange(10)*.00005,'k')
+        timag=ax.plot(np.arange(10)*.000005,np.arange(10)*.00005,'b')
+        ax.legend([treal[0],timag[0]],['Tipper_real','Tipper_imag'],
+                  loc='upper center',
+                  prop={'size':10,'weight':'bold'},
+                  ncol=2,markerscale=.5,borderaxespad=.005,
+                  borderpad=.25)
     
     #make a colorbar with appropriate colors             
     ax2=make_axes(ax,shrink=.8)
