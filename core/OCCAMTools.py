@@ -1189,7 +1189,7 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
     
 def makeModel(datafilename,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
               z1layer=50,bwidth=200,trigger=.75,cwd='.',rhostart=100,
-              makemodelexe=None, modelname=""):
+              makemodelexe=None, modelname="", use_existing_startup = False, existing_startup_file = None):
     """
     makeModel will make an the input files for occam using Steve Constable's
     MakeModel2DMT.f code.
@@ -1205,8 +1205,11 @@ def makeModel(datafilename,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
         trigger = triger point to amalgamate blocks
         cwd     = working directory, files are saved here
         rhostart = starting resistivity for homogeneous half space in ohm-m
-        makemodelexe = executable Make2DModel file
+        use_existing_startup: set True, if an old iteration step output is provided as startup
+        existing_startup_file: absolute path for old itereation output to be used as startup
+
         
+            
         
     Outputs:
         meshfn = mesh file for finite element grid saved ats MESH
@@ -1278,8 +1281,14 @@ def makeModel(datafilename,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
     meshfn=os.path.join(cwd,'MESH')
     inmodelfn=os.path.join(cwd,'INMODEL')
     startupfn=os.path.join(cwd,'startup')
+    
     parameter_dict['meshfn']  = meshfn
     parameter_dict['inmodelfn']  = inmodelfn
+        
+
+    if use_existing_startup:
+        startupfn =  existing_startup_file
+
     parameter_dict['startupfn']  = startupfn
     
     #write OCCAM input files directly - no external function needed:

@@ -26,38 +26,52 @@ class MyForm(QtGui.QMainWindow):
         self.ui.wd = op.abspath(op.realpath('.'))
         
         QtCore.QObject.connect(self.ui.button_browse_wd, QtCore.SIGNAL("clicked()"),  lambda: self.set_path_in_browsefield(self.ui.lineEdit_browse_wd))
+        
         QtCore.QObject.connect(self.ui.button_browse_edis, QtCore.SIGNAL("clicked()"),  lambda: self.set_path_in_browsefield(self.ui.lineEdit_browse_edis))
 
-        QtCore.QObject.connect(self.ui.button_browse_stations, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_stations))
+        QtCore.QObject.connect(self.ui.pushButton_loadstations, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_stations))
 
         QtCore.QObject.connect(self.ui.button_browse_occam, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_occam))
-        QtCore.QObject.connect(self.ui.button_browse_makemodel, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_makemodel))
+        
+        #QtCore.QObject.connect(self.ui.button_browse_makemodel, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_makemodel))
+
         QtCore.QObject.connect(self.ui.pushButton_loaddatafile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_datafile))
+
+        QtCore.QObject.connect(self.ui.pushButton_loadstartupfile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_startupfile))
+        
         QtCore.QObject.connect(self.ui.pushButton_loaddatafile, QtCore.SIGNAL("clicked()"),self.set_data_filename)
         
         QtCore.QObject.connect(self.ui.pushButton_checkparameter, QtCore.SIGNAL("clicked()"),  self.check_input)
 
         QtCore.QObject.connect(self.ui.pushButton_checkparameter, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
         QtCore.QObject.connect(self.ui.pushButton_generateinputfile, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
-        QtCore.QObject.connect(self.ui.pushButton_loadold_meshinmodel, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
+        QtCore.QObject.connect(self.ui.pushButton_runoccam, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
         
 
+        QtCore.QObject.connect(self.ui.pushButton_generateinputfile, QtCore.SIGNAL("clicked()"),  self.check_input)
+        QtCore.QObject.connect(self.ui.pushButton_runoccam, QtCore.SIGNAL("clicked()"),  self.check_input)
+        
+        
         QtCore.QObject.connect(self.ui.pushButton_generateinputfile, QtCore.SIGNAL("clicked()"),  self.generate_inputfiles)
-        QtCore.QObject.connect(self.ui.pushButton_loadold_meshinmodel, QtCore.SIGNAL("clicked()"),  self.loadold_meshinmodel)
+
+        #QtCore.QObject.connect(self.ui.pushButton_loadold_meshinmodel, QtCore.SIGNAL("clicked()"),  self.loadold_meshinmodel)
 
         QtCore.QObject.connect(self.ui.pushButton_runoccam, QtCore.SIGNAL("clicked()"),  self.run_occam)
 
+        QtCore.QObject.connect(self.ui.pushButton_quit, QtCore.SIGNAL("clicked()"), QtCore.QCoreApplication.instance().quit)
 
-
+    
+        
     #when loading old datafile, copy its name to the filename field:
     def set_data_filename(self):
-        self.ui.lineEdit_browse_datafilename.setText(self.ui.lineEdit_browse_datafile.text())
+        self.ui.lineEdit_datafilename.setText(self.ui.lineEdit_browse_datafile.text())
         self._load_datafile = 1
         
 
     def set_path_in_browsefield(self, browsefield):
         dirname = QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', '.')
         browsefield.setText(dirname)
+
     def set_filename_in_browsefield(self, browsefield):
         filename = QtGui.QFileDialog.getOpenFileName(self, 'Locate File', '.')
         browsefield.setText(filename)
@@ -102,13 +116,13 @@ class MyForm(QtGui.QMainWindow):
             occ_exe_mess += 'Occam executable not existing <br>'
             invalid_flag +=1
 
-        makemodel_mess = ''
-        makemodel_text = ''
-        if str(self.ui.lineEdit_browse_makemodel.text()):
-            makemodel_text = str(self.ui.lineEdit_browse_makemodel.text())
-        if (makemodel_text.strip() == '') or (not op.isfile(op.abspath(op.realpath(op.join(self.ui.wd,makemodel_text))))):
-            makemodel_mess += 'Make2DModel executable not existing <br>'
-            invalid_flag +=1
+        #makemodel_mess = ''
+        #makemodel_text = ''
+        #if str(self.ui.lineEdit_browse_makemodel.text()):
+            #makemodel_text = str(self.ui.lineEdit_browse_makemodel.text())
+        #if (makemodel_text.strip() == '') or (not op.isfile(op.abspath(op.realpath(op.join(self.ui.wd,makemodel_text))))):
+            #makemodel_mess += 'Make2DModel executable not existing <br>'
+            #invalid_flag +=1
 
         stations_mess = ''
         stations_text = ''
@@ -118,7 +132,17 @@ class MyForm(QtGui.QMainWindow):
             if self.ui.checkBox_usestationlist.checkState():
                 stations_mess += 'Stations file not existing <br>'
                 invalid_flag +=1
-    
+
+        startup_mess=''
+        startup_text=''
+        if str(self.ui.lineEdit_browse_startupfile.text()):
+            startup_text = str(self.ui.lineEdit_browse_startupfile.text())
+        if (startup_text.strip() == '') or  (not op.isfile(op.realpath(op.join(self.ui.wd,startup_text)))):
+            if self.ui.checkBox_usestartupfile.checkState():
+                startup_mess += 'Startup file not existing <br>'
+                invalid_flag += 1
+                
+         
         datafile_mess = ''
         datafile_text = ''
         if str(self.ui.lineEdit_browse_datafile.text()):
@@ -133,7 +157,7 @@ class MyForm(QtGui.QMainWindow):
     
         datafilename_mess = ''
         datafilename_text = ''        
-        datafilename_text_raw = str(self.ui.lineEdit_browse_datafilename.text()).strip()
+        datafilename_text_raw = str(self.ui.lineEdit_datafilename.text()).strip()
         #check for emtpty slot:
         if not datafilename_text_raw:
             datafilename_mess += 'No datafile given <br>'
@@ -146,7 +170,6 @@ class MyForm(QtGui.QMainWindow):
         else:
             #check for additional strange characters:
             import re
-            #print datafilename_text_raw
             m2 = re.match("^[a-zA-Z_\.]+[a-zA-Z0-9_\.]*$", datafilename_text_raw, re.M)
             if not m2 and (not self._load_datafile):
                 datafilename_mess += 'Wrong format of datafile (a-z,0-9,_) <br>'
@@ -174,7 +197,7 @@ class MyForm(QtGui.QMainWindow):
 
 
         if invalid_flag != 0 :
-            conc_mess = wd_mess+occ_exe_mess+makemodel_mess+edis_mess+stations_mess+datafile_mess+datafilename_mess+modelname_mess
+            conc_mess = wd_mess+occ_exe_mess+startup_mess+edis_mess+stations_mess+datafile_mess+datafilename_mess+modelname_mess
             messagetext = "<P><b><FONT COLOR='#800000'>Error: %i parameters are invalid !  </FONT></b></P><br> %s"%(invalid_flag,conc_mess)
 
             
@@ -188,15 +211,17 @@ class MyForm(QtGui.QMainWindow):
         D['wdir']             = op.abspath( op.realpath( str( self.ui.lineEdit_browse_wd.text() ) ) )
         D['edis_dir']         = op.abspath( op.realpath( str( self.ui.lineEdit_browse_edis.text()) ) )
         D['occam_exe']        = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_occam.text()) ) ) )
-        D['makemodel_exe']    = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_makemodel.text()) ) ) )
+        D['startupfile']      = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_startupfile.text()) ) ) )
         D['stationlist_file'] = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_stations.text()) ) ) )
         D['olddatafile']      = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_datafile.text()) ) ) )
-        D['datafilename']     = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_datafilename.text()) ) ) )
+        D['datafilename']     = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_datafilename.text()) ) ) )
 
         D['modelname']        = str(self.ui.lineEdit_modelname.text())
         
         D['check_usestations']= self.ui.checkBox_usestationlist.checkState()
         D['check_usedatafile']= self.ui.checkBox_usedatafile.checkState()
+        D['check_usestartupfile']= self.ui.checkBox_usestartupfile.checkState()
+        
 
         D['mode']             = self.ui.comboBox_mode.currentIndex()
         D['freqsteps']        = self.ui.spinBox_freq_steps.value()
@@ -229,11 +254,18 @@ class MyForm(QtGui.QMainWindow):
 
     def build_datafile(self):
         D=self.parameters
+
+        print D['check_usedatafile']
+        print D['olddatafile']
+        checkfilename = D['olddatafile']
+        print op.isfile(checkfilename)
         
         if D['check_usedatafile']:
             checkfilename = D['olddatafile']
             if op.isfile(checkfilename):
-                messagetext = "<P><b><FONT COLOR='#008080'>Data file generation successful:</FONT></b></P><br>%s"%checkfilename
+                messagetext = "<P><b><FONT COLOR='#008080'>Existing data file loaded successfully:</FONT></b></P><br>%s"%checkfilename
+                D['datafilename'] = D['olddatafile']
+                D['datafile']     = D['olddatafile']
             else:
                 messagetext = "<P><b><FONT COLOR='#800000'>Error: %i No old data file found!  </FONT></b></P> "
                     
@@ -329,7 +361,15 @@ class MyForm(QtGui.QMainWindow):
             messagetext = "<P><b><FONT COLOR='#800000'>Error: %i No data file generated!  </FONT></b></P> "
             
         QtGui.QMessageBox.about(self, "Data file", messagetext )
-            
+
+    def _setup_startupfile(self):
+        self.parameters['startupfn'] = None    
+
+        if self.parameters['check_usestartupfile']:
+            self.parameters['startupfn'] = self.parameters['startupfile']
+
+        
+ 
 
     def build_startupfiles(self):
         D=self.parameters
@@ -337,6 +377,9 @@ class MyForm(QtGui.QMainWindow):
         datafile = D['datafile'] 
         import MTpy.core.OCCAMTools as OCCAMTools
         reload(OCCAMTools)
+
+        self._setup_startupfile()
+            
         m_fn,i_fn,s_fn = OCCAMTools.makeModel(datafile,\
                                                 niter=int(float(D['n_iterations'])),\
                                                 targetrms=float(D['target_rms']),\
@@ -349,26 +392,33 @@ class MyForm(QtGui.QMainWindow):
                                                 rhostart=float(D['rho0']),\
                                                 #occampath=D['makemodel_exe']\
                                                 cwd=self.ui.wd,\
-                                                makemodelexe=D['makemodel_exe'],
-                                                modelname=D['modelname']\
+                                                #makemodelexe=D['makemodel_exe'],
+                                                modelname=D['modelname'],
+                                                use_existing_startup=D['check_usestartupfile'],\
+                                                existing_startup_file=D['startupfn']\
                                                 )
 
-        
         if op.isfile(m_fn) and op.isfile(i_fn) and op.isfile(s_fn):
-            messagetext = "<P><b><FONT COLOR='#008080'>Startup files generated:</FONT></b></P><br>%s<br>%s<br>%s"%(m_fn,i_fn,s_fn)
+            if D['check_usestartupfile']:
+                messagetext = "<P><b><FONT COLOR='#008080'>Old startup  read in:</FONT></b></P><br>%s"%(s_fn)
+                QtGui.QMessageBox.about(self, "Startup file", messagetext )
+                messagetext = "<P><b><FONT COLOR='#008080'>Input files generated:</FONT></b></P><br>%s<br>%s"%(m_fn,i_fn)
+            
+            else:
+                messagetext = "<P><b><FONT COLOR='#008080'>Input files generated:</FONT></b></P><br>%s<br>%s<br>%s"%(m_fn,i_fn,s_fn)
         else:
             messagetext = "<P><b><FONT COLOR='#800000'>Error: %i No startup files generated!  </FONT></b></P> "
         
-        QtGui.QMessageBox.about(self, "Startup files", messagetext )
+        QtGui.QMessageBox.about(self, "Startup files generation", messagetext )
 
         return
 
 
     def generate_inputfiles(self):
         self.build_datafile()
-        print'datafile done'
+        #print'datafile done'
         self.build_startupfiles()
-        print 'startupfiles done'
+        #print 'startupfiles done'
     
 
         
@@ -377,7 +427,7 @@ class MyForm(QtGui.QMainWindow):
         import subprocess
         exename = self.parameters['occam_exe']
         modname = self.parameters['modelname']
-        startfile = op.abspath(op.realpath(op.join(self.ui.wd,'startup')))
+        startfile = self.parameters['startupfile']
 
 
         #occam_process=QtCore.QProcess()#.start(startstring)
