@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 This file will combine two edi files into one a number of files
 
@@ -15,9 +16,9 @@ so if you want the first 12 frequencies from edi1 and the last 17
 frequencies from edi2, then n1=12 and n2=17
 """
 
-import MTtools as mt
+import MTpy.core.MTtools as mt
 import os
-import MTPlotTools as mtplot
+import MTpy.imaging.MTPlotTools as mtplot
 
 #enter the high frequency edi directory path 
 edipath1=r"dirpath1"

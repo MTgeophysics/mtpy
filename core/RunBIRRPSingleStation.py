@@ -58,10 +58,10 @@ Jared Peacock 2011"""
 #===============================================================================
 
 import os
-import BIRRPTools as brp 
-import MTtools as mt
-import MTPlotTools as mtplot
-import Z
+import MTpy.core.BIRRPTools as brp 
+import MTpy.core.MTtools as mt
+import MTpy.imaging.MTPlotTools as mtplot
+import MTpy.core.Z as Z
 
 
 #===============================================================================

@@ -8,7 +8,6 @@ import fnmatch
 import time
 import datetime
 import shutil
-import MTpy.utils.LatLongUTMconversion as utm2ll
 import scipy as sp
 import scipy.signal as sps
 
@@ -1858,7 +1857,9 @@ def getStationInfo(stationinfofile,station,mapversion=23):
     """getStationInfo(stationinfofile,station) returns info for the nominated
     station from the stationinfofile as a dictionary with key words in the 
     hdrinfo."""
-    
+
+    import MTpy.utils.LatLongUTMconversion as utm2ll
+
     info=readStationInfo(stationinfofile)
     for ii in range(len(info)):
         if info[ii]['station'].lower()==station.lower():
@@ -2063,7 +2064,9 @@ def removeStaticShift(edifile,stol=.2,dm=1000):
     Outputs:
         newedifile = full path to new edifile
     """
-    
+
+    import MTpy.utils.LatLongUTMconversion as utm2ll
+
     #get directory name where all edi files should be
     edipath=os.path.dirname(edifile)
     

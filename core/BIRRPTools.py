@@ -15,7 +15,6 @@ from scipy import interpolate
 import time
 import MTpy.core.MTtools as mt
 import shutil
-#import MTpy.imaging.MTPlotTools as mtplot
 import subprocess
 #import winsound as ws
 

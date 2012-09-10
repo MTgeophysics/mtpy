@@ -6,9 +6,8 @@ Created on Mon May 03 13:44:51 2010
 """
 
 import numpy as np
-import MTpy.core.MTtools as mt
-#import MTpy.imaging.MTPlotTools as mtplot
 import os
+
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
 from matplotlib.ticker import MultipleLocator,FormatStrFormatter
@@ -643,7 +642,9 @@ class Z(Edi):
             newedifn = full path to new edifile the edifile as station+dr.edi.
         
         """
-        
+
+        import MTpy.core.MTtools as mt
+
         z=np.array(self.z)
         zvar=np.array(self.zvar)
         #calculate ellipticity to figure out the distortion from 1d structure

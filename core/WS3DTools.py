@@ -7,7 +7,6 @@ Created on Mon Apr 02 11:54:33 2012
 
 import os
 import numpy as np
-import MTpy.core.Z as Z
 
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
@@ -227,6 +226,7 @@ def getPeriods(edipath,errthresh=10):
                     data file later.
         
     """
+    import MTpy.core.Z as Z
     
     plt.rcParams['font.size']=10
     plt.rcParams['figure.subplot.left']=.13
@@ -305,6 +305,9 @@ def writeWSDataFile(sitesfn,outfn,periodlst,edipath,zerr=.05,ptol=.15,
         datafn = full path to data file, saved in dirname(sitesfn) or savepath
                 where savepath can be a directory or full filename
     """
+
+    import MTpy.core.Z as Z
+
     
     #get units correctly
     if units=='mv':
@@ -789,6 +792,9 @@ def plotDataResPhase(datafn,respfn=None,sitesfn=None,plottype='1',plotnum=1,
         plotnum = 1 for just xy,yx
                   2 for all components
     """
+    import MTpy.core.Z as Z
+
+    
     #plot in color mode or black and white
     if colormode=='color':
         #color for data
@@ -1130,6 +1136,7 @@ def plotTensorMaps(datafn,respfn=None,sitesfn=None,periodlst=None,
         units = 'mv' to convert to Ohm-m 
         dpi = dots per inch of figure
     """
+    import MTpy.core.Z as Z
     
     period,zd,zderr,nsarr,ewarr,sitelst=readDataFile(datafn,sitesfn=sitesfn,
                                                       units=units)

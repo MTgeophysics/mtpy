@@ -28,11 +28,11 @@ Jared Peacock 2011"""
 #===============================================================================
 
 import os
-import BIRRPTools as brp 
+import MTpy.core.BIRRPTools as brp 
 import pp
 import pickle
-import MTtools as mt
-import MTPlotTools as mtplot
+import MTpy.core.MTtools as mt
+import MTpy.imaging.MTPlotTools as mtplot
 import shutil
 
 

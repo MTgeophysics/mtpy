@@ -7,16 +7,9 @@ Created on Tue Aug 23 11:54:38 2011
 
 import numpy as np
 import scipy as sp
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
 import os
-import Z
-import MTtools as mt
 import fnmatch
-import LatLongUTMconversion as utm2ll
 from operator import itemgetter
-from matplotlib.ticker import MultipleLocator
-import WinglinkTools as wlt
 import shutil
 import subprocess
 import time
@@ -53,7 +46,10 @@ def make1DdataFile(station,edipath=None,savepath=None,polarization='both',
     # open up edi file and write data file
     #===============================================================================
     """    
-    
+
+    import MTpy.core.Z
+
+
     if os.path.dirname(station)=='':
         if edipath==None:
             raise IOError('Need to input a path for the file.')
@@ -677,6 +673,10 @@ def plot1D(respfile,iterfile,modelfile,fignum=1,ms=4):
     """
     
     """
+
+    import matplotlib.gridspec as gridspec
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import MultipleLocator
     
     #read in data
     rpdict=read1DRespFile(respfile)
@@ -827,6 +827,10 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
         datfilename = full path of data file
                  
     """
+    import matplotlib.pyplot as plt
+    import MTpy.core.MTtools as mt
+    import MTpy.utils.LatLongUTMconversion as utm2ll
+    
     
     if abs(thetar)>2*np.pi:
         thetar=thetar*(np.pi/180)
@@ -1966,6 +1970,12 @@ def plot2DResponses(datafilename,respfilename=None,winglinkdatafile=None,
     Outputs:
         None
     """
+
+    import matplotlib.gridspec as gridspec
+    import matplotlib.pyplot as plt
+    import MTpy.core.WinglinkTools as wlt
+    from matplotlib.ticker import MultipleLocator
+    
     
     if respfilename!=None:
         #read in the data    
@@ -2450,6 +2460,10 @@ def plotAllResponses(datafile,station,fignum=1):
         Plot
     
     """    
+
+    import matplotlib.gridspec as gridspec
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import MultipleLocator
     
     rpath=os.path.dirname(datafile)
     
