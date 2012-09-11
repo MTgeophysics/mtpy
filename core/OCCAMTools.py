@@ -3030,7 +3030,7 @@ def plot2DModel(iterfile,meshfile,inmodelfile,datafile,xpad=1.0,ypad=6.0,
               mpad=0.5,spad=3.0,ms=60,stationid=None,
               fdict={'size':8,'rotation':60,'weight':'normal'},
               dpi=300,ylimits=None,xminorticks=5,yminorticks=1,climits=(0,4),
-              cmap='jet_r',fs=8):
+              cmap='jet_r',fs=8,femesh='off',regmesh='off',aspect='auto'):
     """
     plotModel will plot the model output by occam in the iteration file.
     
@@ -3080,6 +3080,13 @@ def plot2DModel(iterfile,meshfile,inmodelfile,datafile,xpad=1.0,ypad=6.0,
         cmap = color map to plot the model image
         
         fs = font size of axis labels
+        
+        femesh = 'on' to plot finite element forward modeling mesh (black)
+        
+        regmesh = 'on' to plot regularization mesh (blue)
+        
+        aspect = aspect ratio of the figure, depends on your line length and
+                the depth you want to investigate
         
     """
     #read in data file
@@ -3153,7 +3160,7 @@ def plot2DModel(iterfile,meshfile,inmodelfile,datafile,xpad=1.0,ypad=6.0,
     #plot the model
     fig=plt.figure(1,dpi=dpi)
     plt.clf()
-    ax=fig.add_subplot(1,1,1)
+    ax=fig.add_subplot(1,1,1,aspect=aspect)
     
     ax.pcolormesh(x,y,resmodel,cmap=cmap,vmin=climits[0],vmax=climits[1])
     #ax.set_ylim(ploty[0],ploty[-1]-2.0)
@@ -3185,6 +3192,38 @@ def plot2DModel(iterfile,meshfile,inmodelfile,datafile,xpad=1.0,ypad=6.0,
     ax.yaxis.set_minor_locator(MultipleLocator(yminorticks))
     ax.set_xlabel('Horizontal Distance (km)',fontdict={'size':fs,'weight':'bold'})
     ax.set_ylabel('Depth (km)',fontdict={'size':fs,'weight':'bold'})
+    
+    if femesh=='on':
+        #plot forward model mesh
+        for xx in plotx:
+            ax.plot([xx,xx],[0,ploty[0]],color='k',lw=.5)
+        for yy in ploty:
+            ax.plot([plotx[0],plotx[-1]],[yy,yy],color='k',lw=.5)
+    if regmesh=='on':
+        #plot the regularization mesh
+        linelst=[]
+        for ii in range(nc):
+            #get the number of layers to combine
+            #this index will be the first index in the vertical direction
+            ny1=cr[:ii,0].sum()
+            #the second index  in the vertical direction
+            ny2=ny1+cr[ii][0]
+            #make the list of amalgamated columns an array for ease
+            lc=np.array(cc[ii])
+            yline=ax.plot([plotx[0],plotx[-1]],[ploty[-ny1],ploty[-ny1]],color='b',lw=.5)
+            linelst.append(yline)
+            #loop over the number of amalgamated blocks
+            for jj in range(len(cc[ii])):
+                #get first in index in the horizontal direction
+                nx1=lc[:jj].sum()
+                #get second index in horizontal direction
+                nx2=nx1+lc[jj]
+                try:
+                    xline=ax.plot([plotx[nx1],plotx[nx1]],[ploty[-ny1],ploty[-ny2]],
+                                  color='b',lw=.5)
+                    linelst.append(xline)
+                except IndexError:
+                    pass
     plt.show()
       
 def plotPseudoSection(datafn,respfn=None,fignum=1,rcmap='jet_r',pcmap='jet',
