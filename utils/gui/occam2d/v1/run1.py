@@ -424,6 +424,7 @@ class MyForm(QtGui.QMainWindow):
         
 
     def run_occam(self):
+        import threading
         import subprocess
         exename = self.parameters['occam_exe']
         modname = self.parameters['modelname']
