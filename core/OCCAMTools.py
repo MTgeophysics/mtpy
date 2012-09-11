@@ -21,7 +21,8 @@ import shutil
 import subprocess
 import time
 import matplotlib.colorbar as mcb
-from matplotlib.colors import LinearSegmentedColormap,Normalize 
+from matplotlib.colors import Normalize
+from matplotlib.colorbar import * 
 
 occamdict={'1':'resxy','2':'phasexy','3':'realtip','4':'imagtip','5':'resyx',
            '6':'phaseyx'}
@@ -1438,11 +1439,14 @@ def makeModel(datafn,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
     shutil.copy(os.path.join(occampath,'MESH'),meshfn)
     shutil.copy(os.path.join(occampath,'INMODEL'),inmodelfn)
     shutil.copy(os.path.join(occampath,'startup'),startupfn)
+    shutil.copy(os.path.join(occampath,'inputMakeModel.txt'),
+                os.path.join(savepath,'inputMakeModel.txt'))
     if not os.path.exists(os.path.join(savepath,dfnb)):
         shutil.copy(datafn,os.path.join(savepath,dfnb))
     if os.path.getctime(os.path.join(savepath,dfnb))<\
         os.path.getctime(datafn):
         shutil.copy(datafn,os.path.join(savepath,dfnb))
+    
     
     #rewrite mesh so it contains the right number of columns and rows
     rewriteMesh(meshfn)
@@ -1502,12 +1506,23 @@ def rewriteMesh(meshfn):
     mfid.close()
  
 
-def read2Dmesh(meshfile,ncol=8):
+def read2Dmesh(meshfn):
     """
-    read a 2D meshfile
+    read a 2D meshfn
+    
+    Input:
+        meshfn = full path to mesh file
+
+    Output:
+        hnodes = array of horizontal nodes (column locations (m))
+        vnodes = array of vertical nodes (row locations(m))
+        mdata = free parameters
+        
+    Things to do:
+        incorporate fixed values
     """
     
-    mfid=file(meshfile,'r')
+    mfid=file(meshfn,'r')
     
     mlines=mfid.readlines()
     
@@ -1518,26 +1533,27 @@ def read2Dmesh(meshfile,ncol=8):
     vnodes=np.zeros(nv)
     mdata=np.zeros((nh,nv,4),dtype=str)    
     
-    #get horizontal nodes        
-    for ii,mm in enumerate(mlines[2:nh/ncol+3]):
-        hline=mm.strip().split()
-        for jj,hh in enumerate(hline):
-            try:
-                hnodes[ii*8+jj]=float(hh)
-            except IndexError:
-                pass
-            
+    #get horizontal nodes
+    jj=2
+    ii=0
+    while ii<nh:
+        hline=mlines[jj].strip().split()
+        for mm in hline:
+            hnodes[ii]=float(mm)
+            ii+=1
+        jj+=1
+    
     #get vertical nodes
-    for ii,mm in enumerate(mlines[nh/ncol+2:nv/ncol+nh/ncol+4]):
-        vline=mm.strip().split()
-        for jj,hh in enumerate(vline):
-            try:
-                vnodes[ii*8+jj]=float(hh)
-            except IndexError:
-                pass
+    ii=0
+    while ii<nv:
+        vline=mlines[jj].strip().split()
+        for mm in vline:
+            vnodes[ii]=float(mm)
+            ii+=1
+        jj+=1    
     
     #get free parameters        
-    for ii,mm in enumerate(mlines[nv/ncol+nh/ncol+4:]):
+    for ii,mm in enumerate(mlines[jj+1:]):
         kk=0
         while kk<4:        
             mline=mm.rstrip()
@@ -1555,6 +1571,20 @@ def read2Dmesh(meshfile,ncol=8):
 def read2DInmodel(inmodelfn):
     """
     read an INMODEL file for occam 2D
+    
+    Input:
+        inmodelfn = full path to INMODEL file
+    
+    Output:
+        rows = list of combined data blocks where first number of each list
+                represents the number of combined mesh layers for this 
+                regularization block.  The second number is the number of 
+                columns in the regularization block layer
+        cols = list of combined mesh columns for the regularization layer.
+               The sum of this list must be equal to the number of mesh
+               columns.
+        headerdict = dictionary of all the header information including the
+                     binding offset
     """
     
     ifid=open(inmodelfn,'r')
@@ -1570,6 +1600,9 @@ def read2DInmodel(inmodelfn):
         if iline.find(':')>0:
             iline=iline.strip().split(':')
             headerdict[iline[0]]=iline[1]
+            #append the last line
+            if iline[0].find('EXCEPTIONS')>0:
+                cols.append(ncols)
         else:
             iline=iline.strip().split()
             iline=[int(jj) for jj in iline]
@@ -2993,11 +3026,167 @@ def plotAllResponses(datafile,station,fignum=1):
     plt.show()
     
     
-def plotModel(iterfile,meshfile):
+def plot2DModel(iterfile,meshfile,inmodelfile,datafile,xpad=1.0,ypad=6.0,
+              mpad=0.5,spad=3.0,ms=60,stationid=None,
+              fdict={'size':8,'rotation':60,'weight':'normal'},
+              dpi=300,ylimits=None,xminorticks=5,yminorticks=1,climits=(0,4),
+              cmap='jet_r',fs=8):
     """
-    plot the mode as an image
-    """
+    plotModel will plot the model output by occam in the iteration file.
     
+    Inputs:
+        iterfile = full path to the iteration file that you want to plot
+        
+        meshfile = full path to mesh file (the forward modeling mesh)
+        
+        inmodelfile = full path to the INMODEL file (regularization mesh)
+        
+        datafile = full path to data file
+        
+        xpad = padding in the horizontal direction of model
+        
+        ypad = padding the in the vertical direction of the top of the model
+               to fit the station names and markers
+               
+        mpad = marker pad to fit right at the surface, haven't found a better
+               way of doing this automatically yet
+               
+        spad = padding of station names away from the top of the model, this
+                is kind of awkward at the moment especially if you zoom into 
+                the model, it usually looks retarded and doesn't fit
+                
+        ms = marker size in ambiguous points
+        
+        stationid = index of station names to plot -> ex. pb01sdr would be 
+                    stationid=(0,4) to plot pb01
+                    
+        fdict = font dictionary for the station names, can have keys:
+                'size' = font size
+                'rotation' = angle of rotation (deg) of font
+                'weight' = weight of font 
+                'color' = color of font
+                'style' = style of font ex. 'italics'
+                
+        dpi = dot per inch of figure, should be 300 for publications
+        
+        ylimits = limits of depth scale (km). ex, ylimits=(0,30)
+        
+        xminorticks = location of minor tick marks for the horizontal axis
+        
+        yminorticks = location of minor tick marks for vertical axis
+        
+        climits = limits of log10(resistivity). ex. climits=(0,4)
+        
+        cmap = color map to plot the model image
+        
+        fs = font size of axis labels
+        
+    """
+    #read in data file
+    rplst,slst,freq,title,theta=read2DdataFile(datafile)
+    
+    #read in MESH file
+    hnode,vnode,freeparam=read2Dmesh(meshfile)
+    
+    #read in INMODEL
+    cr,cc,header=read2DInmodel(inmodelfile)
+    bndgoff=float(header['BINDING OFFSET'])/1000.
+    
+    #read the iteration file
+    idict=read2DIterFile(iterfile)
+    
+    #make a meshgrid 
+    X,Y=np.meshgrid(hnode,vnode)
+    
+    cr=np.array(cr)
+    
+    nc=len(cr)
+    assert len(cr)==len(cc)
+    
+    resmodel=np.zeros((vnode.shape[0],hnode.shape[0]))
+    mm=0
+    for ii in range(nc):
+        #get the number of layers to combine
+        #this index will be the first index in the vertical direction
+        ny1=cr[:ii,0].sum()
+        #the second index  in the vertical direction
+        ny2=ny1+cr[ii][0]
+        #make the list of amalgamated columns an array for ease
+        lc=np.array(cc[ii])
+        #loop over the number of amalgamated blocks
+        for jj in range(len(cc[ii])):
+            #get first in index in the horizontal direction
+            nx1=lc[:jj].sum()
+            #get second index in horizontal direction
+            nx2=nx1+lc[jj]
+            #put the apporpriate resistivity value into all the amalgamated model
+            #blocks of the regularization grid into the forward model grid
+            resmodel[ny1:ny2,nx1:nx2]=idict['model'][mm]
+            mm+=1
+    
+    #make some arrays for plotting the model
+    
+    plotx=np.array([hnode[:ii+1].sum() for ii in range(len(hnode)-1)])/1000.
+    ploty=np.array([vnode[:ii+1].sum() for ii in range(len(vnode)-1)])/1000.
+    
+    #center the grid onto the station coordinates
+    x0=bndgoff-plotx[cc[0][0]]
+    plotx=plotx+x0
+    
+    #flip the arrays around for plotting purposes
+    #plotx=plotx[::-1]
+    ploty=ploty[::-1]
+    
+    #make a mesh grid to plot in the model coordinates
+    x,y=np.meshgrid(plotx,ploty)
+    
+    #flip the resmodel upside down so that the top is the stations
+    resmodel=np.flipud(resmodel)
+    
+    
+    plt.rcParams['font.size']=int(dpi/40.)
+    plt.rcParams['figure.subplot.left']=.08
+    plt.rcParams['figure.subplot.right']=.99
+    plt.rcParams['figure.subplot.bottom']=.1
+    plt.rcParams['figure.subplot.top']=.92
+    plt.rcParams['figure.subplot.wspace']=.01
+    #plot the model
+    fig=plt.figure(1,dpi=dpi)
+    plt.clf()
+    ax=fig.add_subplot(1,1,1)
+    
+    ax.pcolormesh(x,y,resmodel,cmap=cmap,vmin=climits[0],vmax=climits[1])
+    #ax.set_ylim(ploty[0],ploty[-1]-2.0)
+    
+    cbx=make_axes(ax,shrink=.8,pad=.01)
+    cb=ColorbarBase(cbx[0],cmap=cmap,norm=Normalize(vmin=climits[0],
+                    vmax=climits[1]))
+    cb.set_label('Resistivity ($\Omega \cdot$m)',
+                 fontdict={'size':fs,'weight':'bold'})
+    cb.set_ticks(np.arange(int(climits[0]),int(climits[1])+1))
+    
+    offsetlst=[]
+    for rpdict in rplst:
+        ax.scatter(rpdict['offset']/1000.,-mpad,marker='v',c='k',s=ms)
+        ax.text(rpdict['offset']/1000.,-spad,rpdict['station'][0:],
+                horizontalalignment='center',
+                verticalalignment='baseline',
+                fontdict=fdict)
+        offsetlst.append(rpdict['offset']/1000.)
+    
+    #set the initial limits of the plot to be square about the profile line  
+    if ylimits==None:  
+        ax.set_ylim(abs(max(offsetlst)-min(offsetlst)),-ypad)
+    else:
+        ax.set_ylim(ylimits[1],ylimits[0]-ypad)
+    ax.set_xlim(min(offsetlst)-xpad,max(offsetlst)+xpad)
+    #set the axis properties
+    ax.xaxis.set_minor_locator(MultipleLocator(xminorticks))
+    ax.yaxis.set_minor_locator(MultipleLocator(yminorticks))
+    ax.set_xlabel('Horizontal Distance (km)',fontdict={'size':fs,'weight':'bold'})
+    ax.set_ylabel('Depth (km)',fontdict={'size':fs,'weight':'bold'})
+    plt.show()
+      
 def plotPseudoSection(datafn,respfn=None,fignum=1,rcmap='jet_r',pcmap='jet',
                       rlim=((0,4),(0,4)),plim=((0,90),(0,90)),ml=2,
                       stationid=[0,4]):
