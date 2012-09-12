@@ -3026,11 +3026,13 @@ def plotAllResponses(datafile,station,fignum=1):
     plt.show()
     
     
-def plot2DModel(iterfile,meshfile,inmodelfile,datafile,xpad=1.0,ypad=6.0,
-              mpad=0.5,spad=3.0,ms=60,stationid=None,
-              fdict={'size':8,'rotation':60,'weight':'normal'},
-              dpi=300,ylimits=None,xminorticks=5,yminorticks=1,climits=(0,4),
-              cmap='jet_r',fs=8,femesh='off',regmesh='off',aspect='auto'):
+def plot2DModel(iterfile,meshfile=None,inmodelfile=None,datafile=None,
+                xpad=1.0,ypad=6.0,mpad=0.5,spad=3.0,ms=60,stationid=None,
+                fdict={'size':8,'rotation':60,'weight':'normal'},
+                dpi=300,ylimits=None,xminorticks=5,yminorticks=1,
+                climits=(0,4), cmap='jet_r',fs=8,femesh='off',
+                regmesh='off',aspect='auto',title='on',meshnum='off',
+                blocknum='off',blkfdict={'size':3},fignum=1):
     """
     plotModel will plot the model output by occam in the iteration file.
     
@@ -3088,14 +3090,68 @@ def plot2DModel(iterfile,meshfile,inmodelfile,datafile,xpad=1.0,ypad=6.0,
         aspect = aspect ratio of the figure, depends on your line length and
                 the depth you want to investigate
         
+        title = 'on' to put the RMS and Roughness as the title, or input a 
+                string that will be added to the RMS and roughness, or put 
+                None to not put a title on the plot and print out RMS and 
+                roughness
+        
+        meshnum = 'on' to plot FE mesh block numbers
+        
+        fignum = figure number to plot to
+        
+        blocknum = 'on' to plot numbers on the regularization blocks
+        
+        blkfdict = font dictionary for the numbering of regularization blocks
     """
+    
+    #get directory path of inversion folder
+    invpath=os.path.dirname(iterfile)    
+    
+    #get meshfile if none is provides assuming the mesh file is named with
+    #mesh
+    if meshfile==None:
+        meshfile=os.path.join(invpath,'MESH')
+        if os.path.isfile(meshfile)==False:
+            for ff in os.listdir(invpath):
+                if ff.lower().find('mesh')>=0:
+                    meshfile=os.path.join(invpath,ff)
+            if os.path.isfile(meshfile)==False:
+                raise NameError('Could not find a mesh file, input manually')
+    
+    #get inmodelfile if none is provides assuming the mesh file is named with
+    #inmodel
+    if inmodelfile==None:
+        inmodelfile=os.path.join(invpath,'INMODEL')
+        if os.path.isfile(inmodelfile)==False:
+            for ff in os.listdir(invpath):
+                if ff.lower().find('inmodel')>=0:
+                    inmodelfile=os.path.join(invpath,ff)
+            if os.path.isfile(inmodelfile)==False:
+                raise NameError('Could not find a model file, input manually')
+                
+    #get datafile if none is provides assuming the mesh file is named with
+    #.dat
+    if datafile==None:
+        datafile=os.path.join(invpath,'Data.dat')
+        if os.path.isfile(inmodelfile)==False:
+            for ff in os.listdir(invpath):
+                if ff.lower().find('.dat')>=0:
+                    inmodelfile=os.path.join(invpath,ff)
+            if os.path.isfile(datafile)==False:
+                raise NameError('Could not find a data file, input manually')
+        
+            
+    
     #read in data file
-    rplst,slst,freq,title,theta=read2DdataFile(datafile)
+    print 'Reading data from: ',datafile
+    rplst,slst,freq,datatitle,theta=read2DdataFile(datafile)
     
     #read in MESH file
+    print 'Reading mesh from: ',meshfile
     hnode,vnode,freeparam=read2Dmesh(meshfile)
     
     #read in INMODEL
+    print 'Reading model from: ',inmodelfile
     cr,cc,header=read2DInmodel(inmodelfile)
     bndgoff=float(header['BINDING OFFSET'])/1000.
     
@@ -3141,8 +3197,8 @@ def plot2DModel(iterfile,meshfile,inmodelfile,datafile,xpad=1.0,ypad=6.0,
     plotx=plotx+x0
     
     #flip the arrays around for plotting purposes
-    #plotx=plotx[::-1]
-    ploty=ploty[::-1]
+    #plotx=plotx[::-1] and make the first layer start at zero
+    ploty=ploty[::-1]-ploty[0]
     
     #make a mesh grid to plot in the model coordinates
     x,y=np.meshgrid(plotx,ploty)
@@ -3158,7 +3214,7 @@ def plot2DModel(iterfile,meshfile,inmodelfile,datafile,xpad=1.0,ypad=6.0,
     plt.rcParams['figure.subplot.top']=.92
     plt.rcParams['figure.subplot.wspace']=.01
     #plot the model
-    fig=plt.figure(1,dpi=dpi)
+    fig=plt.figure(fignum,dpi=dpi)
     plt.clf()
     ax=fig.add_subplot(1,1,1,aspect=aspect)
     
@@ -3175,10 +3231,18 @@ def plot2DModel(iterfile,meshfile,inmodelfile,datafile,xpad=1.0,ypad=6.0,
     offsetlst=[]
     for rpdict in rplst:
         ax.scatter(rpdict['offset']/1000.,-mpad,marker='v',c='k',s=ms)
-        ax.text(rpdict['offset']/1000.,-spad,rpdict['station'][0:],
-                horizontalalignment='center',
-                verticalalignment='baseline',
-                fontdict=fdict)
+        if stationid!=None:
+            ax.text(rpdict['offset']/1000.,-spad,
+                    rpdict['station'][stationid[0]:stationid[1]],
+                    horizontalalignment='center',
+                    verticalalignment='baseline',
+                    fontdict=fdict)
+        else:
+            ax.text(rpdict['offset']/1000.,-spad,
+                    rpdict['station'],
+                    horizontalalignment='center',
+                    verticalalignment='baseline',
+                    fontdict=fdict)
         offsetlst.append(rpdict['offset']/1000.)
     
     #set the initial limits of the plot to be square about the profile line  
@@ -3193,14 +3257,32 @@ def plot2DModel(iterfile,meshfile,inmodelfile,datafile,xpad=1.0,ypad=6.0,
     ax.set_xlabel('Horizontal Distance (km)',fontdict={'size':fs,'weight':'bold'})
     ax.set_ylabel('Depth (km)',fontdict={'size':fs,'weight':'bold'})
     
+    #set title as rms and roughness
+    if type(title) is str:
+        if title=='on':
+            ax.set_title('RMS {0:.2f}, Roughness={1:.0f}'.format(
+                     float(idict['Misfit Value']),
+                     float(idict['Roughness Value'])),
+                     fontdict={'size':fs+1,'weight':'bold'})
+        else:
+            ax.set_title(title+'; RMS {0:.2f}, Roughness={1:.0f}'.format(
+                     float(idict['Misfit Value']),
+                     float(idict['Roughness Value'])),
+                     fontdict={'size':fs+1,'weight':'bold'})
+    else:
+        print 'RMS {0:.2f}, Roughness={1:.0f}'.format(
+                     float(idict['Misfit Value']),
+                     float(idict['Roughness Value'])) 
+    
+    #plot forward model mesh    
     if femesh=='on':
-        #plot forward model mesh
         for xx in plotx:
             ax.plot([xx,xx],[0,ploty[0]],color='k',lw=.5)
         for yy in ploty:
             ax.plot([plotx[0],plotx[-1]],[yy,yy],color='k',lw=.5)
+    
+    #plot the regularization mesh
     if regmesh=='on':
-        #plot the regularization mesh
         linelst=[]
         for ii in range(nc):
             #get the number of layers to combine
@@ -3219,11 +3301,53 @@ def plot2DModel(iterfile,meshfile,inmodelfile,datafile,xpad=1.0,ypad=6.0,
                 #get second index in horizontal direction
                 nx2=nx1+lc[jj]
                 try:
+                    if ny1==0:
+                        ny1=1
                     xline=ax.plot([plotx[nx1],plotx[nx1]],[ploty[-ny1],ploty[-ny2]],
                                   color='b',lw=.5)
                     linelst.append(xline)
                 except IndexError:
                     pass
+                
+    ##plot the mesh block numbers
+    if meshnum=='on':
+        kk=1
+        for yy in ploty[::-1]:
+            for xx in plotx:
+                ax.text(xx,yy,'{0}'.format(kk),fontdict={'size':3})
+                kk+=1
+                
+    ##plot regularization block numbers
+    if blocknum=='on':
+        kk=1
+        for ii in range(nc):
+            #get the number of layers to combine
+            #this index will be the first index in the vertical direction
+            ny1=cr[:ii,0].sum()
+            #the second index  in the vertical direction
+            ny2=ny1+cr[ii][0]
+            #make the list of amalgamated columns an array for ease
+            lc=np.array(cc[ii])
+            #loop over the number of amalgamated blocks
+            for jj in range(len(cc[ii])):
+                #get first in index in the horizontal direction
+                nx1=lc[:jj].sum()
+                #get second index in horizontal direction
+                nx2=nx1+lc[jj]
+                try:
+                    if ny1==0:
+                        ny1=1
+                    #get center points of the blocks
+                    yy=ploty[-ny1]-(ploty[-ny1]-ploty[-ny2])/2
+                    xx=plotx[nx1]-(plotx[nx1]-plotx[nx2])/2
+                    #put the number
+                    ax.text(xx,yy,'{0}'.format(kk),fontdict=blkfdict,
+                            horizontalalignment='center',
+                            verticalalignment='center')
+                    kk+=1
+                except IndexError:
+                    pass
+                
     plt.show()
       
 def plotPseudoSection(datafn,respfn=None,fignum=1,rcmap='jet_r',pcmap='jet',
