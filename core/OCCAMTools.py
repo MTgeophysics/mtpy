@@ -3133,10 +3133,10 @@ def plot2DModel(iterfile,meshfile=None,inmodelfile=None,datafile=None,
     #.dat
     if datafile==None:
         datafile=os.path.join(invpath,'Data.dat')
-        if os.path.isfile(inmodelfile)==False:
+        if os.path.isfile(datafile)==False:
             for ff in os.listdir(invpath):
                 if ff.lower().find('.dat')>=0:
-                    inmodelfile=os.path.join(invpath,ff)
+                    datafile=os.path.join(invpath,ff)
             if os.path.isfile(datafile)==False:
                 raise NameError('Could not find a data file, input manually')
         
