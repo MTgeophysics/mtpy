@@ -2166,7 +2166,7 @@ def read2DIterFile(iterfn,iterpath=None):
     #put header info into dictionary with similar keys
     while ilines[ii].find('Param')!=0:
         iline=ilines[ii].strip().split(':')
-        idict[iline[0]]=iline[1]
+        idict[iline[0]]=iline[1].strip()
         ii+=1
     
     #get number of parameters
@@ -3032,18 +3032,22 @@ def plot2DModel(iterfile,meshfile=None,inmodelfile=None,datafile=None,
                 dpi=300,ylimits=None,xminorticks=5,yminorticks=1,
                 climits=(0,4), cmap='jet_r',fs=8,femesh='off',
                 regmesh='off',aspect='auto',title='on',meshnum='off',
-                blocknum='off',blkfdict={'size':3},fignum=1):
+                blocknum='off',blkfdict={'size':3},fignum=1,
+                plotdimensions=(10,10)):
     """
     plotModel will plot the model output by occam in the iteration file.
     
     Inputs:
         iterfile = full path to the iteration file that you want to plot
         
-        meshfile = full path to mesh file (the forward modeling mesh)
+        meshfile = full path to mesh file (the forward modeling mesh).  If 
+                    none it will look for a file with mesh in the name.
         
-        inmodelfile = full path to the INMODEL file (regularization mesh)
+        inmodelfile = full path to the INMODEL file (regularization mesh).
+                      If none it will look for a file with inmodel in the name.
         
-        datafile = full path to data file
+        datafile = full path to data file.  If none is input it will use the
+                    data file found in the iteration file.
         
         xpad = padding in the horizontal direction of model
         
@@ -3068,6 +3072,8 @@ def plot2DModel(iterfile,meshfile=None,inmodelfile=None,datafile=None,
                 'weight' = weight of font 
                 'color' = color of font
                 'style' = style of font ex. 'italics'
+                
+        plotdimensions = x-y dimensions of the figure (10,10) in inches
                 
         dpi = dot per inch of figure, should be 300 for publications
         
@@ -3107,6 +3113,9 @@ def plot2DModel(iterfile,meshfile=None,inmodelfile=None,datafile=None,
     #get directory path of inversion folder
     invpath=os.path.dirname(iterfile)    
     
+    #read in iteration file
+    idict=read2DIterFile(iterfile)    
+    
     #get meshfile if none is provides assuming the mesh file is named with
     #mesh
     if meshfile==None:
@@ -3132,7 +3141,9 @@ def plot2DModel(iterfile,meshfile=None,inmodelfile=None,datafile=None,
     #get datafile if none is provides assuming the mesh file is named with
     #.dat
     if datafile==None:
-        datafile=os.path.join(invpath,'Data.dat')
+        datafile=idict['Data File']
+        if datafile.find(os.sep)==-1:
+            datafile=os.path.join(invpath,datafile)
         if os.path.isfile(datafile)==False:
             for ff in os.listdir(invpath):
                 if ff.lower().find('.dat')>=0:
@@ -3140,8 +3151,6 @@ def plot2DModel(iterfile,meshfile=None,inmodelfile=None,datafile=None,
             if os.path.isfile(datafile)==False:
                 raise NameError('Could not find a data file, input manually')
         
-            
-    
     #read in data file
     print 'Reading data from: ',datafile
     rplst,slst,freq,datatitle,theta=read2DdataFile(datafile)
@@ -3154,9 +3163,6 @@ def plot2DModel(iterfile,meshfile=None,inmodelfile=None,datafile=None,
     print 'Reading model from: ',inmodelfile
     cr,cc,header=read2DInmodel(inmodelfile)
     bndgoff=float(header['BINDING OFFSET'])/1000.
-    
-    #read the iteration file
-    idict=read2DIterFile(iterfile)
     
     #make a meshgrid 
     X,Y=np.meshgrid(hnode,vnode)
@@ -3214,7 +3220,7 @@ def plot2DModel(iterfile,meshfile=None,inmodelfile=None,datafile=None,
     plt.rcParams['figure.subplot.top']=.92
     plt.rcParams['figure.subplot.wspace']=.01
     #plot the model
-    fig=plt.figure(fignum,dpi=dpi)
+    fig=plt.figure(fignum,plotdimensions,dpi=dpi)
     plt.clf()
     ax=fig.add_subplot(1,1,1,aspect=aspect)
     
@@ -3260,7 +3266,9 @@ def plot2DModel(iterfile,meshfile=None,inmodelfile=None,datafile=None,
     #set title as rms and roughness
     if type(title) is str:
         if title=='on':
-            ax.set_title('RMS {0:.2f}, Roughness={1:.0f}'.format(
+            titlestr=os.path.join(os.path.basename(os.path.dirname(iterfile)),
+                                  os.path.basename(iterfile))
+            ax.set_title(titlestr+': RMS {0:.2f}, Roughness={1:.0f}'.format(
                      float(idict['Misfit Value']),
                      float(idict['Roughness Value'])),
                      fontdict={'size':fs+1,'weight':'bold'})
