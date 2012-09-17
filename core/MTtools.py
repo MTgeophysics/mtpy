@@ -1385,6 +1385,8 @@ def rewriteedi(edifile,znew=None,zvarnew=None,freqnew=None,newfile='y',
             nfreq=int(linelst[-1].rstrip())
         if line.find('IMPEDANCES')>=0:
             spot.append(ii)
+        if line.find('SPECTRA')>=0:
+            spot.append(ii)
         if line.find('TIPPER')>=0:
             spot.append(ii)
     

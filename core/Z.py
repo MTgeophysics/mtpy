@@ -29,6 +29,9 @@ rtcmapdict={'red':((0.0,1.0,1.0),(0.5,1.0,1.0),(1.0,0.0,0.0)),
             'blue':((0.0,0.0,0.0),(0.5,1.0,1.0),(1.0,1.0,1.0))}
 rtcmap=LinearSegmentedColormap('rtcmap',rtcmapdict,256)
 
+#spacing for text files
+tsp='   '
+
 class Edi(object):
     """
     This is a data type for edi files.  Included are 
@@ -529,6 +532,261 @@ class Edi(object):
                                 pass
                     ii+=1
                     kk+=1
+    
+    def rewriteedi(self,znew=None,zvarnew=None,freqnew=None,newfile='y',
+               tipnew=None,tipvarnew=None,thetar=0,dr='n'):
+        """
+        rewriteedi(edifile) will rewrite an edifile say if it needs to be rotated 
+        or distortion removed.
+    
+        Inputs:
+            edifile = full path to edifile to be rewritten
+            znew = impedance tensor if a new one has been created
+            zvarnew = errors in impedance tensor if a new one has been created
+            freqnew = new frequency list if one has been created
+            newfile = 'y' for yes or 'n' for no if you want a new file to be
+                     created.
+            tipnew = new tipper array
+            tipvarnew = new tipper error array
+            thetar = rotation angle counter clockwise (N=0, E=-90)
+            dr = 'n' if no distortion removal and 'y' for distortion removal
+        
+        Outputs:
+            nedi = dirpath(edifile)+basename(edifile)+rw or dr if dr='y'
+        
+        """
+    
+        #get direcotry path make one if not there    
+        dirpath=os.path.dirname(self.edifn)
+        if newfile=='y':
+            if dr=='y':
+                drdirpath=os.path.join(dirpath,'DR')
+            else:
+                drdirpath=os.path.join(dirpath,'Rot{0:.0f}'.format(thetar))
+            if not os.path.exists(drdirpath):
+                os.mkdir(drdirpath)
+                print 'Made directory: ',drdirpath
+            else:
+                pass
+            #copy files into a common directory
+            drpath=os.path.dirname(dirpath)
+            count=1
+            while count<10:
+                drpath=os.path.dirname(drpath)
+                for folder in os.listdir(drpath):
+                    if folder.find('EDIfiles')>=0:
+                        edifolderyn='y'
+                        drcopypath=os.path.join(drpath,'EDIfiles')
+                        if os.path.exists(drcopypath):
+                            if not os.path.exists(os.path.join(drcopypath,'DR')):
+                                os.mkdir(os.path.join(drcopypath,'DR'))
+                                print 'Made directory ',os.path.join(drcopypath,'DR')
+                    else:
+                        edifolderyn='n'
+                        drcopypath=os.path.dirname(drdirpath)
+                count+=1
+            
+            #get new file name
+            if dr=='y':
+                nedibn=os.path.basename(self.edifn)[:-4]+'dr.edi'
+            else:
+                nedibn=os.path.basename(self.edifn)[:-4]+'rw.edi'
+            #open a new edifile
+            newedifid=open(os.path.join(drdirpath,nedibn),'w')
+            
+        else:
+            nedibn=os.path.basename(self.edifn)[:-4]+'c.edi'
+            newedifid=open(os.path.join(dirpath,nedibn),'w')
+            edifolderyn='n'
+        
+        #if there is no znew then rotate the data
+        if znew==None:
+            #read in the data
+            self.getInfo()
+            #rotate data if desired
+            if thetar!=0:
+                znew=np.zeros_like(self.z)
+                zvarnew=np.zeros_like(self.z)
+                #convert thetar into radians
+                if abs(thetar)>2*np.pi:
+                    self.thetar=thetar*(np.pi/180)
+                else:
+                    self.thetar=thetar
+                #make rotation matrix
+                rotmatrix=np.array([[np.cos(self.thetar), np.sin(self.thetar)],
+                             [-np.sin(self.thetar), np.cos(self.thetar)]])
+                trotmatrix=np.array([np.cos(selt.thetar),np.sin(self.thetar)])
+                #rotate the data
+                for rr in range(len(self.frequency)):
+                    self.znew[rr]=np.dot(rotmatrix,np.dot(self.z[rr],rotmatrix.T))
+                    self.zvarnew[rr]=np.dot(rotmatrix,np.dot(self.zvar[rr],
+                                            rotmatrix.T))
+                    self.tippernew[rr]=np.dot(trotmatrix,
+                                            np.dot(self.tipper[rr],
+                                                   trotmatrix.T))
+                    self.tippervarnew[rr]=np.dot(trotmatrix,
+                                                np.dot(self.tippervar[rr],
+                                                       trotmatrix.T))
+            #otherwise read in the new Z
+            else:
+                self.znew=self.z
+                self.zvarnew=self.zvar
+                self.tippernew=self.tipper
+                self.tippervarnew=self.tippervar
+        else:
+            self.znew=znew
+            self.zvarnew=zvarnew
+            self.tippernew=self.tipper
+            self.tippervarnew=self.tippervar
+        
+        #open existing edi file
+        edifid=open(self.edifn,'r')
+        #read existing edi file and find where impedances start and number of freq
+        edilines=edifid.readlines()
+        spot=[]
+        for ii,line in enumerate(edilines):
+            if line.find('>FREQ')>=0:
+                spot.append(ii)
+            if line.find('IMPEDANCES')>=0:
+                spot.append(ii)
+            if line.find('SPECTRA')>=0:
+                spot.append(ii)
+        
+        #write lines until the frequency list or spectra
+        for ll,line in enumerate(edilines[0:spot[0]]):
+            newedifid.write(line)
+        
+        #write in frequencies
+        #if there is a new frequency list
+        if freqnew!=None:
+            #get number of frequencies    
+            nfreq=len(freqnew)
+            
+            #get order of frequencies        
+            if freqnew[0]<freqnew[-1]:
+                order='INC'
+            else:
+                order='DEC'
+            
+            #write frequency header
+            newedifid.write('>FREQ'+tsp+'NFREQ='+str(int(nfreq))+tsp+'ORDER='+order+
+                            tsp+'// '+str(int(nfreq))+'\n')
+            for kk in range(int(nfreq)):
+                newedifid.write(tsp+'{0:.6g}'.format(freqnew[kk]))
+                if np.remainder(float(kk)+1,5.)==0:
+                    newedifid.write('\n')
+            newedifid.write('\n')
+#            newedifid.write('>!****IMPEDANCES****!'+' Rotated {0:.0f} counterclockwise\n'.format(thetar*180/np.pi))
+        #from the start of file to where impedances start write from existing edifile
+        else:
+            #get order of frequencies        
+            if self.frequency[0]<self.frequency[-1]:
+                order='INC'
+            else:
+                order='DEC'
+                
+            nfreq=len(self.frequency)
+            #write frequency header
+            newedifid.write('>FREQ'+tsp+'NFREQ='+str(int(nfreq))+tsp+'ORDER='+order+
+                            tsp+'// '+str(int(nfreq))+'\n')
+            for kk in range(int(nfreq)):
+                newedifid.write(tsp+'{0:.6f}'.format(self.frequency[kk]))
+                if np.remainder(float(kk)+1,5.)==0:
+                    newedifid.write('\n')
+            newedifid.write('\n')
+        newedifid.write('>!****IMPEDANCES****!'+' Rotated {0:.0f} counterclockwise\n'.format(thetar*180/np.pi))
+        
+        #create an implst to make code simpler
+        implst=[['ZXXR',0,0],['ZXXI',0,0],['ZXX.VAR',0,0],['ZXYR',0,1],['ZXYI',0,1],\
+            ['ZXY.VAR',0,1],['ZYXR',1,0],['ZYXI',1,0], ['ZYX.VAR',1,0],\
+            ['ZYYR',1,1],['ZYYI',1,1],['ZYY.VAR',1,1]]
+        #write new impedances and variances
+        for jj,imp in enumerate(implst):
+            mm=imp[1]
+            nn=imp[2]
+            newedifid.write('>'+imp[0]+' // '+str(int(nfreq))+'\n')
+            if imp[0].find('.')==-1:
+                if imp[0].find('R')>=0:
+                    for kk in range(int(nfreq)):
+                        newedifid.write(tsp+'{0:+.6E}'.format(self.znew.real[kk,mm,nn]))
+                        if kk>0:
+                            if np.remainder(float(kk)+1,5.)==0:
+                                newedifid.write('\n')
+                        else:
+                            pass
+                elif imp[0].find('I')>=0:
+                    for kk in range(int(nfreq)):
+                        newedifid.write(tsp+'{0:+.6E}'.format(self.znew.imag[kk,mm,nn]))
+                        if kk>0:
+                            if np.remainder(float(kk)+1,5.)==0:
+                                newedifid.write('\n')
+                        else:
+                            pass
+            else:
+                for kk in range(int(nfreq)):
+                    newedifid.write(tsp+'{0:+.6E}'.format(self.zvarnew[kk,mm,nn]))
+                    if kk>0:
+                        if np.remainder(float(kk)+1,5.)==0:
+                            newedifid.write('\n')
+                    else:
+                        pass
+            newedifid.write('\n')
+        
+        newedifid.write('>!****TIPPER****!'+'\n')
+        tiplst=[['TXR',0],['TXI',0],['TX.VAR',0],['TYR',1],['TYI',1],
+                ['TY.VAR',1]]
+
+        for jj,tip in enumerate(tiplst):
+            mm=tip[1]
+            newedifid.write('>'+tip[0]+' // '+str(int(nfreq))+'\n')
+            if tip[0].find('.')==-1:
+                if tip[0].find('R')>=0:
+                    for kk in range(int(nfreq)):
+                        newedifid.write(tsp+'{0:+.6E}'.format(self.tippernew.real[kk,mm]))
+                        if kk>0:
+                            if np.remainder(float(kk)+1,5.)==0:
+                                newedifid.write('\n')
+                        else:
+                            pass
+                elif tip[0].find('I')>=0:
+                    for kk in range(int(nfreq)):
+                        newedifid.write(tsp+'{0:+.6E}'.format(self.tippernew.imag[kk,mm]))
+                        if kk>0:
+                            if np.remainder(float(kk)+1,5.)==0:
+                                newedifid.write('\n')
+                        else:
+                            pass
+            else:
+                for kk in range(int(nfreq)):
+                    newedifid.write(tsp+'{0:+.6E}'.format(self.tippervarnew.real[kk,mm]))
+                    if kk>0:
+                        if np.remainder(float(kk)+1,5.)==0:
+                            newedifid.write('\n')
+                    else:
+                        pass
+        newedifid.write('\n')
+        newedifid.write('>END')
+        
+        edifid.close()
+        newedifid.close()
+        #copy file to a common folder
+        if edifolderyn=='y':
+            if newfile=='y':
+                if dr=='y':
+                    shutil.copy(os.path.join(drdirpath,newedifile),
+                                os.path.join(drcopypath,'DR',newedifile))
+                else:
+                    shutil.copy(os.path.join(drdirpath,newedifile),
+                                os.path.join(drcopypath,'RW',newedifile))
+            else:
+                shutil.copy(os.path.join(dirpath,newedifile),
+                        os.path.join(drcopypath,newedifile))
+        else:
+            pass
+        if newfile=='y':
+            self.nedifn=os.path.join(drdirpath,nedibn)
+        else:
+            self.nedifn=os.path.join(dirpath,nedibn)
 
 class Z(Edi):
     """
@@ -709,8 +967,7 @@ class Z(Edi):
                             (Xvar[1,1]/X[1,1])**2))**2)
             #make new edi file. need to flip zdr and zvardr back to normal order 
             #for edi file.
-            newedifn=mt.rewriteedi(self.filename,znew=zdr,
-                                   zvarnew=zvardr.real)
+            newedifn=self.rewriteedi(znew=zdr,zvarnew=zvardr.real)
             
         return D,newedifn
   

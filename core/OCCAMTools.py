@@ -917,21 +917,32 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
                 print 'Found station edifile: ', filename
                 surveydict={} #create a dictionary for the station data and info
                 edifile=os.path.join(edipath,filename) #create filename path
-                edidict=mt.readedi(edifile) #read in edifile as a dictionary
-                freq=edidict['frequency']
+                z1=Z.Z(edifile)
+#                edidict=mt.readedi(edifile) #read in edifile as a dictionary
+                freq=z1.frequency                
+#                freq=edidict['frequency']
                 #check to see if the frequency is in descending order
                 if freq[0]<freq[-1]:
                     freq=freq[::-1]
-                    z=edidict['z'][::-1,:,:]
-                    zvar=edidict['zvar'][::-1,:,:]
-                    tip=edidict['tipper'][::-1,:,:]
-                    tipvar=edidict['tippervar'][::-1,:,:]
+                    z=z1.z[::-1,:,:]
+                    zvar=z1.zvar[::-1,:,:]
+                    tip=z1.tipper[::-1,:,:]
+                    tipvar=z1.tippervar[::-1,:,:]
+                    
+#                    z=edidict['z'][::-1,:,:]
+#                    zvar=edidict['zvar'][::-1,:,:]
+#                    tip=edidict['tipper'][::-1,:,:]
+#                    tipvar=edidict['tippervar'][::-1,:,:]
                     print 'Flipped to descending frequency for station '+station
                 else:
-                    z=edidict['z']
-                    zvar=edidict['zvar']
-                    tip=edidict['tipper']
-                    tipvar=edidict['tippervar']
+                    z=z1.z
+                    zvar=z1.zvar
+                    tip=z1.tipper
+                    tipvar=z1.tippervar
+#                    z=edidict['z']
+#                    zvar=edidict['zvar']
+#                    tip=edidict['tipper']
+#                    tipvar=edidict['tippervar']
                 #rotate matrices if angle is greater than 0
                 if thetar!=0:
                     for rr in range(len(z)):
@@ -941,7 +952,8 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
                 else:
                     pass
                         
-                zone,east,north=utm2ll.LLtoUTM(23,edidict['lat'],edidict['lon'])
+#                zone,east,north=utm2ll.LLtoUTM(23,edidict['lat'],edidict['lon'])
+                zone,east,north=utm2ll.LLtoUTM(23,z1.lat,z1.lon)
                 #put things into a dictionary to sort out order of stations
                 surveydict['station']=station
                 surveydict['east']=east
@@ -952,8 +964,10 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
                 surveydict['freq']=freq
                 surveydict['tipper']=tip
                 surveydict['tippervar']=tipvar
-                surveydict['lat']=edidict['lat']
-                surveydict['lon']=edidict['lon']
+#                surveydict['lat']=edidict['lat']
+                surveydict['lat']=z1.lat
+#                surveydict['lon']=edidict['lon']
+                surveydict['lon']=z1.lon
                 freqlst.append(freq)
                 eastlst.append(east)
                 northlst.append(north)
@@ -1318,7 +1332,7 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
     #                             write dat file
     #===========================================================================
     if savepath!=None:
-        if savepath.find('.')>0:
+        if os.path.basename(savepath).find('.')>0:
             datfilename=savepath
         else:
             if not os.path.exists(savepath):
@@ -2504,6 +2518,7 @@ def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
                                         rplst[ii]['phaseyx'][3]))
             rms=np.sqrt(np.sum(ms**2 for ms in rmslst)/len(rmslst))
             fig=plt.figure(ii+1,[9,10],dpi=dpi)
+            plt.clf()
             
             #plot resistivity
             axr=fig.add_subplot(gs[:4,:])
@@ -2718,7 +2733,7 @@ def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
                                         rplst[ii]['phaseyx'][3]))
             rms=np.sqrt(np.sum(ms**2 for ms in rmslst)/len(rmslst))
             fig=plt.figure(ii+1,dpi=dpi)
-            
+            plt.clf()
             #plot resistivity
             #cut out missing data points first
             axr=fig.add_subplot(gs[:4,:])
@@ -3033,7 +3048,7 @@ def plot2DModel(iterfile,meshfile=None,inmodelfile=None,datafile=None,
                 climits=(0,4), cmap='jet_r',fs=8,femesh='off',
                 regmesh='off',aspect='auto',title='on',meshnum='off',
                 blocknum='off',blkfdict={'size':3},fignum=1,
-                plotdimensions=(10,10)):
+                plotdimensions=(10,10),grid='off'):
     """
     plotModel will plot the model output by occam in the iteration file.
     
@@ -3108,6 +3123,10 @@ def plot2DModel(iterfile,meshfile=None,inmodelfile=None,datafile=None,
         blocknum = 'on' to plot numbers on the regularization blocks
         
         blkfdict = font dictionary for the numbering of regularization blocks
+        
+        grid = major for major ticks grid
+               minor for a grid of the minor ticks
+               both for a grid with major and minor ticks
     """
     
     #get directory path of inversion folder
@@ -3236,13 +3255,17 @@ def plot2DModel(iterfile,meshfile=None,inmodelfile=None,datafile=None,
     
     offsetlst=[]
     for rpdict in rplst:
+        #plot the station marker
         ax.scatter(rpdict['offset']/1000.,-mpad,marker='v',c='k',s=ms)
+        #put station id onto station marker
+        #if there is a station id index
         if stationid!=None:
             ax.text(rpdict['offset']/1000.,-spad,
                     rpdict['station'][stationid[0]:stationid[1]],
                     horizontalalignment='center',
                     verticalalignment='baseline',
                     fontdict=fdict)
+        #otherwise put on the full station name found form data file
         else:
             ax.text(rpdict['offset']/1000.,-spad,
                     rpdict['station'],
@@ -3262,6 +3285,15 @@ def plot2DModel(iterfile,meshfile=None,inmodelfile=None,datafile=None,
     ax.yaxis.set_minor_locator(MultipleLocator(yminorticks))
     ax.set_xlabel('Horizontal Distance (km)',fontdict={'size':fs,'weight':'bold'})
     ax.set_ylabel('Depth (km)',fontdict={'size':fs,'weight':'bold'})
+    #put a grid on if one is desired    
+    if grid=='major':
+        ax.grid(alpha=.3,which='major')
+    if grid=='minor':
+        ax.grid(alpha=.3,which='minor')
+    if grid=='both':
+        ax.grid(alpha=.3,which='both')
+    else:
+        pass
     
     #set title as rms and roughness
     if type(title) is str:
