@@ -16,6 +16,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.patches import Ellipse
 from matplotlib.colors import LinearSegmentedColormap,Normalize
 from matplotlib.colorbar import *
+import LatLongUTMconversion as utm2ll
 
 #make a custom colormap to use for plotting
 ptcmapdict={'red':((0.0,1.0,1.0),(1.0,1.0,1.0)),
@@ -300,7 +301,7 @@ class Edi(object):
                     eline=eline.strip().split()
                     for nn,estr in enumerate(eline):
                         try:
-                            self.frequency[kk*ncol+nn+kk]=float(estr)
+                            self.frequency[kk*(ncol-1)+nn+kk]=float(estr)
                         except IndexError:
                             pass
                     kk+=1
@@ -342,26 +343,26 @@ class Edi(object):
                     if zkey=='ZRO':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.zrot[kk*ncol+nn+kk]=float(estr)
+                                self.zrot[kk*(ncol-1)+nn+kk]=float(estr)
                             except IndexError:
                                 pass
                     elif zcomp=='R':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.z[kk*ncol+nn+kk,z0,z1]=float(estr)
+                                self.z[kk*(ncol-1)+nn+kk,z0,z1]=float(estr)
                             except IndexError:
                                 pass
                     elif zcomp=='I':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.z[kk*ncol+nn+kk,z0,z1]=self.z[kk*ncol+nn+kk,z0,z1]+\
+                                self.z[kk*(ncol-1)+nn+kk,z0,z1]=self.z[kk*(ncol-1)+nn+kk,z0,z1]+\
                                                             1j*float(estr)
                             except IndexError:
                                 pass
                     elif zcomp=='.VAR':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.zvar[kk*ncol+nn+kk,z0,z1]=float(estr)
+                                self.zvar[kk*(ncol-1)+nn+kk,z0,z1]=float(estr)
                             except IndexError:
                                 pass
                     ii+=1
@@ -392,7 +393,7 @@ class Edi(object):
                     if tkey=='TR':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.trot[kk*ncol+nn+kk]=float(estr)
+                                self.trot[kk*(ncol-1)+nn+kk]=float(estr)
                             except IndexError:
                                 pass
                     elif tcomp=='R' or tcomp=='R.EXP':
@@ -404,14 +405,14 @@ class Edi(object):
                     elif tcomp=='I' or tcomp=='I.EXP':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.tipper[kk*ncol+nn+kk,z0]=self.tipper[kk*ncol+nn+kk,z0]+\
+                                self.tipper[kk*ncol+nn+kk,z0]=self.tipper[kk*(ncol-1)+nn+kk,z0]+\
                                                               1j*float(estr)
                             except IndexError:
                                 pass
                     elif tcomp=='VAR.EXP' or '.VAR':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.tippervar[kk*ncol+nn+kk,z0]=float(estr)
+                                self.tippervar[kk*(ncol-1)+nn+kk,z0]=float(estr)
                             except IndexError:
                                 pass
                     ii+=1
@@ -459,25 +460,25 @@ class Edi(object):
                     if zkey=='ZRO':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.zrot[kk*ncol+nn+kk]=float(estr)
+                                self.zrot[kk*(ncol-1)+nn+kk]=float(estr)
                             except IndexError:
                                 pass
                     elif zcomp=='R':
                         for nn,estr in enumerate(eline):
                             try:
-                               self.z[kk*ncol+nn+kk,z0,z1]=float(estr)
+                               self.z[kk*(ncol-1)+nn+kk,z0,z1]=float(estr)
                             except IndexError:
                                 pass
                     elif zcomp=='I':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.z[kk*ncol+nn+kk,z0,z1]=z[kk*ncol+nn+kk,z0,z1]+1j*float(estr)
+                                self.z[kk*(ncol-1)+nn+kk,z0,z1]=z[kk*(ncol-1)+nn+kk,z0,z1]+1j*float(estr)
                             except IndexError:
                                 pass
                     elif zcomp=='.VAR':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.zvar[kk*ncol+nn+kk,z0,z1]=float(estr)
+                                self.zvar[kk*(ncol-1)+nn+kk,z0,z1]=float(estr)
                             except IndexError:
                                 pass
                     ii+=1
@@ -508,33 +509,33 @@ class Edi(object):
                     if tkey=='TR':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.trot[kk*ncol+nn+kk]=float(estr)
+                                self.trot[kk*(ncol-1)+nn+kk]=float(estr)
                             except IndexError:
                                 pass
                     elif tcomp=='R' or tcomp=='R.EXP':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.tipper[kk*ncol+nn+kk,z0]=float(estr)
+                                self.tipper[kk*(ncol-1)+nn+kk,z0]=float(estr)
                             except IndexError:
                                 pass
                     elif tcomp=='I' or tcomp=='I.EXP':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.tipper[kk*ncol+nn+kk,z0]=self.tipper[kk*ncol+nn+kk,z0]+\
+                                self.tipper[kk*(ncol-1)+nn+kk,z0]=self.tipper[kk*(ncol-1)+nn+kk,z0]+\
                                                                 1j*float(estr)
                             except IndexError:
                                 pass
                     elif tcomp=='VAR.EXP' or '.VAR':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.tippervar[kk*ncol+nn+kk,z0]=float(estr)
+                                self.tippervar[kk*(ncol-1)+nn+kk,z0]=float(estr)
                             except IndexError:
                                 pass
                     ii+=1
                     kk+=1
     
     def rewriteedi(self,znew=None,zvarnew=None,freqnew=None,newfile='y',
-               tipnew=None,tipvarnew=None,thetar=0,dr='n'):
+               tipnew=None,tipvarnew=None,thetar=0,ext='dr'):
         """
         rewriteedi(edifile) will rewrite an edifile say if it needs to be rotated 
         or distortion removed.
@@ -549,7 +550,7 @@ class Edi(object):
             tipnew = new tipper array
             tipvarnew = new tipper error array
             thetar = rotation angle counter clockwise (N=0, E=-90)
-            dr = 'n' if no distortion removal and 'y' for distortion removal
+            ext = extension on the end of the file name before .edi
         
         Outputs:
             nedi = dirpath(edifile)+basename(edifile)+rw or dr if dr='y'
@@ -559,10 +560,7 @@ class Edi(object):
         #get direcotry path make one if not there    
         dirpath=os.path.dirname(self.edifn)
         if newfile=='y':
-            if dr=='y':
-                drdirpath=os.path.join(dirpath,'DR')
-            else:
-                drdirpath=os.path.join(dirpath,'Rot{0:.0f}'.format(thetar))
+            drdirpath=os.path.join(dirpath,ext.upper())
             if not os.path.exists(drdirpath):
                 os.mkdir(drdirpath)
                 print 'Made directory: ',drdirpath
@@ -578,19 +576,18 @@ class Edi(object):
                         edifolderyn='y'
                         drcopypath=os.path.join(drpath,'EDIfiles')
                         if os.path.exists(drcopypath):
-                            if not os.path.exists(os.path.join(drcopypath,'DR')):
-                                os.mkdir(os.path.join(drcopypath,'DR'))
-                                print 'Made directory ',os.path.join(drcopypath,'DR')
+                            if not os.path.exists(os.path.join(drcopypath,
+                                                               ext.upper())):
+                                os.mkdir(os.path.join(drcopypath,ext.upper()))
+                                print 'Made directory ',os.path.join(drcopypath,
+                                                                     ext.upper())
                     else:
                         edifolderyn='n'
                         drcopypath=os.path.dirname(drdirpath)
                 count+=1
             
             #get new file name
-            if dr=='y':
-                nedibn=os.path.basename(self.edifn)[:-4]+'dr.edi'
-            else:
-                nedibn=os.path.basename(self.edifn)[:-4]+'rw.edi'
+            nedibn=os.path.basename(self.edifn)[:-4]+ext.lower()+'.edi'
             #open a new edifile
             newedifid=open(os.path.join(drdirpath,nedibn),'w')
             
@@ -656,6 +653,7 @@ class Edi(object):
         for ll,line in enumerate(edilines[0:spot[0]]):
             newedifid.write(line)
         
+        newedifid.write('>!****FREQUENCIES****!'+'\n')
         #write in frequencies
         #if there is a new frequency list
         if freqnew!=None:
@@ -730,7 +728,7 @@ class Edi(object):
                             newedifid.write('\n')
                     else:
                         pass
-            newedifid.write('\n')
+#            newedifid.write('\n')
         
         newedifid.write('>!****TIPPER****!'+'\n')
         tiplst=[['TXR',0],['TXI',0],['TX.VAR',0],['TYR',1],['TYI',1],
@@ -772,12 +770,8 @@ class Edi(object):
         #copy file to a common folder
         if edifolderyn=='y':
             if newfile=='y':
-                if dr=='y':
-                    shutil.copy(os.path.join(drdirpath,newedifile),
-                                os.path.join(drcopypath,'DR',newedifile))
-                else:
-                    shutil.copy(os.path.join(drdirpath,newedifile),
-                                os.path.join(drcopypath,'RW',newedifile))
+                shutil.copy(os.path.join(drdirpath,newedifile),
+                            os.path.join(drcopypath,ext.upper(),newedifile))
             else:
                 shutil.copy(os.path.join(dirpath,newedifile),
                         os.path.join(drcopypath,newedifile))
@@ -927,8 +921,8 @@ class Z(Edi):
                 pass
         if len(zd)==0:
             print 'There is no 1D structure for this station'
-            D=np.zeros((2,2))
-            newedifn=self.filename
+            self.D=np.zeros((2,2))
+            self.nedifn=self.edifn
         else:
             #estimate distortion matrix 
             zd=np.array(zd)
@@ -967,10 +961,96 @@ class Z(Edi):
                             (Xvar[1,1]/X[1,1])**2))**2)
             #make new edi file. need to flip zdr and zvardr back to normal order 
             #for edi file.
-            newedifn=self.rewriteedi(znew=zdr,zvarnew=zvardr.real)
+            self.rewriteedi(znew=zdr,zvarnew=zvardr.real)
+            self.D=D
+
+    def removeStaticShift(self,stol=.2,dm=1000,fspot=20):
+        """
+        removeStaticShift(edifile,stol=.2,dm=1000) will remove static shift by 
+        calculating the median of respones of near by stations, within dm.  If the 
+        ratio of the station response to the median on either side of 1+-stol then 
+        the impedance tensor for that electric component will be corrected for 
+        static shift.
+        
+        Inputs:
+            edifile = full path to edi file. Note nearby stations will be 
+                    looked for in the dirname of edifile.  So have all edis in 
+                    one folder
+                      
+            stol = ratio tolerance.  If there is no static shift the ratio 
+                    between the response and the median response should be 1,
+                    but noise and other factors can be present so a tolerance 
+                    around 1 is assumed.
+                   
+            dm = nearby station radius in meters.  If there is no station
+                within that radius then no static shift will be corrected for.
+                 
+            fspot = the last index of frequencies to look at.  So if you want
+                    to look for static shift in the first 20 frequencies
+                    fspot=20
+        
+        Outputs:
+            newedifile = full path to new edifile
+        """
+        
+        znewss=np.copy(self.z)
+        
+        #get directory name where all edi files should be
+        edipath=os.path.dirname(self.edifn)
+        
+        #make a list of filename from edipath
+        edilst=[os.path.join(edipath,dedifile) 
+                for dedifile in os.listdir(edipath) if dedifile.find('.edi')>0]    
+        
+        rp=ResPhase(self.z,self.period)
+        #loop over files to find nearby stations
+        resxlst=[]
+        resylst=[]
+        statlst=[]
+        zone,northing,easting=utm2ll.LLtoUTM(23,self.lat,self.lon)   
+        for kk,kedi in enumerate(edilst):
+            zk=Edi(kedi)
+            zk.getInfo()
+            zone,dn,de=utm2ll.LLtoUTM(23,zk.lat,zk.lon)        
+            deltad=np.sqrt((dn-northing)**2+(de-easting)**2)
+            if deltad<=dm:
+                zkrp=ResPhase(zk.z,1./zk.frequency)
+                resxlst.append(zkrp.resxy[0:fspot])
+                resylst.append(zkrp.resyx[0:fspot])
+                statlst.append(kk)
+        
+        #make arrays for easy manipulation
+        resxlst=np.array(resxlst)
+        resylst=np.array(resylst)
+        
+        #calculate static shift of x-components
+        staticx=np.mean(rp.resxy[0:fspot]/np.median(resxlst))
+        
+        #see if it is within the tolerance level    
+        if staticx<1-stol or staticx>1+stol:
+            znewss[:,0,:]=self.z[:,0,:]/np.sqrt(staticx)
+            print 'X-Shifted '+self.station+' by '+str(1/np.sqrt(staticx))
+            xyn='y'
+        else:
+            xyn='n'
+        
+        #calculate static shift of y-components
+        staticy=np.mean(rp.resyx[0:fspot]/np.median(resylst))
+        
+        #see if it is within the tolerance level
+        if staticy<1-stol or staticy>1+stol:
+            znewss[:,1,:]=self.z[:,1,:]/np.sqrt(staticy)
+            print 'Y-Shifted '+self.station+' by '+str(1/np.sqrt(staticy)) 
+            yyn='y'
+        else:yyn='n'
+        
+        #if there was a correction write a new edi file
+        if xyn=='y' or yyn=='y':
+            self.rewriteedi(znew=znewss,zvarnew=self.zvar,ext='SS')
             
-        return D,newedifn
-  
+        #if no correction was made return the same edifile
+        else:
+            print 'No Static Shift Correction for ',self.station
  
     def getResPhase(self,ffactor=1,thetar=0):
         """
@@ -2007,13 +2087,13 @@ class ResPhase:
             self.resyy[jj]=wt*abs(self.z[jj,1,1])**2
             
             self.resxxerr[jj]=wt*(abs(self.z[jj,0,0])+self.zvar[jj,0,0])**2-\
-                        self.resxx[jj]
+                        self.resxx[jj].real
             self.resxyerr[jj]=wt*(abs(self.z[jj,0,1])+self.zvar[jj,0,1])**2-\
-                        self.resxy[jj]
+                        self.resxy[jj].real
             self.resyxerr[jj]=wt*(abs(self.z[jj,1,0])+self.zvar[jj,1,0])**2-\
-                        self.resyx[jj]
+                        self.resyx[jj].real
             self.resyyerr[jj]=wt*(abs(self.z[jj,1,1])+self.zvar[jj,1,1])**2-\
-                        self.resyy[jj]
+                        self.resyy[jj].real
             
             self.phasexx[jj]=np.arctan2(self.z[jj,0,0].imag,
                                         self.z[jj,0,0].real)*(180/np.pi)
