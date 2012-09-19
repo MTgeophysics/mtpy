@@ -1723,8 +1723,8 @@ def read2DdataFile(datafn):
     
     return rplst,stationlst,np.array(freq),title,theta
     
-def rewrite2DdataFile(datafn,edipath=None,thetar=0,resxyerr=None,
-                      resyxerr=None,phasexyerr=None,phaseyxerr=None,
+def rewrite2DdataFile(datafn,edipath=None,thetar=0,resxyerr='prev',
+                      resyxerr='prev',phasexyerr='prev',phaseyxerr='prev',
                       tippererr=None,mmode='both',flst=None,removestation=None):
     """
     rewrite2DDataFile will rewrite an existing data file so you can redefine 
@@ -1734,18 +1734,32 @@ def rewrite2DdataFile(datafn,edipath=None,thetar=0,resxyerr=None,
     
     Inputs:
         datafn = full path to data file to rewrite
+        
         rotz = rotation angle with positive clockwise
-        resxyerr = error for TE mode resistivity (percent) or 'data' for data
+        
+        resxyerr = error for TE mode resistivity (percent) or 'data' for data 
+                    or prev to take errors from data file.
+        
         resyxerr = error for TM mode resistivity (percent) or 'data' for data
+                    or prev to take errors from data file.
+                    
         phasexyerr = error for TE mode phase (percent) or 'data' for data
+                    or prev to take errors from data file.
+                    
         phaseyxerr = error for TM mode phase (percent) or 'data' for data
+                    or prev to take errors from data file.
+                    
         tippererr = error for tipper (percent) input only if you want to invert
                     for the tipper or 'data' for data errors
+                    or prev to take errors from data file.
+                    
         mmodes = 'both' for both TE and TM
                  'TE' for TE
                  'TM' for TM
+                 
         flst = frequency list in Hz to rewrite, needs to be similar to the 
                 datafile, cannot add frequencies
+                
         removestation = list of stations to remove if desired
     """
     ss=3*' '
@@ -1823,24 +1837,35 @@ def rewrite2DdataFile(datafn,edipath=None,thetar=0,resxyerr=None,
                     #res_xy (TE)
                     if resxyerr=='data':
                         lresxyerr=(rp.resxyerr[nn]/resxy)/np.log(10)
+                    #take errors from data file
+                    elif resxyerr=='prev':
+                        lresxyerr=rpdict[station]['resxy'][1,jj-1]
                     else:
                         lresxyerr=(resxyerr/100.)/np.log(10)
                     
                     #Res_yx(TM)
                     if resyxerr=='data':
-                        lresyxerr=(rp.resyxerr[nn]/resyx)/np.log(10)
+                        lresxyerr=rpdict[station]['resyx'][1,jj-1]
+                    #take errors from data file
+                    elif resyxerr=='prev':
+                        lresyxerr=rpdict[station]['resyx'][1,jj-1]
                     else:
                         lresyxerr=(resyxerr/100.)/np.log(10)
                     
                     #phase_xy(TE)
                     if phasexyerr=='data':
                         dphasexyerr=rp.phasexyerr[nn]
+                        #take errors from data file
+                    elif phasexyerr=='prev':
+                        dphasexyerr=rpdict[station]['phasexy'][1,jj-1]
                     else:
                         dphasexyerr=(phasexyerr/100.)*57/2.
                         
                     #phase_yx (TM)
                     if phaseyxerr=='data':
                         dphaseyxerr=rp.phaseyxerr[nn]
+                    elif phaseyxerr=='prev':
+                        dphaseyxerr=rpdict[station]['phaseyx'][1,jj-1]
                     else:
                         dphaseyxerr=(phaseyxerr/100.)*57/2.
                     
@@ -2558,8 +2583,8 @@ def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
                     r3=axr.errorbar(period[mrxy],10**rplst[ii]['resxy'][2][mrxy],
                                     ls='--',marker=mtem,ms=ms,mfc=ctem,mec=ctem,
                                     color=ctem,
-                                    yerr=np.log(10)*rplst[ii]['resxy'][3][mrxy]*\
-                                    10**rplst[ii]['resxy'][2][mrxy],
+                                    yerr=10**(rplst[ii]['resxy'][3][mrxy]*\
+                                    rplst[ii]['resxy'][2][mrxy]/np.log(10)),
                                     ecolor=ctem)
                     rlst.append(r3[0])
                     llst.append('$Mod_{xy}$')
@@ -2571,8 +2596,8 @@ def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
                     r4=axr.errorbar(period[mryx],10**rplst[ii]['resyx'][2][mryx],
                                     ls='--',marker=mtmm,ms=ms,mfc=ctmm,mec=ctmm,
                                     color=ctmm,
-                                    yerr=np.log(10)*rplst[ii]['resyx'][3][mryx]*\
-                                    10**rplst[ii]['resyx'][2][mryx],
+                                    yerr=10**(rplst[ii]['resyx'][3][mryx]*\
+                                    rplst[ii]['resyx'][2][mryx]/np.log(10)),
                                     ecolor=ctmm)
                     rlst.append(r4[0])
                     llst.append('$Mod_{yx}$')
@@ -2671,7 +2696,7 @@ def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
 #            axr.set_xticklabels(['' for ii in range(10)])
             axp.set_ylim(phaselimits)
             if reslimits!=None:
-                axr.set_ylim(reslimits)
+                axr.set_ylim(10**reslimits[0],10**reslimits[1])
             axp.grid(True,alpha=.4)
             axp.yaxis.set_major_locator(MultipleLocator(10))
             axp.yaxis.set_minor_locator(MultipleLocator(1))
@@ -2746,14 +2771,14 @@ def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
                 r3=axr.errorbar(period[mrxy],10**rplst[ii]['resxy'][2][mrxy],
                                 ls='--',marker=mtem,ms=ms,mfc=ctem,mec=ctem,
                                 color=ctem,
-                                yerr=np.log(10)*rplst[ii]['resxy'][3][mrxy]*\
-                                10**rplst[ii]['resxy'][2][mrxy],
+                                yerr=10**(rplst[ii]['resxy'][3][mrxy]*\
+                                rplst[ii]['resxy'][2][mrxy]/np.log(10)),
                                 ecolor=ctem)
                 r4=axr.errorbar(period[mryx],10**rplst[ii]['resyx'][2][mryx],
                                 ls='--',marker=mtmm,ms=ms,mfc=ctmm,mec=ctmm,
                                 color=ctmm,
-                                yerr=np.log(10)*rplst[ii]['resyx'][3][mryx]*\
-                                10**rplst[ii]['resyx'][3][mryx],
+                                yerr=10**(rplst[ii]['resyx'][3][mryx]*\
+                                rplst[ii]['resyx'][3][mryx]/np.log(10)),
                                 ecolor=ctmm)
 #                r3=axr.loglog(period[mrxy],10**rplst[ii]['resxy'][2][mrxy],
 #                              ls='--',marker='+', ms=2*ms,color=ctem,mfc=ctem)

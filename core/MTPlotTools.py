@@ -1289,7 +1289,8 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
                colorkeymm=[0,90.],figsave='y',fmt=['png'],rotz=0,pxy=[10,12],
                 galpha=.25,stationid=None,stationpad=.0005,
                 sfdict={'size':12,'weight':'bold'},indarrows='n',
-                cmap='ptcmap',tscale='period',mapscale='latlon',fignum=1):
+                cmap='ptcmap',tscale='period',mapscale='latlon',fignum=1,
+                imagefile=None,image_extent=None):
     """ 
     plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
                ypad=.2,tickstrfmt='%2.4f',cborientation='vertical',
@@ -1340,11 +1341,21 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
         mapscale = latlon for lats and lons or
                    eastnorth for easting and northing, this is recomended if
                    you want to plot tipper data for small surveys.
+        imagefile = path to an image file jpg or png or svg
+        image_extent=(xmin,xmax,ymin,ymax) in coordinates accorting to mapscale
         
     """
     jj=freqspot
     fig=plt.figure(fignum,pxy,dpi=200)
+    plt.clf()
     ax=fig.add_subplot(1,1,1,aspect='equal')
+    
+    if imagefile!=None:
+        if image_extent==None:
+            raise ValueError('Need to put in image extent')
+        im=plt.imread(imagefile)
+        ax.imshow(im,origin='lower',extent=image_extent,aspect='auto')
+        
     elliplst=[]
     latlst=[]
     lonlst=[]
@@ -1523,10 +1534,10 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
         ax.set_ylim(min(latlst)-xpad,max(latlst)+xpad)
         ax.yaxis.set_major_formatter(FormatStrFormatter(tickstrfmt))
     if tscale=='period':
-        titlefreq='{0:.5g}'.format(1./freq)
+        titlefreq='{0:.5g} (s)'.format(1./freq)
     else:
-        titlefreq='{0:.5g}'.format(freq)
-    ax.set_title('Phase Tensor for '+titlefreq+'(s)',
+        titlefreq='{0:.5g} (Hz)'.format(freq)
+    ax.set_title('Phase Tensor Map for '+titlefreq,
                  fontsize=10,fontweight='bold')
     ax.grid(alpha=galpha)
     
