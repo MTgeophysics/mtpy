@@ -2900,7 +2900,13 @@ def plotAllResponses(datafile,station,fignum=1):
     
     rpath=os.path.dirname(datafile)
     
-    gs=gridspec.GridSpec(6,2,wspace=.15)
+    gs=gridspec.GridSpec(6,2,wspace=.20)
+    
+    plt.rcParams['font.size']=int(7)
+    plt.rcParams['figure.subplot.left']=.08
+    plt.rcParams['figure.subplot.right']=.98
+    plt.rcParams['figure.subplot.bottom']=.1
+    plt.rcParams['figure.subplot.top']=.92
 
 
     rlst=[os.path.join(rpath,rfile) for rfile in os.listdir(rpath) 
@@ -2909,13 +2915,16 @@ def plotAllResponses(datafile,station,fignum=1):
     nresp=len(rlst)
     
     colorlst=[(cc,0,1-cc) for cc in np.arange(0,1,1./nresp)]
-    fig=plt.figure(fignum,[7,8])
+    fig=plt.figure(fignum,[7,8],dpi=200)
+    plt.clf()
     axrte=fig.add_subplot(gs[:4,0])
     axrtm=fig.add_subplot(gs[:4,1])
     axpte=fig.add_subplot(gs[-2:,0])
     axptm=fig.add_subplot(gs[-2:,1])
     rmstelst=[]
     rmstmlst=[]
+    rmstestr=[]
+    rmstmstr=[]
     #read responses
     for jj,rfile in enumerate(rlst):
         rplst,stationlst,freq,title=read2DRespFile(os.path.join(rpath,rfile),
@@ -2932,6 +2941,8 @@ def plotAllResponses(datafile,station,fignum=1):
         rmstm=np.sqrt(np.sum(ms**2 for ms in rmslsttm)/len(rmslsttm))
         rmstelst.append('%d rms=%.3f ' % (jj,rmste))
         rmstmlst.append('%d rms=%.3f ' % (jj,rmstm))
+        rmstestr.append(rmste)
+        rmstmstr.append(rmstm)
         #plot resistivity
         
         
@@ -2939,18 +2950,18 @@ def plotAllResponses(datafile,station,fignum=1):
             #cut out missing data points first
             rxy=np.where(rplst[ii]['resxy'][0]!=0)[0]
             ryx=np.where(rplst[ii]['resyx'][0]!=0)[0]
-            r1=axrte.loglog(period[rxy],10**rplst[ii]['resxy'][0][rxy],
+            r1,=axrte.loglog(period[rxy],10**rplst[ii]['resxy'][0][rxy],
                           ls=':',marker='s',ms=4,color='k',mfc='k')
-            r2=axrtm.loglog(period[ryx],10**rplst[ii]['resyx'][0][ryx],
+            r2,=axrtm.loglog(period[ryx],10**rplst[ii]['resyx'][0][ryx],
                           ls=':',marker='o',ms=4,color='k',mfc='k')
             rlstte=[r1]
             rlsttm=[r2]
     
         mrxy=[np.where(rplst[ii]['resxy'][2]!=0)[0]]
         mryx=[np.where(rplst[ii]['resyx'][2]!=0)[0]]
-        r3=axrte.loglog(period[mrxy],10**rplst[ii]['resxy'][2][mrxy],
+        r3,=axrte.loglog(period[mrxy],10**rplst[ii]['resxy'][2][mrxy],
                         ls='-',color=colorlst[jj])
-        r4=axrtm.loglog(period[mryx],10**rplst[ii]['resyx'][2][mryx],
+        r4,=axrtm.loglog(period[mryx],10**rplst[ii]['resyx'][2][mryx],
                         ls='-',color=colorlst[jj])
     
         rlstte.append(r3)
@@ -2973,14 +2984,16 @@ def plotAllResponses(datafile,station,fignum=1):
                      ls='-',color=colorlst[jj])
         axptm.semilogx(period[mpyx],rplst[ii]['phaseyx'][2][mpyx],
                      ls='-',color=colorlst[jj])
-                     
-    axrte.legend(rlstte,rmstelst,loc=2,markerscale=2,borderaxespad=.05,
-               labelspacing=.08,
-               handletextpad=.15,borderpad=.05)
     
-    axrtm.legend(rlsttm,rmstmlst,loc=2,markerscale=2,borderaxespad=.05,
-               labelspacing=.08,
-               handletextpad=.15,borderpad=.05)
+#    teh,tel=axrte.get_legend_handles_labels()                 
+#    axrte.legend(rlstte,rmstelst,loc=2,markerscale=2,borderaxespad=.05,
+#               labelspacing=.08,
+#               handletextpad=.15,borderpad=.05)
+    
+#    tmh,tml=axrtm.get_legend_handles_labels() 
+#    axrtm.legend(rlsttm,rmstmlst,loc=2,markerscale=2,borderaxespad=.05,
+#               labelspacing=.08,
+#               handletextpad=.15,borderpad=.05)
                    
     axrte.grid(True,alpha=.4)
     axrtm.grid(True,alpha=.4)
@@ -2990,24 +3003,28 @@ def plotAllResponses(datafile,station,fignum=1):
     axrte.set_xticklabels(['' for ii in range(10)])
     #axpte.set_ylim(-10,120)
     
-    axrte.set_title('TE')
-    axrtm.set_title('TM')
+    rmstestr=np.median(np.array(rmstestr)[1:])
+    rmstmstr=np.median(np.array(rmstmstr)[1:])
+    axrte.set_title('TE rms={0:.2f}'.format(rmstestr),
+                    fontdict={'size':10,'weight':'bold'})
+    axrtm.set_title('TM rms={0:.2f}'.format(rmstmstr),
+                    fontdict={'size':10,'weight':'bold'})
     
     axpte.grid(True,alpha=.4)
     axpte.yaxis.set_major_locator(MultipleLocator(10))
     axpte.yaxis.set_minor_locator(MultipleLocator(1))
     
     axrte.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                   fontdict={'size':12,'weight':'bold'})
+                   fontdict={'size':10,'weight':'bold'})
     axpte.set_ylabel('Phase (deg)',
-                   fontdict={'size':12,'weight':'bold'})
-    axpte.set_xlabel('Period (s)',fontdict={'size':12,'weight':'bold'})
+                   fontdict={'size':10,'weight':'bold'})
+    axpte.set_xlabel('Period (s)',fontdict={'size':10,'weight':'bold'})
 
-    axrte.yaxis.set_label_coords(-.05,.5)
-    axpte.yaxis.set_label_coords(-.05,.5)
+    axrte.yaxis.set_label_coords(-.08,.5)
+    axpte.yaxis.set_label_coords(-.08,.5)
     
     axrtm.set_xticklabels(['' for ii in range(10)])
-    axptm.set_ylim(-10,120)
+#    axptm.set_ylim(-10,120)
     axptm.grid(True,alpha=.4)
     axptm.yaxis.set_major_locator(MultipleLocator(10))
     axptm.yaxis.set_minor_locator(MultipleLocator(1))
@@ -3018,9 +3035,9 @@ def plotAllResponses(datafile,station,fignum=1):
                    fontdict={'size':12,'weight':'bold'})
     axptm.set_xlabel('Period (s)',fontdict={'size':12,'weight':'bold'})
 
-    axrtm.yaxis.set_label_coords(-.05,.5)
-    axptm.yaxis.set_label_coords(-.05,.5)
-    plt.suptitle(station,fontsize=14,fontweight='bold')
+    axrtm.yaxis.set_label_coords(-.08,.5)
+    axptm.yaxis.set_label_coords(-.08,.5)
+    plt.suptitle(station,fontsize=12,fontweight='bold')
     plt.show()
     
     
@@ -3554,7 +3571,7 @@ def plotPseudoSection(datafn,respfn=None,fignum=1,rcmap='jet_r',pcmap='jet',
         plt.show()
         
 def plotDepthModel(iterfn,meshfn,slst,lm,fignum=1,dpi=300,depth=10000,
-                   stations=None):
+                   stations=None,yscale='log'):
     """
     will plot a depth section as a line for the block numbers given by slst and
     the layer multiplier lm
@@ -3571,14 +3588,17 @@ def plotDepthModel(iterfn,meshfn,slst,lm,fignum=1,dpi=300,depth=10000,
     v=v[::-1]
     
     fig=plt.figure(fignum,dpi=dpi)
+    plt.clf()
     ax=fig.add_subplot(1,1,1)
     
     rholst=[]
     for ss in slst:
         ilst=np.arange(nv)*lm+(ss-1)
-        print v[len(v)-len(ilst):]
         rho=idict['model'][ilst]
-        p1=ax.loglog(10**(rho[::-1]),v[len(varr)-len(ilst):]+1000,ls='steps-')
+        if yscale=='linear':
+            p1,=ax.semilogx(10**(rho[::-1]),v[len(v)-len(ilst):],ls='steps-')
+        elif yscale=='log':
+            p1,=ax.loglog(10**(rho[::-1]),v[len(v)-len(ilst):],ls='steps-')
         rholst.append(p1)
     ax.set_ylim(depth,varr.min())
     if stations==None:
@@ -3590,6 +3610,296 @@ def plotDepthModel(iterfn,meshfn,slst,lm,fignum=1,dpi=300,depth=10000,
     ax.grid(True,alpha=.3,which='both')
         
         
+def plotL2Curve(invpath,fnstem=None,fignum=1,dpi=300):
+    """
+    PlotL2Curve will plot the RMS vs iteration number for the given inversion 
+    folder and roughness vs iteration number
+    
+    Inputs: 
+        invpath = full path to the inversion folder where .iter files are
+        fnstem = filename stem to look for in case multiple inversions were
+                run in the same folder.  If none then searches for anything
+                ending in .iter
+    
+    Outputs:
+        rmsiter = array(3x#iterations) of rms, iteration and roughness
+    """ 
+    
+    if fnstem==None:
+        iterlst=[os.path.join(invpath,itfile) 
+                for itfile in os.listdir(invpath) if itfile.find('.iter')>0]
+    else:
+        iterlst=[os.path.join(invpath,itfile) 
+                for itfile in os.listdir(invpath) if itfile.find('.iter')>0 and
+                itfile.find(fnstem)>0]
+                
+    nr=len(iterlst)
+    
+    rmsarr=np.zeros((nr,2))
+    
+    for itfile in iterlst:
+        idict=read2DIterFile(itfile)
+        ii=int(idict['Iteration'])
+        rmsarr[ii,0]=float(idict['Misfit Value'])
+        rmsarr[ii,1]=float(idict['Roughness Value'])
+
+        plt.rcParams['font.size']=int(dpi/40.)
+    plt.rcParams['figure.subplot.left']=.08
+    plt.rcParams['figure.subplot.right']=.90
+    plt.rcParams['figure.subplot.bottom']=.1
+    plt.rcParams['figure.subplot.top']=.92
+    plt.rcParams['figure.subplot.wspace']=.01
+    
+    fig=plt.figure(fignum,[6,5],dpi=dpi)
+    plt.clf()
+    ax1=fig.add_subplot(1,1,1)
+    ax2=ax1.twinx()
+    l1,=ax1.plot(np.arange(1,nr,1),rmsarr[1:,0],'-k',lw=1,marker='o',ms=5)
+    l2,=ax2.plot(np.arange(1,nr,1),rmsarr[1:,1],'--b',lw=.75,marker='d',ms=5)
+    m1,=ax1.plot(np.arange(0,nr,1),np.repeat(np.median(rmsarr[1:,0]),nr),
+                 '--r',lw=.75)
+    m2,=ax1.plot(np.arange(0,nr,1),np.repeat(np.mean(rmsarr[1:,0]),nr),
+                 ls='--',color='orange',lw=.75)
+    
+    ax1.legend([l1,l2,m1,m2],['RMS','Roughness',
+               'Median_RMS={0:.2f}'.format(np.median(rmsarr[1:,0])),
+                'Mean_RMS={0:.2f}'.format(np.mean(rmsarr[1:,0]))],
+                ncol=4,loc='upper center',columnspacing=.25,markerscale=.75,
+                handletextpad=.15)
+    
+    ax1.yaxis.set_minor_locator(MultipleLocator(.2))
+    ax1.xaxis.set_minor_locator(MultipleLocator(1))
+    ax1.set_ylabel('RMS',fontdict={'size':8,'weight':'bold'})
+    ax2.set_ylabel('Roughness',fontdict={'size':8,'weight':'bold',
+                                         'color':'blue'})
+    for tl in ax2.get_yticklabels():
+        tl.set_color('b')
+    ax1.set_xlabel('Iteration',fontdict={'size':8,'weight':'bold'})
+    ax1.grid(alpha=.25,which='both')
+    plt.show()
+    
+    return rmsarr
+
+class OccamPointPicker(object):
+    """
+    This class will help the user interactively pick points to mask and add 
+    error bars. 
+    
+    To mask just a single point right click over the point and a gray point 
+    will appear indicating it has been masked
+    
+    To mask both the apparent resistivity and phase left click over the point.
+    Gray points will appear over both the apparent resistivity and phase.  
+    Sometimes the points don't exactly matchup, haven't quite worked that bug
+    out yet, but not to worry it picks out the correct points
+    
+    To add error bars to a point click the middle or scroll bar button.  This
+    only adds error bars to the point and does not reduce them so start out
+    with reasonable errorbars.  You can change the increment that the error
+    bars are increased with reserrinc and phaseerrinc.
+    
+    Inputs:
+        axlst = list of the resistivity and phase axis that have been plotted
+        
+        linelst = list of lines used to plot the responses, not the error bars
+        
+        errlst = list of the errorcaps and errorbar lines as 
+                   [[cap1,cap2,bar],...]
+                 
+        reserrinc = percent increment to increase the errorbars
+        
+        phaseerrinc = percent increment to increase the errorbars
+    """    
+    
+    def __init__(self,axlst,linelst,errlst,reserrinc=.05,phaseerrinc=.02,
+                 marker='h'):
+        #give the class some attributes
+        self.ax=axlst[0]
+        self.axlst=axlst
+        self.linelst=linelst
+        self.errlst=errlst
+        self.line=linelst[0]
+        self.data=[]
+        self.error=[]
+        self.fdict=[]
+        self.reserrinc=reserrinc
+        self.phaseerrinc=phaseerrinc
+        self.marker=marker
+        self.fignum=self.line.figure.number
+        
+        #get data from lines and make a dictionary of frequency points for easy
+        #indexing
+        for line in linelst:
+            self.data.append(line.get_data()[1])
+            self.fdict.append(dict([('{0:.5g}'.format(kk),ff) for ff,kk in 
+                                    enumerate(line.get_data()[0])]))
+        
+        #read in the error in a useful way so that it can be translated to 
+        #the data file.  Make the error into an array
+        for ee,err in enumerate(errlst):
+            errpath=err[2].get_paths()
+            errarr=np.zeros(len(self.fdict[ee].keys()))
+            for ff,epath in enumerate(errpath):
+                errv=epath.vertices
+                errarr[ff]=abs(errv[0,1]-self.data[ee][ff])
+            self.error.append(errarr)
+        
+        #set some events
+        self.cid=line.figure.canvas.mpl_connect('pick_event',self)
+        self.cid2=line.figure.canvas.mpl_connect('axes_enter_event',self.inAxes)
+        self.cid3=line.figure.canvas.mpl_connect('key_press_event',self.on_close)
+        self.count=0
+    
+    def __call__(self,event):
+        """
+        When the function is called the mouse events will be recorder for 
+        picking points to mask or change error bars.
+        
+        Left mouse button will mask both resistivity and phase point
+        
+        Right mouse button will mask just the point selected
+        
+        middle mouse button will increase the error bars
+        
+        q will close the figure.
+        """
+        self.event=event
+        #make a new point that is an PickEvent type
+        npoint=event.artist
+        #if the right button is clicked mask the point
+        if event.mouseevent.button==3:
+            #get the point that was clicked on
+            ii=event.ind
+            xd=npoint.get_xdata()[ii]
+            yd=npoint.get_ydata()[ii]
+            
+            #set the x index from the frequency dictionary
+            ll=self.fdict[self.jj]['{0:.5g}'.format(xd[0])]
+            
+            #change the data to be a zero
+            self.data[self.jj][ll]=0
+            
+            #reset the point to be a gray x
+            self.ax.plot(xd,yd,ls='None',color=(.7,.7,.7),marker=self.marker,
+                         ms=4)
+        
+        #if the left button is clicked change both resistivity and phase points
+        elif event.mouseevent.button==1:
+            #get the point that was clicked on
+            ii=event.ind
+            xd=npoint.get_xdata()[ii]
+            yd=npoint.get_ydata()[ii]
+            
+            #set the x index from the frequency dictionary
+            ll=self.fdict[self.jj]['{0:.5g}'.format(xd[0])]
+            
+            #set the data point to zero
+            self.data[self.jj][ll]=0
+            
+            #reset the point to be a gray x
+            self.ax.plot(xd,yd,ls='None',color=(.7,.7,.7),marker=self.marker,
+                         ms=4)
+            
+            #check to make sure there is a corresponding res/phase point
+            try:
+                #get the corresponding y-value 
+                yd2=self.data[self.kk][ll]
+                
+                #set that data point to 0 as well
+                self.data[self.kk][ll]=0
+                
+                #make that data point a gray x
+                self.axlst[self.kk].plot(xd,yd2,ls='None',
+                                        color=(.7,.7,.7),marker=self.marker,
+                                        ms=4)
+            except KeyError:
+                print 'Axis does not contain res/phase point'
+                
+        #if click the scroll button or middle button change increase the 
+        #errorbars by the given amount
+        elif event.mouseevent.button==2:
+            ii=event.ind
+            xd=npoint.get_xdata()[ii]
+            yd=npoint.get_ydata()[ii]
+            
+            #get x index
+            ll=self.fdict[self.jj]['{0:.5g}'.format(xd[0])]
+            
+            #make error bar array
+            eb=self.errlst[self.jj][2].get_paths()[ll].vertices
+            
+            #make ecap array
+            ecapl=self.errlst[self.jj][0].get_data()[1][ll]
+            ecapu=self.errlst[self.jj][1].get_data()[1][ll]
+            
+            #change apparent resistivity error
+            if self.jj==0 or self.jj==1:
+                nebu=eb[0,1]-self.reserrinc*eb[0,1]
+                nebl=eb[1,1]+self.reserrinc*eb[1,1]
+                ecapl=ecapl-self.reserrinc*ecapl
+                ecapu=ecapu+self.reserrinc*ecapu
+                
+            #change phase error
+            elif self.jj==2 or self.jj==3:
+                nebu=eb[0,1]-eb[0,1]*self.phaseerrinc
+                nebl=eb[1,1]+eb[1,1]*self.phaseerrinc
+                ecapl=ecapl-ecapl*self.phaseerrinc
+                ecapu=ecapu+ecapu*self.phaseerrinc
+                
+            #put the new error into the error array    
+            self.error[self.jj][ll]=abs(nebu-self.data[self.jj][ll])
+            
+            #set the new error bar values
+            eb[0,1]=nebu
+            eb[1,1]=nebl
+            
+            #reset the error bars and caps
+            ncapl=self.errlst[self.jj][0].get_data()
+            ncapu=self.errlst[self.jj][1].get_data()
+            ncapl[1][ll]=ecapl
+            ncapu[1][ll]=ecapu
+            
+            #set the values 
+            self.errlst[self.jj][0].set_data(ncapl)
+            self.errlst[self.jj][1].set_data(ncapu)
+            self.errlst[self.jj][2].get_paths()[ll].vertices=eb
+            
+        #redraw the canvas
+        self.ax.figure.canvas.draw()
+
+    #get the axis number that the mouse is in and change to that axis
+    def inAxes(self,event):
+        self.event2=event
+        self.ax=event.inaxes
+        for jj,axj in enumerate(self.axlst):
+            if self.ax==axj:
+                self.jj=jj
+                
+        #set complimentary resistivity and phase plots together
+        if self.jj==0:
+            self.kk=2
+        if self.jj==1:
+            self.kk=3
+        if self.jj==2:
+            self.kk=0
+        if self.jj==3:
+            self.kk=1
+        print self.jj,self.kk
+    
+    #type the q key to quit the figure and disconnect event handling            
+    def on_close(self,event):
+        self.event3=event
+        if self.event3.key=='q':
+            self.line.figure.canvas.mpl_disconnect(self.cid)
+            self.line.figure.canvas.mpl_disconnect(self.cid2)
+            self.line.figure.canvas.mpl_disconnect(self.cid3)
+            plt.close(event.canvas.figure)
+            print 'closed'      
+    
+    
+    
+    
+
         
     
     
