@@ -2314,7 +2314,10 @@ def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
                    not have to be verbatim but should have similar unique 
                    characters input pb01 for pb01cs in outputfile
     Outputs:
-        None
+        used for interactive masking of points
+        axlst = list of axes plotted
+        errlst = list of errors that were plotted
+        linelst = list of lines plotted
     """
     
     plt.rcParams['font.size']=10
@@ -2550,26 +2553,26 @@ def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
             
             #check to see if there is a xy component
             if len(rxy)>0:
-                r1=axr.errorbar(period[rxy],10**rplst[ii]['resxy'][0][rxy],
-                                ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
-                                color=cted,
-                                yerr=np.log(10)*rplst[ii]['resxy'][1][rxy]*\
-                                10**rplst[ii]['resxy'][0][rxy],
-                                ecolor=cted)
-                rlst.append(r1[0])
+                rte=axr.errorbar(period[rxy],10**rplst[ii]['resxy'][0][rxy],
+                                   ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
+                                   color=cted,
+                                   yerr=np.log(10)*rplst[ii]['resxy'][1][rxy]*\
+                                   10**rplst[ii]['resxy'][0][rxy],
+                                   ecolor=cted,picker=2)
+                rlst.append(rte[0])
                 llst.append('$Obs_{xy}$')
             else:
                 pass
             
             #check to see if there is a yx component
             if len(ryx)>0:
-                r2=axr.errorbar(period[ryx],10**rplst[ii]['resyx'][0][ryx],
-                                ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
-                                color=ctmd,
-                                yerr=np.log(10)*rplst[ii]['resyx'][1][ryx]*\
-                                10**rplst[ii]['resyx'][0][ryx],
-                                ecolor=ctmd)
-                rlst.append(r2[0])
+                rtm=axr.errorbar(period[ryx],10**rplst[ii]['resyx'][0][ryx],
+                                   ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
+                                   color=ctmd,
+                                   yerr=np.log(10)*rplst[ii]['resyx'][1][ryx]*\
+                                   10**rplst[ii]['resyx'][0][ryx],
+                                   ecolor=ctmd,picker=2)
+                rlst.append(rtm[0])
                 llst.append('$Obs_{yx}$')
             else:
                 pass                                
@@ -2610,16 +2613,20 @@ def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
             pyx=np.where(rplst[ii]['phaseyx'][0]!=0)[0]
 
             if len(pxy)>0:
-                axp.errorbar(period[pxy],rplst[ii]['phasexy'][0][pxy],
-                             ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,color=cted,
-                             yerr=rplst[ii]['phasexy'][1][pxy],ecolor=cted)
+                pte=axp.errorbar(period[pxy],rplst[ii]['phasexy'][0][pxy],
+                                   ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
+                                   color=cted,
+                                   yerr=rplst[ii]['phasexy'][1][pxy],
+                                    ecolor=cted,picker=1)
             else:
                 pass
             
             if len(pyx)>0:
-                axp.errorbar(period[pyx],rplst[ii]['phaseyx'][0][pyx],
-                             ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,color=ctmd,
-                             yerr=rplst[ii]['phaseyx'][1][pyx],ecolor=ctmd)
+                ptm=axp.errorbar(period[pyx],rplst[ii]['phaseyx'][0][pyx],
+                                   ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
+                                   color=ctmd,
+                                   yerr=rplst[ii]['phaseyx'][1][pyx],
+                                    ecolor=ctmd,picker=1)
             else:
                 pass
             
@@ -2688,7 +2695,8 @@ def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
             else:
                 axr.set_title(stationlst[ii]+'; rms= %.2f' % rms,
                               fontdict={'size':16,'weight':'bold'})
-                             
+            
+                            
             axr.set_xscale('log')
             axp.set_xscale('log')
             axr.set_yscale('log')
@@ -2749,18 +2757,18 @@ def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
             axr=fig.add_subplot(gs[:4,:])
             rxy=np.where(rplst[ii]['resxy'][0]!=0)[0]
             ryx=np.where(rplst[ii]['resyx'][0]!=0)[0]
-            r1=axr.errorbar(period[rxy],10**rplst[ii]['resxy'][0][rxy],
-                            ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
-                            color=cted,
-                            yerr=np.log(10)*rplst[ii]['resxy'][1][rxy]*\
-                                10**rplst[ii]['resxy'][0][rxy],
-                            ecolor=cted)
-            r2=axr.errorbar(period[ryx],10**rplst[ii]['resyx'][0][ryx],
-                            ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
-                            color=ctmd,
-                            yerr=np.log(10)*rplst[ii]['resyx'][1][ryx]*\
-                                10**rplst[ii]['resyx'][0][ryx],
-                            ecolor=ctmd)
+            rte=axr.errorbar(period[rxy],10**rplst[ii]['resxy'][0][rxy],
+                    ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
+                    color=cted,
+                    yerr=np.log(10)*rplst[ii]['resxy'][1][rxy]*\
+                        10**rplst[ii]['resxy'][0][rxy],
+                    ecolor=cted,picker=2)
+            rtm=axr.errorbar(period[ryx],10**rplst[ii]['resyx'][0][ryx],
+                    ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
+                    color=ctmd,
+                    yerr=np.log(10)*rplst[ii]['resyx'][1][ryx]*\
+                        10**rplst[ii]['resyx'][0][ryx],
+                    ecolor=ctmd,picker=2)
 #            r1=axr.loglog(period[rxy],10**rplst[ii]['resxy'][0][rxy],
 #                          ls=':',marker='s',ms=ms,color=cted,mfc=cted)
 #            r2=axr.loglog(period[ryx],10**rplst[ii]['resyx'][0][ryx],
@@ -2785,21 +2793,21 @@ def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
 #                r4=axr.loglog(period[mryx],10**rplst[ii]['resyx'][2][mryx],
 #                              ls='--',marker='+',ms=2*ms,color=ctmm,mfc=ctmm)
             
-                rlst=[r1[0],r2[0],r3[0],r4[0]]
+                rlst=[rte[0],rtm[0],r3[0],r4[0]]
             else:
-                rlst=[r1[0],r2[0]]
+                rlst=[rte[0],rtm[0]]
                                 
             #plot phase
             axp=fig.add_subplot(gs[-2:,:],sharex=axr)
             #cut out missing data points first
             pxy=[np.where(rplst[ii]['phasexy'][0]!=0)[0]]
             pyx=[np.where(rplst[ii]['phaseyx'][0]!=0)[0]]
-            axp.errorbar(period[pxy],rplst[ii]['phasexy'][0][pxy],
-                            ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,color=cted,
-                            yerr=rplst[ii]['phasexy'][1][pxy],ecolor=cted)
-            axp.errorbar(period[pyx],rplst[ii]['phaseyx'][0][pyx],
-                            ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,color=ctmd,
-                            yerr=rplst[ii]['phaseyx'][1][pyx],ecolor=ctmd)
+            pte=axp.errorbar(period[pxy],rplst[ii]['phasexy'][0][pxy],
+                       ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,color=cted,
+                       yerr=rplst[ii]['phasexy'][1][pxy],ecolor=cted,picker=1)
+            ptm=axp.errorbar(period[pyx],rplst[ii]['phaseyx'][0][pyx],
+                    ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,color=ctmd,
+                    yerr=rplst[ii]['phaseyx'][1][pyx],ecolor=ctmd,picker=1)
 #            axp.semilogx(period[pxy],rplst[ii]['phasexy'][0][pxy],
 #                         ls=':',marker='s',ms=ms,color=cted,mfc=cted)
 #            axp.semilogx(period[pyx],rplst[ii]['phaseyx'][0][pyx],
@@ -2856,6 +2864,7 @@ def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
                 else:
                     axr.set_title(pstation,
                                   fontdict={'size':16,'weight':'bold'})
+                       
             
             axr.set_xscale('log')
             axr.set_yscale('log')
@@ -2882,6 +2891,8 @@ def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
             axr.yaxis.set_label_coords(-.075,.5)
             axp.yaxis.set_label_coords(-.075,.5)
             
+#    return axlst,linelst,errlst
+    
 def plotTipper(datafile,):
     pass
     
@@ -3700,6 +3711,7 @@ class OccamPointPicker(object):
     
     Inputs:
         axlst = list of the resistivity and phase axis that have been plotted
+                as [axrte,axrtm,axpte,axptm]
         
         linelst = list of lines used to plot the responses, not the error bars
         
@@ -3714,41 +3726,63 @@ class OccamPointPicker(object):
     def __init__(self,axlst,linelst,errlst,reserrinc=.05,phaseerrinc=.02,
                  marker='h'):
         #give the class some attributes
-        self.ax=axlst[0]
         self.axlst=axlst
         self.linelst=linelst
         self.errlst=errlst
-        self.line=linelst[0]
         self.data=[]
         self.error=[]
         self.fdict=[]
+        self.fndict={}
+        #see if just one figure is plotted or multiple figures are plotted
+        self.ax=axlst[0][0]
+        self.line=linelst[0][0]
+        self.cidlst=[]
+        for nn in range(len(axlst)):
+            self.data.append([])
+            self.error.append([])
+            self.fdict.append([])
+        
+            #get data from lines and make a dictionary of frequency points for easy
+            #indexing
+            for ii,line in enumerate(linelst[nn]):
+                self.data[nn].append(line.get_data()[1])
+                self.fdict[nn].append(dict([('{0:.5g}'.format(kk),ff) for ff,kk in 
+                                        enumerate(line.get_data()[0])]))
+                self.fndict['{0}'.format(line.figure.number)]=nn
+                
+                #set some events
+                if ii==0:
+                    cid1=line.figure.canvas.mpl_connect('pick_event',self)
+                    cid2=line.figure.canvas.mpl_connect('axes_enter_event',
+                                                        self.inAxes)
+                    cid3=line.figure.canvas.mpl_connect('key_press_event',
+                                                        self.on_close)
+                    cid4=line.figure.canvas.mpl_connect('figure_enter_event',
+                                                        self.inFigure)
+                    self.cidlst.append([cid1,cid2,cid3,cid4])
+        
+            #read in the error in a useful way so that it can be translated to 
+            #the data file.  Make the error into an array
+            for ee,err in enumerate(errlst[nn]):
+                errpath=err[2].get_paths()
+                errarr=np.zeros(len(self.fdict[nn][ee].keys()))
+                for ff,epath in enumerate(errpath):
+                    errv=epath.vertices
+                    errarr[ff]=abs(errv[0,1]-self.data[nn][ee][ff])
+                self.error[nn].append(errarr)
+        
+        #set the error bar increment values
         self.reserrinc=reserrinc
         self.phaseerrinc=phaseerrinc
+        #set the marker
         self.marker=marker
+        #set the figure number
         self.fignum=self.line.figure.number
+        #make a list of occam lines to write later
+        self.occamlines=[]
+    
         
-        #get data from lines and make a dictionary of frequency points for easy
-        #indexing
-        for line in linelst:
-            self.data.append(line.get_data()[1])
-            self.fdict.append(dict([('{0:.5g}'.format(kk),ff) for ff,kk in 
-                                    enumerate(line.get_data()[0])]))
         
-        #read in the error in a useful way so that it can be translated to 
-        #the data file.  Make the error into an array
-        for ee,err in enumerate(errlst):
-            errpath=err[2].get_paths()
-            errarr=np.zeros(len(self.fdict[ee].keys()))
-            for ff,epath in enumerate(errpath):
-                errv=epath.vertices
-                errarr[ff]=abs(errv[0,1]-self.data[ee][ff])
-            self.error.append(errarr)
-        
-        #set some events
-        self.cid=line.figure.canvas.mpl_connect('pick_event',self)
-        self.cid2=line.figure.canvas.mpl_connect('axes_enter_event',self.inAxes)
-        self.cid3=line.figure.canvas.mpl_connect('key_press_event',self.on_close)
-        self.count=0
     
     def __call__(self,event):
         """
@@ -3774,10 +3808,10 @@ class OccamPointPicker(object):
             yd=npoint.get_ydata()[ii]
             
             #set the x index from the frequency dictionary
-            ll=self.fdict[self.jj]['{0:.5g}'.format(xd[0])]
+            ll=self.fdict[self.fignum][self.jj]['{0:.5g}'.format(xd[0])]
             
             #change the data to be a zero
-            self.data[self.jj][ll]=0
+            self.data[self.fignum][self.jj][ll]=0
             
             #reset the point to be a gray x
             self.ax.plot(xd,yd,ls='None',color=(.7,.7,.7),marker=self.marker,
@@ -3791,10 +3825,10 @@ class OccamPointPicker(object):
             yd=npoint.get_ydata()[ii]
             
             #set the x index from the frequency dictionary
-            ll=self.fdict[self.jj]['{0:.5g}'.format(xd[0])]
+            ll=self.fdict[self.fignum][self.jj]['{0:.5g}'.format(xd[0])]
             
             #set the data point to zero
-            self.data[self.jj][ll]=0
+            self.data[self.fignum][self.jj][ll]=0
             
             #reset the point to be a gray x
             self.ax.plot(xd,yd,ls='None',color=(.7,.7,.7),marker=self.marker,
@@ -3803,13 +3837,13 @@ class OccamPointPicker(object):
             #check to make sure there is a corresponding res/phase point
             try:
                 #get the corresponding y-value 
-                yd2=self.data[self.kk][ll]
+                yd2=self.data[self.fignum][self.kk][ll]
                 
                 #set that data point to 0 as well
-                self.data[self.kk][ll]=0
+                self.data[self.fignum][self.kk][ll]=0
                 
                 #make that data point a gray x
-                self.axlst[self.kk].plot(xd,yd2,ls='None',
+                self.axlst[self.fignum][self.kk].plot(xd,yd2,ls='None',
                                         color=(.7,.7,.7),marker=self.marker,
                                         ms=4)
             except KeyError:
@@ -3823,14 +3857,14 @@ class OccamPointPicker(object):
             yd=npoint.get_ydata()[ii]
             
             #get x index
-            ll=self.fdict[self.jj]['{0:.5g}'.format(xd[0])]
+            ll=self.fdict[self.fignum][self.jj]['{0:.5g}'.format(xd[0])]
             
             #make error bar array
-            eb=self.errlst[self.jj][2].get_paths()[ll].vertices
+            eb=self.errlst[self.fignum][self.jj][2].get_paths()[ll].vertices
             
             #make ecap array
-            ecapl=self.errlst[self.jj][0].get_data()[1][ll]
-            ecapu=self.errlst[self.jj][1].get_data()[1][ll]
+            ecapl=self.errlst[self.fignum][self.jj][0].get_data()[1][ll]
+            ecapu=self.errlst[self.fignum][self.jj][1].get_data()[1][ll]
             
             #change apparent resistivity error
             if self.jj==0 or self.jj==1:
@@ -3847,22 +3881,23 @@ class OccamPointPicker(object):
                 ecapu=ecapu+ecapu*self.phaseerrinc
                 
             #put the new error into the error array    
-            self.error[self.jj][ll]=abs(nebu-self.data[self.jj][ll])
+            self.error[self.fignum][self.jj][ll]=abs(nebu-\
+                                        self.data[self.fignum][self.jj][ll])
             
             #set the new error bar values
             eb[0,1]=nebu
             eb[1,1]=nebl
             
             #reset the error bars and caps
-            ncapl=self.errlst[self.jj][0].get_data()
-            ncapu=self.errlst[self.jj][1].get_data()
+            ncapl=self.errlst[self.fignum][self.jj][0].get_data()
+            ncapu=self.errlst[self.fignum][self.jj][1].get_data()
             ncapl[1][ll]=ecapl
             ncapu[1][ll]=ecapu
             
             #set the values 
-            self.errlst[self.jj][0].set_data(ncapl)
-            self.errlst[self.jj][1].set_data(ncapu)
-            self.errlst[self.jj][2].get_paths()[ll].vertices=eb
+            self.errlst[self.fignum][self.jj][0].set_data(ncapl)
+            self.errlst[self.fignum][self.jj][1].set_data(ncapu)
+            self.errlst[self.fignum][self.jj][2].get_paths()[ll].vertices=eb
             
         #redraw the canvas
         self.ax.figure.canvas.draw()
@@ -3872,8 +3907,9 @@ class OccamPointPicker(object):
         self.event2=event
         self.ax=event.inaxes
         for jj,axj in enumerate(self.axlst):
-            if self.ax==axj:
-                self.jj=jj
+            for ll,axl in enumerate(axj):
+                if self.ax==axl:
+                    self.jj=ll
                 
         #set complimentary resistivity and phase plots together
         if self.jj==0:
@@ -3884,21 +3920,161 @@ class OccamPointPicker(object):
             self.kk=0
         if self.jj==3:
             self.kk=1
-        print self.jj,self.kk
+        
+    #get the figure number that the mouse is in
+    def inFigure(self,event):
+        self.event3=event
+        self.fignum=self.fndict['{0}'.format(event.canvas.figure.number)]
+        self.line=self.linelst[self.fignum][0]
     
     #type the q key to quit the figure and disconnect event handling            
     def on_close(self,event):
         self.event3=event
         if self.event3.key=='q':
-            self.line.figure.canvas.mpl_disconnect(self.cid)
-            self.line.figure.canvas.mpl_disconnect(self.cid2)
-            self.line.figure.canvas.mpl_disconnect(self.cid3)
+            for cid in self.cidlst[self.fignum]:
+               event.canvas.mpl_disconnect(cid)
             plt.close(event.canvas.figure)
-            print 'closed'      
+            print 'closed'     
     
     
+def plotMaskPoints(datafn,plottype=None,reserrinc=.20,phaseerrinc=5,
+                   marker='o',colormode='color',dpi=300,ms=2,
+                   reslimits=None,phaselimits=(-5,95)):
+    """
+    An interactive plotting tool to mask points an add errorbars
+    """
+    
+    if colormode=='color':
+        #color for data
+        cted=(0,0,1)
+        ctmd=(1,0,0)
+        mted='s'
+        mtmd='o'
+        
+    elif colormode=='bw':
+        #color for data
+        cted=(0,0,0)
+        ctmd=(0,0,0)
+        mted='s'
+        mtmd='o'
+        
+    #read in data file    
+    rplst,stationlst,freq,title,theta=read2DdataFile(datafn)
+    
+    period=1./freq
+    xlimits=(np.log10(period[0]),np.log10(period[-1]))
     
     
+    pstationlst=[]
+    axplst=[]
+    linelst=[]
+    errlst=[]
+    
+    #get the station for plotting
+    if type(plottype) is not list:
+        plottype=[plottype]
+    for ii,station in enumerate(stationlst):
+        for pstation in plottype:
+            if station.find(pstation)>=0:
+                pstationlst.append(ii) 
+    
+    #set the subplot grid
+    axlst=[]
+    errlst=[]
+    linelst=[]
+    gs=gridspec.GridSpec(6,2,wspace=.1,left=.1,top=.93,bottom=.07)
+    for jj,ii in enumerate(pstationlst):
+        fig=plt.figure(ii+1,dpi=dpi)
+        plt.clf()
+        
+        #make subplots
+        axrte=fig.add_subplot(gs[:4,0])
+        axrtm=fig.add_subplot(gs[:4,1])
+        axpte=fig.add_subplot(gs[-2:,0],sharex=axrte)    
+        axptm=fig.add_subplot(gs[-2:,1],sharex=axrtm)    
+        
+        
+        #plot resistivity TE Mode
+        #cut out missing data points first
+        rxy=np.where(rplst[ii]['resxy'][0]!=0)[0]
+        rte=axrte.errorbar(period[rxy],10**rplst[ii]['resxy'][0][rxy],
+                        ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
+                        color=cted,
+                        yerr=np.log(10)*rplst[ii]['resxy'][1][rxy]*\
+                            10**rplst[ii]['resxy'][0][rxy],
+                        ecolor=cted,picker=2)
+                        
+        #plot Phase TE Mode
+        #cut out missing data points first
+        pxy=[np.where(rplst[ii]['phasexy'][0]!=0)[0]]
+        pte=axpte.errorbar(period[pxy],rplst[ii]['phasexy'][0][pxy],
+                           ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,color=cted,
+                           yerr=rplst[ii]['phasexy'][1][pxy],ecolor=cted,picker=1) 
+        
+                       
+        #plot resistivity TM Mode
+        #cut out missing data points first                
+        ryx=np.where(rplst[ii]['resyx'][0]!=0)[0]
+        rtm=axrtm.errorbar(period[ryx],10**rplst[ii]['resyx'][0][ryx],
+                        ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
+                        color=ctmd,
+                        yerr=np.log(10)*rplst[ii]['resyx'][1][ryx]*\
+                            10**rplst[ii]['resyx'][0][ryx],
+                        ecolor=ctmd,picker=2)
+        #plot Phase TM Mode
+        #cut out missing data points first
+        pyx=[np.where(rplst[ii]['phaseyx'][0]!=0)[0]]
+        ptm=axptm.errorbar(period[pyx],rplst[ii]['phaseyx'][0][pyx],
+                        ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,color=ctmd,
+                        yerr=rplst[ii]['phaseyx'][1][pyx],ecolor=ctmd,picker=1)
+    
+    
+        #make the axis presentable
+        #set the apparent resistivity scales to log and x-axis to log
+        axplst=[axrte,axrtm,axpte,axptm]
+        llst=[rte[0],rtm[0],pte[0],ptm[0]]
+        elst=[[rte[1][0],rte[1][1],rte[2][0]],[rtm[1][0],rtm[1][1],rtm[2][0]],
+            [pte[1][0],pte[1][1],pte[2][0]],[ptm[1][0],ptm[1][1],ptm[2][0]]]
+            
+        axlst.append(axplst)
+        linelst.append(llst)
+        errlst.append(elst)
+        for nn,xx in enumerate(axplst):
+            xx.set_xscale('log')
+            xx.set_xlim(xlimits)
+            if nn==0 or nn==1:
+                plt.setp(xx.xaxis.get_ticklabels(),visible=False)
+                xx.set_yscale('log')
+                if reslimits!=None:
+                    xx.set_ylim(reslimits)
+                
+                              
+            if nn==0:
+                xx.set_title('Obs$_{xy}$ (TE-Mode)',
+                             fontdict={'size':9,'weight':'bold'})
+                xx.yaxis.set_label_coords(-.075,.5)
+                xx.set_ylabel('App. Res. ($\Omega \cdot m$)',
+                              fontdict={'size':9,'weight':'bold'})
+            if nn==1:
+                xx.set_title('Obs$_{yx}$ (TM-Mode)',
+                             fontdict={'size':9,'weight':'bold'})
+    
+            if nn==2 or nn==3:
+                xx.set_ylim(phaselimits)
+                xx.yaxis.set_label_coords(-.075,.5)
+                if nn==2:
+                    xx.set_ylabel('Phase (deg)',
+                                   fontdict={'size':9,'weight':'bold'})
+                xx.set_xlabel('Period (s)',fontdict={'size':9,'weight':'bold'})
+                xx.yaxis.set_major_locator(MultipleLocator(10))
+                xx.yaxis.set_minor_locator(MultipleLocator(2))
+                
+            xx.grid(True,alpha=.4,which='both') 
+            
+    points=OccamPointPicker(axlst,linelst,errlst,reserrinc=.30)
+    plt.show()
+    
+    return points
 
         
     

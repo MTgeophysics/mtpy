@@ -6,8 +6,6 @@ Created on Mon May 03 13:44:51 2010
 """
 
 import numpy as np
-import MTtools as mt
-import MTPlotTools as mtplot
 import os
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
@@ -52,7 +50,7 @@ class Edi(object):
         Edi.trot = array (nf) of rotation angles used
         
     """
-    def __init__(self,edifilename):
+    def __init__(self,edifilename,ncol=5):
         self.edifn=edifilename
         self.header={'text':[]}
         self.info={'text':[]}
@@ -66,7 +64,7 @@ class Edi(object):
         self.zrot=0
         self.tipper=0
         self.tippervar=0
-        self.ncol=5
+        self.ncol=ncol
 
     def getInfo(self):
         ncol=self.ncol
@@ -791,7 +789,7 @@ class Z(Edi):
         
         
     """
-    def __init__(self,edifn):
+    def __init__(self,edifn,ncol=5):
         super(Edi,self).__init__()
         
         #define some parameters to be filled
@@ -808,7 +806,7 @@ class Z(Edi):
         self.zrot=0
         self.tipper=0
         self.tippervar=0
-        self.ncol=5
+        self.ncol=ncol
         
         #get information from edifile as a datatype Edi
         Edi.getInfo(self)
@@ -1380,6 +1378,7 @@ class Z(Edi):
         
         #begin plotting
         fig=plt.figure(fignum,[8,10],dpi=dpi)
+        plt.clf()
         
         pt=PhaseTensor(self.z,self.zvar,rotate=coordrot,rotz=thetar)
         rp=ResistivityTensor(self.z,self.frequency,rotate=coordrot,rotz=thetar)
@@ -1528,19 +1527,25 @@ class Z(Edi):
         azvar=np.array(pt.azimuthvar)
 #        realarrow=tipper.magreal
 #        realarrowvar=np.zeros(len(realarrow))+.00000001
+        az[np.where(az>90)]=az[np.where(az>90)]-180
+        az[np.where(az<-90)]=az[np.where(az<-90)]+180
+        
+        strike=zinv.strike
+        strike[np.where(strike>90)]=strike[np.where(strike>90)]-180
+        strike[np.where(strike<-90)]=strike[np.where(strike<-90)]+180
         
         ax2=plt.subplot(3,2,3)
-        erxy=plt.errorbar(period,zinv.strike,
+        erxy=ax2.errorbar(period,strike,
                           marker='s',ms=4,mfc='None',
                           mec='c',mew=1,ls='None',
                           yerr=zinv.strikeerr,
                           ecolor='c')
-        eraz=plt.errorbar(period,az,marker='o',ms=4,
+        eraz=ax2.errorbar(period,az,marker='o',ms=4,
                           mfc='None',mec='purple',mew=1,
                           ls='None',yerr=azvar,ecolor='purple')
         #ertip=plt.errorbar(period,realarrow,marker='>',ms=4,mfc='None',mec='k',
         #                   mew=1,ls='None',yerr=realarrowvar,ecolor='k')
-        plt.legend((erxy[0],eraz[0]),('Strike','Azimuth'),loc='lower left',
+        ax2.legend((erxy[0],eraz[0]),('Strike','Azimuth'),loc='lower left',
                    markerscale=.2,borderaxespad=.01,labelspacing=.1,
                    handletextpad=.2,ncol=2,borderpad=.1,columnspacing=.1)
         leg = plt.gca().get_legend()
@@ -1550,14 +1555,16 @@ class Z(Edi):
         
         ax2.set_yscale('linear')
         ax2.set_xscale('log')
-        plt.xlim(xmax=10**(np.ceil(np.log10(period[-1]))),
+        ax2.set_xlim(xmax=10**(np.ceil(np.log10(period[-1]))),
                  xmin=10**(np.floor(np.log10(period[0]))))
-        plt.ylim(ymin=-200,ymax=200)
-        plt.grid(True,alpha=.3)
+        ax2.set_ylim(ymin=-95,ymax=95)
+        ax2.yaxis.set_major_locator(MultipleLocator(20))
+        ax2.yaxis.set_minor_locator(MultipleLocator(5))
+        ax2.grid(True,alpha=.3)
         #plt.xlabel('Period (s)',fontsize=fs,fontweight='bold')
-        plt.ylabel('Angle (deg)',fontsize=fs,fontweight='bold')
-        plt.title('Strike Angle, Azimuth',fontsize=tfs,
-                  fontweight='bold')
+        ax2.set_ylabel('Angle (deg)',fontsize=fs,fontweight='bold')
+        ax2.set_title('Strike Angle, Azimuth',fontsize=tfs,
+                      fontweight='bold')
         
         #plotMinMaxPhase
         
