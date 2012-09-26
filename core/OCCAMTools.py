@@ -2058,7 +2058,12 @@ def rewrite2DdataFile(datafn,edipath=None,thetar=0,resxyerr='prev',
     #                             write dat file
     #===========================================================================
     
-    dfn=datafn[:-4]+'RW.dat'
+    #make the file name of the data file
+    if datafn.find('RW')>0:
+        dfn=datanf
+    else:
+        dfn=datafn[:-4]+'RW.dat'
+        
     nstat=len(stationlst)
         
     if title==None:
@@ -3962,21 +3967,23 @@ def plotMaskPoints(datafn,plottype=None,reserrinc=.20,phaseerrinc=5,
     rplst,stationlst,freq,title,theta=read2DdataFile(datafn)
     
     period=1./freq
-    xlimits=(np.log10(period[0]),np.log10(period[-1]))
-    
+
+#    xlimits=(period[0],period[-1]) 
+#    xlimits=(np.ceil(np.log10(period[0])),np.floor(np.log10(period[-1]))) 
     
     pstationlst=[]
     axplst=[]
     linelst=[]
     errlst=[]
     
-    #get the station for plotting
-    if type(plottype) is not list:
+    if plottype==None:
+        pstationlst=range(len(stationlst))
+    elif type(plottype) is not list:
         plottype=[plottype]
-    for ii,station in enumerate(stationlst):
-        for pstation in plottype:
-            if station.find(pstation)>=0:
-                pstationlst.append(ii) 
+        for ii,station in enumerate(stationlst):
+            for pstation in plottype:
+                if station.find(pstation)>=0:
+                    pstationlst.append(ii) 
     
     #set the subplot grid
     axlst=[]
@@ -4041,7 +4048,7 @@ def plotMaskPoints(datafn,plottype=None,reserrinc=.20,phaseerrinc=5,
         errlst.append(elst)
         for nn,xx in enumerate(axplst):
             xx.set_xscale('log')
-            xx.set_xlim(xlimits)
+#            xx.set_xlim(xlimits)
             if nn==0 or nn==1:
                 plt.setp(xx.xaxis.get_ticklabels(),visible=False)
                 xx.set_yscale('log')
@@ -4074,8 +4081,1769 @@ def plotMaskPoints(datafn,plottype=None,reserrinc=.20,phaseerrinc=5,
     points=OccamPointPicker(axlst,linelst,errlst,reserrinc=.30)
     plt.show()
     
+        
+    
     return points
 
         
+def maskPoints(maskedpoints,datafn):
     
+    rplst,stationlst,freq,title,theta=read2DdataFile(datafn)
+    #rewrite the data file
+    #make a reverse dictionary for locating the masked points in the data file
+    rploc=dict([('{0}'.format(maskedpoints.fndict[key]),int(key)-1) 
+                for key in maskedpoints.fndict.keys()])
+                
+    #make a period dictionary to locate points changed
+    frpdict=dict([('{0:.5g}'.format(fr),ff) for ff,fr in enumerate(1./freq)])
     
+    #loop over the data list
+    for dd,dat in enumerate(maskedpoints.data):
+        derror=maskedpoints.error[dd]
+        #loop over the 4 main entrie
+        for ss,skey in enumerate(['resxy','resyx','phasexy','phaseyx']):
+            #rewrite any coinciding points
+            for frpkey in frpdict.keys():
+                try:
+                    ff=frpdict[frpkey]
+                    floc=maskedpoints.fdict[dd][ss][frpkey]
+                    
+                    #CHANGE APPARENT RESISTIVITY
+                    if ss==0 or ss==1:
+                        #change the apparent resistivity value
+                        if rplst[rploc[str(dd)]][skey][0][ff]!=\
+                                                    np.log10(dat[ss][floc]):
+                            if dat[ss][floc]==0:
+                                rplst[rploc[str(dd)]][skey][0][ff]=0.0
+                            else:
+                                rplst[rploc[str(dd)]][skey][0][ff]=\
+                                        np.log10(dat[ss][floc])
+                            
+                        #change the apparent resistivity error value
+                        if dat[ss][floc]==0.0:
+                            rerr=0.0
+                        else:
+                            rerr=derror[ss][floc]/dat[ss][floc]/np.log(10)
+                        if rplst[rploc[str(dd)]][skey][1][ff]!=rerr:
+                            rplst[rploc[str(dd)]][skey][1][ff]=rerr
+                    
+                    #DHANGE PHASE
+                    elif ss==2 or ss==3:
+                        #change the phase value
+                        if rplst[rploc[str(dd)]][skey][0][ff]!=dat[ss][floc]:
+                            if dat[ss][floc]==0:
+                                rplst[rploc[str(dd)]][skey][0][ff]=0.0
+                            else:
+                                rplst[rploc[str(dd)]][skey][0][ff]=dat[ss][floc]
+                            
+                        #change the apparent resistivity error value
+                        if dat[ss][floc]==0.0:
+                            rerr=0.0
+                        else:
+                            rerr=derror[ss][floc]
+                        if rplst[rploc[str(dd)]][skey][1][ff]!=rerr:
+                            rplst[rploc[str(dd)]][skey][1][ff]=rerr
+                except KeyError:
+                    pass
+        
+        
+    #rewrite the data file 
+    ss=3*' '
+    fmt='%2.6f'
+    reslst=[]
+    
+    #make a dictionary of rplst for easier extraction of data
+    rpdict=dict([(station,rplst[ii]) for ii,station in enumerate(stationlst)])
+    
+    #loop over stations in the data file
+    for kk,station in enumerate(stationlst,1):
+        srp=rpdict[station]
+        
+        #loop over frequencies
+        for jj,ff in enumerate(freq,1):
+            #make a list of lines to write to the data file
+            if srp['resxy'][0,jj-1]!=0.0:
+                reslst.append(ss+str(kk)+ss+str(jj)+ss+'1'+ss+
+                            fmt % srp['resxy'][0,jj-1]+ss+
+                            fmt % srp['resxy'][1,jj-1]+'\n')
+            if srp['phasexy'][0,jj-1]!=0.0:
+                reslst.append(ss+str(kk)+ss+str(jj)+ss+'2'+ss+
+                            fmt % srp['phasexy'][0,jj-1]+ss+
+                            fmt % srp['phasexy'][1,jj-1]+'\n')
+            if srp['resyx'][0,jj-1]!=0.0:
+                reslst.append(ss+str(kk)+ss+str(jj)+ss+'5'+ss+
+                            fmt % srp['resyx'][0,jj-1]+ss+
+                            fmt % srp['resyx'][1,jj-1]+'\n')
+            if srp['phaseyx'][0,jj-1]!=0.0:
+                reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
+                            fmt % srp['phaseyx'][0,jj-1]+ss+
+                            fmt % srp['phaseyx'][1,jj-1]+'\n')
+            if srp['realtip'][0,jj-1]!=0.0:
+                reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
+                        fmt % srp['realtip'][0,jj-1]+ss+
+                        fmt % srp['realtip'][1,jj-1]+'\n')
+            if srp['imagtip'][0,jj-1]!=0.0:
+                reslst.append(ss+str(kk)+ss+str(jj)+ss+'4'+ss+
+                        fmt % srp['imagtip'][0,jj-1]+ss+
+                        fmt % srp['imagtip'][1,jj-1]+'\n')
+    
+    #===========================================================================
+    #                             write dat file
+    #===========================================================================
+    #make the file name of the data file
+    if datafn.find('RW')>0:
+        dfn=datafn
+    else:
+        dfn=datafn[:-4]+'RW.dat'
+    
+    #get number of stations
+    nstat=len(stationlst)
+    
+    #set title    
+    if title==None:
+        title='Occam Inversion'
+    
+    #open file to write to
+    datfid=open(dfn,'w')
+    datfid.write('FORMAT:'+' '*11+'OCCAM2MTDATA_1.0'+'\n')
+    datfid.write('TITLE:'+' '*12+title+'\n')
+    
+    #write station sites
+    datfid.write('SITES:'+' '*12+str(nstat)+'\n')
+    for station in stationlst:
+        datfid.write(ss+station+'\n')
+    
+    #write offsets
+    datfid.write('OFFSETS (M):'+'\n')
+    for station in stationlst:
+        datfid.write(ss+fmt % rpdict[station]['offset']+'\n')
+    
+    #write frequencies
+    #writefreq=[freq[ff] for ff in range(0,len(freq),freqstep)]
+    datfid.write('FREQUENCIES:'+' '*8+str(len(freq))+'\n')
+    for ff in freq:
+        datfid.write(ss+fmt % ff +'\n')
+    
+    #write data block
+    datfid.write('DATA BLOCKS:'+' '*10+str(len(reslst))+'\n')
+    datfid.write('SITE'+ss+'FREQ'+ss+'TYPE'+ss+'DATUM'+ss+'ERROR'+'\n')
+    for ll,datline in enumerate(reslst):
+        if datline.find('#IND')>=0:
+            print 'Found #IND on line ',ll
+            ndline=datline.replace('#IND','00')
+            print 'Replaced with 00'
+            datfid.write(ndline)
+        else:
+            datfid.write(datline)
+    datfid.close()
+    
+    print 'Wrote Occam2D data file to: ',dfn
+    
+    return dfn
+    
+class Occam2D(object):
+    """
+    This class will read in an occam data file, mesh file, iterfile, anything
+    you could possibly imagine this class will do.
+    """
+    
+    def __init__(self):
+        pass
+
+    def readDataFile(self,datafn):
+        self.datafn=datafn
+        self.data=OccamData(self.datafn)
+        self.data.read2DdataFile()
+
+class OccamData:
+    def __init__(self,datafn):
+        self.datafn=datafn
+    def read2DdataFile(self):
+        """
+            read2DdataFile will read in data from a 2D occam data file.  
+            Only supports the first 6 data types of occam2D
+        
+        Input: 
+            datafn = full path to data file
+        
+        Output:
+            rplst = list of dictionaries for each station with keywords:
+                'station' = station name
+                'offset' = relative offset,
+                'resxy' = TE resistivity and error as row 0 and 1 ressectively,
+                'resyx'= TM resistivity and error as row 0 and 1 respectively,
+                'phasexy'= TE phase and error as row 0 and 1 respectively,
+                'phaseyx'= Tm phase and error as row 0 and 1 respectively,
+                'realtip'= Real Tipper and error as row 0 and 1 respectively,
+                'imagtip'= Imaginary Tipper and error as row 0 and 1 respectively
+                
+                Note: that the resistivity will be in log10 space.  Also, there are
+                2 extra rows in the data arrays, this is to put the response from
+                the inversion. 
+            
+            stationlst = list of stations in order from one side of the profile
+                         to the other.
+            freq = list of frequencies used in the inversion
+            title = title, could be useful for plotting.
+        """
+        
+        dfid=open(self.datafn,'r')
+        
+        dlines=dfid.readlines()
+        #get format of input data
+        self.occamfmt=dlines[0].strip().split(':')[1].strip()
+        
+        #get title
+        self.titlestr=dlines[1].strip().split(':')[1].strip()
+    
+        if self.titlestr.find('--')>0:
+            tstr=self.titlestr.split('--')
+            self.theta_profile=tstr[0]
+            self.title=tstr[1]
+        else:
+            self.title=self.titlestr
+            self.theta_profile=0
+            print 'Need to figure out angle of profile line'
+        #get number of sits
+        nsites=int(dlines[2].strip().split(':')[1].strip())
+        
+        #get station names
+        self.stationlst=[dlines[ii].strip() for ii in range(3,nsites+3)]
+        
+        #get offsets in meters
+        offsets=[float(dlines[ii].strip()) for ii in range(4+nsites,4+2*nsites)]
+        
+        #get number of frequencies
+        nfreq=int(dlines[4+2*nsites].strip().split(':')[1].strip())
+    
+        #get frequencies
+        self.freq=np.array([float(dlines[ii].strip()) 
+                                for ii in range(5+2*nsites,5+2*nsites+nfreq)])
+        
+        #get periods
+        self.period=1./self.freq
+                                                          
+    
+        #-----------get data-------------------
+        #set zero array size the first row will be the data and second the error
+        asize=(4,nfreq)
+        #make a list of dictionaries for each station.
+        self.rplst=[{'station':station,'offset':offsets[ii],
+                'resxy':np.zeros(asize),
+                'resyx':np.zeros(asize),
+                'phasexy':np.zeros(asize),
+                'phaseyx':np.zeros(asize),
+                'realtip':np.zeros(asize),
+                'imagtip':np.zeros(asize),
+                } for ii,station in enumerate(self.stationlst)]
+        for line in dlines[7+2*nsites+nfreq:]:
+            ls=line.split()
+            #station index
+            ss=int(float(ls[0]))-1
+            #component key
+            comp=str(int(float(ls[2])))
+            #frequency index        
+            ff=int(float(ls[1]))-1
+            #print ls,ss,comp,ff
+            #put into array
+            #input data
+            self.rplst[ss][occamdict[comp]][0,ff]=float(ls[3]) 
+            #error       
+            self.rplst[ss][occamdict[comp]][1,ff]=float(ls[4])
+            
+    def rewrite2DdataFile(self,edipath=None,thetar=0,resxyerr='prev',
+                          resyxerr='prev',phasexyerr='prev',phaseyxerr='prev',
+                          tippererr=None,mmode='both',flst=None,
+                          removestation=None):
+        """
+        rewrite2DDataFile will rewrite an existing data file so you can redefine 
+        some of the parameters, such as rotation angle, or errors for the different
+        components or only invert for one mode or add one or add tipper or remove
+        tipper.
+        
+        Inputs:
+            datafn = full path to data file to rewrite
+            
+            rotz = rotation angle with positive clockwise
+            
+            resxyerr = error for TE mode resistivity (percent) or 'data' for data 
+                        or prev to take errors from data file.
+            
+            resyxerr = error for TM mode resistivity (percent) or 'data' for data
+                        or prev to take errors from data file.
+                        
+            phasexyerr = error for TE mode phase (percent) or 'data' for data
+                        or prev to take errors from data file.
+                        
+            phaseyxerr = error for TM mode phase (percent) or 'data' for data
+                        or prev to take errors from data file.
+                        
+            tippererr = error for tipper (percent) input only if you want to invert
+                        for the tipper or 'data' for data errors
+                        or prev to take errors from data file.
+                        
+            mmodes = 'both' for both TE and TM
+                     'TE' for TE
+                     'TM' for TM
+                     
+            flst = frequency list in Hz to rewrite, needs to be similar to the 
+                    datafile, cannot add frequencies
+                    
+            removestation = list of stations to remove if desired
+        """
+        ss=3*' '
+        fmt='%2.6f'
+        
+        #load the data for the data file    
+        self.read2DdataFile()
+        #copy the information into local lists in case you want to keep the 
+        #original data
+        rplst=list(self.rplst)
+        stationlst=list(self.stationlst)
+        #make a dictionary of rplst for easier extraction of data
+        rpdict=dict([(station,rplst[ii]) for ii,station in 
+                                                    enumerate(stationlst)])
+    
+        #remove stations from rplst and stationlst if desired
+        if removestation!=None:
+            #if removestation is not a list make it one
+            if type(removestation) is not list:
+                removestation=[removestation]
+            
+            #remove station from station list           
+            for rstation in removestation:        
+                try:
+                    stationlst.remove(rstation)
+                except ValueError:
+                    print 'Did not find '+rstation
+        
+        #if flst is not the same as freq make freq=flst
+        if flst!=None:
+            freq=flst
+        
+        
+        #if the rotation angle is not 0 than need to read the original data in
+        if thetar!=0:
+            if edipath==None:
+                raise IOError('Need to input the edipath to original edifiles to'+
+                               ' get rotations correct')
+            
+            #get list of edifiles already in data file
+            edilst=[os.path.join(edipath,edi) for stat in stationlst 
+                    for edi in os.listdir(edipath) if edi[0:len(stat)]==stat]
+            reslst=[]
+            for kk,edifn in enumerate(edilst,1):
+                imp1=Z.Z(edifn)
+                rp=imp1.getResPhase(thetar=thetar)
+                imptip=imp1.getTipper()
+                tip=imptip.tipper
+                station=stationlst[kk-1]
+                fdict=dict([('{0:.6g}'.format(fr),ii) for ii,fr in 
+                                                    enumerate(imp1.frequency)])
+                #loop over frequencies to pick out the ones desired
+                for jj,ff in enumerate(freq,1):
+                    #jj is the index of edi file frequency list, this index corresponds
+                    #to the impedance tensor component index
+                    #ff is the frequency from the edi file frequency list
+                    try:
+                        #nn is the frequency number out of extracted frequency list
+                        nn=fdict['%.6g' % ff]
+                        
+                        #calculate resistivity
+                        resxy=rp.resxy[nn]
+                        resyx=rp.resyx[nn]
+                
+                        #calculate the phase putting the yx in the 1st quadrant
+                        phasexy=rp.phasexy[nn]
+                        phaseyx=rp.phaseyx[nn]+180
+                        #put phases in correct quadrant if should be negative
+                        if phaseyx>180:
+                            phaseyx=phaseyx-360
+                            print 'Found Negative Phase at',imp1.station,kk,ff    
+                        
+                        #calculate errors
+                        #res_xy (TE)
+                        if resxyerr=='data':
+                            lresxyerr=(rp.resxyerr[nn]/resxy)/np.log(10)
+                        #take errors from data file
+                        elif resxyerr=='prev':
+                            lresxyerr=rpdict[station]['resxy'][1,jj-1]
+                        else:
+                            lresxyerr=(resxyerr/100.)/np.log(10)
+                        
+                        #Res_yx(TM)
+                        if resyxerr=='data':
+                            lresxyerr=rpdict[station]['resyx'][1,jj-1]
+                        #take errors from data file
+                        elif resyxerr=='prev':
+                            lresyxerr=rpdict[station]['resyx'][1,jj-1]
+                        else:
+                            lresyxerr=(resyxerr/100.)/np.log(10)
+                        
+                        #phase_xy(TE)
+                        if phasexyerr=='data':
+                            dphasexyerr=rp.phasexyerr[nn]
+                            #take errors from data file
+                        elif phasexyerr=='prev':
+                            dphasexyerr=rpdict[station]['phasexy'][1,jj-1]
+                        else:
+                            dphasexyerr=(phasexyerr/100.)*57/2.
+                            
+                        #phase_yx (TM)
+                        if phaseyxerr=='data':
+                            dphaseyxerr=rp.phaseyxerr[nn]
+                        elif phaseyxerr=='prev':
+                            dphaseyxerr=rpdict[station]['phaseyx'][1,jj-1]
+                        else:
+                            dphaseyxerr=(phaseyxerr/100.)*57/2.
+                        
+                        #calculate log10 of resistivity as prescribed by OCCAM
+                        lresyx=np.log10(resyx)
+                        lresxy=np.log10(resxy)
+                        
+                        #if include the tipper
+                        if tippererr!=None:
+                            if tip.tipper[nn,0]==0.0 or tip[nn,1]==0.0:
+                                tipyn='n'
+                            else:
+                                #calculate the projection angle for real and imaginary
+                                tipphir=np.arctan(tip[nn,0].real/tip[nn,1].real)-\
+                                        theta
+                                tipphii=np.arctan(tip[nn,0].imag/tip[nn,1].imag)-\
+                                        theta
+                                
+                                #project the tipper onto the profile line
+                                projtipr=np.sqrt(tip[nn,0].real**2+tip[nn,1].real**2)*\
+                                          np.cos(tipphir)
+                                projtipi=np.sqrt(tip[nn,0].imag**2+tip[nn,1].imag**2)*\
+                                          np.cos(tipphii)
+                                          
+                                #error of tipper is a decimal percentage
+                                projtiperr=tippererr/100.
+                                
+                                tipyn='y'
+                            
+                        
+                        #make a list of lines to write to the data file
+                        if mmode=='both':
+                            if rpdict[station]['resxy'][0,jj-1]!=0.0:
+                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'1'+ss+
+                                            fmt % lresxy +ss+fmt % lresxyerr+'\n')
+                            if rpdict[station]['phasexy'][0,jj-1]!=0.0:
+                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'2'+ss+
+                                            fmt % phasexy+ss+fmt % dphasexyerr+'\n')
+                            if rpdict[station]['resyx'][0,jj-1]!=0.0:
+                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'5'+ss+
+                                            fmt % lresyx+ss+fmt % lresyxerr+'\n')
+                            if rpdict[station]['phaseyx'][0,jj-1]!=0.0:
+                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
+                                            fmt % phaseyx+ss+fmt % dphaseyxerr+'\n')
+                            if tippererr!=None and tipyn=='y':
+                                if rpdict[station]['realtip'][0,jj-1]!=0.0:
+                                    reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
+                                                fmt % projtipr+ss+fmt % projtiperr+
+                                                '\n')
+                                if rpdict[station]['imagtip'][0,jj-1]!=0.0:
+                                    reslst.append(ss+str(kk)+ss+str(jj)+ss+'4'+ss+
+                                                fmt % projtipi+ss+fmt % projtiperr+
+                                                '\n')
+                        elif mmode=='TM':
+                            if rpdict[station]['resyx'][0,jj-1]!=0.0:
+                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'5'+ss+
+                                            fmt % lresyx +ss+fmt % lresyxerr+'\n')
+                            if rpdict[station]['phaseyx'][0,jj-1]!=0.0:
+                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
+                                            fmt % phaseyx+ss+fmt % dphaseyxerr+'\n')
+                            if tippererr!=None and tipyn=='y':
+                                if rpdict[station]['realtip'][0,jj-1]!=0.0:
+                                    reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
+                                                fmt % projtipr+ss+fmt % projtiperr+
+                                                '\n')
+                                if rpdict[station]['imagtip'][0,jj-1]!=0.0:
+                                    reslst.append(ss+str(kk)+ss+str(jj)+ss+'4'+ss+
+                                                fmt % projtipi+ss+fmt % projtiperr+
+                                                '\n')
+                        elif mmode=='TE':
+                            if rpdict[station]['resxy'][0,jj-1]!=0.0:
+                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'1'+ss+
+                                            fmt % lresxy +ss+fmt % lresxyerr+'\n')
+                            if rpdict[station]['phasexy'][0,jj-1]!=0.0:
+                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'2'+ss+
+                                            fmt % phasexy+ss+fmt % dphasexyerr+'\n')
+                            if tippererr!=None and tipyn=='y':
+                                if rpdict[station]['realtip'][0,jj-1]!=0.0:
+                                    reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
+                                                fmt % projtipr+ss+fmt % projtiperr+
+                                                '\n')
+                                if rpdict[station]['imagtip'][0,jj-1]!=0.0:
+                                    reslst.append(ss+str(kk)+ss+str(jj)+ss+'4'+ss+
+                                                fmt % projtipi+ss+fmt % projtiperr+
+                                                '\n')
+                        else:
+                            raise NameError('mmode' +mmode+' not defined')
+                    except KeyError:
+                        pass
+        
+        #If no rotation is desired but error bars are than...
+        else:
+            reslst=[]
+            for kk,station in enumerate(stationlst,1):
+                srp=rpdict[station]
+                nr=srp['resxy'].shape[1]
+                #calculate errors and rewrite
+                #res_xy (TE)
+                if resxyerr!=None:
+                    if resxyerr=='prev':
+                        lresxyerr=rpdict[station]['resxy'][1,:]
+                    else:
+                        lresxyerr=np.repeat((resxyerr/100.)/np.log(10),nr)
+                    srp['resxy'][1,:]=lresxyerr
+                
+                #Res_yx(TM)
+                if resyxerr!=None:
+                    if resyxerr=='prev':
+                        lresyxerr=rpdict[station]['resyx'][1,:]
+                    else:
+                        lresyxerr=np.repeat((resyxerr/100.)/np.log(10),nr)
+                    srp['resyx'][1,:]=lresyxerr
+                
+                #phase_xy(TE)
+                if phasexyerr!=None:
+                    if phasexyerr=='prev':
+                        dphasexyerr=rpdict[station]['phasexy'][1,:]
+                    else:
+                        dphasexyerr=np.repeat((phasexyerr/100.)*57/2.,nr)
+                    srp['phasexy'][1,:]=dphasexyerr
+                    
+                #phase_yx (TM)
+                if phaseyxerr!=None:
+                    if phaseyxerr=='prev':
+                        dphaseyxerr=rpdict[station]['phaseyx'][1,:]
+                    else:
+                        dphaseyxerr=np.repeat((phaseyxerr/100.)*57/2.,nr)
+                    srp['phaseyx'][1,:]=dphaseyxerr
+                
+                if tippererr!=None:
+                    #error of tipper is a decimal percentage
+                    projtiperr=tippererr/100.
+                    srp['realtip'][1,:]=np.repeat(projtiperr,nr)
+                    srp['imagtip'][1,:]=np.repeat(projtiperr,nr)
+                
+                for jj,ff in enumerate(self.freq,1):
+                    #make a list of lines to write to the data file
+                    if mmode=='both':
+                        if srp['resxy'][0,jj-1]!=0.0:
+                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'1'+ss+
+                                        fmt % srp['resxy'][0,jj-1]+ss+
+                                        fmt % srp['resxy'][1,jj-1]+'\n')
+                        if srp['phasexy'][0,jj-1]!=0.0:
+                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'2'+ss+
+                                        fmt % srp['phasexy'][0,jj-1]+ss+
+                                        fmt % srp['phasexy'][1,jj-1]+'\n')
+                        if srp['resyx'][0,jj-1]!=0.0:
+                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'5'+ss+
+                                        fmt % srp['resyx'][0,jj-1]+ss+
+                                        fmt % srp['resyx'][1,jj-1]+'\n')
+                        if srp['phaseyx'][0,jj-1]!=0.0:
+                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
+                                        fmt % srp['phaseyx'][0,jj-1]+ss+
+                                        fmt % srp['phaseyx'][1,jj-1]+'\n')
+                        if tippererr!=None and tipyn=='y':
+                            if srp['realtip'][0,jj-1]!=0.0:
+                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
+                                        fmt % srp['realtip'][0,jj-1]+ss+
+                                        fmt % srp['realtip'][1,jj-1]+'\n')
+                            if srp['imagtip'][0,jj-1]!=0.0:
+                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'4'+ss+
+                                        fmt % srp['imagtip'][0,jj-1]+ss+
+                                        fmt % srp['imagtip'][1,jj-1]+'\n')
+                    elif mmode=='TM':
+                        if srp['resyx'][0,jj-1]!=0.0:
+                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'5'+ss+
+                                        fmt % srp['resyx'][0,jj-1]+ss+
+                                        fmt % srp['resyx'][1,jj-1]+'\n')
+                        if srp['phaseyx'][0,jj-1]!=0.0:
+                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
+                                        fmt % srp['phaseyx'][0,jj-1]+ss+
+                                        fmt % srp['phaseyx'][1,jj-1]+'\n')
+                        if tippererr!=None and tipyn=='y':
+                            if srp['realtip'][0,jj-1]!=0.0:
+                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
+                                        fmt % srp['realtip'][0,jj-1]+ss+
+                                        fmt % srp['realtip'][1,jj-1]+'\n')
+                            if srp['imagtip'][0,jj-1]!=0.0:
+                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'4'+ss+
+                                        fmt % srp['imagtip'][0,jj-1]+ss+
+                                        fmt % srp['imagtip'][1,jj-1]+'\n')
+                    elif mmode=='TE':
+                        if srp['resxy'][0,jj-1]!=0.0:
+                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'1'+ss+
+                                        fmt % srp['resxy'][0,jj-1]+ss+
+                                        fmt % srp['resxy'][1,jj-1]+'\n')
+                        if srp['phasexy'][0,jj-1]!=0.0:
+                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'2'+ss+
+                                        fmt % srp['phasexy'][0,jj-1]+ss+
+                                        fmt % srp['phasexy'][1,jj-1]+'\n')
+                        if tippererr!=None and tipyn=='y':
+                            if srp['realtip'][0,jj-1]!=0.0:
+                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
+                                        fmt % srp['realtip'][0,jj-1]+ss+
+                                        fmt % srp['realtip'][1,jj-1]+'\n')
+                            if srp['imagtip'][0,jj-1]!=0.0:
+                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'4'+ss+
+                                        fmt % srp['imagtip'][0,jj-1]+ss+
+                                        fmt % srp['imagtip'][1,jj-1]+'\n')
+    
+        #===========================================================================
+        #                             write dat file
+        #===========================================================================
+        
+        #make the file name of the data file
+        if self.datafn.find('RW')>0:
+            self.ndatafn=datanf
+        else:
+            self.ndatafn=self.datafn[:-4]+'RW.dat'
+            
+        nstat=len(stationlst)
+            
+        if self.titlestr==None:
+            self.titlestr='Occam Inversion'
+            
+        datfid=open(self.ndatafn,'w')
+        datfid.write('FORMAT:'+' '*11+'OCCAM2MTDATA_1.0'+'\n')
+        datfid.write('TITLE:'+' '*12+self.titlestr+'\n')
+        
+        #write station sites
+        datfid.write('SITES:'+' '*12+str(nstat)+'\n')
+        for station in stationlst:
+            datfid.write(ss+station+'\n')
+        
+        #write offsets
+        datfid.write('OFFSETS (M):'+'\n')
+        for station in stationlst:
+            datfid.write(ss+fmt % rpdict[station]['offset']+'\n')
+        
+        #write frequencies
+        #writefreq=[freq[ff] for ff in range(0,len(freq),freqstep)]
+        datfid.write('FREQUENCIES:'+' '*8+str(len(self.freq))+'\n')
+        for ff in self.freq:
+            datfid.write(ss+fmt % ff +'\n')
+        
+        #write data block
+        datfid.write('DATA BLOCKS:'+' '*10+str(len(reslst))+'\n')
+        datfid.write('SITE'+ss+'FREQ'+ss+'TYPE'+ss+'DATUM'+ss+'ERROR'+'\n')
+        for ll,datline in enumerate(reslst):
+            if datline.find('#IND')>=0:
+                print 'Found #IND on line ',ll
+                ndline=datline.replace('#IND','00')
+                print 'Replaced with 00'
+                datfid.write(ndline)
+            else:
+                datfid.write(datline)
+        datfid.close()
+    
+    def plotMaskPoints(self,plottype=None,reserrinc=.20,phaseerrinc=5,
+                       marker='o',colormode='color',dpi=300,ms=2,
+                       reslimits=None,phaselimits=(-5,95)):
+        """
+        An interactive plotting tool to mask points an add errorbars
+        """
+        
+        if colormode=='color':
+            #color for data
+            cted=(0,0,1)
+            ctmd=(1,0,0)
+            mted='s'
+            mtmd='o'
+            
+        elif colormode=='bw':
+            #color for data
+            cted=(0,0,0)
+            ctmd=(0,0,0)
+            mted='s'
+            mtmd='o'
+            
+        #read in data file    
+        self.read2DdataFile()
+        rplst=list(self.rplst)
+        
+        #get periods
+        period=self.period
+     
+        #define some empty lists to put things into
+        pstationlst=[]
+        axplst=[]
+        linelst=[]
+        errlst=[]
+        
+        #get the stations to plot
+        #if none plot all of them
+        if plottype==None:
+            pstationlst=range(len(stationlst))
+            
+        #otherwise pick out the stations to plot along with their index number
+        elif type(plottype) is not list:
+            plottype=[plottype]
+            for ii,station in enumerate(stationlst):
+                for pstation in plottype:
+                    if station.find(pstation)>=0:
+                        pstationlst.append(ii) 
+        
+        #set the subplot grid
+        gs=gridspec.GridSpec(6,2,wspace=.1,left=.1,top=.93,bottom=.07)
+        for jj,ii in enumerate(pstationlst):
+            fig=plt.figure(ii+1,dpi=dpi)
+            plt.clf()
+            
+            #make subplots
+            axrte=fig.add_subplot(gs[:4,0])
+            axrtm=fig.add_subplot(gs[:4,1])
+            axpte=fig.add_subplot(gs[-2:,0],sharex=axrte)    
+            axptm=fig.add_subplot(gs[-2:,1],sharex=axrtm)    
+            
+            
+            #plot resistivity TE Mode
+            #cut out missing data points first
+            rxy=np.where(rplst[ii]['resxy'][0]!=0)[0]
+            rte=axrte.errorbar(period[rxy],10**rplst[ii]['resxy'][0][rxy],
+                            ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
+                            color=cted,
+                            yerr=np.log(10)*rplst[ii]['resxy'][1][rxy]*\
+                                10**rplst[ii]['resxy'][0][rxy],
+                            ecolor=cted,picker=2)
+                            
+            #plot Phase TE Mode
+            #cut out missing data points first
+            pxy=[np.where(rplst[ii]['phasexy'][0]!=0)[0]]
+            pte=axpte.errorbar(period[pxy],rplst[ii]['phasexy'][0][pxy],
+                               ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,color=cted,
+                               yerr=rplst[ii]['phasexy'][1][pxy],ecolor=cted,picker=1) 
+            
+                           
+            #plot resistivity TM Mode
+            #cut out missing data points first                
+            ryx=np.where(rplst[ii]['resyx'][0]!=0)[0]
+            rtm=axrtm.errorbar(period[ryx],10**rplst[ii]['resyx'][0][ryx],
+                            ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
+                            color=ctmd,
+                            yerr=np.log(10)*rplst[ii]['resyx'][1][ryx]*\
+                                10**rplst[ii]['resyx'][0][ryx],
+                            ecolor=ctmd,picker=2)
+            #plot Phase TM Mode
+            #cut out missing data points first
+            pyx=[np.where(rplst[ii]['phaseyx'][0]!=0)[0]]
+            ptm=axptm.errorbar(period[pyx],rplst[ii]['phaseyx'][0][pyx],
+                            ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,color=ctmd,
+                            yerr=rplst[ii]['phaseyx'][1][pyx],ecolor=ctmd,picker=1)
+        
+        
+            #make the axis presentable
+            #set the apparent resistivity scales to log and x-axis to log
+            axplst=[axrte,axrtm,axpte,axptm]
+            llst=[rte[0],rtm[0],pte[0],ptm[0]]
+            elst=[[rte[1][0],rte[1][1],rte[2][0]],[rtm[1][0],rtm[1][1],rtm[2][0]],
+                [pte[1][0],pte[1][1],pte[2][0]],[ptm[1][0],ptm[1][1],ptm[2][0]]]
+                
+            axlst.append(axplst)
+            linelst.append(llst)
+            errlst.append(elst)
+            
+            #set the axes properties for each subplot
+            for nn,xx in enumerate(axplst):
+                #set xscale to logarithmic in period
+                xx.set_xscale('log')
+                
+                #if apparent resistivity 
+                if nn==0 or nn==1:
+                    #set x-ticklabels to invisible
+                    plt.setp(xx.xaxis.get_ticklabels(),visible=False)
+                    
+                    #set apparent resistivity scale to logarithmic
+                    xx.set_yscale('log')
+                    
+                    #if there are resistivity limits set those
+                    if reslimits!=None:
+                        xx.set_ylim(reslimits)
+                    
+                #Set the title of the TE plot                 
+                if nn==0:
+                    xx.set_title(self.stationlst[ii]+' Obs$_{xy}$ (TE-Mode)',
+                                 fontdict={'size':9,'weight':'bold'})
+                    xx.yaxis.set_label_coords(-.075,.5)
+                    xx.set_ylabel('App. Res. ($\Omega \cdot m$)',
+                                  fontdict={'size':9,'weight':'bold'})
+                #set the title of the TM plot
+                if nn==1:
+                    xx.set_title(self.stationlst[ii]+' Obs$_{yx}$ (TM-Mode)',
+                                 fontdict={'size':9,'weight':'bold'})
+                
+                #set the phase axes properties
+                if nn==2 or nn==3:
+                    #set the phase limits
+                    xx.set_ylim(phaselimits)
+                    
+                    #set label coordinates
+                    xx.yaxis.set_label_coords(-.075,.5)
+                    
+                    #give the y-axis label to the bottom left plot
+                    if nn==2:
+                        xx.set_ylabel('Phase (deg)',
+                                       fontdict={'size':9,'weight':'bold'})
+                    #set the x-axis label
+                    xx.set_xlabel('Period (s)',
+                                  fontdict={'size':9,'weight':'bold'})
+                    
+                    #set tick marks of the y-axis
+                    xx.yaxis.set_major_locator(MultipleLocator(10))
+                    xx.yaxis.set_minor_locator(MultipleLocator(2))
+                    
+                xx.grid(True,alpha=.4,which='both') 
+        
+        #make points an attribute of self which is a data type OccamPointPicker       
+        self.points=OccamPointPicker(axlst,linelst,errlst,reserrinc=.30)
+        
+        #be sure to show the plot
+        plt.show()
+   
+        
+    def maskPoints(self):
+        """
+        maskPoints will take in points found from plotMaskPoints and rewrite 
+        the data file to nameRW.dat.  Be sure to run plotMaskPoints first
+        """
+        
+        self.read2DdataFile()
+        rplst=list[self.rplst]
+        #rewrite the data file
+        #make a reverse dictionary for locating the masked points in the data file
+        rploc=dict([('{0}'.format(self.points.fndict[key]),int(key)-1) 
+                    for key in self.points.fndict.keys()])
+                    
+        #make a period dictionary to locate points changed
+        frpdict=dict([('{0:.5g}'.format(fr),ff) 
+                            for ff,fr in enumerate(1./self.freq)])
+        
+        #loop over the data list
+        for dd,dat in enumerate(self.points.data):
+            derror=self.points.error[dd]
+            #loop over the 4 main entrie
+            for ss,skey in enumerate(['resxy','resyx','phasexy','phaseyx']):
+                #rewrite any coinciding points
+                for frpkey in frpdict.keys():
+                    try:
+                        ff=frpdict[frpkey]
+                        floc=self.points.fdict[dd][ss][frpkey]
+                        
+                        #CHANGE APPARENT RESISTIVITY
+                        if ss==0 or ss==1:
+                            #change the apparent resistivity value
+                            if rplst[rploc[str(dd)]][skey][0][ff]!=\
+                                                        np.log10(dat[ss][floc]):
+                                if dat[ss][floc]==0:
+                                    rplst[rploc[str(dd)]][skey][0][ff]=0.0
+                                else:
+                                    rplst[rploc[str(dd)]][skey][0][ff]=\
+                                            np.log10(dat[ss][floc])
+                                
+                            #change the apparent resistivity error value
+                            if dat[ss][floc]==0.0:
+                                rerr=0.0
+                            else:
+                                rerr=derror[ss][floc]/dat[ss][floc]/np.log(10)
+                            if rplst[rploc[str(dd)]][skey][1][ff]!=rerr:
+                                rplst[rploc[str(dd)]][skey][1][ff]=rerr
+                        
+                        #DHANGE PHASE
+                        elif ss==2 or ss==3:
+                            #change the phase value
+                            if rplst[rploc[str(dd)]][skey][0][ff]!=dat[ss][floc]:
+                                if dat[ss][floc]==0:
+                                    rplst[rploc[str(dd)]][skey][0][ff]=0.0
+                                else:
+                                    rplst[rploc[str(dd)]][skey][0][ff]=dat[ss][floc]
+                                
+                            #change the apparent resistivity error value
+                            if dat[ss][floc]==0.0:
+                                rerr=0.0
+                            else:
+                                rerr=derror[ss][floc]
+                            if rplst[rploc[str(dd)]][skey][1][ff]!=rerr:
+                                rplst[rploc[str(dd)]][skey][1][ff]=rerr
+                    except KeyError:
+                        pass
+            
+            
+        #rewrite the data file 
+        ss=3*' '
+        fmt='%2.6f'
+        reslst=[]
+        
+        #make a dictionary of rplst for easier extraction of data
+        rpdict=dict([(station,rplst[ii]) for ii,station in enumerate(stationlst)])
+        
+        #loop over stations in the data file
+        for kk,station in enumerate(stationlst,1):
+            srp=rpdict[station]
+            
+            #loop over frequencies
+            for jj,ff in enumerate(freq,1):
+                #make a list of lines to write to the data file
+                if srp['resxy'][0,jj-1]!=0.0:
+                    reslst.append(ss+str(kk)+ss+str(jj)+ss+'1'+ss+
+                                fmt % srp['resxy'][0,jj-1]+ss+
+                                fmt % srp['resxy'][1,jj-1]+'\n')
+                if srp['phasexy'][0,jj-1]!=0.0:
+                    reslst.append(ss+str(kk)+ss+str(jj)+ss+'2'+ss+
+                                fmt % srp['phasexy'][0,jj-1]+ss+
+                                fmt % srp['phasexy'][1,jj-1]+'\n')
+                if srp['resyx'][0,jj-1]!=0.0:
+                    reslst.append(ss+str(kk)+ss+str(jj)+ss+'5'+ss+
+                                fmt % srp['resyx'][0,jj-1]+ss+
+                                fmt % srp['resyx'][1,jj-1]+'\n')
+                if srp['phaseyx'][0,jj-1]!=0.0:
+                    reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
+                                fmt % srp['phaseyx'][0,jj-1]+ss+
+                                fmt % srp['phaseyx'][1,jj-1]+'\n')
+                if srp['realtip'][0,jj-1]!=0.0:
+                    reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
+                            fmt % srp['realtip'][0,jj-1]+ss+
+                            fmt % srp['realtip'][1,jj-1]+'\n')
+                if srp['imagtip'][0,jj-1]!=0.0:
+                    reslst.append(ss+str(kk)+ss+str(jj)+ss+'4'+ss+
+                            fmt % srp['imagtip'][0,jj-1]+ss+
+                            fmt % srp['imagtip'][1,jj-1]+'\n')
+        
+        #===========================================================================
+        #                             write dat file
+        #===========================================================================
+        #make the file name of the data file
+        if self.datafn.find('RW')>0:
+            self.ndatafn=self.datafn
+        else:
+            self.ndatafn=self.datafn[:-4]+'RW.dat'
+        
+        #get number of stations
+        nstat=len(self.stationlst)
+        
+        #set title string
+        if self.titlestr==None:
+            self.titlestr='Occam Inversion'
+            
+        datfid=open(self.ndatafn,'w')
+        datfid.write('FORMAT:'+' '*11+'OCCAM2MTDATA_1.0'+'\n')
+        datfid.write('TITLE:'+' '*12+self.titlestr+'\n')
+        
+        #write station sites
+        datfid.write('SITES:'+' '*12+str(nstat)+'\n')
+        for station in self.stationlst:
+            datfid.write(ss+station+'\n')
+        
+        #write offsets
+        datfid.write('OFFSETS (M):'+'\n')
+        for station in self.stationlst:
+            datfid.write(ss+fmt % rpdict[station]['offset']+'\n')
+        
+        #write frequencies
+        #writefreq=[freq[ff] for ff in range(0,len(freq),freqstep)]
+        datfid.write('FREQUENCIES:'+' '*8+str(len(freq))+'\n')
+        for ff in freq:
+            datfid.write(ss+fmt % ff +'\n')
+        
+        #write data block
+        datfid.write('DATA BLOCKS:'+' '*10+str(len(reslst))+'\n')
+        datfid.write('SITE'+ss+'FREQ'+ss+'TYPE'+ss+'DATUM'+ss+'ERROR'+'\n')
+        for ll,datline in enumerate(reslst):
+            if datline.find('#IND')>=0:
+                print 'Found #IND on line ',ll
+                ndline=datline.replace('#IND','00')
+                print 'Replaced with 00'
+                datfid.write(ndline)
+            else:
+                datfid.write(datline)
+        datfid.close()
+        
+        print 'Wrote Occam2D data file to: ',dfn
+    
+    def read2DRespFile(self,respfn):
+        """
+        read2DRespFile will read in a response file and combine the data with info 
+        from the data file.
+    
+        Input:
+            respfn = full path to the response file
+            datafn = full path to data file
+    
+        Outputs:
+            for each data array, the rows are ordered as:
+                0 -> input data
+                1 -> input error
+                2 -> model output
+                3 -> relative error (data-model)/(input error)
+                
+            rplst = list of dictionaries for each station with keywords:
+                'station' = station name
+                'offset' = relative offset,
+                'resxy' = TE resistivity 
+                'resyx'= TM resistivity 
+                'phasexy'= TE phase 
+                'phaseyx'= TM phase a
+                'realtip'= Real Tipper 
+                'imagtip'= Imaginary Tipper 
+                
+                Note: that the resistivity will be in log10 space.  Also, there are
+                2 extra rows in the data arrays, this is to put the response from
+                the inversion. 
+            
+            stationlst = list of stations in order from one side of the profile
+                         to the other.
+            freq = list of frequencies used in the inversion
+            title = title, could be useful for plotting.
+            
+        """
+        #make the response file an attribute        
+        self.respfn=respfn
+        
+        #read in the current data file
+        self.read2DdataFile()
+        
+        rfid=open(self.respfn,'r')
+        
+        rlines=rfid.readlines()
+        for line in rlines:
+            ls=line.split()
+            #station index
+            ss=int(float(ls[0]))-1
+            #component key
+            comp=str(int(float(ls[2])))
+            #frequency index        
+            ff=int(float(ls[1]))-1
+            #put into array
+            #model response
+            self.rplst[ss][occamdict[comp]][2,ff]=float(ls[5]) 
+            #relative error        
+            self.rplst[ss][occamdict[comp]][3,ff]=float(ls[6])
+            
+    def plot2DResponses(self,respfn=None,wlfn=None,maxcol=8,plottype='1',
+                        ms=2,fs=10,phaselimits=(-5,95),colormode='color',
+                        reslimits=None,plotnum=1,**kwargs):
+        """
+        plotResponse will plot the responses modeled from winglink against the 
+        observed data.
+        
+        Inputs:
+            respfn = full path to response file
+            datafn = full path to data file
+            wlfn = full path to a winglink data file used for a similar
+                              inversion.  This will be plotted on the response
+                              plots for comparison of fits.
+            maxcol = maximum number of columns for the plot
+            plottype = 'all' to plot all on the same plot
+                       '1' to plot each respones in a different figure
+                       station to plot a single station or enter as a list of 
+                       stations to plot a few stations [station1,station2].  
+                       Does not have to be verbatim but should have similar
+                       unique characters input pb01 for pb01cs in outputfile
+            ms = marker size 
+            phaselimits = limits of phase in degrees (min,max)
+            colormode = 'color' for color plots
+                        'bw' for black and white plots
+            reslimits = resistivity limits on a log scale (
+                        log10(min),log10(max))
+            plotnum = 1 to plot both TE and TM in the same plot
+                      2 to plot TE and TM in separate subplots
+                      
+        """
+        
+        plt.rcParams['font.size']=fs-2
+        
+        try:
+            dpi=kwargs['dpi']
+        except KeyError:
+            dpi=200
+        
+        #color mode
+        if colormode=='color':
+            #color for data
+            cted=(0,0,1)
+            ctmd=(1,0,0)
+            mted='s'
+            mtmd='o'
+            
+            #color for occam model
+            ctem=(0,.5,1.0)
+            ctmm=(1.0,.5,0)
+            mtem='+'
+            mtmm='+'
+            
+            #color for Winglink model
+            ctewl=(0,.6,.8)
+            ctmwl=(.8,.7,0)
+            mtewl='x'
+            mtmwl='x'
+         
+        #black and white mode
+        elif colormode=='bw':
+            #color for data
+            cted=(0,0,0)
+            ctmd=(0,0,0)
+            mted='*'
+            mtmd='v'
+            
+            #color for occam model
+            ctem=(0.6,.6,.6)
+            ctmm=(.6,.6,.6)
+            mtem='+'
+            mtmm='x'
+            
+            #color for Wingling model
+            ctewl=(.3,.3,.3)
+            ctmwl=(.3,.3,.3)    
+            mtewl='|'
+            mtmwl='_'
+        
+        #if there is a response file to plot
+        if respfn!=None:
+            #read in the data    
+            self.read2DRespFile(respfn)
+            #boolean for plotting response
+            plotresp=True
+        else:
+            #read in current data file
+            self.read2DdataFile()
+            #boolean for plotting response
+            plotresp=False
+            
+        #make a local copy of the rplst    
+        rplst=list(self.rplst)
+        
+        #boolean for adding winglink output to the plots 0 for no, 1 for yes
+        addwl=0
+        hspace=.15
+        #read in winglink data file
+        if wlfn!=None:
+            addwl=1
+            hspace=.25
+            wld,wlrplst,wlplst,wlslst,wltlst=wlt.readOutputFile(wlfn)
+            sdict=dict([(ostation,wlstation) for wlstation in wlslst 
+                        for ostation in self.stationlst 
+                        if wlstation.find(ostation)>=0])
+        
+        #set a local parameter period for less typing
+        period=self.period
+                                          
+        #---------------plot each respones in a different figure------------------
+        if plottype=='1':
+            
+            #set the grid of subplots
+            if plotnum==1:
+                gs=gridspec.GridSpec(6,2,wspace=.1,left=.09,top=.93,bottom=.1,
+                                     hspace=hspace)
+            elif plotnum==2:
+                gs=gridspec.GridSpec(6,2,wspace=.1,left=.07,top=.93,bottom=.1,
+                                     hspace=hspace)
+            #loop over each station
+            for ii,station in enumerate(stationlst):
+                
+                rlst=[]
+                llst=[]
+                
+#                rmslst=np.hstack((rplst[ii]['resxy'][3],
+#                                           rplst[ii]['resyx'][3],
+#                                            rplst[ii]['phasexy'][3],
+#                                            rplst[ii]['phaseyx'][3]))
+#                rms=np.sqrt(np.sum(ms**2 for ms in rmslst)/len(rmslst))
+                #get the RMS values for each TE and TM modes separately
+                rmslstte=np.hstack((rplst[ii]['resxy'][3],
+                                    rplst[ii]['phasexy'][3]))
+                rmslsttm=np.hstack((rplst[ii]['resyx'][3],
+                                    rplst[ii]['phaseyx'][3]))
+                rmste=np.sqrt(np.sum(rms**2 for ms in rmslstte)/len(rmslstte))
+                rmstm=np.sqrt(np.sum(rms**2 for ms in rmslsttm)/len(rmslsttm))
+                
+                fig=plt.figure(ii+1,[9,10],dpi=dpi)
+                plt.clf()
+                
+                #set subplot instances
+                #plot both TE and TM in same subplot
+                if plotnum==1:
+                    axrte=fig.add_subplot(gs[:4,:])
+                    axrtm=axrte
+                    axpte=fig.add_subplot(gs[-2:,:],sharex=axrte)
+                    axptm=axpte
+                    
+                #plot TE and TM in separate subplots
+                elif plotnum==2:
+                    axrte=fig.add_subplot(gs[:4,0])
+                    axrtm=fig.add_subplot(gs[:4,1])
+                    axpte=fig.add_subplot(gs[-2:,0],sharex=axrte)
+                    axptm=fig.add_subplot(gs[-2:,1],sharex=axrtm)
+                
+                #Plot Resistivity
+                
+                #cut out missing data points first
+                rxy=np.where(rplst[ii]['resxy'][0]!=0)[0]
+                ryx=np.where(rplst[ii]['resyx'][0]!=0)[0]
+                
+                #check to see if there is a xy component (TE Mode)
+                if len(rxy)>0:
+                    rte=axrte.errorbar(period[rxy],
+                                     10**rplst[ii]['resxy'][0][rxy],
+                                    ls=':',marker=mted,ms=ms,mfc=cted,
+                                    mec=cted,color=cted,
+                                    yerr=np.log(10)*rplst[ii]['resxy'][1][rxy]*\
+                                    10**rplst[ii]['resxy'][0][rxy],
+                                    ecolor=cted,picker=2)
+                    rlst.append(rte[0])
+                    llst.append('$Obs_{TE}$')
+                else:
+                    pass
+                
+                #check to see if there is a yx component (TM Mode)
+                if len(ryx)>0:
+                    rtm=axrtm.errorbar(period[ryx],
+                                       10**rplst[ii]['resyx'][0][ryx],
+                                       ls=':',marker=mtmd,ms=ms,mfc=ctmd,
+                                       mec=ctmd,color=ctmd,
+                                       yerr=np.log(10)*rplst[ii]['resyx'][1][ryx]*\
+                                       10**rplst[ii]['resyx'][0][ryx],
+                                       ecolor=ctmd,picker=2)
+                    rlst.append(rtm[0])
+                    llst.append('$Obs_{TM}$')
+                else:
+                    pass                                
+                
+                
+                #plot phase
+                #cut out missing data points first
+                pxy=np.where(rplst[ii]['phasexy'][0]!=0)[0]
+                pyx=np.where(rplst[ii]['phaseyx'][0]!=0)[0]
+                
+                #plot the xy component (TE Mode)
+                if len(pxy)>0:
+                    axpte.errorbar(period[pxy],rplst[ii]['phasexy'][0][pxy],
+                                 ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
+                                 color=cted,
+                                 yerr=rplst[ii]['phasexy'][1][pxy],
+                                 ecolor=cted,picker=1)
+                else:
+                    pass
+                
+                #plot the yx component (TM Mode)
+                if len(pyx)>0:
+                    axptm.errorbar(period[pyx],rplst[ii]['phaseyx'][0][pyx],
+                                 ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
+                                 color=ctmd,
+                                 yerr=rplst[ii]['phaseyx'][1][pyx],
+                                 ecolor=ctmd,picker=1)
+                else:
+                    pass
+                
+                #if there is a response file
+                if plotresp==True:
+                    mrxy=np.where(rplst[ii]['resxy'][2]!=0)[0]
+                    mryx=np.where(rplst[ii]['resyx'][2]!=0)[0]
+                    
+                    #plot the Model Resistivity
+                    #check for the xy of model component
+                    if len(mrxy)>0:
+                        r3=axrte.errorbar(period[mrxy],
+                                          10**rplst[ii]['resxy'][2][mrxy],
+                                          ls='--',marker=mtem,ms=ms,mfc=ctem,
+                                          mec=ctem,color=ctem,
+                                          yerr=10**(rplst[ii]['resxy'][3][mrxy]*\
+                                          rplst[ii]['resxy'][2][mrxy]/np.log(10)),
+                                          ecolor=ctem)
+                        rlst.append(r3[0])
+                        llst.append('$Mod_{TE}$')
+                    else:
+                        pass
+                    
+                    #check for the yx model component  of resisitivity
+                    if len(mryx)>0:
+                        r4=axrtm.errorbar(period[mryx],
+                                          10**rplst[ii]['resyx'][2][mryx],
+                                          ls='--',marker=mtmm,ms=ms,mfc=ctmm,
+                                          mec=ctmm,color=ctmm,
+                                          yerr=10**(rplst[ii]['resyx'][3][mryx]*\
+                                          rplst[ii]['resyx'][2][mryx]/np.log(10)),
+                                          ecolor=ctmm)
+                        rlst.append(r4[0])
+                        llst.append('$Mod_{TM}$')
+                                    
+                    #plot the model phase
+                    #check for removed points
+                    mpxy=np.where(rplst[ii]['phasexy'][2]!=0)[0]
+                    mpyx=np.where(rplst[ii]['phaseyx'][2]!=0)[0]
+                    
+                    #plot the xy component (TE Mode)
+                    if len(mpxy)>0:
+                        axpte.errorbar(period[mpxy],
+                                     rplst[ii]['phasexy'][2][mpxy],
+                                     ls='--',marker=mtem,ms=ms,mfc=ctem,
+                                     mec=ctem,color=ctem,
+                                     yerr=rplst[ii]['phasexy'][3][mpxy],
+                                     ecolor=ctem)
+                    else:
+                        pass
+                    
+                    #plot the yx component (TM Mode)
+                    if len(mpyx)>0:
+                        axptm.errorbar(period[mpyx],
+                                     rplst[ii]['phaseyx'][2][mpyx],
+                                     ls='--',marker=mtmm,ms=ms,mfc=ctmm,
+                                     mec=ctmm, color=ctmm,
+                                     yerr=rplst[ii]['phaseyx'][3][mpyx],
+                                     ecolor=ctmm)
+                    else:
+                        pass
+                             
+                #add in winglink responses
+                if addwl==1:
+                    try:
+                        wlrms=wld[sdict[station]]['rms']
+                        axr.set_title(stationlst[ii]+'\n'+\
+                                'rms_occ_TE={0:.2f}, rms_occ_TM={1:.2f}, rms_wl= {2:.2f}'.format(rmste,rmstm,wlrms),
+                                     fontdict={'size':fs+1,'weight':'bold'})
+                        for ww,wlstation in enumerate(wlslst):
+    #                        print station,wlstation
+                            if wlstation.find(station)==0:
+                                print station,wlstation
+                                wlrpdict=wlrplst[ww]
+                        
+                        zrxy=[np.where(wlrpdict['resxy'][0]!=0)[0]]
+                        zryx=[np.where(wlrpdict['resyx'][0]!=0)[0]]
+                        
+                         #plot winglink resistivity
+                        r5=axrte.loglog(wlplst[zrxy],
+                                        wlrpdict['resxy'][1][zrxy],
+                                        ls='-.',marker=mtewl,ms=5,color=ctewl,
+                                        mfc=ctewl)
+                        r6=axrtm.loglog(wlplst[zryx],
+                                        wlrpdict['resyx'][1][zryx],
+                                        ls='-.',marker=mtmwl,ms=5,color=ctmwl,
+                                        mfc=ctmwl)
+                        
+                        #plot winglink phase
+                        axpte.semilogx(wlplst[zrxy],
+                                       wlrpdict['phasexy'][1][zrxy],
+                                       ls='-.',marker=mtewl,ms=5,color=ctewl,
+                                       mfc=ctewl)
+                        axptm.semilogx(wlplst[zryx],
+                                       wlrpdict['phaseyx'][1][zryx],
+                                       ls='-.',marker=mtmwl,ms=5,color=ctmwl,
+                                       mfc=ctmwl)
+                        
+                        rlst.append(r5[0])
+                        rlst.append(r6[0])
+                        llst.append('$WLMod_{TE}$')
+                        llst.append('$WLMod_{TM}$')
+                    except IndexError:
+                        print 'Station not present'
+                else:
+                    if plotnum==1:
+                        axrte.set_title(self.stationlst[ii]+\
+                        ' rms_TE={0:.2f}, rms_TM={1:.2f}'.format(rmste,rmstm),
+                                  fontdict={'size':fs+1,'weight':'bold'})
+                    elif plotnum==2:
+                        axrte.set_title(self.stationlst[ii]+\
+                                        ' rms_TE={0:.2f}'.format(rmste),
+                                        fontdict={'size':fs+1,'weight':'bold'})
+                        axrtm.set_title(self.stationlst[ii]+\
+                                        ' rms_TM={0:.2f}'.format(rmstm),
+                                        fontdict={'size':fs+1,'weight':'bold'})
+                
+                #set the axis properties
+                for aa,axr in enumerate([axrte,axrtm]):
+                    #set both axes to logarithmic scale
+                    axr.set_xscale('log')
+                    axr.set_yscale('log')
+                    
+                    #put on a grid
+                    axr.grid(True,alpha=.3,which='both')
+                    axr.yaxis.set_label_coords(-.07,.5)
+                    
+                    #set resistivity limits if desired
+                    if reslimits!=None:
+                        axr.set_ylim(10**reslimits[0],10**reslimits[1])
+                        
+                    #set the tick labels to invisible
+                    plt.setp(axr.xaxis.get_ticklabels(),visible=False)
+                    if aa==0:
+                        axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
+                               fontdict={'size':fs,'weight':'bold'})
+                    if plotnum==1:
+                        if aa==0:
+                            axr.legend(rlst,llst,
+                               loc=2,markerscale=1,borderaxespad=.05,
+                               labelspacing=.08,
+                               handletextpad=.15,borderpad=.05,prop={'size':fs})
+                    elif plotnum==2:
+                        if aa==0:
+                            if plotresp==True:
+                                axr.legend([rlst[0],rlst[2]],[llst[0],llst[2]],
+                                   loc=2,markerscale=1,borderaxespad=.05,
+                                   labelspacing=.08,
+                                   handletextpad=.15,borderpad=.05,
+                                   prop={'size':fs}) 
+                            else:
+                                axr.legend([rlst[0]],[llst[0]],
+                                   loc=2,markerscale=1,borderaxespad=.05,
+                                   labelspacing=.08,
+                                   handletextpad=.15,borderpad=.05,
+                                   prop={'size':fs})
+                        if aa==1:
+                            if plotresp==True:
+                                axr.legend([rlst[1],rlst[3]],[llst[1],llst[3]],
+                                   loc=2,markerscale=1,borderaxespad=.05,
+                                   labelspacing=.08,
+                                   handletextpad=.15,borderpad=.05,
+                                   prop={'size':fs}) 
+                            else:
+                                axr.legend([rlst[1]],[llst[1]],
+                                   loc=2,markerscale=1,borderaxespad=.05,
+                                   labelspacing=.08,
+                                   handletextpad=.15,borderpad=.05,
+                                   prop={'size':fs})    
+                   
+                
+                for aa in enumerate([axpte,axptm]):
+                    #set the x-axis to log scale
+                    axp.set_xscale('log')
+                    
+                    #set the phase limits
+                    axp.set_ylim(phaselimits)
+                    
+                    #put a grid on the subplot
+                    axp.grid(True,alpha=.3,which='both')
+                    
+                    #set the tick locations
+                    axp.yaxis.set_major_locator(MultipleLocator(10))
+                    axp.yaxis.set_minor_locator(MultipleLocator(2))
+                    
+                    #set the x axis label
+                    axp.set_xlabel('Period (s)',
+                                   fontdict={'size':fs,'weight':'bold'})
+                    
+                    #put the y label on the far left plot
+                    axp.yaxis.set_label_coords(-.07,.5)
+                    if aa==0:
+                        axp.set_ylabel('Phase (deg)',
+                                       fontdict={'size':fs,'weight':'bold'})
+                    
+                
+        #---Plot single or subset of stations-------------------------------------
+        else:
+            pstationlst=[]
+    
+            if type(plottype) is not list:
+                plottype=[plottype]
+            for ii,station in enumerate(self.stationlst):
+                for pstation in plottype:
+                    if station.find(pstation)>=0:
+    #                    print 'plotting ',station
+                        pstationlst.append(ii)
+            if addwl==1:
+                pwlstationlst=[]
+                for ww,wlstation in enumerate(wlslst):
+                    for pstation in plottype:
+                        if wlstation.find(pstation)>=0:
+    #                        print 'plotting ',wlstation
+                            pwlstationlst.append(ww)  
+            if plotnum==1:
+                gs=gridspec.GridSpec(6,2,wspace=.1,left=.09,top=.93,bottom=.1,
+                                     hspace=hspace)
+            elif plotnum==2:
+                gs=gridspec.GridSpec(6,2,wspace=.1,left=.07,top=.93,bottom=.1,
+                                     hspace=hspace)
+            for jj,ii in enumerate(pstationlst):
+                rlst=[]
+                llst=[]
+                
+                #get RMS values for TE and TM separately
+                rmslstte=np.hstack((rplst[ii]['resxy'][3],
+                                    rplst[ii]['phasexy'][3]))
+                rmslsttm=np.hstack((rplst[ii]['resyx'][3],
+                                    rplst[ii]['phaseyx'][3]))
+                rmste=np.sqrt(np.sum(rms**2 for rms in rmslstte)/len(rmslstte))
+                rmstm=np.sqrt(np.sum(rms**2 for rms in rmslsttm)/len(rmslsttm))
+                
+                
+                fig=plt.figure(ii+1,[9,10],dpi=dpi)
+                plt.clf()
+                
+                #set subplot instances
+                #plot both TE and TM in same subplot
+                if plotnum==1:
+                    axrte=fig.add_subplot(gs[:4,:])
+                    axrtm=axrte
+                    axpte=fig.add_subplot(gs[-2:,:],sharex=axrte)
+                    axptm=axpte
+                    
+                #plot TE and TM in separate subplots
+                elif plotnum==2:
+                    axrte=fig.add_subplot(gs[:4,0])
+                    axrtm=fig.add_subplot(gs[:4,1])
+                    axpte=fig.add_subplot(gs[-2:,0],sharex=axrte)
+                    axptm=fig.add_subplot(gs[-2:,1],sharex=axrtm)
+                
+                #Plot Resistivity
+                
+                #cut out missing data points first
+                rxy=np.where(rplst[ii]['resxy'][0]!=0)[0]
+                ryx=np.where(rplst[ii]['resyx'][0]!=0)[0]
+                
+                #check to see if there is a xy component (TE Mode)
+                if len(rxy)>0:
+                    rte=axrte.errorbar(period[rxy],
+                                     10**rplst[ii]['resxy'][0][rxy],
+                                    ls=':',marker=mted,ms=ms,mfc=cted,
+                                    mec=cted,color=cted,
+                                    yerr=np.log(10)*rplst[ii]['resxy'][1][rxy]*\
+                                    10**rplst[ii]['resxy'][0][rxy],
+                                    ecolor=cted,picker=2)
+                    rlst.append(rte[0])
+                    llst.append('$Obs_{TE}$')
+                else:
+                    pass
+                
+                #check to see if there is a yx component (TM Mode)
+                if len(ryx)>0:
+                    rtm=axrtm.errorbar(period[ryx],
+                                       10**rplst[ii]['resyx'][0][ryx],
+                                       ls=':',marker=mtmd,ms=ms,mfc=ctmd,
+                                       mec=ctmd,color=ctmd,
+                                       yerr=np.log(10)*rplst[ii]['resyx'][1][ryx]*\
+                                       10**rplst[ii]['resyx'][0][ryx],
+                                       ecolor=ctmd,picker=2)
+                    rlst.append(rtm[0])
+                    llst.append('$Obs_{TM}$')
+                else:
+                    pass                                
+                
+                
+                #plot phase
+                #cut out missing data points first
+                pxy=np.where(rplst[ii]['phasexy'][0]!=0)[0]
+                pyx=np.where(rplst[ii]['phaseyx'][0]!=0)[0]
+                
+                #plot the xy component (TE Mode)
+                if len(pxy)>0:
+                    axpte.errorbar(period[pxy],rplst[ii]['phasexy'][0][pxy],
+                                 ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
+                                 color=cted,
+                                 yerr=rplst[ii]['phasexy'][1][pxy],
+                                 ecolor=cted,picker=1)
+                else:
+                    pass
+                
+                #plot the yx component (TM Mode)
+                if len(pyx)>0:
+                    axptm.errorbar(period[pyx],rplst[ii]['phaseyx'][0][pyx],
+                                 ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
+                                 color=ctmd,
+                                 yerr=rplst[ii]['phaseyx'][1][pyx],
+                                 ecolor=ctmd,picker=1)
+                else:
+                    pass
+                
+                #if there is a response file
+                if plotresp==True:
+                    mrxy=np.where(rplst[ii]['resxy'][2]!=0)[0]
+                    mryx=np.where(rplst[ii]['resyx'][2]!=0)[0]
+                    
+                    #plot the Model Resistivity
+                    #check for the xy of model component
+                    if len(mrxy)>0:
+                        r3=axrte.errorbar(period[mrxy],
+                                          10**rplst[ii]['resxy'][2][mrxy],
+                                          ls='--',marker=mtem,ms=ms,mfc=ctem,
+                                          mec=ctem,color=ctem,
+                                          yerr=10**(rplst[ii]['resxy'][3][mrxy]*\
+                                          rplst[ii]['resxy'][2][mrxy]/np.log(10)),
+                                          ecolor=ctem)
+                        rlst.append(r3[0])
+                        llst.append('$Mod_{TE}$')
+                    else:
+                        pass
+                    
+                    #check for the yx model component  of resisitivity
+                    if len(mryx)>0:
+                        r4=axrtm.errorbar(period[mryx],
+                                          10**rplst[ii]['resyx'][2][mryx],
+                                          ls='--',marker=mtmm,ms=ms,mfc=ctmm,
+                                          mec=ctmm,color=ctmm,
+                                          yerr=10**(rplst[ii]['resyx'][3][mryx]*\
+                                          rplst[ii]['resyx'][2][mryx]/np.log(10)),
+                                          ecolor=ctmm)
+                        rlst.append(r4[0])
+                        llst.append('$Mod_{TM}$')
+                                    
+                    #plot the model phase
+                    #check for removed points
+                    mpxy=np.where(rplst[ii]['phasexy'][2]!=0)[0]
+                    mpyx=np.where(rplst[ii]['phaseyx'][2]!=0)[0]
+                    
+                    #plot the xy component (TE Mode)
+                    if len(mpxy)>0:
+                        axpte.errorbar(period[mpxy],
+                                     rplst[ii]['phasexy'][2][mpxy],
+                                     ls='--',marker=mtem,ms=ms,mfc=ctem,
+                                     mec=ctem,color=ctem,
+                                     yerr=rplst[ii]['phasexy'][3][mpxy],
+                                     ecolor=ctem)
+                    else:
+                        pass
+                    
+                    #plot the yx component (TM Mode)
+                    if len(mpyx)>0:
+                        axptm.errorbar(period[mpyx],
+                                     rplst[ii]['phaseyx'][2][mpyx],
+                                     ls='--',marker=mtmm,ms=ms,mfc=ctmm,
+                                     mec=ctmm, color=ctmm,
+                                     yerr=rplst[ii]['phaseyx'][3][mpyx],
+                                     ecolor=ctmm)
+                    else:
+                        pass
+                             
+                #add in winglink responses
+                if addwl==1:
+                    try:
+                        wlrms=wld[sdict[station]]['rms']
+                        axr.set_title(stationlst[ii]+'\n'+\
+                                    ' rms_occ_TE={0:.2f}, rms_occ_TM={1:.2f}, rms_wl= {2:.2f}'.format(rmste,rmstm,wlrms),
+                                     fontdict={'size':fs+1,'weight':'bold'})
+                        for ww,wlstation in enumerate(wlslst):
+    #                        print station,wlstation
+                            if wlstation.find(station)==0:
+                                print station,wlstation
+                                wlrpdict=wlrplst[ww]
+                        
+                        zrxy=[np.where(wlrpdict['resxy'][0]!=0)[0]]
+                        zryx=[np.where(wlrpdict['resyx'][0]!=0)[0]]
+                        
+                         #plot winglink resistivity
+                        r5=axrte.loglog(wlplst[zrxy],
+                                        wlrpdict['resxy'][1][zrxy],
+                                        ls='-.',marker=mtewl,ms=5,color=ctewl,
+                                        mfc=ctewl)
+                        r6=axrtm.loglog(wlplst[zryx],
+                                        wlrpdict['resyx'][1][zryx],
+                                        ls='-.',marker=mtmwl,ms=5,color=ctmwl,
+                                        mfc=ctmwl)
+                        
+                        #plot winglink phase
+                        axpte.semilogx(wlplst[zrxy],
+                                       wlrpdict['phasexy'][1][zrxy],
+                                       ls='-.',marker=mtewl,ms=5,color=ctewl,
+                                       mfc=ctewl)
+                        axptm.semilogx(wlplst[zryx],
+                                       wlrpdict['phaseyx'][1][zryx],
+                                       ls='-.',marker=mtmwl,ms=5,color=ctmwl,
+                                       mfc=ctmwl)
+                        
+                        rlst.append(r5[0])
+                        rlst.append(r6[0])
+                        llst.append('$WLMod_{TE}$')
+                        llst.append('$WLMod_{TM}$')
+                    except IndexError:
+                        print 'Station not present'
+                else:
+                    if plotnum==1:
+                        axrte.set_title(self.stationlst[ii]+\
+                        ' rms_TE={0:.2f}, rms_TM={1:.2f}'.format(rmste,rmstm),
+                                  fontdict={'size':fs+1,'weight':'bold'})
+                    elif plotnum==2:
+                        axrte.set_title(self.stationlst[ii]+\
+                                        ' rms_TE={0:.2f}'.format(rmste),
+                                        fontdict={'size':fs+1,'weight':'bold'})
+                        axrtm.set_title(self.stationlst[ii]+\
+                                        ' rms_TM={0:.2f}'.format(rmstm),
+                                        fontdict={'size':fs+1,'weight':'bold'})
+                
+                
+                #set the axis properties
+                for aa,axr in enumerate([axrte,axrtm]):
+                    #set both axes to logarithmic scale
+                    axr.set_xscale('log')
+                    axr.set_yscale('log')
+                    
+                    #put on a grid
+                    axr.grid(True,alpha=.3,which='both')
+                    axr.yaxis.set_label_coords(-.07,.5)
+                    
+                    #set resistivity limits if desired
+                    if reslimits!=None:
+                        axr.set_ylim(10**reslimits[0],10**reslimits[1])
+                        
+                    #set the tick labels to invisible
+                    plt.setp(axr.xaxis.get_ticklabels(),visible=False)
+                    if aa==0:
+                        axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
+                               fontdict={'size':fs,'weight':'bold'})
+                    if plotnum==1:
+                        if aa==0:
+                            axr.legend(rlst,llst,
+                               loc=2,markerscale=1,borderaxespad=.05,
+                               labelspacing=.08,
+                               handletextpad=.15,borderpad=.05,prop={'size':fs})
+                    elif plotnum==2:
+                        if aa==0:
+                            if plotresp==True:
+                                axr.legend([rlst[0],rlst[2]],[llst[0],llst[2]],
+                                   loc=2,markerscale=1,borderaxespad=.05,
+                                   labelspacing=.08,
+                                   handletextpad=.15,borderpad=.05,
+                                   prop={'size':fs}) 
+                            else:
+                                axr.legend([rlst[0]],[llst[0]],
+                                   loc=2,markerscale=1,borderaxespad=.05,
+                                   labelspacing=.08,
+                                   handletextpad=.15,borderpad=.05,
+                                   prop={'size':fs})
+                        if aa==1:
+                            if plotresp==True:
+                                axr.legend([rlst[1],rlst[3]],[llst[1],llst[3]],
+                                   loc=2,markerscale=1,borderaxespad=.05,
+                                   labelspacing=.08,
+                                   handletextpad=.15,borderpad=.05,
+                                   prop={'size':fs}) 
+                            else:
+                                axr.legend([rlst[1]],[llst[1]],
+                                   loc=2,markerscale=1,borderaxespad=.05,
+                                   labelspacing=.08,
+                                   handletextpad=.15,borderpad=.05,
+                                   prop={'size':fs})
+                
+                for aa,axp in enumerate([axpte,axptm]):
+                    #set the x-axis to log scale
+                    axp.set_xscale('log')
+                    
+                    #set the phase limits
+                    axp.set_ylim(phaselimits)
+                    
+                    #put a grid on the subplot
+                    axp.grid(True,alpha=.3,which='both')
+                    
+                    #set the tick locations
+                    axp.yaxis.set_major_locator(MultipleLocator(10))
+                    axp.yaxis.set_minor_locator(MultipleLocator(2))
+                    
+                    #set the x axis label
+                    axp.set_xlabel('Period (s)',
+                                   fontdict={'size':fs,'weight':'bold'})
+                    
+                    #put the y label on the far left plot
+                    axp.yaxis.set_label_coords(-.07,.5)
+                    if aa==0:
+                        axp.set_ylabel('Phase (deg)',
+                                       fontdict={'size':fs,'weight':'bold'})
+                                       
+class OccamModel:
+    """
+    This class will deal with the occam model stuff
+    
+    """
+    
+    def __init__(self,iterfn):
+        self.iterfn=iterfn
+        

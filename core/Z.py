@@ -101,7 +101,10 @@ class Edi(object):
                 if eline.find('>')==0:
                     #For definemeas
                     if eline.find('=')>0 and eline.find('ACQCHAN')==-1:
-                        gkey=eline[2:].strip().lower()
+                        if eline.find('INFO')>0:
+                            gkey=eline[1:].strip().split()[0].lower()
+                        else:
+                            gkey=eline[2:].strip().lower()
                     #for a comment block
                     elif eline.find('!')>0:
                         pass
