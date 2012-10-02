@@ -16,48 +16,54 @@ import os.path as op
 
 
 class MyForm(QtGui.QMainWindow):
+    """
+    Class for handling OCCAM GUI
+
+
+    - Connect input fields and buttons.
+    - Check for valid input values
+    - Generate OCCAM input files
+    - Load old/temporary OCCAM run outputs
+    - Run OCCAM
+
+    """
+
+
     def __init__(self, parent=None):
+        
         QtGui.QWidget.__init__(self, parent)
+        """
+        Call the general QWidget init, then add the connections and slots.
+        
+        """
+
+        #load the occam gui source module
         self.ui = Ui_Form()
         self.ui.setupUi(self)
 
+        #set most basic parameters
         self._load_datafile = None
         self.parameters = {}
         self.ui.wd = op.abspath(op.realpath('.'))
-        
+
+        #Connections
         QtCore.QObject.connect(self.ui.button_browse_wd, QtCore.SIGNAL("clicked()"),  lambda: self.set_path_in_browsefield(self.ui.lineEdit_browse_wd))
-        
         QtCore.QObject.connect(self.ui.button_browse_edis, QtCore.SIGNAL("clicked()"),  lambda: self.set_path_in_browsefield(self.ui.lineEdit_browse_edis))
-
         QtCore.QObject.connect(self.ui.pushButton_loadstations, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_stations))
-
         QtCore.QObject.connect(self.ui.button_browse_occam, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_occam))
-        
         #QtCore.QObject.connect(self.ui.button_browse_makemodel, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_makemodel))
-
         QtCore.QObject.connect(self.ui.pushButton_loaddatafile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_datafile))
-
-        QtCore.QObject.connect(self.ui.pushButton_loadstartupfile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_startupfile))
-        
+        QtCore.QObject.connect(self.ui.pushButton_loadstartupfile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_startupfile))       
         QtCore.QObject.connect(self.ui.pushButton_loaddatafile, QtCore.SIGNAL("clicked()"),self.set_data_filename)
-        
         QtCore.QObject.connect(self.ui.pushButton_checkparameter, QtCore.SIGNAL("clicked()"),  self.check_input)
-
         QtCore.QObject.connect(self.ui.pushButton_checkparameter, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
         QtCore.QObject.connect(self.ui.pushButton_generateinputfile, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
         QtCore.QObject.connect(self.ui.pushButton_runoccam, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
-        
-
         QtCore.QObject.connect(self.ui.pushButton_generateinputfile, QtCore.SIGNAL("clicked()"),  self.check_input)
         QtCore.QObject.connect(self.ui.pushButton_runoccam, QtCore.SIGNAL("clicked()"),  self.check_input)
-        
-        
         QtCore.QObject.connect(self.ui.pushButton_generateinputfile, QtCore.SIGNAL("clicked()"),  self.generate_inputfiles)
-
         #QtCore.QObject.connect(self.ui.pushButton_loadold_meshinmodel, QtCore.SIGNAL("clicked()"),  self.loadold_meshinmodel)
-
         QtCore.QObject.connect(self.ui.pushButton_runoccam, QtCore.SIGNAL("clicked()"),  self.run_occam)
-
         QtCore.QObject.connect(self.ui.pushButton_quit, QtCore.SIGNAL("clicked()"), QtCore.QCoreApplication.instance().quit)
 
     
@@ -68,15 +74,17 @@ class MyForm(QtGui.QMainWindow):
         self._load_datafile = 1
         
 
+    #use standard PyQt tool to browse and set existing directory
     def set_path_in_browsefield(self, browsefield):
         dirname = QtGui.QFileDialog.getExistingDirectory(self, 'Open Directory', '.')
         browsefield.setText(dirname)
 
+    #use standard PyQt tool to browse and set existing file
     def set_filename_in_browsefield(self, browsefield):
         filename = QtGui.QFileDialog.getOpenFileName(self, 'Locate File', '.')
         browsefield.setText(filename)
 
-
+    #check input values for consistency/existence
     def check_input(self):
 
         #checking files, paths and filenames (including write permission in WD)
@@ -85,6 +93,7 @@ class MyForm(QtGui.QMainWindow):
 
         invalid_flag = 0 
 
+        #working directory
         wd_mess = ''
         wd_text = ''
         if str(self.ui.lineEdit_browse_wd.text()):
@@ -100,6 +109,7 @@ class MyForm(QtGui.QMainWindow):
             invalid_flag +=1
 
 
+        #EDI files folder
         edis_mess = ''
         edis_text = ''
         if str(self.ui.lineEdit_browse_edis.text()):
@@ -108,6 +118,7 @@ class MyForm(QtGui.QMainWindow):
             edis_mess += 'EDI files directory not existing <br>'
             invalid_flag +=1
 
+        #OCCAM executable
         occ_exe_mess = ''
         occ_exe_text = ''
         if str(self.ui.lineEdit_browse_occam.text()):
@@ -124,6 +135,8 @@ class MyForm(QtGui.QMainWindow):
             #makemodel_mess += 'Make2DModel executable not existing <br>'
             #invalid_flag +=1
 
+
+        #stations list file
         stations_mess = ''
         stations_text = ''
         if str(self.ui.lineEdit_browse_stations.text()):
@@ -133,6 +146,7 @@ class MyForm(QtGui.QMainWindow):
                 stations_mess += 'Stations file not existing <br>'
                 invalid_flag +=1
 
+        #OCCAM startup file 
         startup_mess=''
         startup_text=''
         if str(self.ui.lineEdit_browse_startupfile.text()):
@@ -141,8 +155,8 @@ class MyForm(QtGui.QMainWindow):
             if self.ui.checkBox_usestartupfile.checkState():
                 startup_mess += 'Startup file not existing <br>'
                 invalid_flag += 1
-                
-         
+        
+        #OCCAM data file (existing file)
         datafile_mess = ''
         datafile_text = ''
         if str(self.ui.lineEdit_browse_datafile.text()):
@@ -154,7 +168,7 @@ class MyForm(QtGui.QMainWindow):
         
         
 
-    
+        #OCCAM data file (new file name)
         datafilename_mess = ''
         datafilename_text = ''        
         datafilename_text_raw = str(self.ui.lineEdit_datafilename.text()).strip()
@@ -175,7 +189,7 @@ class MyForm(QtGui.QMainWindow):
                 datafilename_mess += 'Wrong format of datafile (a-z,0-9,_) <br>'
                 invalid_flag +=1
                 
-            
+        #OCCAM model name
         modelname_mess = ''
         modelname_text = ''        
         modelname_text_raw = str(self.ui.lineEdit_modelname.text()).strip()
@@ -195,23 +209,28 @@ class MyForm(QtGui.QMainWindow):
                 modelname_mess += 'Wrong format of model name (a-z,0-9,_) <br>'
             
 
-
+        #set up error message, if problems occurred
         if invalid_flag != 0 :
             conc_mess = wd_mess+occ_exe_mess+startup_mess+edis_mess+stations_mess+datafile_mess+datafilename_mess+modelname_mess
             messagetext = "<P><b><FONT COLOR='#800000'>Error: %i parameters are invalid !  </FONT></b></P><br> %s"%(invalid_flag,conc_mess)
 
             
-        
+        #define/how message box
         QtGui.QMessageBox.about(self, "Parameter check", messagetext)
         
 
     def setup_parameter_dict(self):
-        #set paths
+        """
+        Define dictionary, which contains all parameters for OCCAM
+
+        """
+
+        
         D = {}
         D['wdir']             = op.abspath( op.realpath( str( self.ui.lineEdit_browse_wd.text() ) ) )
         D['edis_dir']         = op.abspath( op.realpath( str( self.ui.lineEdit_browse_edis.text()) ) )
         D['occam_exe']        = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_occam.text()) ) ) )
-        D['startupfn']      = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_startupfile.text()) ) ) )
+        D['startupfn']        = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_startupfile.text()) ) ) )
         D['stationlist_file'] = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_stations.text()) ) ) )
         D['olddatafile']      = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_datafile.text()) ) ) )
         D['datafilename']     = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_datafilename.text()) ) ) )
@@ -253,13 +272,20 @@ class MyForm(QtGui.QMainWindow):
 
 
     def build_datafile(self):
-        D=self.parameters
+        """
+        Build OCCAM data file, or use existing one (if field is checked in GUI) 
+        """
 
-        print D['check_usedatafile']
-        print D['olddatafile']
+        D = self.parameters
+
+        #print D['check_usedatafile']
+        #print D['olddatafile']
+
         checkfilename = D['olddatafile']
-        print op.isfile(checkfilename)
-        
+        #print op.isfile(checkfilename)
+
+
+        #Try to load old data file, if box is checked
         if D['check_usedatafile']:
             checkfilename = D['olddatafile']
             if op.isfile(checkfilename):
@@ -273,12 +299,16 @@ class MyForm(QtGui.QMainWindow):
                     
             return
 
-
+        #Otherwise set up new data filename
+        
         outfilename = D['datafilename']
         edidirectory= D['edis_dir']
 
-        #define stationlist-----------------------------------------
         def make_stationlist(listfilename):
+            """
+            Read in stations from file.
+
+            """
             FH=file(listfilename,'r')
             raw_string=FH.read()
             FH.close()
@@ -292,11 +322,12 @@ class MyForm(QtGui.QMainWindow):
                         raw_list2.append(j)
             return raw_list2
 
+        #define internal station list 
         stationlist=None
         if D['check_usestations']:
             stationlist = make_stationlist(D['stationlist_file'])
 
-        #define error floors-----------------------------------------
+        #read in error floors-----------------------------------------
         if int(float(D['useDataError_ResXY'])): 
             resxy='data'
         else:
@@ -335,7 +366,9 @@ class MyForm(QtGui.QMainWindow):
         
         #make data file  -------------------------------------------
         
+        #use MTPy core module for generating the new data file
         import MTpy.core.OCCAMTools as OCCAMTools
+        
         checkfilename = OCCAMTools.make2DdataFile(edidirectory,\
                                     savepath=outfilename,\
                                     mmode= mode4modelling,\
@@ -353,7 +386,8 @@ class MyForm(QtGui.QMainWindow):
                                     lineori=lineorientation,\
                                     tippererr=tippererror  \
                                     )
-        
+
+        #check, if generation was successfull and show message box
         if op.isfile(checkfilename):
             messagetext = "<P><b><FONT COLOR='#008080'>Data file generation successful:</FONT></b></P><br>%s"%checkfilename
             D['datafile'] = checkfilename
@@ -362,9 +396,15 @@ class MyForm(QtGui.QMainWindow):
             
         QtGui.QMessageBox.about(self, "Data file", messagetext )
 
+
+
     def _setup_startupfile(self):
+        """
+        Set up OCCAM startup file, called 'startup' by default
+        """
         self.parameters['startupfile'] = 'startup'
 
+        #use old startup file, if box is checked
         if self.parameters['check_usestartupfile']:
             self.parameters['startupfile'] = self.parameters['startupfn']
 
@@ -372,14 +412,26 @@ class MyForm(QtGui.QMainWindow):
  
 
     def build_startupfiles(self):
-        D=self.parameters
+        """
+        Set up collection of required stratup files for OCCAM.
+
+        - startup
+        - model
+        """
         
-        datafile = D['datafile'] 
+        #use MTPy core tool for building start files
         import MTpy.core.OCCAMTools as OCCAMTools
         reload(OCCAMTools)
 
+        D=self.parameters
+        
+        datafile = D['datafile'] 
+
+        #1. make startup file 
         self._setup_startupfile()
 
+
+        #2. make model file
         m_fn,i_fn,s_fn = OCCAMTools.makeModel(datafile,\
                                                 niter=int(float(D['n_iterations'])),\
                                                 targetrms=float(D['target_rms']),\
@@ -425,64 +477,128 @@ class MyForm(QtGui.QMainWindow):
         
 
     def run_occam(self):
+        """Method for calling the external occam code.
+
+        - check input values
+        - disable the 'run' button
+        - set the executable string and its arguments
+        - start occam
+        - show message box including 'cancel' button
+
+        - message box should disappear, if occam terminates (how so ever)
+        - stdout and stderr of occam should be redirected into files
+        - no general blocking of gui
+
+        """
+
+        #import necesary modules
         import threading
         import subprocess
-        exename = self.parameters['occam_exe']
-        modname = self.parameters['modelname']
 
+
+        #check input values and set up startup file
         self._setup_startupfile()
         
-        startfile = self.parameters['startupfile']
+        #deactivate start button to avoid multiple calls
+        self.ui.pushButton_runoccam.setEnabled(False)
 
+        #define executable and argument(s)
+        exename    = self.parameters['occam_exe']
+        modname    = self.parameters['modelname']
+        startfile  = self.parameters['startupfile']
 
-        #occam_process=QtCore.QProcess()#.start(startstring)
+        exec_file      = exename
+        exec_args      = [exec_file,startfile,modname]
 
-        #bb = occam_process.startDetached(startstring)
-
-        exec_file = exename
-        exec_args = [exec_file,startfile,modname]
+        #define log and err files
         logfilename    = op.abspath(op.realpath(op.join(self.ui.wd,'occam2d_log.log')))
         errfilename    = op.abspath(op.realpath(op.join(self.ui.wd,'occam2d_err.log')))
 
-        #startstring = "%s %s %s"%(exename,startfile,modname)
-        #startstring = "nohup %s %s %s >& %s &"%(exename,modname,startfile,logfilename)
-        
 
+        #open log and err files - potentially redirecting sys variables
+        
         #save_stdout = sys.stdout
         #save_stderr = sys.stderr
         outfile = open(logfilename,"w")
         errfile = open(errfilename,'w')
         #sys.stdout = outfile
         #sys.stderr = errfile
+
+        
+        #===================================================================
+        #===================================================================
+        # needs 2 threads: GUI and worker :
+        #===================================================================
         
         
+        #1. try: QProcess ....
+        
+        #occam_process=QtCore.QProcess()#.start(startstring)
+        #bb = occam_process.startDetached(startstring)
+
+
+
+        #startstring = "%s %s %s"%(exename,startfile,modname)
+        #startstring = "nohup %s %s %s >& %s &"%(exename,modname,startfile,logfilename)
+
+        #2. try: os.system call
         #os.system(startstring)
+
+
+        #3. try pexpect (no windows version!!!)
+        
         #import pexpect
         #child1 = pexpect.spawn(startstring)
         #child1.logfile=outfile
         #child1.logfile=sys.stdout
         #child1.expect(pexpect.EOF)
 
+
+        #4. try: thread setup
+
         OccamExitFlag = 0
         class OccamThread(threading.Thread):
             def __init__(self, exec_file, exec_args,logfile,errfile):
+
+                threading.Thread.__init__(self)
+                self.exiting    =  False
+                
                 self.exec_file = exec_file
                 self.startup = exec_args[1]
                 self.outname = exec_args[2]
                 self.logfile = logfile
                 self.errfile = errfile
                 self.running = True
-                threading.Thread.__init__(self)
-            def run(self):
+
+            def __del__(self):
+
+                self.exiting  =  True
+                self.wait()
                 
-                self.occam_process = subprocess.Popen([self.exec_file,self.startup,self.outname])#, stdout=self.logfile,stderr=self.errfile)
-                self.occam_process.communicate()
-                while self.running:
-                    pass
+
+            def run(self):
+
+            #while not self.existing :
+                self.occam_process =  QtCore.QProcess()
+                self.occam_process.connect(self.occam_finished)
+                self.occam_process.startDetached(exec_file,exec_args)
+
+            def occam_finished(self,exitCode, exitStatus):
+                self.parent.ui.pushButton_runoccam.setEnabled(True)
+                print exitCode, exitStatus
+
+                #subprocess.Popen([self.exec_file,self.startup,self.outname])#,                stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    #                while self.occam_process.poll():
+                    #std_out,std_err = self.occam_process.communicate()
+                    #print std_out,std_err
+                    #self.logfile.write(std_out)
+                    #self.logfile.flush()
+                    #self.errfile.write(std_err)
+                    #self.errfile.flush(
+                    
                 
                         
-        print exec_file
-        print exec_args
+        #starting the worker thread
         ot = OccamThread(exec_file, exec_args,outfile,errfile)
         ot.setDaemon(True)
         try:
@@ -491,33 +607,41 @@ class MyForm(QtGui.QMainWindow):
             ot.running = False
             ot.occam_process.kill()
             ot.join()
-            outfile.close()
-            errfile.close()
-            print 'OCCAM terminated by user input'
+            ot.logfile.close()
+            ot.errfile.close()
+            print 'OCCAM terminated by keyboard interruption'
             sys.exit()
             
         
         #occam_process = subprocess.Popen(exec_args)#, stdout=logfil,stderr=errfil)
-        
+
+
+        #starting a message box for start/running of process:
         
         MB_start = QtGui.QMessageBox(self)
         MB_start.setStandardButtons(QtGui.QMessageBox.Cancel)
         MB_start_ret_value = 0
         MB_start.setText('OCCAM is running' )
-        MB_start_ret_value = MB_start.exec_()
-        
 
+        try:
+            MB_start_ret_value = MB_start.exec_()
+        except (KeyboardInterrupt, SystemExit):
+            MB_start_ret_value = QtGui.QMessageBox.Cancel
+            
+
+        #define message box for end of process:
         MB_end = QtGui.QMessageBox(self)
         MB_end.setStandardButtons(QtGui.QMessageBox.Cancel)
         MB_end_ret_value = 0
 
         
         if MB_start_ret_value == QtGui.QMessageBox.Cancel:
+            print ot.__dict__.items()
             ot.running = False
             ot.occam_process.kill()
             ot.join()
-            outfile.close()
-            errfile.close()
+            ot.logfile.close()
+            ot.errfile.close()
             print 'OCCAM terminated by user input'
             
             endtext = 'OCCAM terminated by user!'
@@ -526,17 +650,22 @@ class MyForm(QtGui.QMainWindow):
 
             return
 
-        #while ot.isalive():
-        #    pass
+
+        while ot.isAlive():
+            pass
         
         endtext = 'finished'
 
         MB_end.setText("OCCAM 2D")
         MB_end.setInformativeText(endtext)
 
+
+        #closing start/running message box
+
         #send KILL to MB_start widget ....:
         #print MB_start
         #print MB_start.__dir__
+
 
         MB_end_ret_value = MB_end.exec_()
 
@@ -545,6 +674,9 @@ class MyForm(QtGui.QMainWindow):
             outfile.close()
         if not errfile.closed():
             errfile.close()
+
+
+        #closing stdout and err files
         
         #outfil.close()
         #errfil.close()
@@ -576,13 +708,14 @@ class MyForm(QtGui.QMainWindow):
             
 if __name__ == "__main__":
 
+    #problem with stdout and err files - trying global redirection:
 
     # stdout and stderr are saved
-    save_stdout = sys.stdout
-    save_stderr = sys.stderr
+    #save_stdout = sys.stdout
+    #save_stderr = sys.stderr
 
-    outfile = open("occam2d_gui_log.log","w")
-    errfile = open('occam2d_gui_err.log','w')
+    #outfile = open("occam2d_gui_log.log","w")
+    #errfile = open('occam2d_gui_err.log','w')
     #sys.stdout = outfile
     #sys.stderr = errfile
 
@@ -595,8 +728,8 @@ if __name__ == "__main__":
                 
 
 
-    outfile.close()
-    errfile.close()
+    #outfile.close()
+    #errfile.close()
     #sys.stderr = save_stderr
     #sys.stdout = save_stdout
     
