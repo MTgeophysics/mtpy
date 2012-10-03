@@ -7,7 +7,7 @@ from PyQt4 import QtCore, QtGui
 import gui4
 reload(gui4)
 
-from gui4 import Ui_occamgui2D as Ui_Form
+from gui4 import Ui_occamgui2D as Occam_UI_form
 
 
 import os.path as op
@@ -15,7 +15,7 @@ import os.path as op
 
 
 
-class MyForm(QtGui.QMainWindow):
+class OccamGui(QtGui.QMainWindow):
     """
     Class for handling OCCAM GUI
 
@@ -38,7 +38,7 @@ class MyForm(QtGui.QMainWindow):
         """
 
         #load the occam gui source module
-        self.ui = Ui_Form()
+        self.ui = Occam_UI_form()
         self.ui.setupUi(self)
 
         #set most basic parameters
@@ -474,7 +474,10 @@ class MyForm(QtGui.QMainWindow):
         #print 'startupfiles done'
     
 
-        
+#===============================================================================
+# problem start
+#===============================================================================
+
 
     def run_occam(self):
         """Method for calling the external occam code.
@@ -494,13 +497,14 @@ class MyForm(QtGui.QMainWindow):
         #import necesary modules
         import threading
         import subprocess
+        import Queue
 
 
         #check input values and set up startup file
         self._setup_startupfile()
         
         #deactivate start button to avoid multiple calls
-        self.ui.pushButton_runoccam.setEnabled(False)
+        #self.ui.pushButton_runoccam.setEnabled(False)
 
         #define executable and argument(s)
         exename    = self.parameters['occam_exe']
@@ -524,10 +528,14 @@ class MyForm(QtGui.QMainWindow):
         #sys.stdout = outfile
         #sys.stderr = errfile
 
-        
+
+        #define queue
+        Q = Queue.Queue() 
+
+
         #===================================================================
         #===================================================================
-        # needs 2 threads: GUI and worker :
+        # needs 1 extra worker thread for OCCAM
         #===================================================================
         
         
@@ -557,10 +565,13 @@ class MyForm(QtGui.QMainWindow):
         #4. try: thread setup
 
         OccamExitFlag = 0
-        class OccamThread(threading.Thread):
+        
+        class OccamThread(QtCore.QThread):
+            
             def __init__(self, exec_file, exec_args,logfile,errfile):
+                #super(OccamThread, self).__init__(self)
 
-                threading.Thread.__init__(self)
+                QtCore.QThread.__init__(self)
                 self.exiting    =  False
                 
                 self.exec_file = exec_file
@@ -572,31 +583,39 @@ class MyForm(QtGui.QMainWindow):
 
             def __del__(self):
 
-                self.exiting  =  True
+                self.running  =  False
                 self.wait()
                 
 
             def run(self):
 
-            #while not self.existing :
-                self.occam_process =  QtCore.QProcess()
-                self.occam_process.connect(self.occam_finished)
-                self.occam_process.startDetached(exec_file,exec_args)
+                #while not self.exiting :
+                #self.occam_process =  QtCore.QProcess()
+                    #self.occam_process.connect(self.occam_finished)
+                #self.occam_process.startDetached(exec_file,exec_args)
 
-            def occam_finished(self,exitCode, exitStatus):
-                self.parent.ui.pushButton_runoccam.setEnabled(True)
-                print exitCode, exitStatus
 
-                #subprocess.Popen([self.exec_file,self.startup,self.outname])#,                stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-    #                while self.occam_process.poll():
+#subprocess works, but stderr and stdout redirection fail !!!!!!
+#if 'wait' or 'communicate' are included, the gui freezes!!
+
+                 subprocess.Popen([self.exec_file,self.startup,self.outname])#,                stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+
+
+#                while self.occam_process.poll():
                     #std_out,std_err = self.occam_process.communicate()
                     #print std_out,std_err
                     #self.logfile.write(std_out)
                     #self.logfile.flush()
                     #self.errfile.write(std_err)
                     #self.errfile.flush(
+
+
                     
+            def occam_finished(self,exitCode, exitStatus):
                 
+                #self.parent.ui.pushButton_runoccam.setEnabled(True)
+                print exitCode, exitStatus
+                        
                         
         #starting the worker thread
         ot = OccamThread(exec_file, exec_args,outfile,errfile)
@@ -605,15 +624,13 @@ class MyForm(QtGui.QMainWindow):
             ot.start()
         except (KeyboardInterrupt, SystemExit):
             ot.running = False
-            ot.occam_process.kill()
+            #ot.kill()
             ot.join()
             ot.logfile.close()
             ot.errfile.close()
             print 'OCCAM terminated by keyboard interruption'
             sys.exit()
             
-        
-        #occam_process = subprocess.Popen(exec_args)#, stdout=logfil,stderr=errfil)
 
 
         #starting a message box for start/running of process:
@@ -635,10 +652,21 @@ class MyForm(QtGui.QMainWindow):
         MB_end_ret_value = 0
 
         
+        
+        def _close_occam_mb(self):
+            MB_start_ret_value = QtGui.QMessageBox.Cancel
+
+    
+        #try to connect a potential termination signal from the OccamThread to the trivial function above
+        self.connect(ot, QtCore.SIGNAL('finished()'), _close_occam_mb)
+        self.connect(ot, QtCore.SIGNAL('terminated()'), _close_occam_mb)
+            
+            
+        #this works - press CANCEL button and the OCCAM run stops
         if MB_start_ret_value == QtGui.QMessageBox.Cancel:
-            print ot.__dict__.items()
+            #print ot.__dict__.items()
             ot.running = False
-            ot.occam_process.kill()
+            #ot.kill()
             ot.join()
             ot.logfile.close()
             ot.errfile.close()
@@ -647,10 +675,12 @@ class MyForm(QtGui.QMainWindow):
             endtext = 'OCCAM terminated by user!'
 
             MB_end.about(self, "OCCAM 2D", endtext )
-
+            #re-activate button
+            #self.ui.pushButton_runoccam.setEnabled(False)
             return
 
-
+        
+        
         while ot.isAlive():
             pass
         
@@ -667,6 +697,7 @@ class MyForm(QtGui.QMainWindow):
         #print MB_start.__dir__
 
 
+        
         MB_end_ret_value = MB_end.exec_()
 
         
@@ -683,7 +714,13 @@ class MyForm(QtGui.QMainWindow):
         #sys.stdout = save_stdout
         #sys.stderr = save_stderr
         
+        self.ui.pushButton_runoccam.setEnabled(False)
         
+#===============================================================================
+# problem end
+#===============================================================================
+
+
 
     def loadold_meshinmodel(self):
         pass
@@ -720,9 +757,10 @@ if __name__ == "__main__":
     #sys.stderr = errfile
 
 
-    app = QtGui.QApplication(sys.argv)
-    occam_vals = MyForm()
-    occam_vals.show()
+    app               = QtGui.QApplication(sys.argv)
+
+    occamgui_instance = OccamGui()
+    occamgui_instance.show()
 
     sys.exit(app.exec_())
                 
