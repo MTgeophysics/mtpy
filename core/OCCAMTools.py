@@ -4298,7 +4298,7 @@ class OccamData:
     
         if self.titlestr.find('--')>0:
             tstr=self.titlestr.split('--')
-            self.theta_profile=tstr[0]
+            self.theta_profile=float(tstr[0])
             self.title=tstr[1]
         else:
             self.title=self.titlestr
@@ -4420,6 +4420,8 @@ class OccamData:
         #if flst is not the same as freq make freq=flst
         if flst!=None:
             freq=flst
+        else:
+            freq=self.freq
         
         
         #if the rotation angle is not 0 than need to read the original data in
@@ -4503,14 +4505,14 @@ class OccamData:
                         
                         #if include the tipper
                         if tippererr!=None:
-                            if tip.tipper[nn,0]==0.0 or tip[nn,1]==0.0:
+                            if tip[nn,0]==0.0 or tip[nn,1]==0.0:
                                 tipyn='n'
                             else:
                                 #calculate the projection angle for real and imaginary
                                 tipphir=np.arctan(tip[nn,0].real/tip[nn,1].real)-\
-                                        theta
+                                        self.theta_profile
                                 tipphii=np.arctan(tip[nn,0].imag/tip[nn,1].imag)-\
-                                        theta
+                                        self.theta_profile
                                 
                                 #project the tipper onto the profile line
                                 projtipr=np.sqrt(tip[nn,0].real**2+tip[nn,1].real**2)*\
@@ -4629,7 +4631,7 @@ class OccamData:
                     srp['realtip'][1,:]=np.repeat(projtiperr,nr)
                     srp['imagtip'][1,:]=np.repeat(projtiperr,nr)
                 
-                for jj,ff in enumerate(self.freq,1):
+                for jj,ff in enumerate(freq,1):
                     #make a list of lines to write to the data file
                     if mmode=='both':
                         if srp['resxy'][0,jj-1]!=0.0:
@@ -4700,7 +4702,7 @@ class OccamData:
         
         #make the file name of the data file
         if self.datafn.find('RW')>0:
-            self.ndatafn=datanf
+            self.ndatafn=self.datafn
         else:
             self.ndatafn=self.datafn[:-4]+'RW.dat'
             
@@ -4725,7 +4727,7 @@ class OccamData:
         
         #write frequencies
         #writefreq=[freq[ff] for ff in range(0,len(freq),freqstep)]
-        datfid.write('FREQUENCIES:'+' '*8+str(len(self.freq))+'\n')
+        datfid.write('FREQUENCIES:'+' '*8+str(len(freq))+'\n')
         for ff in self.freq:
             datfid.write(ss+fmt % ff +'\n')
         
@@ -4741,6 +4743,8 @@ class OccamData:
             else:
                 datfid.write(datline)
         datfid.close()
+        
+        print 'Rewrote the data file to: ',self.ndatafn
     
     def plotMaskPoints(self,plottype=None,reserrinc=.20,phaseerrinc=5,
                        marker='o',colormode='color',dpi=300,ms=2,
@@ -4772,19 +4776,19 @@ class OccamData:
      
         #define some empty lists to put things into
         pstationlst=[]
-        axplst=[]
+        axlst=[]
         linelst=[]
         errlst=[]
         
         #get the stations to plot
         #if none plot all of them
         if plottype==None:
-            pstationlst=range(len(stationlst))
+            pstationlst=range(len(self.stationlst))
             
         #otherwise pick out the stations to plot along with their index number
         elif type(plottype) is not list:
             plottype=[plottype]
-            for ii,station in enumerate(stationlst):
+            for ii,station in enumerate(self.stationlst):
                 for pstation in plottype:
                     if station.find(pstation)>=0:
                         pstationlst.append(ii) 
@@ -4900,7 +4904,8 @@ class OccamData:
                 xx.grid(True,alpha=.4,which='both') 
         
         #make points an attribute of self which is a data type OccamPointPicker       
-        self.points=OccamPointPicker(axlst,linelst,errlst,reserrinc=.30)
+        self.points=OccamPointPicker(axlst,linelst,errlst,reserrinc=reserrinc,
+                                     phaseerrinc=phaseerrinc)
         
         #be sure to show the plot
         plt.show()
@@ -4913,7 +4918,7 @@ class OccamData:
         """
         
         self.read2DdataFile()
-        rplst=list[self.rplst]
+        rplst=list(self.rplst)
         #rewrite the data file
         #make a reverse dictionary for locating the masked points in the data file
         rploc=dict([('{0}'.format(self.points.fndict[key]),int(key)-1) 
@@ -4979,14 +4984,14 @@ class OccamData:
         reslst=[]
         
         #make a dictionary of rplst for easier extraction of data
-        rpdict=dict([(station,rplst[ii]) for ii,station in enumerate(stationlst)])
+        rpdict=dict([(station,rplst[ii]) for ii,station in enumerate(self.stationlst)])
         
         #loop over stations in the data file
-        for kk,station in enumerate(stationlst,1):
+        for kk,station in enumerate(self.stationlst,1):
             srp=rpdict[station]
             
             #loop over frequencies
-            for jj,ff in enumerate(freq,1):
+            for jj,ff in enumerate(self.freq,1):
                 #make a list of lines to write to the data file
                 if srp['resxy'][0,jj-1]!=0.0:
                     reslst.append(ss+str(kk)+ss+str(jj)+ss+'1'+ss+
@@ -5045,8 +5050,8 @@ class OccamData:
         
         #write frequencies
         #writefreq=[freq[ff] for ff in range(0,len(freq),freqstep)]
-        datfid.write('FREQUENCIES:'+' '*8+str(len(freq))+'\n')
-        for ff in freq:
+        datfid.write('FREQUENCIES:'+' '*8+str(len(self.freq))+'\n')
+        for ff in self.freq:
             datfid.write(ss+fmt % ff +'\n')
         
         #write data block
@@ -5062,7 +5067,7 @@ class OccamData:
                 datfid.write(datline)
         datfid.close()
         
-        print 'Wrote Occam2D data file to: ',dfn
+        print 'Wrote Occam2D data file to: ',self.ndatafn
     
     def read2DRespFile(self,respfn):
         """
@@ -5242,7 +5247,7 @@ class OccamData:
                 gs=gridspec.GridSpec(6,2,wspace=.1,left=.07,top=.93,bottom=.1,
                                      hspace=hspace)
             #loop over each station
-            for ii,station in enumerate(stationlst):
+            for ii,station in enumerate(self.stationlst):
                 
                 rlst=[]
                 llst=[]
@@ -5257,8 +5262,8 @@ class OccamData:
                                     rplst[ii]['phasexy'][3]))
                 rmslsttm=np.hstack((rplst[ii]['resyx'][3],
                                     rplst[ii]['phaseyx'][3]))
-                rmste=np.sqrt(np.sum(rms**2 for ms in rmslstte)/len(rmslstte))
-                rmstm=np.sqrt(np.sum(rms**2 for ms in rmslsttm)/len(rmslsttm))
+                rmste=np.sqrt(np.sum(rms**2 for rms in rmslstte)/len(rmslstte))
+                rmstm=np.sqrt(np.sum(rms**2 for rms in rmslsttm)/len(rmslsttm))
                 
                 fig=plt.figure(ii+1,[9,10],dpi=dpi)
                 plt.clf()
@@ -5401,7 +5406,7 @@ class OccamData:
                 if addwl==1:
                     try:
                         wlrms=wld[sdict[station]]['rms']
-                        axr.set_title(stationlst[ii]+'\n'+\
+                        axr.set_title(self.stationlst[ii]+'\n'+\
                                 'rms_occ_TE={0:.2f}, rms_occ_TM={1:.2f}, rms_wl= {2:.2f}'.format(rmste,rmstm,wlrms),
                                      fontdict={'size':fs+1,'weight':'bold'})
                         for ww,wlstation in enumerate(wlslst):
@@ -5471,42 +5476,70 @@ class OccamData:
                     if aa==0:
                         axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
                                fontdict={'size':fs,'weight':'bold'})
+                               
+                    #set legend based on the plot type
                     if plotnum==1:
                         if aa==0:
                             axr.legend(rlst,llst,
-                               loc=2,markerscale=1,borderaxespad=.05,
-                               labelspacing=.08,
-                               handletextpad=.15,borderpad=.05,prop={'size':fs})
+                                       loc=2,markerscale=1,
+                                       borderaxespad=.05,
+                                       labelspacing=.08,
+                                       handletextpad=.15,
+                                       borderpad=.05,
+                                       prop={'size':fs})
                     elif plotnum==2:
                         if aa==0:
                             if plotresp==True:
-                                axr.legend([rlst[0],rlst[2]],[llst[0],llst[2]],
-                                   loc=2,markerscale=1,borderaxespad=.05,
-                                   labelspacing=.08,
-                                   handletextpad=.15,borderpad=.05,
-                                   prop={'size':fs}) 
+                                try:
+                                    axr.legend([rlst[0],rlst[2]],
+                                               [llst[0],llst[2]],
+                                               loc=2,markerscale=1,
+                                               borderaxespad=.05,
+                                               labelspacing=.08,
+                                               handletextpad=.15,
+                                               borderpad=.05,
+                                               prop={'size':fs}) 
+                                except IndexError:
+                                    pass
+                                               
                             else:
-                                axr.legend([rlst[0]],[llst[0]],
-                                   loc=2,markerscale=1,borderaxespad=.05,
-                                   labelspacing=.08,
-                                   handletextpad=.15,borderpad=.05,
-                                   prop={'size':fs})
+                                try:
+                                    axr.legend([rlst[0]],[llst[0]],
+                                               loc=2,markerscale=1,
+                                               borderaxespad=.05,
+                                               labelspacing=.08,
+                                               handletextpad=.15,
+                                               borderpad=.05,
+                                               prop={'size':fs})
+                                except IndexError:
+                                    pass
                         if aa==1:
                             if plotresp==True:
-                                axr.legend([rlst[1],rlst[3]],[llst[1],llst[3]],
-                                   loc=2,markerscale=1,borderaxespad=.05,
-                                   labelspacing=.08,
-                                   handletextpad=.15,borderpad=.05,
-                                   prop={'size':fs}) 
+                                try:
+                                    axr.legend([rlst[1],rlst[3]],
+                                               [llst[1],llst[3]],
+                                               loc=2,markerscale=1,
+                                               borderaxespad=.05,
+                                               labelspacing=.08,
+                                               handletextpad=.15
+                                               ,borderpad=.05,
+                                               prop={'size':fs})
+                                except IndexError:
+                                    pass
                             else:
-                                axr.legend([rlst[1]],[llst[1]],
-                                   loc=2,markerscale=1,borderaxespad=.05,
-                                   labelspacing=.08,
-                                   handletextpad=.15,borderpad=.05,
-                                   prop={'size':fs})    
-                   
+                                try:
+                                    axr.legend([rlst[1]],[llst[1]],
+                                               loc=2,markerscale=1,
+                                               borderaxespad=.05,
+                                               labelspacing=.08,
+                                               handletextpad=.15,
+                                               borderpad=.05,
+                                               prop={'size':fs})    
+                                except IndexError:
+                                    pass
                 
-                for aa in enumerate([axpte,axptm]):
+                #set Properties for the phase axes
+                for aa,axp in enumerate([axpte,axptm]):
                     #set the x-axis to log scale
                     axp.set_xscale('log')
                     
@@ -5844,6 +5877,577 @@ class OccamModel:
     
     """
     
-    def __init__(self,iterfn):
+    def __init__(self,iterfn,meshfn=None,inmodelfn=None,datafn=None):
         self.iterfn=iterfn
+        self.meshfn=meshfn
+        self.inmodelfn=inmodelfn
+        self.datafn=datafn
         
+    def readIter(self):
+        """
+        read2DIterFile will read an iteration file and combine that info from the 
+        datafn and return a dictionary of variables.
+        
+        Inputs:
+            iterfn = full path to iteration file if iterpath=None.  If 
+                           iterpath is input then iterfn is just the name
+                           of the file without the full path.
+        
+        Outputs:
+            idict = dictionary of parameters, keys are verbatim from the file, 
+                    except for the key 'model' which is the contains the model
+                    numbers in a 1D array.
+            
+        """
+    
+        #check to see if the file exists
+        if os.path.exists(self.iterfn)==False:
+            raise IOError('File: '+self.iterfn+' does not exist, check path')
+        
+        #open file
+        ifid=file(self.iterfn,'r')
+        ilines=ifid.readlines()
+        ifid.close()
+        
+        #create dictionary to put things
+        self.idict={}
+        ii=0
+        #put header info into dictionary with similar keys
+        while ilines[ii].find('Param')!=0:
+            iline=ilines[ii].strip().split(':')
+            self.idict[iline[0]]=iline[1].strip()
+            ii+=1
+        
+        #get number of parameters
+        iline=ilines[ii].strip().split(':')
+        nparam=int(iline[1].strip())
+        self.idict[iline[0]]=nparam
+        self.idict['model']=np.zeros(nparam)
+        kk=int(ii+1)
+        
+        jj=0
+        while jj<len(ilines)-kk:
+            iline=ilines[jj+kk].strip().split()
+            for ll in range(4):
+                try:
+                    self.idict['model'][jj*4+ll]=float(iline[ll])
+                except IndexError:
+                    pass
+            jj+=1
+    
+    def read2DInmodel(self):
+        """
+        read an INMODEL file for occam 2D
+        
+        Input:
+            inmodelfn = full path to INMODEL file
+        
+        Output:
+            rows = list of combined data blocks where first number of each list
+                    represents the number of combined mesh layers for this 
+                    regularization block.  The second number is the number of 
+                    columns in the regularization block layer
+            cols = list of combined mesh columns for the regularization layer.
+                   The sum of this list must be equal to the number of mesh
+                   columns.
+            headerdict = dictionary of all the header information including the
+                         binding offset
+        """
+        
+        ifid=open(self.inmodelfn,'r')
+        
+        headerdict={}
+        rows=[]
+        cols=[]    
+        ncols=[]
+        
+        ilines=ifid.readlines()
+        
+        for ii,iline in enumerate(ilines):
+            if iline.find(':')>0:
+                iline=iline.strip().split(':')
+                headerdict[iline[0]]=iline[1]
+                #append the last line
+                if iline[0].find('EXCEPTIONS')>0:
+                    cols.append(ncols)
+            else:
+                iline=iline.strip().split()
+                iline=[int(jj) for jj in iline]
+                if len(iline)==2:
+                    if len(ncols)>0:
+                        cols.append(ncols)
+                    rows.append(iline)
+                    ncols=[]
+                elif len(iline)>2:
+                    ncols=ncols+iline
+                    
+        self.rows=np.array(rows)
+        self.cols=cols
+        self.inmodel_headerdict=headerdict
+        
+    def read2DMesh(self):
+        """
+        read a 2D meshfn
+        
+        Input:
+            meshfn = full path to mesh file
+    
+        Output:
+            hnodes = array of horizontal nodes (column locations (m))
+            vnodes = array of vertical nodes (row locations(m))
+            mdata = free parameters
+            
+        Things to do:
+            incorporate fixed values
+        """
+        
+        mfid=file(self.meshfn,'r')
+        
+        mlines=mfid.readlines()
+        
+        nh=int(mlines[1].strip().split()[1])-1
+        nv=int(mlines[1].strip().split()[2])-1
+        
+        hnodes=np.zeros(nh)
+        vnodes=np.zeros(nv)
+        mdata=np.zeros((nh,nv,4),dtype=str)    
+        
+        #get horizontal nodes
+        jj=2
+        ii=0
+        while ii<nh:
+            hline=mlines[jj].strip().split()
+            for mm in hline:
+                hnodes[ii]=float(mm)
+                ii+=1
+            jj+=1
+        
+        #get vertical nodes
+        ii=0
+        while ii<nv:
+            vline=mlines[jj].strip().split()
+            for mm in vline:
+                vnodes[ii]=float(mm)
+                ii+=1
+            jj+=1    
+        
+        #get free parameters        
+        for ii,mm in enumerate(mlines[jj+1:]):
+            kk=0
+            while kk<4:        
+                mline=mm.rstrip()
+                if mline.find('EXCEPTION')>0:
+                    break
+                for jj in range(nh):
+                    try:
+                        mdata[jj,ii,kk]=mline[jj]
+                    except IndexError:
+                        pass
+                kk+=1
+        
+        #make the node information an attributes of the occamModel class 
+        self.hnodes=hnodes
+        self.vnodes=vnodes
+        self.meshdata=mdata
+        
+    def plot2DModel(self,meshfn=None,inmodelfn=None,datafn=None,
+                    xpad=1.0,ypad=1.0,mpad=0.5,spad=3.0,ms=60,stationid=None,
+                    fdict={'size':8,'rotation':60,'weight':'normal'},
+                    dpi=300,ylimits=None,xminorticks=5,yminorticks=1,
+                    climits=(0,4), cmap='jet_r',fs=8,femesh='off',
+                    regmesh='off',aspect='auto',title='on',meshnum='off',
+                    blocknum='off',blkfdict={'size':3},fignum=1,
+                    plotdimensions=(10,10),grid='off',yscale='km'):
+        """
+        plotModel will plot the model output by occam in the iteration file.
+        
+        Inputs:
+            iterfn = full path to the iteration file that you want to plot
+            
+            meshfn = full path to mesh file (the forward modeling mesh).  If 
+                        none it will look for a file with mesh in the name.
+            
+            inmodelfn = full path to the INMODEL file (regularization mesh).
+                          If none it will look for a file with inmodel in the name.
+            
+            datafn = full path to data file.  If none is input it will use the
+                        data file found in the iteration file.
+            
+            xpad = padding in the horizontal direction of model
+            
+            ypad = padding the in the vertical direction of the top of the model
+                   to fit the station names and markers
+                   
+            mpad = marker pad to fit right at the surface, haven't found a better
+                   way of doing this automatically yet
+                   
+            spad = padding of station names away from the top of the model, this
+                    is kind of awkward at the moment especially if you zoom into 
+                    the model, it usually looks retarded and doesn't fit
+                    
+            ms = marker size in ambiguous points
+            
+            stationid = index of station names to plot -> ex. pb01sdr would be 
+                        stationid=(0,4) to plot pb01
+                        
+            fdict = font dictionary for the station names, can have keys:
+                    'size' = font size
+                    'rotation' = angle of rotation (deg) of font
+                    'weight' = weight of font 
+                    'color' = color of font
+                    'style' = style of font ex. 'italics'
+                    
+            plotdimensions = x-y dimensions of the figure (10,10) in inches
+                    
+            dpi = dot per inch of figure, should be 300 for publications
+            
+            ylimits = limits of depth scale (km). ex, ylimits=(0,30)
+            
+            xminorticks = location of minor tick marks for the horizontal axis
+            
+            yminorticks = location of minor tick marks for vertical axis
+            
+            climits = limits of log10(resistivity). ex. climits=(0,4)
+            
+            cmap = color map to plot the model image
+            
+            fs = font size of axis labels
+            
+            femesh = 'on' to plot finite element forward modeling mesh (black)
+            
+            regmesh = 'on' to plot regularization mesh (blue)
+            
+            aspect = aspect ratio of the figure, depends on your line length and
+                    the depth you want to investigate
+            
+            title = 'on' to put the RMS and Roughness as the title, or input a 
+                    string that will be added to the RMS and roughness, or put 
+                    None to not put a title on the plot and print out RMS and 
+                    roughness
+            
+            meshnum = 'on' to plot FE mesh block numbers
+            
+            fignum = figure number to plot to
+            
+            blocknum = 'on' to plot numbers on the regularization blocks
+            
+            blkfdict = font dictionary for the numbering of regularization blocks
+            
+            grid = major for major ticks grid
+                   minor for a grid of the minor ticks
+                   both for a grid with major and minor ticks
+            
+            yscale = 'km' for depth in km or 'm' for depth in meters
+        """
+            
+        
+        #get directory path of inversion folder
+        invpath=os.path.dirname(self.iterfn)    
+        
+        #read in iteration file
+        self.readIter()    
+        
+        #get meshfile if none is provides assuming the mesh file is named with
+        #mesh
+        if meshfn==None:
+            self.meshfn=os.path.join(invpath,'MESH')
+            if os.path.isfile(self.meshfn)==False:
+                for ff in os.listdir(invpath):
+                    if ff.lower().find('mesh')>=0:
+                        self.meshfn=os.path.join(invpath,ff)
+                if os.path.isfile(self.meshfn)==False:
+                    raise NameError('Could not find a mesh file, input manually')
+        
+        #get inmodelfile if none is provides assuming the mesh file is named with
+        #inmodel
+        if inmodelfn==None:
+            self.inmodelfn=os.path.join(invpath,'INMODEL')
+            if os.path.isfile(self.inmodelfn)==False:
+                for ff in os.listdir(invpath):
+                    if ff.lower().find('inmodel')>=0:
+                        self.inmodelfn=os.path.join(invpath,ff)
+                if os.path.isfile(self.inmodelfn)==False:
+                    raise NameError('Could not find a model file, input manually')
+                    
+        #get datafile if none is provides assuming the mesh file is named with
+        #.dat
+        if datafn==None:
+            self.datafn=self.idict['Data File']
+            if self.datafn.find(os.sep)==-1:
+                self.datafn=os.path.join(invpath,self.datafn)
+            if os.path.isfile(self.datafn)==False:
+                for ff in os.listdir(invpath):
+                    if ff.lower().find('.dat')>=0:
+                        self.datafn=os.path.join(invpath,ff)
+                if os.path.isfile(self.datafn)==False:
+                    raise NameError('Could not find a data file, input manually')
+        
+        if yscale=='km':
+            dfactor=1000.
+            pfactor=1.0
+        elif yscale=='m':
+            dfactor=1.
+            pfactor=1000.
+        else:
+            dfactor=1000.
+            pfactor=1.0
+            
+        #read in data file as an OccamData type
+        print 'Reading data from: ',self.datafn
+        self.data=OccamData(self.datafn)
+        self.data.read2DdataFile()
+        
+        #read in MESH file
+        print 'Reading mesh from: ',self.meshfn
+        self.read2DMesh()
+        
+        #read in INMODEL
+        print 'Reading model from: ',self.inmodelfn
+        self.read2DInmodel()
+        #get the binding offset which is the right side of the furthest left
+        #block, this helps locate the model in relative space
+        bndgoff=float(self.inmodel_headerdict['BINDING OFFSET'])/dfactor
+        
+        #make a meshgrid 
+        X,Y=np.meshgrid(self.hnodes,self.vnodes)
+        
+        #set local parameters rows an columns
+        #rows is an array of 2 x nc
+        #cols is a list of horizontal block nodes with variable shape
+        cr=self.rows
+        cc=self.cols
+        
+        #get length of the rows list
+        nc=len(cr)
+        
+        #make sure that the number of rows and number of columns are the same
+        assert len(cr)==len(self.cols)
+        
+        #initiate the resistivity model to the shape of the FE mesh
+        resmodel=np.zeros((self.vnodes.shape[0],self.hnodes.shape[0]))
+        
+        #read in the model and set the regularization block values to map onto
+        #the FE mesh so that the model can be plotted as an image or regular 
+        #mesh.
+        mm=0
+        for ii in range(nc):
+            #get the number of layers to combine
+            #this index will be the first index in the vertical direction
+            ny1=cr[:ii,0].sum()
+            #the second index  in the vertical direction
+            ny2=ny1+cr[ii][0]
+            #make the list of amalgamated columns an array for ease
+            lc=np.array(cc[ii])
+            #loop over the number of amalgamated blocks
+            for jj in range(len(cc[ii])):
+                #get first in index in the horizontal direction
+                nx1=lc[:jj].sum()
+                #get second index in horizontal direction
+                nx2=nx1+lc[jj]
+                #put the apporpriate resistivity value into all the amalgamated model
+                #blocks of the regularization grid into the forward model grid
+                resmodel[ny1:ny2,nx1:nx2]=self.idict['model'][mm]
+                mm+=1
+        
+        #make some arrays for plotting the model
+        plotx=np.array([self.hnodes[:ii+1].sum() 
+                        for ii in range(len(self.hnodes)-1)])/dfactor
+        ploty=np.array([self.vnodes[:ii+1].sum() 
+                        for ii in range(len(self.vnodes)-1)])/dfactor
+        
+        #center the grid onto the station coordinates
+        x0=bndgoff-plotx[cc[0][0]]
+        plotx=plotx+x0
+        
+        #flip the arrays around for plotting purposes
+        #plotx=plotx[::-1] and make the first layer start at zero
+        ploty=ploty[::-1]-ploty[0]
+        
+        #make a mesh grid to plot in the model coordinates
+        x,y=np.meshgrid(plotx,ploty)
+        
+        #flip the resmodel upside down so that the top is the stations
+        resmodel=np.flipud(resmodel)
+        
+        #set some figure properties to use the maiximum space 
+        plt.rcParams['font.size']=int(dpi/40.)
+        plt.rcParams['figure.subplot.left']=.08
+        plt.rcParams['figure.subplot.right']=.99
+        plt.rcParams['figure.subplot.bottom']=.1
+        plt.rcParams['figure.subplot.top']=.92
+        plt.rcParams['figure.subplot.wspace']=.01
+        
+        #plot the model as a mesh
+        fig=plt.figure(fignum,plotdimensions,dpi=dpi)
+        plt.clf()
+        
+        #add a subplot to the figure with the specified aspect ratio
+        ax=fig.add_subplot(1,1,1,aspect=aspect)
+        
+        #plot the model as a pcolormesh so the extents are constrained to 
+        #the model coordinats
+        ax.pcolormesh(x,y,resmodel,cmap=cmap,vmin=climits[0],vmax=climits[1])
+        
+        #make a colorbar for the resistivity
+        cbx=make_axes(ax,shrink=.8,pad=.01)
+        cb=ColorbarBase(cbx[0],cmap=cmap,norm=Normalize(vmin=climits[0],
+                        vmax=climits[1]))
+        cb.set_label('Resistivity ($\Omega \cdot$m)',
+                     fontdict={'size':fs,'weight':'bold'})
+        cb.set_ticks(np.arange(int(climits[0]),int(climits[1])+1))
+        cb.set_ticklabels(['10$^{0}$'.format(nn) for nn in 
+                            np.arange(int(climits[0]),int(climits[1])+1)])
+        
+        #set the offsets of the stations and plot the stations
+        #need to figure out a way to set the marker at the surface in all
+        #views.
+        offsetlst=[]
+        for rpdict in self.data.rplst:
+            #plot the station marker
+            ax.scatter(rpdict['offset']/dfactor,-mpad*pfactor,marker='v',c='k',
+                       s=ms)
+            #put station id onto station marker
+            #if there is a station id index
+            if stationid!=None:
+                ax.text(rpdict['offset']/dfactor,-spad*pfactor,
+                        rpdict['station'][stationid[0]:stationid[1]],
+                        horizontalalignment='center',
+                        verticalalignment='baseline',
+                        fontdict=fdict)
+            #otherwise put on the full station name found form data file
+            else:
+                ax.text(rpdict['offset']/dfactor,-spad*pfactor,
+                        rpdict['station'],
+                        horizontalalignment='center',
+                        verticalalignment='baseline',
+                        fontdict=fdict)
+            offsetlst.append(rpdict['offset']/dfactor)
+        
+        #set the initial limits of the plot to be square about the profile line  
+        if ylimits==None:  
+            ax.set_ylim(abs(max(offsetlst)-min(offsetlst)),
+                        -ypad*pfactor)
+        else:
+            ax.set_ylim(ylimits[1]*pfactor,(ylimits[0]-ypad)*pfactor)
+        ax.set_xlim(min(offsetlst)-(xpad*pfactor),
+                     (max(offsetlst)+(xpad*pfactor)))
+        #set the axis properties
+        ax.xaxis.set_minor_locator(MultipleLocator(xminorticks*pfactor))
+        ax.yaxis.set_minor_locator(MultipleLocator(yminorticks*pfactor))
+        if yscale=='km':
+            ax.set_xlabel('Horizontal Distance (km)',
+                          fontdict={'size':fs,'weight':'bold'})
+            ax.set_ylabel('Depth (km)',fontdict={'size':fs,'weight':'bold'})
+        elif yscale=='m':
+            ax.set_xlabel('Horizontal Distance (m)',
+                          fontdict={'size':fs,'weight':'bold'})
+            ax.set_ylabel('Depth (m)',fontdict={'size':fs,'weight':'bold'})
+        
+        #put a grid on if one is desired    
+        if grid=='major':
+            ax.grid(alpha=.3,which='major')
+        if grid=='minor':
+            ax.grid(alpha=.3,which='minor')
+        if grid=='both':
+            ax.grid(alpha=.3,which='both')
+        else:
+            pass
+        
+        #set title as rms and roughness
+        if type(title) is str:
+            if title=='on':
+                titlestr=os.path.join(os.path.basename(os.path.dirname(self.iterfn)),
+                                      os.path.basename(self.iterfn))
+                ax.set_title(titlestr+': RMS {0:.2f}, Roughness={1:.0f}'.format(
+                         float(self.idict['Misfit Value']),
+                         float(self.idict['Roughness Value'])),
+                         fontdict={'size':fs+1,'weight':'bold'})
+            else:
+                ax.set_title(title+'; RMS {0:.2f}, Roughness={1:.0f}'.format(
+                         float(self.idict['Misfit Value']),
+                         float(self.idict['Roughness Value'])),
+                         fontdict={'size':fs+1,'weight':'bold'})
+        else:
+            print 'RMS {0:.2f}, Roughness={1:.0f}'.format(
+                         float(self.idict['Misfit Value']),
+                         float(self.idict['Roughness Value'])) 
+        
+        #plot forward model mesh    
+        if femesh=='on':
+            for xx in plotx:
+                ax.plot([xx,xx],[0,ploty[0]],color='k',lw=.5)
+            for yy in ploty:
+                ax.plot([plotx[0],plotx[-1]],[yy,yy],color='k',lw=.5)
+        
+        #plot the regularization mesh
+        if regmesh=='on':
+            linelst=[]
+            for ii in range(nc):
+                #get the number of layers to combine
+                #this index will be the first index in the vertical direction
+                ny1=cr[:ii,0].sum()
+                #the second index  in the vertical direction
+                ny2=ny1+cr[ii][0]
+                #make the list of amalgamated columns an array for ease
+                lc=np.array(cc[ii])
+                yline=ax.plot([plotx[0],plotx[-1]],[ploty[-ny1],ploty[-ny1]],
+                              color='b',lw=.5)
+                linelst.append(yline)
+                #loop over the number of amalgamated blocks
+                for jj in range(len(cc[ii])):
+                    #get first in index in the horizontal direction
+                    nx1=lc[:jj].sum()
+                    #get second index in horizontal direction
+                    nx2=nx1+lc[jj]
+                    try:
+                        if ny1==0:
+                            ny1=1
+                        xline=ax.plot([plotx[nx1],plotx[nx1]],
+                                      [ploty[-ny1],ploty[-ny2]],
+                                      color='b',lw=.5)
+                        linelst.append(xline)
+                    except IndexError:
+                        pass
+                    
+        ##plot the mesh block numbers
+        if meshnum=='on':
+            kk=1
+            for yy in ploty[::-1]:
+                for xx in plotx:
+                    ax.text(xx,yy,'{0}'.format(kk),fontdict={'size':3})
+                    kk+=1
+                    
+        ##plot regularization block numbers
+        if blocknum=='on':
+            kk=1
+            for ii in range(nc):
+                #get the number of layers to combine
+                #this index will be the first index in the vertical direction
+                ny1=cr[:ii,0].sum()
+                #the second index  in the vertical direction
+                ny2=ny1+cr[ii][0]
+                #make the list of amalgamated columns an array for ease
+                lc=np.array(cc[ii])
+                #loop over the number of amalgamated blocks
+                for jj in range(len(cc[ii])):
+                    #get first in index in the horizontal direction
+                    nx1=lc[:jj].sum()
+                    #get second index in horizontal direction
+                    nx2=nx1+lc[jj]
+                    try:
+                        if ny1==0:
+                            ny1=1
+                        #get center points of the blocks
+                        yy=ploty[-ny1]-(ploty[-ny1]-ploty[-ny2])/2
+                        xx=plotx[nx1]-(plotx[nx1]-plotx[nx2])/2
+                        #put the number
+                        ax.text(xx,yy,'{0}'.format(kk),fontdict=blkfdict,
+                                horizontalalignment='center',
+                                verticalalignment='center')
+                        kk+=1
+                    except IndexError:
+                        pass
+                    
+        plt.show()
+                
+            

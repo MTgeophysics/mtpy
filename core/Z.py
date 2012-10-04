@@ -1088,7 +1088,8 @@ class Z(Edi):
     
                 
     def plotResPhase(self,thetar=0,fignum=1,plottype=1,title=None,ffactor=1,
-                     savefigfilename=None,dpi=None,fmt=None,orientation=None):
+                     savefigfilename=None,dpi=None,fmt=None,orientation=None,
+                     phaselimits=(0,90)):
         """
         plotResPhase(filename,fignum) will plot the apparent resistivity and 
         phase for TE and TM modes or all modes.  If there is tipper data it will
@@ -1144,10 +1145,13 @@ class Z(Edi):
         #make figure for xy,yx components
         if plottype==1 or plottype==3: 
             fig=plt.figure(fignum,[8,10],dpi=dpi)
+            plt.clf()
             gs.update(hspace=.05,wspace=.15,left=.1)
         elif plottype==2:
             fig=plt.figure(fignum,[10,10],dpi=dpi)
+            plt.clf()
             gs.update(hspace=.05,wspace=.15,left=.07)
+        
         
         #---------plot the apparent resistivity-----------------------------------
         if plottype==1  or plottype==3:
@@ -1210,21 +1214,7 @@ class Z(Edi):
         ax2.set_xscale('log')
 
         #check the phase to see if any point are outside of [0:90]    
-        if min(rp.phasexy)<0 or min(rp.phaseyx+180)<0:
-            pymin=min([min(rp.phasexy),min(rp.phaseyx+180)])
-            if pymin>0:
-                pymin=0
-        else:
-            pymin=0
-        
-        if max(rp.phasexy)>90 or max(rp.phaseyx+180)>90:
-            pymax=min([max(rp.phasexy),max(rp.phaseyx+180)])
-            if pymax<91:
-                pymax=90
-        else:
-            pymax=90
-        
-        ax2.set_ylim(ymin=pymin,ymax=pymax)        
+        ax2.set_ylim(phaselimits)        
         ax2.yaxis.set_major_locator(MultipleLocator(30))
         ax2.yaxis.set_minor_locator(MultipleLocator(1))
         ax2.grid(True)
@@ -1318,14 +1308,14 @@ class Z(Edi):
             line2=ax5.plot(0,0,'b')
 #            ax5.set_xlim(xmin=10**np.floor(np.log10(period[0])),
 #                         xmax=10**np.ceil(np.log10(period[-1])))
-            ax5.yaxis.set_major_locator(MultipleLocator(.1))
+            ax5.yaxis.set_major_locator(MultipleLocator(.2))
                          
             ax5.legend([line1[0],line2[0]],['real','imag'],loc='upper left',markerscale=1,
                        borderaxespad=.01,labelspacing=.07,handletextpad=.2,borderpad=.02)
             ax5.set_xlabel('period (s)',fontdict={'size':12,'weight':'bold'})
             ax5.set_ylabel('tipper',fontdict={'size':12,'weight':'bold'})    
             
-            ax5.set_ylim([tyi.min()-.1,tyr.max()+.1])
+            ax5.set_ylim([-1,1])
             ax5.grid(True)
         
         #make title and show
