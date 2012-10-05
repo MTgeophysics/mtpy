@@ -71,11 +71,11 @@ Add the central repo:
 
 First I should check which remote repo I want:
 
-C:\Users\nietky\github\mtpy\doc [git_tips]> git remote -v
-origin  https://github.com/nietky/MTpy.git (fetch)
-origin  https://github.com/nietky/MTpy.git (push)
-upstream        https://github.com/geophysics/MTpy.git (fetch)
-upstream        https://github.com/geophysics/MTpy.git (push)
+    C:\Users\nietky\github\mtpy\doc [git_tips]> git remote -v
+    origin  https://github.com/nietky/MTpy.git (fetch)
+    origin  https://github.com/nietky/MTpy.git (push)
+    upstream        https://github.com/geophysics/MTpy.git (fetch)
+    upstream        https://github.com/geophysics/MTpy.git (push)
 
 I want them on "origin" (my github fork), and the changes I want to push are on
 the "git_tips" feature branch:
