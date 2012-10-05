@@ -9,7 +9,7 @@ Based on MTAnalysis.m and LoadEDI.m written by Stephan Thiel
 
 import numpy as np
 import matplotlib.pyplot as plt
-from Z import Z
+from MTpy.core.Z import Z
 import os
 from matplotlib.ticker import FormatStrFormatter,MultipleLocator
 from matplotlib.patches import Ellipse
