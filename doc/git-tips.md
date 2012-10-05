@@ -80,7 +80,6 @@ upstream        https://github.com/geophysics/MTpy.git (push)
 I want them on "origin" (my github fork), and the changes I want to push are on
 the "git_tips" feature branch:
 
-    $ git push -u origin git_tips
     C:\Users\nietky\github\mtpy\doc [git_tips]> git push -u origin git_tips
     Counting objects: 6, done.
     Delta compression using up to 4 threads.
