@@ -37,7 +37,7 @@ methods for [bash](http://lmgtfy.com/?q=git+branch+in+bash+prompt)).
     * master
 
 Only the master branch was pulled down, but there are more branches on the
-Github repo I just cloned, they're called "remote branches". Show them with:
+Github repo I just cloned, they are called "remote branches". Show them with:
 
     C:\Users\nietky\github\mtpy [master]> git branch -a
     * master
@@ -50,7 +50,7 @@ Github repo I just cloned, they're called "remote branches". Show them with:
 
 If I want to play with one of those, I need to track the remote branch:
 
-    C:\Users\nietky\github\mtpy\doc [master]> git checkout -b lk origin/lk
+    C:\Users\nietky\github\mtpy\doc [master]> git checkout --track origin/lk
     Branch lk set up to track remote branch lk from origin.
     Switched to a new branch 'lk'
     C:\Users\nietky\github\mtpy\doc [lk]> git branch
@@ -61,10 +61,15 @@ Now I have a local copy, and can pull any future changes by using:
 
     $ git pull origin lk
 
-# Pushing a local feature branch to GitHub
+## Add a new remote repository
 
-First, what's the name of the remote repo? In this case I've got my own fork,
-and the central repo:
+Add the central repo:
+
+    $ git remote add upstream https://github.com/geophysics/MTpy.git
+
+## Pushing a local feature branch
+
+First I should check which remote repo I want:
 
 C:\Users\nietky\github\mtpy\doc [git_tips]> git remote -v
 origin  https://github.com/nietky/MTpy.git (fetch)
@@ -72,11 +77,11 @@ origin  https://github.com/nietky/MTpy.git (push)
 upstream        https://github.com/geophysics/MTpy.git (fetch)
 upstream        https://github.com/geophysics/MTpy.git (push)
 
-I want them on "origin", my forked repo, and the changes I want to push are on
+I want them on "origin" (my github fork), and the changes I want to push are on
 the "git_tips" feature branch:
 
     $ git push -u origin git_tips
-    C:\Users\nietky\github\mtpy\doc [git_tips +1 ~1 -0 !]> git push -u origin git_tips
+    C:\Users\nietky\github\mtpy\doc [git_tips]> git push -u origin git_tips
     Counting objects: 6, done.
     Delta compression using up to 4 threads.
     Compressing objects: 100% (4/4), done.
@@ -86,5 +91,17 @@ the "git_tips" feature branch:
      * [new branch]      git_tips -> git_tips
     Branch git_tips set up to track remote branch git_tips from origin.
 
+After making some changes, pushing is very similar:
+
+    C:\Users\nietky\github\mtpy\doc [git_tips]> git push origin git_tips
+
+## Testing a pull request/feature branch
+
+Just track the branch associated with the pull request, as above, and test
+away/make changes/push them, etc.  In this way, more than one person can work
+on a single pull request. The discussion thread on Github updates automatically
+Just make sure you fetch and merge the most recent changes before starting work:
+
+    $ git fetch
 
 
