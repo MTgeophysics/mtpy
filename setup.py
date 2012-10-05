@@ -9,6 +9,6 @@ setup(name="MTpy",
       scripts=["MTpy/utils/CombineEDIs.py",
                "MTpy/utils/runParalanaMT.py",
                "MTpy/utils/wsmt-pv.py",
-               "MTpy/utils/occam2d_gui/run1.py",
+               "MTpy/utils/occam2d_gui/occam2d_gui.py",
                "MTpy/core/RunBIRRPSingleStation.py"]
       )
