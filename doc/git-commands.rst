@@ -1,4 +1,11 @@
-Example of setting up a local copy of a GitHub repository:
+# Git tips etc.
+
+## Set up local git repo 
+
+First I created a fork on GitHub of https://github.com/geophysics/MTpy,
+which was created at https://github.com/nietky/MTpy
+
+Now clone that locally:
 
     C:\Users\nietky\github> git clone https://github.com/nietky/MTpy.git
     Cloning into 'MTpy'...
@@ -29,7 +36,8 @@ methods for [bash](http://lmgtfy.com/?q=git+branch+in+bash+prompt)).
     C:\Users\nietky\github\mtpy [master]> git branch
     * master
 
-Showing remote branches:
+Only the master branch was pulled down, but there are more branches on the
+Github repo I just cloned, they're called "remote branches". Show them with:
 
     C:\Users\nietky\github\mtpy [master]> git branch -a
     * master
@@ -40,8 +48,43 @@ Showing remote branches:
       remotes/origin/master
       remotes/origin/reconfig_as_pkgs
 
-Track a remote branch locally:
+If I want to play with one of those, I need to track the remote branch:
 
-    C:\Users\nietky\github\mtpy\doc [git]> git checkout -b lk origin/lk
+    C:\Users\nietky\github\mtpy\doc [master]> git checkout -b lk origin/lk
     Branch lk set up to track remote branch lk from origin.
     Switched to a new branch 'lk'
+    C:\Users\nietky\github\mtpy\doc [lk]> git branch
+    * lk
+      master
+
+Now I have a local copy, and can pull any future changes by using:
+
+    $ git pull origin lk
+
+# Pushing a local feature branch to GitHub
+
+First, what's the name of the remote repo? In this case I've got my own fork,
+and the central repo:
+
+C:\Users\nietky\github\mtpy\doc [git_tips]> git remote -v
+origin  https://github.com/nietky/MTpy.git (fetch)
+origin  https://github.com/nietky/MTpy.git (push)
+upstream        https://github.com/geophysics/MTpy.git (fetch)
+upstream        https://github.com/geophysics/MTpy.git (push)
+
+I want them on "origin", my forked repo, and the changes I want to push are on
+the "git_tips" feature branch:
+
+    $ git push -u origin git_tips
+    C:\Users\nietky\github\mtpy\doc [git_tips +1 ~1 -0 !]> git push -u origin git_tips
+    Counting objects: 6, done.
+    Delta compression using up to 4 threads.
+    Compressing objects: 100% (4/4), done.
+    Writing objects: 100% (4/4), 1.12 KiB, done.
+    Total 4 (delta 1), reused 0 (delta 0)
+    To https://github.com/nietky/MTpy.git
+     * [new branch]      git_tips -> git_tips
+    Branch git_tips set up to track remote branch git_tips from origin.
+
+
+
