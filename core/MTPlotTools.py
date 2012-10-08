@@ -10,7 +10,7 @@ import os
 import MTtools as mt
 from matplotlib.ticker import MultipleLocator,FormatStrFormatter
 import Z
-import MTpy.utils.LatLongUTMconversion as utm2ll
+import LatLongUTMconversion as utm2ll
 from matplotlib.patches import Ellipse,Rectangle,Arrow
 from matplotlib.colors import LinearSegmentedColormap,Normalize
 from matplotlib.colorbar import *

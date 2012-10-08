@@ -9,7 +9,6 @@ reload(gui4)
 
 from gui4 import Ui_occamgui2D as Ui_Form
 
-import MTpy.core.OCCAMTools as OCCAMTools
 
 import os.path as op
 
@@ -336,6 +335,7 @@ class MyForm(QtGui.QMainWindow):
         
         #make data file  -------------------------------------------
         
+        import MTpy.core.OCCAMTools as OCCAMTools
         checkfilename = OCCAMTools.make2DdataFile(edidirectory,\
                                     savepath=outfilename,\
                                     mmode= mode4modelling,\
@@ -375,6 +375,8 @@ class MyForm(QtGui.QMainWindow):
         D=self.parameters
         
         datafile = D['datafile'] 
+        import MTpy.core.OCCAMTools as OCCAMTools
+        reload(OCCAMTools)
 
         self._setup_startupfile()
             
