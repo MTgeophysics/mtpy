@@ -131,7 +131,18 @@ class Edi(object):
                         gdict[gkey]['text'].append(eline.strip())
                 ii+=1
         
-        latstr=gdict['head']['LAT']
+        #get latitude from the header
+        try:
+            latstr=gdict['head']['LAT']
+            
+        #if it isn't in the header it should be in the definemeas
+        except KeyError:
+            try:
+                latstr=gdict['definemeas']['REFLAT']
+            #if it isn't there then need to find it else where
+            except KeyError:
+                print 'Did not find Latitude'
+                
         #change from hh:mm:ss to decimal deg
         if latstr.find(':')>=0:
             latlst=latstr.split(':')
@@ -140,8 +151,18 @@ class Edi(object):
             self.lat=float(latstr)
         else:
             self.lat=float(latstr)
+        
+        #get longitude from header
+        try:
+            lonstr=gdict['head']['LONG']
             
-        lonstr=gdict['head']['LONG']
+        #if it isn't in the header it should be in the definemeas
+        except KeyError:
+            try:
+                lonstr=gdict['definemeas']['REFLONG']
+            except KeyError:
+                print 'Did not find Longitude'
+                
         #change from hh:mm:ss to decimal deg
         if lonstr.find(':')>=0:
             lonlst=lonstr.split(':')
@@ -2153,9 +2174,12 @@ class Tipper:
             for rr in range(nt):
                 self.tipper[rr]=np.dot(rotmatrix,np.dot(self.tipper[rr],
                                         rotmatrix.T))
-
+        #get the magnitude
         self.magreal=np.sqrt(self.tipper[:,0].real**2+self.tipper[:,1].real**2)
         self.magimag=np.sqrt(self.tipper[:,0].imag**2+self.tipper[:,1].imag**2)
+        
+        #get the angle, need to make both parts negative to get it into the
+        #parkinson convention where the arrows point towards the conductor
         self.anglereal=np.arctan2(-self.tipper[:,1].real,
                                         -self.tipper[:,0].real)*180/np.pi
         self.angleimag=np.arctan2(-self.tipper[:,1].imag,

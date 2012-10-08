@@ -1290,8 +1290,11 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
                galpha=.25,stationid=None,stationpad=.0005,
                sfdict={'size':12,'weight':'bold'},indarrows='n',
                cmap='ptcmap',tscale='period',mapscale='latlon',fignum=1,
-               imagefile=None,image_extent=None,refpoint=(0,0),
-               arrowprop={'headheight':0.25,'headwidth':0.25,'linewidth':0.5}):
+               imagefile=None,image_extent=None,refpoint=(0,0),cbshrink=.8,
+               arrowprop={'headheight':0.25,'headwidth':0.25,'linewidth':0.5},
+               arrowlegend={'placement':'lower right','xborderpad':.2,
+                            'yborderpad':.2,'fontpad':.05,
+                            'fontdict':{'size':10,'weight':'bold'}}):
     """ 
     plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
                ypad=.2,tickstrfmt='%2.4f',cborientation='vertical',
@@ -1369,6 +1372,23 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
         
         refpoint = reference point to pin the map to locations
         
+        arrowprop = dictionary of arrow properties with keys:
+            linewidth = width of the arrow line
+            headheight = height of arrow head
+            headwidth = width of the arrow head
+            arrowscale = scale size of the arrow
+        
+        arrowlegend = dictionary of properties for legend with keys:
+            placement ->placement of arrow legend can be:
+            upper right
+            lower right
+            upper left
+            lower left
+            xborderpad = padding from x axis
+            yborderpad = padding from y axis
+            fontpad = padding between arrow and legend text
+            fontdict = dictionary of font properties
+        
     """
     jj=freqspot
     fig=plt.figure(fignum,pxy,dpi=200)
@@ -1389,7 +1409,7 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
     
     if mapscale=='latlon':
         tickstrfmt='%.3f'
-    elif mapscale=='eastnorth':
+    elif mapscale=='eastnorth' or mapscale=='eastnorthkm':
         tickstrfmt='%.0f'
     
     ckmin=colorkeymm[0]
@@ -1543,13 +1563,14 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
                 tip=imp.getTipper(thetar=rotz)
                 aheight=arrowprop['headheight']
                 awidth=arrowprop['headwidth']
+                ascale=arrowprop['arrowscale']
                 #plot real tipper
                 if indarrows=='yri' or indarrows=='yr':
                     if tip.magreal[jj]<=1.0:
-                        txr=tip.magreal[jj]*\
-                            np.cos(90-tip.anglereal[jj]*np.pi/180)*scaling
-                        tyr=tip.magreal[jj]*\
-                            np.sin(90-tip.anglereal[jj]*np.pi/180)*scaling
+                        txr=tip.magreal[jj]*ascale*\
+                            np.sin((tip.anglereal[jj])*np.pi/180)
+                        tyr=tip.magreal[jj]*ascale*\
+                            np.cos((tip.anglereal[jj])*np.pi/180)
     
                         ax.arrow(plotx,ploty,txr,tyr,lw=arrowprop['linewidth'],
                              facecolor='k',edgecolor='k',
@@ -1561,9 +1582,9 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
                 if indarrows=='yri' or indarrows=='yi':
                     if tip.magimag[jj]<=1.0:
                         txi=tip.magimag[jj]*\
-                            np.cos(90-tip.angleimag[jj]*np.pi/180)*scaling
+                            np.sin((tip.angleimag[jj])*np.pi/180)*scaling
                         tyi=tip.magimag[jj]*\
-                            np.sin(90-tip.angleimag[jj]*np.pi/180)*scaling
+                            np.cos((tip.angleimag[jj])*np.pi/180)*scaling
     
                         ax.arrow(plotx,ploty,txi,tyi,lw=arrowprop['linewidth'],
                                  facecolor='b',edgecolor='b',
@@ -1610,6 +1631,66 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
         titlefreq='{0:.5g} (Hz)'.format(freq)
     ax.set_title('Phase Tensor Map for '+titlefreq,
                  fontsize=10,fontweight='bold')
+    #plot induction arrow scale bar
+    if indarrows.find('y')==0:
+        parrx=ax.get_xlim()
+        parry=ax.get_ylim()
+        try:
+            axpad=arrowlegend['xborderpad']
+        except KeyError:
+            axpad=xpad+arrowprop['arrowscale']
+        try:
+            aypad=arrowlegend['yborderpad']
+        except KeyError:
+            aypad=ypad
+        try:
+            txtpad=arrowlegend['fontpad']
+        except KeyError:
+            txtpad=.25*esize
+            
+        
+        if arrowlegend['placement']=='lower right':
+            pax=parrx[1]-axpad
+            pay=parry[0]+aypad
+            ptx=arrowprop['arrowscale']
+            pty=0
+            txa=parrx[1]-axpad+arrowprop['arrowscale']/2.
+            txy=pay+txtpad
+        elif arrowlegend['placement']=='upper right':
+            pax=parrx[1]-axpad
+            pay=parry[1]-aypad
+            ptx=arrowprop['arrowscale']
+            pty=0
+            txa=parrx[1]-axpad+arrowprop['arrowscale']/2.
+            txy=pay+txtpad
+        elif arrowlegend['placement']=='lower left':
+            pax=parrx[0]+axpad
+            pay=parry[0]+aypad
+            ptx=arrowprop['arrowscale']
+            pty=0
+            txa=parrx[0]+axpad+arrowprop['arrowscale']/2.
+            txy=pay+txtpad
+        elif arrowlegend['placement']=='upper left':
+            pax=parrx[0]+axpad
+            pay=parry[1]-aypad
+            ptx=arrowprop['arrowscale']
+            pty=0
+            txa=parrx[0]+axpad+arrowprop['arrowscale']/2.
+            txy=pay+txtpad
+        else:
+            raise NameError('arrowlegend not supported.')
+            
+        ax.arrow(pax,pay,ptx,pty,lw=arrowprop['linewidth'],
+                             facecolor='k',edgecolor='k',
+                             length_includes_head=False,
+                             head_width=arrowprop['headwidth'],
+                             head_length=arrowprop['headheight'])
+        
+        ax.text(txa,txy,'|T|=1',
+                horizontalalignment='center',
+                verticalalignment='baseline',
+                fontdict={'size':10,'weight':'bold'})
+                
     ax.grid(alpha=galpha)
     
 #    if indarrows.find('y')==0:
@@ -1639,7 +1720,7 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
     
     
     #make a colorbar with appropriate colors             
-    ax2=make_axes(ax,shrink=.8)
+    ax2=make_axes(ax,shrink=cbshrink)
     if cmap=='ptcmap': 
         cb=ColorbarBase(ax2[0],cmap=ptcmap,norm=Normalize(vmin=ckmin,vmax=ckmax))
         cb.set_label(colorkey+' (deg)')
