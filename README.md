@@ -3,10 +3,10 @@ MTpy
 
 collection of python tools for standard MT data processing
 
-To install::
+To install:
 
-  $ python setup.py install
+    $ python setup.py install
 
-or, if you have setuptools installed::
+or, if you have setuptools installed:
   
-  $ python setup.py develop
+    $ python setup.py develop
