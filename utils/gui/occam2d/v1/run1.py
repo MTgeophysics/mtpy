@@ -504,6 +504,7 @@ class OccamGui(QtGui.QMainWindow):
         self._setup_startupfile()
         
         #deactivate start button to avoid multiple calls
+        # re- activation does not work - WHY ??????? - has to stay commented
         #self.ui.pushButton_runoccam.setEnabled(False)
 
         #define executable and argument(s)
@@ -658,8 +659,10 @@ class OccamGui(QtGui.QMainWindow):
 
     
         #try to connect a potential termination signal from the OccamThread to the trivial function above
-        self.connect(ot, QtCore.SIGNAL('finished()'), _close_occam_mb)
-        self.connect(ot, QtCore.SIGNAL('terminated()'), _close_occam_mb)
+        #Fails, because Thread ot cannot be connected.....WHY???????????
+
+        #self.connect(ot, QtCore.SIGNAL('finished()'), _close_occam_mb)
+        #self.connect(ot, QtCore.SIGNAL('terminated()'), _close_occam_mb)
             
             
         #this works - press CANCEL button and the OCCAM run stops
@@ -676,6 +679,8 @@ class OccamGui(QtGui.QMainWindow):
 
             MB_end.about(self, "OCCAM 2D", endtext )
             #re-activate button
+            #does not work - WHY ???????
+            
             #self.ui.pushButton_runoccam.setEnabled(False)
             return
 
