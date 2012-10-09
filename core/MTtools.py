@@ -10,6 +10,8 @@ import datetime
 import shutil
 import scipy as sp
 import scipy.signal as sps
+import simplekml as skml
+import Z
 
 #short spaces 3 spaces
 tsp='   '
@@ -1383,6 +1385,8 @@ def rewriteedi(edifile,znew=None,zvarnew=None,freqnew=None,newfile='y',
             nfreq=int(linelst[-1].rstrip())
         if line.find('IMPEDANCES')>=0:
             spot.append(ii)
+        if line.find('SPECTRA')>=0:
+            spot.append(ii)
         if line.find('TIPPER')>=0:
             spot.append(ii)
     
@@ -2220,3 +2224,48 @@ def makeDayFoldersFromObservatoryData(obsdirpath,savepath,startday='000',d=10,
                 np.savetxt(savefnpath+complst[ii],bn,fmt='%.7g')
                 print 'Saved file: ',savefnpath+complst[ii]
                                 
+def makeKML(edipath,stationid=None,savepath=None,fs=.9,style=None):
+    """
+    makeKML will make a kml file for Google Earth to plot station locations 
+    relatively quickly
+    """    
+    
+    #create a list of edifiles to pull station info from
+    edilst=[os.path.join(edipath,edi) for edi in os.listdir(edipath)
+            if edi.find('.edi')>0]
+    
+    #make a data type kml        
+    kmlfid=skml.Kml()
+    
+    #create the style marker
+    if style==None:
+        style=skml.Style()
+        style.labelstyle.scale=fs
+        #plots a small cicle with a dot in the middle
+        style.iconstyle.icon.href=r'http://maps.google.com/mapfiles/kml/pal4/icon57.png'
+    
+    #pull information from edi files
+    for edi in edilst:
+        z1=Z.Z(edi)
+        if stationid==None:
+            pnt=kmlfid.newpoint(name=z1.station,coords=[(z1.lon,z1.lat)])
+        else:
+            pnt=kmlfid.newpoint(name=z1.station[stationid[0]:stationid[1]],
+                             coords=[(z1.lon,z1.lat)])
+        pnt.style=style
+    
+    #make a path to save the kml file to    
+    if savepath==None:
+        svpath=os.path.join(edipath,'StationLocations.kml')
+    elif os.path.basename(savepath).find('.')==-1:
+        svpath=os.path.join(savepath,'StationLocations.kml')
+    else:
+        svpath=savepath
+        
+    #save the kml file
+    kmlfid.save(svpath)
+    print 'Saved .kml file to: '+svpath
+    
+    return svpath
+        
+        
