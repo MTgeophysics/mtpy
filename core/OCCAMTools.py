@@ -4273,21 +4273,6 @@ def maskPoints(maskedpoints,datafn):
     
     return dfn
     
-class Occam2D(object):
-    """
-    This class will read in an occam data file, mesh file, iterfile, anything
-    you could possibly imagine this class will do.
-    """
-    
-    def __init__(self,):
-        pass
-
-    def readDataFile(self,datafn):
-        self.datafn=datafn
-        self.data=Occam2DData(self.datafn)
-        self.data.read2DdataFile()
-    
-
 class Occam2DData:
     def __init__(self,datafn=None):
         self.datafn=datafn
@@ -4485,8 +4470,7 @@ class Occam2DData:
 #                ds=surveylst[ii]['offset']*np.sin(thetar)*(1-np.tan(thetar)**2)
 #                lax.plot(x0+ds*np.cos(thetar),y0+ds*np.sin(thetar),'v',
 #                         color='k',ms=8,mew=3)
-                lax.plot(x0+ds*np.cos(thetar),y0+ds*np.sin(thetar),'v',
-                         color='k',ms=8,mew=3)
+                lax.plot(x0,y0,'v',color='k',ms=8,mew=3)
                 lax.text(x0,y0+.0005,pstationlst[ii],horizontalalignment='center',
                      verticalalignment='baseline',fontdict={'size':12,
                                                             'weight':'bold'})
@@ -6460,7 +6444,7 @@ class Occam2DData:
                                        fontdict={'size':fs,'weight':'bold'})
     
     
-    def plotPseudoSection(datafn,respfn=None,fignum=1,rcmap='jet_r',pcmap='jet',
+    def plotPseudoSection(self,respfn=None,fignum=1,rcmap='jet_r',pcmap='jet',
                       rlim=((0,4),(0,4)),plim=((0,90),(0,90)),ml=2,
                       stationid=[0,4]):
         """
@@ -6470,9 +6454,13 @@ class Occam2DData:
         respfn = full path to response file
         """
         
-        self.read2DRespFile(respfn)
+        try:
+            self.read2DRespFile(respfn)
+            nr=2
+        except TypeError:
+            nr=1
         
-        ns=len(self.stationtionlst)
+        ns=len(self.stationlst)
         nf=len(self.freq)
         ylimits=(1./self.freq.min(),1./self.freq.max())
     #    print ylimits
@@ -6519,6 +6507,7 @@ class Occam2DData:
             plt.rcParams['figure.subplot.top']=.96        
             
             fig=plt.figure(fignum,dpi=200)
+            plt.clf()
             gs1=gridspec.GridSpec(2,2,left=0.06,right=.48,hspace=.1,wspace=.005)
             gs2=gridspec.GridSpec(2,2,left=0.52,right=.98,hspace=.1,wspace=.005)
             
@@ -6596,7 +6585,8 @@ class Occam2DData:
                     ax.set_ylabel('Period (s)',
                                   fontdict={'size':10,'weight':'bold'})
                 if xx>3:
-                    ax.set_xlabel('Station',fontdict={'size':10,'weight':'bold'})
+                    ax.set_xlabel('Station',fontdict={'size':10,
+                                                      'weight':'bold'})
                 
                     
             plt.show()
@@ -6608,7 +6598,11 @@ class Occam2DData:
             plt.rcParams['figure.subplot.top']=.96        
             
             fig=plt.figure(fignum,dpi=200)
-            gs1=gridspec.GridSpec(2,2,left=0.06,right=.48,hspace=.1,wspace=.005)
+            plt.clf()
+            gs1=gridspec.GridSpec(2,2,left=0.06,right=.48,hspace=.1,
+                                  wspace=.005)
+            gs2=gridspec.GridSpec(2,2,left=0.52,right=.98,hspace=.1,
+                                  wspace=.005)
             
             ax1r=fig.add_subplot(gs1[0,:])
             ax1r.pcolormesh(dgrid,fgrid,np.flipud(resxyarr[:,:,0]),cmap=rcmap,
@@ -6639,40 +6633,38 @@ class Occam2DData:
                 ax.xaxis.set_ticks(offsetlst,minor=True)
                 ax.xaxis.set_ticklabels(slabel)
                 ax.set_xlim(offsetlst.min(),offsetlst.max())
-                if np.remainder(xx,2.0)==1:
-                    plt.setp(ax.yaxis.get_ticklabels(),visible=False)
-                    cbx=mcb.make_axes(ax,shrink=.7,pad=.015)
-                    if xx<4:
-                        if xx==1:
-                            cb=mcb.ColorbarBase(cbx[0],cmap=rcmap,
-                                            norm=Normalize(vmin=rlim[0][0],
-                                                           vmax=rlim[0][1]))
-                        if xx==3:
-                            cb=mcb.ColorbarBase(cbx[0],cmap=rcmap,
-                                            norm=Normalize(vmin=rlim[1][0],
-                                                           vmax=rlim[1][1]))
-                            cb.set_label('App. Res. ($\Omega \cdot$m)',
-                                         fontdict={'size':9})
-                    else:
-                        if xx==5:
-                            cb=mcb.ColorbarBase(cbx[0],cmap=pcmap,
-                                            norm=Normalize(vmin=plim[0][0],
-                                                           vmax=plim[0][1]))
-                        if xx==7:
-                            cb=mcb.ColorbarBase(cbx[0],cmap=pcmap,
-                                            norm=Normalize(vmin=plim[1][0],
-                                                           vmax=plim[1][1]))
-                            cb.set_label('Phase (deg)',fontdict={'size':9})
+                plt.setp(ax.yaxis.get_ticklabels(),visible=False)
+                cbx=mcb.make_axes(ax,shrink=.7,pad=.015)
+                if xx==0:
+                    cb=mcb.ColorbarBase(cbx[0],cmap=rcmap,
+                                    norm=Normalize(vmin=rlim[0][0],
+                                                   vmax=rlim[0][1]))
+                elif xx==1:
+                    cb=mcb.ColorbarBase(cbx[0],cmap=rcmap,
+                                    norm=Normalize(vmin=rlim[1][0],
+                                                   vmax=rlim[1][1]))
+                    cb.set_label('App. Res. ($\Omega \cdot$m)',
+                                 fontdict={'size':9})
+                elif xx==2:
+                    cb=mcb.ColorbarBase(cbx[0],cmap=pcmap,
+                                    norm=Normalize(vmin=plim[0][0],
+                                                   vmax=plim[0][1]))
+                elif xx==3:
+                    cb=mcb.ColorbarBase(cbx[0],cmap=pcmap,
+                                    norm=Normalize(vmin=plim[1][0],
+                                                   vmax=plim[1][1]))
+                    cb.set_label('Phase (deg)',fontdict={'size':9})
                 ax.text(xloc,yloc,labellst[xx],
                         fontdict={'size':10},
                         bbox={'facecolor':'white'},
                         horizontalalignment='left',
                         verticalalignment='top')
-                if xx==0 or xx==4:
+                if xx==0 or xx==2:
                     ax.set_ylabel('Period (s)',
                                   fontdict={'size':10,'weight':'bold'})
-                if xx>3:
-                    ax.set_xlabel('Station',fontdict={'size':10,'weight':'bold'})
+                if xx>1:
+                    ax.set_xlabel('Station',fontdict={'size':10,
+                                                      'weight':'bold'})
                 
                     
             plt.show()
@@ -6743,10 +6735,12 @@ class Occam2DData:
                 #cut out missing data points first
                 rxy=np.where(self.rplst[ii]['resxy'][0]!=0)[0]
                 ryx=np.where(self.rplst[ii]['resyx'][0]!=0)[0]
-                r1,=axrte.loglog(period[rxy],10**self.rplst[ii]['resxy'][0][rxy],
-                              ls=':',marker='s',ms=4,color='k',mfc='k')
-                r2,=axrtm.loglog(period[ryx],10**self.rplst[ii]['resyx'][0][ryx],
-                              ls=':',marker='o',ms=4,color='k',mfc='k')
+                r1,=axrte.loglog(period[rxy],
+                                 10**self.rplst[ii]['resxy'][0][rxy],
+                                 ls=':',marker='s',ms=4,color='k',mfc='k')
+                r2,=axrtm.loglog(period[ryx],
+                                 10**self.rplst[ii]['resyx'][0][ryx],
+                                 ls=':',marker='o',ms=4,color='k',mfc='k')
                 rlstte=[r1]
                 rlsttm=[r2]
         
@@ -6821,29 +6815,38 @@ class Occam2DData:
         plt.suptitle(station,fontsize=12,fontweight='bold')
         plt.show()
                                        
-class Occam2DModel:
+class Occam2DModel(Occam2DData):
     """
-    This class will deal with the occam model stuff
+    This class deals with the model side of Occam inversions, including 
+    plotting the model, the L-curve, depth profiles.  It will also be able to 
+    build a mesh and regularization grid at some point.  
+    
+    It inherits Occam2DData and the data can be extracted from the method
+    get2DData().  After this call you can use all the methods of Occam2DData,
+    such as plotting the model responses and pseudo sections.
+    
     
     """
     
     def __init__(self,iterfn,meshfn=None,inmodelfn=None):
         self.iterfn=iterfn
+    
         self.invpath=os.path.dirname(self.iterfn)
         
-        #get meshfile if none is provides assuming the mesh file is named with
-        #mesh
-        if meshfn==None:
+        #get meshfile if none is provides assuming the mesh file is named
+        #with mesh
+        if self.invpath!=None:
             self.meshfn=os.path.join(self.invpath,'MESH')
             if os.path.isfile(self.meshfn)==False:
                 for ff in os.listdir(self.invpath):
                     if ff.lower().find('mesh')>=0:
                         self.meshfn=os.path.join(self.invpath,ff)
                 if os.path.isfile(self.meshfn)==False:
-                    raise NameError('Could not find a mesh file, input manually')
-        
-        #get inmodelfile if none is provides assuming the mesh file is named with
-        #inmodel
+                    raise NameError('Could not find a mesh file, '+\
+                                    'input manually')
+            
+        #get inmodelfile if none is provides assuming the mesh file is 
+        #named with inmodel
         if inmodelfn==None:
             self.inmodelfn=os.path.join(self.invpath,'INMODEL')
             if os.path.isfile(self.inmodelfn)==False:
@@ -6851,7 +6854,8 @@ class Occam2DModel:
                     if ff.lower().find('inmodel')>=0:
                         self.inmodelfn=os.path.join(self.invpath,ff)
                 if os.path.isfile(self.inmodelfn)==False:
-                    raise NameError('Could not find a model file, input manually')
+                    raise NameError('Could not find a model file, '+\
+                                    'input manually')
         
     def read2DIter(self):
         """
@@ -7031,6 +7035,12 @@ class Occam2DModel:
         self.vnodes=vnodes
         self.meshdata=mdata
         
+    def get2DData(self):
+        try:
+            self.read2DdataFile()
+        except AttributeError:
+            print 'No Data file defined'
+        
     def get2DModel(self):
         """
         get2DModel will create an array based on the FE mesh and fill the 
@@ -7048,8 +7058,7 @@ class Occam2DModel:
         
         #read in data file as an OccamData type
         print 'Reading data from: ',self.datafn
-        self.data=Occam2DData(self.datafn)
-        self.data.read2DdataFile()
+        self.get2DData()
         
         #read in MESH file
         print 'Reading mesh from: ',self.meshfn
@@ -7119,11 +7128,11 @@ class Occam2DModel:
         
         #set the offsets of the stations and station list.
         self.offsetlst=[]
-        for rpdict in self.data.rplst:
+        for rpdict in self.rplst:
             self.offsetlst.append(rpdict['offset'])
         
     def plot2DModel(self,datafn=None,
-                    xpad=1.0,ypad=1.0,mpad=0.5,spad=3.0,ms=60,stationid=None,
+                    xpad=1.0,ypad=1.0,mpad=0.5,spad=1.0,ms=60,stationid=None,
                     fdict={'size':8,'rotation':60,'weight':'normal'},
                     dpi=300,ylimits=None,xminorticks=5,yminorticks=1,
                     climits=(0,4), cmap='jet_r',fs=8,femesh='off',
@@ -7134,13 +7143,6 @@ class Occam2DModel:
         plotModel will plot the model output by occam in the iteration file.
         
         Inputs:
-            iterfn = full path to the iteration file that you want to plot
-            
-            meshfn = full path to mesh file (the forward modeling mesh).  If 
-                        none it will look for a file with mesh in the name.
-            
-            inmodelfn = full path to the INMODEL file (regularization mesh).
-                          If none it will look for a file with inmodel in the name.
             
             datafn = full path to data file.  If none is input it will use the
                         data file found in the iteration file.
@@ -7233,6 +7235,7 @@ class Occam2DModel:
         plt.rcParams['figure.subplot.bottom']=.1
         plt.rcParams['figure.subplot.top']=.92
         plt.rcParams['figure.subplot.wspace']=.01
+#        plt.rcParams['text.usetex']=True
         
         #plot the model as a mesh
         fig=plt.figure(fignum,plotdimensions,dpi=dpi)
@@ -7259,10 +7262,16 @@ class Occam2DModel:
         #set the offsets of the stations and plot the stations
         #need to figure out a way to set the marker at the surface in all
         #views.
-        for rpdict in self.data.rplst:
+        for rpdict in self.rplst:
             #plot the station marker
-            ax.scatter(rpdict['offset']/dfactor,-mpad*pfactor,marker='v',c='k',
-                       s=ms)
+            #plots a V for the station cause when you use scatter the spacing
+            #is variable if you change the limits of the y axis, this way it
+            #always plots at the surface.
+            ax.text(rpdict['offset']/dfactor,self.ploty.min(),'V',
+                    horizontalalignment='center',
+                    verticalalignment='baseline',
+                    fontdict={'size':ms,'weight':'bold','color':'black'})
+                    
             #put station id onto station marker
             #if there is a station id index
             if stationid!=None:
@@ -7281,12 +7290,12 @@ class Occam2DModel:
         
         #set the initial limits of the plot to be square about the profile line  
         if ylimits==None:  
-            ax.set_ylim(abs(max(self.offsetlst)-min(self.offsetlst)),
+            ax.set_ylim(abs(max(self.offsetlst)-min(self.offsetlst))/dfactor,
                         -ypad*pfactor)
         else:
             ax.set_ylim(ylimits[1]*pfactor,(ylimits[0]-ypad)*pfactor)
-        ax.set_xlim(min(self.offsetlst)-(xpad*pfactor),
-                     (max(self.offsetlst)+(xpad*pfactor)))
+        ax.set_xlim(min(self.offsetlst)/dfactor-(xpad*pfactor),
+                     (max(self.offsetlst)/dfactor+(xpad*pfactor)))
         #set the axis properties
         ax.xaxis.set_minor_locator(MultipleLocator(xminorticks*pfactor))
         ax.yaxis.set_minor_locator(MultipleLocator(yminorticks*pfactor))
@@ -7314,10 +7323,11 @@ class Occam2DModel:
             if title=='on':
                 titlestr=os.path.join(os.path.basename(os.path.dirname(self.iterfn)),
                                       os.path.basename(self.iterfn))
-                ax.set_title(titlestr+': RMS {0:.2f}, Roughness={1:.0f}'.format(
-                         float(self.idict['Misfit Value']),
-                         float(self.idict['Roughness Value'])),
-                         fontdict={'size':fs+1,'weight':'bold'})
+                ax.set_title(titlestr+\
+                            ': RMS {0:.2f}, Roughness={1:.0f}'.format(
+                            float(self.idict['Misfit Value']),
+                            float(self.idict['Roughness Value'])),
+                            fontdict={'size':fs+1,'weight':'bold'})
             else:
                 ax.set_title(title+'; RMS {0:.2f}, Roughness={1:.0f}'.format(
                          float(self.idict['Misfit Value']),
@@ -7612,7 +7622,8 @@ class Occam2DModel:
                 
                 #plot resistivity vs depth
                 if yscale=='linear':
-                    p1,=ax.semilogx(10**self.resmodel[:,ss],self.ploty,ls='steps-')
+                    p1,=ax.semilogx(10**self.resmodel[:,ss],self.ploty,
+                                    ls='steps-')
                 elif yscale=='log':
                     if self.ploty[-1]==0.0:
                         self.ploty[-1]=1
@@ -7626,4 +7637,5 @@ class Occam2DModel:
                 ax.set_xlabel('Resistivity ($\Omega \cdot$m)',
                               fontdict={'size':8,'weight':'bold'})
                 ax.grid(True,alpha=.3,which='both')       
-    
+            
+        
