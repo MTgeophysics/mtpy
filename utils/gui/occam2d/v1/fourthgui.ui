@@ -1586,7 +1586,7 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>142</x>
@@ -1857,7 +1857,7 @@
          </size>
         </property>
         <property name="text">
-         <string>/data/edi/jake</string>
+         <string>bsp</string>
         </property>
        </widget>
       </item>
@@ -2204,7 +2204,6 @@
     </item>
    </layout>
   </widget>
-  <zorder>label_29</zorder>
   <zorder>label_4</zorder>
   <zorder>layoutWidget_15</zorder>
   <zorder>pushButton_generateinputfile</zorder>
@@ -2219,7 +2218,7 @@
   <zorder>doubleSpinBox_errorvalue_tipper</zorder>
   <zorder>pushButton_checkparameter</zorder>
   <zorder>pushButton_runoccam</zorder>
-  <zorder></zorder>
+  <zorder>label_29</zorder>
  </widget>
  <resources/>
  <connections/>
