@@ -12,3 +12,8 @@ If you have [setuptools](http://pypi.python.org/pypi/setuptools) installed, I
 suggest you use:
 
     $ python setup.py develop
+
+Documentation
+-------------
+
+See http://geophysics.github.com/MTpy
