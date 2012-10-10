@@ -34,7 +34,7 @@ if setuptools is False:
     # Different script specification style for ordinary Distutils:
 
     setup_kwargs['scripts'] = [
-        s.split(' = ')[1].replace('.', '/') + '.py' for s in 
+        s.split(' = ')[1].replace('.', '/').split(':')[0] + '.py' for s in 
         setup_kwargs['entry_points']['console_scripts']]
     del setup_kwargs['entry_points']
 
