@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ######################################################################
 #
 # Create vtk format file from WSMT output model file
@@ -86,9 +87,9 @@ f.readline()
 
 # read x,y,z mesh dimensions
 dims = []
-list = f.readline().split()
+modeldata_firstline = f.readline().split()
 for n in range(3):
-  dims.append(int(list[n]))
+  dims.append(int(modeldata_firstline[n]))
 size = dims[0]*dims[1]*dims[2]
 print 'Mesh     ', dims
 print 'Data     ', size
@@ -99,9 +100,9 @@ spacing = []
 for n in range(3):
   i=0
   while i < dims[n]:
-    list = f.readline().split()
+    modeldata_nextlines = f.readline().split()
     for j in range(len(list)):
-      spacing.append(float(list[j])/1000.0) 
+      spacing.append(float(modeldata_nextlines[j])/1000.0)
       i += 1
 
 # read mt data
@@ -109,9 +110,9 @@ for n in range(3):
 mt = np.zeros(size)
 i=0
 while i < size:
-  list = f.readline().split()
-  for j in range(len(list)):
-    mt[i] = float(list[j])
+  modeldata_morelines = f.readline().split()
+  for j in range(len(modeldata_morelines)):
+    mt[i] = float(modeldata_morelines[j])
     i += 1
 
 # calc x coordinates of vtk mesh
@@ -153,8 +154,8 @@ f.close()
 f = open(WSMTresp, 'r')
 
 # get station count
-list = f.readline().split()
-nstations = int(list[0])
+respdata_firstline = f.readline().split()
+nstations = int(respdata_firstline[0])
 print 'Stations ', nstations
 
 # read x locations
@@ -162,9 +163,9 @@ f.readline() #skip line
 x = np.zeros(nstations)
 i=0
 while i < nstations:
-  list = f.readline().split()
-  for j in range(len(list)):
-    x[i] = float(list[j])/1000.0
+  respdata_nextlines = f.readline().split()
+  for j in range(len(respdata_nextlines)):
+    x[i] = float(respdata_nextlines[j])/1000.0
     i += 1
 
 # read y locations
@@ -172,9 +173,9 @@ f.readline() #skip line
 y = np.zeros(nstations)
 i=0
 while i < nstations:
-  list = f.readline().split()
-  for j in range(len(list)):
-    y[i] = float(list[j])/1000.0
+  respdata_morelines = f.readline().split()
+  for j in range(len(respdata_morelines)):
+    y[i] = float(respdata_morelines[j])/1000.0
     i += 1
 
 # set z locations
