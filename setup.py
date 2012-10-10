@@ -23,7 +23,7 @@ setup_kwargs = {}
 setup_kwargs['entry_points'] = {'console_scripts': [
         'CombineEDIs = MTpy.utils.CombineEDIs:main',
         'runParalanaMT = MTpy.utils.runParalanaMT:main',
-        'wsmt_pv = MTpy.utils.wsmt_pv',
+        'wsmt_pv = MTpy.utils.wsmt_pv:main',
         'occam2d_gui = MTpy.utils.gui.occam2d.v1.run1:main',
         'RunBIRRPSingleStation = MTpy.core.RunBIRRPSingleStation:main']}
 
