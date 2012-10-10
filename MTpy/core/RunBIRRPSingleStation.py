@@ -64,98 +64,101 @@ import MTpy.imaging.MTPlotTools as mtplot
 import MTpy.core.Z as Z
 
 
-#===============================================================================
-# Input files
-#===============================================================================
+def main():
+    #===============================================================================
+    # Input files
+    #===============================================================================
 
-#directory where station folders are
+    #directory where station folders are
 
-dirpath=r'G:\DATA'
+    dirpath=r'G:\DATA'
 
-#file where all the processing parameters are, ie day, start time, end time
-#and birrp parameters like tbw, thetae, etc    
-        
-processinginfofile=r'G:\ProcessingHours.txt'
+    #file where all the processing parameters are, ie day, start time, end time
+    #and birrp parameters like tbw, thetae, etc    
+            
+    processinginfofile=r'G:\ProcessingHours.txt'
 
-#file where the station info is, ie lat, long, ex, ey, notes
+    #file where the station info is, ie lat, long, ex, ey, notes
 
-stationinfofile=r'G:\station.txt'
+    stationinfofile=r'G:\station.txt'
 
-#the location of birrp5.exe on your computer, can be the full path to the 
-#executable like r"c:\BIRRP\birrp5Optimized.exe"
-#birrploc=r"c:\Peacock\PHD\BIRRP\birrp5_3pcs20E9ptsOptimized.exe"
+    #the location of birrp5.exe on your computer, can be the full path to the 
+    #executable like r"c:\BIRRP\birrp5Optimized.exe"
+    #birrploc=r"c:\Peacock\PHD\BIRRP\birrp5_3pcs20E9ptsOptimized.exe"
 
-birrploc=r"G:\ForPaul\birrp5.exe"
+    birrploc=r"G:\ForPaul\birrp5.exe"
 
-#this is the index of which station to process which corresponds to the
-#line number in Notepad++ minus 2 of the processinginfofile.  So if you want 
-#to process the first station in processinginfofile which is line 2 in the 
-#notepad file, the statinindex will be 0.  
+    #this is the index of which station to process which corresponds to the
+    #line number in Notepad++ minus 2 of the processinginfofile.  So if you want 
+    #to process the first station in processinginfofile which is line 2 in the 
+    #notepad file, the statinindex will be 0.  
 
-stationindex=0
-#===============================================================================
-# #get information from the processing file and put into a list of dictionaries
-#===============================================================================
+    stationindex=0
+    #===============================================================================
+    # #get information from the processing file and put into a list of dictionaries
+    #===============================================================================
 
-plst=brp.readProDict(processinginfofile,dirpath)
+    plst=brp.readProDict(processinginfofile,dirpath)
 
 
-#===============================================================================
-# Combine files, make script file, run birrp
-#===============================================================================
-#if you find that your responses are not scaled correctly, change the parameter
-#ffactor which multiplies the responses by that number. This might happen if the
-#gains are not quite right or the dipole lengths are not quite right.
+    #===============================================================================
+    # Combine files, make script file, run birrp
+    #===============================================================================
+    #if you find that your responses are not scaled correctly, change the parameter
+    #ffactor which multiplies the responses by that number. This might happen if the
+    #gains are not quite right or the dipole lengths are not quite right.
 
-#flst=brp.runBIRRPpp(dirpath,plst[stationindex],stationinfofile,birrploc,
-#                    ffactor=1)
-#                    
-#if you want to run multiple stations, one after the other uncomment the
-#following loop.  This will processes the station then plot the apparent
-#resistivity and phase of all 4 components, then plot the phase tensor 
-#components.  If you want to start plst from a different index, because you 
-#keep adding to the processinginfofile for each day, which I suggest doing so 
-#when you come back from the field all the info is one place, just change
-#the plst in enumrate(plst,1) to plst[start:stop] or plst[start:] for all 
-#stations after start.
+    #flst=brp.runBIRRPpp(dirpath,plst[stationindex],stationinfofile,birrploc,
+    #                    ffactor=1)
+    #                    
+    #if you want to run multiple stations, one after the other uncomment the
+    #following loop.  This will processes the station then plot the apparent
+    #resistivity and phase of all 4 components, then plot the phase tensor 
+    #components.  If you want to start plst from a different index, because you 
+    #keep adding to the processinginfofile for each day, which I suggest doing so 
+    #when you come back from the field all the info is one place, just change
+    #the plst in enumrate(plst,1) to plst[start:stop] or plst[start:] for all 
+    #stations after start.
 
-flstall=[]
-for ii,pdict in enumerate(plst,1):
-    try:    
-        flst=brp.runBIRRPpp(dirpath,pdict,stationinfofile,birrploc,
-                        ffactor=1)
-        flstall.append(flst)
-        brp.plotBFfiles(flst['edifile'],cohfile=flst['cohfile'],save='y',
-                        show='n')
-#        z1=Z.Z(flst['edifile'])
-#        z1.plotResPhase(fignum=ii,plottype=2)
-#        z1.plotPTAll(fignum=ii+len(plst))
-    except TypeError:
-        print 'Did not process ',pdict['station']
-    except IOError:
-        print 'Did not process ',pdict['station']
-    except IndexError:
-        print 'Did not process ',pdict['station']
-    except ValueError:
-        print 'Did not process ',pdict['station']
+    flstall=[]
+    for ii,pdict in enumerate(plst,1):
+        try:    
+            flst=brp.runBIRRPpp(dirpath,pdict,stationinfofile,birrploc,
+                            ffactor=1)
+            flstall.append(flst)
+            brp.plotBFfiles(flst['edifile'],cohfile=flst['cohfile'],save='y',
+                            show='n')
+    #        z1=Z.Z(flst['edifile'])
+    #        z1.plotResPhase(fignum=ii,plottype=2)
+    #        z1.plotPTAll(fignum=ii+len(plst))
+        except TypeError:
+            print 'Did not process ',pdict['station']
+        except IOError:
+            print 'Did not process ',pdict['station']
+        except IndexError:
+            print 'Did not process ',pdict['station']
+        except ValueError:
+            print 'Did not process ',pdict['station']
 
-#===============================================================================
-# Plot files 
-#===============================================================================
+    #===============================================================================
+    # Plot files 
+    #===============================================================================
 
-#change save='n' to save='y' if want to save the plots, will save in a folder
-#called dirpath\plots
+    #change save='n' to save='y' if want to save the plots, will save in a folder
+    #called dirpath\plots
 
-#if you don't want to use the save icon in the plots you can type in the 
-#interpreter plt.savefig(FullPathSaveName,fmt='pdf)
-#note that fmt can be jpg, eps, or svg
+    #if you don't want to use the save icon in the plots you can type in the 
+    #interpreter plt.savefig(FullPathSaveName,fmt='pdf)
+    #note that fmt can be jpg, eps, or svg
 
-#brp.plotBFfiles(flst['edifile'],cohfile=flst['cohfile'],save='n',show='y')
+    #brp.plotBFfiles(flst['edifile'],cohfile=flst['cohfile'],save='n',show='y')
 
-#if this doesn't work try:
-#mtplot.plotResPhase(flst['edifile'],plotnum=2,fignum=1)
-#or
-#z1=Z.Z(flst['edifile'])
-#z1.plotResPhase(fignum=1,plottype=2)
-#z1.plotPTAll(fignum=2
+    #if this doesn't work try:
+    #mtplot.plotResPhase(flst['edifile'],plotnum=2,fignum=1)
+    #or
+    #z1=Z.Z(flst['edifile'])
+    #z1.plotResPhase(fignum=1,plottype=2)
+    #z1.plotPTAll(fignum=2
 
+if __name__ == '__main__':
+    main()

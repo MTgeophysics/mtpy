@@ -25,7 +25,7 @@ setup_kwargs['entry_points'] = {'console_scripts': [
         'runParalanaMT = MTpy.utils.runParalanaMT:main',
         'wsmt_pv = MTpy.utils.wsmt_pv',
         'occam2d_gui = MTpy.utils.gui.occam2d.v1.run1:main',
-        'RunBIRRPSingleStation = MTpy.core.RunBIRRPSingleStation']}
+        'RunBIRRPSingleStation = MTpy.core.RunBIRRPSingleStation:main']}
 
 # But many people will not have setuptools installed, so we need to handle
 # the default Python installation, which only has Distutils:
