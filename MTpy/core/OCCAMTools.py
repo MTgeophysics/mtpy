@@ -10,12 +10,12 @@ import scipy as sp
 import os
 import fnmatch
 from operator import itemgetter
-import shutil
-import subprocess
+#import shutil
+#import subprocess
 import time
 import matplotlib.colorbar as mcb
 from matplotlib.colors import Normalize
-from matplotlib.colorbar import * 
+#from matplotlib.colorbar import * 
 
 occamdict={'1':'resxy','2':'phasexy','3':'realtip','4':'imagtip','5':'resyx',
            '6':'phaseyx'}
