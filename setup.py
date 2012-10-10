@@ -24,7 +24,7 @@ setup_kwargs['entry_points'] = {'console_scripts': [
         'CombineEDIs = MTpy.utils.CombineEDIs',
         'runParalanaMT = MTpy.utils.runParalanaMT',
         'wsmt_pv = MTpy.utils.wsmt_pv',
-        'occam2d_gui = MTpy.utils.gui.occam2d.v1.run1',
+        'occam2d_gui = MTpy.utils.gui.occam2d.v1.run1:main',
         'RunBIRRPSingleStation = MTpy.core.RunBIRRPSingleStation']}
 
 # But many people will not have setuptools installed, so we need to handle

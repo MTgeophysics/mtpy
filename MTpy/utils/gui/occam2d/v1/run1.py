@@ -742,14 +742,10 @@ class OccamGui(QtGui.QMainWindow):
     def print_entry(self):
         entrylist = str(self.ui.textEdit.toPlainText())
         print entrylist
-       
 
 
-
-
-            
-if __name__ == "__main__":
-
+        
+def main():
     #problem with stdout and err files - trying global redirection:
 
     # stdout and stderr are saved
@@ -761,7 +757,6 @@ if __name__ == "__main__":
     #sys.stdout = outfile
     #sys.stderr = errfile
 
-
     app               = QtGui.QApplication(sys.argv)
 
     occamgui_instance = OccamGui()
@@ -769,12 +764,10 @@ if __name__ == "__main__":
 
     sys.exit(app.exec_())
                 
-
-
     #outfile.close()
     #errfile.close()
     #sys.stderr = save_stderr
     #sys.stdout = save_stdout
     
-
-                
+if __name__ == "__main__":
+    main()                
