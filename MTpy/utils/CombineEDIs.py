@@ -20,43 +20,47 @@ import MTpy.core.MTtools as mt
 import os
 import MTpy.imaging.MTPlotTools as mtplot
 
-#enter the high frequency edi directory path 
-edipath1=r"dirpath1"
+def main():
+    #enter the high frequency edi directory path 
+    edipath1=r"dirpath1"
 
-#enter the low frequency edi directory path 
-edipath2=r"dirpath2"
+    #enter the low frequency edi directory path 
+    edipath2=r"dirpath2"
 
-#station id is the index of the first and last character in the station
-#name which will be matched
-#for station 'pb01' the station id is 0 for 'p' and 3 for '1'
-#but python only indexes to that last number minus 1 ergo stationid
-#for 'pb01' would be (0,4)
-stationid=(0,4)
-s1,s2=stationid[0],stationid[1]
-#number of frequencies to read from high frequency data, starting from
-#high frequencies down
-n1=12
+    #station id is the index of the first and last character in the station
+    #name which will be matched
+    #for station 'pb01' the station id is 0 for 'p' and 3 for '1'
+    #but python only indexes to that last number minus 1 ergo stationid
+    #for 'pb01' would be (0,4)
+    stationid=(0,4)
+    s1,s2=stationid[0],stationid[1]
+    #number of frequencies to read from high frequency data, starting from
+    #high frequencies down
+    n1=12
 
-#number of frequencies to read from low frequency data, starting from 
-#low frequencies and going up
-n2=12
+    #number of frequencies to read from low frequency data, starting from 
+    #low frequencies and going up
+    n2=12
 
-#make a new list to put the new edi file names into
-nedilst=[]
-for edihf in os.listdir(edipath1):
-	cedilst=[]
-	for edibb in os.listdir(edipath2):
-		if edihf[s1:s2]==edibb[s1:s2]:
-			cedilst.append(os.path.join(edipath1,edihf))
-			cedilst.append(os.path.join(edipath2,edibb))
-			break
-	nedi=mt.combineEdifiles(cedilst[0],cedilst[1],n1,n2)
-	nedilst.append(nedi)
+    #make a new list to put the new edi file names into
+    nedilst=[]
+    for edihf in os.listdir(edipath1):
+        cedilst=[]
+        for edibb in os.listdir(edipath2):
+            if edihf[s1:s2]==edibb[s1:s2]:
+                cedilst.append(os.path.join(edipath1,edihf))
+                cedilst.append(os.path.join(edipath2,edibb))
+                break
+        nedi=mt.combineEdifiles(cedilst[0],cedilst[1],n1,n2)
+        nedilst.append(nedi)
 
-#if you want to plot the new edi file to see if the frequencies match
-#use (uncomment the following for a loop
-#for ii,nedi in enumerate(nedilst,1):
-#	mtplot.plotResPhase(nedi,fignum=ii)
+    #if you want to plot the new edi file to see if the frequencies match
+    #use (uncomment the following for a loop
+    #for ii,nedi in enumerate(nedilst,1):
+    #	mtplot.plotResPhase(nedi,fignum=ii)
 
-#or for just one find the index in edilst and use
-#mtplot.plotResPhase(nedilst[index])
+    #or for just one find the index in edilst and use
+    #mtplot.plotResPhase(nedilst[index])
+
+if __name__ == '__main__':
+    main()

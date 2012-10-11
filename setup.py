@@ -21,11 +21,11 @@ setup_kwargs = {}
 # can be customized before the equals sign.
 
 setup_kwargs['entry_points'] = {'console_scripts': [
-        'CombineEDIs = MTpy.utils.CombineEDIs',
-        'runParalanaMT = MTpy.utils.runParalanaMT',
-        'wsmt_pv = MTpy.utils.wsmt_pv',
-        'occam2d_gui = MTpy.utils.gui.occam2d.v1.run1',
-        'RunBIRRPSingleStation = MTpy.core.RunBIRRPSingleStation']}
+        'CombineEDIs = MTpy.utils.CombineEDIs:main',
+        'runParalanaMT = MTpy.utils.runParalanaMT:main',
+        'wsmt_pv = MTpy.utils.wsmt_pv:main',
+        'occam2d_gui = MTpy.utils.gui.occam2d.v1.run1:main',
+        'RunBIRRPSingleStation = MTpy.core.RunBIRRPSingleStation:main']}
 
 # But many people will not have setuptools installed, so we need to handle
 # the default Python installation, which only has Distutils:
@@ -34,7 +34,7 @@ if setuptools is False:
     # Different script specification style for ordinary Distutils:
 
     setup_kwargs['scripts'] = [
-        s.split(' = ')[1].replace('.', '/') + '.py' for s in 
+        s.split(' = ')[1].replace('.', '/').split(':')[0] + '.py' for s in 
         setup_kwargs['entry_points']['console_scripts']]
     del setup_kwargs['entry_points']
 
