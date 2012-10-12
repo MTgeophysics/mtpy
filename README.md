@@ -16,4 +16,13 @@ suggest you use:
 Documentation
 -------------
 
-See http://geophysics.github.com/MTpy
+See http://geophysics.github.com/mtpy
+
+
+
+License
+-------
+
+MTpy is licensed under the GPL version 3
+
+The license agreement is contained in the repository and should be kept together with the code.
