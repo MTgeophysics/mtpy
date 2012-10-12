@@ -50,7 +50,7 @@ def make1DdataFile(station,edipath=None,savepath=None,polarization='both',
     #===============================================================================
     """    
 
-    import MTpy.core.Z
+    import mtpy.core.z
 
 
     if os.path.dirname(station)=='':
@@ -892,8 +892,8 @@ def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None
                  
     """
     import matplotlib.pyplot as plt
-    import MTpy.core.MTtools as mt
-    import MTpy.utils.LatLongUTMconversion as utm2ll
+    import mtpy.core.mttools as mt
+    import mtpy.utils.latlongutmconversion as utm2ll
     
     
     if abs(thetar)>2*np.pi:
@@ -2354,7 +2354,7 @@ def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
 
     import matplotlib.gridspec as gridspec
     import matplotlib.pyplot as plt
-    import MTpy.core.WinglinkTools as wlt
+    import mtpy.modeling.winglinktools as wlt
     from matplotlib.ticker import MultipleLocator
     
     

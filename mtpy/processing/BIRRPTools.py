@@ -13,7 +13,7 @@ import fnmatch
 import datetime
 from scipy import interpolate
 import time
-import MTpy.core.MTtools as mt
+import mtpy.core.mttools as mt
 import shutil
 import subprocess
 #import winsound as ws
@@ -1280,7 +1280,7 @@ def plotBFfiles(edifile,cohfile=None,cfilelst=None,save='y',
         stationdir=os.path.dirname(stationdir)
     
     if save=='y':
-	import MTpy.imaging.MTPlotTools as mtplot
+	import mtpy.imaging.mtplottools as mtplot
         #plot the coherence and apparent resistivity and phase
         if not os.path.exists(os.path.join(os.path.dirname(stationdir),'Plots')):
             os.mkdir(os.path.join(os.path.dirname(stationdir),'Plots'))
@@ -1312,7 +1312,7 @@ def plotBFfiles(edifile,cohfile=None,cfilelst=None,save='y',
                           savefigname=os.path.join(plotpath,station+'TS.pdf'))
     
     if show=='y':
-	import MTpy.imaging.MTPlotTools as mtplot
+	import mtpy.imaging.mtplottools as mtplot
         if cohfile!=None:
             mtplot.plotcoh(cohfile,fignum=1)
         mtplot.plotResPhase(edifile,fignum=2,plotnum=2,ffactor=ffactor)

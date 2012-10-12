@@ -15,7 +15,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.patches import Ellipse
 from matplotlib.colors import LinearSegmentedColormap,Normalize
 from matplotlib.colorbar import *
-import MTpy.utils.LatLongUTMconversion as utm2ll
+import mtpy.utils.latlongutmconversion as utm2ll
 
 #make a custom colormap to use for plotting
 ptcmapdict={'red':((0.0,1.0,1.0),(1.0,1.0,1.0)),
@@ -919,7 +919,7 @@ class Z(Edi):
         
         """
 
-        import MTpy.core.MTtools as mt
+        import mtpy.core.mttools as mt
 
         z=np.array(self.z)
         zvar=np.array(self.zvar)
