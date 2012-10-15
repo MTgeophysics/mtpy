@@ -10,94 +10,243 @@ import scipy as sp
 import os
 import fnmatch
 from operator import itemgetter
-#import shutil
-#import subprocess
 import time
 import matplotlib.colorbar as mcb
 from matplotlib.colors import Normalize
-#from matplotlib.colorbar import * 
+from matplotlib.ticker import MultipleLocator
+import matplotlib.gridspec as gridspec
+import mtply.core.z as Z
+import mtply.modeling.winglinktools as wlt
+import matplotlib.pyplot as plt
+
 
 occamdict={'1':'resxy','2':'phasexy','3':'realtip','4':'imagtip','5':'resyx',
            '6':'phaseyx'}
 
-def make1DdataFile(station,edipath=None,savepath=None,polarization='both',
-                   reserr='data',phaseerr='data',fmt='%.6e',ss=3*' ',thetar=0):
+class Occam1D:
     """
-    make1Ddatafile will write a data file for Occam1D
-
-    Input:
-        station = the station name and path if edipath=None
-        edipath = path to the edi files to be written into a data file,
-                  useful for multile data files
-        savepath = path to save the file
-        thetar = rotation angle to rotate Z
+    ==============================================
+    This class will deal with everything occam 1D
+    =============================================
+    """
     
-    
-    #===============================================================================
-    # Input parameters
-    #===============================================================================
-    
-    edipath=r"C:\Peacock\My Dropbox\Paralana\EDIFilesBaseSurvey\SS" #path to edi's
-    station='pb01'  #station to create data file for                   
-    savepath=r"C:\Peacock\PHD\OCCAM\1DInversion\Base"  #path to save the data file
-    polarization='both'  #choose component either xy or yx or both
-    reserr='data'   #either data or set as a percentage
-    phaseerr='data' #either data or set as percentage -> 10 for 10 percent error
-    ss='   '
-    fmt='%.6e'
-    #===============================================================================
-    # open up edi file and write data file
-    #===============================================================================
-    """    
-
-    import mtpy.core.z
-
-
-    if os.path.dirname(station)=='':
-        if edipath==None:
-            raise IOError('Need to input a path for the file.')
+    def __init__(self,datafn_te=None,datafn_tm=None):
+                     
+        self.datafn_te=datafn_te
+        self.datafn_tm=datafn_tm
+        self.modelfn=None
+        self.inputfn=None
+        
+        if self.datafn_te:
+            self.dirpath=os.path.dirname(self.datafn_te)
+        elif self.datafn_tm:
+            self.dirpath=os.path.dirname(self.datafn_tm)
+        elif self.iterfn_te:
+            self.dirpath=os.path.dirname(self.iterfn_te)
+        elif self.iterfn_tm:
+            self.dirpath=os.path.dirname(self.iterfn_tm)
         else:
-            #find the edifile
-            for fn in os.listdir(edipath):
-                if fn.lower().find(station.lower())>=0:
-                    edifile=os.path.join(edipath,fn)
-    else:
-        edifile=station
+            self.dirpath=None
             
-    #raise an error if can't find the edifile        
-    if edifile==None:
-        raise NameError('No edifile exists, check path and station name')
-
-    #read in edifile    
-    impz=Z.Z(edifile)    
+    def make1DdataFile(self,station,edipath=None,savepath=None,
+                       polarization='both',reserr='data',phaseerr='data',
+                       fmt='%+.6e',ss=3*' ',thetar=0):
+        """
+        make1Ddatafile will write a data file for Occam1D
     
-    #make sure the savepath exists, if not create it
-    if savepath==None:
-        savepath=os.path.dirname(edifile)
-        if not os.path.exists(savepath):
-            os.mkdir(savepath)
-    if savepath.find('.')>0:
-        if not os.path.exists(os.path.dirname(savepath)):
-            os.mkdir(os.path.dirname(savepath))
+        Arguments:
+        ---------    
+            **station** : the station name and path if edipath=None
+            
+            **edipath** : path to the edi files to be written into a data file,
+                          useful for multile data files
+                      
+            **savepath** : path to save the file, if None set to dirname of 
+                           station if edipath = None.  Otherwise set to 
+                           dirname of edipath.
+            
+            **thetar** : rotation angle to rotate Z. Clockwise positive and N=0
+                         *default* = 0
+            
+            **polarization** : polarization to model can be (*default*='both'):
+                
+                                -'both' for TE and TM as separate files,
+                                
+                                -'TE' for just TE mode
+                                
+                                -'TM' for just TM mode
+                            
+            **reserr** : errorbar for resistivity values.  Can be set to (
+                        *default* = 'data'): 
+                
+                        -'data' for errorbars from the data
+                        
+                        -percent number ex. 10 for ten percent
+                    
+            **phaseerr** : errorbar for phase values.  Can be set to (
+                         *default* = 'data'):
+                
+                            -'data' for errorbars from the data
+                            
+                            -percent number ex. 10 for ten percent
+                        
+            **fmt** : format of the values written to the file. 
+                      *default* = %+.6e
+            
+            **ss** : spacing between values in file.  *default* = ' '*3
+            
+            Returns:
+            --------
+                **datafn_te** : full path to data file for TE mode
+                
+                **datafn_tm** : full path to data file for TM mode
+                
+            
+            """    
     
-    #load the edifile and get resistivity and phase
-    
-    rp=impz.getResPhase(thetar=thetar)
-    freq=impz.frequency
-    nf=len(freq)
-    returnfn=[]
-    
-    if polarization=='both':
-        for pol in ['xy','yx']:
-            if savepath.find('.')==0:
-                dfilesave=os.path.join(savepath,impz.station+pol.upper()+'.dat')
+        if os.path.dirname(station)=='':
+            if edipath==None:
+                raise IOError('Need to input a path for the file.')
             else:
-                dfilesave=savepath
+                #find the edifile
+                for fn in os.listdir(edipath):
+                    if fn.lower().find(station.lower())>=0:
+                        edifile=os.path.join(edipath,fn)
+        else:
+            edifile=station
+                
+        #raise an error if can't find the edifile        
+        if edifile==None:
+            raise NameError('No edifile exists, check path and station name')
+    
+        #read in edifile    
+        impz=Z.Z(edifile)    
+        
+        #make sure the savepath exists, if not create it
+        if savepath==None:
+            savepath=os.path.dirname(edifile)
+            if not os.path.exists(savepath):
+                os.mkdir(savepath)
+        if os.path.basename(savepath).find('.')>0:
+            savepath=os.path.dirname(savepath)
+            if not os.path.exists(savepath):
+                os.mkdir(os.path.dirname(savepath))
+        else:
+            savepath=savepath
+            if not os.path.exists(savepath):
+                os.mkdir(os.path.dirname(savepath))
+                
+        
+        #load the edifile and get resistivity and phase
+        rp=impz.getResPhase(thetar=thetar)
+        freq=impz.frequency
+        nf=len(freq)
+        returnfn=[]
+        
+        if polarization=='both':
+            for pol in ['xy','yx']:
+                if pol=='xy':
+                    dfilesave=os.path.join(savepath,impz.station+'TE.dat')
+                elif pol=='yx':
+                    dfilesave=os.path.join(savepath,impz.station+'TM.dat')
+    
+                datafid=open(dfilesave,'w')
+    
+                datafid.write('Format:  EMData_1.1 \n')
+                datafid.write('!Polarization:'+ss+pol+'\n')
+    
+                #needs a transmitter to work so put in a dummy one
+                datafid.write('# Transmitters: 1\n')
+                datafid.write('0 0 0 0 0 \n')
+                
+                #write frequencies
+                datafid.write('# Frequencies:'+ss+str(nf)+'\n')       
+                for ff in freq:
+                    datafid.write(ss+'%.6f' % ff+'\n')
+                
+                #needs a receiver to work so put in a dummy one
+                datafid.write('# Receivers: 1 \n')
+                datafid.write('0 0 0 0 0 0 \n')
+                
+                #write data
+                datafid.write('# Data:'+2*ss+str(2*nf)+'\n')
+                datafid.write('!'+2*ss+'Type'+2*ss+'Freq#'+2*ss+'Tx#'+2*ss+
+                             'Rx#'+ 2*ss+'Data'+2*ss+'Std_Error'+'\n')
+                              
+                #put the yx phase component in the first quadrant as prescribed
+                if pol=='yx':
+                        rp.phaseyx=rp.phaseyx+180
+                        #check if there are any negative phases
+                        negphase=np.where(rp.phaseyx>180)
+                        if len(negphase)>0:
+                            rp.phaseyx[negphase[0]]=rp.phaseyx\
+                                                            [negphase[0]]-360
+                        
+                #write the resistivity and phase components
+                for ii in range(nf):
+                    #write resistivity components
+                    if reserr=='data':
+                        if pol=='xy':
+                            datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
+                                          2*ss+'1'+2*ss+fmt % rp.resxy[ii]+2*ss+
+                                          fmt % rp.resxyerr[ii]+'\n')
+                        elif pol=='yx':
+                            datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
+                                          2*ss+'1'+2*ss+fmt % rp.resyx[ii]+2*ss+
+                                          fmt % rp.resyxerr[ii]+'\n')
+                    else:
+                        if pol=='xy':
+                            datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
+                                          2*ss+'1'+2*ss+fmt % rp.resxy[ii]+2*ss+
+                                          fmt % (rp.resxy[ii]*reserr/100.)+'\n')
+                        elif pol=='yx':
+                            datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
+                                          2*ss+'1'+2*ss+fmt % rp.resyx[ii]+2*ss+
+                                          fmt % (rp.resyx[ii]*reserr/100.)+'\n')
+                    
+                    #write phase components
+                    if phaseerr=='data':
+                        if pol=='xy':
+                            datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
+                                          2*ss+'1'+2*ss+fmt % rp.phasexy[ii]+2*ss+
+                                          fmt % rp.phasexyerr[ii]+'\n')
+                        if pol=='yx':
+                            datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
+                                          2*ss+'1'+2*ss+fmt % rp.phaseyx[ii]+2*ss+
+                                          fmt % rp.phaseyxerr[ii]+'\n')
+                    else:
+                        if pol=='xy':
+                            datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
+                                          2*ss+'1'+2*ss+fmt % rp.phasexy[ii]+2*ss+
+                                          fmt % (phaseerr/100.*(180/np.pi))+'\n')
+                        if pol=='yx':
+                            datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
+                                          2*ss+'1'+2*ss+fmt % rp.phaseyx[ii]+2*ss+
+                                          fmt % (phaseerr/100.*(180/np.pi))+'\n')
+                datafid.write('\n')
+                datafid.close()
+                print 'Wrote Data File: ',dfilesave
+                returnfn.append(dfilesave)
+            self.datafn_te=returnfn[0]
+            self.datafn_tm=returnfn[1]
+        else:
+            if polarization=='TE':
+                pol='xy'
+                dfilesave=os.path.join(savepath,impz.station+'TE.dat')
+                self.datafn_te=dfilesave
+            elif polarization=='TM':
+                pol='yx'
+                dfilesave=os.path.join(savepath,impz.station+'TM.dat')
+                self.datafn_te=dfilesave
+                
+            
+            
+    
+            #open file to write to
             datafid=open(dfilesave,'w')
-
             datafid.write('Format:  EMData_1.1 \n')
             datafid.write('!Polarization:'+ss+pol+'\n')
-
+    
             #needs a transmitter to work so put in a dummy one
             datafid.write('# Transmitters: 1\n')
             datafid.write('0 0 0 0 0 \n')
@@ -111,7 +260,7 @@ def make1DdataFile(station,edipath=None,savepath=None,polarization='both',
             datafid.write('# Receivers: 1 \n')
             datafid.write('0 0 0 0 0 0 \n')
             
-            #write data
+            #write header line
             datafid.write('# Data:'+2*ss+str(2*nf)+'\n')
             datafid.write('!'+2*ss+'Type'+2*ss+'Freq#'+2*ss+'Tx#'+2*ss+'Rx#'+
                           2*ss+'Data'+2*ss+'Std_Error'+'\n')
@@ -166,671 +315,755 @@ def make1DdataFile(station,edipath=None,savepath=None,polarization='both',
                         datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
                                       2*ss+'1'+2*ss+fmt % rp.phaseyx[ii]+2*ss+
                                       fmt % (phaseerr/100.*(180/np.pi))+'\n')
-            datafid.write('\n')
             datafid.close()
             print 'Wrote Data File: ',dfilesave
-            returnfn.append(dfilesave)
-        return returnfn[0],returnfn[1]
-    else:
-        if polarization=='TE':
-            pol='xy'
-        elif polarization=='TM':
-            pol='yx'
-        
-        if savepath.find('.')==-1:
-            dfilesave=os.path.join(savepath,impz.station+pol.upper()+'.dat')
-        else:
-            dfilesave=savepath
-        #open file to write to
-        datafid=open(dfilesave,'w')
-        datafid.write('Format:  EMData_1.1 \n')
-        datafid.write('!Polarization:'+ss+pol+'\n')
 
-        #needs a transmitter to work so put in a dummy one
-        datafid.write('# Transmitters: 1\n')
-        datafid.write('0 0 0 0 0 \n')
+    def make1DModelFile(self,savepath=None,nlayers=100,bottomlayer=10000,
+                        basestep=10,z1layer=50,airlayerheight=10000):
+        """
+        Makes a 1D model file for Occam1D.  
         
-        #write frequencies
-        datafid.write('# Frequencies:'+ss+str(nf)+'\n')       
-        for ff in freq:
-            datafid.write(ss+'%.6f' % ff+'\n')
+        Arguments:
+        ----------
         
-        #needs a receiver to work so put in a dummy one
-        datafid.write('# Receivers: 1 \n')
-        datafid.write('0 0 0 0 0 0 \n')
+            **savepath** :path to save file to, if just path saved as 
+                          savepath\model.mod, if None defaults to dirpath
+                          
+            **nlayers** : number of layers
+            
+            **bottomlayer** : depth of bottom layer in meters
+            
+            **basestep** : numerical base of logarithmic depth step 10 or 2 or 
+                          1 for linear
+                          
+            **z1layer** : depth of first layer in meters
+            
+            **airlayerheight** : height of air layers in meters
         
-        #write header line
-        datafid.write('# Data:'+2*ss+str(2*nf)+'\n')
-        datafid.write('!'+2*ss+'Type'+2*ss+'Freq#'+2*ss+'Tx#'+2*ss+'Rx#'+2*ss+
-                      'Data'+2*ss+'Std_Error'+'\n')
-                      
-        #put the yx phase component in the first quadrant as prescribed
-        if pol=='yx':
-                rp.phaseyx=rp.phaseyx+180
-                #check if there are any negative phases
-                negphase=np.where(rp.phaseyx>180)
-                if len(negphase)>0:
-                    rp.phaseyx[negphase[0]]=rp.phaseyx\
-                                                    [negphase[0]]-360
+        Returns:
+        --------
+        
+            **modelfilename** = full path to model file
+            
+        ..Note: This needs to be redone.
+        """
+        
+        
+        ss='   '
+        if savepath==None:
+            if self.dirpath:
+                savepath=self.dirpath
+            else:
+                raise IOError('No savepath found.  Please input one.')
                 
-        #write the resistivity and phase components
-        for ii in range(nf):
-            #write resistivity components
-            if reserr=='data':
-                if pol=='xy':
-                    datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                  2*ss+'1'+2*ss+fmt % rp.resxy[ii]+2*ss+
-                                  fmt % rp.resxyerr[ii]+'\n')
-                elif pol=='yx':
-                    datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                  2*ss+'1'+2*ss+fmt % rp.resyx[ii]+2*ss+
-                                  fmt % rp.resyxerr[ii]+'\n')
-            else:
-                if pol=='xy':
-                    datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                  2*ss+'1'+2*ss+fmt % rp.resxy[ii]+2*ss+
-                                  fmt % (rp.resxy[ii]*reserr/100.)+'\n')
-                elif pol=='yx':
-                    datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                  2*ss+'1'+2*ss+fmt % rp.resyx[ii]+2*ss+
-                                  fmt % (rp.resyx[ii]*reserr/100.)+'\n')
-            
-            #write phase components
-            if phaseerr=='data':
-                if pol=='xy':
-                    datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                  2*ss+'1'+2*ss+fmt % rp.phasexy[ii]+2*ss+
-                                  fmt % rp.phasexyerr[ii]+'\n')
-                if pol=='yx':
-                    datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                  2*ss+'1'+2*ss+fmt % rp.phaseyx[ii]+2*ss+
-                                  fmt % rp.phaseyxerr[ii]+'\n')
-            else:
-                if pol=='xy':
-                    datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                  2*ss+'1'+2*ss+fmt % rp.phasexy[ii]+2*ss+
-                                  fmt % (phaseerr/100.*(180/np.pi))+'\n')
-                if pol=='yx':
-                    datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                  2*ss+'1'+2*ss+fmt % rp.phaseyx[ii]+2*ss+
-                                  fmt % (phaseerr/100.*(180/np.pi))+'\n')
-        datafid.close()
-        print 'Wrote Data File: ',dfilesave
-        return dfilesave
-
-def make1DModelFile(savepath,nlayers=100,bottomlayer=10000,basestep=10,
-                    z1layer=50,airlayerheight=10000):
-    """
-    Makes a 1D model file
-    
-    Input:
-        savepath =path to save file to, if just path saved as savepath\model.mod
-        nlayers = number of layers
-        bottomlayer = depth of bottom layer in meters
-        basestep = numerical base of logarithmic depth step 10 or 2 or 1 for 
-                    linear
-        z1layer = depth of first layer in meters
-        airlayerheight = height of air layers in meters
-    Output:
-        modelfilename = full path to model file
-    """
-    
-    #===========================================================================
-    # Make model file
-    #===========================================================================
-    #make sure the savepath exists, if not create it
-    
-    ss='   '
-    if savepath.find('.')==-1:
-        if not os.path.exists(savepath):
-            os.mkdir(savepath)
-        modfn=os.path.join(savepath,'model.txt')
-    else:
-        modfn=savepath
-    
-    #---------need to refine this-------------------- 
-    #make an array of layer depths on a scale specified by base
-#    layers=np.zeros(nlayers+1)
-#    layers[0]=z1layer
-    
-    layers=np.logspace(np.log10(z1layer),np.log10(bottomlayer),num=nlayers)   
-#    if basestep==10:
-#    #    l=np.log10(np.logspace(0,np.log10(bottomlayer),num=nlayers))
-#        l=np.linspace(1,np.log10(bottomlayer)+1,num=nlayers+1)
-#    
-#    elif basestep==2:
-#    #    l=np.log2(np.logspace(0,np.log2(bottomlayer),num=nlayers)
-#        l=np.linspace(1,np.log2(bottomlayer)+1,num=nlayers+1)
-#    elif basestep==1:
-#        l=np.linspace(1,np.log10(bottomlayer)+1,num=nlayers+1)
-#    else:
-#        raise ValueError('Base '+str(basestep)+' not supported')
-#    
-#    for ll in range(1,nlayers+1):
-#        layers[ll]=layers[0:ll].sum()+z1layer*np.floor(l[ll])
-        
-    
-    
-    
-#% Create seabed layers:
-#    switch lower(zScale)
-#        case 'uniform'
-#            z = linspace(oceanDepth,maxDepth, nSeaBedLay);
-#        case {'log','logarithmic'}
-#            z = logspace(log10(oceanDepth),log10(maxDepth), nSeaBedLay);
-#    end
-#    r = z*0 - 1; % make vector of -1's
-#    
-#
-#    Model(:,1) = [zsea; z(:)];
-#    Model(:,2) = [rsea; r(:)];
-#    
-#    Model(:,3) = 1;
-#    Model(1:length(zsea)+1,3) = 0;  % +1 is for top of first seabed layer. 
-#    Model(:,4) = 0; % pref penalty
-#    Model(:,5) = 0; % pref penalty
-#
-#% Write Model File:
-#
-#% Open file:
-#    fid = fopen(filename,'w');
-#    if fid <= 0 
-#        fprintf('Error creating model file: %s\n',filename); 
-#        status = -1;
-#        return
-#    end
-#
-#% Format:
-#  fprintf(fid,'Format:     Resistivity1DMod_1.0\n');
-#  
-#% Num Layers:
-# nlay = length(Model(:,1));
-# fprintf(fid,'#Layers:    %i\n',nlay);
-#    
-#% Comments with column labels:
-#    fprintf(fid,'! top_depth 	resistivity  penalty	preference   pref_penalty\n');
-#
-#% Write out the array:
-#  fprintf(fid,'%12g %12g %12g %12g %12g\n',Model'); 
-#
-#% Close the file:
-#   fclose(fid);    
-    
-    #make the model file
-    modfid=open(modfn,'w')
-    modfid.write('Format: Resistivity1DMod_1.0'+'\n')
-    modfid.write('#LAYERS:    '+str(nlayers+3)+'\n')
-    modfid.write('!Set free values to -1 or ? \n')
-    modfid.write('!penalize between 1 and 0,'+
-                 '0 allowing jump between layers and 1 smooth. \n' )
-    modfid.write('!preference is the assumed resistivity on linear scale. \n')
-    modfid.write('!pref_penalty needs to be put if preference is not 0 [0,1]. \n')
-    modfid.write('! top_depth'+ss+'resistivity'+ss+'penalty'+ss+'preference'+ss+
-                 'pref_penalty \n')
-    modfid.write(ss+'-10000'+ss+'1d12'+ss+'0'+ss+'0'+ss+'0'+ss+'!air layer \n')
-    modfid.write(ss+'0'+ss+'-1'+ss+'0'+ss+'0'+ss+'0'+ss+'!first ground layer \n')
-    for ll in layers:
-        modfid.write(ss+str(ll)+ss+'-1'+ss+'1'+ss+'0'+ss+'0'+'\n')
-    
-    modfid.close()
-    print 'Wrote Model file: ',modfn
-    
-    return modfn
-
-def make1DInputFile(savepath,modelfile=None,datafile=None,roughtype=1,
-                    maxiter=100,targetrms=1.0,rhostart=100,description='1dInv',
-                    lagrange=5.0,roughness=1.0E7,debuglevel=1,iteration=0,
-                    misfit=100.0):
-    """
-    Make a 1D input file for occam
-    
-    Input:
-        savepath = full path to save input file to, if just path then saved as
-                   savepath/input.input
-        modelfile = full path to model file, if None then assumed to be in 
-                    savepath/model.mod
-        datafile = full path to data file, if None then assumed to be in 
-                    savepath/data.data
-        roughtype = roughness type
-        maxiter = maximum number of iterations
-        targetrms = target rms value
-        rhostart = starting resistivity value on linear scale
-        paramcount = 
-    """
-    
-    
-    ss='   '
-    
-    #make input data file name
-    if savepath.find('.')==-1:
-        if not os.path.exists(savepath):
-            os.mkdir(savepath)
-        inputfn=os.path.join(savepath,'input.txt')
-        ipath=savepath
-    else:
-        inputfn=savepath
-        ipath=os.path.dirname(savepath)
-        
-    if modelfile==None:
-        modelfile=os.path.join(ipath,'model.txt')
-    if datafile==None:
-        datafile=os.path.join(ipath,'Data.txt')
-    
-    mdict=read1DModelFile(modelfile)
-    paramcount=mdict['nparam']        
-    
-    infid=open(os.path.join(savepath,inputfn),'w')
-    infid.write('Format:             OCCAMITER_FLEX      ! Flexible format \n')
-    infid.write('Description:        '+description+'     !For your own notes. \n')
-    infid.write('Model File:         '+modelfile+'       \n')
-    infid.write('Data File:          '+datafile+'        \n')                                                                     
-    infid.write('Date/Time:          '+time.ctime()+'\n')         
-    infid.write('Max Iter:           '+str(maxiter)+'\n')
-    infid.write('Target Misfit:      '+str(targetrms)+'\n')
-    infid.write('Roughness Type:     '+str(roughtype)+'\n')
-    infid.write('!Model Bounds:      min,max             ! Optional, places bounds'+
-                ' on log10(rho) values. \n')
-    infid.write('!Model Value Steps: stepsize            ! Optional, forces model'+
-                ' into discrete steps of stepsize. \n')
-    infid.write('Debug Level:        '+str(debuglevel)+
-                ' '*19+'! Console output. '+
-                '0: minimal, 1: default, 2: detailed \n')
-    infid.write('Iteration:          '+str(iteration)+
-                ' '*19+'! Iteration number,'+
-                ' use 0 for starting from scratch. \n')
-    infid.write('Lagrange Value:     '+str(lagrange)+
-                ' '*17+'! log10(largrance '+
-                'multiplier), starting value.\n')
-    infid.write('Roughness Value:    '+str(roughness)+
-                ' '*10+'! Roughness of last'+
-                ' model, ignored on startup. \n')
-    infid.write('Misfit Value:       '+str(misfit)+
-                ' '*15+'! Misfit of model listed'+
-                'below. Ignored on startup.\n')
-    infid.write('Misfit Reached:     0	                ! 0: not reached,'+
-                ' 1: reached.  Useful when restarting.\n')
-    infid.write('Param Count:        '+str(paramcount)+
-                ' '*17+'! Number of free' +
-                ' inversion parameters. \n')
-    for ii in range(paramcount):
-        infid.write(ss+str(np.log10(rhostart))+'\n')
-    
-    infid.close()
-    print 'Wrote Input File: ',os.path.join(savepath,inputfn)
-    
-def read1DModelFile(modelfile):
-    """
-    will read in model file
-    
-    Inputs:
-        modelfile = full path to model file
-        
-    Outputs:
-        mdict = dictionary of values with keys:
-            depth = depth of model in meters
-            res = value of resisitivity
-            pen = penalty
-            pre = preference
-            prefpen = preference penalty
-            
-    """
-
-    mfid=open(modelfile,'r')
-    mlines=mfid.readlines()
-    mfid.close()
-    
-    mdict={}
-    mdict['nparam']=0
-    for key in ['depth','res','pen','pref','prefpen']:
-        mdict[key]=[]
-    
-    for mm,mline in enumerate(mlines):
-        if mline.find('!')==0:
-            pass
-        elif mline.find(':')>=0:
-            mlst=mline.strip().split(':')
-            mdict[mlst[0]]=mlst[1]
+        elif savepath.find('.')==-1:
+            if not os.path.exists(savepath):
+                os.mkdir(savepath)
+            modfn=os.path.join(savepath,'Model1D')
         else:
-            mlst=mlst=mline.strip().split()
-            mdict['depth'].append(float(mlst[0]))
-            if mlst[1]=='?':
-                mdict['res'].append(-1)
-            elif mlst[1]=='1d12':
-                mdict['res'].append(1.0E12)
+            modfn=savepath
+        
+        #---------need to refine this-------------------- 
+        
+        layers=np.logspace(np.log10(z1layer),np.log10(bottomlayer),num=nlayers)      
+        
+        #make the model file
+        modfid=open(modfn,'w')
+        modfid.write('Format: Resistivity1DMod_1.0'+'\n')
+        modfid.write('#LAYERS:    '+str(nlayers+3)+'\n')
+        modfid.write('!Set free values to -1 or ? \n')
+        modfid.write('!penalize between 1 and 0,'+
+                     '0 allowing jump between layers and 1 smooth. \n' )
+        modfid.write('!preference is the assumed resistivity on linear scale. \n')
+        modfid.write('!pref_penalty needs to be put if preference is not 0 [0,1]. \n')
+        modfid.write('! top_depth'+ss+'resistivity'+ss+'penalty'+ss+'preference'+ss+
+                     'pref_penalty \n')
+        modfid.write(ss+'-10000'+ss+'1d12'+ss+'0'+ss+'0'+ss+'0'+ss+'!air layer \n')
+        modfid.write(ss+'0'+ss+'-1'+ss+'0'+ss+'0'+ss+'0'+ss+'!first ground layer \n')
+        for ll in layers:
+            modfid.write(ss+str(ll)+ss+'-1'+ss+'1'+ss+'0'+ss+'0'+'\n')
+        
+        modfid.close()
+        print 'Wrote Model file: ',modfn
+        
+        self.modelfn=modfn
+
+    def make1DInputFile(self,savepath=None,imode='TE',roughtype=1,
+                        maxiter=100,targetrms=1.0,rhostart=100,
+                        description='1dInv',lagrange=5.0,roughness=1.0E7,
+                        debuglevel=1,iteration=0,misfit=100.0):
+        """
+        Make a 1D input file for Occam 1D
+        
+        Arguments:
+        ---------
+            **savepath** : full path to save input file to, if just path then 
+                           saved as savepath/input
+            modelfile = full path to model file, if None then assumed to be in 
+                        savepath/model.mod
+            datafile = full path to data file, if None then assumed to be in 
+                        savepath/data.data
+            roughtype = roughness type
+            maxiter = maximum number of iterations
+            targetrms = target rms value
+            rhostart = starting resistivity value on linear scale
+            paramcount = 
+        """
+        
+        
+        ss='   '
+        
+        #make input data file name
+        if os.path.basename(savepath).find('.')==-1:
+            if not os.path.exists(savepath):
+                os.mkdir(savepath)
+            self.inputfn=os.path.join(savepath,'Input1D')
+        else:
+            self.inputfn=savepath
+            
+        if not self.modelfn:
+            if self.dirpath:
+                modelfile=os.path.join(self.dirpath,'Model1D')
+            else:
+                raise IOError('No savepath.  Please input one.')
+                
+        #try to get data file name 
+        if imode=='TE':
+            if not self.datafn_te:
+                if self.dirpath:
+                    dfn=os.path.join(self.dirpath,'TEData.dat')
+                    if os.path.isfile(dfn)==True:
+                        self.datafn_te=dfn
+                    else:
+                        raise IOError('No TE data file found. Please input one.')
+                else:
+                    raise IOError('No savepth found. Please input one.')
+            else:
+                pass
+        if imode=='TM':
+            if not self.datafn_tm:
+                if self.dirpath:
+                    dfn=os.path.join(self.dirpath,'TMData.dat')
+                    if os.path.isfile(dfn)==True:
+                        self.datafn_tm=dfn
+                    else:
+                        raise IOError('No TM data file found. Please input one.')
+                else:
+                    raise IOError('No savepth found. Please input one.')
+            else:
+                pass
+
+        #read in the model and get number of parameters
+        mdict=self.read1DModelFile()
+        paramcount=mdict['nparam']        
+        
+        #write input file
+        infid=open(self.inputfn,'w')
+        infid.write('Format:             OCCAMITER_FLEX      ! Flexible format \n')
+        infid.write('Description:        '+description+'     !For your own notes. \n')
+        infid.write('Model File:         '+modelfile+'       \n')
+        if imode=='TE':
+            infid.write('Data File:          '+self.datafn_te+'        \n')                                                                     
+        if imode=='TM':
+            infid.write('Data File:          '+self.datafn_tm+'        \n')                                                                     
+        infid.write('Date/Time:          '+time.ctime()+'\n')         
+        infid.write('Max Iter:           '+str(maxiter)+'\n')
+        infid.write('Target Misfit:      '+str(targetrms)+'\n')
+        infid.write('Roughness Type:     '+str(roughtype)+'\n')
+        infid.write('!Model Bounds:      min,max             ! Optional, places bounds'+
+                    ' on log10(rho) values. \n')
+        infid.write('!Model Value Steps: stepsize            ! Optional, forces model'+
+                    ' into discrete steps of stepsize. \n')
+        infid.write('Debug Level:        '+str(debuglevel)+
+                    ' '*19+'! Console output. '+
+                    '0: minimal, 1: default, 2: detailed \n')
+        infid.write('Iteration:          '+str(iteration)+
+                    ' '*19+'! Iteration number,'+
+                    ' use 0 for starting from scratch. \n')
+        infid.write('Lagrange Value:     '+str(lagrange)+
+                    ' '*17+'! log10(largrance '+
+                    'multiplier), starting value.\n')
+        infid.write('Roughness Value:    '+str(roughness)+
+                    ' '*10+'! Roughness of last'+
+                    ' model, ignored on startup. \n')
+        infid.write('Misfit Value:       '+str(misfit)+
+                    ' '*15+'! Misfit of model listed'+
+                    'below. Ignored on startup.\n')
+        infid.write('Misfit Reached:     0	                ! 0: not reached,'+
+                    ' 1: reached.  Useful when restarting.\n')
+        infid.write('Param Count:        '+str(paramcount)+
+                    ' '*17+'! Number of free' +
+                    ' inversion parameters. \n')
+        for ii in range(paramcount):
+            infid.write(ss+str(np.log10(rhostart))+'\n')
+        
+        infid.close()
+        print 'Wrote Input File: ',self.inputfn
+    
+    def read1DModelFile(self):
+        """
+        
+        will read in model 1D file
+        
+        Arguments:
+        ----------
+            **modelfn** : full path to model file
+            
+        Returns:
+        --------
+            **mdict** : dictionary of values with keys: 
+                
+                *depth* : depth of model in meters
+                
+                *res* : value of resisitivity
+                
+                *pen* : penalty
+                
+                *pre* : preference
+                
+                *prefpen* : preference penalty
+                
+                
+        """
+        if not self.modelfn:
+            raise IOError('No input file found.  Please input one.')
+            
+        mfid=open(self.modelfn,'r')
+        mlines=mfid.readlines()
+        mfid.close()
+        
+        mdict={}
+        mdict['nparam']=0
+        for key in ['depth','res','pen','pref','prefpen']:
+            mdict[key]=[]
+        
+        for mm,mline in enumerate(mlines):
+            if mline.find('!')==0:
+                pass
+            elif mline.find(':')>=0:
+                mlst=mline.strip().split(':')
+                mdict[mlst[0]]=mlst[1]
+            else:
+                mlst=mlst=mline.strip().split()
+                mdict['depth'].append(float(mlst[0]))
+                if mlst[1]=='?':
+                    mdict['res'].append(-1)
+                elif mlst[1]=='1d12':
+                    mdict['res'].append(1.0E12)
+                else:
+                    try:
+                        mdict['res'].append(float(mlst[1]))
+                    except ValueError:
+                        mdict['res'].append(-1)
+                mdict['pen'].append(float(mlst[2]))
+                mdict['pref'].append(float(mlst[3]))
+                mdict['prefpen'].append(float(mlst[4]))
+                if mlst[1]=='-1' or mlst[1]=='?':
+                    mdict['nparam']+=1
+                    
+        #make everything an array
+        for key in ['depth','res','pen','pref','prefpen']:
+                mdict[key]=np.array(mdict[key])
+        
+        #make dictionary an attribute of Occam1D class            
+        self.mdict=mdict
+    
+    def read1DInputFile(self):
+        """
+        reads in a 1D input file
+        
+        Arguments:
+        ---------
+            **inputfn** : full path to input file
+        
+        Returns:
+        --------
+            **indict** : dictionary with keys following the header and
+            
+                *res* : an array of resistivity values
+        """
+        if not self.inputfn:
+            raise IOError('No input file found.  Please input one.')
+            
+        infid=open(self.inputfn,'r')
+        ilines=infid.readlines()
+        infid.close()
+    
+        self.indict={}
+        res=[]
+        
+        #split the keys and values from the header information
+        for iline in ilines:
+            if iline.find(':')>=0:
+                ikey=iline[0:20].strip()
+                ivalue=iline[20:].split('!')[0].strip()
+                self.indict[ikey]=ivalue
             else:
                 try:
-                    mdict['res'].append(float(mlst[1]))
+                    res.append(float(iline.strip()))
                 except ValueError:
-                    mdict['res'].append(-1)
-            mdict['pen'].append(float(mlst[2]))
-            mdict['pref'].append(float(mlst[3]))
-            mdict['prefpen'].append(float(mlst[4]))
-            if mlst[1]=='-1' or mlst[1]=='?':
-                mdict['nparam']+=1
-    for key in ['depth','res','pen','pref','prefpen']:
-            mdict[key]=np.array(mdict[key])
+                    pass
                 
-    return mdict
-    
-def read1DInputFile(inputfile):
-    """
-    reads in a 1D input file
-    """
+        #make the resistivity array ready for models to be input
+        self.indict['res']=np.zeros((len(res),3))
+        self.indict['res'][:,0]=res
 
-    infid=open(inputfile,'r')
-    ilines=infid.readlines()
-    infid.close()
 
-    indict={}
-    indict['res']=[]
-    
-    for iline in ilines:
-        if iline.find(':')>=0:
-            ikey=iline[0:20].strip()
-            ivalue=iline[20:].split('!')[0].strip()
-            indict[ikey]=ivalue
-        else:
-            try:
-                indict['res'].append(float(iline.strip()))
-            except ValueError:
-                pass
-    return indict
-
-def read1DdataFile(datafile):
-    """
-    reads a 1D data file
-    
-    Iputs:
-        datafile = full path to data file
-    """            
-    
-    dfid=open(datafile,'r')
-    
-    dlines=dfid.readlines()
-    dfid.close()
-    
-    #get format of input data
-    fmt=dlines[0].strip().split(':')[1].strip()
-    
-    finddict={}
-    for ii,dline in enumerate(dlines):
-        if dline.find('#')<=3:
-            fkey=dline[2:].strip().split(':')[0]
-            fvalue=ii
-            finddict[fkey]=fvalue
-    nfreq=int(dlines[finddict['Frequencies']][2:].strip().split(':')[1].strip())
-    
-    #frequency list
-    freq=np.array([float(ff) for ff in dlines[finddict['Frequencies']+1:
-                                                        finddict['Receivers']]])
-            
-    #data dictionary 
-    rpdict={'freq':freq,
-            'resxy':np.zeros((4,nfreq)),
-            'resyx':np.zeros((4,nfreq)),
-            'phasexy':np.zeros((4,nfreq)),
-            'phaseyx':np.zeros((4,nfreq))
-            }
-            
-    for dline in dlines[finddict['Data']+1:]:
-        if dline.find('!')==0:
-            pass
-        else:
-            dlst=dline.strip().split()
-            if len(dlst)>4:
-                jj=int(dlst[1])-1
-                dvalue=float(dlst[4])
-                derr=float(dlst[5])
-                if dlst[0]=='RhoZxy' or dlst[0]=='103':
-                    rpdict['resxy'][0,jj]=dvalue
-                    rpdict['resxy'][1,jj]=derr
-                if dlst[0]=='PhsZxy' or dlst[0]=='104':
-                    rpdict['phasexy'][0,jj]=dvalue
-                    rpdict['phasexy'][1,jj]=derr
-                if dlst[0]=='RhoZyx' or dlst[0]=='105':
-                    rpdict['resyx'][0,jj]=dvalue
-                    rpdict['resyx'][1,jj]=derr
-                if dlst[0]=='PhsZyx' or dlst[0]=='106':
-                    rpdict['phaseyx'][0,jj]=dvalue
-                    rpdict['phaseyx'][1,jj]=derr
-    
-    return rpdict
-
-def read1DIterFile(iterfile,modelfile):
-    """
-    read an iteration file
-    
-    Input:
-        iterfile = full path to iteration file
-        modelfile = full path to model file
-    
-    Output:
-        idict = dictionary with keys:
-            depth = depth of model in m
-            modelres = resistivity of model, any fixed parameters will be put in
-                        correct place.
-            
-    """
-    
-    mdict=read1DModelFile(modelfile)
-    
-    freeparams=np.where(mdict['res']==-1)[0]
-    
-    ifid=open(iterfile,'r')
-    ilines=ifid.readlines()
-    ifid.close()
-    
-    idict={}
-    model=[]    
-    for ii,iline in enumerate(ilines):
-        if iline.find(':')>=0:
-            ikey=iline[0:20].strip()
-            ivalue=iline[20:].split('!')[0].strip()
-            idict[ikey]=ivalue
-        else:
-            try:
-                ilst=iline.strip().split()
-                for kk in ilst:
-                    model.append(float(kk))
-            except ValueError:
-                pass
-            
-    model=np.array(model)
-    idict['modelres']=mdict['res'].copy()
-    idict['modelres'][freeparams]=model
-    idict['depth']=mdict['depth'].copy()
-    
-    return idict
-    
-
-def read1DRespFile(respfile):
-    """
-    read response file
-    
-    Input:
-        repsfile = full path to response file
+    def read1DdataFile(self,imode='TE'):
+        """
+        reads a 1D data file
         
-    Outputs:
-        rpdict = dictionary with keys:
-            freq = frequency array
-            resxy,resyx,phasexy,phaseyx = array for corresponding component with
-                index as:
-                    0 = input data
-                    1 = input error
-                    2 = model data
-                    3 = model error
-    """
-           
-    
-    dfid=open(respfile,'r')
-    
-    dlines=dfid.readlines()
-    dfid.close()
-
-    finddict={}
-    for ii,dline in enumerate(dlines):
-        if dline.find('#')<=3:
-            fkey=dline[2:].strip().split(':')[0]
-            fvalue=ii
-            finddict[fkey]=fvalue
-    nfreq=int(dlines[finddict['Frequencies']][2:].strip().split(':')[1].strip())
-    
-    #frequency list
-    freq=np.array([float(ff) for ff in dlines[finddict['Frequencies']+1:
-                                                        finddict['Receivers']]])
+        Arguments:
+        ----------
+            **datafile** : full path to data file
             
-    #data dictionary 
-    rpdict={'freq':freq,
-            'resxy':np.zeros((4,nfreq)),
-            'resyx':np.zeros((4,nfreq)),
-            'phasexy':np.zeros((4,nfreq)),
-            'phaseyx':np.zeros((4,nfreq))
-            }
+            **imode** : mode to read from can be TE or TM
+        
+        Returns:
+        --------
+            **rpdict** : dictionary with keys:
+                
+                *freq* : an array of frequencies with length nf
+                
+                *resxy* : TE resistivity array with shape (nf,4) for (0) data,
+                          (1) dataerr, (2) model, (3) modelerr
+                         
+                *resyx* : TM resistivity array with shape (nf,4) for (0) data,
+                          (1) dataerr, (2) model, (3) modelerr
+                         
+                *phasexy* : TE phase array with shape (nf,4) for (0) data,
+                            (1) dataerr, (2) model, (3) modelerr
+                
+                *phaseyx* : TM phase array with shape (nf,4) for (0) data,
+                            (1) dataerr, (2) model, (3) modelerr
+        """            
+        
+        #get the data file for the correct mode
+        if imode=='TE':
+            if not self.datafn_te:
+                raise IOError('No TE data file found.  Please input one.')
+                
+            dfid=open(self.datafn_te,'r')
             
-    for dline in dlines[finddict['Data']+1:]:
-        if dline.find('!')==0:
-            pass
-        else:
-            dlst=dline.strip().split()
-            if len(dlst)>4:
-                jj=int(dlst[1])-1
-                dvalue=float(dlst[4])
-                derr=float(dlst[5])
-                rvalue=float(dlst[6])
-                rerr=float(dlst[7])
-                if dlst[0]=='RhoZxy' or dlst[0]=='103':
-                    rpdict['resxy'][0,jj]=dvalue
-                    rpdict['resxy'][1,jj]=derr
-                    rpdict['resxy'][2,jj]=rvalue
-                    rpdict['resxy'][3,jj]=rerr
-                if dlst[0]=='PhsZxy' or dlst[0]=='104':
-                    rpdict['phasexy'][0,jj]=dvalue
-                    rpdict['phasexy'][1,jj]=derr
-                    rpdict['phasexy'][2,jj]=rvalue
-                    rpdict['phasexy'][3,jj]=rerr
-                if dlst[0]=='RhoZyx' or dlst[0]=='105':
-                    rpdict['resyx'][0,jj]=dvalue
-                    rpdict['resyx'][1,jj]=derr
-                    rpdict['resyx'][2,jj]=rvalue
-                    rpdict['resyx'][3,jj]=rerr
-                if dlst[0]=='PhsZyx' or dlst[0]=='106':
-                    rpdict['phaseyx'][0,jj]=dvalue
-                    rpdict['phaseyx'][1,jj]=derr
-                    rpdict['phaseyx'][2,jj]=rvalue
-                    rpdict['phaseyx'][3,jj]=rerr
-    
-    return rpdict
-    
-def plot1D(respfile,iterfile,modelfile,fignum=1,ms=4,dpi=150):
-    """
-    
-    """
+        elif imode=='TM':
+            if not self.datafn_tm:
+                raise IOError('No TM data file found.  Please input one.')
+                
+            dfid=open(self.datafn_te,'r')
+        
+        #read in lines
+        dlines=dfid.readlines()
+        dfid.close()
+        
+        #make a dictionary of all the fields found so can put them into arrays
+        finddict={}
+        for ii,dline in enumerate(dlines):
+            if dline.find('#')<=3:
+                fkey=dline[2:].strip().split(':')[0]
+                fvalue=ii
+                finddict[fkey]=fvalue
+                
+        #get number of frequencies
+        nfreq=int(dlines[finddict['Frequencies']][2:].strip().split(':')[1].strip())
+        
+        #frequency list
+        freq=np.array([float(ff) for ff in dlines[finddict['Frequencies']+1:
+                                                            finddict['Receivers']]])
+                
+        #data dictionary to put things into
+        #check to see if there is alread one, if not make a new one
+        try:
+            self.rpdict
+        except NameError:
+            self.rpdict={'freq':freq,
+                         'resxy':np.zeros((4,nfreq)),
+                         'resyx':np.zeros((4,nfreq)),
+                         'phasexy':np.zeros((4,nfreq)),
+                         'phaseyx':np.zeros((4,nfreq))
+                         }
+        
+        #get data        
+        for dline in dlines[finddict['Data']+1:]:
+            if dline.find('!')==0:
+                pass
+            else:
+                dlst=dline.strip().split()
+                if len(dlst)>4:
+                    jj=int(dlst[1])-1
+                    dvalue=float(dlst[4])
+                    derr=float(dlst[5])
+                    if dlst[0]=='RhoZxy' or dlst[0]=='103':
+                        self.rpdict['resxy'][0,jj]=dvalue
+                        self.rpdict['resxy'][1,jj]=derr
+                    if dlst[0]=='PhsZxy' or dlst[0]=='104':
+                        self.rpdict['phasexy'][0,jj]=dvalue
+                        self.rpdict['phasexy'][1,jj]=derr
+                    if dlst[0]=='RhoZyx' or dlst[0]=='105':
+                        self.rpdict['resyx'][0,jj]=dvalue
+                        self.rpdict['resyx'][1,jj]=derr
+                    if dlst[0]=='PhsZyx' or dlst[0]=='106':
+                        self.rpdict['phaseyx'][0,jj]=dvalue
+                        self.rpdict['phaseyx'][1,jj]=derr
+        
 
-    import matplotlib.gridspec as gridspec
-    import matplotlib.pyplot as plt
-    from matplotlib.ticker import MultipleLocator
-    
-    #color for data
-    cted=(0,0,1)
-    ctmd=(1,0,0)
-    
-    #color for occam model
-    ctem=(0,.1,.8)
-    ctmm=(.8,.1,0)
-    
-    #color for Wingling model
-    ctewl=(0,.5,.5)
-    ctmwl=(.5,.5,0)
-    #read in data
-    rpdict=read1DRespFile(respfile)
-    mdict=read1DIterFile(iterfile,modelfile)
+    def read1DIterFile(self,iterfn,imode='TE'):
+        """
+        read an 1D iteration file
+        
+        Arguments:
+        ----------
+            **imode** : mode to read from 
+        
+        Returns:
+        --------
+            **itdict** : dictionary with keys of the header:
+                
+            **mdict['res']** : fills this array with the appropriate values
+                               (0) for data, (1) TE, (2) TM
+                
+        """
+        
+        self.read1DModelFile()
+        
+        freeparams=np.where(self.mdict['res']==-1)[0]
+        
+        if imode=='TE':
+            self.iter_te=iterfn
+            ifid=open(self.iterfn_te,'r')
+        elif imode=='TM':
+            self.iter_tm=iterfn
+            ifid=open(self.iterfn_tm,'r')
+            
+        ilines=ifid.readlines()
+        ifid.close()
+        
+        self.itdict={}
+        model=[]    
+        for ii,iline in enumerate(ilines):
+            if iline.find(':')>=0:
+                ikey=iline[0:20].strip()
+                ivalue=iline[20:].split('!')[0].strip()
+                self.itdict[ikey]=ivalue
+            else:
+                try:
+                    ilst=iline.strip().split()
+                    for kk in ilst:
+                        model.append(float(kk))
+                except ValueError:
+                    pass
+        
+        #put the model values into the model dictionary into the res array
+        #for easy manipulation and access.  Also so you can compare TE and TM        
+        model=np.array(model)
+        if imode=='TE':
+            self.mdict['res'][:,1]=self.mdict['res'][:,0]
+            self.mdict['res'][freeparams,1]=model
+        if imode=='TM':
+            self.mdict['res'][:,2]=self.mdict['res'][:,0]
+            self.mdict['res'][freeparams,2]=model
 
-    period=1/rpdict['freq']
+
+    def read1DRespFile(self,respfn):
+        """
+        read response file
+        
+        Arguments:
+        ---------
+            **repsfn** : full path to response file
+            
+        Returns:
+        --------
+            **rpdict** : dictionary with keys:
+                
+                *freq* : an array of frequencies with length nf
+                
+                *resxy* : TE resistivity array with shape (nf,4) for (0) data,
+                          (1) dataerr, (2) model, (3) modelerr
+                         
+                *resyx* : TM resistivity array with shape (nf,4) for (0) data,
+                          (1) dataerr, (2) model, (3) modelerr
+                         
+                *phasexy* : TE phase array with shape (nf,4) for (0) data,
+                            (1) dataerr, (2) model, (3) modelerr
+                
+                *phaseyx* : TM phase array with shape (nf,4) for (0) data,
+                            (1) dataerr, (2) model, (3) modelerr
+        """
+               
+        
+        dfid=open(respfn,'r')
+        
+        dlines=dfid.readlines()
+        dfid.close()
     
-    #make a grid of subplots
-    gs=gridspec.GridSpec(6,5,hspace=.25,wspace=.75)
+        finddict={}
+        for ii,dline in enumerate(dlines):
+            if dline.find('#')<=3:
+                fkey=dline[2:].strip().split(':')[0]
+                fvalue=ii
+                finddict[fkey]=fvalue
+        nfreq=int(dlines[finddict['Frequencies']][2:].strip().split(':')[1].strip())
+        
+        #frequency list
+        freq=np.array([float(ff) for ff in dlines[finddict['Frequencies']+1:
+                                                            finddict['Receivers']]])
+                
+        #data dictionary
+        try:
+            self.rpdict
+        except NameError:
+            self.rpdict={'freq':freq,
+                        'resxy':np.zeros((4,nfreq)),
+                        'resyx':np.zeros((4,nfreq)),
+                        'phasexy':np.zeros((4,nfreq)),
+                        'phaseyx':np.zeros((4,nfreq))
+                        }
+                
+        for dline in dlines[finddict['Data']+1:]:
+            if dline.find('!')==0:
+                pass
+            else:
+                dlst=dline.strip().split()
+                if len(dlst)>4:
+                    jj=int(dlst[1])-1
+                    dvalue=float(dlst[4])
+                    derr=float(dlst[5])
+                    rvalue=float(dlst[6])
+                    rerr=float(dlst[7])
+                    if dlst[0]=='RhoZxy' or dlst[0]=='103':
+                        self.rpdict['resxy'][0,jj]=dvalue
+                        self.rpdict['resxy'][1,jj]=derr
+                        self.rpdict['resxy'][2,jj]=rvalue
+                        self.rpdict['resxy'][3,jj]=rerr
+                    if dlst[0]=='PhsZxy' or dlst[0]=='104':
+                        self.rpdict['phasexy'][0,jj]=dvalue
+                        self.rpdict['phasexy'][1,jj]=derr
+                        self.rpdict['phasexy'][2,jj]=rvalue
+                        self.rpdict['phasexy'][3,jj]=rerr
+                    if dlst[0]=='RhoZyx' or dlst[0]=='105':
+                        self.rpdict['resyx'][0,jj]=dvalue
+                        self.rpdict['resyx'][1,jj]=derr
+                        self.rpdict['resyx'][2,jj]=rvalue
+                        self.rpdict['resyx'][3,jj]=rerr
+                    if dlst[0]=='PhsZyx' or dlst[0]=='106':
+                        self.rpdict['phaseyx'][0,jj]=dvalue
+                        self.rpdict['phaseyx'][1,jj]=derr
+                        self.rpdict['phaseyx'][2,jj]=rvalue
+                        self.rpdict['phaseyx'][3,jj]=rerr
     
-    #make a figure
-    fig=plt.figure(fignum,[8,8],dpi=dpi)
-    
-    #plot resistivity
-    axr=fig.add_subplot(gs[:4,:4])
-    rxy=np.where(rpdict['resxy'][0]!=0)[0]
-    ryx=np.where(rpdict['resyx'][0]!=0)[0]
-    if len(rxy)!=0:
-        r1=axr.loglog(period[rxy],rpdict['resxy'][0][rxy],
-                      ls='None',marker='o',color='k',mfc='k',ms=ms)
-        titlestr='$Z_{xy}$'
-    if len(ryx)!=0:
-        r1=axr.loglog(period[ryx],rpdict['resyx'][0][ryx],
-                      ls='None',marker='o',color='k',mfc='k',ms=ms)
-        titlestr='$Z_{yx}$'
-                      
-    rxym=np.where(rpdict['resxy'][2]!=0)[0]
-    ryxm=np.where(rpdict['resyx'][2]!=0)[0]
-    if len(rxym)!=0:
-        r2=axr.loglog(period[rxym],rpdict['resxy'][2][rxym],
-                      ls=':',color='b',lw=2)
-    if len(ryxm)!=0:
-        r2=axr.loglog(period[ryxm],rpdict['resyx'][2][ryxm],
-                      ls=':',color='b',lw=2)
-                      
-    axr.legend([r1,r2],['Data','Model'],loc='upper left',markerscale=2,
-               borderaxespad=.05,
-               labelspacing=.08,
-               handletextpad=.15,borderpad=.05)
-    
-    #plot Phase
-    axp=fig.add_subplot(gs[4:,:4],sharex=axr)
-    pxy=np.where(rpdict['phasexy'][0]!=0)[0]
-    pyx=np.where(rpdict['phaseyx'][0]!=0)[0]
-    if len(pxy)!=0:
-        p1=axp.semilogx(period[pxy],rpdict['phasexy'][0][pxy],
-                      ls='None',marker='o',color='k',mfc='k',ms=ms)
-    if len(pyx)!=0:
-        p1=axp.semilogx(period[pyx],rpdict['phaseyx'][0][pyx],
-                      ls='None',marker='o',color='k',mfc='k',ms=ms)
-                      
-    pxym=np.where(rpdict['phasexy'][2]!=0)[0]
-    pyxm=np.where(rpdict['phaseyx'][2]!=0)[0]
-    if len(pxym)!=0:
-        p2=axp.semilogx(period[pxym],rpdict['phasexy'][2][pxym],
-                      ls=':',color='b')
-    if len(pyxm)!=0:
-        p2=axp.semilogx(period[pyxm],rpdict['phaseyx'][2][pyxm],
-                      ls=':',color='b')
-                      
-    axr.grid(True,alpha=.4)
-    axr.set_xticklabels(['' for ii in range(10)])
-    axp.grid(True,alpha=.4)
-    axp.yaxis.set_major_locator(MultipleLocator(10))
-    axp.yaxis.set_minor_locator(MultipleLocator(1))
-    
-    axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                   fontdict={'size':12,'weight':'bold'})
-    axp.set_ylabel('Phase (deg)',
-                   fontdict={'size':12,'weight':'bold'})
-    axp.set_xlabel('Period (s)',fontdict={'size':12,'weight':'bold'})
-    axr.yaxis.set_label_coords(-.15,.5)
-    axp.yaxis.set_label_coords(-.15,.5)
-    plt.suptitle(titlestr,fontsize=14,fontweight='bold')
-    
-    #plot 1D inversion
-    axm=fig.add_subplot(gs[:,4])
-    modelresp=abs(10**mdict['modelres'][1:])
-    depthp=np.array([mdict['depth'][0:ii+1].sum() for ii in range(len(mdict['depth']))])[1:]
-    axm.loglog(modelresp[::-1],depthp[::-1],ls='steps-')
-    print (depthp[-1],depthp[0])
-    axm.set_ylim(ymin=depthp[-1],ymax=depthp[0])
-#    axm.set_xlim(xmax=10**3)
-    axm.set_ylabel('Depth (m)',fontdict={'size':12,'weight':'bold'})
-    axm.set_xlabel('Resistivity ($\Omega \cdot m$)',
-                   fontdict={'size':12,'weight':'bold'})
-#    axm.yaxis.set_minor_locator(MultipleLocator(200))
-#    axm.yaxis.set_major_locator(MultipleLocator(1000))
-    axm.grid(True,which='both')
-    
-    plt.show()
+    def plot1D(self,respfn,iterfn,imode='TE',fignum=1,ms=4,dpi=150):
+        """
+        
+        """
+
+        #color for data
+        cted=(0,0,1)
+        ctmd=(1,0,0)
+        
+        #color for occam model
+        ctem=(0,.1,.8)
+        ctmm=(.8,.1,0)
+        
+        try:
+            self.modelfn
+        except NameError:
+            if not self.dirpath:
+                self.dirpath=os.path.dirname(respfn)
+                
+            self.modelfn=os.path.join(self.dirpath,'Model1D')
+            if os.path.isfile(self.modelfn)==False:
+                raise IOError('Could not find '+self.modelfn)
+        
+        self.respfn=respfn
+
+        #read in data
+        self.read1DRespFile(self.respfn)
+        if imode=='TE':
+            self.iter_te=iterfn
+            self.read1DIterFile(self.iter_te,imode='TE')
+            
+        elif imode=='TM':
+            self.iter_tm=iterfn
+            self.read1DIterFile(self.iter_tm,imode='TM')
+            
+        elif imode=='both':
+            if type(iterfn) is not list or type(iterfn) is not tuple:
+                raise IOError('Please enter iteration files as a list or tuple.')
+            else:
+                self.iter_te=iterfn[0]
+                self.read1DIterFile(self.iter_te,imode='TE')
+                
+                self.iter_tm=iterfn[1]
+                self.read1DIterFile(self.iter_tm,imode='TM')
+                
+        period=1/self.rpdict['freq']
+        
+        #make a grid of subplots
+        gs=gridspec.GridSpec(6,5,hspace=.25,wspace=.75)
+        
+        #make a figure
+        fig=plt.figure(fignum,[8,8],dpi=dpi)
+        
+        #subplot resistivity
+        axr=fig.add_subplot(gs[:4,:4])
+        
+        #subplot for phase
+        axp=fig.add_subplot(gs[4:,:4],sharex=axr)
+        
+        #check for data in resistivity
+        rxy=np.where(self.rpdict['resxy'][0]!=0)[0]
+        ryx=np.where(self.rpdict['resyx'][0]!=0)[0]
+        
+        pxy=np.where(self.rpdict['phasexy'][0]!=0)[0]
+        pyx=np.where(self.rpdict['phaseyx'][0]!=0)[0]
+        
+        #check to make sure a model was read in for resistivity
+        rxym=np.where(self.rpdict['resxy'][2]!=0)[0]
+        ryxm=np.where(self.rpdict['resyx'][2]!=0)[0]
+        
+        pxym=np.where(self.rpdict['phasexy'][2]!=0)[0]
+        pyxm=np.where(self.rpdict['phaseyx'][2]!=0)[0]
+        
+        if imode=='TE':
+            titlestr='$Z_{TE}$'
+            #plot data resistivity 
+            if len(rxy)!=0:
+                r1=axr.loglog(period[rxy],self.rpdict['resxy'][0][rxy],
+                              ls='None',marker='o',color='k',mfc='k',ms=ms)
+
+            #plot data phase
+            if len(pxy)!=0:
+                p1=axp.semilogx(period[pxy],self.rpdict['phasexy'][0][pxy],
+                          ls='None',marker='o',color='k',mfc='k',ms=ms)
+                          
+            #plot model resistivity
+            if len(rxym)!=0:
+                r2=axr.loglog(period[rxym],self.rpdict['resxy'][2][rxym],
+                              ls=':',color='b',lw=2)
+            #plot model phase                 
+            if len(pxym)!=0:
+                p2=axp.semilogx(period[pxym],self.rpdict['phasexy'][2][pxym],
+                          ls=':',color='b')
+            
+            #add legend
+            axr.legend([r1,r2],['Data','Model'],loc='upper left',markerscale=2,
+                       borderaxespad=.05,
+                       labelspacing=.08,
+                       handletextpad=.15,borderpad=.05)
+            
+        elif imode=='TM':
+            titlestr='$Z_{TM}$'
+            #plot data resistivity 
+            if len(ryx)!=0:
+                r1=axr.loglog(period[ryx],self.rpdict['resyx'][0][ryx],
+                              ls='None',marker='o',color='k',mfc='k',ms=ms)
+            #plot data phase
+            if len(pyx)!=0:
+                p1=axp.semilogx(period[pyx],self.rpdict['phaseyx'][0][pyx],
+                          ls='None',marker='o',color='k',mfc='k',ms=ms)
+                          
+            #plot model resistivity
+            if len(ryxm)!=0:
+                r2=axr.loglog(period[ryxm],self.rpdict['resyx'][2][ryxm],
+                              ls=':',color='b',lw=2)
+            #plot model phase                 
+            if len(pyxm)!=0:
+                p2=axp.semilogx(period[pyxm],self.rpdict['phaseyx'][2][pyxm],
+                          ls=':',color='b')
+            if len(ryx)!=0:
+                r1=axr.loglog(period[ryx],self.rpdict['resyx'][0][ryx],
+                              ls='None',marker='o',color='k',mfc='k',ms=ms)
+                
+            axr.legend([r1,r2],['Data','Model'],loc='upper left',markerscale=2,
+                       borderaxespad=.05,
+                       labelspacing=.08,
+                       handletextpad=.15,borderpad=.05)
+        
+        
+        elif imode=='both':
+            #plot data resistivity 
+            if len(rxy)!=0:
+                r1te=axr.loglog(period[rxy],self.rpdict['resxy'][0][rxy],
+                              ls='None',marker='s',color='k',mfc='k',ms=ms)
+            if len(ryx)!=0:
+                r1tm=axr.loglog(period[ryx],self.rpdict['resyx'][0][ryx],
+                              ls='None',marker='o',color='k',mfc='k',ms=ms)
+
+            #plot data phase
+            if len(pxy)!=0:
+                p1te=axp.semilogx(period[pxy],self.rpdict['phasexy'][0][pxy],
+                          ls='None',marker='s',color='k',mfc='k',ms=ms)
+            
+            if len(pyx)!=0:
+                p1tm=axp.semilogx(period[pyx],self.rpdict['phaseyx'][0][pyx],
+                          ls='None',marker='o',color='k',mfc='k',ms=ms)
+                          
+            #plot model resistivity
+            if len(rxym)!=0:
+                r2te=axr.loglog(period[rxym],self.rpdict['resxy'][2][rxym],
+                              ls=':',color='b',lw=2)
+        
+            if len(ryxm)!=0:
+                r2tm=axr.loglog(period[ryxm],self.rpdict['resyx'][2][ryxm],
+                              ls=':',color='r',lw=2)
+            #plot model phase                 
+            if len(pxym)!=0:
+                p2=axp.semilogx(period[pxym],self.rpdict['phasexy'][2][pxym],
+                          ls=':',color='b')
+            if len(pyxm)!=0:
+                p2=axp.semilogx(period[pyxm],self.rpdict['phaseyx'][2][pyxm],
+                          ls=':',color='r')
+            
+            #add legend
+            axr.legend([r1te,r2te,r1tm,r2tm],
+                       ['Data$_{TE}$','Model$_{TE}$',
+                        'Data$_{TM}$','Model$_{TM}$'],
+                        loc='upper left',markerscale=2,
+                       borderaxespad=.05,
+                       labelspacing=.08,
+                       handletextpad=.15,borderpad=.05)
+
+                          
+        axr.grid(True,alpha=.4)
+        axr.set_xticklabels(['' for ii in range(10)])
+        axp.grid(True,alpha=.4)
+        axp.yaxis.set_major_locator(MultipleLocator(10))
+        axp.yaxis.set_minor_locator(MultipleLocator(1))
+        
+        axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
+                       fontdict={'size':12,'weight':'bold'})
+        axp.set_ylabel('Phase (deg)',
+                       fontdict={'size':12,'weight':'bold'})
+        axp.set_xlabel('Period (s)',fontdict={'size':12,'weight':'bold'})
+        axr.yaxis.set_label_coords(-.15,.5)
+        axp.yaxis.set_label_coords(-.15,.5)
+        plt.suptitle(titlestr,fontsize=14,fontweight='bold')
+        
+        #plot 1D inversion
+        axm=fig.add_subplot(gs[:,4])
+        depthp=np.array([self.mdict['depth'][0:ii+1].sum() 
+                        for ii in range(len(self.mdict['depth']))])[1:]
+        if imode=='TE':
+            modelresp=abs(10**self.mdict['res'][1:,1])
+            axm.loglog(modelresp[::-1],depthp[::-1],ls='steps-',color='b')
+        elif imode=='TM':
+            modelresp=abs(10**self.mdict['res'][1:,2])
+            axm.loglog(modelresp[::-1],depthp[::-1],ls='steps-',color='b')
+        elif imode=='both':
+            modelrespte=abs(10**self.mdict['res'][1:,1])
+            axm.loglog(modelrespte[::-1],depthp[::-1],ls='steps-',color='b')
+            modelresptm=abs(10**self.mdict['res'][1:,1])
+            axm.loglog(modelresptm[::-1],depthp[::-1],ls='steps-',color='r')
+        
+        print (depthp[-1],depthp[0])
+        axm.set_ylim(ymin=depthp[-1],ymax=depthp[0])
+    #    axm.set_xlim(xmax=10**3)
+        axm.set_ylabel('Depth (m)',fontdict={'size':12,'weight':'bold'})
+        axm.set_xlabel('Resistivity ($\Omega \cdot m$)',
+                       fontdict={'size':12,'weight':'bold'})
+        axm.grid(True,which='both')
+        
+        plt.show()
     
 
 def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None,
