@@ -21,11 +21,11 @@ setup_kwargs = {}
 # can be customized before the equals sign.
 
 setup_kwargs['entry_points'] = {'console_scripts': [
-        'CombineEDIs = MTpy.utils.CombineEDIs:main',
-        'runParalanaMT = MTpy.utils.runParalanaMT:main',
-        'wsmt_pv = MTpy.utils.wsmt_pv:main',
-        'occam2d_gui = MTpy.utils.gui.occam2d.v1.run1:main',
-        'RunBIRRPSingleStation = MTpy.core.RunBIRRPSingleStation:main']}
+        'combineedis = mtpy.utils.combineedis:main',
+        'runparalanamt = mtpy.utils.runparalanamt:main',
+        'wsmt_pv = mtpy.utils.wsmt_pv:main',
+        'occamgui_v1 = mtpy.utils.gui.occam2d.v1.occamgui_v1:main',
+        'runbirrpsinglestation = mtpy.core.runbirrpsinglestation:main']}
 
 # But many people will not have setuptools installed, so we need to handle
 # the default Python installation, which only has Distutils:
