@@ -853,7 +853,23 @@ class Occam1D:
     
     def plot1D(self,respfn,iterfn,imode='TE',fignum=1,ms=4,dpi=150):
         """
+        Plots the output of Occam1D as plots of the MT response and the 1D 
+        model.
         
+        Arguments:
+        ----------
+        
+            **respfn** : full path to response file name
+            
+            **iterfn** : full path to iteration file name
+            
+            **imode** : mode to look at can be:
+                    
+                    *TE* : for TE mode
+                    
+                    *TM*: for TM mode 
+                    
+                    *both* : for both modes
         """
 
         #color for data
