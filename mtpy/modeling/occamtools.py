@@ -2,7 +2,7 @@
 """
 Created on Tue Aug 23 11:54:38 2011
 
-@author: a1185872
+Jared Peacock
 """
 
 import numpy as np
@@ -30,24 +30,15 @@ class Occam1D:
     =============================================
     """
     
-    def __init__(self,datafn_te=None,datafn_tm=None):
-                     
-        self.datafn_te=datafn_te
-        self.datafn_tm=datafn_tm
+    def __init__(self,savepath=None):
+        
+        self.savepath=None             
         self.modelfn=None
         self.inputfn=None
-        
-        if self.datafn_te:
-            self.dirpath=os.path.dirname(self.datafn_te)
-        elif self.datafn_tm:
-            self.dirpath=os.path.dirname(self.datafn_tm)
-        elif self.iterfn_te:
-            self.dirpath=os.path.dirname(self.iterfn_te)
-        elif self.iterfn_tm:
-            self.dirpath=os.path.dirname(self.iterfn_tm)
-        else:
-            self.dirpath=None
-            
+        self.datafn_te=None
+        self.datafn_tm=None
+        self.iternum=0
+  
     def make1DdataFile(self,station,edipath=None,savepath=None,
                        polarization='both',reserr='data',phaseerr='data',
                        fmt='%+.6e',ss=3*' ',thetar=0):
@@ -95,14 +86,14 @@ class Occam1D:
             
             **ss** : spacing between values in file.  *default* = ' '*3
             
-            Returns:
-            --------
-                **datafn_te** : full path to data file for TE mode
+        Returns:
+        --------
+            **datafn_te** : full path to data file for TE mode
                 
-                **datafn_tm** : full path to data file for TM mode
+            **datafn_tm** : full path to data file for TM mode
                 
             
-            """    
+        """    
     
         if os.path.dirname(station)=='':
             if edipath==None:
@@ -114,7 +105,9 @@ class Occam1D:
                         edifile=os.path.join(edipath,fn)
         else:
             edifile=station
-                
+        
+        self.station=os.path.basename(edifile)[:-4]
+        
         #raise an error if can't find the edifile        
         if edifile==None:
             raise NameError('No edifile exists, check path and station name')
@@ -124,18 +117,23 @@ class Occam1D:
         
         #make sure the savepath exists, if not create it
         if savepath==None:
-            savepath=os.path.dirname(edifile)
-            if not os.path.exists(savepath):
-                os.mkdir(savepath)
+            if not self.savepath:
+                savepath=os.path.dirname(edifile)
+                if not os.path.exists(savepath):
+                    os.mkdir(savepath)
+                savepath=self.savepath
+            else:
+                savepath=self.savepath
         if os.path.basename(savepath).find('.')>0:
             savepath=os.path.dirname(savepath)
             if not os.path.exists(savepath):
                 os.mkdir(os.path.dirname(savepath))
+            self.savepath=savepath
         else:
             savepath=savepath
             if not os.path.exists(savepath):
                 os.mkdir(os.path.dirname(savepath))
-                
+            self.savepath=savepath
         
         #load the edifile and get resistivity and phase
         rp=impz.getResPhase(thetar=thetar)
@@ -146,9 +144,9 @@ class Occam1D:
         if polarization=='both':
             for pol in ['xy','yx']:
                 if pol=='xy':
-                    dfilesave=os.path.join(savepath,impz.station+'TE.dat')
+                    dfilesave=os.path.join(self.savepath,impz.station+'TE.dat')
                 elif pol=='yx':
-                    dfilesave=os.path.join(savepath,impz.station+'TM.dat')
+                    dfilesave=os.path.join(self.savepath,impz.station+'TM.dat')
     
                 datafid=open(dfilesave,'w')
     
@@ -188,40 +186,40 @@ class Occam1D:
                     if reserr=='data':
                         if pol=='xy':
                             datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.resxy[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.resxy[ii]+2*ss+
                                           fmt % rp.resxyerr[ii]+'\n')
                         elif pol=='yx':
                             datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.resyx[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.resyx[ii]+2*ss+
                                           fmt % rp.resyxerr[ii]+'\n')
                     else:
                         if pol=='xy':
                             datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.resxy[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.resxy[ii]+2*ss+
                                           fmt % (rp.resxy[ii]*reserr/100.)+'\n')
                         elif pol=='yx':
                             datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.resyx[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.resyx[ii]+2*ss+
                                           fmt % (rp.resyx[ii]*reserr/100.)+'\n')
                     
                     #write phase components
                     if phaseerr=='data':
                         if pol=='xy':
                             datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.phasexy[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.phasexy[ii]+2*ss+
                                           fmt % rp.phasexyerr[ii]+'\n')
                         if pol=='yx':
                             datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.phaseyx[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.phaseyx[ii]+2*ss+
                                           fmt % rp.phaseyxerr[ii]+'\n')
                     else:
                         if pol=='xy':
                             datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.phasexy[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.phasexy[ii]+2*ss+
                                           fmt % (phaseerr/100.*(180/np.pi))+'\n')
                         if pol=='yx':
                             datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.phaseyx[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.phaseyx[ii]+2*ss+
                                           fmt % (phaseerr/100.*(180/np.pi))+'\n')
                 datafid.write('\n')
                 datafid.close()
@@ -319,7 +317,7 @@ class Occam1D:
             print 'Wrote Data File: ',dfilesave
 
     def make1DModelFile(self,savepath=None,nlayers=100,bottomlayer=10000,
-                        basestep=10,z1layer=50,airlayerheight=10000):
+                        basestep=10,z1layer=10,airlayerheight=10000):
         """
         Makes a 1D model file for Occam1D.  
         
@@ -350,27 +348,31 @@ class Occam1D:
         
         
         ss='   '
+        #if the savepath was not entered test to see if there is one
         if savepath==None:
-            if self.dirpath:
-                savepath=self.dirpath
-            else:
+            if not self.savepath:
                 raise IOError('No savepath found.  Please input one.')
-                
-        elif savepath.find('.')==-1:
+            self.modelfn=os.path.join(self.savepath,'Model1D') 
+        
+        #if the save path was entered as just a path
+        elif os.path.basename(savepath).find('.')==-1:
             if not os.path.exists(savepath):
                 os.mkdir(savepath)
-            modfn=os.path.join(savepath,'Model1D')
+            self.savepath=savepath
+            self.modelfn=os.path.join(self.savepath,'Model1D')
+         
+        #if the save path was entered as a file with full path
         else:
-            modfn=savepath
+            self.modelfn=savepath
         
         #---------need to refine this-------------------- 
         
         layers=np.logspace(np.log10(z1layer),np.log10(bottomlayer),num=nlayers)      
         
         #make the model file
-        modfid=open(modfn,'w')
+        modfid=open(self.modelfn,'w')
         modfid.write('Format: Resistivity1DMod_1.0'+'\n')
-        modfid.write('#LAYERS:    '+str(nlayers+3)+'\n')
+        modfid.write('#LAYERS:    '+str(nlayers+2)+'\n')
         modfid.write('!Set free values to -1 or ? \n')
         modfid.write('!penalize between 1 and 0,'+
                      '0 allowing jump between layers and 1 smooth. \n' )
@@ -381,15 +383,16 @@ class Occam1D:
         modfid.write(ss+'-10000'+ss+'1d12'+ss+'0'+ss+'0'+ss+'0'+ss+'!air layer \n')
         modfid.write(ss+'0'+ss+'-1'+ss+'0'+ss+'0'+ss+'0'+ss+'!first ground layer \n')
         for ll in layers:
-            modfid.write(ss+str(ll)+ss+'-1'+ss+'1'+ss+'0'+ss+'0'+'\n')
+            modfid.write(ss+'{0:.2f}'.format(ll)+ss+'-1'+ss+'1'+ss+'0'+ss+'0'+
+                         '\n')
         
         modfid.close()
-        print 'Wrote Model file: ',modfn
         
-        self.modelfn=modfn
+        print 'Wrote Model file: ',self.modelfn
+        
 
     def make1DInputFile(self,savepath=None,imode='TE',roughtype=1,
-                        maxiter=100,targetrms=1.0,rhostart=100,
+                        maxiter=20,targetrms=1.0,rhostart=100,
                         description='1dInv',lagrange=5.0,roughness=1.0E7,
                         debuglevel=1,iteration=0,misfit=100.0):
         """
@@ -399,42 +402,79 @@ class Occam1D:
         ---------
             **savepath** : full path to save input file to, if just path then 
                            saved as savepath/input
-            modelfile = full path to model file, if None then assumed to be in 
-                        savepath/model.mod
-            datafile = full path to data file, if None then assumed to be in 
-                        savepath/data.data
-            roughtype = roughness type
-            maxiter = maximum number of iterations
-            targetrms = target rms value
-            rhostart = starting resistivity value on linear scale
-            paramcount = 
+                           
+            **modelfile** : full path to model file, if None then assumed to be in 
+                            savepath/model.mod
+                            
+            **datafile** : full path to data file, if None then assumed to be 
+                            in savepath/TE.dat or TM.dat
+                            
+            **roughtype** : roughness type. *default* = 0
+            
+            **maxiter** : maximum number of iterations. *default* = 20 
+            
+            **targetrms** : target rms value. *default* = 1.0
+            
+            **rhostart** : starting resistivity value on linear scale. 
+                            *default* = 100
+            
+            **description** : description of the inversion. 
+            
+            **lagrange** : starting Lagrange multiplier for smoothness.
+                           *default* = 5
+            
+            **roughness** : starting roughness value. *default* = 1E7
+            
+            **debuglevel** : something to do with how Fortran debuggs the code
+                             Almost always leave at *default* = 1
+                    
+            **iteration** : the starting iteration number, handy if the
+                            starting model is from a previous run.
+                            *default* = 0
+            
+            **misfit** : starting misfit value. *default* = 100
+                             
+
+        Returns:
+        --------
+            **inputfn** : full path to input file. 
         """
         
         
         ss='   '
         
         #make input data file name
-        if os.path.basename(savepath).find('.')==-1:
+        #if no savepath is input, test if there is already one
+        if savepath==None:
+            if not self.savepath:
+                raise IOError('No savepath.  Please input one.')
+            self.inputfn=os.path.join(self.savepath,'Input1D') 
+        
+        #if the savepath was input as just a path
+        elif os.path.basename(savepath).find('.')==-1:
             if not os.path.exists(savepath):
                 os.mkdir(savepath)
             self.inputfn=os.path.join(savepath,'Input1D')
+        
+        #if the savepath was input as a full path to file
         else:
             self.inputfn=savepath
             
         if not self.modelfn:
-            if self.dirpath:
-                modelfile=os.path.join(self.dirpath,'Model1D')
+            if self.savepath:
+                self.modelfn=os.path.join(self.savepath,'Model1D')
             else:
                 raise IOError('No savepath.  Please input one.')
                 
         #try to get data file name 
         if imode=='TE':
             if not self.datafn_te:
-                if self.dirpath:
-                    dfn=os.path.join(self.dirpath,'TEData.dat')
-                    if os.path.isfile(dfn)==True:
-                        self.datafn_te=dfn
-                    else:
+                if self.savepath:
+                    try:
+                        self.datafn_te=[os.path.join(self.savepath,dd) 
+                            for dd in os.listdir(self.savepath) 
+                            if dd.find('TE.dat')>0][0]
+                    except IndexError:
                         raise IOError('No TE data file found. Please input one.')
                 else:
                     raise IOError('No savepth found. Please input one.')
@@ -442,26 +482,25 @@ class Occam1D:
                 pass
         if imode=='TM':
             if not self.datafn_tm:
-                if self.dirpath:
-                    dfn=os.path.join(self.dirpath,'TMData.dat')
-                    if os.path.isfile(dfn)==True:
-                        self.datafn_tm=dfn
-                    else:
-                        raise IOError('No TM data file found. Please input one.')
-                else:
-                    raise IOError('No savepth found. Please input one.')
+                if self.savepath:
+                    try:
+                        self.datafn_tm=[os.path.join(self.savepath,dd) 
+                            for dd in os.listdir(self.savepath) 
+                            if dd.find('TM.dat')>0][0]
+                    except IndexError:
+                        raise IOError('No TM data file found. Please input one.') 
             else:
                 pass
 
         #read in the model and get number of parameters
-        mdict=self.read1DModelFile()
-        paramcount=mdict['nparam']        
+        self.read1DModelFile()
+        paramcount=self.mdict['nparam']        
         
         #write input file
         infid=open(self.inputfn,'w')
         infid.write('Format:             OCCAMITER_FLEX      ! Flexible format \n')
         infid.write('Description:        '+description+'     !For your own notes. \n')
-        infid.write('Model File:         '+modelfile+'       \n')
+        infid.write('Model File:         '+self.modelfn+'       \n')
         if imode=='TE':
             infid.write('Data File:          '+self.datafn_te+'        \n')                                                                     
         if imode=='TM':
@@ -526,47 +565,55 @@ class Occam1D:
                 
         """
         if not self.modelfn:
-            raise IOError('No input file found.  Please input one.')
+            if not self.savepath:
+                raise IOError('No model file found.  Please input one.')
+            self.modelfn=os.path.join(self.savepath,'Model1D')
             
         mfid=open(self.modelfn,'r')
         mlines=mfid.readlines()
         mfid.close()
-        
-        mdict={}
-        mdict['nparam']=0
-        for key in ['depth','res','pen','pref','prefpen']:
-            mdict[key]=[]
-        
-        for mm,mline in enumerate(mlines):
-            if mline.find('!')==0:
-                pass
-            elif mline.find(':')>=0:
-                mlst=mline.strip().split(':')
-                mdict[mlst[0]]=mlst[1]
-            else:
-                mlst=mlst=mline.strip().split()
-                mdict['depth'].append(float(mlst[0]))
-                if mlst[1]=='?':
-                    mdict['res'].append(-1)
-                elif mlst[1]=='1d12':
-                    mdict['res'].append(1.0E12)
+        try:
+            self.mdict
+        except AttributeError:
+            mdict={}
+            mdict['nparam']=0
+            for key in ['depth','res','pen','pref','prefpen']:
+                mdict[key]=[]
+            
+            for mm,mline in enumerate(mlines):
+                if mline.find('!')==0:
+                    pass
+                elif mline.find(':')>=0:
+                    mlst=mline.strip().split(':')
+                    mdict[mlst[0]]=mlst[1]
                 else:
-                    try:
-                        mdict['res'].append(float(mlst[1]))
-                    except ValueError:
+                    mlst=mlst=mline.strip().split()
+                    mdict['depth'].append(float(mlst[0]))
+                    if mlst[1]=='?':
                         mdict['res'].append(-1)
-                mdict['pen'].append(float(mlst[2]))
-                mdict['pref'].append(float(mlst[3]))
-                mdict['prefpen'].append(float(mlst[4]))
-                if mlst[1]=='-1' or mlst[1]=='?':
-                    mdict['nparam']+=1
+                    elif mlst[1]=='1d12':
+                        mdict['res'].append(1.0E12)
+                    else:
+                        try:
+                            mdict['res'].append(float(mlst[1]))
+                        except ValueError:
+                            mdict['res'].append(-1)
+                    mdict['pen'].append(float(mlst[2]))
+                    mdict['pref'].append(float(mlst[3]))
+                    mdict['prefpen'].append(float(mlst[4]))
+                    if mlst[1]=='-1' or mlst[1]=='?':
+                        mdict['nparam']+=1
+                        
+            #make everything an array
+            for key in ['depth','res','pen','pref','prefpen']:
+                    mdict[key]=np.array(mdict[key])
                     
-        #make everything an array
-        for key in ['depth','res','pen','pref','prefpen']:
-                mdict[key]=np.array(mdict[key])
-        
-        #make dictionary an attribute of Occam1D class            
-        self.mdict=mdict
+            #create an array with empty columns to put the TE and TM models into
+            mres=np.zeros((len(mdict['res']),3))
+            mres[:,0]=mdict['res']
+            mdict['res']=mres
+            #make dictionary an attribute of Occam1D class            
+            self.mdict=mdict
     
     def read1DInputFile(self):
         """
@@ -583,7 +630,9 @@ class Occam1D:
                 *res* : an array of resistivity values
         """
         if not self.inputfn:
-            raise IOError('No input file found.  Please input one.')
+            if not self.savepath:
+                raise IOError('No input file found.  Please input one.')
+            self.inputfn=os.path.join(self.savepath,'Input1D')
             
         infid=open(self.inputfn,'r')
         ilines=infid.readlines()
@@ -597,7 +646,7 @@ class Occam1D:
             if iline.find(':')>=0:
                 ikey=iline[0:20].strip()
                 ivalue=iline[20:].split('!')[0].strip()
-                self.indict[ikey]=ivalue
+                self.indict[ikey[:-1]]=ivalue
             else:
                 try:
                     res.append(float(iline.strip()))
@@ -607,6 +656,14 @@ class Occam1D:
         #make the resistivity array ready for models to be input
         self.indict['res']=np.zeros((len(res),3))
         self.indict['res'][:,0]=res
+        
+        #get data file
+        if self.indict['Data File'].find('TE')>0:
+            self.datafn_te=self.indict['Data File']
+            
+        elif self.indict['Data File'].find('TM')>0:
+            self.datafn_tm=self.indict['Data File']
+        
 
 
     def read1DdataFile(self,imode='TE'):
@@ -723,6 +780,9 @@ class Occam1D:
                 
         """
         
+        if not self.savepath:
+            self.savepath=os.path.dirname(iterfn)
+            
         self.read1DModelFile()
         
         freeparams=np.where(self.mdict['res']==-1)[0]
@@ -743,7 +803,7 @@ class Occam1D:
             if iline.find(':')>=0:
                 ikey=iline[0:20].strip()
                 ivalue=iline[20:].split('!')[0].strip()
-                self.itdict[ikey]=ivalue
+                self.itdict[ikey[:-1]]=ivalue
             else:
                 try:
                     ilst=iline.strip().split()
@@ -763,7 +823,7 @@ class Occam1D:
             self.mdict['res'][freeparams,2]=model
 
 
-    def read1DRespFile(self,respfn):
+    def read1DRespFile(self,respfn,imode='TE'):
         """
         read response file
         
@@ -789,8 +849,15 @@ class Occam1D:
                 *phaseyx* : TM phase array with shape (nf,4) for (0) data,
                             (1) dataerr, (2) model, (3) modelerr
         """
-               
         
+        if imode=='TE':
+            self.respfn_te=respfn
+        elif imode=='TM':
+            self.respfn_tm=respfn
+        
+        if not self.savepath:
+            self.savepath=os.path.dirname(respfn)
+            
         dfid=open(respfn,'r')
         
         dlines=dfid.readlines()
@@ -811,7 +878,7 @@ class Occam1D:
         #data dictionary
         try:
             self.rpdict
-        except NameError:
+        except AttributeError:
             self.rpdict={'freq':freq,
                         'resxy':np.zeros((4,nfreq)),
                         'resyx':np.zeros((4,nfreq)),
@@ -851,38 +918,17 @@ class Occam1D:
                         self.rpdict['phaseyx'][2,jj]=rvalue
                         self.rpdict['phaseyx'][3,jj]=rerr
     
-    def plot1D(self,respfn,iterfn,imode='TE',fignum=1,ms=4,dpi=150):
+    def plot1D(self,iternum=10,savepath=None,iterfn=None,respfn=None,
+               imode='TE',fignum=1,ms=4,dpi=150,fs=10,lw=2,dlimits=None):
         """
-        Plots the output of Occam1D as plots of the MT response and the 1D 
-        model.
         
-        Arguments:
-        ----------
-        
-            **respfn** : full path to response file name
-            
-            **iterfn** : full path to iteration file name
-            
-            **imode** : mode to look at can be:
-                    
-                    *TE* : for TE mode
-                    
-                    *TM*: for TM mode 
-                    
-                    *both* : for both modes
         """
-
-        #color for data
-        cted=(0,0,1)
-        ctmd=(1,0,0)
         
-        #color for occam model
-        ctem=(0,.1,.8)
-        ctmm=(.8,.1,0)
-        
+        self.iternum=iternum
+        #get files
         try:
             self.modelfn
-        except NameError:
+        except AttributeError:
             if not self.dirpath:
                 self.dirpath=os.path.dirname(respfn)
                 
@@ -890,27 +936,115 @@ class Occam1D:
             if os.path.isfile(self.modelfn)==False:
                 raise IOError('Could not find '+self.modelfn)
         
-        self.respfn=respfn
-
-        #read in data
-        self.read1DRespFile(self.respfn)
-        if imode=='TE':
-            self.iter_te=iterfn
-            self.read1DIterFile(self.iter_te,imode='TE')
-            
-        elif imode=='TM':
-            self.iter_tm=iterfn
-            self.read1DIterFile(self.iter_tm,imode='TM')
-            
-        elif imode=='both':
-            if type(iterfn) is not list or type(iterfn) is not tuple:
-                raise IOError('Please enter iteration files as a list or tuple.')
-            else:
-                self.iter_te=iterfn[0]
-                self.read1DIterFile(self.iter_te,imode='TE')
+        #-------------read in response files---------------------
+        if respfn==None:
+            if imode=='TE':
+                try:
+                    self.respfn_te=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TE_{0}.resp'.format(self.iternum))>0][0]
+                    
+                    self.read1DRespFile(self.respfn_te,imode='TE')
+                    
+                except IndexError:
+                    raise IOError('Could not find response TE file.')
+            elif imode=='TM':
+                try:
+                    self.respfn_tm=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TM_{0}.resp'.format(self.iternum))>0][0]
+                    
+                    self.read1DRespFile(self.respfn_tm,imode='TM')
+                except IndexError:
+                    raise IOError('Could not find response TM file.')
+            elif imode=='both':
+                try:
+                    self.respfn_te=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TE_{0}.resp'.format(self.iternum))>0][0]
+                    self.read1DRespFile(self.respfn_te,imode='TE')
+                except IndexError:
+                    raise IOError('Could not find response TE file.')
+                try:
+                    self.respfn_tm=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TM_{0}.resp'.format(self.iternum))>0][0]
+                    self.read1DRespFile(self.respfn_tm,imode='TM')
+                except IndexError:
+                    raise IOError('Could not find response TM file.')
+        
+        #if the response files are input read them in 
+        else:
+            if imode=='TE':
+                self.respfn_te=respfn
+                self.read1DRespFile(self.respfn_te,imode='TE')
                 
-                self.iter_tm=iterfn[1]
-                self.read1DIterFile(self.iter_tm,imode='TM')
+            elif imode=='TM':
+                self.respfn_tm=respfn
+                self.read1DRespFile(self.respfn_tm,imode='TM')
+                
+            elif imode=='both':
+                if type(iterfn) is not list or type(iterfn) is not tuple:
+                    raise IOError('Please enter iteration files as a list or tuple.')
+                self.respfn_te=respfn[0]
+                self.read1DRespFile(self.respfn_te,imode='TE')
+                
+                self.respfn_tm=respfn[1]
+                self.read1DRespFile(self.respfn_tm,imode='TM')
+        
+        #------Read in iteration files--------------------        
+        if iterfn==None:
+            if imode=='TE':
+                try:
+                    self.iterfn_te=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TE_{0}.iter'.format(self.iternum))>0][0]
+                    print self.iterfn_te
+                    self.read1DIterFile(self.iterfn_te,imode='TE')
+                    
+                except IndexError:
+                    raise IOError('Could not find iteration TE file.')
+            elif imode=='TM':
+                try:
+                    self.iterfn_tm=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TM_{0}.iter'.format(self.iternum))>0][0]
+                    
+                    self.read1DIterFile(self.iterfn_tm,imode='TM')
+                except IndexError:
+                    raise IOError('Could not find iteration TM file.')
+            elif imode=='both':
+                try:
+                    self.iterfn_te=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TE_{0}.iter'.format(self.iternum))>0][0]
+                    self.read1DIterFile(self.iterfn_te,imode='TE')
+                except IndexError:
+                    raise IOError('Could not find iteration TE file.')
+                try:
+                    self.iterfn_tm=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TM_{0}.iter'.format(self.iternum))>0][0]
+                    self.read1DIterFile(self.iterfn_tm,imode='TM')
+                except IndexError:
+                    raise IOError('Could not find iteration TM file.')
+        else:
+            if imode=='TE':
+                self.iterfn_te=iterfn
+                self.read1DIterFile(self.iterfn_te,imode='TE')
+                
+            elif imode=='TM':
+                self.iterfn_tm=iterfn
+                self.read1DIterFile(self.iterfn_tm,imode='TM')
+                
+            elif imode=='both':
+                if type(iterfn) is not list or type(iterfn) is not tuple:
+                    raise IOError('Please enter iteration files as a list or tuple.')
+                self.iterfn_te=iterfn[0]
+                self.read1DIterFile(self.iterfn_te,imode='TE')
+                
+                self.iterfn_tm=iterfn[1]
+                self.read1DIterFile(self.iterfn_tm,imode='TM')
                 
         period=1/self.rpdict['freq']
         
@@ -919,6 +1053,14 @@ class Occam1D:
         
         #make a figure
         fig=plt.figure(fignum,[8,8],dpi=dpi)
+        plt.clf()
+        
+        #set some plot parameters
+        plt.rcParams['font.size']=fs-2
+        plt.rcParams['figure.subplot.left']=.1
+        plt.rcParams['figure.subplot.right']=.93
+        plt.rcParams['figure.subplot.bottom']=.1
+        plt.rcParams['figure.subplot.top']=.90
         
         #subplot resistivity
         axr=fig.add_subplot(gs[:4,:4])
@@ -940,6 +1082,7 @@ class Occam1D:
         pxym=np.where(self.rpdict['phasexy'][2]!=0)[0]
         pyxm=np.where(self.rpdict['phaseyx'][2]!=0)[0]
         
+        #----------Plot TE mode-------------------
         if imode=='TE':
             titlestr='$Z_{TE}$'
             #plot data resistivity 
@@ -955,18 +1098,20 @@ class Occam1D:
             #plot model resistivity
             if len(rxym)!=0:
                 r2=axr.loglog(period[rxym],self.rpdict['resxy'][2][rxym],
-                              ls=':',color='b',lw=2)
+                              ls=':',color='b',lw=lw)
             #plot model phase                 
             if len(pxym)!=0:
                 p2=axp.semilogx(period[pxym],self.rpdict['phasexy'][2][pxym],
-                          ls=':',color='b')
+                          ls=':',color='b',lw=lw)
             
             #add legend
-            axr.legend([r1,r2],['Data','Model'],loc='upper left',markerscale=2,
-                       borderaxespad=.05,
-                       labelspacing=.08,
-                       handletextpad=.15,borderpad=.05)
-            
+            axr.legend([r1[0],r2[0]],['Data','Model'],loc='upper left',
+                       markerscale=1,
+                       borderaxespad=.15,
+                       labelspacing=.18,
+                       handletextpad=.15,borderpad=.15)
+        
+        #--------Plot TM mode-----------------------
         elif imode=='TM':
             titlestr='$Z_{TM}$'
             #plot data resistivity 
@@ -981,22 +1126,21 @@ class Occam1D:
             #plot model resistivity
             if len(ryxm)!=0:
                 r2=axr.loglog(period[ryxm],self.rpdict['resyx'][2][ryxm],
-                              ls=':',color='b',lw=2)
+                              ls=':',color='b',lw=lw)
             #plot model phase                 
             if len(pyxm)!=0:
                 p2=axp.semilogx(period[pyxm],self.rpdict['phaseyx'][2][pyxm],
-                          ls=':',color='b')
-            if len(ryx)!=0:
-                r1=axr.loglog(period[ryx],self.rpdict['resyx'][0][ryx],
-                              ls='None',marker='o',color='k',mfc='k',ms=ms)
+                          ls=':',color='b',lw=lw)
                 
-            axr.legend([r1,r2],['Data','Model'],loc='upper left',markerscale=2,
-                       borderaxespad=.05,
-                       labelspacing=.08,
-                       handletextpad=.15,borderpad=.05)
+            axr.legend([r1[0],r2[0]],['Data','Model'],
+                       loc='upper left',markerscale=1,
+                       borderaxespad=.15,
+                       labelspacing=.18,
+                       handletextpad=.15,borderpad=.15)
         
-        
+        #-------------Plot Both Modes--------------------------------
         elif imode=='both':
+            titlestr='$Z_{TE}$ and $Z_{TM}$'
             #plot data resistivity 
             if len(rxy)!=0:
                 r1te=axr.loglog(period[rxy],self.rpdict['resxy'][0][rxy],
@@ -1017,67 +1161,73 @@ class Occam1D:
             #plot model resistivity
             if len(rxym)!=0:
                 r2te=axr.loglog(period[rxym],self.rpdict['resxy'][2][rxym],
-                              ls=':',color='b',lw=2)
+                              ls=':',color='b',lw=lw)
         
             if len(ryxm)!=0:
                 r2tm=axr.loglog(period[ryxm],self.rpdict['resyx'][2][ryxm],
-                              ls=':',color='r',lw=2)
+                              ls=':',color='r',lw=lw)
             #plot model phase                 
             if len(pxym)!=0:
                 p2=axp.semilogx(period[pxym],self.rpdict['phasexy'][2][pxym],
-                          ls=':',color='b')
+                          ls=':',color='b',lw=lw)
             if len(pyxm)!=0:
                 p2=axp.semilogx(period[pyxm],self.rpdict['phaseyx'][2][pyxm],
-                          ls=':',color='r')
+                          ls=':',color='r',lw=lw)
             
             #add legend
-            axr.legend([r1te,r2te,r1tm,r2tm],
+            axr.legend([r1te[0],r2te[0],r1tm[0],r2tm[0]],
                        ['Data$_{TE}$','Model$_{TE}$',
                         'Data$_{TM}$','Model$_{TM}$'],
-                        loc='upper left',markerscale=2,
-                       borderaxespad=.05,
-                       labelspacing=.08,
-                       handletextpad=.15,borderpad=.05)
+                        loc='upper left',markerscale=1,
+                       borderaxespad=.15,
+                       labelspacing=.18,
+                       handletextpad=.15,borderpad=.15)
 
                           
-        axr.grid(True,alpha=.4)
-        axr.set_xticklabels(['' for ii in range(10)])
-        axp.grid(True,alpha=.4)
+        axr.grid(True,alpha=.4,which='both')
+        plt.setp(axr.xaxis.get_ticklabels(),visible=False)
+        axp.grid(True,alpha=.4,which='both')
         axp.yaxis.set_major_locator(MultipleLocator(10))
         axp.yaxis.set_minor_locator(MultipleLocator(1))
         
         axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                       fontdict={'size':12,'weight':'bold'})
+                       fontdict={'size':fs,'weight':'bold'})
         axp.set_ylabel('Phase (deg)',
-                       fontdict={'size':12,'weight':'bold'})
-        axp.set_xlabel('Period (s)',fontdict={'size':12,'weight':'bold'})
-        axr.yaxis.set_label_coords(-.15,.5)
-        axp.yaxis.set_label_coords(-.15,.5)
-        plt.suptitle(titlestr,fontsize=14,fontweight='bold')
+                       fontdict={'size':fs,'weight':'bold'})
+        axp.set_xlabel('Period (s)',fontdict={'size':fs,'weight':'bold'})
+#        axr.yaxis.set_label_coords(-.15,.5)
+#        axp.yaxis.set_label_coords(-.15,.5)
+        plt.suptitle(titlestr,fontsize=fs+2,fontweight='bold')
         
         #plot 1D inversion
         axm=fig.add_subplot(gs[:,4])
-        depthp=np.array([self.mdict['depth'][0:ii+1].sum() 
-                        for ii in range(len(self.mdict['depth']))])[1:]
+#        depthp=np.array([self.mdict['depth'][0:ii+1].sum() 
+#                        for ii in range(len(self.mdict['depth']))])[1:]
+        depthp=self.mdict['depth'][1:]
         if imode=='TE':
             modelresp=abs(10**self.mdict['res'][1:,1])
-            axm.loglog(modelresp[::-1],depthp[::-1],ls='steps-',color='b')
+            axm.loglog(modelresp[::-1],depthp[::-1],ls='steps-',color='b',
+                       lw=lw)
         elif imode=='TM':
             modelresp=abs(10**self.mdict['res'][1:,2])
-            axm.loglog(modelresp[::-1],depthp[::-1],ls='steps-',color='b')
+            axm.loglog(modelresp[::-1],depthp[::-1],ls='steps-',color='b',
+                       lw=lw)
         elif imode=='both':
             modelrespte=abs(10**self.mdict['res'][1:,1])
-            axm.loglog(modelrespte[::-1],depthp[::-1],ls='steps-',color='b')
-            modelresptm=abs(10**self.mdict['res'][1:,1])
-            axm.loglog(modelresptm[::-1],depthp[::-1],ls='steps-',color='r')
+            axm.loglog(modelrespte[::-1],depthp[::-1],ls='steps-',color='b',
+                       lw=lw)
+            modelresptm=abs(10**self.mdict['res'][1:,2])
+            axm.loglog(modelresptm[::-1],depthp[::-1],ls='steps-',color='r',
+                       lw=lw)
         
-        print (depthp[-1],depthp[0])
-        axm.set_ylim(ymin=depthp[-1],ymax=depthp[0])
-    #    axm.set_xlim(xmax=10**3)
-        axm.set_ylabel('Depth (m)',fontdict={'size':12,'weight':'bold'})
+        if dlimits==None:
+            axm.set_ylim(ymin=depthp[-1],ymax=depthp[0])
+        else:
+            axm.set_ylim(dlimits)
+        axm.set_ylabel('Depth (m)',fontdict={'size':fs,'weight':'bold'})
         axm.set_xlabel('Resistivity ($\Omega \cdot m$)',
-                       fontdict={'size':12,'weight':'bold'})
-        axm.grid(True,which='both')
+                       fontdict={'size':fs,'weight':'bold'})
+        axm.grid(True,which='both',alpha=.4)
         
         plt.show()
     
