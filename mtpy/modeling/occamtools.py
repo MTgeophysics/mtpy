@@ -1248,57 +1248,103 @@ class Occam1D:
         self.roughness_tm=[]
         
         #get rms and roughness from each iteration for the different modes
-        if imode=='TE' or imode=='both':
+        if imode=='TE':
             #get all iteration files for TE mode
             iterlstte=[os.path.join(self.savepath,itfn) 
                      for itfn in os.listdir(self.savepath)
                      if itfn.find('TE')>0 and itfn.find('iter')>0]
+                     
+            self.rms_te=np.zeros(len(iterlstte))
+            self.roughness_te=np.zeros(len(iterlstte))
             
             #get rms and roughness
             for itfn in iterlstte:
                 self.read1DIterFile(itfn,imode='TE')
-                self.rms_te.append(float(self.itdict['Misfit Value']))
-                self.roughness_te.append(float(self.itdict['Roughness Value']))
+                
+                #get iteration number to make sure the items are in sequence
+                ii=int(self.itdict['Iteration'])
+                
+                #put the values in appropriate place
+                self.rms_te[ii]=float(self.itdict['Misfit Value'])
+                self.roughness_te[ii]=float(self.itdict['Roughness Value'])
             
-            #make the lists arrays for easier manipulation
-            self.rms_te=np.array(self.rms_te)
-            self.roughness_te=np.array(self.roughness_te)
         
-        elif imode=='TM' or imode=='both':
+        elif imode=='TM':
             #get all iteration files for TM mode
             iterlsttm=[os.path.join(self.savepath,itfn) 
                      for itfn in os.listdir(self.savepath)
                      if itfn.find('TM')>0 and itfn.find('iter')>0]
             
+            self.rms_tm=np.zeros(len(iterlsttm))
+            self.roughness_tm=np.zeros(len(iterlsttm))
+            
             #get rms and roughness
             for itfn in iterlsttm:
                 self.read1DIterFile(itfn,imode='TM')
-                self.rms_tm.append(float(self.itdict['Misfit Value']))
-                self.roughness_tm.append(float(self.itdict['Roughness Value']))
+                
+                #get iteration number to make sure the items are in sequence
+                ii=int(self.itdict['Iteration'])
+                
+                #put the values in appropriate place
+                self.rms_tm[ii]=float(self.itdict['Misfit Value'])
+                self.roughness_tm[ii]=float(self.itdict['Roughness Value'])
+                
+        elif imode=='both':
+            #get all iteration files for TE mode
+            iterlstte=[os.path.join(self.savepath,itfn) 
+                     for itfn in os.listdir(self.savepath)
+                     if itfn.find('TE')>0 and itfn.find('iter')>0]
+                     
+            self.rms_te=np.zeros(len(iterlstte))
+            self.roughness_te=np.zeros(len(iterlstte))
             
-            #make the lists arrays for easier manipulation
-            self.rms_te=np.array(self.rms_te)
-            self.roughness_te=np.array(self.roughness_te)
+            #get rms and roughness
+            for itfn in iterlstte:
+                self.read1DIterFile(itfn,imode='TE')
+                
+                #get iteration number to make sure the items are in sequence
+                ii=int(self.itdict['Iteration'])
+                
+                #put the values in appropriate place
+                self.rms_te[ii]=float(self.itdict['Misfit Value'])
+                self.roughness_te[ii]=float(self.itdict['Roughness Value'])
+                
+            #get all iteration files for TM mode
+            iterlsttm=[os.path.join(self.savepath,itfn) 
+                     for itfn in os.listdir(self.savepath)
+                     if itfn.find('TM')>0 and itfn.find('iter')>0]
+            
+            self.rms_tm=np.zeros(len(iterlsttm))
+            self.roughness_tm=np.zeros(len(iterlsttm))
+            
+            #get rms and roughness
+            for itfn in iterlsttm:
+                self.read1DIterFile(itfn,imode='TM')
+                
+                #get iteration number to make sure the items are in sequence
+                ii=int(self.itdict['Iteration'])
+                
+                #put the values in appropriate place
+                self.rms_tm[ii]=float(self.itdict['Misfit Value'])
+                self.roughness_tm[ii]=float(self.itdict['Roughness Value'])
         
         #plot the rms vs iteration, roughness vs rms
-        fig=plt.figure(fignum,dpi=dpi)
-        ax1=fig.add_subplot(1,1,1)
-        
+        #---------plot TE mode-------------------
         if imode=='TE':
+            fig=plt.figure(fignum,dpi=dpi)
+            plt.clf()
+            ax1=fig.add_subplot(1,1,1)            
+            
             nr=len(self.rms_te)
             #plot the rms vs iteration
             l1,=ax1.plot(np.arange(1,nr,1),self.rms_te[1:],'-k',lw=1,
                          marker='d',ms=5)
             
             #plot the median of the RMS
+            medte=np.median(self.rms_te[1:])
             m1,=ax1.plot(np.arange(0,nr,1),
-                         np.repeat(np.median(self.rms_te[1:]),nr),
+                         np.repeat(medte,nr),
                          '--r',lw=.75)
-            
-            #plot the mean of the RMS
-            m2,=ax1.plot(np.arange(0,nr,1),
-                         np.repeat(np.mean(self.rms_te[1:]),nr),
-                         ls='--',color='orange',lw=.75)
         
             #make subplot for RMS vs Roughness Plot
             ax2=ax1.twiny()
@@ -1313,22 +1359,154 @@ class Occam1D:
                          fontdict={'size':6,'weight':'bold','color':'blue'})
             
             #make a legend
-            ax1.legend([l1,l2,m1,m2],['RMS','Roughness',
-                       'Median_RMS={0:.2f}'.format(np.median(self.rms_te[1:])),
-                        'Mean_RMS={0:.2f}'.format(np.mean(self.rms_te[1:]))],
-                        ncol=4,loc='upper center',columnspacing=.25,markerscale=.75,
-                        handletextpad=.15)
+            ax1.legend([l1,l2,m1],['RMS_TE','Roughness_TE',
+                       'Median_RMS={0:.2f}'.format(medte)],
+                        ncol=4,loc='upper center',columnspacing=.25,
+                        markerscale=.75,handletextpad=.15)
+            
+            ax1.set_ylim(medte-1,medte+1)
+            ax1.set_ylabel('RMS',fontdict={'size':8,'weight':'bold'})                                   
+            ax1.set_xlabel('Iteration',fontdict={'size':8,'weight':'bold'})
+            ax1.grid(alpha=.25,which='both')
+            ax2.set_xlabel('Roughness',fontdict={'size':8,'weight':'bold',
+                                                 'color':'blue'})
+            for t2 in ax2.get_xticklabels():
+                t2.set_color('blue')  
+                
+        #-------Plot TM mode-------------------
+        elif imode=='TM':
+            fig=plt.figure(fignum,dpi=dpi)
+            plt.clf()
+            ax1=fig.add_subplot(1,1,1)
+            
+            nr=len(self.rms_te)
+            #plot the rms vs iteration
+            l1,=ax1.plot(np.arange(1,nr,1),self.rms_tm[1:],'-k',lw=1,
+                         marker='d',ms=5)
+            
+            #plot the median of the RMS
+            medtm=np.median(self.rms_tm[1:])
+            m1,=ax1.plot(np.arange(0,nr,1),
+                         np.repeat(medtm,nr),
+                         '--r',lw=.75)
+
+        
+            #make subplot for RMS vs Roughness Plot
+            ax2=ax1.twiny()
+            
+            #plot the rms vs roughness 
+            l2,=ax2.plot(self.roughness_tm[1:],self.rms_tm[1:],
+                         '--b',lw=.75,marker='o',ms=7,mfc='white')
+            for ii,rms in enumerate(self.rms_tm[1:],1):
+                ax2.text(self.roughness_tm[ii],rms,'{0}'.format(ii),
+                         horizontalalignment='center',
+                         verticalalignment='center',
+                         fontdict={'size':6,'weight':'bold','color':'blue'})
+            
+            #make a legend
+            ax1.legend([l1,l2,m1],['RMS_TM','Roughness_TM',
+                       'Median_RMS={0:.2f}'.format(medtm)],
+                        ncol=4,loc='upper center',columnspacing=.25,
+                        markerscale=.75, handletextpad=.15)
+            
+            ax1.set_ylim(medtm-1,medtm+1)            
+            ax1.set_ylabel('RMS',fontdict={'size':8,'weight':'bold'})                                   
+            ax1.set_xlabel('Iteration',fontdict={'size':8,'weight':'bold'})
+            ax1.grid(alpha=.25,which='both')
+            ax2.set_xlabel('Roughness',fontdict={'size':8,'weight':'bold',
+                                                 'color':'blue'})
+            for t2 in ax2.get_xticklabels():
+                t2.set_color('blue')  
                     
-        #set the axis properties for RMS vs iteration
-#        ax1.yaxis.set_minor_locator(MultipleLocator(.1))
-#        ax1.xaxis.set_minor_locator(MultipleLocator(1))
-        ax1.set_ylabel('RMS',fontdict={'size':8,'weight':'bold'})                                   
-        ax1.set_xlabel('Iteration',fontdict={'size':8,'weight':'bold'})
-        ax1.grid(alpha=.25,which='both')
-        ax2.set_xlabel('Roughness',fontdict={'size':8,'weight':'bold',
-                                             'color':'blue'})
-        for t2 in ax2.get_xticklabels():
-            t2.set_color('blue')          
+        elif imode=='both':
+            fig=plt.figure(fignum,dpi=dpi)
+            plt.clf()
+            ax1=fig.add_subplot(2,1,1)
+            ax3=fig.add_subplot(2,1,2,sharex=ax1) 
+            
+            plt.rcParams['figure.subplot.hspace']=.4
+            plt.rcParams['figure.subplot.left']=.1
+            plt.rcParams['figure.subplot.right']=.97
+            plt.rcParams['figure.subplot.bottom']=.1
+            plt.rcParams['figure.subplot.top']=.92
+            
+            nr=len(self.rms_te)
+            #plot the rms vs iteration
+            l1,=ax1.plot(np.arange(1,nr,1),self.rms_te[1:],'-k',lw=1,
+                         marker='d',ms=5)
+            
+            #plot the median of the RMS
+            medte=np.median(self.rms_te[1:])
+            m1,=ax1.plot(np.arange(0,nr,1),
+                         np.repeat(medte,nr),
+                         '--r',lw=.75)
+        
+            #make subplot for RMS vs Roughness Plot
+            ax2=ax1.twiny()
+            
+            #plot the rms vs roughness 
+            l2,=ax2.plot(self.roughness_te[1:],self.rms_te[1:],
+                         '--b',lw=.75,marker='o',ms=7,mfc='white')
+            for ii,rms in enumerate(self.rms_te[1:],1):
+                ax2.text(self.roughness_te[ii],rms,'{0}'.format(ii),
+                         horizontalalignment='center',
+                         verticalalignment='center',
+                         fontdict={'size':6,'weight':'bold','color':'blue'})
+            
+            #make a legend
+            ax1.legend([l1,l2,m1],['RMS_TE','Roughness_TE',
+                       'Median_RMS={0:.2f}'.format(medte)],
+                        ncol=4,loc='upper center',columnspacing=.25,
+                        markerscale=.75,handletextpad=.15)
+            
+            ax1.set_ylim(medte-1,medte+1)
+            ax1.set_ylabel('RMS',fontdict={'size':8,'weight':'bold'})                                   
+            #ax1.set_xlabel('Iteration',fontdict={'size':8,'weight':'bold'})
+            ax1.grid(alpha=.25,which='both')
+            ax2.set_xlabel('Roughness',fontdict={'size':8,'weight':'bold',
+                                                 'color':'blue'})
+            for t2 in ax2.get_xticklabels():
+                t2.set_color('blue') 
+            
+            #plot TM
+            nr=len(self.rms_te)
+            #plot the rms vs iteration
+            l3,=ax3.plot(np.arange(1,nr,1),self.rms_tm[1:],'-k',lw=1,
+                         marker='d',ms=5)
+            
+            #plot the median of the RMS
+            medtm=np.median(self.rms_tm[1:])
+            m3,=ax3.plot(np.arange(0,nr,1),
+                         np.repeat(medtm,nr),
+                         '--r',lw=.75)
+
+        
+            #make subplot for RMS vs Roughness Plot
+            ax4=ax3.twiny()
+            
+            #plot the rms vs roughness 
+            l4,=ax4.plot(self.roughness_tm[1:],self.rms_tm[1:],
+                         '--b',lw=.75,marker='o',ms=7,mfc='white')
+            for ii,rms in enumerate(self.rms_tm[1:],1):
+                ax4.text(self.roughness_tm[ii],rms,'{0}'.format(ii),
+                         horizontalalignment='center',
+                         verticalalignment='center',
+                         fontdict={'size':6,'weight':'bold','color':'blue'})
+            
+            #make a legend
+            ax3.legend([l1,l2,m1],['RMS_TM','Roughness_TM',
+                       'Median_RMS={0:.2f}'.format(medtm)],
+                        ncol=4,loc='upper center',columnspacing=.25,
+                        markerscale=.75, handletextpad=.15)
+            
+            ax3.set_ylim(medtm-1,medtm+1)            
+            ax3.set_ylabel('RMS',fontdict={'size':8,'weight':'bold'})                                   
+            ax3.set_xlabel('Iteration',fontdict={'size':8,'weight':'bold'})
+            ax3.grid(alpha=.25,which='both')
+            ax4.set_xlabel('Roughness',fontdict={'size':8,'weight':'bold',
+                                                 'color':'blue'})
+            for t2 in ax4.get_xticklabels():
+                t2.set_color('blue') 
         
         plt.show()
 
