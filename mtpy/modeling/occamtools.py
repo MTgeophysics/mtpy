@@ -15,10 +15,10 @@ import matplotlib.colorbar as mcb
 from matplotlib.colors import Normalize
 from matplotlib.ticker import MultipleLocator
 import matplotlib.gridspec as gridspec
-import Z
-import WinglinkTools as wlt
+import mtpy.core.z as Z
+import mtpy.modeling.winglink as wlt
 import matplotlib.pyplot as plt
-import LatLongUTMconversion as utm2ll
+import mtply.utils.latlongutmconversion as utm2ll
 
 
 occamdict={'1':'resxy','2':'phasexy','3':'realtip','4':'imagtip','5':'resyx',
