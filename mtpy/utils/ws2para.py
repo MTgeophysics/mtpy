@@ -12,10 +12,10 @@
 ######################################################################
 #
 
-  from evtk.hl import gridToVTK, pointsToVTK
-  import numpy as np
-  import os
-  import sys
+from evtk.hl import gridToVTK, pointsToVTK
+import numpy as np
+import os
+import sys
 
 ######################################################################
 
@@ -33,7 +33,7 @@
 ######################################################################
 
 
-def main(arguments):
+def main():
     """
     Convert ws3Dinv output files (model and responses) into 3D VTK resistivity grid
     and unstructured VTKGrid containing station locations.
@@ -45,8 +45,10 @@ def main(arguments):
     - [optional] VTK stations grid file - output file name
     """
 
-    if len(arguments) < 2:
-        sys.exit('ERROR - provide at least 2 file names: <modeldata file>, <responses file>')
+    arguments = sys.argv
+
+    if len(arguments) < 3:
+        sys.exit('ERROR - provide at least 2 file names: <modeldata file>  <responses file>')
 
     try:
         WSMTmodel = os.path.abspath(os.path.realpath(arguments[1]))
@@ -187,5 +189,6 @@ def main(arguments):
 
 
 if __name__ == '__main__':
+    arglist = sys.argv	
 
-    main(sys.argv)
+    main()
