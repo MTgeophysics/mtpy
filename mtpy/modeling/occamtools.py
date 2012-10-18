@@ -2422,8 +2422,8 @@ class Occam2DData:
     def make2DdataFile(self,edipath,mmode='both',savepath=None,stationlst=None,
                        title=None,thetar=0,resxyerr=10,resyxerr=10,
                        phasexyerr=5,phaseyxerr=5,ss=3*' ',fmt='%+2.6f',
-                       freqstep=1,plotyn='y',lineori='ew',tippererr=None,
-                       ftol=.05):
+                       freqstep=1,plotyn='y',lineori='ew',proj_strike='yes',
+                       tippererr=None,ftol=.05):
         """
         Make a data file that Occam can read.  At the moment the inversion line
         is the best fit line through all the stations used for the inversion.
@@ -2451,11 +2451,17 @@ class Occam2DData:
             **title** : title input into the data file. *Default* is None
             
             **thetar** : rotation angle (deg) of the MT response to align 
-                         TE mode perpendicular to the inversion line and TM
+                         TE mode along strike which is assumed to be 
+                         perpendicular to the inversion line and TM
                          parallel to the inversion line.  Angle is on 
                          the unit circle with an orientation that north is 0 
                          degree, east 90. Rotations are postive clockwise.
-                         *Default* is 0
+                         *Default* is 0 (North).  
+                         
+                         If proj_strike = 'yes' then the stations will be 
+                         projected onto a line that is perpendicular to 
+                         the thetar, which is assumed to be the strike
+                         direction. 
             
             **resxyerr** : percent error in the res_xy component (TE), 
                           can be entered as 'data' where the errors from the 
@@ -2504,6 +2510,11 @@ class Occam2DData:
                           ns for north-south line-> will orientate so first 
                                                     station is farthest to the
                                                     south
+                                                    
+            **proj_strike** : 'yes' to project the line perpendicular to the 
+                                    strike direction
+                              'no' to project the line on the best fitting line
+                                   through the stations.
             
             **tippererr** : error for tipper in percent.  If this value is 
                             entered than the tipper will be included in the 
@@ -2543,8 +2554,9 @@ class Occam2DData:
             for filename in os.listdir(edipath):
                 if fnmatch.fnmatch(filename,station+'*.edi'):
                     print 'Found station edifile: ', filename
-                    surveydict={} #create a dictionary for the station data and info
-                    edifile=os.path.join(edipath,filename) #create filename path
+                    #create a dictionary for the station data and info 
+                    surveydict={} 
+                    edifile=os.path.join(edipath,filename) 
                     z1=Z.Z(edifile)
                     freq=z1.frequency                
                     #check to see if the frequency is in descending order
@@ -2564,7 +2576,8 @@ class Occam2DData:
                     #rotate matrices if angle is greater than 0
                     if thetar!=0:
                         for rr in range(len(z)):
-                            z[rr,:,:]=np.dot(rotmatrix,np.dot(z[rr],rotmatrix.T))
+                            z[rr,:,:]=np.dot(rotmatrix,np.dot(z[rr],
+                                                                rotmatrix.T))
                             zvar[rr,:,:]=np.dot(rotmatrix,np.dot(zvar[rr],
                                                                  rotmatrix.T))
                     else:
@@ -2590,6 +2603,8 @@ class Occam2DData:
                     pstationlst.append(station)
                     surveylst.append(surveydict)
         
+        eastlst=np.array(eastlst)
+        northlst=np.array(northlst)
         #-----------------------------------------------------------------            
         #project stations onto a best fitting line taking into account the 
         #strike direction to get relative MT distance correct
@@ -2599,10 +2614,16 @@ class Occam2DData:
         p=sp.polyfit(eastlst,northlst,1)
         
         #now project this line onto the strike direction so that the distances
-        #are relative to geoelectric strike. Is negative because strike angle
-        #is measured from North clockwise ease where as the bestfit angle is
-        #measured as east counter clockwise to north
-        p[0]-=thetar*np.pi/180
+        #are relative to geoelectric strike.  Needs to be negative cause 
+        #the strike angles is measured clockwise, where as the line angle is 
+        #measured counterclockwise.
+        if proj_strike=='yes':
+            p[0]=-thetar
+        else:
+            pass
+        
+        
+        #need to work on this
         
         #the angle of the line is now the angle of the best fitting line added
         #to the geoelectric strike direction, which gives the relative distance
@@ -2613,9 +2634,15 @@ class Occam2DData:
         #plot stations on profile line
         if plotyn=='y':
             lfig=plt.figure(4,dpi=200)
+            plt.clf()
+            ploty=sp.polyval(p,eastlst)
             lax=lfig.add_subplot(1,1,1,aspect='equal')
-            lax.plot(eastlst,sp.polyval(p,eastlst),'-b',lw=2)
+            lax.plot(eastlst,ploty,'-b',lw=2)
             lax.set_title('Projected Stations')
+            lax.set_ylim(ploty.min()-1000.,ploty.max()+1000.)
+            lax.set_xlim(eastlst.min()-1000,eastlst.max()+1000.)
+            lax.set_xlabel('Easting (m)',fontdict={'size':12,'weight':'bold'})
+            lax.set_ylabel('Northing (m)',fontdict={'size':12,'weight':'bold'})
         for ii in range(len(surveylst)):
             if surveylst[ii]['zone']!=surveylst[0]['zone']:
                 print surveylst[ii]['station']
@@ -2624,6 +2651,7 @@ class Occam2DData:
             y0=northlst[ii]-d*np.cos(theta)
             surveylst[ii]['east']=x0
             surveylst[ii]['north']=y0
+            
             
             
             #need to figure out a way to account for zone changes
@@ -2660,7 +2688,7 @@ class Occam2DData:
 #                lax.plot(x0+ds*np.cos(thetar),y0+ds*np.sin(thetar),'v',
 #                         color='k',ms=8,mew=3)
                 lax.plot(x0,y0,'v',color='k',ms=8,mew=3)
-                lax.text(x0,y0+.0005,pstationlst[ii],horizontalalignment='center',
+                lax.text(x0,y0+100,pstationlst[ii],horizontalalignment='center',
                      verticalalignment='baseline',fontdict={'size':12,
                                                             'weight':'bold'})
         
@@ -3036,24 +3064,37 @@ class Occam2DData:
         --------
         Returns:
         --------
-            rplst = list of dictionaries for each station with keywords:
-                'station' = station name
-                'offset' = relative offset,
-                'resxy' = TE resistivity and error as row 0 and 1 ressectively,
-                'resyx'= TM resistivity and error as row 0 and 1 respectively,
-                'phasexy'= TE phase and error as row 0 and 1 respectively,
-                'phaseyx'= Tm phase and error as row 0 and 1 respectively,
-                'realtip'= Real Tipper and error as row 0 and 1 respectively,
-                'imagtip'= Imaginary Tipper and error as row 0 and 1 respectively
+            **rplst** : list of dictionaries for each station with keywords:
                 
-                Note: that the resistivity will be in log10 space.  Also, there are
-                2 extra rows in the data arrays, this is to put the response from
-                the inversion. 
+                *station* : string
+                            station name
+                
+                *offset* : float
+                            relative offset
+                
+                *resxy* : np.array(nf,4)
+                          TE resistivity and error as row 0 and 1 ressectively
+                
+                *resyx* : np.array(fn,4)
+                          TM resistivity and error as row 0 and 1 respectively
+                
+                *phasexy* : np.array(nf,4)
+                            TE phase and error as row 0 and 1 respectively
+                
+                *phaseyx* : np.array(nf,4)
+                            Tm phase and error as row 0 and 1 respectively
+                
+                *realtip* : np.array(nf,4)
+                            Real Tipper and error as row 0 and 1 respectively
+                
+                *imagtip* : np.array(nf,4)
+                            Imaginary Tipper and error as row 0 and 1 
+                            respectively
+                
+                Note: that the resistivity will be in log10 space.  Also, there
+                are 2 extra rows in the data arrays, this is to put the 
+                response from the inversion. 
             
-            stationlst = list of stations in order from one side of the profile
-                         to the other.
-            freq = list of frequencies used in the inversion
-            title = title, could be useful for plotting.
         """
         
         dfid=open(self.datafn,'r')
@@ -3125,41 +3166,60 @@ class Occam2DData:
                           tippererr=None,mmode='both',flst=None,
                           removestation=None):
         """
-        rewrite2DDataFile will rewrite an existing data file so you can redefine 
-        some of the parameters, such as rotation angle, or errors for the different
-        components or only invert for one mode or add one or add tipper or remove
-        tipper.
+        rewrite2DDataFile will rewrite an existing data file so you can 
+        redefine some of the parameters, such as rotation angle, or errors for 
+        the different components or only invert for one mode or add one or add
+        tipper or remove tipper.
         
-        Inputs:
-            datafn = full path to data file to rewrite
+        Arguments:
+        ----------
             
-            rotz = rotation angle with positive clockwise
+            **datafn** : string
+                         full path to data file to rewrite
             
-            resxyerr = error for TE mode resistivity (percent) or 'data' for data 
-                        or prev to take errors from data file.
+            **thetar** : float
+                         rotation angle with positive clockwise
             
-            resyxerr = error for TM mode resistivity (percent) or 'data' for data
-                        or prev to take errors from data file.
+            **resxyerr** : float
+                           error for TE mode resistivity (percent) or 'data' 
+                           for data or 'prev' to take errors from data file.
+            
+            **resyxerr** : float
+                           error for TM mode resistivity (percent) or 'data' 
+                           for data or 'prev' to take errors from data file.
                         
-            phasexyerr = error for TE mode phase (percent) or 'data' for data
-                        or prev to take errors from data file.
+            **phasexyerr** : float
+                             error for TE mode phase (percent) or 'data' 
+                             for data or 'prev' to take errors from data file.
                         
-            phaseyxerr = error for TM mode phase (percent) or 'data' for data
-                        or prev to take errors from data file.
+            **phaseyxerr** : float
+                             error for TM mode phase (percent) or 'data' 
+                             for data or 'prev' to take errors from data file.
                         
-            tippererr = error for tipper (percent) input only if you want to invert
-                        for the tipper or 'data' for data errors
-                        or prev to take errors from data file.
+            **tippererr** : float 
+                            error for tipper (percent) input only if you want
+                            to invert for the tipper or 'data' for data errors
+                            or prev to take errors from data file.
                         
-            mmodes = 'both' for both TE and TM
-                     'TE' for TE
-                     'TM' for TM
+            **mmodes** : string can be:
+                            *'both' for both TE and TM
+                            *'TE' for TE
+                            *'TM' for TM
                      
-            flst = frequency list in Hz to rewrite, needs to be similar to the 
-                    datafile, cannot add frequencies
+            **flst** : list or np.array
+                       frequency list in Hz to rewrite, needs to be similar to
+                       the datafile, cannot add frequencies
                     
-            removestation = list of stations to remove if desired
+            **removestation** : list of stations to remove if desired
+            
+        --------
+        Returns:
+        --------
+        
+            **ndatafn** : string
+                          full path to new data file
         """
+        
         ss=3*' '
         fmt='%2.6f'
         
@@ -3515,11 +3575,64 @@ class Occam2DData:
         
         print 'Rewrote the data file to: ',self.ndatafn
     
-    def plotMaskPoints(self,plottype=None,reserrinc=.20,phaseerrinc=5,
-                       marker='o',colormode='color',dpi=300,ms=2,
+    def plotMaskPoints(self,plottype=None,reserrinc=.20,phaseerrinc=.05,
+                       marker='h',colormode='color',dpi=300,ms=2,
                        reslimits=None,phaselimits=(-5,95)):
         """
         An interactive plotting tool to mask points an add errorbars
+        
+        Arguments:
+        ----------
+            **plottype** : string
+                           describes the way the responses are plotted. Can be:
+                               *list of stations to plot ['mt01','mt02']
+                               *one station 'mt01'
+                               *None plots all stations *Default*
+            
+            **reserrinc** : float
+                            amount to increase the error bars. Input as a 
+                            decimal percentage.  0.3 for 30 percent
+                            *Default* is 0.2 (20 percent)
+                            
+            **phaseerrinc** : float
+                              amount to increase the error bars. Input as a 
+                              decimal percentage.  0.3 for 30 percent
+                              *Default* is 0.05 (5 percent)
+                            
+            **marker** : string
+                         marker that the masked points will be
+                         *Default* is 'h' for hexagon
+                        
+            **colormode** : string
+                            defines the color mode to plot the responses in
+                            *'color'* for color plots
+                            *'bw'* for black and white plots
+                            *Default* is 'color'
+            
+            **dpi** : int
+                      dot-per-inch resolution of the plots.
+                      *Default* is 300
+            
+            **ms** : float
+                     size of the marker in the response plots
+                     *Default* is 2
+                     
+            **reslimits**: tuple (min,max)
+                           min and max limits of the resistivity values in 
+                           linear scale
+                           *Default* is None
+                           
+            **phaselimits**: tuple (min,max)
+                            min and max phase limits 
+                            *Default* is (-5,90)
+                            
+        ----------
+        Returns:
+        ---------
+            data type **OccamPointPicker**  
+                           
+                           
+            
         """
         
         if colormode=='color':
@@ -3589,8 +3702,9 @@ class Occam2DData:
             #cut out missing data points first
             pxy=[np.where(rplst[ii]['phasexy'][0]!=0)[0]]
             pte=axpte.errorbar(period[pxy],rplst[ii]['phasexy'][0][pxy],
-                               ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,color=cted,
-                               yerr=rplst[ii]['phasexy'][1][pxy],ecolor=cted,picker=1) 
+                               ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
+                               color=cted,yerr=rplst[ii]['phasexy'][1][pxy],
+                               ecolor=cted,picker=1) 
             
                            
             #plot resistivity TM Mode
@@ -3606,16 +3720,19 @@ class Occam2DData:
             #cut out missing data points first
             pyx=[np.where(rplst[ii]['phaseyx'][0]!=0)[0]]
             ptm=axptm.errorbar(period[pyx],rplst[ii]['phaseyx'][0][pyx],
-                            ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,color=ctmd,
-                            yerr=rplst[ii]['phaseyx'][1][pyx],ecolor=ctmd,picker=1)
+                            ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
+                            color=ctmd,yerr=rplst[ii]['phaseyx'][1][pyx],
+                            ecolor=ctmd,picker=1)
         
         
             #make the axis presentable
             #set the apparent resistivity scales to log and x-axis to log
             axplst=[axrte,axrtm,axpte,axptm]
             llst=[rte[0],rtm[0],pte[0],ptm[0]]
-            elst=[[rte[1][0],rte[1][1],rte[2][0]],[rtm[1][0],rtm[1][1],rtm[2][0]],
-                [pte[1][0],pte[1][1],pte[2][0]],[ptm[1][0],ptm[1][1],ptm[2][0]]]
+            elst=[[rte[1][0],rte[1][1],rte[2][0]],
+                  [rtm[1][0],rtm[1][1],rtm[2][0]],
+                  [pte[1][0],pte[1][1],pte[2][0]],
+                  [ptm[1][0],ptm[1][1],ptm[2][0]]]
                 
             axlst.append(axplst)
             linelst.append(llst)
@@ -3674,7 +3791,7 @@ class Occam2DData:
         
         #make points an attribute of self which is a data type OccamPointPicker       
         self.points=OccamPointPicker(axlst,linelst,errlst,reserrinc=reserrinc,
-                                     phaseerrinc=phaseerrinc)
+                                     phaseerrinc=phaseerrinc,marker=marker)
         
         #be sure to show the plot
         plt.show()
@@ -3683,13 +3800,24 @@ class Occam2DData:
     def maskPoints(self):
         """
         maskPoints will take in points found from plotMaskPoints and rewrite 
-        the data file to nameRW.dat.  Be sure to run plotMaskPoints first
+        the data file to nameRW.dat.  **Be sure to run plotMaskPoints first**
+        
+        Arguments:
+        ---------
+            None
+            
+        ---------
+        Returns:
+        ---------
+        
+            **ndatafn** : full path to rewritten data file
         """
         
         self.read2DdataFile()
         rplst=list(self.rplst)
         #rewrite the data file
-        #make a reverse dictionary for locating the masked points in the data file
+        #make a reverse dictionary for locating the masked points in the data 
+        #file
         rploc=dict([('{0}'.format(self.points.fndict[key]),int(key)-1) 
                     for key in self.points.fndict.keys()])
                     
@@ -3712,7 +3840,7 @@ class Occam2DData:
                         if ss==0 or ss==1:
                             #change the apparent resistivity value
                             if rplst[rploc[str(dd)]][skey][0][ff]!=\
-                                                        np.log10(dat[ss][floc]):
+                                                      np.log10(dat[ss][floc]):
                                 if dat[ss][floc]==0:
                                     rplst[rploc[str(dd)]][skey][0][ff]=0.0
                                 else:
@@ -3730,11 +3858,13 @@ class Occam2DData:
                         #DHANGE PHASE
                         elif ss==2 or ss==3:
                             #change the phase value
-                            if rplst[rploc[str(dd)]][skey][0][ff]!=dat[ss][floc]:
+                            if rplst[rploc[str(dd)]][skey][0][ff]!=\
+                                                                 dat[ss][floc]:
                                 if dat[ss][floc]==0:
                                     rplst[rploc[str(dd)]][skey][0][ff]=0.0
                                 else:
-                                    rplst[rploc[str(dd)]][skey][0][ff]=dat[ss][floc]
+                                    rplst[rploc[str(dd)]][skey][0][ff]=\
+                                                                  dat[ss][floc]
                                 
                             #change the apparent resistivity error value
                             if dat[ss][floc]==0.0:
@@ -3753,7 +3883,8 @@ class Occam2DData:
         reslst=[]
         
         #make a dictionary of rplst for easier extraction of data
-        rpdict=dict([(station,rplst[ii]) for ii,station in enumerate(self.stationlst)])
+        rpdict=dict([(station,rplst[ii]) 
+                    for ii,station in enumerate(self.stationlst)])
         
         #loop over stations in the data file
         for kk,station in enumerate(self.stationlst,1):
@@ -3787,9 +3918,9 @@ class Occam2DData:
                             fmt % srp['imagtip'][0,jj-1]+ss+
                             fmt % srp['imagtip'][1,jj-1]+'\n')
         
-        #===========================================================================
+        #======================================================================
         #                             write dat file
-        #===========================================================================
+        #======================================================================
         #make the file name of the data file
         if self.datafn.find('RW')>0:
             self.ndatafn=self.datafn
@@ -3843,35 +3974,51 @@ class Occam2DData:
         read2DRespFile will read in a response file and combine the data with info 
         from the data file.
     
-        Input:
-            respfn = full path to the response file
-            datafn = full path to data file
+        Arguments:
+        ----------
+            **respfn** : full path to the response file
+            
+            **datafn** : full path to data file
     
-        Outputs:
+        --------
+        Returns:
+        --------
             for each data array, the rows are ordered as:
                 0 -> input data
                 1 -> input error
                 2 -> model output
                 3 -> relative error (data-model)/(input error)
                 
-            rplst = list of dictionaries for each station with keywords:
-                'station' = station name
-                'offset' = relative offset,
-                'resxy' = TE resistivity 
-                'resyx'= TM resistivity 
-                'phasexy'= TE phase 
-                'phaseyx'= TM phase a
-                'realtip'= Real Tipper 
-                'imagtip'= Imaginary Tipper 
+            **rplst** : list of dictionaries for each station with keywords:
                 
-                Note: that the resistivity will be in log10 space.  Also, there are
-                2 extra rows in the data arrays, this is to put the response from
-                the inversion. 
-            
-            stationlst = list of stations in order from one side of the profile
-                         to the other.
-            freq = list of frequencies used in the inversion
-            title = title, could be useful for plotting.
+                *station* : string
+                            station name
+                
+                *offset* : float
+                            relative offset
+                
+                *resxy* : np.array(nf,4)
+                          TE resistivity and error as row 0 and 1 ressectively
+                
+                *resyx* : np.array(fn,4)
+                          TM resistivity and error as row 0 and 1 respectively
+                
+                *phasexy* : np.array(nf,4)
+                            TE phase and error as row 0 and 1 respectively
+                
+                *phaseyx* : np.array(nf,4)
+                            Tm phase and error as row 0 and 1 respectively
+                
+                *realtip* : np.array(nf,4)
+                            Real Tipper and error as row 0 and 1 respectively
+                
+                *imagtip* : np.array(nf,4)
+                            Imaginary Tipper and error as row 0 and 1 
+                            respectively
+                
+                Note: that the resistivity will be in log10 space.  Also, there
+                are 2 extra rows in the data arrays, this is to put the 
+                response from the inversion.  
             
         """
         #make the response file an attribute        
@@ -3899,32 +4046,58 @@ class Occam2DData:
             
     def plot2DResponses(self,respfn=None,wlfn=None,maxcol=8,plottype='1',
                         ms=2,fs=10,phaselimits=(-5,95),colormode='color',
-                        reslimits=None,plotnum=1,**kwargs):
+                        reslimits=None,plotnum=2,**kwargs):
         """
         plotResponse will plot the responses modeled from winglink against the 
         observed data.
         
-        Inputs:
-            respfn = full path to response file
-            datafn = full path to data file
-            wlfn = full path to a winglink data file used for a similar
-                              inversion.  This will be plotted on the response
-                              plots for comparison of fits.
-            maxcol = maximum number of columns for the plot
-            plottype = 'all' to plot all on the same plot
-                       '1' to plot each respones in a different figure
-                       station to plot a single station or enter as a list of 
-                       stations to plot a few stations [station1,station2].  
-                       Does not have to be verbatim but should have similar
-                       unique characters input pb01 for pb01cs in outputfile
-            ms = marker size 
-            phaselimits = limits of phase in degrees (min,max)
-            colormode = 'color' for color plots
-                        'bw' for black and white plots
-            reslimits = resistivity limits on a log scale (
-                        log10(min),log10(max))
-            plotnum = 1 to plot both TE and TM in the same plot
-                      2 to plot TE and TM in separate subplots
+        Arguments:
+        ----------
+        
+            **respfn** : string
+                         full path to response file
+                         
+            **wlfn** : string
+                       full path to a winglink data file used for a similar
+                       inversion.  This will be plotted on the response
+                       plots for comparison of fits.
+                       *Default* is None
+                       
+            **maxcol** : int
+                         maximum number of columns for the plot
+                         *Default* is 8
+                         
+            **plottype** : string
+                          *'all' to plot all on the same plot
+                          *'1' to plot each respones in a different figure
+                               station to plot a single station 
+                          or enter as a list of stations to plot a few stations
+                          [station1,station2]. Does not have to be verbatim but
+                          should have similar unique characters input pb01 for 
+                          pb01cs in outputfile
+                          *Default* is '1' to plot all stations
+                          
+            **ms** : float
+                     marker size
+                     *Default* is 2
+            
+            **phaselimits** : tuple (min,max)
+                              limits of phase in degrees (min,max)
+                              *Default* is (-5,95)
+                              
+            **colormode** : string
+                            *'color' for color plots
+                            *'bw' for black and white plots
+                            
+            **reslimits** : tuple (min,max)
+                            resistivity limits on a log scale 
+                            (log10(min),log10(max))
+                            *Default* is None
+                            
+            **plotnum** : int
+                            *1 to plot both TE and TM in the same plot
+                            *2 to plot TE and TM in separate subplots
+                          *Default* is 2
                       
         """
         
@@ -4643,12 +4816,42 @@ class Occam2DData:
     
     def plotPseudoSection(self,respfn=None,fignum=1,rcmap='jet_r',pcmap='jet',
                       rlim=((0,4),(0,4)),plim=((0,90),(0,90)),ml=2,
-                      stationid=[0,4]):
+                      stationid=(0,4)):
         """
-        plots a pseudo section of the data
+        plots a pseudo section of the data and response if input.
         
-        datafn = full path to data file
-        respfn = full path to response file
+        Arguments:
+        ----------
+            **respfn** : string
+                         full path to response file
+            
+            **fignum** : int
+                         figure number to put the plot in
+            
+            **rcmap** : string
+                        colormap to plot the resistivity in see matplotlib.cm
+                        *Default* 'jet_r' 
+                        
+            **pcmap** : string
+                        colormap to plot the resistivity in see matplotlib.cm
+                        *Default* 'jet'
+            **rlim** : tuple ((te_min,te_max),(tm_min,tm_max))
+                       min and max ranges for resistivity of TE and TM modes
+                       in log10 scale
+                       *Default* is ((0,4),(0,4))
+                       
+            **plim** : tuple ((te_min,te_max),(tm_min,tm_max))
+                       min and max ranges for phase of TE and TM modes
+                       *Default* is ((0,90),(0,90))
+            
+            **ml** : int
+                    tick markers between stations
+                    *Default* is 2 (for one every second station)
+            
+            **stationid** : tuple (min_string_index,max_string_index)
+                            indicating how long the station name is
+                            *Default* is (0,4) for a string of length 4
+        
         """
         
         try:
@@ -4705,43 +4908,56 @@ class Occam2DData:
             
             fig=plt.figure(fignum,dpi=200)
             plt.clf()
-            gs1=gridspec.GridSpec(2,2,left=0.06,right=.48,hspace=.1,wspace=.005)
-            gs2=gridspec.GridSpec(2,2,left=0.52,right=.98,hspace=.1,wspace=.005)
             
+            #make subplot grids
+            gs1=gridspec.GridSpec(2,2,left=0.06,right=.48,hspace=.1,
+                                  wspace=.005)
+            gs2=gridspec.GridSpec(2,2,left=0.52,right=.98,hspace=.1,
+                                  wspace=.005)
+            
+            #plot TE resistivity data
             ax1r=fig.add_subplot(gs1[0,0])
             ax1r.pcolormesh(dgrid,fgrid,np.flipud(resxyarr[:,:,0]),cmap=rcmap,
-                           vmin=rlim[0][0],vmax=rlim[0][1])
+                            vmin=rlim[0][0],vmax=rlim[0][1])
             
+            #plot TE resistivity model
             ax2r=fig.add_subplot(gs1[0,1])
             ax2r.pcolormesh(dgrid,fgrid,np.flipud(resxyarr[:,:,1]),cmap=rcmap,
-                           vmin=rlim[0][0],vmax=rlim[0][1])
-                           
+                            vmin=rlim[0][0],vmax=rlim[0][1])
+            
+            #plot TM resistivity data               
             ax3r=fig.add_subplot(gs2[0,0])
             ax3r.pcolormesh(dgrid,fgrid,np.flipud(resyxarr[:,:,0]),cmap=rcmap,
-                           vmin=rlim[1][0],vmax=rlim[1][1])
+                            vmin=rlim[1][0],vmax=rlim[1][1])
             
+            #plot TM resistivity model
             ax4r=fig.add_subplot(gs2[0,1])
             ax4r.pcolormesh(dgrid,fgrid,np.flipud(resyxarr[:,:,1]),cmap=rcmap,
-                           vmin=rlim[1][0],vmax=rlim[1][1])
+                            vmin=rlim[1][0],vmax=rlim[1][1])
     
+            #plot TE phase data
             ax1p=fig.add_subplot(gs1[1,0])
-            ax1p.pcolormesh(dgrid,fgrid,np.flipud(phasexyarr[:,:,0]),cmap=pcmap,
-                           vmin=plim[0][0],vmax=plim[0][1])
+            ax1p.pcolormesh(dgrid,fgrid,np.flipud(phasexyarr[:,:,0]),
+                            cmap=pcmap,vmin=plim[0][0],vmax=plim[0][1])
             
+            #plot TE phase model
             ax2p=fig.add_subplot(gs1[1,1])
-            ax2p.pcolormesh(dgrid,fgrid,np.flipud(phasexyarr[:,:,1]),cmap=pcmap,
-                           vmin=plim[0][0],vmax=plim[0][1])
-                           
-            ax3p=fig.add_subplot(gs2[1,0])
-            ax3p.pcolormesh(dgrid,fgrid,np.flipud(phaseyxarr[:,:,0]),cmap=pcmap,
-                           vmin=plim[1][0],vmax=plim[1][1])
+            ax2p.pcolormesh(dgrid,fgrid,np.flipud(phasexyarr[:,:,1]),
+                            cmap=pcmap,vmin=plim[0][0],vmax=plim[0][1])
             
+            #plot TM phase data               
+            ax3p=fig.add_subplot(gs2[1,0])
+            ax3p.pcolormesh(dgrid,fgrid,np.flipud(phaseyxarr[:,:,0]),
+                            cmap=pcmap,vmin=plim[1][0],vmax=plim[1][1])
+            
+            #plot TM phase model
             ax4p=fig.add_subplot(gs2[1,1])
-            ax4p.pcolormesh(dgrid,fgrid,np.flipud(phaseyxarr[:,:,1]),cmap=pcmap,
-                           vmin=plim[1][0],vmax=plim[1][1])
+            ax4p.pcolormesh(dgrid,fgrid,np.flipud(phaseyxarr[:,:,1]),
+                            cmap=pcmap,vmin=plim[1][0],vmax=plim[1][1])
             
             axlst=[ax1r,ax2r,ax3r,ax4r,ax1p,ax2p,ax3p,ax4p]
             
+            #make everthing look tidy
             for xx,ax in enumerate(axlst):
                 ax.semilogy()
                 ax.set_ylim(ylimits)
@@ -4796,26 +5012,29 @@ class Occam2DData:
             
             fig=plt.figure(fignum,dpi=200)
             plt.clf()
+            
+            #make subplot grids
             gs1=gridspec.GridSpec(2,2,left=0.06,right=.48,hspace=.1,
                                   wspace=.005)
             gs2=gridspec.GridSpec(2,2,left=0.52,right=.98,hspace=.1,
                                   wspace=.005)
             
+            #plot TE resistivity data
             ax1r=fig.add_subplot(gs1[0,:])
             ax1r.pcolormesh(dgrid,fgrid,np.flipud(resxyarr[:,:,0]),cmap=rcmap,
                            vmin=rlim[0][0],vmax=rlim[0][1])
             
-                           
+            #plot TM resistivity data               
             ax3r=fig.add_subplot(gs2[0,:])
             ax3r.pcolormesh(dgrid,fgrid,np.flipud(resyxarr[:,:,0]),cmap=rcmap,
                            vmin=rlim[1][0],vmax=rlim[1][1])
             
-    
+            #plot TE phase data
             ax1p=fig.add_subplot(gs1[1,:])
             ax1p.pcolormesh(dgrid,fgrid,np.flipud(phasexyarr[:,:,0]),cmap=pcmap,
                            vmin=plim[0][0],vmax=plim[0][1])
             
-                           
+            #plot TM phase data               
             ax3p=fig.add_subplot(gs2[1,:])
             ax3p.pcolormesh(dgrid,fgrid,np.flipud(phaseyxarr[:,:,0]),cmap=pcmap,
                            vmin=plim[1][0],vmax=plim[1][1])
@@ -4823,6 +5042,7 @@ class Occam2DData:
             
             axlst=[ax1r,ax3r,ax1p,ax3p]
             
+            #make everything look tidy
             for xx,ax in enumerate(axlst):
                 ax.semilogy()
                 ax.set_ylim(ylimits)
@@ -4871,11 +5091,13 @@ class Occam2DData:
         Plot all the responses of occam inversion from data file.  This assumes
         the response curves are in the same folder as the datafile.
     
-        Input:
-            datafile = full path to occam data file
+        Arguments:
+        ----------
+            **station** : string
+                          station name to plot
             
-        Output:
-            Plot
+            **fignum** : int
+                         plot number to put figure into
         
         """    
         
@@ -5798,7 +6020,7 @@ class Occam2DModel(Occam2DData):
                                   ls='steps-')
                     ax.set_ylim(depth,self.ploty[-1])
                 
-                ax.set_title(self.stationlst[pstationlst[ii]],
+                ax.set_title(self.data.stationlst[pstationlst[ii]],
                              fontdict={'size':10,'weight':'bold'})
                 if ii==0:
                     ax.set_ylabel('Depth (m)',
