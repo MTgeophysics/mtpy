@@ -12,9 +12,10 @@
 ######################################################################
 #
 
-from evtk.hl import gridToVTK, pointsToVTK
-import numpy as np
-import os
+  from evtk.hl import gridToVTK, pointsToVTK
+  import numpy as np
+  import os
+  import sys
 
 ######################################################################
 
@@ -32,69 +33,39 @@ import os
 ######################################################################
 
 
-def main():
-    #WSMTmodel = './ParwQuantec_01_model.01' # WSMT output model file
-    #WSMTresp = './ParwQuantec_01_resp.01'   # WSMT initial response file
-    #VTKresist = './ParwQuantec_01_01_res'            # VTK file to create
-    #VTKstations = './ParwQuantec_01_0_sta'          # VTK file to create
+def main(arguments):
+    """
+    Convert ws3Dinv output files (model and responses) into 3D VTK resistivity grid
+    and unstructured VTKGrid containing station locations.
 
-    #==============================================================================
-    # Paralana Regional
-    #==============================================================================
-    #dirpath=r"/home/mt/Documents/wsinv/Paralana/Big3D/Inv1rough"
-    #savepath=r"/home/mt/Documents/ParaviewFiles/Paralana"
-    ##
-    ## WSMT output model file
-    #WSMTmodel = os.path.join(dirpath,'ParalanaRegional_rough_model.05')
-    #
-    ## WSMT initial response file
-    #WSMTresp = os.path.join(dirpath,'ParalanaRegional_rough_resp.05')
-    #
-    ## VTK file to create
-    #VTKresist = os.path.join(savepath,'ParalanaRegionalR5_res')
-    #
-    ## VTK file to create
-    #VTKstations = os.path.join(savepath,'ParalanaRegionalR5_sta')
+    Input:
+    - ws3dInv model name
+    - ws3DInv response file name
+    - [optional] VTK resistivity grid file - output file name
+    - [optional] VTK stations grid file - output file name
+    """
 
-    #==============================================================================
-    # Paralana Dense
-    #==============================================================================
-    dirpath='.'#r"/home/mt/Documents/wsinv/od/inv0503rough"
-    savepath='.'#r"/home/mt/Documents/ParaviewFiles/od"
+    if len(arguments) < 2:
+        sys.exit('ERROR - provide at least 2 file names: <modeldata file>, <responses file>')
 
-    # WSMT output model file
-    WSMTmodel = os.path.join(dirpath,'olympic_model.03')
+    try:
+        WSMTmodel = os.path.abspath(os.path.realpath(arguments[1]))
+        WSMTresp  = os.path.abspath(os.path.realpath(arguments[2]))
 
-    # WSMT initial response file
-    WSMTresp = os.path.join(dirpath,'olympic_resp.03')
+        try:
+            VTKresist = os.path.abspath(os.path.realpath(arguments[3]))
+        except:
+            VTKresist = os.path.abspath(os.path.realpath('VTKResistivityGrid'))
 
-    # VTK file to create
-    VTKresist = os.path.join(savepath,'olympicR3_res')
+        try:
+            VTKstations = os.path.abspath(os.path.realpath(arguments[3]))
+        except:
+            VTKstations = os.path.abspath(os.path.realpath('VTKStationGrid'))
 
-    # VTK file to create
-    VTKstations = os.path.join(savepath,'olympicR3_sta')
 
-    #==============================================================================
-    # Olympic Dam
-    #==============================================================================
-    #dirpath=r"/home/mt/Documents/wsinv/od/inv0503"
-    #savepath=r"/home/mt/Documents/ParaviewFiles/od"
-    #
-    #if not os.path.exists(savepath):
-    #    os.mkdir(savepath)
-    #
-    ## WSMT output model file
-    #WSMTmodel = os.path.join(dirpath,'olympic_model.05_01')
-    #
-    ## WSMT initial response file
-    #WSMTresp = os.path.join(dirpath,'olympic_resp.05_01')
-    #
-    ## VTK file to create for resistivity blocks
-    #VTKresist = os.path.join(savepath,'olympic_res')
-    #
-    # # VTK file to create for station locations
-    #VTKstations = os.path.join(savepath,'olympic_sta')
-    #####################################################################
+    except:
+        sys.exit('ERROR - could not find file(s)')
+
 
     f = open(WSMTmodel, 'r')
 
@@ -205,7 +176,7 @@ def main():
     dummy = np.ones(nstations)
     #for j in range(nstations):
     #    dummy[j] = 1.0
-    
+
     pointsToVTK(VTKstations, N, E, D, data = {"value" : dummy})
 
     f.close()
@@ -216,4 +187,5 @@ def main():
 
 
 if __name__ == '__main__':
-  main()
+
+    main(sys.argv)
