@@ -5281,15 +5281,20 @@ class Occam2DModel(Occam2DData):
         read2DIter will read an iteration file and combine that info from the 
         datafn and return a dictionary of variables.
         
-        Inputs:
-            iterfn = full path to iteration file if iterpath=None.  If 
-                           iterpath is input then iterfn is just the name
-                           of the file without the full path.
+        Arguments:
+        ----------
         
-        Outputs:
-            idict = dictionary of parameters, keys are verbatim from the file, 
-                    except for the key 'model' which is the contains the model
-                    numbers in a 1D array.
+            **iterfn** : string
+                        full path to iteration file if iterpath=None.  If 
+                        iterpath is input then iterfn is just the name
+                        of the file without the full path.
+        --------
+        Returns:
+        --------
+            **idict** :  dictionary of parameters, 
+                         keys are verbatim from the file, except for the 
+                         key 'model' which is the contains the model
+                         numbers in a 1D array.
             
         """
     
@@ -5391,17 +5396,28 @@ class Occam2DModel(Occam2DData):
         
     def read2DMesh(self):
         """
-        read a 2D meshfn
+        reads an Occam 2D mesh file
         
-        Input:
-            meshfn = full path to mesh file
-    
-        Output:
-            hnodes = array of horizontal nodes (column locations (m))
-            vnodes = array of vertical nodes (row locations(m))
-            mdata = free parameters
+        Arguments:
+        ----------
             
-        Things to do:
+            **meshfn** : string
+                         full path to mesh file
+    
+        --------
+        Returns:
+        --------
+        
+            **Occam2DModel.hnodes** : array of horizontal nodes (column 
+                                      locations (m))
+            
+            **Occam2DModel.vnodes** : array of vertical nodes (row 
+                                      locations(m))
+            
+            **Occam2DModel.mdata** : free parameters
+        -----    
+        Todo:
+        -----
             incorporate fixed values
         """
         
