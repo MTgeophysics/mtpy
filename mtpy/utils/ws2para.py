@@ -117,8 +117,8 @@ def main():
         i=0
         while i < dims[n]:
             modeldata_nextlines = f.readline().split()
-            for j in range(len(list)):
-                spacing.append(float(modeldata_nextlines[j])/1000.0)
+            for j in modeldata_nextlines:
+                spacing.append(float(j)/1000.0)
                 i += 1
 
     # read mt data
@@ -127,8 +127,8 @@ def main():
     i=0
     while i < size:
         modeldata_morelines = f.readline().split()
-        for j in range(len(modeldata_morelines)):
-            mt[i] = float(modeldata_morelines[j])
+        for j in modeldata_morelines:
+            mt[i] = float(j)
             i += 1
 
     # calc North coordinates of vtk mesh
@@ -164,7 +164,7 @@ def main():
             for idx_S in range(dims[0]):
                 mtNS[(dims[0]-1)-idx_S,idx_E,idx_D] = mt[n]
                 n += 1
-    gridToVTK(VTKresist, V, E, D, cellData = {'resistivity' : mtNS})
+    gridToVTK(VTKresist, N, E, D, cellData = {'resistivity' : mtNS})
 
     f.close()
 
@@ -182,8 +182,9 @@ def main():
     while i < nstations:
         respdata_nextlines = f.readline().split()
         for j in respdata_nextlines:
-            N[i] = float(j)/1000.0
+            N[i] = -float(j)/1000.0
             i += 1
+    print N
 
     # read East locations
     f.readline() #skip line
@@ -195,14 +196,17 @@ def main():
             E[i] = float(j)/1000.0
             i += 1
 
+    print E
+
     # set Depths -- all stations at the surface!!
     D = np.zeros(nstations)
 
     # output to vtk format - dummy value for scalar field needed
-    dummy = np.zeros(nstations)
-    for j in range(nstations):
-        dummy[j] = 1.0
-    pointsToVTK(VTKstations, x, y, z, data = {"value" : dummy})
+    dummy = np.ones(nstations)
+    #for j in range(nstations):
+    #    dummy[j] = 1.0
+    
+    pointsToVTK(VTKstations, N, E, D, data = {"value" : dummy})
 
     f.close()
 

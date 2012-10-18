@@ -23,7 +23,7 @@ setup_kwargs = {}
 setup_kwargs['entry_points'] = {'console_scripts': [
         'combineedis = mtpy.utils.combineedis:main',
         'runparalanamt = mtpy.utils.runparalanamt:main',
-        'wsmt_pv = mtpy.utils.wsmt_pv:main',
+        'ws2para = mtpy.utils.ws2para:main',
         'occamgui_v1 = mtpy.utils.gui.occam2d.v1.occamgui_v1:main',
         'runbirrpsinglestation = mtpy.core.runbirrpsinglestation:main']}
 
@@ -42,9 +42,9 @@ if setuptools is False:
     # recursively scan your source tree looking for any directory with an
     # __init__.py file"
 
-    setup_kwargs['packages'] = ['MTpy',
-                                'MTpy.core',
-                                'MTpy.imaging',
-                                'MTpy.utils']
+    setup_kwargs['packages'] = ['mtpy',
+                                'mtpy.core',
+                                'mtpy.imaging',
+                                'mtpy.utils']
 
-setup(name="MTpy", **setup_kwargs)
+setup(name="mtpy", **setup_kwargs)
