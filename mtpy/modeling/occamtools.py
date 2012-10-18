@@ -5447,8 +5447,8 @@ class Occam2DModel(Occam2DData):
                       cmap=cmap,vmin=climits[0],vmax=climits[1])
         
         #make a colorbar for the resistivity
-        cbx=make_axes(ax,shrink=.8,pad=.01)
-        cb=ColorbarBase(cbx[0],cmap=cmap,norm=Normalize(vmin=climits[0],
+        cbx=mcb.make_axes(ax,shrink=.8,pad=.01)
+        cb=mcb.ColorbarBase(cbx[0],cmap=cmap,norm=Normalize(vmin=climits[0],
                         vmax=climits[1]))
         cb.set_label('Resistivity ($\Omega \cdot$m)',
                      fontdict={'size':fs,'weight':'bold'})
@@ -5740,13 +5740,13 @@ class Occam2DModel(Occam2DData):
             self.get2DModel()
         #get stations to plot
         if plottype=='1':
-            pstationlst=np.arange(len(self.data.stationlst))
+            pstationlst=np.arange(len(self.stationlst))
         else:
             pstationlst=[]
             if type(plottype) is not list:
                 plottype=[plottype]
             for ps in plottype:
-                for ii,ss in enumerate(self.data.stationlst):
+                for ii,ss in enumerate(self.stationlst):
                     if ss.find(ps)==0:
                         pstationlst.append(ii)
                                   
@@ -5798,7 +5798,7 @@ class Occam2DModel(Occam2DData):
                                   ls='steps-')
                     ax.set_ylim(depth,self.ploty[-1])
                 
-                ax.set_title(self.data.stationlst[pstationlst[ii]],
+                ax.set_title(self.stationlst[pstationlst[ii]],
                              fontdict={'size':10,'weight':'bold'})
                 if ii==0:
                     ax.set_ylabel('Depth (m)',
@@ -5828,7 +5828,7 @@ class Occam2DModel(Occam2DData):
                                   ls='steps-')
                 ax.set_ylim(depth,self.ploty[-1])
                 
-                ax.set_title(self.data.stationlst[pstationlst[ii]],
+                ax.set_title(self.stationlst[pstationlst[ii]],
                              fontdict={'size':10,'weight':'bold'})    
                 ax.set_ylabel('Depth (m)',fontdict={'size':8,'weight':'bold'})
                 ax.set_xlabel('Resistivity ($\Omega \cdot$m)',
