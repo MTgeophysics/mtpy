@@ -16,7 +16,7 @@ from matplotlib.colors import Normalize
 from matplotlib.ticker import MultipleLocator
 import matplotlib.gridspec as gridspec
 import mtpy.core.z as Z
-import mtpy.modeling.winglink as wlt
+import mtpy.modeling.winglinktools as wlt
 import matplotlib.pyplot as plt
 import mtply.utils.latlongutmconversion as utm2ll
 
