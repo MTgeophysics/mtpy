@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import mtply.utils.latlongutmconversion as utm2ll
 
 
+
 occamdict={'1':'resxy','2':'phasexy','3':'realtip','4':'imagtip','5':'resyx',
            '6':'phaseyx'}
 
@@ -62,37 +63,32 @@ class Occam1D:
             
             **polarization** : polarization to model can be (*default*='both'):
                 
-                                -'both' for TE and TM as separate files,
-                                
-                                -'TE' for just TE mode
-                                
-                                -'TM' for just TM mode
+                                - 'both' for TE and TM as separate files
+                                - 'TE' for just TE mode
+                                - 'TM' for just TM mode
                             
             **reserr** : errorbar for resistivity values.  Can be set to (
                         *default* = 'data'): 
                 
-                        -'data' for errorbars from the data
-                        
-                        -percent number ex. 10 for ten percent
+                        - 'data' for errorbars from the data
+                        - percent number ex. 10 for ten percent
                     
             **phaseerr** : errorbar for phase values.  Can be set to (
                          *default* = 'data'):
                 
-                            -'data' for errorbars from the data
-                            
-                            -percent number ex. 10 for ten percent
+                            - 'data' for errorbars from the data
+                            - percent number ex. 10 for ten percent
                         
             **fmt** : format of the values written to the file. 
                       *default* = %+.6e
             
             **ss** : spacing between values in file.  *default* = ' '*3
             
-        --------
         Returns:
         --------
-            **datafn_te** : full path to data file for TE mode
+            **Occam1D.datafn_te** : full path to data file for TE mode
                 
-            **datafn_tm** : full path to data file for TM mode
+            **Occam1D.datafn_tm** : full path to data file for TM mode
                 
             
         """    
@@ -339,12 +335,11 @@ class Occam1D:
             **z1layer** : depth of first layer in meters
             
             **airlayerheight** : height of air layers in meters
-        
-        --------        
+              
         Returns:
         --------
         
-            **modelfilename** = full path to model file
+            **Occam1D.modelfn** = full path to model file
             
         ..Note: This needs to be redone.
         """
@@ -437,10 +432,9 @@ class Occam1D:
             
             **misfit** : starting misfit value. *default* = 100
                              
-        --------
         Returns:
         --------
-            **inputfn** : full path to input file. 
+            **Occam1D.inputfn** : full path to input file. 
         """
         
         
@@ -551,20 +545,19 @@ class Occam1D:
         ----------
             **modelfn** : full path to model file
             
-        --------
         Returns:
         --------
-            **mdict** : dictionary of values with keys: 
+            **Occam1D.mdict** : dictionary of values with keys: 
                 
-                *depth* : depth of model in meters
+                *'depth'* : depth of model in meters
                 
-                *res* : value of resisitivity
+                *'res'* : value of resisitivity
                 
-                *pen* : penalty
+                *'pen'* : penalty
                 
-                *pre* : preference
+                *'pre'* : preference
                 
-                *prefpen* : preference penalty
+                *'prefpen'* : preference penalty
                 
                 
         """
@@ -630,9 +623,9 @@ class Occam1D:
         --------        
         Returns:
         --------
-            **indict** : dictionary with keys following the header and
+            **Occam1D.indict** : dictionary with keys following the header and
             
-                *res* : an array of resistivity values
+                *'res'* : an array of resistivity values
         """
         if not self.inputfn:
             if not self.savepath:
@@ -684,20 +677,20 @@ class Occam1D:
         --------
         Returns:
         --------
-            **rpdict** : dictionary with keys:
+            **Occam1D.rpdict** : dictionary with keys:
                 
-                *freq* : an array of frequencies with length nf
+                *'freq'* : an array of frequencies with length nf
                 
-                *resxy* : TE resistivity array with shape (nf,4) for (0) data,
+                *'resxy'* : TE resistivity array with shape (nf,4) for (0) data,
                           (1) dataerr, (2) model, (3) modelerr
                          
-                *resyx* : TM resistivity array with shape (nf,4) for (0) data,
+                *'resyx'* : TM resistivity array with shape (nf,4) for (0) data,
                           (1) dataerr, (2) model, (3) modelerr
                          
-                *phasexy* : TE phase array with shape (nf,4) for (0) data,
+                *'phasexy'* : TE phase array with shape (nf,4) for (0) data,
                             (1) dataerr, (2) model, (3) modelerr
                 
-                *phaseyx* : TM phase array with shape (nf,4) for (0) data,
+                *'phaseyx'* : TM phase array with shape (nf,4) for (0) data,
                             (1) dataerr, (2) model, (3) modelerr
         """            
         
@@ -780,10 +773,10 @@ class Occam1D:
         --------
         Returns:
         --------
-            **itdict** : dictionary with keys of the header:
+            **Occam1D.itdict** : dictionary with keys of the header:
                 
-            **mdict['res']** : fills this array with the appropriate values
-                               (0) for data, (1) TE, (2) TM
+            **Occam1D.mdict['res']** : fills this array with the appropriate 
+                                        values (0) for data, (1) TE, (2) TM
                 
         """
         
@@ -841,7 +834,7 @@ class Occam1D:
         --------
         Returns:
         --------
-            **rpdict** : dictionary with keys:
+            *Occam1D.*rpdict** : dictionary with keys:
                 
                 *freq* : an array of frequencies with length nf
                 
@@ -946,10 +939,10 @@ class Occam1D:
                          *Default* is None.
             
             **imode** : mode to plot. can be input as:
-                *TE for TE mode
-                *TM for TM mode
-                *both for both TE and TM modes
-                *Default* is 'TE'
+                * 'TE' for TE mode
+                * 'TM' for TM mode
+                * 'both' for both TE and TM modes
+                * Default* is 'TE'
             
             **fignum** : figure number that the plot will be. *Default* is 1
             
@@ -1282,9 +1275,9 @@ class Occam1D:
             **savepath** : path to iteration files
             
             **imode** : mode to plot.  Can be:
-                    *TE for TE mode. *Default*
-                    *TM for TM mode
-                    *both* for both TE ant TM modes
+                    * 'TE' for TE mode. *Default*
+                    * 'TM' for TM mode
+                    * 'both' for both TE ant TM modes
                     
             **fignum** : figure number for the plot
             
@@ -1567,7 +1560,6 @@ class Occam1D:
                 t2.set_color('blue') 
         
         plt.show()
-            
 
 def getdatetime():
 
@@ -2342,9 +2334,9 @@ class OccamPointPicker(object):
         Returns:
         --------
         
-            **jj** : index of resistivity axes for axlst
+            **OccamPointPicker.jj** : index of resistivity axes for axlst
             
-            **kk** : index of phase axes for axlst
+            **OccamPointPicker.kk** : index of phase axes for axlst
         
         """
         
@@ -2377,8 +2369,9 @@ class OccamPointPicker(object):
         --------
         Returns:
         --------
-            **fignum** : figure number that corresponds to the index in the 
-                        axlst, datalst, errorlst and linelst.
+            **OccamPointPicker.fignum** : figure number that corresponds to the
+                                          index in the axlst, datalst, errorlst
+                                          and linelst.
                         
         """
         self.event3=event
@@ -2433,9 +2426,9 @@ class Occam2DData:
             **edipath** : path to edifiles
             
             **mmode** : modes to invert for.  Can be: 
-                        'both' -> will model both TE and TM modes
-                        'TM'   -> will model just TM mode
-                        'TE'   -> will model just TE mode
+                        * 'both' -> will model both TE and TM modes
+                        * 'TM'   -> will model just TM mode
+                        * 'TE'   -> will model just TE mode
                         
             **savepath** : path to save the data file to, this can include the 
                            name of the data file, if not the file will be 
@@ -2526,7 +2519,7 @@ class Occam2DData:
         --------          
         Returns:
         --------
-            **datafn** : full path of data file
+            **Occam2DData.datafn** : full path of data file
 
                      
         """
@@ -3059,35 +3052,36 @@ class Occam2DData:
         Arguments:
         ----------
         
-            **datafn** : full path to data file
+            **OccamPointPicker.datafn** : full path to data file
         
         --------
         Returns:
         --------
-            **rplst** : list of dictionaries for each station with keywords:
+            **OccamPointPicker.rplst** : list of dictionaries for each station 
+                                         with keywords:
                 
-                *station* : string
-                            station name
+                *'station'* : string
+                              station name
                 
-                *offset* : float
+                *'offset'* : float
                             relative offset
                 
-                *resxy* : np.array(nf,4)
+                *'resxy'* : np.array(nf,4)
                           TE resistivity and error as row 0 and 1 ressectively
                 
-                *resyx* : np.array(fn,4)
+                *'resyx'* : np.array(fn,4)
                           TM resistivity and error as row 0 and 1 respectively
                 
-                *phasexy* : np.array(nf,4)
+                *'phasexy'* : np.array(nf,4)
                             TE phase and error as row 0 and 1 respectively
                 
-                *phaseyx* : np.array(nf,4)
+                *'phaseyx'* : np.array(nf,4)
                             Tm phase and error as row 0 and 1 respectively
                 
-                *realtip* : np.array(nf,4)
+                *'realtip'* : np.array(nf,4)
                             Real Tipper and error as row 0 and 1 respectively
                 
-                *imagtip* : np.array(nf,4)
+                *'imagtip'* : np.array(nf,4)
                             Imaginary Tipper and error as row 0 and 1 
                             respectively
                 
@@ -3202,9 +3196,9 @@ class Occam2DData:
                             or prev to take errors from data file.
                         
             **mmodes** : string can be:
-                            *'both' for both TE and TM
-                            *'TE' for TE
-                            *'TM' for TM
+                            * 'both' for both TE and TM
+                            * 'TE' for TE
+                            * 'TM' for TM
                      
             **flst** : list or np.array
                        frequency list in Hz to rewrite, needs to be similar to
@@ -3216,8 +3210,8 @@ class Occam2DData:
         Returns:
         --------
         
-            **ndatafn** : string
-                          full path to new data file
+            **OccamPointPicker.ndatafn** : string
+                                           full path to new data file
         """
         
         ss=3*' '
@@ -3810,7 +3804,7 @@ class Occam2DData:
         Returns:
         ---------
         
-            **ndatafn** : full path to rewritten data file
+            **OccamPointPicker.ndatafn** : full path to rewritten data file
         """
         
         self.read2DdataFile()
@@ -3984,10 +3978,10 @@ class Occam2DData:
         Returns:
         --------
             for each data array, the rows are ordered as:
-                0 -> input data
-                1 -> input error
-                2 -> model output
-                3 -> relative error (data-model)/(input error)
+                - 0 -> input data
+                - 1 -> input error
+                - 2 -> model output
+                - 3 -> relative error (data-model)/(input error)
                 
             **rplst** : list of dictionaries for each station with keywords:
                 
@@ -4068,14 +4062,15 @@ class Occam2DData:
                          *Default* is 8
                          
             **plottype** : string
-                          *'all' to plot all on the same plot
-                          *'1' to plot each respones in a different figure
+                          * 'all' to plot all on the same plot
+                          * '1' to plot each respones in a different figure
                                station to plot a single station 
-                          or enter as a list of stations to plot a few stations
-                          [station1,station2]. Does not have to be verbatim but
-                          should have similar unique characters input pb01 for 
-                          pb01cs in outputfile
-                          *Default* is '1' to plot all stations
+                          * or enter as a list of stations to plot a few 
+                            stations [station1,station2]. Does not have to be 
+                            verbatim but should have similar unique characters
+                            input pb01 for pb01cs in outputfile
+                            
+                          * *Default* is '1' to plot all stations
                           
             **ms** : float
                      marker size
@@ -4086,8 +4081,8 @@ class Occam2DData:
                               *Default* is (-5,95)
                               
             **colormode** : string
-                            *'color' for color plots
-                            *'bw' for black and white plots
+                            * 'color' for color plots
+                            * 'bw' for black and white plots
                             
             **reslimits** : tuple (min,max)
                             resistivity limits on a log scale 
@@ -4095,9 +4090,9 @@ class Occam2DData:
                             *Default* is None
                             
             **plotnum** : int
-                            *1 to plot both TE and TM in the same plot
-                            *2 to plot TE and TM in separate subplots
-                          *Default* is 2
+                            * 1 to plot both TE and TM in the same plot
+                            * 2 to plot TE and TM in separate subplots
+                            * *Default* is 2
                       
         """
         
@@ -5281,15 +5276,19 @@ class Occam2DModel(Occam2DData):
         read2DIter will read an iteration file and combine that info from the 
         datafn and return a dictionary of variables.
         
-        Inputs:
-            iterfn = full path to iteration file if iterpath=None.  If 
-                           iterpath is input then iterfn is just the name
-                           of the file without the full path.
-        
-        Outputs:
-            idict = dictionary of parameters, keys are verbatim from the file, 
-                    except for the key 'model' which is the contains the model
-                    numbers in a 1D array.
+        Arguments:
+        ----------
+            **iterfn** : string
+                        full path to iteration file if iterpath=None.  If 
+                        iterpath is input then iterfn is just the name
+                        of the file without the full path.
+        --------
+        Returns:
+        --------
+            **Occam2DModel.idict** : dictionary of parameters, 
+                                     keys are verbatim from the file, 
+                                     except for the key 'model' which is the 
+                                     contains the model numbers in a 1D array.
             
         """
     
@@ -5342,20 +5341,29 @@ class Occam2DModel(Occam2DData):
     def read2DInmodel(self):
         """
         read an INMODEL file for occam 2D
+              
+        Arguments:
+        ----------
+            **inmodelfn** : string
+                            full path to INMODEL file
         
-        Input:
-            inmodelfn = full path to INMODEL file
-        
-        Output:
-            rows = list of combined data blocks where first number of each list
-                    represents the number of combined mesh layers for this 
-                    regularization block.  The second number is the number of 
-                    columns in the regularization block layer
-            cols = list of combined mesh columns for the regularization layer.
-                   The sum of this list must be equal to the number of mesh
-                   columns.
-            headerdict = dictionary of all the header information including the
-                         binding offset
+
+        Returns:
+        --------
+            **Occam2DModel.rows** : list of combined data blocks where first 
+                                    number of each list represents the number 
+                                    of combined mesh layers for this 
+                                    regularization block.  The second number is
+                                    the number of columns in the regularization
+                                    block layer.
+                                    
+            **Occam2DModel.cols** : list of combined mesh columns for the 
+                                    regularization layer. The sum of this list 
+                                    must be equal to the number of mesh columns
+                                    
+            **Occam2DModel.headerdict** : dictionary of all the header 
+                                          information including the binding 
+                                          offset.
         """
         
         ifid=open(self.inmodelfn,'r')
@@ -5393,15 +5401,24 @@ class Occam2DModel(Occam2DData):
         """
         read a 2D meshfn
         
-        Input:
-            meshfn = full path to mesh file
+        Arguments:
+        ----------
+        
+            **Occam2DModel.meshfn** : string 
+                                      full path to mesh file
     
-        Output:
-            hnodes = array of horizontal nodes (column locations (m))
-            vnodes = array of vertical nodes (row locations(m))
-            mdata = free parameters
+        Returns:
+        --------
+            **Occam2DModel.hnodes**: array of horizontal nodes 
+                                    (column locations (m))
+                                    
+            **Occam2DModel.vnodes** : array of vertical nodes 
+                                      (row locations(m))
+                                      
+            **Occam2DModel.mdata** : np.array of free parameters
             
-        Things to do:
+        To do:
+        ------
             incorporate fixed values
         """
         
@@ -5455,6 +5472,9 @@ class Occam2DModel(Occam2DData):
         self.meshdata=mdata
         
     def get2DData(self):
+        """
+        get data from data file using the inherited :func:'read2DdataFile' 
+        """
         try:
             self.read2DdataFile()
         except AttributeError:
@@ -5466,10 +5486,16 @@ class Occam2DModel(Occam2DData):
         values found from the regularization grid.  This way the array can 
         be manipulated as a 2D object and plotted as an image or a mesh.
         
-        Outputs:
-            self.2Dmodel -> model array with log resistivity values
-            self.plotx -> horizontal distance of FE mesh (m) blocks
-            self.ploty -> depth of vertical nodes of FE mesh (m)
+        Returns:
+        --------
+        
+            **Occam2DModel.resmodel** : model array with log resistivity values
+            
+            **Occam2DModel.plotx** : np.array
+                                    horizontal distance of FE mesh (m) blocks
+                                    
+            **Occam2DModel.ploty** : np.array
+                                    depth of vertical nodes of FE mesh (m)
         """
         
         #read iteration file to get model and data file
@@ -5551,7 +5577,7 @@ class Occam2DModel(Occam2DData):
             self.offsetlst.append(rpdict['offset'])
         
     def plot2DModel(self,datafn=None,
-                    xpad=1.0,ypad=1.0,mpad=0.5,spad=1.0,ms=60,stationid=None,
+                    xpad=1.0,ypad=1.0,spad=1.0,ms=60,stationid=None,
                     fdict={'size':8,'rotation':60,'weight':'normal'},
                     dpi=300,ylimits=None,xminorticks=5,yminorticks=1,
                     climits=(0,4), cmap='jet_r',fs=8,femesh='off',
@@ -5561,76 +5587,114 @@ class Occam2DModel(Occam2DData):
         """
         plotModel will plot the model output by occam in the iteration file.
         
-        Inputs:
+        Arguments:
+        ----------
             
-            datafn = full path to data file.  If none is input it will use the
-                        data file found in the iteration file.
+            **datafn** : string 
+                        full path to data file.  If none is input it will use 
+                        the data file found in the iteration file.
             
-            xpad = padding in the horizontal direction of model
+            **xpad** : float (units of km) 
+                       padding in the horizontal direction of model.
             
-            ypad = padding the in the vertical direction of the top of the model
-                   to fit the station names and markers
-                   
-            mpad = marker pad to fit right at the surface, haven't found a better
-                   way of doing this automatically yet
-                   
-            spad = padding of station names away from the top of the model, this
-                    is kind of awkward at the moment especially if you zoom into 
-                    the model, it usually looks retarded and doesn't fit
+            **ypad** : float (units according to **yscale**)
+                       padding in the vertical direction of the top of the 
+                       model to fit the station names and markers.
+                       
+            **spad** : float (units according to **yscale**)
+                       padding of station names away from the top of the model,
+                       this is kind of awkward at the moment especially if you
+                       zoom into the model, it usually looks retarded and 
+                       doesn't fit
                     
-            ms = marker size in ambiguous points
+            **ms** : float  
+                     marker size in ambiguous points
             
-            stationid = index of station names to plot -> ex. pb01sdr would be 
-                        stationid=(0,4) to plot pb01
+            **stationid** : tuple (min,max)
+                           index of station names to plot -> ex. pb01sdr would 
+                           be stationid=(0,4) to plot pb01
                         
-            fdict = font dictionary for the station names, can have keys:
-                    'size' = font size
-                    'rotation' = angle of rotation (deg) of font
-                    'weight' = weight of font 
-                    'color' = color of font
-                    'style' = style of font ex. 'italics'
+            **fdict** : font dictionary for the station names, can have keys:
+                
+                    *'size'* : font size
                     
-            plotdimensions = x-y dimensions of the figure (10,10) in inches
+                    *'rotation'* : angle of rotation (deg) of font
                     
-            dpi = dot per inch of figure, should be 300 for publications
+                    *'weight'* : weight of font 
+                    
+                    *'color'* : color of font
+                    
+                    *'style'* : style of font ex. 'italics'
+                    
+            **plotdimensions** : tuple (x,y)
+                               x-y dimensions of the figure in inches
+                    
+            **dpi** : int 
+                      dot per inch of figure, should be 300 for publications
             
-            ylimits = limits of depth scale (km). ex, ylimits=(0,30)
+            **ylimits** : tuple (min,max)
+                          limits of depth scale (km). ex, ylimits=(0,30)
             
-            xminorticks = location of minor tick marks for the horizontal axis
+            **xminorticks** : int or float
+                              location of minor tick marks for the horizontal 
+                              axis
             
-            yminorticks = location of minor tick marks for vertical axis
+            **yminorticks** : int or float
+                              location of minor tick marks for vertical axis
             
-            climits = limits of log10(resistivity). ex. climits=(0,4)
+            **climits** : tuple (min,max)
+                          limits of log10(resistivity). ex. climits=(0,4)
             
-            cmap = color map to plot the model image
+            **cmap** : string
+                       color map to plot the model image
+                       see matplotlib.cm for all options
             
-            fs = font size of axis labels
+            **fs** : float
+                     font size of axis labels
             
-            femesh = 'on' to plot finite element forward modeling mesh (black)
+            **femesh** : string ('on','off')
+                        'on' to plot finite element forward modeling mesh 
+                        (black)
             
-            regmesh = 'on' to plot regularization mesh (blue)
+            **regmesh** : string ('on','off')
+                         'on' to plot regularization mesh (blue)
             
-            aspect = aspect ratio of the figure, depends on your line length and
-                    the depth you want to investigate
+            **aspect** : tuple (width,height)
+                        aspect ratio of the figure, depends on your line 
+                        length and the depth you want to investigate
             
-            title = 'on' to put the RMS and Roughness as the title, or input a 
-                    string that will be added to the RMS and roughness, or put 
-                    None to not put a title on the plot and print out RMS and 
-                    roughness
+            **title** : string ('on,'off',input,None)
+                        
+                        * 'on' to put the RMS and Roughness as the title
+                        * input a string that will be added to the RMS and
+                          roughness put 
+                        * None to not put a title on the plot and print out RMS
+                          and roughness
             
-            meshnum = 'on' to plot FE mesh block numbers
+            **meshnum** : string ('on','off')
+                         'on' to plot FE mesh block numbers
             
-            fignum = figure number to plot to
+            **fignum** : int
+                        figure number to plot to
             
-            blocknum = 'on' to plot numbers on the regularization blocks
+            **blocknum** : tuple ('on','off')
+                          'on' to plot numbers on the regularization blocks
             
-            blkfdict = font dictionary for the numbering of regularization blocks
+            **blkfdict** : font dictionary for the numbering of regularization 
+                           blocks with keys:
+                               
+                               *'size'* : float font size
+                               
+                               *'weight'* : font weight
             
-            grid = major for major ticks grid
-                   minor for a grid of the minor ticks
-                   both for a grid with major and minor ticks
+            **grid** : string ('major','minor','both')
+                        * 'major' for major ticks grid
+                        * 'minor' for a grid of the minor ticks
+                        * 'both' for a grid with major and minor ticks
             
-            yscale = 'km' for depth in km or 'm' for depth in meters
+            **yscale** : string ('km','m')
+                        * 'km' for depth in km 
+                        * 'm' for depth in meters
         """   
                     
         #set the scale of the plot
@@ -5847,12 +5911,18 @@ class Occam2DModel(Occam2DData):
         PlotL2Curve will plot the RMS vs iteration number for the given 
         inversion folder and roughness vs iteration number
         
-        Inputs: 
-            fnstem = filename stem to look for in case multiple inversions were
-                    run in the same folder.  If none then searches for anything
-                    ending in .iter
-            fignum = figure number
-            dpi = dpi of the figure
+        Arguments:
+        ----------
+            **fnstem** : string
+                         filename stem to look for in case multiple inversions 
+                         were run in the same folder.  If none then searches 
+                         for anything ending in .iter
+            
+            **fignum** : int
+                         figure number
+
+            dpi** : int
+                    dots per inch resolution of the figure
         
         """ 
 
@@ -5935,24 +6005,35 @@ class Occam2DModel(Occam2DData):
         
         plt.show()
                 
-    def plotDepthModel(self,dpi=300,depth=10000,plottype='1',yscale='log',
-                       plotdimensions=(3,6),plotnum=1,fignum=1):
+    def plotDepthModel(self,dpi=300,depthmm=(1,10000),plottype='1',
+                       yscale='log',plotdimensions=(3,6),plotnum=1,fignum=1):
         """
-        will plot a depth section profile for a given set of stations.
+        Plots a depth section profile for a given set of stations.
         
-        Inputs:
+        Arguments:
+        ----------
             
-            plotnum = 1 to plot in different figures, 'all' to plot in all into
-                      one figure.
+            **dpi** : int
+                      dots-per-inch resolution of figure
             
-            dpi = dpi of figure
+            **depthmm** : tuple (min,max)
+                          minimum and maximum depth to plot in meters
             
-            depth = max depth to estimate the profile
+            **plottype** : input as:
+                            * '1' to plot all stations found
+                            * [station list] to plot only a few stations
             
-            stationnames = list of station names corresponding to the starting
-                           block numbers
+            **plotnum** : input as:
+                          * 1 to plot in different figures
+                          * 'all' to plot in all intoone figure.
             
-            yscale = 'log' for logarithmic or 'linear' for linear
+            **yscale** : 'log' for logarithmic or 'linear' for linear
+            
+            **plotdimensions** : tuple (width,height)
+                                 figure dimensions in inches
+            
+            **fignum** : int
+                         figure number
             
         """
 
@@ -5984,6 +6065,12 @@ class Occam2DModel(Occam2DData):
             for ii,xx in enumerate(self.plotx):
                 if offset>=xx-xavg/2. and offset<=xx+xavg/2.:
                     slst.append(ii)
+        
+        #get depth limits
+        if depthmm==None:
+            depthmm=(self.ploty.min(),self.ploty.max())
+        if depthmm[0]==0:
+            depthmm[0]=1
         
         #set the dimesions of the figure
         plt.rcParams['font.size']=int(dpi/40.)
@@ -6018,7 +6105,7 @@ class Occam2DModel(Occam2DData):
                         self.ploty[-1]=1
                     p1,=ax.loglog(10**self.resmodel[:,ss],self.ploty,
                                   ls='steps-')
-                    ax.set_ylim(depth,self.ploty[-1])
+                ax.set_ylim(depthmm[1],depthmm[0])
                 
                 ax.set_title(self.data.stationlst[pstationlst[ii]],
                              fontdict={'size':10,'weight':'bold'})
@@ -6048,7 +6135,7 @@ class Occam2DModel(Occam2DData):
                         self.ploty[-1]=1
                     p1,=ax.loglog(10**self.resmodel[:,ss],self.ploty,
                                   ls='steps-')
-                ax.set_ylim(depth,self.ploty[-1])
+                ax.set_ylim(depthmm[1],depthmm[0])
                 
                 ax.set_title(self.stationlst[pstationlst[ii]],
                              fontdict={'size':10,'weight':'bold'})    
