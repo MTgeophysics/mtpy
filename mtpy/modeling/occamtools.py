@@ -15,9 +15,11 @@ import matplotlib.colorbar as mcb
 from matplotlib.colors import Normalize
 from matplotlib.ticker import MultipleLocator
 import matplotlib.gridspec as gridspec
-import mtply.core.z as Z
-import mtply.modeling.winglinktools as wlt
+import mtpy.core.z as Z
+import mtpy.modeling.winglink as wlt
 import matplotlib.pyplot as plt
+import mtply.utils.latlongutmconversion as utm2ll
+
 
 
 occamdict={'1':'resxy','2':'phasexy','3':'realtip','4':'imagtip','5':'resyx',
@@ -30,24 +32,15 @@ class Occam1D:
     =============================================
     """
     
-    def __init__(self,datafn_te=None,datafn_tm=None):
-                     
-        self.datafn_te=datafn_te
-        self.datafn_tm=datafn_tm
+    def __init__(self,savepath=None):
+        
+        self.savepath=None             
         self.modelfn=None
         self.inputfn=None
-        
-        if self.datafn_te:
-            self.dirpath=os.path.dirname(self.datafn_te)
-        elif self.datafn_tm:
-            self.dirpath=os.path.dirname(self.datafn_tm)
-        elif self.iterfn_te:
-            self.dirpath=os.path.dirname(self.iterfn_te)
-        elif self.iterfn_tm:
-            self.dirpath=os.path.dirname(self.iterfn_tm)
-        else:
-            self.dirpath=None
-            
+        self.datafn_te=None
+        self.datafn_tm=None
+        self.iternum=0
+  
     def make1DdataFile(self,station,edipath=None,savepath=None,
                        polarization='both',reserr='data',phaseerr='data',
                        fmt='%+.6e',ss=3*' ',thetar=0):
@@ -70,39 +63,35 @@ class Occam1D:
             
             **polarization** : polarization to model can be (*default*='both'):
                 
-                                -'both' for TE and TM as separate files,
-                                
-                                -'TE' for just TE mode
-                                
-                                -'TM' for just TM mode
+                                - 'both' for TE and TM as separate files
+                                - 'TE' for just TE mode
+                                - 'TM' for just TM mode
                             
             **reserr** : errorbar for resistivity values.  Can be set to (
                         *default* = 'data'): 
                 
-                        -'data' for errorbars from the data
-                        
-                        -percent number ex. 10 for ten percent
+                        - 'data' for errorbars from the data
+                        - percent number ex. 10 for ten percent
                     
             **phaseerr** : errorbar for phase values.  Can be set to (
                          *default* = 'data'):
                 
-                            -'data' for errorbars from the data
-                            
-                            -percent number ex. 10 for ten percent
+                            - 'data' for errorbars from the data
+                            - percent number ex. 10 for ten percent
                         
             **fmt** : format of the values written to the file. 
                       *default* = %+.6e
             
             **ss** : spacing between values in file.  *default* = ' '*3
             
-            Returns:
-            --------
-                **datafn_te** : full path to data file for TE mode
+        Returns:
+        --------
+            **Occam1D.datafn_te** : full path to data file for TE mode
                 
-                **datafn_tm** : full path to data file for TM mode
+            **Occam1D.datafn_tm** : full path to data file for TM mode
                 
             
-            """    
+        """    
     
         if os.path.dirname(station)=='':
             if edipath==None:
@@ -114,7 +103,9 @@ class Occam1D:
                         edifile=os.path.join(edipath,fn)
         else:
             edifile=station
-                
+        
+        self.station=os.path.basename(edifile)[:-4]
+        
         #raise an error if can't find the edifile        
         if edifile==None:
             raise NameError('No edifile exists, check path and station name')
@@ -124,18 +115,23 @@ class Occam1D:
         
         #make sure the savepath exists, if not create it
         if savepath==None:
-            savepath=os.path.dirname(edifile)
-            if not os.path.exists(savepath):
-                os.mkdir(savepath)
+            if not self.savepath:
+                savepath=os.path.dirname(edifile)
+                if not os.path.exists(savepath):
+                    os.mkdir(savepath)
+                savepath=self.savepath
+            else:
+                savepath=self.savepath
         if os.path.basename(savepath).find('.')>0:
             savepath=os.path.dirname(savepath)
             if not os.path.exists(savepath):
                 os.mkdir(os.path.dirname(savepath))
+            self.savepath=savepath
         else:
             savepath=savepath
             if not os.path.exists(savepath):
                 os.mkdir(os.path.dirname(savepath))
-                
+            self.savepath=savepath
         
         #load the edifile and get resistivity and phase
         rp=impz.getResPhase(thetar=thetar)
@@ -146,9 +142,9 @@ class Occam1D:
         if polarization=='both':
             for pol in ['xy','yx']:
                 if pol=='xy':
-                    dfilesave=os.path.join(savepath,impz.station+'TE.dat')
+                    dfilesave=os.path.join(self.savepath,impz.station+'TE.dat')
                 elif pol=='yx':
-                    dfilesave=os.path.join(savepath,impz.station+'TM.dat')
+                    dfilesave=os.path.join(self.savepath,impz.station+'TM.dat')
     
                 datafid=open(dfilesave,'w')
     
@@ -188,40 +184,40 @@ class Occam1D:
                     if reserr=='data':
                         if pol=='xy':
                             datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.resxy[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.resxy[ii]+2*ss+
                                           fmt % rp.resxyerr[ii]+'\n')
                         elif pol=='yx':
                             datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.resyx[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.resyx[ii]+2*ss+
                                           fmt % rp.resyxerr[ii]+'\n')
                     else:
                         if pol=='xy':
                             datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.resxy[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.resxy[ii]+2*ss+
                                           fmt % (rp.resxy[ii]*reserr/100.)+'\n')
                         elif pol=='yx':
                             datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.resyx[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.resyx[ii]+2*ss+
                                           fmt % (rp.resyx[ii]*reserr/100.)+'\n')
                     
                     #write phase components
                     if phaseerr=='data':
                         if pol=='xy':
                             datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.phasexy[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.phasexy[ii]+2*ss+
                                           fmt % rp.phasexyerr[ii]+'\n')
                         if pol=='yx':
                             datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.phaseyx[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.phaseyx[ii]+2*ss+
                                           fmt % rp.phaseyxerr[ii]+'\n')
                     else:
                         if pol=='xy':
                             datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.phasexy[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.phasexy[ii]+2*ss+
                                           fmt % (phaseerr/100.*(180/np.pi))+'\n')
                         if pol=='yx':
                             datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'1'+2*ss+fmt % rp.phaseyx[ii]+2*ss+
+                                          2*ss+'0'+2*ss+fmt % rp.phaseyx[ii]+2*ss+
                                           fmt % (phaseerr/100.*(180/np.pi))+'\n')
                 datafid.write('\n')
                 datafid.close()
@@ -319,7 +315,7 @@ class Occam1D:
             print 'Wrote Data File: ',dfilesave
 
     def make1DModelFile(self,savepath=None,nlayers=100,bottomlayer=10000,
-                        basestep=10,z1layer=50,airlayerheight=10000):
+                        basestep=10,z1layer=10,airlayerheight=10000):
         """
         Makes a 1D model file for Occam1D.  
         
@@ -339,38 +335,42 @@ class Occam1D:
             **z1layer** : depth of first layer in meters
             
             **airlayerheight** : height of air layers in meters
-        
+              
         Returns:
         --------
         
-            **modelfilename** = full path to model file
+            **Occam1D.modelfn** = full path to model file
             
         ..Note: This needs to be redone.
         """
         
         
         ss='   '
+        #if the savepath was not entered test to see if there is one
         if savepath==None:
-            if self.dirpath:
-                savepath=self.dirpath
-            else:
+            if not self.savepath:
                 raise IOError('No savepath found.  Please input one.')
-                
-        elif savepath.find('.')==-1:
+            self.modelfn=os.path.join(self.savepath,'Model1D') 
+        
+        #if the save path was entered as just a path
+        elif os.path.basename(savepath).find('.')==-1:
             if not os.path.exists(savepath):
                 os.mkdir(savepath)
-            modfn=os.path.join(savepath,'Model1D')
+            self.savepath=savepath
+            self.modelfn=os.path.join(self.savepath,'Model1D')
+         
+        #if the save path was entered as a file with full path
         else:
-            modfn=savepath
+            self.modelfn=savepath
         
         #---------need to refine this-------------------- 
         
         layers=np.logspace(np.log10(z1layer),np.log10(bottomlayer),num=nlayers)      
         
         #make the model file
-        modfid=open(modfn,'w')
+        modfid=open(self.modelfn,'w')
         modfid.write('Format: Resistivity1DMod_1.0'+'\n')
-        modfid.write('#LAYERS:    '+str(nlayers+3)+'\n')
+        modfid.write('#LAYERS:    '+str(nlayers+2)+'\n')
         modfid.write('!Set free values to -1 or ? \n')
         modfid.write('!penalize between 1 and 0,'+
                      '0 allowing jump between layers and 1 smooth. \n' )
@@ -381,15 +381,16 @@ class Occam1D:
         modfid.write(ss+'-10000'+ss+'1d12'+ss+'0'+ss+'0'+ss+'0'+ss+'!air layer \n')
         modfid.write(ss+'0'+ss+'-1'+ss+'0'+ss+'0'+ss+'0'+ss+'!first ground layer \n')
         for ll in layers:
-            modfid.write(ss+str(ll)+ss+'-1'+ss+'1'+ss+'0'+ss+'0'+'\n')
+            modfid.write(ss+'{0:.2f}'.format(ll)+ss+'-1'+ss+'1'+ss+'0'+ss+'0'+
+                         '\n')
         
         modfid.close()
-        print 'Wrote Model file: ',modfn
         
-        self.modelfn=modfn
+        print 'Wrote Model file: ',self.modelfn
+        
 
     def make1DInputFile(self,savepath=None,imode='TE',roughtype=1,
-                        maxiter=100,targetrms=1.0,rhostart=100,
+                        maxiter=20,targetrms=1.0,rhostart=100,
                         description='1dInv',lagrange=5.0,roughness=1.0E7,
                         debuglevel=1,iteration=0,misfit=100.0):
         """
@@ -399,42 +400,78 @@ class Occam1D:
         ---------
             **savepath** : full path to save input file to, if just path then 
                            saved as savepath/input
-            modelfile = full path to model file, if None then assumed to be in 
-                        savepath/model.mod
-            datafile = full path to data file, if None then assumed to be in 
-                        savepath/data.data
-            roughtype = roughness type
-            maxiter = maximum number of iterations
-            targetrms = target rms value
-            rhostart = starting resistivity value on linear scale
-            paramcount = 
+                           
+            **modelfile** : full path to model file, if None then assumed to be in 
+                            savepath/model.mod
+                            
+            **datafile** : full path to data file, if None then assumed to be 
+                            in savepath/TE.dat or TM.dat
+                            
+            **roughtype** : roughness type. *default* = 0
+            
+            **maxiter** : maximum number of iterations. *default* = 20 
+            
+            **targetrms** : target rms value. *default* = 1.0
+            
+            **rhostart** : starting resistivity value on linear scale. 
+                            *default* = 100
+            
+            **description** : description of the inversion. 
+            
+            **lagrange** : starting Lagrange multiplier for smoothness.
+                           *default* = 5
+            
+            **roughness** : starting roughness value. *default* = 1E7
+            
+            **debuglevel** : something to do with how Fortran debuggs the code
+                             Almost always leave at *default* = 1
+                    
+            **iteration** : the starting iteration number, handy if the
+                            starting model is from a previous run.
+                            *default* = 0
+            
+            **misfit** : starting misfit value. *default* = 100
+                             
+        Returns:
+        --------
+            **Occam1D.inputfn** : full path to input file. 
         """
         
         
         ss='   '
         
         #make input data file name
-        if os.path.basename(savepath).find('.')==-1:
+        #if no savepath is input, test if there is already one
+        if savepath==None:
+            if not self.savepath:
+                raise IOError('No savepath.  Please input one.')
+            self.inputfn=os.path.join(self.savepath,'Input1D') 
+        
+        #if the savepath was input as just a path
+        elif os.path.basename(savepath).find('.')==-1:
             if not os.path.exists(savepath):
                 os.mkdir(savepath)
             self.inputfn=os.path.join(savepath,'Input1D')
+        
+        #if the savepath was input as a full path to file
         else:
             self.inputfn=savepath
             
         if not self.modelfn:
-            if self.dirpath:
-                modelfile=os.path.join(self.dirpath,'Model1D')
+            if self.savepath:
+                self.modelfn=os.path.join(self.savepath,'Model1D')
             else:
                 raise IOError('No savepath.  Please input one.')
                 
         #try to get data file name 
         if imode=='TE':
             if not self.datafn_te:
-                if self.dirpath:
-                    dfn=os.path.join(self.dirpath,'TEData.dat')
-                    if os.path.isfile(dfn)==True:
-                        self.datafn_te=dfn
-                    else:
+                if self.savepath:
+                    try:
+                        self.datafn_te=[os.path.join(self.savepath,dd) 
+                            for dd in os.listdir(self.savepath) 
+                            if dd.find('TE.dat')>0][0]
+                    except IndexError:
                         raise IOError('No TE data file found. Please input one.')
                 else:
                     raise IOError('No savepth found. Please input one.')
@@ -442,26 +479,25 @@ class Occam1D:
                 pass
         if imode=='TM':
             if not self.datafn_tm:
-                if self.dirpath:
-                    dfn=os.path.join(self.dirpath,'TMData.dat')
-                    if os.path.isfile(dfn)==True:
-                        self.datafn_tm=dfn
-                    else:
-                        raise IOError('No TM data file found. Please input one.')
-                else:
-                    raise IOError('No savepth found. Please input one.')
+                if self.savepath:
+                    try:
+                        self.datafn_tm=[os.path.join(self.savepath,dd) 
+                            for dd in os.listdir(self.savepath) 
+                            if dd.find('TM.dat')>0][0]
+                    except IndexError:
+                        raise IOError('No TM data file found. Please input one.') 
             else:
                 pass
 
         #read in the model and get number of parameters
-        mdict=self.read1DModelFile()
-        paramcount=mdict['nparam']        
+        self.read1DModelFile()
+        paramcount=self.mdict['nparam']        
         
         #write input file
         infid=open(self.inputfn,'w')
         infid.write('Format:             OCCAMITER_FLEX      ! Flexible format \n')
         infid.write('Description:        '+description+'     !For your own notes. \n')
-        infid.write('Model File:         '+modelfile+'       \n')
+        infid.write('Model File:         '+self.modelfn+'       \n')
         if imode=='TE':
             infid.write('Data File:          '+self.datafn_te+'        \n')                                                                     
         if imode=='TM':
@@ -511,62 +547,70 @@ class Occam1D:
             
         Returns:
         --------
-            **mdict** : dictionary of values with keys: 
+            **Occam1D.mdict** : dictionary of values with keys: 
                 
-                *depth* : depth of model in meters
+                *'depth'* : depth of model in meters
                 
-                *res* : value of resisitivity
+                *'res'* : value of resisitivity
                 
-                *pen* : penalty
+                *'pen'* : penalty
                 
-                *pre* : preference
+                *'pre'* : preference
                 
-                *prefpen* : preference penalty
+                *'prefpen'* : preference penalty
                 
                 
         """
         if not self.modelfn:
-            raise IOError('No input file found.  Please input one.')
+            if not self.savepath:
+                raise IOError('No model file found.  Please input one.')
+            self.modelfn=os.path.join(self.savepath,'Model1D')
             
         mfid=open(self.modelfn,'r')
         mlines=mfid.readlines()
         mfid.close()
-        
-        mdict={}
-        mdict['nparam']=0
-        for key in ['depth','res','pen','pref','prefpen']:
-            mdict[key]=[]
-        
-        for mm,mline in enumerate(mlines):
-            if mline.find('!')==0:
-                pass
-            elif mline.find(':')>=0:
-                mlst=mline.strip().split(':')
-                mdict[mlst[0]]=mlst[1]
-            else:
-                mlst=mlst=mline.strip().split()
-                mdict['depth'].append(float(mlst[0]))
-                if mlst[1]=='?':
-                    mdict['res'].append(-1)
-                elif mlst[1]=='1d12':
-                    mdict['res'].append(1.0E12)
+        try:
+            self.mdict
+        except AttributeError:
+            mdict={}
+            mdict['nparam']=0
+            for key in ['depth','res','pen','pref','prefpen']:
+                mdict[key]=[]
+            
+            for mm,mline in enumerate(mlines):
+                if mline.find('!')==0:
+                    pass
+                elif mline.find(':')>=0:
+                    mlst=mline.strip().split(':')
+                    mdict[mlst[0]]=mlst[1]
                 else:
-                    try:
-                        mdict['res'].append(float(mlst[1]))
-                    except ValueError:
+                    mlst=mlst=mline.strip().split()
+                    mdict['depth'].append(float(mlst[0]))
+                    if mlst[1]=='?':
                         mdict['res'].append(-1)
-                mdict['pen'].append(float(mlst[2]))
-                mdict['pref'].append(float(mlst[3]))
-                mdict['prefpen'].append(float(mlst[4]))
-                if mlst[1]=='-1' or mlst[1]=='?':
-                    mdict['nparam']+=1
+                    elif mlst[1]=='1d12':
+                        mdict['res'].append(1.0E12)
+                    else:
+                        try:
+                            mdict['res'].append(float(mlst[1]))
+                        except ValueError:
+                            mdict['res'].append(-1)
+                    mdict['pen'].append(float(mlst[2]))
+                    mdict['pref'].append(float(mlst[3]))
+                    mdict['prefpen'].append(float(mlst[4]))
+                    if mlst[1]=='-1' or mlst[1]=='?':
+                        mdict['nparam']+=1
+                        
+            #make everything an array
+            for key in ['depth','res','pen','pref','prefpen']:
+                    mdict[key]=np.array(mdict[key])
                     
-        #make everything an array
-        for key in ['depth','res','pen','pref','prefpen']:
-                mdict[key]=np.array(mdict[key])
-        
-        #make dictionary an attribute of Occam1D class            
-        self.mdict=mdict
+            #create an array with empty columns to put the TE and TM models into
+            mres=np.zeros((len(mdict['res']),3))
+            mres[:,0]=mdict['res']
+            mdict['res']=mres
+            #make dictionary an attribute of Occam1D class            
+            self.mdict=mdict
     
     def read1DInputFile(self):
         """
@@ -576,14 +620,17 @@ class Occam1D:
         ---------
             **inputfn** : full path to input file
         
+        --------        
         Returns:
         --------
-            **indict** : dictionary with keys following the header and
+            **Occam1D.indict** : dictionary with keys following the header and
             
-                *res* : an array of resistivity values
+                *'res'* : an array of resistivity values
         """
         if not self.inputfn:
-            raise IOError('No input file found.  Please input one.')
+            if not self.savepath:
+                raise IOError('No input file found.  Please input one.')
+            self.inputfn=os.path.join(self.savepath,'Input1D')
             
         infid=open(self.inputfn,'r')
         ilines=infid.readlines()
@@ -597,7 +644,7 @@ class Occam1D:
             if iline.find(':')>=0:
                 ikey=iline[0:20].strip()
                 ivalue=iline[20:].split('!')[0].strip()
-                self.indict[ikey]=ivalue
+                self.indict[ikey[:-1]]=ivalue
             else:
                 try:
                     res.append(float(iline.strip()))
@@ -607,6 +654,14 @@ class Occam1D:
         #make the resistivity array ready for models to be input
         self.indict['res']=np.zeros((len(res),3))
         self.indict['res'][:,0]=res
+        
+        #get data file
+        if self.indict['Data File'].find('TE')>0:
+            self.datafn_te=self.indict['Data File']
+            
+        elif self.indict['Data File'].find('TM')>0:
+            self.datafn_tm=self.indict['Data File']
+        
 
 
     def read1DdataFile(self,imode='TE'):
@@ -619,22 +674,23 @@ class Occam1D:
             
             **imode** : mode to read from can be TE or TM
         
+        --------
         Returns:
         --------
-            **rpdict** : dictionary with keys:
+            **Occam1D.rpdict** : dictionary with keys:
                 
-                *freq* : an array of frequencies with length nf
+                *'freq'* : an array of frequencies with length nf
                 
-                *resxy* : TE resistivity array with shape (nf,4) for (0) data,
+                *'resxy'* : TE resistivity array with shape (nf,4) for (0) data,
                           (1) dataerr, (2) model, (3) modelerr
                          
-                *resyx* : TM resistivity array with shape (nf,4) for (0) data,
+                *'resyx'* : TM resistivity array with shape (nf,4) for (0) data,
                           (1) dataerr, (2) model, (3) modelerr
                          
-                *phasexy* : TE phase array with shape (nf,4) for (0) data,
+                *'phasexy'* : TE phase array with shape (nf,4) for (0) data,
                             (1) dataerr, (2) model, (3) modelerr
                 
-                *phaseyx* : TM phase array with shape (nf,4) for (0) data,
+                *'phaseyx'* : TM phase array with shape (nf,4) for (0) data,
                             (1) dataerr, (2) model, (3) modelerr
         """            
         
@@ -714,24 +770,28 @@ class Occam1D:
         ----------
             **imode** : mode to read from 
         
+        --------
         Returns:
         --------
-            **itdict** : dictionary with keys of the header:
+            **Occam1D.itdict** : dictionary with keys of the header:
                 
-            **mdict['res']** : fills this array with the appropriate values
-                               (0) for data, (1) TE, (2) TM
+            **Occam1D.mdict['res']** : fills this array with the appropriate 
+                                        values (0) for data, (1) TE, (2) TM
                 
         """
         
+        if not self.savepath:
+            self.savepath=os.path.dirname(iterfn)
+            
         self.read1DModelFile()
         
         freeparams=np.where(self.mdict['res']==-1)[0]
         
         if imode=='TE':
-            self.iter_te=iterfn
+            self.iterfn_te=iterfn
             ifid=open(self.iterfn_te,'r')
         elif imode=='TM':
-            self.iter_tm=iterfn
+            self.iterfn_tm=iterfn
             ifid=open(self.iterfn_tm,'r')
             
         ilines=ifid.readlines()
@@ -743,7 +803,7 @@ class Occam1D:
             if iline.find(':')>=0:
                 ikey=iline[0:20].strip()
                 ivalue=iline[20:].split('!')[0].strip()
-                self.itdict[ikey]=ivalue
+                self.itdict[ikey[:-1]]=ivalue
             else:
                 try:
                     ilst=iline.strip().split()
@@ -763,17 +823,18 @@ class Occam1D:
             self.mdict['res'][freeparams,2]=model
 
 
-    def read1DRespFile(self,respfn):
+    def read1DRespFile(self,respfn,imode='TE'):
         """
         read response file
         
         Arguments:
         ---------
             **repsfn** : full path to response file
-            
+        
+        --------
         Returns:
         --------
-            **rpdict** : dictionary with keys:
+            *Occam1D.*rpdict** : dictionary with keys:
                 
                 *freq* : an array of frequencies with length nf
                 
@@ -789,8 +850,15 @@ class Occam1D:
                 *phaseyx* : TM phase array with shape (nf,4) for (0) data,
                             (1) dataerr, (2) model, (3) modelerr
         """
-               
         
+        if imode=='TE':
+            self.respfn_te=respfn
+        elif imode=='TM':
+            self.respfn_tm=respfn
+        
+        if not self.savepath:
+            self.savepath=os.path.dirname(respfn)
+            
         dfid=open(respfn,'r')
         
         dlines=dfid.readlines()
@@ -811,7 +879,7 @@ class Occam1D:
         #data dictionary
         try:
             self.rpdict
-        except NameError:
+        except AttributeError:
             self.rpdict={'freq':freq,
                         'resxy':np.zeros((4,nfreq)),
                         'resyx':np.zeros((4,nfreq)),
@@ -851,22 +919,50 @@ class Occam1D:
                         self.rpdict['phaseyx'][2,jj]=rvalue
                         self.rpdict['phaseyx'][3,jj]=rerr
     
-    def plot1D(self,respfn,iterfn,imode='TE',fignum=1,ms=4,dpi=150):
+    def plot1D(self,iternum=10,savepath=None,iterfn=None,respfn=None,
+               imode='TE',fignum=1,ms=4,dpi=150,fs=10,lw=2,dlimits=None):
         """
+        Plots the results of a 1D inversion.  The left plot is the response
+        and the right hand plot is the model as a function of depth.
         
-        """
-
-        #color for data
-        cted=(0,0,1)
-        ctmd=(1,0,0)
+        Arguments:
+        ----------
+            **iternum** : iteration number to plot. *Default* is 10 
+            
+            **savepath** : path to the 1D inversion response and iteration 
+                           files. *Default* is None.
+                           
+            **iterfn** : full path to iteration file if savepath is not entered
+                         *Default* is None.
+                        
+            **respfn** : full path to response file if savepath is not entered.
+                         *Default* is None.
+            
+            **imode** : mode to plot. can be input as:
+                * 'TE' for TE mode
+                * 'TM' for TM mode
+                * 'both' for both TE and TM modes
+                * Default* is 'TE'
+            
+            **fignum** : figure number that the plot will be. *Default* is 1
+            
+            **ms** : marker size. *Default* is 4
+            
+            **dpi** : dots per inch resolution of the plot. *Default* is 150.
+            
+            **fs** : font size of the labels. *Default* is 10
+            
+            **dlimits** : limits on the depth axes. Input as a tuple 
+                          (dmin,dmax).  *Default* is None.
+            
+            
+        """ 
         
-        #color for occam model
-        ctem=(0,.1,.8)
-        ctmm=(.8,.1,0)
-        
+        self.iternum=iternum
+        #get files
         try:
             self.modelfn
-        except NameError:
+        except AttributeError:
             if not self.dirpath:
                 self.dirpath=os.path.dirname(respfn)
                 
@@ -874,27 +970,115 @@ class Occam1D:
             if os.path.isfile(self.modelfn)==False:
                 raise IOError('Could not find '+self.modelfn)
         
-        self.respfn=respfn
-
-        #read in data
-        self.read1DRespFile(self.respfn)
-        if imode=='TE':
-            self.iter_te=iterfn
-            self.read1DIterFile(self.iter_te,imode='TE')
-            
-        elif imode=='TM':
-            self.iter_tm=iterfn
-            self.read1DIterFile(self.iter_tm,imode='TM')
-            
-        elif imode=='both':
-            if type(iterfn) is not list or type(iterfn) is not tuple:
-                raise IOError('Please enter iteration files as a list or tuple.')
-            else:
-                self.iter_te=iterfn[0]
-                self.read1DIterFile(self.iter_te,imode='TE')
+        #-------------read in response files---------------------
+        if respfn==None:
+            if imode=='TE':
+                try:
+                    self.respfn_te=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TE_{0}.resp'.format(self.iternum))>0][0]
+                    
+                    self.read1DRespFile(self.respfn_te,imode='TE')
+                    
+                except IndexError:
+                    raise IOError('Could not find response TE file.')
+            elif imode=='TM':
+                try:
+                    self.respfn_tm=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TM_{0}.resp'.format(self.iternum))>0][0]
+                    
+                    self.read1DRespFile(self.respfn_tm,imode='TM')
+                except IndexError:
+                    raise IOError('Could not find response TM file.')
+            elif imode=='both':
+                try:
+                    self.respfn_te=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TE_{0}.resp'.format(self.iternum))>0][0]
+                    self.read1DRespFile(self.respfn_te,imode='TE')
+                except IndexError:
+                    raise IOError('Could not find response TE file.')
+                try:
+                    self.respfn_tm=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TM_{0}.resp'.format(self.iternum))>0][0]
+                    self.read1DRespFile(self.respfn_tm,imode='TM')
+                except IndexError:
+                    raise IOError('Could not find response TM file.')
+        
+        #if the response files are input read them in 
+        else:
+            if imode=='TE':
+                self.respfn_te=respfn
+                self.read1DRespFile(self.respfn_te,imode='TE')
                 
-                self.iter_tm=iterfn[1]
-                self.read1DIterFile(self.iter_tm,imode='TM')
+            elif imode=='TM':
+                self.respfn_tm=respfn
+                self.read1DRespFile(self.respfn_tm,imode='TM')
+                
+            elif imode=='both':
+                if type(iterfn) is not list or type(iterfn) is not tuple:
+                    raise IOError('Please enter iteration files as a list or tuple.')
+                self.respfn_te=respfn[0]
+                self.read1DRespFile(self.respfn_te,imode='TE')
+                
+                self.respfn_tm=respfn[1]
+                self.read1DRespFile(self.respfn_tm,imode='TM')
+        
+        #------Read in iteration files--------------------        
+        if iterfn==None:
+            if imode=='TE':
+                try:
+                    self.iterfn_te=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TE_{0}.iter'.format(self.iternum))>0][0]
+                    print self.iterfn_te
+                    self.read1DIterFile(self.iterfn_te,imode='TE')
+                    
+                except IndexError:
+                    raise IOError('Could not find iteration TE file.')
+            elif imode=='TM':
+                try:
+                    self.iterfn_tm=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TM_{0}.iter'.format(self.iternum))>0][0]
+                    
+                    self.read1DIterFile(self.iterfn_tm,imode='TM')
+                except IndexError:
+                    raise IOError('Could not find iteration TM file.')
+            elif imode=='both':
+                try:
+                    self.iterfn_te=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TE_{0}.iter'.format(self.iternum))>0][0]
+                    self.read1DIterFile(self.iterfn_te,imode='TE')
+                except IndexError:
+                    raise IOError('Could not find iteration TE file.')
+                try:
+                    self.iterfn_tm=[os.path.join(self.savepath,rr) 
+                                    for rr in os.listdir(self.savepath)
+                                    if rr.find('TM_{0}.iter'.format(self.iternum))>0][0]
+                    self.read1DIterFile(self.iterfn_tm,imode='TM')
+                except IndexError:
+                    raise IOError('Could not find iteration TM file.')
+        else:
+            if imode=='TE':
+                self.iterfn_te=iterfn
+                self.read1DIterFile(self.iterfn_te,imode='TE')
+                
+            elif imode=='TM':
+                self.iterfn_tm=iterfn
+                self.read1DIterFile(self.iterfn_tm,imode='TM')
+                
+            elif imode=='both':
+                if type(iterfn) is not list or type(iterfn) is not tuple:
+                    raise IOError('Please enter iteration files as a list or tuple.')
+                self.iterfn_te=iterfn[0]
+                self.read1DIterFile(self.iterfn_te,imode='TE')
+                
+                self.iterfn_tm=iterfn[1]
+                self.read1DIterFile(self.iterfn_tm,imode='TM')
                 
         period=1/self.rpdict['freq']
         
@@ -903,6 +1087,14 @@ class Occam1D:
         
         #make a figure
         fig=plt.figure(fignum,[8,8],dpi=dpi)
+        plt.clf()
+        
+        #set some plot parameters
+        plt.rcParams['font.size']=fs-2
+        plt.rcParams['figure.subplot.left']=.1
+        plt.rcParams['figure.subplot.right']=.93
+        plt.rcParams['figure.subplot.bottom']=.1
+        plt.rcParams['figure.subplot.top']=.90
         
         #subplot resistivity
         axr=fig.add_subplot(gs[:4,:4])
@@ -924,6 +1116,7 @@ class Occam1D:
         pxym=np.where(self.rpdict['phasexy'][2]!=0)[0]
         pyxm=np.where(self.rpdict['phaseyx'][2]!=0)[0]
         
+        #----------Plot TE mode-------------------
         if imode=='TE':
             titlestr='$Z_{TE}$'
             #plot data resistivity 
@@ -939,18 +1132,20 @@ class Occam1D:
             #plot model resistivity
             if len(rxym)!=0:
                 r2=axr.loglog(period[rxym],self.rpdict['resxy'][2][rxym],
-                              ls=':',color='b',lw=2)
+                              ls=':',color='b',lw=lw)
             #plot model phase                 
             if len(pxym)!=0:
                 p2=axp.semilogx(period[pxym],self.rpdict['phasexy'][2][pxym],
-                          ls=':',color='b')
+                          ls=':',color='b',lw=lw)
             
             #add legend
-            axr.legend([r1,r2],['Data','Model'],loc='upper left',markerscale=2,
-                       borderaxespad=.05,
-                       labelspacing=.08,
-                       handletextpad=.15,borderpad=.05)
-            
+            axr.legend([r1[0],r2[0]],['Data','Model'],loc='upper left',
+                       markerscale=1,
+                       borderaxespad=.15,
+                       labelspacing=.18,
+                       handletextpad=.15,borderpad=.15)
+        
+        #--------Plot TM mode-----------------------
         elif imode=='TM':
             titlestr='$Z_{TM}$'
             #plot data resistivity 
@@ -965,22 +1160,21 @@ class Occam1D:
             #plot model resistivity
             if len(ryxm)!=0:
                 r2=axr.loglog(period[ryxm],self.rpdict['resyx'][2][ryxm],
-                              ls=':',color='b',lw=2)
+                              ls=':',color='b',lw=lw)
             #plot model phase                 
             if len(pyxm)!=0:
                 p2=axp.semilogx(period[pyxm],self.rpdict['phaseyx'][2][pyxm],
-                          ls=':',color='b')
-            if len(ryx)!=0:
-                r1=axr.loglog(period[ryx],self.rpdict['resyx'][0][ryx],
-                              ls='None',marker='o',color='k',mfc='k',ms=ms)
+                          ls=':',color='b',lw=lw)
                 
-            axr.legend([r1,r2],['Data','Model'],loc='upper left',markerscale=2,
-                       borderaxespad=.05,
-                       labelspacing=.08,
-                       handletextpad=.15,borderpad=.05)
+            axr.legend([r1[0],r2[0]],['Data','Model'],
+                       loc='upper left',markerscale=1,
+                       borderaxespad=.15,
+                       labelspacing=.18,
+                       handletextpad=.15,borderpad=.15)
         
-        
+        #-------------Plot Both Modes--------------------------------
         elif imode=='both':
+            titlestr='$Z_{TE}$ and $Z_{TM}$'
             #plot data resistivity 
             if len(rxy)!=0:
                 r1te=axr.loglog(period[rxy],self.rpdict['resxy'][0][rxy],
@@ -1001,3010 +1195,375 @@ class Occam1D:
             #plot model resistivity
             if len(rxym)!=0:
                 r2te=axr.loglog(period[rxym],self.rpdict['resxy'][2][rxym],
-                              ls=':',color='b',lw=2)
+                              ls=':',color='b',lw=lw)
         
             if len(ryxm)!=0:
                 r2tm=axr.loglog(period[ryxm],self.rpdict['resyx'][2][ryxm],
-                              ls=':',color='r',lw=2)
+                              ls=':',color='r',lw=lw)
             #plot model phase                 
             if len(pxym)!=0:
                 p2=axp.semilogx(period[pxym],self.rpdict['phasexy'][2][pxym],
-                          ls=':',color='b')
+                          ls=':',color='b',lw=lw)
             if len(pyxm)!=0:
                 p2=axp.semilogx(period[pyxm],self.rpdict['phaseyx'][2][pyxm],
-                          ls=':',color='r')
+                          ls=':',color='r',lw=lw)
             
             #add legend
-            axr.legend([r1te,r2te,r1tm,r2tm],
+            axr.legend([r1te[0],r2te[0],r1tm[0],r2tm[0]],
                        ['Data$_{TE}$','Model$_{TE}$',
                         'Data$_{TM}$','Model$_{TM}$'],
-                        loc='upper left',markerscale=2,
-                       borderaxespad=.05,
-                       labelspacing=.08,
-                       handletextpad=.15,borderpad=.05)
+                        loc='upper left',markerscale=1,
+                       borderaxespad=.15,
+                       labelspacing=.18,
+                       handletextpad=.15,borderpad=.15)
 
                           
-        axr.grid(True,alpha=.4)
-        axr.set_xticklabels(['' for ii in range(10)])
-        axp.grid(True,alpha=.4)
+        axr.grid(True,alpha=.4,which='both')
+        plt.setp(axr.xaxis.get_ticklabels(),visible=False)
+        axp.grid(True,alpha=.4,which='both')
         axp.yaxis.set_major_locator(MultipleLocator(10))
         axp.yaxis.set_minor_locator(MultipleLocator(1))
         
         axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                       fontdict={'size':12,'weight':'bold'})
+                       fontdict={'size':fs,'weight':'bold'})
         axp.set_ylabel('Phase (deg)',
-                       fontdict={'size':12,'weight':'bold'})
-        axp.set_xlabel('Period (s)',fontdict={'size':12,'weight':'bold'})
-        axr.yaxis.set_label_coords(-.15,.5)
-        axp.yaxis.set_label_coords(-.15,.5)
-        plt.suptitle(titlestr,fontsize=14,fontweight='bold')
+                       fontdict={'size':fs,'weight':'bold'})
+        axp.set_xlabel('Period (s)',fontdict={'size':fs,'weight':'bold'})
+#        axr.yaxis.set_label_coords(-.15,.5)
+#        axp.yaxis.set_label_coords(-.15,.5)
+        plt.suptitle(titlestr,fontsize=fs+2,fontweight='bold')
         
         #plot 1D inversion
         axm=fig.add_subplot(gs[:,4])
-        depthp=np.array([self.mdict['depth'][0:ii+1].sum() 
-                        for ii in range(len(self.mdict['depth']))])[1:]
+#        depthp=np.array([self.mdict['depth'][0:ii+1].sum() 
+#                        for ii in range(len(self.mdict['depth']))])[1:]
+        depthp=self.mdict['depth'][1:]
         if imode=='TE':
             modelresp=abs(10**self.mdict['res'][1:,1])
-            axm.loglog(modelresp[::-1],depthp[::-1],ls='steps-',color='b')
+            axm.loglog(modelresp[::-1],depthp[::-1],ls='steps-',color='b',
+                       lw=lw)
         elif imode=='TM':
             modelresp=abs(10**self.mdict['res'][1:,2])
-            axm.loglog(modelresp[::-1],depthp[::-1],ls='steps-',color='b')
+            axm.loglog(modelresp[::-1],depthp[::-1],ls='steps-',color='b',
+                       lw=lw)
         elif imode=='both':
             modelrespte=abs(10**self.mdict['res'][1:,1])
-            axm.loglog(modelrespte[::-1],depthp[::-1],ls='steps-',color='b')
-            modelresptm=abs(10**self.mdict['res'][1:,1])
-            axm.loglog(modelresptm[::-1],depthp[::-1],ls='steps-',color='r')
+            axm.loglog(modelrespte[::-1],depthp[::-1],ls='steps-',color='b',
+                       lw=lw)
+            modelresptm=abs(10**self.mdict['res'][1:,2])
+            axm.loglog(modelresptm[::-1],depthp[::-1],ls='steps-',color='r',
+                       lw=lw)
         
-        print (depthp[-1],depthp[0])
-        axm.set_ylim(ymin=depthp[-1],ymax=depthp[0])
-    #    axm.set_xlim(xmax=10**3)
-        axm.set_ylabel('Depth (m)',fontdict={'size':12,'weight':'bold'})
+        if dlimits==None:
+            axm.set_ylim(ymin=depthp[-1],ymax=depthp[0])
+        else:
+            axm.set_ylim(dlimits)
+        axm.set_ylabel('Depth (m)',fontdict={'size':fs,'weight':'bold'})
         axm.set_xlabel('Resistivity ($\Omega \cdot m$)',
-                       fontdict={'size':12,'weight':'bold'})
-        axm.grid(True,which='both')
+                       fontdict={'size':fs,'weight':'bold'})
+        axm.grid(True,which='both',alpha=.4)
         
         plt.show()
-    
-
-def make2DdataFile(edipath,mmode='both',savepath=None,stationlst=None,title=None,
-                   thetar=0,resxyerr=10,resyxerr=10,phasexyerr=10,phaseyxerr=10,
-                   ss=3*' ',fmt='%2.6f',freqstep=1,plotyn='y',lineori='ew',
-                   tippererr=None,ftol=.05):
-    """
-    make2DdataFile will make a data file for occam2D.  
-    
-    Input:
-        edipath = path to edifiles
-        mmode = modes to invert for.  Can be: 
-                'both' -> will model both TE and TM modes
-                'TM'   -> will model just TM mode
-                'TE'   -> will model just TE mode
-        savepath = path to save the data file to, this can include the name of
-                   the data file, if not the file will be named:
-                       savepath\Data.dat or edipath\Data.dat if savepath=None
-        stationlst = list of stations to put in the data file, doesn't need to
-                     be in order, the relative distance will be calculated
-                     internally.  If stationlst=None, it will be assumed all the
-                     files in edipath will be input into the data file
-        title = title input into the data file
-        thetar = rotation angle (deg) of the edifiles if you want to align the
-                 components with the profile.  Angle is on the unit circle with 
-                 an orientation that north is 0 degree, east -90.
-        resxyerr = percent error in the res_xy component (TE), 
-                  can be entered as 'data' where the errors from the data are
-                  used.  
-        resyxerr = percent error in the res_yx component (TM), 
-                  can be entered as 'data' where the errors from the data are
-                  used.  
-        phasexyerr = percent error in the phase_xy component (TE), 
-                  can be entered as 'data' where the errors from the data are
-                  used.  
-        phaseyxerr = percent error in the phase_yx component (TM), 
-                  can be entered as 'data' where the errors from the data are
-                  used.  
-        ss = is the spacing parameter for the data file
-        fmt = format of the numbers for the data file, see string formats for 
-              a full description
-        freqstep = take frequencies at this step, so if you want to take every
-                   third frequency enter 3.  
-                   Can input as a list of specific frequencies.  Note that the
-                   frequencies must match the frequencies in the EDI files,
-                   otherwise they will not be input.  
-        plotyn = y or n to plot the stations on the profile line.
-        lineori = predominant line orientation with respect to geographic north
-                 ew for east-west line-> will orientate so first station is 
-                                         farthest to the west
-                 ns for north-south line-> will orientate so first station is 
-                                         farthest to the south
-        tippererr = error for tipper in percent.  If this value is entered than
-                    the tipper will be included in the inversion, if the value
-                    is None than the tipper will not be included.
-              
-    Output:
-        datfilename = full path of data file
-                 
-    """
-    import matplotlib.pyplot as plt
-    import mtpy.core.mttools as mt
-    import mtpy.utils.latlongutmconversion as utm2ll
-    
-    
-    if abs(thetar)>2*np.pi:
-        thetar=thetar*(np.pi/180)
-    #create rotation matrix
-    rotmatrix=np.array([[np.cos(thetar), np.sin(thetar)],
-                         [-np.sin(thetar), np.cos(thetar)]])
-    
-    #-----------------------Station Locations-----------------------------------    
-    #create a list to put all the station dictionaries into
-    surveylst=[]
-    eastlst=[]
-    northlst=[]
-    pstationlst=[]
-    freqlst=[]
-    
-    if stationlst==None:
-        stationlst=[edifile[:-4] 
-            for edifile in os.listdir(edipath) if edifile.find('.edi')]
-    
-    for kk,station in enumerate(stationlst):
-        #search for filenames in the given directory and match to station name
-        for filename in os.listdir(edipath):
-            if fnmatch.fnmatch(filename,station+'*.edi'):
-                print 'Found station edifile: ', filename
-                surveydict={} #create a dictionary for the station data and info
-                edifile=os.path.join(edipath,filename) #create filename path
-                z1=Z.Z(edifile)
-#                edidict=mt.readedi(edifile) #read in edifile as a dictionary
-                freq=z1.frequency                
-#                freq=edidict['frequency']
-                #check to see if the frequency is in descending order
-                if freq[0]<freq[-1]:
-                    freq=freq[::-1]
-                    z=z1.z[::-1,:,:]
-                    zvar=z1.zvar[::-1,:,:]
-                    tip=z1.tipper[::-1,:,:]
-                    tipvar=z1.tippervar[::-1,:,:]
+        
+    def plotL2Curve(self,savepath=None,imode='TE',fignum=1,dpi=150,fs=10):
+        """
+        Plot the L curve for RMS vs Iteration and RMS vs Roughness.
+        
+        Arguments:
+        ----------
+        
+            **savepath** : path to iteration files
+            
+            **imode** : mode to plot.  Can be:
+                    * 'TE' for TE mode. *Default*
+                    * 'TM' for TM mode
+                    * 'both' for both TE ant TM modes
                     
-#                    z=edidict['z'][::-1,:,:]
-#                    zvar=edidict['zvar'][::-1,:,:]
-#                    tip=edidict['tipper'][::-1,:,:]
-#                    tipvar=edidict['tippervar'][::-1,:,:]
-                    print 'Flipped to descending frequency for station '+station
-                else:
-                    z=z1.z
-                    zvar=z1.zvar
-                    tip=z1.tipper
-                    tipvar=z1.tippervar
-#                    z=edidict['z']
-#                    zvar=edidict['zvar']
-#                    tip=edidict['tipper']
-#                    tipvar=edidict['tippervar']
-                #rotate matrices if angle is greater than 0
-                if thetar!=0:
-                    for rr in range(len(z)):
-                        z[rr,:,:]=np.dot(rotmatrix,np.dot(z[rr],rotmatrix.T))
-                        zvar[rr,:,:]=np.dot(rotmatrix,np.dot(zvar[rr],
-                                                             rotmatrix.T))
-                else:
-                    pass
-                        
-#                zone,east,north=utm2ll.LLtoUTM(23,edidict['lat'],edidict['lon'])
-                zone,east,north=utm2ll.LLtoUTM(23,z1.lat,z1.lon)
-                #put things into a dictionary to sort out order of stations
-                surveydict['station']=station
-                surveydict['east']=east
-                surveydict['north']=north
-                surveydict['zone']=zone
-                surveydict['z']=z
-                surveydict['zvar']=zvar
-                surveydict['freq']=freq
-                surveydict['tipper']=tip
-                surveydict['tippervar']=tipvar
-#                surveydict['lat']=edidict['lat']
-                surveydict['lat']=z1.lat
-#                surveydict['lon']=edidict['lon']
-                surveydict['lon']=z1.lon
-                freqlst.append(freq)
-                eastlst.append(east)
-                northlst.append(north)
-                pstationlst.append(station)
-                surveylst.append(surveydict)
+            **fignum** : figure number for the plot
+            
+            **dpi** : dots per inch resolution of the plot
+            
+            **fs** : font size of labels
+        """
+        
+        if savepath==None:
+            if not self.savepath:
+                raise IOError('No savepath found, please enter one.')
                 
-    #project stations onto a best fitting line
-    #plot a bestfitting line
-    p=sp.polyfit(eastlst,northlst,1)
-    theta=np.arctan(p[0])
-    print 'Profile Line Angle is: {0:.4g} (E=0,N=90)'.format(theta*180/np.pi)
-    
-    #plot stations on profile line
-    if plotyn=='y':
-        plt.figure(4)
-        plt.title('Projected Stations')
-        plt.plot(eastlst,sp.polyval(p,eastlst),'-b',lw=2)
-        
-    for ii in range(len(surveylst)):
-        if surveylst[ii]['zone']!=surveylst[0]['zone']:
-            print surveylst[ii]['station']
-        d=(northlst[ii]-sp.polyval(p,eastlst[ii]))*np.cos(theta)
-        x0=eastlst[ii]+d*np.sin(theta)
-        y0=northlst[ii]-d*np.cos(theta)
-        surveylst[ii]['east']=x0
-        surveylst[ii]['north']=y0
-        if plotyn=='y':
-            plt.plot(x0,y0,'v',color='k',ms=8,mew=3)
-            plt.text(x0,y0+.0005,pstationlst[ii],horizontalalignment='center',
-                 verticalalignment='baseline',fontdict={'size':12,
-                                                        'weight':'bold'})
-        
-        #need to figure out a way to account for zone changes
-        
-        if lineori=='ew': 
-            if surveylst[0]['east']<surveylst[ii]['east']:
-                surveylst[ii]['offset']=np.sqrt((surveylst[0]['east']-
-                                                surveylst[ii]['east'])**2+
-                                                (surveylst[0]['north']-
-                                                surveylst[ii]['north'])**2)
-            elif surveylst[0]['east']>surveylst[ii]['east']:
-                surveylst[ii]['offset']=-1*np.sqrt((surveylst[0]['east']-
-                                                surveylst[ii]['east'])**2+
-                                                (surveylst[0]['north']-
-                                                surveylst[ii]['north'])**2)
-            else:
-                surveylst[ii]['offset']=0
-        elif lineori=='ns': 
-            if surveylst[0]['north']<surveylst[ii]['north']:
-                surveylst[ii]['offset']=np.sqrt((surveylst[0]['east']-
-                                                surveylst[ii]['east'])**2+
-                                                (surveylst[0]['north']-
-                                                surveylst[ii]['north'])**2)
-            elif surveylst[0]['north']>surveylst[ii]['north']:
-                surveylst[ii]['offset']=-1*np.sqrt((surveylst[0]['east']-
-                                                surveylst[ii]['east'])**2+
-                                                (surveylst[0]['north']-
-                                                surveylst[ii]['north'])**2)
-            else:
-                surveylst[ii]['offset']=0
-    
-    #sort by ascending order of distance from first station
-    surveylst=sorted(surveylst,key=itemgetter('offset'))
-    
-    #number of stations read    
-    nstat=len(surveylst)    
-    
-    #--------------------------Match Frequencies--------------------------------
-    #a dictionary is created with the frequency as the key and the value is the
-    #frequency number in the list. Each edi file is iterated over extracting
-    #only the matched frequencies.  This makes it necessary to have the same
-    #frequency content in each edifile.    
-    
-    #make a list to iterate over frequencies
-    if type(freqstep) is list or type(freqstep) is not int:
-        if type(freqstep[0]) is int:
-            #find the median frequency list
-            maxflen=max([len(ff) for ff in freqlst])
-            farray=np.zeros((nstat,maxflen))
-            for ii in range(nstat):
-                farray[ii,0:len(freqlst[ii])]=freqlst[ii]
-        
-            mfreq=np.median(farray,axis=0)
-            print len(mfreq),len(freqstep)
-            fdict=dict([('%.6g' % mfreq[ff],ii) 
-                            for ii,ff in enumerate(freqstep,1) if mfreq[ff]!=0])
         else:
-            fdict=dict([('%.6g' % ff,ii) for ii,ff in enumerate(freqstep,1)])
-    else:
-        #find the median frequency list
-        maxflen=max([len(ff) for ff in freqlst])
-        farray=np.zeros((nstat,maxflen))
-        for ii in range(nstat):
-            farray[ii,0:len(freqlst[ii])]=freqlst[ii]
+            self.savepath=savepath
         
-        mfreq=np.median(farray,axis=0)
-    
-        #make a dictionary of values        
-        fdict=dict([('%.6g' % ff,ii) for ii,ff in 
-                    enumerate(mfreq[range(0,maxflen,freqstep)],1) if ff!=0])
-
-    #print the frequencies to look for to make sure its what the user wants
-    #make a list of keys that is sorted in descending order
-    klst=[float(dd) for dd in fdict.keys()]
-    klst.sort(reverse=True)
-    klst=['%.6g' % dd for dd in klst]    
-    
-    print 'Frequencies to look for are: (# freq(Hz) Period(s)) '
-    for key in klst:
-        print fdict[key],key, 1./float(key)
-    
-    #make lists of parameters to write to file    
-    reslst=[]
-    offsetlst=[]
-    stationlstsort=[]
-    for kk in range(nstat):
-        z=surveylst[kk]['z']
-        zvar=surveylst[kk]['zvar']
-        freq=surveylst[kk]['freq']
-        offsetlst.append(surveylst[kk]['offset'])  
-        stationlstsort.append(surveylst[kk]['station'])
-        tip=surveylst[kk]['tipper']
-        tipvar=surveylst[kk]['tippervar']
-        #loop over frequencies to pick out the ones desired
-        dflst=range(len(klst))
-        for jj,ff in enumerate(freq):
-            #jj is the index of edi file frequency list, this index corresponds
-            #to the impedance tensor component index
-            #ff is the frequency from the edi file frequency list
-            try:
-                #nn is the frequency number out of extracted frequency list
-                nn=fdict['%.6g' % ff]
-                            #calculate resistivity 
-                wt=.2/(ff)
-                resxy=wt*abs(z[jj,0,1])**2
-                resyx=wt*abs(z[jj,1,0])**2
+        self.rms_te=[]
+        self.rms_tm=[]
+        self.roughness_te=[]
+        self.roughness_tm=[]
         
-                #calculate the phase putting the yx in the 1st quadrant        
-                phasexy=np.arctan2(z[jj,0,1].imag,z[jj,0,1].real)*(180/np.pi)
-                phaseyx=np.arctan2(z[jj,1,0].imag,z[jj,1,0].real)*(180/np.pi)+\
-                        180
-                #put phases in correct quadrant if should be negative
-                if phaseyx>180:
-                    phaseyx=phaseyx-360
-                    print 'Found Negative Phase',surveylst[kk]['station'],ff    
+        #get rms and roughness from each iteration for the different modes
+        if imode=='TE':
+            #get all iteration files for TE mode
+            iterlstte=[os.path.join(self.savepath,itfn) 
+                     for itfn in os.listdir(self.savepath)
+                     if itfn.find('TE')>0 and itfn.find('iter')>0]
+                     
+            self.rms_te=np.zeros(len(iterlstte))
+            self.roughness_te=np.zeros(len(iterlstte))
+            
+            #get rms and roughness
+            for itfn in iterlstte:
+                self.read1DIterFile(itfn,imode='TE')
                 
-                #calculate errors
-                #res_xy (TE)
-                if resxyerr=='data':
-                    dresxyerr=wt*(abs(z[jj,0,1])+zvar[jj,0,1])**2-resxy
-                    lresxyerr=(dresxyerr/resxy)/np.log(10)
+                #get iteration number to make sure the items are in sequence
+                ii=int(self.itdict['Iteration'])
                 
-                else:
-                    lresxyerr=(resxyerr/100.)/np.log(10)
-                
-                #Res_yx(TM)
-                if resyxerr=='data':
-                    dresyxerr=wt*(abs(z[jj,1,0])+zvar[jj,1,0])**2-resyx
-                    lresyxerr=(dresyxerr/resyx)/np.log(10)
-                else:
-                    lresyxerr=(resyxerr/100.)/np.log(10)
-                
-                #phase_xy(TE)
-                if phasexyerr=='data':
-                    dphasexyerr=np.arcsin(zvar[jj,0,1]/abs(z[jj,0,1]))*\
-                                (180/np.pi)
-                else:
-                    dphasexyerr=(phasexyerr/100.)*57/2.
-                    
-                #phase_yx (TM)
-                if phaseyxerr=='data':
-                    dphaseyxerr=np.arcsin(zvar[jj,1,0]/abs(z[jj,1,0]))*\
-                                (180/np.pi)
-                else:
-                    dphaseyxerr=(phaseyxerr/100.)*57/2.
-                
-                #calculate log10 of resistivity as prescribed by OCCAM
-                lresyx=np.log10(resyx)
-                lresxy=np.log10(resxy)
-                
-                #if include the tipper
-                if tippererr!=None:
-                    if tip[jj,0].real==0.0 or tip[jj,1]==0.0:
-                        tipyn='n'
-                    else:
-                        #calculate the projection angle for real and imaginary
-                        tipphir=np.arctan(tip[jj,0].real/tip[jj,1].real)-theta
-                        tipphii=np.arctan(tip[jj,0].imag/tip[jj,1].imag)-theta
-                        
-                        #project the tipper onto the profile line
-                        projtipr=np.sqrt(tip[jj,0].real**2+tip[jj,1].real**2)*\
-                                  np.cos(tipphir)
-                        projtipi=np.sqrt(tip[jj,0].imag**2+tip[jj,1].imag**2)*\
-                                  np.cos(tipphii)
-                                  
-                        #error of tipper is a decimal percentage
-                        projtiperr=tippererr/100.
-                        
-                        tipyn='y'
-                        
-                    
-                #make a list of lines to write to the data file
-                if mmode=='both':
-                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'1'+ss+
-                                    fmt % lresxy +ss+fmt % lresxyerr+'\n')
-                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'2'+ss+
-                                    fmt % phasexy +ss+fmt % dphasexyerr+'\n')
-                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'5'+ss+
-                                    fmt % lresyx+ss+fmt % lresyxerr+'\n')
-                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'6'+ss+
-                                    fmt % phaseyx +ss+fmt % dphaseyxerr+'\n')
-                    if tippererr!=None and tipyn=='y':
-                        reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'3'+ss+
-                                    fmt % projtipr +ss+fmt % projtiperr+'\n')
-                        reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'4'+ss+
-                                    fmt % projtipi +ss+fmt % projtiperr+'\n')
-                elif mmode=='TM':
-                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'5'+ss+
-                                    fmt % lresyx +ss+fmt % lresyxerr+'\n')
-                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'6'+ss+
-                                    fmt % phaseyx +ss+fmt % dphaseyxerr+'\n')
-                    if tippererr!=None and tipyn=='y':
-                        reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'3'+ss+
-                                    fmt % projtipr +ss+fmt % projtiperr+'\n')
-                        reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'4'+ss+
-                                    fmt % projtipi +ss+fmt % projtiperr+'\n')
-                elif mmode=='TE':
-                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'1'+ss+
-                                    fmt % lresxy+ss+fmt % lresxyerr+'\n')
-                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'2'+ss+
-                                    fmt % phasexy+ss+fmt % dphasexyerr+'\n')
-                    if tippererr!=None and tipyn=='y':
-                        reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'3'+ss+
-                                    fmt % projtipr +ss+fmt % projtiperr+'\n')
-                        reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'4'+ss+
-                                    fmt % projtipi +ss+fmt % projtiperr+'\n')
-                else:
-                    raise NameError('mmode' +mmode+' not defined')
-            except KeyError:
-                #search around the frequency given by ftol
-                try:
-                    for key in fdict.keys():
-                        if ff>float(key)*(1-ftol) and ff<float(key)*(1+ftol):
-                            nn=fdict[key]                           
-                            wt=.2/(ff)
-                            resxy=wt*abs(z[jj,0,1])**2
-                            resyx=wt*abs(z[jj,1,0])**2
-                    
-                            #calculate the phase putting the yx in the 1st quadrant        
-                            phasexy=np.arctan2(z[jj,0,1].imag,z[jj,0,1].real)*\
-                                    (180/np.pi)
-                            phaseyx=np.arctan2(z[jj,1,0].imag,z[jj,1,0].real)*\
-                                    (180/np.pi)+180
-                            #put phases in correct quadrant if should be negative
-                            if phaseyx>180:
-                                phaseyx=phaseyx-360
-                                print 'Found Negative Phase',surveylst[kk]['station'],ff    
-                            
-                            #calculate errors
-                            #res_xy (TE)
-                            if resxyerr=='data':
-                                dresxyerr=wt*(abs(z[jj,0,1])+zvar[jj,0,1])**2-resxy
-                                lresxyerr=(dresxyerr/resxy)/np.log(10)
-                            
-                            else:
-                                lresxyerr=(resxyerr/100.)/np.log(10)
-                            
-                            #Res_yx(TM)
-                            if resyxerr=='data':
-                                dresyxerr=wt*(abs(z[jj,1,0])+zvar[jj,1,0])**2-resyx
-                                lresyxerr=(dresyxerr/resyx)/np.log(10)
-                            else:
-                                lresyxerr=(resyxerr/100.)/np.log(10)
-                            
-                            #phase_xy(TE)
-                            if phasexyerr=='data':
-                                dphasexyerr=np.arcsin(zvar[jj,0,1]/abs(z[jj,0,1]))*\
-                                            (180/np.pi)
-                            else:
-                                dphasexyerr=(phasexyerr/100.)*57/2.
-                                
-                            #phase_yx (TM)
-                            if phaseyxerr=='data':
-                                dphaseyxerr=np.arcsin(zvar[jj,1,0]/abs(z[jj,1,0]))*\
-                                            (180/np.pi)
-                            else:
-                                dphaseyxerr=(phaseyxerr/100.)*57/2.
-                            
-                            #calculate log10 of resistivity as prescribed by OCCAM
-                            lresyx=np.log10(resyx)
-                            lresxy=np.log10(resxy)
-                            
-                            #if include the tipper
-                            if tippererr!=None:
-                                if tip[jj,0].real==0.0 or tip[jj,1]==0.0:
-                                    tipyn='n'
-                                else:
-                                    #calculate the projection angle for real and imaginary
-                                    tipphir=np.arctan(tip[jj,0].real/tip[jj,1].real)-theta
-                                    tipphii=np.arctan(tip[jj,0].imag/tip[jj,1].imag)-theta
-                                    
-                                    #project the tipper onto the profile line
-                                    projtipr=np.sqrt(tip[jj,0].real**2+tip[jj,1].real**2)*\
-                                              np.cos(tipphir)
-                                    projtipi=np.sqrt(tip[jj,0].imag**2+tip[jj,1].imag**2)*\
-                                              np.cos(tipphii)
-                                              
-                                    #error of tipper is a decimal percentage
-                                    projtiperr=tippererr/100.
-                                    
-                                    tipyn='y'
-                                    
-                                
-                            #make a list of lines to write to the data file
-                            if mmode=='both':
-                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'1'+ss+
-                                                fmt % lresxy +ss+fmt % lresxyerr+'\n')
-                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'2'+ss+
-                                                fmt % phasexy +ss+fmt % dphasexyerr+'\n')
-                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'5'+ss+
-                                                fmt % lresyx+ss+fmt % lresyxerr+'\n')
-                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'6'+ss+
-                                                fmt % phaseyx +ss+fmt % dphaseyxerr+'\n')
-                                if tippererr!=None and tipyn=='y':
-                                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'3'+ss+
-                                                fmt % projtipr +ss+fmt % projtiperr+'\n')
-                                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'4'+ss+
-                                                fmt % projtipi +ss+fmt % projtiperr+'\n')
-                            elif mmode=='TM':
-                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'5'+ss+
-                                                fmt % lresyx +ss+fmt % lresyxerr+'\n')
-                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'6'+ss+
-                                                fmt % phaseyx +ss+fmt % dphaseyxerr+'\n')
-                                if tippererr!=None and tipyn=='y':
-                                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'3'+ss+
-                                                fmt % projtipr +ss+fmt % projtiperr+'\n')
-                                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'4'+ss+
-                                                fmt % projtipi +ss+fmt % projtiperr+'\n')
-                            elif mmode=='TE':
-                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'1'+ss+
-                                                fmt % lresxy+ss+fmt % lresxyerr+'\n')
-                                reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'2'+ss+
-                                                fmt % phasexy+ss+fmt % dphasexyerr+'\n')
-                                if tippererr!=None and tipyn=='y':
-                                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'3'+ss+
-                                                fmt % projtipr +ss+fmt % projtiperr+'\n')
-                                    reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'4'+ss+
-                                                fmt % projtipi +ss+fmt % projtiperr+'\n')
-                            else:
-                                raise NameError('mmode' +mmode+' not defined')    
-                        
-                            break                         
-                        else:
-                            pass
-        #                           print 'Did not find frequency {0} for station {1}'.format(ff,surveylst[kk]['station'])
-                            #calculate resistivity 
-                               
-                except KeyError:
-                    pass
-    
-    #===========================================================================
-    #                             write dat file
-    #===========================================================================
-    if savepath!=None:
-        if os.path.basename(savepath).find('.')>0:
-            datfilename=savepath
-        else:
-            if not os.path.exists(savepath):
-                os.mkdir(savepath)
-            datfilename=os.path.join(savepath,'Data.dat')
-    else:
-        datfilename=os.path.join(edipath,'Data.dat')
-        
-    if title==None:
-        title='Occam Inversion'
-        
-    datfid=open(datfilename,'w')
-    datfid.write('FORMAT:'+' '*11+'OCCAM2MTDATA_1.0'+'\n')
-    datfid.write('TITLE:            %1.4f-- %s\n'%(theta*180/np.pi,title))
-    
-    #write station sites
-    datfid.write('SITES:'+' '*12+str(nstat)+'\n')
-    for station in stationlstsort:
-        datfid.write(ss+station+'\n')
-    
-    #write offsets
-    datfid.write('OFFSETS (M):'+'\n')
-    for offset in offsetlst:
-        datfid.write(ss+fmt % offset+'\n')
-    
-    #write frequencies
-    #writefreq=[freq[ff] for ff in range(0,len(freq),freqstep)]
-    datfid.write('FREQUENCIES:'+' '*8+str(len(fdict))+'\n')
-    for fkey in klst:
-        datfid.write(ss+fmt % float(fkey) +'\n')
-    
-    #write data block
-    datfid.write('DATA BLOCKS:'+' '*10+str(len(reslst))+'\n')
-    datfid.write('SITE'+ss+'FREQ'+ss+'TYPE'+ss+'DATUM'+ss+'ERROR'+'\n')
-    for ll,datline in enumerate(reslst):
-        if datline.find('#IND')>=0:
-            print 'Found #IND on line ',ll
-            ndline=datline.replace('#IND','00')
-            print 'Replaced with 00'
-            datfid.write(ndline)
-        else:
-            datfid.write(datline)
-    datfid.close()
-    
-    print 'Wrote Occam2D data file to: ',datfilename
-    
-    return datfilename
-    
-def makeModel(datafilename,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
-              z1layer=50,bwidth=200,trigger=.75,cwd='.',rhostart=100,
-              makemodelexe=None, modelname="", use_existing_startup = False, existing_startup_file = None):
-
-    """
-    makeModel will make an the input files for occam using Steve Constable's
-    MakeModel2DMT.f code.
-    
-    Inputs:
-        datafn = full path to data file
-        niter = maximum number of iterations
-        targetrms = target root mean square error
-        nlayers = total number of layers in mesh
-        nlperdec = number of layers per decade
-        z1layer = thickness of the first layer in meters
-        bwidth = maximum block width for regularization grid in meters
-        trigger = triger point to amalgamate blocks
-        cwd     = working directory, files are saved here
-        rhostart = starting resistivity for homogeneous half space in ohm-m
-        use_existing_startup: set True, if an old iteration step output is provided as startup
-        existing_startup_file: absolute path for old itereation output to be used as startup
-
-        
+                #put the values in appropriate place
+                self.rms_te[ii]=float(self.itdict['Misfit Value'])
+                self.roughness_te[ii]=float(self.itdict['Roughness Value'])
             
         
-    Outputs:
-        meshfn = mesh file for finite element grid saved ats MESH
-        inmodelfn = input model, starting model with rhostart as starting value
-                    saved as INMODEL
-        startupfn = start up filepath, saved as startup
-    """
-    #get the base name of data file    
-    
-    olddir = os.path.abspath(os.curdir)
-    os.chdir(cwd)
-
-    dfnb=os.path.basename(datafilename)
-
-
-    #deprecated....not necessary, if path is given in excplicit form
-    #put data file into the same directory as MakeModel2DMT
-    
-    #write input file for MakeModel2DMT
-    mmfid=file(os.path.join(cwd,'inputMakeModel.txt'),'w')
-    mmfid.write(dfnb+'\n')
-    mmfid.write(str(niter)+'\n')    
-    mmfid.write(str(targetrms)+'\n')    
-    mmfid.write(str(nlayers)+'\n')
-    mmfid.write(str(nlperdec)+'\n')
-    mmfid.write(str(z1layer)+'\n')
-    mmfid.write(str(bwidth)+'\n')
-    mmfid.write(str(trigger)+'\n')
-    mmfid.write('\n')
-    mmfid.close()
-
-    #WRite parameters to local dict for passing to functions:
-    parameter_dict={}
-    parameter_dict['datafile'] = datafilename
-    parameter_dict['n_max_iterations'] = niter
-    parameter_dict['targetrms'] = targetrms
-    parameter_dict['n_layers'] = nlayers
-    parameter_dict['n_layersperdecade'] = nlperdec
-    parameter_dict['firstlayer_thickness'] = z1layer
-    parameter_dict['max_blockwidth'] = bwidth
-    parameter_dict['trigger'] = trigger
-    parameter_dict['cwd'] = cwd
-    parameter_dict['rho_start'] = rhostart
-    parameter_dict['modelname'] = modelname
-
-    #shutil.copy(os.path.join(occampath,'inputMakeModel.txt'),
-                #os.path.join(os.path.dirname(datafilename),
-                             #'inputMakeModel.txt'))
-    
-    
-    #---call MakeModel2DMT---
-    #subprocess.os.system("%s < inputMakeModel.txt"%(makemodelexe))
-
-    
-    #change back to original working directory    
-    #os.chdir(cdir)
-    
-    
-    meshfn=os.path.join(cwd,'MESH')
-    inmodelfn=os.path.join(cwd,'INMODEL')
-    startupfn=os.path.join(cwd,'startup')
-    
-    parameter_dict['meshfn']  = meshfn
-    parameter_dict['inmodelfn']  = inmodelfn
-        
-
-    if use_existing_startup:
-        startupfn =  existing_startup_file
-
-    parameter_dict['startupfn']  = startupfn
-    
-    #write OCCAM input files directly - no external function needed:
-    filelist= makestartfiles(parameter_dict)
-
-    #deprecated....not necessary
-    #copy ouput files to savepath
-    
-    #rewrite mesh so it contains the right number of columns and rows
-    #rewriteMesh(meshfn)
-    
-    #write startup file to have the starting desired starting rho value
-    ifid=file(startupfn,'r')
-    ilines=ifid.readlines()
-    ifid.close()
-    
-    if rhostart!=100:
-        #make startup model a homogeneous half space of rhostart
-        rhostart=np.log10(rhostart)
-        ifid=open(startupfn,'w')
-        for line in ilines:
-            if line.find('2.000000')>=0:
-                line=line.replace('2.000000','%.6f' % rhostart)
-            ifid.write(line)
-    ifid.close()
-    
-    print 'Be sure to check the INMODEL file for clumped numbers near the bottom.'
-    print 'Also, check the MESH and startup files to make sure they are correct.'
-
-    #go back to old path:
-    os.chdir(olddir)
-    
-    return filelist
-
-
-def rewriteMesh(meshfn):
-    """
-    checkMesh will check to see if the number of lines are correct and the 
-    length of the line is correct
-    """
-    
-    #check the mesh
-    mfid=file(meshfn,'r')
-    mlines=mfid.readlines()
-    mfid.close()
-    
-    #get parameters for number of lines and number of unknowns per line    
-    pstr=mlines[1].strip().split()
-    nhn=int(pstr[1])
-    nvn=(int(pstr[2])-1)*4
-    
-    print 'Number of horizontal nodes: ',nhn
-    print 'Number of vertical nodes: ',nvn
-    #find the first line
-    for ii,mline in enumerate(mlines[2:],2):
-        if mline.find('?')==0:
-            qspot=ii
-            break
-
-    #rewrite the file to have the proper amount of stuff
-    mfid=file(meshfn,'w')
-    for line in mlines[0:qspot]:
-        mfid.write(line)
-    
-    for kk in range(qspot,qspot+nvn):
-        mfid.write('?'*(nhn-1)+'\n')
-    mfid.close()
- 
-
-def read2Dmesh(meshfn):
-    """
-    read a 2D meshfn
-    
-    Input:
-        meshfn = full path to mesh file
-
-    Output:
-        hnodes = array of horizontal nodes (column locations (m))
-        vnodes = array of vertical nodes (row locations(m))
-        mdata = free parameters
-        
-    Things to do:
-        incorporate fixed values
-    """
-    
-    mfid=file(meshfn,'r')
-    
-    mlines=mfid.readlines()
-    
-    nh=int(mlines[1].strip().split()[1])-1
-    nv=int(mlines[1].strip().split()[2])-1
-    
-    hnodes=np.zeros(nh)
-    vnodes=np.zeros(nv)
-    mdata=np.zeros((nh,nv,4),dtype=str)    
-    
-    #get horizontal nodes
-    jj=2
-    ii=0
-    while ii<nh:
-        hline=mlines[jj].strip().split()
-        for mm in hline:
-            hnodes[ii]=float(mm)
-            ii+=1
-        jj+=1
-    
-    #get vertical nodes
-    ii=0
-    while ii<nv:
-        vline=mlines[jj].strip().split()
-        for mm in vline:
-            vnodes[ii]=float(mm)
-            ii+=1
-        jj+=1    
-    
-    #get free parameters        
-    for ii,mm in enumerate(mlines[jj+1:]):
-        kk=0
-        while kk<4:        
-            mline=mm.rstrip()
-            if mline.find('EXCEPTION')>0:
-                break
-            for jj in range(nh):
-                try:
-                    mdata[jj,ii,kk]=mline[jj]
-                except IndexError:
-                    pass
-            kk+=1
-    
-    return hnodes,vnodes,mdata
-    
-def read2DInmodel(inmodelfn):
-    """
-    read an INMODEL file for occam 2D
-    
-    Input:
-        inmodelfn = full path to INMODEL file
-    
-    Output:
-        rows = list of combined data blocks where first number of each list
-                represents the number of combined mesh layers for this 
-                regularization block.  The second number is the number of 
-                columns in the regularization block layer
-        cols = list of combined mesh columns for the regularization layer.
-               The sum of this list must be equal to the number of mesh
-               columns.
-        headerdict = dictionary of all the header information including the
-                     binding offset
-    """
-    
-    ifid=open(inmodelfn,'r')
-    
-    headerdict={}
-    rows=[]
-    cols=[]    
-    ncols=[]
-    
-    ilines=ifid.readlines()
-    
-    for ii,iline in enumerate(ilines):
-        if iline.find(':')>0:
-            iline=iline.strip().split(':')
-            headerdict[iline[0]]=iline[1]
-            #append the last line
-            if iline[0].find('EXCEPTIONS')>0:
-                cols.append(ncols)
-        else:
-            iline=iline.strip().split()
-            iline=[int(jj) for jj in iline]
-            if len(iline)==2:
-                if len(ncols)>0:
-                    cols.append(ncols)
-                rows.append(iline)
-                ncols=[]
-            elif len(iline)>2:
-                ncols=ncols+iline
-    
-    return rows,cols,headerdict
+        elif imode=='TM':
+            #get all iteration files for TM mode
+            iterlsttm=[os.path.join(self.savepath,itfn) 
+                     for itfn in os.listdir(self.savepath)
+                     if itfn.find('TM')>0 and itfn.find('iter')>0]
+            
+            self.rms_tm=np.zeros(len(iterlsttm))
+            self.roughness_tm=np.zeros(len(iterlsttm))
+            
+            #get rms and roughness
+            for itfn in iterlsttm:
+                self.read1DIterFile(itfn,imode='TM')
                 
-    
-def read2DdataFile(datafn):
-    """
-    read2DdataFile will read in data from a 2D occam data file.  Only supports
-    the first 6 data types of occam2D
-    
-    Input: 
-        datafn = full path to data file
-    
-    Output:
-        rplst = list of dictionaries for each station with keywords:
-            'station' = station name
-            'offset' = relative offset,
-            'resxy' = TE resistivity and error as row 0 and 1 ressectively,
-            'resyx'= TM resistivity and error as row 0 and 1 respectively,
-            'phasexy'= TE phase and error as row 0 and 1 respectively,
-            'phaseyx'= Tm phase and error as row 0 and 1 respectively,
-            'realtip'= Real Tipper and error as row 0 and 1 respectively,
-            'imagtip'= Imaginary Tipper and error as row 0 and 1 respectively
-            
-            Note: that the resistivity will be in log10 space.  Also, there are
-            2 extra rows in the data arrays, this is to put the response from
-            the inversion. 
-        
-        stationlst = list of stations in order from one side of the profile
-                     to the other.
-        freq = list of frequencies used in the inversion
-        title = title, could be useful for plotting.
-    """
-    
-    dfid=open(datafn,'r')
-    
-    dlines=dfid.readlines()
-    #get format of input data
-    fmt=dlines[0].strip().split(':')[1].strip()
-    
-    #get title
-    titlestr=dlines[1].strip().split(':')[1].strip()
-
-    if titlestr.find('--')>0:
-        tstr=titlestr.split('--')
-        theta=tstr[0]
-        title=tstr[1]
-    else:
-        title=titlestr
-        theta=0
-        print 'Need to figure out angle of profile line'
-    #get number of sits
-    nsites=int(dlines[2].strip().split(':')[1].strip())
-    
-    #get station names
-    stationlst=[dlines[ii].strip() for ii in range(3,nsites+3)]
-    
-    #get offsets in meters
-    offsets=[float(dlines[ii].strip()) for ii in range(4+nsites,4+2*nsites)]
-    
-    #get number of frequencies
-    nfreq=int(dlines[4+2*nsites].strip().split(':')[1].strip())
-
-    #get frequencies
-    freq=[float(dlines[ii].strip()) for ii in range(5+2*nsites,
-                                                      5+2*nsites+nfreq)]
-                                                      
-
-    #-----------get data-------------------
-    #set zero array size the first row will be the data and second the error
-    asize=(4,nfreq)
-    #make a list of dictionaries for each station.
-    rplst=[{'station':station,'offset':offsets[ii],
-            'resxy':np.zeros(asize),
-            'resyx':np.zeros(asize),
-            'phasexy':np.zeros(asize),
-            'phaseyx':np.zeros(asize),
-            'realtip':np.zeros(asize),
-            'imagtip':np.zeros(asize),
-            } for ii,station in enumerate(stationlst)]
-    for line in dlines[7+2*nsites+nfreq:]:
-        ls=line.split()
-        #station index
-        ss=int(float(ls[0]))-1
-        #component key
-        comp=str(int(float(ls[2])))
-        #frequency index        
-        ff=int(float(ls[1]))-1
-        #print ls,ss,comp,ff
-        #put into array
-        #input data
-        rplst[ss][occamdict[comp]][0,ff]=float(ls[3]) 
-        #error       
-        rplst[ss][occamdict[comp]][1,ff]=float(ls[4])
-    
-    return rplst,stationlst,np.array(freq),title,theta
-    
-def rewrite2DdataFile(datafn,edipath=None,thetar=0,resxyerr='prev',
-                      resyxerr='prev',phasexyerr='prev',phaseyxerr='prev',
-                      tippererr=None,mmode='both',flst=None,removestation=None):
-    """
-    rewrite2DDataFile will rewrite an existing data file so you can redefine 
-    some of the parameters, such as rotation angle, or errors for the different
-    components or only invert for one mode or add one or add tipper or remove
-    tipper.
-    
-    Inputs:
-        datafn = full path to data file to rewrite
-        
-        rotz = rotation angle with positive clockwise
-        
-        resxyerr = error for TE mode resistivity (percent) or 'data' for data 
-                    or prev to take errors from data file.
-        
-        resyxerr = error for TM mode resistivity (percent) or 'data' for data
-                    or prev to take errors from data file.
-                    
-        phasexyerr = error for TE mode phase (percent) or 'data' for data
-                    or prev to take errors from data file.
-                    
-        phaseyxerr = error for TM mode phase (percent) or 'data' for data
-                    or prev to take errors from data file.
-                    
-        tippererr = error for tipper (percent) input only if you want to invert
-                    for the tipper or 'data' for data errors
-                    or prev to take errors from data file.
-                    
-        mmodes = 'both' for both TE and TM
-                 'TE' for TE
-                 'TM' for TM
-                 
-        flst = frequency list in Hz to rewrite, needs to be similar to the 
-                datafile, cannot add frequencies
+                #get iteration number to make sure the items are in sequence
+                ii=int(self.itdict['Iteration'])
                 
-        removestation = list of stations to remove if desired
-    """
-    ss=3*' '
-    fmt='%2.6f'
-    
-    #load the data for the data file    
-    rplst,stationlst,freq,title,theta=read2DdataFile(datafn)
-    
-    #make a dictionary of rplst for easier extraction of data
-    rpdict=dict([(station,rplst[ii]) for ii,station in enumerate(stationlst)])
-
-    #remove stations from rplst and stationlst if desired
-    if removestation!=None:
-        #if removestation is not a list make it one
-        if type(removestation) is not list:
-            removestation=[removestation]
-        
-#        #remove station dictionary from rplst
-#        for rstation in removestation:
-#            for hh,hdict in enumerate(rplst):
-#                if hdict['station']==rstation:
-#                    rplst.remove(rplst[hh])
-        
-        #remove station from station list           
-        for rstation in removestation:        
-            try:
-                stationlst.remove(rstation)
-            except ValueError:
-                print 'Did not find '+rstation
-    
-    #if flst is not the same as freq make freq=flst
-    if flst!=None:
-        freq=flst
-    
-    
-    #if the rotation angle is not 0 than need to read the original data in
-    if thetar!=0:
-        if edipath==None:
-            raise IOError('Need to input the edipath to original edifiles to'+
-                           ' get rotations correct')
-        
-        #get list of edifiles already in data file
-        edilst=[os.path.join(edipath,edi) for stat in stationlst 
-                for edi in os.listdir(edipath) if edi[0:len(stat)]==stat]
-        reslst=[]
-        for kk,edifn in enumerate(edilst,1):
-            imp1=Z.Z(edifn)
-            rp=imp1.getResPhase(thetar=thetar)
-            imptip=imp1.getTipper()
-            tip=imptip.tipper
-            station=stationlst[kk-1]
-            fdict=dict([('{0:.6g}'.format(fr),ii) for ii,fr in enumerate(imp1.frequency)])
-            #loop over frequencies to pick out the ones desired
-            for jj,ff in enumerate(freq,1):
-                #jj is the index of edi file frequency list, this index corresponds
-                #to the impedance tensor component index
-                #ff is the frequency from the edi file frequency list
-                try:
-                    #nn is the frequency number out of extracted frequency list
-                    nn=fdict['%.6g' % ff]
-                    
-                    #calculate resistivity
-                    resxy=rp.resxy[nn]
-                    resyx=rp.resyx[nn]
-            
-                    #calculate the phase putting the yx in the 1st quadrant
-                    phasexy=rp.phasexy[nn]
-                    phaseyx=rp.phaseyx[nn]+180
-                    #put phases in correct quadrant if should be negative
-                    if phaseyx>180:
-                        phaseyx=phaseyx-360
-                        print 'Found Negative Phase at',imp1.station,ff    
-                    
-                    #calculate errors
-                    #res_xy (TE)
-                    if resxyerr=='data':
-                        lresxyerr=(rp.resxyerr[nn]/resxy)/np.log(10)
-                    #take errors from data file
-                    elif resxyerr=='prev':
-                        lresxyerr=rpdict[station]['resxy'][1,jj-1]
-                    else:
-                        lresxyerr=(resxyerr/100.)/np.log(10)
-                    
-                    #Res_yx(TM)
-                    if resyxerr=='data':
-                        lresxyerr=rpdict[station]['resyx'][1,jj-1]
-                    #take errors from data file
-                    elif resyxerr=='prev':
-                        lresyxerr=rpdict[station]['resyx'][1,jj-1]
-                    else:
-                        lresyxerr=(resyxerr/100.)/np.log(10)
-                    
-                    #phase_xy(TE)
-                    if phasexyerr=='data':
-                        dphasexyerr=rp.phasexyerr[nn]
-                        #take errors from data file
-                    elif phasexyerr=='prev':
-                        dphasexyerr=rpdict[station]['phasexy'][1,jj-1]
-                    else:
-                        dphasexyerr=(phasexyerr/100.)*57/2.
-                        
-                    #phase_yx (TM)
-                    if phaseyxerr=='data':
-                        dphaseyxerr=rp.phaseyxerr[nn]
-                    elif phaseyxerr=='prev':
-                        dphaseyxerr=rpdict[station]['phaseyx'][1,jj-1]
-                    else:
-                        dphaseyxerr=(phaseyxerr/100.)*57/2.
-                    
-                    #calculate log10 of resistivity as prescribed by OCCAM
-                    lresyx=np.log10(resyx)
-                    lresxy=np.log10(resxy)
-                    
-                    #if include the tipper
-                    if tippererr!=None:
-                        if tip.tipper[nn,0]==0.0 or tip[nn,1]==0.0:
-                            tipyn='n'
-                        else:
-                            #calculate the projection angle for real and imaginary
-                            tipphir=np.arctan(tip[nn,0].real/tip[nn,1].real)-\
-                                    theta
-                            tipphii=np.arctan(tip[nn,0].imag/tip[nn,1].imag)-\
-                                    theta
-                            
-                            #project the tipper onto the profile line
-                            projtipr=np.sqrt(tip[nn,0].real**2+tip[nn,1].real**2)*\
-                                      np.cos(tipphir)
-                            projtipi=np.sqrt(tip[nn,0].imag**2+tip[nn,1].imag**2)*\
-                                      np.cos(tipphii)
-                                      
-                            #error of tipper is a decimal percentage
-                            projtiperr=tippererr/100.
-                            
-                            tipyn='y'
-                        
-                    
-                    #make a list of lines to write to the data file
-                    if mmode=='both':
-                        if rpdict[station]['resxy'][0,jj-1]!=0.0:
-                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'1'+ss+
-                                        fmt % lresxy +ss+fmt % lresxyerr+'\n')
-                        if rpdict[station]['phasexy'][0,jj-1]!=0.0:
-                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'2'+ss+
-                                        fmt % phasexy+ss+fmt % dphasexyerr+'\n')
-                        if rpdict[station]['resyx'][0,jj-1]!=0.0:
-                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'5'+ss+
-                                        fmt % lresyx+ss+fmt % lresyxerr+'\n')
-                        if rpdict[station]['phaseyx'][0,jj-1]!=0.0:
-                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
-                                        fmt % phaseyx+ss+fmt % dphaseyxerr+'\n')
-                        if tippererr!=None and tipyn=='y':
-                            if rpdict[station]['realtip'][0,jj-1]!=0.0:
-                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
-                                            fmt % projtipr+ss+fmt % projtiperr+
-                                            '\n')
-                            if rpdict[station]['imagtip'][0,jj-1]!=0.0:
-                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'4'+ss+
-                                            fmt % projtipi+ss+fmt % projtiperr+
-                                            '\n')
-                    elif mmode=='TM':
-                        if rpdict[station]['resyx'][0,jj-1]!=0.0:
-                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'5'+ss+
-                                        fmt % lresyx +ss+fmt % lresyxerr+'\n')
-                        if rpdict[station]['phaseyx'][0,jj-1]!=0.0:
-                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
-                                        fmt % phaseyx+ss+fmt % dphaseyxerr+'\n')
-                        if tippererr!=None and tipyn=='y':
-                            if rpdict[station]['realtip'][0,jj-1]!=0.0:
-                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
-                                            fmt % projtipr+ss+fmt % projtiperr+
-                                            '\n')
-                            if rpdict[station]['imagtip'][0,jj-1]!=0.0:
-                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'4'+ss+
-                                            fmt % projtipi+ss+fmt % projtiperr+
-                                            '\n')
-                    elif mmode=='TE':
-                        if rpdict[station]['resxy'][0,jj-1]!=0.0:
-                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'1'+ss+
-                                        fmt % lresxy +ss+fmt % lresxyerr+'\n')
-                        if rpdict[station]['phasexy'][0,jj-1]!=0.0:
-                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'2'+ss+
-                                        fmt % phasexy+ss+fmt % dphasexyerr+'\n')
-                        if tippererr!=None and tipyn=='y':
-                            if rpdict[station]['realtip'][0,jj-1]!=0.0:
-                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
-                                            fmt % projtipr+ss+fmt % projtiperr+
-                                            '\n')
-                            if rpdict[station]['imagtip'][0,jj-1]!=0.0:
-                                reslst.append(ss+str(kk)+ss+str(jj)+ss+'4'+ss+
-                                            fmt % projtipi+ss+fmt % projtiperr+
-                                            '\n')
-                    else:
-                        raise NameError('mmode' +mmode+' not defined')
-                except KeyError:
-                    pass
-    
-    #If no rotation is desired but error bars are than...
-    else:
-        reslst=[]
-        for kk,station in enumerate(stationlst,1):
-            srp=rpdict[station]
-            nr=srp['resxy'].shape[1]
-            #calculate errors and rewrite
-            #res_xy (TE)
-            if resxyerr!=None:
-                lresxyerr=(resxyerr/100.)/np.log(10)
-                srp['resxy'][1,:]=np.repeat(lresxyerr,nr)
-            
-            #Res_yx(TM)
-            if resyxerr!=None:
-                lresyxerr=(resyxerr/100.)/np.log(10)
-                srp['resyx'][1,:]=np.repeat(lresyxerr,nr)
-            
-            #phase_xy(TE)
-            if phasexyerr!=None:
-                dphasexyerr=(phasexyerr/100.)*57/2.
-                srp['phasexy'][1,:]=np.repeat(dphasexyerr,nr)
+                #put the values in appropriate place
+                self.rms_tm[ii]=float(self.itdict['Misfit Value'])
+                self.roughness_tm[ii]=float(self.itdict['Roughness Value'])
                 
-            #phase_yx (TM)
-            if phaseyxerr!=None:
-                dphaseyxerr=(phaseyxerr/100.)*57/2.
-                srp['phaseyx'][1,:]=np.repeat(dphaseyxerr,nr)
+        elif imode=='both':
+            #get all iteration files for TE mode
+            iterlstte=[os.path.join(self.savepath,itfn) 
+                     for itfn in os.listdir(self.savepath)
+                     if itfn.find('TE')>0 and itfn.find('iter')>0]
+                     
+            self.rms_te=np.zeros(len(iterlstte))
+            self.roughness_te=np.zeros(len(iterlstte))
             
-            if tippererr!=None:
-                #error of tipper is a decimal percentage
-                projtiperr=tippererr/100.
-                srp['realtip'][1,:]=np.repeat(projtiperr,nr)
-                srp['imagtip'][1,:]=np.repeat(projtiperr,nr)
-            
-            for jj,ff in enumerate(freq,1):
-                #make a list of lines to write to the data file
-                if mmode=='both':
-                    if srp['resxy'][0,jj-1]!=0.0:
-                        reslst.append(ss+str(kk)+ss+str(jj)+ss+'1'+ss+
-                                    fmt % srp['resxy'][0,jj-1]+ss+
-                                    fmt % srp['resxy'][1,jj-1]+'\n')
-                    if srp['phasexy'][0,jj-1]!=0.0:
-                        reslst.append(ss+str(kk)+ss+str(jj)+ss+'2'+ss+
-                                    fmt % srp['phasexy'][0,jj-1]+ss+
-                                    fmt % srp['phasexy'][1,jj-1]+'\n')
-                    if srp['resyx'][0,jj-1]!=0.0:
-                        reslst.append(ss+str(kk)+ss+str(jj)+ss+'5'+ss+
-                                    fmt % srp['resyx'][0,jj-1]+ss+
-                                    fmt % srp['resyx'][1,jj-1]+'\n')
-                    if srp['phaseyx'][0,jj-1]!=0.0:
-                        reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
-                                    fmt % srp['phaseyx'][0,jj-1]+ss+
-                                    fmt % srp['phaseyx'][1,jj-1]+'\n')
-                    if tippererr!=None and tipyn=='y':
-                        if srp['realtip'][0,jj-1]!=0.0:
-                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
-                                    fmt % srp['realtip'][0,jj-1]+ss+
-                                    fmt % srp['realtip'][1,jj-1]+'\n')
-                        if srp['imagtip'][0,jj-1]!=0.0:
-                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'4'+ss+
-                                    fmt % srp['imagtip'][0,jj-1]+ss+
-                                    fmt % srp['imagtip'][1,jj-1]+'\n')
-                elif mmode=='TM':
-                    if srp['resyx'][0,jj-1]!=0.0:
-                        reslst.append(ss+str(kk)+ss+str(jj)+ss+'5'+ss+
-                                    fmt % srp['resyx'][0,jj-1]+ss+
-                                    fmt % srp['resyx'][1,jj-1]+'\n')
-                    if srp['phaseyx'][0,jj-1]!=0.0:
-                        reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
-                                    fmt % srp['phaseyx'][0,jj-1]+ss+
-                                    fmt % srp['phaseyx'][1,jj-1]+'\n')
-                    if tippererr!=None and tipyn=='y':
-                        if srp['realtip'][0,jj-1]!=0.0:
-                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
-                                    fmt % srp['realtip'][0,jj-1]+ss+
-                                    fmt % srp['realtip'][1,jj-1]+'\n')
-                        if srp['imagtip'][0,jj-1]!=0.0:
-                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'4'+ss+
-                                    fmt % srp['imagtip'][0,jj-1]+ss+
-                                    fmt % srp['imagtip'][1,jj-1]+'\n')
-                elif mmode=='TE':
-                    if srp['resxy'][0,jj-1]!=0.0:
-                        reslst.append(ss+str(kk)+ss+str(jj)+ss+'1'+ss+
-                                    fmt % srp['resxy'][0,jj-1]+ss+
-                                    fmt % srp['resxy'][1,jj-1]+'\n')
-                    if srp['phasexy'][0,jj-1]!=0.0:
-                        reslst.append(ss+str(kk)+ss+str(jj)+ss+'2'+ss+
-                                    fmt % srp['phasexy'][0,jj-1]+ss+
-                                    fmt % srp['phasexy'][1,jj-1]+'\n')
-                    if tippererr!=None and tipyn=='y':
-                        if srp['realtip'][0,jj-1]!=0.0:
-                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
-                                    fmt % srp['realtip'][0,jj-1]+ss+
-                                    fmt % srp['realtip'][1,jj-1]+'\n')
-                        if srp['imagtip'][0,jj-1]!=0.0:
-                            reslst.append(ss+str(kk)+ss+str(jj)+ss+'4'+ss+
-                                    fmt % srp['imagtip'][0,jj-1]+ss+
-                                    fmt % srp['imagtip'][1,jj-1]+'\n')
-
-    #===========================================================================
-    #                             write dat file
-    #===========================================================================
-    
-    #make the file name of the data file
-    if datafn.find('RW')>0:
-        dfn=datanf
-    else:
-        dfn=datafn[:-4]+'RW.dat'
-        
-    nstat=len(stationlst)
-        
-    if title==None:
-        title='Occam Inversion'
-        
-    datfid=open(dfn,'w')
-    datfid.write('FORMAT:'+' '*11+'OCCAM2MTDATA_1.0'+'\n')
-    datfid.write('TITLE:'+' '*12+title+'\n')
-    
-    #write station sites
-    datfid.write('SITES:'+' '*12+str(nstat)+'\n')
-    for station in stationlst:
-        datfid.write(ss+station+'\n')
-    
-    #write offsets
-    datfid.write('OFFSETS (M):'+'\n')
-    for station in stationlst:
-        datfid.write(ss+fmt % rpdict[station]['offset']+'\n')
-    
-    #write frequencies
-    #writefreq=[freq[ff] for ff in range(0,len(freq),freqstep)]
-    datfid.write('FREQUENCIES:'+' '*8+str(len(freq))+'\n')
-    for ff in freq:
-        datfid.write(ss+fmt % ff +'\n')
-    
-    #write data block
-    datfid.write('DATA BLOCKS:'+' '*10+str(len(reslst))+'\n')
-    datfid.write('SITE'+ss+'FREQ'+ss+'TYPE'+ss+'DATUM'+ss+'ERROR'+'\n')
-    for ll,datline in enumerate(reslst):
-        if datline.find('#IND')>=0:
-            print 'Found #IND on line ',ll
-            ndline=datline.replace('#IND','00')
-            print 'Replaced with 00'
-            datfid.write(ndline)
-        else:
-            datfid.write(datline)
-    datfid.close()
-    
-    print 'Wrote Occam2D data file to: ',dfn
-    
-    return dfn
-                             
-def read2DRespFile(respfn,datafn):
-    """
-    read2DRespFile will read in a response file and combine the data with info 
-    from the data file.
-
-    Input:
-        respfn = full path to the response file
-        datafn = full path to data file
-
-    Outputs:
-        for each data array, the rows are ordered as:
-            0 -> input data
-            1 -> input error
-            2 -> model output
-            3 -> relative error (data-model)/(input error)
-            
-        rplst = list of dictionaries for each station with keywords:
-            'station' = station name
-            'offset' = relative offset,
-            'resxy' = TE resistivity 
-            'resyx'= TM resistivity 
-            'phasexy'= TE phase 
-            'phaseyx'= TM phase a
-            'realtip'= Real Tipper 
-            'imagtip'= Imaginary Tipper 
-            
-            Note: that the resistivity will be in log10 space.  Also, there are
-            2 extra rows in the data arrays, this is to put the response from
-            the inversion. 
-        
-        stationlst = list of stations in order from one side of the profile
-                     to the other.
-        freq = list of frequencies used in the inversion
-        title = title, could be useful for plotting.
-        
-    """
-    
-    rplst,stationlst,freq,title,theta=read2DdataFile(datafn)
-    
-    rfid=open(respfn,'r')
-    
-    rlines=rfid.readlines()
-    for line in rlines:
-        ls=line.split()
-        #station index
-        ss=int(float(ls[0]))-1
-        #component key
-        comp=str(int(float(ls[2])))
-        #frequency index        
-        ff=int(float(ls[1]))-1
-        #put into array
-        #model response
-        rplst[ss][occamdict[comp]][2,ff]=float(ls[5]) 
-        #relative error        
-        rplst[ss][occamdict[comp]][3,ff]=float(ls[6]) 
-        
-    return rplst,stationlst,np.array(freq),title
-
-def read2DIterFile(iterfn,iterpath=None):
-    """
-    read2DIterFile will read an iteration file and combine that info from the 
-    datafn and return a dictionary of variables.
-    
-    Inputs:
-        iterfn = full path to iteration file if iterpath=None.  If 
-                       iterpath is input then iterfn is just the name
-                       of the file without the full path.
-    
-    Outputs:
-        idict = dictionary of parameters, keys are verbatim from the file, 
-                except for the key 'model' which is the contains the model
-                numbers in a 1D array.
-        
-    """
-
-    #get full paths if not already input
-    if iterpath!=None and os.path.dirname(iterfn)=='':
-        ifn=os.path.join(iterpath,iterfn)
-    else:
-        ifn=iterfn
-    if os.path.exists(ifn)==False:
-        raise IOError('File: '+ifn+' does not exist, check name and path')
-        
-#    if iterpath!=None and os.path.dirname(datafn)=='':
-#        dfn=os.path.join(iterpath,datafn)
-#    else:
-#        dfn=datafn
-#    if os.path.exists(dfn)==False:
-#        raise IOError('File: '+dfn+' does not exist, check name and path')
-    
-    #open file
-    ifid=file(ifn,'r')
-    ilines=ifid.readlines()
-    ifid.close()
-    
-    #create dictionary to put things
-    idict={}
-    ii=0
-    #put header info into dictionary with similar keys
-    while ilines[ii].find('Param')!=0:
-        iline=ilines[ii].strip().split(':')
-        idict[iline[0]]=iline[1].strip()
-        ii+=1
-    
-    #get number of parameters
-    iline=ilines[ii].strip().split(':')
-    nparam=int(iline[1].strip())
-    idict[iline[0]]=nparam
-    idict['model']=np.zeros(nparam)
-    kk=int(ii+1)
-    
-    jj=0
-    while jj<len(ilines)-kk:
-        iline=ilines[jj+kk].strip().split()
-        for ll in range(4):
-            try:
-                idict['model'][jj*4+ll]=float(iline[ll])
-            except IndexError:
-                pass
-        jj+=1
-            
-    return idict
-
-
-def compareIter(iterfn1,iterfn2,savepath=None):
-    """
-    compareIter will take the difference between two iteration and make a 
-    difference iter file
-    
-    Inputs:
-        iterfn1 = full path to iteration file 1
-        iterfn2 = full path to iteration file 2
-        savepath = path to save the difference iteration file, can be full or
-                  just a directory
-                  
-    Outputs:
-        diterfn = file name of iteration difference either:
-            savepath/iterdiff##and##.iter
-            or os.path.dirname(iterfn1,iterdiff##and##.iter)
-            or savepath
-    """
-
-    #get number of iteration
-    inum1=iterfn1[-7:-5]    
-    inum2=iterfn2[-7:-5]    
-    
-    #make file name to save difference to
-    if savepath==None:
-        svdir=os.path.dirname(iterfn1)
-        diterfn=os.path.join(svdir,
-                              'iterdiff{0}and{1}.iter'.format(inum1,inum2))
-    elif savepath.find('.')==-1:
-        diterfn=os.path.join(savepath,
-                              'iterdiff{0}and{1}.iter'.format(inum1,inum2))
-    else:
-        diterfn=savepath
-    
-    #read the iter files
-    idict1=read2DIterFile(iterfn1)
-    idict2=read2DIterFile(iterfn2)
-    
-    #calculate difference this way it will plot as red going conductive and
-    #blues being a resistive change
-    mdiff=-idict1['model']+idict2['model']
-    nd=len(mdiff)
-    
-    ifid=file(iterfn1,'r')
-    ilines=ifid.readlines()
-    ifid.close()    
-    
-    #write iterfile
-    dfid=file(diterfn,'w')
-    ii=0
-    while ilines[ii].find('Param')!=0:
-        dfid.write(ilines[ii])
-        ii+=1
-    
-    dfid.write('Param Count:        {0}\n'.format(nd))
-    
-    for jj in range(nd/4+1):
-        for kk in range(4):
-            try:
-                dfid.write('   {0:+.6f}'.format(mdiff[4*jj+kk]))
-                if kk==3:
-                    dfid.write('\n')
-            except IndexError:
-                dfid.write('\n')
-            
-    dfid.close()
-    
-    return diterfn
-        
-def plot2DResponses(datafn,respfn=None,wlfn=None,maxcol=8,plottype='1',ms=4,
-                    phaselimits=(-5,95),colormode='color',reslimits=None,
-                    **kwargs):
-    """
-    plotResponse will plot the responses modeled from winglink against the 
-    observed data.
-    
-    Inputs:
-        respfn = full path to response file
-        datafn = full path to data file
-        wlfn = full path to a winglink data file used for a similar
-                          inversion.  This will be plotted on the response
-                          plots for comparison of fits.
-        maxcol = maximum number of columns for the plot
-        plottype = 'all' to plot all on the same plot
-                   '1' to plot each respones in a different figure
-                   station to plot a single station or enter as a list of 
-                   stations to plot a few stations [station1,station2].  Does
-                   not have to be verbatim but should have similar unique 
-                   characters input pb01 for pb01cs in outputfile
-    Outputs:
-        used for interactive masking of points
-        axlst = list of axes plotted
-        errlst = list of errors that were plotted
-        linelst = list of lines plotted
-    """
-
-    import matplotlib.gridspec as gridspec
-    import matplotlib.pyplot as plt
-    import mtpy.modeling.winglinktools as wlt
-    from matplotlib.ticker import MultipleLocator
-    
-    
-    plt.rcParams['font.size']=10
-    
-    try:
-        dpi=kwargs['dpi']
-    except KeyError:
-        dpi=200
-    if colormode=='color':
-        #color for data
-        cted=(0,0,1)
-        ctmd=(1,0,0)
-        mted='*'
-        mtmd='*'
-        
-        #color for occam model
-        ctem=(0,.6,.3)
-        ctmm=(.9,0,.8)
-        mtem='+'
-        mtmm='+'
-        
-        #color for Wingling model
-        ctewl=(0,.6,.8)
-        ctmwl=(.8,.7,0)
-        mtewl='x'
-        mtmwl='x'
-        
-    elif colormode=='bw':
-        #color for data
-        cted=(0,0,0)
-        ctmd=(0,0,0)
-        mted='*'
-        mtmd='v'
-        
-        #color for occam model
-        ctem=(0.6,.6,.6)
-        ctmm=(.6,.6,.6)
-        mtem='+'
-        mtmm='x'
-        
-        #color for Wingling model
-        ctewl=(.3,.3,.3)
-        ctmwl=(.3,.3,.3)    
-        mtewl='|'
-        mtmwl='_'
-        
-    if respfn!=None:
-        #read in the data    
-        rplst,stationlst,freq,title=read2DRespFile(respfn,datafn)
-        #make a legend list for plotting
-        legendlst=['$Obs_{xy}$','$Obs_{yx}$','$Mod_{xy}$','$Mod_{yx}$']
-        plotresp=True
-    else:
-        rplst,stationlst,freq,title,theta=read2DdataFile(datafn)
-        #make a legend list for plotting
-        legendlst=['$Obs_{xy}$','$Obs_{yx}$']
-        plotresp=False
-    
-    #boolean for adding winglink output to the plots 0 for no, 1 for yes
-    addwl=0
-    hspace=.15
-    #read in winglink data file
-    if wlfn!=None:
-        addwl=1
-        hspace=.25
-        wld,wlrplst,wlplst,wlslst,wltlst=wlt.readOutputFile(wlfn)
-        legendlst=['$Obs_{xy}$','$Obs_{yx}$','Occ_$Mod_{xy}$','Occ_$Mod_{yx}$',
-                   'Wl_$Mod_{xy}$','Wl_$Mod_{yx}$']
-        sdict=dict([(ostation,wlstation) for wlstation in wlslst 
-                    for ostation in stationlst if wlstation.find(ostation)>=0])
-    period=1./freq
-    nf=len(period)
-    
-    nstations=len(stationlst)
-    
-    #plot all responses onto one plot
-    if plottype=='all':
-        maxcol=8         
-        nrows=int(np.ceil(nstations/float(maxcol)))
-        
-        fig=plt.figure(1,[14,10],dpi=dpi)
-        gs=gridspec.GridSpec(nrows,1,hspace=hspace,left=.05,right=.98)
-        count=0
-        for rr in range(nrows):
-            g1=gridspec.GridSpecFromSubplotSpec(6,maxcol,subplot_spec=gs[rr],
-                                                    hspace=.15,wspace=.05)
-            count=rr*(maxcol)
-            for cc in range(maxcol):
-                rlst=[]
-                try:
-                    ii=count+cc
-                    stationlst[ii]
-                except IndexError:
-                    break
-                rmslst=np.hstack((rplst[ii]['resxy'][3],
-                                       rplst[ii]['resyx'][3],
-                                        rplst[ii]['phasexy'][3],
-                                        rplst[ii]['phaseyx'][3]))
-                rms=np.sqrt(np.sum(ms**2 for ms in rmslst)/len(rmslst))
-                #plot resistivity
-                axr=plt.Subplot(fig,g1[:4,cc])
-                fig.add_subplot(axr)
-                #cut out missing data points first
-                rxy=np.where(rplst[ii]['resxy'][0]!=0)[0]
-                ryx=np.where(rplst[ii]['resyx'][0]!=0)[0]
-                r1=axr.loglog(period[rxy],10**rplst[ii]['resxy'][0][rxy],
-                              ls=':',marker='s',ms=ms,color='b',mfc='b')
-                r2=axr.loglog(period[ryx],10**rplst[ii]['resyx'][0][ryx],
-                              ls=':',marker='o',ms=ms,color=ctmd,mfc=ctmd)
-                if plotresp==True:
-                    mrxy=[np.where(rplst[ii]['resxy'][2]!=0)[0]]
-                    mryx=[np.where(rplst[ii]['resyx'][2]!=0)[0]]
-                    r3=axr.loglog(period[mrxy],10**rplst[ii]['resxy'][2][mrxy],
-                                  ls='--',marker='+', ms=2*ms,color=ctem,mfc=ctem)
-                    r4=axr.loglog(period[mryx],10**rplst[ii]['resyx'][2][mryx],
-                                  ls='--',marker='+',ms=2*ms,color=ctmm,mfc=ctmm)
+            #get rms and roughness
+            for itfn in iterlstte:
+                self.read1DIterFile(itfn,imode='TE')
                 
-                    rlst=[r1,r2,r3,r4]
-                else:
-                    rlst=[r1,r2]
-                #plot phase
-                axp=plt.Subplot(fig,g1[-2:,cc])
-                fig.add_subplot(axp)
-                #cut out missing data points first
-                pxy=[np.where(rplst[ii]['phasexy'][0]!=0)[0]]
-                pyx=[np.where(rplst[ii]['phaseyx'][0]!=0)[0]]
-                axp.semilogx(period[pxy],rplst[ii]['phasexy'][0][pxy],
-                             ls=':',marker='s',ms=ms,color='b',mfc='b')
-                axp.semilogx(period[pyx],rplst[ii]['phaseyx'][0][pyx],
-                             ls=':',marker='o',ms=ms,color=ctmd,mfc=ctmd)
-                if plotresp==True:
-                    mpxy=[np.where(rplst[ii]['phasexy'][2]!=0)[0]]
-                    mpyx=[np.where(rplst[ii]['phaseyx'][2]!=0)[0]]
-                    axp.semilogx(period[mpxy],rplst[ii]['phasexy'][2][mpxy],
-                                 ls='--',marker='+',ms=2*ms,color=ctem,mfc=ctem)
-                    axp.semilogx(period[mpyx],rplst[ii]['phaseyx'][2][mpyx],
-                                 ls='--',marker='+',ms=2*ms,color=ctmm,mfc=ctmm)
+                #get iteration number to make sure the items are in sequence
+                ii=int(self.itdict['Iteration'])
                 
-                #add in winglink responses
-                if addwl==1:
-                    try:
-                        wlrms=wld[sdict[stationlst[ii]]]['rms']
-                        axr.set_title(stationlst[ii]+'\n'+\
-                                    'rms_occ, rms_wl= %.2f, %.2f' % (rms,wlrms),
-                                     fontdict={'size':12,'weight':'bold'})
-                        r5=axr.loglog(wld[sdict[stationlst[ii]]]['period'],
-                                   wld[sdict[stationlst[ii]]]['modresxy'],
-                                   ls='-.',marker='x',ms=2*ms,color=ctewl,
-                                   mfc=ctewl)
-                        r6=axr.loglog(wld[sdict[stationlst[ii]]]['period'],
-                                   wld[sdict[stationlst[ii]]]['modresyx'],
-                                   ls='-.',marker='x',ms=2*ms,color=ctmwl,
-                                   mfc=ctmwl)
-                        axp.semilogx(wld[sdict[stationlst[ii]]]['period'],
-                                     wld[sdict[stationlst[ii]]]['modphasexy'],
-                                     ls='-.',marker='x',ms=2*ms,color=ctewl,
-                                     mfc=ctewl)
-                        axp.semilogx(wld[sdict[stationlst[ii]]]['period'],
-                                     wld[sdict[stationlst[ii]]]['modphaseyx'],
-                                     ls='-.',marker='x',ms=2*ms,color=ctmwl,
-                                     mfc=ctmwl)
-                        rlst.append(r5[0])
-                        rlst.append(r6[0])
-                    except IndexError:
-                        print 'Station not present'
-                else:
-                    if plotresp==True:
-                        axr.set_title(stationlst[ii]+'; rms= %.2f' % rms,
-                                      fontdict={'size':12,'weight':'bold'})
-                    else:
-                        axr.set_title(stationlst[ii],
-                                      fontdict={'size':12,'weight':'bold'})
+                #put the values in appropriate place
+                self.rms_te[ii]=float(self.itdict['Misfit Value'])
+                self.roughness_te[ii]=float(self.itdict['Roughness Value'])
                 
-                #make plot nice with labels
-                if cc==0 and rr==0:
-                    fig.legend(rlst,legendlst,
-                                loc='upper center',markerscale=2,
-                                borderaxespad=.35,
-                                labelspacing=.08,
-                                handletextpad=.15,borderpad=.1,
-                                ncol=len(rlst))
-                axr.grid(True,alpha=.4)
-                axr.set_xticklabels(['' for ii in range(10)])
-                if cc>0:
-                    axr.set_yticklabels(['' for ii in range(6)])
-                    
-                axp.set_ylim(phaselimits)
-                if reslimits!=None:
-                    axr.set_ylim(reslimits)
-                axp.grid(True,alpha=.4)
-                axp.yaxis.set_major_locator(MultipleLocator(30))
-                axp.yaxis.set_minor_locator(MultipleLocator(5))
-                
-                if cc==0:
-                    axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                                   fontdict={'size':12,'weight':'bold'})
-                    axp.set_ylabel('Phase (deg)',
-                                   fontdict={'size':12,'weight':'bold'})
-                    axr.yaxis.set_label_coords(-.15,.5)
-                    axp.yaxis.set_label_coords(-.15,.5)
-        
-                if cc>0:
-                    axr.set_yticklabels(['' for ii in range(6)])
-                    axp.set_yticklabels(['' for ii in range(6)])
-                if rr==nrows-1:
-                    axp.set_xlabel('Period (s)',
-                                   fontdict={'size':12,'weight':'bold'})
-                                   
-    #---------------plot each respones in a different figure------------------
-    elif plottype=='1':
-        gs=gridspec.GridSpec(6,2,wspace=.05)
-         
-        
-
-        for ii,station in enumerate(stationlst):
+            #get all iteration files for TM mode
+            iterlsttm=[os.path.join(self.savepath,itfn) 
+                     for itfn in os.listdir(self.savepath)
+                     if itfn.find('TM')>0 and itfn.find('iter')>0]
             
-            rlst=[]
-            llst=[]
+            self.rms_tm=np.zeros(len(iterlsttm))
+            self.roughness_tm=np.zeros(len(iterlsttm))
             
-            rmslst=np.hstack((rplst[ii]['resxy'][3],
-                                       rplst[ii]['resyx'][3],
-                                        rplst[ii]['phasexy'][3],
-                                        rplst[ii]['phaseyx'][3]))
-            rms=np.sqrt(np.sum(ms**2 for ms in rmslst)/len(rmslst))
-            fig=plt.figure(ii+1,[9,10],dpi=dpi)
+            #get rms and roughness
+            for itfn in iterlsttm:
+                self.read1DIterFile(itfn,imode='TM')
+                
+                #get iteration number to make sure the items are in sequence
+                ii=int(self.itdict['Iteration'])
+                
+                #put the values in appropriate place
+                self.rms_tm[ii]=float(self.itdict['Misfit Value'])
+                self.roughness_tm[ii]=float(self.itdict['Roughness Value'])
+        
+        #plot the rms vs iteration, roughness vs rms
+        #---------plot TE mode-------------------
+        if imode=='TE':
+            fig=plt.figure(fignum,dpi=dpi)
             plt.clf()
+            ax1=fig.add_subplot(1,1,1)            
             
-            #plot resistivity
-            axr=fig.add_subplot(gs[:4,:])
-            #cut out missing data points first
-            rxy=np.where(rplst[ii]['resxy'][0]!=0)[0]
-            ryx=np.where(rplst[ii]['resyx'][0]!=0)[0]
+            nr=len(self.rms_te)
+            #plot the rms vs iteration
+            l1,=ax1.plot(np.arange(1,nr,1),self.rms_te[1:],'-k',lw=1,
+                         marker='d',ms=5)
             
-            #check to see if there is a xy component
-            if len(rxy)>0:
-                rte=axr.errorbar(period[rxy],10**rplst[ii]['resxy'][0][rxy],
-                                   ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
-                                   color=cted,
-                                   yerr=np.log(10)*rplst[ii]['resxy'][1][rxy]*\
-                                   10**rplst[ii]['resxy'][0][rxy],
-                                   ecolor=cted,picker=2)
-                rlst.append(rte[0])
-                llst.append('$Obs_{xy}$')
-            else:
-                pass
+            #plot the median of the RMS
+            medte=np.median(self.rms_te[1:])
+            m1,=ax1.plot(np.arange(0,nr,1),
+                         np.repeat(medte,nr),
+                         '--r',lw=.75)
+        
+            #make subplot for RMS vs Roughness Plot
+            ax2=ax1.twiny()
             
-            #check to see if there is a yx component
-            if len(ryx)>0:
-                rtm=axr.errorbar(period[ryx],10**rplst[ii]['resyx'][0][ryx],
-                                   ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
-                                   color=ctmd,
-                                   yerr=np.log(10)*rplst[ii]['resyx'][1][ryx]*\
-                                   10**rplst[ii]['resyx'][0][ryx],
-                                   ecolor=ctmd,picker=2)
-                rlst.append(rtm[0])
-                llst.append('$Obs_{yx}$')
-            else:
-                pass                                
+            #plot the rms vs roughness 
+            l2,=ax2.plot(self.roughness_te[1:],self.rms_te[1:],
+                         '--b',lw=.75,marker='o',ms=7,mfc='white')
+            for ii,rms in enumerate(self.rms_te[1:],1):
+                ax2.text(self.roughness_te[ii],rms,'{0}'.format(ii),
+                         horizontalalignment='center',
+                         verticalalignment='center',
+                         fontdict={'size':6,'weight':'bold','color':'blue'})
             
-            if plotresp==True:
-                mrxy=np.where(rplst[ii]['resxy'][2]!=0)[0]
-                mryx=np.where(rplst[ii]['resyx'][2]!=0)[0]
+            #make a legend
+            ax1.legend([l1,l2,m1],['RMS_TE','Roughness_TE',
+                       'Median_RMS={0:.2f}'.format(medte)],
+                        ncol=4,loc='upper center',columnspacing=.25,
+                        markerscale=.75,handletextpad=.15)
+            
+            ax1.set_ylim(medte-1,medte+1)
+            ax1.set_ylabel('RMS',fontdict={'size':fs,'weight':'bold'})                                   
+            ax1.set_xlabel('Iteration',fontdict={'size':fs,'weight':'bold'})
+            ax1.grid(alpha=.25,which='both')
+            ax2.set_xlabel('Roughness',fontdict={'size':fs,'weight':'bold',
+                                                 'color':'blue'})
+            for t2 in ax2.get_xticklabels():
+                t2.set_color('blue')  
                 
-                #check for the xy of model component
-                if len(mrxy)>0:
-                    r3=axr.errorbar(period[mrxy],10**rplst[ii]['resxy'][2][mrxy],
-                                    ls='--',marker=mtem,ms=ms,mfc=ctem,mec=ctem,
-                                    color=ctem,
-                                    yerr=10**(rplst[ii]['resxy'][3][mrxy]*\
-                                    rplst[ii]['resxy'][2][mrxy]/np.log(10)),
-                                    ecolor=ctem)
-                    rlst.append(r3[0])
-                    llst.append('$Mod_{xy}$')
-                else:
-                    pass
-                
-                #check for the yx model component  of resisitivity
-                if len(mryx)>0:
-                    r4=axr.errorbar(period[mryx],10**rplst[ii]['resyx'][2][mryx],
-                                    ls='--',marker=mtmm,ms=ms,mfc=ctmm,mec=ctmm,
-                                    color=ctmm,
-                                    yerr=10**(rplst[ii]['resyx'][3][mryx]*\
-                                    rplst[ii]['resyx'][2][mryx]/np.log(10)),
-                                    ecolor=ctmm)
-                    rlst.append(r4[0])
-                    llst.append('$Mod_{yx}$')
-                                
-            #plot phase
-            axp=fig.add_subplot(gs[-2:,:],sharex=axr)
-            
-            #cut out missing data points first
-            pxy=np.where(rplst[ii]['phasexy'][0]!=0)[0]
-            pyx=np.where(rplst[ii]['phaseyx'][0]!=0)[0]
-
-            if len(pxy)>0:
-                pte=axp.errorbar(period[pxy],rplst[ii]['phasexy'][0][pxy],
-                                   ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
-                                   color=cted,
-                                   yerr=rplst[ii]['phasexy'][1][pxy],
-                                    ecolor=cted,picker=1)
-            else:
-                pass
-            
-            if len(pyx)>0:
-                ptm=axp.errorbar(period[pyx],rplst[ii]['phaseyx'][0][pyx],
-                                   ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
-                                   color=ctmd,
-                                   yerr=rplst[ii]['phaseyx'][1][pyx],
-                                    ecolor=ctmd,picker=1)
-            else:
-                pass
-            
-            if plotresp==True:
-                mpxy=np.where(rplst[ii]['phasexy'][2]!=0)[0]
-                mpyx=np.where(rplst[ii]['phaseyx'][2]!=0)[0]
-                
-                if len(mpxy)>0:
-                    axp.errorbar(period[mpxy],rplst[ii]['phasexy'][2][mpxy],
-                                 ls='--',marker=mtem,ms=ms,mfc=ctem,mec=ctem,
-                                 color=ctem,yerr=rplst[ii]['phasexy'][3][mpxy],
-                                 ecolor=ctem)
-                else:
-                    pass
-                
-                if len(mpyx)>0:
-                    axp.errorbar(period[mpyx],rplst[ii]['phaseyx'][2][mpyx],
-                                 ls='--',marker=mtmm,ms=ms,mfc=ctmm,mec=ctmm,
-                                 color=ctmm,yerr=rplst[ii]['phaseyx'][3][mpyx],
-                                 ecolor=ctmm)
-                else:
-                    pass
-#                axp.semilogx(period[mpxy],rplst[ii]['phasexy'][2][mpxy],
-#                             ls='--',marker='+',ms=2*ms,color=ctem,mfc=ctem)
-#                axp.semilogx(period[mpyx],rplst[ii]['phaseyx'][2][mpyx],
-#                             ls='--',marker='+',ms=2*ms,color=ctmm,mfc=ctmm)
-                         
-            #add in winglink responses
-            if addwl==1:
-                try:
-                    wlrms=wld[sdict[station]]['rms']
-                    axr.set_title(stationlst[ii]+'\n'+\
-                                'rms_occ, rms_wl= %.2f, %.2f' % (rms,wlrms),
-                                 fontdict={'size':12,'weight':'bold'})
-                    for ww,wlstation in enumerate(wlslst):
-#                        print station,wlstation
-                        if wlstation.find(station)==0:
-                            print station,wlstation
-                            wlrpdict=wlrplst[ww]
-                    
-                    zrxy=[np.where(wlrpdict['resxy'][0]!=0)[0]]
-                    zryx=[np.where(wlrpdict['resyx'][0]!=0)[0]]
-                    
-                     #plot winglink resistivity
-                    r5=axr.loglog(wlplst[zrxy],wlrpdict['resxy'][1][zrxy],
-                                  ls='-.',marker=mtewl,ms=5,color=ctewl,
-                                  mfc=ctewl)
-                    r6=axr.loglog(wlplst[zryx],wlrpdict['resyx'][1][zryx],
-                                  ls='-.',marker=mtmwl,ms=5,color=ctmwl,
-                                  mfc=ctmwl)
-                    
-                    #plot winglink phase
-                    axp.semilogx(wlplst[zrxy],wlrpdict['phasexy'][1][zrxy],
-                                 ls='-.',marker=mtewl,ms=5,color=ctewl,
-                                 mfc=ctewl)
-                    axp.semilogx(wlplst[zryx],wlrpdict['phaseyx'][1][zryx],
-                                 ls='-.',marker=mtmwl,ms=5,color=ctmwl,
-                                 mfc=ctmwl)
-                    
-                    rlst.append(r5[0])
-                    rlst.append(r6[0])
-                    llst.append('$WLMod_{xy}$')
-                    llst.append('$WLMod_{yx}$')
-                except IndexError:
-                    print 'Station not present'
-            else:
-                axr.set_title(stationlst[ii]+'; rms= %.2f' % rms,
-                              fontdict={'size':16,'weight':'bold'})
-            
-                            
-            axr.set_xscale('log')
-            axp.set_xscale('log')
-            axr.set_yscale('log')
-            axr.grid(True,alpha=.4)
-#            axr.set_xticklabels(['' for ii in range(10)])
-            axp.set_ylim(phaselimits)
-            if reslimits!=None:
-                axr.set_ylim(10**reslimits[0],10**reslimits[1])
-            axp.grid(True,alpha=.4)
-            axp.yaxis.set_major_locator(MultipleLocator(10))
-            axp.yaxis.set_minor_locator(MultipleLocator(1))
-            plt.setp(axr.xaxis.get_ticklabels(),visible=False)
-            
-            axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                           fontdict={'size':12,'weight':'bold'})
-            axp.set_ylabel('Phase (deg)',
-                           fontdict={'size':12,'weight':'bold'})
-            axp.set_xlabel('Period (s)',fontdict={'size':12,'weight':'bold'})
-            axr.legend(rlst,llst,
-                       loc=2,markerscale=1,borderaxespad=.05,
-                       labelspacing=.08,
-                       handletextpad=.15,borderpad=.05,prop={'size':12})
-            axr.yaxis.set_label_coords(-.07,.5)
-            axp.yaxis.set_label_coords(-.07,.5)
-            
-    #---Plot single or subset of stations-------------------------------------
-    else:
-        pstationlst=[]
-
-        if type(plottype) is not list:
-            plottype=[plottype]
-        for ii,station in enumerate(stationlst):
-            for pstation in plottype:
-                if station.find(pstation)>=0:
-#                    print 'plotting ',station
-                    pstationlst.append(ii)
-        if addwl==1:
-            pwlstationlst=[]
-            for ww,wlstation in enumerate(wlslst):
-                for pstation in plottype:
-                    if wlstation.find(pstation)>=0:
-#                        print 'plotting ',wlstation
-                        pwlstationlst.append(ww)  
-
-        gs=gridspec.GridSpec(6,2,wspace=.05,left=.1,top=.93,bottom=.07)
-        for jj,ii in enumerate(pstationlst):
-            rlst=[]
-            pstation=stationlst[ii]
-            rmslst=np.hstack((rplst[ii]['resxy'][3],
-                                       rplst[ii]['resyx'][3],
-                                        rplst[ii]['phasexy'][3],
-                                        rplst[ii]['phaseyx'][3]))
-            rms=np.sqrt(np.sum(ms**2 for ms in rmslst)/len(rmslst))
-            fig=plt.figure(ii+1,dpi=dpi)
+        #-------Plot TM mode-------------------
+        elif imode=='TM':
+            fig=plt.figure(fignum,dpi=dpi)
             plt.clf()
-            #plot resistivity
-            #cut out missing data points first
-            axr=fig.add_subplot(gs[:4,:])
-            rxy=np.where(rplst[ii]['resxy'][0]!=0)[0]
-            ryx=np.where(rplst[ii]['resyx'][0]!=0)[0]
-            rte=axr.errorbar(period[rxy],10**rplst[ii]['resxy'][0][rxy],
-                    ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
-                    color=cted,
-                    yerr=np.log(10)*rplst[ii]['resxy'][1][rxy]*\
-                        10**rplst[ii]['resxy'][0][rxy],
-                    ecolor=cted,picker=2)
-            rtm=axr.errorbar(period[ryx],10**rplst[ii]['resyx'][0][ryx],
-                    ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
-                    color=ctmd,
-                    yerr=np.log(10)*rplst[ii]['resyx'][1][ryx]*\
-                        10**rplst[ii]['resyx'][0][ryx],
-                    ecolor=ctmd,picker=2)
-#            r1=axr.loglog(period[rxy],10**rplst[ii]['resxy'][0][rxy],
-#                          ls=':',marker='s',ms=ms,color=cted,mfc=cted)
-#            r2=axr.loglog(period[ryx],10**rplst[ii]['resyx'][0][ryx],
-#                          ls=':',marker='o',ms=ms,color=ctmd,mfc=ctmd)
-            if plotresp==True:
-                mrxy=[np.where(rplst[ii]['resxy'][2]!=0)[0]]
-                mryx=[np.where(rplst[ii]['resyx'][2]!=0)[0]]
-                r3=axr.errorbar(period[mrxy],10**rplst[ii]['resxy'][2][mrxy],
-                                ls='--',marker=mtem,ms=ms,mfc=ctem,mec=ctem,
-                                color=ctem,
-                                yerr=10**(rplst[ii]['resxy'][3][mrxy]*\
-                                rplst[ii]['resxy'][2][mrxy]/np.log(10)),
-                                ecolor=ctem)
-                r4=axr.errorbar(period[mryx],10**rplst[ii]['resyx'][2][mryx],
-                                ls='--',marker=mtmm,ms=ms,mfc=ctmm,mec=ctmm,
-                                color=ctmm,
-                                yerr=10**(rplst[ii]['resyx'][3][mryx]*\
-                                rplst[ii]['resyx'][3][mryx]/np.log(10)),
-                                ecolor=ctmm)
-#                r3=axr.loglog(period[mrxy],10**rplst[ii]['resxy'][2][mrxy],
-#                              ls='--',marker='+', ms=2*ms,color=ctem,mfc=ctem)
-#                r4=axr.loglog(period[mryx],10**rplst[ii]['resyx'][2][mryx],
-#                              ls='--',marker='+',ms=2*ms,color=ctmm,mfc=ctmm)
+            ax1=fig.add_subplot(1,1,1)
             
-                rlst=[rte[0],rtm[0],r3[0],r4[0]]
-            else:
-                rlst=[rte[0],rtm[0]]
-                                
-            #plot phase
-            axp=fig.add_subplot(gs[-2:,:],sharex=axr)
-            #cut out missing data points first
-            pxy=[np.where(rplst[ii]['phasexy'][0]!=0)[0]]
-            pyx=[np.where(rplst[ii]['phaseyx'][0]!=0)[0]]
-            pte=axp.errorbar(period[pxy],rplst[ii]['phasexy'][0][pxy],
-                       ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,color=cted,
-                       yerr=rplst[ii]['phasexy'][1][pxy],ecolor=cted,picker=1)
-            ptm=axp.errorbar(period[pyx],rplst[ii]['phaseyx'][0][pyx],
-                    ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,color=ctmd,
-                    yerr=rplst[ii]['phaseyx'][1][pyx],ecolor=ctmd,picker=1)
-#            axp.semilogx(period[pxy],rplst[ii]['phasexy'][0][pxy],
-#                         ls=':',marker='s',ms=ms,color=cted,mfc=cted)
-#            axp.semilogx(period[pyx],rplst[ii]['phaseyx'][0][pyx],
-#                         ls=':',marker='o',ms=ms,color=ctmd,mfc=ctmd)
-            if plotresp==True:
-                mpxy=[np.where(rplst[ii]['phasexy'][2]!=0)[0]]
-                mpyx=[np.where(rplst[ii]['phaseyx'][2]!=0)[0]]
-                
-                axp.errorbar(period[mpxy],rplst[ii]['phasexy'][2][mpxy],
-                            ls='--',marker=mtem,ms=ms,mfc=ctem,mec=ctem,color=ctem,
-                            yerr=rplst[ii]['phasexy'][3][mpxy],ecolor=ctem)
-                axp.errorbar(period[mpyx],rplst[ii]['phaseyx'][2][mpyx],
-                            ls='--',marker=mtmm,ms=ms,mfc=ctmm,mec=ctmm,color=ctmm,
-                            yerr=rplst[ii]['phaseyx'][3][mpyx],ecolor=ctmm)
-#                axp.semilogx(period[mpxy],rplst[ii]['phasexy'][2][mpxy],
-#                             ls='--',marker='+',ms=2*ms,color=ctem,mfc=ctem)
-#                axp.semilogx(period[mpyx],rplst[ii]['phaseyx'][2][mpyx],
-#                             ls='--',marker='+',ms=2*ms,color=ctmm,mfc=ctmm)
-                         
-            #add in winglink responses
-            if addwl==1:
-                try:
-                    wlrms=wld[sdict[station]]['rms']
-                    print 'plotting WL station: ', sdict[pstation]
-                    axr.set_title(pstation+'\n'+\
-                                'rms_occ, rms_wl= %.2f, %.2f' % (rms,wlrms),
-                                 fontdict={'size':12,'weight':'bold'})
-                    wlrpdict=wlrplst[pwlstationlst[jj]]
-                    zrxy=[np.where(wlrpdict['resxy'][0]!=0)[0]]
-                    zryx=[np.where(wlrpdict['resyx'][0]!=0)[0]]
+            nr=len(self.rms_tm)
+            #plot the rms vs iteration
+            l1,=ax1.plot(np.arange(1,nr,1),self.rms_tm[1:],'-k',lw=1,
+                         marker='d',ms=5)
+            
+            #plot the median of the RMS
+            medtm=np.median(self.rms_tm[1:])
+            m1,=ax1.plot(np.arange(0,nr,1),
+                         np.repeat(medtm,nr),
+                         '--r',lw=.75)
+
+        
+            #make subplot for RMS vs Roughness Plot
+            ax2=ax1.twiny()
+            
+            #plot the rms vs roughness 
+            l2,=ax2.plot(self.roughness_tm[1:],self.rms_tm[1:],
+                         '--b',lw=.75,marker='o',ms=7,mfc='white')
+            for ii,rms in enumerate(self.rms_tm[1:],1):
+                ax2.text(self.roughness_tm[ii],rms,'{0}'.format(ii),
+                         horizontalalignment='center',
+                         verticalalignment='center',
+                         fontdict={'size':fs-2,'weight':'bold','color':'blue'})
+            
+            #make a legend
+            ax1.legend([l1,l2,m1],['RMS_TM','Roughness_TM',
+                       'Median_RMS={0:.2f}'.format(medtm)],
+                        ncol=4,loc='upper center',columnspacing=.25,
+                        markerscale=.75, handletextpad=.15)
+            
+            ax1.set_ylim(medtm-1,medtm+1)            
+            ax1.set_ylabel('RMS',fontdict={'size':fs,'weight':'bold'})                                   
+            ax1.set_xlabel('Iteration',fontdict={'size':fs,'weight':'bold'})
+            ax1.grid(alpha=.25,which='both')
+            ax2.set_xlabel('Roughness',fontdict={'size':fs,'weight':'bold',
+                                                 'color':'blue'})
+            for t2 in ax2.get_xticklabels():
+                t2.set_color('blue')  
                     
-                    #plot winglink Resistivity
-                    r5=axr.loglog(wlplst[zrxy],wlrpdict['resxy'][1][zrxy],
-                                  ls='-.',marker=mtewl,ms=5,color=ctewl,
-                                  mfc=ctewl)
-                    r6=axr.loglog(wlplst[zryx],wlrpdict['resyx'][1][zryx],
-                                  ls='-.',marker=mtmwl,ms=5,color=ctmwl,
-                                  mfc=ctmwl)
-                    #plot winglink phase
-                    axp.semilogx(wlplst[zrxy],wlrpdict['phasexy'][1][zrxy],
-                                 ls='-.',marker=mtewl,ms=5,color=ctewl,
-                                 mfc=ctewl)
-                    axp.semilogx(wlplst[zryx],wlrpdict['phaseyx'][1][zryx],
-                                 ls='-.',marker=mtmwl,ms=5,color=ctmwl,
-                                 mfc=ctmwl)
-                    rlst.append(r5[0])
-                    rlst.append(r6[0])
-                except IndexError:
-                    print 'Station not present'
-            else:
-                if plotresp==True:
-                    axr.set_title(pstation+'; rms= %.2f' % rms,
-                                  fontdict={'size':16,'weight':'bold'})
-                else:
-                    axr.set_title(pstation,
-                                  fontdict={'size':16,'weight':'bold'})
-                       
+        elif imode=='both':
+            fig=plt.figure(fignum,dpi=dpi)
+            plt.clf()
+            ax1=fig.add_subplot(2,1,1)
+            ax3=fig.add_subplot(2,1,2,sharex=ax1) 
             
-            axr.set_xscale('log')
-            axr.set_yscale('log')
-            axp.set_xscale('log') 
-            plt.setp(axr.xaxis.get_ticklabels(),visible=False)                 
-            axr.grid(True,alpha=.4)
-#            axr.set_xticklabels(['' for ii in range(10)])
-            axp.set_ylim(phaselimits)
-            if reslimits!=None:
-                axr.set_ylim(reslimits)
-            axp.grid(True,alpha=.4)
-            axp.yaxis.set_major_locator(MultipleLocator(10))
-            axp.yaxis.set_minor_locator(MultipleLocator(1))
+            plt.rcParams['figure.subplot.hspace']=.4
+            plt.rcParams['figure.subplot.left']=.1
+            plt.rcParams['figure.subplot.right']=.97
+            plt.rcParams['figure.subplot.bottom']=.1
+            plt.rcParams['figure.subplot.top']=.92
             
-            axr.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                           fontdict={'size':12,'weight':'bold'})
-            axp.set_ylabel('Phase (deg)',
-                           fontdict={'size':12,'weight':'bold'})
-            axp.set_xlabel('Period (s)',fontdict={'size':12,'weight':'bold'})
-            axr.legend(rlst,legendlst,
-                       loc=2,markerscale=2,borderaxespad=.05,
-                       labelspacing=.08,
-                       handletextpad=.15,borderpad=.05,prop={'size':12})
-            axr.yaxis.set_label_coords(-.075,.5)
-            axp.yaxis.set_label_coords(-.075,.5)
+            nr=len(self.rms_te)
+            #plot the rms vs iteration
+            l1,=ax1.plot(np.arange(1,nr,1),self.rms_te[1:],'-k',lw=1,
+                         marker='d',ms=5)
             
-#    return axlst,linelst,errlst
-    
-def plotTipper(datafile,):
-    pass
-    
-def plotAllResponses(datafile,station,fignum=1):
-    """
-    Plot all the responses of occam inversion from data file.  This assumes
-    the response curves are in the same folder as the datafile.
-
-    Input:
-        datafile = full path to occam data file
+            #plot the median of the RMS
+            medte=np.median(self.rms_te[1:])
+            m1,=ax1.plot(np.arange(0,nr,1),
+                         np.repeat(medte,nr),
+                         '--r',lw=.75)
         
-    Output:
-        Plot
-    
-    """    
-
-    import matplotlib.gridspec as gridspec
-    import matplotlib.pyplot as plt
-    from matplotlib.ticker import MultipleLocator
-    
-    rpath=os.path.dirname(datafile)
-    
-    gs=gridspec.GridSpec(6,2,wspace=.20)
-    
-    plt.rcParams['font.size']=int(7)
-    plt.rcParams['figure.subplot.left']=.08
-    plt.rcParams['figure.subplot.right']=.98
-    plt.rcParams['figure.subplot.bottom']=.1
-    plt.rcParams['figure.subplot.top']=.92
-
-
-    rlst=[os.path.join(rpath,rfile) for rfile in os.listdir(rpath) 
-            if rfile.find('.resp')>0]
-    
-    nresp=len(rlst)
-    
-    colorlst=[(cc,0,1-cc) for cc in np.arange(0,1,1./nresp)]
-    fig=plt.figure(fignum,[7,8],dpi=200)
-    plt.clf()
-    axrte=fig.add_subplot(gs[:4,0])
-    axrtm=fig.add_subplot(gs[:4,1])
-    axpte=fig.add_subplot(gs[-2:,0])
-    axptm=fig.add_subplot(gs[-2:,1])
-    rmstelst=[]
-    rmstmlst=[]
-    rmstestr=[]
-    rmstmstr=[]
-    #read responses
-    for jj,rfile in enumerate(rlst):
-        rplst,stationlst,freq,title=read2DRespFile(os.path.join(rpath,rfile),
-                                                 datafile)
-        ii=np.where(np.array(stationlst)==station)[0][0]
-        
-        period=1./freq
-        
-        rmslstte=np.hstack((rplst[ii]['resxy'][3],
-                            rplst[ii]['phasexy'][3]))
-        rmslsttm=np.hstack((rplst[ii]['resyx'][3],
-                            rplst[ii]['phaseyx'][3]))
-        rmste=np.sqrt(np.sum(ms**2 for ms in rmslstte)/len(rmslstte))
-        rmstm=np.sqrt(np.sum(ms**2 for ms in rmslsttm)/len(rmslsttm))
-        rmstelst.append('%d rms=%.3f ' % (jj,rmste))
-        rmstmlst.append('%d rms=%.3f ' % (jj,rmstm))
-        rmstestr.append(rmste)
-        rmstmstr.append(rmstm)
-        #plot resistivity
-        
-        
-        if jj==0:
-            #cut out missing data points first
-            rxy=np.where(rplst[ii]['resxy'][0]!=0)[0]
-            ryx=np.where(rplst[ii]['resyx'][0]!=0)[0]
-            r1,=axrte.loglog(period[rxy],10**rplst[ii]['resxy'][0][rxy],
-                          ls=':',marker='s',ms=4,color='k',mfc='k')
-            r2,=axrtm.loglog(period[ryx],10**rplst[ii]['resyx'][0][ryx],
-                          ls=':',marker='o',ms=4,color='k',mfc='k')
-            rlstte=[r1]
-            rlsttm=[r2]
-    
-        mrxy=[np.where(rplst[ii]['resxy'][2]!=0)[0]]
-        mryx=[np.where(rplst[ii]['resyx'][2]!=0)[0]]
-        r3,=axrte.loglog(period[mrxy],10**rplst[ii]['resxy'][2][mrxy],
-                        ls='-',color=colorlst[jj])
-        r4,=axrtm.loglog(period[mryx],10**rplst[ii]['resyx'][2][mryx],
-                        ls='-',color=colorlst[jj])
-    
-        rlstte.append(r3)
-        rlsttm.append(r4)
-                            
-        #plot phase
-        #cut out missing data points first
-        pxy=[np.where(rplst[ii]['phasexy'][0]!=0)[0]]
-        pyx=[np.where(rplst[ii]['phaseyx'][0]!=0)[0]]
-        
-        if jj==0:            
-            axpte.semilogx(period[pxy],rplst[ii]['phasexy'][0][pxy],
-                         ls=':',marker='s',ms=4,color='k',mfc='k')
-            axptm.semilogx(period[pyx],rplst[ii]['phaseyx'][0][pyx],
-                         ls=':',marker='o',ms=4,color='k',mfc='k')
-                         
-        mpxy=[np.where(rplst[ii]['phasexy'][2]!=0)[0]]
-        mpyx=[np.where(rplst[ii]['phaseyx'][2]!=0)[0]]
-        axpte.semilogx(period[mpxy],rplst[ii]['phasexy'][2][mpxy],
-                     ls='-',color=colorlst[jj])
-        axptm.semilogx(period[mpyx],rplst[ii]['phaseyx'][2][mpyx],
-                     ls='-',color=colorlst[jj])
-    
-#    teh,tel=axrte.get_legend_handles_labels()                 
-#    axrte.legend(rlstte,rmstelst,loc=2,markerscale=2,borderaxespad=.05,
-#               labelspacing=.08,
-#               handletextpad=.15,borderpad=.05)
-    
-#    tmh,tml=axrtm.get_legend_handles_labels() 
-#    axrtm.legend(rlsttm,rmstmlst,loc=2,markerscale=2,borderaxespad=.05,
-#               labelspacing=.08,
-#               handletextpad=.15,borderpad=.05)
-                   
-    axrte.grid(True,alpha=.4)
-    axrtm.grid(True,alpha=.4)
-    
-    
-    axrtm.set_xticklabels(['' for ii in range(10)])
-    axrte.set_xticklabels(['' for ii in range(10)])
-    #axpte.set_ylim(-10,120)
-    
-    rmstestr=np.median(np.array(rmstestr)[1:])
-    rmstmstr=np.median(np.array(rmstmstr)[1:])
-    axrte.set_title('TE rms={0:.2f}'.format(rmstestr),
-                    fontdict={'size':10,'weight':'bold'})
-    axrtm.set_title('TM rms={0:.2f}'.format(rmstmstr),
-                    fontdict={'size':10,'weight':'bold'})
-    
-    axpte.grid(True,alpha=.4)
-    axpte.yaxis.set_major_locator(MultipleLocator(10))
-    axpte.yaxis.set_minor_locator(MultipleLocator(1))
-    
-    axrte.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                   fontdict={'size':10,'weight':'bold'})
-    axpte.set_ylabel('Phase (deg)',
-                   fontdict={'size':10,'weight':'bold'})
-    axpte.set_xlabel('Period (s)',fontdict={'size':10,'weight':'bold'})
-
-    axrte.yaxis.set_label_coords(-.08,.5)
-    axpte.yaxis.set_label_coords(-.08,.5)
-    
-    axrtm.set_xticklabels(['' for ii in range(10)])
-#    axptm.set_ylim(-10,120)
-    axptm.grid(True,alpha=.4)
-    axptm.yaxis.set_major_locator(MultipleLocator(10))
-    axptm.yaxis.set_minor_locator(MultipleLocator(1))
-    
-    axrtm.set_ylabel('App. Res. ($\Omega \cdot m$)',
-                   fontdict={'size':12,'weight':'bold'})
-    axptm.set_ylabel('Phase (deg)',
-                   fontdict={'size':12,'weight':'bold'})
-    axptm.set_xlabel('Period (s)',fontdict={'size':12,'weight':'bold'})
-
-    axrtm.yaxis.set_label_coords(-.08,.5)
-    axptm.yaxis.set_label_coords(-.08,.5)
-    plt.suptitle(station,fontsize=12,fontweight='bold')
-    plt.show()
-    
-    
-def plot2DModel(iterfile,meshfile=None,inmodelfile=None,datafile=None,
-                xpad=1.0,ypad=6.0,mpad=0.5,spad=3.0,ms=60,stationid=None,
-                fdict={'size':8,'rotation':60,'weight':'normal'},
-                dpi=300,ylimits=None,xminorticks=5,yminorticks=1,
-                climits=(0,4), cmap='jet_r',fs=8,femesh='off',
-                regmesh='off',aspect='auto',title='on',meshnum='off',
-                blocknum='off',blkfdict={'size':3},fignum=1,
-                plotdimensions=(10,10),grid='off',yscale='km'):
-    """
-    plotModel will plot the model output by occam in the iteration file.
-    
-    Inputs:
-        iterfile = full path to the iteration file that you want to plot
-        
-        meshfile = full path to mesh file (the forward modeling mesh).  If 
-                    none it will look for a file with mesh in the name.
-        
-        inmodelfile = full path to the INMODEL file (regularization mesh).
-                      If none it will look for a file with inmodel in the name.
-        
-        datafile = full path to data file.  If none is input it will use the
-                    data file found in the iteration file.
-        
-        xpad = padding in the horizontal direction of model
-        
-        ypad = padding the in the vertical direction of the top of the model
-               to fit the station names and markers
-               
-        mpad = marker pad to fit right at the surface, haven't found a better
-               way of doing this automatically yet
-               
-        spad = padding of station names away from the top of the model, this
-                is kind of awkward at the moment especially if you zoom into 
-                the model, it usually looks retarded and doesn't fit
-                
-        ms = marker size in ambiguous points
-        
-        stationid = index of station names to plot -> ex. pb01sdr would be 
-                    stationid=(0,4) to plot pb01
-                    
-        fdict = font dictionary for the station names, can have keys:
-                'size' = font size
-                'rotation' = angle of rotation (deg) of font
-                'weight' = weight of font 
-                'color' = color of font
-                'style' = style of font ex. 'italics'
-                
-        plotdimensions = x-y dimensions of the figure (10,10) in inches
-                
-        dpi = dot per inch of figure, should be 300 for publications
-        
-        ylimits = limits of depth scale (km). ex, ylimits=(0,30)
-        
-        xminorticks = location of minor tick marks for the horizontal axis
-        
-        yminorticks = location of minor tick marks for vertical axis
-        
-        climits = limits of log10(resistivity). ex. climits=(0,4)
-        
-        cmap = color map to plot the model image
-        
-        fs = font size of axis labels
-        
-        femesh = 'on' to plot finite element forward modeling mesh (black)
-        
-        regmesh = 'on' to plot regularization mesh (blue)
-        
-        aspect = aspect ratio of the figure, depends on your line length and
-                the depth you want to investigate
-        
-        title = 'on' to put the RMS and Roughness as the title, or input a 
-                string that will be added to the RMS and roughness, or put 
-                None to not put a title on the plot and print out RMS and 
-                roughness
-        
-        meshnum = 'on' to plot FE mesh block numbers
-        
-        fignum = figure number to plot to
-        
-        blocknum = 'on' to plot numbers on the regularization blocks
-        
-        blkfdict = font dictionary for the numbering of regularization blocks
-        
-        grid = major for major ticks grid
-               minor for a grid of the minor ticks
-               both for a grid with major and minor ticks
-        
-        yscale = 'km' for depth in km or 'm' for depth in meters
-    """
-        
-    
-    #get directory path of inversion folder
-    invpath=os.path.dirname(iterfile)    
-    
-    #read in iteration file
-    idict=read2DIterFile(iterfile)    
-    
-    #get meshfile if none is provides assuming the mesh file is named with
-    #mesh
-    if meshfile==None:
-        meshfile=os.path.join(invpath,'MESH')
-        if os.path.isfile(meshfile)==False:
-            for ff in os.listdir(invpath):
-                if ff.lower().find('mesh')>=0:
-                    meshfile=os.path.join(invpath,ff)
-            if os.path.isfile(meshfile)==False:
-                raise NameError('Could not find a mesh file, input manually')
-    
-    #get inmodelfile if none is provides assuming the mesh file is named with
-    #inmodel
-    if inmodelfile==None:
-        inmodelfile=os.path.join(invpath,'INMODEL')
-        if os.path.isfile(inmodelfile)==False:
-            for ff in os.listdir(invpath):
-                if ff.lower().find('inmodel')>=0:
-                    inmodelfile=os.path.join(invpath,ff)
-            if os.path.isfile(inmodelfile)==False:
-                raise NameError('Could not find a model file, input manually')
-                
-    #get datafile if none is provides assuming the mesh file is named with
-    #.dat
-    if datafile==None:
-        datafile=idict['Data File']
-        if datafile.find(os.sep)==-1:
-            datafile=os.path.join(invpath,datafile)
-        if os.path.isfile(datafile)==False:
-            for ff in os.listdir(invpath):
-                if ff.lower().find('.dat')>=0:
-                    datafile=os.path.join(invpath,ff)
-            if os.path.isfile(datafile)==False:
-                raise NameError('Could not find a data file, input manually')
-    
-    if yscale=='km':
-        dfactor=1000.
-        pfactor=1.0
-    elif yscale=='m':
-        dfactor=1.
-        pfactor=1000.
-    else:
-        dfactor=1000.
-        pfactor=1.0
-    #read in data file
-    print 'Reading data from: ',datafile
-    rplst,slst,freq,datatitle,theta=read2DdataFile(datafile)
-    
-    #read in MESH file
-    print 'Reading mesh from: ',meshfile
-    hnode,vnode,freeparam=read2Dmesh(meshfile)
-    
-    #read in INMODEL
-    print 'Reading model from: ',inmodelfile
-    cr,cc,header=read2DInmodel(inmodelfile)
-    bndgoff=float(header['BINDING OFFSET'])/dfactor
-    
-    #make a meshgrid 
-    X,Y=np.meshgrid(hnode,vnode)
-    
-    cr=np.array(cr)
-    
-    nc=len(cr)
-    assert len(cr)==len(cc)
-    
-    resmodel=np.zeros((vnode.shape[0],hnode.shape[0]))
-    mm=0
-    for ii in range(nc):
-        #get the number of layers to combine
-        #this index will be the first index in the vertical direction
-        ny1=cr[:ii,0].sum()
-        #the second index  in the vertical direction
-        ny2=ny1+cr[ii][0]
-        #make the list of amalgamated columns an array for ease
-        lc=np.array(cc[ii])
-        #loop over the number of amalgamated blocks
-        for jj in range(len(cc[ii])):
-            #get first in index in the horizontal direction
-            nx1=lc[:jj].sum()
-            #get second index in horizontal direction
-            nx2=nx1+lc[jj]
-            #put the apporpriate resistivity value into all the amalgamated model
-            #blocks of the regularization grid into the forward model grid
-            resmodel[ny1:ny2,nx1:nx2]=idict['model'][mm]
-            mm+=1
-    
-    #make some arrays for plotting the model
-    
-    plotx=np.array([hnode[:ii+1].sum() for ii in range(len(hnode)-1)])/dfactor
-    ploty=np.array([vnode[:ii+1].sum() for ii in range(len(vnode)-1)])/dfactor
-    
-    #center the grid onto the station coordinates
-    x0=bndgoff-plotx[cc[0][0]]
-    plotx=plotx+x0
-    
-    #flip the arrays around for plotting purposes
-    #plotx=plotx[::-1] and make the first layer start at zero
-    ploty=ploty[::-1]-ploty[0]
-    
-    #make a mesh grid to plot in the model coordinates
-    x,y=np.meshgrid(plotx,ploty)
-    
-    #flip the resmodel upside down so that the top is the stations
-    resmodel=np.flipud(resmodel)
-    
-    
-    plt.rcParams['font.size']=int(dpi/40.)
-    plt.rcParams['figure.subplot.left']=.08
-    plt.rcParams['figure.subplot.right']=.99
-    plt.rcParams['figure.subplot.bottom']=.1
-    plt.rcParams['figure.subplot.top']=.92
-    plt.rcParams['figure.subplot.wspace']=.01
-    #plot the model
-    fig=plt.figure(fignum,plotdimensions,dpi=dpi)
-    plt.clf()
-    ax=fig.add_subplot(1,1,1,aspect=aspect)
-    
-    ax.pcolormesh(x,y,resmodel,cmap=cmap,vmin=climits[0],vmax=climits[1])
-    #ax.set_ylim(ploty[0],ploty[-1]-2.0)
-    
-    cbx=make_axes(ax,shrink=.8,pad=.01)
-    cb=ColorbarBase(cbx[0],cmap=cmap,norm=Normalize(vmin=climits[0],
-                    vmax=climits[1]))
-    cb.set_label('Resistivity ($\Omega \cdot$m)',
-                 fontdict={'size':fs,'weight':'bold'})
-    cb.set_ticks(np.arange(int(climits[0]),int(climits[1])+1))
-    cb.set_ticklabels(['10$^{0}$'.format(nn) for nn in 
-                        np.arange(int(climits[0]),int(climits[1])+1)])
-    
-    offsetlst=[]
-    for rpdict in rplst:
-        #plot the station marker
-        ax.scatter(rpdict['offset']/dfactor,-mpad*pfactor,marker='v',c='k',
-                   s=ms)
-        #put station id onto station marker
-        #if there is a station id index
-        if stationid!=None:
-            ax.text(rpdict['offset']/dfactor,-spad*pfactor,
-                    rpdict['station'][stationid[0]:stationid[1]],
-                    horizontalalignment='center',
-                    verticalalignment='baseline',
-                    fontdict=fdict)
-        #otherwise put on the full station name found form data file
-        else:
-            ax.text(rpdict['offset']/dfactor,-spad*pfactor,
-                    rpdict['station'],
-                    horizontalalignment='center',
-                    verticalalignment='baseline',
-                    fontdict=fdict)
-        offsetlst.append(rpdict['offset']/dfactor)
-    
-    #set the initial limits of the plot to be square about the profile line  
-    if ylimits==None:  
-        ax.set_ylim(abs(max(offsetlst)-min(offsetlst))/dfactor,-ypad*pfactor)
-    else:
-        ax.set_ylim(ylimits[1]*pfactor,(ylimits[0]-ypad)*pfactor)
-    ax.set_xlim(min(offsetlst)-(xpad*pfactor),
-                 (max(offsetlst)+(xpad*pfactor)))
-    #set the axis properties
-    ax.xaxis.set_minor_locator(MultipleLocator(xminorticks*pfactor))
-    ax.yaxis.set_minor_locator(MultipleLocator(yminorticks*pfactor))
-    if yscale=='km':
-        ax.set_xlabel('Horizontal Distance (km)',
-                      fontdict={'size':fs,'weight':'bold'})
-        ax.set_ylabel('Depth (km)',fontdict={'size':fs,'weight':'bold'})
-    elif yscale=='m':
-        ax.set_xlabel('Horizontal Distance (m)',
-                      fontdict={'size':fs,'weight':'bold'})
-        ax.set_ylabel('Depth (m)',fontdict={'size':fs,'weight':'bold'})
-    
-    #put a grid on if one is desired    
-    if grid=='major':
-        ax.grid(alpha=.3,which='major')
-    if grid=='minor':
-        ax.grid(alpha=.3,which='minor')
-    if grid=='both':
-        ax.grid(alpha=.3,which='both')
-    else:
-        pass
-    
-    #set title as rms and roughness
-    if type(title) is str:
-        if title=='on':
-            titlestr=os.path.join(os.path.basename(os.path.dirname(iterfile)),
-                                  os.path.basename(iterfile))
-            ax.set_title(titlestr+': RMS {0:.2f}, Roughness={1:.0f}'.format(
-                     float(idict['Misfit Value']),
-                     float(idict['Roughness Value'])),
-                     fontdict={'size':fs+1,'weight':'bold'})
-        else:
-            ax.set_title(title+'; RMS {0:.2f}, Roughness={1:.0f}'.format(
-                     float(idict['Misfit Value']),
-                     float(idict['Roughness Value'])),
-                     fontdict={'size':fs+1,'weight':'bold'})
-    else:
-        print 'RMS {0:.2f}, Roughness={1:.0f}'.format(
-                     float(idict['Misfit Value']),
-                     float(idict['Roughness Value'])) 
-    
-    #plot forward model mesh    
-    if femesh=='on':
-        for xx in plotx:
-            ax.plot([xx,xx],[0,ploty[0]],color='k',lw=.5)
-        for yy in ploty:
-            ax.plot([plotx[0],plotx[-1]],[yy,yy],color='k',lw=.5)
-    
-    #plot the regularization mesh
-    if regmesh=='on':
-        linelst=[]
-        for ii in range(nc):
-            #get the number of layers to combine
-            #this index will be the first index in the vertical direction
-            ny1=cr[:ii,0].sum()
-            #the second index  in the vertical direction
-            ny2=ny1+cr[ii][0]
-            #make the list of amalgamated columns an array for ease
-            lc=np.array(cc[ii])
-            yline=ax.plot([plotx[0],plotx[-1]],[ploty[-ny1],ploty[-ny1]],color='b',lw=.5)
-            linelst.append(yline)
-            #loop over the number of amalgamated blocks
-            for jj in range(len(cc[ii])):
-                #get first in index in the horizontal direction
-                nx1=lc[:jj].sum()
-                #get second index in horizontal direction
-                nx2=nx1+lc[jj]
-                try:
-                    if ny1==0:
-                        ny1=1
-                    xline=ax.plot([plotx[nx1],plotx[nx1]],[ploty[-ny1],ploty[-ny2]],
-                                  color='b',lw=.5)
-                    linelst.append(xline)
-                except IndexError:
-                    pass
-                
-    ##plot the mesh block numbers
-    if meshnum=='on':
-        kk=1
-        for yy in ploty[::-1]:
-            for xx in plotx:
-                ax.text(xx,yy,'{0}'.format(kk),fontdict={'size':3})
-                kk+=1
-                
-    ##plot regularization block numbers
-    if blocknum=='on':
-        kk=1
-        for ii in range(nc):
-            #get the number of layers to combine
-            #this index will be the first index in the vertical direction
-            ny1=cr[:ii,0].sum()
-            #the second index  in the vertical direction
-            ny2=ny1+cr[ii][0]
-            #make the list of amalgamated columns an array for ease
-            lc=np.array(cc[ii])
-            #loop over the number of amalgamated blocks
-            for jj in range(len(cc[ii])):
-                #get first in index in the horizontal direction
-                nx1=lc[:jj].sum()
-                #get second index in horizontal direction
-                nx2=nx1+lc[jj]
-                try:
-                    if ny1==0:
-                        ny1=1
-                    #get center points of the blocks
-                    yy=ploty[-ny1]-(ploty[-ny1]-ploty[-ny2])/2
-                    xx=plotx[nx1]-(plotx[nx1]-plotx[nx2])/2
-                    #put the number
-                    ax.text(xx,yy,'{0}'.format(kk),fontdict=blkfdict,
-                            horizontalalignment='center',
-                            verticalalignment='center')
-                    kk+=1
-                except IndexError:
-                    pass
-                
-    plt.show()
-      
-def plotPseudoSection(datafn,respfn=None,fignum=1,rcmap='jet_r',pcmap='jet',
-                      rlim=((0,4),(0,4)),plim=((0,90),(0,90)),ml=2,
-                      stationid=[0,4]):
-    """
-    plots a pseudo section of the data
-    
-    datafn = full path to data file
-    respfn = full path to response file
-    """
-    
-    if respfn!=None:
-        rplst,slst,freq,title=read2DRespFile(respfn,datafn)
-        nr=2
-    else:
-        rplst,slst,freq,title,thetal=read2DdataFile(datafn)
-        nr=1
-    ns=len(slst)
-    nf=len(freq)
-    ylimits=(1./freq.min(),1./freq.max())
-#    print ylimits
-    
-    #make a grid for pcolormesh so you can have a log scale
-    #get things into arrays for plotting
-    offsetlst=np.zeros(ns)
-    resxyarr=np.zeros((nf,ns,nr))    
-    resyxarr=np.zeros((nf,ns,nr))    
-    phasexyarr=np.zeros((nf,ns,nr))    
-    phaseyxarr=np.zeros((nf,ns,nr))
-
-    for ii,rpdict in enumerate(rplst):
-        offsetlst[ii]=rpdict['offset']     
-        resxyarr[:,ii,0]=rpdict['resxy'][0]
-        resyxarr[:,ii,0]=rpdict['resyx'][0]
-        phasexyarr[:,ii,0]=rpdict['phasexy'][0]
-        phaseyxarr[:,ii,0]=rpdict['phaseyx'][0]
-        if respfn!=None:
-            resxyarr[:,ii,1]=rpdict['resxy'][2]
-            resyxarr[:,ii,1]=rpdict['resyx'][2]
-            phasexyarr[:,ii,1]=rpdict['phasexy'][2]
-            phaseyxarr[:,ii,1]=rpdict['phaseyx'][2]
+            #make subplot for RMS vs Roughness Plot
+            ax2=ax1.twiny()
             
+            #plot the rms vs roughness 
+            l2,=ax2.plot(self.roughness_te[1:],self.rms_te[1:],
+                         '--b',lw=.75,marker='o',ms=7,mfc='white')
+            for ii,rms in enumerate(self.rms_te[1:],1):
+                ax2.text(self.roughness_te[ii],rms,'{0}'.format(ii),
+                         horizontalalignment='center',
+                         verticalalignment='center',
+                         fontdict={'size':fs-2,'weight':'bold','color':'blue'})
             
-    #make a meshgrid for plotting
-    #flip frequency so bottom corner is long period
-    dgrid,fgrid=np.meshgrid(offsetlst,1./freq[::-1])
-
-    #make list for station labels
-    slabel=[slst[ss][stationid[0]:stationid[1]] for ss in range(0,ns,ml)]
-    labellst=['$r_{TE-Data}$','$r_{TE-Model}$',
-              '$r_{TM-Data}$','$r_{TM-Model}$',
-              '$\phi_{TE-Data}$','$\phi_{TE-Model}$',
-              '$\phi_{TM-Data}$','$\phi_{TM-Model}$']
-    xloc=offsetlst[0]+abs(offsetlst[0]-offsetlst[1])/5
-    yloc=1./freq[1]
-    
-    if respfn!=None:
-        
-
-        plt.rcParams['font.size']=7
-        plt.rcParams['figure.subplot.bottom']=.09
-        plt.rcParams['figure.subplot.top']=.96        
-        
-        fig=plt.figure(fignum,dpi=200)
-        gs1=gridspec.GridSpec(2,2,left=0.06,right=.48,hspace=.1,wspace=.005)
-        gs2=gridspec.GridSpec(2,2,left=0.52,right=.98,hspace=.1,wspace=.005)
-        
-#        ax1r=fig.add_subplot(2,4,1)
-        ax1r=fig.add_subplot(gs1[0,0])
-        ax1r.pcolormesh(dgrid,fgrid,np.flipud(resxyarr[:,:,0]),cmap=rcmap,
-                       vmin=rlim[0][0],vmax=rlim[0][1])
-        
-#        ax2r=fig.add_subplot(2,4,2)
-        ax2r=fig.add_subplot(gs1[0,1])
-        ax2r.pcolormesh(dgrid,fgrid,np.flipud(resxyarr[:,:,1]),cmap=rcmap,
-                       vmin=rlim[0][0],vmax=rlim[0][1])
-                       
-#        ax3r=fig.add_subplot(2,4,3)
-        ax3r=fig.add_subplot(gs2[0,0])
-        ax3r.pcolormesh(dgrid,fgrid,np.flipud(resyxarr[:,:,0]),cmap=rcmap,
-                       vmin=rlim[1][0],vmax=rlim[1][1])
-        
-#        ax4r=fig.add_subplot(2,4,4)
-        ax4r=fig.add_subplot(gs2[0,1])
-        ax4r.pcolormesh(dgrid,fgrid,np.flipud(resyxarr[:,:,1]),cmap=rcmap,
-                       vmin=rlim[1][0],vmax=rlim[1][1])
-
-#        ax1p=fig.add_subplot(2,4,5)
-        ax1p=fig.add_subplot(gs1[1,0])
-        ax1p.pcolormesh(dgrid,fgrid,np.flipud(phasexyarr[:,:,0]),cmap=pcmap,
-                       vmin=plim[0][0],vmax=plim[0][1])
-        
-#        ax2p=fig.add_subplot(2,4,6)
-        ax2p=fig.add_subplot(gs1[1,1])
-        ax2p.pcolormesh(dgrid,fgrid,np.flipud(phasexyarr[:,:,1]),cmap=pcmap,
-                       vmin=plim[0][0],vmax=plim[0][1])
-                       
-#        ax3p=fig.add_subplot(2,4,7)
-        ax3p=fig.add_subplot(gs2[1,0])
-        ax3p.pcolormesh(dgrid,fgrid,np.flipud(phaseyxarr[:,:,0]),cmap=pcmap,
-                       vmin=plim[1][0],vmax=plim[1][1])
-        
-#        ax4p=fig.add_subplot(2,4,8)
-        ax4p=fig.add_subplot(gs2[1,1])
-        ax4p.pcolormesh(dgrid,fgrid,np.flipud(phaseyxarr[:,:,1]),cmap=pcmap,
-                       vmin=plim[1][0],vmax=plim[1][1])
-        
-        axlst=[ax1r,ax2r,ax3r,ax4r,ax1p,ax2p,ax3p,ax4p]
-        
-        for xx,ax in enumerate(axlst):
-            ax.semilogy()
-            ax.set_ylim(ylimits)
-#            ax.xaxis.set_major_locator(MultipleLocator(ml))
-            ax.xaxis.set_ticks(offsetlst[np.arange(0,ns,ml)])
-            ax.xaxis.set_ticks(offsetlst,minor=True)
-            ax.xaxis.set_ticklabels(slabel)
-            ax.set_xlim(offsetlst.min(),offsetlst.max())
-            if np.remainder(xx,2.0)==1:
-                plt.setp(ax.yaxis.get_ticklabels(),visible=False)
-                cbx=mcb.make_axes(ax,shrink=.7,pad=.015)
-                if xx<4:
-                    if xx==1:
-                        cb=mcb.ColorbarBase(cbx[0],cmap=rcmap,
-                                        norm=Normalize(vmin=rlim[0][0],
-                                                       vmax=rlim[0][1]))
-#                        cb.set_label('Resistivity ($\Omega \cdot$m)',
-#                                     fontdict={'size':9})
-                    if xx==3:
-                        cb=mcb.ColorbarBase(cbx[0],cmap=rcmap,
-                                        norm=Normalize(vmin=rlim[1][0],
-                                                       vmax=rlim[1][1]))
-                        cb.set_label('App. Res. ($\Omega \cdot$m)',
-                                     fontdict={'size':9})
-                else:
-                    if xx==5:
-                        cb=mcb.ColorbarBase(cbx[0],cmap=pcmap,
-                                        norm=Normalize(vmin=plim[0][0],
-                                                       vmax=plim[0][1]))
-#                        cb.set_label('Phase (deg)',fontdict={'size':9})
-                    if xx==7:
-                        cb=mcb.ColorbarBase(cbx[0],cmap=pcmap,
-                                        norm=Normalize(vmin=plim[1][0],
-                                                       vmax=plim[1][1]))
-                        cb.set_label('Phase (deg)',fontdict={'size':9})
-            ax.text(xloc,yloc,labellst[xx],
-                    fontdict={'size':10},
-                    bbox={'facecolor':'white'},
-                    horizontalalignment='left',
-                    verticalalignment='top')
-            if xx==0 or xx==4:
-                ax.set_ylabel('Period (s)',
-                              fontdict={'size':10,'weight':'bold'})
-            if xx>3:
-                ax.set_xlabel('Station',fontdict={'size':10,'weight':'bold'})
+            #make a legend
+            ax1.legend([l1,l2,m1],['RMS_TE','Roughness_TE',
+                       'Median_RMS={0:.2f}'.format(medte)],
+                        ncol=4,loc='upper center',columnspacing=.25,
+                        markerscale=.75,handletextpad=.15)
             
-                
+            ax1.set_ylim(medte-1,medte+1)
+            ax1.set_ylabel('RMS',fontdict={'size':fs,'weight':'bold'})                                   
+            #ax1.set_xlabel('Iteration',fontdict={'size':8,'weight':'bold'})
+            ax1.grid(alpha=.25,which='both')
+            ax2.set_xlabel('Roughness',fontdict={'size':fs,'weight':'bold',
+                                                 'color':'blue'})
+            for t2 in ax2.get_xticklabels():
+                t2.set_color('blue') 
+            
+            #plot TM
+            nr=len(self.rms_te)
+            #plot the rms vs iteration
+            l3,=ax3.plot(np.arange(1,nr,1),self.rms_tm[1:],'-k',lw=1,
+                         marker='d',ms=5)
+            
+            #plot the median of the RMS
+            medtm=np.median(self.rms_tm[1:])
+            m3,=ax3.plot(np.arange(0,nr,1),
+                         np.repeat(medtm,nr),
+                         '--r',lw=.75)
+
+        
+            #make subplot for RMS vs Roughness Plot
+            ax4=ax3.twiny()
+            
+            #plot the rms vs roughness 
+            l4,=ax4.plot(self.roughness_tm[1:],self.rms_tm[1:],
+                         '--b',lw=.75,marker='o',ms=7,mfc='white')
+            for ii,rms in enumerate(self.rms_tm[1:],1):
+                ax4.text(self.roughness_tm[ii],rms,'{0}'.format(ii),
+                         horizontalalignment='center',
+                         verticalalignment='center',
+                         fontdict={'size':6,'weight':'bold','color':'blue'})
+            
+            #make a legend
+            ax3.legend([l1,l2,m1],['RMS_TM','Roughness_TM',
+                       'Median_RMS={0:.2f}'.format(medtm)],
+                        ncol=4,loc='upper center',columnspacing=.25,
+                        markerscale=.75, handletextpad=.15)
+            
+            ax3.set_ylim(medtm-1,medtm+1)            
+            ax3.set_ylabel('RMS',fontdict={'size':fs,'weight':'bold'})                                   
+            ax3.set_xlabel('Iteration',fontdict={'size':fs,'weight':'bold'})
+            ax3.grid(alpha=.25,which='both')
+            ax4.set_xlabel('Roughness',fontdict={'size':fs,'weight':'bold',
+                                                 'color':'blue'})
+            for t2 in ax4.get_xticklabels():
+                t2.set_color('blue') 
+        
         plt.show()
-        
-def plotDepthModel(iterfn,meshfn,slst,lm,fignum=1,dpi=300,depth=10000,
-                   stations=None,yscale='log'):
-    """
-    will plot a depth section as a line for the block numbers given by slst and
-    the layer multiplier lm
-    """
-                       
-    idict=read2DIterFile(iterfn)
-    harr,varr,marr=read2Dmesh(meshfn)
-    
-    v=np.array([varr[0:ii+1].sum() for ii in range(len(varr))])
-#    print varr
-    
-    nv=len(np.where(v<depth)[0])
-
-    v=v[::-1]
-    
-    fig=plt.figure(fignum,dpi=dpi)
-    plt.clf()
-    ax=fig.add_subplot(1,1,1)
-    
-    rholst=[]
-    for ss in slst:
-        ilst=np.arange(nv)*lm+(ss-1)
-        rho=idict['model'][ilst]
-        if yscale=='linear':
-            p1,=ax.semilogx(10**(rho[::-1]),v[len(v)-len(ilst):],ls='steps-')
-        elif yscale=='log':
-            p1,=ax.loglog(10**(rho[::-1]),v[len(v)-len(ilst):],ls='steps-')
-        rholst.append(p1)
-    ax.set_ylim(depth,varr.min())
-    if stations==None:
-        ax.legend(rholst,np.arange(len(rholst)),loc=0)
-    else:
-        ax.legend(rholst,stations,loc=0)
-    ax.set_ylabel('Depth (m)',fontdict={'size':8,'weight':'bold'})
-    ax.set_xlabel('Resistivity ($\Omega \cdot$m)',fontdict={'size':8,'weight':'bold'})
-    ax.grid(True,alpha=.3,which='both')
-        
-        
-def plotL2Curve(invpath,fnstem=None,fignum=1,dpi=300):
-    """
-    PlotL2Curve will plot the RMS vs iteration number for the given inversion 
-    folder and roughness vs iteration number
-    
-    Inputs: 
-        invpath = full path to the inversion folder where .iter files are
-        fnstem = filename stem to look for in case multiple inversions were
-                run in the same folder.  If none then searches for anything
-                ending in .iter
-    
-    Outputs:
-        rmsiter = array(3x#iterations) of rms, iteration and roughness
-    """ 
-    
-    if fnstem==None:
-        iterlst=[os.path.join(invpath,itfile) 
-                for itfile in os.listdir(invpath) if itfile.find('.iter')>0]
-    else:
-        iterlst=[os.path.join(invpath,itfile) 
-                for itfile in os.listdir(invpath) if itfile.find('.iter')>0 and
-                itfile.find(fnstem)>0]
-                
-    nr=len(iterlst)
-    
-    rmsarr=np.zeros((nr,2))
-    
-    for itfile in iterlst:
-        idict=read2DIterFile(itfile)
-        ii=int(idict['Iteration'])
-        rmsarr[ii,0]=float(idict['Misfit Value'])
-        rmsarr[ii,1]=float(idict['Roughness Value'])
-
-        plt.rcParams['font.size']=int(dpi/40.)
-    plt.rcParams['figure.subplot.left']=.08
-    plt.rcParams['figure.subplot.right']=.90
-    plt.rcParams['figure.subplot.bottom']=.1
-    plt.rcParams['figure.subplot.top']=.90
-    plt.rcParams['figure.subplot.wspace']=.01
-    
-    fig=plt.figure(fignum,[6,5],dpi=dpi)
-    plt.clf()
-    #make a subplot for RMS vs Iteration
-    ax1=fig.add_subplot(1,1,1)
-    
-    #plot the rms vs iteration
-    l1,=ax1.plot(np.arange(1,nr,1),rmsarr[1:,0],'-k',lw=1,marker='d',ms=5)
-    
-    #plot the median of the RMS
-    m1,=ax1.plot(np.arange(0,nr,1),np.repeat(np.median(rmsarr[1:,0]),nr),
-                 '--r',lw=.75)
-    
-    #plot the mean of the RMS
-    m2,=ax1.plot(np.arange(0,nr,1),np.repeat(np.mean(rmsarr[1:,0]),nr),
-                 ls='--',color='orange',lw=.75)
-
-    #make subplot for RMS vs Roughness Plot
-    ax2=ax1.twiny()
-    
-    #plot the rms vs roughness 
-    l2,=ax2.plot(rmsarr[1:,1],rmsarr[1:,0],'--b',lw=.75,marker='o',ms=7,
-                 mfc='white')
-    for ii,rms in enumerate(rmsarr[1:,0],1):
-        ax2.text(rmsarr[ii,1],rms,'{0}'.format(ii),
-                 horizontalalignment='center',
-                 verticalalignment='center',
-                 fontdict={'size':6,'weight':'bold','color':'blue'})
-    
-    #make a legend
-    ax1.legend([l1,l2,m1,m2],['RMS','Roughness',
-               'Median_RMS={0:.2f}'.format(np.median(rmsarr[1:,0])),
-                'Mean_RMS={0:.2f}'.format(np.mean(rmsarr[1:,0]))],
-                ncol=4,loc='upper center',columnspacing=.25,markerscale=.75,
-                handletextpad=.15)
-                
-    #set the axis properties for RMS vs iteration
-    ax1.yaxis.set_minor_locator(MultipleLocator(.1))
-    ax1.xaxis.set_minor_locator(MultipleLocator(1))
-    ax1.set_ylabel('RMS',fontdict={'size':8,'weight':'bold'})                                   
-    ax1.set_xlabel('Iteration',fontdict={'size':8,'weight':'bold'})
-    ax1.grid(alpha=.25,which='both')
-    ax2.set_xlabel('Roughness',fontdict={'size':8,'weight':'bold',
-                                         'color':'blue'})
-    for t2 in ax2.get_xticklabels():
-        t2.set_color('blue')
-#    #plot the median of the RMS
-#    m1,=ax2.plot(np.arange(0,nr,1),np.repeat(np.median(rmsarr[1:,0]),nr),
-#                 '--r',lw=.75)
-#    
-#    #plot the mean of the RMS
-#    m2,=ax2.plot(np.arange(0,nr,1),np.repeat(np.mean(rmsarr[1:,0]),nr),
-#                 ls='--',color='orange',lw=.75)
-    #set the axis properties for RMS vs iteration
-#    ax2.yaxis.set_minor_locator(MultipleLocator(.1))
-#    ax2.xaxis.set_minor_locator(MultipleLocator(1))
-#    ax2.set_ylabel('RMS',fontdict={'size':8,'weight':'bold'})                                   
-#    ax2.set_xlabel('Roughness',fontdict={'size':8,'weight':'bold'})
-#    ax2.grid(alpha=.25,which='both')
-                
-    
-    plt.show()
-
 
 def getdatetime():
 
-
     return time.asctime(time.gmtime())
-
-
 
 
 def makestartfiles(parameter_dict):
@@ -4501,9 +2060,11 @@ def blocks_elements_setup(parameter_dict):
     
 class OccamPointPicker(object):
     """
-    This class will help the user interactively pick points to mask and add 
+    This class helps the user interactively pick points to mask and add 
     error bars. 
     
+    Useage:
+    -------
     To mask just a single point right click over the point and a gray point 
     will appear indicating it has been masked
     
@@ -4517,22 +2078,59 @@ class OccamPointPicker(object):
     with reasonable errorbars.  You can change the increment that the error
     bars are increased with reserrinc and phaseerrinc.
     
-    Inputs:
-        axlst = list of the resistivity and phase axis that have been plotted
-                as [axrte,axrtm,axpte,axptm]
+    Arguments:
+    ----------
+        **axlst** : list of the resistivity and phase axis that have been 
+                    plotted as [axr_te,axr_tm,axp_te,axp_tm]
         
-        linelst = list of lines used to plot the responses, not the error bars
+        **linelst** : list of lines used to plot the responses, not the error 
+                      bars as [res_te,res_tm,phase_te,phase_tm]
         
-        errlst = list of the errorcaps and errorbar lines as 
+        **errlst** : list of the errorcaps and errorbar lines as 
                    [[cap1,cap2,bar],...]
                  
-        reserrinc = percent increment to increase the errorbars
+        **reserrinc** : increment to increase the errorbars for resistivity.
+                        put .20 for 20 percent change. *Default* is .05
         
-        phaseerrinc = percent increment to increase the errorbars
+        **phaseerrinc** : increment to increase the errorbars for the phase
+                          put .10 for 10 percent change. *Defualt* is .02 
+                    
+        **marker** : marker type for masked points.  See matplotlib.pyplot.plot
+                    for options of markers.  *Default* is h for hexagon.
+    
+    -----------                
+    Attributes:
+    -----------
+    
+        **axlst** : axes list used to plot the data
+        
+        **linelst** : line list used to plot the data
+        
+        **errlst** : error list used to plot the data
+        
+        **data** : list of data points that were not masked for each plot.
+        
+        **fdict** : dictionary of frequency arrays for each plot and data set.
+        
+        **fndict** : dictionary of figure numbers to corresponed with data.
+        
+        **cidlst** : list of event ids.
+        
+        **reserrinc** : increment to increase resistivity error bars
+        
+        **phaseinc** : increment to increase phase error bars
+        
+        **marker** : marker of masked points
+        
+        **fignum** : figure numbers
+        
+        **occamlines** : list of lines to write into the occam data file.
+            
     """    
     
     def __init__(self,axlst,linelst,errlst,reserrinc=.05,phaseerrinc=.02,
                  marker='h'):
+          
         #give the class some attributes
         self.axlst=axlst
         self.linelst=linelst
@@ -4550,8 +2148,8 @@ class OccamPointPicker(object):
             self.error.append([])
             self.fdict.append([])
         
-            #get data from lines and make a dictionary of frequency points for easy
-            #indexing
+            #get data from lines and make a dictionary of frequency points for 
+            #easy indexing
             for ii,line in enumerate(linelst[nn]):
                 self.data[nn].append(line.get_data()[1])
                 self.fdict[nn].append(dict([('{0:.5g}'.format(kk),ff) for ff,kk in 
@@ -4582,10 +2180,13 @@ class OccamPointPicker(object):
         #set the error bar increment values
         self.reserrinc=reserrinc
         self.phaseerrinc=phaseerrinc
+        
         #set the marker
         self.marker=marker
+        
         #set the figure number
         self.fignum=self.line.figure.number
+        
         #make a list of occam lines to write later
         self.occamlines=[]
     
@@ -4595,15 +2196,25 @@ class OccamPointPicker(object):
     def __call__(self,event):
         """
         When the function is called the mouse events will be recorder for 
-        picking points to mask or change error bars.
+        picking points to mask or change error bars.  The axes is redrawn with
+        a gray marker to indicate a masked point and/or increased size in 
+        errorbars.
         
-        Left mouse button will mask both resistivity and phase point
+        Arguments:
+        ----------
+            **event** : type mouse_click_event
         
-        Right mouse button will mask just the point selected
+        -------        
+        Useage:
+        -------
         
-        middle mouse button will increase the error bars
+            **Left mouse button** will mask both resistivity and phase point
         
-        q will close the figure.
+            **Right mouse button** will mask just the point selected
+        
+            **Middle mouse button** will increase the error bars
+        
+            **q** will close the figure.
         """
         self.event=event
         #make a new point that is an PickEvent type
@@ -4712,6 +2323,23 @@ class OccamPointPicker(object):
 
     #get the axis number that the mouse is in and change to that axis
     def inAxes(self,event):
+        """
+        gets the axes that the mouse is currently in.
+        
+        Arguments:
+        ---------
+            **event**: is a type axes_enter_event
+        
+        --------        
+        Returns:
+        --------
+        
+            **OccamPointPicker.jj** : index of resistivity axes for axlst
+            
+            **OccamPointPicker.kk** : index of phase axes for axlst
+        
+        """
+        
         self.event2=event
         self.ax=event.inaxes
         for jj,axj in enumerate(self.axlst):
@@ -4731,86 +2359,174 @@ class OccamPointPicker(object):
         
     #get the figure number that the mouse is in
     def inFigure(self,event):
+        """
+        gets the figure number that the mouse is in
+        
+        Arguments:
+        ----------
+            **event** : figure_enter_event
+            
+        --------
+        Returns:
+        --------
+            **OccamPointPicker.fignum** : figure number that corresponds to the
+                                          index in the axlst, datalst, errorlst
+                                          and linelst.
+                        
+        """
         self.event3=event
         self.fignum=self.fndict['{0}'.format(event.canvas.figure.number)]
         self.line=self.linelst[self.fignum][0]
     
     #type the q key to quit the figure and disconnect event handling            
     def on_close(self,event):
+        """
+        close the figure with a 'q' key event and disconnect the event ids
+        
+        Arguments:
+        ----------
+            **event** : key_press_event
+        
+        --------        
+        Returns:
+        --------
+            print statement saying the figure is closed
+        """
         self.event3=event
         if self.event3.key=='q':
             for cid in self.cidlst[self.fignum]:
                event.canvas.mpl_disconnect(cid)
             plt.close(event.canvas.figure)
-            print 'closed'     
+            print 'Closed figure ',self.fignum     
             
 class Occam2DData:
+    """
+    Occam2DData covers all aspects of dealing with data for an Occam 2D
+    inversion using the code of Constable et al. [1987] and deGroot-Hedlin and 
+    Constable [1990] from Scripps avaliable at 
+    http://marineemlab.ucsd.edu/Projects/Occam/2DMT/index.html.
+    
+    
+    """    
+    
     def __init__(self,datafn=None):
         self.datafn=datafn
         
     def make2DdataFile(self,edipath,mmode='both',savepath=None,stationlst=None,
                        title=None,thetar=0,resxyerr=10,resyxerr=10,
-                       phasexyerr=5,phaseyxerr=5,ss=3*' ',fmt='%2.6f',
-                       freqstep=1,plotyn='y',lineori='ew',tippererr=None,
-                       ftol=.05):
+                       phasexyerr=5,phaseyxerr=5,ss=3*' ',fmt='%+2.6f',
+                       freqstep=1,plotyn='y',lineori='ew',proj_strike='yes',
+                       tippererr=None,ftol=.05):
         """
-        make2DdataFile will make a data file for occam2D.  
+        Make a data file that Occam can read.  At the moment the inversion line
+        is the best fit line through all the stations used for the inversion.
         
-        Input:
-            edipath = path to edifiles
-            mmode = modes to invert for.  Can be: 
-                    'both' -> will model both TE and TM modes
-                    'TM'   -> will model just TM mode
-                    'TE'   -> will model just TE mode
-            savepath = path to save the data file to, this can include the name of
-                       the data file, if not the file will be named:
-                           savepath\Data.dat or edipath\Data.dat if savepath=None
-            stationlst = list of stations to put in the data file, doesn't need to
-                         be in order, the relative distance will be calculated
-                         internally.  If stationlst=None, it will be assumed all the
-                         files in edipath will be input into the data file
-            title = title input into the data file
-            thetar = rotation angle (deg) of the edifiles if you want to align the
-                     components with the profile.  Angle is on the unit circle with 
-                     an orientation that north is 0 degree, east -90.
-            resxyerr = percent error in the res_xy component (TE), 
-                      can be entered as 'data' where the errors from the data are
-                      used.  
-            resyxerr = percent error in the res_yx component (TM), 
-                      can be entered as 'data' where the errors from the data are
-                      used.  
-            phasexyerr = percent error in the phase_xy component (TE), 
-                      can be entered as 'data' where the errors from the data are
-                      used.  
-            phaseyxerr = percent error in the phase_yx component (TM), 
-                      can be entered as 'data' where the errors from the data are
-                      used.  
-            ss = is the spacing parameter for the data file
-            fmt = format of the numbers for the data file, see string formats for 
-                  a full description
-            freqstep = take frequencies at this step, so if you want to take every
-                       third frequency enter 3.  
-                       Can input as a list of specific frequencies.  Note that the
-                       frequencies must match the frequencies in the EDI files,
-                       otherwise they will not be input.  
-            plotyn = y or n to plot the stations on the profile line.
-            lineori = predominant line orientation with respect to geographic north
-                     ew for east-west line-> will orientate so first station is 
-                                             farthest to the west
-                     ns for north-south line-> will orientate so first station is 
-                                             farthest to the south
-            tippererr = error for tipper in percent.  If this value is entered than
-                        the tipper will be included in the inversion, if the value
-                        is None than the tipper will not be included.
-                  
-        Output:
-            datfilename = full path of data file
+        Arguments:
+        ----------
+            **edipath** : path to edifiles
+            
+            **mmode** : modes to invert for.  Can be: 
+                        * 'both' -> will model both TE and TM modes
+                        * 'TM'   -> will model just TM mode
+                        * 'TE'   -> will model just TE mode
+                        
+            **savepath** : path to save the data file to, this can include the 
+                           name of the data file, if not the file will be 
+                           named: savepath/Data.dat or edipath/Data.dat if 
+                           savepath=None
+                           
+            **stationlst** : list of stations to put in the data file, doesn't 
+                             need to be in order, the relative distance will be
+                             calculated internally.  If stationlst:None, it
+                             will be assumed all the files in edipath will be 
+                             input into the data file
+                             
+            **title** : title input into the data file. *Default* is None
+            
+            **thetar** : rotation angle (deg) of the MT response to align 
+                         TE mode along strike which is assumed to be 
+                         perpendicular to the inversion line and TM
+                         parallel to the inversion line.  Angle is on 
+                         the unit circle with an orientation that north is 0 
+                         degree, east 90. Rotations are postive clockwise.
+                         *Default* is 0 (North).  
+                         
+                         If proj_strike = 'yes' then the stations will be 
+                         projected onto a line that is perpendicular to 
+                         the thetar, which is assumed to be the strike
+                         direction. 
+            
+            **resxyerr** : percent error in the res_xy component (TE), 
+                          can be entered as 'data' where the errors from the 
+                          data are used otherwise enter as a percentage.
+                          enter 10 for 10 percent. *Default* is 10
+            
+            **resyxerr** : percent error in the res_yx component (TM), 
+                          can be entered as 'data' where the errors from the 
+                          data are used otherwise enter as a percentage.
+                          enter 10 for 10 percent. *Default* is 10
+            
+            **phasexyerr** : percent error in the phase_xy component (TE), 
+                             can be entered as 'data' where the errors from the 
+                             data are used otherwise enter as a percentage.
+                             enter 10 for 10 percent. *Default* is 5  
+            
+            **phaseyxerr** : percent error in the phase_yx component (TM), 
+                             can be entered as 'data' where the errors from the 
+                             data are used otherwise enter as a percentage.
+                             enter 10 for 10 percent. *Default* is 5  
+            
+            **ss** : is the spacing parameter for the data file. 
+                     *Default* is '   ' 
+            
+            **fmt** : format of the numbers for the data file, see string 
+                      formats for a full description. *Default* is '%+2.6f
+            
+            **freqstep** : take frequencies at this step, so if you want to 
+                           take every third frequency enter 3.  
+                           Can input as a list of specific frequencies.  
+                           Note that the frequencies must match the frequencies
+                           in the EDI files within ftol, otherwise they will 
+                           not be input.  
+            
+            **ftol** : tolerance level (decimal %) to match frequencies to 
+                       freqstep if input as a list.  *Default* is .05
+            
+            **plotyn** : y or n to plot the stations that are pojected on to 
+                         the best fitting line through the stations.
+            
+            **lineori** : predominant line orientation with respect to 
+                          geographic north
+                          ew for east-west line-> will orientate so first 
+                                                  station is farthest to the 
+                                                  west
+                          ns for north-south line-> will orientate so first 
+                                                    station is farthest to the
+                                                    south
+                                                    
+            **proj_strike** : 'yes' to project the line perpendicular to the 
+                                    strike direction
+                              'no' to project the line on the best fitting line
+                                   through the stations.
+            
+            **tippererr** : error for tipper in percent.  If this value is 
+                            entered than the tipper will be included in the 
+                            inversion, if the value is None than the tipper 
+                            will not be included. 
+                            Can be entered as 'data' where the errors from the 
+                            data are used otherwise enter as a percentage.
+                            enter 10 for 10 percent.
+        --------          
+        Returns:
+        --------
+            **Occam2DData.datafn** : full path of data file
+
                      
         """
         
         if abs(thetar)>2*np.pi:
             thetar=thetar*(np.pi/180)
-        #create rotation matrix
+        #create rotation matrix which rotates clockwise positive
         rotmatrix=np.array([[np.cos(thetar), np.sin(thetar)],
                              [-np.sin(thetar), np.cos(thetar)]])
         
@@ -4831,8 +2547,9 @@ class Occam2DData:
             for filename in os.listdir(edipath):
                 if fnmatch.fnmatch(filename,station+'*.edi'):
                     print 'Found station edifile: ', filename
-                    surveydict={} #create a dictionary for the station data and info
-                    edifile=os.path.join(edipath,filename) #create filename path
+                    #create a dictionary for the station data and info 
+                    surveydict={} 
+                    edifile=os.path.join(edipath,filename) 
                     z1=Z.Z(edifile)
                     freq=z1.frequency                
                     #check to see if the frequency is in descending order
@@ -4852,7 +2569,8 @@ class Occam2DData:
                     #rotate matrices if angle is greater than 0
                     if thetar!=0:
                         for rr in range(len(z)):
-                            z[rr,:,:]=np.dot(rotmatrix,np.dot(z[rr],rotmatrix.T))
+                            z[rr,:,:]=np.dot(rotmatrix,np.dot(z[rr],
+                                                                rotmatrix.T))
                             zvar[rr,:,:]=np.dot(rotmatrix,np.dot(zvar[rr],
                                                                  rotmatrix.T))
                     else:
@@ -4878,6 +2596,8 @@ class Occam2DData:
                     pstationlst.append(station)
                     surveylst.append(surveydict)
         
+        eastlst=np.array(eastlst)
+        northlst=np.array(northlst)
         #-----------------------------------------------------------------            
         #project stations onto a best fitting line taking into account the 
         #strike direction to get relative MT distance correct
@@ -4886,18 +2606,36 @@ class Occam2DData:
         #get bestfitting line
         p=sp.polyfit(eastlst,northlst,1)
         
+        #now project this line onto the strike direction so that the distances
+        #are relative to geoelectric strike.  Needs to be negative cause 
+        #the strike angles is measured clockwise, where as the line angle is 
+        #measured counterclockwise.
+        if proj_strike=='yes':
+            p[0]=-thetar
+        else:
+            pass
+        
+        
+        #need to work on this
+        
         #the angle of the line is now the angle of the best fitting line added
         #to the geoelectric strike direction, which gives the relative distance
         #along the strike direction.
         theta=np.arctan(p[0])
-        print 'Profile Line Angle is: {0:.4g} (E=0,N=90)'.format(theta*180/np.pi)
+        print 'Profile Line Angle is: {0:.4g}'.format(theta*180/np.pi)
         
         #plot stations on profile line
         if plotyn=='y':
             lfig=plt.figure(4,dpi=200)
+            plt.clf()
+            ploty=sp.polyval(p,eastlst)
             lax=lfig.add_subplot(1,1,1,aspect='equal')
-            lax.plot(eastlst,sp.polyval(p,eastlst),'-b',lw=2)
+            lax.plot(eastlst,ploty,'-b',lw=2)
             lax.set_title('Projected Stations')
+            lax.set_ylim(ploty.min()-1000.,ploty.max()+1000.)
+            lax.set_xlim(eastlst.min()-1000,eastlst.max()+1000.)
+            lax.set_xlabel('Easting (m)',fontdict={'size':12,'weight':'bold'})
+            lax.set_ylabel('Northing (m)',fontdict={'size':12,'weight':'bold'})
         for ii in range(len(surveylst)):
             if surveylst[ii]['zone']!=surveylst[0]['zone']:
                 print surveylst[ii]['station']
@@ -4906,6 +2644,7 @@ class Occam2DData:
             y0=northlst[ii]-d*np.cos(theta)
             surveylst[ii]['east']=x0
             surveylst[ii]['north']=y0
+            
             
             
             #need to figure out a way to account for zone changes
@@ -4942,7 +2681,7 @@ class Occam2DData:
 #                lax.plot(x0+ds*np.cos(thetar),y0+ds*np.sin(thetar),'v',
 #                         color='k',ms=8,mew=3)
                 lax.plot(x0,y0,'v',color='k',ms=8,mew=3)
-                lax.text(x0,y0+.0005,pstationlst[ii],horizontalalignment='center',
+                lax.text(x0,y0+100,pstationlst[ii],horizontalalignment='center',
                      verticalalignment='baseline',fontdict={'size':12,
                                                             'weight':'bold'})
         
@@ -4972,9 +2711,11 @@ class Occam2DData:
                 mfreq=np.median(farray,axis=0)
                 print len(mfreq),len(freqstep)
                 fdict=dict([('%.6g' % mfreq[ff],ii) 
-                                for ii,ff in enumerate(freqstep,1) if mfreq[ff]!=0])
+                            for ii,ff in enumerate(freqstep,1) 
+                            if mfreq[ff]!=0])
             else:
-                fdict=dict([('%.6g' % ff,ii) for ii,ff in enumerate(freqstep,1)])
+                fdict=dict([('%.6g' % ff,ii) 
+                            for ii,ff in enumerate(freqstep,1)])
         else:
             #find the median frequency list
             maxflen=max([len(ff) for ff in freqlst])
@@ -4986,7 +2727,8 @@ class Occam2DData:
         
             #make a dictionary of values        
             fdict=dict([('%.6g' % ff,ii) for ii,ff in 
-                        enumerate(mfreq[range(0,maxflen,freqstep)],1) if ff!=0])
+                        enumerate(mfreq[range(0,maxflen,freqstep)],1) 
+                        if ff!=0])
     
         #print the frequencies to look for to make sure its what the user wants
         #make a list of keys that is sorted in descending order
@@ -5025,9 +2767,10 @@ class Occam2DData:
                     resyx=wt*abs(z[jj,1,0])**2
             
                     #calculate the phase putting the yx in the 1st quadrant        
-                    phasexy=np.arctan2(z[jj,0,1].imag,z[jj,0,1].real)*(180/np.pi)
-                    phaseyx=np.arctan2(z[jj,1,0].imag,z[jj,1,0].real)*(180/np.pi)+\
-                            180
+                    phasexy=np.arctan2(z[jj,0,1].imag,
+                                       z[jj,0,1].real)*(180/np.pi)
+                    phaseyx=np.arctan2(z[jj,1,0].imag,
+                                       z[jj,1,0].real)*(180/np.pi)+180
                     #put phases in correct quadrant if should be negative
                     if phaseyx>180:
                         phaseyx=phaseyx-360
@@ -5306,28 +3049,46 @@ class Occam2DData:
             read2DdataFile will read in data from a 2D occam data file.  
             Only supports the first 6 data types of occam2D
         
-        Input: 
-            datafn = full path to data file
+        Arguments:
+        ----------
         
-        Output:
-            rplst = list of dictionaries for each station with keywords:
-                'station' = station name
-                'offset' = relative offset,
-                'resxy' = TE resistivity and error as row 0 and 1 ressectively,
-                'resyx'= TM resistivity and error as row 0 and 1 respectively,
-                'phasexy'= TE phase and error as row 0 and 1 respectively,
-                'phaseyx'= Tm phase and error as row 0 and 1 respectively,
-                'realtip'= Real Tipper and error as row 0 and 1 respectively,
-                'imagtip'= Imaginary Tipper and error as row 0 and 1 respectively
+            **OccamPointPicker.datafn** : full path to data file
+        
+        --------
+        Returns:
+        --------
+            **OccamPointPicker.rplst** : list of dictionaries for each station 
+                                         with keywords:
                 
-                Note: that the resistivity will be in log10 space.  Also, there are
-                2 extra rows in the data arrays, this is to put the response from
-                the inversion. 
+                *'station'* : string
+                              station name
+                
+                *'offset'* : float
+                            relative offset
+                
+                *'resxy'* : np.array(nf,4)
+                          TE resistivity and error as row 0 and 1 ressectively
+                
+                *'resyx'* : np.array(fn,4)
+                          TM resistivity and error as row 0 and 1 respectively
+                
+                *'phasexy'* : np.array(nf,4)
+                            TE phase and error as row 0 and 1 respectively
+                
+                *'phaseyx'* : np.array(nf,4)
+                            Tm phase and error as row 0 and 1 respectively
+                
+                *'realtip'* : np.array(nf,4)
+                            Real Tipper and error as row 0 and 1 respectively
+                
+                *'imagtip'* : np.array(nf,4)
+                            Imaginary Tipper and error as row 0 and 1 
+                            respectively
+                
+                Note: that the resistivity will be in log10 space.  Also, there
+                are 2 extra rows in the data arrays, this is to put the 
+                response from the inversion. 
             
-            stationlst = list of stations in order from one side of the profile
-                         to the other.
-            freq = list of frequencies used in the inversion
-            title = title, could be useful for plotting.
         """
         
         dfid=open(self.datafn,'r')
@@ -5399,41 +3160,60 @@ class Occam2DData:
                           tippererr=None,mmode='both',flst=None,
                           removestation=None):
         """
-        rewrite2DDataFile will rewrite an existing data file so you can redefine 
-        some of the parameters, such as rotation angle, or errors for the different
-        components or only invert for one mode or add one or add tipper or remove
-        tipper.
+        rewrite2DDataFile will rewrite an existing data file so you can 
+        redefine some of the parameters, such as rotation angle, or errors for 
+        the different components or only invert for one mode or add one or add
+        tipper or remove tipper.
         
-        Inputs:
-            datafn = full path to data file to rewrite
+        Arguments:
+        ----------
             
-            rotz = rotation angle with positive clockwise
+            **datafn** : string
+                         full path to data file to rewrite
             
-            resxyerr = error for TE mode resistivity (percent) or 'data' for data 
-                        or prev to take errors from data file.
+            **thetar** : float
+                         rotation angle with positive clockwise
             
-            resyxerr = error for TM mode resistivity (percent) or 'data' for data
-                        or prev to take errors from data file.
+            **resxyerr** : float
+                           error for TE mode resistivity (percent) or 'data' 
+                           for data or 'prev' to take errors from data file.
+            
+            **resyxerr** : float
+                           error for TM mode resistivity (percent) or 'data' 
+                           for data or 'prev' to take errors from data file.
                         
-            phasexyerr = error for TE mode phase (percent) or 'data' for data
-                        or prev to take errors from data file.
+            **phasexyerr** : float
+                             error for TE mode phase (percent) or 'data' 
+                             for data or 'prev' to take errors from data file.
                         
-            phaseyxerr = error for TM mode phase (percent) or 'data' for data
-                        or prev to take errors from data file.
+            **phaseyxerr** : float
+                             error for TM mode phase (percent) or 'data' 
+                             for data or 'prev' to take errors from data file.
                         
-            tippererr = error for tipper (percent) input only if you want to invert
-                        for the tipper or 'data' for data errors
-                        or prev to take errors from data file.
+            **tippererr** : float 
+                            error for tipper (percent) input only if you want
+                            to invert for the tipper or 'data' for data errors
+                            or prev to take errors from data file.
                         
-            mmodes = 'both' for both TE and TM
-                     'TE' for TE
-                     'TM' for TM
+            **mmodes** : string can be:
+                            * 'both' for both TE and TM
+                            * 'TE' for TE
+                            * 'TM' for TM
                      
-            flst = frequency list in Hz to rewrite, needs to be similar to the 
-                    datafile, cannot add frequencies
+            **flst** : list or np.array
+                       frequency list in Hz to rewrite, needs to be similar to
+                       the datafile, cannot add frequencies
                     
-            removestation = list of stations to remove if desired
+            **removestation** : list of stations to remove if desired
+            
+        --------
+        Returns:
+        --------
+        
+            **OccamPointPicker.ndatafn** : string
+                                           full path to new data file
         """
+        
         ss=3*' '
         fmt='%2.6f'
         
@@ -5789,11 +3569,64 @@ class Occam2DData:
         
         print 'Rewrote the data file to: ',self.ndatafn
     
-    def plotMaskPoints(self,plottype=None,reserrinc=.20,phaseerrinc=5,
-                       marker='o',colormode='color',dpi=300,ms=2,
+    def plotMaskPoints(self,plottype=None,reserrinc=.20,phaseerrinc=.05,
+                       marker='h',colormode='color',dpi=300,ms=2,
                        reslimits=None,phaselimits=(-5,95)):
         """
         An interactive plotting tool to mask points an add errorbars
+        
+        Arguments:
+        ----------
+            **plottype** : string
+                           describes the way the responses are plotted. Can be:
+                               *list of stations to plot ['mt01','mt02']
+                               *one station 'mt01'
+                               *None plots all stations *Default*
+            
+            **reserrinc** : float
+                            amount to increase the error bars. Input as a 
+                            decimal percentage.  0.3 for 30 percent
+                            *Default* is 0.2 (20 percent)
+                            
+            **phaseerrinc** : float
+                              amount to increase the error bars. Input as a 
+                              decimal percentage.  0.3 for 30 percent
+                              *Default* is 0.05 (5 percent)
+                            
+            **marker** : string
+                         marker that the masked points will be
+                         *Default* is 'h' for hexagon
+                        
+            **colormode** : string
+                            defines the color mode to plot the responses in
+                            *'color'* for color plots
+                            *'bw'* for black and white plots
+                            *Default* is 'color'
+            
+            **dpi** : int
+                      dot-per-inch resolution of the plots.
+                      *Default* is 300
+            
+            **ms** : float
+                     size of the marker in the response plots
+                     *Default* is 2
+                     
+            **reslimits**: tuple (min,max)
+                           min and max limits of the resistivity values in 
+                           linear scale
+                           *Default* is None
+                           
+            **phaselimits**: tuple (min,max)
+                            min and max phase limits 
+                            *Default* is (-5,90)
+                            
+        ----------
+        Returns:
+        ---------
+            data type **OccamPointPicker**  
+                           
+                           
+            
         """
         
         if colormode=='color':
@@ -5863,8 +3696,9 @@ class Occam2DData:
             #cut out missing data points first
             pxy=[np.where(rplst[ii]['phasexy'][0]!=0)[0]]
             pte=axpte.errorbar(period[pxy],rplst[ii]['phasexy'][0][pxy],
-                               ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,color=cted,
-                               yerr=rplst[ii]['phasexy'][1][pxy],ecolor=cted,picker=1) 
+                               ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
+                               color=cted,yerr=rplst[ii]['phasexy'][1][pxy],
+                               ecolor=cted,picker=1) 
             
                            
             #plot resistivity TM Mode
@@ -5880,16 +3714,19 @@ class Occam2DData:
             #cut out missing data points first
             pyx=[np.where(rplst[ii]['phaseyx'][0]!=0)[0]]
             ptm=axptm.errorbar(period[pyx],rplst[ii]['phaseyx'][0][pyx],
-                            ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,color=ctmd,
-                            yerr=rplst[ii]['phaseyx'][1][pyx],ecolor=ctmd,picker=1)
+                            ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
+                            color=ctmd,yerr=rplst[ii]['phaseyx'][1][pyx],
+                            ecolor=ctmd,picker=1)
         
         
             #make the axis presentable
             #set the apparent resistivity scales to log and x-axis to log
             axplst=[axrte,axrtm,axpte,axptm]
             llst=[rte[0],rtm[0],pte[0],ptm[0]]
-            elst=[[rte[1][0],rte[1][1],rte[2][0]],[rtm[1][0],rtm[1][1],rtm[2][0]],
-                [pte[1][0],pte[1][1],pte[2][0]],[ptm[1][0],ptm[1][1],ptm[2][0]]]
+            elst=[[rte[1][0],rte[1][1],rte[2][0]],
+                  [rtm[1][0],rtm[1][1],rtm[2][0]],
+                  [pte[1][0],pte[1][1],pte[2][0]],
+                  [ptm[1][0],ptm[1][1],ptm[2][0]]]
                 
             axlst.append(axplst)
             linelst.append(llst)
@@ -5948,7 +3785,7 @@ class Occam2DData:
         
         #make points an attribute of self which is a data type OccamPointPicker       
         self.points=OccamPointPicker(axlst,linelst,errlst,reserrinc=reserrinc,
-                                     phaseerrinc=phaseerrinc)
+                                     phaseerrinc=phaseerrinc,marker=marker)
         
         #be sure to show the plot
         plt.show()
@@ -5957,13 +3794,24 @@ class Occam2DData:
     def maskPoints(self):
         """
         maskPoints will take in points found from plotMaskPoints and rewrite 
-        the data file to nameRW.dat.  Be sure to run plotMaskPoints first
+        the data file to nameRW.dat.  **Be sure to run plotMaskPoints first**
+        
+        Arguments:
+        ---------
+            None
+            
+        ---------
+        Returns:
+        ---------
+        
+            **OccamPointPicker.ndatafn** : full path to rewritten data file
         """
         
         self.read2DdataFile()
         rplst=list(self.rplst)
         #rewrite the data file
-        #make a reverse dictionary for locating the masked points in the data file
+        #make a reverse dictionary for locating the masked points in the data 
+        #file
         rploc=dict([('{0}'.format(self.points.fndict[key]),int(key)-1) 
                     for key in self.points.fndict.keys()])
                     
@@ -5986,7 +3834,7 @@ class Occam2DData:
                         if ss==0 or ss==1:
                             #change the apparent resistivity value
                             if rplst[rploc[str(dd)]][skey][0][ff]!=\
-                                                        np.log10(dat[ss][floc]):
+                                                      np.log10(dat[ss][floc]):
                                 if dat[ss][floc]==0:
                                     rplst[rploc[str(dd)]][skey][0][ff]=0.0
                                 else:
@@ -6004,11 +3852,13 @@ class Occam2DData:
                         #DHANGE PHASE
                         elif ss==2 or ss==3:
                             #change the phase value
-                            if rplst[rploc[str(dd)]][skey][0][ff]!=dat[ss][floc]:
+                            if rplst[rploc[str(dd)]][skey][0][ff]!=\
+                                                                 dat[ss][floc]:
                                 if dat[ss][floc]==0:
                                     rplst[rploc[str(dd)]][skey][0][ff]=0.0
                                 else:
-                                    rplst[rploc[str(dd)]][skey][0][ff]=dat[ss][floc]
+                                    rplst[rploc[str(dd)]][skey][0][ff]=\
+                                                                  dat[ss][floc]
                                 
                             #change the apparent resistivity error value
                             if dat[ss][floc]==0.0:
@@ -6027,7 +3877,8 @@ class Occam2DData:
         reslst=[]
         
         #make a dictionary of rplst for easier extraction of data
-        rpdict=dict([(station,rplst[ii]) for ii,station in enumerate(self.stationlst)])
+        rpdict=dict([(station,rplst[ii]) 
+                    for ii,station in enumerate(self.stationlst)])
         
         #loop over stations in the data file
         for kk,station in enumerate(self.stationlst,1):
@@ -6061,9 +3912,9 @@ class Occam2DData:
                             fmt % srp['imagtip'][0,jj-1]+ss+
                             fmt % srp['imagtip'][1,jj-1]+'\n')
         
-        #===========================================================================
+        #======================================================================
         #                             write dat file
-        #===========================================================================
+        #======================================================================
         #make the file name of the data file
         if self.datafn.find('RW')>0:
             self.ndatafn=self.datafn
@@ -6117,35 +3968,51 @@ class Occam2DData:
         read2DRespFile will read in a response file and combine the data with info 
         from the data file.
     
-        Input:
-            respfn = full path to the response file
-            datafn = full path to data file
-    
-        Outputs:
-            for each data array, the rows are ordered as:
-                0 -> input data
-                1 -> input error
-                2 -> model output
-                3 -> relative error (data-model)/(input error)
-                
-            rplst = list of dictionaries for each station with keywords:
-                'station' = station name
-                'offset' = relative offset,
-                'resxy' = TE resistivity 
-                'resyx'= TM resistivity 
-                'phasexy'= TE phase 
-                'phaseyx'= TM phase a
-                'realtip'= Real Tipper 
-                'imagtip'= Imaginary Tipper 
-                
-                Note: that the resistivity will be in log10 space.  Also, there are
-                2 extra rows in the data arrays, this is to put the response from
-                the inversion. 
+        Arguments:
+        ----------
+            **respfn** : full path to the response file
             
-            stationlst = list of stations in order from one side of the profile
-                         to the other.
-            freq = list of frequencies used in the inversion
-            title = title, could be useful for plotting.
+            **datafn** : full path to data file
+    
+        --------
+        Returns:
+        --------
+            for each data array, the rows are ordered as:
+                - 0 -> input data
+                - 1 -> input error
+                - 2 -> model output
+                - 3 -> relative error (data-model)/(input error)
+                
+            **rplst** : list of dictionaries for each station with keywords:
+                
+                *station* : string
+                            station name
+                
+                *offset* : float
+                            relative offset
+                
+                *resxy* : np.array(nf,4)
+                          TE resistivity and error as row 0 and 1 ressectively
+                
+                *resyx* : np.array(fn,4)
+                          TM resistivity and error as row 0 and 1 respectively
+                
+                *phasexy* : np.array(nf,4)
+                            TE phase and error as row 0 and 1 respectively
+                
+                *phaseyx* : np.array(nf,4)
+                            Tm phase and error as row 0 and 1 respectively
+                
+                *realtip* : np.array(nf,4)
+                            Real Tipper and error as row 0 and 1 respectively
+                
+                *imagtip* : np.array(nf,4)
+                            Imaginary Tipper and error as row 0 and 1 
+                            respectively
+                
+                Note: that the resistivity will be in log10 space.  Also, there
+                are 2 extra rows in the data arrays, this is to put the 
+                response from the inversion.  
             
         """
         #make the response file an attribute        
@@ -6173,32 +4040,59 @@ class Occam2DData:
             
     def plot2DResponses(self,respfn=None,wlfn=None,maxcol=8,plottype='1',
                         ms=2,fs=10,phaselimits=(-5,95),colormode='color',
-                        reslimits=None,plotnum=1,**kwargs):
+                        reslimits=None,plotnum=2,**kwargs):
         """
         plotResponse will plot the responses modeled from winglink against the 
         observed data.
         
-        Inputs:
-            respfn = full path to response file
-            datafn = full path to data file
-            wlfn = full path to a winglink data file used for a similar
-                              inversion.  This will be plotted on the response
-                              plots for comparison of fits.
-            maxcol = maximum number of columns for the plot
-            plottype = 'all' to plot all on the same plot
-                       '1' to plot each respones in a different figure
-                       station to plot a single station or enter as a list of 
-                       stations to plot a few stations [station1,station2].  
-                       Does not have to be verbatim but should have similar
-                       unique characters input pb01 for pb01cs in outputfile
-            ms = marker size 
-            phaselimits = limits of phase in degrees (min,max)
-            colormode = 'color' for color plots
-                        'bw' for black and white plots
-            reslimits = resistivity limits on a log scale (
-                        log10(min),log10(max))
-            plotnum = 1 to plot both TE and TM in the same plot
-                      2 to plot TE and TM in separate subplots
+        Arguments:
+        ----------
+        
+            **respfn** : string
+                         full path to response file
+                         
+            **wlfn** : string
+                       full path to a winglink data file used for a similar
+                       inversion.  This will be plotted on the response
+                       plots for comparison of fits.
+                       *Default* is None
+                       
+            **maxcol** : int
+                         maximum number of columns for the plot
+                         *Default* is 8
+                         
+            **plottype** : string
+                          * 'all' to plot all on the same plot
+                          * '1' to plot each respones in a different figure
+                               station to plot a single station 
+                          * or enter as a list of stations to plot a few 
+                            stations [station1,station2]. Does not have to be 
+                            verbatim but should have similar unique characters
+                            input pb01 for pb01cs in outputfile
+                            
+                          * *Default* is '1' to plot all stations
+                          
+            **ms** : float
+                     marker size
+                     *Default* is 2
+            
+            **phaselimits** : tuple (min,max)
+                              limits of phase in degrees (min,max)
+                              *Default* is (-5,95)
+                              
+            **colormode** : string
+                            * 'color' for color plots
+                            * 'bw' for black and white plots
+                            
+            **reslimits** : tuple (min,max)
+                            resistivity limits on a log scale 
+                            (log10(min),log10(max))
+                            *Default* is None
+                            
+            **plotnum** : int
+                            * 1 to plot both TE and TM in the same plot
+                            * 2 to plot TE and TM in separate subplots
+                            * *Default* is 2
                       
         """
         
@@ -6917,12 +4811,42 @@ class Occam2DData:
     
     def plotPseudoSection(self,respfn=None,fignum=1,rcmap='jet_r',pcmap='jet',
                       rlim=((0,4),(0,4)),plim=((0,90),(0,90)),ml=2,
-                      stationid=[0,4]):
+                      stationid=(0,4)):
         """
-        plots a pseudo section of the data
+        plots a pseudo section of the data and response if input.
         
-        datafn = full path to data file
-        respfn = full path to response file
+        Arguments:
+        ----------
+            **respfn** : string
+                         full path to response file
+            
+            **fignum** : int
+                         figure number to put the plot in
+            
+            **rcmap** : string
+                        colormap to plot the resistivity in see matplotlib.cm
+                        *Default* 'jet_r' 
+                        
+            **pcmap** : string
+                        colormap to plot the resistivity in see matplotlib.cm
+                        *Default* 'jet'
+            **rlim** : tuple ((te_min,te_max),(tm_min,tm_max))
+                       min and max ranges for resistivity of TE and TM modes
+                       in log10 scale
+                       *Default* is ((0,4),(0,4))
+                       
+            **plim** : tuple ((te_min,te_max),(tm_min,tm_max))
+                       min and max ranges for phase of TE and TM modes
+                       *Default* is ((0,90),(0,90))
+            
+            **ml** : int
+                    tick markers between stations
+                    *Default* is 2 (for one every second station)
+            
+            **stationid** : tuple (min_string_index,max_string_index)
+                            indicating how long the station name is
+                            *Default* is (0,4) for a string of length 4
+        
         """
         
         try:
@@ -6979,43 +4903,56 @@ class Occam2DData:
             
             fig=plt.figure(fignum,dpi=200)
             plt.clf()
-            gs1=gridspec.GridSpec(2,2,left=0.06,right=.48,hspace=.1,wspace=.005)
-            gs2=gridspec.GridSpec(2,2,left=0.52,right=.98,hspace=.1,wspace=.005)
             
+            #make subplot grids
+            gs1=gridspec.GridSpec(2,2,left=0.06,right=.48,hspace=.1,
+                                  wspace=.005)
+            gs2=gridspec.GridSpec(2,2,left=0.52,right=.98,hspace=.1,
+                                  wspace=.005)
+            
+            #plot TE resistivity data
             ax1r=fig.add_subplot(gs1[0,0])
             ax1r.pcolormesh(dgrid,fgrid,np.flipud(resxyarr[:,:,0]),cmap=rcmap,
-                           vmin=rlim[0][0],vmax=rlim[0][1])
+                            vmin=rlim[0][0],vmax=rlim[0][1])
             
+            #plot TE resistivity model
             ax2r=fig.add_subplot(gs1[0,1])
             ax2r.pcolormesh(dgrid,fgrid,np.flipud(resxyarr[:,:,1]),cmap=rcmap,
-                           vmin=rlim[0][0],vmax=rlim[0][1])
-                           
+                            vmin=rlim[0][0],vmax=rlim[0][1])
+            
+            #plot TM resistivity data               
             ax3r=fig.add_subplot(gs2[0,0])
             ax3r.pcolormesh(dgrid,fgrid,np.flipud(resyxarr[:,:,0]),cmap=rcmap,
-                           vmin=rlim[1][0],vmax=rlim[1][1])
+                            vmin=rlim[1][0],vmax=rlim[1][1])
             
+            #plot TM resistivity model
             ax4r=fig.add_subplot(gs2[0,1])
             ax4r.pcolormesh(dgrid,fgrid,np.flipud(resyxarr[:,:,1]),cmap=rcmap,
-                           vmin=rlim[1][0],vmax=rlim[1][1])
+                            vmin=rlim[1][0],vmax=rlim[1][1])
     
+            #plot TE phase data
             ax1p=fig.add_subplot(gs1[1,0])
-            ax1p.pcolormesh(dgrid,fgrid,np.flipud(phasexyarr[:,:,0]),cmap=pcmap,
-                           vmin=plim[0][0],vmax=plim[0][1])
+            ax1p.pcolormesh(dgrid,fgrid,np.flipud(phasexyarr[:,:,0]),
+                            cmap=pcmap,vmin=plim[0][0],vmax=plim[0][1])
             
+            #plot TE phase model
             ax2p=fig.add_subplot(gs1[1,1])
-            ax2p.pcolormesh(dgrid,fgrid,np.flipud(phasexyarr[:,:,1]),cmap=pcmap,
-                           vmin=plim[0][0],vmax=plim[0][1])
-                           
-            ax3p=fig.add_subplot(gs2[1,0])
-            ax3p.pcolormesh(dgrid,fgrid,np.flipud(phaseyxarr[:,:,0]),cmap=pcmap,
-                           vmin=plim[1][0],vmax=plim[1][1])
+            ax2p.pcolormesh(dgrid,fgrid,np.flipud(phasexyarr[:,:,1]),
+                            cmap=pcmap,vmin=plim[0][0],vmax=plim[0][1])
             
+            #plot TM phase data               
+            ax3p=fig.add_subplot(gs2[1,0])
+            ax3p.pcolormesh(dgrid,fgrid,np.flipud(phaseyxarr[:,:,0]),
+                            cmap=pcmap,vmin=plim[1][0],vmax=plim[1][1])
+            
+            #plot TM phase model
             ax4p=fig.add_subplot(gs2[1,1])
-            ax4p.pcolormesh(dgrid,fgrid,np.flipud(phaseyxarr[:,:,1]),cmap=pcmap,
-                           vmin=plim[1][0],vmax=plim[1][1])
+            ax4p.pcolormesh(dgrid,fgrid,np.flipud(phaseyxarr[:,:,1]),
+                            cmap=pcmap,vmin=plim[1][0],vmax=plim[1][1])
             
             axlst=[ax1r,ax2r,ax3r,ax4r,ax1p,ax2p,ax3p,ax4p]
             
+            #make everthing look tidy
             for xx,ax in enumerate(axlst):
                 ax.semilogy()
                 ax.set_ylim(ylimits)
@@ -7070,26 +5007,29 @@ class Occam2DData:
             
             fig=plt.figure(fignum,dpi=200)
             plt.clf()
+            
+            #make subplot grids
             gs1=gridspec.GridSpec(2,2,left=0.06,right=.48,hspace=.1,
                                   wspace=.005)
             gs2=gridspec.GridSpec(2,2,left=0.52,right=.98,hspace=.1,
                                   wspace=.005)
             
+            #plot TE resistivity data
             ax1r=fig.add_subplot(gs1[0,:])
             ax1r.pcolormesh(dgrid,fgrid,np.flipud(resxyarr[:,:,0]),cmap=rcmap,
                            vmin=rlim[0][0],vmax=rlim[0][1])
             
-                           
+            #plot TM resistivity data               
             ax3r=fig.add_subplot(gs2[0,:])
             ax3r.pcolormesh(dgrid,fgrid,np.flipud(resyxarr[:,:,0]),cmap=rcmap,
                            vmin=rlim[1][0],vmax=rlim[1][1])
             
-    
+            #plot TE phase data
             ax1p=fig.add_subplot(gs1[1,:])
             ax1p.pcolormesh(dgrid,fgrid,np.flipud(phasexyarr[:,:,0]),cmap=pcmap,
                            vmin=plim[0][0],vmax=plim[0][1])
             
-                           
+            #plot TM phase data               
             ax3p=fig.add_subplot(gs2[1,:])
             ax3p.pcolormesh(dgrid,fgrid,np.flipud(phaseyxarr[:,:,0]),cmap=pcmap,
                            vmin=plim[1][0],vmax=plim[1][1])
@@ -7097,6 +5037,7 @@ class Occam2DData:
             
             axlst=[ax1r,ax3r,ax1p,ax3p]
             
+            #make everything look tidy
             for xx,ax in enumerate(axlst):
                 ax.semilogy()
                 ax.set_ylim(ylimits)
@@ -7145,11 +5086,13 @@ class Occam2DData:
         Plot all the responses of occam inversion from data file.  This assumes
         the response curves are in the same folder as the datafile.
     
-        Input:
-            datafile = full path to occam data file
+        Arguments:
+        ----------
+            **station** : string
+                          station name to plot
             
-        Output:
-            Plot
+            **fignum** : int
+                         plot number to put figure into
         
         """    
         
@@ -7333,15 +5276,30 @@ class Occam2DModel(Occam2DData):
         read2DIter will read an iteration file and combine that info from the 
         datafn and return a dictionary of variables.
         
-        Inputs:
-            iterfn = full path to iteration file if iterpath=None.  If 
-                           iterpath is input then iterfn is just the name
-                           of the file without the full path.
+        Arguments:
+        ----------
+<<<<<<< HEAD
+=======
         
-        Outputs:
-            idict = dictionary of parameters, keys are verbatim from the file, 
-                    except for the key 'model' which is the contains the model
-                    numbers in a 1D array.
+>>>>>>> 7c0fbc987b5363aefde9b1fc7df4e7361a52a537
+            **iterfn** : string
+                        full path to iteration file if iterpath=None.  If 
+                        iterpath is input then iterfn is just the name
+                        of the file without the full path.
+        --------
+        Returns:
+        --------
+<<<<<<< HEAD
+            **Occam2DModel.idict** : dictionary of parameters, 
+                                     keys are verbatim from the file, 
+                                     except for the key 'model' which is the 
+                                     contains the model numbers in a 1D array.
+=======
+            **idict** :  dictionary of parameters, 
+                         keys are verbatim from the file, except for the 
+                         key 'model' which is the contains the model
+                         numbers in a 1D array.
+>>>>>>> 7c0fbc987b5363aefde9b1fc7df4e7361a52a537
             
         """
     
@@ -7394,20 +5352,29 @@ class Occam2DModel(Occam2DData):
     def read2DInmodel(self):
         """
         read an INMODEL file for occam 2D
+              
+        Arguments:
+        ----------
+            **inmodelfn** : string
+                            full path to INMODEL file
         
-        Input:
-            inmodelfn = full path to INMODEL file
-        
-        Output:
-            rows = list of combined data blocks where first number of each list
-                    represents the number of combined mesh layers for this 
-                    regularization block.  The second number is the number of 
-                    columns in the regularization block layer
-            cols = list of combined mesh columns for the regularization layer.
-                   The sum of this list must be equal to the number of mesh
-                   columns.
-            headerdict = dictionary of all the header information including the
-                         binding offset
+
+        Returns:
+        --------
+            **Occam2DModel.rows** : list of combined data blocks where first 
+                                    number of each list represents the number 
+                                    of combined mesh layers for this 
+                                    regularization block.  The second number is
+                                    the number of columns in the regularization
+                                    block layer.
+                                    
+            **Occam2DModel.cols** : list of combined mesh columns for the 
+                                    regularization layer. The sum of this list 
+                                    must be equal to the number of mesh columns
+                                    
+            **Occam2DModel.headerdict** : dictionary of all the header 
+                                          information including the binding 
+                                          offset.
         """
         
         ifid=open(self.inmodelfn,'r')
@@ -7443,17 +5410,47 @@ class Occam2DModel(Occam2DData):
         
     def read2DMesh(self):
         """
-        read a 2D meshfn
+        reads an Occam 2D mesh file
         
-        Input:
-            meshfn = full path to mesh file
+        Arguments:
+        ----------
+<<<<<<< HEAD
+        
+            **Occam2DModel.meshfn** : string 
+                                      full path to mesh file
     
-        Output:
-            hnodes = array of horizontal nodes (column locations (m))
-            vnodes = array of vertical nodes (row locations(m))
-            mdata = free parameters
+        Returns:
+        --------
+            **Occam2DModel.hnodes**: array of horizontal nodes 
+                                    (column locations (m))
+                                    
+            **Occam2DModel.vnodes** : array of vertical nodes 
+                                      (row locations(m))
+                                      
+            **Occam2DModel.mdata** : np.array of free parameters
             
-        Things to do:
+        To do:
+        ------
+=======
+            
+            **meshfn** : string
+                         full path to mesh file
+    
+        --------
+        Returns:
+        --------
+        
+            **Occam2DModel.hnodes** : array of horizontal nodes (column 
+                                      locations (m))
+            
+            **Occam2DModel.vnodes** : array of vertical nodes (row 
+                                      locations(m))
+            
+            **Occam2DModel.mdata** : free parameters
+        -----    
+        Todo:
+        -----
+>>>>>>> 7c0fbc987b5363aefde9b1fc7df4e7361a52a537
             incorporate fixed values
         """
         
@@ -7507,6 +5504,9 @@ class Occam2DModel(Occam2DData):
         self.meshdata=mdata
         
     def get2DData(self):
+        """
+        get data from data file using the inherited :func:'read2DdataFile' 
+        """
         try:
             self.read2DdataFile()
         except AttributeError:
@@ -7518,10 +5518,16 @@ class Occam2DModel(Occam2DData):
         values found from the regularization grid.  This way the array can 
         be manipulated as a 2D object and plotted as an image or a mesh.
         
-        Outputs:
-            self.2Dmodel -> model array with log resistivity values
-            self.plotx -> horizontal distance of FE mesh (m) blocks
-            self.ploty -> depth of vertical nodes of FE mesh (m)
+        Returns:
+        --------
+        
+            **Occam2DModel.resmodel** : model array with log resistivity values
+            
+            **Occam2DModel.plotx** : np.array
+                                    horizontal distance of FE mesh (m) blocks
+                                    
+            **Occam2DModel.ploty** : np.array
+                                    depth of vertical nodes of FE mesh (m)
         """
         
         #read iteration file to get model and data file
@@ -7603,7 +5609,7 @@ class Occam2DModel(Occam2DData):
             self.offsetlst.append(rpdict['offset'])
         
     def plot2DModel(self,datafn=None,
-                    xpad=1.0,ypad=1.0,mpad=0.5,spad=1.0,ms=60,stationid=None,
+                    xpad=1.0,ypad=1.0,spad=1.0,ms=60,stationid=None,
                     fdict={'size':8,'rotation':60,'weight':'normal'},
                     dpi=300,ylimits=None,xminorticks=5,yminorticks=1,
                     climits=(0,4), cmap='jet_r',fs=8,femesh='off',
@@ -7613,76 +5619,114 @@ class Occam2DModel(Occam2DData):
         """
         plotModel will plot the model output by occam in the iteration file.
         
-        Inputs:
+        Arguments:
+        ----------
             
-            datafn = full path to data file.  If none is input it will use the
-                        data file found in the iteration file.
+            **datafn** : string 
+                        full path to data file.  If none is input it will use 
+                        the data file found in the iteration file.
             
-            xpad = padding in the horizontal direction of model
+            **xpad** : float (units of km) 
+                       padding in the horizontal direction of model.
             
-            ypad = padding the in the vertical direction of the top of the model
-                   to fit the station names and markers
-                   
-            mpad = marker pad to fit right at the surface, haven't found a better
-                   way of doing this automatically yet
-                   
-            spad = padding of station names away from the top of the model, this
-                    is kind of awkward at the moment especially if you zoom into 
-                    the model, it usually looks retarded and doesn't fit
+            **ypad** : float (units according to **yscale**)
+                       padding in the vertical direction of the top of the 
+                       model to fit the station names and markers.
+                       
+            **spad** : float (units according to **yscale**)
+                       padding of station names away from the top of the model,
+                       this is kind of awkward at the moment especially if you
+                       zoom into the model, it usually looks retarded and 
+                       doesn't fit
                     
-            ms = marker size in ambiguous points
+            **ms** : float  
+                     marker size in ambiguous points
             
-            stationid = index of station names to plot -> ex. pb01sdr would be 
-                        stationid=(0,4) to plot pb01
+            **stationid** : tuple (min,max)
+                           index of station names to plot -> ex. pb01sdr would 
+                           be stationid=(0,4) to plot pb01
                         
-            fdict = font dictionary for the station names, can have keys:
-                    'size' = font size
-                    'rotation' = angle of rotation (deg) of font
-                    'weight' = weight of font 
-                    'color' = color of font
-                    'style' = style of font ex. 'italics'
+            **fdict** : font dictionary for the station names, can have keys:
+                
+                    *'size'* : font size
                     
-            plotdimensions = x-y dimensions of the figure (10,10) in inches
+                    *'rotation'* : angle of rotation (deg) of font
                     
-            dpi = dot per inch of figure, should be 300 for publications
+                    *'weight'* : weight of font 
+                    
+                    *'color'* : color of font
+                    
+                    *'style'* : style of font ex. 'italics'
+                    
+            **plotdimensions** : tuple (x,y)
+                               x-y dimensions of the figure in inches
+                    
+            **dpi** : int 
+                      dot per inch of figure, should be 300 for publications
             
-            ylimits = limits of depth scale (km). ex, ylimits=(0,30)
+            **ylimits** : tuple (min,max)
+                          limits of depth scale (km). ex, ylimits=(0,30)
             
-            xminorticks = location of minor tick marks for the horizontal axis
+            **xminorticks** : int or float
+                              location of minor tick marks for the horizontal 
+                              axis
             
-            yminorticks = location of minor tick marks for vertical axis
+            **yminorticks** : int or float
+                              location of minor tick marks for vertical axis
             
-            climits = limits of log10(resistivity). ex. climits=(0,4)
+            **climits** : tuple (min,max)
+                          limits of log10(resistivity). ex. climits=(0,4)
             
-            cmap = color map to plot the model image
+            **cmap** : string
+                       color map to plot the model image
+                       see matplotlib.cm for all options
             
-            fs = font size of axis labels
+            **fs** : float
+                     font size of axis labels
             
-            femesh = 'on' to plot finite element forward modeling mesh (black)
+            **femesh** : string ('on','off')
+                        'on' to plot finite element forward modeling mesh 
+                        (black)
             
-            regmesh = 'on' to plot regularization mesh (blue)
+            **regmesh** : string ('on','off')
+                         'on' to plot regularization mesh (blue)
             
-            aspect = aspect ratio of the figure, depends on your line length and
-                    the depth you want to investigate
+            **aspect** : tuple (width,height)
+                        aspect ratio of the figure, depends on your line 
+                        length and the depth you want to investigate
             
-            title = 'on' to put the RMS and Roughness as the title, or input a 
-                    string that will be added to the RMS and roughness, or put 
-                    None to not put a title on the plot and print out RMS and 
-                    roughness
+            **title** : string ('on,'off',input,None)
+                        
+                        * 'on' to put the RMS and Roughness as the title
+                        * input a string that will be added to the RMS and
+                          roughness put 
+                        * None to not put a title on the plot and print out RMS
+                          and roughness
             
-            meshnum = 'on' to plot FE mesh block numbers
+            **meshnum** : string ('on','off')
+                         'on' to plot FE mesh block numbers
             
-            fignum = figure number to plot to
+            **fignum** : int
+                        figure number to plot to
             
-            blocknum = 'on' to plot numbers on the regularization blocks
+            **blocknum** : tuple ('on','off')
+                          'on' to plot numbers on the regularization blocks
             
-            blkfdict = font dictionary for the numbering of regularization blocks
+            **blkfdict** : font dictionary for the numbering of regularization 
+                           blocks with keys:
+                               
+                               *'size'* : float font size
+                               
+                               *'weight'* : font weight
             
-            grid = major for major ticks grid
-                   minor for a grid of the minor ticks
-                   both for a grid with major and minor ticks
+            **grid** : string ('major','minor','both')
+                        * 'major' for major ticks grid
+                        * 'minor' for a grid of the minor ticks
+                        * 'both' for a grid with major and minor ticks
             
-            yscale = 'km' for depth in km or 'm' for depth in meters
+            **yscale** : string ('km','m')
+                        * 'km' for depth in km 
+                        * 'm' for depth in meters
         """   
                     
         #set the scale of the plot
@@ -7721,8 +5765,8 @@ class Occam2DModel(Occam2DData):
                       cmap=cmap,vmin=climits[0],vmax=climits[1])
         
         #make a colorbar for the resistivity
-        cbx=make_axes(ax,shrink=.8,pad=.01)
-        cb=ColorbarBase(cbx[0],cmap=cmap,norm=Normalize(vmin=climits[0],
+        cbx=mcb.make_axes(ax,shrink=.8,pad=.01)
+        cb=mcb.ColorbarBase(cbx[0],cmap=cmap,norm=Normalize(vmin=climits[0],
                         vmax=climits[1]))
         cb.set_label('Resistivity ($\Omega \cdot$m)',
                      fontdict={'size':fs,'weight':'bold'})
@@ -7899,12 +5943,18 @@ class Occam2DModel(Occam2DData):
         PlotL2Curve will plot the RMS vs iteration number for the given 
         inversion folder and roughness vs iteration number
         
-        Inputs: 
-            fnstem = filename stem to look for in case multiple inversions were
-                    run in the same folder.  If none then searches for anything
-                    ending in .iter
-            fignum = figure number
-            dpi = dpi of the figure
+        Arguments:
+        ----------
+            **fnstem** : string
+                         filename stem to look for in case multiple inversions 
+                         were run in the same folder.  If none then searches 
+                         for anything ending in .iter
+            
+            **fignum** : int
+                         figure number
+
+            dpi** : int
+                    dots per inch resolution of the figure
         
         """ 
 
@@ -7987,24 +6037,35 @@ class Occam2DModel(Occam2DData):
         
         plt.show()
                 
-    def plotDepthModel(self,dpi=300,depth=10000,plottype='1',yscale='log',
-                       plotdimensions=(3,6),plotnum=1,fignum=1):
+    def plotDepthModel(self,dpi=300,depthmm=(1,10000),plottype='1',
+                       yscale='log',plotdimensions=(3,6),plotnum=1,fignum=1):
         """
-        will plot a depth section profile for a given set of stations.
+        Plots a depth section profile for a given set of stations.
         
-        Inputs:
+        Arguments:
+        ----------
             
-            plotnum = 1 to plot in different figures, 'all' to plot in all into
-                      one figure.
+            **dpi** : int
+                      dots-per-inch resolution of figure
             
-            dpi = dpi of figure
+            **depthmm** : tuple (min,max)
+                          minimum and maximum depth to plot in meters
             
-            depth = max depth to estimate the profile
+            **plottype** : input as:
+                            * '1' to plot all stations found
+                            * [station list] to plot only a few stations
             
-            stationnames = list of station names corresponding to the starting
-                           block numbers
+            **plotnum** : input as:
+                          * 1 to plot in different figures
+                          * 'all' to plot in all intoone figure.
             
-            yscale = 'log' for logarithmic or 'linear' for linear
+            **yscale** : 'log' for logarithmic or 'linear' for linear
+            
+            **plotdimensions** : tuple (width,height)
+                                 figure dimensions in inches
+            
+            **fignum** : int
+                         figure number
             
         """
 
@@ -8014,13 +6075,13 @@ class Occam2DModel(Occam2DData):
             self.get2DModel()
         #get stations to plot
         if plottype=='1':
-            pstationlst=np.arange(len(self.data.stationlst))
+            pstationlst=np.arange(len(self.stationlst))
         else:
             pstationlst=[]
             if type(plottype) is not list:
                 plottype=[plottype]
             for ps in plottype:
-                for ii,ss in enumerate(self.data.stationlst):
+                for ii,ss in enumerate(self.stationlst):
                     if ss.find(ps)==0:
                         pstationlst.append(ii)
                                   
@@ -8036,6 +6097,12 @@ class Occam2DModel(Occam2DData):
             for ii,xx in enumerate(self.plotx):
                 if offset>=xx-xavg/2. and offset<=xx+xavg/2.:
                     slst.append(ii)
+        
+        #get depth limits
+        if depthmm==None:
+            depthmm=(self.ploty.min(),self.ploty.max())
+        if depthmm[0]==0:
+            depthmm[0]=1
         
         #set the dimesions of the figure
         plt.rcParams['font.size']=int(dpi/40.)
@@ -8070,7 +6137,7 @@ class Occam2DModel(Occam2DData):
                         self.ploty[-1]=1
                     p1,=ax.loglog(10**self.resmodel[:,ss],self.ploty,
                                   ls='steps-')
-                    ax.set_ylim(depth,self.ploty[-1])
+                ax.set_ylim(depthmm[1],depthmm[0])
                 
                 ax.set_title(self.data.stationlst[pstationlst[ii]],
                              fontdict={'size':10,'weight':'bold'})
@@ -8100,9 +6167,9 @@ class Occam2DModel(Occam2DData):
                         self.ploty[-1]=1
                     p1,=ax.loglog(10**self.resmodel[:,ss],self.ploty,
                                   ls='steps-')
-                ax.set_ylim(depth,self.ploty[-1])
+                ax.set_ylim(depthmm[1],depthmm[0])
                 
-                ax.set_title(self.data.stationlst[pstationlst[ii]],
+                ax.set_title(self.stationlst[pstationlst[ii]],
                              fontdict={'size':10,'weight':'bold'})    
                 ax.set_ylabel('Depth (m)',fontdict={'size':8,'weight':'bold'})
                 ax.set_xlabel('Resistivity ($\Omega \cdot$m)',
