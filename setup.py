@@ -50,7 +50,7 @@ setup_kwargs['packages'] = ['mtpy',
 	
 
 setup(name = "mtpy", 
-		version = 0.0.0,
+		version = '0.0.0',
 		description = ("Collection of python tools for standard MT data processing."),
 		license = "GNU GENERAL PUBLIC LICENSE",
 		**setup_kwargs)
