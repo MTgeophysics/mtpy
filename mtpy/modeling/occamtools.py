@@ -5278,6 +5278,10 @@ class Occam2DModel(Occam2DData):
         
         Arguments:
         ----------
+<<<<<<< HEAD
+=======
+        
+>>>>>>> 7c0fbc987b5363aefde9b1fc7df4e7361a52a537
             **iterfn** : string
                         full path to iteration file if iterpath=None.  If 
                         iterpath is input then iterfn is just the name
@@ -5285,10 +5289,17 @@ class Occam2DModel(Occam2DData):
         --------
         Returns:
         --------
+<<<<<<< HEAD
             **Occam2DModel.idict** : dictionary of parameters, 
                                      keys are verbatim from the file, 
                                      except for the key 'model' which is the 
                                      contains the model numbers in a 1D array.
+=======
+            **idict** :  dictionary of parameters, 
+                         keys are verbatim from the file, except for the 
+                         key 'model' which is the contains the model
+                         numbers in a 1D array.
+>>>>>>> 7c0fbc987b5363aefde9b1fc7df4e7361a52a537
             
         """
     
@@ -5399,10 +5410,11 @@ class Occam2DModel(Occam2DData):
         
     def read2DMesh(self):
         """
-        read a 2D meshfn
+        reads an Occam 2D mesh file
         
         Arguments:
         ----------
+<<<<<<< HEAD
         
             **Occam2DModel.meshfn** : string 
                                       full path to mesh file
@@ -5419,6 +5431,26 @@ class Occam2DModel(Occam2DData):
             
         To do:
         ------
+=======
+            
+            **meshfn** : string
+                         full path to mesh file
+    
+        --------
+        Returns:
+        --------
+        
+            **Occam2DModel.hnodes** : array of horizontal nodes (column 
+                                      locations (m))
+            
+            **Occam2DModel.vnodes** : array of vertical nodes (row 
+                                      locations(m))
+            
+            **Occam2DModel.mdata** : free parameters
+        -----    
+        Todo:
+        -----
+>>>>>>> 7c0fbc987b5363aefde9b1fc7df4e7361a52a537
             incorporate fixed values
         """
         
