@@ -42,9 +42,11 @@ if setuptools is False:
     # recursively scan your source tree looking for any directory with an
     # __init__.py file"
 
-    setup_kwargs['packages'] = ['mtpy',
-                                'mtpy.core',
-                                'mtpy.imaging',
-                                'mtpy.utils']
+setup_kwargs['packages'] = ['mtpy',
+							'mtpy.core',
+							'mtpy.imaging',
+							'mtpy.utils',
+							'mtpy.modeling']
+	
 
 setup(name="mtpy", **setup_kwargs)
