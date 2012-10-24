@@ -2,7 +2,7 @@
 """
 Created on Mon May 03 13:44:51 2010
 
-@author: a1185872
+@author: Jared Peacock
 """
 
 import numpy as np
@@ -71,6 +71,12 @@ class Edi(object):
         Returns:
         --------
             data type Edi
+            
+        :Example: 
+            
+            >>> import mtpy.core.z as Z
+            >>> edi1 = Z.Edi(edifile)
+            >>> edi1.readEDI(verbose=True)
         """
         #open up file
         edifid=file(self.edifn,'r')
@@ -614,6 +620,14 @@ class Edi(object):
             **Edi.nedifn** : string
                             full path to rewritten edi file
                             dirpath(edifile)+basename(edifile)+ext
+                            
+        :Example:
+            
+            >>> import mtpy.core.z as Z
+            >>> edi1 = Z.Edi(edifile)
+            >>> edi1.rewriteedi(thetar=65,ext='Rot65')
+            Made directory:  c:\Rot65
+            Made file:  c:\Rot65\pb01cRot65.edi
         
         """
     
@@ -897,9 +911,8 @@ class Z(Edi):
     Z is a data type to deal with edifiles and manipulate them to do 
     informative characterization.
     
-    The methods are:
-        
-        
+    Inherits the class Edi so edi files can be read and rewritten.
+            
     """
     def __init__(self,edifn,ncol=5):
         super(Edi,self).__init__()
@@ -929,51 +942,52 @@ class Z(Edi):
         
                     
     def getInvariants(self,thetar=0):
-        """Calculate the invariants according to Weaver et al. (2003) output is:
-        a class with attributes:
-            inv1,
-            inv2,
-            inv3,
-            inv4,
-            inv5,
-            inv6,
-            inv7,
-            q,
-            strike,
-            strikeerr"""
+        """
+        Calculate the invariants of the impedance tensor according to 
+        Weaver et al. [2003].
+        
+        Arguments:
+        ----------
+            **thetar** : float (angle in degrees)
+                         rotation angle clockwise positive
+        
+        Returns:
+        --------
+            **Zinvariants** : data type Zinvariants
+            
+        :Example:
+            
+            >>> z1 = Z.Z(edifile)
+            >>> zinv = z1.getInvariants(thetar=0)
+        """
         
         return Zinvariants(self.z,rotz=thetar)
     
     def getPhaseTensor(self,rotate=180,thetar=0):
-        """Calculate phase tensor elements following Caldwell et al. 2004.
-        Inputs:
-            rotate = coordinate axis is assumed to be Y north and X east, if the
-                     data is in X north and Y east than a rotation of 180 is
-                     necessary
-            thetar = will rotate the data assuming that Y is 0 and X is 90 so 
-                     clockwise is positive.
+        """
+        Calculate phase tensor elements from the impedance tensor following 
+        Caldwell et al. [2004].
+        
+        Arguments:
+        ----------
+            **rotate** : int (90,180,270) 
+                         Caldwell et al, [2004] assume the coordinate axis is 
+                         Y North and X East.  If the data is in X North and Y 
+                         East than rotation = 180. *Default* is 180
+                         
+            **thetar** : float (angle in degrees)
+                         rotation angle clockwise positive assuming 0 is North.
             
-        Returns a phase tensor class with attributes of:
-            phi = phase tensor
-            phivar = phase tensor errors
-            phimin = minimum of the phase tensor in radians (invariant)
-            phiminvar = errors of phimin
-            phimax = maximum of phase tensor in radians (invariant)
-            phimaxvar = erros of phimax
-            alpha = angle between reference axis and coordinate axis
-            alphavar = errors of alpha
-            beta = anble between reference axis and principal axis of ellipse
-            betavar = erros in beta
-            azimuth = difference between alpha and beta orienting ellipse in 
-                      degrees, is measured counter-clockwise with x=0, y=90
-            azimuthvar = erros in azimuth
-            phiminang = phimin in degrees
-            phiminangvar = errors in phimin in degrees
-            ellipticity = measure of 3D effects
-            ellipticityvar = errors in ellipticity
-            phidet = determinant of phi as phimin*phimax from Bibby et al.[2005]
-            phidetvar = errors in phidet            
-            """
+        Returns:
+        --------
+            **PhaseTensor** : data type Phase Tensor
+
+        :Example:
+            
+            >>> z1 = Z.Z(edifile)
+            >>> pt = z1.getPhaseTensor()
+        
+        """
         
         pt=PhaseTensor(self.z,self.zvar,rotate=rotate,rotz=thetar)
         return pt
@@ -981,12 +995,21 @@ class Z(Edi):
     def getTipper(self,thetar=0):
         """
         Get tipper information and return a type with attributes:
-        magreal
-        magimag
-        anglereal
-        angleimag
+            
+        Arguments:
+        ----------
+            **thetar** : float (angle in degrees)
+                         rotation angle clockwise positive assuming 0 is North. 
         
-        need to add error bars
+        Returns:
+        --------
+            **Tipper** : data type Tipper
+            
+        :Example:
+            
+            >>> z1 = Z.Z(edifile)
+            >>> tip = z1.getTipper(thetar=10)
+            
         """
         
            
@@ -995,14 +1018,29 @@ class Z(Edi):
     def removeDistortion(self,thetar=0):
         """
         removeDistortion(self) will remove the distortion from the impedance
-        tensor as prescribed by Bibby et al. [2005].  
+        tensor as prescribed by Bibby et al. [2005] for the 1D case.  
         
-        Inputs:
-            thetar = will rotate the data assuming that Y is 0 and X is 90 so 
-                     clockwise is positive. 
-        Outputs:
-            D = distortion tensor
-            newedifn = full path to new edifile the edifile as station+dr.edi.
+        Argumens:
+        ---------
+            **thetar** : float (angle in degrees)
+                         rotation angle clockwise positive assuming 0 is North. 
+        
+        Returns:
+        --------
+            **Z.D** : real np.array (2,2)
+                    estimated distortion tensor
+                    
+            **Z.newedifn** : string
+                           full path to new edifile the edifile as 
+                           station+dr.edi.
+                           
+        :Example:
+            
+            >>> z1 = Z.Z(edifile)
+            >>> z1.removeDistortion()
+            >>> z1.D
+            np.array([[0.01,0.9],[0.98,0.05]])
+            
         
         """
 
@@ -1076,31 +1114,42 @@ class Z(Edi):
 
     def removeStaticShift(self,stol=.2,dm=1000,fspot=20):
         """
-        removeStaticShift(edifile,stol=.2,dm=1000) will remove static shift by 
-        calculating the median of respones of near by stations, within dm.  If the 
-        ratio of the station response to the median on either side of 1+-stol then 
-        the impedance tensor for that electric component will be corrected for 
-        static shift.
+        Will remove static shift by calculating the median of respones of near
+        by stations, within dm.  If the ratio of the station response to the 
+        median on either side of 1+-stol then the impedance tensor for that 
+        electric component will be corrected for static shift.  
         
-        Inputs:
-            edifile = full path to edi file. Note nearby stations will be 
-                    looked for in the dirname of edifile.  So have all edis in 
-                    one folder
-                      
-            stol = ratio tolerance.  If there is no static shift the ratio 
-                    between the response and the median response should be 1,
-                    but noise and other factors can be present so a tolerance 
-                    around 1 is assumed.
+        .. note:: **Usually only works with closely spaced (<1km) stations.**
+        
+        .. note:: It is important to have all the edifiles in one folder.
+        
+        Arguments:
+        ----------
+            **stol** : float (ratio tolerance).  
+                        If there is no static shift the ratio between the 
+                        response and the median response should be 1, but noise
+                        and other factors can be present so a tolerance 
+                        around 1 is assumed. *Default* is 0.2
                    
-            dm = nearby station radius in meters.  If there is no station
-                within that radius then no static shift will be corrected for.
+            **dm** : float (nearby station radius in meters)  
+                     If there is no station within that radius then no static 
+                     shift will be corrected for. *Default* is 1000m
                  
-            fspot = the last index of frequencies to look at.  So if you want
-                    to look for static shift in the first 20 frequencies
-                    fspot=20
+            **fspot** : int (the last index of frequencies to look at) 
+                        So if you want to look for static shift in the first 
+                        20 frequencies fspot=20.  *Default* is 20
         
-        Outputs:
-            newedifile = full path to new edifile
+        Returns:
+        --------
+            **Z.nedifn** : string
+                           full path to new edifile
+        
+        :Example:
+            
+            >>> z1 = Z.Z(edifile)
+            #to estimate the static shift for a radius of 1500m for the first 
+            #50 frequencies enter:
+            >>> z1.removeStaticShift(stol=0.25,dm=1500,fspot=50)
         """
         
         znewss=np.copy(self.z)
@@ -1168,13 +1217,23 @@ class Z(Edi):
         components of resistivity and phase as well as the errors and 
         determinants.
         
-        Inputs:
-            ffactor = a fudge factor if the calibration or gains aren't quite 
-                      correct
-            thetar = will rotate the data assumint that Y is 0 and X is 90 so 
-                     clockwise is positive.
-        Returns a type with attributes of all components of the resistivity
-        and phase
+        Arguments:
+        ----------
+            **ffactor** : float
+                          a factor if the calibration or gains aren't quite 
+                          correct
+                          
+            **thetar** : float (angle in degrees)
+                         rotation angle clockwise positive assuming 0 is North.
+        
+        Returns:
+        --------
+            **ResPhase** : data type ResPhase
+            
+        :Example:
+            
+            >>> z1 = Z.Z(edifile)
+            >>> rp = z1.getResPhase()
         
         """
     
@@ -1184,12 +1243,27 @@ class Z(Edi):
     def getResTensor(self,thetar=0,rotate=180):
         """
         getResTensor will return a data type that describes the reistivity 
-        tensor defined by Weckmann et al. [2003]
+        tensor defined by O'reilly [1978] and Weckmann et al. [2003]
         
-        Input: 
-            thetar = rotation of impedance tensor
-            rotate = rotation of coordinate system, default is Y to north and 
-                     X to the east
+        Arguments:
+        ----------
+            **thetar** : float (angle in degrees)
+                         rotation angle clockwise positive assuming 0 is North.
+                         *Default* is 0
+                         
+            **rotate** : int (90,180,270) 
+                        rotation of coordinate system, default is Y North and 
+                        X East.  So if X is North rotate is 180. 
+                        *Default* is 180
+                        
+        Returns:
+            **ResistivityTensor** : data type Resistivity Tensor
+            
+        :Example:
+            
+            >>> z1 = Z.Z(edifile)
+            >>> rt = z1.getResTensor()
+            
         """
         
         return ResistivityTensor(self.z,self.frequency,rotz=thetar,
