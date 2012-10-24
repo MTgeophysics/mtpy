@@ -55,7 +55,7 @@ class Edi(object):
         self.tippervar=0
         self.ncol=ncol
 
-    def readEDI(self,verbose=False):
+    def readEDI(self,verbose=None):
         """
         readEDI will read in the information of the edi file
         
@@ -72,7 +72,7 @@ class Edi(object):
         --------
             data type Edi
             
-        :Example: 
+        :Example: ::
             
             >>> import mtpy.core.z as Z
             >>> edi1 = Z.Edi(edifile)
@@ -200,10 +200,8 @@ class Edi(object):
         try:
             self.elevation=float(gdict['head']['ELEV'])
         except KeyError:
-            if verbose==True:
+            if verbose:
                 print 'Did not find elevation for ',self.edifn
-            else:
-                pass
         
         
         #======================================================================
@@ -236,10 +234,9 @@ class Edi(object):
                     kk+=1
                     ii+=1
         except KeyError:
-            if verbose==True:
+            if verbose:
                 print 'Did not find frequencies in ',self.edifn
-            else:
-                pass
+
             
         #-------------Get impedance from spectra---------------------------
         try:
@@ -369,10 +366,8 @@ class Edi(object):
                                     (spect[bx,bz].conj()*spect[bx,by]))/zdet
         
         except KeyError:
-            if verbose==True:
+            if verbose:
                 print 'Did not find spectra information for ',self.edifn
-            else:
-                pass
         
         #--------------Get Impedance Rotation angles----------------------
         try:
@@ -403,10 +398,8 @@ class Edi(object):
                     ii+=1
         
         except KeyError:
-            if verbose==True:
+            if verbose:
                 print 'Did not find impedance rotation block for ',self.edifn
-            else:
-                pass
         
         #--------------Get impedance--------------------------------------                           
         try:
@@ -477,10 +470,8 @@ class Edi(object):
                     ii+=1
                     kk+=1
         except KeyError:
-            if verbose==True:
+            if verbose:
                 print 'Did not find impedance information for ',self.edifn
-            else:
-                pass
         
         #--------------Get Tipper Rotation angles----------------------
         try:
@@ -511,11 +502,9 @@ class Edi(object):
                     ii+=1
         
         except KeyError:
-            if verbose==True:
+            if verbose:
                 print 'Did not find Tipper rotation block for ',self.edifn
-            else:
-                pass
-            
+
         #-----Get Tipper Information-----------
         try:
             ii=edict['tipper']+1
@@ -569,10 +558,8 @@ class Edi(object):
                     kk+=1
 
         except KeyError:
-            if verbose==True:
+            if verbose:
                 print 'Did not find Tipper information for ',self.edifn  
-            else:
-                pass
     
     def rewriteedi(self,znew=None,zvarnew=None,freqnew=None,newfile='y',
                tipnew=None,tipvarnew=None,thetar=0,ext='dr'):
@@ -621,7 +608,7 @@ class Edi(object):
                             full path to rewritten edi file
                             dirpath(edifile)+basename(edifile)+ext
                             
-        :Example:
+        :Example: ::
             
             >>> import mtpy.core.z as Z
             >>> edi1 = Z.Edi(edifile)
@@ -955,7 +942,7 @@ class Z(Edi):
         --------
             **Zinvariants** : data type Zinvariants
             
-        :Example:
+        :Example: ::
             
             >>> z1 = Z.Z(edifile)
             >>> zinv = z1.getInvariants(thetar=0)
@@ -970,7 +957,7 @@ class Z(Edi):
         
         Arguments:
         ----------
-            **rotate** : int (90,180,270) 
+            **rotate** : [ 90 | 180 | 270 ]  
                          Caldwell et al, [2004] assume the coordinate axis is 
                          Y North and X East.  If the data is in X North and Y 
                          East than rotation = 180. *Default* is 180
@@ -982,7 +969,7 @@ class Z(Edi):
         --------
             **PhaseTensor** : data type Phase Tensor
 
-        :Example:
+        :Example: ::
             
             >>> z1 = Z.Z(edifile)
             >>> pt = z1.getPhaseTensor()
@@ -1005,7 +992,7 @@ class Z(Edi):
         --------
             **Tipper** : data type Tipper
             
-        :Example:
+        :Example: ::
             
             >>> z1 = Z.Z(edifile)
             >>> tip = z1.getTipper(thetar=10)
@@ -1034,7 +1021,7 @@ class Z(Edi):
                            full path to new edifile the edifile as 
                            station+dr.edi.
                            
-        :Example:
+        :Example: ::
             
             >>> z1 = Z.Z(edifile)
             >>> z1.removeDistortion()
@@ -1144,11 +1131,11 @@ class Z(Edi):
             **Z.nedifn** : string
                            full path to new edifile
         
-        :Example:
+        :Example: ::
             
-            >>> z1 = Z.Z(edifile)
             #to estimate the static shift for a radius of 1500m for the first 
             #50 frequencies enter:
+            >>> z1 = Z.Z(edifile)
             >>> z1.removeStaticShift(stol=0.25,dm=1500,fspot=50)
         """
         
@@ -1230,7 +1217,7 @@ class Z(Edi):
         --------
             **ResPhase** : data type ResPhase
             
-        :Example:
+        :Example: ::
             
             >>> z1 = Z.Z(edifile)
             >>> rp = z1.getResPhase()
@@ -1259,7 +1246,7 @@ class Z(Edi):
         Returns:
             **ResistivityTensor** : data type Resistivity Tensor
             
-        :Example:
+        :Example: ::
             
             >>> z1 = Z.Z(edifile)
             >>> rt = z1.getResTensor()
@@ -1317,7 +1304,7 @@ class Z(Edi):
                               min and max of phase limits in degrees. 
                               *Default* is (0,90)
             
-        :Example:
+        :Example: ::
             
             # to plot all 4 components
             >>> z1 = Z.Z(edifile)
@@ -1548,23 +1535,65 @@ class Z(Edi):
                 
     def plotPTAll(self,xspacing=6,esize=5,fignum=1,thetar=0, save='n',
                   savepath=None,fmt='pdf',coordrot=180,ptmm=None,rpmm=None,
-                  dpi=300):
-        """plotAll will plot phase tensor, strike angle, min and max phase angle, 
-        azimuth, skew, and ellipticity as subplots on one plot.  It also plots
+                  dpi=300,restensor='n'):
+        """
+        Will plot phase tensor, strike angle, min and max phase angle, 
+        azimuth, skew, and ellipticity as subplots on one plot.  It can plot
         the resistivity tensor along side the phase tensor for comparison.
         
-        Inputs:
-            xspacing = spacing of tensors along x direction
-            esize = size of tensor ellipses
-            fignum = number of figure
-            thetar = will rotate the data assuming that Y is 0 and X is 90 so 
-                     clockwise is positive.
-            save = save the figure 'y' or 'n'
-            savepath = path to save to, saves as savepath\statioAll.fmt
-            fmt = format of save figure pdf,svg,eps,ps,png
-            coordrot = rotation of coordinate directions by multiples of 90
-            rpmm = min and max of resistivity tensor on log10 scale
-            ptmm = min an max of phase tensor
+        Arguments:
+        ----------
+            **xspacing** : float 
+                            spacing of tensors along x direction.
+                            *Default* is 6
+                            
+            **esize** : float
+                        size of tensor ellipses.
+                        *Default* is 5
+                        
+            **fignum** : int (figure number)
+            
+            **thetar** : float (angle in degrees)
+                         rotation angle clockwise positive assuming 0 is North.
+                         *Default* is 0
+                         
+            **save** : [ 'y' | 'n' ]
+                       * 'y' to save figure
+                       * 'n' to not save figure
+                       * *Default* is 'n'
+            
+            **savepath** : string
+                           path to save to, saves as savepath\statioAll.fmt
+                           
+            **fmt** : [ 'pdf' | 'eps' | 'svg' | 'png' | 'jpeg' ]
+                      format of save figure pdf,svg,eps,ps,png
+            
+            **dpi** : int
+                      Dots-per-inch resolution of figure.
+                      *Default* is 300
+            
+            **coordrot** : [ 90 | 180 | 270 ]
+                          rotation of coordinate directions assuming Y North
+                          and X East.  If data measured in X North, Y East
+                          coordrot=180.  *Default* is 180
+                          
+            **rpmm** : tuple (min,max)
+                       min and max of resistivity tensor on log10 scale
+            
+            **ptmm** : tuple (min,max)
+                       min an max of phase tensor
+            
+            **restensor** : [ 'y' | 'n' ]
+                            * 'y' to plot the resistivity tensors along with 
+                               the phase tensors
+                            * 'n' to not plot resistivity tensors
+                            * *Default* is 'n'
+                            
+        :Example: ::
+            #To plot just the phase tensor components
+            >>> z1 = Z.Z(edifile)
+            >>> z1.plotPTAll()
+            
         """
         
         #Set plot parameters
@@ -1607,7 +1636,7 @@ class Z(Edi):
             ptmin=float(ptmm[0])*np.pi/180
             ptmax=float(ptmm[1])*np.pi/180
             
-        #plotPhaseTensor
+        #-------------plotPhaseTensor-----------------------------------
         ax1=fig.add_subplot(3,1,1,aspect='equal')
         for ii in range(n):
             #make sure the ellipses will be visable
@@ -1626,7 +1655,6 @@ class Z(Edi):
                           
             if pt.phimin[ii]<0 or pt.phimin[ii]=='nan':
                 cvars=0
-#                    print 'less than 0 or nan',cvars
             else:
                 cvars=(pt.phimin[ii]-ptmin)/(ptmax-ptmin)
                 if cvars>1.0:
@@ -1637,27 +1665,28 @@ class Z(Edi):
             ax1.add_artist(ellip)
             
             #resistivity tensor
-            rellip=Ellipse((xspacing*ii,3+esize),width=rwidth,
-                          height=rheight,
-                          angle=rp.rhoazimuth[ii])
-                         
-            cvar=(np.log10(rp.rhodet[ii])-rpmin)/(rpmax-rpmin)
-#            print 'rpcvar={0:.3g}'.format(cvar)
-            if cvar>.5:
-                if cvar>1:
-                    rellip.set_facecolor((0,0,1))
+            if restensor=='y':
+                rellip=Ellipse((xspacing*ii,3+esize),width=rwidth,
+                              height=rheight,
+                              angle=rp.rhoazimuth[ii])
+                             
+                cvar=(np.log10(rp.rhodet[ii])-rpmin)/(rpmax-rpmin)
+                if cvar>.5:
+                    if cvar>1:
+                        rellip.set_facecolor((0,0,1))
+                    else:
+                        rellip.set_facecolor((1-abs(cvar),1-abs(cvar),1))
                 else:
-                    rellip.set_facecolor((1-abs(cvar),1-abs(cvar),1))
+                    if cvar<-1:
+                        rellip.set_facecolor((1,0,0))
+                    else:
+                        rellip.set_facecolor((1,1-abs(cvar),1-abs(cvar)))
+                
+                ax1.add_artist(rellip)
             else:
-                if cvar<-1:
-                    rellip.set_facecolor((1,0,0))
-                else:
-                    rellip.set_facecolor((1,1-abs(cvar),1-abs(cvar)))
-            
-            ax1.add_artist(rellip)
+                pass
         
-#        xticklabels=['%.0g' % period[ii] for ii in np.arange(start=0,stop=n,
-#                     step=3)]
+        #set tick labels and limits
         xticklabels=[]
         for xx in np.arange(start=0,stop=n,step=5):
             if period[xx]<100:
@@ -1670,21 +1699,21 @@ class Z(Edi):
         #plt.title('Phase Tensor Ellipses for '+stationstr,fontsize=14)
         plt.xticks(np.arange(start=0,stop=xspacing*n,step=5*xspacing),
                    xticklabels)
-        ax1.set_ylim(-esize,2*esize+3)
+        if restensor=='y':
+            ax1.set_ylim(-esize,2*esize+3)
+        else:
+            ax1.set_ylim(-esize,esize+3)
         ax1.set_xlim(-xspacing,n*xspacing+3)
         ax1.grid(alpha=.3)
         plt.setp(ax1.get_yticklabels(),visible=False)
         
+        #add colorbar for PT
         cbpt=fig.add_subplot(3,32,1)
         cbpt.set_axis_off()
-#        ax1cbpt=make_axes(cbpt,shrink=.9,orientation='horizontal',pad=.10)
-##        ax1cb=make_axes(ax1,shrink=.3,orientation='horizontal',pad=.30)
-#        cb1=ColorbarBase(ax1cbpt[0],cmap=ptcmap,
-#                        norm=Normalize(vmin=ptmin*180/np.pi,
-#                                       vmax=ptmax*180/np.pi),
-#                        orientation='horizontal')
-        ax1cbpt=make_axes(ax1,shrink=.7,orientation='vertical',pad=.005)
-#        ax1cb=make_axes(ax1,shrink=.3,orientation='horizontal',pad=.30)
+        if restensor=='y':
+            ax1cbpt=make_axes(ax1,shrink=.7,orientation='vertical',pad=.005)
+        else:
+            ax1cbpt=make_axes(ax1,shrink=.7,orientation='vertical',pad=.01)
         cb1=ColorbarBase(ax1cbpt[0],cmap=ptcmap,
                         norm=Normalize(vmin=ptmin*180/np.pi,
                                        vmax=ptmax*180/np.pi),
@@ -1693,61 +1722,46 @@ class Z(Edi):
         cb1.set_ticklabels(['{0:.0f}'.format(ptmin*180/np.pi),
                             '{0:.0f}'.format(ptmax*180/np.pi)])
         
-#        cb.set_label('Min Phase')
-
-
-        cbrt=fig.add_subplot(3,32,1)
-        cbrt.set_axis_off()
-#        ax1cbrt=make_axes(cbrt,shrink=.9,orientation='horizontal',pad=.10)
-##        ax1cb=make_axes(ax1,shrink=.3,orientation='horizontal',pad=.30)
-#        cb2=ColorbarBase(ax1cbrt[0],cmap=rtcmap,
-#                        norm=Normalize(vmin=10**rpmin,
-#                                       vmax=10**rpmax),
-#                        orientation='horizontal')
-        ax1cbrt=make_axes(ax1,shrink=.7,orientation='vertical',pad=.01)
-#        ax1cb=make_axes(ax1,shrink=.3,orientation='horizontal',pad=.30)
-        cb2=ColorbarBase(ax1cbrt[0],cmap=rtcmap,
-                        norm=Normalize(vmin=10**rpmin,
-                                       vmax=10**rpmax),
-                        orientation='vertical')
-        cb2.draw_all()
-        cb2.set_ticks([10**rpmin,10**rpmax])
-        cb2.set_ticklabels(['{0:.2g}'.format(10**rpmin),
-                            '{0:.5g}'.format(10**rpmax)])
-#        cb.set_label('Min Phase')
-    
-#        if len(stationlst)>1:
-#            plt.legend(stationlst,loc=0,markerscale=.4,borderaxespad=.05,
-#                   labelspacing=.1,handletextpad=.2)
-#            leg=plt.gca().get_legend()
-#            ltext=leg.get_texts()  # all the text.Text instance in the legend
-#            plt.setp(ltext, fontsize=10)    # the legend text fontsize
-    
+        #add color bar for RT
+        if restensor=='y':
+            cbrt=fig.add_subplot(3,32,1)
+            cbrt.set_axis_off()
+            ax1cbrt=make_axes(ax1,shrink=.7,orientation='vertical',pad=.01)
+            cb2=ColorbarBase(ax1cbrt[0],cmap=rtcmap,
+                            norm=Normalize(vmin=10**rpmin,
+                                           vmax=10**rpmax),
+                            orientation='vertical')
+            cb2.draw_all()
+            cb2.set_ticks([10**rpmin,10**rpmax])
+            cb2.set_ticklabels(['{0:.2g}'.format(10**rpmin),
+                                '{0:.5g}'.format(10**rpmax)]) 
         
-        #plotStrikeAngle
+        #---------------plotStrikeAngle-----------------------------------
         
         az=90-np.array(pt.azimuth)
         azvar=np.array(pt.azimuthvar)
-#        realarrow=tipper.magreal
-#        realarrowvar=np.zeros(len(realarrow))+.00000001
+        #put the strike into a coordinate system that goes from -90 to 90
         az[np.where(az>90)]=az[np.where(az>90)]-180
         az[np.where(az<-90)]=az[np.where(az<-90)]+180
         
         strike=zinv.strike
+        #put the strike into a coordinate system that goes from -90 to 90
         strike[np.where(strike>90)]=strike[np.where(strike>90)]-180
         strike[np.where(strike<-90)]=strike[np.where(strike<-90)]+180
         
         ax2=plt.subplot(3,2,3)
+        
+        #plot invariant strike
         erxy=ax2.errorbar(period,strike,
                           marker='s',ms=4,mfc='None',
                           mec='c',mew=1,ls='None',
                           yerr=zinv.strikeerr,
                           ecolor='c')
+        #plot phase tensor strike
         eraz=ax2.errorbar(period,az,marker='o',ms=4,
                           mfc='None',mec='purple',mew=1,
                           ls='None',yerr=azvar,ecolor='purple')
-        #ertip=plt.errorbar(period,realarrow,marker='>',ms=4,mfc='None',mec='k',
-        #                   mew=1,ls='None',yerr=realarrowvar,ecolor='k')
+                          
         ax2.legend((erxy[0],eraz[0]),('Strike','Azimuth'),loc='lower left',
                    markerscale=.2,borderaxespad=.01,labelspacing=.1,
                    handletextpad=.2,ncol=2,borderpad=.1,columnspacing=.1)
@@ -1769,7 +1783,7 @@ class Z(Edi):
         ax2.set_title('Strike Angle, Azimuth',fontsize=tfs,
                       fontweight='bold')
         
-        #plotMinMaxPhase
+        #---------plot Min & Max Phase-----------------------------------------
         
         minphi=pt.phiminang
         minphivar=pt.phiminangvar
@@ -1799,11 +1813,11 @@ class Z(Edi):
         plt.grid(True,alpha=.3)
         #plt.xlabel('Period (s)',fontsize=fs,fontweight='bold')
         plt.ylabel('Phase (deg)',fontsize=fs,fontweight='bold')
-        plt.title('$\mathbf{\phi_{min}}$ and $\mathbf{\phi_{max}}$',fontsize=tfs,
-                  fontweight='bold')
+        plt.title('$\mathbf{\phi_{min}}$ and $\mathbf{\phi_{max}}$',
+                  fontsize=tfs,fontweight='bold')
 
         
-        #plotSkew
+        #-----------------------plotSkew---------------------------------------
         
         skew=pt.beta
         skewvar=pt.betavar
@@ -1826,7 +1840,7 @@ class Z(Edi):
         plt.ylabel('Skew Angle (deg)',fontsize=fs,fontweight='bold')
         plt.title('Skew Angle',fontsize=tfs,fontweight='bold')
         
-        #plotEllipticity
+        #----------------------plotEllipticity--------------------------------
         
         ellipticity=pt.ellipticity
         ellipticityvar=pt.ellipticityvar
@@ -1870,9 +1884,31 @@ class Z(Edi):
     def plotTipper(self,thetar=0,fignum=1,plotnum=1,dpi=100):
         """
         plotTipper will plot the resistivity, phase and tipper
+        
+        Arguments:
+        ----------
+            **fignum** : int (figure number). *Default* is 1
+            
+            **thetar** : float (angle in degrees)
+                         rotation angle clockwise positive assuming 0 is North.
+                         *Default* is 0
+        
+            **dpi** : int
+                      Dots-per-inch resolution of figure.
+                      *Default* is 100
+                      
+            **plotnum** : [ 1 | 2 | 3 ]
+                          * 1 for just Ex/By and Ey/Bx
+                          * 2 for all 4 components
+                          * 3 for off diagonal plus the determinant
+                          * Default is 1
+        :Example: ::
+            #To plot all 4 components and the tipper
+            >>> z1 = Z.Z(edifile)
+            >>> z1.plotTipper(plotnum=2)
         """
 
-        rp=ResPhase(self.z,self.zvar,self.period,rotz=thetar,
+        rp=ResPhase(self.z,self.period,zvar=self.zvar,rotz=thetar,
                        ffactor=1)
         tip=Tipper(self.tipper,rott=thetar)
         
@@ -2015,6 +2051,23 @@ class PhaseTensor:
     """
     PhaseTensor calculates the components of the phase tensor following 
     Caldwell et al. [2004].
+    
+    Arguments:
+    ----------
+        **z** : complex np.array (nf,2,2)
+                impedance tensor
+        
+        **zvar** : np.array (nf,2,2)
+                   impedance tensor variances
+                   
+        **rotate** : [ 90 | 180 | 270 ] 
+                     Caldwell et al, [2004] assume the coordinate axis is 
+                     Y North and X East.  If the data is in X North and Y 
+                     East than rotation = 180. *Default* is 180
+        
+        **rotz** : float (angle in degrees)
+                   rotation angle clockwise positive assuming 0 is North.
+        
     """
 
     def __init__(self,z,zvar=None,rotate=180,rotz=0):
@@ -2225,6 +2278,24 @@ class PhaseTensor:
 class ResPhase:
     """
     ResPhase is a resistivity and phase class
+    
+    Arguments:
+    ----------
+        **z** : complex np.array (nf,2,2)
+                impedance tensor [[zxx,zxy],[zyx,zyy]]
+        
+        **period** : np.array (nf)
+                    array of periods corresponding to the impedance tensor
+        
+        **zvar** : np.array (nf,2,2)
+                   impedance tensor variances [[zxx,zxy],[zyx,zyy]]
+        
+        **rotz** : float (angle in degrees)
+                   rotation angle clockwise positive assuming 0 is North.
+        
+        **ffactor** : float
+                      factor to scale the apparent resistivities by.
+                
     """
     
     def __init__(self,z,period,zvar=None,rotz=0,ffactor=1):
@@ -2336,7 +2407,15 @@ class ResPhase:
 
 class Tipper:
     """
-    Tipper is a type with attributes:
+    Tipper Class
+    
+    Arguments:
+    ----------
+        **tipper** : complex np.array (nf,2)
+                     tipper array [tx,ty]
+                     
+        **roty** : float (angle in degrees)
+                   rotation angle clockwise positive assuming 0 is North.        
         
     """
 
@@ -2376,7 +2455,13 @@ class Tipper:
 
 class Zinvariants:
     """
-    calculates invariants from Weaver [2003]
+    calculates invariants from Weaver et al. [2003]
+    
+    Arguments:
+    ----------
+    
+        **z** : complex np.array (nf,2,2)
+                impedance tensor
     """
     
     def __init__(self,z,rotz=0):
@@ -2458,7 +2543,25 @@ class Zinvariants:
             
 class ResistivityTensor:
     """
-    gets components of the resistivity tensor defined by Weckmann et al. [2003]
+    gets components of the resistivity tensor defined by 
+    O'reilly [1978] and Weckmann et al. [2003]
+    
+    Arguments:
+    ----------
+        **z** : complex np.array (nf,2,2)
+                impedance tensor [[zxx,zxy],[zyx,zyy]]
+        
+        **frequency** : np.array (nf)
+                    array of frequencies corresponding to the impedance tensor
+        
+        **rotate** : [ 90 | 180 | 270 ] 
+                     Caldwell et al, [2004] assume the coordinate axis is 
+                     Y North and X East.  If the data is in X North and Y 
+                     East than rotation = 180. *Default* is 180
+                     
+        **rotz** : float (angle in degrees)
+                   rotation angle clockwise positive assuming 0 is North.
+    
     """
     
     def __init__(self,z,frequency,rotate=180,rotz=0):
