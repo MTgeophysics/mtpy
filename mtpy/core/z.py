@@ -2659,6 +2659,10 @@ class ResistivityTensor:
 class PhaseTensorResidual:
     """
     calculates the tensor residual
+    as defined by 
+    
+    .. math:: 
+        \Delta \Phi_{1,2} = \hat{I} - \Phi_1^{-1} \Phi_2
     """
     
     def __init__(self,z1,z2,rotz=0,rotate=180):
@@ -2736,6 +2740,9 @@ class PhaseTensorResidual:
 class ResistivityTensorResidual:
     """
     will calculate the resistivity residual between two tensors
+    
+    .. math:: 
+        \Delta \Phi_{1,2} = \hat{I} - \Phi_1^{-1} \Phi_2
     """
     
     def __init__(self,z1,z2,frequency,rotz=0,rotatecoord=180):
