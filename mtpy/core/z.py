@@ -1274,27 +1274,53 @@ class Z(Edi):
                      savefigfilename=None,dpi=None,fmt=None,orientation=None,
                      phaselimits=(0,90)):
         """
-        plotResPhase(filename,fignum) will plot the apparent resistivity and 
-        phase for TE and TM modes or all modes.  If there is tipper data it will
-        be plotted at the bottom as real and imaginary parts.
+        Will plot the apparent resistivity and phase for TE and TM modes or all
+        modes.  If there is tipper data it will be plotted at the bottom as 
+        real and imaginary parts.
     
-        Inputs:
-            filename = filename containing impedance (.edi) or resistivity and phase
-                       information (.dat)
-            fignum = figure number
-            ffactor = fudge factor for computing resistivity from impedances
-            thetar = rotation angle of impedance tensor (deg or radians)
-            plottype = 1 for just Ex/By and Ey/Bx
-                      2 for all 4 components
-                      3 for off diagonal plus the determinant
-            title = title of plot
-            savefigfilename = supply filename to save figure to if desired
-            dpi = figure resolution
-            format = file type of saved figure pdf,svg,eps...
-            orientation = orientation of figure on A4 paper
+        Arguments:
+        ----------
+            **fignum** : int (figure number). *Default* is 1
             
-        Outputs:
-            none
+            **thetar** : float (angle in degrees)
+                         rotation angle clockwise positive assuming 0 is North.
+                         *Default* is 0
+                         
+            **ffactor** : float
+                          a factor if the calibration or gains aren't quite 
+                          correct.  *Default* is 1
+                          
+            **plottype** : int (1,2,3)
+                            * 1 for just Ex/By and Ey/Bx
+                            * 2 for all 4 components
+                            * 3 for off diagonal plus the determinant
+                            * Default is 1
+                            
+            **title** : string 
+                        title of plot
+                        
+            **savefigfilename** : string
+                                 supply full path filename to save figure 
+                                 *Default* is None 
+                                 
+            **dpi** : int
+                      Dots-per-inch resolution of figure.
+                      *Default* is 100
+                      
+            **format** : string ('pdf','eps','svg','png','jpeg')
+                         if savefigfilename!=None, save figure to format
+            
+            **orientation** : string ('landscape','portrait')
+                              orientation of figure on A4 paper
+                              
+            **phaselimits** : tuple (min,max)
+                              min and max of phase limits in degrees. 
+                              *Default* is (0,90)
+            
+        :Example:
+            
+            >>> z1 = Z.Z(edifile)
+            >>> z1.plotResPhase(plottype=2)
             
         """
         
