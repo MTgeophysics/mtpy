@@ -1590,6 +1590,7 @@ class Z(Edi):
                             * *Default* is 'n'
                             
         :Example: ::
+            
             #To plot just the phase tensor components
             >>> z1 = Z.Z(edifile)
             >>> z1.plotPTAll()
@@ -1702,7 +1703,7 @@ class Z(Edi):
         if restensor=='y':
             ax1.set_ylim(-esize,2*esize+3)
         else:
-            ax1.set_ylim(-esize,esize+3)
+            ax1.set_ylim(-esize,esize)
         ax1.set_xlim(-xspacing,n*xspacing+3)
         ax1.grid(alpha=.3)
         plt.setp(ax1.get_yticklabels(),visible=False)
