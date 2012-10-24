@@ -34,23 +34,11 @@ tsp='   '
 
 class Edi(object):
     """
-    This is a data type for edi files.  Included are 
-    self.edifn=edifilename
-        Edi.header = header information about the survey area (dictionary)
-        Edi.info = information about data processing (dictionary)
-        Edi.measurement = information about measurement setup (dictionary)
-        Edi.lat = latitude in decimal degrees
-        Edi.lon = longitude in decimal degrees
-        Edi.elevation = elevation in meters
-        Edi.frequency = array of frequencies for estimated transfer functions
-        Edi.z = array (nf,2,2) of impedance components (nf=# of frequencies)
-        Edi.zvar = array (nf,2,2) of variance estimation of Z
-        Edi.zrot = array (nf) of rotation angles used
-        Edi.tipper = array (nf,2) of tipper components
-        Edi.tippervar = array (nf,2) of variance estimation of tipper
-        Edi.trot = array (nf) of rotation angles used
+    This is a data type for edi files to read, write and rewrite any edi file,
+    well, at least that is the plan.
         
     """
+    
     def __init__(self,edifilename,ncol=5):
         self.edifn=edifilename
         self.header={'text':[]}
@@ -67,12 +55,28 @@ class Edi(object):
         self.tippervar=0
         self.ncol=ncol
 
-    def getInfo(self):
-        ncol=self.ncol
+    def readEDI(self,verbose=False):
+        """
+        readEDI will read in the information of the edi file
+        
+        Arguments:
+        ----------
+            **Edi.edifn** : string
+                            full path to .edi file to be read in.
+            
+            **verbose** : boolean (True,False)
+                          * True to print out diagnositic messages
+                          * False to not print out messages
+                            
+        Returns:
+        --------
+            data type Edi
+        """
         #open up file
         edifid=file(self.edifn,'r')
         #read all the lines from that file
         edilines=edifid.readlines()
+        edifid.close()
         
         #---Read in the information about the measurement---------
         gdict={'head':self.header,
@@ -82,21 +86,34 @@ class Edi(object):
                'emapsect':{'text':[]},
                'comp':{}}
         
-        ii=0               
+        #get indexes of important information
+        edict={}
+        for ii,eline in enumerate(edilines):
+            if eline.find('FREQUENCIES')>0:
+                edict['freq']=ii
+            elif eline.find('SPECTRASECT')>0:
+                edict['spectra']=ii
+            elif eline.find('IMPEDANCE')>0:
+                if eline.find('ROTATION')>0:
+                    edict['zrot']=ii
+                else:
+                    edict['z']=ii
+            elif eline.find('TIPPER')>0:
+                if eline.find('ROTATION')>0:
+                    edict['trot']=ii
+                else:
+                    edict['tipper']=ii
+            
+        #-------Read in header information------------------------
+        ii=0
         while type(ii) is int:
             eline=edilines[ii]
-            if eline.find('SPECTRA')>0:
-                jj=ii        
+            if eline.find('SPECTRA')>0:      
                 ii=None
-                specimp='spectra'
-            elif eline.find('IMPEDANCE')>0:
-                jj=ii        
+            elif eline.find('IMPEDANCE')>0:      
                 ii=None
-                specimp='impedance'
-            elif eline.find('FREQUENCIES')>0:
-                jj=ii        
+            elif eline.find('FREQUENCIES')>0:     
                 ii=None
-                specimp='frequency'
             else:
                 #get the block header
                 if eline.find('>')==0:
@@ -173,15 +190,57 @@ class Edi(object):
         else:
             self.lon=float(lonstr)
         
+        #get elevation
+        try:
+            self.elevation=float(gdict['head']['ELEV'])
+        except KeyError:
+            if verbose==True:
+                print 'Did not find elevation for ',self.edifn
+            else:
+                pass
         
-        #++++++++++++Get impedences and frequencies+++++++++++++++++++
         
-        #=========Get impedance from spectra=============================
-        if specimp=='spectra':
+        #======================================================================
+        #         Get frequency, impedance and tipper
+        #======================================================================
+        #-------------------Get Frequencies------------------------------------        
+        try:
+            ii=edict['freq']+1
+            #get number of frequencies
+            nf=int(edilines[ii].strip().split('//')[1])
+            
+            #initialize some arrays    
+            self.frequency=np.zeros(nf)
+            
+            #get frequencies
+            kk=0
+            ii+=1
+            while type(kk) is int:
+                if edilines[ii].find('!')>0 or edilines[ii].find('*')>0:
+                    kk=None
+                else:
+                    eline=edilines[ii].strip().split()
+                    if kk==0:
+                        self.ncol=len(eline)
+                    for nn,estr in enumerate(eline):
+                        try:
+                            self.frequency[kk*(self.ncol-1)+nn+kk]=float(estr)
+                        except IndexError:
+                            pass
+                    kk+=1
+                    ii+=1
+        except KeyError:
+            if verbose==True:
+                print 'Did not find frequencies in ',self.edifn
+            else:
+                pass
+            
+        #-------------Get impedance from spectra---------------------------
+        try:
+            ii=edict['spectra']+1
             #make a dictionary with a list to put the component order into
             gdict['spectraset']={'comporder':{}}
-            #counter
-            ii=jj+1
+            
             cc=0
             #get header information about how the spectra is stored
             while type(ii) is int:
@@ -244,7 +303,8 @@ class Edi(object):
                             avgt[kk]=float(estr[1])
                         else:
                             pass
-                    #make and empty array to put spectra into for easy calculation
+                    #make and empty array to put spectra into for easy 
+                    #calculation
                     spectra=np.zeros((nc,nc))
                     kk+=1
                     jj+=1
@@ -257,9 +317,9 @@ class Edi(object):
                         eline=edilines[jj].strip().split()
                         jj+=1
                         for nn in range(nc):
-                            spectra[ll,nn]=float(eline[nn])
-                    #get spectra in a useable order such that all values are complex 
-                    #in the upper right hand triangle
+                            spectra[ll,nn]=float(eline[nn])       
+                    #get spectra in a useable order such that all values are
+                    #complex in the upper right hand triangle
                     spect=np.zeros((nc,nc),dtype='complex')
                     for ll in range(nc):
                         for nn in range(ll,nc):
@@ -302,49 +362,67 @@ class Edi(object):
                     self.tipper[kk-1,1]=((spect[by,bz].conj()*spect[bx,bx].real)-
                                     (spect[bx,bz].conj()*spect[bx,by]))/zdet
         
-        #========Get impedance ====================================                            
-        elif specimp=='frequency':
+        except KeyError:
+            if verbose==True:
+                print 'Did not find spectra information for ',self.edifn
+            else:
+                pass
+        
+        #--------------Get Impedance Rotation angles----------------------
+        try:
+            ii=edict['zrot']+1
+            
             #get number of frequencies
-            nf=int(edilines[jj+1].strip().split('//')[1])
+            nf=int(edilines[ii].strip().split('//')[1])
             
             #initialize some arrays    
-            self.frequency=np.zeros(nf)
+            self.zrot=np.zeros(nf)
             
-            #get frequencies
+            #get rotation angles
             kk=0
-            ii=jj+2
+            ii+=1
             while type(kk) is int:
-                eline=edilines[ii]
-                #if past the impedance information end loop
-                if eline.find('>')==0 and eline.find('FREQ')==-1:
+                if edilines[ii].find('!')>0 or edilines[ii].find('*')>0:
                     kk=None
-                    jj=ii
-                    specimp='impedance'
-                else:
-                    eline=eline.strip().split()
-                    for nn,estr in enumerate(eline):
+                else:     
+                    eline=edilines[ii].strip().split()
+                    if kk==0:
+                        self.ncol=len(eline)
+                    for nn,estr in enumerate(eline): 
                         try:
-                            self.frequency[kk*(ncol-1)+nn+kk]=float(estr)
+                            self.zrot[kk*(self.ncol-1)+nn+kk]=float(estr)
                         except IndexError:
                             pass
                     kk+=1
                     ii+=1
-                    
-            #------Get Impedance information-----------------
-            zdict=dict([('ZXX',(0,0)),('ZXY',(0,1)),('ZYX',(1,0)),('ZYY',(1,1))])
+        
+        except KeyError:
+            if verbose==True:
+                print 'Did not find impedance rotation block for ',self.edifn
+            else:
+                pass
+        
+        #--------------Get impedance--------------------------------------                           
+        try:
+            ii=edict['z']+1
+            
+            #define a dictionary of indecies to put information into z array
+            zdict=dict([('ZXX',(0,0)),('ZXY',(0,1)),('ZYX',(1,0)),
+                        ('ZYY',(1,1))])
             
             #initialize some arrays
-            nf=int(edilines[jj+1].strip().split('//')[1])
+            nf=int(edilines[ii].strip().split('//')[1])
             self.z=np.zeros((nf,2,2),dtype='complex')
-            self.zrot=np.zeros(nf)
             self.zvar=np.zeros((nf,2,2))
             self.tipper=np.zeros((nf,2),dtype='complex')
             self.tippervar=np.zeros((nf,2))
             self.trot=np.zeros(nf)
+            try:
+                edict['zrot']
+            except KeyError:
+                self.zrot=np.zeros(nf)
         
-            
             kk=0
-            ii=jj+1
             while type(kk) is int:
                 eline=edilines[ii]
                 if eline.find('>')==0:
@@ -366,40 +444,82 @@ class Edi(object):
                     if zkey=='ZRO':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.zrot[kk*(ncol-1)+nn+kk]=float(estr)
+                                self.zrot[kk*(self.ncol-1)+nn+kk]=float(estr)
                             except IndexError:
                                 pass
                     elif zcomp=='R':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.z[kk*(ncol-1)+nn+kk,z0,z1]=float(estr)
+                                self.z[kk*(self.ncol-1)+nn+kk,z0,z1]=float(estr)
                             except IndexError:
                                 pass
                     elif zcomp=='I':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.z[kk*(ncol-1)+nn+kk,z0,z1]=self.z[kk*(ncol-1)+nn+kk,z0,z1]+\
-                                                            1j*float(estr)
+                                self.z[kk*(self.ncol-1)+nn+kk,z0,z1]=\
+                                        self.z[kk*(self.ncol-1)+nn+kk,z0,z1]+\
+                                        1j*float(estr)
                             except IndexError:
                                 pass
                     elif zcomp=='.VAR':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.zvar[kk*(ncol-1)+nn+kk,z0,z1]=float(estr)
+                                self.zvar[kk*(self.ncol-1)+nn+kk,z0,z1]=\
+                                                                    float(estr)
                             except IndexError:
                                 pass
                     ii+=1
                     kk+=1
-                    
-            #-----Get Tipper Information-----------
+        except KeyError:
+            if verbose==True:
+                print 'Did not find impedance information for ',self.edifn
+            else:
+                pass
+        
+        #--------------Get Tipper Rotation angles----------------------
+        try:
+            ii=edict['trot']+1
+            
+            #get number of frequencies
+            nf=int(edilines[ii].strip().split('//')[1])
+            
+            #initialize some arrays    
+            self.trot=np.zeros(nf)
+            
+            #get rotation angles
+            kk=0
+            ii+=1
+            while type(kk) is int:
+                if edilines[ii].find('!')>0 or edilines[ii].find('*')>0:
+                    kk=None
+                else:
+                    eline=edilines[ii].strip().split()
+                    if kk==0:
+                        self.ncol=len(eline)
+                    for nn,estr in enumerate(eline):
+                        try:
+                            self.trot[kk*(self.ncol-1)+nn+kk]=float(estr)
+                        except IndexError:
+                            pass
+                    kk+=1
+                    ii+=1
+        
+        except KeyError:
+            if verbose==True:
+                print 'Did not find Tipper rotation block for ',self.edifn
+            else:
+                pass
+            
+        #-----Get Tipper Information-----------
+        try:
+            ii=edict['tipper']+1
             tdict=dict([('TX',0),('TY',1)])
             
             kk=0
-            ii=jj+1
             while type(kk) is int:
                 eline=edilines[ii]
                 if eline.find('>')==0:
-                    if eline.find('T')==-1:
+                    if eline.find('T',0,2)==-1:
                             kk=None
                             jj=ii
                     else:
@@ -416,167 +536,84 @@ class Edi(object):
                     if tkey=='TR':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.trot[kk*(ncol-1)+nn+kk]=float(estr)
+                                self.trot[kk*(self.ncol-1)+nn+kk]=float(estr)
                             except IndexError:
                                 pass
-                    elif tcomp=='R' or tcomp=='R.EXP':
+                    if tcomp=='R' or tcomp=='R.EXP':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.tipper[kk*ncol+nn+kk,z0]=float(estr)
+                                self.tipper[kk*(self.ncol-1)+nn+kk,z0]=float(estr)
                             except IndexError:
                                 pass
                     elif tcomp=='I' or tcomp=='I.EXP':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.tipper[kk*ncol+nn+kk,z0]=self.tipper[kk*(ncol-1)+nn+kk,z0]+\
-                                                              1j*float(estr)
+                                self.tipper[kk*(self.ncol-1)+nn+kk,z0]+=\
+                                                                 1j*float(estr)
                             except IndexError:
                                 pass
                     elif tcomp=='VAR.EXP' or '.VAR':
                         for nn,estr in enumerate(eline):
                             try:
-                                self.tippervar[kk*(ncol-1)+nn+kk,z0]=float(estr)
+                                self.tippervar[kk*(self.ncol-1)+nn+kk,z0]=\
+                                                                float(estr)
                             except IndexError:
                                 pass
                     ii+=1
                     kk+=1
-        
-        #=========get impedance components=================================
-        elif specimp=='impedance':
-            #defind a dictionary to place components
-            zdict=dict([('ZXX',(0,0)),('ZXY',(0,1)),('ZYX',(1,0)),('ZYY',(1,1))])
-            
-            #if nf is already defined    
-            if nf:
-                self.z=np.zeros((nf,2,2),dtype='complex')
-                self.zvar=np.zeros((nf,2,2))
-                self.tipper=np.zeros((nf,2))
-                self.tippervar=np.zeros((nf,2))
+
+        except KeyError:
+            if verbose==True:
+                print 'Did not find Tipper information for ',self.edifn  
             else:
-                nf=int(edilines[jj+1].strip().split('//')[1])
-                self.z=np.zeros((nf,2,2),dtype='complex')
-                self.zvar=np.zeros((nf,2,2))
-                self.tipper=np.zeros((nf,2))
-                self.tippervar=np.zeros((nf,2))
-                
-            #------Get Impedance information-----------------
-            kk=0
-            ii=jj+1
-            while type(kk) is int:
-                eline=edilines[ii]
-                if eline.find('>')==0:
-                    if eline.find('Z')==-1 and eline.find('IMP')==-1:
-                            kk=None
-                            jj=ii
-                    else:
-                        eline=eline.strip().split()
-                        zkey=eline[0][1:4]
-                        zcomp=eline[0][4:]
-                        if zkey!='ZRO' and zkey.find('!')==-1:
-                            z0=zdict[zkey][0]
-                            z1=zdict[zkey][1]
-                            
-                        kk=0
-                        ii+=1
-                else:
-                    eline=eline.strip().split()
-                    if zkey=='ZRO':
-                        for nn,estr in enumerate(eline):
-                            try:
-                                self.zrot[kk*(ncol-1)+nn+kk]=float(estr)
-                            except IndexError:
-                                pass
-                    elif zcomp=='R':
-                        for nn,estr in enumerate(eline):
-                            try:
-                               self.z[kk*(ncol-1)+nn+kk,z0,z1]=float(estr)
-                            except IndexError:
-                                pass
-                    elif zcomp=='I':
-                        for nn,estr in enumerate(eline):
-                            try:
-                                self.z[kk*(ncol-1)+nn+kk,z0,z1]=z[kk*(ncol-1)+nn+kk,z0,z1]+1j*float(estr)
-                            except IndexError:
-                                pass
-                    elif zcomp=='.VAR':
-                        for nn,estr in enumerate(eline):
-                            try:
-                                self.zvar[kk*(ncol-1)+nn+kk,z0,z1]=float(estr)
-                            except IndexError:
-                                pass
-                    ii+=1
-                    kk+=1
-                    
-            #-----Get Tipper Information-----------
-            tdict=dict([('TX',0),('TY',1)])
-            
-            kk=0
-            ii=jj+1
-            while type(kk) is int:
-                eline=edilines[ii]
-                if eline.find('>')==0:
-                    if eline.find('T')==-1:
-                            kk=None
-                            jj=ii
-                    else:
-                        eline=eline.strip().split()
-                        tkey=eline[0][1:3]
-                        tcomp=eline[0][3:]
-                        if zkey!='TR' and zkey.find('!')==-1:
-                            z0=zdict[zkey][0]
-                            
-                        kk=0
-                        ii+=1
-                else:
-                    eline=eline.strip().split()
-                    if tkey=='TR':
-                        for nn,estr in enumerate(eline):
-                            try:
-                                self.trot[kk*(ncol-1)+nn+kk]=float(estr)
-                            except IndexError:
-                                pass
-                    elif tcomp=='R' or tcomp=='R.EXP':
-                        for nn,estr in enumerate(eline):
-                            try:
-                                self.tipper[kk*(ncol-1)+nn+kk,z0]=float(estr)
-                            except IndexError:
-                                pass
-                    elif tcomp=='I' or tcomp=='I.EXP':
-                        for nn,estr in enumerate(eline):
-                            try:
-                                self.tipper[kk*(ncol-1)+nn+kk,z0]=self.tipper[kk*(ncol-1)+nn+kk,z0]+\
-                                                                1j*float(estr)
-                            except IndexError:
-                                pass
-                    elif tcomp=='VAR.EXP' or '.VAR':
-                        for nn,estr in enumerate(eline):
-                            try:
-                                self.tippervar[kk*(ncol-1)+nn+kk,z0]=float(estr)
-                            except IndexError:
-                                pass
-                    ii+=1
-                    kk+=1
+                pass
     
     def rewriteedi(self,znew=None,zvarnew=None,freqnew=None,newfile='y',
                tipnew=None,tipvarnew=None,thetar=0,ext='dr'):
         """
-        rewriteedi(edifile) will rewrite an edifile say if it needs to be rotated 
-        or distortion removed.
+        rewriteedi(edifile) will rewrite an edifile say if it needs to be 
+        rotated or distortion removed.
     
-        Inputs:
-            edifile = full path to edifile to be rewritten
-            znew = impedance tensor if a new one has been created
-            zvarnew = errors in impedance tensor if a new one has been created
-            freqnew = new frequency list if one has been created
-            newfile = 'y' for yes or 'n' for no if you want a new file to be
-                     created.
-            tipnew = new tipper array
-            tipvarnew = new tipper error array
-            thetar = rotation angle counter clockwise (N=0, E=-90)
-            ext = extension on the end of the file name before .edi
+        Arguments:
+        ----------
+            **Edi.edifile** : string
+                              full path to edifile to be rewritten
+            
+            **znew** : complex np.array with shape (nf,2,2) 
+                        [[zxx,zxy],[zyx,zyy]]
+                       impedance tensor if a new one has been created
+            
+            **zvarnew** : real np.array with shape (nf,2,2)
+                          [[zxx_err,zxy_err],[zyx_err,zyy_err]]
+                          errors in impedance tensor if a new one has been 
+                          created
+           
+            **freqnew** : np.array with shape (nf)
+                          new frequency list if one has been created
+            
+            **newfile** : string ('y','n')
+                          * 'y' to create a new edi file
+                          * 'n' to rewrite the existing edifile
+            
+            **tipnew** : complex np.array with shape (nf,2)
+                         [[tx,ty]]
+                         new tipper array
+            
+            **tipvarnew** : real np. array with shape (nf,2)
+                            [[tx_err,ty_err]]
+                            rnew tipper error array
+            
+            **thetar** : float (angle in degrees)
+                         rotation angle clockwise (N=0, E=90)
+            
+            **ext** : string
+                      extension on the end of the file name before .edi
         
-        Outputs:
-            nedi = dirpath(edifile)+basename(edifile)+rw or dr if dr='y'
+        Returns:
+        --------
+            **Edi.nedifn** : string
+                            full path to rewritten edi file
+                            dirpath(edifile)+basename(edifile)+ext
         
         """
     
@@ -622,46 +659,66 @@ class Edi(object):
         #if there is no znew then rotate the data
         if znew==None:
             #read in the data
-            self.getInfo()
+            self.readEDI()
             #rotate data if desired
             if thetar!=0:
-                znew=np.zeros_like(self.z)
-                zvarnew=np.zeros_like(self.z)
+                self.znew=np.zeros_like(self.z)
+                self.zvarnew=np.zeros_like(self.zvar)
+                self.tippernew=np.zeros_like(self.tipper)
+                self.tippervarnew=np.zeros_like(self.tippervar)
+                
                 #convert thetar into radians
                 if abs(thetar)>2*np.pi:
                     self.thetar=thetar*(np.pi/180)
                 else:
                     self.thetar=thetar
+                print self.thetar
                 #make rotation matrix
                 rotmatrix=np.array([[np.cos(self.thetar), np.sin(self.thetar)],
                              [-np.sin(self.thetar), np.cos(self.thetar)]])
-                trotmatrix=np.array([np.cos(selt.thetar),np.sin(self.thetar)])
+                trotmatrix=np.array([np.cos(self.thetar),np.sin(self.thetar)])
+                
+                #fill in rotation for impedances (zrot)
+                self.zrot=np.zeros_like(self.frequency)
+                self.zrot[:]=thetar
+                
                 #rotate the data
                 for rr in range(len(self.frequency)):
-                    self.znew[rr]=np.dot(rotmatrix,np.dot(self.z[rr],rotmatrix.T))
+                    self.znew[rr]=np.dot(rotmatrix,np.dot(self.z[rr],
+                                         rotmatrix.T))
                     self.zvarnew[rr]=np.dot(rotmatrix,np.dot(self.zvar[rr],
                                             rotmatrix.T))
                     self.tippernew[rr]=np.dot(trotmatrix,
                                             np.dot(self.tipper[rr],
                                                    trotmatrix.T))
                     self.tippervarnew[rr]=np.dot(trotmatrix,
-                                                np.dot(self.tippervar[rr],
-                                                       trotmatrix.T))
+                                                 np.dot(self.tippervar[rr],
+                                                        trotmatrix.T))
             #otherwise read in the new Z
             else:
                 self.znew=self.z
                 self.zvarnew=self.zvar
                 self.tippernew=self.tipper
                 self.tippervarnew=self.tippervar
+                #fill in rotation for impedances (zrot)
+                self.zrot=np.zeros_like(self.frequency)
+                self.zrot[:]=thetar
+                self.thetar=0.0
         else:
             self.znew=znew
             self.zvarnew=zvarnew
             self.tippernew=self.tipper
             self.tippervarnew=self.tippervar
+            #fill in rotation for impedances (zrot)
+            self.zrot=np.zeros_like(self.frequency)
+            self.zrot[:]=thetar
+            self.thetar=0.0
         
         #open existing edi file
         edifid=open(self.edifn,'r')
-        #read existing edi file and find where impedances start and number of freq
+        
+        #read existing edi file and find where impedances start and number of 
+        #frequencies
         edilines=edifid.readlines()
         spot=[]
         for ii,line in enumerate(edilines):
@@ -673,7 +730,7 @@ class Edi(object):
                 spot.append(ii)
         
         #write lines until the frequency list or spectra
-        for ll,line in enumerate(edilines[0:spot[0]]):
+        for ll,line in enumerate(edilines[0:spot[0]-1]):
             newedifid.write(line)
         
         newedifid.write('>!****FREQUENCIES****!'+'\n')
@@ -690,15 +747,16 @@ class Edi(object):
                 order='DEC'
             
             #write frequency header
-            newedifid.write('>FREQ'+tsp+'NFREQ='+str(int(nfreq))+tsp+'ORDER='+order+
-                            tsp+'// '+str(int(nfreq))+'\n')
+            newedifid.write('>FREQ'+tsp+'NFREQ='+str(int(nfreq))+tsp+\
+                            'ORDER='+order+tsp+'// '+str(int(nfreq))+'\n')
             for kk in range(int(nfreq)):
-                newedifid.write(tsp+'{0:.6g}'.format(freqnew[kk]))
+                newedifid.write(tsp+'{0:+.6E}'.format(freqnew[kk]))
                 if np.remainder(float(kk)+1,5.)==0:
                     newedifid.write('\n')
             newedifid.write('\n')
-#            newedifid.write('>!****IMPEDANCES****!'+' Rotated {0:.0f} counterclockwise\n'.format(thetar*180/np.pi))
-        #from the start of file to where impedances start write from existing edifile
+
+        #from the start of file to where impedances start write from existing 
+        #edifile
         else:
             #get order of frequencies        
             if self.frequency[0]<self.frequency[-1]:
@@ -708,24 +766,38 @@ class Edi(object):
                 
             nfreq=len(self.frequency)
             #write frequency header
-            newedifid.write('>FREQ'+tsp+'NFREQ='+str(int(nfreq))+tsp+'ORDER='+order+
-                            tsp+'// '+str(int(nfreq))+'\n')
+            newedifid.write('>FREQ'+tsp+'NFREQ='+str(int(nfreq))+tsp+'ORDER='+\
+                            order+tsp+'// '+str(int(nfreq))+'\n')
             for kk in range(int(nfreq)):
-                newedifid.write(tsp+'{0:.6f}'.format(self.frequency[kk]))
+                newedifid.write(tsp+'{0:+.6E}'.format(self.frequency[kk]))
                 if np.remainder(float(kk)+1,5.)==0:
                     newedifid.write('\n')
             newedifid.write('\n')
-        newedifid.write('>!****IMPEDANCES****!'+' Rotated {0:.0f} counterclockwise\n'.format(thetar*180/np.pi))
+        
+        #write in rotation block for impedance tensor
+        newedifid.write('>!****IMPEDANCE ROTATION ANGLES****!\n')
+        newedifid.write('>ZROT // {0}\n'.format(int(nfreq)))
+        for ss in range(nfreq):
+            newedifid.write(tsp+'{0:+.4f}'.format(self.thetar*180/np.pi))
+            if np.remainder(ss+1.0,5.)==0:
+                newedifid.write('\n')
+        if np.remainder(ss+1.,5.)!=0:
+            newedifid.write('\n')
+        
+        #write in impedance information        
+        newedifid.write('>!****IMPEDANCES****!'+\
+                       ' Rotated {0:.0f} clockwise\n'.format(self.thetar*\
+                                                             180/np.pi))
         
         #create an implst to make code simpler
-        implst=[['ZXXR',0,0],['ZXXI',0,0],['ZXX.VAR',0,0],['ZXYR',0,1],['ZXYI',0,1],\
-            ['ZXY.VAR',0,1],['ZYXR',1,0],['ZYXI',1,0], ['ZYX.VAR',1,0],\
-            ['ZYYR',1,1],['ZYYI',1,1],['ZYY.VAR',1,1]]
+        implst=[['ZXXR',0,0],['ZXXI',0,0],['ZXX.VAR',0,0],['ZXYR',0,1],
+                ['ZXYI',0,1],['ZXY.VAR',0,1],['ZYXR',1,0],['ZYXI',1,0], 
+                ['ZYX.VAR',1,0],['ZYYR',1,1],['ZYYI',1,1],['ZYY.VAR',1,1]]
         #write new impedances and variances
         for jj,imp in enumerate(implst):
             mm=imp[1]
             nn=imp[2]
-            newedifid.write('>'+imp[0]+' // '+str(int(nfreq))+'\n')
+            newedifid.write('>'+imp[0]+' ROT=ZROT // '+str(int(nfreq))+'\n')
             if imp[0].find('.')==-1:
                 if imp[0].find('R')>=0:
                     for kk in range(int(nfreq)):
@@ -751,7 +823,8 @@ class Edi(object):
                             newedifid.write('\n')
                     else:
                         pass
-#            newedifid.write('\n')
+            if np.remainder(kk+1.,5.)!=0:
+                newedifid.write('\n')
         
         newedifid.write('>!****TIPPER****!'+'\n')
         tiplst=[['TXR',0],['TXI',0],['TX.VAR',0],['TYR',1],['TYI',1],
@@ -769,6 +842,8 @@ class Edi(object):
                                 newedifid.write('\n')
                         else:
                             pass
+                    if np.remainder(kk+1.,5.)!=0:
+                        newedifid.write('\n')
                 elif tip[0].find('I')>=0:
                     for kk in range(int(nfreq)):
                         newedifid.write(tsp+'{0:+.6E}'.format(self.tippernew.imag[kk,mm]))
@@ -777,6 +852,8 @@ class Edi(object):
                                 newedifid.write('\n')
                         else:
                             pass
+                    if np.remainder(kk+1.,5.)!=0:
+                        newedifid.write('\n')
             else:
                 for kk in range(int(nfreq)):
                     newedifid.write(tsp+'{0:+.6E}'.format(self.tippervarnew.real[kk,mm]))
@@ -785,6 +862,8 @@ class Edi(object):
                             newedifid.write('\n')
                     else:
                         pass
+                if np.remainder(kk+1.,5.)!=0:
+                        newedifid.write('\n')
         newedifid.write('\n')
         newedifid.write('>END')
         
@@ -795,15 +874,23 @@ class Edi(object):
             if newfile=='y':
                 shutil.copy(os.path.join(drdirpath,newedifile),
                             os.path.join(drcopypath,ext.upper(),newedifile))
+                print 'Copied new edifile to: ',os.path.join(drcopypath,
+                                                             ext.upper(),
+                                                             newedifile)
             else:
                 shutil.copy(os.path.join(dirpath,newedifile),
                         os.path.join(drcopypath,newedifile))
+                print 'Copied new edifile to: ',os.path.join(drcopypath,
+                                                             newedifile)
         else:
             pass
         if newfile=='y':
             self.nedifn=os.path.join(drdirpath,nedibn)
+            
         else:
             self.nedifn=os.path.join(dirpath,nedibn)
+            
+        print 'Made file: ', self.nedifn
 
 class Z(Edi):
     """
@@ -834,7 +921,7 @@ class Z(Edi):
         self.ncol=ncol
         
         #get information from edifile as a datatype Edi
-        Edi.getInfo(self)
+        Edi.readEDI(self)
         
         #define some parameters needed from older version
         self.period=1./self.frequency
@@ -918,8 +1005,6 @@ class Z(Edi):
             newedifn = full path to new edifile the edifile as station+dr.edi.
         
         """
-
-        import mtpy.core.mttools as mt
 
         z=np.array(self.z)
         zvar=np.array(self.zvar)
@@ -1035,7 +1120,7 @@ class Z(Edi):
         zone,northing,easting=utm2ll.LLtoUTM(23,self.lat,self.lon)   
         for kk,kedi in enumerate(edilst):
             zk=Edi(kedi)
-            zk.getInfo()
+            zk.readEDI()
             zone,dn,de=utm2ll.LLtoUTM(23,zk.lat,zk.lon)        
             deltad=np.sqrt((dn-northing)**2+(de-easting)**2)
             if deltad<=dm:
