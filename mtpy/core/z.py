@@ -1251,7 +1251,7 @@ class Z(Edi):
                          rotation angle clockwise positive assuming 0 is North.
                          *Default* is 0
                          
-            **rotate** : int (90,180,270) 
+            **rotate** : int [ 90 | 180 | 270 ] 
                         rotation of coordinate system, default is Y North and 
                         X East.  So if X is North rotate is 180. 
                         *Default* is 180
@@ -1290,7 +1290,7 @@ class Z(Edi):
                           a factor if the calibration or gains aren't quite 
                           correct.  *Default* is 1
                           
-            **plottype** : int (1,2,3)
+            **plottype** : int [ 1 | 2 | 3 ]
                             * 1 for just Ex/By and Ey/Bx
                             * 2 for all 4 components
                             * 3 for off diagonal plus the determinant
@@ -1307,10 +1307,10 @@ class Z(Edi):
                       Dots-per-inch resolution of figure.
                       *Default* is 100
                       
-            **format** : string ('pdf','eps','svg','png','jpeg')
+            **format** : string [ 'pdf' | 'eps' | 'svg' | 'png' | 'jpeg' ]
                          if savefigfilename!=None, save figure to format
             
-            **orientation** : string ('landscape','portrait')
+            **orientation** : string [ 'landscape' | 'portrait' ]
                               orientation of figure on A4 paper
                               
             **phaselimits** : tuple (min,max)
@@ -1319,6 +1319,7 @@ class Z(Edi):
             
         :Example:
             
+            # to plot all 4 components
             >>> z1 = Z.Z(edifile)
             >>> z1.plotResPhase(plottype=2)
             
