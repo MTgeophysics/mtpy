@@ -1904,6 +1904,7 @@ class Z(Edi):
                           * 3 for off diagonal plus the determinant
                           * Default is 1
         :Example: ::
+            
             #To plot all 4 components and the tipper
             >>> z1 = Z.Z(edifile)
             >>> z1.plotTipper(plotnum=2)
