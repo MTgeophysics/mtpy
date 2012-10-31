@@ -147,15 +147,14 @@ class Occam1D:
                 savepath=self.savepath
             else:
                 savepath=self.savepath
-        if os.path.basename(savepath).find('.')>0:
+        elif os.path.basename(savepath).find('.')>0:
             savepath=os.path.dirname(savepath)
             if not os.path.exists(savepath):
                 os.mkdir(os.path.dirname(savepath))
             self.savepath=savepath
         else:
-            savepath=savepath
             if not os.path.exists(savepath):
-                os.mkdir(os.path.dirname(savepath))
+                os.mkdir(savepath)
             self.savepath=savepath
         
         #load the edifile and get resistivity and phase
