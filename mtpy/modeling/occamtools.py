@@ -5997,8 +5997,8 @@ class Occam2DModel(Occam2DData):
             >>> import mtpy.modeling.occamtools as occam
             >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
             >>> ocm = occam.Occam2DModel(itfn)
-            >>> ocm.plot2DModel(ms=20,ylimits=(0,.350),yscale='m',spad=.10,
-                                ypad=.125,xpad=.025,climits=(0,2.5),
+            >>> ocm.plot2DModel(ms=20,ylimits=(0,.350),yscale='m',spad=.10,\
+                                ypad=.125,xpad=.025,climits=(0,2.5),\
                                 aspect='equal')
         """   
                     
