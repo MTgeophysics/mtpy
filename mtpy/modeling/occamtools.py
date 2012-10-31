@@ -2686,6 +2686,26 @@ class Occam2DData:
         Returns:
         --------
             **Occam2DData.datafn** : full path of data file
+            
+        :Example: ::
+            
+            >>> import mtpy.core.occamtools as occam
+            >>> ocd = occam.Occam2DData()
+            #define a path to where the edifiles are
+            >>> edipath = r"/home/EDIfiles"
+            
+            #create a save path to put the data file
+            >>> svpath = r"/home/Occam2D/Line1/Inv1"
+            
+            #create a station list of stations to use in inversion
+            >>> slst = ['MT0{0}'.format(ii) for ii in range(1,10)]
+            
+            #write data file that is rotated 50 degrees east of north and
+            #projected on to the strike direction 50 degrees east of north
+            >>> ocd.make2DdataFile(edipath,stationlst=slst,savepath=svpath,
+                                   thetar=50,proj_strike='yes',lineori='ew')
+                                   
+            Wrote Occam2D data file to: /home/Occam2D/Line1/Inv1/Data.dat 
 
                      
         """
@@ -3254,6 +3274,13 @@ class Occam2DData:
                 Note: that the resistivity will be in log10 space.  Also, there
                 are 2 extra rows in the data arrays, this is to put the 
                 response from the inversion. 
+                
+        :Example: ::
+            
+            >>> import mtpy.modeling.occamtools as occam
+            >>> ocd = occam.Occam2DData()
+            >>> ocd.datafn = r"/home/Occam2D/Line1/Inv1/Data.dat"
+            >>> ocd.read2DdataFile()
             
         """
         
@@ -3380,8 +3407,24 @@ class Occam2DData:
         Returns:
         --------
         
-            **OccamPointPicker.ndatafn** : string
-                                           full path to new data file
+            **Occam2DData.ndatafn** : string
+                                      full path to new data file
+        
+        :Example: ::
+            
+            >>> import mtpy.modeling.occamtools as occam
+            >>> ocd = occam.Occam2DData()
+            >>> ocd.datafn = r"/home/Occam2D/Line1/Inv1/Data.dat"
+            
+            #rotate by 10 degrees east of North, remove station MT03 and 
+            #increase the resistivity error to 30 percent and put into a new 
+            #folder using savepath
+            >>> svpath = r"/home/Occam2D/Line1/Inv2"
+            >>> edipath = r"/home/EDIfiles"
+            >>> ocd.rewrite2DdataFile(edipath=edipath,thetar=10,resxyerr=30,
+                                      resyxerr=30,removstation='MT03',
+                                      savepath=svpath)
+            Rewrote the data file to: /home/Occam2D/Line1/Inv2/DataRW.dat
         """
         
         ss=3*' '
@@ -3721,8 +3764,11 @@ class Occam2DData:
         
         #write offsets
         datfid.write('OFFSETS (M):'+'\n')
+        projangle=(thetar-self.theta_profile)*np.pi/180.
         for station in stationlst:
-            datfid.write(ss+fmt % rpdict[station]['offset']+'\n')
+            #need to project the stations on to the strike direction
+            datfid.write(ss+fmt % (rpdict[station]['offset']*np.cos(projangle))+
+                         '\n')
         
         #write frequencies
         #writefreq=[freq[ff] for ff in range(0,len(freq),freqstep)]
@@ -3801,7 +3847,13 @@ class Occam2DData:
         ---------
             data type **OccamPointPicker**  
                            
-                           
+        
+        :Example: ::
+
+            >>> import mtpy.modeling.occamtools as occam
+            >>> ocd = occam.Occam2DData()
+            >>> ocd.datafn = r"/home/Occam2D/Line1/Inv1/Data.dat"
+            >>> ocd.plotMaskPoints()                   
             
         """
         
@@ -3981,6 +4033,19 @@ class Occam2DData:
         ---------
         
             **OccamPointPicker.ndatafn** : full path to rewritten data file
+            
+        :Example: ::
+
+            >>> import mtpy.modeling.occamtools as occam
+            >>> ocd = occam.Occam2DData()
+            >>> ocd.datafn = r"/home/Occam2D/Line1/Inv1/Data.dat"
+            >>> ocd.plotMaskPoints()
+            
+            #after all the points are masked rewrite the data file
+            >>> ocd.maskPoints()
+            
+            Rewrote Occam2D data file to: /home/Occam2D/Line1/Inv1/DataRW.dat 
+            
         """
         
         self.read2DdataFile()
@@ -4190,6 +4255,11 @@ class Occam2DData:
                 are 2 extra rows in the data arrays, this is to put the 
                 response from the inversion.  
             
+        :Example: ::
+            
+            >>> import mtpy.modeling.occamtools as occam
+            >>> ocd = occam.Occam2DData()
+            >>> ocd.read2DRespFile(r"/home/Occam2D/Line1/Inv1/Test_15.resp")
         """
         #make the response file an attribute        
         self.respfn=respfn
@@ -4269,6 +4339,17 @@ class Occam2DData:
                             * 1 to plot both TE and TM in the same plot
                             * 2 to plot TE and TM in separate subplots
                             * *Default* is 2
+                            
+        :Example: ::
+            
+            >>> import mtpy.modeling.occamtools as occam
+            >>> ocd = occam.Occam2DData()
+            >>> rfile = r"/home/Occam2D/Line1/Inv1/Test_15.resp"
+            >>> ocd.datafn = r"/home/Occam2D/Line1/Inv1/DataRW.dat"
+            
+            #plot all responses in their own figure and modes in separate 
+            #suplots
+            >>> ocd.plot2DResponses(respfn=rfile)
                       
         """
         
@@ -4855,7 +4936,7 @@ class Occam2DData:
                 if addwl==1:
                     try:
                         wlrms=wld[sdict[station]]['rms']
-                        axr.set_title(stationlst[ii]+'\n'+\
+                        axr.set_title(self.stationlst[ii]+'\n'+\
                                     ' rms_occ_TE={0:.2f}, rms_occ_TM={1:.2f}, rms_wl= {2:.2f}'.format(rmste,rmstm,wlrms),
                                      fontdict={'size':fs+1,'weight':'bold'})
                         for ww,wlstation in enumerate(wlslst):
@@ -5022,6 +5103,14 @@ class Occam2DData:
             **stationid** : tuple (min_string_index,max_string_index)
                             indicating how long the station name is
                             *Default* is (0,4) for a string of length 4
+                            
+       :Example: ::
+            
+            >>> import mtpy.modeling.occamtools as occam
+            >>> ocd = occam.Occam2DData()
+            >>> rfile = r"/home/Occam2D/Line1/Inv1/Test_15.resp"
+            >>> ocd.datafn = r"/home/Occam2D/Line1/Inv1/DataRW.dat"
+            >>> ocd.plot2PseudoSection(respfn=rfile) 
         
         """
         
@@ -5269,6 +5358,13 @@ class Occam2DData:
             
             **fignum** : int
                          plot number to put figure into
+                         
+        :Example: ::
+            
+            >>> import mtpy.modeling.occamtools as occam
+            >>> ocd = occam.Occam2DData()
+            >>> ocd.datafn = r"/home/Occam2D/Line1/Inv1/DataRW.dat"
+            >>> ocd.plotAllResponses('MT01')
         
         """    
         
@@ -5454,10 +5550,6 @@ class Occam2DModel(Occam2DData):
         
         Arguments:
         ----------
-<<<<<<< HEAD
-=======
-        
->>>>>>> 7c0fbc987b5363aefde9b1fc7df4e7361a52a537
             **iterfn** : string
                         full path to iteration file if iterpath=None.  If 
                         iterpath is input then iterfn is just the name
@@ -5465,17 +5557,16 @@ class Occam2DModel(Occam2DData):
         --------
         Returns:
         --------
-<<<<<<< HEAD
             **Occam2DModel.idict** : dictionary of parameters, 
                                      keys are verbatim from the file, 
                                      except for the key 'model' which is the 
-                                     contains the model numbers in a 1D array.
-=======
-            **idict** :  dictionary of parameters, 
-                         keys are verbatim from the file, except for the 
-                         key 'model' which is the contains the model
-                         numbers in a 1D array.
->>>>>>> 7c0fbc987b5363aefde9b1fc7df4e7361a52a537
+        
+        :Example: ::
+            
+            >>> import mtpy.modeling.occamtools as occam
+            >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
+            >>> ocm = occam.Occam2DModel(itfn)
+            >>> ocm.read2DIter()
             
         """
     
@@ -5551,6 +5642,13 @@ class Occam2DModel(Occam2DData):
             **Occam2DModel.headerdict** : dictionary of all the header 
                                           information including the binding 
                                           offset.
+        
+        :Example: ::
+            
+            >>> import mtpy.modeling.occamtools as occam
+            >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
+            >>> ocm = occam.Occam2DModel(itfn)
+            >>> ocm.read2DInmodel()
         """
         
         ifid=open(self.inmodelfn,'r')
@@ -5590,8 +5688,6 @@ class Occam2DModel(Occam2DData):
         
         Arguments:
         ----------
-<<<<<<< HEAD
-        
             **Occam2DModel.meshfn** : string 
                                       full path to mesh file
     
@@ -5607,27 +5703,14 @@ class Occam2DModel(Occam2DData):
             
         To do:
         ------
-=======
-            
-            **meshfn** : string
-                         full path to mesh file
-    
-        --------
-        Returns:
-        --------
-        
-            **Occam2DModel.hnodes** : array of horizontal nodes (column 
-                                      locations (m))
-            
-            **Occam2DModel.vnodes** : array of vertical nodes (row 
-                                      locations(m))
-            
-            **Occam2DModel.mdata** : free parameters
-        -----    
-        Todo:
-        -----
->>>>>>> 7c0fbc987b5363aefde9b1fc7df4e7361a52a537
             incorporate fixed values
+            
+        :Example: ::
+            
+            >>> import mtpy.modeling.occamtools as occam
+            >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
+            >>> ocm = occam.Occam2DModel(itfn)
+            >>> ocm.read2DMesh()
         """
         
         mfid=file(self.meshfn,'r')
@@ -5908,6 +5991,15 @@ class Occam2DModel(Occam2DData):
             **yscale** : string ('km','m')
                         * 'km' for depth in km 
                         * 'm' for depth in meters
+        
+        :Example: ::
+            
+            >>> import mtpy.modeling.occamtools as occam
+            >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
+            >>> ocm = occam.Occam2DModel(itfn)
+            >>> ocm.plot2DModel(ms=20,ylimits=(0,.350),yscale='m',spad=.10,
+                                ypad=.125,xpad=.025,climits=(0,2.5),
+                                aspect='equal')
         """   
                     
         #set the scale of the plot
@@ -6136,7 +6228,14 @@ class Occam2DModel(Occam2DData):
 
             dpi** : int
                     dots per inch resolution of the figure
+                    
         
+        :Example: ::
+            
+            >>> import mtpy.modeling.occamtools as occam
+            >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
+            >>> ocm = occam.Occam2DModel(itfn)
+            >>> ocm.plotL2Curve(fignum=2)
         """ 
 
         invpath=os.path.dirname(self.iterfn)        
@@ -6238,7 +6337,7 @@ class Occam2DModel(Occam2DData):
             
             **plotnum** : input as:
                           * 1 to plot in different figures
-                          * 'all' to plot in all intoone figure.
+                          * 'all' to plot in all into one figure.
             
             **yscale** : 'log' for logarithmic or 'linear' for linear
             
@@ -6247,6 +6346,15 @@ class Occam2DModel(Occam2DData):
             
             **fignum** : int
                          figure number
+                         
+        :Example: ::
+            
+            >>> import mtpy.modeling.occamtools as occam
+            >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
+            >>> ocm = occam.Occam2DModel(itfn)
+            #plot just a few stations depth profile in one figure
+            >>> ocm.plotDepthModel(plottype=['MT01','MT05'],plotnum='all')
+                         
             
         """
 
