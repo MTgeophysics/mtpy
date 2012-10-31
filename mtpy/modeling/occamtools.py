@@ -301,7 +301,7 @@ class Occam1D:
                                               fmt % rp.phasedet[ii]+2*ss+
                                               fmt % (phaseerr/100.*(180/np.pi))+
                                               '\n')
-                            if polarization=='det':
+                            else:
                                 datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+
                                               2*ss+'0'+2*ss+'0'+2*ss+
                                               fmt % rp.phasexy[ii]+2*ss+
@@ -314,7 +314,7 @@ class Occam1D:
                                               fmt % rp.phasedet[ii]+2*ss+
                                               fmt % (phaseerr/100.*(180/np.pi))+
                                               '\n')
-                            if polarization=='det':
+                            else:
                                 datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+
                                               2*ss+'0'+2*ss+'0'+2*ss+
                                               fmt % rp.phaseyx[ii]+2*ss+
