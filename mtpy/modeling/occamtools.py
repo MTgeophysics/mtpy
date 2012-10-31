@@ -49,32 +49,51 @@ class Occam1D:
     
         Arguments:
         ---------    
-            **station** : the station name and path if edipath=None
+            **station** : string
+                          the station name and path if edipath=None
             
-            **edipath** : path to the edi files to be written into a data file,
+            **edipath** : string
+                          path to the edi files to be written into a data file,
                           useful for multile data files
                       
-            **savepath** : path to save the file, if None set to dirname of 
+            **savepath** : string
+                           path to save the file, if None set to dirname of 
                            station if edipath = None.  Otherwise set to 
                            dirname of edipath.
             
-            **thetar** : rotation angle to rotate Z. Clockwise positive and N=0
+            **thetar** : float
+                         rotation angle to rotate Z. Clockwise positive and N=0
                          *default* = 0
             
-            **polarization** : polarization to model can be (*default*='both'):
+            **polarization** : [ 'both' | 'TE' | 'TM' | 'det']
+                              polarization to model can be (*default*='both'):
                 
                                 - 'both' for TE and TM as separate files
                                 - 'TE' for just TE mode
                                 - 'TM' for just TM mode
+                                - 'det' for the determinant of Z.
+                                .. note:: 
+                                    
+                                    if polarization = 'det' two files 
+                                    will be created stationDet_TE.dat and 
+                                    stationDet_TM.dat.  These files both use
+                                    the determinant however the code for the 
+                                    Occam input is different so you can test 
+                                    the difference between inverting the 
+                                    determinant as TE or TM because there is
+                                    no option in Occam for the Det.
+                                
                             
-            **reserr** : errorbar for resistivity values.  Can be set to (
+            **reserr** : float
+                        errorbar for resistivity values.  Can be set to (
                         *default* = 'data'): 
                 
                         - 'data' for errorbars from the data
                         - percent number ex. 10 for ten percent
                     
-            **phaseerr** : errorbar for phase values.  Can be set to (
-                         *default* = 'data'):
+            **phaseerr** : float
+                          errorbar for phase values.  Can be set to (
+                          *default* = 'data'):
                 
                             - 'data' for errorbars from the data
                             - percent number ex. 10 for ten percent
@@ -90,7 +109,13 @@ class Occam1D:
                 
             **Occam1D.datafn_tm** : full path to data file for TM mode
                 
+        :Example: ::
             
+            >>> old = occam.Occam1D()
+            >>> old.make1DdataFile('MT01',edipath=r"/home/Line1",
+                                   savepath=r"/home/Occam1D/Line1/Inv1_TE",
+                                   mode='TE')
+            Wrote Data File: /home/Occam1D/Line1/Inv1_TE/MT01TE.dat 
         """    
     
         if os.path.dirname(station)=='':
@@ -139,12 +164,22 @@ class Occam1D:
         nf=len(freq)
         returnfn=[]
         
-        if polarization=='both':
+        if polarization=='both' or polarization=='det':
             for pol in ['xy','yx']:
                 if pol=='xy':
-                    dfilesave=os.path.join(self.savepath,impz.station+'TE.dat')
+                    if polarization=='det':
+                        dfilesave=os.path.join(self.savepath,
+                                               impz.station+'Det_TE.dat')
+                    else:
+                        dfilesave=os.path.join(self.savepath,
+                                               impz.station+'TE.dat')
                 elif pol=='yx':
-                    dfilesave=os.path.join(self.savepath,impz.station+'TM.dat')
+                    if polarization=='det':
+                        dfilesave=os.path.join(self.savepath,
+                                               impz.station+'Det_TM.dat')
+                    else:
+                        dfilesave=os.path.join(self.savepath,
+                                               impz.station+'TM.dat')
     
                 datafid=open(dfilesave,'w')
     
@@ -180,45 +215,111 @@ class Occam1D:
                         
                 #write the resistivity and phase components
                 for ii in range(nf):
-                    #write resistivity components
+                    #------------write resistivity components------------------
                     if reserr=='data':
                         if pol=='xy':
-                            datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'0'+2*ss+fmt % rp.resxy[ii]+2*ss+
-                                          fmt % rp.resxyerr[ii]+'\n')
+                            if polarization=='det':
+                                datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.resdet[ii]+2*ss+
+                                              fmt % rp.resdeterr[ii]+'\n')
+                            else:
+                                datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.resxy[ii]+2*ss+
+                                              fmt % rp.resxyerr[ii]+'\n')
                         elif pol=='yx':
-                            datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'0'+2*ss+fmt % rp.resyx[ii]+2*ss+
-                                          fmt % rp.resyxerr[ii]+'\n')
+                            if polarization=='det':
+                                datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.resdet[ii]+2*ss+
+                                              fmt % rp.resdeterr[ii]+'\n')
+                            else:
+                                datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.resyx[ii]+2*ss+
+                                              fmt % rp.resyxerr[ii]+'\n')
+                    #-----------if percent error is given--------------------                          
                     else:
                         if pol=='xy':
-                            datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'0'+2*ss+fmt % rp.resxy[ii]+2*ss+
-                                          fmt % (rp.resxy[ii]*reserr/100.)+'\n')
+                            if polarization=='det':
+                                datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.resdet[ii]+2*ss+
+                                              fmt % (rp.resdet[ii]*reserr/100.)+
+                                              '\n')
+                            else:
+                                datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.resxy[ii]+2*ss+
+                                              fmt % (rp.resxy[ii]*reserr/100.)+
+                                              '\n')
                         elif pol=='yx':
-                            datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'0'+2*ss+fmt % rp.resyx[ii]+2*ss+
-                                          fmt % (rp.resyx[ii]*reserr/100.)+'\n')
+                            if polarization=='det':
+                                datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.resdet[ii]+2*ss+
+                                              fmt % (rp.resdet[ii]*reserr/100.)+
+                                              '\n')
+                            else:
+                                datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.resyx[ii]+2*ss+
+                                              fmt % (rp.resyx[ii]*reserr/100.)+
+                                              '\n')
                     
-                    #write phase components
+                    #---------------write phase components--------------------
                     if phaseerr=='data':
                         if pol=='xy':
-                            datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'0'+2*ss+fmt % rp.phasexy[ii]+2*ss+
-                                          fmt % rp.phasexyerr[ii]+'\n')
+                            if polarization=='det':
+                                datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.phasedet[ii]+2*ss+
+                                              fmt % rp.pdasedeterr[ii]+'\n')
+                            else:
+                                datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.phasexy[ii]+2*ss+
+                                              fmt % rp.phasexyerr[ii]+'\n')
                         if pol=='yx':
-                            datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'0'+2*ss+fmt % rp.phaseyx[ii]+2*ss+
-                                          fmt % rp.phaseyxerr[ii]+'\n')
+                            if polarization=='det':
+                                datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.phasedet[ii]+2*ss+
+                                              fmt % rp.pdasedeterr[ii]+'\n')
+                            else:
+                                datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.phasexy[ii]+2*ss+
+                                              fmt % rp.phasexyerr[ii]+'\n')
+                    #-----------if percent error is given--------------------                          
                     else:
                         if pol=='xy':
-                            datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'0'+2*ss+fmt % rp.phasexy[ii]+2*ss+
-                                          fmt % (phaseerr/100.*(180/np.pi))+'\n')
+                            if polarization=='det':
+                                datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.phasedet[ii]+2*ss+
+                                              fmt % (phaseerr/100.*(180/np.pi))+
+                                              '\n')
+                            if polarization=='det':
+                                datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.phasexy[ii]+2*ss+
+                                              fmt % (phaseerr/100.*(180/np.pi))+
+                                              '\n')
                         if pol=='yx':
-                            datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
-                                          2*ss+'0'+2*ss+fmt % rp.phaseyx[ii]+2*ss+
-                                          fmt % (phaseerr/100.*(180/np.pi))+'\n')
+                            if polarization=='det':
+                                datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.phasedet[ii]+2*ss+
+                                              fmt % (phaseerr/100.*(180/np.pi))+
+                                              '\n')
+                            if polarization=='det':
+                                datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+
+                                              2*ss+'0'+2*ss+'0'+2*ss+
+                                              fmt % rp.phaseyx[ii]+2*ss+
+                                              fmt % (phaseerr/100.*(180/np.pi))+
+                                              '\n')
                 datafid.write('\n')
                 datafid.close()
                 print 'Wrote Data File: ',dfilesave
@@ -234,10 +335,7 @@ class Occam1D:
                 pol='yx'
                 dfilesave=os.path.join(savepath,impz.station+'TM.dat')
                 self.datafn_te=dfilesave
-                
-            
-            
-    
+
             #open file to write to
             datafid=open(dfilesave,'w')
             datafid.write('Format:  EMData_1.1 \n')
@@ -279,6 +377,10 @@ class Occam1D:
                                       2*ss+'1'+2*ss+fmt % rp.resxy[ii]+2*ss+
                                       fmt % rp.resxyerr[ii]+'\n')
                     elif pol=='yx':
+                        datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
+                                      2*ss+'1'+2*ss+fmt % rp.resyx[ii]+2*ss+
+                                      fmt % rp.resyxerr[ii]+'\n')
+                    elif pol=='det':
                         datafid.write(2*ss+'RhoZ'+pol+2*ss+str(ii+1)+2*ss+'0'+
                                       2*ss+'1'+2*ss+fmt % rp.resyx[ii]+2*ss+
                                       fmt % rp.resyxerr[ii]+'\n')
@@ -342,6 +444,13 @@ class Occam1D:
             **Occam1D.modelfn** = full path to model file
             
         ..Note: This needs to be redone.
+        
+        :Example: ::
+            
+            >>> old = occam.Occam1D()
+            >>> old.make1DModelFile(savepath=r"/home/Occam1D/Line1/Inv1_TE",
+                                    nlayers=50,bottomlayer=10000,z1layer=50)
+            Wrote Model file: /home/Occam1D/Line1/Inv1_TE/Model1D 
         """
         
         
@@ -435,6 +544,21 @@ class Occam1D:
         Returns:
         --------
             **Occam1D.inputfn** : full path to input file. 
+            
+        :Example: ::
+            
+            >>> old = occam.Occam1D()
+            >>> old.make1DdataFile('MT01',edipath=r"/home/Line1",
+                                   savepath=r"/home/Occam1D/Line1/Inv1_TE",
+                                   mode='TE')
+            Wrote Data File: /home/Occam1D/Line1/Inv1_TE/MT01TE.dat
+            
+            >>> old.make1DModelFile(savepath=r"/home/Occam1D/Line1/Inv1_TE",
+                                    nlayers=50,bottomlayer=10000,z1layer=50)
+            Wrote Model file: /home/Occam1D/Line1/Inv1_TE/Model1D
+            
+            >>> old.make1DInputFile(rhostart=10,targetrms=1.5,maxiter=15)
+           Wrote Input File: /home/Occam1D/Line1/Inv1_TE/Input1D  
         """
         
         
@@ -559,7 +683,11 @@ class Occam1D:
                 
                 *'prefpen'* : preference penalty
                 
-                
+        :Example: ::
+            
+            >>> old = occam.Occam1d()
+            >>> old.savepath = r"/home/Occam1D/Line1/Inv1_TE"
+            >>> old.read1DModelFile()
         """
         if not self.modelfn:
             if not self.savepath:
@@ -626,6 +754,12 @@ class Occam1D:
             **Occam1D.indict** : dictionary with keys following the header and
             
                 *'res'* : an array of resistivity values
+                
+        :Example: ::
+            
+            >>> old = occam.Occam1d()
+            >>> old.savepath = r"/home/Occam1D/Line1/Inv1_TE"
+            >>> old.read1DInputFile()
         """
         if not self.inputfn:
             if not self.savepath:
@@ -692,6 +826,12 @@ class Occam1D:
                 
                 *'phaseyx'* : TM phase array with shape (nf,4) for (0) data,
                             (1) dataerr, (2) model, (3) modelerr
+                            
+        :Example: ::
+            
+            >>> old = occam.Occam1d()
+            >>> old.datafn_te = r"/home/Occam1D/Line1/Inv1_TE/MT01TE.dat"
+            >>> old.read1DdataFile()
         """            
         
         #get the data file for the correct mode
@@ -777,6 +917,11 @@ class Occam1D:
                 
             **Occam1D.mdict['res']** : fills this array with the appropriate 
                                         values (0) for data, (1) TE, (2) TM
+                                        
+        :Example: ::
+            
+            >>> old = occam.Occam1d()
+            >>> old.read1DIterFile(r"/home/Occam1D/Inv1_TE/M01TE_15.iter")
                 
         """
         
@@ -849,6 +994,11 @@ class Occam1D:
                 
                 *phaseyx* : TM phase array with shape (nf,4) for (0) data,
                             (1) dataerr, (2) model, (3) modelerr
+       
+       :Example: ::
+            
+            >>> old = occam.Occam1d()
+            >>> old.read1DRespFile(r"/home/Occam1D/Inv1_TE/M01TE_15.resp")
         """
         
         if imode=='TE':
@@ -955,7 +1105,12 @@ class Occam1D:
             **dlimits** : limits on the depth axes. Input as a tuple 
                           (dmin,dmax).  *Default* is None.
             
-            
+        :Example: ::
+
+            >>> old = occam.Occam1d()
+            >>> old.savepath = r"/home/Occam1D/Line1/Inv1_TE"
+            #Look at only the interval between 5 and 10 kilometers
+            >>> old.plot1D(dlimits=(5,10))
         """ 
         
         self.iternum=iternum
@@ -1284,6 +1439,12 @@ class Occam1D:
             **dpi** : dots per inch resolution of the plot
             
             **fs** : font size of labels
+            
+        :Example: ::
+
+            >>> old = occam.Occam1d()
+            >>> old.savepath = r"/home/Occam1D/Line1/Inv1_TE"
+            >>> old.plotL2Curve()
         """
         
         if savepath==None:
@@ -2125,7 +2286,12 @@ class OccamPointPicker(object):
         **fignum** : figure numbers
         
         **occamlines** : list of lines to write into the occam data file.
-            
+        
+    :Example: ::
+        
+        >>> ocd = occam.Occam2DData()
+        >>> ocd.datafn = r"/home/Occam2D/Line1/Inv1/Data.dat"
+        >>> ocd.plotMaskPoints()
     """    
     
     def __init__(self,axlst,linelst,errlst,reserrinc=.05,phaseerrinc=.02,
@@ -3158,7 +3324,7 @@ class Occam2DData:
     def rewrite2DdataFile(self,edipath=None,thetar=0,resxyerr='prev',
                           resyxerr='prev',phasexyerr='prev',phaseyxerr='prev',
                           tippererr=None,mmode='both',flst=None,
-                          removestation=None):
+                          removestation=None,savepath=None):
         """
         rewrite2DDataFile will rewrite an existing data file so you can 
         redefine some of the parameters, such as rotation angle, or errors for 
@@ -3205,6 +3371,10 @@ class Occam2DData:
                        the datafile, cannot add frequencies
                     
             **removestation** : list of stations to remove if desired
+            
+            **savepath** : string
+                           full path to save the file to, if None then file 
+                           is saved to os.path.dirname(datafn,'DataRW.dat')
             
         --------
         Returns:
@@ -3525,9 +3695,15 @@ class Occam2DData:
         
         #make the file name of the data file
         if self.datafn.find('RW')>0:
-            self.ndatafn=self.datafn
+            if savepath==None:
+                self.ndatafn=self.datafn
+            else:
+                self.ndatafn=os.path.join(savepath,'DataRW.dat')
         else:
-            self.ndatafn=self.datafn[:-4]+'RW.dat'
+            if savepath==None:
+                self.ndatafn=self.datafn[:-4]+'RW.dat'
+            else:
+                self.ndatafn=os.path.join(savepath,'DataRW.dat')
             
         nstat=len(stationlst)
             
@@ -5609,13 +5785,14 @@ class Occam2DModel(Occam2DData):
             self.offsetlst.append(rpdict['offset'])
         
     def plot2DModel(self,datafn=None,
-                    xpad=1.0,ypad=1.0,spad=1.0,ms=60,stationid=None,
+                    xpad=1.0,ypad=1.0,spad=1.0,ms=10,stationid=None,
                     fdict={'size':8,'rotation':60,'weight':'normal'},
                     dpi=300,ylimits=None,xminorticks=5,yminorticks=1,
                     climits=(0,4), cmap='jet_r',fs=8,femesh='off',
                     regmesh='off',aspect='auto',title='on',meshnum='off',
                     blocknum='off',blkfdict={'size':3},fignum=1,
-                    plotdimensions=(10,10),grid='off',yscale='km'):
+                    plotdimensions=(10,10),grid='off',yscale='km',
+                    xlimits=None):
         """
         plotModel will plot the model output by occam in the iteration file.
         
@@ -5666,6 +5843,10 @@ class Occam2DModel(Occam2DData):
             
             **ylimits** : tuple (min,max)
                           limits of depth scale (km). ex, ylimits=(0,30)
+                          
+            **xlimits** : tuple (min,max)
+                          limits of horizontal scale (km). ex, ylimits=(0,30)
+                          
             
             **xminorticks** : int or float
                               location of minor tick marks for the horizontal 
