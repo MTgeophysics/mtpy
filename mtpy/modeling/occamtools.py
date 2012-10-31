@@ -113,9 +113,9 @@ class Occam1D:
             
             >>> old = occam.Occam1D()
             >>> old.make1DdataFile('MT01',edipath=r"/home/Line1",
-                                   savepath=r"/home/Occam1D/Line1/Inv1_TE",
-                                   mode='TE')
-            Wrote Data File: /home/Occam1D/Line1/Inv1_TE/MT01TE.dat 
+            >>>                    savepath=r"/home/Occam1D/Line1/Inv1_TE",
+            >>>                    mode='TE')
+            >>> Wrote Data File: /home/Occam1D/Line1/Inv1_TE/MT01TE.dat 
         """    
     
         if os.path.dirname(station)=='':
@@ -449,8 +449,8 @@ class Occam1D:
             
             >>> old = occam.Occam1D()
             >>> old.make1DModelFile(savepath=r"/home/Occam1D/Line1/Inv1_TE",
-                                    nlayers=50,bottomlayer=10000,z1layer=50)
-            Wrote Model file: /home/Occam1D/Line1/Inv1_TE/Model1D 
+            >>>                     nlayers=50,bottomlayer=10000,z1layer=50)
+            >>> Wrote Model file: /home/Occam1D/Line1/Inv1_TE/Model1D 
         """
         
         
@@ -549,16 +549,16 @@ class Occam1D:
             
             >>> old = occam.Occam1D()
             >>> old.make1DdataFile('MT01',edipath=r"/home/Line1",
-                                   savepath=r"/home/Occam1D/Line1/Inv1_TE",
-                                   mode='TE')
-            Wrote Data File: /home/Occam1D/Line1/Inv1_TE/MT01TE.dat
-            
+            >>>                    savepath=r"/home/Occam1D/Line1/Inv1_TE",
+            >>>                    mode='TE')
+            >>> Wrote Data File: /home/Occam1D/Line1/Inv1_TE/MT01TE.dat
+            >>>            
             >>> old.make1DModelFile(savepath=r"/home/Occam1D/Line1/Inv1_TE",
-                                    nlayers=50,bottomlayer=10000,z1layer=50)
-            Wrote Model file: /home/Occam1D/Line1/Inv1_TE/Model1D
-            
+            >>>                     nlayers=50,bottomlayer=10000,z1layer=50)
+            >>> Wrote Model file: /home/Occam1D/Line1/Inv1_TE/Model1D
+            >>>
             >>> old.make1DInputFile(rhostart=10,targetrms=1.5,maxiter=15)
-           Wrote Input File: /home/Occam1D/Line1/Inv1_TE/Input1D  
+            >>> Wrote Input File: /home/Occam1D/Line1/Inv1_TE/Input1D  
         """
         
         
@@ -747,8 +747,7 @@ class Occam1D:
         Arguments:
         ---------
             **inputfn** : full path to input file
-        
-        --------        
+               
         Returns:
         --------
             **Occam1D.indict** : dictionary with keys following the header and
@@ -808,7 +807,6 @@ class Occam1D:
             
             **imode** : mode to read from can be TE or TM
         
-        --------
         Returns:
         --------
             **Occam1D.rpdict** : dictionary with keys:
@@ -910,7 +908,6 @@ class Occam1D:
         ----------
             **imode** : mode to read from 
         
-        --------
         Returns:
         --------
             **Occam1D.itdict** : dictionary with keys of the header:
@@ -976,7 +973,6 @@ class Occam1D:
         ---------
             **repsfn** : full path to response file
         
-        --------
         Returns:
         --------
             *Occam1D.*rpdict** : dictionary with keys:
@@ -1109,7 +1105,7 @@ class Occam1D:
 
             >>> old = occam.Occam1d()
             >>> old.savepath = r"/home/Occam1D/Line1/Inv1_TE"
-            #Look at only the interval between 5 and 10 kilometers
+            >>> #Look at only the interval between 5 and 10 kilometers
             >>> old.plot1D(dlimits=(5,10))
         """ 
         
@@ -2258,8 +2254,7 @@ class OccamPointPicker(object):
                     
         **marker** : marker type for masked points.  See matplotlib.pyplot.plot
                     for options of markers.  *Default* is h for hexagon.
-    
-    -----------                
+                   
     Attributes:
     -----------
     
@@ -2369,8 +2364,7 @@ class OccamPointPicker(object):
         Arguments:
         ----------
             **event** : type mouse_click_event
-        
-        -------        
+                
         Useage:
         -------
         
@@ -2495,8 +2489,7 @@ class OccamPointPicker(object):
         Arguments:
         ---------
             **event**: is a type axes_enter_event
-        
-        --------        
+                
         Returns:
         --------
         
@@ -2532,7 +2525,6 @@ class OccamPointPicker(object):
         ----------
             **event** : figure_enter_event
             
-        --------
         Returns:
         --------
             **OccamPointPicker.fignum** : figure number that corresponds to the
@@ -2552,8 +2544,7 @@ class OccamPointPicker(object):
         Arguments:
         ----------
             **event** : key_press_event
-        
-        --------        
+               
         Returns:
         --------
             print statement saying the figure is closed
@@ -2682,7 +2673,7 @@ class Occam2DData:
                             Can be entered as 'data' where the errors from the 
                             data are used otherwise enter as a percentage.
                             enter 10 for 10 percent.
-        --------          
+                            
         Returns:
         --------
             **Occam2DData.datafn** : full path of data file
@@ -2691,21 +2682,21 @@ class Occam2DData:
             
             >>> import mtpy.core.occamtools as occam
             >>> ocd = occam.Occam2DData()
-            #define a path to where the edifiles are
+            >>> #define a path to where the edifiles are
             >>> edipath = r"/home/EDIfiles"
-            
-            #create a save path to put the data file
+            >>>
+            >>> #create a save path to put the data file
             >>> svpath = r"/home/Occam2D/Line1/Inv1"
-            
-            #create a station list of stations to use in inversion
+            >>>
+            >>> #create a station list of stations to use in inversion
             >>> slst = ['MT0{0}'.format(ii) for ii in range(1,10)]
-            
-            #write data file that is rotated 50 degrees east of north and
-            #projected on to the strike direction 50 degrees east of north
+            >>> 
+            >>> #write data file that is rotated 50 degrees east of north and
+            >>> #projected on to the strike direction 50 degrees east of north
             >>> ocd.make2DdataFile(edipath,stationlst=slst,savepath=svpath,
-                                   thetar=50,proj_strike='yes',lineori='ew')
-                                   
-            Wrote Occam2D data file to: /home/Occam2D/Line1/Inv1/Data.dat 
+            >>>                    thetar=50,proj_strike='yes',lineori='ew')
+            >>>                       
+            >>> Wrote Occam2D data file to: /home/Occam2D/Line1/Inv1/Data.dat 
 
                      
         """
@@ -3240,7 +3231,6 @@ class Occam2DData:
         
             **OccamPointPicker.datafn** : full path to data file
         
-        --------
         Returns:
         --------
             **OccamPointPicker.rplst** : list of dictionaries for each station 
@@ -3403,7 +3393,6 @@ class Occam2DData:
                            full path to save the file to, if None then file 
                            is saved to os.path.dirname(datafn,'DataRW.dat')
             
-        --------
         Returns:
         --------
         
@@ -3415,16 +3404,16 @@ class Occam2DData:
             >>> import mtpy.modeling.occamtools as occam
             >>> ocd = occam.Occam2DData()
             >>> ocd.datafn = r"/home/Occam2D/Line1/Inv1/Data.dat"
-            
-            #rotate by 10 degrees east of North, remove station MT03 and 
-            #increase the resistivity error to 30 percent and put into a new 
-            #folder using savepath
+            >>>
+            >>> #rotate by 10 degrees east of North, remove station MT03 and 
+            >>> #increase the resistivity error to 30 percent and put into a new 
+            >>> #folder using savepath
             >>> svpath = r"/home/Occam2D/Line1/Inv2"
             >>> edipath = r"/home/EDIfiles"
             >>> ocd.rewrite2DdataFile(edipath=edipath,thetar=10,resxyerr=30,
-                                      resyxerr=30,removstation='MT03',
-                                      savepath=svpath)
-            Rewrote the data file to: /home/Occam2D/Line1/Inv2/DataRW.dat
+            >>>                       resyxerr=30,removstation='MT03',
+            >>>                       savepath=svpath)
+            >>> Rewrote the data file to: /home/Occam2D/Line1/Inv2/DataRW.dat
         """
         
         ss=3*' '
@@ -3842,7 +3831,6 @@ class Occam2DData:
                             min and max phase limits 
                             *Default* is (-5,90)
                             
-        ----------
         Returns:
         ---------
             data type **OccamPointPicker**  
@@ -4028,7 +4016,6 @@ class Occam2DData:
         ---------
             None
             
-        ---------
         Returns:
         ---------
         
@@ -4040,11 +4027,11 @@ class Occam2DData:
             >>> ocd = occam.Occam2DData()
             >>> ocd.datafn = r"/home/Occam2D/Line1/Inv1/Data.dat"
             >>> ocd.plotMaskPoints()
-            
-            #after all the points are masked rewrite the data file
+            >>>
+            >>> #after all the points are masked rewrite the data file
             >>> ocd.maskPoints()
-            
-            Rewrote Occam2D data file to: /home/Occam2D/Line1/Inv1/DataRW.dat 
+            >>>
+            >>> Rewrote Occam2D data file to: /home/Occam2D/Line1/Inv1/DataRW.dat 
             
         """
         
@@ -4215,7 +4202,6 @@ class Occam2DData:
             
             **datafn** : full path to data file
     
-        --------
         Returns:
         --------
             for each data array, the rows are ordered as:
@@ -4346,9 +4332,9 @@ class Occam2DData:
             >>> ocd = occam.Occam2DData()
             >>> rfile = r"/home/Occam2D/Line1/Inv1/Test_15.resp"
             >>> ocd.datafn = r"/home/Occam2D/Line1/Inv1/DataRW.dat"
-            
-            #plot all responses in their own figure and modes in separate 
-            #suplots
+            >>>
+            >>> #plot all responses in their own figure and modes in separate 
+            >>> #suplots
             >>> ocd.plot2DResponses(respfn=rfile)
                       
         """
@@ -5554,7 +5540,7 @@ class Occam2DModel(Occam2DData):
                         full path to iteration file if iterpath=None.  If 
                         iterpath is input then iterfn is just the name
                         of the file without the full path.
-        --------
+
         Returns:
         --------
             **Occam2DModel.idict** : dictionary of parameters, 
@@ -5997,9 +5983,9 @@ class Occam2DModel(Occam2DData):
             >>> import mtpy.modeling.occamtools as occam
             >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
             >>> ocm = occam.Occam2DModel(itfn)
-            >>> ocm.plot2DModel(ms=20,ylimits=(0,.350),yscale='m',spad=.10,\
-                                ypad=.125,xpad=.025,climits=(0,2.5),\
-                                aspect='equal')
+            >>> ocm.plot2DModel(ms=20,ylimits=(0,.350),yscale='m',spad=.10,
+            >>>                 ypad=.125,xpad=.025,climits=(0,2.5),
+            >>>                 aspect='equal')
         """   
                     
         #set the scale of the plot
@@ -6352,7 +6338,7 @@ class Occam2DModel(Occam2DData):
             >>> import mtpy.modeling.occamtools as occam
             >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
             >>> ocm = occam.Occam2DModel(itfn)
-            #plot just a few stations depth profile in one figure
+            >>> #plot just a few stations depth profile in one figure
             >>> ocm.plotDepthModel(plottype=['MT01','MT05'],plotnum='all')
                          
             
