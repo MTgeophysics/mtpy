@@ -46,7 +46,8 @@ setup_kwargs['packages'] = ['mtpy',
 							'mtpy.core',
 							'mtpy.imaging',
 							'mtpy.utils',
-							'mtpy.modeling']
+							'mtpy.modeling',
+                            'mtpy.processing']
 	
 
 setup(name = "mtpy", 
