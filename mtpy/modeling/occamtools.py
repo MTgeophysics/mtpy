@@ -274,7 +274,7 @@ class Occam1D:
                                 datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+
                                               2*ss+'0'+2*ss+'0'+2*ss+
                                               fmt % rp.phasedet[ii]+2*ss+
-                                              fmt % rp.pdasedeterr[ii]+'\n')
+                                              fmt % rp.phasedeterr[ii]+'\n')
                             else:
                                 datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+
                                               2*ss+'0'+2*ss+'0'+2*ss+
@@ -285,7 +285,7 @@ class Occam1D:
                                 datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+
                                               2*ss+'0'+2*ss+'0'+2*ss+
                                               fmt % rp.phasedet[ii]+2*ss+
-                                              fmt % rp.pdasedeterr[ii]+'\n')
+                                              fmt % rp.phasedeterr[ii]+'\n')
                             else:
                                 datafid.write(2*ss+'PhsZ'+pol+2*ss+str(ii+1)+
                                               2*ss+'0'+2*ss+'0'+2*ss+
@@ -1379,14 +1379,10 @@ class Occam1D:
         axp.set_ylabel('Phase (deg)',
                        fontdict={'size':fs,'weight':'bold'})
         axp.set_xlabel('Period (s)',fontdict={'size':fs,'weight':'bold'})
-#        axr.yaxis.set_label_coords(-.15,.5)
-#        axp.yaxis.set_label_coords(-.15,.5)
         plt.suptitle(titlestr,fontsize=fs+2,fontweight='bold')
         
-        #plot 1D inversion
+        #------------------plot 1D inversion---------------------------------
         axm=fig.add_subplot(gs[:,4])
-#        depthp=np.array([self.mdict['depth'][0:ii+1].sum() 
-#                        for ii in range(len(self.mdict['depth']))])[1:]
         depthp=self.mdict['depth'][1:]
         if imode=='TE':
             modelresp=abs(10**self.mdict['res'][1:,1])
