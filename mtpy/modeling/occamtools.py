@@ -163,6 +163,11 @@ class Occam1D:
         nf=len(freq)
         returnfn=[]
         
+        pdict={'TE':['xy'],
+               'TM':['yx'],
+               'both':['xy','yx'],
+               'det':['det'],
+               'all':['xy','yx','det']}
         if polarization=='both' or polarization=='det':
             for pol in ['xy','yx']:
                 if pol=='xy':

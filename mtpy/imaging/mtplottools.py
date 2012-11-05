@@ -2451,3 +2451,138 @@ def comparePT2(edilst,esize=5,xspacing=5,yspacing=3,savepath=None,show='y',
         plt.close()
     else:
         plt.show()
+
+def plotStrikeAngles(edilst,fs=10,dpi=300,thetar=0,legend='off',title='off'):
+    """
+    plots the strike angle as determined by phase tensor azimuth (Caldwell et 
+    al. [2004]) and invariants of the impedance tensor (Weaver et al. [2003])
+    
+    
+    """
+    mclst=['s','o','d','h','v','^','>','<','p','*','x']
+    
+    fig1=plt.figure(fignum,[8,6],dpi=dpi)
+    ax1=fig1.add_subplot(1,1,1)
+    fig2=plt.figure(fignum+1,[8,6],dpi=dpi)
+    ax2=fig2.add_subplot(1,1,1)
+    
+    plt.rcParams['font.size']=fs-2
+    plt.rcParams['figure.subplot.left']=.07
+    plt.rcParams['figure.subplot.right']=.98
+    plt.rcParams['figure.subplot.bottom']=.08
+    plt.rcParams['figure.subplot.top']=.95
+    plt.rcParams['figure.subplot.wspace']=.2
+    plt.rcParams['figure.subplot.hspace']=.4    
+    
+    stationstr=self.z[0].station
+    stationlst=[]
+    mlst=[]
+    
+    medlstinv=[]
+    medlstpt=[]
+    
+    for ii,edi in enumerate(edilst):
+        z1=Z.Z(edi)
+        mm=np.remainder(dd,4)
+        period=z1.period
+        #plot strike determined from the invariants
+        zinv=z1.getInvariants(thetar=thetar)
+        zs=zinv.strike
+
+        zs[np.where(zs>90)]=zs[np.where(zs>90)]-180
+        zs[np.where(zs<-90)]=zs[np.where(zs<-90)]+180
+        
+        #make a dictionary of strikes with keys as period
+        mdictinv=dict([(pp,jj) for pp,jj in zip(z1.period,zs)])
+        medlstinv.append(mdictinv)
+        
+        mcolor=(.05+float(dd)/(2*cc),
+                .05+float(dd)/(2*cc),
+                .05+float(dd)/(2*cc))
+        erxy=ax1.errorbar(period,zs, marker=mclst[mm],ms=400./dpi,
+                          mfc='None', mec=mcolor,mew=100./dpi,ls='None',
+                          yerr=zinv.strikeerr,ecolor=mcolor)
+        mlst.append(erxy[0])
+        stationlst.append(z1.station)
+        if dd!=0:
+            stationstr+=','+z1.station
+        else:
+            pass
+        
+        #plot phase tensor strike angle
+        pt=z1.getPhaseTensor()
+        az=pt.azimuth
+        azerr=pt.azimuthvar
+        
+        az[np.where(az>90)]=az[np.where(az>90)]-180
+        az[np.where(az<-90)]=az[np.where(az<-90)]+180
+        
+        #make a dictionary of strikes with keys as period
+        mdictpt=dict([(pp,jj) for pp,jj in zip(z1.period,az)])
+        medlstpt.append(mdictpt)
+        
+        erxy=ax2.errorbar(period,az,marker=mclst[mm],ms=400./dpi,
+                          mfc='None',mec=mcolor,mew=100./dpi,ls='None',
+                          yerr=azerr,ecolor=mcolor)
+                          
+#        medlst2.append(az)
+    
+#    if medlst1:
+#        medlst1=np.array(medlst1)
+#        medp=ax1.plot(period,np.median(medlst1,axis=0),lw=300./dpi,
+#                      marker='x',ms=500./dpi,
+#                      color='k',mec='k')
+#        mlst.append(medp[0])
+#        stationlst.append('Median')
+#        meanp=ax1.plot(period,np.mean(medlst1,axis=0),lw=300./dpi,
+#                       marker='x',ms=500./dpi,
+#                       color='g',mec='g')
+#        mlst.append(meanp[0])
+#        stationlst.append('Mean')
+#        
+#        #pt strike
+#        medlst2=np.array(medlst2)
+#        medp=ax2.plot(period,np.median(medlst2,axis=0),lw=300./dpi,
+#                      marker='x',ms=500./dpi,
+#                      color='k',mec='k')
+#        mlst.append(medp[0])
+#        stationlst.append('Median')
+#        meanp=ax2.plot(period,np.mean(medlst2,axis=0),lw=300./dpi,
+#                       marker='x',ms=500./dpi,
+#                       color='g',mec='g')
+#        mlst.append(meanp[0])
+#        stationlst.append('Mean')
+    for aa,ax in enumerate([ax1,ax2]):    
+        ax.set_yscale('linear')
+        ax.set_xscale('log')
+        ax.set_xlim(xmax=10**(np.ceil(np.log10(period[-1]))),
+                    xmin=10**(np.floor(np.log10(period[0]))))
+        ax.set_ylim(ymin=-90,ymax=90)
+        ax.grid(True,which='both',alpha=.25)
+        if legend=='on':
+            ax.legend(tuple(mlst),tuple(stationlst),loc=0,markerscale=.4,
+                      borderaxespad=.05,labelspacing=.1,handletextpad=.2,
+                      prop={'size':1200./dpi})
+        elif legend=='off':
+            ax.legend([medp[0],meanp[0]],['Median','Mean'],loc=0,
+                       markerscale=.4,borderaxespad=.05,
+                       labelspacing=.1,handletextpad=.2,
+                       prop={'size':fs})
+    
+        ax.set_xlabel('Period (s)',
+                      fontdict={'size':fs,'weight':'bold'})
+        ax.set_ylabel('Strike Angle (deg)',
+                      fontdict={'size':fs,'weight':'bold'})
+        if title=='on':
+            ax.set_title('Strike Angle for '+stationstr,
+                     fontsize=1400./dpi,fontweight='bold')
+        else:
+            if aa==0:
+                ax.set_title('Strike Angle from Invariants',
+                         fontdict={'size':fs+2,'weight':'bold'})
+            elif aa==1:
+                ax.set_title('Strike Angle from Phase Tensor',
+                         fontdict={'size':fs+2,'weight':'bold'})
+        plt.show()    
+    
+    return medlstinv,medlstpt
