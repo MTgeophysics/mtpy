@@ -9,7 +9,7 @@ import mtpy.processing.birrptools as brp
 import os
 import mtpy.core.mttools as mt
 from matplotlib.ticker import MultipleLocator,FormatStrFormatter
-import mtpy.core.z
+import mtpy.core.z as Z
 import mtpy.utils.latlongutmconversion as utm2ll
 from matplotlib.patches import Ellipse,Rectangle,Arrow
 from matplotlib.colors import LinearSegmentedColormap,Normalize
@@ -2452,7 +2452,8 @@ def comparePT2(edilst,esize=5,xspacing=5,yspacing=3,savepath=None,show='y',
     else:
         plt.show()
 
-def plotStrikeAngles(edilst,fs=10,dpi=300,thetar=0,legend='off',title='off'):
+def plotStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,legend='off',
+                     title='off',ptol=.05):
     """
     plots the strike angle as determined by phase tensor azimuth (Caldwell et 
     al. [2004]) and invariants of the impedance tensor (Weaver et al. [2003])
@@ -2462,8 +2463,10 @@ def plotStrikeAngles(edilst,fs=10,dpi=300,thetar=0,legend='off',title='off'):
     mclst=['s','o','d','h','v','^','>','<','p','*','x']
     
     fig1=plt.figure(fignum,[8,6],dpi=dpi)
+    plt.clf()
     ax1=fig1.add_subplot(1,1,1)
     fig2=plt.figure(fignum+1,[8,6],dpi=dpi)
+    plt.clf()
     ax2=fig2.add_subplot(1,1,1)
     
     plt.rcParams['font.size']=fs-2
@@ -2474,17 +2477,25 @@ def plotStrikeAngles(edilst,fs=10,dpi=300,thetar=0,legend='off',title='off'):
     plt.rcParams['figure.subplot.wspace']=.2
     plt.rcParams['figure.subplot.hspace']=.4    
     
-    stationstr=self.z[0].station
     stationlst=[]
+    stationstr=' '
     mlst=[]
     
     medlstinv=[]
     medlstpt=[]
     
-    for ii,edi in enumerate(edilst):
+    nc=len(edilst)
+    nt=0
+    kk=0
+    
+    for dd,edi in enumerate(edilst):
         z1=Z.Z(edi)
         mm=np.remainder(dd,4)
         period=z1.period
+        #get maximum length of periods and which index that is
+        if len(period)>nt:
+            nt=len(period)
+            kk=dd
         #plot strike determined from the invariants
         zinv=z1.getInvariants(thetar=thetar)
         zs=zinv.strike
@@ -2493,12 +2504,12 @@ def plotStrikeAngles(edilst,fs=10,dpi=300,thetar=0,legend='off',title='off'):
         zs[np.where(zs<-90)]=zs[np.where(zs<-90)]+180
         
         #make a dictionary of strikes with keys as period
-        mdictinv=dict([(pp,jj) for pp,jj in zip(z1.period,zs)])
+        mdictinv=dict([(ff,jj) for ff,jj in zip(z1.period,zs)])
         medlstinv.append(mdictinv)
         
-        mcolor=(.05+float(dd)/(2*cc),
-                .05+float(dd)/(2*cc),
-                .05+float(dd)/(2*cc))
+        mcolor=(.05+float(dd)/(2*nc),
+                .05+float(dd)/(2*nc),
+                .05+float(dd)/(2*nc))
         erxy=ax1.errorbar(period,zs, marker=mclst[mm],ms=400./dpi,
                           mfc='None', mec=mcolor,mew=100./dpi,ls='None',
                           yerr=zinv.strikeerr,ecolor=mcolor)
@@ -2518,7 +2529,7 @@ def plotStrikeAngles(edilst,fs=10,dpi=300,thetar=0,legend='off',title='off'):
         az[np.where(az<-90)]=az[np.where(az<-90)]+180
         
         #make a dictionary of strikes with keys as period
-        mdictpt=dict([(pp,jj) for pp,jj in zip(z1.period,az)])
+        mdictpt=dict([(ff,jj) for ff,jj in zip(z1.period,zs)])
         medlstpt.append(mdictpt)
         
         erxy=ax2.errorbar(period,az,marker=mclst[mm],ms=400./dpi,
@@ -2527,36 +2538,64 @@ def plotStrikeAngles(edilst,fs=10,dpi=300,thetar=0,legend='off',title='off'):
                           
 #        medlst2.append(az)
     
-#    if medlst1:
-#        medlst1=np.array(medlst1)
-#        medp=ax1.plot(period,np.median(medlst1,axis=0),lw=300./dpi,
-#                      marker='x',ms=500./dpi,
-#                      color='k',mec='k')
-#        mlst.append(medp[0])
-#        stationlst.append('Median')
-#        meanp=ax1.plot(period,np.mean(medlst1,axis=0),lw=300./dpi,
-#                       marker='x',ms=500./dpi,
-#                       color='g',mec='g')
-#        mlst.append(meanp[0])
-#        stationlst.append('Mean')
-#        
-#        #pt strike
-#        medlst2=np.array(medlst2)
-#        medp=ax2.plot(period,np.median(medlst2,axis=0),lw=300./dpi,
-#                      marker='x',ms=500./dpi,
-#                      color='k',mec='k')
-#        mlst.append(medp[0])
-#        stationlst.append('Median')
-#        meanp=ax2.plot(period,np.mean(medlst2,axis=0),lw=300./dpi,
-#                       marker='x',ms=500./dpi,
-#                       color='g',mec='g')
-#        mlst.append(meanp[0])
-#        stationlst.append('Mean')
+
+
+    #get min and max period
+    maxper=np.max([np.max(mm.keys()) for mm in medlstinv])
+    minper=np.min([np.min(mm.keys()) for mm in medlstinv])
+    
+    #do some statistical analysis
+    medinv=np.zeros((nt,nc))
+    medpt=np.zeros((nt,nc))
+    
+    #make a list of periods from the longest period list
+    plst=np.logspace(np.log10(minper),np.log10(maxper),num=nt,base=10)
+    print len(plst)
+    pdict=dict([(ii,jj) for jj,ii in enumerate(plst)])
+    
+    for ii,mm in enumerate(medlstinv):
+        mperiod=mm.keys()
+        for jj,mp in enumerate(mperiod):
+            for kk in pdict.keys():
+                if mp>kk*(1-ptol) and mp<kk*(1+ptol):
+                    ll=pdict[kk]
+                    medinv[ll,ii]=medlstinv[ii][mp]
+                    medpt[ll,ii]=medlstpt[ii][mp]
+                else:
+                    pass
+    
+    #plot the mean and median of the strike angles            
+    medp=ax1.plot(plst,np.median(medinv,axis=1),lw=300./dpi,
+                  marker='x',ms=500./dpi,
+                  color='k',mec='k')
+    mlst.append(medp[0])
+    stationlst.append('Median')
+    
+    meanp=ax1.plot(plst,np.mean(medinv,axis=1),lw=300./dpi,
+                   marker='x',ms=500./dpi,
+                   color='g',mec='g')
+    mlst.append(meanp[0])
+    stationlst.append('Mean')
+    
+    #pt strike
+    medp=ax2.plot(plst,np.median(medpt,axis=1),lw=300./dpi,
+                  marker='x',ms=500./dpi,
+                  color='k',mec='k')
+    mlst.append(medp[0])
+    stationlst.append('Median')
+    
+    meanp=ax2.plot(plst,np.mean(medpt,axis=1),lw=300./dpi,
+                   marker='x',ms=500./dpi,
+                   color='g',mec='g')
+    mlst.append(meanp[0])
+    stationlst.append('Mean')
+
+    #set axis properties
     for aa,ax in enumerate([ax1,ax2]):    
         ax.set_yscale('linear')
         ax.set_xscale('log')
-        ax.set_xlim(xmax=10**(np.ceil(np.log10(period[-1]))),
-                    xmin=10**(np.floor(np.log10(period[0]))))
+        ax.set_xlim(xmax=10**(np.ceil(np.log10(maxper))),
+                    xmin=10**(np.floor(np.log10(minper))))
         ax.set_ylim(ymin=-90,ymax=90)
         ax.grid(True,which='both',alpha=.25)
         if legend=='on':
@@ -2583,6 +2622,45 @@ def plotStrikeAngles(edilst,fs=10,dpi=300,thetar=0,legend='off',title='off'):
             elif aa==1:
                 ax.set_title('Strike Angle from Phase Tensor',
                          fontdict={'size':fs+2,'weight':'bold'})
-        plt.show()    
+        plt.show() 
+        
+    #-----Plot Histograms of the strike angles-----------------------------
+    brange=np.arange(np.floor(np.log10(minper)),np.ceil(np.log10(maxper)),1)
+
+    plt.rcParams['figure.subplot.hspace']=.05
+    fig3=plt.figure(fignum+3,dpi=dpi)
+    plt.clf()
+
+        
+    for jj,bb in enumerate(brange,1):
+        axh=fig3.add_subplot(len(brange),1,jj)
+        binlst=[]
+        for ii,ff in enumerate(plst):
+            if ff>10**bb and ff<10**(bb+1):
+                binlst.append(ii)
+        hh=medinv[binlst,:]
+        axh.hist(hh[np.nonzero(hh)].flatten(),bins=36,range=(-90,90))
+        axh.xaxis.set_major_locator(MultipleLocator(10))
+        axh.set_xlim(-90,90)
+        yy=axh.get_ylim()
+        print yy[1]
+        axh.text(88,yy[1]*.9,'Median={0:.2f}'.format(np.median(hh)),
+                 bbox={'facecolor':'white'},
+                 horizontalalignment='right',
+                 verticalalignment='top',
+                 fontdict={'size':fs,'weight':'bold'})
+        if jj!=len(brange):
+            plt.setp(axh.xaxis.get_ticklabels(),visible=False)
+        
+        else:
+            axh.set_xlabel('Angle (deg)',fontdict={'size':fs,'weight':'bold'})
     
-    return medlstinv,medlstpt
+        
+                       
+        
+        
+    
+    
+    
+    
+    return plst,medinv,medpt
