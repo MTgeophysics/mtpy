@@ -43,10 +43,11 @@ if setuptools is False:
     # __init__.py file"
 
 setup_kwargs['packages'] = ['mtpy',
-							'mtpy.core',
-							'mtpy.imaging',
-							'mtpy.utils',
-							'mtpy.modeling']
+                            'mtpy.core',
+					'mtpy.imaging',
+					'mtpy.utils',
+					'mtpy.modeling',
+                             'mtpy.processing']
 	
 
 setup(name = "mtpy", 
