@@ -2513,8 +2513,8 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
     plt.rcParams['font.size']=fs-2
     plt.rcParams['figure.subplot.left']=.07
     plt.rcParams['figure.subplot.right']=.98
-    plt.rcParams['figure.subplot.bottom']=.08
-    plt.rcParams['figure.subplot.top']=.95
+    plt.rcParams['figure.subplot.bottom']=.9
+    plt.rcParams['figure.subplot.top']=.90
     plt.rcParams['figure.subplot.wspace']=.2
     plt.rcParams['figure.subplot.hspace']=.4 
     plt.rcParams['xtick.major.pad']='18'   
@@ -2591,7 +2591,7 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
     else:
         brange=np.arange(np.floor(prange[0]),np.ceil(prange[1]),1)
     
-    plt.rcParams['figure.subplot.hspace']=.2
+    plt.rcParams['figure.subplot.hspace']=.3
     plt.rcParams['figure.subplot.wspace']=.3
     fig3=plt.figure(fignum+3,dpi=dpi)
     plt.clf()
@@ -2725,10 +2725,10 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
     
             if jj==1:
                 if aa==0:
-                    axh.set_ylabel('Invariant Strike',fd,labelpad=9,
+                    axh.set_ylabel('Invariant Strike',fd,labelpad=3300./dpi,
                                    bbox={'facecolor':(.9,0,.1),'alpha':galpha})
                 if aa==1:
-                    axh.set_ylabel('PT Azimuth',fd,labelpad=9,
+                    axh.set_ylabel('PT Azimuth',fd,labelpad=3300./dpi,
                                    bbox={'facecolor':(.9,.9,0),'alpha':galpha})
             
             plt.setp(axh.yaxis.get_ticklabels(),visible=False)
