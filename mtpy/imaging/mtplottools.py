@@ -2453,7 +2453,8 @@ def comparePT2(edilst,esize=5,xspacing=5,yspacing=3,savepath=None,show='y',
         plt.show()
 
 def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
-                         tpad=1.65,galpha=.25,prange='data'):
+                         tpad=1.65,galpha=.25,prange='data',plottype=1,
+                         tipper='n'):
     """
     plots the strike angle as determined by phase tensor azimuth (Caldwell et 
     al. [2004]) and invariants of the impedance tensor (Weaver et al. [2003]).
@@ -2500,6 +2501,16 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                             in the data.
                         * (pmin,pmax) for period min and period max, input as
                           (log10(pmin),log10(pmax))
+        
+        **plottype** : [ 1 | 2 ]
+                        * *1* to plot individual decades in one plot
+                        * *2* to plot all period ranges into one polar diagram
+                              for each strike angle estimation
+        
+        **tipper** : [ 'y' | 'n' ]
+                      * *'y'* to plot the tipper strike
+                      * *'n'* to not plot tipper strike
+                
 
     :Example: ::
         
@@ -2520,9 +2531,10 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
     plt.rcParams['xtick.major.pad']='18'   
     plt.rcParams['ytick.major.pad']='18'   
     
-    medlstinv=[]
-    medlstpt=[]
-    
+    if tipper=='y':
+        tiprlst=[]
+        tipilst=[]
+
     nc=len(edilst)
     nt=0
     kk=0
@@ -2548,39 +2560,52 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
         
         #make a dictionary of strikes with keys as period
         mdictinv=dict([(ff,jj) for ff,jj in zip(z1.period,zs)])
-        medlstinv.append(mdictinv)
+        invlst.append(mdictinv)
     
         #------------get strike from phase tensor strike angle---------------
-        pt=z1.getPhaseTensor()
+        pt=z1.getPhaseTensor(thetar=thetar)
         az=pt.azimuth
         azerr=pt.azimuthvar
         #don't need to add 90 because pt assumes 90 is north.
         
         #make a dictionary of strikes with keys as period
         mdictpt=dict([(ff,jj) for ff,jj in zip(z1.period,az)])
-        medlstpt.append(mdictpt)
+        ptlst.append(mdictpt)
+        
+        #-----------get tipper strike------------------------------------
+        tip=z1.getTipper(thetar=thetar)
+        tiprdict=dict([(ff,jj) for ff,jj in zip(z1.period,tip.anglereal)])
+        tiprlst.append(tiprdict)
+        
+        tipidict=dict([(ff,jj) for ff,jj in zip(z1.period,tip.angleimag)])
+        tipilst.append(tiprdict)
+        
+        
     
     #get min and max period
-    maxper=np.max([np.max(mm.keys()) for mm in medlstinv])
-    minper=np.min([np.min(mm.keys()) for mm in medlstinv])
+    maxper=np.max([np.max(mm.keys()) for mm in invlst])
+    minper=np.min([np.min(mm.keys()) for mm in ptlst])
     
     #make empty arrays to put data into for easy manipulation
     medinv=np.zeros((nt,nc))
     medpt=np.zeros((nt,nc))
+    if tipper=='y':
+        medtipr=np.zeros((nt,nc))
+        medtipi=np.zeros((nt,nc))
     
     #make a list of periods from the longest period list
     plst=np.logspace(np.log10(minper),np.log10(maxper),num=nt,base=10)
     pdict=dict([(ii,jj) for jj,ii in enumerate(plst)])
     
     #put data into arrays
-    for ii,mm in enumerate(medlstinv):
+    for ii,mm in enumerate(invlst):
         mperiod=mm.keys()
         for jj,mp in enumerate(mperiod):
             for kk in pdict.keys():
                 if mp>kk*(1-ptol) and mp<kk*(1+ptol):
                     ll=pdict[kk]
-                    medinv[ll,ii]=medlstinv[ii][mp]
-                    medpt[ll,ii]=medlstpt[ii][mp]
+                    medinv[ll,ii]=invlst[ii][mp]
+                    medpt[ll,ii]=ptlst[ii][mp]
                 else:
                     pass
         
@@ -2591,31 +2616,215 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
     else:
         brange=np.arange(np.floor(prange[0]),np.ceil(prange[1]),1)
     
-    plt.rcParams['figure.subplot.hspace']=.3
-    plt.rcParams['figure.subplot.wspace']=.3
-    fig3=plt.figure(fignum+3,dpi=dpi)
-    plt.clf()
     
+    #font dictionary
     fd={'size':fs,'weight':'normal'}
     
-    for jj,bb in enumerate(brange,1):
+    #------------------plot indivdual decades---------------------------------
+    if plottype==1:
+        #plot specs
+        plt.rcParams['figure.subplot.hspace']=.3
+        plt.rcParams['figure.subplot.wspace']=.3
+        
+        fig3=plt.figure(fignum,dpi=dpi)
+        plt.clf()
+        for jj,bb in enumerate(brange,1):
+            #make subplots for invariants and phase tensor azimuths
+            axhinv=fig3.add_subplot(2,len(brange),jj,polar=True)
+            axhpt=fig3.add_subplot(2,len(brange),jj+len(brange),polar=True)
+            
+            #make a list of indicies for each decades    
+            binlst=[]
+            for ii,ff in enumerate(plst):
+                if ff>10**bb and ff<10**(bb+1):
+                    binlst.append(ii)
+            
+            #extract just the subset for each decade
+            hh=medinv[binlst,:]
+            gg=medpt[binlst,:]
+            
+            #estimate the histogram for the decade for invariants and pt
+            invhist=np.histogram(hh[np.nonzero(hh)].flatten(),bins=72,
+                                    range=(-180,180))
+            pthist=np.histogram(gg[np.nonzero(gg)].flatten(),bins=72,
+                                   range=(-180,180))
+            
+            #plot the histograms    
+            barinv=axhinv.bar((invhist[1][:-1])*np.pi/180,invhist[0],
+                              width=5*np.pi/180)
+            barpt=axhpt.bar((pthist[1][:-1])*np.pi/180,pthist[0],
+                            width=5*np.pi/180)
+            
+            for cc,bar in enumerate(barinv):
+                fc=float(invhist[0][cc])/invhist[0].max()*.8
+                bar.set_facecolor((fc,0,1-fc))
+            for cc,bar in enumerate(barpt):
+                fc=float(pthist[0][cc])/pthist[0].max()*.8
+                bar.set_facecolor((fc,1-fc,0))
+            #make axis look correct with N to the top at 90.
+            for aa,axh in enumerate([axhinv,axhpt]):
+                axh.xaxis.set_major_locator(MultipleLocator(30*np.pi/180))
+                axh.xaxis.set_ticklabels(['E','','',
+                                          'N','','',
+                                          'W','','',
+                                          'S','',''])
+                axh.grid(alpha=galpha)
+                if aa==0:
+                    axh.set_xlim(-90*np.pi/180,270*np.pi/180)
+                    axh.text(3*np.pi/2,axh.get_ylim()[1]*tpad,
+                             '{0:.1f}$^o$'.format(90-np.median(hh[np.nonzero(hh)])),
+                              horizontalalignment='center',
+                              verticalalignment='baseline',
+                              fontdict={'size':fs-2},
+                              bbox={'facecolor':(.9,0,.1),'alpha':.25})
+                    if bb==-5:
+                        axh.set_title('10$^{-5}$-10$^{-4}$s',fontdict=fd,
+                                      bbox={'facecolor':'white',
+                                            'alpha':galpha})
+                    elif bb==-4:
+                        axh.set_title('10$^{-4}$-10$^{-3}$s',fontdict=fd,
+                                      bbox={'facecolor':'white',
+                                            'alpha':galpha})
+                    elif bb==-3:
+                        axh.set_title('10$^{-3}$-10$^{-2}$s',fontdict=fd,
+                                      bbox={'facecolor':'white',
+                                            'alpha':galpha})
+                    elif bb==-2:
+                        axh.set_title('10$^{-2}$-10$^{-1}$s',fontdict=fd,
+                                      bbox={'facecolor':'white',
+                                            'alpha':galpha})
+                    elif bb==-1:
+                        axh.set_title('10$^{-1}$-10$^{0}$s',fontdict=fd,
+                                      bbox={'facecolor':'white',
+                                            'alpha':galpha})
+                    elif bb==0:
+                        axh.set_title('10$^{0}$-10$^{1}$s',fontdict=fd,
+                                      bbox={'facecolor':'white',
+                                            'alpha':galpha})
+                    elif bb==1:
+                        axh.set_title('10$^{1}$-10$^{2}$s',fontdict=fd,
+                                      bbox={'facecolor':'white',
+                                            'alpha':galpha})
+                    elif bb==2:
+                        axh.set_title('10$^{2}$-10$^{3}$s',fontdict=fd,
+                                      bbox={'facecolor':'white',
+                                            'alpha':galpha})
+                    elif bb==3:
+                        axh.set_title('10$^{3}$-10$^{4}$s',fontdict=fd,
+                                      bbox={'facecolor':'white',
+                                            'alpha':galpha})
+                    elif bb==4:
+                        axh.set_title('10$^{4}$-10$^{5}$s',fontdict=fd,
+                                      bbox={'facecolor':'white',
+                                            'alpha':galpha})
+                    elif bb==5:
+                        axh.set_title('10$^{5}$-10$^{6}$s',fontdict=fd,
+                                      bbox={'facecolor':'white',
+                                            'alpha':galpha})
+        
+                else:
+                    axh.set_xlim(-180*np.pi/180,180*np.pi/180)
+                    axh.text(3*np.pi/2,axh.get_ylim()[1]*tpad,
+                             '{0:.1f}$^o$'.format(90-np.median(gg[np.nonzero(gg)])),
+                              horizontalalignment='center',
+                              verticalalignment='baseline',
+                              fontdict={'size':fs-2},
+                              bbox={'facecolor':(.9,.9,0),'alpha':galpha})
+                    if len(brange)>5: 
+                        if bb==-5:
+                            axh.set_title('10$^{-5}$-10$^{-4}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==-4:
+                            axh.set_title('10$^{-4}$-10$^{-3}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==-3:
+                            axh.set_title('10$^{-3}$-10$^{-2}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==-2:
+                            axh.set_title('10$^{-2}$-10$^{-1}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==-1:
+                            axh.set_title('10$^{-1}$-10$^{0}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==0:
+                            axh.set_title('10$^{0}$-10$^{1}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==1:
+                            axh.set_title('10$^{1}$-10$^{2}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==2:
+                            axh.set_title('10$^{2}$-10$^{3}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==3:
+                            axh.set_title('10$^{3}$-10$^{4}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==4:
+                            axh.set_title('10$^{4}$-10$^{5}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==5:
+                            axh.set_title('10$^{5}$-10$^{6}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                                  
+        
+                if jj==1:
+                    if aa==0:
+                        axh.set_ylabel('Invariant Strike',fontdict=fd,
+                                       labelpad=3000./dpi,
+                                       bbox={'facecolor':(.9,0,.1),
+                                             'alpha':galpha})
+                    if aa==1:
+                        axh.set_ylabel('PT Azimuth',fontdict=fd,
+                                       labelpad=3000./dpi,
+                                       bbox={'facecolor':(.9,.9,0),
+                                             'alpha':galpha})
+                
+                plt.setp(axh.yaxis.get_ticklabels(),visible=False)
+                
+        print 'North is assumed to be 0 and the strike angle is measured \n'+\
+              'clockwise positive.'
+        
+        plt.show()
+    
+    #------------------Plot strike angles for all period ranges--------------------
+    elif plottype==2:
+        #plot specs
+        plt.rcParams['figure.subplot.left']=.07
+        plt.rcParams['figure.subplot.right']=.98
+        plt.rcParams['figure.subplot.bottom']=.100
+        plt.rcParams['figure.subplot.top']=.88
+        plt.rcParams['figure.subplot.hspace']=.3
+        plt.rcParams['figure.subplot.wspace']=.2
+        
+        fig3=plt.figure(fignum,dpi=dpi)
+        plt.clf()
         #make subplots for invariants and phase tensor azimuths
-        axhinv=fig3.add_subplot(2,len(brange),jj,polar=True)
-        axhpt=fig3.add_subplot(2,len(brange),jj+len(brange),polar=True)
+        axhinv=fig3.add_subplot(1,2,1,polar=True)
+        axhpt=fig3.add_subplot(1,2,2,polar=True)
         
         #make a list of indicies for each decades    
-        binlst=[]
-        for ii,ff in enumerate(plst):
-            if ff>10**bb and ff<10**(bb+1):
-                binlst.append(ii)
+        binlst=[pdict[ff] for ff in plst 
+                if ff>10**brange.min() and ff<10**brange.max()]
         
         #extract just the subset for each decade
         hh=medinv[binlst,:]
         gg=medpt[binlst,:]
         
         #estimate the histogram for the decade for invariants and pt
-        invhist=np.histogram(hh[np.nonzero(hh)].flatten(),bins=72,range=(-180,180))
-        pthist=np.histogram(gg[np.nonzero(gg)].flatten(),bins=72,range=(-180,180))
+        invhist=np.histogram(hh[np.nonzero(hh)].flatten(),bins=72,
+                                range=(-180,180))
+        pthist=np.histogram(gg[np.nonzero(gg)].flatten(),bins=72,
+                               range=(-180,180))
         
         #plot the histograms    
         barinv=axhinv.bar((invhist[1][:-1])*np.pi/180,invhist[0],width=5*np.pi/180)
@@ -2627,113 +2836,48 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
         for cc,bar in enumerate(barpt):
             fc=float(pthist[0][cc])/pthist[0].max()*.8
             bar.set_facecolor((fc,1-fc,0))
+            
         #make axis look correct with N to the top at 90.
         for aa,axh in enumerate([axhinv,axhpt]):
             axh.xaxis.set_major_locator(MultipleLocator(30*np.pi/180))
-            axh.xaxis.set_minor_locator(MultipleLocator(10*np.pi/180))
+            axh.grid(alpha=galpha)
+            plt.setp(axh.yaxis.get_ticklabels(),visible=False)
             axh.xaxis.set_ticklabels(['E','','',
                                       'N','','',
                                       'W','','',
                                       'S','',''])
-            axh.grid(alpha=galpha)
-            axh.xaxis.set_tick_params(pad=10)
+                                      
+            #put median angle in a box at bottom of polar diagram
             if aa==0:
-                axh.set_xlim(-90*np.pi/180,270*np.pi/180)
-                axh.text(3*np.pi/2,axh.get_ylim()[1]*tpad,
+                axh.set_ylim(0,invhist[0].max())
+                axh.text(170*np.pi/180,axh.get_ylim()[1]*.65,
                          '{0:.1f}$^o$'.format(90-np.median(hh[np.nonzero(hh)])),
                           horizontalalignment='center',
                           verticalalignment='baseline',
                           fontdict={'size':fs-2},
                           bbox={'facecolor':(.9,0,.1),'alpha':.25})
-                if bb==-5:
-                    axh.set_title('10$^{-5}$-10$^{-4}$s',fontdict=fd,
-                                  bbox={'facecolor':'white','alpha':galpha})
-                elif bb==-4:
-                    axh.set_title('10$^{-4}$-10$^{-3}$s',fontdict=fd,
-                                  bbox={'facecolor':'white','alpha':galpha})
-                elif bb==-3:
-                    axh.set_title('10$^{-3}$-10$^{-2}$s',fontdict=fd,
-                                  bbox={'facecolor':'white','alpha':galpha})
-                elif bb==-2:
-                    axh.set_title('10$^{-2}$-10$^{-1}$s',fontdict=fd,
-                                  bbox={'facecolor':'white','alpha':galpha})
-                elif bb==-1:
-                    axh.set_title('10$^{-1}$-10$^{0}$s',fontdict=fd,
-                                  bbox={'facecolor':'white','alpha':galpha})
-                elif bb==0:
-                    axh.set_title('10$^{0}$-10$^{1}$s',fontdict=fd,
-                                  bbox={'facecolor':'white','alpha':galpha})
-                elif bb==1:
-                    axh.set_title('10$^{1}$-10$^{2}$s',fontdict=fd,
-                                  bbox={'facecolor':'white','alpha':galpha})
-                elif bb==2:
-                    axh.set_title('10$^{2}$-10$^{3}$s',fontdict=fd,
-                                  bbox={'facecolor':'white','alpha':galpha})
-                elif bb==3:
-                    axh.set_title('10$^{3}$-10$^{4}$s',fontdict=fd,
-                                  bbox={'facecolor':'white','alpha':galpha})
-                elif bb==4:
-                    axh.set_title('10$^{4}$-10$^{5}$s',fontdict=fd,
-                                  bbox={'facecolor':'white','alpha':galpha})
-                elif bb==5:
-                    axh.set_title('10$^{5}$-10$^{6}$s',fontdict=fd,
-                                  bbox={'facecolor':'white','alpha':galpha})
     
             else:
-                axh.set_xlim(-180*np.pi/180,180*np.pi/180)
-                axh.text(3*np.pi/2,axh.get_ylim()[1]*tpad,
+                axh.set_ylim(0,pthist[0].max())
+                axh.text(170*np.pi/180,axh.get_ylim()[1]*.65,
                          '{0:.1f}$^o$'.format(90-np.median(gg[np.nonzero(gg)])),
                           horizontalalignment='center',
                           verticalalignment='baseline',
                           fontdict={'size':fs-2},
                           bbox={'facecolor':(.9,.9,0),'alpha':galpha})
-                if len(brange)>5: 
-                    if bb==-5:
-                        axh.set_title('10$^{-5}$-10$^{-4}$s',fontdict=fd,
-                                      bbox={'facecolor':'white','alpha':galpha})
-                    elif bb==-4:
-                        axh.set_title('10$^{-4}$-10$^{-3}$s',fontdict=fd,
-                                      bbox={'facecolor':'white','alpha':galpha})
-                    elif bb==-3:
-                        axh.set_title('10$^{-3}$-10$^{-2}$s',fontdict=fd,
-                                      bbox={'facecolor':'white','alpha':galpha})
-                    elif bb==-2:
-                        axh.set_title('10$^{-2}$-10$^{-1}$s',fontdict=fd,
-                                      bbox={'facecolor':'white','alpha':galpha})
-                    elif bb==-1:
-                        axh.set_title('10$^{-1}$-10$^{0}$s',fontdict=fd,
-                                      bbox={'facecolor':'white','alpha':galpha})
-                    elif bb==0:
-                        axh.set_title('10$^{0}$-10$^{1}$s',fontdict=fd,
-                                      bbox={'facecolor':'white','alpha':galpha})
-                    elif bb==1:
-                        axh.set_title('10$^{1}$-10$^{2}$s',fontdict=fd,
-                                      bbox={'facecolor':'white','alpha':galpha})
-                    elif bb==2:
-                        axh.set_title('10$^{2}$-10$^{3}$s',fontdict=fd,
-                                      bbox={'facecolor':'white','alpha':galpha})
-                    elif bb==3:
-                        axh.set_title('10$^{3}$-10$^{4}$s',fontdict=fd,
-                                      bbox={'facecolor':'white','alpha':galpha})
-                    elif bb==4:
-                        axh.set_title('10$^{4}$-10$^{5}$s',fontdict=fd,
-                                      bbox={'facecolor':'white','alpha':galpha})
-                    elif bb==5:
-                        axh.set_title('10$^{5}$-10$^{6}$s',fontdict=fd,
-                                      bbox={'facecolor':'white','alpha':galpha})
                               
-    
-            if jj==1:
-                if aa==0:
-                    axh.set_ylabel('Invariant Strike',fd,labelpad=3300./dpi,
-                                   bbox={'facecolor':(.9,0,.1),'alpha':galpha})
-                if aa==1:
-                    axh.set_ylabel('PT Azimuth',fd,labelpad=3300./dpi,
-                                   bbox={'facecolor':(.9,.9,0),'alpha':galpha})
+            #set the title of the diagrams
+            if aa==0:
+                axh.set_title('Invariant Strike',fontdict=fd,
+                               bbox={'facecolor':(.9,0,.1),'alpha':galpha})
+            if aa==1:
+                axh.set_title('PT Azimuth',fontdict=fd,
+                               bbox={'facecolor':(.9,.9,0),'alpha':galpha})
             
-            plt.setp(axh.yaxis.get_ticklabels(),visible=False)
-            
-    print 'North is assumed to be 0 and the strike angle is measured \n'+\
-          'clockwise positive.'
-    
-    plt.show()
+                
+                
+        print 'North is assumed to be 0 and the strike angle is measured '+\
+              'clockwise positive.'
+        
+        plt.show()
+        
