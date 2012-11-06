@@ -2513,7 +2513,7 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
     plt.rcParams['font.size']=fs-2
     plt.rcParams['figure.subplot.left']=.07
     plt.rcParams['figure.subplot.right']=.98
-    plt.rcParams['figure.subplot.bottom']=.9
+    plt.rcParams['figure.subplot.bottom']=.09
     plt.rcParams['figure.subplot.top']=.90
     plt.rcParams['figure.subplot.wspace']=.2
     plt.rcParams['figure.subplot.hspace']=.4 
