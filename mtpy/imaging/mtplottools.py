@@ -2453,7 +2453,7 @@ def comparePT2(edilst,esize=5,xspacing=5,yspacing=3,savepath=None,show='y',
         plt.show()
 
 def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
-                         tpad=1.65,galpha=.25):
+                         tpad=1.65,galpha=.25,prange='data'):
     """
     plots the strike angle as determined by phase tensor azimuth (Caldwell et 
     al. [2004]) and invariants of the impedance tensor (Weaver et al. [2003]).
@@ -2494,7 +2494,13 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                      transparency of the font boxes and grid lines.  0 is fully
                      tranparent and 1 is opaque.  *Default* is 0.25
                      
-    
+        **prange** : [ 'data' | (period_min,period_max) ]
+                    period range to estimate the strike angle. Options are:
+                        * *'data'* for estimating the strike for all periods
+                            in the data.
+                        * (pmin,pmax) for period min and period max, input as
+                          (log10(pmin),log10(pmax))
+
     :Example: ::
         
         >>> import os
@@ -2579,7 +2585,11 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                     pass
         
     #-----Plot Histograms of the strike angles-----------------------------
-    brange=np.arange(np.floor(np.log10(minper)),np.ceil(np.log10(maxper)),1)
+    if prange=='data':
+        brange=np.arange(np.floor(np.log10(minper)),
+                         np.ceil(np.log10(maxper)),1)
+    else:
+        brange=np.arange(np.floor(prange[0]),np.ceil(prange[1]),1)
     
     plt.rcParams['figure.subplot.hspace']=.05
     plt.rcParams['figure.subplot.wspace']=.3
