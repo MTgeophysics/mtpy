@@ -2531,10 +2531,13 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
     plt.rcParams['xtick.major.pad']='18'   
     plt.rcParams['ytick.major.pad']='18'   
     
+    invlst=[]
+    ptlst=[]
+    
     if tipper=='y':
         tiprlst=[]
         tipilst=[]
-
+    
     nc=len(edilst)
     nt=0
     kk=0
@@ -2557,6 +2560,7 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
         
         #for plotting put the NW angles into the SE quadrant 
         zs[np.where(zs>90)]=zs[np.where(zs>90)]-180
+        zs[np.where(zs<-90)]=zs[np.where(zs<-90)]+180
         
         #make a dictionary of strikes with keys as period
         mdictinv=dict([(ff,jj) for ff,jj in zip(z1.period,zs)])
@@ -2567,18 +2571,25 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
         az=pt.azimuth
         azerr=pt.azimuthvar
         #don't need to add 90 because pt assumes 90 is north.
-        
+        az[np.where(az>90)]=az[np.where(az>90)]-180
+        zs[np.where(az<-90)]=az[np.where(az<-90)]+180
         #make a dictionary of strikes with keys as period
         mdictpt=dict([(ff,jj) for ff,jj in zip(z1.period,az)])
         ptlst.append(mdictpt)
         
         #-----------get tipper strike------------------------------------
-        tip=z1.getTipper(thetar=thetar)
-        tiprdict=dict([(ff,jj) for ff,jj in zip(z1.period,tip.anglereal)])
-        tiprlst.append(tiprdict)
-        
-        tipidict=dict([(ff,jj) for ff,jj in zip(z1.period,tip.angleimag)])
-        tipilst.append(tiprdict)
+        if tipper=='y':
+            tip=z1.getTipper(thetar=thetar)
+            tipr=tip.anglereal
+            
+            tipr[np.where(tipr>90)]=tipr[np.where(tipr>90)]-180
+            tipr[np.where(tipr<-90)]=tipr[np.where(tipr<-90)]+180
+            
+            tiprdict=dict([(ff,jj) for ff,jj in zip(z1.period,tipr)])
+            tiprlst.append(tiprdict)
+            
+            tipidict=dict([(ff,jj) for ff,jj in zip(z1.period,tip.angleimag)])
+            tipilst.append(tiprdict)
         
         
     
@@ -2606,6 +2617,9 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                     ll=pdict[kk]
                     medinv[ll,ii]=invlst[ii][mp]
                     medpt[ll,ii]=ptlst[ii][mp]
+                    if tipper=='y':
+                        medtipr[ll,ii]=tiprlst[ii][mp]
+                        medtipi[ll,ii]=tipilst[ii][mp]
                 else:
                     pass
         
@@ -2628,10 +2642,18 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
         
         fig3=plt.figure(fignum,dpi=dpi)
         plt.clf()
+        nb=len(brange)
         for jj,bb in enumerate(brange,1):
             #make subplots for invariants and phase tensor azimuths
-            axhinv=fig3.add_subplot(2,len(brange),jj,polar=True)
-            axhpt=fig3.add_subplot(2,len(brange),jj+len(brange),polar=True)
+            if tipper=='n':
+                axhinv=fig3.add_subplot(2,nb,jj,polar=True)
+                axhpt=fig3.add_subplot(2,nb,jj+nb,polar=True)
+                axlst=[axhinv,axhpt]
+            if tipper=='y':
+                axhinv=fig3.add_subplot(3,nb,jj,polar=True)
+                axhpt=fig3.add_subplot(3,nb,jj+nb,polar=True)
+                axhtip=fig3.add_subplot(3,nb,jj+2*nb,polar=True)
+                axlst=[axhinv,axhpt,axhtip]
             
             #make a list of indicies for each decades    
             binlst=[]
@@ -2642,6 +2664,24 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
             #extract just the subset for each decade
             hh=medinv[binlst,:]
             gg=medpt[binlst,:]
+            if tipper=='y':
+                tr=medtipr[binlst,:]
+                ti=medtipi[binlst,:]
+                trhist=np.histogram(tr[np.nonzero(tr)].flatten(),bins=72,
+                                       range=(-180,180))
+                tihist=np.histogram(ti[np.nonzero(ti)].flatten(),bins=72,
+                                       range=(-180,180))
+                bartr=axhtip.bar((trhist[1][:-1])*np.pi/180,trhist[0],
+                                 width=5*np.pi/180)
+                barti=axhtip.bar((tihist[1][:-1])*np.pi/180,tihist[0],
+                                 width=5*np.pi/180)
+                for cc,bar in enumerate(bartr):
+                    fc=float(trhist[0][cc])/trhist[0].max()*.9
+                    bar.set_facecolor((1-fc,1-fc,0))
+                for cc,bar in enumerate(barti):
+                    fc=float(tihist[0][cc])/tihist[0].max()*.9
+                    bar.set_facecolor((0,fc,1-fc))
+                        
             
             #estimate the histogram for the decade for invariants and pt
             invhist=np.histogram(hh[np.nonzero(hh)].flatten(),bins=72,
@@ -2650,10 +2690,8 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                                    range=(-180,180))
             
             #plot the histograms    
-            barinv=axhinv.bar((invhist[1][:-1])*np.pi/180,invhist[0],
-                              width=5*np.pi/180)
-            barpt=axhpt.bar((pthist[1][:-1])*np.pi/180,pthist[0],
-                            width=5*np.pi/180)
+            barinv=axhinv.bar((invhist[1][:-1])*np.pi/180,invhist[0],width=5*np.pi/180)
+            barpt=axhpt.bar((pthist[1][:-1])*np.pi/180,pthist[0],width=5*np.pi/180)
             
             for cc,bar in enumerate(barinv):
                 fc=float(invhist[0][cc])/invhist[0].max()*.8
@@ -2661,8 +2699,9 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
             for cc,bar in enumerate(barpt):
                 fc=float(pthist[0][cc])/pthist[0].max()*.8
                 bar.set_facecolor((fc,1-fc,0))
+                
             #make axis look correct with N to the top at 90.
-            for aa,axh in enumerate([axhinv,axhpt]):
+            for aa,axh in enumerate(axlst):
                 axh.xaxis.set_major_locator(MultipleLocator(30*np.pi/180))
                 axh.xaxis.set_ticklabels(['E','','',
                                           'N','','',
@@ -2671,66 +2710,123 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                 axh.grid(alpha=galpha)
                 if aa==0:
                     axh.set_xlim(-90*np.pi/180,270*np.pi/180)
-                    axh.text(3*np.pi/2,axh.get_ylim()[1]*tpad,
+                    axh.text(np.pi,axh.get_ylim()[1]*tpad,
                              '{0:.1f}$^o$'.format(90-np.median(hh[np.nonzero(hh)])),
                               horizontalalignment='center',
                               verticalalignment='baseline',
-                              fontdict={'size':fs-2},
+                              fontdict={'size':fs-nb},
                               bbox={'facecolor':(.9,0,.1),'alpha':.25})
+                    print '-----Period Range {0:.3g} to {1:.3g} (s)-----'.format(10**bb,
+                          10**(bb+1))
+                         
+                    print '   *Z-Invariants: median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                            90-np.median(hh[np.nonzero(hh)]),
+                            90-invhist[1][np.where(invhist[0]==invhist[0].max())[0][0]],
+                            90-np.mean(hh[np.nonzero(hh)])) 
                     if bb==-5:
                         axh.set_title('10$^{-5}$-10$^{-4}$s',fontdict=fd,
-                                      bbox={'facecolor':'white',
-                                            'alpha':galpha})
+                                      bbox={'facecolor':'white','alpha':galpha})
                     elif bb==-4:
                         axh.set_title('10$^{-4}$-10$^{-3}$s',fontdict=fd,
-                                      bbox={'facecolor':'white',
-                                            'alpha':galpha})
+                                      bbox={'facecolor':'white','alpha':galpha})
                     elif bb==-3:
                         axh.set_title('10$^{-3}$-10$^{-2}$s',fontdict=fd,
-                                      bbox={'facecolor':'white',
-                                            'alpha':galpha})
+                                      bbox={'facecolor':'white','alpha':galpha})
                     elif bb==-2:
                         axh.set_title('10$^{-2}$-10$^{-1}$s',fontdict=fd,
-                                      bbox={'facecolor':'white',
-                                            'alpha':galpha})
+                                      bbox={'facecolor':'white','alpha':galpha})
                     elif bb==-1:
                         axh.set_title('10$^{-1}$-10$^{0}$s',fontdict=fd,
-                                      bbox={'facecolor':'white',
-                                            'alpha':galpha})
+                                      bbox={'facecolor':'white','alpha':galpha})
                     elif bb==0:
                         axh.set_title('10$^{0}$-10$^{1}$s',fontdict=fd,
-                                      bbox={'facecolor':'white',
-                                            'alpha':galpha})
+                                      bbox={'facecolor':'white','alpha':galpha})
                     elif bb==1:
                         axh.set_title('10$^{1}$-10$^{2}$s',fontdict=fd,
-                                      bbox={'facecolor':'white',
-                                            'alpha':galpha})
+                                      bbox={'facecolor':'white','alpha':galpha})
                     elif bb==2:
                         axh.set_title('10$^{2}$-10$^{3}$s',fontdict=fd,
-                                      bbox={'facecolor':'white',
-                                            'alpha':galpha})
+                                      bbox={'facecolor':'white','alpha':galpha})
                     elif bb==3:
                         axh.set_title('10$^{3}$-10$^{4}$s',fontdict=fd,
-                                      bbox={'facecolor':'white',
-                                            'alpha':galpha})
+                                      bbox={'facecolor':'white','alpha':galpha})
                     elif bb==4:
                         axh.set_title('10$^{4}$-10$^{5}$s',fontdict=fd,
-                                      bbox={'facecolor':'white',
-                                            'alpha':galpha})
+                                      bbox={'facecolor':'white','alpha':galpha})
                     elif bb==5:
                         axh.set_title('10$^{5}$-10$^{6}$s',fontdict=fd,
-                                      bbox={'facecolor':'white',
-                                            'alpha':galpha})
+                                      bbox={'facecolor':'white','alpha':galpha})
         
-                else:
+                elif aa==1:
                     axh.set_xlim(-180*np.pi/180,180*np.pi/180)
-                    axh.text(3*np.pi/2,axh.get_ylim()[1]*tpad,
+                    axh.text(np.pi,axh.get_ylim()[1]*tpad,
                              '{0:.1f}$^o$'.format(90-np.median(gg[np.nonzero(gg)])),
                               horizontalalignment='center',
                               verticalalignment='baseline',
-                              fontdict={'size':fs-2},
+                              fontdict={'size':fs-nb},
                               bbox={'facecolor':(.9,.9,0),'alpha':galpha})
-                    if len(brange)>5: 
+                    print '   *PT Strike:    median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                            90-np.median(gg[np.nonzero(gg)]),
+                            90-pthist[1][np.where(pthist[0]==pthist[0].max())[0][0]],
+                            90-np.mean(gg[np.nonzero(gg)])) 
+                    if nb>5: 
+                        if bb==-5:
+                            axh.set_title('10$^{-5}$-10$^{-4}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==-4:
+                            axh.set_title('10$^{-4}$-10$^{-3}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==-3:
+                            axh.set_title('10$^{-3}$-10$^{-2}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==-2:
+                            axh.set_title('10$^{-2}$-10$^{-1}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==-1:
+                            axh.set_title('10$^{-1}$-10$^{0}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==0:
+                            axh.set_title('10$^{0}$-10$^{1}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==1:
+                            axh.set_title('10$^{1}$-10$^{2}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==2:
+                            axh.set_title('10$^{2}$-10$^{3}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==3:
+                            axh.set_title('10$^{3}$-10$^{4}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==4:
+                            axh.set_title('10$^{4}$-10$^{5}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                        elif bb==5:
+                            axh.set_title('10$^{5}$-10$^{6}$s',fontdict=fd,
+                                          bbox={'facecolor':'white',
+                                                'alpha':galpha})
+                elif aa==2:
+                    axh.set_xlim(-180*np.pi/180,180*np.pi/180)
+                    axh.text(np.pi,axh.get_ylim()[1]*tpad,
+                             '{0:.1f}$^o$'.format(90-np.median(tr[np.nonzero(tr)])),
+                              horizontalalignment='center',
+                              verticalalignment='baseline',
+                              fontdict={'size':fs-nb},
+                              bbox={'facecolor':(.9,.9,0),'alpha':galpha})
+                    print '   *Tipper:       median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                            90-np.median(tr[np.nonzero(tr)]),
+                            90-trhist[1][np.where(trhist[0]==trhist[0].max())[0][0]],
+                            90-np.mean(tr[np.nonzero(tr)])) 
+                    if nb>5: 
                         if bb==-5:
                             axh.set_title('10$^{-5}$-10$^{-4}$s',fontdict=fd,
                                           bbox={'facecolor':'white',
@@ -2779,19 +2875,18 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
         
                 if jj==1:
                     if aa==0:
-                        axh.set_ylabel('Invariant Strike',fontdict=fd,
-                                       labelpad=3000./dpi,
-                                       bbox={'facecolor':(.9,0,.1),
-                                             'alpha':galpha})
-                    if aa==1:
-                        axh.set_ylabel('PT Azimuth',fontdict=fd,
-                                       labelpad=3000./dpi,
-                                       bbox={'facecolor':(.9,.9,0),
-                                             'alpha':galpha})
+                        axh.set_ylabel('Invariant Strike',fd,labelpad=3000./dpi,
+                                       bbox={'facecolor':(.9,0,.1),'alpha':galpha})
+                    elif aa==1:
+                        axh.set_ylabel('PT Azimuth',fd,labelpad=3000./dpi,
+                                       bbox={'facecolor':(.9,.9,0),'alpha':galpha})
+                    elif aa==2:
+                        axh.set_ylabel('Tipper',fd,labelpad=3000./dpi,
+                                       bbox={'facecolor':(0,.1,.9),'alpha':galpha})
                 
                 plt.setp(axh.yaxis.get_ticklabels(),visible=False)
                 
-        print 'North is assumed to be 0 and the strike angle is measured \n'+\
+        print '\n Note: North is assumed to be 0 and the strike angle is measured \n'+\
               'clockwise positive.'
         
         plt.show()
@@ -2809,8 +2904,15 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
         fig3=plt.figure(fignum,dpi=dpi)
         plt.clf()
         #make subplots for invariants and phase tensor azimuths
-        axhinv=fig3.add_subplot(1,2,1,polar=True)
-        axhpt=fig3.add_subplot(1,2,2,polar=True)
+        if tipper=='n':
+            axhinv=fig3.add_subplot(1,2,1,polar=True)
+            axhpt=fig3.add_subplot(1,2,2,polar=True)
+            axlst=[axhinv,axhpt]
+        else:
+            axhinv=fig3.add_subplot(1,3,1,polar=True)
+            axhpt=fig3.add_subplot(1,3,2,polar=True)
+            axhtip=fig3.add_subplot(1,3,3,polar=True)
+            axlst=[axhinv,axhpt,axhtip]
         
         #make a list of indicies for each decades    
         binlst=[pdict[ff] for ff in plst 
@@ -2821,10 +2923,8 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
         gg=medpt[binlst,:]
         
         #estimate the histogram for the decade for invariants and pt
-        invhist=np.histogram(hh[np.nonzero(hh)].flatten(),bins=72,
-                                range=(-180,180))
-        pthist=np.histogram(gg[np.nonzero(gg)].flatten(),bins=72,
-                               range=(-180,180))
+        invhist=np.histogram(hh[np.nonzero(hh)].flatten(),bins=72,range=(-180,180))
+        pthist=np.histogram(gg[np.nonzero(gg)].flatten(),bins=72,range=(-180,180))
         
         #plot the histograms    
         barinv=axhinv.bar((invhist[1][:-1])*np.pi/180,invhist[0],width=5*np.pi/180)
@@ -2837,8 +2937,26 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
             fc=float(pthist[0][cc])/pthist[0].max()*.8
             bar.set_facecolor((fc,1-fc,0))
             
+        if tipper=='y':
+                tr=medtipr[binlst,:]
+                ti=medtipi[binlst,:]
+                trhist=np.histogram(tr[np.nonzero(tr)].flatten(),bins=72,
+                                       range=(-180,180))
+                tihist=np.histogram(ti[np.nonzero(ti)].flatten(),bins=72,
+                                       range=(-180,180))
+                bartr=axhtip.bar((trhist[1][:-1])*np.pi/180,trhist[0],
+                                 width=5*np.pi/180)
+    #            barti=axhtip.bar((tihist[1][:-1])*np.pi/180,tihist[0],
+    #                             width=5*np.pi/180)
+                for cc,bar in enumerate(bartr):
+                    fc=float(trhist[0][cc])/trhist[0].max()*.9
+                    bar.set_facecolor((0,1-fc,fc))
+    #            for cc,bar in enumerate(barti):
+    #                fc=float(tihist[0][cc])/tihist[0].max()*.9
+    #                bar.set_facecolor((0,fc,1-fc))
+                    
         #make axis look correct with N to the top at 90.
-        for aa,axh in enumerate([axhinv,axhpt]):
+        for aa,axh in enumerate(axlst):
             axh.xaxis.set_major_locator(MultipleLocator(30*np.pi/180))
             axh.grid(alpha=galpha)
             plt.setp(axh.yaxis.get_ticklabels(),visible=False)
@@ -2856,8 +2974,15 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                           verticalalignment='baseline',
                           fontdict={'size':fs-2},
                           bbox={'facecolor':(.9,0,.1),'alpha':.25})
+                print '-----Period Range {0:.3g} to {1:.3g} (s)-----'.format(10**bb,
+                          10**(bb+1))
+                         
+                print '   *Z-Invariants: median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                        90-np.median(hh[np.nonzero(hh)]),
+                        90-invhist[1][np.where(invhist[0]==invhist[0].max())[0][0]],
+                        90-np.mean(hh[np.nonzero(hh)])) 
     
-            else:
+            elif aa==1:
                 axh.set_ylim(0,pthist[0].max())
                 axh.text(170*np.pi/180,axh.get_ylim()[1]*.65,
                          '{0:.1f}$^o$'.format(90-np.median(gg[np.nonzero(gg)])),
@@ -2865,14 +2990,33 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                           verticalalignment='baseline',
                           fontdict={'size':fs-2},
                           bbox={'facecolor':(.9,.9,0),'alpha':galpha})
+                print '   *PT Strike:    median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                        90-np.median(gg[np.nonzero(gg)]),
+                        90-pthist[1][np.where(pthist[0]==pthist[0].max())[0][0]],
+                        90-np.mean(gg[np.nonzero(gg)])) 
+            elif aa==2:
+                axh.set_ylim(0,trhist[0].max())
+                axh.text(170*np.pi/180,axh.get_ylim()[1]*.65,
+                         '{0:.1f}$^o$'.format(90-np.median(tr[np.nonzero(tr)])),
+                          horizontalalignment='center',
+                          verticalalignment='baseline',
+                          fontdict={'size':fs-2},
+                          bbox={'facecolor':(0,.1,.9),'alpha':galpha})
+                print '   *Tipper:       median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                        90-np.median(tr[np.nonzero(tr)]),
+                        90-trhist[1][np.where(trhist[0]==trhist[0].max())[0][0]],
+                        90-np.mean(tr[np.nonzero(tr)]))
                               
             #set the title of the diagrams
             if aa==0:
                 axh.set_title('Invariant Strike',fontdict=fd,
                                bbox={'facecolor':(.9,0,.1),'alpha':galpha})
-            if aa==1:
+            elif aa==1:
                 axh.set_title('PT Azimuth',fontdict=fd,
                                bbox={'facecolor':(.9,.9,0),'alpha':galpha})
+            if aa==2:
+                axh.set_title('Tipper',fontdict=fd,
+                               bbox={'facecolor':(0,.1,.9),'alpha':galpha})
             
                 
                 
@@ -2880,4 +3024,4 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
               'clockwise positive.'
         
         plt.show()
-        
+    
