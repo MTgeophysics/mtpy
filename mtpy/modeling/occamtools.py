@@ -3885,6 +3885,8 @@ class Occam2DData:
                     if station.find(pstation)>=0:
                         pstationlst.append(ii) 
         
+        plt.rcParams['xtick.major.pad']='8'
+        plt.rcParams['ytick.major.pad']='8'
         #set the subplot grid
         gs=gridspec.GridSpec(6,2,wspace=.1,left=.1,top=.93,bottom=.07)
         for jj,ii in enumerate(pstationlst):
