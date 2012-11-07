@@ -5597,10 +5597,16 @@ class Occam2DModel(Occam2DData):
         self.datafn=self.idict['Data File']
         if self.datafn.find(os.sep)==-1:
             self.datafn=os.path.join(self.invpath,self.datafn)
+            
+        #if the file path does not exist look for .dat or data in the filenames
         if os.path.isfile(self.datafn)==False:
             for ff in os.listdir(self.invpath):
                 if ff.lower().find('.dat')>=0:
                     self.datafn=os.path.join(self.invpath,ff)
+                    
+                elif ff.lower().find('data')>=0:
+                    self.datafn=os.path.join(self.invpath,ff)
+                    
             if os.path.isfile(self.datafn)==False:
                 raise NameError('Could not find a data file, input manually')
     
@@ -5655,8 +5661,12 @@ class Occam2DModel(Occam2DData):
                 #append the last line
                 if iline[0].find('EXCEPTIONS')>0:
                     cols.append(ncols)
-            elif not 'EXCEPTIONS' in iline:
+            else:
                 iline=iline.strip().split()
+                
+                #added the try statement in case there is some formating issue
+                #with the number of exceptions line.  This will stop if it 
+                #finds a string like Number Exceptions
                 try:
                     iline=[int(jj) for jj in iline]
                     if len(iline)==2:
@@ -5667,7 +5677,9 @@ class Occam2DModel(Occam2DData):
                     elif len(iline)>2:
                         ncols=ncols+iline
                 except ValueError:
-                    print 'Found ',iline
+                    #be sure to append the last line of columns
+                    cols.append(ncols)
+                    print 'Found line',iline
                     
         self.rows=np.array(rows)
         self.cols=cols
@@ -5723,7 +5735,6 @@ class Occam2DModel(Occam2DData):
         mdata=np.zeros((nh,nv,4),dtype=str)    
         
         #get horizontal nodes
-        jj=2
         ii=0
         while ii<nh:
             hline=mlines[jj].strip().split()
@@ -5806,7 +5817,25 @@ class Occam2DModel(Occam2DData):
         bndgoff=float(self.inmodel_headerdict['BINDING OFFSET'])
         
         #make sure that the number of rows and number of columns are the same
-        assert len(self.rows)==len(self.cols)
+        try:
+            assert len(self.rows)==len(self.cols)
+        except AssertionError:
+            print 'Number of amalgamated block lines does not equal number'+\
+                  ' of amalgamate row lines.'
+            print 'ie the number of 7 2 ... 2 7 lines does not equal the '+\
+                  'number of 1 4 lines. '
+            print '===>  Check INMODEL file: '+self.inmodelfn
+            
+            
+            if len(self.rows)<len(self.cols):
+                np.append(self.rows,self.rows[-2:])
+                print 'Added and extra set of numbers for row amalgamation'
+                print self.rows[-2:]
+                
+            elif len(self.rows)>len(self.cols):
+                self.cols.append(self.cols[-1])
+                print 'Added and extra set of numbers for column amalgamation'
+                print self.cols[-1]
         
         #initiate the resistivity model to the shape of the FE mesh
         resmodel=np.zeros((self.vnodes.shape[0],self.hnodes.shape[0]))
