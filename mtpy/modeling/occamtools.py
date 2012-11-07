@@ -5679,7 +5679,7 @@ class Occam2DModel(Occam2DData):
                 except ValueError:
                     #be sure to append the last line of columns
                     cols.append(ncols)
-                    print 'Found line',iline
+                    print 'Stopped reading INMODEL at line',iline
                     
         self.rows=np.array(rows)
         self.cols=cols
