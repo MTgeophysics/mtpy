@@ -5655,14 +5655,17 @@ class Occam2DModel(Occam2DData):
                     cols.append(ncols)
             else:
                 iline=iline.strip().split()
-                iline=[int(jj) for jj in iline]
-                if len(iline)==2:
-                    if len(ncols)>0:
-                        cols.append(ncols)
-                    rows.append(iline)
-                    ncols=[]
-                elif len(iline)>2:
-                    ncols=ncols+iline
+                try:
+                    iline=[int(jj) for jj in iline]
+                    if len(iline)==2:
+                        if len(ncols)>0:
+                            cols.append(ncols)
+                        rows.append(iline)
+                        ncols=[]
+                    elif len(iline)>2:
+                        ncols=ncols+iline
+                except ValueError:
+                    print 'Found ',iline
                     
         self.rows=np.array(rows)
         self.cols=cols
@@ -5703,8 +5706,15 @@ class Occam2DModel(Occam2DData):
         
         mlines=mfid.readlines()
         
-        nh=int(mlines[1].strip().split()[1])-1
-        nv=int(mlines[1].strip().split()[2])-1
+        #get number of nodes for either the first or second line
+        if len(mlines[0].split())==6:
+            nh=int(mlines[0].strip().split()[1])-1
+            nv=int(mlines[0].strip().split()[2])-1
+            jj=1    #set the first line of hnodes
+        else:
+            nh=int(mlines[1].strip().split()[1])-1
+            nv=int(mlines[1].strip().split()[2])-1
+            jj=2    #set the first line of hnodes
         
         hnodes=np.zeros(nh)
         vnodes=np.zeros(nv)
