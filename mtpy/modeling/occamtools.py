@@ -3885,8 +3885,8 @@ class Occam2DData:
                     if station.find(pstation)>=0:
                         pstationlst.append(ii) 
         
-        plt.rcParams['xtick.major.pad']='8'
-        plt.rcParams['ytick.major.pad']='8'
+        plt.rcParams['xtick.major.pad']='3'
+        plt.rcParams['ytick.major.pad']='3'
         #set the subplot grid
         gs=gridspec.GridSpec(6,2,wspace=.1,left=.1,top=.93,bottom=.07)
         for jj,ii in enumerate(pstationlst):
@@ -5900,7 +5900,7 @@ class Occam2DModel(Occam2DData):
             self.offsetlst.append(rpdict['offset'])
         
     def plot2DModel(self,datafn=None,
-                    xpad=1.0,ypad=1.0,spad=1.0,ms=10,stationid=None,
+                    xpad=None,ypad=None,spad=None,ms=10,stationid=None,
                     fdict={'size':8,'rotation':60,'weight':'normal'},
                     dpi=300,ylimits=None,xminorticks=5,yminorticks=1,
                     climits=(0,4), cmap='jet_r',fs=8,femesh='off',
@@ -6079,9 +6079,14 @@ class Occam2DModel(Occam2DData):
         cb.set_ticklabels(['10$^{0}$'.format(nn) for nn in 
                             np.arange(int(climits[0]),int(climits[1])+1)])
         
+        #set padding values 
+        if ypad==None:
+            ypad=abs(max(self.offsetlst)-min(self.offsetlst))*.225*pfactor/\
+                     dfactor
+        if spad==None:
+            spad=.65*ypad
+            
         #set the offsets of the stations and plot the stations
-        #need to figure out a way to set the marker at the surface in all
-        #views.
         for rpdict in self.rplst:
             #plot the station marker
             #plots a V for the station cause when you use scatter the spacing
@@ -6108,14 +6113,21 @@ class Occam2DModel(Occam2DData):
                         verticalalignment='baseline',
                         fontdict=fdict)
         
-        #set the initial limits of the plot to be square about the profile line  
-        if ylimits==None:  
+        #set the initial limits of the plot to be square about the profile line
+        if ylimits==None:
             ax.set_ylim(abs(max(self.offsetlst)-min(self.offsetlst))/dfactor,
                         -ypad*pfactor)
         else:
             ax.set_ylim(ylimits[1]*pfactor,(ylimits[0]-ypad)*pfactor)
+            
+        #set the xpad
+        if xpad==None:
+            xpad=np.mean([abs(self.offsetlst[oo+1]-self.offsetlst[oo])/dfactor
+                         for oo in range(len(self.offsetlst)-1)])*.1*pfactor
+                         
         ax.set_xlim(min(self.offsetlst)/dfactor-(xpad*pfactor),
                      (max(self.offsetlst)/dfactor+(xpad*pfactor)))
+        
         #set the axis properties
         ax.xaxis.set_minor_locator(MultipleLocator(xminorticks*pfactor))
         ax.yaxis.set_minor_locator(MultipleLocator(yminorticks*pfactor))
