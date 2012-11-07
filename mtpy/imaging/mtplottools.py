@@ -69,15 +69,32 @@ def plotcoh(filename,fignum=1,savefigfilename=None,dpi=None,format=None,
     """Will plot coherence output from birrp_bbconvert.  If you want to save the
     plot do so using the interactive gui.  If coh3=0 only two plots.
     
-     Inputs:
-        filename = filename containing coherence (.coh)
-        fignum = figure number
-        savefigfilenames = supply filenames to save figures to if desired
-        dpi = figure resolution
-        format = file type of saved figure pdf,svg,eps...
-        orientation = orientation of figure on A4 paper
-    Outputs:
-        none"""
+     Arguments:
+    -----------
+        **filename** : string
+                       filename containing coherence (.coh)
+                       
+        **fignum** : int
+                     figure number
+                     
+        **savefigfilename** : list of strings
+                             supply filenames to save figures to if desired
+        
+        **dpi** : int
+                  dots-per-inch of figure resolution
+        
+        **format** : [ pdf | eps | jpg | png | svg ]
+                    file type of saved figure pdf,svg,eps...
+            
+        **orientation** : [ landscape | portrait ]
+                         orientation of figure on A4 paper
+    :Example: ::
+        
+        >>> import mtpy.imaging.mtplottools as mtplot
+        >>> cohfile = r"/home/MT01/MT01.coh"
+        >>> mtplot.plotcoh(cohfile)
+        
+        """
     
   
     station,period,freq,coh1,zcoh1,coh2,zcoh2,coh3,zcoh3=brp.readcoh(filename)
@@ -101,7 +118,8 @@ def plotcoh(filename,fignum=1,savefigfilename=None,dpi=None,format=None,
         ax1.semilogx(period,coh1,'k',linewidth=2)
         ax1.semilogx(period,zcoh1,'k--', linewidth=2,dashes=[4,1,4,1])
         ax1.grid(True)
-        ax1.legend(('Normal','Zero'),'lower left',shadow=False,borderaxespad=.50)
+        ax1.legend(('Normal','Zero'),'lower left',shadow=False,
+                   borderaxespad=.50)
         ax1.set_title('$\mathbf{E_x/B_y}$',fontsize=12,fontweight='bold')
         ax1.set_xlabel('Period (s)',fontsize=12,fontweight='bold')
         ax1.set_ylabel('Coherence',fontsize=12,fontweight='bold')
@@ -112,14 +130,16 @@ def plotcoh(filename,fignum=1,savefigfilename=None,dpi=None,format=None,
         ax2.semilogx(period,coh2,'k',linewidth=2)
         ax2.semilogx(period,zcoh2,'k--', linewidth=2,dashes=[4,1,4,1])
         ax2.grid(True)
-        ax2.legend(('Normal','Zero'),'lower left',shadow=False,borderaxespad=.50)
+        ax2.legend(('Normal','Zero'),'lower left',shadow=False,
+                   borderaxespad=.50)
         ax2.set_title('$\mathbf{E_y/B_x}$',fontsize=12,fontweight='bold')
         ax2.set_xlabel('Period (s)',fontsize=12,fontweight='bold')
         ax2.set_ylabel('Coherence',fontsize=12,fontweight='bold')
         ax2.set_xlim(xmax=period[0],xmin=period[nd-1])
         ax2.set_ylim(ymin=0,ymax=1)
         
-        plt.suptitle('Coherence for Station: '+station,fontsize=12,fontweight='bold')
+        plt.suptitle('Coherence for Station: '+station,fontsize=12,
+                     fontweight='bold')
         plt.show()
         if savefigfilename!=None:
             if dpi==None:
@@ -178,7 +198,8 @@ def plotcoh(filename,fignum=1,savefigfilename=None,dpi=None,format=None,
         ax3.set_xlim(xmax=period[0],xmin=period[nd-1])
         ax3.set_ylim(ymin=0,ymax=1)
         
-        plt.suptitle('Coherence for Station: '+station,fontsize=12,fontweight='bold')
+        plt.suptitle('Coherence for Station: '+station,fontsize=12,
+                     fontweight='bold')
         plt.show()
         if savefigfilename!=None:
             if dpi==None:
@@ -193,7 +214,7 @@ def plotcoh(filename,fignum=1,savefigfilename=None,dpi=None,format=None,
             plt.close(fig1)
 
     
-def plotResPhase(filename,fignum=1,df=100,ffactor=1,plotnum=1,title=None,
+def plotResPhase(filename,fignum=1,ffactor=1,plotnum=1,title=None,
                  savefigfilename=None,dpi=None,format=None,orientation=None,
                  rotz=0):
     """
@@ -202,24 +223,47 @@ def plotResPhase(filename,fignum=1,df=100,ffactor=1,plotnum=1,title=None,
     from a .dat file produced by writedat.  If you want to save the plot 
     use the save button on top left.
     
-    Inputs:
-        filename = filename containing impedance (.edi) or resistivity and phase
-                   information (.dat)
-        fignum = figure number
-        df = sampling frequency (Hz)
-        ffactor = fudge factor for computing resistivity from impedances
-        thetar = rotation angle of impedance tensor (deg or radians)
-        plotnum = 1 for just Ex/By and Ey/Bx
-                  2 for all 4 components
-                  3 for off diagonal plus the determinant
-        title = title of plot
-        savefigfilename = supply filename to save figure to if desired
-        dpi = figure resolution
-        format = file type of saved figure pdf,svg,eps...
-        orientation = orientation of figure on A4 paper
+    Arguments:
+    ----------
+        **filename** : string
+                       filename containing impedance (.edi) or resistivity and
+                       phase information (.dat)
+                      
+        **fignum** : int
+                     figure number
+                     
+        **ffactor** : float
+                      scaling factor for computing resistivity from impedances
         
-    Outputs:
-        none
+        **thetar** : float
+                     rotation angle of impedance tensor (deg or radians)
+        
+        **plotnum** : [ 1 | 2 | 3 ]
+                        * 1 for just Ex/By and Ey/Bx
+                        * 2 for all 4 components
+                        * 3 for off diagonal plus the determinant
+                        
+        **title** : string
+                    title of plot
+                    
+        **savefigfilename** : string
+                              supply filename to save figure to if desired
+                              
+        **dpi** : int
+                  dots-per-inch of figure resolution
+        
+        **format** : [ pdf | eps | jpg | png | svg ]
+                    file type of saved figure pdf,svg,eps...
+            
+        **orientation** : [ landscape | portrait ]
+                         orientation of figure on A4 paper
+    :Example: ::
+        
+        >>> import mtpy.imaging.mtplottools as mtplot
+        >>> edifile = r"/home/MT01/MT01.edi"
+        >>> mtplot.plotResPhase(edifile)
+        >>> # plot all 4 components
+        >>> mtplot.plotResPhase(edifile,plotnum=2)
         
     """
     
@@ -442,22 +486,53 @@ def resPhasePlots(filenamelst,plottype=1,ffactor=1,kwdict=None,plotnum=1,
     Can input key word list dictionary if parameters for each plot are different
     or just single values.
     
-    Input:
-        for plottype==1 (plots a new figure for each station with resitivity and
-                         phase):
-            plotnum = 1,2,3
-                        1 -> will plot just the off diagonal components
-                        2 -> will plot all 4 components one subplot for each 
+    Arguments:
+    ----------
+        **filenamelst** : list of strings
+                          full path to .edi files to plot
+                          
+        **plottype** : [ 1 | 2 | 3 ]
+                        * 1 -> each filename has its own figure window 
+                        * 2 -> plots in one figure with subplots for each 
+                                file in filenamelst
+                        * 3 -> plots onto one figure and one plot
+                        * *Default* is 1
+        
+        **plotnum** : [ 1 | 2 | 3 ]
+                        * 1 -> will plot just the off diagonal components
+                        * 2 -> will plot all 4 components one subplot for each 
                              diagonal pair
-                        3 -> will plot the determinant of Z only
-            kwdict = keywords for plotResPhase, can input as a list of 
+                        * 3 -> will plot the determinant of Z only
+                        * *Default* is 1
+                        
+        **ffactor** : float
+                      scaling factor for apparent resistivity. *Default* is 1
+            
+        **ylim** : tuple (lo10(min),log10(max))
+                   minimum and maximu of apparent resistivity that scales the
+                   plot, on a log scale. *Default* is 0
+        
+        **rotz** : float
+                   angle in degrees to rotate the impedance tensor clockwise
+                   positive. *Default* is 0
+                    
+        **kwdict** : dictionary or list
+                     keywords for plotResPhase, can input as a list of 
                      keywords that is the same length as filenamelst
             
-            
-            ylim = min and max powers of 10 to plot apparent resistivity
-        \t 1 => each filename has its own figure window \n
-        \t 2 => plotted in one figure with subplots for each filename \n
-        \t 3 => plotted onto one figure and one plot"""
+    :Example: ::
+        
+        >>> import mtpy.imaging.mtplottools as mtplot
+        >>> import os
+        >>> edipath = r"/home/EDIfiles"
+        >>> edilst = [os.path.join(edipath,MT{0}.format(ii) 
+        >>> ...       for ii in range(1,4))]
+        >>> # plot all 3 edi files together for all 4 components
+        >>> mtplot.resPhasePlots(edilst,plottype=3,plotnum=2)
+        >>> #plot in individual plots with different parameters for each
+        >>> klst=[{'thetar':10},{'thetar':45},{'thetar':75}]
+        >>> mtplot.resPhasePlots(edilst,plottype=1,plotnum=2,kwdict=klst)
+    """
     
     plt.rcParams['font.size']=12    
     
@@ -852,48 +927,104 @@ def plotTS(combinefilelst,df=1.0,fignum=1,start=None,stop=None,
         plt.clf()
         plt.close(fig1)
     
-def plotPTpseudoSection(filenamelst,colorkey='phiminang',esize=2,
-                        offsetscaling=.005,colorkeymm=[0,90],stationid=[0,4],
+def plotPTpseudoSection(filenamelst,colorkey='phimin',esize=2,
+                        offsetscaling=.005,colorkeymm=(0,90),stationid=[0,4],
                         title=None,cbshrink=.8,linedir='ns',fignum=1,rotz=0,
-                        yscale='period',pxy=[8,8],dpi=300,
-                        indarrows='n',ascale=5,cmap='ptcmap',tscale='period'):
+                        pxy=[8,8],dpi=300,indarrows='n',ascale=5,
+                        cmap='ptcmap',tscale='period'):
     
     """
     plotPTpseudoSection(filenamelst,colorkey='beta',esize=2,offsetscaling=
     .005) will plot a pseudo section of phase tensor ellipses given a list of 
     full path filenames. 
-     
-    colorkey =  the fill color of the ellipses and can be:
-            'phimin' for minimum phase
-            'beta'  for phase tensor skew angle
-            'ellipticity' for phase tensor ellipticity
-            'phidet' for the determinant of the phase tensor
-    colorkeymm = [min,max] min and max of colorkey to which colorbar is
-                    normalized to. 
-    esize = size of ellipse, float 
     
-    offsetscaling is a factor that scales the distance from one station to the 
-    next to make the plot readable. 
+    Arguments:
+    ----------
     
-    stationid is start and stop of station name [start,stop]
-    
-    title is figure title added to Phase Tensor Elements + title
-    
-    indarrow = 'yri' to plot induction both real and imaginary induction
-                    arrows 
-                    'yr' to plot just the real induction arrows
-                    'yi' to plot the imaginary induction arrows
-                    'n' to not plot them
-                    **Note: convention is to point towards a conductor **
-    ascale = scaling factor to make induction arrows bigger
-    
-    cmap = color map of ellipse facecolor.  So far the colormaps are:
-            ptcmap = yellow (low phase) to red (high phase)
-            ptcmap3 = white (low numbers) to blue (high numbers)
-            skcmap = blue to yellow to red
-            skcmap2 = blue to white to red
-            rtcmap = blue to purple to red
-    tscale = period or frequency for the title of the plot
+        **filenamelst** : list of strings
+                          full paths to .edi files to plot
+        
+        **colorkey** : [ 'phimin' | 'beta' | 'ellipticity' | 'phidet' ]
+                       fill color of the ellipses and can be:
+                       * 'phimin'      -> minimum phase
+                       * 'beta'        -> phase tensor skew angle
+                       * 'ellipticity' -> phase tensor ellipticity
+                       * 'phidet'      -> determinant of the phase tensor
+                       * *Default* is 'phimin'
+                       
+        **colorkeymm** : tuple (min,max)
+                        min and max of colorkey to which colorbar is normalized
+                        to.  In degrees except for ellipticity which is already
+                        normalized.
+                        
+        **esize** : float
+                    size of ellipse in map units 
+        
+        **offsetscaling** : float
+                            is a factor that scales the distance from one 
+                            station to the next to make the plot readable.
+                            *Default* is 0.005
+        **linedir** : [ 'ns' | 'ew' ]
+                      predominant direction of profile line
+                      * 'ns' -> North-South Line
+                      * 'ew' -> East-West line
+                      * *Default* is 'ns'
+        
+        **stationid** : tuple or list 
+                        start and stop of station name indicies.  
+                        ex: for MT01dr stationid=(0,4) will be MT01
+        
+        **rotz** : float
+                   angle in degrees to rotate the data clockwise positive.
+                   *Default* is 0
+        
+        **title** : string
+                    figure title added to Phase Tensor + title
+                    
+        **cbshrink** : float
+                       percent to shrink the color bar to fit the image better
+                       *Default* is 0.8 -> 80 percent
+                       
+        **fignum** : int
+                     figure number.  *Default* is 1
+        
+        **indarrow** : [ 'yri' | 'yr' | 'yi' | 'n' ]
+                        * 'yri' to plot induction both real and imaginary 
+                           induction arrows 
+                        * 'yr' to plot just the real induction arrows
+                        * 'yi' to plot the imaginary induction arrows
+                        * 'n' to not plot them
+                        * *Default* is 'n'                        
+                        **Note: convention is to point towards a conductor **
+                         
+        **ascale** : float
+                     scaling factor to make induction arrows bigger
+        
+        **cmap** :[ 'ptcmap' | 'ptcmap3' | 'skcmap' | 'skcmap2' | 'rtcmap' ]
+                  color map of ellipse facecolor.  So far the colormaps are:
+                      * 'ptcmap'  -> yellow (low phase) to red (high phase)
+                      * 'ptcmap3' -> white (low numbers) to blue (high numbers)
+                      * 'skcmap'  -> blue to yellow to red
+                      * 'skcmap2' -> blue to white to red
+                      * 'rtcmap'  -> blue to purple to red
+                      
+        **tscale** : [ 'period' | 'frequency' ]
+                     * 'period'    -> plot vertical scale in period
+                     * 'frequency' -> plot vertical scale in frequency
+                     
+    :Example: ::
+        
+        >>> import mtpy.imaging.mtplottools as mtplot
+        >>> import os
+        >>> edipath = r"/home/EDIfiles"
+        >>> edilst = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
+        >>> ...       if edi.find('.edi')]
+        >>> # color by phimin with a range of 20-70 deg
+        >>> mtplot.plotPTpseudoSection(edilst,colorkeymm=(20,70))
+        >>> 
+        >>> # add induction arrows to skew angle with range (-5,5)
+        >>> mtplot.plotPTpseudoSection(edilst,colorkey='beta',
+        >>> ...                        colorkeymm=(-5,5),indarrows='yri')
 
     """
     
@@ -1141,24 +1272,63 @@ def plotRTpseudoSection(filenamelst,colorkey='rhodet',esize=2,
     .005) will plot a pseudo section of resistivity tensor ellipses given a list of 
     full path filenames. (Weckmann et al. 2002)
     
-    colorkey is the fill color of the ellipses and can be any of the dictionary 
-    keys returned by Z.getPhaseTensor(), note skew is beta:
-        'phimin','phi', 'phiminvar', 'azimuthvar', 'azimuth', 'betavar', 
-        'phivar', 'alphavar', 'beta', 'ellipticityvar', 'phiminangvar', 
-        'ellipticity', 'phimaxangvar', 'alpha', 'phiminang', 'phimaxvar', 
-        'phimaxang', 'phimax'
-        . 
-    esize is the normalized size of the ellipse, meaning the major axis will be
-    this number. 
-    
-    offsetscaling is a factor that scales the distance from one station to the 
-    next to make the plot readable. 
-    
-    colorkeymm is colorkey min and max input as [min,max]
-    
-    stationid is start and stop of station name [start,stop]
-    
-    title is figure title added to Phase Tensor Elements + title
+    **filenamelst** : list of strings
+                          full paths to .edi files to plot
+        
+        **colorkey** : [ 'rhodet' ]
+                       fill color of the ellipses and can be:
+                       * 'rhodet'      -> minimum phase
+                       * more to come
+                       * *Default* is 'rhodet'
+                       
+        **colorkeymm** : tuple (min,max)
+                        min and max of colorkey to which colorbar is normalized
+                        to.  In log10 resistivity
+                        
+        **esize** : float
+                    size of ellipse in map units 
+        
+        **offsetscaling** : float
+                            is a factor that scales the distance from one 
+                            station to the next to make the plot readable.
+                            *Default* is 0.005
+        **linedir** : [ 'ns' | 'ew' ]
+                      predominant direction of profile line
+                      * 'ns' -> North-South Line
+                      * 'ew' -> East-West line
+                      * *Default* is 'ns'
+        
+        **stationid** : tuple or list 
+                        start and stop of station name indicies.  
+                        ex: for MT01dr stationid=(0,4) will be MT01
+        
+        **rotz** : float
+                   angle in degrees to rotate the data clockwise positive.
+                   *Default* is 0
+        
+        **title** : string
+                    figure title added to Phase Tensor + title
+                    
+        **cbshrink** : float
+                       percent to shrink the color bar to fit the image better
+                       *Default* is 0.8 -> 80 percent
+                       
+        **fignum** : int
+                     figure number.  *Default* is 1
+                      
+        **yscale** : [ 'period' | 'frequency' ]
+                     * 'period'    -> plot vertical scale in period
+                     * 'frequency' -> plot vertical scale in frequency
+                     
+    :Example: ::
+        
+        >>> import mtpy.imaging.mtplottools as mtplot
+        >>> import os
+        >>> edipath = r"/home/EDIfiles"
+        >>> edilst = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
+        >>> ...       if edi.find('.edi')]
+        >>> # color by rhodet with a range of 0-4 log10 resistivity
+        >>> mtplot.plotRTpseudoSection(edilst,colorkeymm=(0,4))
     
     """
     
@@ -1291,104 +1461,171 @@ def plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
                sfdict={'size':12,'weight':'bold'},indarrows='n',
                cmap='ptcmap',tscale='period',mapscale='latlon',fignum=1,
                imagefile=None,image_extent=None,refpoint=(0,0),cbshrink=.8,
-               arrowprop={'headheight':0.25,'headwidth':0.25,'linewidth':0.5},
+               arrowprop={'headheight':0.25,'headwidth':0.25,'linewidth':0.5,
+                          'arrowscale':1},
                arrowlegend={'placement':'lower right','xborderpad':.2,
                             'yborderpad':.2,'fontpad':.05,
                             'fontdict':{'size':10,'weight':'bold'}}):
-    """ 
-    plotPTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='phimin',xpad=.2,
-               ypad=.2,tickstrfmt='%2.4f',cborientation='vertical',
-               colorkeymax=90.,figsave='y',fmt=['png']) 
-    plots phase tensor ellipses in map view from a list of edifiles with full 
-    path.  Parameters are:
+    """  
+    Plots phase tensor ellipses in map view from a list of edifiles with full 
+    path.
+    
+    Arguments:
+    ----------
+        **edilst** : list of strings
+                          full paths to .edi files to plot
+                          
+        **freqspot** : position in frequency list for plotting, an integer
         
-        freqspot = position in frequency list for plotting, an integer
+        **esize** : float
+                    size of ellipse in map units 
         
-        esize = size of ellipse, float
-        
-        colorkey =  the fill color of the ellipses and can be:
-            'phimin' for minimum phase
-            'beta'  for phase tensor skew angle
-            'ellipticity' for phase tensor ellipticity
-            'phidet' for the determinant of the phase tensor
-            
-        colorkeymm = [min,max] min and max of colorkey to which colorbar is
-                    normalized to.
+        **colorkey** : [ 'phimin' | 'beta' | 'ellipticity' | 'phidet' ]
+                       fill color of the ellipses and can be:
+                       * 'phimin'      -> minimum phase
+                       * 'beta'        -> phase tensor skew angle
+                       * 'ellipticity' -> phase tensor ellipticity
+                       * 'phidet'      -> determinant of the phase tensor
+                       * *Default* is 'phimin'
+                       
+        **colorkeymm** : tuple (min,max)
+                        min and max of colorkey to which colorbar is normalized
+                        to.  In degrees except for ellipticity which is already
+                        normalized.
                     
-        xpad = pad from xmin and xmax on plot
+        **xpad** : float
+                   padding in x-direction in map units from furthest ellipses
         
-        ypad = pad from ymin and ymax on plot
+        **ypad** : float
+                   padding in y-direction in map units from furthest ellipses
         
-        tickstrfmt = format of tick strings needs to be a string format
+        **tickstrfmt** : string
+                        format of tick strings needs to be a string format.
+                        ex: '%.2f' for 2 decimal place in floating number
         
-        cborientation = colorbar orientation horizontal or vertical
+        **cborientation** : [ 'horizontal' | 'vertical' ]
+                            colorbar orientation horizontal or vertical
         
-        figsave = y or n, if yes figure will be saved to edifilelist path in 
-                a folder called PTfigures.
+        **figsave** :  [ 'y' | 'n' ]
+                        * 'y' will save figure to edifilelist path in a folder 
+                           called PTfigures.  The figure will also close once
+                           saved.
+                        * 'n' will not save the figure
                 
-        fmt = ['png'] is format of save figure can be pdf,eps or any other 
-            formats supported by matplotlib. Can be a list of multiple formats.
-            Note that pdf and eps do not properly yet.
+        **fmt** : list of formats 
+                 can be pdf,eps or any other formats supported by matplotlib. 
+                 Can be a list of multiple formats.
+                 **Note: that pdf and eps sometimes do not work properly.
             
-        rotz = rotation angle clockwise from north
+        **rotz** : float
+                   angle in degrees to rotate the data clockwise positive.
+                   *Default* is 0
         
-        pxy = dimensions of the figure in inches
+        **pxy** : tuple (width,height)
+                  dimensions of the figure in inches.  *Default* is (10,12)
         
-        galpha = opacity of the grid
+        **galpha** : float [0:1]
+                     opacity of the grid.  0 for transparent, 1 for opaque
+                     *Default* is 0.25
         
-        stationid = first and last index of the station name, default is None
-                    which is no station names.  If input use 
-                    stationid=(0,4) for the 1st through 4th characters
+        **stationid** : tuple or list 
+                        start and stop of station name indicies.  
+                        ex: for MT01dr stationid=(0,4) will be MT01.
+                        *Default* is None
                     
-        stationpad = padding for station name in the y direction
+        **stationpad** : float
+                         padding for station name in the y-direction in map
+                         units
         
-        sfdict = dictionary for station name where size is the font size
-                and weight is the font weight
-                
-        indarrow = 'yri' to plot induction both real and imaginary induction
-                    arrows 
-                    'yr' to plot just the real induction arrows
-                    'yi' to plot the imaginary induction arrows
-                    'n' to not plot them
-                    **Note: convention is to point away from a conductor **
-                    
-        cmap = color map of ellipse facecolor.  So far the colormaps are:
-            ptcmap = yellow (low phase) to red (high phase)
-            ptcmap3 = white (low numbers) to blue (high numbers)
-            skcmap = blue to yellow to red
-            skcmap2 = blue to white to red
-            rtcmap = blue to purple to red
+        **sfdict** : dictionary
+                     font dictionary for station name. Keys can be
+                     matplotlib.text properties, common ones are:
+                         * 'size'   -> for font size
+                         * 'weight' -> for font weight
+                         * 'color'  -> for color of font
+                                     
+        **indarrow** : [ 'yri' | 'yr' | 'yi' | 'n' ]
+                        * 'yri' to plot induction both real and imaginary 
+                           induction arrows 
+                        * 'yr' to plot just the real induction arrows
+                        * 'yi' to plot the imaginary induction arrows
+                        * 'n' to not plot them
+                        * *Default* is 'n'                        
+                        **Note: convention is to point towards a conductor **
+       
+       **arrowprop** : dictionary of arrow properties with keys:
+                        * 'linewidth'  -> width of the arrow line
+                        * 'headheight' -> height of arrow head
+                        * 'headwidth'  -> width of the arrow head
+                        * 'arrowscale' -> scale size of the arrow
+        
+        
+        **arrowlegend** : dictionary of properties for legend with keys:
+                        * 'placement -> placement of arrow legend can be:
+                            - 'upper right'
+                            - 'lower right'
+                            - 'upper left'
+                            - 'lower left'
+                        * 'xborderpad' -> padding from x axis
+                        * yborderpad'  -> padding from y axis
+                        * fontpad'     -> padding between arrow and legend text
+                        * fontdict'    -> dictionary of font properties
+        
+        **cmap** :[ 'ptcmap' | 'ptcmap3' | 'skcmap' | 'skcmap2' | 'rtcmap' ]
+                  color map of ellipse facecolor.  So far the colormaps are:
+                      * 'ptcmap'  -> yellow (low phase) to red (high phase)
+                      * 'ptcmap3' -> white (low numbers) to blue (high numbers)
+                      * 'skcmap'  -> blue to yellow to red
+                      * 'skcmap2' -> blue to white to red
+                      * 'rtcmap'  -> blue to purple to red
             
-        tscale = period or frequency for the title of the plot
+        **tscale** : [ 'period' | 'frequency' ]
+                     * 'period'    -> plot vertical scale in period
+                     * 'frequency' -> plot vertical scale in frequency
         
-        mapscale = latlon for lats and lons or
-                   eastnorth for easting and northing, this is recomended if
-                   you want to plot tipper data for small surveys.
-                   eastnorthkm for kilometer scaling
+        **mapscale** : [ 'latlon' | 'eastnorth' | 'eastnorthkm' ]
+                      scale of map
+                          * 'latlon'     -> lats and longs
+                          * 'eastnorth'  -> for easting and northing, this is 
+                             recomended if you want to plot tipper data for 
+                             small surveys.
+                          * 'eastnorthkm' -> for kilometer scaling
+                          ** Note: if the ellipses are plotting in the wrong 
+                          spot in east-north scale, check to see if your survey
+                          crosses UTM grids.  Currently there is no way of 
+                          dealing with this.
                    
-        imagefile = path to an image file jpg or png or svg
+        **imagefile** : string
+                        path to an image file jpg or png or svg
         
-        image_extent=(xmin,xmax,ymin,ymax) in coordinates accorting to mapscale
+        **image_extent** : tuple (xmin,xmax,ymin,ymax)
+                           coordinates according to mapscale. Must be input if
+                           image file is not None.
         
-        refpoint = reference point to pin the map to locations
+        **refpoint** : tuple (x,y)
+                       reference point estimate relative distance to.  This 
+                       point will be (0,0) on the map and everything else is 
+                       referenced to this point
+         
+    :Example: ::
         
-        arrowprop = dictionary of arrow properties with keys:
-            linewidth = width of the arrow line
-            headheight = height of arrow head
-            headwidth = width of the arrow head
-            arrowscale = scale size of the arrow
-        
-        arrowlegend = dictionary of properties for legend with keys:
-            placement ->placement of arrow legend can be:
-            upper right
-            lower right
-            upper left
-            lower left
-            xborderpad = padding from x axis
-            yborderpad = padding from y axis
-            fontpad = padding between arrow and legend text
-            fontdict = dictionary of font properties
-        
+        >>> import mtpy.imaging.mtplottools as mtplot
+        >>> import os
+        >>> edipath = r"/home/EDIfiles"
+        >>> edilst = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
+        >>> ...       if edi.find('.edi')]
+        >>> # color by phimin with a range of 20-70 deg in meter scale
+        >>> mtplot.plotPTMaps(edilst,colorkeymm=(20,70),mapscale='eastnorth')
+        >>> 
+        >>> # add induction arrows to skew angle with range (-5,5)
+        >>> mtplot.plotPTMaps(edilst,colorkey='beta',
+        >>> ...               colorkeymm=(-5,5),indarrows='yri')
+        >>>
+        >>> # put an underlying image as a basemap in km scale
+        >>> mtplot.plotPTMaps(edilst,imagefile=r"/home/Maps/Basemap.jpg",
+        >>> ...               image_extent=(0,20,0,20),mapscale='eastnorthkm')
+
+
     """
     jj=freqspot
     fig=plt.figure(fignum,pxy,dpi=200)
@@ -2118,343 +2355,9 @@ def plotRTMaps(edifilelst,freqspot=10,esize=2.0,colorkey='rhodet',xpad=.2,
                                      'RTmap'+sf+'Hz.'+f)
         plt.close()
     
-def comparePT(edilst,esize=5,xspacing=5,yspacing=3,savepath=None,show='y',
-              title=None,stationfind=[0,4],xlabel=None,rotz=0):
-    """
-    comparePT will compare phase tensors given by edilst.  This formulation is
-    based on Weise et al. [2008]. A perfect match is equivalent to a unit sphere
-    with a fill color of yellow.
-    
-    Inputs:
-        edilst = list of edi files to compare input as [[edi1,edi2],[1n,2n]]
-        esize = max size of ellipse, anything larger than this will be set to 
-                zero.
-        xspacing = spacing along x-axis
-        yspaceing = spacing along y-axis
-        savepath = full path to save file to, if None file is not saved.
-        show = 'y' or 'n', if yes the figure will be displayed and 'n' the 
-                figure will not be displayed, useful if producing and saving
-                multiple figures.
-        title = title of figure, if None, no title is put on figure
-        stationfind = index of station in edifile
-    
-    """
-    
-    plt.rcParams['font.size']=8
-    plt.rcParams['figure.subplot.left']=.1
-    plt.rcParams['figure.subplot.right']=.94
-    plt.rcParams['figure.subplot.bottom']=.08
-    plt.rcParams['figure.subplot.top']=.95
-    plt.rcParams['figure.subplot.hspace']=.05
-    #create a plot instance
-    fig=plt.figure(1,[8,8],dpi=150)
-    ax1=fig.add_subplot(1,1,1,aspect='equal')
-    
-    colorlst=[]
-    maxlst=[]
-    stationclst=[] 
-    sf=stationfind
-    
-    azimutharr=np.zeros((29,len(edilst)))
-    for ss,station in enumerate(edilst):
-        #make a data type Z      
-        imp1=Z.Z(station[0])
-        imp2=Z.Z(station[1])
-        stationclst.append(os.path.basename(station[0])[sf[0]:sf[1]])
-        
-        #get the phase tensor information
-        pt1=imp1.getPhaseTensor(thetar=rotz)
-        pt2=imp2.getPhaseTensor(thetar=rotz)
-        
-        #loop over period plotting the difference between phase tensors
-        period=imp1.period
-        n=len(period)
-        for ii in range(n):
-            #calculate the difference between the two phase tensor ellipses
-            phi=np.eye(2)-(pt1.phi[ii]/pt2.phi[ii]+
-                                pt2.phi[ii]/pt1.phi[ii])/2         
-            
-            #compute the trace        
-            tr=phi[0,0]+phi[1,1]
-            #Calculate skew of phi and the cooresponding error
-            skew=phi[0,1]-phi[1,0]
-            #calculate the determinate and determinate error of phi
-            phidet=abs(np.linalg.det(phi))
-            
-            #calculate reverse trace and error
-            revtr=phi[0,0]-phi[1,1]
-            
-            #calculate reverse skew and error
-            revskew=phi[1,0]+phi[0,1]
-            
-            beta=.5*np.arctan2(skew,tr)*(180/np.pi)
-            alpha=.5*np.arctan2(revskew,revtr)*(180/np.pi)
-            azimuth=alpha-beta  
-    #        azimuth=pt1.azimuth[ii]-pt2.azimuth[ii]                  
-            azimutharr[ii,ss]=azimuth
-            phimax=np.sqrt(abs((.5*tr)**2+(.5*skew)**2))+\
-                    np.sqrt(abs((.5*tr)**2+(.5*skew)**2-np.sqrt(phidet)**2))
-                
-            #calculate minimum value for phi
-            if phidet>=0:
-                phimin=np.sqrt(abs((.5*tr)**2+(.5*skew)**2))-\
-                np.sqrt(abs((.5*tr)**2+(.5*skew)**2-np.sqrt(phidet)**2))
-            elif phidet<0:
-                phimin=-1*np.sqrt(abs((.5*tr)**2+(.5*skew)**2))-np.sqrt(abs(
-                            (.5*tr)**2+(.5*skew)**2-(np.sqrt(phidet))**2))            
-            #make ellipse
-            if abs(phimax)>esize:
-                phimax=.1
-            if abs(phimin)>esize:
-                phimin=.1
-            
-            #compute width and height of ellipse
-            eheightd=phimax
-            ewidthd=phimin
-            
-            #add ellipse to the plot
-            ellipd=Ellipse((xspacing*(ss)+1/2,yspacing*(n-ii)),
-                           width=ewidthd,
-                           height=eheightd,
-                           angle=azimuth)
-            ax1.add_artist(ellipd)
-            
-            ecolor=1/((abs(eheightd)+abs(ewidthd))/2)
-            if ecolor>1:
-                ecolor=.99
-            else:
-                ecolor=1-ecolor
-            colorlst.append(ecolor)
-            if ecolor>.98:
-                ecolor=.98
-            #print 'cvrs3: ',15*cvars3*(np.pi/2)*(180/np.pi) 
-            ellipd.set_facecolor((1,1-ecolor,.1)) 
-        maxlst.append(np.mean(colorlst))
-    
-    nellip=Ellipse((xspacing*(ss+1),yspacing*n/2),width=1,height=1,angle=0)
-    
-    ax1.add_artist(nellip)
-    nellip.set_facecolor((1,.1,.1))
-    textrect=Rectangle((xspacing*(ss+1)-xspacing*.4,yspacing*n/2-yspacing*.8),
-                       5,
-                       4,
-                       fill=False,
-                       clip_on=False)
-    ax1.add_artist(textrect)
-    ax1.text(xspacing*(ss+1),yspacing*n/2-yspacing/2,'$\Delta$=1',
-             fontdict={'size':10},
-             horizontalalignment='center',
-             verticalalignment='center')
-    
-    stationclst=[stationclst[kk][-2:] for kk in range(len(stationclst))]                
-    
-    yticklabels=['%2.3g' % period[n-ii] for ii in np.arange(start=1,stop=n+1,
-                 step=2)]
-    plt.ylabel('Period (s)',fontsize=10,fontweight='bold')
-    plt.yticks(np.arange(start=yspacing,stop=yspacing*n+1,step=2*yspacing),
-               yticklabels)
-    
-    plt.xticks(np.arange(start=0,stop=xspacing*len(stationclst),step=xspacing),
-               stationclst)
-               
-    ax1.set_xlim(-1*(xspacing/2),len(stationclst)*xspacing+5)
-    ax1.set_ylim(0,yspacing*n+2)
-    if xlabel==None:
-        ax1.set_xlabel('Station',fontdict={'size':10,'weight':'bold'})
-    else:
-        ax1.set_xlabel(xlabel,fontdict={'size':10,'weight':'bold'})
-    
-    if title!=None:
-        ax1.set_title(title,
-                  fontdict={'size':12,'weight':'bold'})
-    ax1.grid()
-    
-    
-    ax4=make_axes(ax1,shrink=.5,fraction=.1,orientation='vertical',pad=.005)
-    cb1=ColorbarBase(ax4[0],cmap=ptcmap,norm=Normalize(vmin=0,vmax=1),
-                     orientation='vertical')
-    cb1.set_label('(|$\Delta_{max}$|+|$\Delta_{min}$|)/2')
-    
-    if savepath!=None:
-        plt.savefig(savepath,fmt='png')
-    
-    if show=='n':
-        plt.close()
-    else:
-        plt.show()
-
-def comparePT2(edilst,esize=5,xspacing=5,yspacing=3,savepath=None,show='y',
-              title=None,stationfind=[0,4],xlabel=None,colorkeymm=[-5,5],
-              fignum=1,rotz=0):
-    """
-    comparePT will compare phase tensors given by edilst.  This formulation is
-    based on Weise et al. [2008]. Instead of plotting the ellipse of the 
-    difference, this will plot the first phase tensor with perturbation due
-    to the second phase tensor.
-    
-    Inputs:
-        edilst = list of edi files to compare input as [[edi1,edi2],[1n,2n]]
-        esize = max size of ellipse, anything larger than this will be set to 
-                zero.
-        xspacing = spacing along x-axis
-        yspaceing = spacing along y-axis
-        savepath = full path to save file to, if None file is not saved.
-        show = 'y' or 'n', if yes the figure will be displayed and 'n' the 
-                figure will not be displayed, useful if producing and saving
-                multiple figures.
-        title = title of figure, if None, no title is put on figure
-        stationfind = index of station in edifile
-    
-    """
-    
-    plt.rcParams['font.size']=8
-    plt.rcParams['figure.subplot.left']=.1
-    plt.rcParams['figure.subplot.right']=.94
-    plt.rcParams['figure.subplot.bottom']=.08
-    plt.rcParams['figure.subplot.top']=.95
-    plt.rcParams['figure.subplot.hspace']=.05
-    #create a plot instance
-    fig=plt.figure(fignum,[8,8],dpi=150)
-    ax1=fig.add_subplot(1,1,1,aspect='equal')
-    
-    stationclst=[] 
-    sf=stationfind
-    
-    for ss,station in enumerate(edilst):
-        #make a data type Z      
-        imp1=Z.Z(station[0])
-        imp2=Z.Z(station[1])
-        stationclst.append(os.path.basename(station[0])[sf[0]:sf[1]])
-        
-        #get the phase tensor information
-        pt1=imp1.getPhaseTensor(thetar=rotz)
-        pt2=imp2.getPhaseTensor(thetar=rotz)
-        
-        #set colorkey
-#        colorarray=2*ptdict1[colorkey]-ptdict2[colorkey]
-        
-        #loop over period plotting the difference between phase tensors
-        period=imp1.period
-        n=len(period)
-        for ii in range(n):
-            #calculate the difference between the two phase tensor ellipses         
-                              
-            azimuth=2*pt1.azimuth[ii]-pt2.azimuth[ii]                                    
-            phimax=2*pt1.phimax[ii]-pt2.phimax[ii]  
-            phimin=2*pt1.phimin[ii]-pt2.phimin[ii]  
-            
-            #compute width and height of ellipse
-            scaling1=esize/max([phimax,phimin])
-            eheight1=pt1.phimin[ii]*scaling1
-            ewidth1=pt1.phimax[ii]*scaling1
-            
-#            scaling2=esize/max([phimax,phimin])
-            eheight2=pt2.phimin[ii]*scaling1
-            ewidth2=pt2.phimax[ii]*scaling1
-            
-#            scaling=esize/max([phimax,phimin])
-            eheightd=phimin*scaling1
-            ewidthd=phimax*scaling1
-
-            
-            #add ellipse to the plot            
-            ellip1=Ellipse((xspacing*(ss)+1/2,yspacing*(n-ii)),
-                           width=ewidth1,
-                           height=eheight1,
-                           angle=pt1.azimuth[ii])
-            ax1.add_artist(ellip1)
-            ellip1.set_edgecolor('black')
-            ellip1.set_facecolor('none')
-
-            ellip2=Ellipse((xspacing*(ss)+1/2,yspacing*(n-ii)),
-                           width=ewidth2,
-                           height=eheight2,
-                           angle=pt2.azimuth[ii])
-            ax1.add_artist(ellip2)
-            ellip2.set_edgecolor('blue')
-            ellip2.set_facecolor('none')
-            
-            ellipd=Ellipse((xspacing*(ss)+1/2,yspacing*(n-ii)),
-                           width=ewidthd,
-                           height=eheightd,
-                           angle=azimuth)
-            ax1.add_artist(ellipd)
-            ellipd.set_edgecolor('red')
-            ellipd.set_facecolor('none')
-            
-#            if abs(azimuthd)<=colorkeymm[1]:
-#                cvars=azimuthd/colorkeymm[1]
-#                if cvars<0:
-#                    ellipd.set_facecolor((.1,1+cvars,abs(cvars)))
-#                else:
-#                    ellipd.set_facecolor((1,1-cvars,.1))
-#            elif abs(azimuthd)>colorkeymm[1]:
-#                cvars=azimuthd/colorkeymm[1]
-#                if cvars<0:
-#                    cvars=-1
-#                    ellipd.set_facecolor((.1,1+cvars,abs(cvars)))
-#                else:
-#                    cvars=1
-#                    ellipd.set_facecolor((1,1-cvars,.1))
-                    
-            #plot arrows of length phimax and angle azimuth
-            xarrow=xspacing*(ss)+1/2
-            yarrow=yspacing*(n-ii)
-            theta1=pt1.azimuth[ii]*(np.pi/180.)
-            theta2=pt2.azimuth[ii]*(np.pi/180.)
-            arrow1=Arrow(xarrow,yarrow,
-                         pt1.phimax[ii]*np.cos(theta1),
-                         pt1.phimax[ii]*np.sin(theta1),
-                         ec='black',fc='black')
-            ax1.add_artist(arrow1)
-            
-            arrow2=Arrow(xarrow,yarrow,
-                         pt2.phimax[ii]*np.cos(theta2),
-                         pt1.phimax[ii]*np.sin(theta2),
-                         ec='blue',fc='blue')
-            ax1.add_artist(arrow2)
-    
-    stationclst=[stationclst[kk][-2:] for kk in range(len(stationclst))]                
-    
-    yticklabels=['%2.3g' % period[n-ii] for ii in np.arange(start=1,stop=n+1,
-                 step=2)]
-    plt.ylabel('Period (s)',fontsize=10,fontweight='bold')
-    plt.yticks(np.arange(start=yspacing,stop=yspacing*n+1,step=2*yspacing),
-               yticklabels)
-    
-    plt.xticks(np.arange(start=0,stop=xspacing*len(stationclst),step=xspacing),
-               stationclst)
-               
-    ax1.set_xlim(-1*(xspacing/2),len(stationclst)*xspacing+5)
-    ax1.set_ylim(0,yspacing*n+2)
-    if xlabel==None:
-        ax1.set_xlabel('Station',fontdict={'size':10,'weight':'bold'})
-    else:
-        ax1.set_xlabel(xlabel,fontdict={'size':10,'weight':'bold'})
-    
-    if title!=None:
-        ax1.set_title(title,
-                  fontdict={'size':12,'weight':'bold'})
-    ax1.grid()
-    
-    
-    ax4=make_axes(ax1,shrink=.5,fraction=.1,orientation='vertical',pad=.005)
-    cb1=ColorbarBase(ax4[0],cmap=ptcmap2,
-                     norm=Normalize(vmin=colorkeymm[0],vmax=colorkeymm[1]),
-                     orientation='vertical')
-    cb1.set_label('$\gamma_1 - \gamma_2$')
-    
-    if savepath!=None:
-        plt.savefig(savepath,fmt='png')
-    
-    if show=='n':
-        plt.close()
-    else:
-        plt.show()
-
 def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
-                         tpad=.85,galpha=.25,prange='data',plottype=1,
-                         tipper='n'):
+                         tpad=.60,galpha=.25,prange='data',plottype=1,
+                         tipper='n',pterr=None):
     """
     plots the strike angle as determined by phase tensor azimuth (Caldwell et 
     al. [2004]) and invariants of the impedance tensor (Weaver et al. [2003]).
@@ -2462,9 +2365,11 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
     The data is split into decades where the histogram for each is plotted in 
     the form of a rose diagram with a range of 0 to 180 degrees.
     Where 0 is North and 90 is East.   The median angle of the period band is 
-    set just below the polar diagram.  The top row is the strike estimated from
+    set in polar diagram.  The top row is the strike estimated from
     the invariants of the impedance tensor.  The bottom row is the azimuth
-    estimated from the phase tensor.
+    estimated from the phase tensor.  If tipper is 'y' then the 3rd row is the
+    strike determined from the tipper, which is orthogonal to the induction
+    arrow direction.  
     
     Arguments:
     ----------
@@ -2510,6 +2415,10 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
         **tipper** : [ 'y' | 'n' ]
                       * *'y'* to plot the tipper strike
                       * *'n'* to not plot tipper strike
+                      
+        **pterr** : float   
+                    Maximum error in degrees that is allowed to estimate strike.
+                    *Default* is None allowing all estimates to be used.
                 
 
     :Example: ::
@@ -2519,7 +2428,10 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
         >>> edipath = r"/home/EDIFiles"
         >>> edilst = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
         >>> ...       if edi.find('.edi')>0]
-        >>> mtplot.plotRoseStrikeAngles(edilst)
+        >>> # plot rose plots in decades with tipper and an error floor on pt
+        >>> mtplot.plotRoseStrikeAngles(edilst,plottype=1,pterr=5)
+        >>> # plot all decades into one rose plot for each estimation
+        >>> mtplot.plotRoseStrikeAngles(edilst,plottype=2,pterr=5)
     """
     plt.rcParams['font.size']=fs-2
     plt.rcParams['figure.subplot.left']=.07
@@ -2527,16 +2439,13 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
     plt.rcParams['figure.subplot.bottom']=.09
     plt.rcParams['figure.subplot.top']=.90
     plt.rcParams['figure.subplot.wspace']=.2
-    plt.rcParams['figure.subplot.hspace']=.4 
-    plt.rcParams['xtick.major.pad']='18'   
-    plt.rcParams['ytick.major.pad']='18'   
+    plt.rcParams['figure.subplot.hspace']=.4   
     
     invlst=[]
     ptlst=[]
     
     if tipper=='y':
         tiprlst=[]
-        tipilst=[]
     
     nc=len(edilst)
     nt=0
@@ -2570,9 +2479,12 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
         pt=z1.getPhaseTensor(thetar=thetar)
         az=pt.azimuth
         azerr=pt.azimuthvar
+        #put an error max on the estimation of strike angle
+        if pterr:
+            az[np.where(azerr>pterr)]=0.0
         #don't need to add 90 because pt assumes 90 is north.
         az[np.where(az>90)]=az[np.where(az>90)]-180
-        zs[np.where(az<-90)]=az[np.where(az<-90)]+180
+        az[np.where(az<-90)]=az[np.where(az<-90)]+180
         #make a dictionary of strikes with keys as period
         mdictpt=dict([(ff,jj) for ff,jj in zip(z1.period,az)])
         ptlst.append(mdictpt)
@@ -2580,7 +2492,7 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
         #-----------get tipper strike------------------------------------
         if tipper=='y':
             tip=z1.getTipper(thetar=thetar)
-            tipr=tip.anglereal
+            tipr=-tip.anglereal
             
             tipr[np.where(tipr>90)]=tipr[np.where(tipr>90)]-180
             tipr[np.where(tipr<-90)]=tipr[np.where(tipr<-90)]+180
@@ -2588,8 +2500,6 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
             tiprdict=dict([(ff,jj) for ff,jj in zip(z1.period,tipr)])
             tiprlst.append(tiprdict)
             
-            tipidict=dict([(ff,jj) for ff,jj in zip(z1.period,tip.angleimag)])
-            tipilst.append(tiprdict)
         
         
     
@@ -2602,7 +2512,6 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
     medpt=np.zeros((nt,nc))
     if tipper=='y':
         medtipr=np.zeros((nt,nc))
-        medtipi=np.zeros((nt,nc))
     
     #make a list of periods from the longest period list
     plst=np.logspace(np.log10(minper),np.log10(maxper),num=nt,base=10)
@@ -2619,7 +2528,6 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                     medpt[ll,ii]=ptlst[ii][mp]
                     if tipper=='y':
                         medtipr[ll,ii]=tiprlst[ii][mp]
-                        medtipi[ll,ii]=tipilst[ii][mp]
                 else:
                     pass
         
@@ -2666,21 +2574,13 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
             gg=medpt[binlst,:]
             if tipper=='y':
                 tr=medtipr[binlst,:]
-                ti=medtipi[binlst,:]
                 trhist=np.histogram(tr[np.nonzero(tr)].flatten(),bins=72,
-                                       range=(-180,180))
-                tihist=np.histogram(ti[np.nonzero(ti)].flatten(),bins=72,
                                        range=(-180,180))
                 bartr=axhtip.bar((trhist[1][:-1])*np.pi/180,trhist[0],
                                  width=5*np.pi/180)
-                barti=axhtip.bar((tihist[1][:-1])*np.pi/180,tihist[0],
-                                 width=5*np.pi/180)
                 for cc,bar in enumerate(bartr):
                     fc=float(trhist[0][cc])/trhist[0].max()*.9
-                    bar.set_facecolor((1-fc,1-fc,0))
-                for cc,bar in enumerate(barti):
-                    fc=float(tihist[0][cc])/tihist[0].max()*.9
-                    bar.set_facecolor((0,fc,1-fc))
+                    bar.set_facecolor((0,1-fc/2,fc))
                         
             
             #estimate the histogram for the decade for invariants and pt
@@ -2719,7 +2619,7 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                     print '-----Period Range {0:.3g} to {1:.3g} (s)-----'.format(10**bb,
                           10**(bb+1))
                          
-                    print '   *Z-Invariants: median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                    print '   *Z-Invariants:  median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
                             90-np.median(hh[np.nonzero(hh)]),
                             90-invhist[1][np.where(invhist[0]==invhist[0].max())[0][0]],
                             90-np.mean(hh[np.nonzero(hh)])) 
@@ -2756,6 +2656,7 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                     elif bb==5:
                         axh.set_title('10$^{5}$-10$^{6}$s',fontdict=fd,
                                       bbox={'facecolor':'white','alpha':galpha})
+                    axh.titleOffsetTrans._t=(0,.1)
         
                 elif aa==1:
                     axh.set_xlim(-180*np.pi/180,180*np.pi/180)
@@ -2765,10 +2666,12 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                               verticalalignment='baseline',
                               fontdict={'size':fs-nb},
                               bbox={'facecolor':(.9,.9,0),'alpha':galpha})
-                    print '   *PT Strike:    median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                    print '   *PT Strike:     median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
                             90-np.median(gg[np.nonzero(gg)]),
                             90-pthist[1][np.where(pthist[0]==pthist[0].max())[0][0]],
-                            90-np.mean(gg[np.nonzero(gg)])) 
+                            90-np.mean(gg[np.nonzero(gg)]))
+                    if tipper!='y':
+                        print '\n'
                     if nb>5: 
                         if bb==-5:
                             axh.set_title('10$^{-5}$-10$^{-4}$s',fontdict=fd,
@@ -2821,11 +2724,12 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                               horizontalalignment='center',
                               verticalalignment='baseline',
                               fontdict={'size':fs-nb},
-                              bbox={'facecolor':(.9,.9,0),'alpha':galpha})
-                    print '   *Tipper:       median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                              bbox={'facecolor':(0,.1,.9),'alpha':galpha})
+                    print '   *Tipper Strike: median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
                             90-np.median(tr[np.nonzero(tr)]),
                             90-trhist[1][np.where(trhist[0]==trhist[0].max())[0][0]],
                             90-np.mean(tr[np.nonzero(tr)])) 
+                    print '\n'
                     if nb>5: 
                         if bb==-5:
                             axh.set_title('10$^{-5}$-10$^{-4}$s',fontdict=fd,
@@ -2872,21 +2776,20 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                                           bbox={'facecolor':'white',
                                                 'alpha':galpha})
                                   
-        
                 if jj==1:
                     if aa==0:
-                        axh.set_ylabel('Invariant Strike',fd,labelpad=3000./dpi,
+                        axh.set_ylabel('Strike (Z)',fontdict=fd,labelpad=5000./dpi,
                                        bbox={'facecolor':(.9,0,.1),'alpha':galpha})
                     elif aa==1:
-                        axh.set_ylabel('PT Azimuth',fd,labelpad=3000./dpi,
+                        axh.set_ylabel('PT Azimuth',fontdict=fd,labelpad=5000./dpi,
                                        bbox={'facecolor':(.9,.9,0),'alpha':galpha})
                     elif aa==2:
-                        axh.set_ylabel('Tipper',fd,labelpad=3000./dpi,
+                        axh.set_ylabel('Tipper Strike',fd,labelpad=5000./dpi,
                                        bbox={'facecolor':(0,.1,.9),'alpha':galpha})
                 
                 plt.setp(axh.yaxis.get_ticklabels(),visible=False)
                 
-        print '\n Note: North is assumed to be 0 and the strike angle is measured \n'+\
+        print 'Note: North is assumed to be 0 and the strike angle is measured'+\
               'clockwise positive.'
         
         plt.show()
@@ -2939,21 +2842,13 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
             
         if tipper=='y':
                 tr=medtipr[binlst,:]
-                ti=medtipi[binlst,:]
                 trhist=np.histogram(tr[np.nonzero(tr)].flatten(),bins=72,
-                                       range=(-180,180))
-                tihist=np.histogram(ti[np.nonzero(ti)].flatten(),bins=72,
                                        range=(-180,180))
                 bartr=axhtip.bar((trhist[1][:-1])*np.pi/180,trhist[0],
                                  width=5*np.pi/180)
-    #            barti=axhtip.bar((tihist[1][:-1])*np.pi/180,tihist[0],
-    #                             width=5*np.pi/180)
                 for cc,bar in enumerate(bartr):
                     fc=float(trhist[0][cc])/trhist[0].max()*.9
-                    bar.set_facecolor((0,1-fc,fc))
-    #            for cc,bar in enumerate(barti):
-    #                fc=float(tihist[0][cc])/tihist[0].max()*.9
-    #                bar.set_facecolor((0,fc,1-fc))
+                    bar.set_facecolor((0,1-fc/2,fc))
                     
         #make axis look correct with N to the top at 90.
         for aa,axh in enumerate(axlst):
@@ -2977,7 +2872,7 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                 print '-----Period Range {0:.3g} to {1:.3g} (s)-----'.format(min(plst),
                           max(plst))
                          
-                print '   *Z-Invariants: median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                print '   *Z-Invariants:  median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
                         90-np.median(hh[np.nonzero(hh)]),
                         90-invhist[1][np.where(invhist[0]==invhist[0].max())[0][0]],
                         90-np.mean(hh[np.nonzero(hh)])) 
@@ -2990,10 +2885,12 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                           verticalalignment='baseline',
                           fontdict={'size':fs-2},
                           bbox={'facecolor':(.9,.9,0),'alpha':galpha})
-                print '   *PT Strike:    median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                print '   *PT Strike:     median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
                         90-np.median(gg[np.nonzero(gg)]),
                         90-pthist[1][np.where(pthist[0]==pthist[0].max())[0][0]],
-                        90-np.mean(gg[np.nonzero(gg)])) 
+                        90-np.mean(gg[np.nonzero(gg)]))
+                if tipper!='y':
+                    print '\n'
             elif aa==2:
                 axh.set_ylim(0,trhist[0].max())
                 axh.text(170*np.pi/180,axh.get_ylim()[1]*.65,
@@ -3002,26 +2899,25 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                           verticalalignment='baseline',
                           fontdict={'size':fs-2},
                           bbox={'facecolor':(0,.1,.9),'alpha':galpha})
-                print '   *Tipper:       median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
+                print '   *Tipper Stike:  median={0:.1f} mode={1:.1f} mean={2:.1f}\n'.format(
                         90-np.median(tr[np.nonzero(tr)]),
                         90-trhist[1][np.where(trhist[0]==trhist[0].max())[0][0]],
                         90-np.mean(tr[np.nonzero(tr)]))
-                              
             #set the title of the diagrams
             if aa==0:
-                axh.set_title('Invariant Strike',fontdict=fd,
+                axh.set_title('Strike (Z)',fontdict=fd,
                                bbox={'facecolor':(.9,0,.1),'alpha':galpha})
             elif aa==1:
                 axh.set_title('PT Azimuth',fontdict=fd,
                                bbox={'facecolor':(.9,.9,0),'alpha':galpha})
-            if aa==2:
-                axh.set_title('Tipper',fontdict=fd,
+            elif aa==2:
+                axh.set_title('Tipper Strike',fontdict=fd,
                                bbox={'facecolor':(0,.1,.9),'alpha':galpha})
+            axh.titleOffsetTrans._t=(0,.15)
             
                 
                 
-        print '\n Note: North is assumed to be 0 and the strike angle is '+\
-                'measured clockwise positive.'
+        print 'Note: North is assumed to be 0 and the strike angle is measured '+\
+              'clockwise positive.'
         
         plt.show()
-    
