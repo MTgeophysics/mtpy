@@ -5605,7 +5605,10 @@ class Occam2DModel(Occam2DData):
                     self.datafn=os.path.join(self.invpath,ff)
                     
                 elif ff.lower().find('data')>=0:
-                    self.datafn=os.path.join(self.invpath,ff)
+                    if os.path.isfile(self.datafn)==False:
+                        self.datafn=os.path.join(self.invpath,ff)
+                    else:
+                        pass
                     
             if os.path.isfile(self.datafn)==False:
                 raise NameError('Could not find a data file, input manually')
