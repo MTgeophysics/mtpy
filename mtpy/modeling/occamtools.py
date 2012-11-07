@@ -5320,7 +5320,7 @@ class Occam2DModel(Occam2DData):
         #put header info into dictionary with similar keys
         while ilines[ii].find('Param')!=0:
             iline=ilines[ii].strip().split(':')
-            self.idict[inline[0]] = ':'.join(iline[1:]).strip()
+            self.idict[iline[0]] = ':'.join(iline[1:]).strip()
             ii+=1
         
         #get number of parameters
