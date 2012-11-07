@@ -2974,8 +2974,8 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
                           verticalalignment='baseline',
                           fontdict={'size':fs-2},
                           bbox={'facecolor':(.9,0,.1),'alpha':.25})
-                print '-----Period Range {0:.3g} to {1:.3g} (s)-----'.format(10**bb,
-                          10**(bb+1))
+                print '-----Period Range {0:.3g} to {1:.3g} (s)-----'.format(min(plst),
+                          max(plst))
                          
                 print '   *Z-Invariants: median={0:.1f} mode={1:.1f} mean={2:.1f}'.format(
                         90-np.median(hh[np.nonzero(hh)]),
@@ -3020,8 +3020,8 @@ def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
             
                 
                 
-        print 'North is assumed to be 0 and the strike angle is measured '+\
-              'clockwise positive.'
+        print '\n Note: North is assumed to be 0 and the strike angle is '+\
+                'measured clockwise positive.'
         
         plt.show()
     
