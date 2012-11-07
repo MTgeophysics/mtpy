@@ -5528,6 +5528,8 @@ class Occam2DModel(Occam2DData):
                 if os.path.isfile(self.inmodelfn)==False:
                     raise NameError('Could not find a model file, '+\
                                     'input manually')
+        else:
+            self.inmodelfn = os.path.join(self.invpath, inmodelfn)
         
     def read2DIter(self):
         """
@@ -5571,7 +5573,7 @@ class Occam2DModel(Occam2DData):
         #put header info into dictionary with similar keys
         while ilines[ii].find('Param')!=0:
             iline=ilines[ii].strip().split(':')
-            self.idict[iline[0]]=iline[1].strip()
+            self.idict[iline[0]] = ':'.join(iline[1:]).strip()
             ii+=1
         
         #get number of parameters
@@ -5653,7 +5655,7 @@ class Occam2DModel(Occam2DData):
                 #append the last line
                 if iline[0].find('EXCEPTIONS')>0:
                     cols.append(ncols)
-            else:
+            elif not 'EXCEPTIONS' in iline:
                 iline=iline.strip().split()
                 try:
                     iline=[int(jj) for jj in iline]
