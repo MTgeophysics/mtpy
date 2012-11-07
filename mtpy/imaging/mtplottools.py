@@ -2453,7 +2453,7 @@ def comparePT2(edilst,esize=5,xspacing=5,yspacing=3,savepath=None,show='y',
         plt.show()
 
 def plotRoseStrikeAngles(edilst,fignum=1,fs=10,dpi=300,thetar=0,ptol=.05,
-                         tpad=1.65,galpha=.25,prange='data',plottype=1,
+                         tpad=.85,galpha=.25,prange='data',plottype=1,
                          tipper='n'):
     """
     plots the strike angle as determined by phase tensor azimuth (Caldwell et 
