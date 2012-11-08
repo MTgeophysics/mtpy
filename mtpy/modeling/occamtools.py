@@ -6066,8 +6066,9 @@ class Occam2DModel(Occam2DData):
         
         #plot the model as a pcolormesh so the extents are constrained to 
         #the model coordinates
-        ax.pcolormesh(self.meshx/dfactor,self.meshy/dfactor,self.resmodel,
-                      cmap=cmap,vmin=climits[0],vmax=climits[1])
+        self.mesh_plot=ax.pcolormesh(self.meshx/dfactor,self.meshy/dfactor,
+                                     self.resmodel,cmap=cmap,vmin=climits[0],
+                                     vmax=climits[1])
         
         #make a colorbar for the resistivity
         cbx=mcb.make_axes(ax,shrink=.8,pad=.01)
@@ -6252,7 +6253,7 @@ class Occam2DModel(Occam2DData):
                         kk+=1
                     except IndexError:
                         pass
-                    
+        self.model_axes=ax
         plt.show()
     
     def plotL2Curve(self,fnstem=None,fignum=1,dpi=300):
