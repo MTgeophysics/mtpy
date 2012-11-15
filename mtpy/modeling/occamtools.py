@@ -2788,18 +2788,17 @@ class Occam2DData:
         #the strike angles is measured clockwise, where as the line angle is 
         #measured counterclockwise.
         if proj_strike=='yes':
-            p[0]=-thetar
+            theta=-thetar
         else:
-            pass
-        
-        
+            theta=np.arctan2(p[0],1)
+
         #need to work on this
         
         #the angle of the line is now the angle of the best fitting line added
         #to the geoelectric strike direction, which gives the relative distance
         #along the strike direction.
-        theta=np.arctan(p[0])
-        print 'Profile Line Angle is: {0:.4g}'.format(theta*180/np.pi)
+        
+        print 'Profile Line Angle is (counterclockwise 0=E,-90=N): {0:.4g}'.format(theta*180/np.pi)
         
         #plot stations on profile line
         if plotyn=='y':
@@ -4537,8 +4536,9 @@ class Occam2DData:
                                           10**rplst[ii]['resxy'][2][mrxy],
                                           ls='--',marker=mtem,ms=ms,mfc=ctem,
                                           mec=ctem,color=ctem,
-                                          yerr=10**(rplst[ii]['resxy'][3][mrxy]*\
-                                          rplst[ii]['resxy'][2][mrxy]/np.log(10)),
+                                          yerr=abs(10**rplst[ii]['resxy'][0][mrxy]-
+                                          10**(rplst[ii]['resxy'][3][mrxy]*\
+                                          rplst[ii]['resxy'][2][mrxy]/np.log(10))),
                                           ecolor=ctem)
                         rlst.append(r3[0])
                         llst.append('$Mod_{TE}$')
@@ -4551,8 +4551,9 @@ class Occam2DData:
                                           10**rplst[ii]['resyx'][2][mryx],
                                           ls='--',marker=mtmm,ms=ms,mfc=ctmm,
                                           mec=ctmm,color=ctmm,
-                                          yerr=10**(rplst[ii]['resyx'][3][mryx]*\
-                                          rplst[ii]['resyx'][2][mryx]/np.log(10)),
+                                          yerr=abs(10**rplst[ii]['resyx'][0][mryx]-
+                                          10**(rplst[ii]['resyx'][3][mryx]*\
+                                          rplst[ii]['resyx'][2][mryx]/np.log(10))),
                                           ecolor=ctmm)
                         rlst.append(r4[0])
                         llst.append('$Mod_{TM}$')
@@ -5573,9 +5574,9 @@ class Occam2DModel(Occam2DData):
         self.idict={}
         ii=0
         #put header info into dictionary with similar keys
-        while ilines[ii].find('Param')!=0:
+        while ilines[ii].lower().find('par')<0: 
             iline=ilines[ii].strip().split(':')
-            self.idict[iline[0]] = ':'.join(iline[1:]).strip()
+            self.idict[iline[0].lower()] = ':'.join(iline[1:]).strip()
             ii+=1
         
         #get number of parameters
@@ -5596,7 +5597,7 @@ class Occam2DModel(Occam2DData):
             jj+=1
         
         #get the data file name from the iteration header
-        self.datafn=self.idict['Data File']
+        self.datafn=self.idict['data file']
         if self.datafn.find(os.sep)==-1:
             self.datafn=os.path.join(self.invpath,self.datafn)
             
@@ -5614,6 +5615,31 @@ class Occam2DModel(Occam2DData):
                     
             if os.path.isfile(self.datafn)==False:
                 raise NameError('Could not find a data file, input manually')
+        
+        #if the iteration file is the startup from MakeModel2DMT then the 
+        #keys are different        
+        try:
+            self.idict['misfit value']
+        except KeyError:
+            try:
+                self.idict['misfit value']=self.idict['req tol']
+            except KeyError:
+                print 'Did not find misfit value in iteration file, '+\
+                      'setting to 1'
+                self.idict['misfit value']=1.0
+                
+        try:
+            self.idict['roughness value']
+        except KeyError:
+            try:
+                self.idict['roughness value']=self.idict['rlast']
+            except KeyError:
+                print 'Did not find roughness value in iteration file, '+\
+                       'setting 10E+5'
+                self.idict['roughness value']=10E+5
+        
+        
+                
     
     def read2DInmodel(self):
         """
@@ -5662,9 +5688,10 @@ class Occam2DModel(Occam2DData):
         for ii,iline in enumerate(ilines):
             if iline.find(':')>0:
                 iline=iline.strip().split(':')
-                headerdict[iline[0]]=iline[1]
+                headerdict[iline[0].lower()]=iline[1]
+                kk=ii
                 #append the last line
-                if iline[0].find('EXCEPTIONS')>0:
+                if iline[0].lower().find('exception')>0:
                     cols.append(ncols)
             else:
                 iline=iline.strip().split()
@@ -5675,10 +5702,29 @@ class Occam2DModel(Occam2DData):
                 try:
                     iline=[int(jj) for jj in iline]
                     if len(iline)==2:
+                        #append the first set of row values so there is 
+                        #a value to compare with for the next line.
+                        if ii==kk+1:
+                            rows.append(iline)
+                            
+                        #sometimes the numbers get wrapped around in the 
+                        #INMODEL file and can have just two numbers, so check
+                        #to see if those 2 numbers are for rows or the columns
+                        elif len(ncols)>0 and len(ncols)!=rows[-1][1]:
+                            ncols+=iline
+                        
+                        #if the sum is fine then the two numbers must be rows
+                        else:
+                            rows.append(iline)
+
+                        #finally, if the numbers aren't rows, then append them
+                        #to the columns list                                
                         if len(ncols)>0:
                             cols.append(ncols)
-                        rows.append(iline)
-                        ncols=[]
+                            #reset the list to be empty
+                            ncols=[]
+                            
+                    #if the line is greater than 2 it must be column numbers
                     elif len(iline)>2:
                         ncols=ncols+iline
                 except ValueError:
@@ -5762,7 +5808,7 @@ class Occam2DModel(Occam2DData):
             kk=0
             while kk<4:        
                 mline=mm.rstrip()
-                if mline.find('EXCEPTION')>0:
+                if mline.lower().find('exception')>0:
                     break
                 for jj in range(nh):
                     try:
@@ -5819,7 +5865,7 @@ class Occam2DModel(Occam2DData):
         self.read2DInmodel()
         #get the binding offset which is the right side of the furthest left
         #block, this helps locate the model in relative space
-        bndgoff=float(self.inmodel_headerdict['BINDING OFFSET'])
+        bndgoff=float(self.inmodel_headerdict['binding offset'])
         
         #make sure that the number of rows and number of columns are the same
         try:
@@ -6158,18 +6204,18 @@ class Occam2DModel(Occam2DData):
                                       os.path.basename(self.iterfn))
                 ax.set_title(titlestr+\
                             ': RMS {0:.2f}, Roughness={1:.0f}'.format(
-                            float(self.idict['Misfit Value']),
-                            float(self.idict['Roughness Value'])),
+                            float(self.idict['misfit value']),
+                            float(self.idict['roughness value'])),
                             fontdict={'size':fs+1,'weight':'bold'})
             else:
                 ax.set_title(title+'; RMS {0:.2f}, Roughness={1:.0f}'.format(
-                         float(self.idict['Misfit Value']),
-                         float(self.idict['Roughness Value'])),
+                         float(self.idict['misfit value']),
+                         float(self.idict['roughness value'])),
                          fontdict={'size':fs+1,'weight':'bold'})
         else:
             print 'RMS {0:.2f}, Roughness={1:.0f}'.format(
-                         float(self.idict['Misfit Value']),
-                         float(self.idict['Roughness Value'])) 
+                         float(self.idict['misfit value']),
+                         float(self.idict['roughness value'])) 
         
         #plot forward model mesh    
         if femesh=='on':
@@ -6300,9 +6346,9 @@ class Occam2DModel(Occam2DData):
         for itfile in iterlst:
             self.iterfn=itfile
             self.read2DIter()
-            ii=int(self.idict['Iteration'])
-            rmsarr[ii,0]=float(self.idict['Misfit Value'])
-            rmsarr[ii,1]=float(self.idict['Roughness Value'])
+            ii=int(self.idict['iteration'])
+            rmsarr[ii,0]=float(self.idict['misfit value'])
+            rmsarr[ii,1]=float(self.idict['roughness value'])
         
         #set the dimesions of the figure
         plt.rcParams['font.size']=int(dpi/40.)
@@ -6473,7 +6519,7 @@ class Occam2DModel(Occam2DData):
                                   ls='steps-')
                 ax.set_ylim(depthmm[1],depthmm[0])
                 
-                ax.set_title(self.data.stationlst[pstationlst[ii]],
+                ax.set_title(self.stationlst[pstationlst[ii]],
                              fontdict={'size':10,'weight':'bold'})
                 if ii==0:
                     ax.set_ylabel('Depth (m)',
