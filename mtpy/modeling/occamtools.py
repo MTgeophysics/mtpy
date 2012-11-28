@@ -2786,9 +2786,10 @@ class Occam2DData:
         #now project this line onto the strike direction so that the distances
         #are relative to geoelectric strike.  Needs to be negative cause 
         #the strike angles is measured clockwise, where as the line angle is 
-        #measured counterclockwise.
+        #measured counterclockwise.  It must also be perpendicular to strike so 
+        #add 90
         if proj_strike=='yes':
-            theta=-thetar
+            theta=-thetar+90
         else:
             theta=np.arctan2(p[0],1)
 
@@ -5944,6 +5945,7 @@ class Occam2DModel(Occam2DData):
         self.offsetlst=[]
         for rpdict in self.rplst:
             self.offsetlst.append(rpdict['offset'])
+            
         
     def plot2DModel(self,datafn=None,
                     xpad=None,ypad=None,spad=None,ms=10,stationid=None,
@@ -6556,5 +6558,76 @@ class Occam2DModel(Occam2DData):
                               fontdict={'size':8,'weight':'bold'})
                 ax.grid(True,alpha=.3,which='both')       
             
-        
+def compare2DIter(self,iterfn1,iterfn2,savepath=None):
+    """
+    compareIter will take the difference between two iteration and make a 
+    difference iter file
+    
+    Inputs:
+        iterfn1 = full path to iteration file 1
+        iterfn2 = full path to iteration file 2
+        savepath = path to save the difference iteration file, can be full or
+                  just a directory
+                  
+    Outputs:
+        diterfn = file name of iteration difference either:
+            savepath/iterdiff##and##.iter
+            or os.path.dirname(iterfn1,iterdiff##and##.iter)
+            or savepath
+    """
+
+    #get number of iteration
+    inum1=iterfn1[-7:-5]    
+    inum2=iterfn2[-7:-5]    
+    
+    #make file name to save difference to
+    if savepath==None:
+        svdir=os.path.dirname(iterfn1)
+        diterfn=os.path.join(svdir,
+                              'iterdiff{0}and{1}.iter'.format(inum1,inum2))
+    elif savepath.find('.')==-1:
+        diterfn=os.path.join(savepath,
+                              'iterdiff{0}and{1}.iter'.format(inum1,inum2))
+    else:
+        diterfn=savepath
+    
+    #read the iter files
+    ocm1=Occam2DModel(iterfn1)
+    ocm2=Occam2DModel(iterfn2)
+    
+    ocm1.get2DModel()
+    ocm2.get2DModel()
+    
+    #calculate difference this way it will plot as red going conductive and
+    #blues being a resistive change
+    mdiff=-ocm1.resmodel+ocm2.resmodel
+    nd=len(mdiff)
+    
+    ifid=file(iterfn1,'r')
+    ilines=ifid.readlines()
+    ifid.close()    
+    
+    #write iterfile
+    dfid=file(diterfn,'w')
+    ii=0
+    while ilines[ii].find('Param')!=0:
+        dfid.write(ilines[ii])
+        ii+=1
+    
+    dfid.write('Param Count:        {0}\n'.format(nd))
+    
+    for jj in range(nd/4+1):
+        for kk in range(4):
+            try:
+                dfid.write('   {0:+.6f}'.format(mdiff[4*jj+kk]))
+                if kk==3:
+                    dfid.write('\n')
+            except IndexError:
+                dfid.write('\n')
+            
+    dfid.close()
+    
+    print 'Wrote Difference file to: ',diterfn
+    return diterfn
+                
     
