@@ -113,7 +113,7 @@ def edidms2deg():
 
 
                 if len(raw_line1)>1:
-                    if  raw_line1[0][:3].lower() =='lat':
+                    if  raw_line1[0].strip()[:3].lower() =='lat':
                         lat_in = raw_line1[1]
                         if check_format(lat_in) == 'dms' and invert == 0: 
                             lat_out = dms2deg(lat_in)
@@ -125,7 +125,7 @@ def edidms2deg():
                             latlon +=1
 
                         
-                    elif raw_line1[0][:3].lower() =='lon': 
+                    elif raw_line1[0].strip()[:3].lower() =='lon': 
                         lon_in = raw_line1[1]
                         if check_format(lon_in) == 'dms' and invert == 0: 
                             lon_out = dms2deg(lon_in)
