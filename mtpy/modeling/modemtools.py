@@ -13,42 +13,42 @@ import glob
 
 import mtpy.core.mttools as mtt
 import mtpy.modeling.winglinktools as wlt
-
+import mtpy.utils.latlongutmconversion as ll2utm
 
 
 def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_value=100):
     """return init3d file/start model
-    
+
     mainly copied from ws3dtools...
-    
+
     Inputs:
         WLoutputfile -  *.out-file from winglink
-        modelfilename - name of the modelfile 
+        modelfilename - name of the modelfile
         res_value - starting homogeneous half space in Ohm-meters (default: 100)
-        
-        
+
+
     Output:
         init file path
-        
+
     """
-    
+
      #create the output filename
     model_fn = op.abspath(modelfilename)
 
-        
+
     dx,dy,dz=wlt.readWLOutFile(WLoutputfile,ncol=5)
-    
+
     nx=len(dx)
     ny=len(dy)
     nz=len(dz)
-    
+
     init_modelFH = open(model_fn,'w')
     init_modelFH.write('#Initial halfspace model, based on WingLink generated mesh \n')
     init_modelFH.write('%i %i %i 1 \n'%(ny,nx,nz))
-        
+
     #write y locations
     y_string=''
-    y_counter=0 
+    y_counter=0
     for y_idx in range(ny):
         y_string += '%.3e  '%(dy[y_idx])
         y_counter+=1
@@ -58,110 +58,198 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
     if ny%8:
         y_string +='\n'
     init_modelFH.write(y_string)
-    
+
     #write x locations
     x_string=''
-    x_counter=0 
+    x_counter=0
     for x_idx in range(nx):
         x_string += '%.3e  '%(dx[x_idx])
         x_counter+=1
         if x_counter == 8:
             x_string += '\n'
             x_counter = 0
-    if nx%8:		    
+    if nx%8:
 	x_string +='\n'
     init_modelFH.write(x_string)
 
     #write z locations
     z_string=''
-    z_counter=0 
+    z_counter=0
     for z_idx in range(nz):
         z_string += '%.3e  '%(dz[z_idx])
         z_counter+=1
         if z_counter == 8:
             z_string += '\n'
-            z_counter = 0   
+            z_counter = 0
     if nz%8:
         z_string +='\n'
     init_modelFH.write(z_string)
-           
+
     init_modelFH.write('%i \n'%int(rhostart))
-    
+
     init_modelFH.close()
-    
+
     print 'Wrote initial halfspace model to file: %s '%(model_fn)
 
-    
-    return ifile
-        
 
-def  edis2datafile(edilist, comment):
+    return model_fn
+
+
+
+def latlon2xy(lat, lon, origin):
+    """returns position in local rectangular coordinates.
+
+    x is positive northwards, y positive eastwards, values given in meter
+
+    origin must be given as a 2-tuple/-array in (lat,lon) form
+
+    """
+
+    #using existing tool for conversion from lat/lon to northing/easting, then just take planar approximation
+
+    #comment: to be checked for overlapping UTM zones!!
+
+    dummy1,utm_local_east,utm_local_north   = ll2utm.LLtoUTM(23, lat, lon)
+    dummy2,utm_origin_east,utm_origin_north = ll2utm.LLtoUTM(23, origin[0], origin[1])
+
+    x = utm_local_north - utm_origin_north
+    y = utm_local_east  - utm_origin_east
+
+    return x,y
+
+
+def  edis2datafile(edilist, origin, comment='Generic datafile, generated from Python script'):
 
     datafilename = op.abspath('ModEM_inputdata')
     if len(comment)>100:
         sys.exit('comment string is too long (cannot exceed 100 characters)\n')
 
-    for idx_edi,edifile in enumerate(edilist):
-        #generate dictionary containing all info
-        
-        
-        
-    #check dictionary for values n_stations, n_periods:
-    
+
+    lo_frequencies = []
+    data_dict = {}
+
+    counter = 0
+
+    #define a little helper
+    def closetoexisting(f,l):
+        #check, if list l contains an element, which deviates less than 3% from value f
+        a_l = np.array(l)
+        dev = np.abs(f-a_l).min()/f*100.
+        if dev < 3:
+            return True
+        else:
+            return False
+
+
+
+    for idx_edi,edifilename in enumerate(edilist):
+        #generate overall dictionary containing info from all files
+
+        raw_dict = mtt.readedi(edifilename)
+        stationname = raw_dict['station']
+        data_dict['stationname'] = raw_dict
+        counter += 1
+
+
+        raw_freqs = list(raw_dict['frequency'])
+
+
+        for freq in raw_freqs:
+            #check, if freq is already in list, ...
+            if len(lo_frequencies) ==0:
+                lo_frequencies.extend(freq)
+            elif freq in lo_frequencies:
+                continue
+            elif closetoexisting(freq,lo_frequencies):
+                continue
+            else:
+                lo_frequencies.extend(freq)
+
+
+    so_frequencies = list (set(lo_frequencies))
+    n_periods      = len(so_frequencies)
+    n_stations     = counter
+
     #write header info
     F = open(datafilename,'w')
     F.write('#%s\n'%(comment))
     F.write('#Period Station Lat Lon X Y Z Component Real Imag Err\n')
     F.write('>Full_Impedance\n')
-    F.write('>exp(-i\omega t\n')    
-    F.write('>[mV/km]/[nT]\n')    
-    F.write('>0.00\n')    
-    F.write('>0 0 \n')    
-    F.write('>%i %i\n'%(no_periods, no_stations))        
-        
-    #iterate over dictionary and write data file lines successively:   
-    
-    
-    
- 
-    
-    return datafilename
-    
-    
-    
-    
-def generate_edilist(edifolder):
-    
-    lo_edifiles = [op.abspath(i) for i in glob.glob('*.[eE][dD][iI]')]
-    
-    return edilist 
+    F.write('>exp(-i\omega t\n')
+    F.write('>[mV/km]/[nT]\n')
+    F.write('>0.00\n')
+    F.write('>0 0 \n')
+    F.write('>%i %i\n'%(n_periods, n_stations))
 
-    
+    #define components:
+    z_components =['ZXX','ZXY','ZYX','ZYY']
+
+    #iterate over general dictionary and write data file lines successively sorted by stations:
+    for station in data_dict:
+        station_frequencies = station['frequency']
+        lat = station['lat']
+        lon = station['lon']
+        Z   = station['z']
+        Z_var = station['zvar']
+        #no other choice so far...no depth given via EDI file:
+        depth  = 0.
+
+        x,y = latlon2xy(lat, lon, origin)
+
+        for idx_freq, tmp_freq in enumerate(station_frequencies):
+            #take frequency from the frequency-list defined above
+            correct_frequency = lo_frequencies[ np.abs(tmp_freq-np.array(lo_frequencies)).minarg() ]
+            period = 1./correct_frequency
+
+            for idx_comp,comp in enumerate(z_components):
+                row = int(idx_comp/2.)
+                column = idx_comp%2
+                Z_value = Z[idx_freq,row,column]
+                err = Z_var[idx_freq,row,column]
+
+                current_data_line = '%f %s %f %f %f %f %f %s %f %f %f \n'%(period, station, lat, lon, x,y,depth,comp, real(Z_value), imag(Z_value), err)
+
+
+    return datafilename
+
+
+
+
+def generate_edilist(edifolder):
+
+    lo_edifiles = [op.abspath(i) for i in glob.glob('*.[eE][dD][iI]')]
+
+    return edilist
+
+
 
 
 def winglink2modem(edifolder, winglinkoutput, resistivity):
-    
-    if not op.isdir(edifolder):
-        sys.exit('cannot find EDI files: no such directory: \n%s'%(edifolder))   
 
-    edilist = generate_edilist(edifolder)       
+
+    #check input for consistency
+    if not op.isdir(edifolder):
+        sys.exit('cannot find EDI files: no such directory: \n%s'%(edifolder))
+
+    edilist = generate_edilist(edifolder)
 
     if len(edilist)==0:
-        sys.exit('cannot find EDI files in given directory: \n%s'%(edifolder))          
-    
+        sys.exit('cannot find EDI files in given directory: \n%s'%(edifolder))
+
     try:
         WL_outfile = op.abspath(winglinkoutput)
     except:
         sys.exit('cannot find specified WingLink output file: \n%s'%(winglinkoutput))
-    
+
     try:
         HS_rho_value = float(resistivity)
     except:
         sys.exit('provided resistivity value is not a proper number')
 
 
+    #set up data file
     datafn  = edis2datafile(edilist)
-    
+    #set up model file
     modelfn = winglinkmesh2modelfile(WL_outfile, modelfilename=chosen_model, res_value=HS_rho_value)
 
     return datafn, modelfn

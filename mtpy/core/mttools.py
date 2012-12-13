@@ -10,7 +10,7 @@ import datetime
 import shutil
 import scipy as sp
 import scipy.signal as sps
-import simplekml as skml
+
 import mtpy.core.z
 
 #short spaces 3 spaces
@@ -1623,7 +1623,7 @@ def readedi(filename):
                     locstr=locstr.split('=')[1]
                     station=locstr.replace('"','')
                 else:
-                    station=os.path.basename(filename)
+                    station=os.path.basename(filename).strip().split('.')[0]
                     
             #print ii, ' Got Header'
         elif existlst[ii][0].find('info')>=0:
@@ -2229,6 +2229,7 @@ def makeKML(edipath,stationid=None,savepath=None,fs=.9,style=None):
     makeKML will make a kml file for Google Earth to plot station locations 
     relatively quickly
     """    
+    import simplekml as skml 
     
     #create a list of edifiles to pull station info from
     edilst=[os.path.join(edipath,edi) for edi in os.listdir(edipath)
