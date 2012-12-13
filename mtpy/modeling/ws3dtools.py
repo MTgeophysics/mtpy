@@ -8,6 +8,10 @@ Created on Mon Apr 02 11:54:33 2012
 import os
 import numpy as np
 
+from  mtpy.modeling.winglinktools import *
+from mtpy.core.mttools import *
+
+
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
 from matplotlib.ticker import MultipleLocator,FormatStrFormatter
@@ -82,203 +86,11 @@ class ListPeriods:
     def disconnect(self):
         self.fig.canvas.mpl_disconnect(self.cid)
 
-def readWLOutFile(outfn,ncol=5):
-    """
-    read .out file from winglink
-    
-    Inputs:
-        outfn = full path to .out file from winglink
-        
-    Outputs:
-        dx,dy,dz = cell nodes in x,y,z directions (note x is to the East here
-                    and y is to the north.)
-    """
-    
-    wingLinkDataFH = file(outfn,'r')
-    raw_data       = wingLinkDataFH.read().strip().split()
-    
-    nx = int(raw_data[0])
-    ny = int(raw_data[1])
-    nz = int(raw_data[2])
 
 
-    dx=np.zeros(nx)
-    dy=np.zeros(ny)
-    dz=np.zeros(nz)
-    
-    for x_idx in range(nx):
-      dx[x_idx] = raw_data[x_idx + 5]
-    for y_idx in range(ny):
-      dy[y_idx] = raw_data[y_idx + 5 + nx]
-    for z_idx in range(nz):
-      dz[z_idx] = raw_data[z_idx + 5 + nx + ny]
-
-    #dx[0:nx/2]=-dx[0:nx/2]
-    #dy[0:ny/2]=-dy[0:ny/2]
     
 
 
-            
-    return dx,dy,dz
-    
-def readSitesFile(sitesfn):
-    """
-    read sites_ file output from winglink
-    
-    Input: 
-        sitesfn = full path to the sites file output by winglink
-        
-    Output:
-        slst = list of dictionaries for each station.  Keys include:
-            station = station name
-            dx = number of blocks from center of grid in East-West direction
-            dy = number of blocks from center of grid in North-South direction
-            dz = number of blocks from center of grid vertically
-            number = block number in the grid
-        sitelst = list of station names 
-    """
-    
-    sfid=file(sitesfn,'r')
-    slines=sfid.readlines()
-    
-    slst=[]
-    sitelst=[]
-    for ss in slines:
-        sdict={}
-        sline=ss.strip().split()
-        sdict['station']=sline[0][0:-4]
-        sdict['dx']=int(sline[1])-1
-        sdict['dy']=int(sline[2])-1
-        sdict['dz']=int(sline[3])-1
-        sdict['something']=int(sline[4])
-        sdict['number']=int(sline[5])
-        slst.append(sdict)
-        sitelst.append(sline[0][0:-4])
-    return slst,sitelst
-    
-def getXY(sitesfn,outfn,ncol=5):
-    """
-    get x (e-w) and y (n-s) position of station and put in middle of cell
-    
-    Input:
-        sitesfn = full path to sites file output from winglink
-        outfn = full path to .out file output from winglink
-        ncol = number of columns the data is in
-        
-    Outputs:
-        xarr = array of relative distance for each station from center of the
-                grid.  Note this is E-W direction
-        yarr = array of relative distance for each station from center of the
-                grid.  Note this is N-S direction
-                
-    """
-    
-    slst,sitelst=readSitesFile(sitesfn)
-    
-    dx,dy,dz=readWLOutFile(outfn,ncol=ncol)
-    
-    ns=len(slst)
-    nxh=len(dx)/2
-    nyh=len(dy)/2
-    xarr=np.zeros(ns)
-    yarr=np.zeros(ns)
-    
-    
-    for ii,sdict in enumerate(slst):
-        xx=sdict['dx']
-        yy=sdict['dy']
-        if xx<nxh:
-            xarr[ii]=dx[xx:nxh].sum()-dx[xx]/2
-        else:
-            xarr[ii]=dx[nxh:xx].sum()+dx[xx]/2                    
-        if yy<nyh:
-            yarr[ii]=-1*(dy[yy:nyh].sum()-dy[yy]/2)
-        else:
-            yarr[ii]=-1*(dy[nyh:yy].sum()+dy[yy]/2)   
-
-    return xarr,yarr  
-
-def getPeriods(edipath,errthresh=10):
-    """
-    Plots periods for all stations in edipath and the plot is interactive, just
-    clikc on the period you want to select and it will appear in the console,
-    it will also be saved to lp.plst.  To sort this list type lp.plst.sort()
-    
-    The x's mark a conformation that the station contains that period.  So 
-    when looking for the best periods to invert for look for a dense line of 
-    x's
-    
-    Inputs:
-        edipath = path to where all your edi files are.  Note that only the 
-            impedance components are supported so if you have spectra data, 
-            export them from wingling to have impedance information.
-        errthresh = threshold on the error in impedance estimation, this just 
-                    gives an indication on where bad stations and bad periods
-                    are, anything above this level will be colored in red.
-    
-    Outputs:
-        periodlst = list of periods for each station
-        errorlst = error in the impedance determinant for each station at 
-                   each period.
-        lp = data type lp has attributes: 
-            plst = period list of chosen periods, again to sort this list type
-                    lp.plst.sort().  this will then be the input to make the 
-                    data file later.
-        
-    """
-    import mtpy.core.z as Z
-    
-    plt.rcParams['font.size']=10
-    plt.rcParams['figure.subplot.left']=.13
-    plt.rcParams['figure.subplot.right']=.98
-    plt.rcParams['figure.subplot.bottom']=.1
-    plt.rcParams['figure.subplot.top']=.95
-    plt.rcParams['figure.subplot.wspace']=.25
-    plt.rcParams['figure.subplot.hspace']=.05    
-    
-    periodlst=[]
-    errorlst=[]
-    
-    fig1=plt.figure(5)
-    ax=fig1.add_subplot(1,1,1)
-    for edi in os.listdir(edipath):
-        if edi.find('.edi')>0:
-            z1=Z.Z(os.path.join(edipath,edi))
-            periodlst.append(z1.period)
-            zdet=np.array([np.sqrt(abs(np.linalg.det(zz))) for zz in z1.z])
-            error=np.array([np.sqrt(abs(np.linalg.det(zz))) for zz in z1.zvar])
-            perror=(error/zdet)*100            
-            errorlst.append(perror)
-            #make a plot to pick frequencies from showing period and percent 
-            #error
-            ax.scatter(z1.period,perror,marker='x',picker=5)
-            pfind=np.where(perror>errthresh)[0]
-            if len(pfind)>0: 
-                print 'Error greater than {0:.3f} for '.format(errthresh)+z1.station
-                for jj in pfind:
-                    ax.scatter(z1.period[jj],perror[jj],marker='x',color='r')
-                    ax.text(z1.period[jj],perror[jj]*1.05,z1.station,
-                            horizontalalignment='center',
-                            verticalalignment='baseline',
-                            fontdict={'size':8,'color':'red'})
-                    print jj,z1.period[jj]
-                    
-    ax.set_xscale('log')
-    ax.set_xlim(10**np.floor(np.log10(z1.period[0])),
-                10**np.ceil(np.log10(z1.period[-1])))
-    ax.set_ylim(0,3*errthresh)
-    ax.set_yscale('log')
-    ax.set_xlabel('Period (s)',fontdict={'size':12,'weight':'bold'})
-    ax.set_ylabel('Percent Error',fontdict={'size':12,'weight':'bold'})
-    ax.grid('on',which='both')
-    
-    lp=ListPeriods(fig1)
-    lp.connect()
-        
-    return periodlst,errorlst,lp
-    
-            
-    
     
 def writeWSDataFile(sitesfn,outfn,periodlst,edipath,zerr=.05,ptol=.15,
                     zerrmap=[10,1,1,10],savepath=None,ncol=5,units='mv'):
