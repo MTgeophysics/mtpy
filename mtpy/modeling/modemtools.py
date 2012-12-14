@@ -48,8 +48,13 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
 
     #write north locations
     north_string=''
+    count = 0
     for north_idx in range(n_ns_blocks):
         north_string += '%.3e '%(dy[north_idx])
+        count +=1
+        if count == 8:
+            north_string +='\n'
+
 
     north_string +='\n'
     print north_string
