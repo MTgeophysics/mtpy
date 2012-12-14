@@ -390,7 +390,7 @@ def readWLOutFile(outfn,ncol=5):
         outfn = full path to .out file from winglink
 
     Outputs:
-        dx,dy,dz = cell nodes in x,y,z directions (note x is to the East here
+        dx,dy,dz = cell widths in x,y,z directions (note x is to the East here
                     and y is to the north.)
     """
 
@@ -458,6 +458,75 @@ def readSitesFile(sitesfn):
     return slst,sitelst
 
 
+    def readSitesFile(sitesfn):
+    """
+    read sites_ file output from winglink
+
+    Input:
+        sitesfn = full path to the sites file output by winglink
+
+    Output:
+        slst = list of dictionaries for each station.  Keys include:
+            station = station name
+            dx = number of blocks from center of grid in East-West direction
+            dy = number of blocks from center of grid in North-South direction
+            dz = number of blocks from center of grid vertically
+            number = block number in the grid
+        sitelst = list of station names
+    """
+
+    sfid=file(sitesfn,'r')
+    slines=sfid.readlines()
+
+    slst=[]
+    sitelst=[]
+    for ss in slines:
+        sdict={}
+        sline=ss.strip().split()
+        sdict['station']=sline[0][0:-4]
+        sdict['dx']=int(sline[1])-1
+        sdict['dy']=int(sline[2])-1
+        sdict['dz']=int(sline[3])-1
+        sdict['something']=int(sline[4])
+        sdict['number']=int(sline[5])
+        slst.append(sdict)
+        sitelst.append(sline[0][0:-4])
+    return slst,sitelst
+
+def readSitesFile2(sitesfn):
+    """
+    read sites_ file output from winglink
+
+    Input:
+        sitesfn = full path to the sites file output by winglink
+
+    Output:
+        sites_dict
+        Dictionary with station names as keys. Each value is again a dictionary with keys:
+        idx_east
+        (index of the station-containing mesh block in east direction - starts at 1 for westernmost block)
+        idx_south
+        (index of the station-containing mesh block in south direction - starts at 1 for northernmost block)
+        idx_z
+        (index of the station-containing mesh block in down direction)
+
+    """
+        stations_dict = {}
+
+        sfid=file(sitesfn,'r')
+        slines=sfid.readlines()
+        for ss in slines:
+            current_dict={}
+            sline   = ss.strip().split()
+            station = sline[0][0:-4]
+            current_dict['idx_east']  = int(sline[1])
+            current_dict['idx_south'] = int(sline[2])
+            current_dict['idx_z']     = int(sline[1])
+            stations_dict[station] = current_dict
+
+        return stations_dict
+
+
 def getXY(sitesfn,outfn,ncol=5):
     """
     get x (e-w) and y (n-s) position of station and put in middle of cell
@@ -509,5 +578,73 @@ def getXY(sitesfn,outfn,ncol=5):
     return xarr,yarr, xy_dict
 
 
+def getmeshblockcoordinates(WL_outfile):
+    """
+    returns a list of 3 lists, which again contain the X/Y/Z coordinate of a mesh block
+
+    Orientation is X-North, Y-East, Z-Down.
+    Horizontal origin is in the center of the mesh,
+    Indexing starts at the lower left (SouthWest) corner
+
+    Referring to a station, which has an entry in the WingLink 'Sites' file of (7,12,1), you get the coordinates as
+
+       ( thislist[0][-12], thislist[1][6],, thislist[2][0] )
+
+    [ explanation:
+        1.Winglink refers to the UPPER left corner
+        2.WingLink starts with East
+        3.WingLink begins indexing at 1
+    ]
+
+    """
+
+    east_blockwidths, north_blockwidths, z_blockwidth = readWLOutFile(WL_outfile)
+
+    n_east  = len(east_blockwidths)
+    n_north = len(north_blockwidths)
+    n_down  = len(z_blockwidths)
+
+    coord_list_xyz =[]
+
+    total_width_ew = np.sum(east_blockwidths)
+    center_ew      = total_width_ew/2.
+
+    total_width_ns = np.sum(north_blockwidths)
+    center_ns      = total_width_ns/2.
+
+    total_depth    = np.sum(z_blockwidths)
+
+    #depths
+    lo_depths = []
+    current_depth = z_blockwidths[0]/2.
+    lo_depths.append(current_depth)
+
+    for idx_z in range(n_down-1):
+        current_depth += (z_blockwidths[idx_z]/2. + z_blockwidths[idx_z+1]/2.)
+        lo_depths.append(current_depth)
+
+    coord_list_xyz.append(lo_depths)
 
 
+    lo_norths = []
+    current_north = north_blockwidths[0]/2.
+    lo_norths.append(current_north)
+    for idx_n in range(n_north-1):
+        current_north += (north_blockwidths[idx_n]/2. + north_blockwidths[idx_n+1]/2.)
+        lo_norths.append(current_north)
+
+    lo_norths_centered = list(np.array(lo_norths)-center_ns)
+    coord_list_xyz.append(lo_norths_centered)
+
+    lo_easts = []
+    current_east= east_blockwidths[0]/2.
+    lo_easts.append(current_east)
+    for idx_e in range(n_east-1):
+        current_east+= (east_blockwidths[idx_e]/2. + east_blockwidths[idx_e+1]/2.)
+        lo_easts.append(current_east)
+
+    lo_easts_centered = list(np.array(lo_easts)-center_ew)
+    coord_list_xyz.append(lo_easts_centered)
+
+
+    return coord_list_xyz

@@ -38,6 +38,7 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
     #read widths for all blocks from WingLink output file
     dx,dy,dz=wlt.readWLOutFile(WLoutputfile,ncol=5)
 
+
     n_we_blocks=len(dx)
     n_ns_blocks=len(dy)
     nz=len(dz)
@@ -46,7 +47,7 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
     init_modelFH.write('#Initial halfspace model, based on WingLink generated mesh \n')
     init_modelFH.write('%i %i %i 0 \n'%(n_ns_blocks,n_we_blocks,nz))
 
-    #write north locations
+    #write north block widths
     north_string=''
     count = 0
     for north_idx in range(n_ns_blocks):
@@ -61,7 +62,7 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
 
     init_modelFH.write(north_string)
 
-    #write x locations
+    #write east block widths
     east_string=''
     count=0
     for east_idx in range(n_we_blocks):
@@ -76,7 +77,7 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
 
     init_modelFH.write(east_string)
 
-    #write z locations
+    #write z block widths/hights
     z_string=''
     count = 0
     for z_idx in range(nz):
@@ -90,8 +91,6 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
 
     init_modelFH.write(z_string)
 
-    #init_modelFH.close()
-    #sys.exit()
 
     #empty line required, if resistivity values are given instead of resistivity indices
     init_modelFH.write('\n')
@@ -106,6 +105,7 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
 
 
     #define origin of model file ... just 0 at the moment
+    #assumed to be at the lateral center of the model at the surface
     init_modelFH.write('%.1f %.1f %.1f \n'%(0.,0.,0.))
 
     #define rotation angle of model w.r.t. data set...just 0 at the moment
@@ -143,7 +143,7 @@ def latlon2xy(lat, lon, origin):
     return x,y
 
 
-def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafile, generated from Python script'):
+def edis2datafile(winglink_outfile, edilist, sites_file,  comment='Generic datafile, generated from Python script'):
 
     datafilename = op.abspath('ModEM_inputdata')
     if len(comment)>100:
@@ -167,18 +167,17 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
 
 
     #obtain x,y coordinateds using sites file:
-    x_east_list, y_north_list, x_east_y_north_dict = wlt.getXY(sites_file, winglink_outfile)
-
+    lo_mesh_xyz_coord_lists = wlt.getmeshblockcoordinates(WL_outfile)
+    sites_dict              = wlt.readSitesFile2(sites_file)
 
 
     for idx_edi,edifilename in enumerate(edilist):
         #generate overall dictionary containing info from all files
 
-
         raw_dict = mtt.readedi(edifilename)
         stationname = raw_dict['station']
         #check, if the station has been used in the model setup:
-        if not stationname in x_east_y_north_dict.keys():
+        if not stationname in sites_dict.keys():
             continue
 
         data_dict[stationname] = raw_dict
@@ -236,7 +235,12 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
         #no other choice so far...no depth given via EDI file:
         depth  = 0.
 
-        eastnorthpair = x_east_y_north_dict[stationname]
+        stationdict = sites_dict[station]
+        east_idx    = stationdict['idx_east']
+        south_idx   = stationdict['idx_south']
+        #WingLink indices go from North to South, but here we have South as reference
+        north_coordinate = lo_mesh_xyz_coord_lists[0][-south_idx]
+        east_coordinate  = lo_mesh_xyz_coord_lists[1][east_idx-1]
         #x,y = latlon2xy(lat, lon, origin)
 
         for idx_freq, tmp_freq in enumerate(station_frequencies):
@@ -250,7 +254,7 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
                 Z_value = Z[idx_freq,row,column]
                 err = Z_var[idx_freq,row,column]
 
-                current_data_line = '%f %s %f %f %.1f %.1f %.1f %s %f %f %f \n'%(period, stationname, lat, lon, eastnorthpair[1], eastnorthpair[0],depth,comp, np.real(Z_value), np.imag(Z_value), err)
+                current_data_line = '%f %s %f %f %.1f %.1f %.1f %s %f %f %f \n'%(period, stationname, lat, lon, north_coordinate, east_coordinate,depth,comp, np.real(Z_value), np.imag(Z_value), err)
 
                 F.write(current_data_line)
 
@@ -298,10 +302,12 @@ def winglink2modem(edifolder, winglinkoutput, sites_file, modelfilename='init_mo
         sys.exit('provided resistivity value is not a proper number')
 
 
-    #set up data file
-    datafn  = edis2datafile(edilist, sites_file, winglinkoutput )
     #set up model file
     modelfn = winglinkmesh2modelfile(WL_outfile, modelfilename=modelfilename, res_value=HS_rho_value)
+
+    #set up data file
+    datafn  = edis2datafile(WL_outfile, edilist, sites_file)
+
 
     return datafn, modelfn
 
