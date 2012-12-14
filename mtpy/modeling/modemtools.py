@@ -32,7 +32,7 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
 
     """
 
-     #create the output filename
+    #create the output filename
     model_fn = op.abspath(modelfilename)
 
     #read widths for all blocks from WingLink output file
@@ -50,7 +50,7 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
     north_string=''
     count = 0
     for north_idx in range(n_ns_blocks):
-        north_string += '%f '%(dy[north_idx])
+        north_string += '%.3e '%(dy[north_idx])
         count +=1
         if count == 8:
             north_string +='\n'
@@ -65,7 +65,7 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
     east_string=''
     east_counter=0
     for east_idx in range(n_we_blocks):
-        east_string += '%g '%(dx[east_idx])
+        east_string += '%.3e '%(dx[east_idx])
 
     east_string +='\n'
     print east_string
@@ -76,7 +76,7 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
     z_string=''
     z_counter=0
     for z_idx in range(nz):
-        z_string += '%g '%(dz[z_idx])
+        z_string += '%.3e '%(dz[z_idx])
     z_string +='\n'
     print z_string
     init_modelFH.write(z_string)
