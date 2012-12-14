@@ -76,13 +76,13 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
     z_string=''
     z_counter=0
     for z_idx in range(nz):
-        z_string += '%.3e '%(dz[z_idx])
+        z_string += '%g '%(dz[z_idx])
     z_string +='\n'
     print z_string
     init_modelFH.write(z_string)
 
     init_modelFH.close()
-    sys.exit()
+    #sys.exit()
 
     #empty line required, if resistivity values are given instead of resistivity indices
     init_modelFH.write('\n')
