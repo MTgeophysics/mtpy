@@ -417,8 +417,6 @@ def readWLOutFile(outfn,ncol=5):
     #dy[0:ny/2]=-dy[0:ny/2]
 
 
-
-
     return dx,dy,dz
 
 
@@ -457,41 +455,6 @@ def readSitesFile(sitesfn):
         sitelst.append(sline[0][0:-4])
     return slst,sitelst
 
-
-def readSitesFile(sitesfn):
-    """
-    read sites_ file output from winglink
-
-    Input:
-        sitesfn = full path to the sites file output by winglink
-
-    Output:
-        slst = list of dictionaries for each station.  Keys include:
-            station = station name
-            dx = number of blocks from center of grid in East-West direction
-            dy = number of blocks from center of grid in North-South direction
-            dz = number of blocks from center of grid vertically
-            number = block number in the grid
-        sitelst = list of station names
-    """
-
-    sfid=file(sitesfn,'r')
-    slines=sfid.readlines()
-
-    slst=[]
-    sitelst=[]
-    for ss in slines:
-        sdict={}
-        sline=ss.strip().split()
-        sdict['station']=sline[0][0:-4]
-        sdict['dx']=int(sline[1])-1
-        sdict['dy']=int(sline[2])-1
-        sdict['dz']=int(sline[3])-1
-        sdict['something']=int(sline[4])
-        sdict['number']=int(sline[5])
-        slst.append(sdict)
-        sitelst.append(sline[0][0:-4])
-    return slst,sitelst
 
 def readSitesFile2(sitesfn):
     """
@@ -623,8 +586,6 @@ def getmeshblockcoordinates(WL_outfile):
         current_depth += (z_blockwidths[idx_z]/2. + z_blockwidths[idx_z+1]/2.)
         lo_depths.append(current_depth)
 
-    coord_list_xyz.append(lo_depths)
-
 
     lo_norths = []
     current_north = north_blockwidths[0]/2.
@@ -645,6 +606,8 @@ def getmeshblockcoordinates(WL_outfile):
 
     lo_easts_centered = list(np.array(lo_easts)-center_ew)
     coord_list_xyz.append(lo_easts_centered)
+
+    coord_list_xyz.append(lo_depths)
 
 
     return coord_list_xyz
