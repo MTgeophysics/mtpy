@@ -167,7 +167,7 @@ def edis2datafile(winglink_outfile, edilist, sites_file,  comment='Generic dataf
 
 
     #obtain x,y coordinateds using sites file:
-    lo_mesh_xyz_coord_lists = wlt.getmeshblockcoordinates(WL_outfile)
+    lo_mesh_xyz_coord_lists = wlt.getmeshblockcoordinates(winglink_outfile)
     sites_dict              = wlt.readSitesFile2(sites_file)
 
 
