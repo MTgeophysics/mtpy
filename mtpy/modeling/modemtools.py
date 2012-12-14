@@ -40,54 +40,71 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
 
     dx,dy,dz=wlt.readWLOutFile(WLoutputfile,ncol=5)
 
-    nx=len(dx)
-    ny=len(dy)
+    n_we_blocks=len(dx)
+    n_ns_blocks=len(dy)
     nz=len(dz)
 
     init_modelFH = open(model_fn,'w')
     init_modelFH.write('#Initial halfspace model, based on WingLink generated mesh \n')
-    init_modelFH.write('%i %i %i 1 \n'%(ny,nx,nz))
+    init_modelFH.write('%i %i %i 0 \n'%(ny,nx,nz))
 
-    #write y locations
-    y_string=''
-    y_counter=0
-    for y_idx in range(ny):
-        y_string += '%.3e  '%(dy[y_idx])
-        y_counter+=1
-        if y_counter == 8:
-            y_string += '\n'
-            y_counter = 0
-    if ny%8:
-        y_string +='\n'
-    init_modelFH.write(y_string)
+    #write north locations
+    north_string=''
+    north_counter=0
+    for north_idx in range(n_ns_blocks):
+        north_string += '%.3e'%(dy[north_idx])
+        #north_counter+=1
+        #if north_counter == 8:
+        #    north_string += '\n'
+        #    north_counter = 0
+    #if ny%8:
+    north_string +='\n'
+    init_modelFH.write(north_string)
 
     #write x locations
-    x_string=''
-    x_counter=0
-    for x_idx in range(nx):
-        x_string += '%.3e  '%(dx[x_idx])
-        x_counter+=1
-        if x_counter == 8:
-            x_string += '\n'
-            x_counter = 0
-    if nx%8:
-	x_string +='\n'
-    init_modelFH.write(x_string)
+    east_string=''
+    east_counter=0
+    for east_idx in range(n_we_blocks):
+        east_string += '%.3e '%(dx[east_idx])
+        #east_counter+=1
+        #if x_counter == 8:
+            #x_string += '\n'
+            #x_counter = 0
+    #if nx%8:
+	east_string +='\n'
+    init_modelFH.write(east_string)
 
     #write z locations
     z_string=''
     z_counter=0
     for z_idx in range(nz):
-        z_string += '%.3e  '%(dz[z_idx])
-        z_counter+=1
-        if z_counter == 8:
-            z_string += '\n'
-            z_counter = 0
-    if nz%8:
-        z_string +='\n'
+        z_string += '%.3e '%(dz[z_idx])
+        #z_counter+=1
+        #if z_counter == 8:
+            #z_string += '\n'
+            #z_counter = 0
+    #if nz%8:
+    z_string +='\n'
     init_modelFH.write(z_string)
 
-    init_modelFH.write('%.2f \n'%float(res_value))
+    #empty line required, if resistivity values are given instead of resistivity indices
+    init_modelFH.write('\n')
+
+    for idx_depth in range(nz):
+        for idx_n in range(n_ns_blocks):
+            we_profile_string =''
+            for idx_e in range(n_we_blocks):
+                we_profile_string +='%.1f '%(res_value)
+            #linebreak after each west-east profile
+            init_modelFH.write(we_profile_string+'\n')
+
+
+    #define origin of model file ... just 0 at the moment
+    init_modelFH.write('%.1f %.1f %.1f \n'%(0.,0.,0.))
+
+    #define rotation angle of model w.r.t. data set...just 0 at the moment
+    init_modelFH.write('%.1f\n'%(0.))
+
 
     init_modelFH.close()
 
@@ -126,7 +143,7 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
     if len(comment)>100:
         sys.exit('comment string is too long (cannot exceed 100 characters)\n')
 
-    
+
     lo_frequencies = []
     data_dict = {}
 
@@ -145,19 +162,19 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
 
     #obtain x,y coordinateds using sites file:
     x_east_list, y_north_list, x_east_y_north_dict = wlt.getXY(sites_file, winglink_outfile)
-   
-  
-    
+
+
+
     for idx_edi,edifilename in enumerate(edilist):
         #generate overall dictionary containing info from all files
 
-       
+
         raw_dict = mtt.readedi(edifilename)
         stationname = raw_dict['station']
         #check, if the station has been used in the model setup:
         if not stationname in x_east_y_north_dict.keys():
-            continue 
-        
+            continue
+
         data_dict[stationname] = raw_dict
         counter += 1
 
@@ -180,7 +197,7 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
     so_frequencies = list (set(lo_frequencies))
     n_periods      = len(so_frequencies)
     n_stations     = counter
-    
+
     print 'data from %i stations used for datafile and model setup'%(counter)
 
     #write header info
@@ -212,7 +229,7 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
 
         #no other choice so far...no depth given via EDI file:
         depth  = 0.
-        
+
         eastnorthpair = x_east_y_north_dict[stationname]
         #x,y = latlon2xy(lat, lon, origin)
 
@@ -228,7 +245,7 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
                 err = Z_var[idx_freq,row,column]
 
                 current_data_line = '%f %s %f %f %.1f %.1f %.1f %s %f %f %f \n'%(period, stationname, lat, lon, eastnorthpair[1], eastnorthpair[0],depth,comp, np.real(Z_value), np.imag(Z_value), err)
-                
+
                 F.write(current_data_line)
 
     F.close()
@@ -240,7 +257,7 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
 
 def generate_edilist(edifolder):
 
-    
+
     lo_edifiles = [op.abspath(i) for i in glob.glob(op.join(edifolder,'*.[eE][dD][iI]'))]
 
     return lo_edifiles
@@ -263,7 +280,7 @@ def winglink2modem(edifolder, winglinkoutput, sites_file, modelfilename='init_mo
 
     if not op.isfile(sites_file):
         sys.exit('cannot open sites information file: \n%s'%(sites_file))
-        
+
     try:
         WL_outfile = op.abspath(winglinkoutput)
     except:
