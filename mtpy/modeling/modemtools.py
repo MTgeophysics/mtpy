@@ -56,7 +56,8 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
             north_string +='\n'
             count = 0
 
-    north_string +='\n'
+    if n_ns_blocks%8 != 0:
+        north_string +='\n'
 
     init_modelFH.write(north_string)
 
@@ -65,11 +66,13 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
     count=0
     for east_idx in range(n_we_blocks):
         east_string += '%.3e '%(dx[east_idx])
+        count +=1
         if count == 8:
             east_string +='\n'
             count = 0
 
-    east_string +='\n'
+    if n_we_blocks%8 != 0:
+        east_string +='\n'
 
     init_modelFH.write(east_string)
 
@@ -78,11 +81,13 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
     count = 0
     for z_idx in range(nz):
         z_string += '%.3e '%(dz[z_idx])
+        count +=1
         if count == 8:
             z_string +='\n'
             count = 0
+    if nz%8 != 0:
+        z_string +='\n'
 
-    z_string +='\n'
     init_modelFH.write(z_string)
 
     #init_modelFH.close()
