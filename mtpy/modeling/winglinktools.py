@@ -598,7 +598,7 @@ def getmeshblockcoordinates(WL_outfile):
 
     """
 
-    east_blockwidths, north_blockwidths, z_blockwidth = readWLOutFile(WL_outfile)
+    east_blockwidths, north_blockwidths, z_blockwidths = readWLOutFile(WL_outfile)
 
     n_east  = len(east_blockwidths)
     n_north = len(north_blockwidths)
