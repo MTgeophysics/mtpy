@@ -209,9 +209,9 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
     #write header info
     F = open(datafilename,'w')
     F.write('# %s\n'%(comment))
-    F.write('# Period Station Lat Lon X Y Z Component Real Imag Err\n')
+    F.write('# Period Station Lat Lon X Y Z Component Real Imag Error\n')
     F.write('> Full_Impedance\n')
-    F.write('> exp(-i\omega t\n')
+    F.write('> exp(-i\omega t)\n')
     F.write('> [mV/km]/[nT]\n')
     F.write('> 0.00\n')
     F.write('> 0 0 \n')
