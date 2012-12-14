@@ -46,7 +46,7 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
 
     init_modelFH = open(model_fn,'w')
     init_modelFH.write('#Initial halfspace model, based on WingLink generated mesh \n')
-    init_modelFH.write('%i %i %i 0 \n'%(ny,nx,nz))
+    init_modelFH.write('%i %i %i 0 \n'%(n_ns_blocks,n_we_blocks,nz))
 
     #write north locations
     north_string=''
