@@ -458,7 +458,7 @@ def readSitesFile(sitesfn):
     return slst,sitelst
 
 
-    def readSitesFile(sitesfn):
+def readSitesFile(sitesfn):
     """
     read sites_ file output from winglink
 
