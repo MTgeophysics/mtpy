@@ -511,20 +511,20 @@ def readSitesFile2(sitesfn):
         (index of the station-containing mesh block in down direction)
 
     """
-        stations_dict = {}
+    stations_dict = {}
 
-        sfid=file(sitesfn,'r')
-        slines=sfid.readlines()
-        for ss in slines:
-            current_dict={}
-            sline   = ss.strip().split()
-            station = sline[0][0:-4]
-            current_dict['idx_east']  = int(sline[1])
-            current_dict['idx_south'] = int(sline[2])
-            current_dict['idx_z']     = int(sline[1])
-            stations_dict[station] = current_dict
+    sfid=file(sitesfn,'r')
+    slines=sfid.readlines()
+    for ss in slines:
+        current_dict={}
+        sline   = ss.strip().split()
+        station = sline[0][0:-4]
+        current_dict['idx_east']  = int(sline[1])
+        current_dict['idx_south'] = int(sline[2])
+        current_dict['idx_z']     = int(sline[1])
+        stations_dict[station] = current_dict
 
-        return stations_dict
+    return stations_dict
 
 
 def getXY(sitesfn,outfn,ncol=5):
