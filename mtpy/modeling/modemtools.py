@@ -73,7 +73,7 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
             #x_counter = 0
     #if nx%8:
     print east_string
-	east_string +='\n'
+    east_string +='\n'
     init_modelFH.write(east_string)
 
     #write z locations
