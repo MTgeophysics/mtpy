@@ -32,12 +32,10 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
 
     """
 
-    #TODO check for x-y convention!!!!
-
      #create the output filename
     model_fn = op.abspath(modelfilename)
 
-
+    #read widths for all blocks from WingLink output file
     dx,dy,dz=wlt.readWLOutFile(WLoutputfile,ncol=5)
 
     n_we_blocks=len(dx)
@@ -50,16 +48,12 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
 
     #write north locations
     north_string=''
-    north_counter=0
     for north_idx in range(n_ns_blocks):
         north_string += '%.3e '%(dy[north_idx])
-        #north_counter+=1
-        #if north_counter == 8:
-        #    north_string += '\n'
-        #    north_counter = 0
-    #if ny%8:
-    print north_string
+
     north_string +='\n'
+    print north_string
+
     init_modelFH.write(north_string)
 
     #write x locations
@@ -67,13 +61,10 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
     east_counter=0
     for east_idx in range(n_we_blocks):
         east_string += '%.3e '%(dx[east_idx])
-        #east_counter+=1
-        #if x_counter == 8:
-            #x_string += '\n'
-            #x_counter = 0
-    #if nx%8:
-    print east_string
+
     east_string +='\n'
+    print east_string
+
     init_modelFH.write(east_string)
 
     #write z locations
@@ -81,14 +72,12 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
     z_counter=0
     for z_idx in range(nz):
         z_string += '%.3e '%(dz[z_idx])
-        #z_counter+=1
-        #if z_counter == 8:
-            #z_string += '\n'
-            #z_counter = 0
-    #if nz%8:
-    print z_string
     z_string +='\n'
+    print z_string
     init_modelFH.write(z_string)
+
+    init_modelFH.close()
+    sys.exit()
 
     #empty line required, if resistivity values are given instead of resistivity indices
     init_modelFH.write('\n')
