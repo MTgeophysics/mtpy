@@ -137,7 +137,7 @@ def writeWSDataFile(sitesfn,outfn,periodlst,edipath,zerr=.05,ptol=.15,
     sitelst,slst=readSitesFile(sitesfn)
     
     #get x and y locations on a relative grid
-    xlst,ylst=getXY(sitesfn,outfn,ncol=ncol)
+    xlst,ylst, xy_dict = getXY(sitesfn,outfn,ncol=ncol)
     
     #define some lengths
     ns=len(slst)

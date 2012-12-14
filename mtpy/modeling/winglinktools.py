@@ -485,11 +485,15 @@ def getXY(sitesfn,outfn,ncol=5):
     xarr=np.zeros(ns)
     yarr=np.zeros(ns)
     
+    #redundant, but necessary, since station order in sites file can be messed up
+    xy_dict = {}
     
     for ii,sdict in enumerate(slst):
         xx=sdict['dx']
         yy=sdict['dy']
-        if xx<nxh:
+        station = sdict['station']
+        
+        if xx<nxh:       
             xarr[ii]=dx[xx:nxh].sum()-dx[xx]/2
         else:
             xarr[ii]=dx[nxh:xx].sum()+dx[xx]/2                    
@@ -497,8 +501,12 @@ def getXY(sitesfn,outfn,ncol=5):
             yarr[ii]=-1*(dy[yy:nyh].sum()-dy[yy]/2)
         else:
             yarr[ii]=-1*(dy[nyh:yy].sum()+dy[yy]/2)   
+        
+        
+        xy_dict['station'] = [xarr[ii], yarr[ii]  ]
 
-    return xarr,yarr  
+
+    return xarr,yarr, xy_dict  
 
     
         

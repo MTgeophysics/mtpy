@@ -118,13 +118,13 @@ def latlon2xy(lat, lon, origin):
     return x,y
 
 
-def  edis2datafile(edilist, origin, comment='Generic datafile, generated from Python script'):
+def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafile, generated from Python script'):
 
     datafilename = op.abspath('ModEM_inputdata')
     if len(comment)>100:
         sys.exit('comment string is too long (cannot exceed 100 characters)\n')
 
-
+    
     lo_frequencies = []
     data_dict = {}
 
@@ -141,7 +141,11 @@ def  edis2datafile(edilist, origin, comment='Generic datafile, generated from Py
             return False
 
 
-
+    #obtain x,y coordinateds using sites file:
+    x_east_list, y_north_list, x_east_y_north_dict = wlt.getXY(sites_file, winglink_outfile)
+    
+    
+    
     for idx_edi,edifilename in enumerate(edilist):
         #generate overall dictionary containing info from all files
 
@@ -193,8 +197,9 @@ def  edis2datafile(edilist, origin, comment='Generic datafile, generated from Py
         Z_var = station['zvar']
         #no other choice so far...no depth given via EDI file:
         depth  = 0.
-
-        x,y = latlon2xy(lat, lon, origin)
+        
+        eastnorthpair = x_east_y_north_dict['station']
+        #x,y = latlon2xy(lat, lon, origin)
 
         for idx_freq, tmp_freq in enumerate(station_frequencies):
             #take frequency from the frequency-list defined above
@@ -207,7 +212,7 @@ def  edis2datafile(edilist, origin, comment='Generic datafile, generated from Py
                 Z_value = Z[idx_freq,row,column]
                 err = Z_var[idx_freq,row,column]
 
-                current_data_line = '%f %s %f %f %f %f %f %s %f %f %f \n'%(period, station, lat, lon, x,y,depth,comp, real(Z_value), imag(Z_value), err)
+                current_data_line = '%f %s %f %f %f %f %f %s %f %f %f \n'%(period, station, lat, lon, eastnorthpair[1], eastnorthpair[0],depth,comp, real(Z_value), imag(Z_value), err)
 
 
     return datafilename
@@ -224,7 +229,7 @@ def generate_edilist(edifolder):
 
 
 
-def winglink2modem(edifolder, winglinkoutput, resistivity):
+def winglink2modem(edifolder, winglinkoutput, sites_file, resistivity=100):
 
 
     #check input for consistency
@@ -233,9 +238,13 @@ def winglink2modem(edifolder, winglinkoutput, resistivity):
 
     edilist = generate_edilist(edifolder)
 
+
     if len(edilist)==0:
         sys.exit('cannot find EDI files in given directory: \n%s'%(edifolder))
 
+    if not op.isfile(sites_file):
+        sys.exit('cannot open sites information file: \n%s'%(sites_file))
+        
     try:
         WL_outfile = op.abspath(winglinkoutput)
     except:
@@ -248,7 +257,7 @@ def winglink2modem(edifolder, winglinkoutput, resistivity):
 
 
     #set up data file
-    datafn  = edis2datafile(edilist)
+    datafn  = edis2datafile(edilist, sitesfile, winglinkoutput )
     #set up model file
     modelfn = winglinkmesh2modelfile(WL_outfile, modelfilename=chosen_model, res_value=HS_rho_value)
 
