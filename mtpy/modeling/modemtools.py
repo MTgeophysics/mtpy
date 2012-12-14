@@ -54,31 +54,35 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
         count +=1
         if count == 8:
             north_string +='\n'
-
+            count = 0
 
     north_string +='\n'
-    print north_string
 
     init_modelFH.write(north_string)
 
     #write x locations
     east_string=''
-    east_counter=0
+    count=0
     for east_idx in range(n_we_blocks):
         east_string += '%.3e '%(dx[east_idx])
+        if count == 8:
+            east_string +='\n'
+            count = 0
 
     east_string +='\n'
-    print east_string
 
     init_modelFH.write(east_string)
 
     #write z locations
     z_string=''
-    z_counter=0
+    count = 0
     for z_idx in range(nz):
         z_string += '%.3e '%(dz[z_idx])
+        if count == 8:
+            z_string +='\n'
+            count = 0
+
     z_string +='\n'
-    print z_string
     init_modelFH.write(z_string)
 
     #init_modelFH.close()
