@@ -151,7 +151,7 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
 
         raw_dict = mtt.readedi(edifilename)
         stationname = raw_dict['station']
-        data_dict['stationname'] = raw_dict
+        data_dict[stationname] = raw_dict
         counter += 1
 
 
@@ -161,13 +161,13 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
         for freq in raw_freqs:
             #check, if freq is already in list, ...
             if len(lo_frequencies) ==0:
-                lo_frequencies.extend(freq)
+                lo_frequencies.append(freq)
             elif freq in lo_frequencies:
                 continue
             elif closetoexisting(freq,lo_frequencies):
                 continue
             else:
-                lo_frequencies.extend(freq)
+                lo_frequencies.append(freq)
 
 
     so_frequencies = list (set(lo_frequencies))
@@ -188,8 +188,10 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
     #define components:
     z_components =['ZXX','ZXY','ZYX','ZYY']
 
+
     #iterate over general dictionary and write data file lines successively sorted by stations:
-    for station in data_dict:
+    for stationname in data_dict:
+        station = data_dict[stationname]
         station_frequencies = station['frequency']
         lat = station['lat']
         lon = station['lon']
@@ -203,7 +205,7 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
 
         for idx_freq, tmp_freq in enumerate(station_frequencies):
             #take frequency from the frequency-list defined above
-            correct_frequency = lo_frequencies[ np.abs(tmp_freq-np.array(lo_frequencies)).minarg() ]
+            correct_frequency = lo_frequencies[ np.abs(tmp_freq-np.array(lo_frequencies)).argmin() ]
             period = 1./correct_frequency
 
             for idx_comp,comp in enumerate(z_components):
@@ -212,9 +214,11 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
                 Z_value = Z[idx_freq,row,column]
                 err = Z_var[idx_freq,row,column]
 
-                current_data_line = '%f %s %f %f %f %f %f %s %f %f %f \n'%(period, station, lat, lon, eastnorthpair[1], eastnorthpair[0],depth,comp, real(Z_value), imag(Z_value), err)
+                current_data_line = '%f %s %f %f %f %f %f %s %f %f %f \n'%(period, station, lat, lon, eastnorthpair[1], eastnorthpair[0],depth,comp, np.real(Z_value), np.imag(Z_value), err)
+                
+                F.write(current_data_line)
 
-
+    F.close()
     return datafilename
 
 
@@ -222,14 +226,15 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
 
 def generate_edilist(edifolder):
 
-    lo_edifiles = [op.abspath(i) for i in glob.glob('*.[eE][dD][iI]')]
+    
+    lo_edifiles = [op.abspath(i) for i in glob.glob(op.join(edifolder,'*.[eE][dD][iI]'))]
 
-    return edilist
+    return lo_edifiles
 
 
 
 
-def winglink2modem(edifolder, winglinkoutput, sites_file, resistivity=100):
+def winglink2modem(edifolder, winglinkoutput, sites_file, modelfilename='init_model', resistivity=100):
 
 
     #check input for consistency
@@ -257,9 +262,9 @@ def winglink2modem(edifolder, winglinkoutput, sites_file, resistivity=100):
 
 
     #set up data file
-    datafn  = edis2datafile(edilist, sitesfile, winglinkoutput )
+    datafn  = edis2datafile(edilist, sites_file, winglinkoutput )
     #set up model file
-    modelfn = winglinkmesh2modelfile(WL_outfile, modelfilename=chosen_model, res_value=HS_rho_value)
+    modelfn = winglinkmesh2modelfile(WL_outfile, modelfilename=modelfilename, res_value=HS_rho_value)
 
     return datafn, modelfn
 
