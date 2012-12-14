@@ -14,7 +14,7 @@ import glob
 import mtpy.core.mttools as mtt
 import mtpy.modeling.winglinktools as wlt
 import mtpy.utils.latlongutmconversion as ll2utm
-
+reload(wlt)
 
 def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_value=100):
     """return init3d file/start model
@@ -31,6 +31,8 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
         init file path
 
     """
+
+    #TODO check for x-y convention!!!!
 
      #create the output filename
     model_fn = op.abspath(modelfilename)
@@ -85,7 +87,7 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
         z_string +='\n'
     init_modelFH.write(z_string)
 
-    init_modelFH.write('%i \n'%int(rhostart))
+    init_modelFH.write('%.2f \n'%float(res_value))
 
     init_modelFH.close()
 
@@ -143,14 +145,19 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
 
     #obtain x,y coordinateds using sites file:
     x_east_list, y_north_list, x_east_y_north_dict = wlt.getXY(sites_file, winglink_outfile)
-    
-    
+   
+  
     
     for idx_edi,edifilename in enumerate(edilist):
         #generate overall dictionary containing info from all files
 
+       
         raw_dict = mtt.readedi(edifilename)
         stationname = raw_dict['station']
+        #check, if the station has been used in the model setup:
+        if not stationname in x_east_y_north_dict.keys():
+            continue 
+        
         data_dict[stationname] = raw_dict
         counter += 1
 
@@ -173,6 +180,8 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
     so_frequencies = list (set(lo_frequencies))
     n_periods      = len(so_frequencies)
     n_stations     = counter
+    
+    print 'data from %i stations used for datafile and model setup'%(counter)
 
     #write header info
     F = open(datafilename,'w')
@@ -190,17 +199,21 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
 
 
     #iterate over general dictionary and write data file lines successively sorted by stations:
-    for stationname in data_dict:
-        station = data_dict[stationname]
-        station_frequencies = station['frequency']
-        lat = station['lat']
-        lon = station['lon']
-        Z   = station['z']
-        Z_var = station['zvar']
+    for station in data_dict:
+
+        station_dict = data_dict[station]
+        station_frequencies = station_dict['frequency']
+        lat = station_dict['lat']
+        lon = station_dict['lon']
+        Z   = station_dict['z']
+        Z_var = station_dict['zvar']
+        stationname = station_dict['station']
+        print 'writing data for station %s'%(stationname)
+
         #no other choice so far...no depth given via EDI file:
         depth  = 0.
         
-        eastnorthpair = x_east_y_north_dict['station']
+        eastnorthpair = x_east_y_north_dict[stationname]
         #x,y = latlon2xy(lat, lon, origin)
 
         for idx_freq, tmp_freq in enumerate(station_frequencies):
@@ -214,11 +227,12 @@ def edis2datafile(edilist, sites_file, winglink_outfile, comment='Generic datafi
                 Z_value = Z[idx_freq,row,column]
                 err = Z_var[idx_freq,row,column]
 
-                current_data_line = '%f %s %f %f %f %f %f %s %f %f %f \n'%(period, station, lat, lon, eastnorthpair[1], eastnorthpair[0],depth,comp, np.real(Z_value), np.imag(Z_value), err)
+                current_data_line = '%f %s %f %f %.1f %.1f %.1f %s %f %f %f \n'%(period, stationname, lat, lon, eastnorthpair[1], eastnorthpair[0],depth,comp, np.real(Z_value), np.imag(Z_value), err)
                 
                 F.write(current_data_line)
 
     F.close()
+    print 'wrote datafile %s'%(datafilename)
     return datafilename
 
 

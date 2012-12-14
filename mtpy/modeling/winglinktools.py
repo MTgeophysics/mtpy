@@ -503,7 +503,7 @@ def getXY(sitesfn,outfn,ncol=5):
             yarr[ii]=-1*(dy[nyh:yy].sum()+dy[yy]/2)   
         
         
-        xy_dict['station'] = [xarr[ii], yarr[ii]  ]
+        xy_dict[station] = [xarr[ii], yarr[ii]  ]
 
 
     return xarr,yarr, xy_dict  
