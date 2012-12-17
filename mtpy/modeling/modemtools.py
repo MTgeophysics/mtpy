@@ -93,10 +93,11 @@ def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_v
     init_modelFH.write(z_string)
 
 
-    #empty line required, if resistivity values are given instead of resistivity indices
-    init_modelFH.write('\n')
 
     for idx_depth in range(nz):
+        #empty line required, if resistivity values are given instead of resistivity indices
+        init_modelFH.write('\n')
+
         for idx_n in range(n_ns_blocks):
             we_profile_string =''
             for idx_e in range(n_we_blocks):
@@ -465,7 +466,7 @@ def wsinv2modem_data(wsinv_datafile, sites_file=None):
                 mean_error = 0.5 * (real_error + imag_error)
 
 
-                current_data_line = '%f %s 0 0 %.1f %.1f 0 %s %.4e %.4e %.4e \n'%(current_period, current_station,  north_coord, east_coord,comp, real_value, imag_value, mean_error)
+                current_data_line = '%.6E %s 0 0 %.1f %.1f 0 %s %.6E %.6E %.6E \n'%(current_period, current_station,  north_coord, east_coord,comp, real_value, imag_value, mean_error)
 
                 outFH.write(current_data_line)
 
@@ -512,10 +513,9 @@ def wsinv2modem_model(wsinv_modelfile, modeltype='halfspace'):
     for row in modeldata_raw:
         lo_blockwidths.extend(row.strip().split())
 
-
-    lo_blockwidths_north = [float(i) for i in lo_blockwidths[6:6+n_north_blocks]]
-    lo_blockwidths_east  = [float(j) for j in lo_blockwidths[6+n_north_blocks:6+n_north_blocks+n_east_blocks]]
-    lo_blockwidths_z     = [float(k) for k in lo_blockwidths[6+n_north_blocks+n_east_blocks:6+n_north_blocks+n_east_blocks+n_z_blocks]]
+    lo_blockwidths_north = [int(float(i)) for i in lo_blockwidths[6:6+n_north_blocks]]
+    lo_blockwidths_east  = [int(float(j)) for j in lo_blockwidths[6+n_north_blocks:6+n_north_blocks+n_east_blocks]]
+    lo_blockwidths_z     = [int(float(k)) for k in lo_blockwidths[6+n_north_blocks+n_east_blocks:6+n_north_blocks+n_east_blocks+n_z_blocks]]
 
 
     HS_resistivity_value = float(modeldata_raw[-1].strip().split()[0])
@@ -525,20 +525,20 @@ def wsinv2modem_model(wsinv_modelfile, modeltype='halfspace'):
     Fout = open(outfilename,'w')
 
     Fout.write('#Initial halfspace model, converted from wsinv input model file\n')
-    Fout.write('%i %i %i 0 \n'%(n_north_blocks,n_east_blocks,n_z_blocks))
+    Fout.write('%i %i %i 0 LOGE\n'%(n_north_blocks,n_east_blocks,n_z_blocks))
 
     #write north block widths
     north_string=''
     count = 0
     for north_idx in range(n_north_blocks):
-        north_string += '%.3e '%(lo_blockwidths_north[north_idx])
-        count +=1
-        if count == 8:
-            north_string +='\n'
-            count = 0
+        north_string += '%i '%(lo_blockwidths_north[north_idx])
+        #count +=1
+        #if count == 8:
+            #north_string +='\n'
+            #count = 0
 
-    if n_north_blocks%8 != 0:
-        north_string +='\n'
+    #if n_north_blocks%8 != 0:
+    north_string +='\n'
 
 
     Fout.write( north_string)
@@ -548,14 +548,14 @@ def wsinv2modem_model(wsinv_modelfile, modeltype='halfspace'):
     east_string=''
     count = 0
     for east_idx in range(n_east_blocks):
-        east_string += '%.3e '%(lo_blockwidths_east[east_idx])
+        east_string += '%i '%(lo_blockwidths_east[east_idx])
         count +=1
-        if count == 8:
-            east_string +='\n'
-            count = 0
+        #if count == 8:
+            #east_string +='\n'
+            #count = 0
 
-    if n_east_blocks%8 != 0:
-        east_string +='\n'
+    #if n_east_blocks%8 != 0:
+    east_string +='\n'
 
 
     Fout.write(east_string)
@@ -565,30 +565,29 @@ def wsinv2modem_model(wsinv_modelfile, modeltype='halfspace'):
     z_string=''
     count = 0
     for z_idx in range(n_z_blocks):
-        z_string += '%.3e '%(lo_blockwidths_z[z_idx])
-        count +=1
-        if count == 8:
-            z_string +='\n'
-            count = 0
+        z_string += '%i '%(lo_blockwidths_z[z_idx])
+        #count +=1
+        #if count == 8:
+            #z_string +='\n'
+            #count = 0
 
-    if n_z_blocks%8 != 0:
-        z_string +='\n'
+    #if n_z_blocks%8 != 0:
+    z_string +='\n'
 
     Fout.write(z_string)
 
-    #empty line required
-    Fout.write('\n')
-
     blockcount = 0
     for idx_depth in range(n_z_blocks):
+        #empty line required
+        Fout.write('\n')
+
         for idx_n in range(n_north_blocks):
             we_profile_string =''
             for idx_e in range(n_east_blocks):
                 blockcount +=1
-                we_profile_string +='%.1f '%(HS_resistivity_value)
+                we_profile_string +='%.5E '%(np.log(HS_resistivity_value))
                 #linebreak after each west-east profile
             Fout.write(we_profile_string+'\n')
-
 
     #define origin of model file ... just 0 at the moment
     #assumed to be at the lateral center of the model at the surface
@@ -597,7 +596,6 @@ def wsinv2modem_model(wsinv_modelfile, modeltype='halfspace'):
     #define rotation angle of model w.r.t. data set...just 0 at the moment
     Fout.write('%.1f\n'%(0.))
 
-    Fout.write('\n')
 
     Fout.close()
     print 'wrote modelfile %s'%(outfilename)
