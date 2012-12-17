@@ -10,6 +10,7 @@ import os.path as op
 import sys
 import numpy as np
 import glob
+import re
 
 import mtpy.core.mttools as mtt
 import mtpy.modeling.winglinktools as wlt
@@ -275,6 +276,7 @@ def generate_edilist(edifolder):
 
 
 
+
 def winglink2modem(edifolder, winglinkoutput, sites_file, modelfilename='init_model', resistivity=100):
 
 
@@ -311,3 +313,168 @@ def winglink2modem(edifolder, winglinkoutput, sites_file, modelfilename='init_mo
 
     return datafn, modelfn
 
+
+
+
+def wsinv2modem_data(wsinv_datafile, sites_file=None):
+    """
+    Convert an existing input data file from Weerachai's wsinv style into Egbert's ModEM type
+
+    Just provide the wsinv data file and optional the 'sites' file
+    The ModEM data file is then provided as 'ModEM_datafile'
+
+    """
+
+
+
+    if not op.isfile(wsinv_datafile):
+        sys.exit('cannot find input data file:\n%s'%(wsinv_datafile))
+
+    inFH  = open(wsinv_datafile,'r')
+
+    outfn = op.abspath('ModEM_datafile')
+    outFH = open(outfn,'w')
+
+    #conversion factor from ohm (ws3dinv) into 'standard' mV/km/nT (ModEM):
+    ohm2mvkmnt = 1./796
+
+    #define Z components
+    z_components =['ZXX','ZXY','ZYX','ZYY']
+
+
+    outFH.write('# ModEM datafile, converted from Wsinv3D input\n')
+    outFH.write('# Period Station 0 0 X Y 0 Component Real Imag Error\n')
+    outFH.write('> Full_Impedance\n')
+    outFH.write('> exp(-i\omega t)\n')
+    outFH.write('> [mV/km]/[nT]\n')
+    outFH.write('> 0.00\n')
+    outFH.write('> 0 0 \n')
+
+
+    indata_raw = inFH.readlines()
+    inFH.close()
+    indata_list =[]
+    for row in indata_raw:
+        indata_list.extend(row.strip().split() )
+
+    n_stations = int(indata_list[0])
+    n_periods  = int(indata_list[1])
+
+    outFH.write('> %i %i\n'%(n_periods, n_stations))
+
+    if not int(indata_list[2]) == 8:
+        outFH.close()
+        sys.exit('cannot handle input file - need 8 components, but %i given!'%int(indata_list[2]))
+
+    #obtain ns coordinates:
+    lo_coordinates_ns = []
+    for n in range(n_stations):
+        curr_north = float(indata_list[5+n])
+        lo_coordinates_ns.append(curr_north)
+
+    #obtain ew coordinates:
+    lo_coordinates_ew = []
+    for e in range(n_stations):
+        curr_east = float(indata_list[5+n_stations+2+e])
+        lo_coordinates_ew.append(curr_east)
+
+    #setup list of station names
+    lo_stations = []
+
+    #check, if valid sites file is provided:
+    try:
+        if not op.isfile(sites_file):
+            print 'ERROR -- could not find sites file:\n%s'%(sites_file)
+            raise
+
+        SF = open(sites_file,'r')
+        SF_data = SF.readlines()
+        if not len(SF_data) == n_stations:
+            print 'ERROR -- sites file contains wrong number of stations (%i instead of %i)!'%(len(SF_data),n_stations)
+            raise
+
+        for i in range(n_stations):
+            lo_stations.append(SF_data[i].strip().split()[0][:-4])
+
+
+    except:
+        print 'Could not find proper list of site names. Generic station names are used'
+        for i in range(n_stations):
+            stationname = 'Sta%02i'%(i+1)
+            lo_stations.append(stationname)
+
+
+    #find starting row for actual data block:
+    repattern1 = re.compile(r'DATA_Period')
+    r = None
+    dummy1 = 0
+    for i,line in enumerate(indata_raw):
+        r = re.search(repattern1, line)
+        if r:
+            dummy1 = i
+            break
+
+    idx_first_data_row = dummy1
+
+
+    #find starting row for error block
+    repattern2 = re.compile(r'ERROR_Period')
+    r = None
+    dummy2 = 0
+    for i,line in enumerate(indata_raw):
+        r = re.search(repattern2, line)
+        if r:
+            dummy2 = i
+            break
+
+    idx_first_error_row = dummy2
+
+
+    #loop for wrting data to output file; main looping over periods rather than stations for simplicity
+    for idx_period in range(n_periods):
+        current_starting_line_data = idx_first_data_row + (idx_period * (n_stations+1))
+        print current_starting_line_data
+        current_period = float(indata_raw[current_starting_line_data].strip().split(':')[1])
+
+        current_starting_line_error = idx_first_error_row + (idx_period * (n_stations+1))
+
+        print idx_period,current_period,current_starting_line_error
+
+        for idx_station in range(n_stations):
+            current_station = lo_stations[idx_station]
+            north_coord = lo_coordinates_ns[idx_station]
+            east_coord = lo_coordinates_ew[idx_station]
+
+
+            current_data_line  = current_starting_line_data + 1 + idx_station
+            current_error_line = current_starting_line_error + 1 + idx_station
+
+            lo_current_data = indata_raw[current_data_line].strip().split()
+            lo_current_error= indata_raw[current_error_line].strip().split()
+
+
+            for idx_comp, comp in enumerate(z_components):
+
+                real_value =  float(lo_current_data[idx_comp*2]) * ohm2mvkmnt
+                imag_value = float(lo_current_data[idx_comp*2+1]) * ohm2mvkmnt
+
+                real_error = float(lo_current_error[idx_comp*2]) * ohm2mvkmnt
+                imag_error = float(lo_current_error[idx_comp*2+1]) * ohm2mvkmnt
+
+                #only one error for ModEM, so taking the arithmetic mean:
+                mean_error = 0.5 * (real_error + imag_error)
+
+
+                current_data_line = '%f %s 0 0 %.1f %.1f 0 %s %.4e %.4e %.4e \n'%(current_period, current_station,  north_coord, east_coord,comp, real_value, imag_value, mean_error)
+
+                outFH.write(current_data_line)
+
+    outFH.close()
+    print 'wrote datafile %s'%(outfn)
+
+
+    return outfn
+
+
+
+def wsinv2modem_init(wsinv_datafile, sites_file=None):
