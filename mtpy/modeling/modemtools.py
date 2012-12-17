@@ -321,7 +321,7 @@ def wsinv2modem_data(wsinv_datafile, sites_file=None):
     Convert an existing input data file from Weerachai's wsinv style into Egbert's ModEM type
 
     Just provide the wsinv data file and optional the 'sites' file
-    The ModEM data file is then provided as 'ModEM_datafile'
+    The ModEM data file is then saved as 'ModEM_datafile' in the current working directory
 
     """
 
@@ -477,4 +477,129 @@ def wsinv2modem_data(wsinv_datafile, sites_file=None):
 
 
 
-def wsinv2modem_init(wsinv_datafile, sites_file=None):
+def wsinv2modem_model(wsinv_modelfile, modeltype='halfspace'):
+    """
+    Convert an existing input model file from Weerachai's wsinv style into Egbert's ModEM type
+
+    Just provide the wsinv model file
+    The ModEM model file is then saved as 'ModEM_modelfile' in the current working directorys
+
+    So far, only halfspace models can be converted (Dec. 2012)
+
+    """
+
+    if not op.isfile(wsinv_modelfile):
+        sys.exit('ERROR - could not find input model file:\n%s'%(wsinv_modelfile))
+
+    outfilename = 'ModEM_modelfile'
+
+    Fin = open(wsinv_modelfile,'r')
+    modeldata_raw = Fin.readlines()
+    Fin.close()
+
+    blockline = modeldata_raw[1].strip().split()
+    n_north_blocks = int(blockline[0])
+    n_east_blocks  = int(blockline[1])
+    n_z_blocks     = int(blockline[2])
+
+    modeltype_index = int(blockline[3])
+
+    if not modeltype_index == 1:
+        sys.exit('ERROR - conversion of this model type not supported (yet)!')
+
+
+    lo_blockwidths = []
+    for row in modeldata_raw:
+        lo_blockwidths.extend(row.strip().split())
+
+
+    lo_blockwidths_north = [float(i) for i in lo_blockwidths[6:6+n_north_blocks]]
+    lo_blockwidths_east  = [float(j) for j in lo_blockwidths[6+n_north_blocks:6+n_north_blocks+n_east_blocks]]
+    lo_blockwidths_z     = [float(k) for k in lo_blockwidths[6+n_north_blocks+n_east_blocks:6+n_north_blocks+n_east_blocks+n_z_blocks]]
+
+
+    HS_resistivity_value = float(modeldata_raw[-1].strip().split()[0])
+
+
+    #build new output file
+    Fout = open(outfilename,'w')
+
+    Fout.write('#Initial halfspace model, converted from wsinv input model file\n')
+    Fout.write('%i %i %i 0 \n'%(n_north_blocks,n_east_blocks,n_z_blocks))
+
+    #write north block widths
+    north_string=''
+    count = 0
+    for north_idx in range(n_north_blocks):
+        north_string += '%.3e '%(lo_blockwidths_north[north_idx])
+        count +=1
+        if count == 8:
+            north_string +='\n'
+            count = 0
+
+    if n_north_blocks%8 != 0:
+        north_string +='\n'
+
+
+    Fout.write( north_string)
+
+
+    #write east block widths
+    east_string=''
+    count = 0
+    for east_idx in range(n_east_blocks):
+        east_string += '%.3e '%(lo_blockwidths_east[east_idx])
+        count +=1
+        if count == 8:
+            east_string +='\n'
+            count = 0
+
+    if n_east_blocks%8 != 0:
+        east_string +='\n'
+
+
+    Fout.write(east_string)
+
+
+    #write down block heights
+    z_string=''
+    count = 0
+    for z_idx in range(n_z_blocks):
+        z_string += '%.3e '%(lo_blockwidths_z[z_idx])
+        count +=1
+        if count == 8:
+            z_string +='\n'
+            count = 0
+
+    if n_z_blocks%8 != 0:
+        z_string +='\n'
+
+    Fout.write(z_string)
+
+    #empty line required
+    Fout.write('\n')
+
+    blockcount = 0
+    for idx_depth in range(n_z_blocks):
+        for idx_n in range(n_north_blocks):
+            we_profile_string =''
+            for idx_e in range(n_east_blocks):
+                blockcount +=1
+                we_profile_string +='%.1f '%(HS_resistivity_value)
+                #linebreak after each west-east profile
+            Fout.write(we_profile_string+'\n')
+
+
+    #define origin of model file ... just 0 at the moment
+    #assumed to be at the lateral center of the model at the surface
+    Fout.write('%.1f %.1f %.1f \n'%(0.,0.,0.))
+
+    #define rotation angle of model w.r.t. data set...just 0 at the moment
+    Fout.write('%.1f\n'%(0.))
+
+    Fout.write('\n')
+
+    Fout.close()
+    print 'wrote modelfile %s'%(outfilename)
+
+    return outfilename
