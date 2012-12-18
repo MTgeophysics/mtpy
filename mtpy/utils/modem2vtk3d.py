@@ -40,10 +40,10 @@ def model2vtkgrid(ModEMmodelfn,VTKfn='VTKresistivitymodel.vtk' ):
     - [optional] VTK resistivity grid file - output file name
     """
 
-    if not op.isfile(os.path.abspath(os.path.realpath(ModEMmodelfn))):
+    if not os.path.isfile(os.path.abspath(os.path.realpath(ModEMmodelfn))):
         sys.exit('ERROR - could not find file:\n%s'%(os.path.abspath(os.path.realpath(ModEMmodelfn))))
 
-    if not op.isfile(os.path.abspath(os.path.realpath(VTKfn))):
+    if not os.path.isfile(os.path.abspath(os.path.realpath(VTKfn))):
         VTKfn = os.path.abspath(os.path.realpath('VTKresistivitymodel.vtk'))
 
 
@@ -94,10 +94,10 @@ def stations2vtkgrid(ModEMdatafn, VTKfn='VTKstations.vtk'):
     - [optional] VTK station grid file - output file name
     """
 
-    if not op.isfile(os.path.abspath(os.path.realpath(ModEMdatafn))):
+    if not os.path.isfile(os.path.abspath(os.path.realpath(ModEMdatafn))):
         sys.exit('ERROR - could not find file:\n%s'%(os.path.abspath(os.path.realpath(ModEMdatafn))))
 
-    if not op.isfile(os.path.abspath(os.path.realpath(VTKfn))):
+    if not os.path.isfile(os.path.abspath(os.path.realpath(VTKfn))):
         VTKfn = os.path.abspath(os.path.realpath('VTKstations.vtk'))
 
 
