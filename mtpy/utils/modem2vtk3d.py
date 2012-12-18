@@ -69,7 +69,7 @@ def model2vtkgrid(ModEMmodelfn,VTKfn='VTKresistivitymodel.vtk' ):
             current_line = raw_data[current_line_idx]
             lo_data_tmp = current_line.strip().split()
             for idx_east in range(n_east_blocks):
-                res_model[idx_north,idx_east, idx_depth] = exp(float(lo_data_tmp[idx_east]) )
+                res_model[idx_north,idx_east, idx_depth] = np.exp(float(lo_data_tmp[idx_east]) )
             current_line_idx +=1
 
     #transfer grid to km  instead of m
