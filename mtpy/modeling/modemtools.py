@@ -601,3 +601,119 @@ def wsinv2modem_model(wsinv_modelfile, modeltype='halfspace'):
     print 'wrote modelfile %s'%(outfilename)
 
     return outfilename
+
+
+
+def plotmodel3d(modem_modelfile, viewaxis='z',layer=0,savefile=None):
+    """
+    Plot routine for 3D model.
+    Generates a 2D surface section plot of one layer (first layer as default) with the given orientation of viewing axis (default downwards).
+
+
+
+    """
+
+
+    import pylab as p
+
+
+    pass
+
+    return
+
+
+
+def model2vtk3d(modem_modelfile)
+    """
+    Generates vtk file from 3D model file.
+
+
+    """
+
+
+    pass
+
+    return vtk_filename
+
+
+def getmeshblockcoordinates(ModEM_modelfile):
+    """
+    returns a list of 3 lists, which again contain the X/Y/Z coordinate of a mesh block
+
+    Orientation is X-North, Y-East, Z-Down.
+    Horizontal origin is in the center of the mesh,
+    Indexing starts at the lower left (SouthWest) corner
+
+    Referring to a block, which has the position (7 North,12 East,22 Depth), you get the coordinates as
+
+    ( thislist[0][6], thislist[1][11],, thislist[2][21] )
+
+
+    """
+
+    try:
+        ModEMmodelfn = os.path.abspath(os.path.realpath(ModEM_modelfile))
+
+    except:
+        sys.exit('ERROR - could not find file:\n%s'%(ModEM_modelfile))
+
+    F = open(ModEMmodelfn, 'r')
+    raw_data = F.readlines()
+    F.close()
+
+    dims = []
+    modeldata_firstline = raw_data[1].strip().split()
+    for n in range(3):
+        dims.append(int(modeldata_firstline[n]))
+    n_north_blocks = dims[0]
+    n_east_blocks  = dims[1]
+    n_depth_blocks = dims[2]
+
+    north_blockwidths = [int(float(i)) for i in raw_data[2].strip().split()]
+    east_blockwidths  = [int(float(j)) for j in raw_data[3].strip().split()]
+    depth_blockwidths = [int(float(k)) for k in raw_data[4].strip().split()]
+
+    coord_list_xyz =[]
+
+    total_width_ew = np.sum(east_blockwidths)
+    center_ew      = total_width_ew/2.
+
+    total_width_ns = np.sum(north_blockwidths)
+    center_ns      = total_width_ns/2.
+
+    total_depth    = np.sum(z_blockwidths)
+
+    #depths
+    lo_depths = []
+    current_depth = z_blockwidths[0]/2.
+    lo_depths.append(current_depth)
+
+    for idx_z in range(n_down-1):
+        current_depth += (z_blockwidths[idx_z]/2. + z_blockwidths[idx_z+1]/2.)
+        lo_depths.append(current_depth)
+
+
+    lo_norths = []
+    current_north = north_blockwidths[0]/2.
+    lo_norths.append(current_north)
+    for idx_n in range(n_north-1):
+        current_north += (north_blockwidths[idx_n]/2. + north_blockwidths[idx_n+1]/2.)
+        lo_norths.append(current_north)
+
+    lo_norths_centered = list(np.array(lo_norths)-center_ns)
+    coord_list_xyz.append(lo_norths_centered)
+
+    lo_easts = []
+    current_east= east_blockwidths[0]/2.
+    lo_easts.append(current_east)
+    for idx_e in range(n_east-1):
+        current_east+= (east_blockwidths[idx_e]/2. + east_blockwidths[idx_e+1]/2.)
+        lo_easts.append(current_east)
+
+    lo_easts_centered = list(np.array(lo_easts)-center_ew)
+    coord_list_xyz.append(lo_easts_centered)
+
+    coord_list_xyz.append(lo_depths)
+
+
+    return coord_list_xyz
