@@ -682,7 +682,7 @@ def getmeshblockcoordinates(ModEM_modelfile):
     lo_norths = []
     current_north = north_blockwidths[0]/2.
     lo_norths.append(current_north)
-    for idx_n in range(n_north-1):
+    for idx_n in range(n_north_blocks-1):
         current_north += (north_blockwidths[idx_n]/2. + north_blockwidths[idx_n+1]/2.)
         lo_norths.append(current_north)
 
@@ -692,7 +692,7 @@ def getmeshblockcoordinates(ModEM_modelfile):
     lo_easts = []
     current_east= east_blockwidths[0]/2.
     lo_easts.append(current_east)
-    for idx_e in range(n_east-1):
+    for idx_e in range(n_east_blocks-1):
         current_east+= (east_blockwidths[idx_e]/2. + east_blockwidths[idx_e+1]/2.)
         lo_easts.append(current_east)
 
