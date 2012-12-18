@@ -674,7 +674,7 @@ def getmeshblockcoordinates(ModEM_modelfile):
     current_depth = depth_blockwidths[0]/2.
     lo_depths.append(current_depth)
 
-    for idx_z in range(n_down-1):
+    for idx_z in range(n_depth_blocks-1):
         current_depth += (depth_blockwidths[idx_z]/2. + depth_blockwidths[idx_z+1]/2.)
         lo_depths.append(current_depth)
 
