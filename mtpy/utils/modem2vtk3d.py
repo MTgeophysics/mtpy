@@ -74,18 +74,20 @@ def model2vtkgrid(ModEMmodelfn,VTKfn='VTKresistivitymodel.vtk' ):
 
     #transfer grid to km  instead of m
     #use North-to-South convention in the grid!!
-    N = np.array(coords_list[0].reverse())/1000.
+    coords_list[0].reverse()
+    N = np.array(coords_list[0])/1000.
     E = np.array(coords_list[1])/1000.
     D = np.array(coords_list[2])/1000.
 
 
     gridToVTK(VTKfn, N, E, D, cellData = {'resistivity (in Ohm)' : res_model})
+
     print 'Created Resistivity File: ',VTKfn
 
     return VTKfn
 
 
-def stations2vtkgrid(ModEMdatafn, VTKfn='VTKstations.vtk'):
+def data2vtkstationsgrid(ModEMdatafn, VTKfn='VTKstations.vtk'):
     """
     Convert ModEM data file into 2D VTK station set (unstructured grid)
 
@@ -130,7 +132,6 @@ def stations2vtkgrid(ModEMdatafn, VTKfn='VTKstations.vtk'):
 
     #dummy scalar values
     dummy = np.ones((len(lo_norths)))
-
 
     pointsToVTK(VTKfn, N, E, D, data = {"value" : dummy})
 
