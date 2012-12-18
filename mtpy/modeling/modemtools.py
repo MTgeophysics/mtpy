@@ -667,15 +667,15 @@ def getmeshblockcoordinates(ModEM_modelfile):
     total_width_ns = np.sum(north_blockwidths)
     center_ns      = total_width_ns/2.
 
-    total_depth    = np.sum(z_blockwidths)
+    total_depth    = np.sum(depth_blockwidths)
 
     #depths
     lo_depths = []
-    current_depth = z_blockwidths[0]/2.
+    current_depth = depth_blockwidths[0]/2.
     lo_depths.append(current_depth)
 
     for idx_z in range(n_down-1):
-        current_depth += (z_blockwidths[idx_z]/2. + z_blockwidths[idx_z+1]/2.)
+        current_depth += (depth_blockwidths[idx_z]/2. + depth_blockwidths[idx_z+1]/2.)
         lo_depths.append(current_depth)
 
 
