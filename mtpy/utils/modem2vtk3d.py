@@ -64,11 +64,11 @@ def model2vtkgrid(ModEMmodelfn,VTKfn='VTKresistivitymodel' ):
     for idx_depth in range(n_depth_blocks):
         #catering for the empty line between depths
         current_line_idx += 1
-        for idx_north in range(n_north_blocks):
+        for idx_east in range(n_east_blocks):
             #use North-to-South convention in the grid!!
             current_line = raw_data[current_line_idx]
             lo_data_tmp = current_line.strip().split()
-            for idx_east in range(n_east_blocks):
+            for idx_north in range(n_north_blocks):
                 res_model[idx_north,idx_east, idx_depth] = np.exp(float(lo_data_tmp[idx_east]) )
             current_line_idx +=1
 
