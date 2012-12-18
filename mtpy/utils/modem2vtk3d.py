@@ -31,7 +31,7 @@ import numpy as np
 ######################################################################
 
 
-def model2vtkgrid():
+def model2vtkgrid(ModEMmodelfn,VTKfn='VTKresistivitymodel.vtk' ):
     """
     Convert ModEM output files (model and responses) into 3D VTK resistivity grid
 
@@ -40,22 +40,12 @@ def model2vtkgrid():
     - [optional] VTK resistivity grid file - output file name
     """
 
-    arguments = sys.argv
+    if not op.isfile(os.path.abspath(os.path.realpath(ModEMmodelfn))):
+        sys.exit('ERROR - could not find file:\n%s'%(os.path.abspath(os.path.realpath(ModEMmodelfn))))
 
-    if len(arguments) < 2:
-        sys.exit('ERROR - provide at least 1 file name: <modeldata file> ')
+    if not op.isfile(os.path.abspath(os.path.realpath(VTKfn))):
+        VTKfn = os.path.abspath(os.path.realpath('VTKresistivitymodel.vtk'))
 
-    try:
-        ModEMmodelfn = os.path.abspath(os.path.realpath(arguments[1]))
-
-        try:
-            VTKfn = os.path.abspath(os.path.realpath(arguments[2]))
-        except:
-            VTKfn = os.path.abspath(os.path.realpath('VTKresistivitymodel.vtk'))
-
-
-    except:
-        sys.exit('ERROR - could not find file:\n%s'%(os.path.abspath(os.path.realpath(arguments[1]))))
 
 
     F = open(ModEMmodelfn, 'r')
@@ -95,7 +85,7 @@ def model2vtkgrid():
     return VTKfn
 
 
-def stations2vtkgrid():
+def stations2vtkgrid(ModEMdatafn, VTKfn='VTKstations.vtk'):
     """
     Convert ModEM data file into 2D VTK station set (unstructured grid)
 
@@ -104,22 +94,11 @@ def stations2vtkgrid():
     - [optional] VTK station grid file - output file name
     """
 
-    arguments = sys.argv
+    if not op.isfile(os.path.abspath(os.path.realpath(ModEMdatafn))):
+        sys.exit('ERROR - could not find file:\n%s'%(os.path.abspath(os.path.realpath(ModEMdatafn))))
 
-    if len(arguments) < 2:
-        sys.exit('ERROR - provide at least 1 file name: <data file> ')
-
-        try:
-            ModEMdatafn = os.path.abspath(os.path.realpath(arguments[1]))
-
-            try:
-                VTKfn = os.path.abspath(os.path.realpath(arguments[2]))
-            except:
-                VTKfn = os.path.abspath(os.path.realpath('VTKstations.vtk'))
-
-
-        except:
-            sys.exit('ERROR - could not find file:\n%s'%(os.path.abspath(os.path.realpath(arguments[1]))))
+    if not op.isfile(os.path.abspath(os.path.realpath(VTKfn))):
+        VTKfn = os.path.abspath(os.path.realpath('VTKstations.vtk'))
 
 
     F = open(ModEMdatafn, 'r')
