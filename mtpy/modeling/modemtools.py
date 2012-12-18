@@ -622,20 +622,6 @@ def plotmodel3d(modem_modelfile, viewaxis='z',layer=0,savefile=None):
     return
 
 
-
-def model2vtk3d(modem_modelfile)
-    """
-    Generates vtk file from 3D model file.
-
-
-    """
-
-
-    pass
-
-    return vtk_filename
-
-
 def getmeshblockcoordinates(ModEM_modelfile):
     """
     returns a list of 3 lists, which again contain the X/Y/Z coordinate of a mesh block
