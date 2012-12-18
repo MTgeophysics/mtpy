@@ -581,13 +581,14 @@ def wsinv2modem_model(wsinv_modelfile, modeltype='halfspace'):
         #empty line required
         Fout.write('\n')
 
-        for idx_n in range(n_north_blocks):
-            we_profile_string =''
-            for idx_e in range(n_east_blocks):
+        for idx_e in range(n_east_blocks):
+            ns_profile_string =''
+            #data in one line for each north-south line:
+            for idx_n in range(n_north_blocks):
                 blockcount +=1
-                we_profile_string +='%.5E '%(np.log(HS_resistivity_value))
+                ns_profile_string +='%.5E '%(np.log(HS_resistivity_value))
                 #linebreak after each west-east profile
-            Fout.write(we_profile_string+'\n')
+            Fout.write(ns_profile_string+'\n')
 
     #define origin of model file ... just 0 at the moment
     #assumed to be at the lateral center of the model at the surface
