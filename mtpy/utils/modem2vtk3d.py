@@ -31,7 +31,7 @@ import numpy as np
 ######################################################################
 
 
-def model2vtkgrid(ModEMmodelfn,VTKfn='VTKresistivitymodel.vtk' ):
+def model2vtkgrid(ModEMmodelfn,VTKfn='VTKresistivitymodel' ):
     """
     Convert ModEM output files (model and responses) into 3D VTK resistivity grid
 
@@ -44,7 +44,7 @@ def model2vtkgrid(ModEMmodelfn,VTKfn='VTKresistivitymodel.vtk' ):
         sys.exit('ERROR - could not find file:\n%s'%(os.path.abspath(os.path.realpath(ModEMmodelfn))))
 
     if not os.path.isfile(os.path.abspath(os.path.realpath(VTKfn))):
-        VTKfn = os.path.abspath(os.path.realpath('VTKresistivitymodel.vtk'))
+        VTKfn = os.path.abspath(os.path.realpath('VTKresistivitymodel'))
 
 
 
@@ -87,7 +87,7 @@ def model2vtkgrid(ModEMmodelfn,VTKfn='VTKresistivitymodel.vtk' ):
     return VTKfn
 
 
-def data2vtkstationsgrid(ModEMdatafn, VTKfn='VTKstations.vtk'):
+def data2vtkstationsgrid(ModEMdatafn, VTKfn='VTKstations'):
     """
     Convert ModEM data file into 2D VTK station set (unstructured grid)
 
@@ -100,7 +100,7 @@ def data2vtkstationsgrid(ModEMdatafn, VTKfn='VTKstations.vtk'):
         sys.exit('ERROR - could not find file:\n%s'%(os.path.abspath(os.path.realpath(ModEMdatafn))))
 
     if not os.path.isfile(os.path.abspath(os.path.realpath(VTKfn))):
-        VTKfn = os.path.abspath(os.path.realpath('VTKstations.vtk'))
+        VTKfn = os.path.abspath(os.path.realpath('VTKstations'))
 
 
     F = open(ModEMdatafn, 'r')
