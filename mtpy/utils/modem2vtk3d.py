@@ -49,7 +49,7 @@ def model2vtkgrid(ModEMmodelfn,VTKfn='VTKresistivitymodel.vtk' ):
 
 
     F = open(ModEMmodelfn, 'r')
-    raw_data = f.readlines()
+    raw_data = F.readlines()
     F.close()
 
     coords_list = mdt.getmeshblockcoordinates(ModEMmodelfn)
@@ -79,7 +79,7 @@ def model2vtkgrid(ModEMmodelfn,VTKfn='VTKresistivitymodel.vtk' ):
     D = np.array(coords_list[2])/1000.
 
 
-    gridToVTK(VTKfn, N, E, D, cellData = {'resistivity' : res_model})
+    gridToVTK(VTKfn, N, E, D, cellData = {'resistivity (in Ohm)' : res_model})
     print 'Created Resistivity File: ',VTKfn
 
     return VTKfn
@@ -138,7 +138,3 @@ def stations2vtkgrid(ModEMdatafn, VTKfn='VTKstations.vtk'):
     print 'Created Station File: ',VTKfn
 
 
-#if __name__ == '__main__':
-    #arglist = sys.argv
-
-    #main()
