@@ -10,7 +10,7 @@ import datetime
 import shutil
 import scipy as sp
 import scipy.signal as sps
-import simplekml as skml
+
 import mtpy.core.z
 
 #short spaces 3 spaces
@@ -1623,7 +1623,7 @@ def readedi(filename):
                     locstr=locstr.split('=')[1]
                     station=locstr.replace('"','')
                 else:
-                    station=os.path.basename(filename)
+                    station=os.path.basename(filename).strip().split('.')[0]
                     
             #print ii, ' Got Header'
         elif existlst[ii][0].find('info')>=0:
@@ -2229,6 +2229,7 @@ def makeKML(edipath,stationid=None,savepath=None,fs=.9,style=None):
     makeKML will make a kml file for Google Earth to plot station locations 
     relatively quickly
     """    
+    import simplekml as skml 
     
     #create a list of edifiles to pull station info from
     edilst=[os.path.join(edipath,edi) for edi in os.listdir(edipath)
@@ -2269,3 +2270,85 @@ def makeKML(edipath,stationid=None,savepath=None,fs=.9,style=None):
     return svpath
         
         
+        
+def getPeriods(edipath,errthresh=10):
+    """
+    Plots periods for all stations in edipath and the plot is interactive, just
+    clikc on the period you want to select and it will appear in the console,
+    it will also be saved to lp.plst.  To sort this list type lp.plst.sort()
+    
+    The x's mark a conformation that the station contains that period.  So 
+    when looking for the best periods to invert for look for a dense line of 
+    x's
+    
+    Inputs:
+        edipath = path to where all your edi files are.  Note that only the 
+            impedance components are supported so if you have spectra data, 
+            export them from wingling to have impedance information.
+        errthresh = threshold on the error in impedance estimation, this just 
+                    gives an indication on where bad stations and bad periods
+                    are, anything above this level will be colored in red.
+    
+    Outputs:
+        periodlst = list of periods for each station
+        errorlst = error in the impedance determinant for each station at 
+                   each period.
+        lp = data type lp has attributes: 
+            plst = period list of chosen periods, again to sort this list type
+                    lp.plst.sort().  this will then be the input to make the 
+                    data file later.
+        
+    """
+    import mtpy.core.z as Z
+    
+    plt.rcParams['font.size']=10
+    plt.rcParams['figure.subplot.left']=.13
+    plt.rcParams['figure.subplot.right']=.98
+    plt.rcParams['figure.subplot.bottom']=.1
+    plt.rcParams['figure.subplot.top']=.95
+    plt.rcParams['figure.subplot.wspace']=.25
+    plt.rcParams['figure.subplot.hspace']=.05    
+    
+    periodlst=[]
+    errorlst=[]
+    
+    fig1=plt.figure(5)
+    ax=fig1.add_subplot(1,1,1)
+    for edi in os.listdir(edipath):
+        if edi.find('.edi')>0:
+            z1=Z.Z(os.path.join(edipath,edi))
+            periodlst.append(z1.period)
+            zdet=np.array([np.sqrt(abs(np.linalg.det(zz))) for zz in z1.z])
+            error=np.array([np.sqrt(abs(np.linalg.det(zz))) for zz in z1.zvar])
+            perror=(error/zdet)*100            
+            errorlst.append(perror)
+            #make a plot to pick frequencies from showing period and percent 
+            #error
+            ax.scatter(z1.period,perror,marker='x',picker=5)
+            pfind=np.where(perror>errthresh)[0]
+            if len(pfind)>0: 
+                print 'Error greater than {0:.3f} for '.format(errthresh)+z1.station
+                for jj in pfind:
+                    ax.scatter(z1.period[jj],perror[jj],marker='x',color='r')
+                    ax.text(z1.period[jj],perror[jj]*1.05,z1.station,
+                            horizontalalignment='center',
+                            verticalalignment='baseline',
+                            fontdict={'size':8,'color':'red'})
+                    print jj,z1.period[jj]
+                    
+    ax.set_xscale('log')
+    ax.set_xlim(10**np.floor(np.log10(z1.period[0])),
+                10**np.ceil(np.log10(z1.period[-1])))
+    ax.set_ylim(0,3*errthresh)
+    ax.set_yscale('log')
+    ax.set_xlabel('Period (s)',fontdict={'size':12,'weight':'bold'})
+    ax.set_ylabel('Percent Error',fontdict={'size':12,'weight':'bold'})
+    ax.grid('on',which='both')
+    
+    lp=ListPeriods(fig1)
+    lp.connect()
+        
+    return periodlst,errorlst,lp
+    
+            
+    
