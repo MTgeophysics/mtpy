@@ -74,7 +74,7 @@ def rotateE(ex,ey,declination):
 
 def rotateB(bx,by):
     """rotateB(bx,by) will Rotate the magnetic field such that Bx is pointing to
-    magnetic north and by to geomagnetic east.  Assumes setup was orthogonal. 
+    magnetic north and By to geomagnetic east.  Assumes setup was orthogonal. 
     Returns list of strings that are 8 significant digits."""
 
     meanbx=sum(bx)/len(bx)
@@ -135,7 +135,7 @@ def filter(f,fcutoff=10.,w=10.0,dt=.001):
     return filtfunc
 
 def dctrend(f):
-    """dctrend(f) will remove a dc trend from the function f."""
+    """dctrend(f) will remove a DC trend from the function f."""
     
     n=len(f)
     dc=sum(np.array(f))/n
@@ -154,7 +154,7 @@ def normalizeL2(f):
 
 def decimatef(farray,m):
     """Will decimate a function by the factor m. First an 8th order Cheybechev 
-    type I filter with a cuttoff frequency of .8/m  is applied in both 
+    type I filter with a cuttoff frequency of 0.8/m  is applied in both 
     directions to minimize any phase distortion and remove any aliasing. If m 
     is greater than 10, decimatef will be called multiple times."""
     
@@ -261,7 +261,7 @@ def decimatef(farray,m):
     return fdec
     
 def openMTfile(filename,gain=2.5,egain=10,dlength=[100,100],magtype='lp',zadj=1):
-    """Open an MT file, convert counts to units and return an 1D-array.  
+    """Open an MT raw data file, convert counts to units and return an 1D-array.  
     Make sure filename includes the entire path.  gain (verylow=2.5,low=1,
     high=.1), egain same as gain, dlength is dipole length in m of EX,EY. 
     magtype is the magnetic measurment type 'lp' for long period and 'bb' for 
@@ -637,7 +637,7 @@ def combineFiles(dirpath,station,daylst,cacherate,
                  complst=['EX','EY','BX','BY','BZ'],dec=0,fdict=None):
     """
     combineFiles(dirpath,station,daydict,complst=['EX','EY','BX','BY','BZ'])
-    will combine files from different days into one file.
+    will combine raw data files from different days into one file.
     
     Inputs:
         dirpath = directory path where station files are
@@ -1538,7 +1538,7 @@ def getnum(numberlst):
     
 def readedi(filename):
     """readedi(edifile) will read in an edi file written in a format given by
-    format given by http://www.dias.ie/mtnet/docs/ediformat.txt. 
+    http://www.dias.ie/mtnet/docs/ediformat.txt. 
     Returns: lat,lon,frequency,Z[zreal+i*zimag],Zvar,tipper,tippervar (if 
     applicable)
     
@@ -1770,8 +1770,8 @@ def readedi(filename):
 
 def combineEdifiles(edifile1,edifile2,nread1,nread2):
     """
-    combineEdifiles(edifile1,edifile2,read1,read2) will combine edifile1 with
-    edifile2 according to read1 and read2. It will combine frequencies,
+    combineEdifiles(edifile1,edifile2,nread1,nread2) will combine edifile1 with
+    edifile2 according to nread1 and nread2. It will combine frequencies,
     impedance and tipper.
     
     Note nread1 is from the start for edifile1 and nread2 is from end for 
@@ -2052,7 +2052,7 @@ def removeStaticShift(edifile,stol=.2,dm=1000):
     """
     removeStaticShift(edifile,stol=.2,dm=1000) will remove static shift by 
     calculating the median of respones of near by stations, within dm.  If the 
-    ratio of the station response to the median on either side of 1+-stol then 
+    ratio of the station response to the median on either side is out of +-stol then 
     the impedance tensor for that electric component will be corrected for 
     static shift.
     
@@ -2274,7 +2274,7 @@ def makeKML(edipath,stationid=None,savepath=None,fs=.9,style=None):
 def getPeriods(edipath,errthresh=10):
     """
     Plots periods for all stations in edipath and the plot is interactive, just
-    clikc on the period you want to select and it will appear in the console,
+    click on the period you want to select and it will appear in the console,
     it will also be saved to lp.plst.  To sort this list type lp.plst.sort()
     
     The x's mark a conformation that the station contains that period.  So 

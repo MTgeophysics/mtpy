@@ -8,7 +8,10 @@ import numpy as np
 import glob
 
 def pakascii2TSascii(fn):
+    """
+    ...
 
+    """
     try:
         F = open(fn,'r')
         raw_data = F.readlines()

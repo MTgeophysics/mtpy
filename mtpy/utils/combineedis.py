@@ -18,14 +18,22 @@ frequencies from edi2, then n1=12 and n2=17
 
 import mtpy.core.mttools as mt
 import os
+import os.path as op
+import sys
 import mtpy.imaging.mtplottools as mtplot
 
 def main():
+
+    arglist = sys.argv[1:]
+
+    if len(arglist) < 2:
+        sys.exit('ERROR -- provide 2 arguments: <high frequency edi directory path> <low frequency edi directory path >')
+
     #enter the high frequency edi directory path 
-    edipath1=r"dirpath1"
+    edipath1 = op.abspath(arglist[0])
 
     #enter the low frequency edi directory path 
-    edipath2=r"dirpath2"
+    edipath2 = op.abspath(arglist[1])
 
     #station id is the index of the first and last character in the station
     #name which will be matched

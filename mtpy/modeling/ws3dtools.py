@@ -351,7 +351,7 @@ def writeStartupFile(datafn,initialfn=None,outputfn=None,savepath=None,
                     control=None,maxiter=10,errortol=None,staticfn=None,
                     lagrange=None):
     """
-    makes a startup file for WSINV3D t.  Most of these parameters are not input
+    makes a startup file for WSINV3D .  Most of these parameters are not input
     
     Inputs:
         datafn = full path to the data file written for inversion
@@ -436,7 +436,7 @@ def writeStartupFile(datafn,initialfn=None,outputfn=None,savepath=None,
     
 def readDataFile(datafn,sitesfn=None,units='mv'):
     """
-    read in data file
+    read in Ws3Dinv data file
     
     Inputs:
         datafn = full path to data file
@@ -925,7 +925,7 @@ def plotTensorMaps(datafn,respfn=None,sitesfn=None,periodlst=None,
     plot phase tensor maps for data and or response, each figure is of a
     different period.  If response is input a third column is added which is 
     the residual phase tensor showing where the model is not fitting the data 
-    well.  The data is plotted in km in units of ohm-m.
+    well.  The data are plotted in km in units of ohm-m.
     
     Inputs:
         datafn = full path to data file
@@ -1301,7 +1301,7 @@ def plotTensorMaps(datafn,respfn=None,sitesfn=None,periodlst=None,
 
 def readModelFile(mfile,ncol=7):
     """
-    read in a model file
+    read in a Ws3Dinv model file
     """            
     
     mfid=file(mfile,'r')

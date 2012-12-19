@@ -41,6 +41,11 @@ def main():
 def csvutm(csvtxt, out_file, delimiter=',',
            f='28353', fx='easting', fy='northing',
            t='4326', tx='lon', ty='lon'):
+
+    """
+    ...
+
+    """
     f_in = StringIO.StringIO(csvtxt)
     r = csv.DictReader(f_in, delimiter=delimiter)
     for key in (fx, fy):
@@ -73,6 +78,10 @@ def csvutm(csvtxt, out_file, delimiter=',',
 
             
 def get_parser():
+    """
+    ...
+
+    """
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0],
             epilog=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--fx', default='lon', help='column header for x coord of 1st (from) coord system')

@@ -7,6 +7,10 @@ import glob
 
 
 def dms2deg(dms_in):
+    """
+    ...
+
+    """
     raw_in = dms_in.split(':')
 
     sec_fracs = float(raw_in[2])/60.
@@ -20,6 +24,12 @@ def dms2deg(dms_in):
 
 
 def deg2dms(deg_in):
+    """
+    ...
+
+    """
+ 
+
     raw_in = float(deg_in)
     degs = int(raw_in)
     degfracs = abs(raw_in - degs )
@@ -32,7 +42,11 @@ def deg2dms(deg_in):
     return dms_out
 
 def check_format(instring):
-   
+    """
+    ...
+
+    """
+ 
     try:
         a = float(instring)
         return 'deg'

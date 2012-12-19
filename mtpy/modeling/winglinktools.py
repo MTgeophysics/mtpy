@@ -543,7 +543,7 @@ def getXY(sitesfn,outfn,ncol=5):
 
 def getmeshblockcoordinates(WL_outfile):
     """
-    returns a list of 3 lists, which again contain the X/Y/Z coordinate of a mesh block
+    return a list of 3 lists, which again contain the X/Y/Z coordinate of a mesh block
 
     Orientation is X-North, Y-East, Z-Down.
     Horizontal origin is in the center of the mesh,

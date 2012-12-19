@@ -279,7 +279,12 @@ def generate_edilist(edifolder):
 
 
 def winglink2modem(edifolder, winglinkoutput, sites_file, modelfilename='init_model', resistivity=100):
+    """
+    Conversion of WingLink output files into ModEM input.
 
+
+
+    """
 
     #check input for consistency
     if not op.isdir(edifolder):
@@ -625,7 +630,7 @@ def plotmodel3d(modem_modelfile, viewaxis='z',layer=0,savefile=None):
 
 def getmeshblockcoordinates(ModEM_modelfile):
     """
-    returns a list of 3 lists, which again contain the X/Y/Z coordinate of a mesh block
+    Read a ModEM-style model file and return a list of 3 lists, which again contain the X/Y/Z coordinate of a mesh block
 
     Orientation is X-North, Y-East, Z-Down.
     Horizontal origin is in the center of the mesh,

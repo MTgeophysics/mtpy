@@ -28,6 +28,8 @@ Jared Peacock 2011"""
 #===============================================================================
 
 import os
+import os.path as op
+import sys
 import mtpy.processing.birrptools as brp 
 import pp
 import pickle
@@ -37,11 +39,18 @@ import shutil
 
 
 def main():
+
+    arglist = sys.srgv[1:]
+
+    if len(arglist) < 5:
+        sys.exit('ERROR -- provide 5 arguments: <station folders directory> <processing parameter file> <station info file> <BIRRP executable> <EDI files directory>')
+
     #===============================================================================
     # Input files
     #===============================================================================
     #directory where station folders are
-    dirpath=r'/wolle/InjectionJuly2011'
+    dirpath = op.abspath(arglist[0])
+
     #dirpath=r'g:\ParalanaSept2011'
     #dirpath=r'G:\University dos\Monash\Processing'
     #dirpath=r"c:\Sept2011"
@@ -53,22 +62,22 @@ def main():
     #processinginfofile=r'g:\University dos\Monash\Processing\sashapro.txt'
     #processinginfofile=r"/wolle/InjectionJuly2011/AdvPro24Hrs100Hz.txt"
     #processinginfofile=r"/wolle/InjectionJuly2011/InjectionHours.csv"
-    processinginfofile=r"/wolle/InjectionJuly2011/AdvPro4Hrs.csv"
+    processinginfofile = op.abspath(arglist[1])
 
     #file where the station info is, ie lat, long, ex, ey, notes
     #stationinfofile=r'c:\Sept2011\Sept2011Info.txt'
     #stationinfofile=r'c:\InjectionJuly2011\InjectionJuly2011Info.txt'
-    stationinfofile=r"/wolle/InjectionJuly2011/InjectionJuly2011Info.txt"
+    stationinfofile = op.abspath(arglist[2])
     #stationinfofile=r'g:\University dos\Monash\Processing\SashaInfo.txt'
 
     #the location of birrp5.exe on your computer, can be the full path to the 
     #executable like r"c:\BIRRP\birrp5Optimized.exe"
     #birrploc=r"c:\Peacock\PHD\BIRRP\birrp5_3pcs20E9ptsOptimized.exe"
-    birrploc=r"/home/mt/Documents/BIRRP/birrp5Opt2"
+    birrploc = op.abspath(arglist[3])
     #birrploc=r"c:\Peacock\PHD\BIRRP\birrp51lp.exe"
 
     #edipath=r"c:\Sept2011\EDIfiles" 
-    edipath=r"/wolle/InjectionJuly2011/EDIfiles/AdvPro4Hr"
+    edipath = op.abspath(arglist[4])
 
     pstart=0
     #===============================================================================

@@ -58,6 +58,8 @@ Jared Peacock 2011"""
 #===============================================================================
 
 import os
+import os.path as op
+import sys
 import mtpy.processing.birrptools as brp 
 import mtpy.core.mttools as mt
 import mtpy.imaging.mtplottools as mtplot
@@ -69,24 +71,28 @@ def main():
     # Input files
     #===============================================================================
 
-    #directory where station folders are
 
-    dirpath=r'G:\DATA'
+    arglist = sys.argv[1:]
+    if len(arglist) < 4:
+    sys.exit('ERROR - provide 4 arguments:<station folder directory> <processingparameter file> <stationparameter file> <BIRRP executable>')    
+    
+    #directory where station folders are
+    dirpath = op.abspath(arglist[0])
 
     #file where all the processing parameters are, ie day, start time, end time
     #and birrp parameters like tbw, thetae, etc    
             
-    processinginfofile=r'G:\ProcessingHours.txt'
+    processinginfofile = op.abspath(arglist[1])
 
     #file where the station info is, ie lat, long, ex, ey, notes
 
-    stationinfofile=r'G:\station.txt'
+    stationinfofile = op.abspath(arglist[2])
 
     #the location of birrp5.exe on your computer, can be the full path to the 
     #executable like r"c:\BIRRP\birrp5Optimized.exe"
     #birrploc=r"c:\Peacock\PHD\BIRRP\birrp5_3pcs20E9ptsOptimized.exe"
 
-    birrploc=r"G:\ForPaul\birrp5.exe"
+    birrploc = op.abspath(arglist[3])
 
     #this is the index of which station to process which corresponds to the
     #line number in Notepad++ minus 2 of the processinginfofile.  So if you want 
