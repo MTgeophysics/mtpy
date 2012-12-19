@@ -1,0 +1,414 @@
+\section{\textit{modemtools} }
+\label{sec:modeling.modemtools}
+
+Collection of functions for dealing with ModEM. So far there are conversions from Ws3Dinv models and data into ModEM3D model and data. Furthermore, WingLink-generated model meshes can be converted.
+
+\subsection{\textit{winglinkmesh2modelfile} (Function)}
+\label{ssec:.modeling.modemtools.winglinkmesh2modelfile}
+
+Convert a WingLink mesh geometry into ModEM modelfile (so far only homogeneous halfspace model supported)
+
+
+\subsection{\textit{latlon2xy} (Function)}
+\label{ssec:.modeling.modemtools.latlon2xy}
+
+UNUSED
+
+\subsection{\textit{edis2datafile} (Function)}
+\label{ssec:.modeling.modemtools.edis2datafile}
+
+Generate ModEM datafile from a combination of a WingLink model .out-file and a list of EDI files
+
+\subsection{\textit{generate\_edilist} (Function)}
+\label{ssec:.modeling.modemtools.generate_edilist}
+
+browse a folder for existing EDI files. Sensitive to file suffix 'EDI',/'edi'
+
+\subsection{\textit{winglink2modem} (Function)}
+\label{ssec:.modeling.modemtools.winglink2modem}
+
+    Conversion of WingLink output files into ModEM input. Wrapper fro 2 functions, which deal with the model- and data-file respectively.
+
+
+\subsection{\textit{wsinv2modem\_data} (Function)}
+\label{ssec:.modeling.modemtools.wsinv2modem_data}
+
+    Convert an existing input data file from Weerachai's wsinv style into Egbert's ModEM type
+
+
+\subsection{\textit{wsinv2modem\_model} (Function)}
+\label{ssec:.modeling.modemtools.wsinv2modem_model}
+
+    Convert an existing input model file from Weerachai's wsinv style into Egbert's ModEM type
+
+
+\subsection{\textit{plotmodel3d} (Function)}
+\label{ssec:.modeling.modemtools.plotmodel3d}
+
+ToDo !!! void function !!! 
+
+\subsection{\textit{getmeshblockcoordinates} (Function)}
+\label{ssec:.modeling.modemtools.getmeshblockcoordinates}
+
+Read a ModEM-style model file and return a list of 3 lists, which again contain the X/Y/Z coordinate of a mesh block
+
+
+%===============================================================================
+
+
+\section{\textit{occamtools} }
+\label{sec:modeling.occamtools}
+
+
+
+\subsection{\textit{Occam1D} (Class)}
+\label{ssec:.modeling.occamtools.Occam1D}
+
+
+
+\subsubsection{\textit{make1DdataFile} (Method)}
+\label{sssec:.modeling.occamtools.Occam1D.make1DdataFile}
+
+
+
+\subsubsection{\textit{make1DModelFile} (Method)}
+\label{sssec:.modeling.occamtools.Occam1D.make1DModelFile}
+
+
+
+\subsubsection{\textit{make1DInputFile} (Method)}
+\label{sssec:.modeling.occamtools.Occam1D.make1DInputFile}
+
+
+
+\subsubsection{\textit{read1DModelFile} (Method)}
+\label{sssec:.modeling.occamtools.Occam1D.read1DModelFile}
+
+
+
+\subsubsection{\textit{read1DInputFile} (Method)}
+\label{sssec:.modeling.occamtools.Occam1D.read1DInputFile}
+
+
+
+\subsubsection{\textit{read1DdataFile} (Method)}
+\label{sssec:.modeling.occamtools.Occam1D.read1DdataFile}
+
+
+
+\subsubsection{\textit{read1DIterFile} (Method)}
+\label{sssec:.modeling.occamtools.Occam1D.read1DIterFile}
+
+
+
+\subsubsection{\textit{read1DRespFile} (Method)}
+\label{sssec:.modeling.occamtools.Occam1D.read1DRespFile}
+
+
+
+\subsubsection{\textit{plot1D} (Method)}
+\label{sssec:.modeling.occamtools.Occam1D.plot1D}
+
+
+
+\subsubsection{\textit{plotL2Curve} (Method)}
+\label{sssec:.modeling.occamtools.Occam1D.plotL2Curve}
+
+
+
+\subsection{\textit{getdatetime} (Function)}
+\label{ssec:.modeling.occamtools.getdatetime}
+
+
+
+\subsection{\textit{makestartfiles} (Function)}
+\label{ssec:.modeling.occamtools.makestartfiles}
+
+
+
+\subsection{\textit{writemeshfile} (Function)}
+\label{ssec:.modeling.occamtools.writemeshfile}
+
+
+
+\subsection{\textit{writemodelfile} (Function)}
+\label{ssec:.modeling.occamtools.writemodelfile}
+
+
+
+\subsection{\textit{writestartupfile} (Function)}
+\label{ssec:.modeling.occamtools.writestartupfile}
+
+
+
+\subsection{\textit{read\_datafile} (Function)}
+\label{ssec:.modeling.occamtools.read_datafile}
+
+
+
+\subsection{\textit{get\_model\_setup} (Function)}
+\label{ssec:.modeling.occamtools.get_model_setup}
+
+
+
+\subsection{\textit{blocks\_elements\_setup} (Function)}
+\label{ssec:.modeling.occamtools.blocks_elements_setup}
+
+
+
+
+\subsection{\textit{OccamPointPicker} (Class)}
+\label{ssec:.modeling.occamtools.OccamPointPicker}
+
+
+
+\subsubsection{\textit{inAxes} (Method)}
+\label{sssec:.modeling.occamtools.OccamPointPicker.inAxes}
+
+
+
+\subsubsection{\textit{inFigure} (Method)}
+\label{sssec:.modeling.occamtools.OccamPointPicker.inFigure}
+
+
+
+\subsubsection{\textit{on\_close} (Method)}
+\label{sssec:.modeling.occamtools.OccamPointPicker.on_close}
+
+
+
+\subsection{\textit{Occam2DData} (Class)}
+\label{ssec:.modeling.occamtools.Occam2DData}
+
+
+
+
+\subsubsection{\textit{make2DdataFile} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DData.make2DdataFile}
+
+
+
+\subsubsection{\textit{read2DdataFile} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DData.read2DdataFile}
+
+
+
+\subsubsection{\textit{rewrite2DdataFile} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DData.rewrite2DdataFile}
+
+
+
+\subsubsection{\textit{plotMaskPoints} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DData.plotMaskPoints}
+
+
+
+\subsubsection{\textit{maskPoints} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DData.maskPoints}
+
+
+
+\subsubsection{\textit{read2DRespFile} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DData.read2DRespFile}
+
+
+
+\subsubsection{\textit{plot2DResponses} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DData.plot2DResponses}
+
+
+
+\subsubsection{\textit{plotPseudoSection} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DData.plotPseudoSection}
+
+
+
+\subsubsection{\textit{plotAllResponses} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DData.plotAllResponses}
+
+
+
+
+
+\subsection{\textit{Occam2DModel} (Class)}
+\label{ssec:.modeling.occamtools.Occam2DModel}
+
+
+
+\subsubsection{\textit{read2DIter} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DModel.read2DIter}
+
+
+
+\subsubsection{\textit{read2DInmodel} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DModel.read2DInmodel}
+
+
+
+\subsubsection{\textit{read2DMesh} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DModel.read2DMesh}
+
+
+
+\subsubsection{\textit{get2DData} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DModel.get2DData}
+
+
+
+\subsubsection{\textit{get2DModel} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DModel.get2DModel}
+
+
+
+\subsubsection{\textit{plot2DModel} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DModel.plot2DModel}
+
+
+
+\subsubsection{\textit{plotL2Curve} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DModel.plotL2Curve}
+
+
+
+\subsubsection{\textit{plotDepthModel} (Method)}
+\label{sssec:.modeling.occamtools.Occam2DModel.plotDepthModel}
+
+
+
+\subsection{\textit{compare2DIter} (Function)}
+\label{sssec:.modeling.occamtools.compare2DIter}
+
+
+
+
+
+%===============================================================================
+
+\section{\textit{winglinktools} }
+\label{sec:modeling.winglinktools}
+
+
+Collection of tools for dealing with output from Windows WingLink software
+
+\subsection{\textit{readOutputFile} (Function)}
+\label{ssec:.modeling.winglinktools.readOutputFile}
+
+read an output file from winglink and output data
+    in the form of a dictionary.
+
+\subsection{\textit{plotResponses} (Function)}
+\label{ssec:.modeling.winglinktools.plotResponses}
+
+plot the responses modeled from winglink against the
+    observed data.
+
+\subsection{\textit{readModelFile} (Function)}
+\label{ssec:.modeling.winglinktools.readModelFile}
+
+read  the XYZ .txt-file output by Winglink.
+
+(profile directions restricted to NS or EW !!!)
+
+\subsection{\textit{readWLOutFile} (Function)}
+\label{ssec:.modeling.winglinktools.readWLOutFile}
+
+read .out file from winglink
+
+\subsection{\textit{readSitesFile} (Function)}
+\label{ssec:.modeling.winglinktools.readSitesFile}
+
+read sites file output from winglink
+
+\subsection{\textit{readSitesFile2} (Function)}
+\label{ssec:.modeling.winglinktools.readSitesFile2}
+
+read sites file output from winglink - alternative
+
+more consistent output!
+
+\subsection{\textit{getXY} (Function)}
+\label{ssec:.modeling.winglinktools.getXY}
+
+get x (e-w) and y (n-s) position of station and put in middle of cell
+
+connection x-East and y-North here !!!! (ToDo change this)
+
+\subsection{\textit{getmeshblockcoordinates} (Function)}
+\label{ssec:.modeling.winglinktools.getmeshblockcoordinates}
+
+(slightly different from ModEM mesh block coordinates!!)
+return a list of 3 lists, which again contain the X/Y/Z coordinate of a mesh block
+
+    Orientation is X-North, Y-East, Z-Down.
+    Horizontal origin is in the center of the mesh,
+    Indexing starts at the lower left (SouthWest) corner
+
+
+%===============================================================================
+
+\section{\textit{ws3dtools} }
+\label{sec:modeling.ws3dtools}
+
+Handling Weerachai's Ws3Dinv code
+
+
+\subsection{\textit{ListPeriods} (Class)}
+\label{ssec:modeling.ws3dtools.ListPeriods}
+
+class to pick periods
+
+\subsubsection{\textit{connect} (Method)}
+\label{sssec:modeling.ws3dtools.ListPeriods.connect}
+
+?
+
+\subsubsection{\textit{onclick} (Method)}
+\label{sssec:modeling.ws3dtools.ListPeriods.onclick}
+
+?
+
+\subsubsection{\textit{disconnect} (Method)}
+\label{sssec:modeling.ws3dtools.ListPeriods.disconnect}
+
+?
+
+
+\subsection{\textit{writeWSDataFile} (Function)}
+\label{ssec:modeling.ws3dtools.writeWSDataFile}
+
+writes a data file for WSINV3D from winglink outputs
+
+\subsection{\textit{writeInit3DFile} (Function)}
+\label{ssec:modeling.ws3dtools.writeInit3DFile}
+
+Makes an init3d file for WSINV3D
+
+\subsection{\textit{writeStartupFile} (Function)}
+\label{ssec:modeling.ws3dtools.writeStartupFile}
+
+makes a startup file for WSINV3D
+
+\subsection{\textit{readDataFile} (Function)}
+\label{ssec:modeling.ws3dtools.readDataFile}
+
+read in Ws3Dinv data file
+
+
+\subsection{\textit{plotDataResPhase} (Function)}
+\label{ssec:modeling.ws3dtools.plotDataResPhase}
+
+plot responses from the data file and if there is a response file
+
+\subsection{\textit{plotTensorMaps} (Function)}
+\label{ssec:modeling.ws3dtools.plotTensorMaps}
+
+plot phase tensor maps for data and or response, each figure is of a
+    different period.  If response is input a third column is added which is 
+    the residual phase tensor showing where the model is not fitting the data 
+    well.  The data are plotted in km in units of ohm-m.
+
+\subsection{\textit{readModelFile} (Function)}
+\label{ssec:modeling.ws3dtools.readModelFile}
+
+read in a Ws3Dinv model file
+
