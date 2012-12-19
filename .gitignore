@@ -19,3 +19,7 @@ _build
 *.swp
 *.swo
 .commitmsg
+*.aux
+*.toc
+*.log
+*.bbl
