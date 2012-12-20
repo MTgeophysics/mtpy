@@ -470,7 +470,7 @@ def scriptfilePrep(prepdict):
     
 def writeScriptfile(processingdict):
     """
-    writeScriptfile(processingdict will write a script file for BIRRP using 
+    writeScriptfile(processingdict) will write a script file for BIRRP using 
     info in processingdict which is a dictionary with keys:
         cfilelst = list of combined filenames (full path) ordered as:
             [electric N, electric E, mag N, mag E, mag Z] can omit Z if not 
@@ -2088,7 +2088,7 @@ def lpconvz(z,dlgain=1):
 def writeimp(dirpath,egain=10,dlgain=1,dlen=[50,50],magtype='bb',
            bbfile=r'c:\Peacock\PHD\BIRRP\bbconv.txt',tsp='   ',ffactor=1):
     """
-    writebbimp(dirpath,magtype,dlgain,bbfile=None)writes a tab delimited .imp 
+    writebbimp(dirpath,magtype,dlgain,bbfile=None) writes a tab delimited .imp 
     file of converted impedances from.rf outputs of BIRRP and calibrates using 
     file bbfile and dlgain which is the data logger gain 
     (verylow=2.5,low=1,high=.1). Returns written to filename.

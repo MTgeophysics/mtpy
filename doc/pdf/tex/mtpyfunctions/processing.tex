@@ -6,81 +6,187 @@ Tools for dealing with the (Fortran) processing software BIRRP
 \subsection{\textit{finishBeep} (Function)}
 \label{ssec:processing.birrptools.finishBeep}
 
+!!! void function !!! 
+(commented, since Windows based tool)
+
 \subsection{\textit{readProDict} (Function)}
 \label{ssec:processing.birrptools.readProDict}
+
+read in the information from processing infofile and output
+    as a list of dictionaries.
+
 
 \subsection{\textit{scriptfilePrep} (Function)}
 \label{ssec:processing.birrptools.scriptfilePrep}
 
+calculate parameters, combine files and 
+    convert if need be.
+
 \subsection{\textit{writeScriptfile} (Function)}
 \label{ssec:processing.birrptools.writeScriptfile}
+
+will write a script file for BIRRP using 
+    info in processingdict which is a dictionary
 
 \subsection{\textit{callBIRRP} (Function)}
 \label{ssec:processing.birrptools.callBIRRP}
 
+call BIRRP from a command window and 
+    run the script file provided
+
 \subsection{\textit{convertBIRRPoutputs} (Function)}
 \label{ssec:processing.birrptools.convertBIRRPoutputs}
+
+take the outputs of BIRRP
+    and manipulate them into .edi, .dat, .coh, .imp files as well as generate 
+    plots of apparent resistivity and phase and coherence.
 
 \subsection{\textit{plotBFfiles} (Function)}
 \label{ssec:processing.birrptools.plotBFfiles}
 
+plot the apparent resisitivty
+    and phase calculated from edifile as 2 seperate plots for the different 
+    polarizations.  It will plot the coherency between components and if input
+    will plot the time series.
+
 \subsection{\textit{writeLogfile} (Function)}
 \label{ssec:processing.birrptools.writeLogfile}
+
+ write a log file of how a station was processed
+    
 
 \subsection{\textit{runBIRRPpp} (Function)}
 \label{ssec:processing.birrptools.runBIRRPpp}
 
+processes a station from start to finish on seperate 
+    processors
+
 \subsection{\textit{sigfigs} (Function)}
 \label{ssec:processing.birrptools.sigfigs}
+
+return a string with the proper 
+    amount of significant digits for the input number, can be str or float.
 
 \subsection{\textit{sil} (Function)}
 \label{ssec:processing.birrptools.sil}
 
+split a single line written in an .ini file
+    for burpinterface and return the list of strings.
+
 \subsection{\textit{read2c2} (Function)}
 \label{ssec:processing.birrptools.read2c2}
 
-
+read in a .2c2 file output from BIRRP and return a list 
+    containing [period],[freq],[coh],[zcoh]. Note if any of the coherences are 
+    negative a value of 0 will be given to them.
 
 \subsection{\textit{writecoh} (Function)}
 \label{ssec:processing.birrptools.writecoh}
 
+write a coherence file using the BIRRP outputs 
+    residing in the dirpath folder.  The output file is tab delimited and if any 
+    values are negative they are put to 0. Each value has 7 significant digits.
+    Returns written to filename.
+
 \subsection{\textit{readcoh} (Function)}
 \label{ssec:processing.birrptools.readcoh}
 
-
+read a coherence file writen by writecoh.  The 
+    output is period,frequency,coh1,zcoh1,coh2,zcoh2,coh3,zcoh3
 
 \subsection{\textit{bbcalfunc} (Function)}
+\label{ssec:processing.birrptools.bbcalfunc}
+
+generate a function fitting the 
+    calibration data in bbfile to the frequencies in nfreqlst using a cubic
+    interpolation algorithm.  The output is the real and imaginary functions
+    as a function of the nfreqlst in units of microV/nT
+
+\subsection{\textit{readj} (Function)}
 \label{ssec:processing.birrptools.readj}
+
+read in the .j file output by BIRRP, which is better than 
+    reading in the .irj.rf files
 
 \subsection{\textit{readrf} (Function)}
 \label{ssec:processing.birrptools.readrf}
 
+
+read in .irj.rf file output by BIRRP that reside in 
+    the folder nominated by dirpath. Returns: period, freq, 
+    z[ijreal,ijimag,ijvar] as array.  If any of the numbers are NaN or +Inf they
+    are set to zero
+
+
 \subsection{\textit{bbconvz} (Function)}
 \label{ssec:processing.birrptools.bbconvz}
+
+convert the .rf output files of BIRRP 
+    into correct units using broadband calibrations given by file bbcalfile that
+    has format log(freq),breal,bimag. dlgain is the data logger gain (verylow=
+    2.5,low=1,high=.1) The output is period,freq,z[[zijr,ziji,zije]].
+    Note that it assumes the efields are already converted.
 
 \subsection{\textit{lpconvz} (Function)}
 \label{ssec:processing.birrptools.lpconvz}
 
+Convert the magnetic field from counts to units of microV/nT.
+    bfield is a list of numbers. dlain is amount of gain applied
+    by data logger(verylow=2.5,low=1, high=.1)
+
 \subsection{\textit{writeimp} (Function)}
 \label{ssec:processing.birrptools.writeimp}
+
+writes a tab delimited .imp 
+    file of converted impedances from.rf outputs of BIRRP and calibrates using 
+    file bbfile and dlgain which is the data logger gain 
+    (verylow=2.5,low=1,high=.1). Returns written to filename.
+
 
 \subsection{\textit{readimp} (Function)}
 \label{ssec:processing.birrptools.readimp}
 
+read in the impedances from a .imp file written 
+    by writeimp. the output is ofil,period,z[zr,zi]
+
 \subsection{\textit{writedat} (Function)}
 \label{ssec:processing.birrptools.writedat}
+
+write a .dat 
+    (resistivity and phase) file from .rf output 
+    files from birrp after converting the broadband magnetic channels. dirpath
+    is where the .rf files reside, bb file is where the conversion file
+    resides and df is the sampling frequency. Returns written to filename.
+
 
 \subsection{\textit{readdat} (Function)}
 \label{ssec:processing.birrptools.readdat}
 
+read in a .dat file written by writedat and output 
+    ofil, period,[resistivity,resistivityerr],[phase,phaseerr]
+
 \subsection{\textit{writeedi} (Function)}
 \label{ssec:processing.birrptools.writeedi}
+
+write an .edi file for a station 
+    processed by BIRRP given the station info file, station and bbfile if
+    applicable. Returns the full path to the .edi file
 
 \subsection{\textit{readini} (Function)}
 \label{ssec:processing.birrptools.readini}
 
+read in an inifile and return a dictionary of 
+    initial parameters for the burpinterface program.
+
 \subsection{\textit{writeini} (Function)}
 \label{ssec:processing.birrptools.writeini}
+
+write an .ini file from the to
+    the filepath as station.ini.  The argsdict must be len 40 or will not write,
+    the variables should be: dict[defdirpath,station,magtype,lpyn,eyn,mcomps,magdec,
+    df,cacherate, dlength,dlgain,egain,lpbzcor,bbcal,magori,birrploc,ilev,nout,
+    ninp,tbw,nfft,nsctmax,uin,ainuin,c2threshe,nz,c2threshe1,ofil,
+    nlev,nar,imode,jmode,nfil,complstr,thetae,thetab,thetaf].
 
 
 %===============================================================
