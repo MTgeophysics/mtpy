@@ -46,10 +46,12 @@ if setuptools is False:
 
 setup_kwargs['packages'] = ['mtpy',
                             'mtpy.core',
-					'mtpy.imaging',
-					'mtpy.utils',
-					'mtpy.modeling',
-                             'mtpy.processing']
+                            'mtpy.imaging',
+                            'mtpy.utils',
+                            'mtpy.modeling',
+                            'mtpy.processing',
+                            'mtpy.analysis',
+                            'mtpy.test']
 
 	
 
