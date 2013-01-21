@@ -1,5 +1,39 @@
 \section{E field logger data}
 \label{sec:processing.elogger}
 
-.
+\section{step by step}
+
+\subsection{raw data}
+
+\subsubsection{concatenate time series recorded by EDLs}
+
+Functions for concatenation are in the \textit{mtpy.utils.filehandling} module. The reference to the module is given here as   \texttt{FH}. It is assumed that the files are ascii-formatted, and are named according to the EDL standard. This is \texttt{$<$stationname$>$$<$year$>$$<$month$>$$<$day$>$$<$hour$>$$<$minute$>$$<$seconds$>$.$<$channel$>$}; and the cahnnels in question are \textit{ex,ey,bx,by,bz}, case insensitive.
+
+The data in the files are assumed to be either in single-column form (instrument counts), or in two-column form: \textit{single column time stamp (e.g. epochs or datetime-string) - instrument counts}
+
+\begin{enumerate}
+\item Find the sampling rate{~}\\
+You have to know the duration of your single files (e.g. 10 mins, 1 hour,...). Chose a file, of which you know that it contains complete information for the full duration. Then obtain the sampling period with the function \\
+\texttt{FH.get\_sampling\_interval\_fromdatafile(filename, duration in seconds)}
+
+\item Put all files of interest into one folder (preferably sorted by station).
+
+\item Call \\
+\texttt{FH.EDL\_make\_dayfiles(foldername, sampling , stationname = None)}\\ This generates a subfolder called \textit{dayfiles}. If the given files cannot be merged continuously, several files are created for the same day.
+
+\item Output dayfiles have a single header line, which starts with the character \textit{\#}. The contnet of the line is \\  \textit{stationname ; sampling interval ; time of first sample ; time of last sample}.
+
+\end{enumerate}
+
+
+\subsubsection{Time series data calibration}
+
+The conversion of  time series from lists of raw \textit{instrument counts} into time series of data values with an actual physical meaning and approprite units is called \textit{calibration}.
+
+The calibration depends on  the instrument as well as on the respective data logger. The given time series are multiplied by various factors, which are unique for each kind of instrument,  logger, and their software setup. Additionally, possible spurious offsets can be removed.
+
+The basic unit for the magnetic flux density is Tesla ([$\mathbf{B}$] = $T$), the unit of the electric field is Volt per meter ([$\mathbf{E}$] = $\frac{V}{m}$). For obtaining more convenient numbers, these units are often scaled e.g. to nano-Tesla ($nT$).
+
+
+
 
