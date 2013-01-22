@@ -251,7 +251,8 @@ def EDL_make_dayfiles(foldername, sampling , stationname = None):
             if incomplete == 1 :
 
                 #define header info
-                headerline = '# %s %i Hz first sample: %i - last sample: %i (epochs)\n'%(stationname, int(1./sampling), outfile_timeaxis[0],outfile_timeaxis[-1] )
+                headerline = '# %s %s %i Hz first sample: %i - last sample: %i (epochs)\n'%(
+                    stationname, comp.upper(), int(1./sampling), outfile_timeaxis[0],outfile_timeaxis[-1] )
 
                 F.write(headerline)
 

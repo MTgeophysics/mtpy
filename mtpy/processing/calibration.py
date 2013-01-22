@@ -3,7 +3,7 @@
 """
 This modules contains helper functions for the calibration of raw time series. 
 
-The various functions deal with the calibration of data from fluxgates, coils, dipoles,...
+The various functions deal with the calibration of data from fluxgates, coil, dipoles,...
 The calibration depends on  the instrument as well as on the respective data logger. 
 
 
@@ -26,64 +26,335 @@ import time
 
 
 from mtpy.utils.exceptions import *
+
 #=================================================================
+
+list_of_channels = ['ex','ey','bx','by','bz']
 
 list_of_loggers = ['edl','elogger']
-list_of_instruments = ['dipole','fluxgate', 'coils', 'bartington']
-dict_of_EDL_gain_factors = {'high': 0.1, 'low': 1. , 'verylow': 2.5}
+list_of_instruments = ['electrodes','fluxgate', 'coil']
+list_of_bfield_loggers = ['edl']
+list_of_bfield_instruments = ['fluxgate', 'coil']
+
+# section for amplification and scaling factors:
+
+
+dict_of_calibration_factors_volt2nanotesla = {'fluxgate': 70000/0.1, 'coil': 1.}
+
+#...dict_of_instrument_amplification = {'electrodes' :10. , 'fluxgate' = 1., 'coil': 1.}
+#dict_of_channel_amplification = {'ex':1, 'ey':1.,'bx':1. ,'by':1., 'bz': 0.5}
+
+dict_of_bz_instrument_amplification = {'edl': 0.5, 'elogger': 1.}
+
+dict_of_EDL_gain_factors = {'high': 10., 'low': 1., 'verylow': 0.4, str(10): 10., str(1): 1. , str(0.4): 0.4}
+
+list_of_elogger_gain_factors = [11.]
+
+dict_of_efield_amplification = {'edl': 1., 'elogger': 10.}
+
+#=================================================================
+
+
 
 
 #=================================================================
-# section for amplification factors
-
-# list of gain levels
-
-# z channel scaling factor
 
 
-
-#=================================================================
-
-
-def calibrate(raw_data, field, dipole_length=1., instrument, amplification, logger, gain):
+def calibrate(raw_data, field, dipole_length=1.,
+                calibration_factor = 1., instrument, amplification = 1., logger, gain = 1., offset = 0.):
 
     """
-    Convert a given time series from raw data (instrument counts) 
+    Convert a given time series from raw data (voltage) 
     into field strength amplitude values. 
     The dipole length factor must be set to 1 for the calibration of B-field data.
 
-    The output is a time series of field strngth values in basic units: 
+    The output is a time series of field strength values in basic units: 
     Tesla for the B-field and V/m for the E-field.
 
     input:
     - 1D time series (list or numpy array)
     - type of measured field (E/B)
-    - instrument (fluxgate, coils, dipole, bartington)
+    - dipole length 
+    - actual calibration factor ('Volts/Tesla per count')
+    - instrument (fluxgate, coil, electrodes, bartington)
     - amplification factor for the instrument
     - logger (EDL, elogger, other)
     - gain factor of the logger
+    - offset of the counts
 
     output:
     - 1D time series (numpy array)
 
     """
 
-    raw_data = np.array(raw_data)
+    raw_data = np.array(raw_data) - offset
 
-    _data_instrument_consitency_check(raw_data,field, dipole_length, instrument, amplification, logger, gain )
+    units_per_count = calibration_factor
+
+    _data_instrument_consitency_check(raw_data, field, dipole_length, instrument, amplification, logger, gain )
     
 
-    data = raw_data / dipole_length * amplification * gain
+    # converting counts into units, including  
+    # - transistion from voltage to field
+    # - correcting for instrument amplification
+    # - correcting for logger amplification (gain)
+    # - raw conversion factor counts2unit (Volt or Tesla)
+    data = raw_data * units_per_count / dipole_length / amplification / gain 
 
 
     return data
 
 #=================================================================
 
+def EDL_e_field(data, edl_gain, dipole, instrument_amplification):
+    """
+    Convert EDL output (channels EX and EY) into E field values.
+
+    input:
+    - time series of field values in microvolt (standard EDL output)
+    - gain factor set at the EDL 
+    - dipole length in meters
+    - instrument amplification
+
+    output:
+    - time series of E field values in V/m
+
+    """
+
+    # Since the conversion is straight from volt into V/m, no further calibration factor is needed
+    e_field = calibrate(data, 'e', dipole_length = dipole, calibration_factor = 1.,
+                         'electrodes', amplification = instrument_amplification, 
+                         'edl', gain = edl_gain, offset = 0.)
+
+    return e_field
+
+#=================================================================
+
+def EDL_b_field(data, edl_gain, instrument , instrument_amplification):
+    """
+    Convert EDL output (channels BX, BY and BZ) into B field values.
+
+    input:
+    - time series of field values in microvolt (standard EDL output)
+    - gain factor set at the EDL 
+    - type of instrument
+    - instrument amplification
+
+    output:
+    - time series of B field values in nanotesla (!!)
+
+    """
+
+    #setting the calibration factor for converting voltage into electric field strength:
+    nanotesla_per_volt = dict_of_calibration_factors_volt2nanotesla[instrument]
+
+    nanotesla_per_microvolt = nanotesla_per_volt / (10 ** 6)
+
+    b_field = calibrate(data, 'b', dipole_length = 1., calibration_factor = 1. ,
+                         instrument, amplification = instrument_amplification,
+                         'edl', gain = edl_gain, offset = 0.)
+
+    return b_field
+
+#=================================================================
+
+def elogger_e_field(data, elogger_gain, dipole, instrument_amplification):
+    """
+    Convert elogger output (channels EX and EY) into E field values.
+
+    input:
+    - time series of field values in microvolt (standard EDL output)
+    - gain factor set at the elogger 
+    - dipole length in meters
+    - instrument amplification
+
+    output:
+    - time series of E field values in microvolt/meter
+
+    """
+    # Since the conversion is straight from volt into V/m, no further calibration factor is needed
+    e_field = calibrate(data, 'e', dipole_length = dipole, calibration_factor = 1.,
+                         'electrodes', amplification = instrument_amplification, 
+                         'elogger', gain = elogger_gain, offset = 0.)
+
+    return e_field
+
+#=================================================================
+
+def calibrate_file(filename, output_path, instrument, logger, gain, dipole = 1., channel = None, offset = 0 ):
+    """
+    Calibrate data from one given file and store the output to another file.
+    If the channel is not given explicitly, it's taken from the filename suffix.
+
+    E field values will be present in microvolt/meter
+    B fields are given in nanotesla 
+
+    input:
+    - data file name
+    - foldername for saving the output
+    - instrument type
+    - instrument amplification factor
+    - data logger type
+    - logger gain factor
+    - channel  
+
+    """
+    time_axis = None
+
+    if not instrument.lower() in list_of_instruments:
+        raise MTpyError_inputarguments('instrument type not known')
+
+    if not logger.lower() in list_of_loggers:
+        raise MTpyError_inputarguments('data logger type not known')
 
 
 
-def _data_instrument_consitency_check(data,field, dipole, instrument, amplification, logger, gain):
+    if not op.isfile(filename):
+        raise MTpyError_inputarguments('data file not existing')
+
+    infile_base = op.basename(filename)
+
+    try:
+        data_in = np.loadtxt(filename)
+    except:
+        raise MTpyError_inputarguments('cannot read data file')
+
+
+    data_out = data_in.copy()
+
+    #read in first line of input file, checking, if header line exists
+    FH = open(filename,'r')
+    firstline = FH.readline().strip()
+    FH.close()
+
+
+    if np.size(data_in.shape) > 1:
+        if data_in.shape[1] > 1:
+            #at least 2 columns - assume, first is time, second data - ignore, if there are more
+            time_axis = data_in[:,0]
+            data_in = data_in[:,1]
+
+
+
+    if not op.isdir(output_path):
+        try:
+            os.makedirs(output_path)
+        except:
+            raise MTpyError_inputarguments('output directory is not existing and cannot be generated')
+
+    if channel == None:
+        channel = filename[-2:].lower()
+        
+    if not channel_raw in list_of_channels:
+        raise MTpyError_inputarguments('wrong channel specification')
+   
+    field = channel[0]
+
+
+    #separate way for B and E fields here:
+    if field == 'e':
+
+        if dipole <= 1:
+            print 'Check dipole length value ! - It is highly improbable to have a 1 meter dipole!!'
+            answer = raw_input('\t\tContinue anyway? [y/N] \n')
+            if not answer[0].lower() == 'y':
+                sys.exit('Calibration process interrupted by user input!')
+
+
+        instrument = 'electrodes'
+
+        logger = logger.lower()
+
+        if logger == 'elogger':
+
+            if not gain in list_of_elogger_gain_factors:
+                raise MTpyError_inputarguments('invalid gain for elogger')
+
+            instrument_amplification = dict_of_efield_amplification[logger]
+
+            outfile_data = elogger_e_field(data_in, gain, dipole, instrument_amplification)
+        
+        elif logger == 'edl':
+
+            if not str(gain) in  dict_of_EDL_gain_factors:
+                raise MTpyError_inputarguments('invalid gain for EDL')
+
+            instrument_amplification = dict_of_efield_amplification[logger]
+
+            EDLgain = dict_of_EDL_gain_factors[gain] 
+
+            outfile_data = EDL_e_field(data, EDLgain, dipole, instrument_amplification)
+    
+        dataunit ='microvoltpermeter'
+
+    #B-field part
+    elif field == 'b':
+
+        instrument = instrument.lower()
+        if not instrument in list_of_bfield_instruments:
+            raise MTpyError_inputarguments('invalid instrument for B field measurements')
+
+
+        logger = logger.lower()
+
+        if not logger in list_of_bfield_loggers:
+            raise MTpyError_inputarguments('invalid logger for B field measurements')
+
+
+        instrument_amplification = 1.
+ 
+        calibration_factor = dict_of_calibration_factors_volt2nanotesla[instrument]
+
+
+        if logger == 'edl':
+
+            if not str(gain) in  dict_of_EDL_gain_factors:
+                raise MTpyError_inputarguments('invalid gain for EDL')
+
+
+            EDLgain = dict_of_EDL_gain_factors[gain] 
+
+
+            if instrument == 'fluxgate' and channel == 'bz':
+                instrument_amplification = dict_of_bz_instrument_amplification[logger]
+
+
+            outfile_data = EDL_b_field(data, EDLgain, instrument, instrument_amplification)
+
+        dataunit = 'nanotesla'
+
+
+
+    newbasename = infile_base.split('.')[-2]+dataunit+'.'+infile_base.split('.')[-1]
+
+
+    #set up output file
+    outfile = op.join(output_path, newbasename)
+    
+    additional_header_info = '%s %s %s \n'%(dataunit, instrument, logger)
+
+    if firstline[0] == '#':
+        newfirstline = firstline + additional_header_info
+
+    else:
+        newfirstline = '#' + additional_header_info
+
+
+    if time_axis != None:
+        data_out[:,1] = outfile_data
+    else:
+        data_out = outfile_data
+
+    Fout = open(outfile,'w')
+
+    Fout.write(newfirstline)
+    np.savetxt(Fout,data_out)
+    Fout.close()
+
+
+#=================================================================
+
+def _data_instrument_consitency_check(data, field, dipole_length, instrument, amplification, logger, gain):
     """
     Check, if the input values given  for the calibration make any sense at all.
 
@@ -95,7 +366,7 @@ def _data_instrument_consitency_check(data,field, dipole, instrument, amplificat
     if not field.lower() in ['e','b']:
         raise MTpyError_inputarguments( 'Field must be E or B' )
 
-    if float(dipole) <= 0:
+    if float(dipole_length) <= 0:
         raise MTpyError_inputarguments( 'Dipole length must be positive' )
 
     if float(amplification) <= 0:
@@ -119,30 +390,17 @@ def _data_instrument_consitency_check(data,field, dipole, instrument, amplificat
     if field.lower == 'b':
         if logger.lower() == 'elogger':
             raise MTpyError_inputarguments( 'wrong choice of logger')
-        if instrument.lower() == 'dipole'
+        if instrument.lower() == 'electrodes'
             raise MTpyError_inputarguments( 'wrong choice of instrument')
-        if not float(dipole) == 1:
+        if not float(dipole_length) == 1:
             raise MTpyError_inputarguments( 'Dipole length must be 1 for B-field calibration')
            
 
     if field.lower == 'e':
-        if not instrument.lower() == 'dipole'
+        if not instrument.lower() == 'electrodes'
             raise MTpyError_inputarguments( 'wrong choice of instrument')
 
 
-
-def e_field(raw_data):
-
-
-
-    return data
-
-
-
-def b_field(raw_data):
-
-
-    return data
 
 #-=---------------------------------------------------------
 # old functions

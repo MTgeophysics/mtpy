@@ -1,7 +1,9 @@
 #!/usr/bin/env python
-"""This is a convenience file in form of a script for the generation of dayfiles. It needs the location of a folder with time series and the sampling period as arguments.
+"""This is a convenience file in form of a script for the generation of dayfiles. 
+It needs the location of a folder with time series and the sampling period as arguments.
 
-The time series files have to be named in the EDL-ascii output standard, which codes stationname and start time of the file in the name. 
+The time series files have to be named in the EDL-ascii output standard, 
+which codes stationname and start time of the file in the name. 
 
 The data have to be either single column values or in 2-column form.
 
@@ -25,7 +27,7 @@ import time
 from mtpy.utils.exceptions import *
 
 
-import mtpy.utils.filehandling as FH
+import mtpy.processing.filehandling as FH
 reload(FH)
 
 
