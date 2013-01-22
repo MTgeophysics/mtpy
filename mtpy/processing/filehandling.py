@@ -69,10 +69,12 @@ def EDL_make_dayfiles(foldername, sampling , stationname = None):
 
 
     Files are named as 'stationname_samplingrate_date_idx.channel'
-    Stationname, sampling, and timestasmps for the first and the last 
-    sample are written to a header line.
+    Stationname, channel,  and sampling are written to a header line.
 
-    Attention: Midnight must be at the start of a file, because only file starts are checked for a new day!!
+    Output data consists of two column array: (time, data); timestamp given in epoch seconds.
+
+    Attention: 
+    Midnight cannot be in the middle of a file, because only file starts are checked for a new day!!
 
     """
 
@@ -251,12 +253,15 @@ def EDL_make_dayfiles(foldername, sampling , stationname = None):
             if incomplete == 1 :
 
                 #define header info
-                headerline = '# %s %s %i Hz first sample: %i - last sample: %i (epochs)\n'%(
-                    stationname, comp.upper(), int(1./sampling), outfile_timeaxis[0],outfile_timeaxis[-1] )
+                headerline = '# %s %s - %i Hz\n'%(stationname, comp.upper(), int(1./sampling))
 
                 F.write(headerline)
 
-                np.savetxt(F, np.array(outfile_data))
+                outfile_array = np.zeros((len(outfile_timeaxis),2))
+                outfile_array[:,0] = outfile_timeaxis
+                outfile_array[:,1] = outfile_data
+
+                np.savetxt(F, outfile_array)
 
                 F.close()
                 print '\t wrote file %s'%(new_file)
@@ -299,9 +304,9 @@ def EDL_get_starttime_fromfilename(filename):
     return epochtime
 
 
-def EDL_get_stationname_fromfilename(fn):
+def EDL_get_stationname_fromfilename(filename):
 
-    bn = op.basename(fn)
+    bn = op.basename(filename)
     parts_of_bn = bn.split('.')
     stationtime = parts_of_bn[-2]
 
