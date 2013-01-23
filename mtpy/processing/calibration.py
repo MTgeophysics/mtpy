@@ -60,8 +60,8 @@ dict_of_efield_amplification = {'edl': 1., 'elogger': 10.}
 #=================================================================
 
 
-def calibrate(raw_data, field, dipole_length=1.,
-                calibration_factor = 1., instrument, amplification = 1., logger, gain = 1., offset = 0.):
+def calibrate(raw_data, field, instrument, logger,dipole_length=1.,
+                calibration_factor = 1.,  amplification = 1.,  gain = 1., offset = 0.):
 
     """
     Convert a given time series from raw data (voltage) 
@@ -122,9 +122,9 @@ def EDL_e_field(data, edl_gain, dipole, instrument_amplification):
     """
 
     # Since the conversion is straight from volt into V/m, no further calibration factor is needed
-    e_field = calibrate(data, 'e', dipole_length = dipole, calibration_factor = 1.,
-                         'electrodes', amplification = instrument_amplification, 
-                         'edl', gain = edl_gain, offset = 0.)
+    e_field = calibrate(data, 'e', 'electrodes', 'edl', dipole_length = dipole, 
+                        calibration_factor = 1., amplification = instrument_amplification, 
+                        gain = edl_gain, offset = 0.)
 
     return e_field
 
@@ -150,9 +150,9 @@ def EDL_b_field(data, edl_gain, instrument , instrument_amplification):
 
     nanotesla_per_microvolt = nanotesla_per_volt / (10 ** 6)
 
-    b_field = calibrate(data, 'b', dipole_length = 1., calibration_factor = 1. ,
-                         instrument, amplification = instrument_amplification,
-                         'edl', gain = edl_gain, offset = 0.)
+    b_field = calibrate(data, 'b', instrument, 'edl', dipole_length = 1., 
+                        calibration_factor = 1. , amplification = instrument_amplification,
+                        gain = edl_gain, offset = 0.)
 
     return b_field
 
@@ -173,9 +173,9 @@ def elogger_e_field(data, elogger_gain, dipole, instrument_amplification):
 
     """
     # Since the conversion is straight from volt into V/m, no further calibration factor is needed
-    e_field = calibrate(data, 'e', dipole_length = dipole, calibration_factor = 1.,
-                         'electrodes', amplification = instrument_amplification, 
-                         'elogger', gain = elogger_gain, offset = 0.)
+    e_field = calibrate(data, 'e', 'electrodes', 'elogger',dipole_length = dipole, 
+                        calibration_factor = 1., amplification = instrument_amplification, 
+                        gain = elogger_gain, offset = 0.)
 
     return e_field
 
@@ -390,14 +390,14 @@ def _data_instrument_consitency_check(data, field, dipole_length, instrument, am
     if field.lower == 'b':
         if logger.lower() == 'elogger':
             raise MTpyError_inputarguments( 'wrong choice of logger')
-        if instrument.lower() == 'electrodes'
+        if instrument.lower() == 'electrodes':
             raise MTpyError_inputarguments( 'wrong choice of instrument')
         if not float(dipole_length) == 1:
             raise MTpyError_inputarguments( 'Dipole length must be 1 for B-field calibration')
            
 
     if field.lower == 'e':
-        if not instrument.lower() == 'electrodes'
+        if not instrument.lower() == 'electrodes':
             raise MTpyError_inputarguments( 'wrong choice of instrument')
 
 

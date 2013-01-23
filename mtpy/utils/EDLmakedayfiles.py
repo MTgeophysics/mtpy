@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""This is a convenience file in form of a script for the generation of dayfiles. 
+"""This is a convenience script for the generation of dayfiles. 
 It needs the location of a folder with time series and the sampling period as arguments.
 
 The time series files have to be named in the EDL-ascii output standard, 

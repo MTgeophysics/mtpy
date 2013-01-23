@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 """
-This modules contains helper functions for file handling. 
+This module contains helper functions for file handling. 
 
-The various functions deal with renaming, sorting, concatenation of time series, extraction of names and times from filenames, ....
+The various functions deal with renaming, sorting, 
+concatenation of time series, extraction of names and times from filenames,
+reading configuration files, ....
 
 
 @UofA, 2013
@@ -22,9 +24,10 @@ import os.path as op
 import glob
 import calendar
 import time
-
+import ConfigParser
 
 from mtpy.utils.exceptions import *
+from mtpy.utils.format import *
 #=================================================================
 
 #define uncertainty for differences between time steps
@@ -35,6 +38,136 @@ epsilon = 1e-9
 
 #=================================================================
 
+def read_configfile(filename):
+    """
+    Read in a configuration file and return a dictionary.
+
+    The output dictionary keys are station names (capitalised), the values are (sub-)dictionaries.
+    The configuration file must contain sections for all stations, each containing all mandatory keywords:
+    
+    - latitude (deg)
+    - longitude (deg)
+    - elevation (in meter)
+    - sampling_interval (in seconds)
+    - station_type (MT, E, B)
+
+    Depending on the type of station the following entries are required.
+
+    E-field recorded:
+
+    - E_logger_type (edl/elogger)
+    - E_logger_gain (factor/gain level)
+    - E_instrument_type (electrodes)
+    - E_instrument_amplification (applied amplification factor)
+    - E_Xaxis_azimuth (degrees)
+    - E_Xaxis_length (in meter)
+    - E_Yaxis_azimuth (degrees)
+    - E_Yaxis_length (in meter)
+
+    B-field recorded:
+  
+    - B_logger_type (edl)
+    - B_logger_gain (factor/gain level)
+    - B_instrument_type (coil, fluxgate)
+    - B_instrument_amplification (applied amplification factor)
+
+    """
+
+    list_of_station_types = ['mt','e','b']
+
+    list_of_required_keywords = ['latitude',
+                                'longitude',
+                                'elevation',
+                                'sampling_interval',
+                                'station_type'
+                                ]
+
+    list_of_efield_keywords = [ 'E_logger_type',
+                                'E_logger_gain',
+                                'E_instrument_type',
+                                'E_instrument_amplification',
+                                'E_Xaxis_azimuth',
+                                'E_Xaxis_length',
+                                'E_Yaxis_azimuth',
+                                'E_Yaxis_length'
+                                ]
+
+    list_of_bfield_keywords = [ 'B_logger_type',
+                                'B_logger_gain',
+                                'B_instrument_type',
+                                'B_instrument_amplification'
+                              ]
+
+    
+    error_counter = 0
+
+    #generate config parser instance
+    configobject = ConfigParser.ConfigParser()
+
+    #check, if file is present
+    if not op.isfile(filename):
+        raise MTpyError_inputarguments( 'File does not exist: %s'%filename )
+
+    # try to parse file, exit, if not a config file
+    try:
+        configobject.read(filename)
+    except:
+        raise MTpyError_inputarguments( 'File is no proper configuration file: %s'%filename )
+
+    #obtain dict of dicts containing the input file's sections
+    configobject_dict = configobject._sections
+
+    #initialise the output dictionary
+    config_dict = {}
+
+    #loop over the sections (stations) of the config file
+    for station in configobject_dict:
+        #read in the sub-dictionary for the current station - bringing all keys to lowercase!
+        temp_dict_in = dict((k.lower(),v) for k,v in configobject_dict[station].items())
+
+        #initialise output sub-directory for current station 
+        stationdict = {}
+
+        #stationnames are uppercase in MTpy
+        stationname = station.upper()
+
+        #check for presence of all mandatory keywords for the current station
+        #case insensitive - allow for short forms 'lat' and 'lon'
+        for req_keyword in list_of_required_keywords:
+            if req_keyword.lower() in temp_dict_in.keys():
+                stationdict[req_keyword.lower()] = temp_dict_in[req_keyword.lower()].lower()
+            elif req_keyword in ['latitude', 'longitude', 'elevation']:
+                if req_keyword[:3] in temp_dict_in.keys():
+                    stationdict[req_keyword] = temp_dict_in[req_keyword[:3]]
+            else:  
+                print 'Station %s - keyword %s missing'%(stationname, req_keyword)
+                error_counter += 1
+                continue
+
+        #check format of lat/lon - convert to degrees, if given in deg,min,sec
+        for coordinate in ['latitude', 'longitude', 'elevation']:
+            value = stationdict[coordinate]
+            try:
+                new_value = _assert_position_format(coordinate,value)
+            except:
+                raise MTpyError_config_file('Error - wrong coordinate format for station %s'%(stationname)
+            stationdict[coordinate] = new_value
+
+
+        #add the station's sub-dictionary to the config dictionary
+        config_dict[stationname] = stationdict
+
+    #MTpyError_config_file('Station %s - keyword missing: %s'%(stationname, key) ) 
+
+
+    if error_counter != 0:
+        print 'could not read all mandatory sections and options - found %i errors - check configuration file before continuing!' %error_counter
+    
+    else:
+        return config_dict
+
+
+#=================================================================
 
 
 def get_sampling_interval_fromdatafile(filename, length = 3600):
@@ -253,7 +386,7 @@ def EDL_make_dayfiles(foldername, sampling , stationname = None):
             if incomplete == 1 :
 
                 #define header info
-                headerline = '# %s %s - %i Hz\n'%(stationname, comp.upper(), int(1./sampling))
+                headerline = '# %s %s  %.1f Hz\n'%(stationname, comp.upper(), int(1./sampling))
 
                 F.write(headerline)
 
