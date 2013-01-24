@@ -27,7 +27,7 @@ import time
 import ConfigParser
 
 from mtpy.utils.exceptions import *
-from mtpy.utils.format import *
+import mtpy.utils.format as MTformat
 #=================================================================
 
 #define uncertainty for differences between time steps
@@ -73,8 +73,6 @@ def read_configfile(filename):
 
     """
 
-    list_of_station_types = ['mt','e','b']
-
     list_of_required_keywords = ['latitude',
                                 'longitude',
                                 'elevation',
@@ -98,7 +96,24 @@ def read_configfile(filename):
                                 'B_instrument_amplification'
                               ]
 
+
+    dict_of_allowed_values_efield = {'E_logger_type':['edl','elogger'] ,
+                                    'E_logger_gain': ['low', 'verylow','high', 0.4, 1, 10, 11],
+                                    'E_instrument_type':['electrodes'],
+                                    'E_instrument_amplification':[1,10]
+                                    }
     
+    dict_of_allowed_values_bfield = {'B_logger_type':['edl'] ,
+                                    'B_logger_gain': ['low', 'verylow','high', 0.4, 1, 10],
+                                    'B_instrument_type':['fluxgate', 'coil'],
+                                    'B_instrument_amplification':[1]
+                                    }
+
+
+
+    list_of_station_types = ['mt','e','b']
+
+
     error_counter = 0
 
     #generate config parser instance
@@ -108,13 +123,13 @@ def read_configfile(filename):
     if not op.isfile(filename):
         raise MTpyError_inputarguments( 'File does not exist: %s'%filename )
 
-    # try to parse file, exit, if not a config file
+    # try to parse file - exit, if not a config file
     try:
         configobject.read(filename)
     except:
         raise MTpyError_inputarguments( 'File is no proper configuration file: %s'%filename )
 
-    #obtain dict of dicts containing the input file's sections
+    #obtain dict of dicts containing the input file's sections (station names)
     configobject_dict = configobject._sections
 
     #initialise the output dictionary
@@ -131,8 +146,9 @@ def read_configfile(filename):
         #stationnames are uppercase in MTpy
         stationname = station.upper()
 
+
         #check for presence of all mandatory keywords for the current station
-        #case insensitive - allow for short forms 'lat' and 'lon'
+        #case insensitive - allow for short forms 'lat', 'lon', and 'ele'
         for req_keyword in list_of_required_keywords:
             if req_keyword.lower() in temp_dict_in.keys():
                 stationdict[req_keyword.lower()] = temp_dict_in[req_keyword.lower()].lower()
@@ -148,11 +164,40 @@ def read_configfile(filename):
         for coordinate in ['latitude', 'longitude', 'elevation']:
             value = stationdict[coordinate]
             try:
-                new_value = _assert_position_format(coordinate,value)
+                new_value = MTformat._assert_position_format(coordinate,value)
             except:
-                raise MTpyError_config_file('Error - wrong coordinate format for station %s'%(stationname)
+                raise MTpyError_config_file('Error - wrong coordinate format for station %s'%(stationname))
             stationdict[coordinate] = new_value
 
+        if not stationdict['station_type'] in list_of_station_types:
+            raise MTpyError_config_file( 'Station type not valid' )
+
+
+        if stationdict['station_type'] in ['mt','e']:
+            #check for required electric field parameters
+            for req_keyword in list_of_efield_keywords:
+                if req_keyword.lower() in temp_dict_in.keys():
+                    stationdict[req_keyword.lower()] = temp_dict_in[req_keyword.lower()].lower()
+                else:  
+                    print 'Station %s - keyword %s missing'%(stationname, req_keyword)
+                    error_counter += 1
+                    continue
+
+            _validate_dictionary(stationdict,dict_of_allowed_values_efield)
+            
+
+        if stationdict['station_type'] in ['mt','b']:
+            #check for required magnetic field parameters
+            for req_keyword in list_of_bfield_keywords:
+                if req_keyword.lower() in temp_dict_in.keys():
+                    stationdict[req_keyword.lower()] = temp_dict_in[req_keyword.lower()].lower()
+                else:  
+                    print 'Station %s - keyword %s missing'%(stationname, req_keyword)
+                    error_counter += 1
+                    continue
+
+            _validate_dictionary(stationdict,dict_of_allowed_values_bfield)
+            
 
         #add the station's sub-dictionary to the config dictionary
         config_dict[stationname] = stationdict
@@ -165,6 +210,29 @@ def read_configfile(filename):
     
     else:
         return config_dict
+
+
+#=================================================================
+ 
+def _validate_dictionary(dict2validate,referencedict):
+
+    for key, value in referencedict.items():
+        #make everything to strings - easier to compare
+        #in case of numbers, make to float first
+        try:
+            value2validate = str(float(dict2validate[key.lower()]))
+        except:
+            value2validate = str( dict2validate[key.lower()] ).lower()
+        
+        tmp = []
+        for i in value:
+            try: 
+                tmp.append(str(float(i)))
+            except:
+                tmp.append(str(i))  
+        value = tmp
+        if not value2validate in value:
+            raise MTpyError_config_file( 'Config file error -- key %s, value %s not valid'%(key, value2validate) )
 
 
 #=================================================================
@@ -224,6 +292,7 @@ def EDL_make_dayfiles(foldername, sampling , stationname = None):
     oldwd = os.getcwd()
     os.chdir(wd)
     lo_allfiles = glob.glob('*.??')
+    lo_allfiles = [op.abspath(i) for i in lo_allfiles]
     os.chdir(oldwd)
 
 
@@ -307,7 +376,7 @@ def EDL_make_dayfiles(foldername, sampling , stationname = None):
 
 
                 #define output filename
-                new_fn = '%s_%.1fHz_%s_%i.%s'%(stationname, 1./sampling, file_date, fileindex, comp)
+                new_fn = '%s_1day_%s_%i.%s'%(stationname, file_date, fileindex, comp)
                 new_file = op.abspath(op.join(outpath,new_fn))
                 
                 #open output file 
@@ -386,7 +455,7 @@ def EDL_make_dayfiles(foldername, sampling , stationname = None):
             if incomplete == 1 :
 
                 #define header info
-                headerline = '# %s %s  %.1f Hz\n'%(stationname, comp.upper(), int(1./sampling))
+                headerline = '# %s %s \n'%(stationname, comp.upper())
 
                 F.write(headerline)
 

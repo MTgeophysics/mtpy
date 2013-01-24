@@ -1,10 +1,16 @@
 #!/usr/bin/env python
 
 """
-This modules contains helper functions for the calibration of raw time series. 
+This modules contains functions for the calibration of raw time series. 
 
 The various functions deal with the calibration of data from fluxgates, coil, dipoles,...
 The calibration depends on  the instrument as well as on the respective data logger. 
+
+All information needed for the calibration must be provided by a configuration file. This has to 
+consist of station names as section headers. Each section must contain a set of mandatory keywords.
+The keyword list is defined in the function mtpy.processing.filehandling.read_configfile()
+
+For calling a batch calibration rather than just one file, use the appropriate scripts from the mtpy.utils subpackage. 
 
 
 @UofA, 2013
@@ -74,7 +80,7 @@ def calibrate(raw_data, field, instrument, logger,dipole_length=1.,
     input:
     - 1D time series (list or numpy array)
     - type of measured field (E/B)
-    - dipole length 
+    - dipole length (if value is negative, the data will change sign )
     - actual calibration factor ('Volts/Tesla per count')
     - instrument (fluxgate, coil, electrodes, bartington)
     - amplification factor for the instrument
@@ -181,7 +187,7 @@ def elogger_e_field(data, elogger_gain, dipole, instrument_amplification):
 
 #=================================================================
 
-def calibrate_file(filename, output_path, instrument, logger, gain, dipole = 1., channel = None, offset = 0 ):
+def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationname, channel, offset = 0 ):
     """
     Calibrate data from one given file and store the output to another file.
     If the channel is not given explicitly, it's taken from the filename suffix.
@@ -196,6 +202,7 @@ def calibrate_file(filename, output_path, instrument, logger, gain, dipole = 1.,
     - instrument amplification factor
     - data logger type
     - logger gain factor
+    - station name
     - channel  
 
     """
@@ -236,16 +243,16 @@ def calibrate_file(filename, output_path, instrument, logger, gain, dipole = 1.,
 
 
 
-    if not op.isdir(output_path):
+    if not op.isdir(outdir):
         try:
-            os.makedirs(output_path)
+            os.makedirs(outdir)
         except:
             raise MTpyError_inputarguments('output directory is not existing and cannot be generated')
 
     if channel == None:
         channel = filename[-2:].lower()
         
-    if not channel_raw in list_of_channels:
+    if not channel in list_of_channels:
         raise MTpyError_inputarguments('wrong channel specification')
    
     field = channel[0]
@@ -283,7 +290,7 @@ def calibrate_file(filename, output_path, instrument, logger, gain, dipole = 1.,
 
             EDLgain = dict_of_EDL_gain_factors[gain] 
 
-            outfile_data = EDL_e_field(data, EDLgain, dipole, instrument_amplification)
+            outfile_data = EDL_e_field(data_in, EDLgain, dipole, instrument_amplification)
     
         dataunit ='microvoltpermeter'
 
@@ -319,25 +326,25 @@ def calibrate_file(filename, output_path, instrument, logger, gain, dipole = 1.,
                 instrument_amplification = dict_of_bz_instrument_amplification[logger]
 
 
-            outfile_data = EDL_b_field(data, EDLgain, instrument, instrument_amplification)
+            outfile_data = EDL_b_field(data_in, EDLgain, instrument, instrument_amplification)
 
         dataunit = 'nanotesla'
 
 
 
-    newbasename = infile_base.split('.')[-2]+dataunit+'.'+infile_base.split('.')[-1]
+    newbasename = '%s_%s.%s'%(op.splitext(infile_base)[0], dataunit, infile_base.split('.')[-1].lower())
 
 
     #set up output file
-    outfile = op.join(output_path, newbasename)
+    outfile = op.join(outdir, newbasename)
     
-    additional_header_info = '%s %s %s \n'%(dataunit, instrument, logger)
+    additional_header_info = ' %s %s %s \n'%(dataunit, instrument, logger)
 
     if firstline[0] == '#':
         newfirstline = firstline + additional_header_info
 
     else:
-        newfirstline = '#' + additional_header_info
+        newfirstline = '# %s %s %s'%(stationname, channel, additional_header_info)
 
 
     if time_axis != None:
@@ -351,6 +358,8 @@ def calibrate_file(filename, output_path, instrument, logger, gain, dipole = 1.,
     np.savetxt(Fout,data_out)
     Fout.close()
 
+    print 'wrote file %s'%(outfile)
+    
 
 #=================================================================
 
@@ -366,8 +375,8 @@ def _data_instrument_consitency_check(data, field, dipole_length, instrument, am
     if not field.lower() in ['e','b']:
         raise MTpyError_inputarguments( 'Field must be E or B' )
 
-    if float(dipole_length) <= 0:
-        raise MTpyError_inputarguments( 'Dipole length must be positive' )
+#    if float(dipole_length) <= 0:
+#        raise MTpyError_inputarguments( 'Dipole length must be positive' )
 
     if float(amplification) <= 0:
         raise MTpyError_inputarguments( 'Amplification factor must be positive' )
