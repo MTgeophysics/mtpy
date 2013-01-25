@@ -1,0 +1,51 @@
+0 #input mode
+2 # number of output timeseries 1,2,3
+2 # number of input time series 1,2,3
+2 # time bandwidth for slepian data taper window (overlap between consecutive windows, 1=50% - 4=71%)
+-10 #sampling interval - negative number for sampling rate
+8192,8 #maximum section length, number of reduction steps 
+y # confirm output
+0,0.999 #fudge factor/robustness factor (0=automatic determination from Rayleigh distr.),  probability rejection level for leverage points 
+0.4 # squared threshold for E-B field coherence - block discarded if actual value is smaller
+# -- #thresholding mode for third input variable (0= Bz is thresholded separately form E-field)
+# -- # squared coherence threshold vor Bz 
+h68 # filename root for output files
+0 # output level (0= only response functions are output)
+1 # number of data pieces (1= single continuous time series)
+3 # length of AR filter (0=None, the larger the better the prewhitening)
+0 # file mode (0= separate ascii files, 1 value per line )
+1 # input mode (0=value only, 1= datestamp)
+0 # number of filter parameters
+HS068/HS068_16h_10Hz.EX # filename
+2012-02-23 00:00:00 # 19 characters: data series start time
+2012-02-23 00:00:00 # 19 characters: processinng window start time
+2012-02-23 16:00:00 # 19 characters: procesing window end time 
+0 # ?
+HS068/HS068_16h_10Hz.EY
+2012-02-23 00:00:00
+2012-02-23 00:00:00
+2012-02-23 16:00:00
+0 # ?
+HS068/HS068_16h_10Hz.BX
+2012-02-23 00:00:00
+2012-02-23 00:00:00
+2012-02-23 16:00:00
+0 # ?
+HS068/HS068_16h_10Hz.BY
+2012-02-23 00:00:00
+2012-02-23 00:00:00
+2012-02-23 16:00:00
+0 # ?
+HS068/HS068_16h_10Hz.BX # filename remote reference BX
+2012-02-23 00:00:00
+2012-02-23 00:00:00
+2012-02-23 16:00:00
+0 #?
+HS068/HS068_16h_10Hz.BY # filename remote reference BY
+2012-02-23 00:00:00
+2012-02-23 00:00:00
+2012-02-23 16:00:00
+0 # ?
+0,90,173 # geometry of output (only read, if nout >=2 ) -  first comp w.r.t. geomag north, second comp., total rotation (incl. declination correction) - why 180 degrees rotation ???
+0,90,-7 # geometry of input variables
+0,90,-7 # geometry of remote ref station
