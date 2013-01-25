@@ -2,7 +2,7 @@
 \section{Processing -- step by step}
 \label{sec:processing.steps}
 
-The processing starrts with the raw time series data files from the data loggers. 
+The processing starts with the raw time series data files from the data loggers. 
 Additionally, a configuration-file is needed. This contains all sort of meta data and further information.
 The configuration file is an ascii text file of the form\\
 \begin{verbatim}
@@ -67,7 +67,7 @@ You have to know the duration of your single files (e.g. 10 mins, 1 hour,...). C
 \item For generating dayfiles call \\
 \texttt{FH.EDL\_make\_dayfiles(foldername, sampling , stationname = None)}\\ This generates a subfolder called \textit{dayfiles}. If the given files cannot be merged continuously, several files are created for the same day.
 
-\item Output dayfiles have a single header line, which starts with the character \textit{\#}. The content of the line is \\  \textit{stationname ; channel ; time of first sample ; time of last sample}. Time stamps are given in epoch seconds.
+\item Output dayfiles have a single header line, which starts with the character \textit{\#}. The content of the line is \\  \textit{stationname ; channel ; sampling interval ; time of first sample ; time of last sample}. Time stamps are given in epoch seconds.
 
 \end{enumerate}
 
@@ -114,7 +114,7 @@ The units are microvolts per meter ($\mu V/m$) for the electric field and nanote
 
 The calibrated files have a single header line, starting with the common commenting symbol "\#".
 The header line contains the fields\\
-\texttt{stationname, channel, unit of data, latitude, longitude, elevation}\\
+\texttt{stationname, channel, unit of data, sampling interval, timestamp first sample , timestamp last sample, latitude, longitude, elevation}\\
 Hence from this point on all basic information are present, which are necessary for continuing the MT processing, even if the configuration file should be lost. 
 
 In order to be able to distiguish between latitude and longitude values, the standard position format is applied: latitude values are given as  2-digit numbers $\pm dd.ddddd$, whereas longitudes are in the 3-digit form $\pm ddd.ddddd$. The positions are given to 5 decimal digits, this means an accuracy of $< 2$m.
