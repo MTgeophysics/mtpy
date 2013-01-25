@@ -84,7 +84,7 @@ def main():
 
     #check, if list of files is empty
     if len(lo_files) == 0:
-        raise MTpyError_inputarguments('Directory does not contain files to combine: %s' % (wd))
+        raise MTpyError_inputarguments('Directory does not contain files to calibrate: %s' % (wd))
     #-------------------------------------------------------
 
 
@@ -126,6 +126,9 @@ def main():
             print 'no entry for station %s found in configuration file %s skipping file'%(stationname, configfile )
             continue
 
+        latitude = stationdict['latitude']
+        longitude = stationdict['longitude']
+        elevation = stationdict['elevation']
 
         field = channel[0]
         direction = channel[1]
@@ -167,7 +170,7 @@ def main():
             instrument_amplification = stationdict['b_instrument_amplification']
 
 
-        C.calibrate_file(f, outdir, instrument, logger, gain, dipolelength, stationname, channel, offset = 0 )
+        C.calibrate_file(f, outdir, instrument, logger, gain, dipolelength, stationname, channel, latitude, longitude, elevation,  offset = 0 )
 
 if __name__=='__main__':
     main()

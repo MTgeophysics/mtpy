@@ -47,7 +47,7 @@ def read_configfile(filename):
     
     - latitude (deg)
     - longitude (deg)
-    - elevation (in meter)
+    - elevation (in meters)
     - sampling_interval (in seconds)
     - station_type (MT, E, B)
 
@@ -60,9 +60,9 @@ def read_configfile(filename):
     - E_instrument_type (electrodes)
     - E_instrument_amplification (applied amplification factor)
     - E_Xaxis_azimuth (degrees)
-    - E_Xaxis_length (in meter)
+    - E_Xaxis_length (in meters)
     - E_Yaxis_azimuth (degrees)
-    - E_Yaxis_length (in meter)
+    - E_Yaxis_length (in meters)
 
     B-field recorded:
   

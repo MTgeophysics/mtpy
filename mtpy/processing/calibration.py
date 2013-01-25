@@ -187,7 +187,7 @@ def elogger_e_field(data, elogger_gain, dipole, instrument_amplification):
 
 #=================================================================
 
-def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationname, channel, offset = 0 ):
+def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationname, channel, latitude, longitude, elevation, offset = 0 ):
     """
     Calibrate data from one given file and store the output to another file.
     If the channel is not given explicitly, it's taken from the filename suffix.
@@ -338,7 +338,7 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
     #set up output file
     outfile = op.join(outdir, newbasename)
     
-    additional_header_info = ' %s %s %s \n'%(dataunit, instrument, logger)
+    additional_header_info = ' %s %02.5f %03.5f %.1f \n'%(dataunit, latitude, longitude, elevation)
 
     if firstline[0] == '#':
         newfirstline = firstline + additional_header_info
