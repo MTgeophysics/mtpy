@@ -287,7 +287,7 @@ def EDL_make_dayfiles(foldername, sampling , stationname = None):
         raise MTpyError_inputarguments('Directory not existing: %s' % (wd))
 
     #typical suffixes for EDL output file names
-    components = ['ex', 'ey', 'bx', 'by', 'bz', 'tp']
+    components = ['ex', 'ey', 'bx', 'by', 'bz']
 
     oldwd = os.getcwd()
     os.chdir(wd)
@@ -455,7 +455,7 @@ def EDL_make_dayfiles(foldername, sampling , stationname = None):
             if incomplete == 1 :
 
                 #define header info
-                headerline = '# %s %s \n'%(stationname, comp.upper())
+                headerline = '# %s %s \n'%(stationname, comp.lower())
 
                 F.write(headerline)
 
@@ -520,3 +520,54 @@ def EDL_get_stationname_fromfilename(filename):
 
     return stationname
 
+
+def read_data_header(fn_raw):
+    """
+        Read the header line of MTpy data files.
+
+    input: 
+    MTpy data file name
+
+    output:
+    list of header elements -
+    stationname, channel, sampling rate, starttime first sample, starttime last sample, unit, lat, lon, elevation
+
+    """
+
+
+    fn = op.abspath(op.realpath(fn))
+
+    if not op.isfile(fn):
+        raise MTpyError_inputarguments('Not a file:%s'%fn)
+    try:
+        F = open(fn), 'r')
+    except:
+        raise MTpyError_inputarguments('File not readable:%s'%fn)
+
+    firstline = F.readline().strip().split()
+    if not firstline[0][0] == '#':
+        raise MTpyError_ts_data('Time series data file does not have a proper header:%s'%fn)
+
+    F.close()
+
+    header_list = []
+
+    idx_header = 0
+
+    if len(firstline[0]) > 1:
+        header_list.append(firstline[0][1:].upper())
+    else:
+        header_list.append(firstline[1].upper())
+        idx_header += 1
+
+    header_list.append( firstline[idx_header+1].lower() )
+    header_list.append( float(firstline[idx_header+2]) )
+    header_list.append( float(firstline[idx_header+3]) )
+    header_list.append( float(firstline[idx_header+4]) )
+    header_list.append( firstline[idx_header+5].lower() )
+    header_list.append( float(firstline[idx_header+6]) )
+    header_list.append( float(firstline[idx_header+7]) )
+    header_list.append( float(firstline[idx_header+8]) )
+
+
+    return header_list

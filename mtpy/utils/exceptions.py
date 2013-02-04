@@ -25,3 +25,6 @@ class MTpyError_ts_data( Exception ):
 
 class MTpyError_config_file( Exception ): 
     pass
+
+class MTpyError_file_handling( Exception ): 
+    pass
