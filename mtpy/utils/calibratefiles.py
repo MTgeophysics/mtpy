@@ -16,7 +16,9 @@ import calendar
 import time
 
 
-from mtpy.utils.exceptions import *
+import mtpy.utils.exceptions as EX
+reload(EX)
+
 import mtpy.processing.calibration as C
 reload(C)
 import mtpy.processing.filehandling as FH
@@ -28,7 +30,7 @@ angleaccuracy = 1.
 def main():
 
     if len(sys.argv) < 3:
-        raise MTpyError_inputarguments('Need 2 arguments: <path to files> <config file>')
+        raise EX.MTpyError_inputarguments('Need 2 arguments: <path to files> <config file>')
 
 
     pathname_raw = sys.argv[1] 
@@ -39,10 +41,10 @@ def main():
 
 
     if not op.isdir(directory):
-        raise MTpyError_inputarguments('Directory not existing: %s' % (directory))
+        raise EX.MTpyError_inputarguments('Directory not existing: %s' % (directory))
 
     if not op.isfile(configfile):
-        raise MTpyError_inputarguments('Config file not existing: %s' % (configfile))
+        raise EX.MTpyError_inputarguments('Config file not existing: %s' % (configfile))
 
 
     try:
@@ -55,13 +57,13 @@ def main():
         if not op.isdir(outdir):
             os.makedirs(outdir)
     except:
-        raise MTpyError_inputarguments('Output directory cannot be generated: %s' % (outdir))
+        raise EX.MTpyError_inputarguments('Output directory cannot be generated: %s' % (outdir))
 
 
     try:
         config_dir = FH.read_configfile(configfile)
     except:
-        raise MTpyError_config_file( 'Config file cannot be read: %s' % (configfile) )
+        raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (configfile) )
 
     #----------------------------------------------------------------------------
     #to be improved later - rather rely on header lines than filenames!! :
@@ -84,7 +86,7 @@ def main():
 
     #check, if list of files is empty
     if len(lo_files) == 0:
-        raise MTpyError_inputarguments('Directory does not contain files to calibrate: %s' % (wd))
+        raise EX.MTpyError_inputarguments('Directory does not contain files to calibrate: %s' % (wd))
     #-------------------------------------------------------
 
 

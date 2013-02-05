@@ -123,11 +123,12 @@ def read_configfile(filename):
     if not op.isfile(filename):
         raise MTpyError_inputarguments( 'File does not exist: %s'%filename )
 
+
     # try to parse file - exit, if not a config file
     try:
         configobject.read(filename)
     except:
-        raise MTpyError_inputarguments( 'File is no proper configuration file: %s'%filename )
+        raise MTpyError_inputarguments( 'File is not a proper configuration file: %s'%filename )
 
     #obtain dict of dicts containing the input file's sections (station names)
     configobject_dict = configobject._sections
@@ -455,15 +456,15 @@ def EDL_make_dayfiles(foldername, sampling , stationname = None):
             if incomplete == 1 :
 
                 #define header info
-                headerline = '# %s %s \n'%(stationname, comp.lower())
+                headerline = '# %s %s %.1f %f %f \n'%(stationname, comp.lower(), 1./sampling, outfile_timeaxis[0], outfile_timeaxis[-1] )
 
                 F.write(headerline)
 
-                outfile_array = np.zeros((len(outfile_timeaxis),2))
-                outfile_array[:,0] = outfile_timeaxis
-                outfile_array[:,1] = outfile_data
+                #outfile_array = np.zeros((len(outfile_timeaxis),2))
+                #outfile_array[:,0] = outfile_timeaxis
+                #outfile_array[:,1] = outfile_data
 
-                np.savetxt(F, outfile_array)
+                np.savetxt(F, np.array(outfile_data))
 
                 F.close()
                 print '\t wrote file %s'%(new_file)
@@ -535,12 +536,12 @@ def read_data_header(fn_raw):
     """
 
 
-    fn = op.abspath(op.realpath(fn))
+    fn = op.abspath(op.realpath(fn_raw))
 
     if not op.isfile(fn):
         raise MTpyError_inputarguments('Not a file:%s'%fn)
     try:
-        F = open(fn), 'r')
+        F = open(fn, 'r')
     except:
         raise MTpyError_inputarguments('File not readable:%s'%fn)
 
@@ -571,3 +572,5 @@ def read_data_header(fn_raw):
 
 
     return header_list
+
+
