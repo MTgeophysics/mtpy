@@ -57,7 +57,7 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
 
     current_dir = op.abspath(os.curdir)
 
-    wd = op.abspath(op.realpath(ts_directory))
+    wd = op.abspath(op.realpath(op.join(ts_directory,'birrp_processed')))
     if not op.isdir(wd):
         try:
             os.makedirs(wd) 
@@ -68,8 +68,8 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
 
     inputstring = generate_birrp_inputstring_simple(stationname, ts_directory, coherence_threshold)
 
-    print inputstring
-    sys.exit()
+    #print inputstring
+    #sys.exit()
     #correct inputstring for potential errorneous line endings:
     tempstring = inputstring.split()
     tempstring = [i.strip() for i in tempstring]
@@ -98,7 +98,6 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
 
     longest_section, number_of_bisections = get_optimal_window_decimation(length, sampling_rate)
 
-    print (sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,stationname)
 
     if output_channels == 2:
         inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n%i\n4,3,4\n%s\n0\n0,90,180\n0,90,180\n0,90,180'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,input_filename)
