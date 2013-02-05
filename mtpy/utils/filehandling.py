@@ -456,7 +456,7 @@ def EDL_make_dayfiles(foldername, sampling , stationname = None):
             if incomplete == 1 :
 
                 #define header info
-                headerline = '# %s %s %.1f %f %f \n'%(stationname, comp.lower(), 1./sampling, outfile_timeaxis[0], outfile_timeaxis[-1] )
+                headerline = '# %s %s %.1f %f %i \n'%(stationname, comp.lower(), 1./sampling, outfile_timeaxis[0], len(outfile_timeaxis) )
 
                 F.write(headerline)
 
@@ -564,7 +564,7 @@ def read_data_header(fn_raw):
     header_list.append( firstline[idx_header+1].lower() )
     header_list.append( float(firstline[idx_header+2]) )
     header_list.append( float(firstline[idx_header+3]) )
-    header_list.append( float(firstline[idx_header+4]) )
+    header_list.append( int(float(firstline[idx_header+4])) )
     header_list.append( firstline[idx_header+5].lower() )
     header_list.append( float(firstline[idx_header+6]) )
     header_list.append( float(firstline[idx_header+7]) )

@@ -36,7 +36,7 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
     totalmin = np.min(mins)
     totalmax = np.max(maxs)
 
-    #do not correct for last sampole, since 'end' in the MTpy handling is defined as the start time of the last sample already
+    #do not correct for last sample, since 'end' in the MTpy handling is defined as the start time of the last sample already
     totallength = (totalmax - totalmin ) * sampling_rate
     
 
@@ -101,6 +101,6 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
 
     #rounding limits of the time window to precision defined by the sampling rate
     precision = -int(np.log10(1./sampling_rate))
-    return (round(ta[start_idx], precision), round(ta[end_idx], precision), totallength)
+    return (round(ta[start_idx], precision), round(ta[end_idx], precision), window_length)
 
 

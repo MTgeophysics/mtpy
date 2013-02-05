@@ -27,7 +27,7 @@ import time
 from mtpy.utils.exceptions import *
 
 
-import mtpy.processing.filehandling as FH
+import mtpy.utils.filehandling as FH
 reload(FH)
 
 

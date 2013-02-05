@@ -28,6 +28,7 @@ import sys, os
 import glob
 import os.path as op
 import subprocess
+import time 
 
 from mtpy.utils.exceptions import *
 import mtpy.utils.format as MTformat
@@ -100,10 +101,10 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
 
 
     if output_channels == 2:
-        inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n%i\n4,3,4\n%s\n0\n0,90,180\n0,90,180\n0,90,180'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,input_filename)
+        inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n%i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,input_filename)
 
     elif output_channels == 3:
-        inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n\i\n4,3,4\n%s\n0\n0,90,180\n0,90,180\n0,90,180'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,stationname)
+        inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n\i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,stationname)
 
 
     return inputstring
@@ -147,10 +148,12 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
         if not stationname_read == stationname.upper():
             continue
 
+                
         lo_channels.append(header[1])
         lo_sampling_rates.append(header[2])
         lo_starttimes.append(header[3])
-        lo_endtimes.append(header[4]+1./float(header[2]))
+        endtime = (np.arange(header[4]+1)/header[2] + header[3])[-1]
+        lo_endtimes.append(endtime)
 
     #take the most common sampling rate, if there are more than one:
     from collections import Counter
@@ -178,7 +181,7 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
             ch_read = lo_channels[st]
             if not ch == ch_read:
                 continue
-
+                
             if tmp_starttime != None:
                 if (tmp_endtime != None) and (np.abs(lo_starttimes[st] - tmp_endtime) > 0.5*1./sampling_rate):
                     tmp_timewindows_list_per_channel.append((tmp_starttime, tmp_endtime))
@@ -196,9 +199,11 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
     longest_common_time_window = MISC.find_longest_common_time_window_from_list(lo_time_windows, sampling_rate)
 
 
-    #return longest_common_time_window
+    # print longest_common_time_window
+    # print time.gmtime(longest_common_time_window[0]), time.gmtime(longest_common_time_window[1])
+    # os.chdir('/data/TS')
+    # sys.exit()
 
-#schleife ueber liste von anfangswerten und endwerten...richtige indizes finden, jeweilige datenfiles oeffnen und richtigen teil daten in 4/5 column array einlesen 
 
     #data array to hold time series for longest possible time window for the files given 
     #order Ex, Ey, Bx, By (,Bz)
@@ -297,7 +302,7 @@ def validate_outputfiles():
 
     pass
 
-def renamecoherencefiles():
+def rename_coherencefiles():
 
 
     pass

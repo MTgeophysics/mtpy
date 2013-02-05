@@ -21,7 +21,7 @@ reload(EX)
 
 import mtpy.processing.calibration as C
 reload(C)
-import mtpy.processing.filehandling as FH
+import mtpy.utils.filehandling as FH
 reload(FH)
 
 angleaccuracy = 1.
