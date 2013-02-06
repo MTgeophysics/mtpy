@@ -203,15 +203,44 @@ def read_configfile(filename):
         #add the station's sub-dictionary to the config dictionary
         config_dict[stationname] = stationdict
 
-    #MTpyError_config_file('Station %s - keyword missing: %s'%(stationname, key) ) 
-
 
     if error_counter != 0:
-        print 'could not read all mandatory sections and options - found %i errors - check configuration file before continuing!' %error_counter
+        print 'Could not read all mandatory sections and options in config file - found %i errors - check configuration file before continuing!' %error_counter
     
     else:
         return config_dict
 
+#=================================================================
+
+def write_dict_to_configfile(dictionary, output_filename):
+    """
+    Write a dictionary into a configuration file.
+
+    The dictionary can contain pure key-value pairs as well as a level-1 nested dictionary. In the first case, the entries are stored in a 'DEFAULT' section. In the latter case, the dictionary keys are taken as section heads and the sub-dictionaries key-value pairs fill up the respective section  
+
+    """
+
+    configobject = ConfigParser.ConfigParser()
+
+    #check for nested dictionary - 
+    #if the dict entry is a key-value pair, it's stored in a section with head 'DEFAULT' 
+    #otherwise, the dict key is taken as section header
+    for key,val in dictionary.items():
+        try:
+            sectionhead = key
+            configobject.add_section(sectionhead)
+            for subkey, subval in val.items():
+                configobject.set(sectionhead,subkey, subval)
+
+        except:
+            #if not configobject.has_section('DEFAULT'):
+            #    configobject.add_section('')
+            configobject.set('',key,val)
+
+
+    with open(output_filename, 'w') as F:
+        configobject.write(F)
+    
 
 #=================================================================
  

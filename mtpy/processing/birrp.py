@@ -67,7 +67,9 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
 
     os.chdir(wd)
 
-    inputstring = generate_birrp_inputstring_simple(stationname, ts_directory, coherence_threshold)
+    inputstring, birrp_stationdict = generate_birrp_inputstring_simple(stationname, ts_directory, coherence_threshold)
+
+
 
     #print inputstring
     #sys.exit()
@@ -84,6 +86,11 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
 
     logfile.close()
 
+    #generate a local configuration file, containing information about all BIRRP and station parameters
+    #required for the header of the EDI file 
+    FH.write_dict_to_configfile(birrp_stationdict, 'stationname_birrpconfig.cfg')
+
+    #go back to initial directory
     os.chdir(current_dir)
 
 
@@ -94,11 +101,13 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
         raise MTpyError_inputarguments( 'Output channels must be 2 or 3' )
 
 
-    input_filename, length, sampling_rate = set_birrp_input_file_simple(stationname, ts_directory, output_channels, op.join(ts_directory,'birrp_wd'))
+    (input_filename, length, sampling_rate), birrp_stationdict = set_birrp_input_file_simple(stationname, ts_directory, output_channels, op.join(ts_directory,'birrp_wd'))
 
 
     longest_section, number_of_bisections = get_optimal_window_decimation(length, sampling_rate)
 
+    birrp_stationdict['max_window_length'] = longest_section
+    birrp_stationdict['n_bisections'] = number_of_bisections
 
     if output_channels == 2:
         inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n%i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,input_filename)
@@ -106,8 +115,12 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
     elif output_channels == 3:
         inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n\i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,stationname)
 
+    string_file = op.join(ts_directory,'birrp_wd','birrp_input_string.txt')
+    F = open(string_file,'w')
+    F.write(inputstring)
+    F.close()
 
-    return inputstring
+    return inputstring, birrp_stationdict
 
 
 
@@ -128,6 +141,8 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
     lo_starttimes = []
     lo_endtimes = []
     lo_sampling_rates = []
+    birrp_stationdict = {}
+
 
     channels =  ['ex', 'ey', 'bx', 'by']
     if output_channels == 3:
@@ -181,7 +196,7 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
             ch_read = lo_channels[st]
             if not ch == ch_read:
                 continue
-                
+
             if tmp_starttime != None:
                 if (tmp_endtime != None) and (np.abs(lo_starttimes[st] - tmp_endtime) > 0.5*1./sampling_rate):
                     tmp_timewindows_list_per_channel.append((tmp_starttime, tmp_endtime))
@@ -258,7 +273,7 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
     print 'Wrote input data to file:%s'%outfn
 
 
-    return op.abspath(outfn), len(data), sampling_rate
+    return (op.abspath(outfn), len(data), sampling_rate), birrp_stationdict
 
 
 def get_optimal_window_decimation(length, sampling_rate):
@@ -313,7 +328,47 @@ def setup_arguments():
     pass
 
 
-def convert():
+def convert(stationname, in_dir, configfile, out_dir = None):
+    """
+    Convert BIRRP output files into .edi and .coh file.
+
+    List of BIRRP output files is searched for in the in_dir directory for the given stationname (base part of filenames). All meta-data must be provided in a config file. If MTpy standard processing has been applied, this is the same file as used from the beginning of the processing. 
+    
+    If the overall config file is missing, a temporary config file must been created from the header information of the time series files that have been used as BIRRP input.
+
+    The outputfiles 'stationname.edi' and 'stationname.coh' are stored in the out_dir directory. If out_dir is not given, the files are stored in the in_dir.
+    """ 
+
+    input_dir = op.abspath(op.realpath(in_dir))
+    if not op.isdir(input_dir):
+        raise MTpyError_inputarguments('Directory not existing:%s'%(input_dir))
+
+    if out_dir == None:
+        output_dir = input_dir
+    else:
+        output_dir = op.abspath(op.realpath(out_dir))
+        if not op.isdir(output_dir):
+            try:
+                os.makedirs(output_dir)
+            except:
+                print 'output directory could not be created - using input directory instead'
+                output_dir = input_dir
+
+    if not op.isfile(configfile):
+        raise MTpyError_inputarguments('Config file not existing:%s'%(configfile))
+    
+    #read the config file:
+    try:
+        config_dir = FH.read_configfile(configfile)
+    except:
+        raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (configfile) )
+
+    if not stationname.upper() in config_dir:
+        raise EX.MTpyError_config_file( 'No information about station %s found in config file: %s' % (stationname, configfile) )
+
+
+
+
 
     pass
 
