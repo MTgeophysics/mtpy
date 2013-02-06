@@ -227,9 +227,10 @@ def write_dict_to_configfile(dictionary, output_filename):
     #otherwise, the dict key is taken as section header
     for key,val in dictionary.items():
         try:
-            sectionhead = key
-            configobject.add_section(sectionhead)
             for subkey, subval in val.items():
+                sectionhead = key
+                if not configobject.has_section(sectionhead):
+                    configobject.add_section(sectionhead)
                 configobject.set(sectionhead,subkey, subval)
 
         except:
@@ -602,4 +603,43 @@ def read_data_header(fn_raw):
 
     return header_list
 
+
+def read_2c2_file(filename):
+    """
+    Read in BIRRP 2c2 coherence files and return 4 lists 
+    containing [period],[freq],[coh],[zcoh]. Note if any of the coherences are 
+    negative a value of 0 will be given to them.
+
+    """
+
+    period = []
+    freq = []
+    coh1 = []
+    zcoh1 = []
+
+    F_in = open(filename,'r')
+    data_raw = F_in.readlines()
+    
+    for ii in range(len(data_raw)):
+
+        coh_row = data_raw[ii].strip().split()
+        
+        try:
+            period.append(float(coh_row[0]))
+        except:
+            period.append(0.)
+        try:
+            freq.append(  float(coh_row[1]))
+        except:
+            period.append(0.)
+        try:
+            coh1.append(  float(coh_row[2]))
+        except:
+            period.append(0.)
+        try:
+            zcoh1.append( float(coh_row[3]))
+        except:
+            period.append(0.)
+
+    return period, freq, coh1, zcoh1
 

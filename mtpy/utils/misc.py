@@ -103,4 +103,22 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
     precision = -int(np.log10(1./sampling_rate))
     return (round(ta[start_idx], precision), round(ta[end_idx], precision), window_length)
 
+def add_birrp_simple_parameters_to_dictionary(birrp_dictionary):
 
+    birrp_dictionary['ilev'] = 0 
+    birrp_dictionary['ninp'] = 2
+    birrp_dictionary['tbw'] = 2
+    birrp_dictionary['uin'] = 0 
+    birrp_dictionary['ainuin'] = 0.999
+    birrp_dictionary['nlev'] = 0 
+    birrp_dictionary['npcs'] = 1 
+    birrp_dictionary['nar'] = 5
+    birrp_dictionary['imode'] = 2
+    birrp_dictionary['jmode'] = 0 
+    birrp_dictionary['nfil'] = 0
+    birrp_dictionary['nskip'] = 0 
+    birrp_dictionary['theta1'] = 0 
+    birrp_dictionary['theta2'] = 90
+    birrp_dictionary['phi'] = 0
+ 
+    return birrp_dictionary

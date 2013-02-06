@@ -29,6 +29,7 @@ import glob
 import os.path as op
 import subprocess
 import time 
+import fnmatch
 
 from mtpy.utils.exceptions import *
 import mtpy.utils.format as MTformat
@@ -48,6 +49,8 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
     Provide stationname and directory containing the data folders. Data must be in 1-column ascii format, including one header line for identification of station, channel and sampling rate. For this function, the files must have aligned time series!
     All parameters are automatically determined, the threshold for coherence is set to 0.5 by default.
     Output files are put into a subfolder of the source directory, named 'birrp_processed'.
+
+    Additionally, a configuration file is created. It contains information about the processing paramters for the station. Keys are generic for the common parameters and named after BIRRP input keywords for the processing parameters.
 
     """
 
@@ -69,8 +72,6 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
 
     inputstring, birrp_stationdict = generate_birrp_inputstring_simple(stationname, ts_directory, coherence_threshold)
 
-
-
     #print inputstring
     #sys.exit()
     #correct inputstring for potential errorneous line endings:
@@ -88,7 +89,9 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
 
     #generate a local configuration file, containing information about all BIRRP and station parameters
     #required for the header of the EDI file 
-    FH.write_dict_to_configfile(birrp_stationdict, 'stationname_birrpconfig.cfg')
+    station_config_file = 'stationname_birrpconfig.cfg'
+    FH.write_dict_to_configfile(birrp_stationdict, station_config_file)
+    print 'Wrote BIRRP and time series configurations to file: %s'%(op.abspath(station_config_file))
 
     #go back to initial directory
     os.chdir(current_dir)
@@ -101,24 +104,37 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
         raise MTpyError_inputarguments( 'Output channels must be 2 or 3' )
 
 
-    (input_filename, length, sampling_rate), birrp_stationdict = set_birrp_input_file_simple(stationname, ts_directory, output_channels, op.join(ts_directory,'birrp_wd'))
+    input_filename, length, sampling_rate, birrp_stationdict = set_birrp_input_file_simple(stationname, ts_directory, output_channels, op.join(ts_directory,'birrp_wd'))
 
 
     longest_section, number_of_bisections = get_optimal_window_decimation(length, sampling_rate)
 
     birrp_stationdict['max_window_length'] = longest_section
     birrp_stationdict['n_bisections'] = number_of_bisections
+    birrp_stationdict['coherence_threshold'] = coherence_threshold
+
+    #self referencing:
+    birrp_stationdict['rr_station'] = birrp_stationdict['station']
+
+    birrp_stationdict = MISC.add_birrp_simple_parameters_to_dictionary(birrp_stationdict)
+
 
     if output_channels == 2:
+        birrp_stationdict['nout'] = 2
+
         inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n%i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,input_filename)
 
     elif output_channels == 3:
-        inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n\i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,stationname)
+        birrp_stationdict['nout'] = 3
+        birrp_stationdict['nz'] = 2
+
+
+        inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n\i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,stationname)
 
     string_file = op.join(ts_directory,'birrp_wd','birrp_input_string.txt')
-    F = open(string_file,'w')
-    F.write(inputstring)
-    F.close()
+    with open(string_file,'w') as F:
+        F.write(inputstring)
+    
 
     return inputstring, birrp_stationdict
 
@@ -126,13 +142,20 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
 
 def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_directory = '.'):
     """
-    File handling: collect longest possible input for BIRRP from different files for the given station name. Generate a new input file in the working directory and return the name of this file, as well as time series properties. 
+    File handling: collect longest possible input for BIRRP from different files for the given station name. Generate a new input file in the working directory and return the name of this file, as well as time series and processing properties in form of a dictionary. 
 
     Scan all files in the directory by their headers: if the stationname matches, add the data file to the list.
     Additionally read out channels and start-/end times. Find longest consecutive time available on all channels.
     Then generate nx4/5 array for n consecutive time steps. Array in order Ex, Ey, Bx, By (,Bz) saved into file 'birrp_input_data.txt'
 
     Output_channels determine the number of output channels: 2 for Ex, Ey - 3 for additional Bz
+
+    Output:
+    - filename for birrp input data_in
+    - length of data (samples)
+    - sampling_rate (in Hz)
+    - configuration dictionary for processed station
+
     """
 
 
@@ -141,7 +164,6 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
     lo_starttimes = []
     lo_endtimes = []
     lo_sampling_rates = []
-    birrp_stationdict = {}
 
 
     channels =  ['ex', 'ey', 'bx', 'by']
@@ -272,8 +294,16 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
 
     print 'Wrote input data to file:%s'%outfn
 
+    birrp_stationdict = {}
+    birrp_stationdict['station'] =  stationname.upper()
+    birrp_stationdict['n_output_channels'] = output_channels
+    birrp_stationdict['sampling_rate'] = sampling_rate
+    birrp_stationdict['n_samples'] =  len(data)
+    birrp_stationdict['time_series_start'] = longest_common_time_window[0]
+    birrp_stationdict['survey_start'] =  lo_starttimes[0]
 
-    return (op.abspath(outfn), len(data), sampling_rate), birrp_stationdict
+
+    return op.abspath(outfn), len(data), sampling_rate, birrp_stationdict
 
 
 def get_optimal_window_decimation(length, sampling_rate):
@@ -328,7 +358,7 @@ def setup_arguments():
     pass
 
 
-def convert(stationname, in_dir, configfile, out_dir = None):
+def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_dir = None):
     """
     Convert BIRRP output files into .edi and .coh file.
 
@@ -337,6 +367,13 @@ def convert(stationname, in_dir, configfile, out_dir = None):
     If the overall config file is missing, a temporary config file must been created from the header information of the time series files that have been used as BIRRP input.
 
     The outputfiles 'stationname.edi' and 'stationname.coh' are stored in the out_dir directory. If out_dir is not given, the files are stored in the in_dir.
+
+    Input:
+    - name of the station
+    - directory, which contains the BIRRP output files
+    - configuration file of the survey, containing all station setup information
+    - configuration file for the processing of the station, containing all BIRRP and other processing parameters
+
     """ 
 
     input_dir = op.abspath(op.realpath(in_dir))
@@ -357,14 +394,39 @@ def convert(stationname, in_dir, configfile, out_dir = None):
     if not op.isfile(configfile):
         raise MTpyError_inputarguments('Config file not existing:%s'%(configfile))
     
-    #read the config file:
+    #read the survey config file:
     try:
-        config_dir = FH.read_configfile(configfile)
+        survey_config_dict = FH.read_configfile(survey_configfile)
     except:
-        raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (configfile) )
+        raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (survey_configfile) )
 
-    if not stationname.upper() in config_dir:
-        raise EX.MTpyError_config_file( 'No information about station %s found in config file: %s' % (stationname, configfile) )
+    if not stationname.upper() in survey_config_dict:
+        raise EX.MTpyError_config_file( 'No information about station %s found in configuration file: %s' % (stationname, survey_configfile) )
+
+    station_config_dict = survey_config_dict[stationname]
+
+
+    #read the BIRRP/processing config file:
+    try:
+        birrp_config_dict = FH.read_configfile(birrp_configfile)
+    except:
+        raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (birrp_configfile) )
+
+    #Having now:
+    # station_config_dict - contains information about station setup
+    # birrp_config_dict - contains information about the processing (BIRRP parameters, selected time window, Rem.Ref.,..)
+    # directory - contains BIRRP output files, coded by stationname
+
+    # To be converted into .EDI and .COH, 
+    # Dictionaries information goes into EDI header: HEAD and INFO section - check for other sections though
+
+    #write coherence file:
+    try:
+        cohfile = convert_birrp2coh(input_dir, stationname)
+
+    except:
+        print 'Could not produce .coh file'
+        cohfile = None
 
 
 
@@ -374,4 +436,65 @@ def convert(stationname, in_dir, configfile, out_dir = None):
 
     
 
+def convert2coh(directory, stationname):
 
+    stationname = stationname.upper()
+    #locate file names
+    cohfilenames = [ op.abspath(i) for i in fnmatch.filter(os.listdir(directory), '*%s*.[123]r.2c2'%stationname.upper()) ] 
+    
+    if len(cohfilenames) < 1:
+        raise MTpyError_file_handling('No coherence files for station %s found in: %s'%(stationname, directory))
+
+    if len(cohfilenames) > 3:
+        raise MTpyError_file_handling('Too many coherence files for station %s found in: %s'%(stationname, directory))
+
+    try:
+        period,freq,coh1,zcoh1 = FH.read_2c2_file(cohfilenames[0])
+        period,freq,coh2,zcoh2 = FH.read_2c2_file(cohfilenames[1])
+
+        if len(cohfilenames) == 3:
+
+            period,freq,coh3,zcoh3 = FH.read_2c2_file(cohfilenames[2])
+    except:
+        raise MTpyError_file_handling('Cannot read coherence files for station %s found in: %s'%(stationname, directory))
+
+    fn = '%s.coh'%(stationname)
+    print fn
+    out_fn = op.abspath(op.join(directory,fn))
+    print out_fn
+
+    F_out =  open(out_fn,'w')
+    F_out.write('period \t freq \t coh1 \t zcoh1 \t coh2 \t zcoh2 \t coh3 \t zcoh3 \n')
+
+
+    for ff in range(len(period)):
+        try:
+            c1 = float(coh1[ff])
+            zc1 = float(zcoh1[ff])
+        except :
+            c1= 0.
+            zc1= 0.
+        
+        try:
+            c2 = float(coh2[ff])
+            zc2 = float(zcoh2[ff])
+        except :
+            c2 = 0.
+            zc2 = 0.
+        
+        c3 = 0.
+        zc3 = 0.
+
+        if len(cohfilenames) == 3:
+  
+            try:
+                c3 = float(coh3[ff])
+                zc3 = float(zcoh3[ff])
+            except:
+                pass
+    
+                   
+        F_out.write('%f \t %f \t %f \t %f \t %f \t %f \t %f \t %f \n'%(period[ff], freq[ff], c1, zc1, c2, zc2, c3, zc3))
+    F_out.close()
+
+    return out_fn
