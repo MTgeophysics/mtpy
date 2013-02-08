@@ -34,11 +34,35 @@ import mtpy.utils.format as MTformat
 epsilon = 1e-9
 
 
-
-
 #=================================================================
 
 def read_configfile(filename):
+
+    #generate config parser instance
+    configobject = ConfigParser.ConfigParser()
+    
+    #check, if file is present
+    if not op.isfile(filename):
+        raise MTpyError_inputarguments( 'File does not exist: %s'%filename )
+
+    # try to parse file - exit, if not a config file
+    try:
+        configobject.read(filename)
+    except:
+        raise MTpyError_inputarguments( 'File is not a proper configuration file: %s'%filename )
+
+
+    if 0:#len(configobject.sections()) != 0:
+        pass
+        
+        
+
+    else:
+        config_dict = configobject.defaults()
+
+    return config_dict
+
+def read_survey_configfile(filename):
     """
     Read in a configuration file and return a dictionary.
 

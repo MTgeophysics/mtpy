@@ -8,7 +8,7 @@ The calibration depends on  the instrument as well as on the respective data log
 
 All information needed for the calibration must be provided by a configuration file. This has to 
 consist of station names as section headers. Each section must contain a set of mandatory keywords.
-The keyword list is defined in the function mtpy.processing.filehandling.read_configfile()
+The keyword list is defined in the function mtpy.processing.filehandling.read_survey_configfile()
 
 For calling a batch calibration rather than just one file, use the appropriate scripts from the mtpy.utils subpackage. 
 

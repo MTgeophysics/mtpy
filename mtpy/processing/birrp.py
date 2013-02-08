@@ -42,13 +42,13 @@ reload(MISC)
 #=================================================================
 
 
-def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_threshold = 0.5):
+def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_threshold = 0.5, output_dir = None):
     """
     Call BIRRP for 2 input and 2 output channels with the simplest setup. 
 
     Provide stationname and directory containing the data folders. Data must be in 1-column ascii format, including one header line for identification of station, channel and sampling rate. For this function, the files must have aligned time series!
     All parameters are automatically determined, the threshold for coherence is set to 0.5 by default.
-    Output files are put into a subfolder of the source directory, named 'birrp_processed'.
+    If no output directory is specified, output files are put into a subfolder of the source directory, named 'birrp_processed'.
 
     Additionally, a configuration file is created. It contains information about the processing paramters for the station. Keys are generic for the common parameters and named after BIRRP input keywords for the processing parameters.
 
@@ -62,6 +62,17 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
     current_dir = op.abspath(os.curdir)
 
     wd = op.abspath(op.realpath(op.join(ts_directory,'birrp_processed')))
+    if output_dir != None:
+        output_dir = op.abspath(output_dir)
+        if not op.isdir(output_dir) :
+            try:
+                os.makedirs(output_dir)
+                wd = output_dir
+            except:
+                print ('Could not find or generate specified output directory %s - using default instead!'%(output_dir))
+        else:
+            wd = output_dir 
+
     if not op.isdir(wd):
         try:
             os.makedirs(wd) 
@@ -89,7 +100,7 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
 
     #generate a local configuration file, containing information about all BIRRP and station parameters
     #required for the header of the EDI file 
-    station_config_file = 'stationname_birrpconfig.cfg'
+    station_config_file = '%s_birrpconfig.cfg'%(stationname)
     FH.write_dict_to_configfile(birrp_stationdict, station_config_file)
     print 'Wrote BIRRP and time series configurations to file: %s'%(op.abspath(station_config_file))
 
@@ -107,7 +118,7 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
     input_filename, length, sampling_rate, birrp_stationdict = set_birrp_input_file_simple(stationname, ts_directory, output_channels, op.join(ts_directory,'birrp_wd'))
 
 
-    longest_section, number_of_bisections = get_optimal_window_decimation(length, sampling_rate)
+    longest_section, number_of_bisections = get_optimal_window_bisection(length, sampling_rate)
 
     birrp_stationdict['max_window_length'] = longest_section
     birrp_stationdict['n_bisections'] = number_of_bisections
@@ -236,12 +247,6 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
     longest_common_time_window = MISC.find_longest_common_time_window_from_list(lo_time_windows, sampling_rate)
 
 
-    # print longest_common_time_window
-    # print time.gmtime(longest_common_time_window[0]), time.gmtime(longest_common_time_window[1])
-    # os.chdir('/data/TS')
-    # sys.exit()
-
-
     #data array to hold time series for longest possible time window for the files given 
     #order Ex, Ey, Bx, By (,Bz)
     data = np.zeros((longest_common_time_window[2],output_channels+2))
@@ -277,7 +282,6 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
             #set data entries
             data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch] = data_in[idx_ta_file:idx_ta_file+len(overlap)]
 
-            #print 'wrote %i data to array'%len(overlap)
 
     #define output file for storing the output data array to:
     if not op.isdir(w_directory):
@@ -299,14 +303,14 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
     birrp_stationdict['n_output_channels'] = output_channels
     birrp_stationdict['sampling_rate'] = sampling_rate
     birrp_stationdict['n_samples'] =  len(data)
-    birrp_stationdict['time_series_start'] = longest_common_time_window[0]
-    birrp_stationdict['survey_start'] =  lo_starttimes[0]
+    birrp_stationdict['processing_window_start'] = longest_common_time_window[0]
+    birrp_stationdict['recording_start'] =  lo_starttimes[0]
 
 
     return op.abspath(outfn), len(data), sampling_rate, birrp_stationdict
 
 
-def get_optimal_window_decimation(length, sampling_rate):
+def get_optimal_window_bisection(length, sampling_rate):
     """
 
     input:
@@ -318,14 +322,12 @@ def get_optimal_window_decimation(length, sampling_rate):
     # longest time window cannot exceed 1/30 of the total length in order to obtain statistically sound results (maybe correcting this to 1/100 later); value given in samples
     longest_window = int(length/30.)
 
-    #shortest_window cannot be smaller than 2^4=16 times the sampling interval in order to suit Nyquist and other criteria:
-    shortest_window = 16 #int(16.*1./sampling_rate)
+    #shortest_window cannot be smaller than 2^4=16 times the sampling interval in order to suit Nyquist and other criteria; value given in samples
+    shortest_window = 16 
 
 
     #find maximal number of bisections so that the current window is still longer than the shortest window allowed
-    
     number_of_bisections = int(np.ceil(np.log(16./longest_window) / np.log(0.5) ))
-
 
     return longest_window, number_of_bisections
 
@@ -360,21 +362,21 @@ def setup_arguments():
 
 def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_dir = None):
     """
-    Convert BIRRP output files into .edi and .coh file.
+    Convert BIRRP output files into EDI file.
 
-    List of BIRRP output files is searched for in the in_dir directory for the given stationname (base part of filenames). All meta-data must be provided in a config file. If MTpy standard processing has been applied, this is the same file as used from the beginning of the processing. 
-    
-    If the overall config file is missing, a temporary config file must been created from the header information of the time series files that have been used as BIRRP input.
+    The list of BIRRP output files is searched for in the in_dir directory for the given stationname (base part of filenames). Meta-data must be provided in two config files.  If MTpy standard processing has been applied, the first one is the same file as used from the beginning of the processing. If this survey-config-file is missing, a temporary config file must been created from the header information of the time series files that have been used as BIRRP input.
+    A second config file contains information about the BIRRP processing parameters. It's generated when BIRRP is called with MTpy.
 
-    The outputfiles 'stationname.edi' and 'stationname.coh' are stored in the out_dir directory. If out_dir is not given, the files are stored in the in_dir.
+    The outputfile 'stationname.edi' and is stored in the out_dir directory. If out_dir is not given, the files are stored in the in_dir.
 
     Input:
     - name of the station
     - directory, which contains the BIRRP output files
     - configuration file of the survey, containing all station setup information
     - configuration file for the processing of the station, containing all BIRRP and other processing parameters
-
+    [- location to store the EDI file]
     """ 
+
     stationname = stationname.upper()
 
     input_dir = op.abspath(op.realpath(in_dir))
@@ -394,12 +396,14 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
 
     out_fn = op.join(output_dir,'%s.edi'%(stationname))
 
-    if not op.isfile(configfile):
-        raise MTpyError_inputarguments('Config file not existing:%s'%(configfile))
-    
+    if not op.isfile(survey_configfile):
+        raise MTpyError_inputarguments('Config file not existing:%s'%(survey_configfile))
+    if not op.isfile(birrp_configfile):
+        raise MTpyError_inputarguments('Config file not existing:%s'%(birrp_configfile))
+     
     #read the survey config file:
     try:
-        survey_config_dict = FH.read_configfile(survey_configfile)
+        survey_config_dict = FH.read_survey_configfile(survey_configfile)
     except:
         raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (survey_configfile) )
 
@@ -415,6 +419,17 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
     except:
         raise EX.MTpyError_config_file( 'Config file with BIRRP processing parameters could not be read: %s' % (birrp_configfile) )
 
+
+    #find the birrp-output j-file for the current station 
+    j_filename_list = [i for i in os.listdir(input_dir) if op.basename(i).upper() == ('%s.j'%stationname).upper() ]
+    try:
+        j_filename = j_filename_list[0]
+    except:
+        raise MTpyError_file_handling('j-file for station %s not found in directory %s'%(stationname, input_dir))
+    
+    if len(j_filename_list) > 1:
+        raise MTpyError_file_handling('More than one j-file for station %s found in directory %s'%(stationname, input_dir))
+
     #Having now:
     # station_config_dict - contains information about station setup
     # birrp_config_dict - contains information about the processing (BIRRP parameters, selected time window, Rem.Ref.,..)
@@ -424,458 +439,202 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
     # Dictionaries information goes into EDI header: HEAD and INFO section - check for other sections though
     # output EDI file is out_fn
     
+    periods, Z_array, tipper_array = read_j_file(j_filename)
 
 
+    HEAD = _set_edi_head(station_config_dict,birrp_config_dict)
+    INFO = _set_edi_info(station_config_dict,birrp_config_dict)
+    DATA = _set_edi_data(periods, Z_array, tipper_array)
 
+    DEFINEMEAS = _set_edi_defmeas(station_config_dict)
+    MTSECT = _set_edi_mtsect(birrp_config_dict,periods)
 
+    F_out = open(out_fn,'w') 
+    
+    F_out.write(HEAD)
+    F_out.write(INFO)
+    F_out.write(DEFINEMEAS)
+    F_out.write(MTSECT)
+    F_out.write(DATA)
+    F_out.write('>END')
 
-
-
-
-    """
-
-
-    ofil,period,freq,z,tip = readj(os.path.join(dirpath,station+'.j'),
-                                  egain=float(statdict['egain']),
-                                  dlgain=float(dlgain),
-                                  dlen=[float(statdict['ex']),
-                                        float(statdict['ey'])],
-                                  magtype=magtype,
-                                  bbfile=bbfile,ffactor=ffactor)
-    
-    if freq[0]<freq[-1]:
-        freq=freq[::-1]
-        period=period[::-1]
-        z=z[:,:,::-1]
-        if type(tip)!=list:
-            tip=tip[:,:,::-1]
-        print 'Flipped array so frequency is decending'
-                    
-    nfreq=str(len(freq))
-        
-    #list of orientation components
-    orilst=['HX','HY','EX','EY','RX','RY']
-    
-    #open an edifile to write to
-    if ofil!=station:
-        ofil=station
-    edifid=file(os.path.join(dirpath,ofil+'.edi'),'w')
-    
-    #---------------------------------------------------------------------------
-    #write header information
-    edifid.write('>HEAD \n')
-    edifid.write(tsp+'DATAID="'+ofil+'"'+'\n')
-    
-    #acquired by:
-    try:
-        edifid.write(tsp+'ACQBY="'+statdict['acqby']+'"'+'\n')
-    except KeyError:
-        edifid.write(tsp+'ACQBY="'+'Adelaide University'+'"'+'\n')
-    #aqcuired date
-    try:
-        mdate=statdict['date'].split('/')
-        mday=int(mdate[0])
-        mmonth=int(mdate[1])
-        if len(mdate[2])<3:
-            myear=int('20'+mdate[2])
-        elif len(mdate[2])>4:
-            myear=int(mdate[2][0:4])
-        else:
-            myear=int(mdate[2])
-        md=datetime.date(myear,mmonth,mday)
-        edifid.write(tsp+'ACQDATE='+datetime.date.strftime(md,'%B %d, %Y')+'\n')
-    except KeyError:
-        edifid.write(tsp+'ACQDATE='+'\n')
-    #date edi file written
-    edifid.write(tsp+'FILEDATE='+datetime.date.strftime(datetime.date.today(),
-                                                       '%B %d, %Y')+'\n')
-    #survey location
-    try: 
-        edifid.write(tsp+'PROSPECT="'+statdict['location']+'"'+'\n')
-    except KeyError:
-        edifid.write(tsp+'PROSPECT=" "'+'\n')
-    #station name
-        edifid.write(tsp+'LOC="'+ofil+'"'+'\n')
-    
-    #latitude
-    try:
-        edifid.write(tsp+'LAT='+'%2.8g' % float(statdict['lat'])+'\n')
-    except KeyError:
-        edifid.write(tsp+'LAT= \n')
-
-    #longitude
-    try: 
-        edifid.write(tsp+'LONG='+'%2.8g' % float(statdict['long'])+'\n')
-    except KeyError:
-        edifid.write(tsp+'LONG= \n')
-    #elevation
-    try:
-        edifid.write(tsp+'ELEV='+statdict['elev']+'\n')
-    except:
-        edifid.write(tsp+'ELEV= \n')
-    edifid.write('\n')
-    #---------------------------------------------------------------------------
-    #Write info block
-    edifid.write('>INFO'+tsp+'MAX LINES=1000'+'\n')
-    
-    #survey parameters
-    edifid.write(tsp+'Survey Parameters: \n')
-    try:
-        edifid.write(lsp+'Sampling Frequency (Hz): '+statdict['df']+'\n')
-    except KeyError:
-        pass
-    
-    try:
-        edifid.write(lsp+'Cache Rate (HHMMSS): '+statdict['cacherate']+'\n')
-    except KeyError:
-        pass
-    
-    try:
-        edifid.write(lsp+'Data Logger Gain: '+statdict['dlgain']+'\n')
-    except KeyError:
-        pass
-    
-    try:
-        edifid.write(lsp+'Interface Box Gain: '+statdict['egain']+'\n')
-    except KeyError:
-        pass
-    
-    try:
-        edifid.write(lsp+'Instrument Box no: '+statdict['box no']+'\n')
-    except KeyError:
-        pass
-    
-    try:
-        edifid.write(lsp+'Coil Numbers (BX,BY,BZ): '+statdict['coil no(bx,by)']
-                                                                    +'\n')
-    except KeyError:
-        pass
-    
-    try:
-        edifid.write(lsp+'Data Logger: '+statdict['dlbox']
-                                                                +'\n')
-    except KeyError:
-        pass
-    
-    try:
-        edifid.write(lsp+'Hard Drive no: '+statdict['harddrive']+'\n')
-    except KeyError:
-        pass
-    
-    try:
-        edifid.write(lsp+'Interface Box no: '+statdict['interfacebox']+'\n')
-    except KeyError:
-        pass
-    
-    try:
-        edifid.write(lsp+'Battery no: '+statdict['battery']
-                        +' Starting Voltage: '+statdict['start volt']
-                        +' End Voltage '+statdict['end volt']+'\n')
-    except KeyError:
-        pass
-    
-    try:
-        edifid.write(lsp+'Other Notes: '+statdict['notes']+'\n')
-    except KeyError:
-        pass
-    
-    #BIRRP parameters
-    edifid.write('   Transfer Functions Computed using BIRRP 5.1  \n')
-    if birrpdict!=None:
-        edifid.write(lsp+'Coil Calibration File='+bbfile+'\n')
-        try:
-            edifid.write(lsp+'Interaction Level (ILEV)='+str(birrpdict['ilev'])+
-                        '\n')
-            ilevyn=int(birrpdict['ilev'])
-        except KeyError:
-            pass
-        try:
-            edifid.write(lsp+'Number of outputs (NOUT)='+str(birrpdict['nout'])+
-                       '\n')
-        except KeyError:
-            pass
-        try:
-            edifid.write(lsp+'Number of inputs (NINP)='+str(birrpdict['ninp'])+
-                        '\n')
-        except KeyError:
-            pass
-        if ilevyn==1:
-            try:
-                edifid.write(lsp+'Number of Remote Reference time series (NREF)='
-                             +str(birrpdict['nref'])+'\n')
-            except KeyError:
-                pass
-            
-            try:
-                edifid.write(lsp+'Remote reference(0) or bounded influence(1)'+
-                            '(NRR)='+str(birrpdict['nrr'])+'\n')
-            except KeyError:
-                pass
-        try:
-            edifid.write(lsp+'Slepian Filter order (TBW)='+str(birrpdict['tbw'])+
-                        '\n')
-        except KeyError:
-            pass
-        try:
-            edifid.write(lsp+'Max length of fft window (NFFT)='+
-                        str(birrpdict['nfft'])+'\n')
-        except KeyError:
-            pass
-        if ilevyn==1:
-            try:
-                edifid.write(lsp+'Section Increment divisor (NSCTINC)='
-                             +str(birrpdict['nsctinc'])+'\n')
-            except KeyError:
-                pass
-        
-        try:
-            edifid.write(lsp+'Maximum number of fft sections (NSCTMAX)='+
-                        str(birrpdict['nsctmax'])+'\n')
-        except KeyError:
-            pass
-        
-        if ilevyn==1:
-            try:
-                edifid.write(lsp+'First frequency extracted (NF1)='
-                             +str(birrpdict['nf1'])+'\n')
-            except KeyError:
-                pass
-            try:
-                edifid.write(lsp+'Frequency increment per window (NFINC)='
-                             +str(birrpdict['nfinc'])+'\n')
-            except KeyError:
-                pass
-            try:
-                edifid.write(lsp+'Number of frequencies per window (NFSECT)='
-                             +str(birrpdict['nf1'])+'\n')
-            except KeyError:
-                pass
-        try:
-            edifid.write(lsp+'Small leverage point control (UIN)='+
-                        str(birrpdict['uin'])+'\n')
-        except KeyError:
-            pass
-        if ilevyn==1:
-            try:
-                edifid.write(lsp+'Lower leverage point control (AINLIN)='
-                             +str(birrpdict['ainlin'])+'\n')
-            except KeyError:
-                pass
-        try:
-            edifid.write(lsp+'Large leverage point control (AINUIN)='+
-                        str(birrpdict['ainuin'])+'\n')
-        except KeyError:
-            pass
-        
-        if ilevyn==1:
-            try:
-                edifid.write(lsp+'Magnetic coherence threshold (C2THRESHEB)='
-                             +str(birrpdict['c2threshb'])+'\n')
-            except KeyError:
-                pass
-        try:
-            edifid.write(lsp+'Electric coherence threshold (C2THRESHE)='+
-                        str(birrpdict['c2threshe'])+'\n')
-        except KeyError:
-            pass
-        try:
-            edifid.write(lsp+'Z component (NZ)='+str(birrpdict['nz'])+'\n')
-        except KeyError:
-            pass
-        
-        try:  
-            edifid.write(lsp+'Coherence threshold z channel (c2threshe1)='+
-                        str(birrpdict['c2threshe1'])+'\n')
-        except KeyError:
-            pass
-        if ilevyn==1:
-            try:
-                edifid.write(lsp+'Low and high periods for coherence threshold '
-                            +'(PERLO,PERHI)='+str(birrpdict['perlo'])+','+
-                            str(birrpdict['perhi'])+'\n')
-            except KeyError:
-                pass
-            try:
-                edifid.write(lsp+'Number of periods to reject (NPREJ)='
-                             +str(birrpdict['nprej'])+'\n')
-            except KeyError:
-                pass
-            try:
-                edifid.write(lsp+'Periods to reject (PREJ)='
-                             +str(birrpdict['prej'])+'\n')
-            except KeyError:
-                pass
-        try:
-            edifid.write(lsp+'Order of prewhitening filter (NAR)='+
-                        str(birrpdict['nar'])+'\n')
-        except KeyError:
-            pass
-        try:
-            edifid.write(lsp+'Electric channel rotation angles (THETAE)='+
-                        birrpdict['thetae']+'\n')
-        except KeyError:
-            pass
-        try:
-            edifid.write(lsp+'Magnetic channel rotation angles (THETAB)='+
-                        birrpdict['thetab']+'\n')
-        except KeyError:
-            pass
-        try:
-            edifid.write(lsp+'Final channel rotation angles (THETAF)='+
-                        birrpdict['thetaf']+'\n')
-        except KeyError:
-            pass
-            
-    #remote reference
-    if rrstation!=None:
-        rrstation=rrstation.replace(';',',')
-        rrstationlst=rrstation.split(',')
-    else:
-        rrstationlst=[station]
-    if len(rrstationlst)<=1:
-        rrstation=rrstationlst[0]
-        if rrstation!=None and rrstation!=station:
-            if stationinfofile==None or stationinfofile=='None':
-                pass
-            else:
-                rrdict=mt.getStationInfo(stationinfofile,rrstation)
-                edifid.write(lsp+'Remote Reference Station: '+rrstation+'\n')
-                edifid.write(lsp+'Remote Reference Lat='
-                                            +'%2.8g' % float(rrdict['lat'])+'\n')
-                edifid.write(lsp+'Remote Reference Long='
-                                            +'%2.8g' % float(rrdict['long'])+'\n')
-                edifid.write(lsp+'Remote Reference Elev='+rrdict['elev']+'\n')
-        else:
-            edifid.write(lsp+'Remote Reference Station: '+station+'\n')
-            edifid.write(lsp+'Remote Reference Lat='
-                                        +'%2.8g' % float(statdict['lat'])+'\n')
-            edifid.write(lsp+'Remote Reference Long='
-                                        +'%2.8g' % float(statdict['long'])+'\n')
-            edifid.write(lsp+'Remote Reference Elev='+statdict['elev']+'\n')
-    else:
-        for rrs in rrstationlst:
-            rfind=np.where(np.array(rrstationlst)==rrs)[0]
-            if len(rfind)>1:
-                for rf in range(len(rfind)):
-                    try:
-                        rrstationlst.__delitem__(rfind[rf])
-                    except IndexError:
-                        break
-            if rrs!=station:
-                if stationinfofile==None or stationinfofile=='None':
-                    pass
-                else:
-                    rrdict=mt.getStationInfo(stationinfofile,rrs)
-                    edifid.write(lsp+'Remote Reference Station: '+rrs+'\n')
-                    edifid.write(lsp+'Remote Reference Lat='
-                                                +'%2.8g' % float(rrdict['lat'])+'\n')
-                    edifid.write(lsp+'Remote Reference Long='
-                                                +'%2.8g' % float(rrdict['long'])+'\n')
-                    edifid.write(lsp+'Remote Reference Elev='+rrdict['elev']+'\n')
-            else:
-                pass
-    
-    edifid.write('\n')
-    
-    #---------------------------------------------------------------------------
-    #write define measurement block
-    edifid.write('>=DEFINEMEAS'+'\n'+'\n')
-    edifid.write(tsp+'MAXCHAN=6'+'\n')
-    edifid.write(tsp+'MAXRUN=999'+'\n')
-    edifid.write(tsp+'MAXMEAS=99999'+'\n')
-    edifid.write(tsp+'UNITS=M'+'\n')
-    edifid.write(tsp+'REFTYPY=CART'+'\n')
-    edifid.write(tsp+'REFLAT='+'%2.8g' % float(statdict['lat'])+'\n')
-    edifid.write(tsp+'REFLONG='+'%2.8g' % float(statdict['long'])+'\n')
-    edifid.write(tsp+'REFELEV='+statdict['elev']+'\n')
-    edifid.write('\n'+'\n')
-    
-    edifid.write('>HMEAS ID=1001.001 CHTYPE=HX X=0 Y=0 AZM=0'+'\n')
-    edifid.write('>HMEAS ID=1002.001 CHTYPE=HY X=0 Y=0 AZM=90'+'\n')
-    edifid.write('>EMEAS ID=1003.001 CHTYPE=EX X=0 Y=0 X2='+statdict['ex']
-                                                            +' Y2=0'+'\n')
-    edifid.write('>EMEAS ID=1004.001 CHTYPE=EY X=0 Y=0 X2=0 Y2='+statdict['ey']
-                                                            +'\n')
-    edifid.write('>HMEAS ID=1005.001 CHTYPE=RX X=0 Y=0 AZM=0'+'\n')
-    edifid.write('>HMEAS ID=1006.001 CHTYPE=RY X=0 Y=0 AZM=90'+'\n')
-    edifid.write('\n')
-    
-    #---------------------------------------------------------------------------
-    #write mtsect block
-    edifid.write('>=MTSECT \n')
-    edifid.write(tsp+'SECTID='+ofil+'\n')
-    edifid.write(tsp+'NFREQ='+nfreq+'\n')
-    edifid.write(tsp+orilst[0]+'=1001.001'+'\n')
-    edifid.write(tsp+orilst[1]+'=1002.001'+'\n')
-    edifid.write(tsp+orilst[2]+'=1003.001'+'\n')
-    edifid.write(tsp+orilst[3]+'=1004.001'+'\n')
-    edifid.write(tsp+orilst[4]+'=1005.001'+'\n')
-    edifid.write(tsp+orilst[5]+'=1006.001'+'\n')
-    edifid.write('\n')
-    edifid.write('>!****FREQUENCIES****!'+'\n')
-    if freq[0]<freq[-1]:
-        order='INC'
-    else:
-        order='DEC'
-    edifid.write('>FREQ'+tsp+'NFREQ='+nfreq+tsp+'ORDER='+order+tsp+'// '+
-                                                                    nfreq+'\n')
-    for kk in range(int(nfreq)):
-        edifid.write(tsp+'%2.6f' % freq[kk])
-        if np.remainder(float(kk)+1,5.)==0:
-            edifid.write('\n')
-    edifid.write('\n')
-    edifid.write('>!****IMPEDANCES****!'+'\n')
-    
-    implst=[['ZXXR',0,0],['ZXXI',0,1],['ZXX.VAR',0,2],['ZXYR',1,0],['ZXYI',1,1],\
-        ['ZXY.VAR',1,2],['ZYXR',2,0],['ZYXI',2,1], ['ZYX.VAR',2,2],\
-        ['ZYYR',3,0],['ZYYI',3,1],['ZYY.VAR',3,2]]
-    #write new impedances and variances
-    for jj,imp in enumerate(implst):
-        mm=imp[1]
-        nn=imp[2]
-        edifid.write('>'+imp[0]+' // '+nfreq+'\n')
-        for kk in range(int(nfreq)):
-            znum='{0:+.6e}'.format(z[mm,nn,kk])
-            if znum.find('INF')>=0:
-                znum='{0:+.6e}'.format(-6.666)  
-            edifid.write(tsp+znum)
-            if np.remainder(float(kk)+1,5.)==0:
-                edifid.write('\n')
-        edifid.write('\n')
-    edifid.write('\n')
-    
-    #---------------------------------------------------------------------------
-    #write tipper info
-    
-    edifid.write('>!****TIPPER****!'+'\n')
-    tiplst=[['TXR',0,0],['TXI',0,1],['TX.VAR',0,2],['TYR',1,0],['TYI',1,1],
-            ['TY.VAR',1,2]]
-    if len(tip)==0:
-        tip=np.zeros((2,3,float(nfreq)))
-        ntip=int(nfreq)
-    else:
-        tip=np.array(tip)
-        ntip=tip.shape[2]
-    for jj,tcomp in enumerate(tiplst):
-        mm=tcomp[1]
-        nn=tcomp[2]
-        edifid.write('>'+tcomp[0]+' // '+str(ntip)+'\n')
-        for kk in range(int(ntip)):
-            tipnum='{0:+.6e}'.format(tip[mm,nn,kk])
-            if tipnum.find('INF')>=0:
-                znum='{0:+.6e}'.format(-6.666)   
-            edifid.write(tsp+tipnum)
-            if np.remainder(float(kk)+1,5.)==0:
-                edifid.write('\n')
-        edifid.write('\n')
-    edifid.write('\n')
-    edifid.write('>END')
-    edifid.close()
-    """
-
-
+    F_out.close()
 
     return out_fn
+
+    
+  
+
+def _set_edi_data(periods, Z_array, tipper_array):
+    
+    #debugging - to be deleted:
+    periods = periods[:,0]
+
+    datastring = ''
+    datastring += '>!****FREQUENCIES****!\n'
+    datastring += '>FREQ\t NFREQ=%i\tORDER=DEC // %i\n'%(len(periods),len(periods))
+    #datastring += '\t'
+    for i,period in enumerate(periods):
+        freq = 1./period
+        datastring += '%f'%(freq)
+        if (i+1)%5 == 0 and (i != len(periods) - 1) and i > 0:
+            datastring += '\n'
+        else:
+            datastring += '\t'
+
+    datastring += '\n\n'
+
+    datastring += '>!****IMPEDANCES****!\n'
+    compstrings = ['ZXX','ZXY','ZYX','ZYY']
+    Z_entries = ['R','I','.VAR']
+    
+    for Z_comp in range(4):
+        for entry in range(3):
+            datastring += '>%s%s // %i\n'%(compstrings[Z_comp], Z_entries[entry], len(periods))
+            for i,period in enumerate(periods):
+                data = Z_array[i,entry,Z_comp]
+                datastring += '%f'%(data)
+                if (i+1)%5 == 0 and (i != len(periods) - 1) and i > 0:
+                    datastring += '\n'
+                else:
+                    datastring += '\t'
+
+            datastring += '\n'
+
+        
+    if tipper_array != None :
+        
+        datastring += '\n'
+        datastring += '>!****TIPPER****!\n'
+
+        compstrings = ['TX','TY']
+        T_entries = ['R','I','.VAR']
+        
+        for T_comp in range(2):
+            for entry in range(3):
+                datastring += '>%s%s // %i\n'%(compstrings[T_comp], T_entries[entry], len(periods))
+                for i,period in enumerate(periods):
+                    data = tipper_array[i,entry,T_comp]
+                    datastring += '%f'%(data)
+                    if (i+1)%5 == 0 and (i != len(periods) - 1) and i > 0:
+                        datastring += '\n'
+                    else:
+                        datastring += '\t'
+
+                datastring += '\n'
+
+
+    datastring += '\n'
+
+    return datastring
+
+
+def _set_edi_info(station_config_dict,birrp_config_dict):
+    infostring = ''
+    infostring += '>INFO\t MAX LINES=1000\n'
+    infostring += '\tStation parameters:\n'
+    for key, value in station_config_dict.items():
+        infostring += '\t\t%s: %s  \n'%(str(key),str(value))   
+    infostring += '\n'
+    infostring += '\tProcessing parameters:\n'
+    for key, value in birrp_config_dict.items():
+        infostring += '\t\t%s: %s  \n'%(str(key),str(value))   
+    infostring += '\n'    
+
+
+    infostring += '\n'
+
+    return infostring.expandtabs(4)
+
+def _set_edi_head(station_config_dict,birrp_config_dict):
+    headstring = ''
+    headstring += '>HEAD\n'
+    headstring += '\tDATAID=%s\n'%(birrp_config_dict['station'])
+
+    if station_config_dict.has_key('company'):
+        acqby = station_config_dict.has_key('company')
+    else:
+        acqby = ''
+
+    headstring += '\tACQBY=%s\n'%(acqby)
+
+
+    sampling_rate = float(birrp_config_dict['sampling_rate'])
+    n_samples = int(float(birrp_config_dict['n_samples']))
+    #new:
+    #acq_starttime = float(birrp_config_dict['processing_window_start'])
+    #old:
+    acq_starttime = float(birrp_config_dict['time_series_start'])
+
+    acq_start_date = (time.gmtime(acq_starttime)[:3])[::-1]
+    acq_start_time = (time.gmtime(acq_starttime)[3:6])
+    acq_start = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_start_date[0],acq_start_date[1],acq_start_date[2],acq_start_time[0],acq_start_time[1],acq_start_time[2]) 
+
+    acq_endtime = acq_starttime + 1./sampling_rate * (n_samples + 1)
+    acq_end_date = (time.gmtime(acq_endtime)[:3])[::-1]
+    acq_end_time = (time.gmtime(acq_endtime)[3:6])
+    acq_end = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_end_date[0],acq_end_date[1],acq_end_date[2],acq_end_time[0],acq_end_time[1],acq_end_time[2]) 
+
+
+    headstring +='\tACQDATE=%s - %s\n'%(acq_start, acq_end)
+
+
+    current_date = (time.gmtime()[:3])[::-1]
+    current_time = time.gmtime()[3:6]
+    todaystring = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(current_date[0],current_date[1],current_date[2],current_time[0],current_time[1],current_time[2]) 
+    headstring += '\tFILEDATE=%s\n'%(todaystring)
+
+
+    network = ''
+    if station_config_dict.has_key('network'):
+        location = station_config_dicthas_key('network')
+    headstring += '\tNETWORK=%s\n'%(network)
+
+    location = ''
+    if station_config_dict.has_key('location'):
+        location = station_config_dicthas_key('location')
+    headstring += '\tLOC=%s\n'%(location)
+
+    headstring += '\tLAT=%f\n'%station_config_dict['latitude']
+    headstring += '\tLONG=%f\n'%station_config_dict['longitude']
+    headstring += '\tELEV=%f\n'%station_config_dict['elevation']
+
+    headstring += '\n'
+
+    return headstring.expandtabs(4)
+
+
+def _set_edi_defmeas(station_config_dict):
+    dmeasstring = ''
+    dmeasstring += '>=DEFINEMEAS\n'
+    dmeasstring += '\n'
+
+    dmeasstring += '\tMAXCHAN=6\n'
+    dmeasstring += '\tMAXRUN=999\n'
+    dmeasstring += '\tMAXMEAS=99999\n'
+    dmeasstring += '\tUNITS=M\n'
+    dmeasstring += '\tREFTYPY=CART\n'
+    dmeasstring += '\tREFLAT=%f\n'%station_config_dict['latitude']
+    dmeasstring += '\tREFLONG=%f\n'%station_config_dict['longitude']
+    dmeasstring += '\tREFELEV=%f\n'%station_config_dict['elevation']
+
+
+    dmeasstring += '\n'
+
+    return dmeasstring.expandtabs(4)
+
+
+def _set_edi_mtsect(birrp_config_dict,periods):
+    mtsectstring = ''
+    mtsectstring += '>=MTSECT\n' 
+    mtsectstring += '\tSECTID=%s\n'%birrp_config_dict['station']
+    mtsectstring += '\tNFREQ=%i\n'%(len(periods))
+    
+    mtsectstring += '\n'
+
+    return mtsectstring.expandtabs(4)
+
+
 
 
 def read_j_file(fn):
@@ -885,7 +644,7 @@ def read_j_file(fn):
 
     j_fn = op.abspath(fn)
     if not op.isfile(j_fn):
-        raise MTpyError_inputarguments('Ccannot read j-file %s - file is not existing'%(j_fn))
+        raise MTpyError_inputarguments('Cannot read j-file %s - file is not existing'%(j_fn))
 
     
     
@@ -979,11 +738,10 @@ def read_j_file(fn):
         """
  
         pass
-  
-    _check_j_file_content(Z,periods, tipper)
+        return periods, Z_array, tipper_array  
 
 
-    return periods, Z, tipper
+    return _check_j_file_content(Z,periods, tipper)
     
 
 def convert2coh(birrp_output_directory, stationname):
@@ -1019,7 +777,7 @@ def convert2coh(birrp_output_directory, stationname):
     print out_fn
 
     F_out =  open(out_fn,'w')
-    F_out.write('period \t freq \t coh1 \t zcoh1 \t coh2 \t zcoh2 \t coh3 \t zcoh3 \n')
+    F_out.write('period \t freq \t coh1 \t zcoh1 \t coh2 \t zcoh2 \t coh3 \t zcoh3 \n'.expandtabs(4))
 
 
     for ff in range(len(period)):
@@ -1049,7 +807,7 @@ def convert2coh(birrp_output_directory, stationname):
                 pass
     
                    
-        F_out.write('%f \t %f \t %f \t %f \t %f \t %f \t %f \t %f \n'%(period[ff], freq[ff], c1, zc1, c2, zc2, c3, zc3))
+        F_out.write(('%f \t %f \t %f \t %f \t %f \t %f \t %f \t %f \n'%(period[ff], freq[ff], c1, zc1, c2, zc2, c3, zc3)).expandtabs(4))
     F_out.close()
 
     return out_fn
