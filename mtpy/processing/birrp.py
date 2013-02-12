@@ -465,24 +465,21 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
     
   
 
-def _set_edi_data(periods, Z_array, tipper_array):
+def _set_edi_data(lo_periods, Z_array, tipper_array):
     
-    #debugging - to be deleted:
-    periods = periods[:,0]
+
+    periods = lo_periods
 
     datastring = ''
     datastring += '>!****FREQUENCIES****!\n'
-    datastring += '>FREQ // %i\n'%(len(periods))
-    #datastring += '\t'
+    datastring += '>FREQ NFREQ=%i ORDER=DEC // %i\n'%(len(periods),len(periods))
     for i,period in enumerate(periods):
         freq = 1./period
-        datastring += '%f'%(freq)
+        datastring += '\t%E'%(freq)
         if (i+1)%5 == 0 and (i != len(periods) - 1) and i > 0:
             datastring += '\n'
-        else:
-            datastring += '\t'
 
-    datastring += '\n\n'
+    datastring += '\n'
 
     datastring += '>!****IMPEDANCES****!\n'
     compstrings = ['ZXX','ZXY','ZYX','ZYY']
@@ -493,17 +490,15 @@ def _set_edi_data(periods, Z_array, tipper_array):
             datastring += '>%s%s // %i\n'%(compstrings[Z_comp], Z_entries[entry], len(periods))
             for i,period in enumerate(periods):
                 data = Z_array[i,entry,Z_comp]
-                datastring += '%f'%(data)
+                datastring += '\t%E'%(data)
                 if (i+1)%5 == 0 and (i != len(periods) - 1) and i > 0:
                     datastring += '\n'
-                else:
-                    datastring += '\t'
-
+                
             datastring += '\n'
 
         
         
-    datastring += '\n'
+    #datastring += '\n'
     datastring += '>!****TIPPER****!\n'
 
     compstrings = ['TX','TY']
@@ -517,21 +512,21 @@ def _set_edi_data(periods, Z_array, tipper_array):
                     data = tipper_array[i,entry,T_comp]
                 else:
                     data = 0.
-                datastring += '%f'%(data)
+                datastring += '\t%E'%(data)
                 if (i+1)%5 == 0 and (i != len(periods) - 1) and i > 0:
                     datastring += '\n'
-                else:
-                    datastring += '\t'
+                
 
             datastring += '\n'
 
 
     datastring += '\n'
 
-    return datastring
+    return datastring.expandtabs(4)
 
 
 def _set_edi_info(station_config_dict,birrp_config_dict):
+
     infostring = ''
     infostring += '>INFO\t MAX LINES=1000\n'
     infostring += '\tStation parameters:\n'
@@ -553,8 +548,9 @@ def _set_edi_info(station_config_dict,birrp_config_dict):
     return infostring.expandtabs(4)
 
 def _set_edi_head(station_config_dict,birrp_config_dict):
+
     headstring = ''
-    headstring += '>HEAD\n'
+    headstring += '>HEAD\n\n'
     headstring += '\tDATAID="%s"\n'%(birrp_config_dict['station'])
 
     if station_config_dict.has_key('company'):
@@ -574,12 +570,14 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
 
     acq_start_date = (time.gmtime(acq_starttime)[:3])[::-1]
     acq_start_time = (time.gmtime(acq_starttime)[3:6])
-    acq_start = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_start_date[0],acq_start_date[1],acq_start_date[2],acq_start_time[0],acq_start_time[1],acq_start_time[2]) 
+    acq_start = '%02i/%02i/%02i'%(acq_start_date[0],acq_start_date[1],acq_start_date[2]%100)
+    #acq_start = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_start_date[0],acq_start_date[1],acq_start_date[2],acq_start_time[0],acq_start_time[1],acq_start_time[2]) 
 
     acq_endtime = acq_starttime + 1./sampling_rate * (n_samples )
     acq_end_date = (time.gmtime(acq_endtime)[:3])[::-1]
     acq_end_time = (time.gmtime(acq_endtime)[3:6])
-    acq_end = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_end_date[0],acq_end_date[1],acq_end_date[2],acq_end_time[0],acq_end_time[1],acq_end_time[2]) 
+    acq_end = '%02i/%02i/%02i'%(acq_end_date[0],acq_end_date[1],acq_end_date[2]%100)
+    #acq_end = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_end_date[0],acq_end_date[1],acq_end_date[2],acq_end_time[0],acq_end_time[1],acq_end_time[2]) 
 
 
     headstring +='\tACQDATE=%s \n'%(acq_start)
@@ -588,7 +586,8 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
 
     current_date = (time.gmtime()[:3])[::-1]
     current_time = time.gmtime()[3:6]
-    todaystring = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(current_date[0],current_date[1],current_date[2],current_time[0],current_time[1],current_time[2]) 
+    todaystring = '%02i/%02i/%02i'%(current_date[0],current_date[1],current_date[2]%100)
+    #todaystring = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(current_date[0],current_date[1],current_date[2],current_time[0],current_time[1],current_time[2]) 
     headstring += '\tFILEDATE=%s\n'%(todaystring)
 
 
@@ -617,7 +616,7 @@ def _set_edi_defmeas(station_config_dict):
     dmeasstring += '>=DEFINEMEAS\n'
     dmeasstring += '\n'
 
-    dmeasstring += '\tMAXCHAN=6\n'
+    dmeasstring += '\tMAXCHAN=7\n'
     dmeasstring += '\tMAXRUN=999\n'
     dmeasstring += '\tMAXMEAS=99999\n'
     dmeasstring += '\tUNITS=M\n'
@@ -627,21 +626,22 @@ def _set_edi_defmeas(station_config_dict):
     dmeasstring += '\tREFELEV=%.1f\n'%station_config_dict['elevation']
     
     dmeasstring += '\n'
-    dmeasstring += '>HMEAS ID=1001.001 CHTYPE=HX X=0 Y=0 AZM=0\n'
-    dmeasstring += '>HMEAS ID=1002.001 CHTYPE=HY X=0 Y=0 AZM=90\n'
+    dmeasstring += '>HMEAS ID=1001.001 CHTYPE=HX X=0. Y=0. AZM=0.\n'
+    dmeasstring += '>HMEAS ID=1002.001 CHTYPE=HY X=0. Y=0. AZM=90.\n'
+    dmeasstring += '>HMEAS ID=1003.001 CHTYPE=HZ X=0. Y=0. AZM=0.\n'
 
     try:
-        dmeasstring += '>EMEAS ID=1003.001 CHTYPE=EX X=0 Y=0 X2=%.1f Y2=0\n'%float(station_config_dict['e_xaxis_length'])
+        dmeasstring += '>EMEAS ID=1004.001 CHTYPE=EX X=0. Y=0. X2=%.1f Y2=0\n'%float(station_config_dict['e_xaxis_length'])
     except:
-        dmeasstring += '>EMEAS ID=1003.001 CHTYPE=EX X=0 Y=0 X2=0 Y2=0\n'
+        dmeasstring += '>EMEAS ID=1004.001 CHTYPE=EX X=0. Y=0. X2=0. Y2=0.\n'
         
     try:
-        dmeasstring += '>EMEAS ID=1004.001 CHTYPE=EY X=0 Y=0 X2=0 Y2=%.1f\n'%float(station_config_dict['e_yaxis_length'])
+        dmeasstring += '>EMEAS ID=1005.001 CHTYPE=EY X=0. Y=0. X2=0. Y2=%.1f\n'%float(station_config_dict['e_yaxis_length'])
     except:
-        dmeasstring += '>EMEAS ID=1004.001 CHTYPE=EY X=0 Y=0 X2=0 Y2=0\n'
+        dmeasstring += '>EMEAS ID=1005.001 CHTYPE=EY X=0. Y=0. X2=0. Y2=0.\n'
 
-    dmeasstring += '>HMEAS ID=1005.001 CHTYPE=RX X=0 Y=0 AZM=0\n'
-    dmeasstring += '>HMEAS ID=1006.001 CHTYPE=RY X=0 Y=0 AZM=90\n'
+    dmeasstring += '>HMEAS ID=1006.001 CHTYPE=RX X=0. Y=0. AZM=0.\n'
+    dmeasstring += '>HMEAS ID=1007.001 CHTYPE=RY X=0. Y=0. AZM=90.\n'
 
 
     dmeasstring += '\n'
@@ -656,10 +656,11 @@ def _set_edi_mtsect(birrp_config_dict,periods):
     mtsectstring += '\tNFREQ=%i\n'%(len(periods))
     mtsectstring += '\tHX=1001.001\n'
     mtsectstring += '\tHY=1002.001\n'
-    mtsectstring += '\tEX=1003.001\n'
-    mtsectstring += '\tEY=1004.001\n'
-    mtsectstring += '\tRX=1005.001\n'
-    mtsectstring += '\tRY=1006.001\n'
+    mtsectstring += '\tHZ=1003.001\n'
+    mtsectstring += '\tEX=1004.001\n'
+    mtsectstring += '\tEY=1005.001\n'
+    mtsectstring += '\tRX=1006.001\n'
+    mtsectstring += '\tRY=1007.001\n'
 
     mtsectstring += '\n'
 
@@ -670,7 +671,7 @@ def _set_edi_mtsect(birrp_config_dict,periods):
 
 def read_j_file(fn):
     """
-    read_j_file will read in a *.j file output by BIRRP (better than reading .irj.rf files)
+    read_j_file will read in a *.j file output by BIRRP (better than reading lots of *.<k>r<l>.rf files)
     """   
 
     j_fn = op.abspath(fn)
@@ -760,19 +761,55 @@ def read_j_file(fn):
 
  
 
-    def _check_j_file_content(Z_array, periods_array, tipper_array):
+    def _check_j_file_content( periods_array, Z_array, tipper_array):
         """ 
         Check the content of j file.
         
         If 'nan' appears at any part for some period, the respective period must be deleted together with all respective entries of the Z_array and tipper_array.
         Additionally, check the entries of the period array. This should have fully redundant entries. If this is not the case for at least one period for at least one component, the period and all respective entries of the arrays have to be deleted.
         """
- 
-        pass
-        return periods, Z_array, tipper_array  
+        period_epsilon = 1E-7
+        lo_periods = []
+
+        lo_all_periods_raw = list(set(periods_array.flatten()))
+        lo_all_periods_raw.sort()
+        lo_all_periods = np.array(lo_all_periods_raw)
+
+        n_period_entries = periods_array.shape[1]
+
+        for idx_period, period in enumerate(lo_all_periods):
+            tmp_lo_period_idxs = []
+            for i in range(n_period_entries):
+                coinc = np.where(period==periods[:,i])[0]
+                if len(coinc) == 1:
+                    tmp_lo_period_idxs.append(coinc[0])
+            if len(tmp_lo_period_idxs) == n_period_entries:
+                lo_periods.append( (period,tuple(tmp_lo_period_idxs)) )
+
+        Z_array_out = np.zeros((len(lo_periods),3,4))
+        tipper_array_out = None
+        if n_period_entries == 6:
+            tipper_array_out = np.zeros((len(lo_periods),3,2))
+
+        lo_periods_out = []
+
+        for idx in range(len(lo_periods)):
+            lo_periods_out.append(lo_periods[idx][0])
+            idx_tuple = lo_periods[idx][1]
+            for j in range(4):
+                Z_array_out[idx,:,j] = Z_array[idx_tuple[j],:,j]
+
+            if n_period_entries == 6:
+                for k in rnage(2):
+                    tipper_out[idx,:,k] = tipper_array[idx_tuple[k+4],:,k]
+
+     
 
 
-    return _check_j_file_content(Z,periods, tipper)
+        return lo_periods_out, Z_array_out, tipper_array_out  
+
+
+    return _check_j_file_content(periods, Z, tipper)
     
 
 def convert2coh(birrp_output_directory, stationname):
