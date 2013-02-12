@@ -30,6 +30,7 @@ import os.path as op
 import subprocess
 import time 
 import fnmatch
+import math
 
 from mtpy.utils.exceptions import *
 import mtpy.utils.format as MTformat
@@ -758,58 +759,75 @@ def read_j_file(fn):
 
                     tipper[idx_per,idx_z_entry,idx_comp] = value
 
+    return _check_j_file_content(periods, Z, tipper)
 
  
 
-    def _check_j_file_content( periods_array, Z_array, tipper_array):
-        """ 
-        Check the content of j file.
-        
-        If 'nan' appears at any part for some period, the respective period must be deleted together with all respective entries of the Z_array and tipper_array.
-        Additionally, check the entries of the period array. This should have fully redundant entries. If this is not the case for at least one period for at least one component, the period and all respective entries of the arrays have to be deleted.
-        """
-        period_epsilon = 1E-7
-        lo_periods = []
+def _check_j_file_content( periods_array, Z_array, tipper_array):
+    """ 
+    Check the content of j file.
+    
+    If 'nan' appears at any part for some period, the respective period must be deleted together with all respective entries of the Z_array and tipper_array.
+    Additionally, check the entries of the period array. This should have fully redundant entries. If this is not the case for at least one period for at least one component, the period and all respective entries of the arrays have to be deleted.
+    """
+    period_epsilon = 1E-7
+    lo_periods = []
 
-        lo_all_periods_raw = list(set(periods_array.flatten()))
-        lo_all_periods_raw.sort()
-        lo_all_periods = np.array(lo_all_periods_raw)
+    lo_all_periods_raw = list(set(periods_array.flatten()))
+    lo_all_periods_raw.sort()
+    lo_all_periods = np.array(lo_all_periods_raw)
 
-        n_period_entries = periods_array.shape[1]
+    n_period_entries = periods_array.shape[1]
 
-        for idx_period, period in enumerate(lo_all_periods):
-            tmp_lo_period_idxs = []
-            for i in range(n_period_entries):
-                coinc = np.where(period==periods[:,i])[0]
-                if len(coinc) == 1:
+    for idx_period, period in enumerate(lo_all_periods):
+        tmp_lo_period_idxs = []
+        foundnan = 0
+        for i in range(n_period_entries):
+            #loop over all 4/6 components of Z and tipper
+            
+            #check, where the current period appears for the current component
+            coinc = np.where(period == periods_array[:,i])[0]
+
+            #check, if period is found exactly once for this component
+            if len(coinc) == 1:
+                #check all components for NaN:
+                for j in range(3):
+                    #only Z:
+                    if i < 4:
+                        if math.isnan(Z_array[coinc[0], j, i]):
+                            foundnan = 1
+                    else:
+                        if math.isnan(tipper_array[coinc[0], j, i - 4]):
+                            foundnan = 1
+                if foundnan == 0:
                     tmp_lo_period_idxs.append(coinc[0])
-            if len(tmp_lo_period_idxs) == n_period_entries:
-                lo_periods.append( (period,tuple(tmp_lo_period_idxs)) )
 
-        Z_array_out = np.zeros((len(lo_periods),3,4))
-        tipper_array_out = None
+        if len(tmp_lo_period_idxs) == n_period_entries:
+            lo_periods.append( (period,tuple(tmp_lo_period_idxs)) )
+
+    Z_array_out = np.zeros((len(lo_periods),3,4))
+    tipper_array_out = None
+    if n_period_entries == 6:
+        tipper_array_out = np.zeros((len(lo_periods),3,2))
+
+    lo_periods_out = []
+
+    for idx in range(len(lo_periods)):
+        lo_periods_out.append(lo_periods[idx][0])
+        idx_tuple = lo_periods[idx][1]
+        for j in range(4):
+            Z_array_out[idx,:,j] = Z_array[idx_tuple[j],:,j]
+
         if n_period_entries == 6:
-            tipper_array_out = np.zeros((len(lo_periods),3,2))
+            for k in rnage(2):
+                tipper_out[idx,:,k] = tipper_array[idx_tuple[k+4],:,k]
 
-        lo_periods_out = []
-
-        for idx in range(len(lo_periods)):
-            lo_periods_out.append(lo_periods[idx][0])
-            idx_tuple = lo_periods[idx][1]
-            for j in range(4):
-                Z_array_out[idx,:,j] = Z_array[idx_tuple[j],:,j]
-
-            if n_period_entries == 6:
-                for k in rnage(2):
-                    tipper_out[idx,:,k] = tipper_array[idx_tuple[k+4],:,k]
-
-     
+ 
 
 
-        return lo_periods_out, Z_array_out, tipper_array_out  
+    return lo_periods_out, Z_array_out, tipper_array_out  
 
 
-    return _check_j_file_content(periods, Z, tipper)
     
 
 def convert2coh(birrp_output_directory, stationname):
