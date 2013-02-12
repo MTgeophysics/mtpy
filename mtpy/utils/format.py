@@ -21,10 +21,10 @@ import re
 from mtpy.utils.exceptions import *
 
 
-def _assert_position_format(coordinate,value): 
+def _assert_position_format(coordinate, value): 
 
     """
-    Check, if value is valid for the three coordinates of a position: latitude, longitude, elevation raise MTpyError_config_file - exception, if not.
+    Check, if value is valid for the three coordinates of a position: 'latitude, longitude, elevation' - raise 'MTpyError_config_file'-exception, if not.
 
     If lat/lon are given in deg,min,sec it is converted do degrees. The value is returned, if no exception was raised 
 
@@ -47,8 +47,8 @@ def _assert_position_format(coordinate,value):
         #if not, check, if it's in (deg,min,sec) format
         except: 
             try:
-                latlon_raw = value
-                #allow separation by :,. or space for (deg min sec) format
+                latlon_raw = str(value)
+                #allow separation by ':','.' or 'space' for (deg min sec) format
                 latlon_list = re.split('[ :,]', latlon_raw)
                 try:
                     latlon_list = [float(i) for  i in latlon_list]

@@ -37,6 +37,13 @@ epsilon = 1e-9
 #=================================================================
 
 def read_configfile(filename):
+    """
+        Read a general config file and return the content as dictionary.
+
+        Config files without sections or only DEFAULT section -> return dictionary
+        Config files with sections -> return nested dictionary (main level keys are section heads)
+        Config files with sections as well as section-less entries -> return nested dictionary, which includes a 'DEFAULT' key
+    """
 
     #generate config parser instance
     configobject = ConfigParser.ConfigParser()
@@ -52,19 +59,24 @@ def read_configfile(filename):
         raise MTpyError_inputarguments( 'File is not a proper configuration file: %s'%filename )
 
 
-    if 0:#len(configobject.sections()) != 0:
-        pass
+    #if 0:#len(configobject.sections()) != 0:
+    config_dict = configobject._sections
         
-        
+    if len (config_dict.keys()) != 0:
 
+        config_dict['DEFAULT'] = configobject.defaults()
     else:
         config_dict = configobject.defaults()
 
+
     return config_dict
+
 
 def read_survey_configfile(filename):
     """
-    Read in a configuration file and return a dictionary.
+    Read in a survey configuration file and return a dictionary.
+
+    Input config file must contain station names as section headers!
 
     The output dictionary keys are station names (capitalised), the values are (sub-)dictionaries.
     The configuration file must contain sections for all stations, each containing all mandatory keywords:
@@ -155,6 +167,7 @@ def read_survey_configfile(filename):
         raise MTpyError_inputarguments( 'File is not a proper configuration file: %s'%filename )
 
     #obtain dict of dicts containing the input file's sections (station names)
+    #excludes DEFAULT section and key-value pairs without section header
     configobject_dict = configobject._sections
 
     #initialise the output dictionary
@@ -185,7 +198,7 @@ def read_survey_configfile(filename):
                 error_counter += 1
                 continue
 
-        #check format of lat/lon - convert to degrees, if given in deg,min,sec
+        #check format of lat/lon - convert to degrees, if given in (deg,min,sec)-triple
         for coordinate in ['latitude', 'longitude', 'elevation']:
             value = stationdict[coordinate]
             try:
@@ -226,6 +239,59 @@ def read_survey_configfile(filename):
 
         #add the station's sub-dictionary to the config dictionary
         config_dict[stationname] = stationdict
+
+    #re-loop for setting up correct remote reference station information :
+    #if rem.ref. station key is present, its information must be contained in the config file!
+    for station in config_dict.iterkeys():
+        stationdict = config_dict[station]
+
+        stationdict['rr_station'] = None
+        stationdict['rr_station_latitude'] = None
+        stationdict['rr_station_longitude'] = None
+        stationdict['rr_station_elevation'] = None
+
+
+        if stationdict.has_key('rr_station'):
+            rem_station = stationdict['rr_station'] 
+            try:
+                #check, if values are contained in dict 
+                float(stationdict['rr_station_latitude'] )
+                float(stationdict['rr_station_longitude'])
+                float(stationdict['rr_station_elevation'])
+            except:
+                try:
+                    #check for shortened form
+                    stationdict['rr_station_latitude']  = float(stationdict['rr_station_lat'] )
+                    stationdict['rr_station_longitude'] = float(stationdict['rr_station_lon'] )
+                    stationdict['rr_station_elevation'] = float(stationdict['rr_station_ele'] )                 
+
+                except:
+                    try:
+                        #read from other config dict entry
+                        stationdict['rr_station_latitude'] = config_dict[rem_station]['latitude']
+                        stationdict['rr_station_longitude'] = config_dict[rem_station]['longitude']
+                        stationdict['rr_station_elevation'] = config_dict[rem_station]['elevation']
+
+                    except:
+                        #if finally failed to read rr_station info, set rr_station back to None
+                        stationdict['rr_station'] = None
+                        stationdict['rr_station_latitude'] = None
+                        stationdict['rr_station_longitude'] = None
+                        stationdict['rr_station_elevation'] = None
+
+        #check consistency of coordinates, if rr_station is present
+        if stationdict['rr_station'] != None:
+            try:
+                stationdict['rr_station_latitude'] = MTformat._assert_position_format('latitude',stationdict['rr_station_latitude'])
+                stationdict['rr_station_longitude'] = MTformat._assert_position_format('longitude',stationdict['rr_station_longitude'])
+                stationdict['rr_station_elevation'] = MTformat._assert_position_format('elevation',stationdict['rr_station_elevation'])
+
+            except:
+                print 'Problem with remote reference station (%s) - remote reference (%s) coordinates invalid - remote reference set to None'%(station, stationdict['rr_station'] )
+                stationdict['rr_station'] = None
+                stationdict['rr_station_latitude'] = None
+                stationdict['rr_station_longitude'] = None
+                stationdict['rr_station_elevation'] = None
 
 
     if error_counter != 0:

@@ -456,7 +456,7 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
     F_out.write(DEFINEMEAS)
     F_out.write(MTSECT)
     F_out.write(DATA)
-    F_out.write('>END')
+    F_out.write('>END\n')
 
     F_out.close()
 
@@ -472,7 +472,7 @@ def _set_edi_data(periods, Z_array, tipper_array):
 
     datastring = ''
     datastring += '>!****FREQUENCIES****!\n'
-    datastring += '>FREQ\t NFREQ=%i\tORDER=DEC // %i\n'%(len(periods),len(periods))
+    datastring += '>FREQ // %i\n'%(len(periods))
     #datastring += '\t'
     for i,period in enumerate(periods):
         freq = 1./period
@@ -502,26 +502,28 @@ def _set_edi_data(periods, Z_array, tipper_array):
             datastring += '\n'
 
         
-    if tipper_array != None :
         
-        datastring += '\n'
-        datastring += '>!****TIPPER****!\n'
+    datastring += '\n'
+    datastring += '>!****TIPPER****!\n'
 
-        compstrings = ['TX','TY']
-        T_entries = ['R','I','.VAR']
-        
-        for T_comp in range(2):
-            for entry in range(3):
-                datastring += '>%s%s // %i\n'%(compstrings[T_comp], T_entries[entry], len(periods))
-                for i,period in enumerate(periods):
+    compstrings = ['TX','TY']
+    T_entries = ['R.EXP','I.EXP','VAR.EXP']
+    
+    for T_comp in range(2):
+        for entry in range(3):
+            datastring += '>%s%s // %i\n'%(compstrings[T_comp], T_entries[entry], len(periods))
+            for i,period in enumerate(periods):
+                if tipper_array != None :
                     data = tipper_array[i,entry,T_comp]
-                    datastring += '%f'%(data)
-                    if (i+1)%5 == 0 and (i != len(periods) - 1) and i > 0:
-                        datastring += '\n'
-                    else:
-                        datastring += '\t'
+                else:
+                    data = 0.
+                datastring += '%f'%(data)
+                if (i+1)%5 == 0 and (i != len(periods) - 1) and i > 0:
+                    datastring += '\n'
+                else:
+                    datastring += '\t'
 
-                datastring += '\n'
+            datastring += '\n'
 
 
     datastring += '\n'
@@ -533,12 +535,16 @@ def _set_edi_info(station_config_dict,birrp_config_dict):
     infostring = ''
     infostring += '>INFO\t MAX LINES=1000\n'
     infostring += '\tStation parameters:\n'
-    for key, value in station_config_dict.items():
-        infostring += '\t\t%s: %s  \n'%(str(key),str(value))   
+
+    for key in sorted(station_config_dict.iterkeys()):
+        infostring += '\t\t%s: %s  \n'%(str(key),str(station_config_dict[key]))   
+    
+
     infostring += '\n'
     infostring += '\tProcessing parameters:\n'
-    for key, value in birrp_config_dict.items():
-        infostring += '\t\t%s: %s  \n'%(str(key),str(value))   
+
+    for key in sorted(birrp_config_dict.iterkeys()):
+        infostring += '\t\t%s: %s  \n'%(str(key),str(birrp_config_dict[key]))   
     infostring += '\n'    
 
 
@@ -549,14 +555,14 @@ def _set_edi_info(station_config_dict,birrp_config_dict):
 def _set_edi_head(station_config_dict,birrp_config_dict):
     headstring = ''
     headstring += '>HEAD\n'
-    headstring += '\tDATAID=%s\n'%(birrp_config_dict['station'])
+    headstring += '\tDATAID="%s"\n'%(birrp_config_dict['station'])
 
     if station_config_dict.has_key('company'):
         acqby = station_config_dict.has_key('company')
     else:
         acqby = ''
 
-    headstring += '\tACQBY=%s\n'%(acqby)
+    headstring += '\tACQBY="%s"\n'%(acqby)
 
 
     sampling_rate = float(birrp_config_dict['sampling_rate'])
@@ -570,13 +576,14 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
     acq_start_time = (time.gmtime(acq_starttime)[3:6])
     acq_start = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_start_date[0],acq_start_date[1],acq_start_date[2],acq_start_time[0],acq_start_time[1],acq_start_time[2]) 
 
-    acq_endtime = acq_starttime + 1./sampling_rate * (n_samples + 1)
+    acq_endtime = acq_starttime + 1./sampling_rate * (n_samples )
     acq_end_date = (time.gmtime(acq_endtime)[:3])[::-1]
     acq_end_time = (time.gmtime(acq_endtime)[3:6])
     acq_end = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_end_date[0],acq_end_date[1],acq_end_date[2],acq_end_time[0],acq_end_time[1],acq_end_time[2]) 
 
 
-    headstring +='\tACQDATE=%s - %s\n'%(acq_start, acq_end)
+    headstring +='\tACQDATE=%s \n'%(acq_start)
+    headstring +='\tENDDATE=%s \n'%(acq_end)
 
 
     current_date = (time.gmtime()[:3])[::-1]
@@ -588,16 +595,16 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
     network = ''
     if station_config_dict.has_key('network'):
         location = station_config_dicthas_key('network')
-    headstring += '\tNETWORK=%s\n'%(network)
+    headstring += '\tPROSPECT="%s"\n'%(network)
 
     location = ''
     if station_config_dict.has_key('location'):
         location = station_config_dicthas_key('location')
-    headstring += '\tLOC=%s\n'%(location)
+    headstring += '\tLOC="%s"\n'%(location)
 
-    headstring += '\tLAT=%f\n'%station_config_dict['latitude']
-    headstring += '\tLONG=%f\n'%station_config_dict['longitude']
-    headstring += '\tELEV=%f\n'%station_config_dict['elevation']
+    headstring += '\tLAT=%.5f\n'%station_config_dict['latitude']
+    headstring += '\tLONG=%.5f\n'%station_config_dict['longitude']
+    headstring += '\tELEV=%.1f\n'%station_config_dict['elevation']
 
     headstring += '\n'
 
@@ -605,6 +612,7 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
 
 
 def _set_edi_defmeas(station_config_dict):
+
     dmeasstring = ''
     dmeasstring += '>=DEFINEMEAS\n'
     dmeasstring += '\n'
@@ -613,10 +621,27 @@ def _set_edi_defmeas(station_config_dict):
     dmeasstring += '\tMAXRUN=999\n'
     dmeasstring += '\tMAXMEAS=99999\n'
     dmeasstring += '\tUNITS=M\n'
-    dmeasstring += '\tREFTYPY=CART\n'
+    dmeasstring += '\tREFTYPE=CART\n'
     dmeasstring += '\tREFLAT=%f\n'%station_config_dict['latitude']
     dmeasstring += '\tREFLONG=%f\n'%station_config_dict['longitude']
-    dmeasstring += '\tREFELEV=%f\n'%station_config_dict['elevation']
+    dmeasstring += '\tREFELEV=%.1f\n'%station_config_dict['elevation']
+    
+    dmeasstring += '\n'
+    dmeasstring += '>HMEAS ID=1001.001 CHTYPE=HX X=0 Y=0 AZM=0\n'
+    dmeasstring += '>HMEAS ID=1002.001 CHTYPE=HY X=0 Y=0 AZM=90\n'
+
+    try:
+        dmeasstring += '>EMEAS ID=1003.001 CHTYPE=EX X=0 Y=0 X2=%.1f Y2=0\n'%float(station_config_dict['e_xaxis_length'])
+    except:
+        dmeasstring += '>EMEAS ID=1003.001 CHTYPE=EX X=0 Y=0 X2=0 Y2=0\n'
+        
+    try:
+        dmeasstring += '>EMEAS ID=1004.001 CHTYPE=EY X=0 Y=0 X2=0 Y2=%.1f\n'%float(station_config_dict['e_yaxis_length'])
+    except:
+        dmeasstring += '>EMEAS ID=1004.001 CHTYPE=EY X=0 Y=0 X2=0 Y2=0\n'
+
+    dmeasstring += '>HMEAS ID=1005.001 CHTYPE=RX X=0 Y=0 AZM=0\n'
+    dmeasstring += '>HMEAS ID=1006.001 CHTYPE=RY X=0 Y=0 AZM=90\n'
 
 
     dmeasstring += '\n'
@@ -629,7 +654,13 @@ def _set_edi_mtsect(birrp_config_dict,periods):
     mtsectstring += '>=MTSECT\n' 
     mtsectstring += '\tSECTID=%s\n'%birrp_config_dict['station']
     mtsectstring += '\tNFREQ=%i\n'%(len(periods))
-    
+    mtsectstring += '\tHX=1001.001\n'
+    mtsectstring += '\tHY=1002.001\n'
+    mtsectstring += '\tEX=1003.001\n'
+    mtsectstring += '\tEY=1004.001\n'
+    mtsectstring += '\tRX=1005.001\n'
+    mtsectstring += '\tRY=1006.001\n'
+
     mtsectstring += '\n'
 
     return mtsectstring.expandtabs(4)
