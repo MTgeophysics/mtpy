@@ -28,3 +28,6 @@ class MTpyError_config_file( Exception ):
 
 class MTpyError_file_handling( Exception ): 
     pass
+
+class MTpyError_edi_file( Exception ): 
+    pass

@@ -619,9 +619,9 @@ def _set_edi_defmeas(station_config_dict):
 
     dmeasstring += '\tMAXCHAN=7\n'
     dmeasstring += '\tMAXRUN=999\n'
-    dmeasstring += '\tMAXMEAS=99999\n'
+    dmeasstring += '\tMAXMEAS=9999\n'
     dmeasstring += '\tUNITS=M\n'
-    dmeasstring += '\tREFTYPE=CART\n'
+    dmeasstring += '\tREFTYPE="WGS 84"\n'
     dmeasstring += '\tREFLAT=%f\n'%station_config_dict['latitude']
     dmeasstring += '\tREFLONG=%f\n'%station_config_dict['longitude']
     dmeasstring += '\tREFELEV=%.1f\n'%station_config_dict['elevation']
