@@ -85,8 +85,12 @@ class Edi(object):
             self.n_freqs = 0.
             self.zrot = None
             self.data = {}
-            self.z = {}
+            self.z_dict = {}
+            self.z = None
+            self.zerr = None
             self.tipper = None
+            self.tippererr = None
+            self.tipper_dict = {}
             self.rho = None
             self.phase = None
             self.frequencies = None
@@ -108,6 +112,8 @@ class Edi(object):
             raise MTexceptions.MTpyError_edi_file('%s is no proper edi file'%infile)
 
         self.filename = infile
+        self.raw_filestring = edistring
+
 
         try:
             self._read_head(edistring)
@@ -117,43 +123,54 @@ class Edi(object):
         try:
             self._read_info(edistring)
         except:
-            raise MTexceptions.MTpyError_edi_file('Could not read INFO section:%s'%infile)
+            raise MTexceptions.MTpyError_edi_file('Could not read INFO section: %s'%infile)
 
         try:
             self._read_definemeas(edistring)
         except:
-            raise MTexceptions.MTpyError_edi_file('Could not read DEFINEMEAS section:%s'%infile)
+            raise MTexceptions.MTpyError_edi_file('Could not read DEFINEMEAS section: %s'%infile)
 
         try:
             self._read_hmeas_emeas(edistring)
         except:
-            print 'Could not read HMEAS/EMEAS sub-section:%s'%infile
+            print 'Could not read HMEAS/EMEAS sub-section: %s'%infile
 
         try:
             self._read_mtsect(edistring)
         except:
-            raise MTexceptions.MTpyError_edi_file('Could not read MTSECT section:%s'%infile)
+            raise MTexceptions.MTpyError_edi_file('Could not read MTSECT section: %s'%infile)
 
         try:
             self._read_freq(edistring)
         except:
-            raise MTexceptions.MTpyError_edi_file('Could not read FREQ section:%s'%infile)
+            raise MTexceptions.MTpyError_edi_file('Could not read FREQ section: %s'%infile)
 
         try:
             self._read_z(edistring)
         except:
-            raise MTexceptions.MTpyError_edi_file('Could not read Z section:%s'%infile)
+            raise MTexceptions.MTpyError_edi_file('Could not read Z section: %s'%infile)
 
         try:
             self._read_tipper(edistring)
         except:
-            print 'Could not read Tipper section:%s'%infile
+            print 'Could not read Tipper section: %s'%infile
 
         try:
             self._read_zrot(edistring)
         except:
-            print 'Could not read Zrot section:%s'%infile
+            print 'Could not read Zrot section: %s'%infile
 
+        #collect all data information in one dictionary
+        data_dict = {}
+
+        data_dict['z'] = self.z
+        data_dict['tipper'] = self.tipper
+        data_dict['zrot'] = self.zrot
+        data_dict['frequencies'] = self.frequencies
+        data_dict['zerr'] = self.zerr
+        data_dict['tippererr'] = self.tippererr
+        
+        self.data = data_dict
 
 
     def _read_head(self, edistring):
@@ -313,21 +330,161 @@ class Edi(object):
 
 
     def _read_z(self, edistring):
+        """
+        Read in impedances information. 
+        Store it as dictionary and complex array (incl. Zvar values in 'zerr' array)
 
-        pass
+        """
+
+        compstrings = ['ZXX','ZXY','ZYX','ZYY']
+        Z_entries = ['R','I','.VAR']
+
+        z_array = np.zeros((self.n_freqs,2,2),dtype=np.complex)
+        zerr_array = np.zeros((self.n_freqs,2,2),dtype=np.float)
+        z_dict = {}
+
+
+        for idx_comp,comp in enumerate(compstrings):
+            for idx_zentry,zentry in enumerate(Z_entries):
+                sectionhead = comp + zentry
+                try:
+                    temp_string = _cut_sectionstring(edistring,sectionhead)
+                except:
+                    pass
+  
+                lo_z_vals = []
+
+                #check, if correct number of entries are given in the block
+                t0 = temp_string.strip().split('\n')[0]
+                n_dummy = int(float(t0.split('//')[1].strip()))
+                if not n_dummy == self.n_freqs:
+                    raise
+
+
+                t1 = temp_string.strip().split('\n')[1:]
+                for j in t1:
+                    lo_j = j.strip().split()
+                    for k in lo_j:
+                        try:
+                            lo_z_vals.append(float(k))
+                        except:
+                            pass
+
+                z_dict[sectionhead] = lo_z_vals
+
+        self.z_dict = z_dict
+
+        for idx_freq  in range( self.n_freqs):
+            z_array[idx_freq,0,0] = np.complex(self.z_dict['ZXXR'][idx_freq], self.z_dict['ZXXI'][idx_freq])
+            zerr_array[idx_freq,0,0] = self.z_dict['ZXX.VAR'][idx_freq]
+
+            z_array[idx_freq,0,1] = np.complex(self.z_dict['ZXYR'][idx_freq], self.z_dict['ZXYI'][idx_freq])
+            zerr_array[idx_freq,0,1] = self.z_dict['ZXY.VAR'][idx_freq]
+
+            z_array[idx_freq,1,0] = np.complex(self.z_dict['ZYXR'][idx_freq], self.z_dict['ZYXI'][idx_freq])
+            zerr_array[idx_freq,1,0] = self.z_dict['ZYX.VAR'][idx_freq]
+
+            z_array[idx_freq,1,1] = np.complex(self.z_dict['ZYYR'][idx_freq], self.z_dict['ZYYI'][idx_freq])
+            zerr_array[idx_freq,1,1] = self.z_dict['ZYY.VAR'][idx_freq]
+
+        self.z = z_array
+        self.zerr = zerr_array
+
 
     def _read_tipper(self, edistring):
 
-        pass
+        compstrings = ['TX','TY']
+        T_entries = ['R','I','VAR']
+    
+        tipper_array = np.zeros((self.n_freqs,1,2),dtype=np.complex)
+        tippererr_array = np.zeros((self.n_freqs,1,2),dtype=np.float)
+        t_dict = {}
+
+
+        for idx_comp,comp in enumerate(compstrings):
+            for idx_tentry,tentry in enumerate(T_entries):
+
+                try:
+                    sectionhead = comp + tentry + '.EXP'
+                    temp_string = _cut_sectionstring(edistring,sectionhead)
+                except:
+                    try:
+                        sectionhead = comp + tentry
+                        temp_string = _cut_sectionstring(edistring,sectionhead)
+                    except:
+                        pass
+  
+                lo_t_vals = []
+                
+                #check, if correct number of entries are given in the block
+                t0 = temp_string.strip().split('\n')[0]
+                n_dummy = int(float(t0.split('//')[1].strip()))
+                if not n_dummy == self.n_freqs:
+                    raise
+
+                t1 = temp_string.strip().split('\n')[1:]
+                for j in t1:
+                    lo_j = j.strip().split()
+                    for k in lo_j:
+                        try:
+                            lo_t_vals.append(float(k))
+                        except:
+                            pass
+
+                t_dict[comp + tentry] = lo_t_vals
+
+        self.tipper_dict = t_dict
+
+        for idx_freq  in range( self.n_freqs):
+            tipper_array[idx_freq,0,0] = np.complex(self.tipper_dict['TXR'][idx_freq], self.tipper_dict['TXI'][idx_freq])
+            tippererr_array[idx_freq,0,0] = self.tipper_dict['TXVAR'][idx_freq]
+
+            tipper_array[idx_freq,0,1] = np.complex(self.tipper_dict['TYR'][idx_freq], self.tipper_dict['TYI'][idx_freq])
+            tippererr_array[idx_freq,0,1] = self.tipper_dict['TYVAR'][idx_freq]
+
+
+
+        self.tipper = tipper_array
+        self.tippererr = tippererr_array
+
+
 
     def _read_zrot(self, edistring):
 
-        pass
+        try:
+            temp_string = _cut_sectionstring(edistring,'ZROT')
+        except:
+            lo_angles = list( np.zeros((self.n_freqs)) )            
+            self.zrot = lo_angles
+            return
+
+
+        lo_angles = []
+
+        t1 = temp_string.strip().split('\n')[1:]
+
+        for j in t1:
+            lo_j = j.strip().split()
+            for k in lo_j:
+                try:
+                    lo_angles.append(float(k))
+                except:
+                    pass
+
+
+        if len(lo_angles) != self.n_freqs:
+            raise
+
+        self.zrot = lo_angles
+
 
 
 
     def writefile(self,fn):
         pass
+
+
+
 
     def _validate_edifile_string(self, edistring):
         """
@@ -493,13 +650,6 @@ class Edi(object):
         
 
 
-    def get_edi_dict():
-        pass
-        
-    
-    def set_edi_dict():
-        pass
-        
 
 
     def get_zrot():
@@ -513,7 +663,11 @@ class Edi(object):
 
 
 def read_edifile(fn):
-    pass
+
+    edi_object = Edi()
+
+    edi_object.readfile(fn) 
+   
 
     return edi_object
 
@@ -525,15 +679,27 @@ def write_edifile(out_fn = None):
 
 
 def combine_edifiles(fn1, fn2, out_fn = None):
-    pass
+    
+    edi_object1 = Edi()
+    edi_object1.readfile(fn1)
+    edi_object2 = Edi()
+    edi_object2.readfile(fn2)
+
+
 
     return out_filename
 
 
 def validate_edifile(fn):
-    is_edi  = False
 
-    return is_edi
+    edi_object = Edi()
+
+    try:
+        edi_object.readfile(fn) 
+        return True
+    except:
+        return False
+
 
 def rotate_edifile(fn, out_fn = None):
     pass
