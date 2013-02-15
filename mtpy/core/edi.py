@@ -66,27 +66,32 @@ class Edi(object):
 
     def __init__(self, fn = None):
     
-        if fn != None:
-            if op.isfile(op.abspath(fn)):
-                self.filename = op.abspath(fn)
-            else:
-                self.filename = None
+            self.filename = fn
+            if fn != None:
+                if op.isfile(op.abspath(fn)):
+                    self.filename = op.abspath(fn)
+                else:
+                    self.filename = None
 
             self.raw_filestring = None
             self.edi_dict = {}
             self.head = {}
-            self.info = {}
-            self.definemeas = {}
+            self.info_string = None
+            self.info_dict = {}
+            self.definemeas_dict = {}
+            self.hmeas_emeas = None
             self.mtsect = {}
-            self.freq = {}
+            self.freq = None
             self.n_freqs = 0.
             self.zrot = None
             self.data = {}
-            self.z = None
+            self.z = {}
             self.tipper = None
             self.rho = None
             self.phase = None
-
+            self.frequencies = None
+            self.periods = None
+            self.data = {}
 
     def readfile(self, fn):
         
@@ -102,6 +107,149 @@ class Edi(object):
         if not self._validate_edifile_string(edistring):
             raise MTexceptions.MTpyError_edi_file('%s is no proper edi file'%infile)
 
+        self.filename = infile
+
+        if 1:
+            self._read_head(edistring)
+        #except:
+        #    raise MTexceptions.MTpyError_edi_file('Could not read HEAD section: %s'%fn)
+
+        try:
+            self._read_info(edistring)
+        except:
+            raise MTexceptions.MTpyError_edi_file('Could not read INFO section:%s'%fn)
+
+        try:
+            self._read_definemeas_dict(edistring)
+        except:
+            raise MTexceptions.MTpyError_edi_file('Could not read DEFINEMEAS section:%s'%fn)
+
+        try:
+            self._read_hmeas_emeas(edistring)
+        except:
+            raise MTexceptions.MTpyError_edi_file('Could not read HMEAS/EMEAS sub-section:%s'%fn)
+
+        try:
+            self._read_mtsect(edistring)
+        except:
+            raise MTexceptions.MTpyError_edi_file('Could not read MTSECT section:%s'%fn)
+
+        try:
+            self._read_freq(edistring)
+        except:
+            raise MTexceptions.MTpyError_edi_file('Could not read FREQ section:%s'%fn)
+
+        try:
+            self._read_z(edistring)
+        except:
+            raise MTexceptions.MTpyError_edi_file('Could not read Z section:%s'%fn)
+
+        try:
+            self._read_tipper(edistring)
+        except:
+            raise MTexceptions.MTpyError_edi_file('Could not read Tipper section:%s'%fn)
+
+        try:
+            self._read_zrot(edistring)
+        except:
+            raise MTexceptions.MTpyError_edi_file('Could not read Zrot section:%s'%fn)
+
+
+
+    def _read_head(self, edistring):
+
+        try:
+            temp_string = _cut_sectionstring(edistring,'HEAD')
+        except:
+            raise
+
+        head_dict = {}
+        t1 = temp_string.strip().split('\n')
+        t2 = [i.strip() for i in t1 if '=' in i]
+        for j in t2:
+            k = j.split('=')
+            key = str(k[0]).lower()
+            value = k[1].replace('"','')           
+            head_dict[key] = value
+
+        self.head = head_dict
+
+    def _read_info(self, edistring):
+
+        try:
+            temp_string = _cut_sectionstring(edistring,'INFO')
+        except:
+            raise
+
+        self.info_string = temp_string.strip()
+
+        info_dict = {}
+
+        t1 = temp_string.strip().split('\n')
+        t2 = [i.strip() for i in t1 if '=' in i or ':' in i]
+
+        for tmp_str in t2:
+            #fill dictionary 
+            #ignore lines with no information after '='' or ':'
+
+            if '=' in tmp_str:
+                t3 = tmp_str.split('=')
+                key = str(t3[0]).lower()
+                value = t3[1].replace('"','')           
+                if not len(value) == 0:
+                    info_dict[key] = value
+            
+            elif ':' in tmp_str:
+                #consider potential ':' characters in coordinates!
+                t3 = tmp_str.split(':')
+                key = str(t3[0]).lower()
+                value = t3[1:]
+                value = [i.strip().replace('"','') for i in value]
+                print value
+                if len(value) > 1:
+                    value = ':'.join(value)
+                else:
+                    value = value[0]
+
+                if not len(value) == 0:
+                    info_dict[key] = value
+
+        self.info_dict = info_dict
+
+
+
+    def _read_definemeas_dict(self, edistring):
+
+        pass
+
+
+
+    def _read_hmeas_emeas(self, edistring):
+
+        pass
+
+
+    def _read_mtsect(self, edistring):
+
+        pass
+
+
+    def _read_freq(self, edistring):
+
+        pass
+
+
+    def _read_z(self, edistring):
+
+        pass
+
+    def _read_tipper(self, edistring):
+
+        pass
+
+    def _read_zrot(self, edistring):
+
+        pass
 
 
 
@@ -110,7 +258,7 @@ class Edi(object):
 
     def _validate_edifile_string(self, edistring):
         """
-            Read the file as string and check, if blocks 'HEAD, INFO, DEFINEMEAS, MTSECT, FREQ, Z' are present.
+            Read the file as string and check, if blocks 'HEAD, INFO, =DEFINEMEAS, =MTSECT, FREQ, Z, END' are present.
 
             Within the blocks look for mandatory entries:
             HEAD: 'DATAID'
@@ -132,9 +280,13 @@ class Edi(object):
         found *= np.sign(edistring.upper().find('>EMEAS') + 1 )
         found *= np.sign(edistring.upper().find('NFREQ') + 1 )
         found *= np.sign(edistring.upper().find('>FREQ') + 1 )
+        found *= np.sign(edistring.upper().find('>END') + 1 )
+        found *= np.sign(edistring.upper().find('>=DEFINEMEAS') + 1 )
+        found *= np.sign(edistring.upper().find('>=MTSECT') + 1 )
+
 
         if found < 1 :
-            print 'Could not find all mandatory sections for a valid EDI file!'
+            print 'Could not find all mandatory sections for a valid EDI file!\n (Most basic version must contain: "HEAD, INFO, =DEFINEMEAS, =MTSECT, FREQ, Z, END") '
             return False
 
 
@@ -315,6 +467,28 @@ def rotate_edifile(fn, out_fn = None):
 
     return out_filename
 
+
+def _cut_sectionstring(edistring,sectionhead):
+
+    start_idx = edistring.upper().find('>'+sectionhead.upper())
+    if start_idx == -1:
+        start_idx = edistring.upper().find('>='+sectionhead.upper())
+        if start_idx == -1:
+            raise 
+        #correct for the = character
+        start_idx += 1
+    #start cut behind the section keyword
+    start_idx += (1+len(sectionhead))
+
+
+    next_block_start = edistring.upper().find('>', start_idx + 1)
+    cutstring = edistring[start_idx:next_block_start]
+
+    if len(cutstring) == 0 :
+        raise
+
+
+    return cutstring
 
 
 
