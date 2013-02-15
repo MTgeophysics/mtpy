@@ -78,7 +78,7 @@ class Edi(object):
             self.head = {}
             self.info_string = None
             self.info_dict = {}
-            self.definemeas_dict = {}
+            self.definemeas = {}
             self.hmeas_emeas = None
             self.mtsect = {}
             self.freq = None
@@ -109,50 +109,50 @@ class Edi(object):
 
         self.filename = infile
 
-        if 1:
+        try:
             self._read_head(edistring)
-        #except:
-        #    raise MTexceptions.MTpyError_edi_file('Could not read HEAD section: %s'%fn)
+        except:
+            raise MTexceptions.MTpyError_edi_file('Could not read HEAD section: %s'%infile)
 
         try:
             self._read_info(edistring)
         except:
-            raise MTexceptions.MTpyError_edi_file('Could not read INFO section:%s'%fn)
+            raise MTexceptions.MTpyError_edi_file('Could not read INFO section:%s'%infile)
 
         try:
-            self._read_definemeas_dict(edistring)
+            self._read_definemeas(edistring)
         except:
-            raise MTexceptions.MTpyError_edi_file('Could not read DEFINEMEAS section:%s'%fn)
+            raise MTexceptions.MTpyError_edi_file('Could not read DEFINEMEAS section:%s'%infile)
 
         try:
             self._read_hmeas_emeas(edistring)
         except:
-            raise MTexceptions.MTpyError_edi_file('Could not read HMEAS/EMEAS sub-section:%s'%fn)
+            print 'Could not read HMEAS/EMEAS sub-section:%s'%infile
 
         try:
             self._read_mtsect(edistring)
         except:
-            raise MTexceptions.MTpyError_edi_file('Could not read MTSECT section:%s'%fn)
+            raise MTexceptions.MTpyError_edi_file('Could not read MTSECT section:%s'%infile)
 
         try:
             self._read_freq(edistring)
         except:
-            raise MTexceptions.MTpyError_edi_file('Could not read FREQ section:%s'%fn)
+            raise MTexceptions.MTpyError_edi_file('Could not read FREQ section:%s'%infile)
 
         try:
             self._read_z(edistring)
         except:
-            raise MTexceptions.MTpyError_edi_file('Could not read Z section:%s'%fn)
+            raise MTexceptions.MTpyError_edi_file('Could not read Z section:%s'%infile)
 
         try:
             self._read_tipper(edistring)
         except:
-            raise MTexceptions.MTpyError_edi_file('Could not read Tipper section:%s'%fn)
+            print 'Could not read Tipper section:%s'%infile
 
         try:
             self._read_zrot(edistring)
         except:
-            raise MTexceptions.MTpyError_edi_file('Could not read Zrot section:%s'%fn)
+            print 'Could not read Zrot section:%s'%infile
 
 
 
@@ -205,7 +205,6 @@ class Edi(object):
                 key = str(t3[0]).lower()
                 value = t3[1:]
                 value = [i.strip().replace('"','') for i in value]
-                print value
                 if len(value) > 1:
                     value = ':'.join(value)
                 else:
@@ -218,25 +217,99 @@ class Edi(object):
 
 
 
-    def _read_definemeas_dict(self, edistring):
+    def _read_definemeas(self, edistring):
 
-        pass
+        try:
+            temp_string = _cut_sectionstring(edistring,'DEFINEMEAS')
+        except:
+            raise
+
+        d_dict = {} 
+
+        t1 = temp_string.strip().split('\n')
+
+        for tmp_str in t1:
+            if '=' in tmp_str:
+                k = tmp_str.strip().split('=')
+                key = k[0].lower()
+                value = k[1].replace('"','')
+                if len(value) != 0:
+                    d_dict[key] = value
+         
+        if len(d_dict.keys()) == 0:
+            raise
+
+
+        self.definemeas = d_dict
 
 
 
     def _read_hmeas_emeas(self, edistring):
 
-        pass
+        try:
+            temp_string = _cut_sectionstring(edistring,'HMEAS_EMEAS')
+        except:
+            raise
+
+        t1 = temp_string.strip().split('\n')
+        lo_hmeas_emeas = []
+        for j in t1:
+            j = j.replace('>','')
+            lo_j = j.split()
+            lo_hmeas_emeas.append(tuple(lo_j))
+
+        self.hmeas_emeas = lo_hmeas_emeas
 
 
     def _read_mtsect(self, edistring):
 
-        pass
+        try:
+            temp_string = _cut_sectionstring(edistring,'MTSECT')
+        except:
+            raise
+        m_dict = {}
+
+        t1 = temp_string.strip().split('\n')
+
+        for tmp_str in t1:
+            if '=' in tmp_str:
+                k = tmp_str.strip().split('=')
+                key = k[0].lower()
+                value = k[1].replace('"','')
+                if len(value) != 0:
+                    m_dict[key] = value
+         
+        if len(m_dict.keys()) == 0:
+            raise
+
+
+        self.mtsect = m_dict
 
 
     def _read_freq(self, edistring):
 
-        pass
+        try:
+            temp_string = _cut_sectionstring(edistring,'FREQ')
+        except:
+            raise
+        
+        lo_freqs = []
+
+        t1 = temp_string.strip().split('\n')[1:]
+
+        for j in t1:
+            lo_j = j.strip().split()
+            for k in lo_j:
+                try:
+                    lo_freqs.append(float(k))
+                except:
+                    pass
+
+
+        self.n_freqs = len(lo_freqs)
+        self.frequencies = lo_freqs
+        self.freq = lo_freqs
+        self.periods = list(1./np.array(lo_freqs))
 
 
     def _read_z(self, edistring):
@@ -470,6 +543,31 @@ def rotate_edifile(fn, out_fn = None):
 
 def _cut_sectionstring(edistring,sectionhead):
 
+    #in this case, several blocks have to be handled together, therefore, a simple cut to the next block start does not work:
+    if sectionhead.upper() == 'HMEAS_EMEAS':
+        #required for finding HMEAS and EMEAS at once:
+        import re
+
+        lo_start_idxs = [m.start() for m in re.finditer('>[HE]MEAS', edistring) ]
+        if len(lo_start_idxs) == 0 :
+            del re
+            raise
+
+        start_idx = lo_start_idxs[0]
+
+        end_idx = edistring[(lo_start_idxs[-1]+1):].upper().find('>') + lo_start_idxs[-1]
+
+        hmeas_emeas_string = edistring[start_idx:end_idx]
+
+        if len(hmeas_emeas_string) == 0:
+            del re
+            raise
+        
+        del re
+        return hmeas_emeas_string
+ 
+
+
     start_idx = edistring.upper().find('>'+sectionhead.upper())
     if start_idx == -1:
         start_idx = edistring.upper().find('>='+sectionhead.upper())
@@ -480,8 +578,9 @@ def _cut_sectionstring(edistring,sectionhead):
     #start cut behind the section keyword
     start_idx += (1+len(sectionhead))
 
-
     next_block_start = edistring.upper().find('>', start_idx + 1)
+
+ 
     cutstring = edistring[start_idx:next_block_start]
 
     if len(cutstring) == 0 :
