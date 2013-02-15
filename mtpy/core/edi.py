@@ -45,6 +45,7 @@ import numpy as np
 import os
 import sys
 import os.path as op
+import math
 
 import mtpy.utils.exceptions as MTexceptions
 reload(MTexceptions)
@@ -575,7 +576,73 @@ class Edi(object):
         pass
 
     def rotate(self,angle):
-        pass
+        """
+            Rotate the Z and tipper information in the Edi object. Change the rotation angles in Zrot respectively.
+
+            Rotation angle must be given in degrees. All angles are referenced to geographic North, positive in clockwise direction. (Mathematically negative!)
+
+            In non-rotated state, X refs to North and Y to East direction.
+
+        """
+        n_freqs = self.n_freqs
+        lo_original_angles = self.zrot
+        z = self.z
+        tipper = self.tipper
+        zerr = self.zerr
+        angle = angle%360
+
+        #1. rotation positive in clockwise direction
+        #2. orientation of new X axis X' given by rotation angle
+        #3. express contents of Z/tipper (points P) in this new system (points P')
+        #4. rotation for points calculated as P' = ([cos , sin ],[-sin, cos]) * P <=> P' = R * P
+        #5. => B' = R * B and E' = R * E
+        # (Rt is the inverse rotation matrix)
+        #6. E = Z * B => Rt * E' = Z * Rt * B' => E' = (R*Z*Rt) * B' => Z' = (R*Z*Rt)  
+
+        #7. Bz = T * B => Bz = T * Rt * B' => T' = (T * Rt)
+
+        # Rotation of the uncertainties:
+        # a) rotate Z into Z'
+        # b) use propagation of errors on Z' to obtain the rotated Z'err
+        # That is NOT the same as the rotated error matrix Zerr (although the result is similar)
+
+        z_rot = z.copy()
+        zerr_rot = zerr.copy()
+
+        for idx_freq in range(self.n_freqs):
+
+            phi = math.radians(angle)
+
+            cphi = np.cos(phi)
+            sphi = np.sin(phi)
+
+            z_orig = z[idx_freq,:,:]
+
+            z_rot[idx_freq,0,0] = cphi**2 * z_orig[0,0] + cphi*sphi*(z_orig[0,1]+z_orig[1,0]) + sphi**2 * z_orig[1,1]
+            z_rot[idx_freq,0,1] = cphi**2 * z_orig[0,1] + cphi*sphi*(z_orig[1,1]-z_orig[0,0]) - sphi**2 * z_orig[1,0]
+            z_rot[idx_freq,1,0] = cphi**2 * z_orig[1,0] + cphi*sphi*(z_orig[1,1]-z_orig[0,0]) - sphi**2 * z_orig[0,1]
+            z_rot[idx_freq,1,1] = sphi**2 * z_orig[0,0] - cphi*sphi*(z_orig[0,1]+z_orig[1,0]) + cphi**2 * z_orig[1,1]
+
+            zerr_orig = zerr[idx_freq,:,:]
+
+            zerr_rot[idx_freq,0,0] = np.sqrt( (cphi**2 * zerr_orig[0,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[0,1])**2 + (zerr_orig[1,0])**2) + (sphi**2 * zerr_orig[1,1])**2)
+
+            zerr_rot[idx_freq,0,1] = np.sqrt( (cphi**2 * zerr_orig[0,1])**2 + cphi**2 * sphi**2 * ( (zerr_orig[1,1])**2 + (zerr_orig[0,0])**2) + (sphi**2 * zerr_orig[1,0])**2) 
+
+            zerr_rot[idx_freq,1,0] = np.sqrt( (cphi**2 * zerr_orig[1,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[1,1])**2 + (zerr_orig[0,0])**2) + (sphi**2 * zerr_orig[0,1])**2) 
+
+            zerr_rot[idx_freq,1,1] = np.sqrt( (sphi**2 * zerr_orig[0,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[0,1])**2 + (zerr_orig[1,0])**2) + (cphi**2 * zerr_orig[1,1])**2) 
+
+
+        #todo: check !!!!
+        #todo : tipper rotation
+
+
+        self.z = z_rot
+        self.zerr = zerr_rot
+
+
+        self.zrot = list( np.zeros((len(self.zrot))) + angle) 
         
 
     def get_head():
@@ -658,8 +725,11 @@ class Edi(object):
     
     def set_zrot():
         pass
-        
 
+
+
+#end of Edi Class
+#=========================
 
 
 def read_edifile(fn):
