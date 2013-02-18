@@ -46,10 +46,13 @@ import os
 import sys
 import os.path as op
 import math
+import time, calendar 
 
 import mtpy.core.z as MTz 
 reload (MTz)
 
+import mtpy.utils.format as MTformat
+reload(MTformat)
 
 import mtpy.utils.exceptions as MTexceptions
 reload(MTexceptions)
@@ -61,9 +64,9 @@ reload(MTexceptions)
 
 class Edi(object):
     """
-        Edi class - generates an edi object.
+        Edi class - generates an edi-object.
 
-        Methods  include reading and writing from and to edi-files, combination of edi-files, as well as 'get' and 'set' for all edi file sections
+        Methods  include reading and writing from and to edi-files, rotations/combinations of edi-files, as well as 'get' and 'set' for all edi file sections
 
     """
 
@@ -158,11 +161,15 @@ class Edi(object):
         try:
             self._read_tipper(edistring)
         except:
+            self.tipper = None
+            self.tippererr = None
+            self.tipper_dict = None
             print 'Could not read Tipper section: %s'%infile
 
         try:
             self._read_zrot(edistring)
         except:
+            self.zrot = None
             print 'Could not read Zrot section: %s'%infile
 
         self._update_dicts()
@@ -193,8 +200,10 @@ class Edi(object):
         edi_dict['FREQ'] = self.freq
         #update the dictionary information from the z and tipper arrays (those may have changed by rotation):
         new_z_dict = self._update_z_dict() 
+        self.z_dict = new_z_dict
         edi_dict['Z'] = new_z_dict
         new_tipper_dict = self._update_tipper_dict()
+        self.tipper_dict = new_tipper_dict
         edi_dict['TIPPER'] = new_tipper_dict
 
         edi_dict['ZROT'] = self.zrot
@@ -225,8 +234,12 @@ class Edi(object):
     def _update_tipper_dict(self):
         old_tipper_dict = self.tipper_dict
         
+
         new_t_dict = {}
         t_array = self.tipper
+        if  t_array is None:
+            self.tipper_dict = None
+            return None
         terr_array = self.tippererr
         compstrings = ['TX','TY']
         T_entries = ['R','I','VAR']
@@ -256,8 +269,11 @@ class Edi(object):
         t2 = [i.strip() for i in t1 if '=' in i]
         for j in t2:
             k = j.split('=')
-            key = str(k[0]).lower()
-            value = k[1].replace('"','')           
+            key = str(k[0]).lower().strip()
+            value = k[1].replace('"','')
+            if key in ['lat','long','lon','latitude','longitude']:
+                value = MTformat._assert_position_format(key,value) 
+
             head_dict[key] = value
 
         self.head = head_dict
@@ -301,6 +317,12 @@ class Edi(object):
                 if not len(value) == 0:
                     info_dict[key] = value
 
+        if 'station' not in info_dict:
+            station = self.head['dataid']
+            if len(station) == 0:
+                station = op.splitext(op.basename(self.filename))[0]
+            info_dict['station'] = station
+
         self.info_dict = info_dict
 
 
@@ -320,8 +342,14 @@ class Edi(object):
             if '=' in tmp_str:
                 k = tmp_str.strip().split('=')
                 key = k[0].lower()
-                value = k[1].replace('"','')
+                value = k[1].replace('"','').strip()
                 if len(value) != 0:
+                    if 'lat' in key:
+                        value = MTformat._assert_position_format('lat',value)
+                    if 'lon' in key:
+                        value = MTformat._assert_position_format('lon',value)
+
+
                     d_dict[key] = value
          
         if len(d_dict.keys()) == 0:
@@ -363,7 +391,7 @@ class Edi(object):
             if '=' in tmp_str:
                 k = tmp_str.strip().split('=')
                 key = k[0].lower()
-                value = k[1].replace('"','')
+                value = k[1].replace('"','').strip()
                 if len(value) != 0:
                     m_dict[key] = value
          
@@ -876,24 +904,359 @@ def read_edifile(fn):
     return edi_object
 
 
-def write_edifile(edidict, out_fn = None):
+def write_edifile(edi_object, out_fn = None):
     
-
+#todo
     pass
 
     return out_fn
 
 
-def combine_edifiles(fn1, fn2, out_fn = None):
+def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps = True):
     
-    edi_object1 = Edi()
-    edi_object1.readfile(fn1)
-    edi_object2 = Edi()
-    edi_object2.readfile(fn2)
+    #edi objects:
+    eo1 = Edi()
+    eo1.readfile(fn1)
+    eo2 = Edi()
+    eo2.readfile(fn2)
+    #edi object merged
+    eom = Edi()
+
+    #check frequency lists
+    lo_freqs1 = eo1.frequencies
+    lo_freqs2 = eo2.frequencies
+
+
+    lo_eos = []
+
+    #check for overlap of the frequency regimes:
+    if (not min(lo_freqs1) > max(lo_freqs2)) and (not max(lo_freqs1) > min(lo_freqs2)):
+        if allow_gaps is False:
+            raise MTexceptions.MTpyError_edi_file('Cannot merge files %s and %s - frequency ranges do not overlap and "allow_gaps" is set to False')
+
+    
+    #determine, which is the low frequency part
+    lo_eos = [eo1, eo2]
+    
+    if min(lo_freqs1) <= min(lo_freqs2):
+        if max(lo_freqs1) >= max(lo_freqs2):
+            print 'Frequency range of file %s fully contained in range of file %s => no merging of files!'%(fn2, fn1)
+            return 
+
+    if min(lo_freqs1) >= min(lo_freqs2):
+        if max(lo_freqs1) <= max(lo_freqs2):
+            print 'Frequency range of file %s fully contained in range of file %s => no merging of files!'%(fn1, fn2)
+            return
+        else:
+            lo_eos = [eo2, eo1]
+
+    #find sorting indices for obtaining strictly increasing frequencies:
+    inc_freq_idxs_lower = np.array(lo_eos[0].frequencies).argsort()
+    inc_freq_idxs_upper = np.array(lo_eos[1].frequencies).argsort()
+
+    #determine overlap in frequencies 
+    upper_bound = max(lo_eos[0].frequencies)
+    lower_bound = min(lo_eos[1].frequencies)
+
+    overlap_mid_freq = 0.5*(upper_bound + lower_bound)
+
+    if merge_frequency is not None:
+        try:
+            merge_frequency = float(merge_frequency)
+        except:
+            print 'could not read "merge frequency" argument (float expected)...taking mean of frequency overlap instead: %f Hz'%overlap_mid_freq
+            merge_frequency = overlap_mid_freq
+    else:
+        merge_frequency = overlap_mid_freq
+
+
+    #find indices for all frequencies from the frequency lists, which are below(lower part) or above (upper part) of the merge frequency - use sorted frequency lists !:
+
+    lower_idxs = list(np.where( np.array(lo_eos[0].frequencies)[inc_freq_idxs_lower] <= merge_frequency)[0])
+    upper_idxs = list(np.where( np.array(lo_eos[1].frequencies)[inc_freq_idxs_upper]  > merge_frequency)[0])
+
+
+    #total of frequencies in new edi object
+    n_total_freqs = len(lower_idxs) + len(upper_idxs)
+    eom.n_freqs = n_total_freqs
+
+    #------------
+    # fill data fields
+
+    eom.z = np.zeros((eom.n_freqs,2,2),dtype=np.complex)
+    eom.zerr = np.zeros((eom.n_freqs,2,2),dtype=np.float)
+
+    #check, if tipper exists for both files:
+    if (eo1.tipper  is not None ) and (eo2.tipper  is not None ):
+        eom.tipper = np.zeros((eom.n_freqs,1,2),dtype=np.complex)
+        eom.tippererr = np.zeros((eom.n_freqs,1,2),dtype=np.float)
+       
+    freq_idx = 0
+    zrot = []
+    lo_freqs = []
+    #first read out z, zerr (and tipper) of lower freq. edi object:
+    in_z_lower = eo1.z[inc_freq_idxs_lower]
+    in_zerr_lower = eo1.zerr[inc_freq_idxs_lower]
+    if eom.tipper is not None:
+        in_t_lower = eo1.tipper[inc_freq_idxs_lower]
+        in_terr_lower = eo1.tippererr[inc_freq_idxs_lower]
+    
+    for li in lower_idxs:
+        lo_freqs.append(np.array(lo_eos[0].frequencies)[inc_freq_idxs_lower][li])
+        eom.z[freq_idx,:,:] = in_z_lower[li,:,:]
+        eom.zerr[freq_idx,:,:] = in_zerr_lower[li,:,:]
+        if eom.tipper is not None:
+            eom.tipper[freq_idx,:,:] =  in_t_lower[li,:,:]
+            eom.tippererr[freq_idx,:,:] =  in_terr_lower[li,:,:]
+        try:
+            zrot.append(eo1.zrot[freq_idx])
+        except:
+            zrot.append(0.)
+
+        freq_idx += 1
+
+    #then read upper freq. edi object:
+    in_z_upper = eo2.z[inc_freq_idxs_upper]
+    in_zerr_upper = eo2.zerr[inc_freq_idxs_upper]
+    if eom.tipper is not None:
+        in_t_upper = eo2.tipper[inc_freq_idxs_upper]
+        in_terr_upper = eo2.tippererr[inc_freq_idxs_upper]
+    
+    for ui in upper_idxs:
+        lo_freqs.append(np.array(lo_eos[1].frequencies)[inc_freq_idxs_upper][ui])
+        eom.z[freq_idx,:,:] = in_z_upper[ui,:,:]
+        eom.zerr[freq_idx,:,:] = in_zerr_upper[ui,:,:]
+        
+        if eom.tipper is not None:
+            eom.tipper[freq_idx,:,:] =  in_t_upper[ui,:,:]
+            eom.tippererr[freq_idx,:,:] =  in_terr_upper[ui,:,:]
+        try:
+            zrot.append(eo1.zrot[freq_idx])
+        except:
+            zrot.append(0.)
+
+        freq_idx += 1
+    
+    eom.zrot = zrot
+    eom.frequencies = lo_freqs
+    eom.freq = lo_freqs
+
+
+    #------------
+    # fill header information
+
+    #I) HEAD
+    head1 = dict((k.lower(),v) for k,v in eo1.head.items())
+    head2 = dict((k.lower(),v) for k,v in eo2.head.items())
+
+    so_headsections = set(head1.keys() + head2.keys())
+
+    head_dict = {}
+    for element in so_headsections:
+
+        if (element in head1) and (element not in head2):
+            head_dict[element] = str(head1[element])
+            continue
+        if  (element in head2) and (element not in head1):
+            head_dict[element] = str(head2[element])
+            continue
+        if head1[element] == head2[element]:
+            head_dict[element] = str(head2[element])
+            continue
+        
+        if element in ['lat','long','lon','latitude','longitude', 'elevation','elev','ele']:
+            try:
+                head_dict[element] = 0.5 * (float(head1[element]) + float(head2[element]))
+            except:
+                raise MTexceptions.MTpyError_edi_file('Cannot merge files: wrong format of "%s" coordinate'%element)
+            continue
+
+        if element == 'dataid':
+            head_dict[element] = head1[element]+'+'+head2[element]
+            continue
+
+        if 'date' in element:
+            dateformat1 = '%d/%m/%y'
+            dateformat2 = '%d.%m.%y'
+            dateformat3 = '%d.%m.%Y'
+            date1 = None
+            try:
+                date1 = calendar.timegm(time.strptime(head1[element], dateformat1))
+                date2 = calendar.timegm(time.strptime(head2[element], dateformat1))
+            except:
+                pass
+            try:
+                date1 = calendar.timegm(time.strptime(head1[element], dateformat2))
+                date2 = calendar.timegm(time.strptime(head2[element], dateformat2))
+            except:
+                pass
+            try:
+                date1 = calendar.timegm(time.strptime(head1[element], dateformat3))
+                date2 = calendar.timegm(time.strptime(head2[element], dateformat3))
+            except:
+                pass
+            if date1 is None:
+                raise MTexceptions.MTpyError_edi_file('Cannot merge file, because data format is not understood: %s=%s|%s'%(element,head1[element],head2[element]))
+
+
+            if element in ['acqdate']:
+                date = min(date1, date2 )
+            
+            elif element in ['enddate']:
+                date = max(date1, date2  )
+            
+            elif element in ['filedate']:
+                date = calendar.timegm(time.gmtime())
+
+            datetuple = time.gmtime(date)
+            head_dict[element] = '%02i/%02i/%2i'%(datetuple[2],datetuple[1],datetuple[0])
+
+    eom.head = head_dict
+
+    #II) INFO
+    info1 = dict((k.lower(),v) for k,v in eo1.info_dict.items())
+    info2 = dict((k.lower(),v) for k,v in eo2.info_dict.items())
+
+    so_infosections = set(info1.keys() + info2.keys())
+
+    info_dict = {}
+    info_dict['merge_frequency'] = merge_frequency
+
+    for element in so_infosections:
+
+        if (element in info1) and (element not in info2):
+            info_dict[element] = str(info1[element])
+            continue
+        if  (element in info2) and (element not in info1):
+            info_dict[element] = str(info2[element])
+            continue
+        if info1[element] == info2[element]:
+            info_dict[element] = str(info2[element])
+            continue
+        
+        if element in ['lat','long','lon','latitude','longitude', 'elevation','elev','ele']:
+            try:
+                info_dict[element] = 0.5 * (float(info1[element]) + float(info2[element]))
+            except:
+                raise MTexceptions.MTpyError_edi_file('Cannot merge files: wrong format of "%s" coordinate'%element)
+            continue
+
+        if element == 'dataid':
+            info_dict[element] = info1[element]+'_merged_with_'+info2[element]
+            continue
+
+        if 'date' in element:
+            dateformat1 = '%d/%m/%y'
+            dateformat2 = '%d.%m.%y'
+            dateformat3 = '%d.%m.%Y'
+            date1 = None
+            try:
+                date1 = calendar.timegm(time.strptime(info1[element], dateformat1))
+                date2 = calendar.timegm(time.strptime(info2[element], dateformat1))
+            except:
+                pass
+            try:
+                date1 = calendar.timegm(time.strptime(info1[element], dateformat2))
+                date2 = calendar.timegm(time.strptime(info2[element], dateformat2))
+            except:
+                pass
+            try:
+                date1 = calendar.timegm(time.strptime(info1[element], dateformat3))
+                date2 = calendar.timegm(time.strptime(info2[element], dateformat3))
+            except:
+                pass
+            if date1 is None:
+                raise MTexceptions.MTpyError_edi_file('Cannot merge file, because data format is not understood: %s=%s|%s'%(element,info1[element],info2[element]))
+
+
+            if element in ['acqdate']:
+                date = min(date1, date2 )
+            
+            elif element in ['enddate']:
+                date = max(date1, date2  )
+            
+            elif element in ['filedate']:
+                date = calendar.timegm(time.gmtime())
+
+            #arbitrarily choisen to take information from low frequency file:
+            else:
+                date = date1
+
+            datetuple = time.gmtime(date)
+            info_dict[element] = '%02i/%02i/%2i'%(datetuple[2],datetuple[1],datetuple[0])
+            continue
+
+        if element == 'station':
+            info_dict['station'] = info1[element] + '+' + info2[element]
+
+            
+    eom.info_dict = info_dict
+
+    #III) DEFINEMEAS
+    dmeas1 = dict((k.lower(),v) for k,v in eo1.definemeas.items())
+    dmeas2 = dict((k.lower(),v) for k,v in eo2.definemeas.items())
+
+    so_dmeassections = set(dmeas1.keys() + dmeas2.keys())
+
+    dmeas_dict = {}
+
+    for element in so_dmeassections:
+
+        if element == 'refloc':
+            dmeas_dict[element] = ''
+            continue
+
+        if (element in dmeas1) and (element not in dmeas2):
+            dmeas_dict[element] = str(dmeas1[element])
+            continue
+        if  (element in dmeas2) and (element not in dmeas1):
+            dmeas_dict[element] = str(dmeas2[element])
+            continue
+        if dmeas1[element] == dmeas2[element]:
+            dmeas_dict[element] = str(dmeas2[element])
+            continue
+        
+        if 'lat' in element or 'lon' in element or 'elev' in element:
+            try:
+                dmeas_dict[element] = 0.5 * (float(dmeas1[element]) + float(dmeas2[element]))
+            except:
+                raise MTexceptions.MTpyError_edi_file('Cannot merge files: wrong format of "%s" coordinate'%element)
+            continue
 
 
 
-    return out_filename
+    eom.definemeas = dmeas_dict
+
+    #take hmeas/dmeas section directly from file1:
+
+    eom.hmeas_emeas = eo1.hmeas_emeas
+
+    #IV) MTSECT
+
+    msec1 = dict((k.lower(),v) for k,v in eo1.mtsect.items())
+    msec2 = dict((k.lower(),v) for k,v in eo2.mtsect.items())
+
+    so_msecsections = set(msec1.keys() + msec2.keys())
+
+    msec_dict = {}
+
+    for element in so_msecsections: 
+        #completely unimportant, kept just for the sake of the format:
+        if element in ['ex','ey','hx','hy','hz','bx','by','bz']:
+            msec_dict[element] = msec1[element]
+        if element == 'nfreq':
+            msec_dict[element] = eom.n_freqs
+        if element == 'sectid':
+            msec_dict[element] = msec1[element]+'+'+msec2[element]
+
+
+    eom.mtsect = msec_dict
+
+
+    eom._update_dicts()
+
+
+    return eom, out_fn
 
 
 def validate_edifile(fn):
@@ -951,7 +1314,7 @@ def _generate_edifile_string(edidict):
             edistring += '>HEAD\n'
             head_dict = edidict['HEAD']
             for k in  sorted(head_dict.iterkeys()):
-                v = head_dict[k]
+                v = str(head_dict[k])
                 if len(v) == 0 or len(v.split()) > 1:
                     edistring += '\t%s=""\n'%(k.upper())
                 else:
@@ -973,7 +1336,7 @@ def _generate_edifile_string(edidict):
                 edistring += '>INFO \n'
 
             for k in sorted(info_dict.iterkeys()):
-                v = info_dict[k]
+                v = str(info_dict[k])
                 if len(v) == 0  or len(v.split()) > 1:
                     edistring += '\t%s: ""\n'%(k)
                 else:
@@ -993,7 +1356,7 @@ def _generate_edifile_string(edidict):
             edistring += '>=DEFINEMEAS \n'
 
             for k in sorted(defm_dict.iterkeys()):
-                v = defm_dict[k]
+                v = str(defm_dict[k])
                 if len(v) == 0  or len(v.split()) > 1:
                     edistring += '\t%s=""\n'%(k)
                 else:
@@ -1018,7 +1381,7 @@ def _generate_edifile_string(edidict):
             edistring += '>=MTSECT \n'
 
             for k in sorted(mtsct_dict.iterkeys()):
-                v = mtsct_dict[k]
+                v = str(mtsct_dict[k])
                 if len(v) == 0 or len(v.split()) > 1:
                     edistring += '\t%s=""\n'%(k)
                 else:
@@ -1091,6 +1454,8 @@ def _generate_edifile_string(edidict):
 
             try:
                 t_dict = edidict['TIPPER']
+                if t_dict == None:
+                    continue 
             except:
                 continue
 

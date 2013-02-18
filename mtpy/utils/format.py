@@ -39,7 +39,7 @@ def _assert_position_format(coordinate, value):
         value = elev
 
 
-    if coordinate in ['latitude' , 'longitude']:
+    if coordinate in ['latitude' , 'longitude','lat','lon','long']:
         
         #check, if latlon is given in degrees
         try:
@@ -61,10 +61,10 @@ def _assert_position_format(coordinate, value):
                 raise MTpyError_config_file('Config file error: lat/lon is in invalid format')
 
 
-        if coordinate == 'latitude' and ( not -90 <= latlon <= 90):
+        if coordinate in ['latitude','lat'] and ( not -90 <= latlon <= 90):
             raise MTpyError_config_file('Error - Latitude out of range')
 
-        if coordinate == 'longitude' and ( not -180 <= latlon <= 180):
+        if coordinate in ['longitude','lon','long'] and ( not -180 <= latlon <= 180):
             raise MTpyError_config_file('Error - Longitude out of range')
 
         value = latlon
