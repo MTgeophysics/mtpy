@@ -47,6 +47,10 @@ import sys
 import os.path as op
 import math
 
+import mtpy.core.z as MTz 
+reload (MTz)
+
+
 import mtpy.utils.exceptions as MTexceptions
 reload(MTexceptions)
 
@@ -191,6 +195,7 @@ class Edi(object):
             head_dict[key] = value
 
         self.head = head_dict
+        self.edi_dict['HEAD'] = head_dict
 
     def _read_info(self, edistring):
 
@@ -232,6 +237,7 @@ class Edi(object):
                     info_dict[key] = value
 
         self.info_dict = info_dict
+        self.edi_dict['INFO'] = info_dict
 
 
 
@@ -259,6 +265,7 @@ class Edi(object):
 
 
         self.definemeas = d_dict
+        self.edi_dict['DEFINEMEAS'] = d_dict
 
 
 
@@ -277,6 +284,7 @@ class Edi(object):
             lo_hmeas_emeas.append(tuple(lo_j))
 
         self.hmeas_emeas = lo_hmeas_emeas
+        self.edi_dict['HMEAS_EMEAS'] = lo_hmeas_emeas
 
 
     def _read_mtsect(self, edistring):
@@ -302,6 +310,7 @@ class Edi(object):
 
 
         self.mtsect = m_dict
+        self.edi_dict['MTSECT'] = m_dict
 
 
     def _read_freq(self, edistring):
@@ -328,6 +337,7 @@ class Edi(object):
         self.frequencies = lo_freqs
         self.freq = lo_freqs
         self.periods = list(1./np.array(lo_freqs))
+        self.edi_dict['FREQ'] = lo_freqs
 
 
     def _read_z(self, edistring):
@@ -374,6 +384,7 @@ class Edi(object):
                 z_dict[sectionhead] = lo_z_vals
 
         self.z_dict = z_dict
+        self.edi_dict['Z'] = z_dict
 
         for idx_freq  in range( self.n_freqs):
             z_array[idx_freq,0,0] = np.complex(self.z_dict['ZXXR'][idx_freq], self.z_dict['ZXXI'][idx_freq])
@@ -435,6 +446,7 @@ class Edi(object):
                 t_dict[comp + tentry] = lo_t_vals
 
         self.tipper_dict = t_dict
+        self.edi_dict['TIPPER'] = t_dict
 
         for idx_freq  in range( self.n_freqs):
             tipper_array[idx_freq,0,0] = np.complex(self.tipper_dict['TXR'][idx_freq], self.tipper_dict['TXI'][idx_freq])
@@ -477,12 +489,22 @@ class Edi(object):
             raise
 
         self.zrot = lo_angles
+        self.edi_dict['ZROT'] = lo_angles
 
 
 
 
     def writefile(self,fn):
-        pass
+
+        outfilename = op.abspath(fn)
+        
+        try:
+            with open(outfilename , 'w') as F:
+                F.write(_generate_edifile_string(self.edi_dict))
+        except:
+            raise MTexceptions.MTpyError_edi_file('Cannot write EDI file: %s'%(outfilename))
+
+        return outfilename
 
 
 
@@ -573,7 +595,13 @@ class Edi(object):
 
 
     def z2resphase(self):
-        pass
+        
+        amplitude, phase = MTz.res2phase(self.z)
+
+        return amplitude, phase
+
+
+
 
     def rotate(self,angle):
         """
@@ -589,6 +617,7 @@ class Edi(object):
         z = self.z
         tipper = self.tipper
         zerr = self.zerr
+        tippererr = self.tippererr
         angle = angle%360
 
         #1. rotation positive in clockwise direction
@@ -608,6 +637,7 @@ class Edi(object):
 
         z_rot = z.copy()
         zerr_rot = zerr.copy()
+        tipper_rot = tipper.copy()
 
         for idx_freq in range(self.n_freqs):
 
@@ -621,28 +651,47 @@ class Edi(object):
             z_rot[idx_freq,0,0] = cphi**2 * z_orig[0,0] + cphi*sphi*(z_orig[0,1]+z_orig[1,0]) + sphi**2 * z_orig[1,1]
             z_rot[idx_freq,0,1] = cphi**2 * z_orig[0,1] + cphi*sphi*(z_orig[1,1]-z_orig[0,0]) - sphi**2 * z_orig[1,0]
             z_rot[idx_freq,1,0] = cphi**2 * z_orig[1,0] + cphi*sphi*(z_orig[1,1]-z_orig[0,0]) - sphi**2 * z_orig[0,1]
-            z_rot[idx_freq,1,1] = sphi**2 * z_orig[0,0] - cphi*sphi*(z_orig[0,1]+z_orig[1,0]) + cphi**2 * z_orig[1,1]
+            z_rot[idx_freq,1,1] = cphi**2 * z_orig[1,1] + cphi*sphi*(-z_orig[0,1]-z_orig[1,0]) + sphi**2 * z_orig[0,0]
 
             zerr_orig = zerr[idx_freq,:,:]
+            
+            # squared propagation of errors
+            # zerr_rot[idx_freq,0,0] = np.sqrt( (cphi**2 * zerr_orig[0,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[0,1])**2 + (zerr_orig[1,0])**2) + (sphi**2 * zerr_orig[1,1])**2)
 
-            zerr_rot[idx_freq,0,0] = np.sqrt( (cphi**2 * zerr_orig[0,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[0,1])**2 + (zerr_orig[1,0])**2) + (sphi**2 * zerr_orig[1,1])**2)
+            # zerr_rot[idx_freq,0,1] = np.sqrt( (cphi**2 * zerr_orig[0,1])**2 + cphi**2 * sphi**2 * ( (zerr_orig[1,1])**2 + (zerr_orig[0,0])**2) + (sphi**2 * zerr_orig[1,0])**2) 
 
-            zerr_rot[idx_freq,0,1] = np.sqrt( (cphi**2 * zerr_orig[0,1])**2 + cphi**2 * sphi**2 * ( (zerr_orig[1,1])**2 + (zerr_orig[0,0])**2) + (sphi**2 * zerr_orig[1,0])**2) 
+            # zerr_rot[idx_freq,1,0] = np.sqrt( (cphi**2 * zerr_orig[1,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[1,1])**2 + (zerr_orig[0,0])**2) + (sphi**2 * zerr_orig[0,1])**2) 
 
-            zerr_rot[idx_freq,1,0] = np.sqrt( (cphi**2 * zerr_orig[1,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[1,1])**2 + (zerr_orig[0,0])**2) + (sphi**2 * zerr_orig[0,1])**2) 
+            # zerr_rot[idx_freq,1,1] = np.sqrt( (sphi**2 * zerr_orig[0,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[0,1])**2 + (zerr_orig[1,0])**2) + (cphi**2 * zerr_orig[1,1])**2) 
 
-            zerr_rot[idx_freq,1,1] = np.sqrt( (sphi**2 * zerr_orig[0,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[0,1])**2 + (zerr_orig[1,0])**2) + (cphi**2 * zerr_orig[1,1])**2) 
+            #absolute propagation of errors
+            zerr_rot[idx_freq,0,0] = cphi**2 * zerr_orig[0,0] + np.abs(cphi * sphi) * (zerr_orig[0,1] + zerr_orig[1,0]) + sphi**2 * zerr_orig[1,1]
+
+            zerr_rot[idx_freq,0,1] = cphi**2 * zerr_orig[0,1] + np.abs(cphi * sphi) * (zerr_orig[1,1] + zerr_orig[0,0]) + sphi**2 * zerr_orig[1,0] 
+
+            zerr_rot[idx_freq,1,0] = cphi**2 * zerr_orig[1,0] + np.abs(cphi * sphi) * (zerr_orig[1,1] + zerr_orig[0,0]) + sphi**2 * zerr_orig[0,1] 
+
+            zerr_rot[idx_freq,1,1] = cphi**2 * zerr_orig[1,1] + np.abs(cphi * sphi) * (zerr_orig[0,1] + zerr_orig[1,0]) + sphi**2 * zerr_orig[0,0] 
 
 
-        #todo: check !!!!
-        #todo : tipper rotation
+            t_orig = tipper[idx_freq,:,:]
 
+            tipper_rot[idx_freq,0,0] =  cphi * t_orig[0,0] + sphi * t_orig[0,1]
+            tipper_rot[idx_freq,0,1] = -sphi * t_orig[0,0] + cphi * t_orig[0,1]
+
+            #absolute error propagation
+            terr_orig = tippererr[idx_freq,:,:]
+
+            tippererr_rot[idx_freq,0,0] = np.abs(cphi * terr_orig[0,0])  + np.abs(sphi * terr_orig[0,1])
+            tippererr_rot[idx_freq,0,1] = np.abs(-sphi * terr_orig[0,0]) + np.abs(cphi * terr_orig[0,1])
+ 
 
         self.z = z_rot
         self.zerr = zerr_rot
+        self.tipper = tipper_rot
+        self.tippererr = tippererr_rot
 
-
-        self.zrot = list( np.zeros((len(self.zrot))) + angle) 
+        self.zrot = list( (np.array(self.zrot) + angle)%360)
         
 
     def get_head():
@@ -742,10 +791,12 @@ def read_edifile(fn):
     return edi_object
 
 
-def write_edifile(out_fn = None):
+def write_edifile(edidict, out_fn = None):
+    
+
     pass
 
-    return out_filename
+    return out_fn
 
 
 def combine_edifiles(fn1, fn2, out_fn = None):
@@ -771,10 +822,210 @@ def validate_edifile(fn):
         return False
 
 
-def rotate_edifile(fn, out_fn = None):
-    pass
+def rotate_edifile(fn, angle, out_fn = None):
+    
+    ediobject = Edi()
 
-    return out_filename
+    ediobject.readfile(fn)
+
+    ediobject.rotate(angle)
+
+    ediobject.writefile(out_fn)
+
+
+    return out_fn
+
+
+
+def _generate_edifile_string(edidict):
+    """
+    Generate a string to write out to an EDI file.
+
+    Reading in information from an edi file dictionary. Using the standard sections:
+    HEAD, INFO, DEFINEMEAS, HMEAS_EMEAS, MTSECT, ZROT, FREQ, Z, TIPPER
+
+    Can be extended later on...
+
+    """
+    # define section heads explicitely instead of iteration over the dictionary for getting the correct order!
+    lo_sectionheads = ['HEAD', 'INFO', 'DEFINEMEAS', 'HMEAS_EMEAS', 'MTSECT', 'ZROT', 'FREQ', 'Z', 'TIPPER']
+
+    edistring = ''
+    stationname = None
+    ZROTflag = 0
+
+
+
+    for section in lo_sectionheads:
+        if sectionhead == 'HEAD':
+            if not sectionhead in edidict:
+                raise MTexceptions.MTpyError_edi_file('Cannot write file - required section "HEAD" missing!')
+            edistring += '>HEAD\n'
+            head_dict = edidict['HEAD']
+            for k,v in head_dict.items():
+                if len(v) == 0 or len(v.split() > 1):
+                    edistring += '\t%s = ""\n'%(k)
+                else:
+                    edistring += '\t%s = %s""\n'%(k,v)
+
+        
+        if sectionhead == 'INFO':
+            if not sectionhead in edidict:
+                raise MTexceptions.MTpyError_edi_file('Cannot write file - required section "INFO" missing!')
+            info_dict = edidict['HEAD']
+            info_dict = dict((k.lower(),v) for k,v in info_dict.items())
+
+            if 'max lines' in info_dict:
+                edistring += '>INFO  MAX LINES=%i\n'%(int(float(info_dict.pop('max lines'))))
+            else:
+                edistring += '>INFO \n'
+
+            for k,v in info_dict.items():
+                if len(v) == 0  or len(v.split() > 1):
+                    edistring += '\t%s = ""\n'%(k)
+                else:
+                    edistring += '\t%s = %s""\n'%(k,v)
+
+                #get station name (to be returned aside with the edistring, allowing for proper naming of output file)
+                if k == 'station':
+                    stationname = v.upper()
+
+        if sectionhead == 'DEFINEMEAS':
+            if not sectionhead in edidict:
+                raise MTexceptions.MTpyError_edi_file('Cannot write file - required section "DEFINEMEAS" missing!')
+            defm_dict = edidict['DEFINEMEAS']
+            defm_dict = dict((k.lower(),v) for k,v in defm_dict.items())
+
+            edistring += '>=DEFINEMEAS \n'
+
+            for k,v in defm_dict.items():
+                if len(v) == 0  or len(v.split() > 1):
+                    edistring += '\t%s = ""\n'%(k)
+                else:
+                    edistring += '\t%s = %s""\n'%(k,v)
+        
+
+        if sectionhead == 'HMEAS_EMEAS':
+            if not sectionhead in edidict:
+                raise MTexceptions.MTpyError_edi_file('Cannot write file - required subsection "HMEAS_EMEAS" missing!')
+            lo_hemeas = edidict['HMEAS_EMEAS']
+
+            for hemeas in lo_hemeas:
+                edistring += ('>'+' '.join(hemeas)+'\n').upper()
+
+
+        if sectionhead == 'MTSECT':
+            if not sectionhead in edidict:
+                raise MTexceptions.MTpyError_edi_file('Cannot write file - required section "MTSECT" missing!')
+            mtsct_dict = edidict['MTSECT']
+            mtsct_dict = dict((k.lower(),v) for k,v in mtsct_dict.items())
+
+            edistring += '>=MTSECT \n'
+
+            for k,v in defm_dict.items():
+                if len(v) == 0 or len(v.split() > 1):
+                    edistring += '\t%s = ""\n'%(k)
+                else:
+                    edistring += '\t%s = %s""\n'%(k,v)
+  
+
+        if sectionhead == 'FREQ':
+            if not sectionhead in edidict:
+                raise MTexceptions.MTpyError_edi_file('Cannot write file - required section "FREQ" missing!')
+            lo_freqs = edidict['FREQ']
+
+            edistring+= '>FREQ // %i\n'%(len(lo_freqs))
+
+            for i,freq in enumerate(lo_freqs):
+                edistring += '\t%f'%(freq)
+                if (i+1)%5 == 0 and (i != len(lo_freqs) - 1) and i > 0:
+                    edistring += '\n'
+           
+        if sectionhead == 'ZROT':
+              
+            try:
+                lo_rots = edidict['ZROT']
+            except:
+                continue
+
+            edistring+= '>ZROT // %i\n'%(len(lo_rots))
+
+            for i,angle in enumerate(lo_rots):
+                edistring += '\t%f'%(angle)
+                if (i+1)%5 == 0 and (i != len(lo_rots) - 1) and i > 0:
+                    edistring += '\n'
+
+            ZROTflag = 1
+
+        if sectionhead == 'Z':
+
+            compstrings = ['ZXX','ZXY','ZYX','ZYY']
+            Z_entries = ['R','I','.VAR']
+
+            try:
+                z_dict = edidict['Z']
+            except:
+                raise MTexceptions.MTpyError_edi_file('Cannot write file - required section "Z" missing!')
+
+
+            for idx_comp,comp in enumerate(compstrings):
+                for idx_zentry,zentry in enumerate(Z_entries):
+                    section = comp + zentry
+                    if not section in z_dict:
+                        raise MTexceptions.MTpyError_edi_file('Cannot write file - required subsection "%s" missing!'%(section))
+                    lo_vals = z_dict[section]
+                    
+                    if ZROTflag == 1:
+                        edistring += '>%s ROT=ZROT // %i'%(section,len(lo_freqs))
+                    else:
+                        edistring += '>%s // %i'%(section,len(lo_freqs))
+                    
+                    for i,val in enumerate(lo_vals):
+                        edistring += '\t%f'%(float(val))
+                        if (i+1)%5 == 0 and (i != len(lo_vals) - 1) and i > 0:
+                            edistring += '\n'
+                            
+
+        if sectionhead == 'TIPPER':
+
+            compstrings = ['TX','TY']
+            T_entries = ['R.EXP','I.EXP','VAR.EXP']
+ 
+            try:
+                t_dict = edidict['TIPPER']
+            except:
+                continue
+
+            for idx_comp,comp in enumerate(compstrings):
+                for idx_tentry,tentry in enumerate(T_entries):
+                    section = comp + tentry
+                    if not section in t_dict:
+                        raise MTexceptions.MTpyError_edi_file('Cannot write file - required subsection "%s" missing!'%(section))
+                    lo_vals = t_dict[section]
+                    
+                    if ZROTflag == 1:
+                        edistring += '>%s ROT=ZROT // %i'%(section,len(lo_freqs))
+                    else:
+                        edistring += '>%s // %i'%(section,len(lo_freqs))
+                    
+                    for i,val in enumerate(lo_vals):
+                        edistring += '\t%f'%(float(val))
+                        if (i+1)%5 == 0 and (i != len(lo_vals) - 1) and i > 0:
+                            edistring += '\n'
+                            
+
+
+      
+
+
+        edistring += '\n'
+
+
+    edistring += '>END\n'
+
+
+    return edistring, stationname
+
 
 
 def _cut_sectionstring(edistring,sectionhead):
