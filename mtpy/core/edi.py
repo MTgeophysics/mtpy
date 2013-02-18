@@ -165,6 +165,11 @@ class Edi(object):
         except:
             print 'Could not read Zrot section: %s'%infile
 
+        self._update_dicts()
+
+
+    def _update_dicts(self):
+
         #collect all data information in one dictionary
         data_dict = {}
 
@@ -177,6 +182,67 @@ class Edi(object):
         
         self.data = data_dict
 
+
+        edi_dict = {}
+
+        edi_dict['HEAD'] = self.head
+        edi_dict['INFO'] = self.info_dict
+        edi_dict['DEFINEMEAS'] = self.definemeas
+        edi_dict['HMEAS_EMEAS'] = self.hmeas_emeas
+        edi_dict['MTSECT'] = self.mtsect
+        edi_dict['FREQ'] = self.freq
+        #update the dictionary information from the z and tipper arrays (those may have changed by rotation):
+        new_z_dict = self._update_z_dict() 
+        edi_dict['Z'] = new_z_dict
+        new_tipper_dict = self._update_tipper_dict()
+        edi_dict['TIPPER'] = new_tipper_dict
+
+        edi_dict['ZROT'] = self.zrot
+
+
+        self.edi_dict = edi_dict
+
+    def _update_z_dict(self):
+        old_z_dict = self.z_dict
+        new_z_dict = {}
+        z_array = self.z
+        zerr_array = self.zerr
+        compstrings = ['ZXX','ZXY','ZYX','ZYY']
+        Z_entries = ['R','I','.VAR']
+
+        for idx_comp,comp in enumerate(compstrings):
+            for idx_zentry,zentry in enumerate(Z_entries):
+                section = comp + zentry
+                if idx_zentry == 0:
+                    new_z_dict[section] = list(np.real(z_array[:,idx_comp/2, idx_comp%2]))
+                elif idx_zentry == 1:
+                    new_z_dict[section] = list(np.imag(z_array[:,idx_comp/2, idx_comp%2]))
+                elif idx_zentry == 2:
+                    new_z_dict[section] = list(zerr_array[:,idx_comp/2, idx_comp%2])
+
+        return new_z_dict
+
+    def _update_tipper_dict(self):
+        old_tipper_dict = self.tipper_dict
+        
+        new_t_dict = {}
+        t_array = self.tipper
+        terr_array = self.tippererr
+        compstrings = ['TX','TY']
+        T_entries = ['R','I','VAR']
+
+        for idx_comp,comp in enumerate(compstrings):
+            for idx_tentry,tentry in enumerate(T_entries):
+                section = comp + tentry
+                if idx_tentry == 0:
+                    new_t_dict[section] = list(np.real(t_array[:,idx_comp/2, idx_comp%2]))
+                elif idx_tentry == 1:
+                    new_t_dict[section] = list(np.imag(t_array[:,idx_comp/2, idx_comp%2]))
+                elif idx_tentry == 2:
+                    new_t_dict[section] = list(terr_array[:,idx_comp/2, idx_comp%2])
+
+
+        return new_t_dict
 
     def _read_head(self, edistring):
 
@@ -195,7 +261,6 @@ class Edi(object):
             head_dict[key] = value
 
         self.head = head_dict
-        self.edi_dict['HEAD'] = head_dict
 
     def _read_info(self, edistring):
 
@@ -217,17 +282,17 @@ class Edi(object):
 
             if '=' in tmp_str:
                 t3 = tmp_str.split('=')
-                key = str(t3[0]).lower()
-                value = t3[1].replace('"','')           
+                key = str(t3[0]).lower().strip()
+                value = t3[1].replace('"','').strip()           
                 if not len(value) == 0:
                     info_dict[key] = value
             
             elif ':' in tmp_str:
                 #consider potential ':' characters in coordinates!
                 t3 = tmp_str.split(':')
-                key = str(t3[0]).lower()
+                key = str(t3[0]).lower().strip()
                 value = t3[1:]
-                value = [i.strip().replace('"','') for i in value]
+                value = [i.strip().replace('"','').strip() for i in value]
                 if len(value) > 1:
                     value = ':'.join(value)
                 else:
@@ -237,7 +302,6 @@ class Edi(object):
                     info_dict[key] = value
 
         self.info_dict = info_dict
-        self.edi_dict['INFO'] = info_dict
 
 
 
@@ -265,7 +329,6 @@ class Edi(object):
 
 
         self.definemeas = d_dict
-        self.edi_dict['DEFINEMEAS'] = d_dict
 
 
 
@@ -284,7 +347,6 @@ class Edi(object):
             lo_hmeas_emeas.append(tuple(lo_j))
 
         self.hmeas_emeas = lo_hmeas_emeas
-        self.edi_dict['HMEAS_EMEAS'] = lo_hmeas_emeas
 
 
     def _read_mtsect(self, edistring):
@@ -310,7 +372,6 @@ class Edi(object):
 
 
         self.mtsect = m_dict
-        self.edi_dict['MTSECT'] = m_dict
 
 
     def _read_freq(self, edistring):
@@ -337,7 +398,6 @@ class Edi(object):
         self.frequencies = lo_freqs
         self.freq = lo_freqs
         self.periods = list(1./np.array(lo_freqs))
-        self.edi_dict['FREQ'] = lo_freqs
 
 
     def _read_z(self, edistring):
@@ -384,7 +444,6 @@ class Edi(object):
                 z_dict[sectionhead] = lo_z_vals
 
         self.z_dict = z_dict
-        self.edi_dict['Z'] = z_dict
 
         for idx_freq  in range( self.n_freqs):
             z_array[idx_freq,0,0] = np.complex(self.z_dict['ZXXR'][idx_freq], self.z_dict['ZXXI'][idx_freq])
@@ -446,7 +505,6 @@ class Edi(object):
                 t_dict[comp + tentry] = lo_t_vals
 
         self.tipper_dict = t_dict
-        self.edi_dict['TIPPER'] = t_dict
 
         for idx_freq  in range( self.n_freqs):
             tipper_array[idx_freq,0,0] = np.complex(self.tipper_dict['TXR'][idx_freq], self.tipper_dict['TXI'][idx_freq])
@@ -489,23 +547,45 @@ class Edi(object):
             raise
 
         self.zrot = lo_angles
-        self.edi_dict['ZROT'] = lo_angles
 
 
+    def writefile(self, *fn):
 
-
-    def writefile(self,fn):
-
-        outfilename = op.abspath(fn)
+        if len(fn) == 0 :
+            fn = None
+        else:
+            fn = fn[0]
         
+        outstring, stationname = _generate_edifile_string(self.edi_dict)
+
+        if fn != None:
+            try:
+                outfilename = op.abspath(fn)
+                if not outfilename.lower().endswith('.edi'):
+                    outfilename += '.edi'
+            except:
+                fn = None
+
+        if fn == None:
+            outfilename = op.abspath(stationname.upper()+'.edi')
+        
+        if op.isfile(outfilename):
+            newfile = outfilename
+
+            i = 0
+            while op.isfile(newfile):
+                i += 1
+                newfile = outfilename+'_%i'%i
+
+            outfilename = newfile
+
         try:
             with open(outfilename , 'w') as F:
-                F.write(_generate_edifile_string(self.edi_dict))
+                F.write(outstring)
         except:
             raise MTexceptions.MTpyError_edi_file('Cannot write EDI file: %s'%(outfilename))
 
         return outfilename
-
 
 
 
@@ -611,6 +691,8 @@ class Edi(object):
 
             In non-rotated state, X refs to North and Y to East direction.
 
+            Updates the information of "edi_dict, data, z(_dict), zerr, zrot, tipper(_dict), tippererr" variables.
+
         """
         n_freqs = self.n_freqs
         lo_original_angles = self.zrot
@@ -638,6 +720,7 @@ class Edi(object):
         z_rot = z.copy()
         zerr_rot = zerr.copy()
         tipper_rot = tipper.copy()
+        tippererr_rot = tippererr.copy()
 
         for idx_freq in range(self.n_freqs):
 
@@ -693,6 +776,8 @@ class Edi(object):
 
         self.zrot = list( (np.array(self.zrot) + angle)%360)
         
+        self._update_dicts()
+
 
     def get_head():
         pass
@@ -854,25 +939,32 @@ def _generate_edifile_string(edidict):
     stationname = None
     ZROTflag = 0
 
+    if len(edidict.keys()) == 0:
+        raise MTexceptions.MTpyError_edi_file('Cannot generate string from empty EDI dictionary. Fill dict or read in file first')
 
 
-    for section in lo_sectionheads:
+    for sectionhead in lo_sectionheads:
+
         if sectionhead == 'HEAD':
             if not sectionhead in edidict:
                 raise MTexceptions.MTpyError_edi_file('Cannot write file - required section "HEAD" missing!')
             edistring += '>HEAD\n'
             head_dict = edidict['HEAD']
-            for k,v in head_dict.items():
-                if len(v) == 0 or len(v.split() > 1):
-                    edistring += '\t%s = ""\n'%(k)
+            for k in  sorted(head_dict.iterkeys()):
+                v = head_dict[k]
+                if len(v) == 0 or len(v.split()) > 1:
+                    edistring += '\t%s=""\n'%(k.upper())
                 else:
-                    edistring += '\t%s = %s""\n'%(k,v)
+                    try:
+                        v = v.upper()
+                    except:
+                        pass
+                    edistring += '\t%s=%s\n'%(k.upper(),v)
 
-        
         if sectionhead == 'INFO':
             if not sectionhead in edidict:
                 raise MTexceptions.MTpyError_edi_file('Cannot write file - required section "INFO" missing!')
-            info_dict = edidict['HEAD']
+            info_dict = edidict['INFO']
             info_dict = dict((k.lower(),v) for k,v in info_dict.items())
 
             if 'max lines' in info_dict:
@@ -880,29 +972,32 @@ def _generate_edifile_string(edidict):
             else:
                 edistring += '>INFO \n'
 
-            for k,v in info_dict.items():
-                if len(v) == 0  or len(v.split() > 1):
-                    edistring += '\t%s = ""\n'%(k)
+            for k in sorted(info_dict.iterkeys()):
+                v = info_dict[k]
+                if len(v) == 0  or len(v.split()) > 1:
+                    edistring += '\t%s: ""\n'%(k)
                 else:
-                    edistring += '\t%s = %s""\n'%(k,v)
+                    edistring += '\t%s: %s\n'%(k,v)
 
                 #get station name (to be returned aside with the edistring, allowing for proper naming of output file)
                 if k == 'station':
                     stationname = v.upper()
 
+
         if sectionhead == 'DEFINEMEAS':
             if not sectionhead in edidict:
                 raise MTexceptions.MTpyError_edi_file('Cannot write file - required section "DEFINEMEAS" missing!')
             defm_dict = edidict['DEFINEMEAS']
-            defm_dict = dict((k.lower(),v) for k,v in defm_dict.items())
+            defm_dict = dict((k.upper(),v) for k,v in defm_dict.items())
 
             edistring += '>=DEFINEMEAS \n'
 
-            for k,v in defm_dict.items():
-                if len(v) == 0  or len(v.split() > 1):
-                    edistring += '\t%s = ""\n'%(k)
+            for k in sorted(defm_dict.iterkeys()):
+                v = defm_dict[k]
+                if len(v) == 0  or len(v.split()) > 1:
+                    edistring += '\t%s=""\n'%(k)
                 else:
-                    edistring += '\t%s = %s""\n'%(k,v)
+                    edistring += '\t%s=%s\n'%(k,v)
         
 
         if sectionhead == 'HMEAS_EMEAS':
@@ -918,15 +1013,16 @@ def _generate_edifile_string(edidict):
             if not sectionhead in edidict:
                 raise MTexceptions.MTpyError_edi_file('Cannot write file - required section "MTSECT" missing!')
             mtsct_dict = edidict['MTSECT']
-            mtsct_dict = dict((k.lower(),v) for k,v in mtsct_dict.items())
+            mtsct_dict = dict((k.upper(),v) for k,v in mtsct_dict.items())
 
             edistring += '>=MTSECT \n'
 
-            for k,v in defm_dict.items():
-                if len(v) == 0 or len(v.split() > 1):
-                    edistring += '\t%s = ""\n'%(k)
+            for k in sorted(mtsct_dict.iterkeys()):
+                v = mtsct_dict[k]
+                if len(v) == 0 or len(v.split()) > 1:
+                    edistring += '\t%s=""\n'%(k)
                 else:
-                    edistring += '\t%s = %s""\n'%(k,v)
+                    edistring += '\t%s=%s\n'%(k,v)
   
 
         if sectionhead == 'FREQ':
@@ -976,21 +1072,23 @@ def _generate_edifile_string(edidict):
                     lo_vals = z_dict[section]
                     
                     if ZROTflag == 1:
-                        edistring += '>%s ROT=ZROT // %i'%(section,len(lo_freqs))
+                        edistring += '>%s ROT=ZROT // %i\n'%(section,len(lo_freqs))
                     else:
-                        edistring += '>%s // %i'%(section,len(lo_freqs))
+                        edistring += '>%s // %i\n'%(section,len(lo_freqs))
                     
                     for i,val in enumerate(lo_vals):
                         edistring += '\t%f'%(float(val))
                         if (i+1)%5 == 0 and (i != len(lo_vals) - 1) and i > 0:
                             edistring += '\n'
-                            
+                    edistring += '\n'
+
 
         if sectionhead == 'TIPPER':
 
             compstrings = ['TX','TY']
-            T_entries = ['R.EXP','I.EXP','VAR.EXP']
- 
+            T_entries = ['R','I','VAR']
+            Tout_entries = ['R.EXP','I.EXP','VAR.EXP']
+
             try:
                 t_dict = edidict['TIPPER']
             except:
@@ -999,23 +1097,23 @@ def _generate_edifile_string(edidict):
             for idx_comp,comp in enumerate(compstrings):
                 for idx_tentry,tentry in enumerate(T_entries):
                     section = comp + tentry
+                    outsection = comp + Tout_entries[idx_tentry]
                     if not section in t_dict:
                         raise MTexceptions.MTpyError_edi_file('Cannot write file - required subsection "%s" missing!'%(section))
                     lo_vals = t_dict[section]
                     
                     if ZROTflag == 1:
-                        edistring += '>%s ROT=ZROT // %i'%(section,len(lo_freqs))
+                        edistring += '>%s ROT=ZROT // %i\n'%(outsection,len(lo_freqs))
                     else:
-                        edistring += '>%s // %i'%(section,len(lo_freqs))
+                        edistring += '>%s // %i\n'%(outsection,len(lo_freqs))
                     
                     for i,val in enumerate(lo_vals):
                         edistring += '\t%f'%(float(val))
                         if (i+1)%5 == 0 and (i != len(lo_vals) - 1) and i > 0:
                             edistring += '\n'
                             
-
-
-      
+                    edistring += '\n'
+     
 
 
         edistring += '\n'
@@ -1024,7 +1122,7 @@ def _generate_edifile_string(edidict):
     edistring += '>END\n'
 
 
-    return edistring, stationname
+    return edistring.expandtabs(4), stationname
 
 
 
