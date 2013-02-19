@@ -129,15 +129,30 @@ class Z(object):
 
         self.edi_object = edi_object
         self.frequencies = edi_object.frequencies
-        self.z = edi_object.z
-        self.zerr = edi_object.zerr
+
+        try:
+            if edi_object.z is None or edi_object.zerr is None :
+                raise
+            
+            z_new = edi_object.z
+            zerr_new = edi_object.zerr
+
+            if len(z_new) != len(zerr_new):
+                raise
+            self.z = z_new
+            self.zerr = zerr_new
+
+        except:
+            print 'Edi object does not contain correct z information - z object not updated'
+
+
        
     def set_z(self, z_array):
 
         z_orig = self.z 
 
-        if z_orig.shape != z_array.shape:
-            print 'Error - shape of "z" array does not match shape of Z array: %s ; %s'%(str(z_array.shape),str(z_orig.shape))
+        if (self.z is not None) and (self.z.shape != z_array.shape):
+            print 'Error - shape of "z" array does not match shape of Z array: %s ; %s'%(str(z_array.shape),str(self.z.shape))
             return
 
         self.z = z_array
@@ -145,26 +160,26 @@ class Z(object):
 
     def set_zerr(self, zerr_array):
 
-        zerr_orig = self.zerr 
-
-        if zerr_orig.shape != zerr_array.shape:
-            print 'Error - shape of "zerr" array does not match shape of Zerr array: %s ; %s'%(str(zerr_array.shape),str(zerr_orig.shape))
+        if (self.zerr is not None) and (self.zerr.shape != zerr_array.shape):
+            print 'Error - shape of "zerr" array does not match shape of Zerr array: %s ; %s'%(str(zerr_array.shape),str(self.zerr.shape))
             return
 
         self.zerr = zerr_array
 
 
     def real(self):
+        if self.z is None:
+            print 'z array is None - cannot calculate real'
+            return
 
         return np.real(self.z)
 
         
     def set_real(self, real_array):
         
-        z_orig = self.z 
 
-        if z_orig.shape != real_array.shape:
-            print 'shape of "real" array does not match shape of Z array: %s ; %s'%(str(real_array.shape),str(z_orig.shape))
+        if (self.z is not None) and (self.z.shape != real_array.shape):
+            print 'shape of "real" array does not match shape of Z array: %s ; %s'%(str(real_array.shape),str(self.z.shape))
             return
 
         #assert real array:
@@ -174,22 +189,29 @@ class Z(object):
 
         i = np.complex(0,1)
 
-        z_new = real_array + i * self.imag() 
+        if self.z is not None:
+            z_new = real_array + i * self.imag() 
+        else:
+            z_new = real_array 
+                 
 
         self.z = z_new
 
 
     def imag(self):
-        
+        if self.z is None:
+            print 'z array is None - cannot calculate imag'
+            return
+
+
         return np.imag(self.z)
 
         
     def set_imag(self, imag_array):
 
-        z_orig = self.z 
 
-        if z_orig.shape != imag_array.shape:
-            print 'Error - shape of "imag" array does not match shape of Z array: %s ; %s'%(str(imag_array.shape),str(z_orig.shape))
+        if (self.z is not None) and (self.z.shape != imag_array.shape):
+            print 'Error - shape of "imag" array does not match shape of Z array: %s ; %s'%(str(imag_array.shape),str(self.z.shape))
             return
         
         #assert real array:
@@ -198,13 +220,20 @@ class Z(object):
             return
 
         i = np.complex(0,1)
-
-        z_new = self.real() + i * imag_array 
+        
+        if self.z is not None:
+            z_new = self.real() + i * imag_array 
+        else:
+            z_new = i * imag_array 
 
         self.z = z_new
 
 
     def rho(self):
+        if self.z is None:
+            print 'z array is None - cannot calculate rho'
+            return
+
         rho = np.zeros(self.z.shape)
 
         for idx_f in range(len(rho)):                         
@@ -214,6 +243,10 @@ class Z(object):
 
         
     def phi(self):
+        if self.z is None:
+            print 'z array is None - cannot calculate phi'
+            return
+
         phi = np.zeros(self.z.shape)
         
         for idx_f in range(len(phi)):
@@ -226,16 +259,23 @@ class Z(object):
 
     def set_rho_phi(self, rho_array, phi_array):
 
-        z_new = self.z.copy() 
+        if self.z is not None: 
+            z_new = self.z.copy() 
 
-        if self.z.shape != rho_array.shape:
-            print 'Error - shape of "rho" array does not match shape of Z array: %s ; %s'%(str(rho_array.shape),str(self.z.shape))
-            return
+            if self.z.shape != rho_array.shape:
+                print 'Error - shape of "rho" array does not match shape of Z array: %s ; %s'%(str(rho_array.shape),str(self.z.shape))
+                return
 
-        if self.z.shape != phi_array.shape:
-            print 'Error - shape of "phi" array does not match shape of Z array: %s ; %s'%(str(phi_array.shape),str(self.z.shape))
-            return
-        
+            if self.z.shape != phi_array.shape:
+                print 'Error - shape of "phi" array does not match shape of Z array: %s ; %s'%(str(phi_array.shape),str(self.z.shape))
+                return
+        else:
+            z_new = p.zeros(rho_array.shape,'complex')
+            if rho_array.shape != phi_array.shape:
+                print 'Error - shape of "phi" array does not match shape of "rho" array: %s ; %s'%(str(phi_array.shape),str(rho_array.shape))
+                return
+
+            
         #assert real array:
         if np.linalg.norm(np.imag(rho_array )) != 0 :
             print 'Error - array "rho" is not real valued !'
@@ -253,62 +293,100 @@ class Z(object):
 
 
     def inverse(self):
+        if self.z is None :
+            print 'z array is "None" - I cannot invert that'
+            return
         
         inverse = self.z.copy()
         for idx_f in range(len(inverse)):
-            inverse[idx_f,:,:] = np.array( (np.matrix(self.z[idx_f,:,:])).I )
+            try:
+                inverse[idx_f,:,:] = np.array( (np.matrix(self.z[idx_f,:,:])).I )
+            except:
+                raise MTexceptions.MTpyError_Z('The %ith impedance tensor cannot be inverted'%(idx_f+1))
 
         return inverse
 
 
     def rotate(self, alpha):
-        
-        degreeangle = alpha%360
-        angle = math.radians(degreeangle)
-        
-        cphi = np.cos(angle)
-        sphi = np.sin(angle)
+        if self.z is None :
+            print 'z array is "None" - I cannot rotate that'
+            return
+
+        #check for iterable list/set of angles - if so, it must have length 1 or same as len(tipper):
+        if iterable(alpha) == 0:
+            try:
+                degreeangle = alpha%360
+            except:
+                print '"Angle" must be a valid number (in degrees)'
+                return
+
+            self.rotation_angle = degreeangle
+            #make an n long list of identical angles
+            lo_angles = [degreeangle for i in self.z]
+        else:
+            try:
+                lo_angles = [ i%360 for i in alpha]
+            except:
+                print '"Angles" must be valid numbers (in degrees)'
+                return
+            
+            self.rotation_angle = lo_angles
+
+        if len(lo_angles) != len(self.z):
+            print 'Wrong number Number of "angles" - need %i '%(len(tipper))
+            self.rotation_angle = 0.
+            return
 
         z = self.z
         zerr = self.zerr
 
         z_new = z.copy()
-        zerr_new = zerr.copy()
+        if self.zerr is not None:
+            zerr_new = zerr.copy()
 
         for idx_freq in range(len(z)):
+                    
+            degreeangle = lo_angles[idx_freq]
+            angle = math.radians(degreeangle)
+        
+            cphi = np.cos(angle)
+            sphi = np.sin(angle)
+
 
             z_new[idx_freq,0,0] = cphi**2 * z[idx_freq,0,0] + cphi*sphi*(z[idx_freq,0,1]+z[idx_freq,1,0]) + sphi**2 * z[idx_freq,1,1]
             z_new[idx_freq,0,1] = cphi**2 * z[idx_freq,0,1] + cphi*sphi*(z[idx_freq,1,1]-z[idx_freq,0,0]) - sphi**2 * z[idx_freq,1,0]
             z_new[idx_freq,1,0] = cphi**2 * z[idx_freq,1,0] + cphi*sphi*(z[idx_freq,1,1]-z[idx_freq,0,0]) - sphi**2 * z[idx_freq,0,1]
             z_new[idx_freq,1,1] = cphi**2 * z[idx_freq,1,1] + cphi*sphi*(-z[idx_freq,0,1]-z[idx_freq,1,0]) + sphi**2 *z[ idx_freq,0,0]
 
-            zerr_new[idx_freq,0,0] = cphi**2 * zerr[idx_freq,0,0] + np.abs(cphi * sphi) * (zerr[idx_freq,0,1] + zerr[idx_freq,1,0]) + sphi**2 * zerr[idx_freq,1,1]
+            if self.zerr is not None:
+                zerr_new[idx_freq,0,0] = cphi**2 * zerr[idx_freq,0,0] + np.abs(cphi * sphi) * (zerr[idx_freq,0,1] + zerr[idx_freq,1,0]) + sphi**2 * zerr[idx_freq,1,1]
 
-            zerr_new[idx_freq,0,1] = cphi**2 * zerr[idx_freq,0,1] + np.abs(cphi * sphi) * (zerr[idx_freq,1,1] + zerr[idx_freq,0,0]) + sphi**2 * zerr[idx_freq,1,0] 
+                zerr_new[idx_freq,0,1] = cphi**2 * zerr[idx_freq,0,1] + np.abs(cphi * sphi) * (zerr[idx_freq,1,1] + zerr[idx_freq,0,0]) + sphi**2 * zerr[idx_freq,1,0] 
 
-            zerr_new[idx_freq,1,0] = cphi**2 * zerr[idx_freq,1,0] + np.abs(cphi * sphi) * (zerr[idx_freq,1,1] + zerr[idx_freq,0,0]) + sphi**2 * zerr[idx_freq,0,1] 
+                zerr_new[idx_freq,1,0] = cphi**2 * zerr[idx_freq,1,0] + np.abs(cphi * sphi) * (zerr[idx_freq,1,1] + zerr[idx_freq,0,0]) + sphi**2 * zerr[idx_freq,0,1] 
 
-            zerr_new[idx_freq,1,1] = cphi**2 * zerr[idx_freq,1,1] + np.abs(cphi * sphi) * (zerr[idx_freq,0,1] + zerr[idx_freq,1,0]) + sphi**2 * zerr[idx_freq,0,0] 
+                zerr_new[idx_freq,1,1] = cphi**2 * zerr[idx_freq,1,1] + np.abs(cphi * sphi) * (zerr[idx_freq,0,1] + zerr[idx_freq,1,0]) + sphi**2 * zerr[idx_freq,0,0] 
 
         self.z = z_new
-        self.zerr = zerr_new
-        self.rotation_angle = (self.rotation_angle + degreeangle)%360
+        if self.zerr is not None:
+            self.zerr = zerr_new
+    
 
 
-    def remove_ss(self, rho_x = 1., rho_y = 1.):
+    def no_ss(self, rho_x = 1., rho_y = 1.):
         
         return z_corrected, static_shift
 
 
 
-    def remove_distortion(self):
+    def no_distortion(self):
         
 
         return z_corrected, distortion
 
 
 
-    def remove_ss_and_distortion(self, rho_x = 1., rho_y = 1.):
+    def no_ss_no_distortion(self, rho_x = 1., rho_y = 1.):
 
 
         return z_corrected, static_shift, distortion
@@ -375,7 +453,7 @@ class Tipper(object):
         self.frequencies = edi_object.frequencies
         
         try:
-            if edi_object.tipper is None or edi_object.tippererr:
+            if edi_object.tipper is None or edi_object.tippererr is None:
                 raise
             
             tipper_new = edi_object.tipper
@@ -392,10 +470,8 @@ class Tipper(object):
         
     def set_tipper(self, tipper_array):
 
-        tipper_orig = self.tipper  
-
-        if (tipper_orig is not None) and (tipper_orig.shape != tipper_array.shape):
-            print 'Error - shape of "tipper" array does not match shape of tipper-array: %s ; %s'%(str(tipper_array.shape),str(tipper_orig.shape))
+        if (self.tipper is not None) and (self.tipper.shape != tipper_array.shape):
+            print 'Error - shape of "tipper" array does not match shape of tipper-array: %s ; %s'%(str(tipper_array.shape),str(self.tipper.shape))
             return
 
         self.tipper = tipper_array
@@ -503,7 +579,7 @@ class Tipper(object):
     def set_rho_phi(self, rho_array, phi_array):
 
         if self.tipper is not None: 
-
+                
             tipper_new = self.tipper.copy() 
 
             if self.tipper.shape != rho_array.shape:
@@ -562,7 +638,7 @@ class Tipper(object):
             
             self.rotation_angle = lo_angles
 
-        if len(lo_angles) != len(tipper):
+        if len(lo_angles) != len(self.tipper):
             print 'Wrong number Number of "angles" - need %i '%(len(tipper))
             self.rotation_angle = 0.
             return
@@ -615,19 +691,29 @@ def remove_distortion(z_array, zerr_array = None ):
 
     z_object = _read_z_array(z_array, zerr_array)
     
-    z_object.remove_distortion()
+    z_corrected, distortion = z_object.no_distortion()
 
-    return z_object.no_distortion, z.zerr
+    return z_corrected, distortion, z_object.z
 
 
-def remove_static_shift(z_array, zerr_array = None):
+def remove_ss(z_array, zerr_array = None, rho_x = 1., rho_y = 1.):
 
 
     z_object = _read_z_array(z_array, zerr_array)
 
-    z_object.remove_static_shift()
+    z_corrected, static_shift = z_object.no_ss()
 
-    return z_object.no_ss, z_object.zerr_array
+    return z_corrected, static_shift, z_object.z
+
+
+def remove_ss_and_distortion(z_array, zerr_array = None, rho_x = 1., rho_y = 1.):
+
+
+    z_object = _read_z_array(z_array, zerr_array)
+
+    z_corrected, static_shift, distortion = z_object.no_ss_no_distortion()
+
+    return z_corrected, static_shift, distortion, z_object.z
 
 
 def z2rhophi(z_array):
