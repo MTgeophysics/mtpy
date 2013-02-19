@@ -6,7 +6,7 @@ mtpy/mtpy/core/edi.py
 Contains classes and functions for handling EDI files. 
  
     Class:
-    Edi - an edi object, containing all information from or for an edi file. Sections of edi files are given as respective attributes, their information are stored as dictionaries.
+    "Edi" contains all information from or for an EDI file. Sections of EDI files are given as respective attributes, section-keys and values are stored in dictionaries.
 
         Methods:
         - readfile()
@@ -31,8 +31,6 @@ Contains classes and functions for handling EDI files.
     - combine_edifiles()
     - validate_edifile()
     - rotate_edifile()
-
-
 
 
 @UofA, 2013
@@ -116,7 +114,7 @@ class Edi(object):
         with open(infile,'r') as F:
             edistring = F.read()
 
-        if not self._validate_edifile_string(edistring):
+        if not _validate_edifile_string(edistring):
             raise MTexceptions.MTpyError_edi_file('%s is no proper edi file'%infile)
 
         self.filename = infile
@@ -586,6 +584,10 @@ class Edi(object):
         
         outstring, stationname = _generate_edifile_string(self.edi_dict)
 
+        if not _validate_edifile_string(outstring):
+            raise MTexceptions.MTpyError_edi_file('Cannot write EDI file...output string is invalid')
+
+
         if fn != None:
             try:
                 outfilename = op.abspath(fn)
@@ -617,89 +619,6 @@ class Edi(object):
 
 
 
-    def _validate_edifile_string(self, edistring):
-        """
-            Read the file as string and check, if blocks 'HEAD, INFO, =DEFINEMEAS, =MTSECT, FREQ, Z, END' are present.
-
-            Within the blocks look for mandatory entries:
-            HEAD: 'DATAID'
-            INFO: None
-            DEFINEMEAS: subblocks 'HMEAS, EMEAS' 
-                        ('REFLAT, REFLONG, REFELEV' have to be present for measured data though)
-            MTSECT: 'NFREQ'
-            FREQ: non empty list
-            Z: all components xx, yy, xy, yx ; real, imag and var ; each containing a non-empty list
-
-        """
-        isvalid = False
-        found = 1
-
-        #adding 1 to position of find to correct for possible occurrence at position 0 )
-        found *= np.sign(edistring.upper().find('>HEAD') + 1 )
-        found *= np.sign(edistring.upper().find('DATAID') + 1 )
-        found *= np.sign(edistring.upper().find('>HMEAS') + 1 )
-        found *= np.sign(edistring.upper().find('>EMEAS') + 1 )
-        found *= np.sign(edistring.upper().find('NFREQ') + 1 )
-        found *= np.sign(edistring.upper().find('>FREQ') + 1 )
-        found *= np.sign(edistring.upper().find('>END') + 1 )
-        found *= np.sign(edistring.upper().find('>=DEFINEMEAS') + 1 )
-        found *= np.sign(edistring.upper().find('>=MTSECT') + 1 )
-
-
-        if found < 1 :
-            print 'Could not find all mandatory sections for a valid EDI file!\n (Most basic version must contain: "HEAD, INFO, =DEFINEMEAS, =MTSECT, FREQ, Z, END") '
-            return False
-
-
-        compstrings = ['ZXX','ZXY','ZYX','ZYY']
-        Z_entries = ['R','I','.VAR']
-        
-        for comp in compstrings:
-            for zentry in Z_entries:
-                searchstring = '>'+comp+zentry
-                z_comp_start_idx = edistring.upper().find(searchstring)
-                found *= np.sign(z_comp_start_idx + 1 )
-                #checking for non empty value list:
-                next_block_start = edistring.upper().find('>',z_comp_start_idx+1)
-                string_dummy_1 = edistring[z_comp_start_idx:next_block_start]
-                lo_string_dummy_1 = string_dummy_1.strip().split()
-                n_numbers = 0 
-                for i in lo_string_dummy_1:
-                    try:
-                        n = float(i)
-                        n_numbers +=1
-                    except:
-                        continue
-
-                if n_numbers == 0:
-                    print  MTexceptions.MTpyError_edi_file('Error in %s block: no values found'%(comp+zentry))
-
-                    found *= 0 
-
-
-        #checking for non empty frequency list:
-        freq_start_idx = edistring.upper().find('>FREQ')
-        next_block_start = edistring.upper().find('>',freq_start_idx + 1)
-        string_dummy_2 = edistring[freq_start_idx:next_block_start]
-        lo_string_dummy_2 = string_dummy_1.strip().split()
-        #check, if there are actually one/some valid numbers:
-        n_numbers = 0 
-        for i in lo_string_dummy_2:
-            try:
-                n = float(i)
-                n_numbers +=1
-            except:
-                continue
-
-        if n_numbers == 0:
-            print  MTexceptions.MTpyError_edi_file('Error in FREQ block: no frequencies found')
-
-            found *= 0 
-
-
-        if found > 0: isvalid = True
-
-        return isvalid    
 
 
     def z2resphase(self):
@@ -906,10 +825,26 @@ def read_edifile(fn):
 
 def write_edifile(edi_object, out_fn = None):
     
-#todo
-    pass
 
-    return out_fn
+    if out_fn is not None:
+        dirname = op.dirname(op.abspath(op.join('.',out_fn)))
+        fn = op.basename(op.abspath(op.join('.',out_fn)))
+        if not op.isdir(dirname):
+            try:
+                os.makedirs(dirname)
+                out_fn = op.join(dirname,fn)
+            except:
+                out_fn = None
+        else:
+            out_fn = op.join(dirname,fn)
+
+    outfilename = None
+    try:
+        outfilename = edi_object.writefile(out_fn)
+    except:
+        print 'Cannot write EDI file...output string invalid!'
+
+    return outfilename
 
 
 def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps = True):
@@ -1255,6 +1190,21 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
 
     eom._update_dicts()
 
+    if out_fn is not None:
+        dirname = op.dirname(op.abspath(op.join('.',out_fn)))
+        fn = op.basename(op.abspath(op.join('.',out_fn)))
+        if not op.isdir(dirname):
+            try:
+                os.makedirs(dirname)
+                out_fn = op.join(dirname,fn)
+            except:
+                out_fn = None
+        else:
+            out_fn = op.join(dirname,fn)
+
+
+        eom.writefile(out_fn)
+
 
     return eom, out_fn
 
@@ -1277,6 +1227,19 @@ def rotate_edifile(fn, angle, out_fn = None):
     ediobject.readfile(fn)
 
     ediobject.rotate(angle)
+
+    if out_fn is not None:
+        dirname = op.dirname(op.abspath(op.join('.',out_fn)))
+        fn = op.basename(op.abspath(op.join('.',out_fn)))
+        if not op.isdir(dirname):
+            try:
+                os.makedirs(dirname)
+                out_fn = op.join(dirname,fn)
+            except:
+                out_fn = None
+        else:
+            out_fn = op.join(dirname,fn)
+
 
     ediobject.writefile(out_fn)
 
@@ -1540,4 +1503,87 @@ def _cut_sectionstring(edistring,sectionhead):
     return cutstring
 
 
+def _validate_edifile_string(edistring):
+    """
+        Read the file as string and check, if blocks 'HEAD, INFO, =DEFINEMEAS, =MTSECT, FREQ, Z, END' are present.
+
+        Within the blocks look for mandatory entries:
+        HEAD: 'DATAID'
+        INFO: None
+        DEFINEMEAS: subblocks 'HMEAS, EMEAS' 
+                    ('REFLAT, REFLONG, REFELEV' have to be present for measured data though)
+        MTSECT: 'NFREQ'
+        FREQ: non empty list
+        Z: all components xx, yy, xy, yx ; real, imag and var ; each containing a non-empty list
+
+    """
+    isvalid = False
+    found = 1
+
+    #adding 1 to position of find to correct for possible occurrence at position 0 )
+    found *= np.sign(edistring.upper().find('>HEAD') + 1 )
+    found *= np.sign(edistring.upper().find('DATAID') + 1 )
+    found *= np.sign(edistring.upper().find('>HMEAS') + 1 )
+    found *= np.sign(edistring.upper().find('>EMEAS') + 1 )
+    found *= np.sign(edistring.upper().find('NFREQ') + 1 )
+    found *= np.sign(edistring.upper().find('>FREQ') + 1 )
+    found *= np.sign(edistring.upper().find('>END') + 1 )
+    found *= np.sign(edistring.upper().find('>=DEFINEMEAS') + 1 )
+    found *= np.sign(edistring.upper().find('>=MTSECT') + 1 )
+
+
+    if found < 1 :
+        print 'Could not find all mandatory sections for a valid EDI file!\n (Most basic version must contain: "HEAD, INFO, =DEFINEMEAS, =MTSECT, FREQ, Z, END") '
+        return False
+
+
+    compstrings = ['ZXX','ZXY','ZYX','ZYY']
+    Z_entries = ['R','I','.VAR']
+    
+    for comp in compstrings:
+        for zentry in Z_entries:
+            searchstring = '>'+comp+zentry
+            z_comp_start_idx = edistring.upper().find(searchstring)
+            found *= np.sign(z_comp_start_idx + 1 )
+            #checking for non empty value list:
+            next_block_start = edistring.upper().find('>',z_comp_start_idx+1)
+            string_dummy_1 = edistring[z_comp_start_idx:next_block_start]
+            lo_string_dummy_1 = string_dummy_1.strip().split()
+            n_numbers = 0 
+            for i in lo_string_dummy_1:
+                try:
+                    n = float(i)
+                    n_numbers +=1
+                except:
+                    continue
+
+            if n_numbers == 0:
+                print  MTexceptions.MTpyError_edi_file('Error in %s block: no values found'%(comp+zentry))
+
+                found *= 0 
+
+
+    #checking for non empty frequency list:
+    freq_start_idx = edistring.upper().find('>FREQ')
+    next_block_start = edistring.upper().find('>',freq_start_idx + 1)
+    string_dummy_2 = edistring[freq_start_idx:next_block_start]
+    lo_string_dummy_2 = string_dummy_1.strip().split()
+    #check, if there are actually one/some valid numbers:
+    n_numbers = 0 
+    for i in lo_string_dummy_2:
+        try:
+            n = float(i)
+            n_numbers +=1
+        except:
+            continue
+
+    if n_numbers == 0:
+        print  MTexceptions.MTpyError_edi_file('Error in FREQ block: no frequencies found')
+
+        found *= 0 
+
+
+    if found > 0: isvalid = True
+
+    return isvalid    
 

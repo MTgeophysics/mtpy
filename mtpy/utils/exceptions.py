@@ -31,3 +31,9 @@ class MTpyError_file_handling( Exception ):
 
 class MTpyError_edi_file( Exception ): 
     pass
+
+class MTpyError_EDI( Exception ): 
+    pass
+ 
+class MTpyError_Z( Exception ):
+    pass
