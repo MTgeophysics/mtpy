@@ -114,7 +114,6 @@ class Z(object):
         self.rotation_angle = 0.
         self.static_shift = None
         self.distortion = None
-        self.invariants = None
         self.no_distortion = None
         self.no_ss = None
         self.no_ss_no_distortion = None
@@ -390,7 +389,26 @@ class Z(object):
 
 
         return z_corrected, static_shift, distortion
- 
+
+
+
+    def ellipticity(self):
+
+        return ellipticity 
+
+
+
+    def resistivity(self):
+
+        return resistivity 
+
+
+
+    def invariants(self):
+
+        lo_invariants = []
+
+        return lo_invariants
 
 
 #------------------------
