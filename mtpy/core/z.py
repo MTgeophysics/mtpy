@@ -323,16 +323,26 @@ class Z(object):
             #make an n long list of identical angles
             lo_angles = [degreeangle for i in self.z]
         else:
-            try:
-                lo_angles = [ i%360 for i in alpha]
-            except:
-                print '"Angles" must be valid numbers (in degrees)'
-                return
+            if len(lo_angles) == 1:
+                try:
+                    degreeangle = alpha%360
+                except:
+                    print '"Angle" must be a valid number (in degrees)'
+                    return
+                self.rotation_angle = degreeangle
+                #make an n long list of identical angles
+                lo_angles = [degreeangle for i in self.z]
+            else:                    
+                try:
+                    lo_angles = [ i%360 for i in alpha]
+                except:
+                    print '"Angles" must be valid numbers (in degrees)'
+                    return
             
             self.rotation_angle = lo_angles
 
         if len(lo_angles) != len(self.z):
-            print 'Wrong number Number of "angles" - need %i '%(len(tipper))
+            print 'Wrong number Number of "angles" - need %i '%(len(self.z))
             self.rotation_angle = 0.
             return
 
@@ -372,14 +382,92 @@ class Z(object):
     
 
 
-    def no_ss(self, rho_x = 1., rho_y = 1.):
+    def no_ss(self, reduce_rho_factor_x = 1., reduce_rho_factor_y = 1.):
+        """
+        Remove the static shift by providing the correction factors for x and y components.
+        (Factor can be dteremined by using the "Analysis" module for the impedance tensor)
+
+        Assume the original observed tensor Z is built by a static shift S and an unperturbated "correct" Z0 :
+            Z = S * Z0
+
+        returns:
+            S, Z0   (over all frequencies)
+
+        """
         
-        return z_corrected, static_shift
+        #check for iterable list/set of reduce_rho_factor_x - if so, it must have length 1 or same as len(z):
+        if iterable(reduce_rho_factor_x) == 0:
+            try:
+                x_factor = float(reduce_rho_factor_x)
+            except:
+                print '"reduce_rho_factor_x" must be a valid numbers'
+                return
+
+            lo_x_factors = [x_factor for i in self.z]
+        else:
+            if len(reduce_rho_factor_x) == 1:
+                try:
+                    x_factor = float(reduce_rho_factor_x)
+                except:
+                    print '"reduce_rho_factor_x" must be a valid numbers'
+                    return
+                lo_x_factors = [x_factor for i in self.z]
+            else:                    
+                try:
+                    lo_x_factors = [x_factor for i in reduce_rho_factor_x]
+                except:
+                    print '"reduce_rho_factor_x" must be valid numbers'
+                    return
+            
+        if len(lo_x_factors) != len(self.z):
+            print 'Wrong number Number of "reduce_rho_factor_x" - need %i '%(len(self.z))
+            return
+  
+        #check for iterable list/set of reduce_rho_factor_y - if so, it must have length 1 or same as len(z):
+        if iterable(reduce_rho_factor_y) == 0:
+            try:
+                y_factor = float(reduce_rho_factor_y)
+            except:
+                print '"reduce_rho_factor_y" must be a valid numbers'
+                return
+
+            lo_y_factors = [y_factor for i in self.z]
+        else:
+            if len(reduce_rho_factor_y) == 1:
+                try:
+                    y_factor = float(reduce_rho_factor_y)
+                except:
+                    print '"reduce_rho_factor_y" must be a valid numbers'
+                    return
+                lo_y_factors = [y_factor for i in self.z]
+            else:                    
+                try:
+                    lo_y_factors = [y_factor for i in reduce_rho_factor_y]
+                except:
+                    print '"reduce_rho_factor_y" must be valid numbers'
+                    return
+            
+        if len(lo_y_factors) != len(self.z):
+            print 'Wrong number Number of "reduce_rho_factor_y" - need %i '%(len(self.z))
+            return
+  
+
+        z_corrected = self.z.copy()
+        static_shift = np.zeros((len(self.z),2,2))
+
+        for idx_f in range(len(self.z)):
+            z_corrected[idx_f,0,:] = self.z[idx_f,0,:]*np.sqrt(lo_x_factors[idx_f])
+            z_corrected[idx_f,1,:] = self.z[idx_f,1,:]*np.sqrt(lo_y_factors[idx_f])
+            static_shift[idx_f,0,0] = np.sqrt(lo_x_factors[idx_f])
+            static_shift[idx_f,1,1] = np.sqrt(lo_y_factors[idx_f])
+
+        return  static_shift, z_corrected
 
 
 
     def no_distortion(self):
         
+        pass
 
         return z_corrected, distortion
 
@@ -387,28 +475,64 @@ class Z(object):
 
     def no_ss_no_distortion(self, rho_x = 1., rho_y = 1.):
 
-
+        pass
         return z_corrected, static_shift, distortion
 
 
 
     def ellipticity(self):
-
+        pass
         return ellipticity 
 
 
 
     def resistivity(self):
-
+        pass
         return resistivity 
 
 
 
     def invariants(self):
 
-        lo_invariants = []
+        invariants_dict = {}
 
-        return lo_invariants
+        z1 = (self.z[:,0,1] - self.z[:,1,0])/2.
+        invariants_dict['z1'] = z1 
+
+        z2 = (self.z[:,0,0] + self.z[:,1,1])/2.
+        invariants_dict['z2'] = z2
+        
+        det_z = np.array( [np.linalg.det(i) for i in self.z ])
+        invariants_dict['det'] = det_z
+        
+        det_real = np.array( [np.linalg.det(i) for i in self.real() ])
+        invariants_dict['det_real'] = det_real
+        
+        det_imag = np.array( [np.linalg.det(i) for i in self.imag() ])
+        invariants_dict['det_imag'] = det_imag
+        
+        skew_z = np.array( [np.abs(z2[i])/np.abs(z1[i]) for i in range(len(z1)) ])
+        invariants_dict['skew'] = skew_z
+        
+        trace_z = np.array( [np.linalg.trace(i) for i in self.z ])
+        invariants_dict['trace'] = trace_z
+        
+        norm_z = np.array( [np.linalg.norm(i) for i in self.z ])
+        invariants_dict['norm'] = norm_z
+        
+        lambda_plus = np.array( [ z1[i] + np.sqrt(z1[i] * z1[i] - det_z[i]) for i in range(len(z1)) ])
+        invariants_dict['lambda_plus'] = lambda_plus
+        
+        lambda_minus = np.array( [ z1[i] - np.sqrt(z1[i] * z1[i] - det_z[i]) for i in range(len(z1)) ])
+        invariants_dict['lambda_minus'] = lambda_minus
+        
+        sigma_plus = np.array( [ 0.5*norm_z[i]**2 + np.sqrt(  0.25*norm_z[i]**4 + np.abs(det_z[i])**2) for i in range(len(norm_z)) ])
+        invariants_dict['sigma_plus'] = sigma_plus
+        
+        sigma_minus = np.array( [ 0.5*norm_z[i]**2 - np.sqrt(  0.25*norm_z[i]**4 + np.abs(det_z[i])**2) for i in range(len(norm_z)) ])
+        invariants_dict['sigma_minus'] = sigma_minus
+
+        return invariants_dict
 
 
 #------------------------
@@ -648,16 +772,26 @@ class Tipper(object):
             #make an n long list of identical angles
             lo_angles = [degreeangle for i in self.tipper]
         else:
-            try:
-                lo_angles = [ i%360 for i in alpha]
-            except:
-                print '"Angles" must be valid numbers (in degrees)'
-                return
+            if len(lo_angles) == 1:
+                try:
+                    degreeangle = alpha%360
+                except:
+                    print '"Angle" must be a valid number (in degrees)'
+                    return
+                self.rotation_angle = degreeangle
+                #make an n long list of identical angles
+                lo_angles = [degreeangle for i in self.z]
+            else:                    
+                try:
+                    lo_angles = [ i%360 for i in alpha]
+                except:
+                    print '"Angles" must be valid numbers (in degrees)'
+                    return
             
             self.rotation_angle = lo_angles
 
         if len(lo_angles) != len(self.tipper):
-            print 'Wrong number Number of "angles" - need %i '%(len(tipper))
+            print 'Wrong number Number of "angles" - need %i '%(len(self.tipper))
             self.rotation_angle = 0.
             return
 
@@ -706,7 +840,8 @@ def rotate_z(z_array, alpha, zerr_array = None):
 
 
 def remove_distortion(z_array, zerr_array = None ):
-
+    
+    pass
     z_object = _read_z_array(z_array, zerr_array)
     
     z_corrected, distortion = z_object.no_distortion()
@@ -721,11 +856,11 @@ def remove_ss(z_array, zerr_array = None, rho_x = 1., rho_y = 1.):
 
     z_corrected, static_shift = z_object.no_ss()
 
-    return z_corrected, static_shift, z_object.z
+    return static_shift, z_corrected, z_object.z
 
 
 def remove_ss_and_distortion(z_array, zerr_array = None, rho_x = 1., rho_y = 1.):
-
+    pass
 
     z_object = _read_z_array(z_array, zerr_array)
 
