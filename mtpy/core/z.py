@@ -111,13 +111,10 @@ class Z(object):
         except:
             pass
 
+        if (self.z is not None) and (self.zerr is None):
+            self.zerr = np.zeros(self.z.shape)
+
         self.rotation_angle = 0.
-        self.static_shift = None
-        self.distortion = None
-        self.no_distortion = None
-        self.no_ss = None
-        self.no_ss_no_distortion = None
-        self.ellipticity = None
 
     def set_edi_object(self, edi_object):
 
@@ -130,11 +127,14 @@ class Z(object):
         self.frequencies = edi_object.frequencies
 
         try:
-            if edi_object.z is None or edi_object.zerr is None :
+            if edi_object.z is None :
                 raise
             
             z_new = edi_object.z
-            zerr_new = edi_object.zerr
+            try:
+                zerr_new = edi_object.zerr
+            except:
+                zerr_new = np.zeros(z_new.shape)
 
             if len(z_new) != len(zerr_new):
                 raise
@@ -461,15 +461,83 @@ class Z(object):
             static_shift[idx_f,0,0] = np.sqrt(lo_x_factors[idx_f])
             static_shift[idx_f,1,1] = np.sqrt(lo_y_factors[idx_f])
 
-        return  static_shift, z_corrected
+        return  static_shift, z_corrected,  z_corrected_err
 
 
 
-    def no_distortion(self):
-        
-        pass
+    def no_distortion(self, distortion_tensor, distortion_err_tensor = None):
+        """
+            Remove distortion D form an observed impedance tensor Z to obtain the uperturbed "correct" Z0:
+            Z = D * Z0
 
-        return z_corrected, distortion
+            Propagation of errors/uncertainties included
+        """
+
+        if distortion_err_tensor is None:
+            distortion_err_tensor = np.zeros_like(distortion_tensor)
+        #for all frequencies, calculate D.Inverse, then obtain Z0 = D.I * Z
+        try:
+            if not (len(distortion_tensor.shape) in [2,3]) and  (len(distortion_err_tensor.shape) in [2,3]:
+                raise
+            if len(distortion_tensor.shape) == 3 or len(distortion_err_tensor.shape) == 3:
+                print 'Distortion is not time-dependent - take only first of given distortion tensors'
+                    try:
+                        distortion_tensor = distortion_tensor[0]
+                        distortion_err_tensor = distortion_err_tensor[0]
+                    except:
+                        raise
+
+            if not (distortion_tensor.shape == (2,2) ) and (distortion_err_tensor.shape == (2,2) ):
+                raise
+
+            distortion_tensor = np.matrix(np.real(distortion_tensor))
+
+        except:
+            raise MTexceptions.MTpyError_Z('The array provided is not a proper distortion tensor')
+
+        try: 
+            DI = distortion_tensor.I
+        except:
+            raise MTexceptions.MTpyError_Z('The provided distortion tensor is singular - I cannot invert that!')
+
+        #propagation of errors (using 1-norm) - step 1 - inversion of D:
+        DI_err = np.zeros_like(distortion_err_tensor)
+        DI_det = np.linalg.det(distortion_tensor)
+
+        DI_err[0,0] = np.abs(-1./(distortion_tensor[0,0])**2 * distortion_err_tensor[0,0]) +\
+                    np.abs(1./(distortion_tensor[0,1])**2 * distortion_err_tensor[0,1]) +\
+                    np.abs(-1./(distortion_tensor[1,0])**2 * distortion_err_tensor[1,0]) +\
+                    np.abs( 1./DI_det * (1. - distortion_tensor[0,0] * DI[0,0]) * distortion_err_tensor[1,1] )
+
+        DI_err[0,1] = np.abs(1./(distortion_tensor[0,0])**2 * distortion_err_tensor[0,0]) +\
+                    np.abs(-1./DI_det * (1. - distortion_tensor[1,0] * DI[0,1]) * distortion_err_tensor[0,1] )
+                    np.abs(1./(distortion_tensor[1,0])**2 * distortion_err_tensor[1,0]) +\
+                    np.abs(-1./(distortion_tensor[1,1])**2 * distortion_err_tensor[1,1])
+
+        DI_err[1,0] = np.abs(1./(distortion_tensor[0,0])**2 * distortion_err_tensor[0,0]) +\
+                    np.abs(1./(distortion_tensor[0,1])**2 * distortion_err_tensor[0,1]) +\
+                    np.abs(-1./DI_det * (1. - distortion_tensor[0,1] * DI[1,0]) * distortion_err_tensor[1,0] )
+                    np.abs(-1./(distortion_tensor[1,1])**2 * distortion_err_tensor[1,1])
+
+        DI_err[1,1] = np.abs( 1./DI_det * (1. - distortion_tensor[1,1] * DI[1,1]) * distortion_err_tensor[0,0] ) +\
+                    np.abs(1./(distortion_tensor[0,1])**2 * distortion_err_tensor[0,1]) +\
+                    np.abs(-1./(distortion_tensor[1,0])**2 * distortion_err_tensor[1,0]) +\
+                    np.abs(-1./(distortion_tensor[1,1])**2 * distortion_err_tensor[1,1]) 
+
+        #propagation of errors - step 2 - product of D.inverse and Z; D.I * Z, making it 4 summands for each component:
+        z_corrected = np.zeros_like(self.z)
+        z_corrected_err = np.zeros_like(self.zerr)
+ 
+        for idx_f in range(len(self.z)):
+            z_corrected[idx_f] = np.array(np.dot( DI, np.matrix(self.z[idx_f]) ))           
+            for i in range(2):
+                for j in range(2):
+                    z_corrected_err[idx_f,i,j] = np.sum(np.abs( np.array( [ DI_err[i,0] * self.z[idx_f,0,j],\
+                                                                            DI[i,0] * self.zerr[idx_f,0,j],\
+                                                                            DI_err[i,1] * self.z[idx_f,1,j],\
+                                                                            DI[i,1] * self.zerr[idx_f,1,j] ]))) 
+
+        return distortion_tensor , z_corrected, z_corrected_err
 
 
 
@@ -839,14 +907,13 @@ def rotate_z(z_array, alpha, zerr_array = None):
 
 
 
-def remove_distortion(z_array, zerr_array = None ):
+def remove_distortion(z_array, zerr_array = None, distortion_tensor, distortion_err_tensor ):
     
-    pass
     z_object = _read_z_array(z_array, zerr_array)
     
-    z_corrected, distortion = z_object.no_distortion()
+    distortion, z_corrected, z_corrected_err = z_object.no_distortion(distortion_tensor, distortion_err_tensor)
 
-    return z_corrected, distortion, z_object.z
+    return distortion, z_corrected, z_corrected_err, z_object.z
 
 
 def remove_ss(z_array, zerr_array = None, rho_x = 1., rho_y = 1.):
