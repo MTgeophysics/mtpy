@@ -9,29 +9,53 @@ Contains classes and functions for handling impedance tensors (Z).
     "Z" contains information about an impedance tensor Z. 
 
         Methods:
-        - readfile()
-        - writefile()
-        - validate()
-        - z2resphase()
-        - rotate()
-        - set/get_head()
-        - set/get_info()
-        - set/get_z()
-        - set/get_tipper()
-        - set/get_definemeas()
-        - set/get_mtsect()
-        - set/get_datacomponent()
-        - set/get_frequencies()
-        - set/get_edi_dict()
-        - set/get_zrot()
+        - set_edi_object
+        - set_z
+        - set_zerr
+        - real
+        - set_real
+        - imag
+        - set_imag
+        - rho
+        - phi
+        - set_rho_phi
+        - inverse
+        - rotate
+        - no_ss
+        - no_distortion
+        - no_ss_no_distortion
+        - ellipticity
+        - resistivity
+        - invariants
+
+
+    Class:
+    "Tipper" contains information about the (complex valued) Tipper vector. 
+
+        Methods:
+
+        - set_edi_object
+        - set_tipper
+        - set_tippererr
+        - real
+        - set_real
+        - imag
+        - set_imag
+        - rho
+        - phi
+        - set_rho_phi
+        - rotate
 
     Functions:
-    - read_edifile()
-    - write_edifile()
-    - combine_edifiles()
-    - validate_edifile()
-    - rotate_edifile()
 
+     - rotate_z
+     - remove_distortion
+     - remove_ss
+     - remove_ss_and_distortion
+     - z2rhophi
+     - rotate_tipper
+     - _read_z_array
+     - _read_tipper_array
 
 @UofA, 2013
 (LK)
@@ -502,24 +526,25 @@ class Z(object):
 
         #propagation of errors (using 1-norm) - step 1 - inversion of D:
         DI_err = np.zeros_like(distortion_err_tensor)
-        DI_det = np.linalg.det(distortion_tensor)
+
+        D_det = np.linalg.det(distortion_tensor)
 
         DI_err[0,0] = np.abs(-1./(distortion_tensor[0,0])**2 * distortion_err_tensor[0,0]) +\
                     np.abs(1./(distortion_tensor[0,1])**2 * distortion_err_tensor[0,1]) +\
                     np.abs(-1./(distortion_tensor[1,0])**2 * distortion_err_tensor[1,0]) +\
-                    np.abs( 1./DI_det * (1. - distortion_tensor[0,0] * DI[0,0]) * distortion_err_tensor[1,1] )
+                    np.abs( 1./D_det * (1. - distortion_tensor[0,0] * DI[0,0]) * distortion_err_tensor[1,1] )
 
         DI_err[0,1] = np.abs(1./(distortion_tensor[0,0])**2 * distortion_err_tensor[0,0]) +\
-                    np.abs(-1./DI_det * (1. - distortion_tensor[1,0] * DI[0,1]) * distortion_err_tensor[0,1] )
+                    np.abs(-1./D_det * (1. - distortion_tensor[1,0] * DI[0,1]) * distortion_err_tensor[0,1] )
                     np.abs(1./(distortion_tensor[1,0])**2 * distortion_err_tensor[1,0]) +\
                     np.abs(-1./(distortion_tensor[1,1])**2 * distortion_err_tensor[1,1])
 
         DI_err[1,0] = np.abs(1./(distortion_tensor[0,0])**2 * distortion_err_tensor[0,0]) +\
                     np.abs(1./(distortion_tensor[0,1])**2 * distortion_err_tensor[0,1]) +\
-                    np.abs(-1./DI_det * (1. - distortion_tensor[0,1] * DI[1,0]) * distortion_err_tensor[1,0] )
+                    np.abs(-1./D_det * (1. - distortion_tensor[0,1] * DI[1,0]) * distortion_err_tensor[1,0] )
                     np.abs(-1./(distortion_tensor[1,1])**2 * distortion_err_tensor[1,1])
 
-        DI_err[1,1] = np.abs( 1./DI_det * (1. - distortion_tensor[1,1] * DI[1,1]) * distortion_err_tensor[0,0] ) +\
+        DI_err[1,1] = np.abs( 1./D_det * (1. - distortion_tensor[1,1] * DI[1,1]) * distortion_err_tensor[0,0] ) +\
                     np.abs(1./(distortion_tensor[0,1])**2 * distortion_err_tensor[0,1]) +\
                     np.abs(-1./(distortion_tensor[1,0])**2 * distortion_err_tensor[1,0]) +\
                     np.abs(-1./(distortion_tensor[1,1])**2 * distortion_err_tensor[1,1]) 
@@ -544,19 +569,16 @@ class Z(object):
     def no_ss_no_distortion(self, rho_x = 1., rho_y = 1.):
 
         pass
-        return z_corrected, static_shift, distortion
 
 
 
     def ellipticity(self):
         pass
-        return ellipticity 
 
 
 
     def resistivity(self):
         pass
-        return resistivity 
 
 
 
@@ -567,9 +589,6 @@ class Z(object):
         z1 = (self.z[:,0,1] - self.z[:,1,0])/2.
         invariants_dict['z1'] = z1 
 
-        z2 = (self.z[:,0,0] + self.z[:,1,1])/2.
-        invariants_dict['z2'] = z2
-        
         det_z = np.array( [np.linalg.det(i) for i in self.z ])
         invariants_dict['det'] = det_z
         
@@ -578,12 +597,12 @@ class Z(object):
         
         det_imag = np.array( [np.linalg.det(i) for i in self.imag() ])
         invariants_dict['det_imag'] = det_imag
-        
-        skew_z = np.array( [np.abs(z2[i])/np.abs(z1[i]) for i in range(len(z1)) ])
-        invariants_dict['skew'] = skew_z
-        
+
         trace_z = np.array( [np.linalg.trace(i) for i in self.z ])
         invariants_dict['trace'] = trace_z
+        
+        skew_z = np.array( [np.abs(trace_z[i]/2.)/np.abs(z1[i]) for i in range(len(z1)) ])
+        invariants_dict['skew'] = skew_z
         
         norm_z = np.array( [np.linalg.norm(i) for i in self.z ])
         invariants_dict['norm'] = norm_z
@@ -594,10 +613,10 @@ class Z(object):
         lambda_minus = np.array( [ z1[i] - np.sqrt(z1[i] * z1[i] - det_z[i]) for i in range(len(z1)) ])
         invariants_dict['lambda_minus'] = lambda_minus
         
-        sigma_plus = np.array( [ 0.5*norm_z[i]**2 + np.sqrt(  0.25*norm_z[i]**4 + np.abs(det_z[i])**2) for i in range(len(norm_z)) ])
+        sigma_plus = np.array( [ 0.5*norm_z[i]**2 + np.sqrt( 0.25*norm_z[i]**4 + np.abs(det_z[i])**2) for i in range(len(norm_z)) ])
         invariants_dict['sigma_plus'] = sigma_plus
         
-        sigma_minus = np.array( [ 0.5*norm_z[i]**2 - np.sqrt(  0.25*norm_z[i]**4 + np.abs(det_z[i])**2) for i in range(len(norm_z)) ])
+        sigma_minus = np.array( [ 0.5*norm_z[i]**2 - np.sqrt( 0.25*norm_z[i]**4 + np.abs(det_z[i])**2) for i in range(len(norm_z)) ])
         invariants_dict['sigma_minus'] = sigma_minus
 
         return invariants_dict
@@ -929,11 +948,6 @@ def remove_ss(z_array, zerr_array = None, rho_x = 1., rho_y = 1.):
 def remove_ss_and_distortion(z_array, zerr_array = None, rho_x = 1., rho_y = 1.):
     pass
 
-    z_object = _read_z_array(z_array, zerr_array)
-
-    z_corrected, static_shift, distortion = z_object.no_ss_no_distortion()
-
-    return z_corrected, static_shift, distortion, z_object.z
 
 
 def z2rhophi(z_array):

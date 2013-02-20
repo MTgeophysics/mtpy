@@ -9,29 +9,54 @@ Contains classes and functions for handling EDI files.
     "Edi" contains all information from or for an EDI file. Sections of EDI files are given as respective attributes, section-keys and values are stored in dictionaries.
 
         Methods:
-        - readfile()
-        - writefile()
-        - validate()
-        - z2resphase()
-        - rotate()
-        - set/get_head()
-        - set/get_info()
-        - set/get_z()
-        - set/get_tipper()
-        - set/get_definemeas()
-        - set/get_mtsect()
-        - set/get_datacomponent()
-        - set/get_frequencies()
-        - set/get_edi_dict()
-        - set/get_zrot()
+
+        - readfile
+        - edi_dict
+        - data_dict
+        - z_dict
+        - tipper_dict
+        - periods
+        - frequencies
+        - n_freqs
+        - _read_head
+        - _read_info
+        - _read_definemeas
+        - _read_hmeas_emeas
+        - _read_mtsect
+        - _read_freq
+        - _read_z
+        - _read_tipper
+        - _read_zrot
+        - writefile
+        - z2resphase
+        - rotate
+        - rho
+        - phi
+        - set_rho_phi
+        - set_head
+        - set_info_dict
+        - set_info_string
+        - set_z
+        - set_zerr
+        - set_tipper
+        - set_tippererr
+        - set_definemeas
+        - set_mtsect
+        - get_datacomponent
+        - set_frequencies
+        - set_zrot
+
 
     Functions:
-    - read_edifile()
-    - write_edifile()
-    - combine_edifiles()
-    - validate_edifile()
-    - rotate_edifile()
 
+    - read_edifile
+    - write_edifile
+    - combine_edifiles
+    - validate_edifile
+    - rotate_edifile
+    - _generate_edifile_string
+    - _cut_sectionstring
+    - _validate_edifile_string
 
 @UofA, 2013
 (LK)
@@ -72,36 +97,27 @@ class Edi(object):
 
     def __init__(self, fn = None):
     
-            self.filename = fn
-            if fn != None:
-                if op.isfile(op.abspath(fn)):
-                    self.filename = op.abspath(fn)
-                else:
-                    self.filename = None
+        self.filename = fn
+        if fn != None:
+            if op.isfile(op.abspath(fn)):
+                self.filename = op.abspath(fn)
+            else:
+                self.filename = None
 
-            self.raw_filestring = None
-            self.edi_dict = {}
-            self.head = {}
-            self.info_string = None
-            self.info_dict = {}
-            self.definemeas = {}
-            self.hmeas_emeas = None
-            self.mtsect = {}
-            self.freq = None
-            self.n_freqs = 0.
-            self.zrot = None
-            self.data = {}
-            self.z_dict = {}
-            self.z = None
-            self.zerr = None
-            self.tipper = None
-            self.tippererr = None
-            self.tipper_dict = {}
-            self.rho = None
-            self.phase = None
-            self.frequencies = None
-            self.periods = None
-            self.data = {}
+        self.in_filestring = None
+        self.head = {}
+        self.info_string = None
+        self.info_dict = {}
+        self.definemeas = {}
+        self.hmeas_emeas = None
+        self.mtsect = {}
+        self.freq = None
+        self.zrot = None
+        self.z = None
+        self.zerr = None
+        self.tipper = None
+        self.tippererr = None
+
 
     def readfile(self, fn):
         
@@ -118,7 +134,7 @@ class Edi(object):
             raise MTexceptions.MTpyError_edi_file('%s is no proper edi file'%infile)
 
         self.filename = infile
-        self.raw_filestring = edistring
+        self.in_filestring = edistring
 
 
         try:
@@ -161,7 +177,6 @@ class Edi(object):
         except:
             self.tipper = None
             self.tippererr = None
-            self.tipper_dict = None
             print 'Could not read Tipper section: %s'%infile
 
         try:
@@ -170,23 +185,8 @@ class Edi(object):
             self.zrot = None
             print 'Could not read Zrot section: %s'%infile
 
-        self._update_dicts()
 
-
-    def _update_dicts(self):
-
-        #collect all data information in one dictionary
-        data_dict = {}
-
-        data_dict['z'] = self.z
-        data_dict['tipper'] = self.tipper
-        data_dict['zrot'] = self.zrot
-        data_dict['frequencies'] = self.frequencies
-        data_dict['zerr'] = self.zerr
-        data_dict['tippererr'] = self.tippererr
-        
-        self.data = data_dict
-
+    def edi_dict(self):
 
         edi_dict = {}
 
@@ -196,21 +196,32 @@ class Edi(object):
         edi_dict['HMEAS_EMEAS'] = self.hmeas_emeas
         edi_dict['MTSECT'] = self.mtsect
         edi_dict['FREQ'] = self.freq
-        #update the dictionary information from the z and tipper arrays (those may have changed by rotation):
-        new_z_dict = self._update_z_dict() 
-        self.z_dict = new_z_dict
-        edi_dict['Z'] = new_z_dict
-        new_tipper_dict = self._update_tipper_dict()
-        self.tipper_dict = new_tipper_dict
-        edi_dict['TIPPER'] = new_tipper_dict
 
+        #update the dictionary information from the z and tipper arrays (those may have changed by rotation):
+        edi_dict['Z'] = self.z_dict()
+        edi_dict['TIPPER'] = self.tipper_dict()
         edi_dict['ZROT'] = self.zrot
 
 
-        self.edi_dict = edi_dict
+        return  edi_dict
 
-    def _update_z_dict(self):
-        old_z_dict = self.z_dict
+
+    def data_dict(self):
+
+        #collect all data information in one dictionary
+        data_dict = {}
+
+        data_dict['z'] = self.z
+        data_dict['tipper'] = self.tipper
+        data_dict['zrot'] = self.zrot
+        data_dict['frequencies'] = self.freq
+        data_dict['zerr'] = self.zerr
+        data_dict['tippererr'] = self.tippererr
+        
+        return data_dict
+ 
+    def z_dict(self):
+        
         new_z_dict = {}
         z_array = self.z
         zerr_array = self.zerr
@@ -229,9 +240,7 @@ class Edi(object):
 
         return new_z_dict
 
-    def _update_tipper_dict(self):
-        old_tipper_dict = self.tipper_dict
-        
+    def tipper_dict(self):
 
         new_t_dict = {}
         t_array = self.tipper
@@ -254,6 +263,19 @@ class Edi(object):
 
 
         return new_t_dict
+
+    def periods(self):
+
+        return list( 1./np.array(self.frequencies()) )
+
+    def frequencies(self):
+
+        return list(self.freq)
+
+    def n_freqs(self):
+
+        return len(self.freq)
+
 
     def _read_head(self, edistring):
 
@@ -417,13 +439,9 @@ class Edi(object):
                 try:
                     lo_freqs.append(float(k))
                 except:
-                    pass
+                    passs
 
-
-        self.n_freqs = len(lo_freqs)
-        self.frequencies = lo_freqs
         self.freq = lo_freqs
-        self.periods = list(1./np.array(lo_freqs))
 
 
     def _read_z(self, edistring):
@@ -436,10 +454,8 @@ class Edi(object):
         compstrings = ['ZXX','ZXY','ZYX','ZYY']
         Z_entries = ['R','I','.VAR']
 
-        z_array = np.zeros((self.n_freqs,2,2),dtype=np.complex)
-        zerr_array = np.zeros((self.n_freqs,2,2),dtype=np.float)
-        z_dict = {}
-
+        z_array = np.zeros((self.n_freqs(),2,2),dtype=np.complex)
+        zerr_array = np.zeros((self.n_freqs(),2,2),dtype=np.float)
 
         for idx_comp,comp in enumerate(compstrings):
             for idx_zentry,zentry in enumerate(Z_entries):
@@ -454,7 +470,7 @@ class Edi(object):
                 #check, if correct number of entries are given in the block
                 t0 = temp_string.strip().split('\n')[0]
                 n_dummy = int(float(t0.split('//')[1].strip()))
-                if not n_dummy == self.n_freqs:
+                if not n_dummy == self.n_freqs():
                     raise
 
 
@@ -469,20 +485,19 @@ class Edi(object):
 
                 z_dict[sectionhead] = lo_z_vals
 
-        self.z_dict = z_dict
 
-        for idx_freq  in range( self.n_freqs):
-            z_array[idx_freq,0,0] = np.complex(self.z_dict['ZXXR'][idx_freq], self.z_dict['ZXXI'][idx_freq])
-            zerr_array[idx_freq,0,0] = self.z_dict['ZXX.VAR'][idx_freq]
+        for idx_freq  in range( self.n_freqs()):
+            z_array[idx_freq,0,0] = np.complex(z_dict['ZXXR'][idx_freq], z_dict['ZXXI'][idx_freq])
+            zerr_array[idx_freq,0,0] = z_dict['ZXX.VAR'][idx_freq]
 
-            z_array[idx_freq,0,1] = np.complex(self.z_dict['ZXYR'][idx_freq], self.z_dict['ZXYI'][idx_freq])
-            zerr_array[idx_freq,0,1] = self.z_dict['ZXY.VAR'][idx_freq]
+            z_array[idx_freq,0,1] = np.complex(z_dict['ZXYR'][idx_freq], z_dict['ZXYI'][idx_freq])
+            zerr_array[idx_freq,0,1] = z_dict['ZXY.VAR'][idx_freq]
 
-            z_array[idx_freq,1,0] = np.complex(self.z_dict['ZYXR'][idx_freq], self.z_dict['ZYXI'][idx_freq])
-            zerr_array[idx_freq,1,0] = self.z_dict['ZYX.VAR'][idx_freq]
+            z_array[idx_freq,1,0] = np.complex(z_dict['ZYXR'][idx_freq], z_dict['ZYXI'][idx_freq])
+            zerr_array[idx_freq,1,0] = z_dict['ZYX.VAR'][idx_freq]
 
-            z_array[idx_freq,1,1] = np.complex(self.z_dict['ZYYR'][idx_freq], self.z_dict['ZYYI'][idx_freq])
-            zerr_array[idx_freq,1,1] = self.z_dict['ZYY.VAR'][idx_freq]
+            z_array[idx_freq,1,1] = np.complex(z_dict['ZYYR'][idx_freq], z_dict['ZYYI'][idx_freq])
+            zerr_array[idx_freq,1,1] = z_dict['ZYY.VAR'][idx_freq]
 
         self.z = z_array
         self.zerr = zerr_array
@@ -493,8 +508,8 @@ class Edi(object):
         compstrings = ['TX','TY']
         T_entries = ['R','I','VAR']
     
-        tipper_array = np.zeros((self.n_freqs,1,2),dtype=np.complex)
-        tippererr_array = np.zeros((self.n_freqs,1,2),dtype=np.float)
+        tipper_array = np.zeros((self.n_freqs(),1,2),dtype=np.complex)
+        tippererr_array = np.zeros((self.n_freqs(),1,2),dtype=np.float)
         t_dict = {}
 
 
@@ -516,7 +531,7 @@ class Edi(object):
                 #check, if correct number of entries are given in the block
                 t0 = temp_string.strip().split('\n')[0]
                 n_dummy = int(float(t0.split('//')[1].strip()))
-                if not n_dummy == self.n_freqs:
+                if not n_dummy == self.n_freqs():
                     raise
 
                 t1 = temp_string.strip().split('\n')[1:]
@@ -530,14 +545,13 @@ class Edi(object):
 
                 t_dict[comp + tentry] = lo_t_vals
 
-        self.tipper_dict = t_dict
 
-        for idx_freq  in range( self.n_freqs):
-            tipper_array[idx_freq,0,0] = np.complex(self.tipper_dict['TXR'][idx_freq], self.tipper_dict['TXI'][idx_freq])
-            tippererr_array[idx_freq,0,0] = self.tipper_dict['TXVAR'][idx_freq]
+        for idx_freq  in range( self.n_freqs()):
+            tipper_array[idx_freq,0,0] = np.complex(t_dict['TXR'][idx_freq], t_dict['TXI'][idx_freq])
+            tippererr_array[idx_freq,0,0] = t_dict['TXVAR'][idx_freq]
 
-            tipper_array[idx_freq,0,1] = np.complex(self.tipper_dict['TYR'][idx_freq], self.tipper_dict['TYI'][idx_freq])
-            tippererr_array[idx_freq,0,1] = self.tipper_dict['TYVAR'][idx_freq]
+            tipper_array[idx_freq,0,1] = np.complex(t_dict['TYR'][idx_freq], t_dict['TYI'][idx_freq])
+            tippererr_array[idx_freq,0,1] = self.t_dict['TYVAR'][idx_freq]
 
 
 
@@ -551,7 +565,7 @@ class Edi(object):
         try:
             temp_string = _cut_sectionstring(edistring,'ZROT')
         except:
-            lo_angles = list( np.zeros((self.n_freqs)) )            
+            lo_angles = list( np.zeros((self.n_freqs())) )            
             self.zrot = lo_angles
             return
 
@@ -569,7 +583,7 @@ class Edi(object):
                     pass
 
 
-        if len(lo_angles) != self.n_freqs:
+        if len(lo_angles) != self.n_freqs():
             raise
 
         self.zrot = lo_angles
@@ -582,7 +596,7 @@ class Edi(object):
         else:
             fn = fn[0]
         
-        outstring, stationname = _generate_edifile_string(self.edi_dict)
+        outstring, stationname = _generate_edifile_string(self.edi_dict())
 
         if not _validate_edifile_string(outstring):
             raise MTexceptions.MTpyError_edi_file('Cannot write EDI file...output string is invalid')
@@ -641,7 +655,7 @@ class Edi(object):
             Updates the information of "edi_dict, data, z(_dict), zerr, zrot, tipper(_dict), tippererr" variables.
 
         """
-        n_freqs = self.n_freqs
+        n_freqs = self.n_freqs()
         lo_original_angles = self.zrot
         z = self.z
         tipper = self.tipper
@@ -669,7 +683,7 @@ class Edi(object):
         tipper_rot = tipper.copy()
         tippererr_rot = tippererr.copy()
 
-        for idx_freq in range(self.n_freqs):
+        for idx_freq in range(self.n_freqs()):
 
             phi = math.radians(angle)
 
@@ -723,90 +737,191 @@ class Edi(object):
 
         self.zrot = list( (np.array(self.zrot) + angle)%360)
         
-        self._update_dicts()
 
+    def  rho(self):
+        if self.z is None:
+            print 'z array is None - cannot calculate rho'
+            return
 
-    def get_head():
-        pass
+        rho = np.zeros(self.z.shape)
+
+        for idx_f in range(len(rho)):                         
+            rho[idx_f,:,:] = np.abs(self.z[idx_f,:,:])
+
+        return rho
+
+    def phi(self):
+        if self.z is None:
+            print 'z array is None - cannot calculate phi'
+            return
+
+        phi = np.zeros(self.z.shape)
         
+        for idx_f in range(len(phi)):
+            for i in range(2):
+                for j in range(2):
+                    phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))
 
-    def set_head():
-        pass
+        return phi
+
+
+    def set_rho_phi(self, rho_array, phi_array):
+
+        if self.z is not None: 
+            z_new = self.z.copy() 
+
+            if self.z.shape != rho_array.shape:
+                print 'Error - shape of "rho" array does not match shape of Z array: %s ; %s'%(str(rho_array.shape),str(self.z.shape))
+                return
+
+            if self.z.shape != phi_array.shape:
+                print 'Error - shape of "phi" array does not match shape of Z array: %s ; %s'%(str(phi_array.shape),str(self.z.shape))
+                return
+        else:
+            z_new = p.zeros(rho_array.shape,'complex')
+            if rho_array.shape != phi_array.shape:
+                print 'Error - shape of "phi" array does not match shape of "rho" array: %s ; %s'%(str(phi_array.shape),str(rho_array.shape))
+                return
+
+            
+        #assert real array:
+        if np.linalg.norm(np.imag(rho_array )) != 0 :
+            print 'Error - array "rho" is not real valued !'
+            return
+        if np.linalg.norm(np.imag(phi_array )) != 0 :
+            print 'Error - array "phi" is not real valued !'
+            return
+
+        for idx_f in range(len(z_new)):
+            for i in range(2):
+                for j in range(2):
+                    z_new[idx_f,i,j] = cmath.rect( rho_array[idx_f,i,j], math.radians(phi_array[idx_f,i,j] ))
+
+        self.z = z_new
+
+       
+    def set_head(self, head_dict):
         
-      
-
-    def get_info():
-        pass
+        self.head = head_dict
         
     
-    def set_info():
-        pass
+    def set_info_dict(self,info_dict):
+        
+        self.info_dict = info_dict
+
+        
+    def set_info_string(self,info_string):
+        
+        self.info_string = info_string
+        
+            
+    def set_z(self, z_array):
+
+        z_orig = self.z 
+
+        if (self.z is not None) and (self.z.shape != z_array.shape):
+            print 'Error - shape of "z" array does not match shape of Z array: %s ; %s'%(str(z_array.shape),str(self.z.shape))
+            return
+
+        self.z = z_array
+
+
+    def set_zerr(self, zerr_array):
+
+        if (self.zerr is not None) and (self.zerr.shape != zerr_array.shape):
+            print 'Error - shape of "zerr" array does not match shape of Zerr array: %s ; %s'%(str(zerr_array.shape),str(self.zerr.shape))
+            return
+
+        self.zerr = zerr_array
         
 
+    def set_tipper(self, tipper_array):
+
+        if (self.tipper is not None) and (self.tipper.shape != tipper_array.shape):
+            print 'Error - shape of "tipper" array does not match shape of tipper-array: %s ; %s'%(str(tipper_array.shape),str(self.tipper.shape))
+            return
+
+        self.tipper = tipper_array
+
+
+    def set_tippererr(self, tippererr_array):
+
+
+        if (self.tippererr is not None) and (self.tippererr.shape != tippererr_array.shape):
+            print 'Error - shape of "tippererr" array does not match shape of tippererr array: %s ; %s'%(str(tippererr_array.shape),str(self.tippererr.shape))
+            return
+
+        self.tippererr = tippererr_array
+
+         
+    def set_definemeas(self,definemeas_dict):
+        
+        self.definemeas = definemeas_dict
+        
     
-    def get_z():
-        pass
+    def set_mtsect(self, mtsect_dict):
         
+        sel.mtsect = mtsect_dict
 
-    def set_z():
-        pass
+
         
+    def get_datacomponent(self, componentname):
+        data_dict = self.data_dict()
+        if componentname.lower() in data_dict:
+            return data_dict[componentname.lower()]
 
+        compstrings = ['ZXX','ZXY','ZYX','ZYY']
+        Z_entries = ['R','I','.VAR']
+        for idx_comp,comp in enumerate(compstrings):
+            for idx_zentry,zentry in enumerate(Z_entries):
+                section = comp + zentry    
+                if section.lower() == componentname.lower():
+                    return self.z_dict()[section]
 
-    def get_tipper():
-        pass
-        
-    
-    def set_tipper():
-        pass
-        
+        compstrings = ['TX','TY']
+        T_entries = ['R','I','VAR']
 
+        for idx_comp,comp in enumerate(compstrings):
+            for idx_tentry,tentry in enumerate(T_entries):
+                section = comp + tentry
+                if section.lower() == componentname.lower():
+                    return self.tipper_dict()[section]
 
-    def get_definemeas():
-        pass
-        
-    
-    def set_definemeas():
-        pass
-        
-
-
-    def get_mtsect():
-        pass
-        
-    
-    def set_mtsect():
-        pass
-        
-
-
-    def get_datacomponent():
-        pass
+        print 'unknoen data component: %s'%componentname.lower()
+        return
         
     
-    def set_datacomponent():
-        pass
-        
-
-
-    def get_frequencies():
+    def set_datacomponent(self):
         pass
         
    
-    def set_frequencies():
-        pass
-        
+    def set_frequencies(self, lo_frequencies):
 
+        if len(lo_frequencies) is not len(self.z):
+            print 'length of frequency list not correct (%i instead of %i)'%(len(lo_frequencies), len(self.z))
+            return
 
+        self.freq = lo_frequencies
 
-
-    def get_zrot():
-        pass
         
     
-    def set_zrot():
-        pass
+    def set_zrot(self, angle):
+        if isiterable(angle):
+            if len(angle) is not len(self.z):
+            print 'length of angle list not correct (%i instead of %i)'%(len(angle), len(self.z))
+            return
+            try:
+                angle = [i%360 for i in angle]
+            except:
+                raise MTexceptions.MTpyError_edi_file('list of angles contains non-numercal values')
+        else:
+            try:
+                angle = [angle%360 for i in self.z]
+            except:
+                raise MTexceptions.MTpyError_edi_file('Angles is a non-numercal value')                
 
+
+        self.zrot = angle
 
 
 #end of Edi Class
@@ -858,8 +973,8 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
     eom = Edi()
 
     #check frequency lists
-    lo_freqs1 = eo1.frequencies
-    lo_freqs2 = eo2.frequencies
+    lo_freqs1 = eo1.frequencies()
+    lo_freqs2 = eo2.frequencies()
 
 
     lo_eos = []
@@ -886,12 +1001,12 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
             lo_eos = [eo2, eo1]
 
     #find sorting indices for obtaining strictly increasing frequencies:
-    inc_freq_idxs_lower = np.array(lo_eos[0].frequencies).argsort()
-    inc_freq_idxs_upper = np.array(lo_eos[1].frequencies).argsort()
+    inc_freq_idxs_lower = np.array(lo_eos[0].frequencies()).argsort()
+    inc_freq_idxs_upper = np.array(lo_eos[1].frequencies()).argsort()
 
     #determine overlap in frequencies 
-    upper_bound = max(lo_eos[0].frequencies)
-    lower_bound = min(lo_eos[1].frequencies)
+    upper_bound = max(lo_eos[0].frequencies())
+    lower_bound = min(lo_eos[1].frequencies())
 
     overlap_mid_freq = 0.5*(upper_bound + lower_bound)
 
@@ -907,24 +1022,23 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
 
     #find indices for all frequencies from the frequency lists, which are below(lower part) or above (upper part) of the merge frequency - use sorted frequency lists !:
 
-    lower_idxs = list(np.where( np.array(lo_eos[0].frequencies)[inc_freq_idxs_lower] <= merge_frequency)[0])
-    upper_idxs = list(np.where( np.array(lo_eos[1].frequencies)[inc_freq_idxs_upper]  > merge_frequency)[0])
+    lower_idxs = list(np.where( np.array(lo_eos[0].frequencies())[inc_freq_idxs_lower] <= merge_frequency)[0])
+    upper_idxs = list(np.where( np.array(lo_eos[1].frequencies())[inc_freq_idxs_upper]  > merge_frequency)[0])
 
 
     #total of frequencies in new edi object
     n_total_freqs = len(lower_idxs) + len(upper_idxs)
-    eom.n_freqs = n_total_freqs
 
     #------------
     # fill data fields
 
-    eom.z = np.zeros((eom.n_freqs,2,2),dtype=np.complex)
-    eom.zerr = np.zeros((eom.n_freqs,2,2),dtype=np.float)
+    eom.z = np.zeros((eom.n_freqs(),2,2),dtype=np.complex)
+    eom.zerr = np.zeros((eom.n_freqs(),2,2),dtype=np.float)
 
     #check, if tipper exists for both files:
     if (eo1.tipper  is not None ) and (eo2.tipper  is not None ):
-        eom.tipper = np.zeros((eom.n_freqs,1,2),dtype=np.complex)
-        eom.tippererr = np.zeros((eom.n_freqs,1,2),dtype=np.float)
+        eom.tipper = np.zeros((eom.n_freqs(),1,2),dtype=np.complex)
+        eom.tippererr = np.zeros((eom.n_freqs(),1,2),dtype=np.float)
        
     freq_idx = 0
     zrot = []
@@ -937,7 +1051,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         in_terr_lower = eo1.tippererr[inc_freq_idxs_lower]
     
     for li in lower_idxs:
-        lo_freqs.append(np.array(lo_eos[0].frequencies)[inc_freq_idxs_lower][li])
+        lo_freqs.append(np.array(lo_eos[0].frequencies())[inc_freq_idxs_lower][li])
         eom.z[freq_idx,:,:] = in_z_lower[li,:,:]
         eom.zerr[freq_idx,:,:] = in_zerr_lower[li,:,:]
         if eom.tipper is not None:
@@ -958,7 +1072,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         in_terr_upper = eo2.tippererr[inc_freq_idxs_upper]
     
     for ui in upper_idxs:
-        lo_freqs.append(np.array(lo_eos[1].frequencies)[inc_freq_idxs_upper][ui])
+        lo_freqs.append(np.array(lo_eos[1].frequencies())[inc_freq_idxs_upper][ui])
         eom.z[freq_idx,:,:] = in_z_upper[ui,:,:]
         eom.zerr[freq_idx,:,:] = in_zerr_upper[ui,:,:]
         
@@ -973,7 +1087,6 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         freq_idx += 1
     
     eom.zrot = zrot
-    eom.frequencies = lo_freqs
     eom.freq = lo_freqs
 
 
@@ -1180,15 +1293,13 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         if element in ['ex','ey','hx','hy','hz','bx','by','bz']:
             msec_dict[element] = msec1[element]
         if element == 'nfreq':
-            msec_dict[element] = eom.n_freqs
+            msec_dict[element] = eom.n_freqs()
         if element == 'sectid':
             msec_dict[element] = msec1[element]+'+'+msec2[element]
 
 
     eom.mtsect = msec_dict
 
-
-    eom._update_dicts()
 
     if out_fn is not None:
         dirname = op.dirname(op.abspath(op.join('.',out_fn)))
