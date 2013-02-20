@@ -908,8 +908,8 @@ class Edi(object):
     def set_zrot(self, angle):
         if isiterable(angle):
             if len(angle) is not len(self.z):
-            print 'length of angle list not correct (%i instead of %i)'%(len(angle), len(self.z))
-            return
+                print 'length of angle list not correct (%i instead of %i)'%(len(angle), len(self.z))
+                return
             try:
                 angle = [i%360 for i in angle]
             except:

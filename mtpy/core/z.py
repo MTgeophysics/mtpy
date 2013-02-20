@@ -517,15 +517,15 @@ class Z(object):
             distortion_err_tensor = np.zeros_like(distortion_tensor)
         #for all frequencies, calculate D.Inverse, then obtain Z0 = D.I * Z
         try:
-            if not (len(distortion_tensor.shape) in [2,3]) and  (len(distortion_err_tensor.shape) in [2,3]:
+            if not ( len(distortion_tensor.shape) in [2,3] ) and  (len(distortion_err_tensor.shape) in [2,3]):
                 raise
             if len(distortion_tensor.shape) == 3 or len(distortion_err_tensor.shape) == 3:
                 print 'Distortion is not time-dependent - take only first of given distortion tensors'
-                    try:
-                        distortion_tensor = distortion_tensor[0]
-                        distortion_err_tensor = distortion_err_tensor[0]
-                    except:
-                        raise
+                try:
+                    distortion_tensor = distortion_tensor[0]
+                    distortion_err_tensor = distortion_err_tensor[0]
+                except:
+                    raise
 
             if not (distortion_tensor.shape == (2,2) ) and (distortion_err_tensor.shape == (2,2) ):
                 raise
@@ -551,13 +551,13 @@ class Z(object):
                     np.abs( 1./D_det * (1. - distortion_tensor[0,0] * DI[0,0]) * distortion_err_tensor[1,1] )
 
         DI_err[0,1] = np.abs(1./(distortion_tensor[0,0])**2 * distortion_err_tensor[0,0]) +\
-                    np.abs(-1./D_det * (1. - distortion_tensor[1,0] * DI[0,1]) * distortion_err_tensor[0,1] )
+                    np.abs(-1./D_det * (1. - distortion_tensor[1,0] * DI[0,1]) * distortion_err_tensor[0,1] ) +\
                     np.abs(1./(distortion_tensor[1,0])**2 * distortion_err_tensor[1,0]) +\
                     np.abs(-1./(distortion_tensor[1,1])**2 * distortion_err_tensor[1,1])
 
         DI_err[1,0] = np.abs(1./(distortion_tensor[0,0])**2 * distortion_err_tensor[0,0]) +\
                     np.abs(1./(distortion_tensor[0,1])**2 * distortion_err_tensor[0,1]) +\
-                    np.abs(-1./D_det * (1. - distortion_tensor[0,1] * DI[1,0]) * distortion_err_tensor[1,0] )
+                    np.abs(-1./D_det * (1. - distortion_tensor[0,1] * DI[1,0]) * distortion_err_tensor[1,0] ) +\
                     np.abs(-1./(distortion_tensor[1,1])**2 * distortion_err_tensor[1,1])
 
         DI_err[1,1] = np.abs( 1./D_det * (1. - distortion_tensor[1,1] * DI[1,1]) * distortion_err_tensor[0,0] ) +\

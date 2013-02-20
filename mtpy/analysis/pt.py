@@ -55,8 +55,11 @@ class PhaseTensor(object):
         with indices in the following order: 
             PTxx: (0,0) - PTxy: (0,1) - PTyx: (1,0) - PTyy: (1,1)   
 
-        All internal methods are based on (Caldwell et al.,2004) , where they use the canonical cartesian 2D reference (x1, x2). However, all components, coordinates, and angles for in- and outputs are given in the geographical reference frame:
+        All internal methods are based on (Caldwell et al.,2004), in which they use the canonical cartesian 2D reference (x1, x2). However, all components, coordinates, and angles for in- and outputs are given in the geographical reference frame:
             x-axis = North ; y-axis = East (; z-axis = Down) 
+            Therefore, all results from using those methods are consisting (angles are referenced from North rather than x1)
+
+  
 
     """
 
@@ -69,16 +72,39 @@ class PhaseTensor(object):
         #A) check for direct import of a provided pt array 
         try:
             if len(pt_array.shape) == 3 and pt_array.shape[1:3] == (2,2):
-                if pt_array.dtype in ['complex', 'float']:
-                    self.pt = pt_array
+                if pt_array.dtype in ['float']:
+                    self.pt = np.zeros_like(pt_array)
+                    for idx_f in range(pt_array.shape[0]):
+                        self.pt[idx_F] = pt_array[idx_F]
+
         except:
             pass
 
         try:
             if len(pt_array.shape) == 2 and pt_array.shape == (2,2):
-                if pt_array.dtype in ['complex', 'float']:
-                    self.pt = np.zeros((1,2,2),'complex')
-                    self.pt[0] = pt_array            
+                if pt_array.dtype in ['float']:
+                    self.pt = np.zeros((1,2,2))
+                    self.pt[0] = pt_array
+        except:
+            pass
+
+        try:
+            if len(pterr_array.shape) == 3 and ptrr_array.shape[1:3] == (2,2):
+                if pterr_array.dtype in ['float']:
+                    if self.pt is not None:
+                        if self.pt.shape == pterr_array.shape:
+                            for idx_f in range(pterr_array.shape[0]):
+                                self.pterr[idx_f] = pterr_array[idx_f]
+        except:
+            pass
+
+        try:
+            if len(pterr_array.shape) == 2 and pterr_array.shape == (2,2):
+                if pterr_array.dtype in ['float']:
+                    if self.pt is not None:
+                        if self.pt.shape[-2:] == pterr_array.shape:
+                            self.pterr = np.zeros((1,2,2))
+                            self.pterr[0] =  pt_array           
         except:
             pass
 
@@ -91,6 +117,11 @@ class PhaseTensor(object):
             except:
                 pass
 
+            try:
+                zerr_array = edi_object.zerr_array
+            except:
+                pass
+
         #2. otherwise check, if valid Z object is given 
         elif isinstance(z_object,MTedi.Z):
             
@@ -98,6 +129,14 @@ class PhaseTensor(object):
                 z_array = z_object.z
             except:
                 pass
+            try:
+                zerr_array = edi_object.zerr_array
+            except:
+                pass
+
+        if z_array is not None and zerr_array is not None:
+            if z_array.shape != zerr_array.shape:
+                zerr_array = None
 
         #3. if provided PT array was invalid, try to use the Z array 
         if self.pt is None:
@@ -105,9 +144,14 @@ class PhaseTensor(object):
                 if len(z_array.shape) == 3 and z_array.shape[1:3] == (2,2):
                     if z_array.dtype in ['complex', 'float']:
                         try:
-                            self.pt = np.zeros((len(z_array),2,2),'complex')
+                            self.pt = np.zeros((len(z_array),2,2))
                             for idx_f in range(len(z_array)):
-                                self.pt[idx_f] = z2pt(z_array[idx_f])
+                                if zerr_array is not None:
+                                    self.pt[idx_f], self.pterr[idx_f] = z2pt(z_array[idx_f], zerr_array[idx_f] )
+                                else:
+                                    self.pt[idx_f] = z2pt( z_array[idx_f])
+                        except:
+                            pass
 
             except:
                 pass
@@ -115,15 +159,21 @@ class PhaseTensor(object):
             try:
                 if len(z_array.shape) == 2 and z_array.shape == (2,2):
                     if z_array.dtype in ['complex', 'float']:
-                        self.pt = np.zeros((1,2,2),'complex')
-                        self.pt[0] = z2pt(z_array)       
+                        if zerr_array is not None:
+                            self.pt = np.zeros((1,2,2))
+                            self.pterr = np.zeros((1,2,2))
+                            self.pt[0], self.pterr[0] = z2pt( z_array, zerr_array )    
+                        else:
+                            self.pt = np.zeros((1,2,2))
+                            self.pt[0] = z2pt(z_array)  
             except:
                 pass
            
-
-
         self.frequencies = None
-        self.rotation_angle = 0.
+
+        self.ptrot = None
+        if self.pt is not None:
+            self.ptrot = [ 0. for i in self.pt ]
 
 
     def set_pt(self, pt_array):
@@ -133,6 +183,8 @@ class PhaseTensor(object):
     def set_pterr(self, pterr_array):
         pass
 
+    def set_frequencies(self,lo_frequencies):
+        pass
 
     def read_edi_file(self,fn):
 
@@ -151,24 +203,29 @@ class PhaseTensor(object):
 
     def alpha(self):
 
-        pass
+        return alpha, alphaerr
+        
 
     def beta(self):
-        pass
+        
+        return beta, betaerr
 
     def invariants(self):
 
         pass
 
     def skew(self):
-        pass
+        
+        return skew, skewerr
 
     def phimin(self):
 
-        pass
+        return phimin, phiminerr
 
     def phimax(self):
-        pass
+        
+        return phimax, phimaxerr
+
 
     def rotate(self,angle):
 
@@ -176,14 +233,135 @@ class PhaseTensor(object):
 
 
 
-
-
-
 def z2pt(z_array, zerr_array = None):
-    pass
+    """
+    
+    """
 
+    try:
+        if not  len(z_array.shape) in [2,3]:
+            raise
+        if not z_array.shape[-2:] == (2,2):
+            raise
+        if not z_array.dtype in ['complex', 'float']:
+            raise
+    except:
+        raise MTexceptions.MTpyError_PT('Error - incorrect z array: %s;%s instead of (N,2,2);complex'%(str(z_array.shape), str(z_array.dtype)))
+
+    if zerr_array is not None:
+        try:
+            if not  len(zerr_array.shape) in [2,3]:
+                raise
+            if not zerr_array.shape[-2:] == (2,2):
+                raise
+            if not z_array.dtype in ['float']:
+                raise
+        except:
+            raise MTexceptions.MTpyError_PT('Error - incorrect z-err-array: %s;%s instead of (N,2,2);real'%(str(zerr_array.shape), str(zerr_array.dtype)))
+
+        if not z_array.shape == zerr_array.shape:
+            raise MTexceptions.MTpyError_PT('Error - z-array and z-err-array have different shape: %s;%s'%(str(z_array.shape), str(zerr_array.shape)))
+
+
+    #for a single matrix as input:
+    if len(z_array.shape) == 2:
+        
+        pt_array = np.zeros((2,2))
+
+        realz = np.real(z_array)
+        imagz = np.imag(z_array)
+        detreal = np.linalg.det(realz)
+        if detreal == 0 :
+            raise MTexceptions.MTpyError_PT('Error - z-array contains a singular matrix, thus it cannot be converted into a PT!' )
+
+        pt_array[0,0] =  realz[1,1] * immagz[0,0] - realz[0,1] * immagz[1,0] 
+        pt_array[0,1] =  realz[1,1] * immagz[0,1] - realz[0,1] * immagz[1,1] 
+        pt_array[1,0] =  realz[0,0] * immagz[1,0] - realz[1,0] * immagz[0,0] 
+        pt_array[1,1] =  realz[0,0] * immagz[1,1] - realz[1,0] * immagz[0,1] 
+
+        pt_array /= detreal
+
+        if zerr_array is None:
+            return pt_array, pterr_array
+
+        pterr_array = np.zeros_like(pt_array)
+        pterr_array[0,0] = 1/detreal * (np.abs( -pt_array[0,0] * realz[1,1] * zerr_array[0,0]) + \
+                                        np.abs(  pt_array[0,0] * realz[0,1] * zerr_array[1,0]) + \
+                                        np.abs(  (imagz[0,0] - pt_array[0,0] * realz[0,0] ) * zerr_array[1,1]) +\
+                                        np.abs(  (-imagz[1,0]+ pt_array[0,0] * realz[1,0] ) * zerr_array[0,1]) + \
+                                        np.abs(  realz[1,1] * zerr_array[0,0]) + np.abs( realz[0,1] * zerr_array[1,0]) )
+
+        pterr_array[0,1] = 1/detreal * (np.abs( -pt_array[0,1] * realz[1,1] * zerr_array[0,0]) + \
+                                        np.abs(  pt_array[0,1] * realz[0,1] * zerr_array[1,0]) + \
+                                        np.abs(  (imagz[0,1] - pt_array[0,1] * realz[0,0] ) * zerr_array[1,1]) +\
+                                        np.abs(  (-imagz[1,1]+ pt_array[0,1] * realz[1,0] ) * zerr_array[0,1]) + \
+                                        np.abs(  realz[1,1] * zerr_array[0,1]) + np.abs( realz[0,1] * zerr_array[1,1]) )
+
+        pterr_array[1,0] = 1/detreal * (np.abs(  (imagz[1,0] - pt_array[1,0] * realz[1,1] ) * zerr_array[0,0]) +\
+                                        np.abs( pt_array[1,0] * realz[1,0] * zerr_array[0,1]) + \
+                                        np.abs(  (-imagz[0,0] + pt_array[1,0] * realz[0,1] ) * zerr_array[1,0]) + \
+                                        np.abs( -pt_array[1,0] * realz[0,0] * zerr_array[1,1]) + \
+                                        np.abs(  realz[0,0] * zerr_array[1,0]) + np.abs( -realz[1,0] * zerr_array[0,0]) )
+
+        pterr_array[1,1] = 1/detreal * (np.abs(  (imagz[1,1] - pt_array[1,1] * realz[1,1] ) * zerr_array[0,0]) +\
+                                        np.abs( pt_array[1,1] * realz[1,0] * zerr_array[0,1]) + \
+                                        np.abs(  (-imagz[0,1] + pt_array[1,1] * realz[0,1] ) * zerr_array[1,0]) + \
+                                        np.abs( -pt_array[1,1] * realz[0,0] * zerr_array[1,1]) + \
+                                        np.abs(  realz[0,0] * zerr_array[1,1]) + np.abs( -realz[1,0] * zerr_array[0,1]) )
+
+        return pt_array, pterr_array
+
+
+    #else:
+    pt_array = np.zeros((z_array.shape[0],2,2))
+
+    for idx_f in range(len(z_array)):       
+        
+        realz = np.real(z_array[idx_f])
+        imagz = np.imag(z_array[idx_f])
+
+        detreal = np.linalg.det(realz)
+        if detreal == 0 :
+            raise MTexceptions.MTpyError_PT('Error - z-array contains a singular matrix, thus it cannot be converted into a PT!' )
+
+        pt_array[idx_f,0,0] =  realz[1,1] * immagz[0,0] - realz[0,1] * immagz[1,0] 
+        pt_array[idx_f,0,1] =  realz[1,1] * immagz[0,1] - realz[0,1] * immagz[1,1] 
+        pt_array[idx_f,1,0] =  realz[0,0] * immagz[1,0] - realz[1,0] * immagz[0,0] 
+        pt_array[idx_f,1,1] =  realz[0,0] * immagz[1,1] - realz[1,0] * immagz[0,1] 
+
+        pt_array /= detreal
+
+        if zerr_array is None:
+            return pt_array, pterr_array
+
+        pterr_array = np.zeros_like(pt_array)
+        pterr_array[idx_f,0,0] = 1/detreal * (np.abs( -pt_array[idx_f,0,0] * realz[1,1] * zerr_array[0,0]) + \
+                                        np.abs(  pt_array[idx_f,0,0] * realz[0,1] * zerr_array[1,0]) + \
+                                        np.abs(  (imagz[0,0] - pt_array[idx_f,0,0] * realz[0,0] ) * zerr_array[1,1]) +\
+                                        np.abs(  (-imagz[1,0]+ pt_array[idx_f,0,0] * realz[1,0] ) * zerr_array[0,1]) + \
+                                        np.abs(  realz[1,1] * zerr_array[0,0]) + np.abs( realz[0,1] * zerr_array[1,0]) )
+
+        pterr_array[idx_f,0,1] = 1/detreal * (np.abs( -pt_array[idx_f,0,1] * realz[1,1] * zerr_array[0,0]) + \
+                                        np.abs(  pt_array[idx_f,0,1] * realz[0,1] * zerr_array[1,0]) + \
+                                        np.abs(  (imagz[0,1] - pt_array[idx_f,0,1] * realz[0,0] ) * zerr_array[1,1]) +\
+                                        np.abs(  (-imagz[1,1]+ pt_array[idx_f,0,1] * realz[1,0] ) * zerr_array[0,1]) + \
+                                        np.abs(  realz[1,1] * zerr_array[0,1]) + np.abs( realz[0,1] * zerr_array[1,1]) )
+
+        pterr_array[idx_f,1,0] = 1/detreal * (np.abs(  (imagz[1,0] - pt_array[idx_f,1,0] * realz[1,1] ) * zerr_array[0,0]) +\
+                                        np.abs( pt_array[idx_f,1,0] * realz[1,0] * zerr_array[0,1]) + \
+                                        np.abs(  (-imagz[0,0] + pt_array[idx_f,1,0] * realz[0,1] ) * zerr_array[1,0]) + \
+                                        np.abs( -pt_array[idx_f,1,0] * realz[0,0] * zerr_array[1,1]) + \
+                                        np.abs(  realz[0,0] * zerr_array[1,0]) + np.abs( -realz[1,0] * zerr_array[0,0]) )
+
+        pterr_array[idx_f,1,1] = 1/detreal * (np.abs(  (imagz[1,1] - pt_array[idx_f,1,1] * realz[1,1] ) * zerr_array[0,0]) +\
+                                        np.abs( pt_array[idx_f,1,1] * realz[1,0] * zerr_array[0,1]) + \
+                                        np.abs(  (-imagz[0,1] + pt_array[idx_f,1,1] * realz[0,1] ) * zerr_array[1,0]) + \
+                                        np.abs( -pt_array[idx_f,1,1] * realz[0,0] * zerr_array[1,1]) + \
+                                        np.abs(  realz[0,0] * zerr_array[1,1]) + np.abs( -realz[1,0] * zerr_array[0,1]) )
 
     return pt_array, pterr_array
+
+
 
 def z_object2pt(z_object):
 
@@ -193,4 +371,6 @@ def z_object2pt(z_object):
 def edi_object2pt(edi_object):
 
     return pt_array, pterr_array
-   
+
+
+
