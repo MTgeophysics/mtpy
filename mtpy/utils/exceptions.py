@@ -37,3 +37,6 @@ class MTpyError_EDI( Exception ):
  
 class MTpyError_Z( Exception ):
     pass
+    
+class MTpyError_PT( Exception ):
+    pass

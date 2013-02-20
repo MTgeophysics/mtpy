@@ -91,7 +91,6 @@ class Z(object):
         Methods  include reading and writing from and to edi-objects, rotations/combinations of Z instances, as well as 
         calculation of invariants, inverse, amplitude/phase,...
 
-        'get' and 'set' for all edi file sections
         
         Z is a complex array of the form (n_frequencies, 2, 2), 
         with indices in the following order: 
@@ -114,11 +113,28 @@ class Z(object):
             pass
 
         try:
+            if len(z_array.shape) == 2 and z_array.shape == (2,2):
+                if z_array.dtype in ['complex', 'float']:
+                    self.z = np.zeros((1,2,2),'complex')
+                    self.z[0] = z_array            
+        except:
+            pass
+
+        try:
             if len(zerr_array.shape) == 3 and zerr_array.shape[1:3] == (2,2):
                 if zerr_array.dtype in ['float']:
                     self.zerr = zerr_array
         except:
             pass
+        try:
+            if len(zerr_array.shape) == 2 and zerr_array.shape == (2,2):
+                if zerr_array.dtype in ['float']:
+                    self.z = np.zeros((1,2,2))
+                    self.zerr = zerr_array
+        except:
+            pass
+
+
             
         self.frequencies = None
         self.edi_object = None
