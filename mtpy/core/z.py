@@ -70,14 +70,19 @@ import os.path as op
 import math, cmath
 import time, calendar 
 
+import mtpy.utils.calculator as MTc
+
+
 import mtpy.core.edi as MTedi 
-reload (MTedi)
 
 import mtpy.utils.format as MTformat
-reload(MTformat)
 
 import mtpy.utils.exceptions as MTexceptions
+
 reload(MTexceptions)
+reload (MTedi)
+reload(MTformat)
+reload(MTc)
 
 
 #=================================================================
@@ -545,6 +550,8 @@ class Z(object):
 
         #todo :include error on  determinant!!
         D_det = np.linalg.det(distortion_tensor)
+
+
 
         DI_err[0,0] = np.abs(-1./(distortion_tensor[0,0])**2 * distortion_err_tensor[0,0]) +\
                     np.abs(1./(distortion_tensor[0,1])**2 * distortion_err_tensor[0,1]) +\
