@@ -68,11 +68,8 @@ import numpy as np
 import os
 import sys
 import os.path as op
-import math
+import math, cmath
 import time, calendar 
-
-import mtpy.core.z as MTz 
-reload (MTz)
 
 import mtpy.utils.format as MTformat
 reload(MTformat)
@@ -90,6 +87,9 @@ class Edi(object):
         Edi class - generates an edi-object.
 
         Methods  include reading and writing from and to edi-files, rotations/combinations of edi-files, as well as 'get' and 'set' for all edi file sections
+
+        Errors are given as standard deviations (sqrt(VAR))
+
 
     """
 
@@ -236,7 +236,8 @@ class Edi(object):
                 elif idx_zentry == 1:
                     new_z_dict[section] = list(np.imag(z_array[:,idx_comp/2, idx_comp%2]))
                 elif idx_zentry == 2:
-                    new_z_dict[section] = list(zerr_array[:,idx_comp/2, idx_comp%2])
+                    #squaring the errors (stddev) to get VAR values
+                    new_z_dict[section] = list( (zerr_array[:,idx_comp/2, idx_comp%2])**2 ) 
 
         return new_z_dict
 
@@ -259,7 +260,8 @@ class Edi(object):
                 elif idx_tentry == 1:
                     new_t_dict[section] = list(np.imag(t_array[:,idx_comp/2, idx_comp%2]))
                 elif idx_tentry == 2:
-                    new_t_dict[section] = list(terr_array[:,idx_comp/2, idx_comp%2])
+                    #square errors (stddev) to get VAR values
+                    new_t_dict[section] = list( (terr_array[:,idx_comp/2, idx_comp%2])**2)
 
 
         return new_t_dict
@@ -446,7 +448,7 @@ class Edi(object):
 
     def _read_z(self, edistring):
         """
-        Read in impedances information. 
+        Read in impedances information from a string read from an EDI file. 
         Store it as dictionary and complex array (incl. Zvar values in 'zerr' array)
 
         """
@@ -456,6 +458,7 @@ class Edi(object):
 
         z_array = np.zeros((self.n_freqs(),2,2),dtype=np.complex)
         zerr_array = np.zeros((self.n_freqs(),2,2),dtype=np.float)
+        z_dict = {}
 
         for idx_comp,comp in enumerate(compstrings):
             for idx_zentry,zentry in enumerate(Z_entries):
@@ -463,7 +466,7 @@ class Edi(object):
                 try:
                     temp_string = _cut_sectionstring(edistring,sectionhead)
                 except:
-                    pass
+                    continue
   
                 lo_z_vals = []
 
@@ -488,19 +491,20 @@ class Edi(object):
 
         for idx_freq  in range( self.n_freqs()):
             z_array[idx_freq,0,0] = np.complex(z_dict['ZXXR'][idx_freq], z_dict['ZXXI'][idx_freq])
-            zerr_array[idx_freq,0,0] = z_dict['ZXX.VAR'][idx_freq]
-
             z_array[idx_freq,0,1] = np.complex(z_dict['ZXYR'][idx_freq], z_dict['ZXYI'][idx_freq])
-            zerr_array[idx_freq,0,1] = z_dict['ZXY.VAR'][idx_freq]
-
             z_array[idx_freq,1,0] = np.complex(z_dict['ZYXR'][idx_freq], z_dict['ZYXI'][idx_freq])
-            zerr_array[idx_freq,1,0] = z_dict['ZYX.VAR'][idx_freq]
-
             z_array[idx_freq,1,1] = np.complex(z_dict['ZYYR'][idx_freq], z_dict['ZYYI'][idx_freq])
-            zerr_array[idx_freq,1,1] = z_dict['ZYY.VAR'][idx_freq]
+
+            for idx_comp,comp in enumerate(compstrings):
+                sectionhead = comp + '.VAR'
+                if sectionhead in z_dict:
+                    zerr_array[idx_freq, idx_comp/2, idx_comp%2] = z_dict[sectionhead][idx_freq]
+
 
         self.z = z_array
-        self.zerr = zerr_array
+
+        #errors are stddev, not VAR :
+        self.zerr = np.sqrt(zerr_array)
 
 
     def _read_tipper(self, edistring):
@@ -556,7 +560,8 @@ class Edi(object):
 
 
         self.tipper = tipper_array
-        self.tippererr = tippererr_array
+        #errors are stddev, not VAR :  
+        self.tippererr = np.sqrt(tippererr_array)
 
 
 
@@ -599,6 +604,7 @@ class Edi(object):
         outstring, stationname = _generate_edifile_string(self.edi_dict())
 
         if not _validate_edifile_string(outstring):
+            return outstring
             raise MTexceptions.MTpyError_edi_file('Cannot write EDI file...output string is invalid')
 
 
@@ -636,8 +642,11 @@ class Edi(object):
 
 
     def z2resphase(self):
+        import mtpy.core.z as MTz 
         
         amplitude, phase = MTz.res2phase(self.z)
+
+        del MTz
 
         return amplitude, phase
 
@@ -658,10 +667,13 @@ class Edi(object):
         n_freqs = self.n_freqs()
         lo_original_angles = self.zrot
         z = self.z
-        tipper = self.tipper
         zerr = self.zerr
+
+        tipper = self.tipper
         tippererr = self.tippererr
+        
         angle = angle%360
+
 
         #1. rotation positive in clockwise direction
         #2. orientation of new X axis X' given by rotation angle
@@ -679,9 +691,11 @@ class Edi(object):
         # That is NOT the same as the rotated error matrix Zerr (although the result is similar)
 
         z_rot = z.copy()
-        zerr_rot = zerr.copy()
-        tipper_rot = tipper.copy()
-        tippererr_rot = tippererr.copy()
+
+        zerr_rot = np.copy(zerr)
+
+        tipper_rot = np.copy(tipper)
+        tippererr_rot = np.copy(tippererr)
 
         for idx_freq in range(self.n_freqs()):
 
@@ -697,8 +711,7 @@ class Edi(object):
             z_rot[idx_freq,1,0] = cphi**2 * z_orig[1,0] + cphi*sphi*(z_orig[1,1]-z_orig[0,0]) - sphi**2 * z_orig[0,1]
             z_rot[idx_freq,1,1] = cphi**2 * z_orig[1,1] + cphi*sphi*(-z_orig[0,1]-z_orig[1,0]) + sphi**2 * z_orig[0,0]
 
-            zerr_orig = zerr[idx_freq,:,:]
-            
+           
             # squared propagation of errors
             # zerr_rot[idx_freq,0,0] = np.sqrt( (cphi**2 * zerr_orig[0,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[0,1])**2 + (zerr_orig[1,0])**2) + (sphi**2 * zerr_orig[1,1])**2)
 
@@ -708,26 +721,30 @@ class Edi(object):
 
             # zerr_rot[idx_freq,1,1] = np.sqrt( (sphi**2 * zerr_orig[0,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[0,1])**2 + (zerr_orig[1,0])**2) + (cphi**2 * zerr_orig[1,1])**2) 
 
-            #absolute propagation of errors
-            zerr_rot[idx_freq,0,0] = cphi**2 * zerr_orig[0,0] + np.abs(cphi * sphi) * (zerr_orig[0,1] + zerr_orig[1,0]) + sphi**2 * zerr_orig[1,1]
+            if zerr is not None:
+                zerr_orig = zerr[idx_freq,:,:]
+ 
+                #absolute propagation of errors
+                zerr_rot[idx_freq,0,0] = cphi**2 * zerr_orig[0,0] + np.abs(cphi * sphi) * (zerr_orig[0,1] + zerr_orig[1,0]) + sphi**2 * zerr_orig[1,1]
 
-            zerr_rot[idx_freq,0,1] = cphi**2 * zerr_orig[0,1] + np.abs(cphi * sphi) * (zerr_orig[1,1] + zerr_orig[0,0]) + sphi**2 * zerr_orig[1,0] 
+                zerr_rot[idx_freq,0,1] = cphi**2 * zerr_orig[0,1] + np.abs(cphi * sphi) * (zerr_orig[1,1] + zerr_orig[0,0]) + sphi**2 * zerr_orig[1,0] 
 
-            zerr_rot[idx_freq,1,0] = cphi**2 * zerr_orig[1,0] + np.abs(cphi * sphi) * (zerr_orig[1,1] + zerr_orig[0,0]) + sphi**2 * zerr_orig[0,1] 
+                zerr_rot[idx_freq,1,0] = cphi**2 * zerr_orig[1,0] + np.abs(cphi * sphi) * (zerr_orig[1,1] + zerr_orig[0,0]) + sphi**2 * zerr_orig[0,1] 
 
-            zerr_rot[idx_freq,1,1] = cphi**2 * zerr_orig[1,1] + np.abs(cphi * sphi) * (zerr_orig[0,1] + zerr_orig[1,0]) + sphi**2 * zerr_orig[0,0] 
+                zerr_rot[idx_freq,1,1] = cphi**2 * zerr_orig[1,1] + np.abs(cphi * sphi) * (zerr_orig[0,1] + zerr_orig[1,0]) + sphi**2 * zerr_orig[0,0] 
 
+            if tipper is not None:
+                t_orig = tipper[idx_freq,:,:]
 
-            t_orig = tipper[idx_freq,:,:]
+                tipper_rot[idx_freq,0,0] =  cphi * t_orig[0,0] + sphi * t_orig[0,1]
+                tipper_rot[idx_freq,0,1] = -sphi * t_orig[0,0] + cphi * t_orig[0,1]
 
-            tipper_rot[idx_freq,0,0] =  cphi * t_orig[0,0] + sphi * t_orig[0,1]
-            tipper_rot[idx_freq,0,1] = -sphi * t_orig[0,0] + cphi * t_orig[0,1]
+            if tippererr is not None:
+                #absolute error propagation
+                terr_orig = tippererr[idx_freq,:,:]
 
-            #absolute error propagation
-            terr_orig = tippererr[idx_freq,:,:]
-
-            tippererr_rot[idx_freq,0,0] = np.abs(cphi * terr_orig[0,0])  + np.abs(sphi * terr_orig[0,1])
-            tippererr_rot[idx_freq,0,1] = np.abs(-sphi * terr_orig[0,0]) + np.abs(cphi * terr_orig[0,1])
+                tippererr_rot[idx_freq,0,0] = np.abs(cphi * terr_orig[0,0])  + np.abs(sphi * terr_orig[0,1])
+                tippererr_rot[idx_freq,0,1] = np.abs(-sphi * terr_orig[0,0]) + np.abs(cphi * terr_orig[0,1])
  
 
         self.z = z_rot
@@ -744,11 +761,19 @@ class Edi(object):
             return
 
         rho = np.zeros(self.z.shape)
+        rhoerr = np.zeros_like(rho)
 
         for idx_f in range(len(rho)):                         
             rho[idx_f,:,:] = np.abs(self.z[idx_f,:,:])
+        
+        if self.zerr is None:
+            return rho, rhoerr
 
-        return rho
+        #error of rho depends on the phase of z as well: 
+        # z_err is the same for imag and real, therefore like a square around the value of z. Hence if z is purely real or purely imaginary, the error of rho is the same as z_err, otherwise, the amplitude is crossing this square diagonally, therefor increasing the error by up to a maximum factor of sqrt(2):
+
+        phi
+
 
     def phi(self):
         if self.z is None:
@@ -756,13 +781,14 @@ class Edi(object):
             return
 
         phi = np.zeros(self.z.shape)
+        phierr = np.zeros_like(phi)
         
         for idx_f in range(len(phi)):
             for i in range(2):
                 for j in range(2):
                     phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))
 
-        return phi
+        return phi, phierr
 
 
     def set_rho_phi(self, rho_array, phi_array):

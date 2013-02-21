@@ -73,14 +73,11 @@ import time, calendar
 import mtpy.utils.calculator as MTc
 
 
-import mtpy.core.edi as MTedi 
-
 import mtpy.utils.format as MTformat
 
 import mtpy.utils.exceptions as MTexceptions
 
 reload(MTexceptions)
-reload (MTedi)
 reload(MTformat)
 reload(MTc)
 
@@ -101,11 +98,14 @@ class Z(object):
         with indices in the following order: 
             Zxx: (0,0) - Zxy: (0,1) - Zyx: (1,0) - Zyy: (1,1)   
 
+        Errors are given as standard deviations (sqrt(VAR))
 
     """
 
     def __init__(self, z_array = None, zerr_array = None, edi_object = None):
     
+
+        import mtpy.core.edi as MTedi 
 
         self.z = None
         self.zerr = None
@@ -160,6 +160,7 @@ class Z(object):
             self.zerr = np.zeros(self.z.shape)
 
         self.rotation_angle = 0.
+
 
     def set_edi_object(self, edi_object):
 
@@ -273,32 +274,34 @@ class Z(object):
         self.z = z_new
 
 
-    def rho(self):
+    def rho_phi(self):
+        
         if self.z is None:
-            print 'z array is None - cannot calculate rho'
+            print 'Z array is None - cannot calculate rho/phi'
             return
+        rhoerr = None
+        phierr = None
+        if self.zerr is not None:
+            rhoerr = np.zeros(self.zerr.shape)
+            phierr = np.zeros(self.zerr.shape)
 
         rho = np.zeros(self.z.shape)
-
-        for idx_f in range(len(rho)):                         
-            rho[idx_f,:,:] = np.abs(self.z[idx_f,:,:])
-
-        return rho
-
-        
-    def phi(self):
-        if self.z is None:
-            print 'z array is None - cannot calculate phi'
-            return
-
         phi = np.zeros(self.z.shape)
-        
-        for idx_f in range(len(phi)):
-            for i in range(2):
-                for j in range(2):
-                    phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))
 
-        return phi
+
+        for idx_f in range(len(self.z)): 
+            for i in range(2):                        
+                for j in range(2):
+                    rho[idx_f,i,j] = np.abs(self.z[idx_f,i,j])
+                    phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))
+                
+                    if self.zerr is not None:
+                        r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
+                        rhoerr[idx_f,i,j] = r_err
+                        phierr[idx_f,i,j] = phi_err
+
+        return rho, phi, rhoerr, phierr
+
 
 
     def set_rho_phi(self, rho_array, phi_array):
@@ -430,7 +433,7 @@ class Z(object):
     def no_ss(self, reduce_rho_factor_x = 1., reduce_rho_factor_y = 1.):
         """
         Remove the static shift by providing the correction factors for x and y components.
-        (Factor can be dteremined by using the "Analysis" module for the impedance tensor)
+        (Factor can be determined by using the "Analysis" module for the impedance tensor)
 
         Assume the original observed tensor Z is built by a static shift S and an unperturbated "correct" Z0 :
             Z = S * Z0
@@ -551,27 +554,7 @@ class Z(object):
         #todo :include error on  determinant!!
         D_det = np.linalg.det(distortion_tensor)
 
-
-
-        DI_err[0,0] = np.abs(-1./(distortion_tensor[0,0])**2 * distortion_err_tensor[0,0]) +\
-                    np.abs(1./(distortion_tensor[0,1])**2 * distortion_err_tensor[0,1]) +\
-                    np.abs(-1./(distortion_tensor[1,0])**2 * distortion_err_tensor[1,0]) +\
-                    np.abs( 1./D_det * (1. - distortion_tensor[0,0] * DI[0,0]) * distortion_err_tensor[1,1] )
-
-        DI_err[0,1] = np.abs(1./(distortion_tensor[0,0])**2 * distortion_err_tensor[0,0]) +\
-                    np.abs(-1./D_det * (1. - distortion_tensor[1,0] * DI[0,1]) * distortion_err_tensor[0,1] ) +\
-                    np.abs(1./(distortion_tensor[1,0])**2 * distortion_err_tensor[1,0]) +\
-                    np.abs(-1./(distortion_tensor[1,1])**2 * distortion_err_tensor[1,1])
-
-        DI_err[1,0] = np.abs(1./(distortion_tensor[0,0])**2 * distortion_err_tensor[0,0]) +\
-                    np.abs(1./(distortion_tensor[0,1])**2 * distortion_err_tensor[0,1]) +\
-                    np.abs(-1./D_det * (1. - distortion_tensor[0,1] * DI[1,0]) * distortion_err_tensor[1,0] ) +\
-                    np.abs(-1./(distortion_tensor[1,1])**2 * distortion_err_tensor[1,1])
-
-        DI_err[1,1] = np.abs( 1./D_det * (1. - distortion_tensor[1,1] * DI[1,1]) * distortion_err_tensor[0,0] ) +\
-                    np.abs(1./(distortion_tensor[0,1])**2 * distortion_err_tensor[0,1]) +\
-                    np.abs(-1./(distortion_tensor[1,0])**2 * distortion_err_tensor[1,0]) +\
-                    np.abs(-1./(distortion_tensor[1,1])**2 * distortion_err_tensor[1,1]) 
+        dummy, DI_err = MTc.invertmatrix_incl_errors_real(distortion_tensor, distortion_err_tensor)
 
         #propagation of errors - step 2 - product of D.inverse and Z; D.I * Z, making it 4 summands for each component:
         z_corrected = np.zeros_like(self.z)
@@ -653,6 +636,7 @@ class Tipper(object):
         Tipper class - generates a Tipper-object.
 
 
+        Errors are given as standard deviations (sqrt(VAR))
 
     """
 
@@ -801,32 +785,32 @@ class Tipper(object):
         self.tipper = tipper_new
 
 
-    def rho(self):
+    def rho_phi(self):
         
         if self.tipper is None:
-            print 'tipper array is None - cannot calculate rho'
+            print 'tipper array is None - cannot calculate rho/phi'
             return
+        rhoerr = None
+        phierr = None
+        if self.tippererr is not None:
+            rhoerr = np.zeros(self.tippererr.shape)
+            phierr = np.zeros(self.tippererr.shape)
 
         rho = np.zeros(self.tipper.shape)
-
-        for idx_f in range(len(rho)):                         
-            rho[idx_f,:,:] = np.abs(self.tipper[idx_f,:,:])
-
-        return rho
-
-        
-    def phi(self):
-        if self.tipper is None:
-            print 'tipper array is None - cannot calculate phi'
-            return
-
         phi = np.zeros(self.tipper.shape)
-        
-        for idx_f in range(len(phi)):
-                for j in range(2):
-                    phi[idx_f,0,j] = math.degrees(cmath.phase(self.tipper[idx_f,0,j]))
 
-        return phi
+
+        for idx_f in range(len(tipper)):                         
+            for j in range(2):
+                rho[idx_f,0,j] = np.abs(self.tipper[idx_f,0,j])
+                phi[idx_f,0,j] = math.degrees(cmath.phase(self.tipper[idx_f,0,j]))
+                
+                if self.tippererr is not None:
+                    r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.tipper[idx_f,0,j]), self.tippererr[idx_f,0,j], np.imag(self.tipper[idx_f,0,j]), self.tippererr[idx_f,0,j])
+                    rhoerr[idx_f,0,j] = r_err
+                    phierr[idx_f,0,j] = phi_err
+
+        return rho, phi, rhoerr, phierr
 
 
     def set_rho_phi(self, rho_array, phi_array):
@@ -978,7 +962,7 @@ def z2rhophi(z_array):
     
     z_object = _read_z_array(z_array)
 
-    return z_object.rho(), z_object.phi()
+    return z_object.rho_phi()
 
 
 def rotate_tipper(tipper_array, alpha, tippererr_array = None):
@@ -989,6 +973,12 @@ def rotate_tipper(tipper_array, alpha, tippererr_array = None):
 
     return tipper_object.tipper, tipper_object.tippererr
 
+
+def tipper2rhophi(tipper_array):
+    
+    tipper_object = _read_tipper_array(tipper_array)
+
+    return tipper_object.rho_phi()
 
 
 def _read_z_array(z_array, zerr_array = None):

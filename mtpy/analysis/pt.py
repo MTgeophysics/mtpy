@@ -29,16 +29,14 @@ import math, cmath
 import time, calendar 
 
 import mtpy.core.edi as MTedi 
-reload (MTedi)
-
 import mtpy.core.z as MTz 
-reload (MTz)
-
 import mtpy.utils.format as MTformat
-reload(MTformat)
-
 import mtpy.utils.exceptions as MTexceptions
+
 reload(MTexceptions)
+reload(MTedi)
+reload(MTz)
+reload(MTformat)
 
 
 #=================================================================
@@ -65,7 +63,6 @@ class PhaseTensor(object):
 
     def __init__(self, pt_array = None, pterr_array = None, z_array = None, zerr_array = None, z_object = None, edi_object = None):
     
-
         self.pt = None
         self.pterr = None  
 
@@ -123,7 +120,7 @@ class PhaseTensor(object):
                 pass
 
         #2. otherwise check, if valid Z object is given 
-        elif isinstance(z_object,MTedi.Z):
+        elif isinstance(z_object,MTz.Z):
             
             try:
                 z_array = z_object.z
@@ -145,13 +142,18 @@ class PhaseTensor(object):
                     if z_array.dtype in ['complex', 'float']:
                         try:
                             self.pt = np.zeros((len(z_array),2,2))
-                            for idx_f in range(len(z_array)):
-                                if zerr_array is not None:
-                                    self.pt[idx_f], self.pterr[idx_f] = z2pt(z_array[idx_f], zerr_array[idx_f] )
-                                else:
-                                    self.pt[idx_f] = z2pt( z_array[idx_f])
+                            if zerr_array is not None:
+                                    if zerr_array.shape == z_array.shape:
+                                        self.pterr = np.zeros_like(self.pt)
+                                        for idx_f in range(len(z_array)):
+                                            self.pt[idx_f], self.pterr[idx_f] = z2pt(z_array[idx_f], zerr_array[idx_f] )
+
+                            else:
+                                for idx_f in range(len(z_array)):
+                                    self.pt[idx_f] = z2pt( z_array[idx_f])[0]
+                                    
                         except:
-                            pass
+                            self.pt = None
 
             except:
                 pass
@@ -237,7 +239,6 @@ def z2pt(z_array, zerr_array = None):
     """
     
     """
-
     try:
         if not  len(z_array.shape) in [2,3]:
             raise
@@ -247,6 +248,7 @@ def z2pt(z_array, zerr_array = None):
             raise
     except:
         raise MTexceptions.MTpyError_PT('Error - incorrect z array: %s;%s instead of (N,2,2);complex'%(str(z_array.shape), str(z_array.dtype)))
+    
 
     if zerr_array is not None:
         try:
@@ -254,18 +256,15 @@ def z2pt(z_array, zerr_array = None):
                 raise
             if not zerr_array.shape[-2:] == (2,2):
                 raise
-            if not z_array.dtype in ['float']:
+            if not zerr_array.dtype in ['float']:
                 raise
         except:
             raise MTexceptions.MTpyError_PT('Error - incorrect z-err-array: %s;%s instead of (N,2,2);real'%(str(zerr_array.shape), str(zerr_array.dtype)))
 
         if not z_array.shape == zerr_array.shape:
             raise MTexceptions.MTpyError_PT('Error - z-array and z-err-array have different shape: %s;%s'%(str(z_array.shape), str(zerr_array.shape)))
-
-
     #for a single matrix as input:
     if len(z_array.shape) == 2:
-        
         pt_array = np.zeros((2,2))
 
         realz = np.real(z_array)
@@ -274,15 +273,16 @@ def z2pt(z_array, zerr_array = None):
         if detreal == 0 :
             raise MTexceptions.MTpyError_PT('Error - z-array contains a singular matrix, thus it cannot be converted into a PT!' )
 
-        pt_array[0,0] =  realz[1,1] * immagz[0,0] - realz[0,1] * immagz[1,0] 
-        pt_array[0,1] =  realz[1,1] * immagz[0,1] - realz[0,1] * immagz[1,1] 
-        pt_array[1,0] =  realz[0,0] * immagz[1,0] - realz[1,0] * immagz[0,0] 
-        pt_array[1,1] =  realz[0,0] * immagz[1,1] - realz[1,0] * immagz[0,1] 
+
+        pt_array[0,0] =  realz[1,1] * imagz[0,0] - realz[0,1] * imagz[1,0] 
+        pt_array[0,1] =  realz[1,1] * imagz[0,1] - realz[0,1] * imagz[1,1] 
+        pt_array[1,0] =  realz[0,0] * imagz[1,0] - realz[1,0] * imagz[0,0] 
+        pt_array[1,1] =  realz[0,0] * imagz[1,1] - realz[1,0] * imagz[0,1] 
 
         pt_array /= detreal
 
         if zerr_array is None:
-            return pt_array, pterr_array
+            return pt_array, None
 
         pterr_array = np.zeros_like(pt_array)
         pterr_array[0,0] = 1/detreal * (np.abs( -pt_array[0,0] * realz[1,1] * zerr_array[0,0]) + \
