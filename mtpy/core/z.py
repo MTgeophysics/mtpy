@@ -543,6 +543,7 @@ class Z(object):
         #propagation of errors (using 1-norm) - step 1 - inversion of D:
         DI_err = np.zeros_like(distortion_err_tensor)
 
+        #todo :include error on  determinant!!
         D_det = np.linalg.det(distortion_tensor)
 
         DI_err[0,0] = np.abs(-1./(distortion_tensor[0,0])**2 * distortion_err_tensor[0,0]) +\
@@ -942,7 +943,7 @@ def rotate_z(z_array, alpha, zerr_array = None):
 
 
 
-def remove_distortion(z_array, zerr_array = None, distortion_tensor, distortion_err_tensor ):
+def remove_distortion(z_array, distortion_tensor, distortion_err_tensor, zerr_array = None):
     
     z_object = _read_z_array(z_array, zerr_array)
     
