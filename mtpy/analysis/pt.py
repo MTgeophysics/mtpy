@@ -482,12 +482,23 @@ def z2pt(z_array, zerr_array = None):
 
 
 def z_object2pt(z_object):
-    pass
+
+    p = PhaseTensor(z_object = z_object)
+
+    pt_array = p.pt
+    pterr_array = p.pterr
+
     return pt_array, pterr_array
 
 
 def edi_object2pt(edi_object):
-    pass
+
+    p = PhaseTensor(edi_object = edi_object)
+
+    pt_array = p.pt
+    
+    pterr_array = p.pterr
+
     return pt_array, pterr_array
 
 
