@@ -210,7 +210,7 @@ class PhaseTensor(object):
         inv_dict = {}
         inv_dict['trace'] =  np.array( [np.trace(i) for i in self.pt])
         inv_dict['skew'] = self.skew()[0]
-        inv_dict['det'] = np.array( [np.linalg.det(i) for i in self.pt])
+        inv_dict['det'] = self.det()[0] 
 
         inv_dict['phimax'] = self.phimax()[0] 
         inv_dict['phimin'] = self.phimin()[0] 
@@ -240,9 +240,24 @@ class PhaseTensor(object):
     def skew(self):
         
         skew =  np.array( [ i[0,1] - i[1,0] for i in self.pt ] )
-
+        
+        skewerr = None
+        if self.pterr is not None:
+            skewerr = np.zeros_like(skew)
+            skewerr[:] = self.pterr[:,0,1] + self.pterr[:,1,0]
 
         return skew, skewerr
+
+    def det(self):
+
+        det_phi = np.array( [np.linalg.det(i) for i in self.pt])
+        
+        det_phi_err = None
+        if self.pterr is not None:
+            det_phi_err = np.zeros_like(det_phi)
+            det_phi_err[:] = np.abs(self.pt[:,1,1] * self.pterr[:,0,0]) + np.abs(self.pt[:,0,0] * self.pterr[:,1,1]) + np.abs(self.pt[:,0,1] * self.pterr[:,1,0]) + np.abs(self.pt[:,1,0] * self.pterr[:,0,1])
+
+        return det_phi, det_phi_err
 
     def phimin(self):
 
@@ -378,29 +393,39 @@ def z2pt(z_array, zerr_array = None):
             return pt_array, None
 
         pterr_array = np.zeros_like(pt_array)
-        pterr_array[0,0] = 1/detreal * (np.abs( -pt_array[0,0] * realz[1,1] * zerr_array[0,0]) + \
-                                        np.abs(  pt_array[0,0] * realz[0,1] * zerr_array[1,0]) + \
-                                        np.abs(  (imagz[0,0] - pt_array[0,0] * realz[0,0] ) * zerr_array[1,1]) +\
-                                        np.abs(  (-imagz[1,0]+ pt_array[0,0] * realz[1,0] ) * zerr_array[0,1]) + \
-                                        np.abs(  realz[1,1] * zerr_array[0,0]) + np.abs( realz[0,1] * zerr_array[1,0]) )
 
-        pterr_array[0,1] = 1/detreal * (np.abs( -pt_array[0,1] * realz[1,1] * zerr_array[0,0]) + \
-                                        np.abs(  pt_array[0,1] * realz[0,1] * zerr_array[1,0]) + \
-                                        np.abs(  (imagz[0,1] - pt_array[0,1] * realz[0,0] ) * zerr_array[1,1]) +\
-                                        np.abs(  (-imagz[1,1]+ pt_array[0,1] * realz[1,0] ) * zerr_array[0,1]) + \
-                                        np.abs(  realz[1,1] * zerr_array[0,1]) + np.abs( realz[0,1] * zerr_array[1,1]) )
+        #Z entries are independent -> use Gaussian error propagation (squared sums/2-norm)
 
-        pterr_array[1,0] = 1/detreal * (np.abs(  (imagz[1,0] - pt_array[1,0] * realz[1,1] ) * zerr_array[0,0]) +\
-                                        np.abs( pt_array[1,0] * realz[1,0] * zerr_array[0,1]) + \
-                                        np.abs(  (-imagz[0,0] + pt_array[1,0] * realz[0,1] ) * zerr_array[1,0]) + \
-                                        np.abs( -pt_array[1,0] * realz[0,0] * zerr_array[1,1]) + \
-                                        np.abs(  realz[0,0] * zerr_array[1,0]) + np.abs( -realz[1,0] * zerr_array[0,0]) )
+        pterr_array[0,0] = 1/np.abs(detreal) * np.sqrt( np.sum([np.abs( -pt_array[0,0] * realz[1,1] * zerr_array[0,0])**2,
+                                                                np.abs(  pt_array[0,0] * realz[0,1] * zerr_array[1,0])**2,
+                                                                np.abs(  ( (imagz[0,0] * realz[1,0] - realz[0,0] * imagz[1,0]) / np.abs(detreal) * realz[0,0] ) * zerr_array[0,1])**2, 
+                                                                np.abs(  ( (imagz[1,0] * realz[0,0] - realz[1,0] * imagz[1,1]) / np.abs(detreal) * realz[0,1] ) * zerr_array[1,1])**2,
+                                                                np.abs(  realz[1,1] * zerr_array[0,0])**2,
+                                                                np.abs( realz[0,1] * zerr_array[1,0])**2 ]))
 
-        pterr_array[1,1] = 1/detreal * (np.abs(  (imagz[1,1] - pt_array[1,1] * realz[1,1] ) * zerr_array[0,0]) +\
-                                        np.abs( pt_array[1,1] * realz[1,0] * zerr_array[0,1]) + \
-                                        np.abs(  (-imagz[0,1] + pt_array[1,1] * realz[0,1] ) * zerr_array[1,0]) + \
-                                        np.abs( -pt_array[1,1] * realz[0,0] * zerr_array[1,1]) + \
-                                        np.abs(  realz[0,0] * zerr_array[1,1]) + np.abs( -realz[1,0] * zerr_array[0,1]) )
+
+        pterr_array[0,1] = 1/np.abs(detreal) * np.sqrt( np.sum([np.abs( -pt_array[0,1] * realz[1,1] * zerr_array[0,0])**2,
+                                                                np.abs(  pt_array[0,1] * realz[0,1] * zerr_array[1,0])**2,
+                                                                np.abs(  ( (imagz[0,1] * realz[1,0] - realz[0,0] * imagz[1,1]) / np.abs(detreal) * realz[1,1] ) * zerr_array[0,1])**2, 
+                                                                np.abs(  ( (imagz[1,1] * realz[0,0] - realz[0,1] * imagz[1,0]) / np.abs(detreal) * realz[0,1] ) * zerr_array[1,1])**2,
+                                                                np.abs(  realz[1,1] * zerr_array[0,1])**2,
+                                                                np.abs( realz[0,1] * zerr_array[1,1])**2 ]))
+
+        pterr_array[1,0] = 1/np.abs(detreal) * np.sqrt( np.sum([np.abs(  pt_array[1,0] * realz[1,0] * zerr_array[0,1])**2,
+                                                                np.abs( -pt_array[1,0] * realz[0,0] * zerr_array[1,1])**2,
+                                                                np.abs(  ( (imagz[0,0] * realz[1,1] - realz[0,1] * imagz[1,1]) / np.abs(detreal) * realz[1,0] ) * zerr_array[0,0])**2, 
+                                                                np.abs(  ( (imagz[1,0] * realz[0,1] - realz[1,1] * imagz[0,0]) / np.abs(detreal) * realz[0,0] ) * zerr_array[0,1])**2,
+                                                                np.abs(  realz[1,0] * zerr_array[0,0])**2,
+                                                                np.abs( realz[0,0] * zerr_array[1,0])**2 ]))
+
+
+        pterr_array[1,1] = 1/np.abs(detreal) * np.sqrt( np.sum([np.abs(  pt_array[1,1] * realz[1,0] * zerr_array[0,1])**2,
+                                                                np.abs( -pt_array[1,1] * realz[0,0] * zerr_array[1,1])**2,
+                                                                np.abs(  ( (imagz[0,1] * realz[1,1] - realz[0,1] * imagz[1,1]) / np.abs(detreal) * realz[1,0] ) * zerr_array[0,0])**2, 
+                                                                np.abs(  ( (imagz[1,1] * realz[0,1] - realz[1,1] * imagz[0,1]) / np.abs(detreal) * realz[0,0] ) * zerr_array[0,1])**2,
+                                                                np.abs( - realz[1,0] * zerr_array[0,1])**2,
+                                                                np.abs( realz[0,0] * zerr_array[1,1])**2 ]))
+
 
         return pt_array, pterr_array
 

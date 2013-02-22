@@ -13,18 +13,12 @@ This module contains helper functions for standard calculations.
 
 
 import numpy as np
-import re
-import sys, os
-import glob
-import os.path as op
-import glob
-import calendar
-import time
-import ConfigParser
+
 import math, cmath
 
 from mtpy.utils.exceptions import *
-import mtpy.utils.format as MTformat
+
+
 #=================================================================
 
 #define uncertainty for differences between time steps
@@ -94,7 +88,7 @@ def propagate_error_rect2polar(x,x_error,y, y_error):
     
     # rho error is the difference between the closest and furthest point of the box (w.r.t. the origin)
     # approximation: just take corners and midpoint of edges 
-    lo_points = [ (x + x_error, y), (x - x_error, y), (x, y - y_error ), (x, y - y_error ),\
+    lo_points = [ (x + x_error, y), (x - x_error, y), (x, y - y_error ), (x, y + y_error ),\
                   (x - x_error, y - y_error) ,(x + x_error, y - y_error) ,(x + x_error, y + y_error) ,(x - x_error, y + y_error) ]
 
 
@@ -104,17 +98,30 @@ def propagate_error_rect2polar(x,x_error,y, y_error):
         origin_in_box = True
 
     lo_polar_points = [ cmath.polar(np.complex(*i)) for i in lo_points ]
-    lo_rho = [i[0] for i in lo_polar_points ]
-    lo_phi = [i[1] for i in lo_polar_points ]
 
-    rho_err = lo_rho.max() 
-    phi_err = math.degrees(  lo_phi.max() - lo_phi.min() )
+    lo_rho = [i[0] for i in lo_polar_points ]
+    lo_phi = [math.degrees(i[1])%360 for i in lo_polar_points ]
+
+    rho_err = 0.5*(max(lo_rho) - min(lo_rho) )
+    phi_err = 0.5*(max(lo_phi) - min(lo_phi))
+
+    if (270 < max(lo_phi) < 360 ) and (0 < min(lo_phi) < 90 ):
+        tmp1 = [ i for i in lo_phi if (0 < i < 90) ]
+        tmp4 = [ i for i in lo_phi if (270 < i < 360) ]
+        phi_err = 0.5*((max(tmp1) - min(tmp4))%360)
+
+
+    if phi_err > 180:
+        #print phi_err,' -> ',(-phi_err)%360
+        phi_err = (-phi_err)%360
 
     if origin_in_box is True:
-        rho_err -= lo_rho.min()
-        phi_err = 360.
+        #largest rho:
+        rho_err = 2*rho_err + min(lo_rho)
+        #maximum angle uncertainty:
+        phi_err = 180.
 
-    return rho_error, phi_error
+    return rho_err, phi_err
 
 
 

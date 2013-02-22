@@ -703,40 +703,34 @@ class Edi(object):
         self.zrot = list( (np.array(self.zrot) + angle)%360)
         
 
-    def  rho(self):
+    def  rho_phi(self):
+
         if self.z is None:
-            print 'z array is None - cannot calculate rho'
+            print 'Z array is None - cannot calculate rho/phi'
             return
+        rhoerr = None
+        phierr = None
+        if self.zerr is not None:
+            rhoerr = np.zeros(self.zerr.shape)
+            phierr = np.zeros(self.zerr.shape)
 
         rho = np.zeros(self.z.shape)
-        rhoerr = np.zeros_like(rho)
-
-        for idx_f in range(len(rho)):                         
-            rho[idx_f,:,:] = np.abs(self.z[idx_f,:,:])
-        
-        if self.zerr is None:
-            return rho, rhoerr
-
-        #error of rho depends on the phase of z as well: 
-        # z_err is the same for imag and real, therefore like a square around the value of z. Hence if z is purely real or purely imaginary, the error of rho is the same as z_err, otherwise, the amplitude is crossing this square diagonally, therefor increasing the error by up to a maximum factor of sqrt(2):
-
-        phi
-
-
-    def phi(self):
-        if self.z is None:
-            print 'z array is None - cannot calculate phi'
-            return
-
         phi = np.zeros(self.z.shape)
-        phierr = np.zeros_like(phi)
-        
-        for idx_f in range(len(phi)):
-            for i in range(2):
-                for j in range(2):
-                    phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))
 
-        return phi, phierr
+
+        for idx_f in range(len(self.z)): 
+            for i in range(2):                        
+                for j in range(2):
+                    rho[idx_f,i,j] = np.abs(self.z[idx_f,i,j])
+                    phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))
+                
+                    if self.zerr is not None:
+                        r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
+                        rhoerr[idx_f,i,j] = r_err
+                        phierr[idx_f,i,j] = phi_err
+
+        return rho, phi, rhoerr, phierr
+
 
 
     def set_rho_phi(self, rho_array, phi_array):
