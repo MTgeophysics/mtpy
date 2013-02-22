@@ -32,11 +32,13 @@ import mtpy.core.edi as MTedi
 import mtpy.core.z as MTz 
 import mtpy.utils.format as MTformat
 import mtpy.utils.exceptions as MTexceptions
+import mtpy.utils.calculator as MTc
 
 reload(MTexceptions)
 reload(MTedi)
 reload(MTz)
 reload(MTformat)
+reload(MTc)
 
 
 #=================================================================
@@ -270,10 +272,60 @@ class PhaseTensor(object):
         return phimax, phimaxerr
 
 
-    def rotate(self,angle):
+    def rotate(self,alpha):
 
-        pass
+        if self.pt is None :
+            print 'pt-array is "None" - I cannot rotate that'
+            return
 
+        #check for iterable list/set of angles - if so, it must have length 1 or same as len(tipper):
+        if np.iterable(alpha) == 0:
+            try:
+                degreeangle = float(alpha%360)
+            except:
+                print '"Angle" must be a valid number (in degrees)'
+                return
+
+            #make an n long list of identical angles
+            lo_angles = [degreeangle for i in self.pt]
+        else:
+            if len(lo_angles) == 1:
+                try:
+                    degreeangle = float(alpha%360)
+                except:
+                    print '"Angle" must be a valid number (in degrees)'
+                    return
+                #make an n long list of identical angles
+                lo_angles = [degreeangle for i in self.pt]
+            else:                    
+                try:
+                    lo_angles = [ float(i%360) for i in alpha]
+                except:
+                    print '"Angles" must be valid numbers (in degrees)'
+                    return
+            
+        self.rotation_angle = lo_angles
+
+        if len(lo_angles) != len(self.pt):
+            print 'Wrong number Number of "angles" - need %i '%(len(self.pt))
+            self.rotation_angle = 0.
+            return
+        
+        pt_rot = np.copy(self.pt)
+        pterr_rot = np.copy(self.pterr)
+       
+        for idx_freq in range(len(self.pt)):
+                    
+            angle = lo_angles[idx_freq]
+
+            if self.pterr is not None:
+                pt_rot[idx_freq], pterr_rot[idx_freq] = MTc.rotatematrix_incl_errors(self.pt[idx_freq,:,:], angle, self.pterr[idx_freq,:,:])
+            else:
+                pt_rot[idx_freq], pterr_rot = MTc.rotatematrix_incl_errors(self.pt[idx_freq,:,:], angle)
+
+        
+        self.pt = pt_rot
+        self.pterr = pterr_rot
 
 
 def z2pt(z_array, zerr_array = None):

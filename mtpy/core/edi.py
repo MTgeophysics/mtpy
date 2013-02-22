@@ -519,7 +519,7 @@ class Edi(object):
 
         for idx_comp,comp in enumerate(compstrings):
             for idx_tentry,tentry in enumerate(T_entries):
-
+                temp_string = None
                 try:
                     sectionhead = comp + tentry + '.EXP'
                     temp_string = _cut_sectionstring(edistring,sectionhead)
@@ -528,13 +528,21 @@ class Edi(object):
                         sectionhead = comp + tentry
                         temp_string = _cut_sectionstring(edistring,sectionhead)
                     except:
+                        # if tipper is given with sectionhead "TX.VAR"
+                        if (idx_tentry == 2) and (temp_string is None):
+                            try:
+                                sectionhead = comp + '.' + tentry
+                                temp_string = _cut_sectionstring(edistring,sectionhead)
+                            except:
+                                pass
                         pass
-  
+          
                 lo_t_vals = []
                 
                 #check, if correct number of entries are given in the block
                 t0 = temp_string.strip().split('\n')[0]
                 n_dummy = int(float(t0.split('//')[1].strip()))
+
                 if not n_dummy == self.n_freqs():
                     raise
 
@@ -553,10 +561,8 @@ class Edi(object):
         for idx_freq  in range( self.n_freqs()):
             tipper_array[idx_freq,0,0] = np.complex(t_dict['TXR'][idx_freq], t_dict['TXI'][idx_freq])
             tippererr_array[idx_freq,0,0] = t_dict['TXVAR'][idx_freq]
-
             tipper_array[idx_freq,0,1] = np.complex(t_dict['TYR'][idx_freq], t_dict['TYI'][idx_freq])
-            tippererr_array[idx_freq,0,1] = self.t_dict['TYVAR'][idx_freq]
-
+            tippererr_array[idx_freq,0,1] = t_dict['TYVAR'][idx_freq]
 
 
         self.tipper = tipper_array
@@ -667,21 +673,25 @@ class Edi(object):
         
         angle = angle%360
 
+        z_rot = np.copy(self.z)
+        zerr_rot = np.copy(self.zerr)
+        tipper_rot = np.copy(self.tipper)
+        tippererr_rot = np.copy(self.tippererr)
 
         for idx_freq in range(self.n_freqs()):
 
             if self.zerr is not None:
-                z_rot, zerr_rot = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle, self.zerr[idx_freq,:,:])
+                z_rot[idx_freq], zerr_rot[idx_freq] = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle, self.zerr[idx_freq,:,:])
             else:
-                z_rot, zerr_rot = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle)
+                z_rot[idx_freq], zerr_rot = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle)
   
 
             if tipper is not None:
 
                 if self.tippererr is not None:
-                    tipper_rot, tippererr_rot = MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle,self.tippererr[idx_freq,:,:] )
+                    tipper_rot[idx_freq], tippererr_rot[idx_freq] = MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle,self.tippererr[idx_freq,:,:] )
                 else:
-                    tipper_rot, tippererr_rot = MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle)
+                    tipper_rot[idx_freq], tippererr_rot = MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle)
 
 
 
@@ -870,17 +880,17 @@ class Edi(object):
         
     
     def set_zrot(self, angle):
-        if isiterable(angle):
+        if np.iterable(angle):
             if len(angle) is not len(self.z):
                 print 'length of angle list not correct (%i instead of %i)'%(len(angle), len(self.z))
                 return
             try:
-                angle = [i%360 for i in angle]
+                angle = [float(i%360) for i in angle]
             except:
                 raise MTexceptions.MTpyError_edi_file('list of angles contains non-numercal values')
         else:
             try:
-                angle = [angle%360 for i in self.z]
+                angle = [float(angle%360) for i in self.z]
             except:
                 raise MTexceptions.MTpyError_edi_file('Angles is a non-numercal value')                
 

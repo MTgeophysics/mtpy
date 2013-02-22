@@ -205,15 +205,21 @@ def rotatevector_incl_errors(invector, angle, invector_err = None):
 
     rotmat = np.matrix([[ cphi,-sphi],[sphi,cphi] ])
 
-    rotated_vector = np.dot( rotmat, invector )
+    if invector.shape == (1,2):
+        rotated_vector = np.dot( invector, rotmat.I )
+    else:
+        rotated_vector = np.dot( rotmat, invector )
+    
     
     errvec = None
     if (invector_err is not None) :   
         err_orig = np.real(invector_err)
         errvec = np.zeros_like(invector_err)
 
-        errvec[0,0] = cphi**2 * err_orig[0,0] + np.abs(cphi * sphi) * (err_orig[0,1] + err_orig[1,0]) + sphi**2 * err_orig[1,1]
-        errvec[0,1] = cphi**2 * err_orig[0,1] + np.abs(cphi * sphi) * (err_orig[1,1] + err_orig[0,0]) + sphi**2 * err_orig[1,0]
+        if invector_err.shape == (1,2):
+            errvec = np.dot( invector_err, np.abs(rotmat.I) )
+        else:
+            errvec = np.dot( np.abs(rotmat), invector_err )
 
 
     return rotated_matrix, errvec

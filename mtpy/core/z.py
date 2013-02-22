@@ -360,48 +360,49 @@ class Z(object):
             return
 
         #check for iterable list/set of angles - if so, it must have length 1 or same as len(tipper):
-        if iterable(alpha) == 0:
+        if np.iterable(alpha) == 0:
             try:
-                degreeangle = alpha%360
+                degreeangle = float(alpha%360)
             except:
                 print '"Angle" must be a valid number (in degrees)'
                 return
 
-            self.rotation_angle = degreeangle
             #make an n long list of identical angles
             lo_angles = [degreeangle for i in self.z]
         else:
             if len(lo_angles) == 1:
                 try:
-                    degreeangle = alpha%360
+                    degreeangle = float(alpha%360)
                 except:
                     print '"Angle" must be a valid number (in degrees)'
                     return
-                self.rotation_angle = degreeangle
                 #make an n long list of identical angles
                 lo_angles = [degreeangle for i in self.z]
             else:                    
                 try:
-                    lo_angles = [ i%360 for i in alpha]
+                    lo_angles = [ float(i%360) for i in alpha]
                 except:
                     print '"Angles" must be valid numbers (in degrees)'
                     return
             
-            self.rotation_angle = lo_angles
+        self.rotation_angle = lo_angles
 
         if len(lo_angles) != len(self.z):
             print 'Wrong number Number of "angles" - need %i '%(len(self.z))
-            self.rotation_angle = 0.
+            #self.rotation_angle = 0.
             return
+
+        z_rot = np.copy(self.z)
+        zerr_rot = np.copy(self.zerr)
 
         for idx_freq in range(len(self.zz)):
                     
             angle = lo_angles[idx_freq]
 
             if self.zerr is not None:
-                z_rot, zerr_rot = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle, self.zerr[idx_freq,:,:])
+                z_rot[idx_freq], zerr_rot[idx_freq] = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle, self.zerr[idx_freq,:,:])
             else:
-                z_rot, zerr_rot = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle)
+                z_rot[idx_freq], zerr_rot = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle)
 
 
         self.z = z_rot
@@ -423,7 +424,7 @@ class Z(object):
         """
         
         #check for iterable list/set of reduce_rho_factor_x - if so, it must have length 1 or same as len(z):
-        if iterable(reduce_rho_factor_x) == 0:
+        if np.iterable(reduce_rho_factor_x) == 0:
             try:
                 x_factor = float(reduce_rho_factor_x)
             except:
@@ -451,7 +452,7 @@ class Z(object):
             return
   
         #check for iterable list/set of reduce_rho_factor_y - if so, it must have length 1 or same as len(z):
-        if iterable(reduce_rho_factor_y) == 0:
+        if np.iterable(reduce_rho_factor_y) == 0:
             try:
                 y_factor = float(reduce_rho_factor_y)
             except:
@@ -835,48 +836,48 @@ class Tipper(object):
             return
 
         #check for iterable list/set of angles - if so, it must have length 1 or same as len(tipper):
-        if iterable(alpha) == 0:
+        if np.iterable(alpha) == 0:
             try:
-                degreeangle = alpha%360
+                degreeangle = float(alpha%360)
             except:
                 print '"Angle" must be a valid number (in degrees)'
                 return
 
-            self.rotation_angle = degreeangle
             #make an n long list of identical angles
             lo_angles = [degreeangle for i in self.tipper]
         else:
             if len(lo_angles) == 1:
                 try:
-                    degreeangle = alpha%360
+                    degreeangle = float(alpha%360)
                 except:
                     print '"Angle" must be a valid number (in degrees)'
                     return
-                self.rotation_angle = degreeangle
                 #make an n long list of identical angles
                 lo_angles = [degreeangle for i in self.z]
             else:                    
                 try:
-                    lo_angles = [ i%360 for i in alpha]
+                    lo_angles = [ float(i%360) for i in alpha]
                 except:
                     print '"Angles" must be valid numbers (in degrees)'
                     return
             
-            self.rotation_angle = lo_angles
+        self.rotation_angle = lo_angles
 
         if len(lo_angles) != len(self.tipper):
             print 'Wrong number Number of "angles" - need %i '%(len(self.tipper))
             self.rotation_angle = 0.
             return
 
-            
+        tipper_rot = np.copy(self.tipper)
+        tippererr_rot = np.copy(self.tippererr)
+
         for idx_freq in range(len(tipper_rot)):
             angle = lo_angles[idx_freq]
 
             if self.tippererr is not None:
-                tipper_rot, tippererr_rot =  MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle,self.tippererr[idx_freq,:,:] )
+                tipper_rot[idx_freq], tippererr_rot[idx_freq] =  MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle,self.tippererr[idx_freq,:,:] )
             else:
-                tipper_rot, tippererr_rot = MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle)
+                tipper_rot[idx_freq], tippererr_rot = MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle)
 
 
  
