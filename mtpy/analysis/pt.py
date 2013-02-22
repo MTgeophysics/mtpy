@@ -203,29 +203,70 @@ class PhaseTensor(object):
         pass
 
 
+    def invariants(self):
+
+        inv_dict = {}
+        inv_dict['trace'] =  np.array( [np.trace(i) for i in self.pt])
+        inv_dict['skew'] = self.skew()[0]
+        inv_dict['det'] = np.array( [np.linalg.det(i) for i in self.pt])
+
+        inv_dict['phimax'] = self.phimax()[0] 
+        inv_dict['phimin'] = self.phimin()[0] 
+        inv_dict['beta'] = self.beta()[0] 
+
+        return inv_dict
+
     def alpha(self):
+
+        alpha = 0.5 * np.arctan2( self.pt[:,0,1] +self.pt[:,1,0]  , self.pt[:,0,0] - self.pt[:,1,1] )  
+        
+        alphaerr = np.zeros_like(alpha)
+
 
         return alpha, alphaerr
         
 
     def beta(self):
         
+        beta = 0.5 * np.arctan2( inv_dict['skew'], inv_dict['trace'])  
+
+
         return beta, betaerr
 
-    def invariants(self):
 
-        pass
 
     def skew(self):
         
+        skew =  np.array( [ i[0,1] - i[1,0] for i in self.pt ] )
+
+
         return skew, skewerr
 
     def phimin(self):
 
+        det = np.array( [np.linalg.det(i) for i in self.pt])
+
+        phimin = np.zeros_like(det)
+
+        for i in range(len(P.pt)):
+            s = 1.
+            if det[i] < 0 :
+                s = -1.
+
+        phinmin[i] = s * (0.5 * np.sqrt( self.trace()[i]**2 + self.skew()[i]**2 ) - np.sqrt( 0.25* self.trace()[i]**2 + 0.25*self.skew()[i]**2 - np.abs(  det[i] )) )
+
+ 
         return phimin, phiminerr
 
     def phimax(self):
         
+        det = np.array( [np.linalg.det(i) for i in self.pt])
+
+        phimax = np.zeros_like(det)
+
+
+        phinmax[i] = 0.5 * np.sqrt( self.trace()[i]**2 + self.skew()[i]**2 ) +  np.sqrt( 0.25* self.trace()[i]**2 + 0.25*self.skew()[i]**2 - np.abs(  det[i] ))
+
         return phimax, phimaxerr
 
 
@@ -364,12 +405,12 @@ def z2pt(z_array, zerr_array = None):
 
 
 def z_object2pt(z_object):
-
+    pass
     return pt_array, pterr_array
 
 
 def edi_object2pt(edi_object):
-
+    pass
     return pt_array, pterr_array
 
 

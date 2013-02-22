@@ -72,15 +72,15 @@ import math, cmath
 import time, calendar 
 
 import mtpy.utils.format as MTformat
-reload(MTformat)
-
+import mtpy.utils.calculator as MTc
 import mtpy.utils.exceptions as MTexceptions
+
 reload(MTexceptions)
+reload(MTformat)
+reload(MTc)
 
 
 #=================================================================
-
-
 
 class Edi(object):
     """
@@ -664,88 +664,26 @@ class Edi(object):
             Updates the information of "edi_dict, data, z(_dict), zerr, zrot, tipper(_dict), tippererr" variables.
 
         """
-        n_freqs = self.n_freqs()
-        lo_original_angles = self.zrot
-        z = self.z
-        zerr = self.zerr
-
-        tipper = self.tipper
-        tippererr = self.tippererr
         
         angle = angle%360
 
 
-        #1. rotation positive in clockwise direction
-        #2. orientation of new X axis X' given by rotation angle
-        #3. express contents of Z/tipper (points P) in this new system (points P')
-        #4. rotation for points calculated as P' = ([cos , sin ],[-sin, cos]) * P <=> P' = R * P
-        #5. => B' = R * B and E' = R * E
-        # (Rt is the inverse rotation matrix)
-        #6. E = Z * B => Rt * E' = Z * Rt * B' => E' = (R*Z*Rt) * B' => Z' = (R*Z*Rt)  
-
-        #7. Bz = T * B => Bz = T * Rt * B' => T' = (T * Rt)
-
-        # Rotation of the uncertainties:
-        # a) rotate Z into Z'
-        # b) use propagation of errors on Z' to obtain the rotated Z'err
-        # That is NOT the same as the rotated error matrix Zerr (although the result is similar)
-
-        z_rot = z.copy()
-
-        zerr_rot = np.copy(zerr)
-
-        tipper_rot = np.copy(tipper)
-        tippererr_rot = np.copy(tippererr)
-
         for idx_freq in range(self.n_freqs()):
 
-            phi = math.radians(angle)
-
-            cphi = np.cos(phi)
-            sphi = np.sin(phi)
-
-            z_orig = z[idx_freq,:,:]
-
-            z_rot[idx_freq,0,0] = cphi**2 * z_orig[0,0] + cphi*sphi*(z_orig[0,1]+z_orig[1,0]) + sphi**2 * z_orig[1,1]
-            z_rot[idx_freq,0,1] = cphi**2 * z_orig[0,1] + cphi*sphi*(z_orig[1,1]-z_orig[0,0]) - sphi**2 * z_orig[1,0]
-            z_rot[idx_freq,1,0] = cphi**2 * z_orig[1,0] + cphi*sphi*(z_orig[1,1]-z_orig[0,0]) - sphi**2 * z_orig[0,1]
-            z_rot[idx_freq,1,1] = cphi**2 * z_orig[1,1] + cphi*sphi*(-z_orig[0,1]-z_orig[1,0]) + sphi**2 * z_orig[0,0]
-
-           
-            # squared propagation of errors
-            # zerr_rot[idx_freq,0,0] = np.sqrt( (cphi**2 * zerr_orig[0,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[0,1])**2 + (zerr_orig[1,0])**2) + (sphi**2 * zerr_orig[1,1])**2)
-
-            # zerr_rot[idx_freq,0,1] = np.sqrt( (cphi**2 * zerr_orig[0,1])**2 + cphi**2 * sphi**2 * ( (zerr_orig[1,1])**2 + (zerr_orig[0,0])**2) + (sphi**2 * zerr_orig[1,0])**2) 
-
-            # zerr_rot[idx_freq,1,0] = np.sqrt( (cphi**2 * zerr_orig[1,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[1,1])**2 + (zerr_orig[0,0])**2) + (sphi**2 * zerr_orig[0,1])**2) 
-
-            # zerr_rot[idx_freq,1,1] = np.sqrt( (sphi**2 * zerr_orig[0,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[0,1])**2 + (zerr_orig[1,0])**2) + (cphi**2 * zerr_orig[1,1])**2) 
-
-            if zerr is not None:
-                zerr_orig = zerr[idx_freq,:,:]
- 
-                #absolute propagation of errors
-                zerr_rot[idx_freq,0,0] = cphi**2 * zerr_orig[0,0] + np.abs(cphi * sphi) * (zerr_orig[0,1] + zerr_orig[1,0]) + sphi**2 * zerr_orig[1,1]
-
-                zerr_rot[idx_freq,0,1] = cphi**2 * zerr_orig[0,1] + np.abs(cphi * sphi) * (zerr_orig[1,1] + zerr_orig[0,0]) + sphi**2 * zerr_orig[1,0] 
-
-                zerr_rot[idx_freq,1,0] = cphi**2 * zerr_orig[1,0] + np.abs(cphi * sphi) * (zerr_orig[1,1] + zerr_orig[0,0]) + sphi**2 * zerr_orig[0,1] 
-
-                zerr_rot[idx_freq,1,1] = cphi**2 * zerr_orig[1,1] + np.abs(cphi * sphi) * (zerr_orig[0,1] + zerr_orig[1,0]) + sphi**2 * zerr_orig[0,0] 
+            if self.zerr is not None:
+                z_rot, zerr_rot = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle, self.zerr[idx_freq,:,:])
+            else:
+                z_rot, zerr_rot = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle)
+  
 
             if tipper is not None:
-                t_orig = tipper[idx_freq,:,:]
 
-                tipper_rot[idx_freq,0,0] =  cphi * t_orig[0,0] + sphi * t_orig[0,1]
-                tipper_rot[idx_freq,0,1] = -sphi * t_orig[0,0] + cphi * t_orig[0,1]
+                if self.tippererr is not None:
+                    tipper_rot, tippererr_rot = MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle,self.tippererr[idx_freq,:,:] )
+                else:
+                    tipper_rot, tippererr_rot = MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle)
 
-            if tippererr is not None:
-                #absolute error propagation
-                terr_orig = tippererr[idx_freq,:,:]
 
-                tippererr_rot[idx_freq,0,0] = np.abs(cphi * terr_orig[0,0])  + np.abs(sphi * terr_orig[0,1])
-                tippererr_rot[idx_freq,0,1] = np.abs(-sphi * terr_orig[0,0]) + np.abs(cphi * terr_orig[0,1])
- 
 
         self.z = z_rot
         self.zerr = zerr_rot

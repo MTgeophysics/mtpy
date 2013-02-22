@@ -394,39 +394,18 @@ class Z(object):
             self.rotation_angle = 0.
             return
 
-        z = self.z
-        zerr = self.zerr
-
-        z_new = z.copy()
-        if self.zerr is not None:
-            zerr_new = zerr.copy()
-
-        for idx_freq in range(len(z)):
+        for idx_freq in range(len(self.zz)):
                     
-            degreeangle = lo_angles[idx_freq]
-            angle = math.radians(degreeangle)
-        
-            cphi = np.cos(angle)
-            sphi = np.sin(angle)
-
-
-            z_new[idx_freq,0,0] = cphi**2 * z[idx_freq,0,0] + cphi*sphi*(z[idx_freq,0,1]+z[idx_freq,1,0]) + sphi**2 * z[idx_freq,1,1]
-            z_new[idx_freq,0,1] = cphi**2 * z[idx_freq,0,1] + cphi*sphi*(z[idx_freq,1,1]-z[idx_freq,0,0]) - sphi**2 * z[idx_freq,1,0]
-            z_new[idx_freq,1,0] = cphi**2 * z[idx_freq,1,0] + cphi*sphi*(z[idx_freq,1,1]-z[idx_freq,0,0]) - sphi**2 * z[idx_freq,0,1]
-            z_new[idx_freq,1,1] = cphi**2 * z[idx_freq,1,1] + cphi*sphi*(-z[idx_freq,0,1]-z[idx_freq,1,0]) + sphi**2 *z[ idx_freq,0,0]
+            angle = lo_angles[idx_freq]
 
             if self.zerr is not None:
-                zerr_new[idx_freq,0,0] = cphi**2 * zerr[idx_freq,0,0] + np.abs(cphi * sphi) * (zerr[idx_freq,0,1] + zerr[idx_freq,1,0]) + sphi**2 * zerr[idx_freq,1,1]
+                z_rot, zerr_rot = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle, self.zerr[idx_freq,:,:])
+            else:
+                z_rot, zerr_rot = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle)
 
-                zerr_new[idx_freq,0,1] = cphi**2 * zerr[idx_freq,0,1] + np.abs(cphi * sphi) * (zerr[idx_freq,1,1] + zerr[idx_freq,0,0]) + sphi**2 * zerr[idx_freq,1,0] 
 
-                zerr_new[idx_freq,1,0] = cphi**2 * zerr[idx_freq,1,0] + np.abs(cphi * sphi) * (zerr[idx_freq,1,1] + zerr[idx_freq,0,0]) + sphi**2 * zerr[idx_freq,0,1] 
-
-                zerr_new[idx_freq,1,1] = cphi**2 * zerr[idx_freq,1,1] + np.abs(cphi * sphi) * (zerr[idx_freq,0,1] + zerr[idx_freq,1,0]) + sphi**2 * zerr[idx_freq,0,0] 
-
-        self.z = z_new
-        if self.zerr is not None:
-            self.zerr = zerr_new
+        self.z = z_rot
+        self.zerr = zerr_rot
     
 
 
@@ -890,35 +869,19 @@ class Tipper(object):
             self.rotation_angle = 0.
             return
 
-        tipper_rot = self.tipper.copy()
-        if self.tippererr is not None:
-            tippererr_rot = self.tippererr.copy()
-
-        for idx_freq in range(len(tipper_rot)):
-
-            degreeangle = lo_angles[idx_freq]
-
-            angle = math.radians(degreeangle)
             
-            cphi = np.cos(angle)
-            sphi = np.sin(angle)
-
-
-            t_orig = self.tipper[idx_freq,:,:]
-
-            tipper_rot[idx_freq,0,0] =  cphi * t_orig[0,0] + sphi * t_orig[0,1]
-            tipper_rot[idx_freq,0,1] = -sphi * t_orig[0,0] + cphi * t_orig[0,1]
+        for idx_freq in range(len(tipper_rot)):
+            angle = lo_angles[idx_freq]
 
             if self.tippererr is not None:
-                #absolute error propagation
-                terr_orig = self.tippererr[idx_freq,:,:]
+                tipper_rot, tippererr_rot =  MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle,self.tippererr[idx_freq,:,:] )
+            else:
+                tipper_rot, tippererr_rot = MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle)
 
-                tippererr_rot[idx_freq,0,0] = np.abs(cphi * terr_orig[0,0])  + np.abs(sphi * terr_orig[0,1])
-                tippererr_rot[idx_freq,0,1] = np.abs(-sphi * terr_orig[0,0]) + np.abs(cphi * terr_orig[0,1])
+
  
         self.tipper = tipper_rot
-        if self.tippererr is not None:
-            self.tippererr = tippererr_rot
+        self.tippererr = tippererr_rot
 
 
 #------------------------
