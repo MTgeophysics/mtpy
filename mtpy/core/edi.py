@@ -672,11 +672,17 @@ class Edi(object):
         """
         
         angle = angle%360
-
+        zerr_rot = None
+        tipper_rot = None  
+        tippererr_rot = None
+        
         z_rot = np.copy(self.z)
-        zerr_rot = np.copy(self.zerr)
-        tipper_rot = np.copy(self.tipper)
-        tippererr_rot = np.copy(self.tippererr)
+        if self.zerr is not None:
+            zerr_rot = np.copy(self.zerr)
+        if self.tipper is not None:
+            tipper_rot = np.copy(self.tipper)
+        if self.tippererr is not None:
+            tippererr_rot = np.copy(self.tippererr)
 
         for idx_freq in range(self.n_freqs()):
 
@@ -686,7 +692,7 @@ class Edi(object):
                 z_rot[idx_freq], zerr_rot = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle)
   
 
-            if tipper is not None:
+            if self.tipper is not None:
 
                 if self.tippererr is not None:
                     tipper_rot[idx_freq], tippererr_rot[idx_freq] = MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle,self.tippererr[idx_freq,:,:] )
@@ -696,9 +702,12 @@ class Edi(object):
 
 
         self.z = z_rot
-        self.zerr = zerr_rot
-        self.tipper = tipper_rot
-        self.tippererr = tippererr_rot
+        if zerr_rot is not None:
+            self.zerr = zerr_rot
+        if tipper_rot is not None:
+            self.tipper = tipper_rot
+        if tippererr_rot is not None:
+            self.tippererr = tippererr_rot
 
         self.zrot = list( (np.array(self.zrot) + angle)%360)
         

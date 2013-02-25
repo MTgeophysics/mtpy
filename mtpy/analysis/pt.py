@@ -26,7 +26,7 @@ import os
 import sys
 import os.path as op
 import math, cmath
-import time, calendar 
+import time, calendar  
 
 import mtpy.core.edi as MTedi 
 import mtpy.core.z as MTz 
@@ -137,6 +137,8 @@ class PhaseTensor(object):
             if z_array.shape != zerr_array.shape:
                 zerr_array = None
 
+
+
         #3. if provided PT array was invalid, try to use the Z array 
         if self.pt is None:
             try:
@@ -174,6 +176,7 @@ class PhaseTensor(object):
                 pass
            
         self.frequencies = None
+        self.rotation_angle = 0.
 
         self.ptrot = None
         if self.pt is not None:
@@ -208,7 +211,7 @@ class PhaseTensor(object):
     def invariants(self):
 
         inv_dict = {}
-        inv_dict['trace'] =  np.array( [np.trace(i) for i in self.pt])
+        inv_dict['trace'] = self.trace()[0] 
         inv_dict['skew'] = self.skew()[0]
         inv_dict['det'] = self.det()[0] 
 
@@ -218,11 +221,27 @@ class PhaseTensor(object):
 
         return inv_dict
 
+    def trace(self):
+        
+        tr = np.array( [np.trace(i) for i in self.pt])
+
+        tr_err = None
+        if self.pterr is not None:
+            tr_err = np.zeros_like(tr)
+            tr_err[:] = self.pterr[:,0,0] + self.pterr[:,1,1]
+
+
+        return tr, tr_err
+
+
     def alpha(self):
 
-        alpha = 0.5 * np.arctan2( self.pt[:,0,1] +self.pt[:,1,0]  , self.pt[:,0,0] - self.pt[:,1,1] )  
+        alpha = np.degrees(0.5 * np.arctan2( self.pt[:,0,1] +self.pt[:,1,0]  , self.pt[:,0,0] - self.pt[:,1,1] )  )
         
-        alphaerr = np.zeros_like(alpha)
+        alphaerr = None
+        
+
+        #alphaerr = np.zeros_like(alpha)
 
 
         return alpha, alphaerr
@@ -230,8 +249,8 @@ class PhaseTensor(object):
 
     def beta(self):
         
-        beta = 0.5 * np.arctan2( inv_dict['skew'], inv_dict['trace'])  
-
+        beta = np.degrees(0.5 * np.arctan2( self.skew()[0], self.trace()[0])  )
+        betaerr = None
 
         return beta, betaerr
 
@@ -259,21 +278,37 @@ class PhaseTensor(object):
 
         return det_phi, det_phi_err
 
+    def _pi1(self):
+        #after bibby et al. 2005
+
+        pi1 = 0.5 * np.sqrt( (self.pt[:,0,0] - self.pt[:,1,1] )**2 + (self.pt[:,0,1] + self.pt[:,1,0] )**2 )
+
+        return pi1
+
+    def _pi2(self):
+        #after bibby et al. 2005
+
+        pi1 = 0.5 * np.sqrt( (self.pt[:,0,0] + self.pt[:,1,1] )**2 + (self.pt[:,0,1] - self.pt[:,1,0] )**2 )
+
+        return pi1
+   
+
+
     def phimin(self):
 
         det = np.array( [np.linalg.det(i) for i in self.pt])
 
         phimin = np.zeros_like(det)
 
-        for i in range(len(P.pt)):
+        for i in range(len(self.pt)):
             s = 1.
             if det[i] < 0 :
                 s = -1.
-
-        phinmin[i] = s * (0.5 * np.sqrt( self.trace()[i]**2 + self.skew()[i]**2 ) - np.sqrt( 0.25* self.trace()[i]**2 + 0.25*self.skew()[i]**2 - np.abs(  det[i] )) )
+       
+            phimin[i] = s * (0.5 * np.sqrt( self.trace()[0][i]**2 + self.skew()[0][i]**2 ) - np.sqrt( 0.25* self.trace()[0][i]**2 + 0.25*self.skew()[0][i]**2 - np.abs(  det[i] )) )
 
  
-        return phimin, phiminerr
+        return phimin#, phiminerr
 
     def phimax(self):
         
@@ -281,10 +316,10 @@ class PhaseTensor(object):
 
         phimax = np.zeros_like(det)
 
+        for i in range(len(phimax)):
+            phimax[i] = 0.5 * np.sqrt( self.trace()[0][i]**2 + self.skew()[0][i]**2 ) +  np.sqrt( 0.25* self.trace()[0][i]**2 + 0.25*self.skew()[0][i]**2 - np.abs(  det[i] ))
 
-        phinmax[i] = 0.5 * np.sqrt( self.trace()[i]**2 + self.skew()[i]**2 ) +  np.sqrt( 0.25* self.trace()[i]**2 + 0.25*self.skew()[i]**2 - np.abs(  det[i] ))
-
-        return phimax, phimaxerr
+        return phimax#, phimaxerr
 
 
     def rotate(self,alpha):
@@ -319,7 +354,7 @@ class PhaseTensor(object):
                     print '"Angles" must be valid numbers (in degrees)'
                     return
             
-        self.rotation_angle = lo_angles
+        self.rotation_angle = list( (np.array(lo_angles) + np.array(self.rotation_angle))%360)
 
         if len(lo_angles) != len(self.pt):
             print 'Wrong number Number of "angles" - need %i '%(len(self.pt))
@@ -371,6 +406,8 @@ def z2pt(z_array, zerr_array = None):
 
         if not z_array.shape == zerr_array.shape:
             raise MTexceptions.MTpyError_PT('Error - z-array and z-err-array have different shape: %s;%s'%(str(z_array.shape), str(zerr_array.shape)))
+
+
     #for a single matrix as input:
     if len(z_array.shape) == 2:
         pt_array = np.zeros((2,2))
@@ -378,8 +415,17 @@ def z2pt(z_array, zerr_array = None):
         realz = np.real(z_array)
         imagz = np.imag(z_array)
         detreal = np.linalg.det(realz)
+
         if detreal == 0 :
-            raise MTexceptions.MTpyError_PT('Error - z-array contains a singular matrix, thus it cannot be converted into a PT!' )
+            if np.linalg.norm(realz) == 0 and np.linalg.norm(imagz) == 0:
+                pterr_array = np.zeros_like(pt_array)
+                if zerr_array is None:
+                    pterr_array = None                
+                return pt_array, pterr_array
+
+            else:
+                raise MTexceptions.MTpyError_PT('Error - z-array contains a singular matrix, thus it cannot be converted into a PT!' )
+
 
 
         pt_array[0,0] =  realz[1,1] * imagz[0,0] - realz[0,1] * imagz[1,0] 

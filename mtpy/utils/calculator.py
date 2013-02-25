@@ -160,13 +160,17 @@ def rotatematrix_incl_errors(inmatrix, angle, inmatrix_err = None) :
 
     phi = math.radians(degreeangle)
     
+
     cphi = np.cos(phi)
     sphi = np.sin(phi)
 
     rotmat = np.matrix([[ cphi,-sphi],[sphi,cphi] ])
-
     rotated_matrix = np.dot(np.dot( rotmat, inmatrix ),rotmat.I  ) 
+    #print rotmat
 
+    #print inmatrix
+    #print rotated_matrix
+    #sys.exit()
 
     errmat  = None
     if (inmatrix_err is not None) :

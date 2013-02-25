@@ -69,7 +69,7 @@ import sys
 import os.path as op
 import math, cmath
 import time, calendar 
-
+import copy
 import mtpy.utils.calculator as MTc
 
 
@@ -395,7 +395,7 @@ class Z(object):
         z_rot = np.copy(self.z)
         zerr_rot = np.copy(self.zerr)
 
-        for idx_freq in range(len(self.zz)):
+        for idx_freq in range(len(self.z)):
                     
             angle = lo_angles[idx_freq]
 
@@ -556,16 +556,33 @@ class Z(object):
     def no_ss_no_distortion(self, rho_x = 1., rho_y = 1.):
 
         pass
+        
+
+    def only1d(self):
+
+        z1d = copy.copy(self.z)
+
+        for i in range(len(z1d)):
+            z1d[0,0] = 0
+            z1d[1,1] = 0
+            sign01 = z1d[0,1]/np.abs(z1d[0,1])
+            sign10 = z1d[1,0]/np.abs(z1d[1,0])
+            mean1d = 0.5* (z1d[1,0]+z1d[0,1])
+            z1d[0,1] = sign01 * mean1d
+            z1d[1,0] = sign10 * mean1d
+
+        return z1d
 
 
+    def only2d(self):
 
-    def ellipticity(self):
-        pass
+        z2d = copy.copy(self.z)
 
-
-
-    def resistivity(self):
-        pass
+        for i in range(len(z1d)):
+            z2d[0,0] = 0
+            z2d[1,1] = 0
+            
+        return z2d
 
 
 
