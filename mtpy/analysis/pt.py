@@ -27,6 +27,7 @@ import sys
 import os.path as op
 import math, cmath
 import time, calendar  
+import copy
 
 import mtpy.core.edi as MTedi 
 import mtpy.core.z as MTz 
@@ -310,6 +311,7 @@ class PhaseTensor(object):
  
         return phimin#, phiminerr
 
+
     def phimax(self):
         
         det = np.array( [np.linalg.det(i) for i in self.pt])
@@ -376,6 +378,37 @@ class PhaseTensor(object):
         
         self.pt = pt_rot
         self.pterr = pterr_rot
+
+
+    def only1d(self):
+
+        pt1d = copy.copy(self.pt)
+
+        for i in range(len(pt1d)):
+            pt1d[i,0,1] = 0
+            pt1d[i,1,0] = 0
+            
+            mean1d = 0.5* (pt1d[i,0,0]+pt1d[i,1,1])
+            pt1d[i,0,0] = mean1d
+            pt1d[i,1,1] = mean1d
+
+        return pt1d
+
+
+    def only2d(self):
+
+        pt2d = copy.copy(self.pt)
+
+        for i in range(len(pt1d)):
+            pt1d[i,0,1] = 0
+            pt1d[i,1,0] = 0
+            
+            pt2d[i,0,0] = self.phimax()[i]
+            pt2d[i,1,1] = self.phimin()[i]
+            
+        return pt2d
+
+
 
 
 def z2pt(z_array, zerr_array = None):

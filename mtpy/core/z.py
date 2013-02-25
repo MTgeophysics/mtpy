@@ -556,20 +556,20 @@ class Z(object):
     def no_ss_no_distortion(self, rho_x = 1., rho_y = 1.):
 
         pass
-        
+
 
     def only1d(self):
 
         z1d = copy.copy(self.z)
 
         for i in range(len(z1d)):
-            z1d[0,0] = 0
-            z1d[1,1] = 0
-            sign01 = z1d[0,1]/np.abs(z1d[0,1])
-            sign10 = z1d[1,0]/np.abs(z1d[1,0])
-            mean1d = 0.5* (z1d[1,0]+z1d[0,1])
-            z1d[0,1] = sign01 * mean1d
-            z1d[1,0] = sign10 * mean1d
+            z1d[i,0,0] = 0
+            z1d[i,1,1] = 0
+            sign01 = z1d[i,0,1]/np.abs(z1d[i,0,1])
+            sign10 = z1d[i,1,0]/np.abs(z1d[i,1,0])
+            mean1d = 0.5* (z1d[i,1,0]+z1d[i,0,1])
+            z1d[i,0,1] = sign01 * mean1d
+            z1d[i,1,0] = sign10 * mean1d
 
         return z1d
 
@@ -579,8 +579,8 @@ class Z(object):
         z2d = copy.copy(self.z)
 
         for i in range(len(z1d)):
-            z2d[0,0] = 0
-            z2d[1,1] = 0
+            z2d[i,0,0] = 0
+            z2d[i,1,1] = 0
             
         return z2d
 
