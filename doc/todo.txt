@@ -1,0 +1,88 @@
+
+                The never-ending ToDo list for MTpy
+                ===================================
+
+
+________
+--------
+GENERAL:
+________
+--------
+
+
+- Documentation!
+- Example data set
+- Test cases
+- Commenting!!
+- Doc strings!!
+- test on Windows
+
+______
+ CORE
+------
+
+- test reading of EDI for various Edi file versions
+- Include W for the analysis of GDS data
+
+
+__________
+ ANALYSIS
+----------
+
+- add static shift handling (automated, if possible)
+
+
+__________
+ IMAGING
+----------
+
+- ALL (if possible by setting up plot classes for the respective elements - than batch processing (plotting various stations can be handled by functions looping over the plot objects ...??)
+
+__________
+ MODELING
+----------
+
+- ALL (introduce MODEL classes for all supported modelling codes, then handle calling as well as in- and output)
+
+
+____________
+ PROCESSING
+------------
+
+- batch processing (various stations, whole folders)
+- extended BIRRP usage
+- implement call of EMTF (Egbert's BIRRP alternative)
+
+
+_______
+ UTILS
+-------
+
+- extend filehandling (more automated batch processing)
+- decimate
+- type-conversion (e.g. coordinate formats)
+- data conversion in general
+- miniSeed
+
+______
+ TEST
+------
+
+- ALL
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
