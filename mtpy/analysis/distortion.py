@@ -56,7 +56,7 @@ reload(MTg)
 
 
 
-def find_distortion(z_object):
+def find_distortion(z_object, lo_dims = None):
     """
     find optimal distortion tensor from z object
 
@@ -65,7 +65,13 @@ def find_distortion(z_object):
 
     z_obj = z_object
 
-    lo_dims = MTg.dimensionality(z_object = z_obj)
+    if lo_dims is None :
+        lo_dims = MTg.dimensionality(z_object = z_obj)
+    try:
+        if len(lo_dims) != len(z_obj.z):
+            lo_dims = MTg.dimensionality(z_object = z_obj)
+    except:
+        pass
 
     lo_dis = []
     lo_diserr = []
@@ -116,44 +122,54 @@ def find_distortion(z_object):
         #follow bibby et al. 2005 first alternative: P = 1
         P = 1
 
+        lo_strikes = MTg.strike_angle(z_object = z_obj)
         lo_tetms = [ ]
         lo_t = []
+        lo_tetm_errs =[]
 
         for idx in idx_2:
 
             mat = z_obj.z[idx]
             ang = -lo_strikes[idx][0]
+            if np.isnan(ang):
+                ang = 0.
+
             errmat = None
+
             if z_obj.zerr is not None:
                 errmat = z_obj.zerr[idx]
-            tetm_mat = MTc.rotatematrix_incl_errors(mat, ang, inmatrix_err = errmat)
+            tetm_mat, tetm_err = MTc.rotatematrix_incl_errors(mat, ang, inmatrix_err = errmat)
 
-            lo_tetms.append( tetm_mat )
+            lo_tetms.append(tetm_mat)
+         
+            lo_tetm_errs.append(tetm_err)
 
             realz = np.real(tetm_mat)
             imagz = np.imag(tetm_mat)
             lo_t.append(  - 4*P*realz[0,1]*realz[1,0]/np.linalg.det(realz) )
             lo_t.append(  - 4*P*imagz[0,1]*imagz[1,0]/np.linalg.det(imagz) )
 
-        #since there is no 'wrong' solution by a different value of T, no error is given/calculated for it!
+        #since there is no 'wrong' solution by a different value of T, no error is given/calculated for T !
         try:
-            T = np.sqrt(max(lo_t)) + 1
+            #just add 0.1% for avoiding numerical issues in the squareroots later on
+            T = np.sqrt(max(lo_t)) + 0.001
         except:
             T = 2
 
-        for idx in idx_2:
 
-            mat = lo_tetms[idx]
-            realz = np.real(tetm_mat)
-            imagz = np.imag(tetm_mat)
+        for idx in range(len(lo_tetms)):
 
-            sr = np.sqrt(T**2 + 4*P*realz[0,1]*realz[1,0]/np.linalg.det(realz))
-            si = np.sqrt(T**2 + 4*P*imagz[0,1]*imagz[1,0]/np.linalg.det(imagz))
+            realz = np.real(lo_tetms[idx])
+            imagz = np.imag(lo_tetms[idx])
+            errmat = lo_tetm_errs[idx]
+            
+            sr = np.sqrt( T**2 + 4*P*realz[0,1]*realz[1,0]/np.linalg.det(realz))
+            si = np.sqrt( T**2 + 4*P*imagz[0,1]*imagz[1,0]/np.linalg.det(imagz))
 
-            par_r = 2 * realz[0,1]/(T-sr)
-            orth_r = 2 * realz[1,0]/(T+sr)
-            par_i = 2 * imagz[0,1]/(T-si)
-            orth_i = 2 * imagz[1,0]/(T+si)
+            par_r = 2 * realz[0,1]/(T - sr)
+            orth_r = 2 * realz[1,0]/(T + sr)
+            par_i = 2 * imagz[0,1]/(T - si)
+            orth_i = 2 * imagz[1,0]/(T + si)
 
             mat2_r = np.matrix([[0,1./orth_r ],[1./par_r,0 ]])
             mat2_i = np.matrix([[0,1./orth_i ],[1./par_i,0 ]])
@@ -163,33 +179,33 @@ def find_distortion(z_object):
 
             if z_obj.zerr is not None:
                 #find errors of entries for calculating weights
-                zerr = z_obj.zerr[idx]
-                sigma_sr = np.sqrt( (- (2*P * realz[0,1]* realz[1,0] * realz[1,1])/(np.linalg.det(realz)**2 * sr) )**2 +\
-                                    ( (2*P * realz[0,0]* realz[1,0] * realz[1,1])/(np.linalg.det(realz)**2 * sr) )**2 +\
-                                    ( (2*P * realz[0,0]* realz[0,1] * realz[1,1])/(np.linalg.det(realz)**2 * sr) )**2 +\
-                                    (- (2*P * realz[0,1]* realz[1,0] * realz[0,0])/(np.linalg.det(realz)**2 * sr) )**2
+                sigma_sr = np.sqrt( (- (2*P * realz[0,1]* realz[1,0] * realz[1,1] * errmat[0,0])/(np.linalg.det(realz)**2 * sr) )**2 +\
+                                    ( (2*P * realz[0,0]* realz[1,0] * realz[1,1] * errmat[0,1])/(np.linalg.det(realz)**2 * sr) )**2 +\
+                                    ( (2*P * realz[0,0]* realz[0,1] * realz[1,1] * errmat[1,0])/(np.linalg.det(realz)**2 * sr) )**2 +\
+                                    (- (2*P * realz[0,1]* realz[1,0] * realz[0,0] * errmat[1,1])/(np.linalg.det(realz)**2 * sr) )**2
                                   )
 
                 sigma_dr_11 = 0.5 * sigma_sr
                 sigma_dr_22 = 0.5 * sigma_sr
-                sigma_dr_12 = np.sqrt( (mat2_r[0,1] / realz[0,0] * zerr[0,0])**2 + (mat2_r[0,1] / realz[1,0] * zerr[1,0])**2 +\
+
+                sigma_dr_12 = np.sqrt( (mat2_r[0,1] / realz[0,0] * errmat[0,0])**2 + (mat2_r[0,1] / realz[1,0] * errmat[1,0])**2 +\
                                        (0.5 * realz[0,0]/realz[1,0] *sigma_sr )**2 )
-                sigma_dr_21 = np.sqrt( (mat2_r[1,0] / realz[1,1] * zerr[1,1])**2 + (mat2_r[1,0] / realz[0,1] * zerr[0,1])**2 +\
+                sigma_dr_21 = np.sqrt( (mat2_r[1,0] / realz[1,1] * errmat[1,1])**2 + (mat2_r[1,0] / realz[0,1] * errmat[0,1])**2 +\
                                        (0.5 * realz[1,1]/realz[0,1] *sigma_sr )**2 )
 
                 lo_diserr.append( np.array([[sigma_dr_11, sigma_dr_12],[sigma_dr_21, sigma_dr_22] ]))
 
-                sigma_si = np.sqrt( (- (2*P * imagz[0,1]* imagz[1,0] * imagz[1,1])/(np.linalg.det(imagz)**2 * sr) )**2 +\
-                                    ( (2*P * imagz[0,0]* imagz[1,0] * imagz[1,1])/(np.linalg.det(imagz)**2 * sr) )**2 +\
-                                    ( (2*P * imagz[0,0]* imagz[0,1] * imagz[1,1])/(np.linalg.det(imagz)**2 * sr) )**2 +\
-                                    (- (2*P * imagz[0,1]* imagz[1,0] * imagz[0,0])/(np.linalg.det(imagz)**2 * sr) )**2
+                sigma_si = np.sqrt( (- (2*P * imagz[0,1]* imagz[1,0] * imagz[1,1] * errmat[0,0])/(np.linalg.det(imagz)**2 * sr) )**2 +\
+                                    ( (2*P * imagz[0,0]* imagz[1,0] * imagz[1,1] * errmat[0,1])/(np.linalg.det(imagz)**2 * sr) )**2 +\
+                                    ( (2*P * imagz[0,0]* imagz[0,1] * imagz[1,1] * errmat[1,0])/(np.linalg.det(imagz)**2 * sr) )**2 +\
+                                    (- (2*P * imagz[0,1]* imagz[1,0] * imagz[0,0] * errmat[1,1])/(np.linalg.det(imagz)**2 * sr) )**2
                                   )
 
                 sigma_di_11 = 0.5 * sigma_si
                 sigma_di_22 = 0.5 * sigma_si
-                sigma_di_12 = np.sqrt( (mat2_i[0,1] / imagz[0,0] * zerr[0,0])**2 + (mat2_i[0,1] / imagz[1,0] * zerr[1,0])**2 +\
+                sigma_di_12 = np.sqrt( (mat2_i[0,1] / imagz[0,0] * errmat[0,0])**2 + (mat2_i[0,1] / imagz[1,0] * errmat[1,0])**2 +\
                                        (0.5 * imagz[0,0]/imagz[1,0] *sigma_si )**2 )
-                sigma_di_21 = np.sqrt( (mat2_i[1,0] / imagz[1,1] * zerr[1,1])**2 + (mat2_i[1,0] / imagz[0,1] * zerr[0,1])**2 +\
+                sigma_di_21 = np.sqrt( (mat2_i[1,0] / imagz[1,1] * errmat[1,1])**2 + (mat2_i[1,0] / imagz[0,1] * errmat[0,1])**2 +\
                                        (0.5 * imagz[1,1]/imagz[0,1] *sigma_si )**2 )
 
                 lo_diserr.append( np.array([[sigma_di_11, sigma_di_12],[sigma_di_21, sigma_di_22] ]))
@@ -228,12 +244,22 @@ def find_1d_distortion(z_object, include_non1d = False):
     
     """
 
+    if not isinstance(z_object, MTz.Z):
+        raise MTexceptions.MTpyError_inputarguments('first argument must be an instance of the Z class')
 
-    dis = np.zeros((2,2))
-    dis_err = None
+    z_obj = z_object
 
+    lo_dims = MTg.dimensionality(z_object = z_obj)
 
-    return dis, dis_err
+    if include_non1d is True:
+        lo_dims = [1 for i in lo_dims]
+
+    if len(list(np.where(np.array(lo_dims) == 1))) == 0:
+        raise MTexceptions.MTpyError_inputarguments('Z object does not have frequencies with spatial 1D characteristic')
+
+    print lo_dims
+
+    return  find_distortion(z_obj, lo_dims = lo_dims)
 
 
 
@@ -246,14 +272,24 @@ def find_2d_distortion(z_object, include_non2d = False):
     
     """
 
+    if not isinstance(z_object, MTz.Z):
+        raise MTexceptions.MTpyError_inputarguments('first argument must be an instance of the Z class')
+
+    z_obj = z_object
+
+    lo_dims = MTg.dimensionality(z_object = z_obj)
+
+    #avoid the (standard) 1D distortion call -> remove all 1
+    lo_dims = [ 4 if i == 1 else i for i in lo_dims ]
+
+    if include_non2d is True:
+        lo_dims = [2 for i in lo_dims]
+
+    if len(list(np.where(np.array(lo_dims) == 2))) == 0:
+        raise MTexceptions.MTpyError_inputarguments('Z object does not have frequencies with spatial 2D characteristic')
 
 
-    dis = np.zeros((2,2))
-    dis_err = None
-
-
-    return dis, dis_err
-
+    return  find_distortion(z_obj, lo_dims = lo_dims)
 
 
 
@@ -270,10 +306,9 @@ def remove_distortion(z_array = None, z_object = None):
     #1. find distortion via function above, 
     #2. remove distortion via method of z object
 
-    dis = find_distortion(z_obj)
+    dis, diserr = find_distortion(z_obj)
 
-    z_obj.no_distortion(dis, dis_err = None)
+    return z_obj.no_distortion(dis, dis_err = diserr)
 
 
-    return z_obj.z
 
