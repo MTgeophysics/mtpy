@@ -112,9 +112,104 @@ def find_distortion(z_object):
 
 
     if 2 in lo_dims:
-        pass
+        idx_2 = np.where(np.array(lo_dims) == 2)[0]
+        #follow bibby et al. 2005 first alternative: P = 1
+        P = 1
+
+        lo_tetms = [ ]
+        lo_t = []
+
+        for idx in idx_2:
+
+            mat = z_obj.z[idx]
+            ang = -lo_strikes[idx][0]
+            errmat = None
+            if z_obj.zerr is not None:
+                errmat = z_obj.zerr[idx]
+            tetm_mat = MTc.rotatematrix_incl_errors(mat, ang, inmatrix_err = errmat)
+
+            lo_tetms.append( tetm_mat )
+
+            realz = np.real(tetm_mat)
+            imagz = np.imag(tetm_mat)
+            lo_t.append(  - 4*P*realz[0,1]*realz[1,0]/np.linalg.det(realz) )
+            lo_t.append(  - 4*P*imagz[0,1]*imagz[1,0]/np.linalg.det(imagz) )
+
+        #since there is no 'wrong' solution by a different value of T, no error is given/calculated for it!
+        try:
+            T = np.sqrt(max(lo_t)) + 1
+        except:
+            T = 2
+
+        for idx in idx_2:
+
+            mat = lo_tetms[idx]
+            realz = np.real(tetm_mat)
+            imagz = np.imag(tetm_mat)
+
+            sr = np.sqrt(T**2 + 4*P*realz[0,1]*realz[1,0]/np.linalg.det(realz))
+            si = np.sqrt(T**2 + 4*P*imagz[0,1]*imagz[1,0]/np.linalg.det(imagz))
+
+            par_r = 2 * realz[0,1]/(T-sr)
+            orth_r = 2 * realz[1,0]/(T+sr)
+            par_i = 2 * imagz[0,1]/(T-si)
+            orth_i = 2 * imagz[1,0]/(T+si)
+
+            mat2_r = np.matrix([[0,1./orth_r ],[1./par_r,0 ]])
+            mat2_i = np.matrix([[0,1./orth_i ],[1./par_i,0 ]])
+
+            lo_dis.append( np.dot(realz,mat2_r ) )
+            lo_dis.append( np.dot(imagz,mat2_i ) )
+
+            if z_obj.zerr is not None:
+                #find errors of entries for calculating weights
+                zerr = z_obj.zerr[idx]
+                sigma_sr = np.sqrt( (- (2*P * realz[0,1]* realz[1,0] * realz[1,1])/(np.linalg.det(realz)**2 * sr) )**2 +\
+                                    ( (2*P * realz[0,0]* realz[1,0] * realz[1,1])/(np.linalg.det(realz)**2 * sr) )**2 +\
+                                    ( (2*P * realz[0,0]* realz[0,1] * realz[1,1])/(np.linalg.det(realz)**2 * sr) )**2 +\
+                                    (- (2*P * realz[0,1]* realz[1,0] * realz[0,0])/(np.linalg.det(realz)**2 * sr) )**2
+                                  )
+
+                sigma_dr_11 = 0.5 * sigma_sr
+                sigma_dr_22 = 0.5 * sigma_sr
+                sigma_dr_12 = np.sqrt( (mat2_r[0,1] / realz[0,0] * zerr[0,0])**2 + (mat2_r[0,1] / realz[1,0] * zerr[1,0])**2 +\
+                                       (0.5 * realz[0,0]/realz[1,0] *sigma_sr )**2 )
+                sigma_dr_21 = np.sqrt( (mat2_r[1,0] / realz[1,1] * zerr[1,1])**2 + (mat2_r[1,0] / realz[0,1] * zerr[0,1])**2 +\
+                                       (0.5 * realz[1,1]/realz[0,1] *sigma_sr )**2 )
+
+                lo_diserr.append( np.array([[sigma_dr_11, sigma_dr_12],[sigma_dr_21, sigma_dr_22] ]))
+
+                sigma_si = np.sqrt( (- (2*P * imagz[0,1]* imagz[1,0] * imagz[1,1])/(np.linalg.det(imagz)**2 * sr) )**2 +\
+                                    ( (2*P * imagz[0,0]* imagz[1,0] * imagz[1,1])/(np.linalg.det(imagz)**2 * sr) )**2 +\
+                                    ( (2*P * imagz[0,0]* imagz[0,1] * imagz[1,1])/(np.linalg.det(imagz)**2 * sr) )**2 +\
+                                    (- (2*P * imagz[0,1]* imagz[1,0] * imagz[0,0])/(np.linalg.det(imagz)**2 * sr) )**2
+                                  )
+
+                sigma_di_11 = 0.5 * sigma_si
+                sigma_di_22 = 0.5 * sigma_si
+                sigma_di_12 = np.sqrt( (mat2_i[0,1] / imagz[0,0] * zerr[0,0])**2 + (mat2_i[0,1] / imagz[1,0] * zerr[1,0])**2 +\
+                                       (0.5 * imagz[0,0]/imagz[1,0] *sigma_si )**2 )
+                sigma_di_21 = np.sqrt( (mat2_i[1,0] / imagz[1,1] * zerr[1,1])**2 + (mat2_i[1,0] / imagz[0,1] * zerr[0,1])**2 +\
+                                       (0.5 * imagz[1,1]/imagz[0,1] *sigma_si )**2 )
+
+                lo_diserr.append( np.array([[sigma_di_11, sigma_di_12],[sigma_di_21, sigma_di_22] ]))
 
 
+
+
+            else:
+                #otherwise go for evenly weighted average
+                lo_diserr.append( np.ones((2,2)) )
+                lo_diserr.append( np.ones((2,2)) )
+
+
+        dis = np.zeros((2,2))
+        diserr = np.zeros((2,2))
+        for i in range(2):
+            for j in range(2):
+
+                dis[i,j], dummy = np.average(np.array([k[i,j] for k in lo_dis]), weights = np.array([ 1./(k[i,j])**2 for k in lo_diserr ]) , returned = True )
+                diserr[i,j] = np.sqrt(1./dummy)
 
         return dis, diserr
 
