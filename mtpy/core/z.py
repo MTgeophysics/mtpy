@@ -534,7 +534,7 @@ class Z(object):
         #todo :include error on  determinant!!
         D_det = np.linalg.det(distortion_tensor)
 
-        dummy, DI_err = MTc.invertmatrix_incl_errors_real(distortion_tensor, distortion_err_tensor)
+        dummy, DI_err = MTc.invertmatrix_incl_errors(distortion_tensor, distortion_err_tensor)
 
         #propagation of errors - step 2 - product of D.inverse and Z; D.I * Z, making it 4 summands for each component:
         z_corrected = np.zeros_like(self.z)

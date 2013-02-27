@@ -31,16 +31,18 @@ import time, calendar
 import mtpy.core.edi as MTedi 
 import mtpy.core.z as MTz 
 import mtpy.analysis.pt as MTpt 
+import mtpy.analysis.geometry as MTg 
 import mtpy.utils.format as MTformat
 import mtpy.utils.exceptions as MTexceptions
 import mtpy.utils.calculator as MTc
 
 reload(MTexceptions)
 reload(MTedi)
-reload(MTz)
+#reload(MTz)
 reload(MTformat)
 reload(MTc)
 reload(MTpt)
+reload(MTg)
 
 
 #=================================================================
@@ -61,12 +63,63 @@ def find_distortion(z_object):
     automatically determine the dimensionality over all frequencies, then find the appropriate distortion tensor D
     """
 
+    z_obj = z_object
 
-    dis = np.zeros((2,2))
-    dis_err = None
+    lo_dims = MTg.dimensionality(z_object = z_obj)
+
+    lo_dis = []
+    lo_diserr = []
+
+    if 1 in lo_dims:
+        idx_1 = np.where(np.array(lo_dims) == 1)[0]
+
+        for idx in idx_1:
+
+            realz = np.real(z_obj.z[idx])
+            imagz = np.imag(z_obj.z[idx])
+
+            mat1 = np.matrix([[0,-1 ],[1,0 ]])
+
+            gr = np.sqrt(np.linalg.det(realz))
+            gi = np.sqrt(np.linalg.det(imagz))
+
+            lo_dis.append(1./gr* np.dot(realz,mat1 ) )  
+            lo_dis.append(1./gi* np.dot(imagz,mat1 ) )  
+
+            if z_obj.zerr is not None:
+                #find errors of entries for calculating weights
+
+                lo_diserr.append(1./gr* np.array([[np.abs(z_obj.zerr[idx][0,1]),np.abs(z_obj.zerr[idx][0,0]) ],[np.abs(z_obj.zerr[idx][1,1]),np.abs(z_obj.zerr[idx][1,0])]]) ) 
+
+                lo_diserr.append(1./gi* np.array([[np.abs(z_obj.zerr[idx][0,1]),np.abs(z_obj.zerr[idx][0,0]) ],[np.abs(z_obj.zerr[idx][1,1]),np.abs(z_obj.zerr[idx][1,0])]]) ) 
+
+            else:
+                #otherwise go for evenly weighted average
+                lo_diserr.append( np.ones((2,2)) )
+                lo_diserr.append( np.ones((2,2)) )
+
+        
+        dis = np.zeros((2,2))
+        diserr = np.zeros((2,2))
+        for i in range(2):
+            for j in range(2):
+                
+                dis[i,j], dummy = np.average(np.array([k[i,j] for k in lo_dis]), weights = np.array([ 1./(k[i,j])**2 for k in lo_diserr ]) , returned = True )
+                diserr[i,j] = np.sqrt(1./dummy)
+    
+        return dis, diserr
 
 
-    return dis, dis_err
+
+    if 2 in lo_dims:
+        pass
+
+
+
+        return dis, diserr
+
+
+    return None, None
 
 
 

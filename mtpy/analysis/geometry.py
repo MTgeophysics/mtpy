@@ -56,7 +56,7 @@ reload(MTpt)
 
 
 
-def dimensionality(z_array = None, pt_array= None, pt_object = None, beta_threshold = 5, eccentricity_threshold = 0.1):
+def dimensionality(z_array = None, z_object = None, pt_array= None, pt_object = None, beta_threshold = 5, eccentricity_threshold = 0.1):
     """
     beta_threshold: angle in degrees - if beta is smaller than this, it's 2d
     eccentricity_threshold: fraction of eccentricity (0: circle - 1: line) - if eccentricity (ellipticity) is small than this, it's 1D
@@ -67,6 +67,8 @@ def dimensionality(z_array = None, pt_array= None, pt_object = None, beta_thresh
     
     if z_array is not None:
         pt_obj = MTpt.PhaseTensor(z_array = z_array)
+    elif z_object is not None:
+        pt_obj = MTpt.PhaseTensor(z_object = z_object)
 
     elif pt_array is not None:
         pt_obj = MTpt.PhaseTensor(pt_array= pt_array)
@@ -93,10 +95,12 @@ def dimensionality(z_array = None, pt_array= None, pt_object = None, beta_thresh
 
 
 
-def strike_angle(z_array = None, pt_array= None, pt_object = None, beta_threshold = 5, eccentricity_threshold = 0.1):
+def strike_angle(z_array = None, z_object = None, pt_array= None, pt_object = None, beta_threshold = 5, eccentricity_threshold = 0.1):
 
     if z_array is not None:
         pt_obj = MTpt.PhaseTensor(z_array = z_array)
+    elif z_object is not None:
+        pt_obj = MTpt.PhaseTensor(z_object = z_object)
 
     elif pt_array is not None:
         pt_obj = MTpt.PhaseTensor(pt_array= pt_array)
@@ -127,11 +131,13 @@ def strike_angle(z_array = None, pt_array= None, pt_object = None, beta_threshol
 
 
 
-def eccentricity(z_array = None, pt_array= None, pt_object = None):
+def eccentricity(z_array = None, z_object = None, pt_array= None, pt_object = None):
 
 
     if z_array is not None:
         pt_obj = MTpt.PhaseTensor(z_array = z_array)
+    elif z_object is not None:
+        pt_obj = MTpt.PhaseTensor(z_object = z_object)
     elif pt_array is not None:
         pt_obj = MTpt.PhaseTensor(pt_array= pt_array)
     elif pt_object is not None:

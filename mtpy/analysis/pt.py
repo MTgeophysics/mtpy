@@ -37,7 +37,7 @@ import mtpy.utils.calculator as MTc
 
 reload(MTexceptions)
 reload(MTedi)
-reload(MTz)
+#reload(MTz)
 reload(MTformat)
 reload(MTc)
 
@@ -108,6 +108,7 @@ class PhaseTensor(object):
         except:
             pass
 
+ 
         #B) check, if z array is given as well
         #1. check, if valid Edi object is given
         if isinstance(edi_object,MTedi.Edi):
@@ -134,10 +135,9 @@ class PhaseTensor(object):
             except:
                 pass
 
-        if z_array is not None and zerr_array is not None:
+        if (z_array is not None) and (zerr_array is not None):
             if z_array.shape != zerr_array.shape:
                 zerr_array = None
-
 
 
         #3. if provided PT array was invalid, try to use the Z array 
