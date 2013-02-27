@@ -237,13 +237,17 @@ class PhaseTensor(object):
 
     def alpha(self):
 
-        alpha = np.degrees(0.5 * np.arctan2( self.pt[:,0,1] +self.pt[:,1,0]  , self.pt[:,0,0] - self.pt[:,1,1] )  )
+        alpha = np.degrees(0.5 * np.arctan2( self.pt[:,0,1] + self.pt[:,1,0]  , self.pt[:,0,0] - self.pt[:,1,1] )  )
         
         alphaerr = None
-        
+        if self.pterr is not None:
+            alphaerr = np.zeros_like(alpha)
+            y = self.pt[:,0,1] + self.pt[:,1,0]
+            yerr = np.sqrt( self.pterr[:,0,1]**2 + self.pterr[:,1,0]**2  )
+            x = self.pt[:,0,0] - self.pt[:,1,1] 
+            xerr = np.sqrt( self.pterr[:,0,0]**2 + self.pterr[:,1,1]**2  )
 
-        #alphaerr = np.zeros_like(alpha)
-
+            alphaerr[:] = 0.5 / ( x**2 + y**2) * np.sqrt( y**2 * xerr**2 + x**2 * yerr**2 )
 
         return alpha, alphaerr
         
@@ -252,6 +256,16 @@ class PhaseTensor(object):
         
         beta = np.degrees(0.5 * np.arctan2( self.skew()[0], self.trace()[0])  )
         betaerr = None
+
+        if self.pterr is not None:
+            betaerr = np.zeros_like(beta)
+
+            y = self.skew()[0]
+            yerr = self.skew()[1]
+            x = self.trace()[0]
+            xerr = self.trace()[1]
+
+            betaerr[:] = 0.5 / ( x**2 + y**2) * np.sqrt( y**2 * xerr**2 + x**2 * yerr**2 )
 
         return beta, betaerr
 
@@ -283,45 +297,76 @@ class PhaseTensor(object):
         #after bibby et al. 2005
 
         pi1 = 0.5 * np.sqrt( (self.pt[:,0,0] - self.pt[:,1,1] )**2 + (self.pt[:,0,1] + self.pt[:,1,0] )**2 )
+        pi1err = None
 
-        return pi1
+        if self.pterr is not None:
+            pi1err = 1./ pi1 * np.sqrt( (self.pt[:,0,0] - self.pt[:,1,1] )**2 * (self.pterr[:,0,0]**2 + self.pterr[:,1,1]**2)  +\
+                                       (self.pt[:,0,1] + self.pt[:,1,0] )**2 * (self.pterr[:,0,1]**2 + self.pterr[:,1,0]**2) )
+
+        return pi1, pi1err
 
     def _pi2(self):
         #after bibby et al. 2005
 
-        pi1 = 0.5 * np.sqrt( (self.pt[:,0,0] + self.pt[:,1,1] )**2 + (self.pt[:,0,1] - self.pt[:,1,0] )**2 )
+        pi2 = 0.5 * np.sqrt( (self.pt[:,0,0] + self.pt[:,1,1] )**2 + (self.pt[:,0,1] - self.pt[:,1,0] )**2 )
+        pi2err = None
 
-        return pi1
+        if self.pterr is not None:
+            pi2err = 1./ pi2 * np.sqrt( (self.pt[:,0,0] + self.pt[:,1,1] )**2 * (self.pterr[:,0,0]**2 + self.pterr[:,1,1]**2)  +\
+                                       (self.pt[:,0,1] - self.pt[:,1,0] )**2 * (self.pterr[:,0,1]**2 + self.pterr[:,1,0]**2) )
+
+
+        return pi2, pi2err
    
 
 
     def phimin(self):
 
-        det = np.array( [np.linalg.det(i) for i in self.pt])
+        #following caldwell et al 2004:
 
-        phimin = np.zeros_like(det)
+        #det = np.array( [np.linalg.det(i) for i in self.pt])
 
-        for i in range(len(self.pt)):
-            s = 1.
-            if det[i] < 0 :
-                s = -1.
+        #phimin = np.zeros_like(det)
+
+        # for i in range(len(self.pt)):
+        #     s = 1.
+        #     if det[i] < 0 :
+        #         s = -1.
        
-            phimin[i] = s * (0.5 * np.sqrt( self.trace()[0][i]**2 + self.skew()[0][i]**2 ) - np.sqrt( 0.25* self.trace()[0][i]**2 + 0.25*self.skew()[0][i]**2 - np.abs(  det[i] )) )
+        #     phimin[i] = s * (0.5 * np.sqrt( self.trace()[0][i]**2 + self.skew()[0][i]**2 ) - np.sqrt( 0.25* self.trace()[0][i]**2 + 0.25*self.skew()[0][i]**2 - np.abs(  det[i] )) )
 
+        #following bibby et al 2005:
+
+        phimin = self._pi2[0] - self._pi1[0]
+
+        phinminerr = None
+        if self.pterr is not None:
+            phinminerr = np.sqrt( self._pi2[1]**2 + self._pi1[1]***2 )
  
-        return phimin#, phiminerr
+        return phimin, phiminerr
 
 
     def phimax(self):
         
-        det = np.array( [np.linalg.det(i) for i in self.pt])
+        #following caldwell et al 2004:
 
-        phimax = np.zeros_like(det)
+        # det = np.array( [np.linalg.det(i) for i in self.pt])
 
-        for i in range(len(phimax)):
-            phimax[i] = 0.5 * np.sqrt( self.trace()[0][i]**2 + self.skew()[0][i]**2 ) +  np.sqrt( 0.25* self.trace()[0][i]**2 + 0.25*self.skew()[0][i]**2 - np.abs(  det[i] ))
+        # phimax = np.zeros_like(det)
 
-        return phimax#, phimaxerr
+        # for i in range(len(phimax)):
+        #     phimax[i] = 0.5 * np.sqrt( self.trace()[0][i]**2 + self.skew()[0][i]**2 ) +  np.sqrt( 0.25* self.trace()[0][i]**2 + 0.25*self.skew()[0][i]**2 - np.abs(  det[i] ))
+
+        #following bibby et al 2005:
+
+        phimax = self._pi2[0] + self._pi1[0]
+
+        phinmaxerr = None
+        if self.pterr is not None:
+            phinmaxerr = np.sqrt( self._pi2[1]**2 + self._pi1[1]***2 )
+ 
+        return phimax, phimaxerr
+
 
 
     def rotate(self,alpha):

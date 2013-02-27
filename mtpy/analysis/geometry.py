@@ -144,10 +144,12 @@ def eccentricity(z_array = None, z_object = None, pt_array= None, pt_object = No
         pt_obj = pt_object
 
     lo_ecc = []
+    lo_eccerr = []
 
     for idx_f in range(len(pt_obj.pt)):
-        lo_ecc.append( pt_obj._pi1()[idx_f] / pt_obj._pi2()[idx_f] )
+        lo_ecc.append( pt_obj._pi1()[0][idx_f] / pt_obj._pi2()[0][idx_f] )
 
-    ecc_err = None
+        ecc_err = None
+        lo_eccerr.append(ecc_err)
 
-    return lo_ecc, ecc_err 
+    return lo_ecc, lo_eccerr 
