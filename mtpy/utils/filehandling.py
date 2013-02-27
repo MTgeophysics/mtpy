@@ -17,8 +17,7 @@ reading configuration files, ....
 
 
 import numpy as np
-import re
-import sys, os
+import os
 import glob
 import os.path as op
 import glob
@@ -28,11 +27,11 @@ import ConfigParser
 
 from mtpy.utils.exceptions import *
 import mtpy.utils.format as MTformat
+
 #=================================================================
 
 #define uncertainty for differences between time steps
 epsilon = 1e-9
-
 
 #=================================================================
 

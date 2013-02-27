@@ -66,7 +66,6 @@ Contains classes and functions for handling EDI files.
 #=================================================================
 import numpy as np
 import os
-import sys
 import os.path as op
 import math, cmath
 import time, calendar 
@@ -75,9 +74,9 @@ import mtpy.utils.format as MTformat
 import mtpy.utils.calculator as MTc
 import mtpy.utils.exceptions as MTexceptions
 
-reload(MTexceptions)
-reload(MTformat)
-reload(MTc)
+#reload(MTexceptions)
+#reload(MTformat)
+#reload(MTc)
 
 
 #=================================================================
@@ -673,7 +672,7 @@ class Edi(object):
         zerr_rot = None
         tipper_rot = None  
         tippererr_rot = None
-        
+
         z_rot = np.copy(self.z)
         if self.zerr is not None:
             zerr_rot = np.copy(self.zerr)

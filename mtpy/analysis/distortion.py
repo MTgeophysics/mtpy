@@ -22,27 +22,17 @@ Other mehtods can be implemented, but since the optimal assumtions and constrain
 
 #=================================================================
 import numpy as np
-import os
-import sys
-import os.path as op
-import math, cmath
-import time, calendar 
 
-import mtpy.core.edi as MTedi 
+
 import mtpy.core.z as MTz 
-import mtpy.analysis.pt as MTpt 
 import mtpy.analysis.geometry as MTg 
-import mtpy.utils.format as MTformat
 import mtpy.utils.exceptions as MTexceptions
 import mtpy.utils.calculator as MTc
 
-reload(MTexceptions)
-reload(MTedi)
+#reload(MTexceptions)
 #reload(MTz)
-reload(MTformat)
-reload(MTc)
-reload(MTpt)
-reload(MTg)
+#reload(MTc)
+#reload(MTg)
 
 
 #=================================================================

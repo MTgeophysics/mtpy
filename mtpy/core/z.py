@@ -64,22 +64,16 @@ Contains classes and functions for handling impedance tensors (Z).
 
 #=================================================================
 import numpy as np
-import os
-import sys
-import os.path as op
 import math, cmath
-import time, calendar 
 import copy
 import mtpy.utils.calculator as MTc
 
 
-import mtpy.utils.format as MTformat
-
 import mtpy.utils.exceptions as MTexceptions
 
-reload(MTexceptions)
-reload(MTformat)
-reload(MTc)
+#reload(MTexceptions)
+#reload(MTformat)
+#reload(MTc)
 
 
 #=================================================================

@@ -22,24 +22,17 @@ Contains classes and functions for handling Phase Tensor analysis of given imped
 
 #=================================================================
 import numpy as np
-import os
-import sys
-import os.path as op
-import math, cmath
-import time, calendar  
 import copy
 
 import mtpy.core.edi as MTedi 
 import mtpy.core.z as MTz 
-import mtpy.utils.format as MTformat
 import mtpy.utils.exceptions as MTexceptions
 import mtpy.utils.calculator as MTc
 
-reload(MTexceptions)
-reload(MTedi)
+#reload(MTexceptions)
+#reload(MTedi)
 #reload(MTz)
-reload(MTformat)
-reload(MTc)
+#reload(MTc)
 
 
 #=================================================================
