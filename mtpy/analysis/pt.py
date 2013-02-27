@@ -497,6 +497,14 @@ class ResidualPhaseTensor(PhaseTensor):
         if pt_object1 is not None or  pt_object2 is not None:
             if not (( isinstance(pt_object1,PhaseTensor) and isinstance(pt_object2,PhaseTensor))):
                 raise MTexceptions.MTpyError_PT('ERROR - both arguments must be instances of the PhaseTensor class')
+            
+            self.read_pt_objects(pt_object1,pt_object2)
+
+
+    def read_pt_objects(self, pt_o1, pt_o2):
+
+        if not ( (isinstance(pt_o1, PhaseTensor)) and (isinstance(pt_o2, PhaseTensor)) ):
+            raise MTexceptions.MTpyError_PT('ERROR - both arguments must be instances of the PhaseTensor class')
 
         pt1 = pt_object1.pt
         pt2 = pt_object2.pt
@@ -572,22 +580,19 @@ class ResidualPhaseTensor(PhaseTensor):
 
             except:
                 pass
-
-
-    
  
-
-    def read_pt_objects(self, pt_o1, pt_o2):
-
-        if not ( (isinstance(pt_o1, PhaseTensor)) and (isinstance(pt_o2, PhaseTensor)) ):
-            raise MTexceptions.MTpyError_PT('ERROR - both arguments must be instances of the PhaseTensor class')
-
-
-        pass
-
+ 
     def read_pts(self, pt1, pt2, pt1err = None, pt2err = None):
+        #TODO - check arrays here:
 
+
+        pt_o1 = PhaseTensor(pt_array = pt1, pterr_array = pt1err)
+        pt_o2 = PhaseTensor(pt_array = pt2, pterr_array = pt2err)
+
+        self.read_pt_objects(pt_o1,pt_o2)
+        
         pass
+
 
     def set_rpt(self, rpt = None):
         pass
