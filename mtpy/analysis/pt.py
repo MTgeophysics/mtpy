@@ -419,8 +419,8 @@ class PhaseTensor(object):
             self.rotation_angle = 0.
             return
         
-        pt_rot = np.copy(self.pt)
-        pterr_rot = np.copy(self.pterr)
+        pt_rot = copy.copy(self.pt)
+        pterr_rot = copy.copy(self.pterr)
        
         for idx_freq in range(len(self.pt)):
                     

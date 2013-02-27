@@ -23,7 +23,6 @@ Other mehtods can be implemented, but since the optimal assumtions and constrain
 #=================================================================
 import numpy as np
 
-
 import mtpy.core.z as MTz 
 import mtpy.analysis.geometry as MTg 
 import mtpy.utils.exceptions as MTexceptions

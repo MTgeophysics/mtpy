@@ -10,7 +10,7 @@ import sys
 import os.path as op
 
 import mtpy.utils.filehandling as FH
-reload(FH)
+#reload(FH)
 
 
 

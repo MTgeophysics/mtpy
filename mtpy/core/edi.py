@@ -69,6 +69,7 @@ import os
 import os.path as op
 import math, cmath
 import time, calendar 
+import copy
 
 import mtpy.utils.format as MTformat
 import mtpy.utils.calculator as MTc
@@ -673,13 +674,13 @@ class Edi(object):
         tipper_rot = None  
         tippererr_rot = None
 
-        z_rot = np.copy(self.z)
+        z_rot = copy.copy(self.z)
         if self.zerr is not None:
-            zerr_rot = np.copy(self.zerr)
+            zerr_rot = copy.copy(self.zerr)
         if self.tipper is not None:
-            tipper_rot = np.copy(self.tipper)
+            tipper_rot = copy.copy(self.tipper)
         if self.tippererr is not None:
-            tippererr_rot = np.copy(self.tippererr)
+            tippererr_rot = copy.copy(self.tippererr)
 
         for idx_freq in range(self.n_freqs()):
 
@@ -742,7 +743,7 @@ class Edi(object):
     def set_rho_phi(self, rho_array, phi_array):
 
         if self.z is not None: 
-            z_new = self.z.copy() 
+            z_new = copy.copy(self.z) 
 
             if self.z.shape != rho_array.shape:
                 print 'Error - shape of "rho" array does not match shape of Z array: %s ; %s'%(str(rho_array.shape),str(self.z.shape))

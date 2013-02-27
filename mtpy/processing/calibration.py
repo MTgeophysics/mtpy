@@ -29,6 +29,7 @@ import os.path as op
 import glob
 import calendar
 import time
+import copy
 
 
 from mtpy.utils.exceptions import *
@@ -227,7 +228,7 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
         raise MTpyError_inputarguments('cannot read data file')
 
 
-    data_out = data_in.copy()
+    data_out = copy.copy(data_in)
 
     #read in first line of input file, checking, if header line exists
     FH = open(filename,'r')

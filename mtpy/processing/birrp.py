@@ -34,10 +34,10 @@ import math
 
 from mtpy.utils.exceptions import *
 import mtpy.utils.format as MTformat
-import mtpy.utils.filehandling as FH
-reload(FH)
-import mtpy.utils.misc as MISC
-reload(MISC)
+import mtpy.utils.filehandling as MTfh
+import mtpy.utils.misc as MTm
+#reload(MTm)
+#reload(FH)
 
 
 #=================================================================
@@ -102,7 +102,7 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
     #generate a local configuration file, containing information about all BIRRP and station parameters
     #required for the header of the EDI file 
     station_config_file = '%s_birrpconfig.cfg'%(stationname)
-    FH.write_dict_to_configfile(birrp_stationdict, station_config_file)
+    MTfH.write_dict_to_configfile(birrp_stationdict, station_config_file)
     print 'Wrote BIRRP and time series configurations to file: %s'%(op.abspath(station_config_file))
 
     #go back to initial directory
@@ -128,7 +128,7 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
     #self referencing:
     birrp_stationdict['rr_station'] = birrp_stationdict['station']
 
-    birrp_stationdict = MISC.add_birrp_simple_parameters_to_dictionary(birrp_stationdict)
+    birrp_stationdict = MTm.add_birrp_simple_parameters_to_dictionary(birrp_stationdict)
 
 
     if output_channels == 2:
@@ -187,7 +187,7 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
         lo_files.append(fn)
 
         try:
-            header = FH.read_data_header(fn)
+            header = MTfH.read_data_header(fn)
         except:
             continue
 
@@ -245,7 +245,7 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
 
         lo_time_windows.append(tmp_timewindows_list_per_channel)
 
-    longest_common_time_window = MISC.find_longest_common_time_window_from_list(lo_time_windows, sampling_rate)
+    longest_common_time_window = MTm.find_longest_common_time_window_from_list(lo_time_windows, sampling_rate)
 
 
     #data array to hold time series for longest possible time window for the files given 
@@ -404,7 +404,7 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
      
     #read the survey config file:
     try:
-        survey_config_dict = FH.read_survey_configfile(survey_configfile)
+        survey_config_dict = MTfH.read_survey_configfile(survey_configfile)
     except:
         raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (survey_configfile) )
 
@@ -416,7 +416,7 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
 
     #read the BIRRP/processing config file:
     try:
-        birrp_config_dict = FH.read_configfile(birrp_configfile)
+        birrp_config_dict = MTfH.read_configfile(birrp_configfile)
     except:
         raise EX.MTpyError_config_file( 'Config file with BIRRP processing parameters could not be read: %s' % (birrp_configfile) )
 
@@ -848,12 +848,12 @@ def convert2coh(birrp_output_directory, stationname):
         raise MTpyError_file_handling('Too many coherence files for station %s found in: %s'%(stationname, directory))
 
     try:
-        period,freq,coh1,zcoh1 = FH.read_2c2_file(cohfilenames[0])
-        period,freq,coh2,zcoh2 = FH.read_2c2_file(cohfilenames[1])
+        period,freq,coh1,zcoh1 = MTfH.read_2c2_file(cohfilenames[0])
+        period,freq,coh2,zcoh2 = MTfH.read_2c2_file(cohfilenames[1])
 
         if len(cohfilenames) == 3:
 
-            period,freq,coh3,zcoh3 = FH.read_2c2_file(cohfilenames[2])
+            period,freq,coh3,zcoh3 = MTfH.read_2c2_file(cohfilenames[2])
     except:
         raise MTpyError_file_handling('Cannot read coherence files for station %s found in: %s'%(stationname, directory))
 

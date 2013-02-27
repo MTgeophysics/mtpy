@@ -302,7 +302,7 @@ class Z(object):
     def set_rho_phi(self, rho_array, phi_array):
 
         if self.z is not None: 
-            z_new = self.z.copy() 
+            z_new = copy.copy(self.z) 
 
             if self.z.shape != rho_array.shape:
                 print 'Error - shape of "rho" array does not match shape of Z array: %s ; %s'%(str(rho_array.shape),str(self.z.shape))
@@ -339,7 +339,7 @@ class Z(object):
             print 'z array is "None" - I cannot invert that'
             return
         
-        inverse = self.z.copy()
+        inverse = copy.copy(self.z)
         for idx_f in range(len(inverse)):
             try:
                 inverse[idx_f,:,:] = np.array( (np.matrix(self.z[idx_f,:,:])).I )
@@ -387,8 +387,8 @@ class Z(object):
             #self.rotation_angle = 0.
             return
 
-        z_rot = np.copy(self.z)
-        zerr_rot = np.copy(self.zerr)
+        z_rot = copy.copy(self.z)
+        zerr_rot = copy.copy(self.zerr)
 
         for idx_freq in range(len(self.z)):
                     
@@ -477,7 +477,7 @@ class Z(object):
             return
   
 
-        z_corrected = self.z.copy()
+        z_corrected = copy.copy(self.z)
         static_shift = np.zeros((len(self.z),2,2))
 
         for idx_f in range(len(self.z)):
@@ -811,7 +811,7 @@ class Tipper(object):
 
         if self.tipper is not None: 
                 
-            tipper_new = self.tipper.copy() 
+            tipper_new = copy.copy(self.tipper) 
 
             if self.tipper.shape != rho_array.shape:
                 print 'Error - shape of "rho" array does not match shape of tipper array: %s ; %s'%(str(rho_array.shape),str(self.tipper.shape))
@@ -882,8 +882,8 @@ class Tipper(object):
             self.rotation_angle = 0.
             return
 
-        tipper_rot = np.copy(self.tipper)
-        tippererr_rot = np.copy(self.tippererr)
+        tipper_rot = copy.copy(self.tipper)
+        tippererr_rot = copy.copy(self.tippererr)
 
         for idx_freq in range(len(tipper_rot)):
             angle = lo_angles[idx_freq]
