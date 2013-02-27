@@ -68,18 +68,21 @@ def dimensionality(z_array = None, z_object = None, pt_array= None, pt_object = 
     if z_array is not None:
         pt_obj = MTpt.PhaseTensor(z_array = z_array)
     elif z_object is not None:
+        if not isinstance(z_object, MTz.Z):
+            raise MTexceptions.MTpyError_Z('Input argument is not an instance of the Z class')        
         pt_obj = MTpt.PhaseTensor(z_object = z_object)
-
     elif pt_array is not None:
         pt_obj = MTpt.PhaseTensor(pt_array= pt_array)
     elif pt_object is not None:
+        if not isinstance(pt_object, MTpt.PhaseTensor):
+            raise MTexceptions.MTpyError_PT('Input argument is not an instance of the PhaseTensor class')
         pt_obj = pt_object
     
 
     #use criteria from Bibby et al. 2005 for determining the dimensionality for each frequency of the pt/z array:
     for idx_f in range(len(pt_obj.pt)):
         #1. determine beta value...
-        beta = pt_obj.invariants()['beta'][idx_f]
+        beta = pt_obj.beta()[0][idx_f]
             #compare with threshold for 3D
         if beta > beta_threshold:
             lo_dimensionality.append(3)
@@ -100,11 +103,15 @@ def strike_angle(z_array = None, z_object = None, pt_array= None, pt_object = No
     if z_array is not None:
         pt_obj = MTpt.PhaseTensor(z_array = z_array)
     elif z_object is not None:
+        if not isinstance(z_object, MTz.Z):
+            raise MTexceptions.MTpyError_Z('Input argument is not an instance of the Z class')
         pt_obj = MTpt.PhaseTensor(z_object = z_object)
 
     elif pt_array is not None:
         pt_obj = MTpt.PhaseTensor(pt_array= pt_array)
     elif pt_object is not None:
+        if not isinstance(pt_object, MTpt.PhaseTensor):
+            raise MTexceptions.MTpyError_PT('Input argument is not an instance of the PhaseTensor class')
         pt_obj = pt_object
 
     lo_dims =  dimensionality(pt_object = pt_obj, beta_threshold =beta_threshold , eccentricity_threshold = eccentricity_threshold )
@@ -137,20 +144,29 @@ def eccentricity(z_array = None, z_object = None, pt_array= None, pt_object = No
     if z_array is not None:
         pt_obj = MTpt.PhaseTensor(z_array = z_array)
     elif z_object is not None:
+        if not isinstance(z_object, MTz.Z):
+            raise MTexceptions.MTpyError_Z('Input argument is not an instance of the Z class')
+        print'assssss'
         pt_obj = MTpt.PhaseTensor(z_object = z_object)
     elif pt_array is not None:
         pt_obj = MTpt.PhaseTensor(pt_array= pt_array)
     elif pt_object is not None:
+        if not isinstance(pt_object, MTpt.PhaseTensor):
+            raise MTexceptions.MTpyError_PT('Input argument is not an instance of the PhaseTensor class')
         pt_obj = pt_object
 
     lo_ecc = []
     lo_eccerr = []
 
+    if not isinstance(pt_obj, MTpt.PhaseTensor):
+        raise MTexceptions.MTpyError_PT('Input argument is not an instance of the PhaseTensor class')
+   
+
     for idx_f in range(len(pt_obj.pt)):
         lo_ecc.append( pt_obj._pi1()[0][idx_f] / pt_obj._pi2()[0][idx_f] )
 
         ecc_err = None
-        if pt_obj._pi1()[1][idx_f] is not None and (pt_obj._pi2()[1][idx_f] is not None):
+        if (pt_obj._pi1()[1] is not None) and (pt_obj._pi2()[1] is not None):
             ecc_err = np.sqrt( (pt_obj._pi1()[1][idx_f] /pt_obj._pi1()[0][idx_f] )**2 + (pt_obj._pi2()[1][idx_f] /pt_obj._pi2()[0][idx_f])**2)  
 
 

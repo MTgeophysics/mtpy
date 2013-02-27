@@ -93,8 +93,6 @@ class Edi(object):
 
     """
 
-
-
     def __init__(self, fn = None):
     
         self.filename = fn
@@ -131,7 +129,7 @@ class Edi(object):
             edistring = F.read()
 
         if not _validate_edifile_string(edistring):
-            raise MTexceptions.MTpyError_edi_file('%s is no proper edi file'%infile)
+            raise MTexceptions.MTpyError_edi_file('%s is no proper EDI file'%infile)
 
         self.filename = infile
         self.in_filestring = edistring
@@ -917,6 +915,8 @@ def read_edifile(fn):
 
 def write_edifile(edi_object, out_fn = None):
     
+    if not isinstance(z_object, MTedi.Edi):
+        raise MTexceptions.MTpyError_EDI('Input argument is not an instance of the Edi class')
 
     if out_fn is not None:
         dirname = op.dirname(op.abspath(op.join('.',out_fn)))

@@ -111,7 +111,7 @@ class PhaseTensor(object):
  
         #B) check, if z array is given as well
         #1. check, if valid Edi object is given
-        if isinstance(edi_object,MTedi.Edi):
+        if isinstance(edi_object, MTedi.Edi):
 
             try:
                 z_array = edi_object.z
@@ -119,7 +119,7 @@ class PhaseTensor(object):
                 pass
 
             try:
-                zerr_array = edi_object.zerr_array
+                zerr_array = edi_object.zerr
             except:
                 pass
 
@@ -131,7 +131,7 @@ class PhaseTensor(object):
             except:
                 pass
             try:
-                zerr_array = edi_object.zerr_array
+                zerr_array = z_object.zerr
             except:
                 pass
 
@@ -185,6 +185,24 @@ class PhaseTensor(object):
 
 
     def set_pt(self, pt_array):
+
+        if not len(pt_array.shape) in [2,3]:
+            raise MTexceptions.MTpyError_PT('ERROR - I cannot set new pt array! Invalid dimensions')
+        if not pt_array.shape[-2:] == (2,2):
+            raise MTexceptions.MTpyError_PT('ERROR - I cannot set new pt array! Invalid dimensions')
+        try:
+            if not pt_array.dtype in ['float']:
+                raise
+        except:
+            raise MTexceptions.MTpyError_PT('ERROR - I cannot set new pt array! Invalid data type (float expected)')
+
+        if len(pt_array.shape) == 3:
+            self.pt = pt_array
+        else:
+            self.pt = np.zeros((1,pt_array.shape[0],pt_array.shape[1])) 
+            self.pt[0] = pt_array
+
+        #test all other attributes for proper dimensions!!!...    
 
         pass
 
@@ -337,13 +355,13 @@ class PhaseTensor(object):
 
         #following bibby et al 2005:
 
-        phimin = self._pi2[0] - self._pi1[0]
+        phimin = self._pi2()[0] - self._pi1()[0]
 
-        phinminerr = None
+        phiminerr = None
         if self.pterr is not None:
-            phinminerr = np.sqrt( self._pi2[1]**2 + self._pi1[1]***2 )
+            phiminerr = np.sqrt( self._pi2()[1]**2 + self._pi1()[1]**2 )
  
-        return phimin, phiminerr
+        return np.degrees(phimin), np.degrees(phiminerr)
 
 
     def phimax(self):
@@ -359,13 +377,13 @@ class PhaseTensor(object):
 
         #following bibby et al 2005:
 
-        phimax = self._pi2[0] + self._pi1[0]
+        phimax = self._pi2()[0] + self._pi1()[0]
 
-        phinmaxerr = None
+        phimaxerr = None
         if self.pterr is not None:
-            phinmaxerr = np.sqrt( self._pi2[1]**2 + self._pi1[1]***2 )
+            phimaxerr = np.sqrt( self._pi2()[1]**2 + self._pi1()[1]**2 )
  
-        return phimax, phimaxerr
+        return np.degrees(phimax), np.degrees(phimaxerr)
 
 
 
@@ -386,7 +404,7 @@ class PhaseTensor(object):
             #make an n long list of identical angles
             lo_angles = [degreeangle for i in self.pt]
         else:
-            if len(lo_angles) == 1:
+            if len(alpha) == 1:
                 try:
                     degreeangle = float(alpha%360)
                 except:
@@ -414,6 +432,8 @@ class PhaseTensor(object):
         for idx_freq in range(len(self.pt)):
                     
             angle = lo_angles[idx_freq]
+            if np.isnan(angle):
+                angle = 0.
 
             if self.pterr is not None:
                 pt_rot[idx_freq], pterr_rot[idx_freq] = MTc.rotatematrix_incl_errors(self.pt[idx_freq,:,:], angle, self.pterr[idx_freq,:,:])
@@ -456,20 +476,44 @@ class PhaseTensor(object):
 
 
 
+class ResidualPhaseTensor(object):
+    """
+        PhaseTensor class - generates a Phase Tensor (PT) object.
+
+
+  
+
+    """
+
+    def __init__(self, pt_object1 = None, pt_object2 = None):
+
+        if ( isinstance(pt_object1,PhaseTensor) and isinstance(pt_object2,PhaseTensor)):
+            pass
+    
+        self.pt1 = None
+        self.pterr1 = None  
+
+
+
+
+
+
+
 def z2pt(z_array, zerr_array = None):
     """
     
     """
-    try:
-        if not  len(z_array.shape) in [2,3]:
-            raise
-        if not z_array.shape[-2:] == (2,2):
-            raise
-        if not z_array.dtype in ['complex', 'float']:
-            raise
-    except:
-        raise MTexceptions.MTpyError_PT('Error - incorrect z array: %s;%s instead of (N,2,2);complex'%(str(z_array.shape), str(z_array.dtype)))
-    
+    if z_array is not None:
+        try:
+            if not  len(z_array.shape) in [2,3]:
+                raise
+            if not z_array.shape[-2:] == (2,2):
+                raise
+            if not z_array.dtype in ['complex', 'float']:
+                raise
+        except:
+            raise MTexceptions.MTpyError_PT('Error - incorrect z array: %s;%s instead of (N,2,2);complex'%(str(z_array.shape), str(z_array.dtype)))    
+
 
     if zerr_array is not None:
         try:
@@ -484,6 +528,8 @@ def z2pt(z_array, zerr_array = None):
 
         if not z_array.shape == zerr_array.shape:
             raise MTexceptions.MTpyError_PT('Error - z-array and z-err-array have different shape: %s;%s'%(str(z_array.shape), str(zerr_array.shape)))
+
+
 
 
     #for a single matrix as input:
@@ -607,6 +653,9 @@ def z2pt(z_array, zerr_array = None):
 
 def z_object2pt(z_object):
 
+    if not isinstance(z_object, MTz.Z):
+        raise MTexceptions.MTpyError_Z('Input argument is not an instance of the Z class')
+
     p = PhaseTensor(z_object = z_object)
 
     pt_array = p.pt
@@ -617,7 +666,23 @@ def z_object2pt(z_object):
 
 def edi_object2pt(edi_object):
 
+    if not isinstance(z_object, MTedi.Edi):
+        raise MTexceptions.MTpyError_EDI('Input argument is not an instance of the Edi class')
     p = PhaseTensor(edi_object = edi_object)
+
+    pt_array = p.pt
+    
+    pterr_array = p.pterr
+
+    return pt_array, pterr_array
+
+
+def edi_file2pt(filename):
+
+    e = MTedi.Edi()
+    e.readfile(filename)
+
+    p = PhaseTensor(edi_object = e)
 
     pt_array = p.pt
     

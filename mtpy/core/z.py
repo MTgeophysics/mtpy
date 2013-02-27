@@ -156,8 +156,9 @@ class Z(object):
         except:
             pass
 
-        if (self.z is not None) and (self.zerr is None):
-            self.zerr = np.zeros(self.z.shape)
+
+        #if (self.z is not None) and (self.zerr is None):
+        #    self.zerr = np.zeros(self.z.shape)
 
         self.rotation_angle = 0.
 
@@ -165,7 +166,7 @@ class Z(object):
     def set_edi_object(self, edi_object):
 
         if not isinstance(edi_object,MTedi.Edi):
-            print 'Object is not a valid Edi instance - Z object not updated'
+            print 'Object is not a valid instance of the Edi class - Z object not updated'
             return
 
 
@@ -293,7 +294,7 @@ class Z(object):
             for i in range(2):                        
                 for j in range(2):
                     rho[idx_f,i,j] = np.abs(self.z[idx_f,i,j])
-                    phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))
+                    phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))%360
                 
                     if self.zerr is not None:
                         r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
@@ -578,7 +579,7 @@ class Z(object):
 
         z2d = copy.copy(self.z)
 
-        for i in range(len(z1d)):
+        for i in range(len(z2d)):
             z2d[i,0,0] = 0
             z2d[i,1,1] = 0
             
@@ -939,9 +940,9 @@ def remove_ss_and_distortion(z_array, zerr_array = None, rho_x = 1., rho_y = 1.)
 
 
 
-def z2rhophi(z_array):
+def z2rhophi(z_array, zerr_array = None):
     
-    z_object = _read_z_array(z_array)
+    z_object = _read_z_array(z_array,zerr_array )
 
     return z_object.rho_phi()
 
@@ -955,9 +956,9 @@ def rotate_tipper(tipper_array, alpha, tippererr_array = None):
     return tipper_object.tipper, tipper_object.tippererr
 
 
-def tipper2rhophi(tipper_array):
+def tipper2rhophi(tipper_array, tippererr_array = None):
     
-    tipper_object = _read_tipper_array(tipper_array)
+    tipper_object = _read_tipper_array(tipper_array, tippererr_array )
 
     return tipper_object.rho_phi()
 
