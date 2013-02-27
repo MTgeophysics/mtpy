@@ -371,7 +371,7 @@ class Z(object):
             #make an n long list of identical angles
             lo_angles = [degreeangle for i in self.z]
         else:
-            if len(lo_angles) == 1:
+            if len(alpha) == 1:
                 try:
                     degreeangle = float(alpha%360)
                 except:
@@ -399,6 +399,8 @@ class Z(object):
         for idx_freq in range(len(self.z)):
                     
             angle = lo_angles[idx_freq]
+            if np.isnan(angle):
+                angle = 0.
 
             if self.zerr is not None:
                 z_rot[idx_freq], zerr_rot[idx_freq] = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle, self.zerr[idx_freq,:,:])

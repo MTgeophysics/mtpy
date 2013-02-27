@@ -234,3 +234,33 @@ def rotatevector_incl_errors(invector, angle, invector_err = None):
 
 
     return rotated_matrix, errvec
+
+
+
+def multiplymatrices_incl_errors(inmatrix1, inmatrix2, inmatrix1_err = None,inmatrix2_err = None ):
+
+    if inmatrix1 is None or inmatrix2 is None:
+        raise MTexceptions.MTpyError_inputarguments('ERROR - two 2x2 arrays needed as input')
+
+    if inmatrix1.shape != inmatrix2.shape:
+        raise MTexceptions.MTpyError_inputarguments('ERROR - two 2x2 arrays with same dimensions needed as input')
+
+
+    prod = np.array(np.dot( np.matrix(inmatrix1), np.matrix(inmatrix2)))
+
+    if (inmatrix1_err is None) or ( inmatrix1_err is None ):
+        return prod, None
+
+
+    var = np.zeros((2,2))
+    var[0,0] = (inmatrix1_err[0,0] * inmatrix2[0,0])**2 + (inmatrix1_err[0,1] * inmatrix2[1,0])**2+\
+                (inmatrix2_err[0,0] * inmatrix1[0,0])**2 + (inmatrix2_err[1,0] * inmatrix1[0,1])**2
+    var[0,1] = (inmatrix1_err[0,0] * inmatrix2[0,1])**2 + (inmatrix1_err[0,1] * inmatrix2[1,1])**2+\
+                (inmatrix2_err[0,1] * inmatrix1[0,0])**2 + (inmatrix2_err[1,1] * inmatrix1[0,1])**2
+    var[1,0] = (inmatrix1_err[1,0] * inmatrix2[0,0])**2 + (inmatrix1_err[1,1] * inmatrix2[1,0])**2+\
+                (inmatrix2_err[0,0] * inmatrix1[1,0])**2 + (inmatrix2_err[1,0] * inmatrix1[1,1])**2
+    var[1,1] = (inmatrix1_err[1,0] * inmatrix2[0,1])**2 + (inmatrix1_err[1,1] * inmatrix2[1,1])**2+\
+                (inmatrix2_err[0,1] * inmatrix1[1,0])**2 + (inmatrix2_err[1,1] * inmatrix1[1,1])**2
+
+
+    return prod, np.sqrt(var)

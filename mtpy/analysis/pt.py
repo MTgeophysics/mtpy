@@ -476,24 +476,124 @@ class PhaseTensor(object):
 
 
 
-class ResidualPhaseTensor(object):
+class ResidualPhaseTensor(PhaseTensor):
     """
-        PhaseTensor class - generates a Phase Tensor (PT) object.
+        PhaseTensor class - generates a Phase Tensor (PT) object DeltaPhi
 
-
-  
+        DeltaPhi = 1 - (phi2.I*phi1 + phi*phi2.I)/2
 
     """
 
     def __init__(self, pt_object1 = None, pt_object2 = None):
 
-        if ( isinstance(pt_object1,PhaseTensor) and isinstance(pt_object2,PhaseTensor)):
-            pass
+
+        self.rpt = None
+        self.rpterr = None
+        self._pt1 = None  
+        self._pt2 = None  
+        self._pt1err = None  
+        self._pt2err = None  
+
+        if pt_object1 is not None or  pt_object2 is not None:
+            if not (( isinstance(pt_object1,PhaseTensor) and isinstance(pt_object2,PhaseTensor))):
+                raise MTexceptions.MTpyError_PT('ERROR - both arguments must be instances of the PhaseTensor class')
+
+        pt1 = pt_object1.pt
+        pt2 = pt_object2.pt
+
+        if pt1 is not None and pt2 is not None:
+            try:
+                if (not np.dtype(pt1) in ['float']) or (not np.dtype(pt2) in ['float']):
+                    raise
+                if not pt1.shape == pt2.shape:
+                    raise
+                if (not len(pt1.shape) in [2,3] ) :
+                    raise
+
+                if len(pt1.shape) == 3:
+                    self.rpt = np.zeros((len(pt1),2,2))
+
+                    for idx in range(len(pt1)):
+                        self.rpt[idx] = np.eye(2) - 0.5 * np.array( np.dot( np.matrix(pt2[idx]).I, np.matrix(pt1[idx]) ) + np.dot( np.matrix(pt1[idx]), np.matrix(pt2[idx]).I ) ) 
+                    self._pt1 = pt1  
+                    self._pt2 = pt2  
+
+                else:
+                    self.rpt = np.zeros((1,2,2))
+                    self.rpt[0] = np.eye(2) - 0.5 * np.array( np.dot( np.matrix(pt2).I, np.matrix(pt1) ) + np.dot( np.matrix(pt1), np.matrix(pt2).I ) ) 
+                    
+                    self._pt1 =  np.zeros((1,2,2))  
+                    self._pt1[0] = pt1 
+                    self._pt2 =  np.zeros((1,2,2))  
+                    self._pt2[0] = pt2 
+
+            except:
+                pass
+
+        pt1err = pt_object1.pterr
+        pt2err = pt_object2.pterr
+
+        if pt1err is not None and pt2err is not None:
+            try:
+                if (not np.dtype(pt1err) in ['float']) or (not np.dtype(pt2err) in ['float']):
+                    raise
+                if not pt1err.shape == pt2err.shape:
+                    raise
+                if (not len(pt1err.shape) in [2,3] ):
+                    raise
+
+                if self.rpterr.shape != self.rpt.shape:
+                    raise
+
+                if len(pt1err.shape) == 3:
+                    self.rpt = np.zeros((len(pt1),2,2))
+
+                    for idx in range(len(pt1err)):
+                        matrix1 = pt1[idx]
+                        matrix1err = pt1err[idx]                        
+                        matrix2, matrix2err = invertmatrix_incl_errors(pt2[idx], inmatrix_err = pt2err[idx])
+
+                        summand1,err1 = multiplymatrices_incl_errors(matrix2, matrix1, inmatrix1_err = matrix2err,inmatrix2_err =  matrix1err)
+                        summand2,err2 = multiplymatrices_incl_errors(matrix1, matrix2, inmatrix1_err = matrix1err,inmatrix2_err =  matrix2err)
+
+                        self.rpterr[idx] = np.sqrt( 0.25 * err1**2 + 0.25 * err2**2 )
+
+                    self._pterr1 = pt1err  
+                    self._pterr2 = pt2err  
+
+                else:
+                    self.rpt = np.zeros((1,2,2))
+                    self.rpt[0] = np.eye(2) - 0.5 * np.array( np.dot( np.matrix(pt2).I, np.matrix(pt1) ) + np.dot( np.matrix(pt1), np.matrix(pt2).I ) ) 
+            
+                    self._pt1err =  np.zeros((1,2,2))  
+                    self._pt1err[0] = pt1err
+                    self._pt2err =  np.zeros((1,2,2))  
+                    self._pt2err[0] = pt2err 
+
+            except:
+                pass
+
+
     
-        self.pt1 = None
-        self.pterr1 = None  
+ 
+
+    def read_pt_objects(self, pt_o1, pt_o2):
+
+        if not ( (isinstance(pt_o1, PhaseTensor)) and (isinstance(pt_o2, PhaseTensor)) ):
+            raise MTexceptions.MTpyError_PT('ERROR - both arguments must be instances of the PhaseTensor class')
 
 
+        pass
+
+    def read_pts(self, pt1, pt2, pt1err = None, pt2err = None):
+
+        pass
+
+    def set_rpt(self, rpt = None):
+        pass
+
+    def set_rpterr(self, rpterr = None):
+        pass
 
 
 
