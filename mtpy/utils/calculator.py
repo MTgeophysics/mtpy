@@ -25,6 +25,8 @@ from mtpy.utils.exceptions import *
 
 #define uncertainty for differences between time steps
 epsilon = 1e-9
+#magnetic permeability in free space in H/m (=Vs/Am)
+mu0 = 4e-7*math.pi
 
 
 #=================================================================
@@ -235,7 +237,7 @@ def rotatevector_incl_errors(invector, angle, invector_err = None):
             errvec = np.dot( np.abs(rotmat), invector_err )
 
 
-    return rotated_matrix, errvec
+    return rotated_vector, errvec
 
 
 

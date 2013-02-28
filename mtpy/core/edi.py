@@ -77,7 +77,7 @@ import mtpy.utils.exceptions as MTexceptions
 
 #reload(MTexceptions)
 #reload(MTformat)
-#reload(MTc)
+reload(MTc)
 
 
 #=================================================================
@@ -117,9 +117,22 @@ class Edi(object):
         self.tippererr = None
 
 
-    def readfile(self, fn):
-        
+    def readfile(self, fn, Hscale = 1):
+        """
+            Hscale is the factor that needs to be applied to the data in the file to end up with OHM as unit for Z.
+
+            E.g., if the Z-data are given in E/B with E measured in mV/km and B in nT, the factor is 10e-2 * mu_0 = pi*4e-9
+            If the data are in V/m and Tesla, just use the letter 'B' instead 
+
+        """
         infile = op.abspath(fn)
+
+        if Hscale in ['b','B']:
+            Hscale =  MTc.mu0
+        try:
+            Hscale = float(Hscale)
+        except:
+            raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not undertood ')
 
 
         if not op.isfile(infile):
@@ -166,7 +179,7 @@ class Edi(object):
             raise MTexceptions.MTpyError_edi_file('Could not read FREQ section: %s'%infile)
 
         try:
-            self._read_z(edistring)
+            self._read_z(edistring, Hscale)
         except:
             raise MTexceptions.MTpyError_edi_file('Could not read Z section: %s'%infile)
 
@@ -343,6 +356,8 @@ class Edi(object):
                 station = op.splitext(op.basename(self.filename))[0]
             info_dict['station'] = station
 
+        info_dict['Z_unit'] = 'Ohm'
+
         self.info_dict = info_dict
 
 
@@ -444,7 +459,7 @@ class Edi(object):
         self.freq = lo_freqs
 
 
-    def _read_z(self, edistring):
+    def _read_z(self, edistring, Hscale):
         """
         Read in impedances information from a string read from an EDI file. 
         Store it as dictionary and complex array (incl. Zvar values in 'zerr' array)
@@ -499,10 +514,10 @@ class Edi(object):
                     zerr_array[idx_freq, idx_comp/2, idx_comp%2] = z_dict[sectionhead][idx_freq]
 
 
-        self.z = z_array
+        self.z = Hscale * z_array
 
         #errors are stddev, not VAR :
-        self.zerr = np.sqrt(zerr_array)
+        self.zerr = np.sqrt(Hscale * zerr_array)
 
 
     def _read_tipper(self, edistring):
@@ -644,19 +659,6 @@ class Edi(object):
 
 
 
-
-    def z2resphase(self):
-        import mtpy.core.z as MTz 
-        
-        amplitude, phase = MTz.res2phase(self.z)
-
-        del MTz
-
-        return amplitude, phase
-
-
-
-
     def rotate(self,angle):
         """
             Rotate the Z and tipper information in the Edi object. Change the rotation angles in Zrot respectively.
@@ -726,14 +728,16 @@ class Edi(object):
 
 
         for idx_f in range(len(self.z)): 
+            omega = self.freq[idx_f] * 2 *math.pi
             for i in range(2):                        
                 for j in range(2):
-                    rho[idx_f,i,j] = np.abs(self.z[idx_f,i,j])
+
+                    rho[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /omega / MTc.mu0 
                     phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))
                 
                     if self.zerr is not None:
                         r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
-                        rhoerr[idx_f,i,j] = r_err
+                        rhoerr[idx_f,i,j] = 2 * np.abs(self.z[idx_f,i,j])/omega / MTc.mu0 * r_err
                         phierr[idx_f,i,j] = phi_err
 
         return rho, phi, rhoerr, phierr
@@ -758,7 +762,9 @@ class Edi(object):
                 print 'Error - shape of "phi" array does not match shape of "rho" array: %s ; %s'%(str(phi_array.shape),str(rho_array.shape))
                 return
 
-            
+        if (self.freq is None) or (len(self.freq) != len(rho_array)) :
+            raise MTexceptions.MTpyError_EDI('ERROR -cannot set rho without proper frequency information - proper "freq" attribute must be defined ')
+
         #assert real array:
         if np.linalg.norm(np.imag(rho_array )) != 0 :
             print 'Error - array "rho" is not real valued !'
@@ -770,7 +776,8 @@ class Edi(object):
         for idx_f in range(len(z_new)):
             for i in range(2):
                 for j in range(2):
-                    z_new[idx_f,i,j] = cmath.rect( rho_array[idx_f,i,j], math.radians(phi_array[idx_f,i,j] ))
+                    abs_z = np.sqrt(2 * math.pi * self.freq[idx_f] * MTc.mu0 * rho_array[idx_f,i,j])
+                    z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phi_array[idx_f,i,j] ))
 
         self.z = z_new
 
@@ -903,11 +910,19 @@ class Edi(object):
 #=========================
 
 
-def read_edifile(fn):
+def read_edifile(fn, Hscale = 1):
+
+    if Hscale in ['b','B']:
+        Hscale =  MTc.mu0
+    try:
+        Hscale = float(Hscale)
+    except:
+        raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not undertood ')
+
 
     edi_object = Edi()
 
-    edi_object.readfile(fn) 
+    edi_object.readfile(fn, Hscale) 
    
 
     return edi_object
@@ -939,13 +954,29 @@ def write_edifile(edi_object, out_fn = None):
     return outfilename
 
 
-def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps = True):
+def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps = True, Hscale1 = 1, Hscale2 = 1 ):
     
+
+    if Hscale1 in ['b','B']:
+        Hscale1 =  MTc.mu0
+    try:
+        Hscale1 = float(Hscale1)
+    except:
+        raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor 1 not undertood ')
+
+    if Hscale2 in ['b','B']:
+        Hscale2 =  MTc.mu0
+    try:
+        Hscale2 = float(Hscale2)
+    except:
+        raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor 2 not undertood ')
+
+
     #edi objects:
     eo1 = Edi()
-    eo1.readfile(fn1)
+    eo1.readfile(fn1, Hscale1)
     eo2 = Edi()
-    eo2.readfile(fn2)
+    eo2.readfile(fn2, Hscale2)
     #edi object merged
     eom = Edi()
 

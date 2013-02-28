@@ -96,7 +96,15 @@ class Z(object):
 
     """
 
-    def __init__(self, z_array = None, zerr_array = None, edi_object = None):
+    def __init__(self, z_array = None, zerr_array = None, edi_object = None, Hscale = 1):
+
+        if Hscale in ['b','B']:
+            Hscale = 10e-3 * MTc.mu0
+        try:
+            float(Hscale)
+        except:
+            raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not undertood ')
+    
     
 
         import mtpy.core.edi as MTedi 
@@ -285,14 +293,16 @@ class Z(object):
 
 
         for idx_f in range(len(self.z)): 
+            omega = self.freq[idx_f] * 2 *math.pi
+
             for i in range(2):                        
                 for j in range(2):
-                    rho[idx_f,i,j] = np.abs(self.z[idx_f,i,j])
+                    rho[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /omega/ MTc.mu0
                     phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))%360
                 
                     if self.zerr is not None:
                         r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
-                        rhoerr[idx_f,i,j] = r_err
+                        rhoerr[idx_f,i,j] = 2 * np.abs(self.z[idx_f,i,j])/omega/ MTc.mu0 * r_err
                         phierr[idx_f,i,j] = phi_err
 
         return rho, phi, rhoerr, phierr
@@ -317,6 +327,10 @@ class Z(object):
                 print 'Error - shape of "phi" array does not match shape of "rho" array: %s ; %s'%(str(phi_array.shape),str(rho_array.shape))
                 return
 
+
+        if (self.freq is None) or (len(self.freq) != len(rho_array)) :
+            raise MTexceptions.MTpyError_EDI('ERROR -cannot set rho without proper frequency information - proper "freq" attribute must be defined ')
+
             
         #assert real array:
         if np.linalg.norm(np.imag(rho_array )) != 0 :
@@ -329,7 +343,8 @@ class Z(object):
         for idx_f in range(len(z_new)):
             for i in range(2):
                 for j in range(2):
-                    z_new[idx_f,i,j] = cmath.rect( rho_array[idx_f,i,j], math.radians(phi_array[idx_f,i,j] ))
+                    abs_z = np.sqrt(2 * math.pi * self.freq[idx_f] * rho_array[idx_f,i,j])
+                    z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phi_array[idx_f,i,j] ))
 
         self.z = z_new
 

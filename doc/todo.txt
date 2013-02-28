@@ -16,6 +16,7 @@ ________
 - Commenting!!
 - Doc strings!!
 - test on Windows
+- allow for edi files/z arrays in either E/B or E/H format
 
 ______
  CORE (handling of Edi files and resulting Z objects)
