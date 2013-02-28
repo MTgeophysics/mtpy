@@ -99,11 +99,11 @@ class Z(object):
     def __init__(self, z_array = None, zerr_array = None, edi_object = None, Hscale = 1):
 
         if Hscale in ['b','B']:
-            Hscale = 10e-3 * MTc.mu0
+            Hscale =  MTc.mu0
         try:
-            float(Hscale)
+            Hscale = float(Hscale)
         except:
-            raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not undertood ')
+            raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not understood ')
     
     
 
@@ -141,12 +141,15 @@ class Z(object):
         except:
             pass
 
-
+        if self.z is not None:
+            self.z *= Hscale
+        if self.zerr is not None:
+            self.zerr *= Hscale
             
         self.frequencies = None
         self.edi_object = None
 
-        if isinstance(edi_object,MTedi.Edi):
+        if isinstance(edi_object, MTedi.Edi):
             self.edi_object = edi_object
             self.frequencies = edi_object.frequencies
             self.z = edi_object.z
@@ -165,7 +168,7 @@ class Z(object):
         self.rotation_angle = 0.
 
 
-    def set_edi_object(self, edi_object):
+    def read_edi_object(self, edi_object):
 
         if not isinstance(edi_object,MTedi.Edi):
             print 'Object is not a valid instance of the Edi class - Z object not updated'
