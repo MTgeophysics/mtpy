@@ -32,9 +32,9 @@ __________
 - add static shift handling (automated, if possible)
 
 
-__________
+_________
  IMAGING (no comment)
-----------
+---------
 
 - ALL (if possible by setting up plot classes for the respective elements - than batch processing (plotting various stations can be handled by functions looping over the plot objects ...??)
 
