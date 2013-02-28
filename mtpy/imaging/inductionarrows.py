@@ -1,21 +1,20 @@
 #!/usr/bin/env python
 
 """
-mtpy/utils/roseplot.py
+mtpy/utils/inductionarrows.py
 
 
-Class and functions for the general imaging of roseplots.
-To be represented via matplotlib.
+Class and functions for the imaging of induction arrows.
+To be embedded in local area rectangular plots, GMT maps, or Python basemap
 
 Class:
-    Roseplot - not necessarily restricted to strike angles
+    Inductionarrows (from Z object/array or PT object/array or Edi object/file)
 
 
 Functions:
 
-    Generate roseplot for Strike angle analysis from Z/PT/Edi
     Batch processing of different sites
-    Returning plottable set of roseplot information, to be piped into GMT or other mapping tools
+    Returning plottable vector information, to be piped into GMT or other mapping tools
 
 
 @UofA, 2013

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-This module contains exceptions for MTpy. 
+Specific exceptions for MTpy. 
 
 
 

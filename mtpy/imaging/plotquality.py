@@ -1,10 +1,9 @@
 
 """
-mtpy/processing/quality.py
+mtpy/imaging/plotquality.py
 
-Functions for the analysis of time series data quality.
+(Class and) Functions for the visualisation of time series data quality.
 
-Output can be visualised with the help of mtpy/imaging/plotquality.py
 
 
 
@@ -23,7 +22,7 @@ import os.path as op
 
 import copy
 
-
+import mtpy.processing.quality as MTq
 import  mtpy.utils.exceptions as MTexceptions
 
 #=================================================================

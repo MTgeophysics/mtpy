@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 """
-This module contains helper functions for standard calculations. 
+mtpy/utils/calculator.py
+
+Helper functions for standard calculations. 
 
 
 @UofA, 2013

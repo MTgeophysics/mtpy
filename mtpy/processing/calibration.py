@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 """
+mtpy/processing/calibration.py
+
 This modules contains functions for the calibration of raw time series. 
 
 The various functions deal with the calibration of data from fluxgates, coil, dipoles,...

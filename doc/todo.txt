@@ -18,7 +18,7 @@ ________
 - test on Windows
 
 ______
- CORE
+ CORE (handling of Edi files and resulting Z objects)
 ------
 
 - test reading of EDI for various Edi file versions
@@ -26,36 +26,38 @@ ______
 
 
 __________
- ANALYSIS
+ ANALYSIS (everything operating on frequency domain based data, e.g. Edi and Z)
 ----------
 
 - add static shift handling (automated, if possible)
 
 
 __________
- IMAGING
+ IMAGING (no comment)
 ----------
 
 - ALL (if possible by setting up plot classes for the respective elements - than batch processing (plotting various stations can be handled by functions looping over the plot objects ...??)
 
 __________
- MODELING
+ MODELING (wrapper for calling external modelling tools, functions for converting in- and outputs)
 ----------
 
 - ALL (introduce MODEL classes for all supported modelling codes, then handle calling as well as in- and output)
 
 
 ____________
- PROCESSING
+ PROCESSING (everything operating on time series)
 ------------
 
 - batch processing (various stations, whole folders)
 - extended BIRRP usage
 - implement call of EMTF (Egbert's BIRRP alternative)
+- time frequency analysis
+- quality check
 
 
 _______
- UTILS
+ UTILS (handy general things like concatenation and renaming of files, unit and data type conversions, standard calculations)
 -------
 
 - extend filehandling (more automated batch processing)
@@ -65,7 +67,7 @@ _______
 - miniSeed
 
 ______
- TEST
+ TEST (unit tests for all the functions)
 ------
 
 - ALL

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-This module contains helper functions for file handling. 
+Helper functions for file handling. 
 
 The various functions deal with renaming, sorting, 
 concatenation of time series, extraction of names and times from filenames,
