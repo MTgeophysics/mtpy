@@ -65,6 +65,7 @@ _______
 - type-conversion (e.g. coordinate formats)
 - data conversion in general
 - miniSeed
+- MetaData handling: convert *.XLS to *.cfg
 
 ______
  TEST (unit tests for all the functions)
