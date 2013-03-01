@@ -94,6 +94,15 @@ class Edi(object):
     """
 
     def __init__(self, fn = None):
+
+        """
+            Initialise an instance of the Edi class.
+
+            Optional input:
+            fn : filename to connect with the object - not read in automatically!
+
+            Initialise the attributes with None/empty dictionary
+        """
     
         self.filename = fn
         if fn != None:

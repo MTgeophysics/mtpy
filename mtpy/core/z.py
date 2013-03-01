@@ -92,11 +92,23 @@ class Z(object):
         with indices in the following order: 
             Zxx: (0,0) - Zxy: (0,1) - Zyx: (1,0) - Zyy: (1,1)   
 
-        Errors are given as standard deviations (sqrt(VAR))
+        All errors are given as standard deviations (sqrt(VAR))
+
 
     """
 
     def __init__(self, z_array = None, zerr_array = None, edi_object = None, Hscale = 1):
+        """
+            Initialise an instance of the Z class.
+
+            Optional input:
+            z_array : Numpy array containing Z values
+            zerr_array : Numpy array containing Z-error values (NOT variance, but stddev!)
+            edi_object : instance of the MTpy Edi class
+            Hscale : scaling factor to convert the input Z values to unit Ohm
+
+            Initialise the attributes with None
+        """
 
         if Hscale in ['b','B']:
             Hscale =  MTc.mu0
@@ -169,6 +181,13 @@ class Z(object):
 
 
     def read_edi_object(self, edi_object):
+        """
+            Read in an instance of the MTpy Edi class.
+
+            Update attributes "z, zerr"
+
+        """
+
 
         if not isinstance(edi_object,MTedi.Edi):
             print 'Object is not a valid instance of the Edi class - Z object not updated'
@@ -199,6 +218,15 @@ class Z(object):
 
        
     def set_z(self, z_array):
+        """
+            Set the attribute 'z'.
+
+            Input:
+            Z array
+
+            Test for shape, but no test for consistency!
+
+        """         
 
         z_orig = self.z 
 
@@ -210,7 +238,15 @@ class Z(object):
 
 
     def set_zerr(self, zerr_array):
+        """
+            Set the attribute 'zerr'.
 
+            Input:
+            Zerror array
+
+            Test for shape, but no test for consistency!
+
+        """ 
         if (self.zerr is not None) and (self.zerr.shape != zerr_array.shape):
             print 'Error - shape of "zerr" array does not match shape of Zerr array: %s ; %s'%(str(zerr_array.shape),str(self.zerr.shape))
             return
@@ -219,6 +255,12 @@ class Z(object):
 
 
     def real(self):
+        """
+            Return the real part of Z.
+
+
+        """ 
+
         if self.z is None:
             print 'z array is None - cannot calculate real'
             return
@@ -227,7 +269,15 @@ class Z(object):
 
         
     def set_real(self, real_array):
-        
+        """
+            Set the real part of 'z'.
+
+            Input:
+            Z-shaped, real valued array
+
+            Test for shape, but no test for consistency!
+
+        """         
 
         if (self.z is not None) and (self.z.shape != real_array.shape):
             print 'shape of "real" array does not match shape of Z array: %s ; %s'%(str(real_array.shape),str(self.z.shape))
@@ -250,6 +300,11 @@ class Z(object):
 
 
     def imag(self):
+        """
+            Return the imaginary part of Z.
+
+        """
+
         if self.z is None:
             print 'z array is None - cannot calculate imag'
             return
@@ -259,6 +314,15 @@ class Z(object):
 
         
     def set_imag(self, imag_array):
+        """
+            Set the imaginary part of 'z'.
+
+            Input:
+            Z-shaped, real valued array
+
+            Test for shape, but no test for consistency!
+
+        """         
 
 
         if (self.z is not None) and (self.z.shape != imag_array.shape):
@@ -281,6 +345,12 @@ class Z(object):
 
 
     def rho_phi(self):
+        """
+            Return values for resistivity (rho - in Ohm m) and phase (phi - in degrees).
+
+            Output is a 4-tuple of arrays:
+            (Rho, Phi, RhoError, PhiError)
+        """ 
         
         if self.z is None:
             print 'Z array is None - cannot calculate rho/phi'
@@ -313,6 +383,13 @@ class Z(object):
 
 
     def set_rho_phi(self, rho_array, phi_array):
+        """
+            Set values for resistivity (rho - in Ohm m) and phase (phi - in degrees).
+
+            Updates the attributes "z, zerr".
+
+        """ 
+
 
         if self.z is not None: 
             z_new = copy.copy(self.z) 
@@ -353,6 +430,13 @@ class Z(object):
 
 
     def inverse(self):
+        """
+            Return the inverse of Z.
+
+            (no errors)
+
+        """
+
         if self.z is None :
             print 'z array is "None" - I cannot invert that'
             return
@@ -368,6 +452,19 @@ class Z(object):
 
 
     def rotate(self, alpha):
+        """
+            Rotate  Z array. Change the rotation angles in Zrot respectively.
+
+            Rotation angle must be given in degrees. All angles are referenced to geographic North, positive in clockwise direction. (Mathematically negative!)
+
+            In non-rotated state, X refs to North and Y to East direction.
+
+            Updates the attributes "z, zerr, zrot".
+
+        """
+
+
+
         if self.z is None :
             print 'z array is "None" - I cannot rotate that'
             return
@@ -569,11 +666,19 @@ class Z(object):
 
 
     def no_ss_no_distortion(self, rho_x = 1., rho_y = 1.):
+        """
+            Not implemented yet!!
+        """
 
         pass
 
 
     def only1d(self):
+        """
+            Return Z in 1D form.
+
+            If Z is not 1D per se, the diagonal elements are set to zero, the off-diagonal elements keep their signs, but their absolute is set to the mean of the original Z off-diagonal absolutes.
+        """
 
         z1d = copy.copy(self.z)
 
@@ -590,6 +695,11 @@ class Z(object):
 
 
     def only2d(self):
+        """
+            Return Z in 2D form.
+
+            If Z is not 2D per se, the diagonal elements are set to zero.
+        """
 
         z2d = copy.copy(self.z)
 
@@ -602,6 +712,13 @@ class Z(object):
 
 
     def invariants(self):
+        """
+            Return a dictionary of Z-invariants.
+
+            Contains:
+            z1, det, det_real, det_imag, trace, skew, norm, lambda_plus/minus, sigma_plus/minus
+        """
+
 
         invariants_dict = {}
 
@@ -653,7 +770,16 @@ class Tipper(object):
     """
 
     def __init__(self, tipper_array = None, tippererr_array = None, edi_object = None):
-    
+        """
+            Initialise an instance of the Tipper class.
+
+            Optional input:
+            tipper_array : Numpy array containing Tipper values
+            tippererr_array : Numpy array containing Tipper-error values (NOT variance, but stddev!)
+            edi_object : instance of the MTpy Edi class
+
+            Initialise the attributes with None
+        """    
 
         self.tipper = None        
         self.tippererr = None
@@ -691,7 +817,13 @@ class Tipper(object):
         self.rotation_angle = 0.
 
 
-    def set_edi_object(self, edi_object):
+    def read_edi_object(self, edi_object):
+        """
+            Read in an instance of the MTpy Edi class.
+
+            Update attributes "tipper, tippererr"
+
+        """
 
         if not isinstance(edi_object,MTedi.Edi):
             print 'Object is not a valid Edi instance - Tipper object not updated'
@@ -718,6 +850,15 @@ class Tipper(object):
 
         
     def set_tipper(self, tipper_array):
+        """
+            Set the attribute 'tipper'.
+
+            Input:
+            Tipper array
+
+            Test for shape, but no test for consistency!
+
+        """         
 
         if (self.tipper is not None) and (self.tipper.shape != tipper_array.shape):
             print 'Error - shape of "tipper" array does not match shape of tipper-array: %s ; %s'%(str(tipper_array.shape),str(self.tipper.shape))
@@ -727,6 +868,15 @@ class Tipper(object):
 
 
     def set_tippererr(self, tippererr_array):
+        """
+            Set the attribute 'tippererr'.
+
+            Input:
+            TipperError array
+
+            Test for shape, but no test for consistency!
+
+        """         
 
 
         if (self.tippererr is not None) and (self.tippererr.shape != tippererr_array.shape):
@@ -737,7 +887,12 @@ class Tipper(object):
 
 
     def real(self):
-        if self.tipper is None:
+        """
+            Return the real part of the Tipper.
+
+
+        """ 
+       if self.tipper is None:
             print 'tipper array is None - cannot calculate real'
             return
 
@@ -745,6 +900,15 @@ class Tipper(object):
 
         
     def set_real(self, real_array):
+        """
+            Set the real part of 'tipper'.
+
+            Input:
+            Tipper-shaped, real valued array
+
+            Test for shape, but no test for consistency!
+
+        """         
         
 
         if (self.tipper is not None ) and (self.tipper.shape != real_array.shape):
@@ -768,6 +932,11 @@ class Tipper(object):
 
 
     def imag(self):
+        """
+            Return the imaginary part of the Tipper.
+
+        """ 
+
         if self.tipper is None:
             print 'tipper array is None - cannot calculate imag'
             return
@@ -776,6 +945,15 @@ class Tipper(object):
 
         
     def set_imag(self, imag_array):
+        """
+            Set the imaginary part of 'tipper'.
+
+            Input:
+            Tipper-shaped, real valued array
+
+            Test for shape, but no test for consistency!
+
+        """         
 
 
         if (self.tipper is not None) and (self.tipper.shape != imag_array.shape):
@@ -798,6 +976,14 @@ class Tipper(object):
 
 
     def rho_phi(self):
+        """
+            Return values for amplitude (rho) and argument (phi - in degrees).
+
+            Output is a 4-tuple of arrays:
+            (Rho, Phi, RhoError, PhiError)
+        """ 
+ 
+
         
         if self.tipper is None:
             print 'tipper array is None - cannot calculate rho/phi'
@@ -826,6 +1012,12 @@ class Tipper(object):
 
 
     def set_rho_phi(self, rho_array, phi_array):
+        """
+            Set values for rho and argument (phi - in degrees).
+
+            Updates the attributes "tipper, tippererr".
+
+        """ 
 
         if self.tipper is not None: 
                 
@@ -862,6 +1054,16 @@ class Tipper(object):
 
 
     def rotate(self, alpha):
+        """
+            Rotate  Tipper array. Change the rotation angles in Zrot respectively.
+
+            Rotation angle must be given in degrees. All angles are referenced to geographic North, positive in clockwise direction. (Mathematically negative!)
+
+            In non-rotated state, X refs to North and Y to East direction.
+
+            Updates the attributes "tipper, tippererr, zrot".
+
+        """
 
         if self.tipper is None :
             print 'tipper array is "None" - I cannot rotate that'
@@ -920,9 +1122,25 @@ class Tipper(object):
 #------------------------
 
 
-def rotate_z(z_array, alpha, zerr_array = None):
+def rotate_z(z_array, alpha, zerr_array = None Hscale = 1.):
+    """
+        Rotate a Z array
 
-    z_object = _read_z_array(z_array, zerr_array)
+        Input:
+        - Z array : (1,2,2) or (2,2) shaped Numpy array
+        - rotation angle (in degrees) for clockwise rotation
+
+        Optional:
+        - Zerror : (1,2,2) or (2,2) shaped Numpy array
+        - Hscale : scaling factor to convert the input Z values to unit Ohm
+
+        Output:
+        - rotated Z array
+        - rotated Zerror array (or None, if no error given)
+
+    """
+
+    z_object = _read_z_array(z_array, zerr_array, Hscale = Hscale)
 
     z_object.rotate(alpha)
 
@@ -930,38 +1148,107 @@ def rotate_z(z_array, alpha, zerr_array = None):
 
 
 
-def remove_distortion(z_array, distortion_tensor, distortion_err_tensor, zerr_array = None):
+def remove_distortion(z_array, distortion_tensor, distortion_err_tensor = None, zerr_array = None):
+    """
+        Remove the distortion from a given Z array.
+
+        Inputs:
+        - Z array : (1,2,2) or (2,2) shaped Numpy array
+        - distortion_tensor : (1,2,2) or (2,2) shaped Numpy array
+
+        Optional:
+        - Zerror array : (1,2,2) or (2,2) shaped Numpy array
+        - distortion_error_tensor : (1,2,2) or (2,2) shaped Numpy array
+
+        Output:
+        - corrected Z array
+        - Error of corrected Z array (or None)
+        - original Z array
+
+    """
     
     z_object = _read_z_array(z_array, zerr_array)
     
     distortion, z_corrected, z_corrected_err = z_object.no_distortion(distortion_tensor, distortion_err_tensor)
 
-    return distortion, z_corrected, z_corrected_err, z_object.z
+    return  z_corrected, z_corrected_err, z_array
 
 
 def remove_ss(z_array, zerr_array = None, rho_x = 1., rho_y = 1.):
+    """
+        Remove the static shift from a given Z array.
 
+        Inputs:
+        - Z array : (1,2,2) or (2,2) shaped Numpy array
+
+        Optional:
+        - Zerror array : (1,2,2) or (2,2) shaped Numpy array
+        - rho_x : factor, by which the X component of the Resistivity is off
+        - rho_y : factor, by which the Y component of the Resistivity is off
+    
+        Output:
+        - corrected Z array
+        - static shift tensor
+        - original Z array
+
+    """
+ 
 
     z_object = _read_z_array(z_array, zerr_array)
 
     z_corrected, static_shift = z_object.no_ss()
 
-    return static_shift, z_corrected, z_object.z
+    return z_corrected, static_shift, z_array
 
 
 def remove_ss_and_distortion(z_array, zerr_array = None, rho_x = 1., rho_y = 1.):
+    """
+        Not yet implemented !!
+
+    """
     pass
 
 
 
-def z2rhophi(z_array, zerr_array = None):
+def z2rhophi(z_array, zerr_array = None, Hscale = 1):
+    """
+        Return the resistivity/phase information for Z (in Ohm!!).
+
+        Input:
+        - Z array
+
+        Optional:
+        - Zerror array
+        - Hscale : scaling factor to convert the input Z values to unit Ohm
+
+        Output:
+        - Resistivity array 
+        - Phase array (in degrees)
+        - Resistivity uncertainties array
+        - Phase uncertainties array
+    """
     
-    z_object = _read_z_array(z_array,zerr_array )
+    z_object = _read_z_array(z_array,zerr_array , Hscale = Hscale)
 
     return z_object.rho_phi()
 
 
 def rotate_tipper(tipper_array, alpha, tippererr_array = None):
+    """
+        Rotate a Tipper array
+
+        Input:
+        Tipper array : (1,2,2) or (2,2) shaped Numpy array
+        rotation angle (in degrees) for clockwise rotation
+
+        Optional:
+        TipperError : (1,2,2) or (2,2) shaped Numpy array
+
+        Output:
+        - rotated Tipper array
+        - rotated TipperError array (or None, if no error given)
+
+    """
 
     tipper_object = _read_tipper_array(tipper_array, tippererr_array)
 
@@ -971,16 +1258,41 @@ def rotate_tipper(tipper_array, alpha, tippererr_array = None):
 
 
 def tipper2rhophi(tipper_array, tippererr_array = None):
-    
+    """
+        Return values for amplitude (rho) and argument (phi - in degrees).
+
+        Output is a 4-tuple of arrays:
+        (Rho, Phi, RhoError, PhiError)
+    """ 
+     
     tipper_object = _read_tipper_array(tipper_array, tippererr_array )
 
     return tipper_object.rho_phi()
 
 
-def _read_z_array(z_array, zerr_array = None):
+def _read_z_array(z_array, zerr_array = None, Hscale = 1.):
+    """
+        Read a Z array and return an instance of the Z class.
+
+
+        Input:
+        - Z array
+
+        Optional:
+        - Zerror array
+        - Hscale : scaling factor to convert the input Z values to unit Ohm
+    """
+
 
     try:
-        z_object = Z( z_array=z_array, zerr_array=zerr_array )
+        if Hscale in ['b','B']:
+            Hscale =  MTc.mu0
+        try:
+            Hscale = float(Hscale)
+        except:
+            raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not understood ')
+  
+        z_object = Z( z_array=z_array, zerr_array=zerr_array, Hscale = Hscale )
     except:
         raise MTexceptions.MTpyError_Z('Cannot generate Z instance - check z-array dimensions/type: (N,2,2)/complex ; %s'%(str(z_array.shape)))
 
@@ -988,6 +1300,17 @@ def _read_z_array(z_array, zerr_array = None):
 
 
 def _read_tipper_array(tipper_array, tippererr_array = None):
+    """
+        Read a Tipper array and return an instance of the Tipper class.
+
+
+        Input:
+        - Tipper array
+
+        Optional:
+        - TipperError array
+
+    """
 
     try:
         tipper_object = tipper( tipper_array=tipper_array, tippererr_array=tippererr_array )
