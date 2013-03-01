@@ -119,35 +119,42 @@ class Edi(object):
 
     def readfile(self, fn, Hscale = 1):
         """
+            Read in an EDI file. 
+
+            Returns an exception, if the file is invalid (following MTpy standards).
+
+
             Hscale is the factor that needs to be applied to the data in the file to end up with OHM as unit for Z.
 
-            E.g., if the Z-data are given in E/B with E measured in mV/km and B in nT, the factor is 10e-2 * mu_0 = pi*4e-9
-            If the data are in V/m and Tesla, just use the letter 'B' instead 
+            E.g., if the Z-data are given in E/B with E measured in mV/km and B in nT, the factor is 1e3 * mu_0 = pi*4e-4
+            (If the data are in basic units "V/m" and "Tesla", just use the letter 'B' instead )
 
         """
         infile = op.abspath(fn)
 
+        #define the scaling factor for obtaining Z in Ohm
         if Hscale in ['b','B']:
             Hscale =  MTc.mu0
         try:
             Hscale = float(Hscale)
         except:
-            raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not undertood ')
+            raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not understood ')
 
-
+        #check for existence
         if not op.isfile(infile):
             raise MTexceptions.MTpyError_edi_file('File is not existing: %s'%infile)
 
         with open(infile,'r') as F:
             edistring = F.read()
 
+        #validate edi file string following MTpy standard
         if not _validate_edifile_string(edistring):
             raise MTexceptions.MTpyError_edi_file('%s is no proper EDI file'%infile)
 
         self.filename = infile
         self.in_filestring = edistring
 
-
+        #read out the mandatory EDI file sections from the raw string
         try:
             self._read_head(edistring)
         except:
@@ -183,6 +190,7 @@ class Edi(object):
         except:
             raise MTexceptions.MTpyError_edi_file('Could not read Z section: %s'%infile)
 
+        #Tipper is optional
         try:
             self._read_tipper(edistring)
         except:
@@ -190,6 +198,7 @@ class Edi(object):
             self.tippererr = None
             print 'Could not read Tipper section: %s'%infile
 
+        #rotation is optional 
         try:
             self._read_zrot(edistring)
         except:
@@ -198,6 +207,10 @@ class Edi(object):
 
 
     def edi_dict(self):
+        """
+            Collect sections of the EDI file and return them as a dictionary.
+
+        """
 
         edi_dict = {}
 
@@ -218,8 +231,11 @@ class Edi(object):
 
 
     def data_dict(self):
+        """
+            Return collected raw data information in one dictionary:
+            Z, Tipper, Zrot, frequencies, Zerror, TipperError
 
-        #collect all data information in one dictionary
+        """
         data_dict = {}
 
         data_dict['z'] = self.z
@@ -232,7 +248,10 @@ class Edi(object):
         return data_dict
  
     def z_dict(self):
-        
+        """
+            Return the content of the Z and Zerror arrays in a dictionary.
+        """
+
         new_z_dict = {}
         z_array = self.z
         zerr_array = self.zerr
@@ -253,6 +272,9 @@ class Edi(object):
         return new_z_dict
 
     def tipper_dict(self):
+        """
+            Return the content of the Tipper and TipperError arrays in a dictionary.
+        """
 
         new_t_dict = {}
         t_array = self.tipper
@@ -278,19 +300,32 @@ class Edi(object):
         return new_t_dict
 
     def periods(self):
+        """
+            Return a list of periods instead of frequency (output values in seconds).
+        """
 
         return list( 1./np.array(self.frequencies()) )
 
     def frequencies(self):
+        """
+            Return a list of the frequencies (output values in Hertz).
+        """
+
 
         return list(self.freq)
 
     def n_freqs(self):
+        """
+            Return the number of frequencies/length of the Z array.
+        """
 
         return len(self.freq)
 
 
     def _read_head(self, edistring):
+        """
+            Read in the HEAD  section from the raw edi-string.
+        """
 
         try:
             temp_string = _cut_sectionstring(edistring,'HEAD')
@@ -312,6 +347,9 @@ class Edi(object):
         self.head = head_dict
 
     def _read_info(self, edistring):
+        """
+            Read in the INFO  section from the raw edi-string.
+        """
 
         try:
             temp_string = _cut_sectionstring(edistring,'INFO')
@@ -363,6 +401,9 @@ class Edi(object):
 
 
     def _read_definemeas(self, edistring):
+        """
+            Read in the DEFINEMEAS  section from the raw edi-string.
+        """
 
         try:
             temp_string = _cut_sectionstring(edistring,'DEFINEMEAS')
@@ -396,7 +437,9 @@ class Edi(object):
 
 
     def _read_hmeas_emeas(self, edistring):
-
+        """
+            Read in the HMEAS/EMEAS  section from the raw edi-string.
+        """
         try:
             temp_string = _cut_sectionstring(edistring,'HMEAS_EMEAS')
         except:
@@ -413,6 +456,9 @@ class Edi(object):
 
 
     def _read_mtsect(self, edistring):
+        """
+            Read in the MTSECT  section from the raw edi-string.
+        """
 
         try:
             temp_string = _cut_sectionstring(edistring,'MTSECT')
@@ -438,6 +484,9 @@ class Edi(object):
 
 
     def _read_freq(self, edistring):
+        """
+            Read in the FREQ  section from the raw edi-string.
+        """
 
         try:
             temp_string = _cut_sectionstring(edistring,'FREQ')
@@ -461,8 +510,8 @@ class Edi(object):
 
     def _read_z(self, edistring, Hscale):
         """
-        Read in impedances information from a string read from an EDI file. 
-        Store it as dictionary and complex array (incl. Zvar values in 'zerr' array)
+        Read in impedances information from a raw EDI-string. 
+        Store it as attribute (complex array).
 
         """
 
@@ -521,6 +570,11 @@ class Edi(object):
 
 
     def _read_tipper(self, edistring):
+        """
+        Read in Tipper information from a raw EDI-string. 
+        Store it as attribute (complex array).
+
+        """
 
         compstrings = ['TX','TY']
         T_entries = ['R','I','VAR']
@@ -585,6 +639,9 @@ class Edi(object):
 
 
     def _read_zrot(self, edistring):
+        """
+            Read in the (optional) Zrot  section from the raw edi-string.
+        """
 
         try:
             temp_string = _cut_sectionstring(edistring,'ZROT')
@@ -614,6 +671,9 @@ class Edi(object):
 
 
     def writefile(self, *fn):
+        """
+            Write out the edi object into an EDI file.
+        """
 
         if len(fn) == 0 :
             fn = None
@@ -667,7 +727,7 @@ class Edi(object):
 
             In non-rotated state, X refs to North and Y to East direction.
 
-            Updates the information of "edi_dict, data, z(_dict), zerr, zrot, tipper(_dict), tippererr" variables.
+            Updates the attributes "z, zerr, zrot, tipper, tippererr".
 
         """
         
@@ -713,6 +773,12 @@ class Edi(object):
         
 
     def  rho_phi(self):
+        """
+            Return values for resistivity (rho - in Ohm m) and phase (phi - in degrees).
+
+            Output is a 4-tuple of arrays:
+            (Rho, Phi, RhoError, PhiError)
+        """ 
 
         if self.z is None:
             print 'Z array is None - cannot calculate rho/phi'
@@ -745,6 +811,13 @@ class Edi(object):
 
 
     def set_rho_phi(self, rho_array, phi_array):
+        """
+            Set values for resistivity (rho - in Ohm m) and phase (phi - in degrees).
+
+            Updates the attributes "z, zerr".
+
+        """ 
+
 
         if self.z is not None: 
             z_new = copy.copy(self.z) 
@@ -783,22 +856,58 @@ class Edi(object):
 
        
     def set_head(self, head_dict):
+        """
+            Set the attribute 'head'.
+
+            Input:
+            HEAD section dictionary
+
+            No test for consistency!
+
+        """ 
         
         self.head = head_dict
         
     
     def set_info_dict(self,info_dict):
-        
+        """
+            Set the attribute 'info_dict'.
+
+            Input:
+            INFO section dictionary
+
+            No test for consistency!
+
+        """ 
+          
         self.info_dict = info_dict
 
         
     def set_info_string(self,info_string):
-        
+        """
+            Set the attribute 'info_string'.
+
+            Input:
+            INFO section string
+
+            No test for consistency!
+
+        """ 
+          
         self.info_string = info_string
         
             
     def set_z(self, z_array):
+        """
+            Set the attribute 'z'.
 
+            Input:
+            Z array
+
+            Test for shape, but no test for consistency!
+
+        """ 
+  
         z_orig = self.z 
 
         if (self.z is not None) and (self.z.shape != z_array.shape):
@@ -809,7 +918,16 @@ class Edi(object):
 
 
     def set_zerr(self, zerr_array):
+        """
+            Set the attribute 'zerr'.
 
+            Input:
+            Zerror array
+
+            Test for shape, but no test for consistency!
+
+        """ 
+ 
         if (self.zerr is not None) and (self.zerr.shape != zerr_array.shape):
             print 'Error - shape of "zerr" array does not match shape of Zerr array: %s ; %s'%(str(zerr_array.shape),str(self.zerr.shape))
             return
@@ -818,7 +936,16 @@ class Edi(object):
         
 
     def set_tipper(self, tipper_array):
+        """
+            Set the attribute 'tipper'.
 
+            Input:
+            tipper array
+
+            Test for shape, but no test for consistency!
+
+        """ 
+ 
         if (self.tipper is not None) and (self.tipper.shape != tipper_array.shape):
             print 'Error - shape of "tipper" array does not match shape of tipper-array: %s ; %s'%(str(tipper_array.shape),str(self.tipper.shape))
             return
@@ -827,7 +954,16 @@ class Edi(object):
 
 
     def set_tippererr(self, tippererr_array):
+        """
+            Set the attribute 'tippererr'.
 
+            Input:
+            TipperError array
+
+            Test for shape, but no test for consistency!
+
+        """ 
+ 
 
         if (self.tippererr is not None) and (self.tippererr.shape != tippererr_array.shape):
             print 'Error - shape of "tippererr" array does not match shape of tippererr array: %s ; %s'%(str(tippererr_array.shape),str(self.tippererr.shape))
@@ -837,17 +973,41 @@ class Edi(object):
 
          
     def set_definemeas(self,definemeas_dict):
-        
+        """
+            Set the attribute 'definemeas'.
+
+            Input:
+            DEFINEMEAS section dictionary
+
+            No test for consistency!
+
+        """         
         self.definemeas = definemeas_dict
         
     
     def set_mtsect(self, mtsect_dict):
-        
+        """
+            Set the attribute 'mtsect'.
+
+            Input:
+            MTSECT section dictionary
+
+            No test for consistency!
+
+        """         
+         
         sel.mtsect = mtsect_dict
 
 
         
     def get_datacomponent(self, componentname):
+        """
+            Return a specific data component.
+
+            Input:
+            specification of the data component (Z or Tipper components)
+        """ 
+
         data_dict = self.data_dict()
         if componentname.lower() in data_dict:
             return data_dict[componentname.lower()]
@@ -869,15 +1029,32 @@ class Edi(object):
                 if section.lower() == componentname.lower():
                     return self.tipper_dict()[section]
 
-        print 'unknoen data component: %s'%componentname.lower()
+        print 'unknown data component: %s'%componentname.lower()
         return
         
     
-    def set_datacomponent(self):
+    def set_datacomponent(self, componentname, value):
+        """
+            Set a specific data component.
+
+            Input:
+            specification of the data component (Z or Tipper components)
+            new value
+
+            No test for consistency!
+        """ 
         pass
         
    
     def set_frequencies(self, lo_frequencies):
+        """
+            Set the list of frequencies.
+
+            Input:
+            list of frequencies
+
+            No test for consistency!
+        """ 
 
         if len(lo_frequencies) is not len(self.z):
             print 'length of frequency list not correct (%i instead of %i)'%(len(lo_frequencies), len(self.z))
@@ -888,6 +1065,14 @@ class Edi(object):
         
     
     def set_zrot(self, angle):
+        """
+            Set the list of rotation angles.
+
+            Input:
+            single angle or list of angles (in degrees)
+
+            No test for consistency!
+        """ 
         if np.iterable(angle):
             if len(angle) is not len(self.z):
                 print 'length of angle list not correct (%i instead of %i)'%(len(angle), len(self.z))
@@ -911,13 +1096,18 @@ class Edi(object):
 
 
 def read_edifile(fn, Hscale = 1):
+    """
+        Read in an EDI file.
+
+        Return an instance of the Edi class.
+    """
 
     if Hscale in ['b','B']:
         Hscale =  MTc.mu0
     try:
         Hscale = float(Hscale)
     except:
-        raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not undertood ')
+        raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not understood ')
 
 
     edi_object = Edi()
@@ -929,6 +1119,12 @@ def read_edifile(fn, Hscale = 1):
 
 
 def write_edifile(edi_object, out_fn = None):
+    """
+        Write an EDI file from an instance of the Edi class.
+
+        optional input:
+        EDI file name
+    """
     
     if not isinstance(z_object, MTedi.Edi):
         raise MTexceptions.MTpyError_EDI('Input argument is not an instance of the Edi class')
@@ -955,6 +1151,25 @@ def write_edifile(edi_object, out_fn = None):
 
 
 def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps = True, Hscale1 = 1, Hscale2 = 1 ):
+    """
+        Combine two EDI files.
+
+        Inputs:
+        - name of EDI file 1
+        - name of EDI file 2
+
+        optional input:
+        - merge_frequency : frequency in Hz, on which to merge the files - default is the middle of the overlap
+        - out_fn : output EDI file name
+        - allow_gaps : allow merging EDI files whose frequency ranges does not overlap
+        - Hscale1/2 : scaling factor to bring the Z values to unit Ohm
+
+
+        Outputs:
+        - instance of Edi class, containing merged information 
+        - full path of the output EDI file
+    """
+
     
 
     if Hscale1 in ['b','B']:
@@ -962,14 +1177,14 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
     try:
         Hscale1 = float(Hscale1)
     except:
-        raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor 1 not undertood ')
+        raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor 1 not understood ')
 
     if Hscale2 in ['b','B']:
         Hscale2 =  MTc.mu0
     try:
         Hscale2 = float(Hscale2)
     except:
-        raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor 2 not undertood ')
+        raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor 2 not understood ')
 
 
     #edi objects:
@@ -1329,6 +1544,11 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
 
 
 def validate_edifile(fn):
+    """
+        Validate an EDI file following MTpy standard.
+
+        Return boolean result.
+    """
 
     edi_object = Edi()
 
@@ -1340,6 +1560,19 @@ def validate_edifile(fn):
 
 
 def rotate_edifile(fn, angle, out_fn = None):
+    """
+        Rotate data contents (Z and Tipper) of an EDI file and write it to a new EDI file. 
+        (Use a script with consecutive renaming of the file for in place rotation. MTpy does not overwrite.)
+
+        Input:
+        - angle/list of angles for the rotation
+
+        optional input:
+        - name of output EDI file
+
+        Output:
+        - full path to the new (rotated) EDI file 
+    """
     
     ediobject = Edi()
 
@@ -1574,6 +1807,15 @@ def _generate_edifile_string(edidict):
 
 
 def _cut_sectionstring(edistring,sectionhead):
+    """
+        Cut an edi-string for the specified section.
+
+        Input:
+        - name of the section
+
+        Output:
+        - string : part of the raw edi-string containing starting at the head of the section and ends at beginnig of the next section.
+    """
 
     #in this case, several blocks have to be handled together, therefore, a simple cut to the next block start does not work:
     if sectionhead.upper() == 'HMEAS_EMEAS':
