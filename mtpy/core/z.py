@@ -9,7 +9,7 @@ Contains classes and functions for handling impedance tensors (Z).
     "Z" contains information about an impedance tensor Z. 
 
         Methods:
-        - set_edi_object
+        - read_edi_object
         - set_z
         - set_zerr
         - real
@@ -34,7 +34,7 @@ Contains classes and functions for handling impedance tensors (Z).
 
         Methods:
 
-        - set_edi_object
+        - _edi_object
         - set_tipper
         - set_tippererr
         - real
