@@ -748,7 +748,14 @@ class Edi(object):
                 except:
                     pass
                 try:
-                    rerr[idx_c/2,idx_c%2] = np.abs(np.sqrt(2.5*self.freq[idx_freq]/r[idx_c/2,idx_c%2])*(rhophi_dict['RHO'+comp + '.ERR'][idx_freq]))
+                    try:
+                        #check for small amplitude close to zero
+                        if r[idx_c/2,idx_c%2] == 0:
+                            raise
+                        f1 = np.abs(np.sqrt(2.5*self.freq[idx_freq]/r[idx_c/2,idx_c%2])*(rhophi_dict['RHO'+comp + '.ERR'][idx_freq]))
+                    except:
+                        f1 = np.sqrt(rhophi_dict['RHO'+comp+ '.ERR'][idx_freq] * 5 * self.freq[idx_freq] )
+                    rerr[idx_c/2,idx_c%2] = f1
                 except:
                     pass
                 try:
@@ -814,6 +821,8 @@ class Edi(object):
         else:
             fn = fn[0]
         
+        self.info_dict['edifile_generated_with'] = 'MTpy'
+
         outstring, stationname = _generate_edifile_string(self.edi_dict())
 
         if not _validate_edifile_string(outstring):
@@ -1844,7 +1853,7 @@ def _generate_edifile_string(edidict):
             edistring+= '>FREQ // %i\n'%(len(lo_freqs))
 
             for i,freq in enumerate(lo_freqs):
-                edistring += '\t%f'%(freq)
+                edistring += '\t%E'%(freq)
                 if (i+1)%5 == 0 and (i != len(lo_freqs) - 1) and i > 0:
                     edistring += '\n'
            
@@ -1858,7 +1867,7 @@ def _generate_edifile_string(edidict):
             edistring+= '>ZROT // %i\n'%(len(lo_rots))
 
             for i,angle in enumerate(lo_rots):
-                edistring += '\t%f'%(angle)
+                edistring += '\t%E'%(angle)
                 if (i+1)%5 == 0 and (i != len(lo_rots) - 1) and i > 0:
                     edistring += '\n'
 
@@ -1888,7 +1897,7 @@ def _generate_edifile_string(edidict):
                         edistring += '>%s // %i\n'%(section,len(lo_freqs))
                     
                     for i,val in enumerate(lo_vals):
-                        edistring += '\t%f'%(float(val))
+                        edistring += '\t%E'%(float(val))
                         if (i+1)%5 == 0 and (i != len(lo_vals) - 1) and i > 0:
                             edistring += '\n'
                     edistring += '\n'
@@ -1921,7 +1930,7 @@ def _generate_edifile_string(edidict):
                         edistring += '>%s // %i\n'%(outsection,len(lo_freqs))
                     
                     for i,val in enumerate(lo_vals):
-                        edistring += '\t%f'%(float(val))
+                        edistring += '\t%E'%(float(val))
                         if (i+1)%5 == 0 and (i != len(lo_vals) - 1) and i > 0:
                             edistring += '\n'
                             
