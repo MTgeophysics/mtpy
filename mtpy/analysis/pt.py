@@ -172,9 +172,9 @@ class PhaseTensor(object):
         self.frequencies = None
         self.rotation_angle = 0.
 
-        self.ptrot = None
+        self.rotation_angle = None
         if self.pt is not None:
-            self.ptrot = [ 0. for i in self.pt ]
+            self.rotation_angle = [ 0. for i in self.pt ]
 
 
     def set_pt(self, pt_array):
@@ -196,28 +196,127 @@ class PhaseTensor(object):
             self.pt[0] = pt_array
 
         #test all other attributes for proper dimensions!!!...    
-
         pass
 
     def set_pterr(self, pterr_array):
-        pass
+
+        if not len(pterr_array.shape) in [2,3]:
+            raise MTexceptions.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid dimensions')
+        if not pterr_array.shape[-2:] == (2,2):
+            raise MTexceptions.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid dimensions')
+        try:
+            if not pterr_array.dtype in ['float']:
+                raise
+        except:
+            raise MTexceptions.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid data type (float expected)')
+
+        if self.pt is not None:
+            if self.pt.shape != pterr_array.shape:
+                raise MTexceptions.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid dimensions')
+ 
+
+        if len(pterr_array.shape) == 3:
+            self.pterr = pterr_array
+        else:
+            self.pterr = np.zeros((1,pt_array.shape[0],pt_array.shape[1])) 
+            self.pterr[0] = pterr_array
+
 
     def set_frequencies(self,lo_frequencies):
-        pass
+        """
+            Set the list of frequencies.
+
+            Input:
+            list of frequencies
+
+            No test for consistency!
+        """ 
+
+        if len(lo_frequencies) is not len(self.pt):
+            print 'length of frequency list not correct (%i instead of %i)'%(len(lo_frequencies), len(self.pt))
+            return
+
+        self.frequencies = lo_frequencies
+
+
 
     def read_edi_file(self,fn):
+        """
+            Read in EDI file and convert information into a PhaseTensor object attributes.
+        """
 
-        pass
+        e = MTedi.Edi()
+        self.read_edi(e)
+
 
     def read_edi(self,edi_object):
+        """
+            Read in EDI object and convert information into a PhaseTensor object attributes.
+        """
 
-        pass
+        z = edi_object.z
+        zerr = edi_object.zerr
+        self.pt = np.zeros((len(z),2,2))
+ 
+        if zerr is not None:
+            self.pterr = np.zeros_like(self.pt) 
+
+            for idx_f in range(len(z)):
+                self.pt[idx_f], self.pterr[idx_f] = z2pt(z[idx_f], zerr[idx_f] )
+
+        else:
+            for idx_f in range(len(z)):
+                self.pt[idx_f] = z2pt( z[idx_f])[0]
+
+
+        pt.frequencies = edi_object.freq
+        pt.rotation_angle = edi_object.zrot
+
 
     def read_z(self,z_object):
-        pass
+        """
+            Read in EDI object and convert information into a PhaseTensor object attributes.
+        """
+        
+        z = z_object.z
+        zerr = z_object.zerr
+        self.pt = np.zeros((len(z),2,2))
+ 
+        if zerr is not None:
+            self.pterr = np.zeros_like(self.pt) 
+
+            for idx_f in range(len(z)):
+                self.pt[idx_f], self.pterr[idx_f] = z2pt(z[idx_f], zerr[idx_f] )
+
+        else:
+            for idx_f in range(len(z)):
+                self.pt[idx_f] = z2pt( z[idx_f])[0]
+
+        pt.frequencies = z_object.frequencies
+        pt.rotation_angle = z_object.rotation_angle
+
 
     def read_z_array(self,z_array, zerr_array = None):
-        pass
+
+        z = z_array
+        zerr = zerr_array 
+
+        self.pt = np.zeros((len(z),2,2))
+ 
+        if zerr is not None:
+            self.pterr = np.zeros_like(self.pt) 
+
+            for idx_f in range(len(z)):
+                self.pt[idx_f], self.pterr[idx_f] = z2pt(z[idx_f], zerr[idx_f] )
+
+        else:
+            for idx_f in range(len(z)):
+                self.pt[idx_f] = z2pt( z[idx_f])[0]
+
+        pt.frequencies = z_object.frequencies
+        pt.rotation_angle = z_object.rotation_angle
+
+        
 
 
     def invariants(self):

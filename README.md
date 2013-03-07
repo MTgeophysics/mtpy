@@ -50,6 +50,10 @@ Conventions
 8.) Coordinates are handled in decimal degrees (converted when reading)
 9.) Time stamps refer to UTC
 
+10.) Internal coordinates: X = North, Y = East
+11.) Rotations are interpreted clockwise (mathematically negative)
+12.) 0 degrees azimuth = North
+
 
 
 
