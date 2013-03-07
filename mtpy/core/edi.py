@@ -65,7 +65,7 @@ Contains classes and functions for handling EDI files.
 
 #=================================================================
 import numpy as np
-import os
+import os,sys
 import os.path as op
 import math, cmath
 import time, calendar 
@@ -126,7 +126,7 @@ class Edi(object):
         self.tippererr = None
 
 
-    def readfile(self, fn, Hscale = 1):
+    def readfile(self, fn, Hscale = 1, datatype = 'z'):
         """
             Read in an EDI file. 
 
@@ -134,9 +134,12 @@ class Edi(object):
 
 
             Hscale is the factor that needs to be applied to the data in the file to end up with OHM as unit for Z.
-
             E.g., if the Z-data are given in E/B with E measured in mV/km and B in nT, the factor is 1e3 * mu_0 = pi*4e-4
             (If the data are in basic units "V/m" and "Tesla", just use the letter 'B' instead )
+
+            datatype determines the way data  are provided. Default is 'z', so the full impedance tensor is expected to be present in the file. Other possibilities are 'rhophi' and 'spectra' - they exclude the reading of a potentially present Z information. 
+            TODO: 'spectra' - not implemented yet
+
 
         """
         infile = op.abspath(fn)
@@ -148,6 +151,13 @@ class Edi(object):
             Hscale = float(Hscale)
         except:
             raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not understood ')
+        
+        try:
+            datatype = datatype.lower()
+            if not datatype in ['z' , 'rhophi', 'spectra']:
+                raise
+        except:
+            raise MTexceptions.MTpyError_edi_file('ERROR - datatype not understood')
 
         #check for existence
         if not op.isfile(infile):
@@ -194,10 +204,28 @@ class Edi(object):
         except:
             raise MTexceptions.MTpyError_edi_file('Could not read FREQ section: %s'%infile)
 
-        try:
-            self._read_z(edistring, Hscale)
-        except:
-            raise MTexceptions.MTpyError_edi_file('Could not read Z section: %s'%infile)
+        if datatype == 'z':
+            try:
+                self._read_z(edistring, Hscale)
+            except:
+                raise MTexceptions.MTpyError_edi_file('Could not read Z section: %s'%infile)
+
+        elif datatype == 'rhophi':
+            try:
+                self._read_rhophi(edistring)
+            except:
+                raise MTexceptions.MTpyError_edi_file('Could not read RhoPhi section: %s'%infile)
+            #rotation is optional 
+            try:
+                self._read_rhorot(edistring)
+            except:
+                self.zrot = list(np.zeros((self.n_freqs())))
+                print 'Could not read Rhorot section: %s'%infile
+
+
+        elif datatype == 'spectra':
+            print 'reading of "spectra" data not supported yet'
+
 
         #Tipper is optional
         try:
@@ -288,7 +316,6 @@ class Edi(object):
         new_t_dict = {}
         t_array = self.tipper
         if  t_array is None:
-            self.tipper_dict = None
             return None
         terr_array = self.tippererr
         compstrings = ['TX','TY']
@@ -561,10 +588,23 @@ class Edi(object):
 
 
         for idx_freq  in range( self.n_freqs()):
-            z_array[idx_freq,0,0] = np.complex(z_dict['ZXXR'][idx_freq], z_dict['ZXXI'][idx_freq])
-            z_array[idx_freq,0,1] = np.complex(z_dict['ZXYR'][idx_freq], z_dict['ZXYI'][idx_freq])
-            z_array[idx_freq,1,0] = np.complex(z_dict['ZYXR'][idx_freq], z_dict['ZYXI'][idx_freq])
-            z_array[idx_freq,1,1] = np.complex(z_dict['ZYYR'][idx_freq], z_dict['ZYYI'][idx_freq])
+            try:
+                z_array[idx_freq,0,0] = np.complex(z_dict['ZXXR'][idx_freq], z_dict['ZXXI'][idx_freq])
+            except:
+                pass
+            try:
+                z_array[idx_freq,0,1] = np.complex(z_dict['ZXYR'][idx_freq], z_dict['ZXYI'][idx_freq])
+            except:
+                pass
+            try:
+                z_array[idx_freq,1,0] = np.complex(z_dict['ZYXR'][idx_freq], z_dict['ZYXI'][idx_freq])
+            except:
+                pass
+            try:
+                z_array[idx_freq,1,1] = np.complex(z_dict['ZYYR'][idx_freq], z_dict['ZYYI'][idx_freq])
+            except:
+                pass
+
 
             for idx_comp,comp in enumerate(compstrings):
                 sectionhead = comp + '.VAR'
@@ -645,6 +685,91 @@ class Edi(object):
         #errors are stddev, not VAR :  
         self.tippererr = np.sqrt(tippererr_array)
 
+    def _read_rhophi(self, edistring):
+        """
+            Read in RhoPhi information from a raw EDI-string. 
+            Convert the information into Z and Zerr.
+            Store this as attribute (complex array).
+
+        """
+        #using the loop over all  components. For each component check, if Rho and Phi are given, raise exception if not! Then convert the polar RhoPhi representation into the cartesian Z. Rho is assumed to be in Ohm m, Phi in degrees. Z will be in Ohm. 
+        z_array = np.zeros((self.n_freqs(),2,2), 'complex')
+        zerr_array = np.zeros((self.n_freqs(),2,2))
+
+        rhophistrings = ['RHO','PHS']
+        compstrings = ['XX','XY','YX','YY']
+        entries = ['','.ERR']
+
+        rhophi_dict = {}
+        for rp in rhophistrings:
+            for comp in compstrings:
+                for entry in entries:
+                    sectionhead = rp + comp + entry
+                    try:
+                        temp_string = _cut_sectionstring(edistring,sectionhead)
+                    except:
+                        continue
+
+                    lo_vals = []
+                    #check, if correct number of entries are given in the block
+                    t0 = temp_string.strip().split('\n')[0]
+                    n_dummy = int(float(t0.split('//')[1].strip()))
+                    if not n_dummy == self.n_freqs():
+                        raise
+
+                    t1 = temp_string.strip().split('\n')[1:]
+                    for j in t1:
+                        lo_j = j.strip().split()
+                        for k in lo_j:
+                            try:
+                                lo_vals.append(float(k))
+                            except:
+                                pass
+
+                    rhophi_dict[sectionhead] = lo_vals   
+        #print rhophi_dict
+        #sys.exit()
+
+        for idx_freq  in range( self.n_freqs()):
+            rho = np.zeros((2,2))
+            phi = np.zeros((2,2))
+            rhoerr = np.zeros((2,2))
+            phierr = np.zeros((2,2))
+            zerr = np.zeros((2,2))
+            
+            for idx_c, comp in enumerate(compstrings):
+                #convert rho to amplitude:
+                try:
+                    rho[idx_c/2,idx_c%2] = np.sqrt(rhophi_dict['RHO'+comp][idx_freq] * MTc.mu0 * self.freq[idx_freq] *2*np.pi)
+                except:
+                    pass
+                try:
+                    phi[idx_c/2,idx_c%2] = rhophi_dict['PHS'+comp][idx_freq]
+                except:
+                    pass
+                try:
+                    rhoerr[idx_c/2,idx_c%2] = rhophi_dict['RHO'+comp + '.ERR'][idx_freq]
+                except:
+                    pass
+                try:
+                    phierr[idx_c/2,idx_c%2] = rhophi_dict['PHS'+comp + '.ERR'][idx_freq]
+                except:
+                    pass
+                zerr[idx_c/2,idx_c%2] = max( MTc.propagate_error_polar2rect( rho[idx_c/2,idx_c%2], rhoerr[idx_c/2,idx_c%2], \
+                                                                            phi[idx_c/2,idx_c%2], phierr[idx_c/2,idx_c%2]))
+
+            z_array[idx_freq] = MTc.rhophi2z(rho, phi)
+            zerr_array[idx_freq] = zerr
+
+
+        self.z = z_array
+        self.zerr = zerr_array
+
+
+    def _read_rhorot(self, edistring):
+        pass
+
+        self.zrot = rhorot
 
 
     def _read_zrot(self, edistring):
@@ -692,7 +817,7 @@ class Edi(object):
         outstring, stationname = _generate_edifile_string(self.edi_dict())
 
         if not _validate_edifile_string(outstring):
-            return outstring
+            #return outstring
             raise MTexceptions.MTpyError_edi_file('Cannot write EDI file...output string is invalid')
 
 
@@ -1875,7 +2000,7 @@ def _cut_sectionstring(edistring,sectionhead):
 
 def _validate_edifile_string(edistring):
     """
-        Read the file as string and check, if blocks 'HEAD, INFO, =DEFINEMEAS, =MTSECT, FREQ, Z, END' are present.
+        Read the file as string and check, if blocks 'HEAD, INFO, =DEFINEMEAS, =MTSECT, FREQ, (Z,) END' are present. If 'Z' is missing, check for 'spectra' or 'rho'/'phs'!
 
         Within the blocks look for mandatory entries:
         HEAD: 'DATAID'
@@ -1884,7 +2009,10 @@ def _validate_edifile_string(edistring):
                     ('REFLAT, REFLONG, REFELEV' have to be present for measured data though)
         MTSECT: 'NFREQ'
         FREQ: non empty list
-        Z: all components xx, yy, xy, yx ; real, imag and var ; each containing a non-empty list
+        
+        Z: at least one component xx, yy, xy, yx ; real, imag and var ; containing a non-empty list
+        Otherwise check for presence of 'RHO'/'PHS' OR 'spectra'
+
 
     """
     isvalid = False
@@ -1903,18 +2031,48 @@ def _validate_edifile_string(edistring):
 
 
     if found < 1 :
-        print 'Could not find all mandatory sections for a valid EDI file!\n (Most basic version must contain: "HEAD, INFO, =DEFINEMEAS, =MTSECT, FREQ, Z, END") '
+        print 'Could not find all mandatory sections for a valid EDI file!\n (Most basic version must contain: "HEAD, INFO, =DEFINEMEAS, =MTSECT, FREQ, (Z,) END") '
         return False
 
+
+
+
+    #checking for non empty frequency list:
+    freq_start_idx = edistring.upper().find('>FREQ')
+    next_block_start = edistring.upper().find('>',freq_start_idx + 1)
+    string_dummy_2 = edistring[freq_start_idx:next_block_start]
+    lo_string_dummy_2 = string_dummy_2.strip().split()
+    #check, if there are actually one/some valid numbers:
+    n_numbers = 0 
+    for i in lo_string_dummy_2:
+        try:
+            n = float(i)
+            n_numbers +=1
+        except:
+            continue
+
+    if n_numbers == 0:
+        print  MTexceptions.MTpyError_edi_file('Error in FREQ block: no frequencies found')
+
+        found *= 0 
+    #Check for data entry following priority:
+    # 1. Z
+    z_found = 0
+    rhophi_found = 0 
+    spectra_found = 0
 
     compstrings = ['ZXX','ZXY','ZYX','ZYY']
     Z_entries = ['R','I','.VAR']
     
     for comp in compstrings:
+        n_entries = 0 
+        
         for zentry in Z_entries:
             searchstring = '>'+comp+zentry
             z_comp_start_idx = edistring.upper().find(searchstring)
-            found *= np.sign(z_comp_start_idx + 1 )
+            if z_comp_start_idx < 0:
+                continue
+            #found *= np.sign(z_comp_start_idx + 1 )
             #checking for non empty value list:
             next_block_start = edistring.upper().find('>',z_comp_start_idx+1)
             string_dummy_1 = edistring[z_comp_start_idx:next_block_start]
@@ -1929,28 +2087,53 @@ def _validate_edifile_string(edistring):
 
             if n_numbers == 0:
                 print  MTexceptions.MTpyError_edi_file('Error in %s block: no values found'%(comp+zentry))
+                continue
+            
+            if zentry in ['R','I']:
+                n_entries += 1
+        if n_entries > 1:
+            z_found += 1
+    
 
-                found *= 0 
+    # If no Z entry is found continue searching for RhoPhase information
+    # 2. RHO,PHS
+    if z_found == 0:
 
+        rhophistrings = ['RHO','PHS']
+        compstrings = ['XX','XY','YX','YY']
 
-    #checking for non empty frequency list:
-    freq_start_idx = edistring.upper().find('>FREQ')
-    next_block_start = edistring.upper().find('>',freq_start_idx + 1)
-    string_dummy_2 = edistring[freq_start_idx:next_block_start]
-    lo_string_dummy_2 = string_dummy_1.strip().split()
-    #check, if there are actually one/some valid numbers:
-    n_numbers = 0 
-    for i in lo_string_dummy_2:
-        try:
-            n = float(i)
-            n_numbers +=1
-        except:
-            continue
+        for comp in compstrings:
+            n_entries = 0    
+            for rp in rhophistrings:
+                sectionhead = rp + comp
+                try:
+                    temp_string = _cut_sectionstring(edistring,sectionhead)
+                    lo_vals = []
+                    t0 = temp_string.strip().split('\n')[0]
+                    n_dummy = int(float(t0.split('//')[1].strip()))
+                    t1 = temp_string.strip().split('\n')[1:]
+                    for j in t1:
+                        lo_j = j.strip().split()
+                        for k in lo_j:
+                            try:
+                                lo_vals.append(float(k))
+                            except:
+                                pass
+                    if len(lo_vals) == 0:
+                        raise
+                except:
+                    continue
+                
+                n_entries += 1
+            if n_entries > 1 :
+                rhophi_found += 1
 
-    if n_numbers == 0:
-        print  MTexceptions.MTpyError_edi_file('Error in FREQ block: no frequencies found')
+    # If neither Z nor RHO/PHS  entries are found continue searching for spectra information
+    # 2. spectra
+    if z_found ==0 and rhophi_found == 0:
+        print 'ERROR - no data found in terms of "Z" or "RHO/PHS" - reading of spectra is not supported yet'
+        found *= 0
 
-        found *= 0 
 
 
     if found > 0: isvalid = True

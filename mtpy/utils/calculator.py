@@ -85,6 +85,65 @@ def invertmatrix_incl_errors(inmatrix, inmatrix_err = None):
  
     return inv_matrix, inv_matrix_err
 
+def rhophi2z(rho, phi):
+    """
+        Convert impedance information given in Rho/Phi format into complex valued Z.
+
+        Input:
+        rho - 2x2 array (real) - in Ohm m
+        phi - 2x2 array (real) - in degrees
+
+        Output:
+        Z - 2x2 array (complex)
+    """
+
+    try:
+        if rho.shape != (2,2) or phi.shape != (2,2):
+            raise
+        if not (rho.dtype in ['float'] and phi.dtype in ['float']):
+            raise
+
+    except: 
+        raise MTexceptions.MTpyError_inputarguments('ERROR - arguments must be two 2x2 arrays (real)')
+
+    z = np.zeros((2,2),'complex')
+    for i in range(2):
+        for j in range(2):
+            z[i,j] = cmath.rect(rho[i,j],math.radians(phi[i,j]))
+
+    return z 
+
+
+
+def propagate_error_polar2rect(r,r_error,phi, phi_error):
+    """
+        Find error estimations for the transformation from polar to cartesian coordinates.
+
+        Uncertainties in polar representation define a section of an annulus. Find the 4 corners of this section and additionally the outer boundary point, which is defined by phi = phi0, rho = rho0 + sigma rho.
+        The cartesian "box" defining the uncertainties in x,y is the outer bound around the annulus section, defined by the four outermost points. So check the four corners as well as the outer boundary edge of the section to find the extrema in x znd y. These give you the sigma_x/y. 
+
+    """ 
+
+    corners = [ ( np.real(cmath.rect(r-r_error, phi-phi_error)), np.imag(cmath.rect(r-r_error, phi-phi_error))),\
+                 ( np.real(cmath.rect(r+r_error, phi-phi_error)), np.imag(cmath.rect(r+r_error, phi-phi_error))),\
+                 ( np.real(cmath.rect(r+r_error, phi+phi_error)), np.imag(cmath.rect(r+r_error, phi+phi_error))),\
+                 ( np.real(cmath.rect(r-r_error, phi+phi_error)), np.imag(cmath.rect(r-r_error, phi+phi_error))),\
+                 ( np.real(cmath.rect(r+r_error, phi)), np.imag(cmath.rect(r+r_error, phi))) ]
+
+    lo_x = [i[0] for i in corners]
+    lo_y = [i[1] for i in corners]
+
+    point =  (np.real(cmath.rect(r, phi)), np.imag(cmath.rect(r, phi)) )
+    lo_xdiffs = [ abs(point[0] - i) for i in lo_x]
+    lo_ydiffs = [ abs(point[1] - i) for i in lo_y]
+    
+    xerr = max(lo_xdiffs)
+    yerr = max(lo_ydiffs)
+
+    return xerr, yerr
+
+
+
 
 def propagate_error_rect2polar(x,x_error,y, y_error):
     
