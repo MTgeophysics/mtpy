@@ -150,7 +150,7 @@ class Edi(object):
         try:
             Bscale = float(Bscale)
         except:
-            raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not understood ')
+            raise MTexceptions.MTpyError_edi_file('ERROR - B field scaling factor not understood ')
         
         try:
             datatype = datatype.lower()
@@ -969,7 +969,7 @@ class Edi(object):
                 return
 
         if (self.freq is None) or (len(self.freq) != len(rho_array)) :
-            raise MTexceptions.MTpyError_EDI('ERROR -cannot set rho without proper frequency information - proper "freq" attribute must be defined ')
+            raise MTexceptions.MTpyError_EDI('ERROR - cannot set rho without proper frequency information - proper "freq" attribute must be defined ')
 
         #assert real array:
         if np.linalg.norm(np.imag(rho_array )) != 0 :
@@ -1240,7 +1240,7 @@ def read_edifile(fn, Bscale = 1):
     try:
         Bscale = float(Bscale)
     except:
-        raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not understood ')
+        raise MTexceptions.MTpyError_edi_file('ERROR - B field scaling factor not understood ')
 
 
     edi_object = Edi()
@@ -1310,14 +1310,14 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
     try:
         Bscale1 = float(Bscale1)
     except:
-        raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor 1 not understood ')
+        raise MTexceptions.MTpyError_edi_file('ERROR - B field scaling factor 1 not understood ')
 
     if Bscale2 in ['h','H']:
         Bscale2 =  1./MTc.mu0
     try:
         Bscale2 = float(Bscale2)
     except:
-        raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor 2 not understood ')
+        raise MTexceptions.MTpyError_edi_file('ERROR - B field scaling factor 2 not understood ')
 
 
     #edi objects:

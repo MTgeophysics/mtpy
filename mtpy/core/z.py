@@ -41,9 +41,8 @@ Contains classes and functions for handling impedance tensors (Z).
         - set_real
         - imag
         - set_imag
-        - rho
-        - phi
-        - set_rho_phi
+        - r_phi
+        - set_r_phi
         - rotate
 
     Functions:
@@ -97,7 +96,7 @@ class Z(object):
 
     """
 
-    def __init__(self, z_array = None, zerr_array = None, edi_object = None, Hscale = 1):
+    def __init__(self, z_array = None, zerr_array = None, edi_object = None, Bscale = 1):
         """
             Initialise an instance of the Z class.
 
@@ -105,17 +104,17 @@ class Z(object):
             z_array : Numpy array containing Z values
             zerr_array : Numpy array containing Z-error values (NOT variance, but stddev!)
             edi_object : instance of the MTpy Edi class
-            Hscale : scaling factor to convert the input Z values to unit Ohm
+            Bscale : scaling factor to convert the input Z values to unit km/s
 
             Initialise the attributes with None
         """
 
-        if Hscale in ['b','B']:
-            Hscale =  MTc.mu0
+        if Bscale in ['h','H']:
+            Bscale =  1./MTc.mu0
         try:
-            Hscale = float(Hscale)
+            Bscale = float(Bscale)
         except:
-            raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not understood ')
+            raise MTexceptions.MTpyError_edi_file('ERROR - B field scaling factor not understood ')
     
     
 
@@ -154,9 +153,9 @@ class Z(object):
             pass
 
         if self.z is not None:
-            self.z *= Hscale
+            self.z *= Bscale
         if self.zerr is not None:
-            self.zerr *= Hscale
+            self.zerr *= Bscale
             
         self.frequencies = None
         self.edi_object = None
@@ -366,16 +365,15 @@ class Z(object):
 
 
         for idx_f in range(len(self.z)): 
-            omega = self.freq[idx_f] * 2 *math.pi
 
             for i in range(2):                        
                 for j in range(2):
-                    rho[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /omega/ MTc.mu0
+                    rho[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /self.freq[idx_f] *0.2
                     phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))%360
                 
                     if self.zerr is not None:
                         r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
-                        rhoerr[idx_f,i,j] = 2 * np.abs(self.z[idx_f,i,j])/omega/ MTc.mu0 * r_err
+                        rhoerr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/self.freq[idx_f] * r_err
                         phierr[idx_f,i,j] = phi_err
 
         return rho, phi, rhoerr, phierr
@@ -423,7 +421,7 @@ class Z(object):
         for idx_f in range(len(z_new)):
             for i in range(2):
                 for j in range(2):
-                    abs_z = np.sqrt(2 * math.pi * self.freq[idx_f] * rho_array[idx_f,i,j])
+                    abs_z = np.sqrt(5 * self.freq[idx_f] * rho_array[idx_f,i,j])
                     z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phi_array[idx_f,i,j] ))
 
         self.z = z_new
@@ -975,9 +973,9 @@ class Tipper(object):
         self.tipper = tipper_new
 
 
-    def rho_phi(self):
+    def r_phi(self):
         """
-            Return values for amplitude (rho) and argument (phi - in degrees).
+            Return values for amplitude (r) and argument (phi - in degrees).
 
             Output is a 4-tuple of arrays:
             (Rho, Phi, RhoError, PhiError)
@@ -1011,9 +1009,9 @@ class Tipper(object):
         return rho, phi, rhoerr, phierr
 
 
-    def set_rho_phi(self, rho_array, phi_array):
+    def set_r_phi(self, r_array, phi_array):
         """
-            Set values for rho and argument (phi - in degrees).
+            Set values for amplitude(r) and argument (phi - in degrees).
 
             Updates the attributes "tipper, tippererr".
 
@@ -1023,8 +1021,8 @@ class Tipper(object):
                 
             tipper_new = copy.copy(self.tipper) 
 
-            if self.tipper.shape != rho_array.shape:
-                print 'Error - shape of "rho" array does not match shape of tipper array: %s ; %s'%(str(rho_array.shape),str(self.tipper.shape))
+            if self.tipper.shape != r_array.shape:
+                print 'Error - shape of "r" array does not match shape of tipper array: %s ; %s'%(str(r_array.shape),str(self.tipper.shape))
                 return
 
             if self.tipper.shape != phi_array.shape:
@@ -1032,23 +1030,23 @@ class Tipper(object):
                 return
         else:
 
-            tipper_new = np.zeros(rho_array.shape,'complex')
+            tipper_new = np.zeros(r_array.shape,'complex')
 
-            if rho_array.shape != phi_array.shape:
-                print 'Error - shape of "phi" array does not match shape of "rho" array: %s ; %s'%(str(phi_array.shape),str(rho_array.shape))
+            if r_array.shape != phi_array.shape:
+                print 'Error - shape of "phi" array does not match shape of "r" array: %s ; %s'%(str(phi_array.shape),str(r_array.shape))
                 return
        
         #assert real array:
-        if np.linalg.norm(np.imag(rho_array )) != 0 :
-            print 'Error - array "rho" is not real valued !'
+        if np.linalg.norm(np.imag(r_array )) != 0 :
+            print 'Error - array "r" is not real valued !'
             return
         if np.linalg.norm(np.imag(phi_array )) != 0 :
             print 'Error - array "phi" is not real valued !'
             return
 
-        for idx_f in range(len(rho_array)):
+        for idx_f in range(len(r_array)):
                 for j in range(2):
-                    tipper_new[idx_f,0,j] = cmath.rect( rho_array[idx_f,0,j], math.radians(phi_array[idx_f,0,j] ))
+                    tipper_new[idx_f,0,j] = cmath.rect( r_array[idx_f,0,j], math.radians(phi_array[idx_f,0,j] ))
 
         self.tipper = tipper_new
 
@@ -1122,7 +1120,7 @@ class Tipper(object):
 #------------------------
 
 
-def rotate_z(z_array, alpha, zerr_array = None Hscale = 1.):
+def rotate_z(z_array, alpha, zerr_array = None Bscale = 1.):
     """
         Rotate a Z array
 
@@ -1132,7 +1130,7 @@ def rotate_z(z_array, alpha, zerr_array = None Hscale = 1.):
 
         Optional:
         - Zerror : (1,2,2) or (2,2) shaped Numpy array
-        - Hscale : scaling factor to convert the input Z values to unit Ohm
+        - Bscale : scaling factor to convert the input Z values to unit km/s
 
         Output:
         - rotated Z array
@@ -1140,7 +1138,7 @@ def rotate_z(z_array, alpha, zerr_array = None Hscale = 1.):
 
     """
 
-    z_object = _read_z_array(z_array, zerr_array, Hscale = Hscale)
+    z_object = _read_z_array(z_array, zerr_array, Bscale = Bscale)
 
     z_object.rotate(alpha)
 
@@ -1210,16 +1208,16 @@ def remove_ss_and_distortion(z_array, zerr_array = None, rho_x = 1., rho_y = 1.)
 
 
 
-def z2rhophi(z_array, zerr_array = None, Hscale = 1):
+def z2rhophi(z_array, zerr_array = None, Bscale = 1):
     """
-        Return the resistivity/phase information for Z (in Ohm!!).
+        Return the resistivity/phase information for Z (in km/s!!).
 
         Input:
         - Z array
 
         Optional:
         - Zerror array
-        - Hscale : scaling factor to convert the input Z values to unit Ohm
+        - Bscale : scaling factor to convert the input Z values to unit km/s
 
         Output:
         - Resistivity array 
@@ -1228,7 +1226,7 @@ def z2rhophi(z_array, zerr_array = None, Hscale = 1):
         - Phase uncertainties array
     """
     
-    z_object = _read_z_array(z_array,zerr_array , Hscale = Hscale)
+    z_object = _read_z_array(z_array,zerr_array , Bscale = Bscale)
 
     return z_object.rho_phi()
 
@@ -1270,7 +1268,7 @@ def tipper2rhophi(tipper_array, tippererr_array = None):
     return tipper_object.rho_phi()
 
 
-def _read_z_array(z_array, zerr_array = None, Hscale = 1.):
+def _read_z_array(z_array, zerr_array = None, Bscale = 1.):
     """
         Read a Z array and return an instance of the Z class.
 
@@ -1280,19 +1278,19 @@ def _read_z_array(z_array, zerr_array = None, Hscale = 1.):
 
         Optional:
         - Zerror array
-        - Hscale : scaling factor to convert the input Z values to unit Ohm
+        - Bscale : scaling factor to convert the input Z values to unit km/s
     """
 
 
     try:
-        if Hscale in ['b','B']:
-            Hscale =  MTc.mu0
+        if Bscale in ['h','H']:
+            Bscale =  1./MTc.mu0
         try:
-            Hscale = float(Hscale)
+            Bscale = float(Bscale)
         except:
-            raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not understood ')
+            raise MTexceptions.MTpyError_edi_file('ERROR - B field scaling factor not understood ')
   
-        z_object = Z( z_array=z_array, zerr_array=zerr_array, Hscale = Hscale )
+        z_object = Z( z_array=z_array, zerr_array=zerr_array, Bscale = Bscale )
     except:
         raise MTexceptions.MTpyError_Z('Cannot generate Z instance - check z-array dimensions/type: (N,2,2)/complex ; %s'%(str(z_array.shape)))
 
