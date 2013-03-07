@@ -39,7 +39,7 @@ Conventions
 
 2.) [E] = microvolts/meter (muV/m)
 3.) [B] = nanotesla (nT)
-4.) [Z] = km/s
+4.) [Z] = [E]/[B] = km/s
 4.a) rho = 0.2 * T * |Z|^2  (in Ohm m)
 
 5.) Angles are given in degrees (mod 360)

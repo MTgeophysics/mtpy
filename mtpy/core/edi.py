@@ -126,16 +126,16 @@ class Edi(object):
         self.tippererr = None
 
 
-    def readfile(self, fn, Hscale = 1, datatype = 'z'):
+    def readfile(self, fn, Bscale = 1, datatype = 'z'):
         """
             Read in an EDI file. 
 
             Returns an exception, if the file is invalid (following MTpy standards).
 
 
-            Hscale is the factor that needs to be applied to the data in the file to end up with OHM as unit for Z.
-            E.g., if the Z-data are given in E/B with E measured in mV/km and B in nT, the factor is 1e3 * mu_0 = pi*4e-4
-            (If the data are in basic units "V/m" and "Tesla", just use the letter 'B' instead )
+            Bscale is the factor that needs to be applied to the data in the file to end up with km/s as unit for Z.
+            E.g., if the Z-data are given in E/H with E measured in V/m and H in A/m, the factor is 1e-3 / mu_0 
+            (If the data are in basic units "mV/m" and "A/m", just use the letter 'H' instead )
 
             datatype determines the way data  are provided. Default is 'z', so the full impedance tensor is expected to be present in the file. Other possibilities are 'rhophi' and 'spectra' - they exclude the reading of a potentially present Z information. 
             TODO: 'spectra' - not implemented yet
@@ -145,10 +145,10 @@ class Edi(object):
         infile = op.abspath(fn)
 
         #define the scaling factor for obtaining Z in Ohm
-        if Hscale in ['b','B']:
-            Hscale =  MTc.mu0
+        if Bscale in ['h','H']:
+            Bscale =  1./MTc.mu0
         try:
-            Hscale = float(Hscale)
+            Bscale = float(Bscale)
         except:
             raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not understood ')
         
@@ -206,7 +206,7 @@ class Edi(object):
 
         if datatype == 'z':
             try:
-                self._read_z(edistring, Hscale)
+                self._read_z(edistring, Bscale)
             except:
                 raise MTexceptions.MTpyError_edi_file('Could not read Z section: %s'%infile)
 
@@ -430,7 +430,7 @@ class Edi(object):
                 station = op.splitext(op.basename(self.filename))[0]
             info_dict['station'] = station
 
-        info_dict['Z_unit'] = 'Ohm'
+        info_dict['Z_unit'] = 'km/s'
 
         self.info_dict = info_dict
 
@@ -544,7 +544,7 @@ class Edi(object):
         self.freq = lo_freqs
 
 
-    def _read_z(self, edistring, Hscale):
+    def _read_z(self, edistring, Bscale):
         """
         Read in impedances information from a raw EDI-string. 
         Store it as attribute (complex array).
@@ -612,10 +612,10 @@ class Edi(object):
                     zerr_array[idx_freq, idx_comp/2, idx_comp%2] = z_dict[sectionhead][idx_freq]
 
 
-        self.z = Hscale * z_array
+        self.z = Bscale * z_array
 
         #errors are stddev, not VAR :
-        self.zerr = np.sqrt(Hscale * zerr_array)
+        self.zerr = np.sqrt(Bscale * zerr_array)
 
 
     def _read_tipper(self, edistring):
@@ -692,7 +692,7 @@ class Edi(object):
             Store this as attribute (complex array).
 
         """
-        #using the loop over all  components. For each component check, if Rho and Phi are given, raise exception if not! Then convert the polar RhoPhi representation into the cartesian Z. Rho is assumed to be in Ohm m, Phi in degrees. Z will be in Ohm. 
+        #using the loop over all  components. For each component check, if Rho and Phi are given, raise exception if not! Then convert the polar RhoPhi representation into the cartesian Z. Rho is assumed to be in Ohm m, Phi in degrees. Z will be in km/s. 
         z_array = np.zeros((self.n_freqs(),2,2), 'complex')
         zerr_array = np.zeros((self.n_freqs(),2,2))
 
@@ -731,16 +731,16 @@ class Edi(object):
         #sys.exit()
 
         for idx_freq  in range( self.n_freqs()):
-            rho = np.zeros((2,2))
+            r = np.zeros((2,2))
             phi = np.zeros((2,2))
-            rhoerr = np.zeros((2,2))
+            rerr = np.zeros((2,2))
             phierr = np.zeros((2,2))
             zerr = np.zeros((2,2))
             
             for idx_c, comp in enumerate(compstrings):
                 #convert rho to amplitude:
                 try:
-                    rho[idx_c/2,idx_c%2] = np.sqrt(rhophi_dict['RHO'+comp][idx_freq] * MTc.mu0 * self.freq[idx_freq] *2*np.pi)
+                    r[idx_c/2,idx_c%2] = np.sqrt(rhophi_dict['RHO'+comp][idx_freq] * 5 * self.freq[idx_freq] )
                 except:
                     pass
                 try:
@@ -748,17 +748,17 @@ class Edi(object):
                 except:
                     pass
                 try:
-                    rhoerr[idx_c/2,idx_c%2] = rhophi_dict['RHO'+comp + '.ERR'][idx_freq]
+                    rerr[idx_c/2,idx_c%2] = np.abs(np.sqrt(2.5*self.freq[idx_freq]/r[idx_c/2,idx_c%2])*(rhophi_dict['RHO'+comp + '.ERR'][idx_freq]))
                 except:
                     pass
                 try:
                     phierr[idx_c/2,idx_c%2] = rhophi_dict['PHS'+comp + '.ERR'][idx_freq]
                 except:
                     pass
-                zerr[idx_c/2,idx_c%2] = max( MTc.propagate_error_polar2rect( rho[idx_c/2,idx_c%2], rhoerr[idx_c/2,idx_c%2], \
+                zerr[idx_c/2,idx_c%2] = max( MTc.propagate_error_polar2rect( r[idx_c/2,idx_c%2], rerr[idx_c/2,idx_c%2], \
                                                                             phi[idx_c/2,idx_c%2], phierr[idx_c/2,idx_c%2]))
 
-            z_array[idx_freq] = MTc.rhophi2z(rho, phi)
+            z_array[idx_freq] = MTc.rhophi2z(r, phi)
             zerr_array[idx_freq] = zerr
 
 
@@ -928,16 +928,15 @@ class Edi(object):
 
 
         for idx_f in range(len(self.z)): 
-            omega = self.freq[idx_f] * 2 *math.pi
             for i in range(2):                        
                 for j in range(2):
 
-                    rho[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /omega / MTc.mu0 
+                    rho[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /self.freq[idx_f] *0.2
                     phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))
                 
                     if self.zerr is not None:
                         r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
-                        rhoerr[idx_f,i,j] = 2 * np.abs(self.z[idx_f,i,j])/omega / MTc.mu0 * r_err
+                        rhoerr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/self.freq[idx_f] * r_err
                         phierr[idx_f,i,j] = phi_err
 
         return rho, phi, rhoerr, phierr
@@ -983,7 +982,7 @@ class Edi(object):
         for idx_f in range(len(z_new)):
             for i in range(2):
                 for j in range(2):
-                    abs_z = np.sqrt(2 * math.pi * self.freq[idx_f] * MTc.mu0 * rho_array[idx_f,i,j])
+                    abs_z = np.sqrt(5 * self.freq[idx_f] * rho_array[idx_f,i,j])
                     z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phi_array[idx_f,i,j] ))
 
         self.z = z_new
@@ -1229,24 +1228,24 @@ class Edi(object):
 #=========================
 
 
-def read_edifile(fn, Hscale = 1):
+def read_edifile(fn, Bscale = 1):
     """
         Read in an EDI file.
 
         Return an instance of the Edi class.
     """
 
-    if Hscale in ['b','B']:
-        Hscale =  MTc.mu0
+    if Bscale in ['h','H']:
+        Bscale =  1./MTc.mu0
     try:
-        Hscale = float(Hscale)
+        Bscale = float(Bscale)
     except:
         raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor not understood ')
 
 
     edi_object = Edi()
 
-    edi_object.readfile(fn, Hscale) 
+    edi_object.readfile(fn, Bscale) 
    
 
     return edi_object
@@ -1284,7 +1283,7 @@ def write_edifile(edi_object, out_fn = None):
     return outfilename
 
 
-def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps = True, Hscale1 = 1, Hscale2 = 1 ):
+def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps = True, Bscale1 = 1, Bscale2 = 1 ):
     """
         Combine two EDI files.
 
@@ -1296,7 +1295,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         - merge_frequency : frequency in Hz, on which to merge the files - default is the middle of the overlap
         - out_fn : output EDI file name
         - allow_gaps : allow merging EDI files whose frequency ranges does not overlap
-        - Hscale1/2 : scaling factor to bring the Z values to unit Ohm
+        - Bscale1/2 : scaling factor to bring the Z values to unit km/s
 
 
         Outputs:
@@ -1306,26 +1305,26 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
 
     
 
-    if Hscale1 in ['b','B']:
-        Hscale1 =  MTc.mu0
+    if Bscale1 in ['h','H']:
+        Bscale1 =  1./MTc.mu0
     try:
-        Hscale1 = float(Hscale1)
+        Bscale1 = float(Bscale1)
     except:
         raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor 1 not understood ')
 
-    if Hscale2 in ['b','B']:
-        Hscale2 =  MTc.mu0
+    if Bscale2 in ['h','H']:
+        Bscale2 =  1./MTc.mu0
     try:
-        Hscale2 = float(Hscale2)
+        Bscale2 = float(Bscale2)
     except:
         raise MTexceptions.MTpyError_edi_file('ERROR - H field scaling factor 2 not understood ')
 
 
     #edi objects:
     eo1 = Edi()
-    eo1.readfile(fn1, Hscale1)
+    eo1.readfile(fn1, Bscale1)
     eo2 = Edi()
-    eo2.readfile(fn2, Hscale2)
+    eo2.readfile(fn2, Bscale2)
     #edi object merged
     eom = Edi()
 
