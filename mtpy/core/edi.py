@@ -1050,7 +1050,6 @@ class Edi(object):
 
         """ 
   
-        z_orig = self.z 
 
         if (self.z is not None) and (self.z.shape != z_array.shape):
             print 'Error - shape of "z" array does not match shape of Z array: %s ; %s'%(str(z_array.shape),str(self.z.shape))

@@ -708,6 +708,80 @@ class Z(object):
         return z2d
 
 
+    def trace(self):
+        """
+            Return the trace of Z (incl. uncertainties).
+
+            Output:
+            - Trace(Z) - Numpy array
+            - Error of Trace(Z) - Numpy array
+
+        """
+
+        tr = np.array( [np.trace(i) for i in self.z])
+
+        tr_err = None
+        if self.zerr is not None:
+            tr_err = np.zeros_like(tr)
+            tr_err[:] = self.zerr[:,0,0] + self.zerr[:,1,1]
+
+
+        return tr, tr_err
+
+    def skew(self):
+        """
+            Return the skew of Z (incl. uncertainties).
+
+            Output:
+            - Skew(Z) - Numpy array
+            - Error of Skew(Z) - Numpy array
+
+        """
+        
+        skew =  np.array( [ i[0,1] - i[1,0] for i in self.z ] )
+        
+        skewerr = None
+        if self.zerr is not None:
+            skewerr = np.zeros_like(skew)
+            skewerr[:] = self.zerr[:,0,1] + self.zerr[:,1,0]
+
+        return skew, skewerr
+
+    def det(self):
+        """
+            Return the determinant of Z (incl. uncertainties).
+
+            Output:
+            - det(Z) - Numpy array
+            - Error of det(Z) - Numpy array
+
+        """
+
+        det_phi = np.array( [np.linalg.det(i) for i in self.z])
+        
+        det_phi_err = None
+        if self.zerr is not None:
+            det_phi_err = np.zeros_like(det_phi)
+            det_phi_err[:] = np.abs(self.z[:,1,1] * self.zerr[:,0,0]) + np.abs(self.z[:,0,0] * self.zerr[:,1,1]) + np.abs(self.z[:,0,1] * self.zerr[:,1,0]) + np.abs(self.z[:,1,0] * self.zerr[:,0,1])
+
+        return det_phi, det_phi_err
+
+
+    def norm(self):
+        """
+            Return the 2-/Frobenius-norm of Z (incl. uncertainties).
+
+            Output:
+            - Norm(Z) - Numpy array
+            - Error of Norm(Z) - Numpy array
+
+        """
+
+        znormerr = None
+        norm_z = np.array( [np.linalg.norm(i) for i in self.z ])
+
+        return znorm, znormerr
+
 
     def invariants(self):
         """
@@ -723,8 +797,7 @@ class Z(object):
         z1 = (self.z[:,0,1] - self.z[:,1,0])/2.
         invariants_dict['z1'] = z1 
 
-        det_z = np.array( [np.linalg.det(i) for i in self.z ])
-        invariants_dict['det'] = det_z
+        invariants_dict['det'] = det()[0]
         
         det_real = np.array( [np.linalg.det(i) for i in self.real() ])
         invariants_dict['det_real'] = det_real
@@ -732,14 +805,11 @@ class Z(object):
         det_imag = np.array( [np.linalg.det(i) for i in self.imag() ])
         invariants_dict['det_imag'] = det_imag
 
-        trace_z = np.array( [np.linalg.trace(i) for i in self.z ])
-        invariants_dict['trace'] = trace_z
+        invariants_dict['trace'] = trace()[0]
         
-        skew_z = np.array( [np.abs(trace_z[i]/2.)/np.abs(z1[i]) for i in range(len(z1)) ])
-        invariants_dict['skew'] = skew_z
+        invariants_dict['skew'] = skew()[0]
         
-        norm_z = np.array( [np.linalg.norm(i) for i in self.z ])
-        invariants_dict['norm'] = norm_z
+        invariants_dict['norm'] = norm()[0]
         
         lambda_plus = np.array( [ z1[i] + np.sqrt(z1[i] * z1[i] - det_z[i]) for i in range(len(z1)) ])
         invariants_dict['lambda_plus'] = lambda_plus
