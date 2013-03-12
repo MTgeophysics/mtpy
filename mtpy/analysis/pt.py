@@ -10,9 +10,44 @@ Contains classes and functions for handling Phase Tensor analysis of given imped
 
         Methods:
 
+        - set_pt
+        - set_pterr
+        - set_frequencies
+        - read_edi_file
+        - read_edi
+        - read_z
+        - read_z_array
+        - invariants
+        - trace
+        - alpha
+        - beta
+        - skew
+        - det
+        - _pi1
+        - _pi2
+        - phimin
+        - phimax
+        - rotate
+        - only1d
+        - only2d
+
+    Class:
+    "ResidualPhaseTensor" contains information about a REsidual Phase tensor ResPT.
+
+        Methods:
+
+        - read_pt_objects
+        - read_pts
+        - set_rpt
+        - set_rpterr
 
 
     Functions:
+
+    - z2pt
+    - z_object2pt
+    - edi_object2pt
+    - edi_file2pt
 
 
 @UofA, 2013

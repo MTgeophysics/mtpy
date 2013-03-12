@@ -38,7 +38,7 @@ _________
 ---------
 
 - ALL 
-(if possible by setting up plot classes for the respective elements - than batch processing (plotting various stations can be handled by functions looping over the plot objects ...??)
+(if possible by setting up plot classes for the respective elements - rather than batch processing (plotting various stations can be handled by functions looping over the plot objects ...??)
 
 __________
  MODELING (wrapper for calling external modelling tools, functions for converting in- and outputs)
