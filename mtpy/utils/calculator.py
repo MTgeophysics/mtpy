@@ -100,7 +100,7 @@ def rhophi2z(rho, phi):
     try:
         if rho.shape != (2,2) or phi.shape != (2,2):
             raise
-        if not (rho.dtype in ['float'] and phi.dtype in ['float']):
+        if not (rho.dtype in ['float', 'int'] and phi.dtype in ['float', 'int']):
             raise
 
     except: 

@@ -125,14 +125,14 @@ class Z(object):
               
         try:
             if len(z_array.shape) == 3 and z_array.shape[1:3] == (2,2):
-                if z_array.dtype in ['complex', 'float']:
+                if z_array.dtype in ['complex', 'float', 'int']:
                     self.z = z_array
         except:
             pass
 
         try:
             if len(z_array.shape) == 2 and z_array.shape == (2,2):
-                if z_array.dtype in ['complex', 'float']:
+                if z_array.dtype in ['complex', 'float','int']:
                     self.z = np.zeros((1,2,2),'complex')
                     self.z[0] = z_array            
         except:
@@ -140,13 +140,13 @@ class Z(object):
 
         try:
             if len(zerr_array.shape) == 3 and zerr_array.shape[1:3] == (2,2):
-                if zerr_array.dtype in ['float']:
+                if zerr_array.dtype in ['float', 'int']:
                     self.zerr = zerr_array
         except:
             pass
         try:
             if len(zerr_array.shape) == 2 and zerr_array.shape == (2,2):
-                if zerr_array.dtype in ['float']:
+                if zerr_array.dtype in ['float', 'int']:
                     self.z = np.zeros((1,2,2))
                     self.zerr = zerr_array
         except:
@@ -853,13 +853,13 @@ class Tipper(object):
         self.tippererr = None
         try:
             if len(tipper_array.shape) == 3 and tipper_array.shape[1:3] == (1,2):
-                if tipper_array.dtype in ['complex', 'float']:
+                if tipper_array.dtype in ['complex', 'float','int']:
                     self.tipper = tipper_array
         except:
             pass
         try:
             if len(tippererr_array.shape) == 3 and tippererr_array.shape[1:3] == (1,2):
-                if tippererr_array.dtype in ['float']:
+                if tippererr_array.dtype in ['float','int']:
                     self.tippererr = tippererr_array
         except:
             pass
@@ -1438,7 +1438,7 @@ def correct4sensor_orientation(Z_prime, Bx=0, By=90, Ex=0, Ey=90, Z_prime_error 
         if Z_prime.shape != (2,2):
             raise
         
-        if Z_prime.dtype not in ['complex', 'float']:
+        if Z_prime.dtype not in ['complex', 'float', 'int']:
             raise
 
         Z_prime = np.matrix(Z_prime)
@@ -1453,7 +1453,7 @@ def correct4sensor_orientation(Z_prime, Bx=0, By=90, Ex=0, Ey=90, Z_prime_error 
             if Z_prime_error.shape != (2,2):
                 raise
         
-            if Z_prime_error.dtype not in [ 'float']:
+            if Z_prime_error.dtype not in [ 'float', 'int']:
                 raise
 
         except:
