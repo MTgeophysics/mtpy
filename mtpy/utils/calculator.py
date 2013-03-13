@@ -190,7 +190,7 @@ def propagate_error_rect2polar(x,x_error,y, y_error):
 
 #rotation:
 #1. rotation positive in clockwise direction
-#2. orientation of new X axis X' given by rotation angle
+#2. orientation of new X-axis X' given by rotation angle
 #3. express contents of Z/tipper (points P) in this new system (points P')
 #4. rotation for points calculated as P' = ([cos , sin ],[-sin, cos]) * P <=> P' = R * P
 #5. => B' = R * B and E' = R * E
