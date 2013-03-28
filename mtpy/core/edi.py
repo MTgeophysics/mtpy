@@ -126,7 +126,7 @@ class Edi(object):
         self.tippererr = None
 
 
-    def readfile(self, fn, Hscale = 1):
+    def readfile(self, Hscale = 1):
         """
             Read in an EDI file. 
 
@@ -139,7 +139,7 @@ class Edi(object):
             (If the data are in basic units "V/m" and "Tesla", just use the letter 'B' instead )
 
         """
-        infile = op.abspath(fn)
+        infile = op.abspath(self.fn)
 
         #define the scaling factor for obtaining Z in Ohm
         if Hscale in ['b','B']:
@@ -512,7 +512,7 @@ class Edi(object):
                 try:
                     lo_freqs.append(float(k))
                 except:
-                    passs
+                    pass
 
         self.freq = lo_freqs
 
@@ -561,15 +561,20 @@ class Edi(object):
 
 
         for idx_freq  in range( self.n_freqs()):
-            z_array[idx_freq,0,0] = np.complex(z_dict['ZXXR'][idx_freq], z_dict['ZXXI'][idx_freq])
-            z_array[idx_freq,0,1] = np.complex(z_dict['ZXYR'][idx_freq], z_dict['ZXYI'][idx_freq])
-            z_array[idx_freq,1,0] = np.complex(z_dict['ZYXR'][idx_freq], z_dict['ZYXI'][idx_freq])
-            z_array[idx_freq,1,1] = np.complex(z_dict['ZYYR'][idx_freq], z_dict['ZYYI'][idx_freq])
+            z_array[idx_freq,0,0] = np.complex(z_dict['ZXXR'][idx_freq], 
+                                                z_dict['ZXXI'][idx_freq])
+            z_array[idx_freq,0,1] = np.complex(z_dict['ZXYR'][idx_freq], 
+                                                z_dict['ZXYI'][idx_freq])
+            z_array[idx_freq,1,0] = np.complex(z_dict['ZYXR'][idx_freq],
+                                                z_dict['ZYXI'][idx_freq])
+            z_array[idx_freq,1,1] = np.complex(z_dict['ZYYR'][idx_freq], 
+                                                z_dict['ZYYI'][idx_freq])
 
             for idx_comp,comp in enumerate(compstrings):
                 sectionhead = comp + '.VAR'
                 if sectionhead in z_dict:
-                    zerr_array[idx_freq, idx_comp/2, idx_comp%2] = z_dict[sectionhead][idx_freq]
+                    zerr_array[idx_freq, idx_comp/2, idx_comp%2] = \
+                                                  z_dict[sectionhead][idx_freq]
 
 
         self.z = Hscale * z_array
@@ -608,7 +613,8 @@ class Edi(object):
                         if (idx_tentry == 2) and (temp_string is None):
                             try:
                                 sectionhead = comp + '.' + tentry
-                                temp_string = _cut_sectionstring(edistring,sectionhead)
+                                temp_string = _cut_sectionstring(edistring,
+                                                                 sectionhead)
                             except:
                                 pass
                         pass
@@ -635,9 +641,11 @@ class Edi(object):
 
 
         for idx_freq  in range( self.n_freqs()):
-            tipper_array[idx_freq,0,0] = np.complex(t_dict['TXR'][idx_freq], t_dict['TXI'][idx_freq])
+            tipper_array[idx_freq,0,0] = np.complex(t_dict['TXR'][idx_freq],
+                                                    t_dict['TXI'][idx_freq])
             tippererr_array[idx_freq,0,0] = t_dict['TXVAR'][idx_freq]
-            tipper_array[idx_freq,0,1] = np.complex(t_dict['TYR'][idx_freq], t_dict['TYI'][idx_freq])
+            tipper_array[idx_freq,0,1] = np.complex(t_dict['TYR'][idx_freq],
+                                                    t_dict['TYI'][idx_freq])
             tippererr_array[idx_freq,0,1] = t_dict['TYVAR'][idx_freq]
 
 
@@ -730,9 +738,12 @@ class Edi(object):
 
     def rotate(self,angle):
         """
-            Rotate the Z and tipper information in the Edi object. Change the rotation angles in Zrot respectively.
+            Rotate the Z and tipper information in the Edi object. Change the 
+            rotation angles in Zrot respectively.
 
-            Rotation angle must be given in degrees. All angles are referenced to geographic North, positive in clockwise direction. (Mathematically negative!)
+            Rotation angle must be given in degrees. All angles are referenced
+            to geographic North, positive in clockwise direction.
+            (Mathematically negative!)
 
             In non-rotated state, X refs to North and Y to East direction.
 
