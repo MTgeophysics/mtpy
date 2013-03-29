@@ -118,7 +118,7 @@ class PlotResPhase(object):
     """   
     
     def __init__(self, filename, fignum=1, plotnum=1, title=None, dpi=300, 
-                 rotz=0, ffactor=1, fontsize=7, marker_dict=None, plot_yn='y'):
+                 rotz=0, plot_yn='y'):
         
         #set some of the properties as attributes much to Lars' discontent
         self.fn = filename
@@ -127,8 +127,6 @@ class PlotResPhase(object):
         self.title = title
         self.dpi = dpi
         self.rotz = rotz
-        self.ffactor = ffactor
-        self.fontsize = fontsize
         
         #-->line properties
         #line style between points
@@ -157,6 +155,12 @@ class PlotResPhase(object):
         #set plot limits
         self.xlimits = None
         self.ylimits = None
+        
+        #set font parameters
+        self.font_size = 7
+        
+        #set scaling factor of the apparent resistivity
+        self.ffactor = 1
 
         #plot on initializing
         if plot_yn=='y':
@@ -524,17 +528,30 @@ class PlotResPhase(object):
                           saved.  If None then the dpi will be that at 
                           which the figure was made.  I don't think that 
                           it can be larger than dpi of the figure.
+                          
+            **close_plot** : [ y | n ]
+                             * 'y' will close the plot after saving.
+                             * 'n' will leave plot open
+                          
+        :Example: ::
+            
+            >>> # to save plot as jpg
+            >>> import mtpy.imaging.mtplottools as mtplot
+            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
+            >>> p1.save_plot(r'/home/MT/figures', file_format='jpg')
+            
         """
 
         if fig_dpi==None:
             fig_dpi = self.dpi
             
-        if save_fn.find('.',-4)>0:
+        if os.path.isdir(save_fn)==False:
             file_format = save_fn[-3:]
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
                              orientation=orientation)
             plt.clf()
             plt.close(self.fig)
+            
         else:
             save_fn = os.path.join(save_fn,self.fn_z.station+'_ResPhase.'+
                                     file_format)
@@ -547,13 +564,24 @@ class PlotResPhase(object):
         
         else:
             pass
+        
         self.fig_fn = save_fn
         print 'Saved figure to: '+self.fig_fn
 
     def update_plot(self):
         """
-        update any parameters that where changed using the build in draw from
-        canvas.
+        update any parameters that where changed using the built-in draw from
+        canvas.  
+        
+        Use this if you change an of the .fig or axes properties
+        
+        :Example: ::
+            
+            >>> # to change the grid lines to only be on the major ticks
+            >>> import mtpy.imaging.mtplottools as mtplot
+            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
+            >>> [ax.grid(True, which='major') for ax in [p1.axr,p1.axp]]
+            >>> p1.update_plot()
         
         """
 
@@ -561,8 +589,18 @@ class PlotResPhase(object):
         
     def redraw_plot(self):
         """
-        use this function if you updated some parameters and want to re-plot.
+        use this function if you updated some attributes and want to re-plot.
+        
+        :Example: ::
+            
+            >>> # change the color and marker of the xy components
+            >>> import mtpy.imaging.mtplottools as mtplot
+            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
+            >>> p1.xy_color = (.5,.5,.9)
+            >>> p1.xy_marker = '*'
+            >>> p1.redraw_plot()
         """
+        
         plt.close(self.fig)
         self.plot()
         
@@ -571,11 +609,135 @@ class PlotResPhase(object):
         rewrite the string builtin to give a useful message
         """
         
-        print "Plots Resistivity and phase for the different modes of the MT"+\
-              "response.  At the moment is supports the input of an .edi "+\
-              "file. Other formats that will be supported are the impedance"+\
-              "tensor and errors with an array of periods and .j format."
+        return "Plots Resistivity and phase for the different modes of the MT \n" +\
+              "response.  At the moment it supports the input of an .edi \n"+\
+              "file. Other formats that will be supported are the impedance\n"+\
+              "tensor and errors with an array of periods and .j format.\n"
+              
+class PlotMultipleFiles(object):
+    """
+    PlotMultipleFiles has methods to plot different representations of your 
+    data includeing:
+        
+        **resistivityPhaseModes** : plots the modes in one plot or multiple 
+                                    plots to compare the responses
+                                    
+        **resistivityPhasePseudoSections** : plots the different componets in
+                                             a pseudo section format
+                                             
+        **resistivityPhaseMaps** : plots the different components in map view
+                                   for different periods
+        
+        **phaseTensorPseudoSections** : plots the phase tensors in a pseudo
+                                        section format, with the option of
+                                        coloring and tipper arrows
+                                        
+        **phaseTensorMaps** : plots the phase tensors in map view for different
+                              periods with the options for coloring and tipper
+                              arrows
+                              
+        **plotStrikeRoseDiagrams** : plots the estimated strike direction in as
+                                     Rose diagrams for the strike estimated 
+                                     from the invariants of Weaver et al., 2003
+                                     and the phase tensor strike of Caldwell et
+                                     al., 2004.  In the works is the strike
+                                     angle estimated from the Groom Bailey 
+                                     decomposition of McNiece & Jones, 2001.
+    """
 
+    def resistivityPhaseModes(self):
+        pass
+    
+    def resistivityPhasePseudoSections(self):
+        pass
+    
+    def resistivityPhaseMaps(self):
+        pass
+    
+    def phaseTensorPseudoSections(self):
+        pass
+    
+    def phaseTensorMaps(self):
+        pass
+    
+    def plotStrikeRoseDiagrams(self):
+        pass
+
+class MultipleResistivityPhasePlots(object):
+    """
+    plots multiple MT responses simultaneously either in single plots or in 
+    one plot of subfigures or in a single plot with subfigures for each 
+    component.
+    
+    
+    """
+
+    def __inti__(self, edilst, plotnum=1, plotstyle='1', fignum=1, dpi=300, 
+                 rotz=0, plot_yn='y'):
+        """
+        Initialize parameters
+        """
+        
+        #set some of the properties as attributes much to Lars' discontent
+        self.edilst = edilst
+        self.plotstyle = plotstyle
+        self.fignum = fignum
+        self.plotnum = plotnum
+        self.dpi = dpi
+        self.rotz = rotz
+        
+        #-->line properties
+        #line style between points
+        self.xy_ls='None'        
+        self.yx_ls='None'        
+        self.det_ls='None'        
+        
+        #outline color
+        self.xy_color = 'b'
+        self.yx_color = 'r'
+        self.det_color = 'g'
+        
+        #face color
+        self.xy_mfc='None'
+        self.yx_mfc='None'
+        self.det_mfc='None'
+        
+        #maker
+        self.xy_marker = 's'
+        self.yx_marker = 'o'
+        self.det_marker = 'd'
+        
+        #size
+        self.marker_size = 2
+        
+        #set plot limits
+        self.xlimits = None
+        self.ylimits = None
+        
+        #set font parameters
+        self.font_size = 7
+        
+        #set scaling factor of the apparent resistivity
+        self.ffactor = 1
+
+        #plot on initializing
+        if plot_yn=='y':
+            self.plot()
+        
+        
+    def plot(self):
+        """
+        plot the apparent resistivity and phase
+        """
+        
+        if self.plotstyle=='1':
+            self.plotlst=[]
+            for ii,edi in enumerate(self.edilst,1):
+                p1 = PlotResPhase(edi, fignum=ii, plotnum=self.plotnum, 
+                                  dpi=self.dpi, rotz=self.rotz)
+                self.plotlst.append(p1)
+
+    
 #def resPhasePlots(filenamelst,plottype=1,ffactor=1,kwdict=None,plotnum=1,
 #                  ylim=[0,3],fignum=1,rotz=0):
 #    """resPhasePlots will plot multiple responses given full path filenames.  
