@@ -74,10 +74,51 @@ class PlotResPhase(object):
     and .j format.
     
     
+    Arguments:
+        ----------
+            **filename** : string
+                           filename containing impedance (.edi) is the only 
+                           format supported at the moment
+                          
+            **fignum** : int
+                         figure number
+                         *default* is 1
+                         
+            **ffactor** : float
+                          scaling factor for computing resistivity from 
+                          impedances.
+                          *Default* is 1
+            
+            **rotz** : float
+                       rotation angle of impedance tensor (deg or radians), 
+                       *Note* : rotaion is clockwise positive
+                       *default* is 0
+            
+            **plotnum** : [ 1 | 2 | 3 ]
+                            * 1 for just Ex/By and Ey/Bx *default*
+                            * 2 for all 4 components
+                            * 3 for off diagonal plus the determinant
+        
+            **title** : string
+                        title of plot
+                        *default* is station name
+                        
+            **marker_dict** : dictionary
+                              Dictionary for the marker properties of the plot
+                              Keys include:
+                                  * 
+                        
+        :Example: ::
+            
+            >>> import mtpy.imaging.mtplottools as mtplot
+            >>> edifile = r"/home/MT01/MT01.edi"
+            >>> p1 = mtplot.PlotResPhase(edifile, plotnum=2)
+            >>> # plots all 4 components
+    
     """   
     
     def __init__(self, filename, fignum=1, plotnum=1, title=None, dpi=300, 
-                 rotz=0, ffactor=1, fontsize=7, marker_size=2, plot_yn='y'):
+                 rotz=0, ffactor=1, fontsize=7, marker_dict=None, plot_yn='y'):
         
         #set some of the properties as attributes much to Lars' discontent
         self.fn = filename
@@ -88,72 +129,58 @@ class PlotResPhase(object):
         self.rotz = rotz
         self.ffactor = ffactor
         self.fontsize = fontsize
-        self.marker_size = marker_size
-        self.plot_yn = plot_yn
         
-        #set figure size according to what the plot will be.
-        if self.plotnum==1 or self.plotnum==3:
-            self.figsize = [4,6]
-        elif self.plotnum==2:
-            self.figsize = [6,6]
+        #-->line properties
+        #line style between points
+        self.xy_ls='None'        
+        self.yx_ls='None'        
+        self.det_ls='None'        
         
+        #outline color
+        self.xy_color = 'b'
+        self.yx_color = 'r'
+        self.det_color = 'g'
+        
+        #face color
+        self.xy_mfc='None'
+        self.yx_mfc='None'
+        self.det_mfc='None'
+        
+        #maker
+        self.xy_marker = 's'
+        self.yx_marker = 'o'
+        self.det_marker = 'd'
+        
+        #size
+        self.marker_size = 2
+        
+        #set plot limits
+        self.xlimits = None
+        self.ylimits = None
+
         #plot on initializing
-        if self.plot_yn=='y':
+        if plot_yn=='y':
             self.plot()
         
         
-    def plot(self, fignum=1, plotnum=1, title=None, dpi=300, rotz=0, ffactor=1,
-             fontsize=7, marker_size=2):
+    def plot(self):
         """
         plotResPhase(filename,fignum) will plot the apparent resistivity and 
         phase for TE and TM modes 
         from a .dat file produced by writedat.  If you want to save the plot 
         use the save button on top left.
         
-        Arguments:
-        ----------
-            **filename** : string
-                           filename containing impedance (.edi) or resistivity and
-                           phase information (.dat)
-                          
-            **fignum** : int
-                         figure number
-                         
-            **ffactor** : float
-                          scaling factor for computing resistivity from impedances
-            
-            **thetar** : float
-                         rotation angle of impedance tensor (deg or radians)
-            
-            **plotnum** : [ 1 | 2 | 3 ]
-                            * 1 for just Ex/By and Ey/Bx
-                            * 2 for all 4 components
-                            * 3 for off diagonal plus the determinant
-                            
-            **title** : string
-                        title of plot
-                        
-            **savefigfilename** : string
-                                  supply filename to save figure to if desired
-                                  
-            **dpi** : int
-                      dots-per-inch of figure resolution
-            
-            **format** : [ pdf | eps | jpg | png | svg ]
-                        file type of saved figure pdf,svg,eps...
-                
-            **orientation** : [ landscape | portrait ]
-                             orientation of figure on A4 paper
-        :Example: ::
-            
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> edifile = r"/home/MT01/MT01.edi"
-            >>> mtplot.plotResPhase(edifile)
-            >>> # plot all 4 components
-            >>> mtplot.plotResPhase(edifile,plotnum=2)
+        
             
         """
         
+        #set figure size according to what the plot will be.
+        if self.plotnum==1 or self.plotnum==3:
+            self.figsize = [4,6]
+        elif self.plotnum==2:
+            self.figsize = [6,6]
+            
+            
         #check to see if the file given is an edi file
         if self.fn.find('edi',-4,len(self.fn))>=0:
             print 'Reading '+self.fn
@@ -164,8 +191,11 @@ class PlotResPhase(object):
             self.rp = self.fn_z.getResPhase(thetar=self.rotz)
             
             #set x-axis limits from short period to long period
-            xlimits=(10**(np.floor(np.log10(self.fn_z.period[0]))),
-                     10**(np.ceil(np.log10((self.fn_z.period[-1])))))
+            if self.xlimits==None:
+                self.xlimits = (10**(np.floor(np.log10(self.fn_z.period[0]))),
+                                10**(np.ceil(np.log10((self.fn_z.period[-1])))))
+            if self.ylimits==None:
+                self.ylimits = (0,89.9)
                      
         # ==> will add in other file types and the ability to put in just
         #     the impedance tensor and its error
@@ -231,16 +261,30 @@ class PlotResPhase(object):
         #---------plot the apparent resistivity--------------------------------
         #--> plot as error bars and just as points xy-blue, yx-red
         #res_xy
-        self.ebxyr = self.axr.errorbar(self.fn_z.period, self.rp.resxy, 
-                                      marker='s', ms=self.marker_size, mfc='None',
-                                      mec='b', mew=100./self.dpi, ls='None', 
-                                      yerr=self.rp.resxyerr, ecolor='b')
+        self.ebxyr = self.axr.errorbar(self.fn_z.period, 
+                                       self.rp.resxy, 
+                                       marker=self.xy_marker, 
+                                       ms=self.marker_size, 
+                                       mfc=self.xy_mfc, 
+                                       mec=self.xy_color, 
+                                       mew=100./self.dpi, 
+                                       ls=self.xy_ls, 
+                                       yerr=self.rp.resxyerr, 
+                                       ecolor=self.xy_color,
+                                       capsize=self.marker_size)
         
         #res_yx                              
-        self.ebyxr = self.axr.errorbar(self.fn_z.period, self.rp.resyx, 
-                                      marker='o', ms=self.marker_size, mfc='None',
-                                      mec='r', mew=100./self.dpi, ls='None', 
-                                      yerr=self.rp.resyxerr, ecolor='r')
+        self.ebyxr = self.axr.errorbar(self.fn_z.period, 
+                                       self.rp.resyx, 
+                                       marker=self.yx_marker, 
+                                       ms=self.marker_size, 
+                                       mfc=self.yx_mfc,
+                                       mec=self.yx_color, 
+                                       mew=100./self.dpi,
+                                       ls=self.yx_ls, 
+                                       yerr=self.rp.resyxerr, 
+                                       ecolor=self.yx_color,
+                                       capsize=self.marker_size)
                                       
         #--> set axes properties
         plt.setp(self.axr.get_xticklabels(), visible=False)
@@ -248,49 +292,72 @@ class PlotResPhase(object):
                             fontdict=fontdict)
         self.axr.set_yscale('log')
         self.axr.set_xscale('log')
-        self.axr.set_xlim(xlimits)
-        self.axr.grid(True, alpha=.25)
+        self.axr.set_xlim(self.xlimits)
+        self.axr.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+                      lw=.25)
         self.axr.legend((self.ebxyr[0],self.ebyxr[0]), 
                         ('$E_x/B_y$','$E_y/B_x$'),
-                        loc=3, markerscale=1, borderaxespad=.01,
-                        labelspacing=.07, handletextpad=.2, borderpad=.02)
+                        loc=3, 
+                        markerscale=1, 
+                        borderaxespad=.01,
+                        labelspacing=.07, 
+                        handletextpad=.2, 
+                        borderpad=.02)
         
         #-----Plot the phase---------------------------------------------------
         #phase_xy
-        self.ebxyp = self.axp.errorbar(self.fn_z.period, self.rp.phasexy, 
-                                      marker='s', ms=self.marker_size, mfc='None',
-                                      mec='b', mew=100./self.dpi, ls='None', 
-                                      yerr=self.rp.phasexyerr, ecolor='b')
+        self.ebxyp = self.axp.errorbar(self.fn_z.period, 
+                                       self.rp.phasexy, 
+                                       marker=self.xy_marker, 
+                                       ms=self.marker_size, 
+                                       mfc=self.xy_mfc,
+                                       mec=self.xy_color, 
+                                       mew=100./self.dpi,
+                                       ls=self.xy_ls,
+                                       yerr=self.rp.phasexyerr, 
+                                       ecolor=self.xy_color,
+                                       capsize=self.marker_size)
                                       
         #phase_yx: Note add 180 to place it in same quadrant as phase_xy
-        self.ebyxp = self.axp.errorbar(self.fn_z.period, self.rp.phaseyx+180, 
-                                      marker='o', ms=self.marker_size, mfc='None',
-                                      mec='r', mew=100./self.dpi, ls='None', 
-                                      yerr=self.rp.phaseyxerr, ecolor='r')
+        self.ebyxp = self.axp.errorbar(self.fn_z.period, 
+                                       self.rp.phaseyx+180, 
+                                       marker=self.yx_marker, 
+                                       ms=self.marker_size, 
+                                       mfc=self.yx_mfc, 
+                                       mec=self.yx_color, 
+                                       mew=100./self.dpi,
+                                       ls=self.yx_ls, 
+                                       yerr=self.rp.phaseyxerr, 
+                                       ecolor=self.yx_color,
+                                       capsize=self.marker_size)
 
-        #check the phase to see if any point are outside of [0:90]    
-        if min(self.rp.phasexy)<0 or min(self.rp.phaseyx+180)<0:
-            pymin = min([min(self.rp.phasexy), min(self.rp.phaseyx+180)])
-            if pymin>0:
+        #check the phase to see if any point are outside of [0:90]
+        if self.ylimits==None:
+            if min(self.rp.phasexy)<0 or min(self.rp.phaseyx+180)<0:
+                 pymin = min([min(self.rp.phasexy), min(self.rp.phaseyx+180)])
+                 if pymin>0:
+                    pymin = 0
+            else:
                 pymin = 0
-        else:
-            pymin=0
-        
-        if max(self.rp.phasexy)>90 or max(self.rp.phaseyx+180)>90:
-            pymax = min([max(self.rp.phasexy), max(self.rp.phaseyx+180)])
-            if pymax<91:
+            
+            if max(self.rp.phasexy)>90 or max(self.rp.phaseyx+180)>90:
+                pymax = min([max(self.rp.phasexy), max(self.rp.phaseyx+180)])
+                if pymax<91:
+                    pymax = 89.9
+            else:
                 pymax = 89.9
-        else:
-            pymax = 89.9
+                
+            self.ylimits = (pymin, pymax)
         
         #--> set axes properties
         self.axp.set_xlabel('Period (s)', fontdict)
         self.axp.set_ylabel('Phase (deg)', fontdict)
         self.axp.set_xscale('log')
-        self.axp.set_ylim(ymin=pymin, ymax=pymax)        
+        self.axp.set_ylim(self.ylimits)        
         self.axp.yaxis.set_major_locator(MultipleLocator(15))
         self.axp.yaxis.set_minor_locator(MultipleLocator(5))
-        self.axp.grid(True, alpha=.25)
+        self.axp.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+                      lw=.25)
         
         #===Plot the xx, yy components if desired==============================
         if self.plotnum==2:
@@ -299,29 +366,45 @@ class PlotResPhase(object):
             self.axr2.yaxis.set_label_coords(-.1, 0.5)
             
             #res_xx
-            self.ebxxr = self.axr2.errorbar(self.fn_z.period, self.rp.resxx, 
-                                            marker='s', ms=self.marker_size, 
-                                            mfc='None',mec='b', 
-                                            mew=100./self.dpi, ls='None', 
-                                            yerr=self.rp.resxxerr, ecolor='b')
+            self.ebxxr = self.axr2.errorbar(self.fn_z.period, 
+                                            self.rp.resxx, 
+                                            marker=self.xy_marker, 
+                                            ms=self.marker_size, 
+                                            mfc=self.xy_mfc,
+                                            mec=self.xy_color, 
+                                            mew=100./self.dpi,
+                                            ls=self.xy_ls, 
+                                            yerr=self.rp.resxxerr, 
+                                            ecolor=self.xy_color,
+                                            capsize=self.marker_size)
             
             #res_yy                              
-            self.ebyyr = self.axr2.errorbar(self.fn_z.period, self.rp.resyy, 
-                                            marker='o', ms=self.marker_size, 
-                                            mfc='None', mec='r', 
-                                            mew=100./self.dpi, ls='None', 
-                                            yerr=self.rp.resyyerr, ecolor='r')
+            self.ebyyr = self.axr2.errorbar(self.fn_z.period, 
+                                            self.rp.resyy, 
+                                            marker=self.yx_marker, 
+                                            ms=self.marker_size, 
+                                            mfc=self.yx_mfc, 
+                                            mec=self.yx_color, 
+                                            mew=100./self.dpi, 
+                                            ls=self.yx_ls, 
+                                            yerr=self.rp.resyyerr, 
+                                            ecolor=self.yx_color,
+                                            capsize=self.marker_size)
 
             #--> set axes properties
             plt.setp(self.axr2.get_xticklabels(), visible=False)
             self.axr2.set_yscale('log')
             self.axr2.set_xscale('log')
-            self.axr2.set_xlim(xlimits)
-            self.axr2.grid(True, alpha=.25)
-            self.axr2.legend((self.ebxxr[0],self.ebyyr[0]), 
+            self.axr2.set_xlim(self.xlimits)
+            self.axr2.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+                           lw=.25)
+            self.axr2.legend((self.ebxxr[0], self.ebyyr[0]), 
                             ('$E_x/B_x$','$E_y/B_y$'),
-                            loc=3, markerscale=1, borderaxespad=.01,
-                            labelspacing=.07, handletextpad=.2, borderpad=.02)
+                            loc=3, markerscale=1, 
+                            borderaxespad=.01,
+                            labelspacing=.07, 
+                            handletextpad=.2, 
+                            borderpad=.02)
             
             #-----Plot the phase-----------------------------------------------
             self.axp2=plt.subplot(gs[1,1],sharex=self.axr2)
@@ -329,18 +412,30 @@ class PlotResPhase(object):
             self.axp2.yaxis.set_label_coords(-.1, 0.5)
             
             #phase_xx
-            self.ebxxp = self.axp2.errorbar(self.fn_z.period, self.rp.phasexx, 
-                                            marker='s', ms=self.marker_size, 
-                                            mfc='None', mec='b', 
-                                            mew=100./self.dpi, ls='None', 
-                                            yerr=self.rp.phasexxerr, ecolor='b')
+            self.ebxxp = self.axp2.errorbar(self.fn_z.period, 
+                                            self.rp.phasexx, 
+                                            marker=self.xy_marker, 
+                                            ms=self.marker_size, 
+                                            mfc=self.xy_mfc, 
+                                            mec=self.xy_color, 
+                                            mew=100./self.dpi, 
+                                            ls=self.xy_ls, 
+                                            yerr=self.rp.phasexxerr,
+                                            ecolor=self.xy_color,
+                                            capsize=self.marker_size)
                                             
             #phase_yy
-            self.ebyyp = self.axp2.errorbar(self.fn_z.period, self.rp.phaseyy, 
-                                            marker='o', ms=self.marker_size, 
-                                            mfc='None', mec='r', 
-                                            mew=100./self.dpi, ls='None', 
-                                            yerr=self.rp.phaseyyerr, ecolor='r')
+            self.ebyyp = self.axp2.errorbar(self.fn_z.period,
+                                            self.rp.phaseyy, 
+                                            marker=self.yx_marker,
+                                            ms=self.marker_size, 
+                                            mfc=self.yx_mfc,
+                                            mec=self.yx_color, 
+                                            mew=100./self.dpi, 
+                                            ls=self.yx_ls, 
+                                            yerr=self.rp.phaseyyerr, 
+                                            ecolor=self.yx_color,
+                                            capsize=self.marker_size)
             
             #--> set axes properties
             self.axp2.set_xlabel('Period (s)', fontdict)
@@ -348,29 +443,46 @@ class PlotResPhase(object):
             self.axp2.set_ylim(ymin=-179.9, ymax=179.9)        
             self.axp2.yaxis.set_major_locator(MultipleLocator(30))
             self.axp2.yaxis.set_minor_locator(MultipleLocator(5))
-            self.axp2.grid(True, alpha=.25)       
+            self.axp2.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+                           lw=.25)       
         
         #===Plot the Determinant if desired====================================                          
         if self.plotnum==3:
                 
             #res_det
-            self.ebdetr = self.axr.errorbar(self.fn_z.period, self.rp.resdet, 
-                                            marker='d', ms=self.marker_size, 
-                                            mfc='None',mec='g', 
-                                            mew=100./self.dpi, ls='None', 
-                                            yerr=self.rp.resdeterr, ecolor='g')
+            self.ebdetr = self.axr.errorbar(self.fn_z.period, 
+                                            self.rp.resdet, 
+                                            marker=self.det_marker, 
+                                            ms=self.marker_size, 
+                                            mfc=self.det_mfc,
+                                            mec=self.det_color, 
+                                            mew=100./self.dpi, 
+                                            ls=self.det_ls, 
+                                            yerr=self.rp.resdeterr, 
+                                            ecolor=self.det_color,
+                                            capsize=self.marker_size)
         
             #phase_det
-            self.ebdetp = self.axp.errorbar(self.fn_z.period, self.rp.phasedet, 
-                                            marker='d', ms=self.marker_size, 
-                                            mfc='None', mec='g', 
-                                            mew=100./self.dpi, ls='None', 
-                                            yerr=self.rp.phasedeterr, ecolor='g')
+            self.ebdetp = self.axp.errorbar(self.fn_z.period, 
+                                            self.rp.phasedet, 
+                                            marker=self.det_marker, 
+                                            ms=self.marker_size, 
+                                            mfc=self.det_mfc, 
+                                            mec=self.det_color, 
+                                            mew=100./self.dpi, 
+                                            ls=self.det_ls, 
+                                            yerr=self.rp.phasedeterr, 
+                                            ecolor=self.det_color,
+                                            capsize=self.marker_size)
                                             
             self.axr.legend((self.ebxyr[0],self.ebyxr[0],self.ebdetr[0]),
                             ('$E_x/B_y$','$E_y/B_x$','$\det(\mathbf{\hat{Z}})$'),
-                            loc=3,markerscale=1,borderaxespad=.01,
-                            labelspacing=.07,handletextpad=.2,borderpad=.02)
+                            loc=3,
+                            markerscale=1,
+                            borderaxespad=.01,
+                            labelspacing=.07,
+                            handletextpad=.2,
+                            borderpad=.02)
         
         
         #make title and show
@@ -447,6 +559,22 @@ class PlotResPhase(object):
 
         self.fig.canvas.draw()
         
+    def redraw_plot(self):
+        """
+        use this function if you updated some parameters and want to re-plot.
+        """
+        plt.close(self.fig)
+        self.plot()
+        
+    def __str__(self):
+        """
+        rewrite the string builtin to give a useful message
+        """
+        
+        print "Plots Resistivity and phase for the different modes of the MT"+\
+              "response.  At the moment is supports the input of an .edi "+\
+              "file. Other formats that will be supported are the impedance"+\
+              "tensor and errors with an array of periods and .j format."
 
 #def resPhasePlots(filenamelst,plottype=1,ffactor=1,kwdict=None,plotnum=1,
 #                  ylim=[0,3],fignum=1,rotz=0):
