@@ -154,7 +154,8 @@ class PlotResPhase(object):
         
         #set plot limits
         self.xlimits = None
-        self.ylimits = None
+        self.res_limits = None
+        self.phase_limits = None
         
         #set font parameters
         self.font_size = 7
@@ -198,8 +199,14 @@ class PlotResPhase(object):
             if self.xlimits==None:
                 self.xlimits = (10**(np.floor(np.log10(self.fn_z.period[0]))),
                                 10**(np.ceil(np.log10((self.fn_z.period[-1])))))
-            if self.ylimits==None:
-                self.ylimits = (0,89.9)
+            if self.phase_limits==None:
+                self.phase_limits = (0,89.9)
+                
+            if self.res_limits == None:
+                self.res_limits = (10**(np.floor(np.log10(min[self.rp.resxy,
+                                                              self.rp.resyx]))),
+                                  10**(np.ceil(np.log10(max[self.rp.resxy,
+                                                            self.rp.resyx]))))
                      
         # ==> will add in other file types and the ability to put in just
         #     the impedance tensor and its error
@@ -210,19 +217,19 @@ class PlotResPhase(object):
         
         
         #set some parameters of the figure and subplot spacing
-        plt.rcParams['font.size'] = self.fontsize
+        plt.rcParams['font.size'] = self.font_size
         plt.rcParams['figure.subplot.right'] = .98
         plt.rcParams['figure.subplot.bottom'] = .1
         plt.rcParams['figure.subplot.top'] = .93
         
         #set the font properties for the axis labels
-        fontdict={'size':self.fontsize+2, 'weight':'bold'}
+        fontdict={'size':self.font_size+2, 'weight':'bold'}
         
         #create a grid to place the figures into, set to have 2 rows and 2 
         #columns to put any of the 4 components.  Make the phase plot
         #slightly shorter than the apparent resistivity plot and have the two
         #close to eachother vertically.
-        gs = gridspec.GridSpec(2, 2, height_ratios=[2,1.5], hspace=.05)
+        gs = gridspec.GridSpec(2, 2, height_ratios=[2,1.5], hspace=.01)
         
         #--> make figure for xy,yx components
         if self.plotnum==1 or self.plotnum==3:
@@ -240,8 +247,8 @@ class PlotResPhase(object):
             self.axp = plt.subplot(gs[1,:], sharex=self.axr)
             
             #place the y-coordinate labels in the same location for each axis
-            self.axr.yaxis.set_label_coords(-.055, 0.5)
-            self.axp.yaxis.set_label_coords(-.055, 0.5)
+            self.axr.yaxis.set_label_coords(-.0565, 0.5)
+            self.axp.yaxis.set_label_coords(-.0565, 0.5)
             
         #--> make figure for all 4 components
         elif self.plotnum==2:
@@ -297,6 +304,7 @@ class PlotResPhase(object):
         self.axr.set_yscale('log')
         self.axr.set_xscale('log')
         self.axr.set_xlim(self.xlimits)
+        self.axr.set_ylim(self.res_limits)
         self.axr.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
                       lw=.25)
         self.axr.legend((self.ebxyr[0],self.ebyxr[0]), 
@@ -336,7 +344,7 @@ class PlotResPhase(object):
                                        capsize=self.marker_size)
 
         #check the phase to see if any point are outside of [0:90]
-        if self.ylimits==None:
+        if self.phase_limits==None:
             if min(self.rp.phasexy)<0 or min(self.rp.phaseyx+180)<0:
                  pymin = min([min(self.rp.phasexy), min(self.rp.phaseyx+180)])
                  if pymin>0:
@@ -351,13 +359,13 @@ class PlotResPhase(object):
             else:
                 pymax = 89.9
                 
-            self.ylimits = (pymin, pymax)
+            self.phase_limits = (pymin, pymax)
         
         #--> set axes properties
         self.axp.set_xlabel('Period (s)', fontdict)
         self.axp.set_ylabel('Phase (deg)', fontdict)
         self.axp.set_xscale('log')
-        self.axp.set_ylim(self.ylimits)        
+        self.axp.set_ylim(self.phase_limits)        
         self.axp.yaxis.set_major_locator(MultipleLocator(15))
         self.axp.yaxis.set_minor_locator(MultipleLocator(5))
         self.axp.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
@@ -491,10 +499,10 @@ class PlotResPhase(object):
         
         #make title and show
         if self.title!=None:
-            self.fig.suptitle(self.title, fontsize=self.fontsize+2, 
+            self.fig.suptitle(self.title, fontsize=self.font_size+2, 
                               fontweight='bold')
         else:
-            self.fig.suptitle(self.fn_z.station, fontsize=self.fontsize+2, 
+            self.fig.suptitle(self.fn_z.station, fontsize=self.font_size+2, 
                          fontweight='bold')
         plt.show()
         
@@ -672,7 +680,7 @@ class MultipleResistivityPhasePlots(object):
     
     """
 
-    def __inti__(self, edilst, plotnum=1, plotstyle='1', fignum=1, dpi=300, 
+    def __init__(self, edilst, plotnum=1, plotstyle='1', fignum=1, dpi=300, 
                  rotz=0, plot_yn='y'):
         """
         Initialize parameters
@@ -712,13 +720,30 @@ class MultipleResistivityPhasePlots(object):
         
         #set plot limits
         self.xlimits = None
-        self.ylimits = None
+        self.res_limits = (10.**0,10.**3)
+        self.phase_limits = None
         
         #set font parameters
-        self.font_size = 7
+        self.font_size = 5
         
         #set scaling factor of the apparent resistivity
         self.ffactor = 1
+        
+        self.label_dict = {-6:'$10^{-6}$',
+                           -5:'$10^{-5}$',
+                           -4:'$10^{-4}$',
+                           -3:'$10^{-3}$',
+                           -2:'$10^{-2}$', 
+                           -1:'$10^{-1}$', 
+                            0:'$10^{0}$',
+                            1:'$10^{1}$',
+                            2:'$10^{2}$',
+                            3:'$10^{3}$',
+                            4:'$10^{4}$',
+                            5:'$10^{5}$',
+                            6:'$10^{6}$',
+                            7:'$10^{7}$',
+                            8:'$10^{8}$'}
 
         #plot on initializing
         if plot_yn=='y':
@@ -734,8 +759,852 @@ class MultipleResistivityPhasePlots(object):
             self.plotlst=[]
             for ii,edi in enumerate(self.edilst,1):
                 p1 = PlotResPhase(edi, fignum=ii, plotnum=self.plotnum, 
-                                  dpi=self.dpi, rotz=self.rotz)
+                                  dpi=self.dpi, rotz=self.rotz, plot_yn='n')
+                
+                #make sure all the properties are set to match the users
+                #line style between points
+                p1.xy_ls = self.xy_ls        
+                p1.yx_ls = self.yx_ls        
+                p1.det_ls = self.det_ls        
+                
+                #outline color
+                p1.xy_color = self.xy_color 
+                p1.yx_color = self.yx_color 
+                p1.det_color = self.det_color
+                
+                #face color
+                p1.xy_mfc = self.xy_mfc
+                p1.yx_mfc = self.yx_mfc
+                p1.det_mfc = self.det_mfc
+                
+                #maker
+                p1.xy_marker = self.xy_marker
+                p1.yx_marker = self.yx_marker
+                p1.det_marker = self.det_marker 
+                
+                #size
+                p1.marker_size = 2
+                
+                #set plot limits
+                p1.xlimits = self.xlimits
+                p1.res_limits = self.res_limits
+                p1.phase_limits = self.phase_limits
+
+                #set font parameters
+                p1.font_size = self.font_size
+                
+                #set scaling factor of the apparent resistivity
+                p1.ffactor = self.ffactor
+                
+                #--> plot the apparent resistivity and phase
                 self.plotlst.append(p1)
+                
+                p1.plot()
+        
+        #-----Plot All in one figure with each plot as a subfigure------------        
+        if self.plotstyle=='all':
+
+            ns = len(self.edilst)
+
+            #set some parameters of the figure and subplot spacing
+            plt.rcParams['font.size'] = self.font_size
+            plt.rcParams['figure.subplot.right'] = .98
+            plt.rcParams['figure.subplot.bottom'] = .1
+            plt.rcParams['figure.subplot.top'] = .93
+            
+            #set the font properties for the axis labels
+            fontdict={'size':self.font_size+2, 'weight':'bold'}
+            
+            #set figure size according to what the plot will be.
+            if self.plotnum==1 or self.plotnum==3:
+                self.figsize = [ns*4,6]
+                
+            elif self.plotnum==2:
+                self.figsize = [ns*8,6]
+                
+            #make a figure instance
+            self.fig = plt.figure(self.fignum, self.figsize, dpi=self.dpi)
+                
+            #make subplots as columns for all stations that need to be plotted
+            gs0 = gridspec.GridSpec(1, ns)
+                
+            #space out the subplots
+            gs0.update(hspace=.05, wspace=.05, left=.085)
+
+#            gridspec.GridSpecFromSubplotSpec(3, 3, subplot_spec=gs0[0])   
+            ii = -1    
+            for edi in self.edilst:
+                #check to see if the file given is an edi file
+                if edi.find('edi',-4,len(edi))>=0:
+                    print 'Reading ' + edi
+                    #create a Z object from the file            
+                    zz = Z.Z(edi)
+                    
+                    #get the reistivity and phase object
+                    rp = zz.getResPhase(thetar=self.rotz)
+                    
+                    #set x-axis limits from short period to long period
+                    if self.xlimits==None:
+                        self.xlimits = (10**(np.floor(np.log10(zz.period[0]))),
+                                        10**(np.ceil(np.log10((zz.period[-1])))))
+                    if self.phase_limits==None:
+                        self.phase_limits = (0,89.9)
+                    
+                    ii+=1
+
+                else:
+                    raise ValueError('Could not read file: ' + edi)
+
+                
+                #create a grid to place the figures into, set to have 2 rows and 2 
+                #columns to put any of the 4 components.  Make the phase plot
+                #slightly shorter than the apparent resistivity plot and have the two
+                #close to eachother vertically.
+                
+                #--> make figure for xy,yx components
+                if self.plotnum==1 or self.plotnum==3:
+                    #make subplots for each subplot in the figure
+                    ax1 = gridspec.GridSpecFromSubplotSpec(2, 1, 
+                                                           subplot_spec=gs0[ii],
+                                                           height_ratios=[2,1.5], 
+                                                           hspace=.01)
+                    axr = self.fig.add_subplot(ax1[0,0])
+                    axp = self.fig.add_subplot(ax1[1,0], sharex=axr)
+                    
+                    #place the y-coordinate labels in the same location for each axis
+                    if ii==0:
+                        axr.yaxis.set_label_coords(-.195, 0.5)
+                        axp.yaxis.set_label_coords(-.195, 0.5)
+                    
+                #--> make figure for all 4 components
+                elif self.plotnum==2:
+                    #make subplots for each subplot in the figure
+                    ax1 = gridspec.GridSpecFromSubplotSpec(2, 2, 
+                                                           subplot_spec=gs0[ii],
+                                                           height_ratios=[2,1.5], 
+                                                           hspace=.01)
+                    axr = self.fig.add_subplot(ax1[0,0])
+                    axp = self.fig.add_subplot(ax1[1,0], sharex=axr)
+                    axr2 = self.fig.add_subplot(ax1[0,1], sharex=axr)
+                    axp2 = self.fig.add_subplot(ax1[1,1], sharex=axr)
+                    
+                    #place the y-coordinate labels in the same location for each axis
+                    if ii==0:
+                        axr.yaxis.set_label_coords(-.195, 0.5)
+                        axp.yaxis.set_label_coords(-.195, 0.5)
+                
+                #=========Plot Z_xy and Z_yx=================================== 
+                if self.plotnum==1 or self.plotnum==2:
+                    #---------plot the apparent resistivity--------------------
+                    #--> plot as error bars and just as points xy-blue, yx-red
+                    #res_xy
+                    ebxyr = axr.errorbar(zz.period, 
+                                         rp.resxy, 
+                                         marker=self.xy_marker, 
+                                         ms=self.marker_size, 
+                                         mfc=self.xy_mfc, 
+                                         mec=self.xy_color, 
+                                         mew=100./self.dpi, 
+                                         ls=self.xy_ls, 
+                                         yerr=rp.resxyerr, 
+                                         ecolor=self.xy_color,
+                                         capsize=self.marker_size)
+                    
+                    #res_yx                              
+                    ebyxr = axr.errorbar(zz.period, 
+                                         rp.resyx, 
+                                         marker=self.yx_marker, 
+                                         ms=self.marker_size, 
+                                         mfc=self.yx_mfc,
+                                         mec=self.yx_color, 
+                                         mew=100./self.dpi,
+                                         ls=self.yx_ls, 
+                                         yerr=rp.resyxerr, 
+                                         ecolor=self.yx_color,
+                                         capsize=self.marker_size)
+                                                  
+                    #--> set axes properties
+                    plt.setp(axr.get_xticklabels(), visible=False)
+                    if ii==0:
+                        axr.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
+                                            fontdict=fontdict)
+                        axr.legend((ebxyr[0],ebyxr[0]), 
+                                    ('$E_x/B_y$','$E_y/B_x$'),
+                                    loc=3, 
+                                    markerscale=1, 
+                                    borderaxespad=.01,
+                                    labelspacing=.07, 
+                                    handletextpad=.2, 
+                                    borderpad=.02)
+                    else:
+                        plt.setp(axr.get_yticklabels(), visible=False)
+                                    
+                    axr.set_yscale('log')
+                    axr.set_xscale('log')
+                    axr.set_ylim(self.res_limits)
+                    axr.set_xlim(self.xlimits)
+                    axr.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+                                  lw=.25)
+                    
+                    
+                    #-----Plot the phase---------------------------------------
+                    #phase_xy
+                    ebxyp = axp.errorbar(zz.period, 
+                                         rp.phasexy, 
+                                         marker=self.xy_marker, 
+                                         ms=self.marker_size, 
+                                         mfc=self.xy_mfc,
+                                         mec=self.xy_color, 
+                                         mew=100./self.dpi,
+                                         ls=self.xy_ls,
+                                         yerr=rp.phasexyerr, 
+                                         ecolor=self.xy_color,
+                                         capsize=self.marker_size)
+                                                  
+                    #phase_yx: Note add 180 to place it in same quadrant as
+                    #phase_xy
+                    ebyxp = axp.errorbar(zz.period, 
+                                         rp.phaseyx+180, 
+                                         marker=self.yx_marker, 
+                                         ms=self.marker_size, 
+                                         mfc=self.yx_mfc, 
+                                         mec=self.yx_color, 
+                                         mew=100./self.dpi,
+                                         ls=self.yx_ls, 
+                                         yerr=rp.phaseyxerr, 
+                                         ecolor=self.yx_color,
+                                         capsize=self.marker_size)
+            
+                    #check the phase to see if any point are outside of [0:90]
+                    if self.phase_limits==None:
+                        if min(self.rp.phasexy)<0 or min(self.rp.phaseyx+180)<0:
+                             pymin = min([min(self.rp.phasexy), 
+                                          min(self.rp.phaseyx+180)])
+                             if pymin>0:
+                                pymin = 0
+                        else:
+                            pymin = 0
+                        
+                        if max(self.rp.phasexy)>90 or max(self.rp.phaseyx+180)>90:
+                            pymax = min([max(self.rp.phasexy), 
+                                         max(self.rp.phaseyx+180)])
+                            if pymax<91:
+                                pymax = 89.9
+                        else:
+                            pymax = 89.9
+                            
+                        self.phase_limits = (pymin, pymax)
+                    
+                    #--> set axes properties
+                    axp.set_xlabel('Period (s)', fontdict)
+                   
+                    if ii==0:
+                        axp.set_ylabel('Phase (deg)', fontdict)
+                    
+                    else:
+                        plt.setp(axp.get_yticklabels(), visible=False)
+                        
+                    axp.set_xscale('log')
+                    axp.set_ylim(self.phase_limits)        
+                    axp.yaxis.set_major_locator(MultipleLocator(15))
+                    axp.yaxis.set_minor_locator(MultipleLocator(5))
+                    axp.grid(True, alpha=.25, 
+                                  which='both', 
+                                  color=(.25,.25,.25),
+                                  lw=.25)
+                                  
+                    tklabels=[self.label_dict[tt] 
+                              for tt in np.arange(np.log10(self.xlimits[0]),
+                                                  np.log10(self.xlimits[1])+1)]
+                    tklabels[0]=''
+                    tklabels[-1]=''
+                    
+                    axp.set_xticklabels(tklabels,
+                                        fontdict={'size':self.font_size})
+                    
+                    #====Plot the Z_xx, Z_yy components if desired=============
+                    if self.plotnum==2:
+                        #---------plot the apparent resistivity----------------
+                        axr2.yaxis.set_label_coords(-.1, 0.5)
+                        
+                        #res_xx
+                        ebxxr = axr2.errorbar(zz.period, 
+                                              rp.resxx, 
+                                              marker=self.xy_marker, 
+                                              ms=self.marker_size, 
+                                              mfc=self.xy_mfc,
+                                              mec=self.xy_color, 
+                                              mew=100./self.dpi,
+                                              ls=self.xy_ls, 
+                                              yerr=rp.resxxerr, 
+                                              ecolor=self.xy_color,
+                                              capsize=self.marker_size)
+                        
+                        #res_yy                              
+                        ebyyr = axr2.errorbar(zz.period, 
+                                              rp.resyy, 
+                                              marker=self.yx_marker, 
+                                              ms=self.marker_size, 
+                                              mfc=self.yx_mfc, 
+                                              mec=self.yx_color, 
+                                              mew=100./self.dpi, 
+                                              ls=self.yx_ls, 
+                                              yerr=rp.resyyerr, 
+                                              ecolor=self.yx_color,
+                                              capsize=self.marker_size)
+            
+                        #--> set axes properties
+                        plt.setp(axr2.get_xticklabels(), visible=False)
+                        
+                        axr2.set_yscale('log')
+                        axr2.set_xscale('log')
+                        axr2.set_xlim(self.xlimits)
+                        axr2.grid(True, 
+                                  alpha=.25, 
+                                  which='both', 
+                                  color=(.25,.25,.25),
+                                  lw=.25)
+                        if ii==0:
+                            axr2.legend((ebxxr[0], ebyyr[0]), 
+                                        ('$E_x/B_x$','$E_y/B_y$'),
+                                        loc=3, markerscale=1, 
+                                        borderaxespad=.01,
+                                        labelspacing=.07, 
+                                        handletextpad=.2, 
+                                        borderpad=.02)
+                                            
+    #                    else:
+    #                        plt.setp(axr2.get_yticklabels(), visible=False)
+                        
+                        #-----Plot the phase-----------------------------------
+                        
+                        axp2.yaxis.set_label_coords(-.1, 0.5)
+                        
+                        #phase_xx
+                        ebxxp = axp2.errorbar(zz.period, 
+                                              rp.phasexx, 
+                                              marker=self.xy_marker, 
+                                              ms=self.marker_size, 
+                                              mfc=self.xy_mfc, 
+                                              mec=self.xy_color, 
+                                              mew=100./self.dpi, 
+                                              ls=self.xy_ls, 
+                                              yerr=rp.phasexxerr,
+                                              ecolor=self.xy_color,
+                                              capsize=self.marker_size)
+                                                        
+                        #phase_yy
+                        ebyyp = axp2.errorbar(zz.period,
+                                              rp.phaseyy, 
+                                              marker=self.yx_marker,
+                                              ms=self.marker_size, 
+                                              mfc=self.yx_mfc,
+                                              mec=self.yx_color, 
+                                              mew=100./self.dpi, 
+                                              ls=self.yx_ls, 
+                                              yerr=rp.phaseyyerr, 
+                                              ecolor=self.yx_color,
+                                              capsize=self.marker_size)
+                        
+                        #--> set axes properties
+                        axp2.set_xlabel('Period (s)', fontdict)
+                        axp2.set_xscale('log')
+                        axp2.set_ylim(ymin=-179.9, ymax=179.9)        
+                        axp2.yaxis.set_major_locator(MultipleLocator(30))
+                        axp2.yaxis.set_minor_locator(MultipleLocator(5))
+                        axp2.set_xticklabels(tklabels,
+                                            fontdict={'size':self.font_size})
+                        axp2.grid(True, 
+                                  alpha=.25, 
+                                  which='both', 
+                                  color=(.25,.25,.25),
+                                  lw=.25) 
+                                   
+                
+                #===Plot the Determinant if desired============================                          
+                if self.plotnum==3:
+                        
+                    #res_det
+                    ebdetr = axr.errorbar(zz.period, 
+                                          rp.resdet, 
+                                          marker=self.det_marker, 
+                                          ms=self.marker_size, 
+                                          mfc=self.det_mfc,
+                                          mec=self.det_color, 
+                                          mew=100./self.dpi, 
+                                          ls=self.det_ls, 
+                                          yerr=rp.resdeterr, 
+                                          ecolor=self.det_color,
+                                          capsize=self.marker_size)
+                
+                    #phase_det
+                    ebdetp = axp.errorbar(zz.period, 
+                                          rp.phasedet, 
+                                          marker=self.det_marker, 
+                                          ms=self.marker_size, 
+                                          mfc=self.det_mfc, 
+                                          mec=self.det_color, 
+                                          mew=100./self.dpi, 
+                                          ls=self.det_ls, 
+                                          yerr=rp.phasedeterr, 
+                                          ecolor=self.det_color,
+                                          capsize=self.marker_size)
+                    
+#                    if ii==0:                                
+#                        axr.legend((ebdetr[0]),
+#                                    ('$\det(\mathbf{\hat{Z}})$'),
+#                                    loc=3,
+#                                    markerscale=1,
+#                                    borderaxespad=.01,
+#                                    labelspacing=.07,
+#                                    handletextpad=.2,
+#                                    borderpad=.02)
+                                    
+                    #--> set axes properties
+                    plt.setp(axr.get_xticklabels(), visible=False)
+                    if ii==0:
+                        axr.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
+                                            fontdict=fontdict)
+                    else:
+                        plt.setp(axr.get_yticklabels(), visible=False)
+                                    
+                    axr.set_yscale('log')
+                    axr.set_xscale('log')
+                    axr.set_ylim(self.res_limits)
+                    axr.set_xlim(self.xlimits)
+                    axr.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+                                  lw=.25)
+                                  
+                    #--> set axes properties
+                    axp.set_xlabel('Period (s)', fontdict)
+                   
+                    if ii==0:
+                        axp.set_ylabel('Phase (deg)', fontdict)
+                    
+                    else:
+                        plt.setp(axp.get_yticklabels(), visible=False)
+                        
+                    axp.set_xscale('log')
+                    axp.set_ylim(self.phase_limits)        
+                    axp.yaxis.set_major_locator(MultipleLocator(15))
+                    axp.yaxis.set_minor_locator(MultipleLocator(5))
+                    tklabels=[self.label_dict[tt] 
+                              for tt in np.arange(np.log10(self.xlimits[0]),
+                                                  np.log10(self.xlimits[1])+1)]
+                    tklabels[0]=''
+                    tklabels[-1]=''
+                    
+                    axp.set_xticklabels(tklabels,
+                                        fontdict={'size':self.font_size})
+                    axp.grid(True, alpha=.25, 
+                                  which='both', 
+                                  color=(.25,.25,.25),
+                                  lw=.25)
+                
+                
+                #make title and show
+                axr.set_title(zz.station, fontsize=self.font_size, 
+                              fontweight='bold')
+                plt.show()
+        
+        #=====Plot all responses into one plot to compare changes=============
+        if self.plotstyle=='compare':
+            ns = len(self.edilst)
+            
+            cxy=[(0,0+float(cc)/ns,1-float(cc)/ns) for cc in range(ns)]
+            cyx=[(1,float(cc)/ns,0) for cc in range(ns)]
+            cdet=[(0,1-float(cc)/ns,0) for cc in range(ns)]
+            mxy=['s','D','x','+','*','1','3','4']*5
+            myx=['o','h','8','p','H',7,4,6]*5
+            
+            legendlst=[]
+            stationlst=[]
+
+            #set some parameters of the figure and subplot spacing
+            plt.rcParams['font.size'] = self.font_size
+            plt.rcParams['figure.subplot.right'] = .98
+            plt.rcParams['figure.subplot.bottom'] = .1
+            plt.rcParams['figure.subplot.top'] = .93
+            
+            #set the font properties for the axis labels
+            fontdict={'size':self.font_size+2, 'weight':'bold'}
+            
+            #set figure size according to what the plot will be.
+            if self.plotnum==1 or self.plotnum==3:
+                self.figsize = [4,6]
+                
+            elif self.plotnum==2:
+                self.figsize = [6,6]
+                
+            #make a figure instance
+            self.fig = plt.figure(self.fignum, self.figsize, dpi=self.dpi)
+            
+            #make subplots
+            gs = gridspec.GridSpec(2, 2, height_ratios=[2,1.5], hspace=.01) 
+            
+             #--> make figure for xy,yx components
+            if self.plotnum==1 or self.plotnum==3:
+                
+                #space out the subplots
+                gs.update(hspace=.05, wspace=.15, left=.1)
+                
+                #--> create the axes instances
+                #apparent resistivity axis
+                axr = plt.subplot(gs[0,:])
+                
+                #phase axis which shares the x axis (period) with the resistivity
+                axp = plt.subplot(gs[1,:], sharex=axr)
+                
+                #place the y-coordinate labels in the same location for each axis
+                axr.yaxis.set_label_coords(-.0565, 0.5)
+                axp.yaxis.set_label_coords(-.0565, 0.5)
+                
+            #--> make figure for all 4 components
+            elif self.plotnum==2:
+                #make figure instance
+                self.fig = plt.figure(self.fignum, self.figsize, dpi=self.dpi)
+                
+                #space out the subplots
+                gs.update(hspace=.05, wspace=.15, left=.07)
+                
+                #--> create axes instance
+                #apparent resistivity
+                axr = plt.subplot(gs[0,0])
+                axr2 = plt.subplot(gs[0,1])
+                
+                #phase axis which shares the x axis (period) with the resistivity
+                axp = plt.subplot(gs[1,0],sharex=axr)
+                axp2 = plt.subplot(gs[1,1],sharex=axr)
+                
+                #place the y-coordinate labels in the same location for each axis
+                axr.yaxis.set_label_coords(-.075, 0.5)
+                axp.yaxis.set_label_coords(-.075, 0.5)
+    
+            for ii,edi in enumerate(self.edilst):
+                #check to see if the file given is an edi file
+                if edi.find('edi',-4,len(edi))>=0:
+                    print 'Reading ' + edi
+                    #create a Z object from the file            
+                    zz = Z.Z(edi)
+                    
+                    #get the reistivity and phase object
+                    rp = zz.getResPhase(thetar=self.rotz)
+                    
+                    #set x-axis limits from short period to long period
+                    if self.xlimits==None:
+                        self.xlimits = (10**(np.floor(np.log10(zz.period[0]))),
+                                        10**(np.ceil(np.log10((zz.period[-1])))))
+                    if self.phase_limits==None:
+                        self.phase_limits = (0,89.9)
+                    
+                    stationlst.append(zz.station)
+
+                else:
+                    raise ValueError('Could not read file: ' + edi)
+                
+                #=========Plot Z_xy and Z_yx=================================== 
+                if self.plotnum==1 or self.plotnum==2:
+                    #---------plot the apparent resistivity--------------------
+                    #--> plot as error bars and just as points xy-blue, yx-red
+                    #res_xy
+                    ebxyr = axr.errorbar(zz.period, 
+                                         rp.resxy, 
+                                         marker=mxy[ii], 
+                                         ms=self.marker_size, 
+                                         mfc='None', 
+                                         mec=cxy[ii], 
+                                         mew=100./self.dpi, 
+                                         ls=self.xy_ls, 
+                                         yerr=rp.resxyerr, 
+                                         ecolor=cxy[ii],
+                                         capsize=self.marker_size)
+                    
+                    #res_yx                              
+                    ebyxr = axr.errorbar(zz.period, 
+                                         rp.resyx, 
+                                         marker=myx[ii], 
+                                         ms=self.marker_size, 
+                                         mfc='None',
+                                         mec=cyx[ii], 
+                                         mew=100./self.dpi,
+                                         ls=self.yx_ls, 
+                                         yerr=rp.resyxerr, 
+                                         ecolor=cyx[ii],
+                                         capsize=self.marker_size)
+                                                  
+
+                    #-----Plot the phase---------------------------------------
+                    #phase_xy
+                    ebxyp = axp.errorbar(zz.period, 
+                                         rp.phasexy, 
+                                         marker=mxy[ii], 
+                                         ms=self.marker_size, 
+                                         mfc='None',
+                                         mec=cxy[ii], 
+                                         mew=100./self.dpi,
+                                         ls=self.xy_ls,
+                                         yerr=rp.phasexyerr, 
+                                         ecolor=cxy[ii],
+                                         capsize=self.marker_size)
+                                                  
+                    #phase_yx: Note add 180 to place it in same quadrant as
+                    #phase_xy
+                    ebyxp = axp.errorbar(zz.period, 
+                                         rp.phaseyx+180, 
+                                         marker=myx[ii], 
+                                         ms=self.marker_size, 
+                                         mfc='None',
+                                         mec=cyx[ii], 
+                                         mew=100./self.dpi,
+                                         ls=self.yx_ls, 
+                                         yerr=rp.phaseyxerr, 
+                                         ecolor=cyx[ii],
+                                         capsize=self.marker_size)
+            
+
+                    legendlst.append([ebxyr,ebyxr])             
+                    
+                    #====Plot the Z_xx, Z_yy components if desired=============
+                    if self.plotnum==2:
+                        #---------plot the apparent resistivity----------------
+                        axr2.yaxis.set_label_coords(-.1, 0.5)
+                        
+                        #res_xx
+                        ebxxr = axr2.errorbar(zz.period, 
+                                              rp.resxx, 
+                                              marker=mxy[ii], 
+                                              ms=self.marker_size, 
+                                              mfc='None',
+                                              mec=cxy[ii], 
+                                              mew=100./self.dpi,
+                                              ls=self.xy_ls, 
+                                              yerr=rp.resxxerr, 
+                                              ecolor=cxy[ii],
+                                              capsize=self.marker_size)
+                        
+                        #res_yy                              
+                        ebyyr = axr2.errorbar(zz.period, 
+                                              rp.resyy, 
+                                              marker=myx[ii], 
+                                              ms=self.marker_size, 
+                                              mfc='None', 
+                                              mec=cyx[ii], 
+                                              mew=100./self.dpi, 
+                                              ls=self.yx_ls, 
+                                              yerr=rp.resyyerr, 
+                                              ecolor=cyx[ii],
+                                              capsize=self.marker_size)
+            
+                                            
+                        #-----Plot the phase-----------------------------------
+                        
+                        axp2.yaxis.set_label_coords(-.1, 0.5)
+                        
+                        #phase_xx
+                        ebxxp = axp2.errorbar(zz.period, 
+                                              rp.phasexx, 
+                                              marker=mxy[ii], 
+                                              ms=self.marker_size, 
+                                              mfc='None', 
+                                              mec=cxy[ii], 
+                                              mew=100./self.dpi, 
+                                              ls=self.xy_ls, 
+                                              yerr=rp.phasexxerr,
+                                              ecolor=cxy[ii],
+                                              capsize=self.marker_size)
+                                                        
+                        #phase_yy
+                        ebyyp = axp2.errorbar(zz.period,
+                                              rp.phaseyy, 
+                                              marker=myx[ii],
+                                              ms=self.marker_size, 
+                                              mfc='None',
+                                              mec=cyx[ii], 
+                                              mew=100./self.dpi, 
+                                              ls=self.yx_ls, 
+                                              yerr=rp.phaseyyerr, 
+                                              ecolor=cyx[ii],
+                                              capsize=self.marker_size)
+                        
+
+                                   
+                
+                #===Plot the Determinant if desired============================                          
+                if self.plotnum==3:
+                        
+                    #res_det
+                    ebdetr = axr.errorbar(zz.period, 
+                                          rp.resdet, 
+                                          marker=mxy[ii], 
+                                          ms=self.marker_size, 
+                                          mfc='None',
+                                          mec=cdet[ii], 
+                                          mew=100./self.dpi, 
+                                          ls=self.det_ls, 
+                                          yerr=rp.resdeterr, 
+                                          ecolor=cdet[ii],
+                                          capsize=self.marker_size)
+                
+                    #phase_det
+                    ebdetp = axp.errorbar(zz.period, 
+                                          rp.phasedet, 
+                                          marker=mxy[ii], 
+                                          ms=self.marker_size, 
+                                          mfc='None', 
+                                          mec=cdet[ii], 
+                                          mew=100./self.dpi, 
+                                          ls=self.det_ls, 
+                                          yerr=rp.phasedeterr, 
+                                          ecolor=cdet[ii],
+                                          capsize=self.marker_size)
+                    
+                    legendlst.append(ebdetr)
+                                    
+            #-------set axis properties----------------------------------------
+            axr.set_yscale('log')
+            axr.set_xscale('log')
+            axr.set_ylim(self.res_limits)
+            axr.set_xlim(self.xlimits)
+            axr.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+                          lw=.25)
+            plt.setp(axr.get_xticklabels(), visible=False)
+            
+            axr.set_ylabel('App. Resistivity ($\Omega \cdot$m)',
+                           fontdict=fontdict)
+                          
+            #check the phase to see if any point are outside of [0:90]
+            if self.phase_limits==None:
+                self.phase_limits = (0, 89.99)
+            
+            #--> set axes properties
+            axp.set_xlabel('Period (s)', fontdict=fontdict)
+            axp.set_ylabel('Phase (deg)',fontdict=fontdict)
+            axp.set_xscale('log')
+            axp.set_ylim(self.phase_limits)        
+            axp.yaxis.set_major_locator(MultipleLocator(15))
+            axp.yaxis.set_minor_locator(MultipleLocator(5))
+            axp.grid(True, alpha=.25, 
+                          which='both', 
+                          color=(.25,.25,.25),
+                          lw=.25)
+            
+            #make legend
+            if self.plotnum==1:
+                llst=[ll[0] for ll in legendlst]+[ll[1] for ll in legendlst]
+                slst=[ss+'_xy' for ss in stationlst]+\
+                     [ss+'_yx' for ss in stationlst]
+                     
+                axr.legend(llst, 
+                        slst,
+                        loc=3,
+                        ncol=2,
+                        markerscale=1, 
+                        borderaxespad=.01,
+                        labelspacing=.07, 
+                        handletextpad=.2, 
+                        borderpad=.02)
+            elif self.plotnum==3:
+                llst=[ll[0] for ll in legendlst]
+                slst=[ss+'_det' for ss in stationlst]
+                     
+                axr.legend(llst, 
+                        slst,
+                        loc=3,
+                        markerscale=1, 
+                        borderaxespad=.01,
+                        labelspacing=.07, 
+                        handletextpad=.2, 
+                        borderpad=.02)
+
+            
+            if self.plotnum==2:
+                llst=[ll[0] for ll in legendlst]+[ll[1] for ll in legendlst]
+                slst=[ss+'_xx' for ss in stationlst]+\
+                     [ss+'_yy' for ss in stationlst]
+                     
+                axr2.legend(llst, 
+                        slst,
+                        loc=3,
+                        ncol=2,
+                        markerscale=1, 
+                        borderaxespad=.01,
+                        labelspacing=.07, 
+                        handletextpad=.2, 
+                        borderpad=.02)
+                
+                axr2.set_yscale('log')
+                axr2.set_xscale('log')
+                axr2.set_xlim(self.xlimits)
+                axr2.grid(True, 
+                          alpha=.25, 
+                          which='both', 
+                          color=(.25,.25,.25),
+                          lw=.25)
+                plt.setp(axr2.get_xticklabels(), visible=False)
+                                
+                #--> set axes properties
+                axp2.set_xlabel('Period (s)', fontdict)
+                axp2.set_xscale('log')
+                axp2.set_ylim(ymin=-179.9, ymax=179.9)        
+                axp2.yaxis.set_major_locator(MultipleLocator(30))
+                axp2.yaxis.set_minor_locator(MultipleLocator(5))
+                axp2.grid(True, 
+                          alpha=.25, 
+                          which='both', 
+                          color=(.25,.25,.25),
+                          lw=.25) 
+        
+        
+            plt.show()
+            
+            
+
+    def update_plot(self):
+        """
+        update any parameters that where changed using the built-in draw from
+        canvas.  
+        
+        Use this if you change an of the .fig or axes properties
+        
+        :Example: ::
+            
+            >>> # to change the grid lines to only be on the major ticks
+            >>> import mtpy.imaging.mtplottools as mtplot
+            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
+            >>> [ax.grid(True, which='major') for ax in [p1.axr,p1.axp]]
+            >>> p1.update_plot()
+        
+        """
+
+        self.fig.canvas.draw()
+        
+    def redraw_plot(self):
+        """
+        use this function if you updated some attributes and want to re-plot.
+        
+        :Example: ::
+            
+            >>> # change the color and marker of the xy components
+            >>> import mtpy.imaging.mtplottools as mtplot
+            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
+            >>> p1.xy_color = (.5,.5,.9)
+            >>> p1.xy_marker = '*'
+            >>> p1.redraw_plot()
+        """
+        
+        plt.close(self.fig)
+        self.plot()
+        
+    def __str__(self):
+        """
+        rewrite the string builtin to give a useful message
+        """
+        
+        return "Plots resistivity and phase for the different modes of the MT \n" +\
+              "response for multiple sites. At the moment it supports the \n"+\
+              "input of an .edi file. Other formats that will be supported\n"+\
+              "are the impedance tensor and errors with an array of periods\n"+\
+              "and .j format.\n"        
 
     
 #def resPhasePlots(filenamelst,plottype=1,ffactor=1,kwdict=None,plotnum=1,
