@@ -76,7 +76,7 @@ import mtpy.utils.calculator as MTc
 import mtpy.utils.exceptions as MTexceptions
 
 #reload(MTexceptions)
-#reload(MTformat)
+reload(MTformat)
 reload(MTc)
 
 
@@ -112,13 +112,13 @@ class Edi(object):
                 self.filename = None
 
         self.in_filestring = None
-        self.head = {}
-        self.info_string = None
-        self.info_dict = {}
-        self.definemeas = {}
-        self.hmeas_emeas = None
-        self.mtsect = {}
-        self.freq = None
+        self._head = {}
+        self._info_string = None
+        self._info_dict = {}
+        self._definemeas = {}
+        self._hmeas_emeas = None
+        self._mtsect = {}
+        self._freq = None
         self.zrot = None
         self.z = None
         self.zerr = None
@@ -335,19 +335,30 @@ class Edi(object):
 
         return new_t_dict
 
-    def periods(self):
+    def _get_periods(self):
         """
-            Return a list of periods instead of frequency (output values in seconds).
-        """
-
-        return list( 1./np.array(self.frequencies()) )
-
-    def frequencies(self):
-        """
-            Return a list of the frequencies (output values in Hertz).
+            Return a list of periods (output values in seconds).
         """
 
-        return list(self.freq)
+        return list( 1./np.array(self.freq) )
+    
+    def _set_periods(self, list_of_periods):
+        """
+            Set frequencies by a list of periods (values in seconds).
+        """
+        if len(list_of_periods) is not len(self.z):
+            print 'length of periods list not correct (%i instead of %i)'%(len(list_of_periods), len(self.z))
+            return
+        self.freq = list(1./np.array(list_of_periods) )
+
+    periods = property(_get_periods, _set_periods, doc='List of periods (values in seconds)')    
+
+    # def frequencies(self):
+    #     """
+    #         Return a list of the frequencies (output values in Hertz).
+    #     """
+
+    #     return list(self.freq)
 
     def n_freqs(self):
         """
@@ -357,27 +368,19 @@ class Edi(object):
         return len(self.freq)
 
 
-    def lat(self):
-        """
-            Return latitude value in degrees.
-        """
+    def _getlat(self): return self.head['lat']
+    def _setlat(self, value): self.head['lat'] = MTformat._assert_position_format('lat',value)
+    lat = property(_getlat, _setlat, doc='Location latitude in degrees')
+   
 
-        return self.head['lat']
-
-    def lon(self):
-        """
-            Return longitude value in degrees.
-        """
-
-        return self.head['long']
-
-    def elev(self):
-        """
-            Return elevation value in meters.
-        """
-
-        return self.head['elev']
-
+    def _getlong(self): return self.head['long']
+    def _setlong(self, value): self.head['long'] = MTformat._assert_position_format('long',value)
+    long = property(_getlong, _setlong, doc='Location longitude in degrees')
+ 
+    def _getelev(self): return self.head['elev']
+    def _setelev(self, value): self.head['elev'] = MTformat._assert_position_format('elev',value)
+    elev = property(_getelev, _setelev, doc='Location elevation in meters')
+ 
 
 
     def _read_head(self, edistring):
@@ -397,12 +400,12 @@ class Edi(object):
             k = j.split('=')
             key = str(k[0]).lower().strip()
             value = k[1].replace('"','')
-            if key in ['lat','long','lon','latitude','longitude']:
+            if key in ['lat','long','lon','latitude','longitude','ele','elev','elevation']:
                 value = MTformat._assert_position_format(key,value)
 
             head_dict[key] = value
 
-        self.head = head_dict
+        self._head = head_dict
 
     def _read_info(self, edistring):
         """
@@ -414,12 +417,13 @@ class Edi(object):
         except:
             raise
 
-        self.info_string = temp_string.strip()
-
-        info_dict = {}
+        self._info_string = temp_string.strip()
+        
 
         t1 = temp_string.strip().split('\n')
         t2 = [i.strip() for i in t1 if '=' in i or ':' in i]
+
+        info_dict = {}
 
         for tmp_str in t2:
             #fill dictionary
@@ -454,7 +458,7 @@ class Edi(object):
 
         info_dict['Z_unit'] = 'km/s'
 
-        self.info_dict = info_dict
+        self._info_dict = info_dict
 
 
 
@@ -490,7 +494,7 @@ class Edi(object):
             raise
 
 
-        self.definemeas = d_dict
+        self._definemeas = d_dict
 
 
 
@@ -510,7 +514,7 @@ class Edi(object):
             lo_j = j.split()
             lo_hmeas_emeas.append(tuple(lo_j))
 
-        self.hmeas_emeas = lo_hmeas_emeas
+        self._hmeas_emeas = lo_hmeas_emeas
 
 
     def _read_mtsect(self, edistring):
@@ -538,7 +542,7 @@ class Edi(object):
             raise
 
 
-        self.mtsect = m_dict
+        self._mtsect = m_dict
 
 
     def _read_freq(self, edistring):
@@ -563,7 +567,7 @@ class Edi(object):
                 except:
                     passs
 
-        self.freq = lo_freqs
+        self._freq = lo_freqs
 
 
     def _read_z(self, edistring, Bscale):
@@ -937,7 +941,7 @@ class Edi(object):
         self.zrot = list( (np.array(self.zrot) + angle)%360)
 
 
-    def  rho_phi(self):
+    def _get_rho_phi(self):
         """
             Return values for resistivity (rho - in Ohm m) and phase (phi - in degrees).
 
@@ -974,14 +978,13 @@ class Edi(object):
 
 
 
-    def set_rho_phi(self, rho_array, phi_array):
+    def _set_rho_phi(self, rho_array, phi_array):
         """
             Set values for resistivity (rho - in Ohm m) and phase (phi - in degrees).
 
             Updates the attributes "z, zerr".
 
         """
-
 
         if self.z is not None:
             z_new = copy.copy(self.z)
@@ -1018,8 +1021,11 @@ class Edi(object):
 
         self.z = z_new
 
+    rho_phi = property(_get_rho_phi,_set_rho_phi,doc='Values for resistivity (rho - in Ohm m) and phase (phi - in degrees). Updates the attributes "z, zerr"')
 
-    def set_head(self, head_dict):
+
+
+    def _set_head(self, head_dict):
         """
             Set the attribute 'head'.
 
@@ -1030,10 +1036,13 @@ class Edi(object):
 
         """
 
-        self.head = head_dict
+        self._head = head_dict
+    def _get_head(self): return self._head
+    head = property(_get_head, _set_head, doc='HEAD attribute of EDI file')
 
 
-    def set_info_dict(self,info_dict):
+
+    def _set_info_dict(self,info_dict):
         """
             Set the attribute 'info_dict'.
 
@@ -1044,10 +1053,12 @@ class Edi(object):
 
         """
 
-        self.info_dict = info_dict
+        self._info_dict = info_dict
+    def _get_info_dict(self): return self._info_dict
+    info_dict = property(_get_info_dict, _set_info_dict, doc='INFO section dictionary')
 
 
-    def set_info_string(self,info_string):
+    def _set_info_string(self,info_string):
         """
             Set the attribute 'info_string'.
 
@@ -1058,7 +1069,9 @@ class Edi(object):
 
         """
 
-        self.info_string = info_string
+        self._info_string = info_string
+    def _get_info_string(self): return self._info_string
+    info_string = property(_get_info_string, _set_info_string, doc='INFO section string')
 
 
     def set_z(self, z_array):
@@ -1135,7 +1148,7 @@ class Edi(object):
         self.tippererr = tippererr_array
 
 
-    def set_definemeas(self,definemeas_dict):
+    def _set_definemeas(self,definemeas_dict):
         """
             Set the attribute 'definemeas'.
 
@@ -1145,10 +1158,26 @@ class Edi(object):
             No test for consistency!
 
         """
-        self.definemeas = definemeas_dict
+        self._definemeas = definemeas_dict
+    def _get_definemeas(self): return self._definemeas
+    definemeas = property(_get_definemeas, _set_definemeas, doc='DEFINEMEAS section dictionary')
+
+    def _set_hmeas_emeas(self,hmeas_emeas_list):
+        """
+            Set the attribute 'hmeas_emeas'.
+
+            Input:
+            hmeas_emeas section list of 7-tuples
+
+            No test for consistency!
+
+        """
+        self._hmeas_emeas = hmeas_emeas_list
+    def _get_hmeas_emeas(self): return self._hmeas_emeas
+    hmeas_emeas = property(_get_hmeas_emeas, _set_hmeas_emeas, doc='hmeas_emeas section list of 7-tuples')
 
 
-    def set_mtsect(self, mtsect_dict):
+    def _set_mtsect(self, mtsect_dict):
         """
             Set the attribute 'mtsect'.
 
@@ -1159,7 +1188,9 @@ class Edi(object):
 
         """
 
-        sel.mtsect = mtsect_dict
+        self._mtsect = mtsect_dict
+    def _get_mtsect(self): return self._mtsect
+    mtsect = property(_get_mtsect, _set_mtsect, doc='MTSECT section dictionary')
 
 
 
@@ -1209,7 +1240,7 @@ class Edi(object):
         pass
 
 
-    def set_frequencies(self, lo_frequencies):
+    def _set_frequencies(self, lo_frequencies):
         """
             Set the list of frequencies.
 
@@ -1223,8 +1254,9 @@ class Edi(object):
             print 'length of frequency list not correct (%i instead of %i)'%(len(lo_frequencies), len(self.z))
             return
 
-        self.freq = lo_frequencies
-
+        self._freq = lo_frequencies
+    def _get_frequencies(self): return self._freq
+    freq = property(_get_frequencies, _set_frequencies, doc='list of frequencies')
 
 
     def set_zrot(self, angle):

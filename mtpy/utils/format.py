@@ -29,8 +29,8 @@ def _assert_position_format(coordinate, value):
     If lat/lon are given in deg,min,sec it is converted do degrees. The value is returned, if no exception was raised 
 
     """
+    if coordinate in ['ele','elev','elevation']:
 
-    if coordinate == 'elevation':
         try:
             elev = float(value)
         except: 
