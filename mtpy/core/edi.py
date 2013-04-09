@@ -3,8 +3,8 @@
 """
 mtpy/mtpy/core/edi.py
 
-Contains classes and functions for handling EDI files. 
- 
+Contains classes and functions for handling EDI files.
+
     Class:
     "Edi" contains all information from or for an EDI file. Sections of EDI files are given as respective attributes, section-keys and values are stored in dictionaries.
 
@@ -68,7 +68,7 @@ import numpy as np
 import os,sys
 import os.path as op
 import math, cmath
-import time, calendar 
+import time, calendar
 import copy
 
 import mtpy.utils.format as MTformat
@@ -103,7 +103,7 @@ class Edi(object):
 
             Initialise the attributes with None/empty dictionary
         """
-    
+
         self.filename = fn
         if fn != None:
             if op.isfile(op.abspath(fn)):
@@ -128,16 +128,16 @@ class Edi(object):
 
     def readfile(self, fn, Bscale = 1, datatype = 'z'):
         """
-            Read in an EDI file. 
+            Read in an EDI file.
 
             Returns an exception, if the file is invalid (following MTpy standards).
 
 
             Bscale is the factor that needs to be applied to the data in the file to end up with km/s as unit for Z.
-            E.g., if the Z-data are given in E/H with E measured in V/m and H in A/m, the factor is 1e-3 / mu_0 
+            E.g., if the Z-data are given in E/H with E measured in V/m and H in A/m, the factor is 1e-3 / mu_0
             (If the data are in basic units "mV/m" and "A/m", just use the letter 'H' instead )
 
-            datatype determines the way data  are provided. Default is 'z', so the full impedance tensor is expected to be present in the file. Other possibilities are 'rhophi' and 'spectra' - they exclude the reading of a potentially present Z information. 
+            datatype determines the way data  are provided. Default is 'z', so the full impedance tensor is expected to be present in the file. Other possibilities are 'rhophi' and 'spectra' - they exclude the reading of a potentially present Z information.
             TODO: 'spectra' - not implemented yet
 
 
@@ -151,7 +151,7 @@ class Edi(object):
             Bscale = float(Bscale)
         except:
             raise MTexceptions.MTpyError_edi_file('ERROR - B field scaling factor not understood ')
-        
+
         try:
             datatype = datatype.lower()
             if not datatype in ['z' , 'rhophi', 'spectra']:
@@ -215,7 +215,7 @@ class Edi(object):
                 self._read_rhophi(edistring)
             except:
                 raise MTexceptions.MTpyError_edi_file('Could not read RhoPhi section: %s'%infile)
-            #rotation is optional 
+            #rotation is optional
             try:
                 self._read_rhorot(edistring)
             except:
@@ -235,7 +235,7 @@ class Edi(object):
             self.tippererr = None
             print 'Could not read Tipper section: %s'%infile
 
-        #rotation is optional 
+        #rotation is optional
         try:
             self._read_zrot(edistring)
         except:
@@ -281,9 +281,9 @@ class Edi(object):
         data_dict['frequencies'] = self.freq
         data_dict['zerr'] = self.zerr
         data_dict['tippererr'] = self.tippererr
-        
+
         return data_dict
- 
+
     def z_dict(self):
         """
             Return the content of the Z and Zerror arrays in a dictionary.
@@ -304,7 +304,7 @@ class Edi(object):
                     new_z_dict[section] = list(np.imag(z_array[:,idx_comp/2, idx_comp%2]))
                 elif idx_zentry == 2:
                     #squaring the errors (stddev) to get VAR values
-                    new_z_dict[section] = list( (zerr_array[:,idx_comp/2, idx_comp%2])**2 ) 
+                    new_z_dict[section] = list( (zerr_array[:,idx_comp/2, idx_comp%2])**2 )
 
         return new_z_dict
 
@@ -347,7 +347,6 @@ class Edi(object):
             Return a list of the frequencies (output values in Hertz).
         """
 
-
         return list(self.freq)
 
     def n_freqs(self):
@@ -356,6 +355,29 @@ class Edi(object):
         """
 
         return len(self.freq)
+
+
+    def lat(self):
+        """
+            Return latitude value in degrees.
+        """
+
+        return self.head['lat']
+
+    def lon(self):
+        """
+            Return longitude value in degrees.
+        """
+
+        return self.head['long']
+
+    def elev(self):
+        """
+            Return elevation value in meters.
+        """
+
+        return self.head['elev']
+
 
 
     def _read_head(self, edistring):
@@ -376,7 +398,7 @@ class Edi(object):
             key = str(k[0]).lower().strip()
             value = k[1].replace('"','')
             if key in ['lat','long','lon','latitude','longitude']:
-                value = MTformat._assert_position_format(key,value) 
+                value = MTformat._assert_position_format(key,value)
 
             head_dict[key] = value
 
@@ -400,16 +422,16 @@ class Edi(object):
         t2 = [i.strip() for i in t1 if '=' in i or ':' in i]
 
         for tmp_str in t2:
-            #fill dictionary 
+            #fill dictionary
             #ignore lines with no information after '='' or ':'
 
             if '=' in tmp_str:
                 t3 = tmp_str.split('=')
                 key = str(t3[0]).lower().strip()
-                value = t3[1].replace('"','').strip()           
+                value = t3[1].replace('"','').strip()
                 if not len(value) == 0:
                     info_dict[key] = value
-            
+
             elif ':' in tmp_str:
                 #consider potential ':' characters in coordinates!
                 t3 = tmp_str.split(':')
@@ -446,7 +468,7 @@ class Edi(object):
         except:
             raise
 
-        d_dict = {} 
+        d_dict = {}
 
         t1 = temp_string.strip().split('\n')
 
@@ -463,7 +485,7 @@ class Edi(object):
 
 
                     d_dict[key] = value
-         
+
         if len(d_dict.keys()) == 0:
             raise
 
@@ -511,7 +533,7 @@ class Edi(object):
                 value = k[1].replace('"','').strip()
                 if len(value) != 0:
                     m_dict[key] = value
-         
+
         if len(m_dict.keys()) == 0:
             raise
 
@@ -528,7 +550,7 @@ class Edi(object):
             temp_string = _cut_sectionstring(edistring,'FREQ')
         except:
             raise
-        
+
         lo_freqs = []
 
         t1 = temp_string.strip().split('\n')[1:]
@@ -546,7 +568,7 @@ class Edi(object):
 
     def _read_z(self, edistring, Bscale):
         """
-        Read in impedances information from a raw EDI-string. 
+        Read in impedances information from a raw EDI-string.
         Store it as attribute (complex array).
 
         """
@@ -565,7 +587,7 @@ class Edi(object):
                     temp_string = _cut_sectionstring(edistring,sectionhead)
                 except:
                     continue
-  
+
                 lo_z_vals = []
 
                 #check, if correct number of entries are given in the block
@@ -620,14 +642,14 @@ class Edi(object):
 
     def _read_tipper(self, edistring):
         """
-        Read in Tipper information from a raw EDI-string. 
+        Read in Tipper information from a raw EDI-string.
         Store it as attribute (complex array).
 
         """
 
         compstrings = ['TX','TY']
         T_entries = ['R','I','VAR']
-    
+
         tipper_array = np.zeros((self.n_freqs(),1,2),dtype=np.complex)
         tippererr_array = np.zeros((self.n_freqs(),1,2),dtype=np.float)
         t_dict = {}
@@ -652,9 +674,9 @@ class Edi(object):
                             except:
                                 pass
                         pass
-          
+
                 lo_t_vals = []
-                
+
                 #check, if correct number of entries are given in the block
                 t0 = temp_string.strip().split('\n')[0]
                 n_dummy = int(float(t0.split('//')[1].strip()))
@@ -682,17 +704,17 @@ class Edi(object):
 
 
         self.tipper = tipper_array
-        #errors are stddev, not VAR :  
+        #errors are stddev, not VAR :
         self.tippererr = np.sqrt(tippererr_array)
 
     def _read_rhophi(self, edistring):
         """
-            Read in RhoPhi information from a raw EDI-string. 
+            Read in RhoPhi information from a raw EDI-string.
             Convert the information into Z and Zerr.
             Store this as attribute (complex array).
 
         """
-        #using the loop over all  components. For each component check, if Rho and Phi are given, raise exception if not! Then convert the polar RhoPhi representation into the cartesian Z. Rho is assumed to be in Ohm m, Phi in degrees. Z will be in km/s. 
+        #using the loop over all  components. For each component check, if Rho and Phi are given, raise exception if not! Then convert the polar RhoPhi representation into the cartesian Z. Rho is assumed to be in Ohm m, Phi in degrees. Z will be in km/s.
         z_array = np.zeros((self.n_freqs(),2,2), 'complex')
         zerr_array = np.zeros((self.n_freqs(),2,2))
 
@@ -726,7 +748,7 @@ class Edi(object):
                             except:
                                 pass
 
-                    rhophi_dict[sectionhead] = lo_vals   
+                    rhophi_dict[sectionhead] = lo_vals
         #print rhophi_dict
         #sys.exit()
 
@@ -736,7 +758,7 @@ class Edi(object):
             rerr = np.zeros((2,2))
             phierr = np.zeros((2,2))
             zerr = np.zeros((2,2))
-            
+
             for idx_c, comp in enumerate(compstrings):
                 #convert rho to amplitude:
                 try:
@@ -787,7 +809,7 @@ class Edi(object):
         try:
             temp_string = _cut_sectionstring(edistring,'ZROT')
         except:
-            lo_angles = list( np.zeros((self.n_freqs())) )            
+            lo_angles = list( np.zeros((self.n_freqs())) )
             self.zrot = lo_angles
             return
 
@@ -820,7 +842,7 @@ class Edi(object):
             fn = None
         else:
             fn = fn[0]
-        
+
         self.info_dict['edifile_generated_with'] = 'MTpy'
 
         outstring, stationname = _generate_edifile_string(self.edi_dict())
@@ -840,7 +862,7 @@ class Edi(object):
 
         if fn == None:
             outfilename = op.abspath(stationname.upper()+'.edi')
-        
+
         if op.isfile(outfilename):
             newfile = outfilename
 
@@ -873,10 +895,10 @@ class Edi(object):
             Updates the attributes "z, zerr, zrot, tipper, tippererr".
 
         """
-        
+
         angle = angle%360
         zerr_rot = None
-        tipper_rot = None  
+        tipper_rot = None
         tippererr_rot = None
 
         z_rot = copy.copy(self.z)
@@ -893,7 +915,7 @@ class Edi(object):
                 z_rot[idx_freq], zerr_rot[idx_freq] = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle, self.zerr[idx_freq,:,:])
             else:
                 z_rot[idx_freq], zerr_rot = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle)
-  
+
 
             if self.tipper is not None:
 
@@ -913,7 +935,7 @@ class Edi(object):
             self.tippererr = tippererr_rot
 
         self.zrot = list( (np.array(self.zrot) + angle)%360)
-        
+
 
     def  rho_phi(self):
         """
@@ -921,7 +943,7 @@ class Edi(object):
 
             Output is a 4-tuple of arrays:
             (Rho, Phi, RhoError, PhiError)
-        """ 
+        """
 
         if self.z is None:
             print 'Z array is None - cannot calculate rho/phi'
@@ -936,13 +958,13 @@ class Edi(object):
         phi = np.zeros(self.z.shape)
 
 
-        for idx_f in range(len(self.z)): 
-            for i in range(2):                        
+        for idx_f in range(len(self.z)):
+            for i in range(2):
                 for j in range(2):
 
                     rho[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /self.freq[idx_f] *0.2
                     phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))
-                
+
                     if self.zerr is not None:
                         r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
                         rhoerr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/self.freq[idx_f] * r_err
@@ -958,11 +980,11 @@ class Edi(object):
 
             Updates the attributes "z, zerr".
 
-        """ 
+        """
 
 
-        if self.z is not None: 
-            z_new = copy.copy(self.z) 
+        if self.z is not None:
+            z_new = copy.copy(self.z)
 
             if self.z.shape != rho_array.shape:
                 print 'Error - shape of "rho" array does not match shape of Z array: %s ; %s'%(str(rho_array.shape),str(self.z.shape))
@@ -996,7 +1018,7 @@ class Edi(object):
 
         self.z = z_new
 
-       
+
     def set_head(self, head_dict):
         """
             Set the attribute 'head'.
@@ -1006,11 +1028,11 @@ class Edi(object):
 
             No test for consistency!
 
-        """ 
-        
+        """
+
         self.head = head_dict
-        
-    
+
+
     def set_info_dict(self,info_dict):
         """
             Set the attribute 'info_dict'.
@@ -1020,11 +1042,11 @@ class Edi(object):
 
             No test for consistency!
 
-        """ 
-          
+        """
+
         self.info_dict = info_dict
 
-        
+
     def set_info_string(self,info_string):
         """
             Set the attribute 'info_string'.
@@ -1034,11 +1056,11 @@ class Edi(object):
 
             No test for consistency!
 
-        """ 
-          
+        """
+
         self.info_string = info_string
-        
-            
+
+
     def set_z(self, z_array):
         """
             Set the attribute 'z'.
@@ -1048,8 +1070,8 @@ class Edi(object):
 
             Test for shape, but no test for consistency!
 
-        """ 
-  
+        """
+
 
         if (self.z is not None) and (self.z.shape != z_array.shape):
             print 'Error - shape of "z" array does not match shape of existing Z array: %s ; %s'%(str(z_array.shape),str(self.z.shape))
@@ -1067,14 +1089,14 @@ class Edi(object):
 
             Test for shape, but no test for consistency!
 
-        """ 
- 
+        """
+
         if (self.zerr is not None) and (self.zerr.shape != zerr_array.shape):
             print 'Error - shape of "zerr" array does not match shape of Zerr array: %s ; %s'%(str(zerr_array.shape),str(self.zerr.shape))
             return
 
         self.zerr = zerr_array
-        
+
 
     def set_tipper(self, tipper_array):
         """
@@ -1085,8 +1107,8 @@ class Edi(object):
 
             Test for shape, but no test for consistency!
 
-        """ 
- 
+        """
+
         if (self.tipper is not None) and (self.tipper.shape != tipper_array.shape):
             print 'Error - shape of "tipper" array does not match shape of tipper-array: %s ; %s'%(str(tipper_array.shape),str(self.tipper.shape))
             return
@@ -1103,8 +1125,8 @@ class Edi(object):
 
             Test for shape, but no test for consistency!
 
-        """ 
- 
+        """
+
 
         if (self.tippererr is not None) and (self.tippererr.shape != tippererr_array.shape):
             print 'Error - shape of "tippererr" array does not match shape of tippererr array: %s ; %s'%(str(tippererr_array.shape),str(self.tippererr.shape))
@@ -1112,7 +1134,7 @@ class Edi(object):
 
         self.tippererr = tippererr_array
 
-         
+
     def set_definemeas(self,definemeas_dict):
         """
             Set the attribute 'definemeas'.
@@ -1122,10 +1144,10 @@ class Edi(object):
 
             No test for consistency!
 
-        """         
+        """
         self.definemeas = definemeas_dict
-        
-    
+
+
     def set_mtsect(self, mtsect_dict):
         """
             Set the attribute 'mtsect'.
@@ -1135,19 +1157,19 @@ class Edi(object):
 
             No test for consistency!
 
-        """         
-         
+        """
+
         sel.mtsect = mtsect_dict
 
 
-        
+
     def get_datacomponent(self, componentname):
         """
             Return a specific data component.
 
             Input:
             specification of the data component (Z or Tipper components)
-        """ 
+        """
 
         data_dict = self.data_dict()
         if componentname.lower() in data_dict:
@@ -1157,7 +1179,7 @@ class Edi(object):
         Z_entries = ['R','I','.VAR']
         for idx_comp,comp in enumerate(compstrings):
             for idx_zentry,zentry in enumerate(Z_entries):
-                section = comp + zentry    
+                section = comp + zentry
                 if section.lower() == componentname.lower():
                     return self.z_dict()[section]
 
@@ -1172,8 +1194,8 @@ class Edi(object):
 
         print 'unknown data component: %s'%componentname.lower()
         return
-        
-    
+
+
     def set_datacomponent(self, componentname, value):
         """
             Set a specific data component.
@@ -1183,10 +1205,10 @@ class Edi(object):
             new value
 
             No test for consistency!
-        """ 
+        """
         pass
-        
-   
+
+
     def set_frequencies(self, lo_frequencies):
         """
             Set the list of frequencies.
@@ -1195,7 +1217,7 @@ class Edi(object):
             list of frequencies
 
             No test for consistency!
-        """ 
+        """
 
         if len(lo_frequencies) is not len(self.z):
             print 'length of frequency list not correct (%i instead of %i)'%(len(lo_frequencies), len(self.z))
@@ -1203,8 +1225,8 @@ class Edi(object):
 
         self.freq = lo_frequencies
 
-        
-    
+
+
     def set_zrot(self, angle):
         """
             Set the list of rotation angles.
@@ -1213,7 +1235,7 @@ class Edi(object):
             single angle or list of angles (in degrees)
 
             No test for consistency!
-        """ 
+        """
         if np.iterable(angle):
             if len(angle) is not len(self.z):
                 print 'length of angle list not correct (%i instead of %i)'%(len(angle), len(self.z))
@@ -1226,7 +1248,7 @@ class Edi(object):
             try:
                 angle = [float(angle%360) for i in self.z]
             except:
-                raise MTexceptions.MTpyError_edi_file('Angles is a non-numercal value')                
+                raise MTexceptions.MTpyError_edi_file('Angles is a non-numercal value')
 
 
         self.zrot = angle
@@ -1253,8 +1275,8 @@ def read_edifile(fn, Bscale = 1):
 
     edi_object = Edi()
 
-    edi_object.readfile(fn, Bscale) 
-   
+    edi_object.readfile(fn, Bscale)
+
 
     return edi_object
 
@@ -1266,7 +1288,7 @@ def write_edifile(edi_object, out_fn = None):
         optional input:
         EDI file name
     """
-    
+
     if not isinstance(z_object, MTedi.Edi):
         raise MTexceptions.MTpyError_EDI('Input argument is not an instance of the Edi class')
 
@@ -1307,11 +1329,11 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
 
 
         Outputs:
-        - instance of Edi class, containing merged information 
+        - instance of Edi class, containing merged information
         - full path of the output EDI file
     """
 
-    
+
 
     if Bscale1 in ['h','H']:
         Bscale1 =  1./MTc.mu0
@@ -1348,14 +1370,14 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         if allow_gaps is False:
             raise MTexceptions.MTpyError_edi_file('Cannot merge files %s and %s - frequency ranges do not overlap and "allow_gaps" is set to False')
 
-    
+
     #determine, which is the low frequency part
     lo_eos = [eo1, eo2]
-    
+
     if min(lo_freqs1) <= min(lo_freqs2):
         if max(lo_freqs1) >= max(lo_freqs2):
             print 'Frequency range of file %s fully contained in range of file %s => no merging of files!'%(fn2, fn1)
-            return 
+            return
 
     if min(lo_freqs1) >= min(lo_freqs2):
         if max(lo_freqs1) <= max(lo_freqs2):
@@ -1368,7 +1390,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
     inc_freq_idxs_lower = np.array(lo_eos[0].frequencies()).argsort()
     inc_freq_idxs_upper = np.array(lo_eos[1].frequencies()).argsort()
 
-    #determine overlap in frequencies 
+    #determine overlap in frequencies
     upper_bound = max(lo_eos[0].frequencies())
     lower_bound = min(lo_eos[1].frequencies())
 
@@ -1403,7 +1425,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
     if (eo1.tipper  is not None ) and (eo2.tipper  is not None ):
         eom.tipper = np.zeros((eom.n_freqs(),1,2),dtype=np.complex)
         eom.tippererr = np.zeros((eom.n_freqs(),1,2),dtype=np.float)
-       
+
     freq_idx = 0
     zrot = []
     lo_freqs = []
@@ -1413,7 +1435,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
     if eom.tipper is not None:
         in_t_lower = eo1.tipper[inc_freq_idxs_lower]
         in_terr_lower = eo1.tippererr[inc_freq_idxs_lower]
-    
+
     for li in lower_idxs:
         lo_freqs.append(np.array(lo_eos[0].frequencies())[inc_freq_idxs_lower][li])
         eom.z[freq_idx,:,:] = in_z_lower[li,:,:]
@@ -1434,12 +1456,12 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
     if eom.tipper is not None:
         in_t_upper = eo2.tipper[inc_freq_idxs_upper]
         in_terr_upper = eo2.tippererr[inc_freq_idxs_upper]
-    
+
     for ui in upper_idxs:
         lo_freqs.append(np.array(lo_eos[1].frequencies())[inc_freq_idxs_upper][ui])
         eom.z[freq_idx,:,:] = in_z_upper[ui,:,:]
         eom.zerr[freq_idx,:,:] = in_zerr_upper[ui,:,:]
-        
+
         if eom.tipper is not None:
             eom.tipper[freq_idx,:,:] =  in_t_upper[ui,:,:]
             eom.tippererr[freq_idx,:,:] =  in_terr_upper[ui,:,:]
@@ -1449,7 +1471,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
             zrot.append(0.)
 
         freq_idx += 1
-    
+
     eom.zrot = zrot
     eom.freq = lo_freqs
 
@@ -1475,7 +1497,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         if head1[element] == head2[element]:
             head_dict[element] = str(head2[element])
             continue
-        
+
         if element in ['lat','long','lon','latitude','longitude', 'elevation','elev','ele']:
             try:
                 head_dict[element] = 0.5 * (float(head1[element]) + float(head2[element]))
@@ -1513,10 +1535,10 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
 
             if element in ['acqdate']:
                 date = min(date1, date2 )
-            
+
             elif element in ['enddate']:
                 date = max(date1, date2  )
-            
+
             elif element in ['filedate']:
                 date = calendar.timegm(time.gmtime())
 
@@ -1545,7 +1567,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         if info1[element] == info2[element]:
             info_dict[element] = str(info2[element])
             continue
-        
+
         if element in ['lat','long','lon','latitude','longitude', 'elevation','elev','ele']:
             try:
                 info_dict[element] = 0.5 * (float(info1[element]) + float(info2[element]))
@@ -1583,10 +1605,10 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
 
             if element in ['acqdate']:
                 date = min(date1, date2 )
-            
+
             elif element in ['enddate']:
                 date = max(date1, date2  )
-            
+
             elif element in ['filedate']:
                 date = calendar.timegm(time.gmtime())
 
@@ -1601,7 +1623,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         if element == 'station':
             info_dict['station'] = info1[element] + '+' + info2[element]
 
-            
+
     eom.info_dict = info_dict
 
     #III) DEFINEMEAS
@@ -1627,7 +1649,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         if dmeas1[element] == dmeas2[element]:
             dmeas_dict[element] = str(dmeas2[element])
             continue
-        
+
         if 'lat' in element or 'lon' in element or 'elev' in element:
             try:
                 dmeas_dict[element] = 0.5 * (float(dmeas1[element]) + float(dmeas2[element]))
@@ -1652,7 +1674,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
 
     msec_dict = {}
 
-    for element in so_msecsections: 
+    for element in so_msecsections:
         #completely unimportant, kept just for the sake of the format:
         if element in ['ex','ey','hx','hy','hz','bx','by','bz']:
             msec_dict[element] = msec1[element]
@@ -1694,7 +1716,7 @@ def validate_edifile(fn):
     edi_object = Edi()
 
     try:
-        edi_object.readfile(fn) 
+        edi_object.readfile(fn)
         return True
     except:
         return False
@@ -1702,7 +1724,7 @@ def validate_edifile(fn):
 
 def rotate_edifile(fn, angle, out_fn = None):
     """
-        Rotate data contents (Z and Tipper) of an EDI file and write it to a new EDI file. 
+        Rotate data contents (Z and Tipper) of an EDI file and write it to a new EDI file.
         (Use a script with consecutive renaming of the file for in place rotation. MTpy does not overwrite.)
 
         Input:
@@ -1712,9 +1734,9 @@ def rotate_edifile(fn, angle, out_fn = None):
         - name of output EDI file
 
         Output:
-        - full path to the new (rotated) EDI file 
+        - full path to the new (rotated) EDI file
     """
-    
+
     ediobject = Edi()
 
     ediobject.readfile(fn)
@@ -1817,7 +1839,7 @@ def _generate_edifile_string(edidict):
                     edistring += '\t%s=""\n'%(k)
                 else:
                     edistring += '\t%s=%s\n'%(k,v)
-        
+
 
         if sectionhead == 'HMEAS_EMEAS':
             if not sectionhead in edidict:
@@ -1842,7 +1864,7 @@ def _generate_edifile_string(edidict):
                     edistring += '\t%s=""\n'%(k)
                 else:
                     edistring += '\t%s=%s\n'%(k,v)
-  
+
 
         if sectionhead == 'FREQ':
             if not sectionhead in edidict:
@@ -1855,9 +1877,9 @@ def _generate_edifile_string(edidict):
                 edistring += '\t%E'%(freq)
                 if (i+1)%5 == 0 and (i != len(lo_freqs) - 1) and i > 0:
                     edistring += '\n'
-           
+
         if sectionhead == 'ZROT':
-              
+
             try:
                 lo_rots = edidict['ZROT']
             except:
@@ -1889,12 +1911,12 @@ def _generate_edifile_string(edidict):
                     if not section in z_dict:
                         raise MTexceptions.MTpyError_edi_file('Cannot write file - required subsection "%s" missing!'%(section))
                     lo_vals = z_dict[section]
-                    
+
                     if ZROTflag == 1:
                         edistring += '>%s ROT=ZROT // %i\n'%(section,len(lo_freqs))
                     else:
                         edistring += '>%s // %i\n'%(section,len(lo_freqs))
-                    
+
                     for i,val in enumerate(lo_vals):
                         edistring += '\t%E'%(float(val))
                         if (i+1)%5 == 0 and (i != len(lo_vals) - 1) and i > 0:
@@ -1911,7 +1933,7 @@ def _generate_edifile_string(edidict):
             try:
                 t_dict = edidict['TIPPER']
                 if t_dict == None:
-                    continue 
+                    continue
             except:
                 continue
 
@@ -1922,19 +1944,19 @@ def _generate_edifile_string(edidict):
                     if not section in t_dict:
                         raise MTexceptions.MTpyError_edi_file('Cannot write file - required subsection "%s" missing!'%(section))
                     lo_vals = t_dict[section]
-                    
+
                     if ZROTflag == 1:
                         edistring += '>%s ROT=ZROT // %i\n'%(outsection,len(lo_freqs))
                     else:
                         edistring += '>%s // %i\n'%(outsection,len(lo_freqs))
-                    
+
                     for i,val in enumerate(lo_vals):
                         edistring += '\t%E'%(float(val))
                         if (i+1)%5 == 0 and (i != len(lo_vals) - 1) and i > 0:
                             edistring += '\n'
-                            
+
                     edistring += '\n'
-     
+
 
 
         edistring += '\n'
@@ -1977,17 +1999,17 @@ def _cut_sectionstring(edistring,sectionhead):
         if len(hmeas_emeas_string) == 0:
             del re
             raise
-        
+
         del re
         return hmeas_emeas_string
- 
+
 
 
     start_idx = edistring.upper().find('>'+sectionhead.upper())
     if start_idx == -1:
         start_idx = edistring.upper().find('>='+sectionhead.upper())
         if start_idx == -1:
-            raise 
+            raise
         #correct for the = character
         start_idx += 1
     #start cut behind the section keyword
@@ -1995,7 +2017,7 @@ def _cut_sectionstring(edistring,sectionhead):
 
     next_block_start = edistring.upper().find('>', start_idx + 1)
 
- 
+
     cutstring = edistring[start_idx:next_block_start]
 
     if len(cutstring) == 0 :
@@ -2012,11 +2034,11 @@ def _validate_edifile_string(edistring):
         Within the blocks look for mandatory entries:
         HEAD: 'DATAID'
         INFO: None
-        DEFINEMEAS: subblocks 'HMEAS, EMEAS' 
+        DEFINEMEAS: subblocks 'HMEAS, EMEAS'
                     ('REFLAT, REFLONG, REFELEV' have to be present for measured data though)
         MTSECT: 'NFREQ'
         FREQ: non empty list
-        
+
         Z: at least one component xx, yy, xy, yx ; real, imag and var ; containing a non-empty list
         Otherwise check for presence of 'RHO'/'PHS' OR 'spectra'
 
@@ -2050,7 +2072,7 @@ def _validate_edifile_string(edistring):
     string_dummy_2 = edistring[freq_start_idx:next_block_start]
     lo_string_dummy_2 = string_dummy_2.strip().split()
     #check, if there are actually one/some valid numbers:
-    n_numbers = 0 
+    n_numbers = 0
     for i in lo_string_dummy_2:
         try:
             n = float(i)
@@ -2061,19 +2083,19 @@ def _validate_edifile_string(edistring):
     if n_numbers == 0:
         print  MTexceptions.MTpyError_edi_file('Error in FREQ block: no frequencies found')
 
-        found *= 0 
+        found *= 0
     #Check for data entry following priority:
     # 1. Z
     z_found = 0
-    rhophi_found = 0 
+    rhophi_found = 0
     spectra_found = 0
 
     compstrings = ['ZXX','ZXY','ZYX','ZYY']
     Z_entries = ['R','I','.VAR']
-    
+
     for comp in compstrings:
-        n_entries = 0 
-        
+        n_entries = 0
+
         for zentry in Z_entries:
             searchstring = '>'+comp+zentry
             z_comp_start_idx = edistring.upper().find(searchstring)
@@ -2084,7 +2106,7 @@ def _validate_edifile_string(edistring):
             next_block_start = edistring.upper().find('>',z_comp_start_idx+1)
             string_dummy_1 = edistring[z_comp_start_idx:next_block_start]
             lo_string_dummy_1 = string_dummy_1.strip().split()
-            n_numbers = 0 
+            n_numbers = 0
             for i in lo_string_dummy_1:
                 try:
                     n = float(i)
@@ -2095,12 +2117,12 @@ def _validate_edifile_string(edistring):
             if n_numbers == 0:
                 print  MTexceptions.MTpyError_edi_file('Error in %s block: no values found'%(comp+zentry))
                 continue
-            
+
             if zentry in ['R','I']:
                 n_entries += 1
         if n_entries > 1:
             z_found += 1
-    
+
 
     # If no Z entry is found continue searching for RhoPhase information
     # 2. RHO,PHS
@@ -2110,7 +2132,7 @@ def _validate_edifile_string(edistring):
         compstrings = ['XX','XY','YX','YY']
 
         for comp in compstrings:
-            n_entries = 0    
+            n_entries = 0
             for rp in rhophistrings:
                 sectionhead = rp + comp
                 try:
@@ -2130,7 +2152,7 @@ def _validate_edifile_string(edistring):
                         raise
                 except:
                     continue
-                
+
                 n_entries += 1
             if n_entries > 1 :
                 rhophi_found += 1
@@ -2145,5 +2167,5 @@ def _validate_edifile_string(edistring):
 
     if found > 0: isvalid = True
 
-    return isvalid    
+    return isvalid
 
