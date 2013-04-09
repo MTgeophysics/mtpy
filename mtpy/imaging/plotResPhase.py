@@ -38,9 +38,10 @@ mt_bl2wh2rd=colors.LinearSegmentedColormap('mt_bl2wh2rd',skcmapdict2,256)
 
             
 #blue to white to red in segmented colors
-mt_seg_bl2wh2rd = colors.ListedColormap(((0,0,1),(0,.5,1),(0,.75,1),(0,.9,1),
-                                        (1,1,1),(1.0,.9,0),(1,.75,0),(1,.5,0),
-                                        (1,0,0)))
+mt_seg_bl2wh2rd = colors.ListedColormap(((0,0,1),(.5,.5,1),(.75,.75,1),
+                                         (.9,.9,1),(1,1,1),(1.0,.9,.9),
+                                         (1,.75,.75),(1,.5,.5),
+                                         (1,0,0)))
 
 #white to blue
 ptcmapdict3 = {'red':((0.0,1.0,1.0),(1.0,0.0,0.0)),
@@ -58,7 +59,7 @@ mt_rd2bl = colors.LinearSegmentedColormap('mt_rd2bl',rtcmapdict,256)
 ckdict = {'phiminang':'$\Phi_{min}$ (deg)','phimin':'$\Phi_{min}$ (deg)',
           'phimaxang':'$\Phi_{max}$ (deg)','phimax':'$\Phi_{max}$ (deg)',
           'phidet':'Det{$\Phi$} (deg)','beta':'Skew (deg)',
-          'ellipticity':'Ellipticity'}
+          'ellipticity':'Ellipticity','beta_seg':'Skew (deg)'}
           
 cmapdict = {'mt_yl2rd':mt_yl2rd,
             'mt_bl2yl2rd':mt_bl2yl2rd,
@@ -1731,53 +1732,60 @@ class PlotPhaseTensorPseudoSection(object):
     """
     
     
-    def __init__(self, filenamelst, ellipse_dict={}, offsetscaling=.005, 
+    def __init__(self, filenamelst, ellipse_dict={}, offsetscaling=500, 
                  stationid=(0,4), title=None, cb_dict={}, linedir='ns', 
-                 fignum=1, rotz=0, figsize=[8,8], dpi=300, indarrows='n', 
+                 fignum=1, rotz=0, figsize=[6,6], dpi=300, indarrows='n', 
                  arrow_dict={}, tscale='period', font_size=7, plot_yn='y'):
 
         #----set attributes for the class-------------------------
         self.fn_list = filenamelst
         
         #--> set the ellipse properties
-        self.ellipse_dict=ellipse_dict
         
         #set default size to 2
         try:
-            self.ellipse_dict['size']
+            self.ellipse_size = ellipse_dict['size']
         except KeyError:
-            self.ellipse_dict['size'] = 2
+            self.ellipse_size = 2
         
         #set default colorby to phimin
         try:
-            self.ellipse_dict['colorby']
+            self.ellipse_colorby = ellipse_dict['colorby']
         except KeyError:
-            self.ellipse_dict['colorby'] = 'phimin'
+            self.ellipse_colorby = 'phimin'
         
         #set color range to 0-90
         try:
-            self.ellipse_dict['range']
+            self.ellipse_range = ellipse_dict['range']
         except KeyError:
-            self.ellipse_dict['range'] = (0,90,5)
+            if self.ellipse_colorby=='beta' or self.ellipse_colorby=='beta_seg':
+                self.ellipse_range = (-9,9,3)
+            elif self.ellipse_colorby=='ellipticity':
+                self.ellipse_range = (0,1,.1)
+            else:
+                self.ellipse_range = (0,90,5)
             
         #set colormap to yellow to red
         try:
-            self.ellipse_dict['cmap']
+            self.ellipse_cmap = ellipse_dict['cmap']
         except KeyError:
-            self.ellipse_dict['cmap'] = 'mt_yl2rd'
+            if self.ellipse_colorby=='beta':
+                self.ellipse_cmap = 'mt_bl2wh2rd'
+            else:
+                self.ellipse_cmap = 'mt_yl2rd'
             
         #--> set colorbar properties
         #set orientation to horizontal
         try:
-            self.cb_dict['orientation']
+            self.cb_orientation = cb_dict['orientation']
         except KeyError:
-            self.cb_dict['orientation'] = 'vertical'
+            self.cb_orientation = 'vertical'
         
         #set the position to middle outside the plot            
         try:
-            self.cb_dict['position']
+            self.cb_poistion = cb_dict['position']
         except KeyError:
-            self.cb_dict['position'] = (.92, .375, .025, .3)
+            self.cb_position = (.92, .375, .025, .3)
             
         #--> set plot properties
         self.offsetscaling = offsetscaling
@@ -1789,40 +1797,53 @@ class PlotPhaseTensorPseudoSection(object):
         self.fignum = fignum
         self.linedir = linedir
         self.stationid = stationid
+        self.title = title
         
         #--> set induction arrow properties 
         self.indarrows = indarrows
-        self.arrow_dict = arrow_dict        
         
-        #set arrow length
-        try:
-            self.arrow_dict['size']
-        except KeyError:
-            self.arrow_dict['size'] = 5
-            
-        #set head length
-        try:
-            self.arrow_dict['head_length']
-        except KeyError:
-            self.arrow_dict['head_length'] = .5*self.ellipse_dict['size']
-            
-        #set head width
-        try:
-            self.arrow_dict['head_width']
-        except KeyError:
-            self.arrow_dict['head_width'] = .2*self.ellipse_dict['size']
-            
-        #set line width
-        try:
-            self.arrow_dict['lw']
-        except KeyError:
-            self.arrow_dict['lw'] = .5*self.ellipse_dict['size']
-            
-        #set color to black
-        try:
-            self.arrow_dict['color']
-        except KeyError:
-            self.arrow_dict['color'] = 'k'
+        if self.indarrows.find('y')==0:
+            #set arrow length
+            try:
+                self.arrow_size = arrow_dict['size']
+            except KeyError:
+                self.arrow_size = 5
+                
+            #set head length
+            try:
+                self.arrow_head_length = arrow_dict['head_length']
+            except KeyError:
+                self.arrow_head_length = .5*self.ellipse_size
+                
+            #set head width
+            try:
+                self.arrow_head_width = arrow_dict['head_width']
+            except KeyError:
+                self.arrow_head_width = .2*self.ellipse_size
+                
+            #set line width
+            try:
+                self.arrow_lw = arrow_dict['lw']
+            except KeyError:
+                self.arrow_lw = .5*self.ellipse_size
+                
+            #set real color to black
+            try:
+                self.arrow_color_real = arrow_dict['color'][0]
+            except KeyError:
+                self.arrow_color_real = 'k'
+                
+            #set imaginary color to black
+            try:
+                self.arrow_color_imag = arrow_dict['color'][1]
+            except KeyError:
+                self.arrow_color_imag = 'b'
+                
+            #set threshold of induction arrows to plot
+            try:
+                self.arrow_threshold = arrow_dict['threshold']
+            except KeyError:
+                self.arrow_threshold = 1
             
         #--> plot if desired
         self.plot_yn = plot_yn
@@ -1865,8 +1886,8 @@ class PlotPhaseTensorPseudoSection(object):
                 north0 = imp.lat
                 offset = 0.0
             else:
-                east=self.lon
-                north=self.lat
+                east = imp.lon
+                north = imp.lat
                 if self.linedir=='ew': 
                     if east0<east:
                         offset = np.sqrt((east0-east)**2+(north0-north)**2)
@@ -1892,23 +1913,35 @@ class PlotPhaseTensorPseudoSection(object):
             phimin = pt.phimin[::-1]
             azimuth = pt.azimuth[::-1]
             
+            #if there are induction arrows, flip them as pt
+            if self.indarrows.find('y')==0:
+                tip = imp.getTipper(thetar=self.rotz)
+                tmr = tip.magreal[::-1]
+                tmi = tip.magimag[::-1]
+                tar = tip.anglereal[::-1]
+                tai = tip.angleimag[::-1]
+                
+                aheight = self.arrow_head_length 
+                awidth = self.arrow_head_width
+                alw = self.arrow_lw
+                
             #get the properties to color the ellipses by
-            if self.ellipse_dict['colorby']=='phiminang' or \
-               self.ellipse_dict['colorby']=='phimin':
+            if self.ellipse_colorby=='phiminang' or \
+               self.ellipse_colorby=='phimin':
                 colorarray = pt.phiminang[::-1]
                 
-            elif self.ellipse_dict['colorby']=='phidet':
+            elif self.ellipse_colorby=='phidet':
                  colorarray = np.sqrt(abs(pt.phidet[::-1]))*(180/np.pi)
                 
-            elif self.ellipse_dict['colorby']=='beta' or\
-                 self.ellipse_dict['colorby']=='beta_seg':
+            elif self.ellipse_colorby=='beta' or\
+                 self.ellipse_colorby=='beta_seg':
                 colorarray = pt.beta[::-1]
                 
-            elif self.ellipse_dict['colorby']=='ellipticity':
+            elif self.ellipse_colorby=='ellipticity':
                 colorarray = pt.ellipticity[::-1]
                 
             else:
-                raise NameError(self.ellipse_dict['colorby']+' is not supported')
+                raise NameError(self.ellipse_colorby+' is not supported')
             
             #get the number of periods
             n = len(periodlst)
@@ -1918,12 +1951,13 @@ class PlotPhaseTensorPseudoSection(object):
             maxlst.append(max(colorarray))
             
             #set local parameters with shorter names
-            es = self.ellipse_dict['size']
-            ck = self.ellipse_dict['colorby']
-            cmap = self.ellipse_dict['cmap']
-            ckmin = self.ellipse_dict['range'][0]
-            ckmax = self.ellipse_dict['range'][1]
-            ckseg = self.ellipse_dict['range'][2]
+            es = self.ellipse_size
+            ck = self.ellipse_colorby
+            cmap = self.ellipse_cmap
+            ckmin = self.ellipse_range[0]
+            ckmax = self.ellipse_range[1]
+            ckseg = self.ellipse_range[2]
+            nseg = (ckmax-ckmin)/(2*ckseg)
             
     
             for jj in range(n):
@@ -1932,7 +1966,6 @@ class PlotPhaseTensorPseudoSection(object):
                 eheight = phimin[jj]/phimax[jj]*es
                 ewidth = phimax[jj]/phimax[jj]*es
             
-                    
                 #create an ellipse scaled by phimin and phimax and oriented along
                 #the azimuth    
                 ellipd=patches.Ellipse((offset*self.offsetscaling, 3*jj),
@@ -1942,20 +1975,21 @@ class PlotPhaseTensorPseudoSection(object):
                 
                 #get face color info
                 if ck=='phiminang' or  ck=='phimin':
-                    cvar = (pt.phiminang[jj]-ckmin)/(ckmax-ckmin)
+                    cvar = (colorarray[jj]-ckmin)/(ckmax-ckmin)
                     
                 elif ck=='phidet':
-                    cvar = (pt.phidet[jj]-ckmin)/(ckmax-ckmin)
+                    cvar = (colorarray[jj]-ckmin)/(ckmax-ckmin)
                     
                 elif ck=='beta':
-                    cvar = (pt.beta[jj]-abs(ckmin))/(ckmax-ckmin)
+                    cvar = 2*colorarray[jj]/(ckmax-ckmin)
                     
                 elif ck=='beta_seg':
-                    cvar = ckseg*np.round((pt.beta[jj]-\
-                                            abs(ckmin))/(ckmax-ckmin)/ckseg)
+                    cvar = 2*nseg*(np.round(colorarray[jj]/ckseg)/(ckmax-ckmin))
+                    if jj>70:
+                        print imp.station,imp.frequency[-jj],cvar,colorarray[jj]
 
                 elif ck=='ellipticity':
-                    cvar = (pt.ellipticity[jj]-ckmin)/(ckmax-ckmin)
+                    cvar = (colorarray[jj]-ckmin)/(ckmax-ckmin)
                     
                 else:
                     raise NameError('color key '+ck+' not supported')
@@ -1967,7 +2001,7 @@ class PlotPhaseTensorPseudoSection(object):
                     if abs(cvar)>1:
                         ellipd.set_facecolor((1,0,0))
                     elif cvar<0:
-                        ellipd.set_facecolor((1-abs(cvar),1,abs(cvar)))
+                        ellipd.set_facecolor((0,0,0))
                     else:
                         ellipd.set_facecolor((1,1-abs(cvar),.1))
                         
@@ -1978,19 +2012,30 @@ class PlotPhaseTensorPseudoSection(object):
                     else:
                         ellipd.set_facecolor((1-abs(cvar),1-abs(cvar),1))
                         
-                #blue to yellow to red
-                elif cmap=='mt_bl2yl2rd':
+                #blue to white to red
+                elif cmap=='mt_bl2wh2rd':
                     if cvar<0 and cvar>-1:
-                        ellipd.set_facecolor((1-abs(cvar),1-abs(cvar),1))
+                        ellipd.set_facecolor((1+cvar,1+cvar,1))
                     elif cvar<-1:
                         ellipd.set_facecolor((0,0,1))
-                    elif cvar>0 and cvar<1:
-                        ellipd.set_facecolor((1,1-abs(cvar),1-abs(cvar)))
+                    elif cvar>=0 and cvar<1:
+                        ellipd.set_facecolor((1,1-cvar,1-cvar))
                     elif cvar>1:
                         ellipd.set_facecolor((1,0,0))
                         
                 #blue to white to red
-                elif cmap=='mt_bl2wh2rd':
+                elif cmap=='mt_seg_bl2wh2rd':
+                    if cvar<0 and cvar>-1:
+                        ellipd.set_facecolor((1-abs(cvar),1-abs(cvar),1))
+                    elif cvar<=-1:
+                        ellipd.set_facecolor((0,0,1))
+                    elif cvar>0 and cvar<1:
+                        ellipd.set_facecolor((1,1-cvar,1-cvar))
+                    elif cvar>=1:
+                        ellipd.set_facecolor((1,0,0))
+                        
+                #blue to yellow to red
+                elif cmap=='mt_bl2yl2rd':
                     if cvar<0 and cvar>-1:
                         ellipd.set_facecolor((abs(cvar),abs(cvar),1-abs(cvar)))
                     elif cvar<-1:
@@ -2009,46 +2054,49 @@ class PlotPhaseTensorPseudoSection(object):
                 
                 #--------- Add induction arrows if desired --------------------
                 if self.indarrows.find('y')==0:
-                    tip = imp.getTipper(thetar=self.rotz)
-                    aheight = self.arrow_dict['head_height'] 
-                    awidth = self.arrow_dict['head_width']
-                    alw = self.arrow_dict['lw']
+                    
                     
                     #--> plot real tipper
                     if self.indarrows=='yri' or self.indarrows=='yr':
-                        txr = tip.magreal[jj]*\
-                              np.cos(tip.anglereal[jj]*np.pi/180)*es*5
-                        tyr = tip.magreal[jj]*\
-                              np.sin(tip.anglereal[jj]*np.pi/180)*es*5
-    
-                        self.ax.arrow(offset*self.offsetscaling, 
-                                      3*jj, 
-                                      txr,
-                                      tyr,
-                                      lw=alw,
-                                      facecolor=self.arrow_dict['color'],
-                                      edgecolor=self.arrow_dict['color'],
-                                      length_includes_head=False,
-                                      head_width=awidth,
-                                      head_length=aheight)
+                        txr = tmr[jj]*np.cos(tar[jj]*np.pi/180)*self.arrow_size
+                        tyr = tmr[jj]*np.sin(tar[jj]*np.pi/180)*self.arrow_size
+                        
+                        maxlength = np.sqrt((txr/self.arrow_size)**2+\
+                                            (tyr/self.arrow_size)**2)
+                        if maxlength>self.arrow_threshold:
+                            pass
+                        else:
+                            self.ax.arrow(offset*self.offsetscaling, 
+                                          3*jj, 
+                                          txr,
+                                          tyr,
+                                          lw=alw,
+                                          facecolor=self.arrow_color_real,
+                                          edgecolor=self.arrow_color_real,
+                                          length_includes_head=False,
+                                          head_width=awidth,
+                                          head_length=aheight)
                                       
                     #--> plot imaginary tipper
                     if self.indarrows=='yri' or self.indarrows=='yi':
-                        txi = tip.magimag[jj]*\
-                              np.cos(tip.angleimag[jj]*np.pi/180)*es*5
-                        tyi = tip.magimag[jj]*\
-                              np.sin(tip.angleimag[jj]*np.pi/180)*es*5
-    
-                        self.ax.arrow(offset*self.offsetscaling,
-                                      3*jj,
-                                      txi,
-                                      tyi,
-                                      lw=alw,
-                                      facecolor='b',
-                                      edgecolor='b',
-                                      length_includes_head=False,
-                                      head_width=awidth,
-                                      head_length=aheight)
+                        txi = tmi[jj]*np.cos(tai[jj]*np.pi/180)*self.arrow_size
+                        tyi = tmi[jj]*np.sin(tai[jj]*np.pi/180)*self.arrow_size
+                        
+                        maxlength = np.sqrt((txi/self.arrow_size)**2+\
+                                            (tyi/self.arrow_size)**2)
+                        if maxlength>self.arrow_threshold:
+                            pass
+                        else:
+                            self.ax.arrow(offset*self.offsetscaling,
+                                          3*jj,
+                                          txi,
+                                          tyi,
+                                          lw=alw,
+                                          facecolor=self.arrow_color_imag,
+                                          edgecolor=self.arrow_color_imag,
+                                          length_includes_head=False,
+                                          head_width=awidth,
+                                          head_length=aheight)
         
         #--> Set plot parameters                
         self.offsetlst = np.array(self.offsetlst)
@@ -2106,7 +2154,7 @@ class PlotPhaseTensorPseudoSection(object):
                           
             elif self.indarrows=='yr':
                 treal = self.ax.plot(np.arange(10)*.000005,np.arange(10)*.00005,
-                                     self.arrow_dict['color'])
+                                     self.arrow_color_real)
                 self.ax.legend([treal[0]],
                                ['Tipper_real'],
                                loc='lower right',
@@ -2118,7 +2166,7 @@ class PlotPhaseTensorPseudoSection(object):
                           
             elif self.indarrows=='yi':
                 timag = self.ax.plot(np.arange(10)*.000005,np.arange(10)*.00005,
-                                     'b')
+                                     self.arrow_color_imag)
                 self.ax.legend([timag[0]],
                                ['Tipper_imag'],
                                loc='lower right',
@@ -2129,37 +2177,97 @@ class PlotPhaseTensorPseudoSection(object):
                                borderpad=.25)
         
         #put a grid on the plot
-        self.ax.grid(alpha=.25,which='both',color=(.75,.75,.75))
+        self.ax.grid(alpha=.25,which='both',color=(.25,.25,.25))
         
-        print 'Colorkey min = ',min(minlst)
-        print 'Colorkey max = ',max(maxlst)
+        print '-'*25
+        print ck+' min = {0:.2f}'.format(min(minlst))
+        print ck+' max = {0:.2f}'.format(max(maxlst))
+        print '-'*25
         
         #make a colorbar with appropriate colors             
-        self.ax2 = self.fig.add_axes(self.cb_dict['position'])
+        self.ax2 = self.fig.add_axes(self.cb_position)
         
-        self.cb=mcb.ColorbarBase(self.ax2,
-                            cmap=cmapdict[cmap],
-                            norm=colors.Normalize(vmin=ckmin,vmax=ckmax),
-                            orientation=self.cb_dict['orientation'])
+        if cmap=='mt_seg_bl2wh2rd':
+            bounds = np.arange(ckmin, ckmax+ckseg, ckseg)
+            norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
+            self.cb=mcb.ColorbarBase(self.ax2,
+                                     cmap=mt_seg_bl2wh2rd,
+                                     norm=norms,
+                                     orientation=self.cb_orientation,
+                                     ticks=bounds)
+        else:
+            self.cb=mcb.ColorbarBase(self.ax2,
+                                     cmap=cmapdict[cmap],
+                                     norm=colors.Normalize(vmin=ckmin,
+                                                           vmax=ckmax),
+                                     orientation=self.cb_orientation)
 
         #label the color bar accordingly
         self.cb.set_label(ckdict[ck],
-                     fontdict={'size':self.font_size,'weight':'bold'})
+                          fontdict={'size':self.font_size,'weight':'bold'})
             
         #place the label in the correct location                   
-        if self.cb_dict['orientation']=='horizontal':
+        if self.cb_orientation=='horizontal':
             self.cb.ax.xaxis.set_label_position('top')
             self.cb.ax.xaxis.set_label_coords(.5,1.3)
             
             
-        elif self.cb_dict['orientation']=='vertical':
+        elif self.cb_orientation=='vertical':
             self.cb.ax.yaxis.set_label_position('right')
             self.cb.ax.yaxis.set_label_coords(1.25,.5)
             self.cb.ax.yaxis.tick_left()
             self.cb.ax.tick_params(axis='y',direction='in')
         
         plt.show()
+        
+    def writeTextFiles(self):
+        """
+        This will write text files for all the phase tensor parameters
+        """
+        pass
     
+    def update_plot(self):
+        """
+        update any parameters that where changed using the built-in draw from
+        canvas.  
+        
+        Use this if you change an of the .fig or axes properties
+        
+        :Example: ::
+            
+            >>> # to change the grid lines to only be on the major ticks
+            >>> import mtpy.imaging.mtplottools as mtplot
+            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
+            >>> [ax.grid(True, which='major') for ax in [p1.axr,p1.axp]]
+            >>> p1.update_plot()
+        
+        """
+
+        self.fig.canvas.draw()
+        
+    def redraw_plot(self):
+        """
+        use this function if you updated some attributes and want to re-plot.
+        
+        :Example: ::
+            
+            >>> # change the color and marker of the xy components
+            >>> import mtpy.imaging.mtplottools as mtplot
+            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
+            >>> p1.xy_color = (.5,.5,.9)
+            >>> p1.xy_marker = '*'
+            >>> p1.redraw_plot()
+        """
+        
+        plt.close(self.fig)
+        self.plot()
+        
+    def __str__(self):
+        """
+        rewrite the string builtin to give a useful message
+        """
+        
+        return "Plots pseudo section of phase tensor ellipses" 
 
 class PlotStrike(object):
     """

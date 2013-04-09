@@ -122,13 +122,14 @@ class Edi(object):
                 ii=None
             else:
                 #get the block header
-                if eline.find('>')==0:
+                if eline.find('>')==0 or eline.find('>')==1:
+                    es=eline.find('>')
                     #For definemeas
                     if eline.find('=')>0 and eline.find('ACQCHAN')==-1:
                         if eline.find('INFO')>0:
-                            gkey=eline[1:].strip().split()[0].lower()
+                            gkey=eline[es+1:].strip().split()[0].lower()
                         else:
-                            gkey=eline[2:].strip().lower()
+                            gkey=eline[es+2:].strip().lower()
                     #for a comment block
                     elif eline.find('!')>0:
                         pass
@@ -141,7 +142,7 @@ class Edi(object):
                         gdict['comp'][mid]=mtype
                     #for the normal block header
                     else:
-                        gkey=eline[1:].strip().lower()
+                        gkey=eline[eline.find('>')+1:].strip().lower()
                 #for each block header put the information into a dictionary
                 else:
                     eline=eline.strip()
@@ -202,7 +203,6 @@ class Edi(object):
         except KeyError:
             if verbose:
                 print 'Did not find elevation for ',self.edifn
-        
         
         #======================================================================
         #         Get frequency, impedance and tipper
@@ -424,7 +424,8 @@ class Edi(object):
             kk=0
             while type(kk) is int:
                 eline=edilines[ii]
-                if eline.find('>')==0:
+                if eline.find('>')==0 or eline.find('>')==1:
+                    es=eline.find('>')
                     if eline.find('Z')==-1 and eline.find('IMP')==-1:
                             kk=None
                             jj=ii
@@ -513,8 +514,9 @@ class Edi(object):
             kk=0
             while type(kk) is int:
                 eline=edilines[ii]
-                if eline.find('>')==0:
-                    if eline.find('T',0,2)==-1:
+                if eline.find('>')==0 or eline.find('>')==1:
+                    es=eline.find('>')
+                    if eline.find('T',es,es+2)==-1:
                             kk=None
                             jj=ii
                     else:
@@ -559,7 +561,18 @@ class Edi(object):
 
         except KeyError:
             if verbose:
-                print 'Did not find Tipper information for ',self.edifn  
+                print 'Did not find Tipper information for ',self.edifn 
+        
+        self.period=1./self.frequency        
+        if self.period[0]>self.period[-1]:
+            self.period=self.period[::-1]
+            self.frequency=self.frequency[::-1]
+            self.z=self.z[::-1,:,:]
+            self.zvar=self.zvar[::-1,:,:]
+            self.tipper=self.tipper[::-1,:]
+            self.tipvar=self.tippervar[::-1,:]
+                        
+            print 'Flipped to descending frequency'
     
     def rewriteedi(self,znew=None,zvarnew=None,freqnew=None,newfile='y',
                tipnew=None,tipvarnew=None,thetar=0,ext='dr'):
@@ -1259,7 +1272,7 @@ class Z(Edi):
                 
     def plotResPhase(self,thetar=0,fignum=1,plottype=1,title=None,ffactor=1,
                      savefigfilename=None,dpi=None,fmt=None,orientation=None,
-                     phaselimits=(0,90)):
+                     phaselimits=(0,90),reslimits=None):
         """
         Will plot the apparent resistivity and phase for TE and TM modes or all
         modes.  If there is tipper data it will be plotted at the bottom as 
@@ -1304,6 +1317,10 @@ class Z(Edi):
                               min and max of phase limits in degrees. 
                               *Default* is (0,90)
             
+            **reslimits** : tuple (min,max)
+                            min and max of resistivity limits in log10
+                            *Default* is None to automatically detect limits
+            
         :Example: ::
             
             # to plot all 4 components
@@ -1314,7 +1331,7 @@ class Z(Edi):
         
         if dpi==None:
             dpi=100
-                
+        
         rp=ResPhase(self.z,self.period,zvar=self.zvar,rotz=thetar,
                        ffactor=ffactor)
         tp=Tipper(self.tipper,rott=thetar)
@@ -1391,6 +1408,8 @@ class Z(Edi):
         ax.set_xscale('log')
         ax.set_xlim(xmin=10**(np.floor(np.log10(self.period[0]))),
                     xmax=10**(np.ceil(np.log10(self.period[-1]))))
+        if reslimits!=None:
+            ax.set_ylim(ymin=10**reslimits[0],ymax=10**reslimits[1])
         ax.grid(True)
         ax.legend((erxy[0],eryx[0]),('$E_x/B_y$','$E_y/B_x$'),loc=3,
                     markerscale=1,borderaxespad=.01,labelspacing=.07,
@@ -2227,7 +2246,7 @@ class PhaseTensor:
             
             #calulate maximum value for phi
             phimax=np.sqrt((.5*tr)**2+(.5*skew)**2)+\
-                np.sqrt((.5*tr)**2+(.5*skew)**2-np.sqrt(phidet)**2)
+                np.sqrt(abs((.5*tr)**2+(.5*skew)**2-np.sqrt(phidet)**2))
             phimaxvar=.5*np.sqrt(2*trvar**2+2*skewvar**2)+.5*np.sqrt(
                                         2*trvar**2+2*skewvar**2+phidetvar)
             
@@ -2235,10 +2254,12 @@ class PhaseTensor:
             if np.linalg.det(phi)>=0:
                 phimin=np.sqrt((.5*tr)**2+(.5*skew)**2)-\
                 np.sqrt((.5*tr)**2+(.5*skew)**2-np.sqrt(phidet)**2)
+                
             elif np.linalg.det(phi)<0:
-                phimin=-1*np.sqrt((.5*tr)**2+(.5*skew)**2)-np.sqrt(
-                            (.5*tr)**2+(.5*skew)**2-
-                            (np.sqrt(abs(phidet)))**2)
+                phimin=np.sqrt((.5*tr)**2+(.5*skew)**2)-np.sqrt(abs(
+                                    (.5*tr)**2+(.5*skew)**2-np.sqrt(phidet)**2))
+                            
+            #set the variance in phimin to that of phimax
             phiminvar=phimaxvar
             
             #calculate ellipticity
