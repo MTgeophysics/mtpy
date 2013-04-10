@@ -880,22 +880,31 @@ class Edi(object):
         zerr_array = np.zeros((len(lo_spectra_strings),2,2))  
 
         lo_freqs = []
+        lo_rots = []
 
         id_channel_dict = _build_id_channel_dict(self.hmeas_emeas)
         channellist = [id_channel_dict[i] for i in id_list]
         for j in ['HX', 'HY', 'EX', 'EY'] :
             if j not in channellist:
-                raise MTexceptions.MTpyError_edi_file('Mandatory channel data for %s not given !'%j)
+                raise MTexceptions.MTpyError_edi_file('Mandatory data for channel %s missing!'%j)
 
         for s_idx, spectra in enumerate(lo_spectra_strings):
             firstline = spectra.split('\n')[0]
             freq = float(_find_key_value('FREQ','=',firstline))
             lo_freqs.append(freq)
+            rotangle = 0.
+            try:
+                rotangle = float(_find_key_value('ROTSPEC','=',firstline))
+            except:
+                pass
+            lo_rots.append(rotangle)
+
             datalist = []
             for innerline in spectra.split('\n')[1:]:
                 datalist.extend(innerline.strip().split())
-            data = np.array([float(i) for i in datalist]).reshape(7,7)
+            data = np.array([float(i) for i in datalist]).reshape(n_chan,n_chan)
 
+            z_array[s_idx] = spectra2z(data, channellist)
 
         sys.exit()
 
@@ -2364,7 +2373,7 @@ def _build_id_channel_dict(lo_hmeas_emeas):
 def _find_key_value(key, separator, instring, valuelength=None):
 
     line = instring.strip().split()
-
+    value = None
     #loop over list/line elements
     for idx, element in enumerate(line):
         #if keyword is not found in entry:
@@ -2395,7 +2404,55 @@ def _find_key_value(key, separator, instring, valuelength=None):
             if len(value) != valuelength :
                 continue
 
-
-
     return value
 
+
+
+def spectra2z(data, channellist=None):
+    """
+        Convert data from spectral form into Z - for one fixed frequency.
+
+        Input:
+        spectral data array, real-valued, n x n sized 
+
+        Output:
+        Z array, complex valued, 2x2 sized
+        (Tipper array, complex valued, 2 x 1 sized) <- if HZ is present
+
+        note: if n>5, remote reference is assumed, so the last 2 channels are interpreted as 'HX/HY-remote' 
+            otherwise, self-referencing is applied
+    """
+
+    z_array = zeros((2,2), 'complex')
+    compl_data = zeros(data.shape, 'complex')
+    tipper_array = None
+
+    #in case the components are in a crazy order
+    comps =  ['HX', 'HY', 'HZ', 'EX', 'EY']
+    lo_idx = []
+    for c in comps:
+        if c not in channellist:
+            continue
+        lo_idx.append(channellist.index(c))
+
+
+    for i in range(data.shape[0]-1):
+        for j in range(i+1,data.shape[0]):
+            if i == j :
+                continue
+            compl_data[i,j] = np.complex( data[i,j] , data[j,i] )
+
+    if data.shape[0] < 6:
+        #no remote reference, so use self-referencing
+        Z_det = compl_data[]*compl_data[] - compl_data[]*compl_data[]
+
+
+
+        if data.shape[0] == 5:
+            tipper_array = zeros((2,1), 'complex')
+
+
+
+
+
+    return z_array, tipper_array
