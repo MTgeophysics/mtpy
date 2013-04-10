@@ -224,6 +224,11 @@ class Edi(object):
 
 
         elif datatype == 'spectra':
+            try:
+                self._read_spectra(edistring)
+            except:
+                raise MTexceptions.MTpyError_edi_file('Could not read Spectra section: %s'%infile)
+
             print 'reading of "spectra" data not supported yet'
 
 
@@ -800,9 +805,38 @@ class Edi(object):
 
 
     def _read_rhorot(self, edistring):
-        pass
+        """
+            Read in the (optional) RhoRot  section from the raw edi-string for data file containing data in  RhoPhi style. Angles are stored in the ZROT attribute. 
+        """
 
-        self.zrot = rhorot
+        try:
+            temp_string = _cut_sectionstring(edistring,'RHOROT')
+        except:
+            lo_angles = list( np.zeros((self.n_freqs())) )
+            self.zrot = lo_angles
+            return
+
+
+        lo_angles = []
+
+        t1 = temp_string.strip().split('\n')[1:]
+
+        for j in t1:
+            lo_j = j.strip().split()
+            for k in lo_j:
+                try:
+                    lo_angles.append(float(k))
+                except:
+                    pass
+
+
+        if len(lo_angles) != self.n_freqs():
+            raise
+
+
+    def _read_spectra(self,edistring):
+
+        pass
 
 
     def _read_zrot(self, edistring):
