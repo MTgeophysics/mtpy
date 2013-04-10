@@ -70,6 +70,8 @@ import os.path as op
 import math, cmath
 import time, calendar
 import copy
+#required for finding HMEAS and EMEAS at once:
+import re
 
 import mtpy.utils.format as MTformat
 import mtpy.utils.calculator as MTc
@@ -197,12 +199,12 @@ class Edi(object):
         try:
             self._read_mtsect(edistring)
         except:
-            raise MTexceptions.MTpyError_edi_file('Could not read MTSECT section: %s'%infile)
+            print 'Could not read MTSECT section: %s'%infile
 
         try:
             self._read_freq(edistring)
         except:
-            raise MTexceptions.MTpyError_edi_file('Could not read FREQ section: %s'%infile)
+            print 'Could not read FREQ section: %s'%infile
 
         if datatype == 'z':
             try:
@@ -224,12 +226,10 @@ class Edi(object):
 
 
         elif datatype == 'spectra':
-            try:
+            if 1:
                 self._read_spectra(edistring)
-            except:
-                raise MTexceptions.MTpyError_edi_file('Could not read Spectra section: %s'%infile)
-
-            print 'reading of "spectra" data not supported yet'
+            # except:
+            #     raise MTexceptions.MTpyError_edi_file('Could not read Spectra section: %s'%infile)
 
 
         #Tipper is optional
@@ -521,6 +521,7 @@ class Edi(object):
 
         self._hmeas_emeas = lo_hmeas_emeas
 
+        
 
     def _read_mtsect(self, edistring):
         """
@@ -835,8 +836,78 @@ class Edi(object):
 
 
     def _read_spectra(self,edistring):
+        """
+            Read in Spectra information from a raw EDI-string.
+            Convert the information into Z and Zerr.
+            Store this as attribute (complex array).
+
+        """
+
+        #identify and cut spectrasect part:
+        specset_string = _cut_sectionstring(edistring,'SPECTRASECT')
+        dummy4 = specset_string.upper().find('NCHAN')
+        n_chan = int(float(specset_string[dummy4:].strip().split('=')[1].split()[0]))
+        id_list = specset_string.split('//')[1].split('\n')[1].strip().split()
+
+        dummy5 = specset_string.upper().find('NFREQ')
+        n_freq = int(float(specset_string[dummy5:].strip().split('=')[1].split()[0]))
+        
+        lo_spectra_strings = []
+        tmp_string = copy.copy(edistring)
+
+        #read in all SPECTRA subsections into a list 
+        while True:
+            try:
+                dummy3 = tmp_string.find('>SPECTRA')
+                #check, if SPECTRA subsection exists
+                if dummy3 <0 :
+                    raise               
+                # cut the respective sub string
+                tmp_cut_string = _cut_sectionstring(tmp_string,'SPECTRA')
+                #append to the list
+                lo_spectra_strings.append(tmp_cut_string)
+                # reduce the input string by the keyword 'SPECTRA', so the subsequent subsection will be read in the next loop-run instead
+                tmp_string = tmp_string[:dummy3] + tmp_string[dummy3+8:]
+            #exceptions for breaking the while, called, if no more SPECTRA subsections can be found
+            except:
+                break
+
+        #assert that the list of read in SPECTRA subsection is not empty:
+        if len(lo_spectra_strings) == 0:
+            raise MTexceptions.MTpyError_EDI('ERROR - EDI file does not contain readable SPECTRA sections!')
+
+        z_array = np.zeros((len(lo_spectra_strings),2,2), 'complex')
+        zerr_array = np.zeros((len(lo_spectra_strings),2,2))  
+
+        lo_freqs = []
+
+        id_channel_dict = _build_id_channel_dict(self.hmeas_emeas)
+        channellist = [id_channel_dict[i] for i in id_list]
+        for j in ['HX', 'HY', 'EX', 'EY'] :
+            if j not in channellist:
+                raise MTexceptions.MTpyError_edi_file('Mandatory channel data for %s not given !'%j)
+
+        for s_idx, spectra in enumerate(lo_spectra_strings):
+            firstline = spectra.split('\n')[0]
+            freq = float(_find_key_value('FREQ','=',firstline))
+            lo_freqs.append(freq)
+            datalist = []
+            for innerline in spectra.split('\n')[1:]:
+                datalist.extend(innerline.strip().split())
+            data = np.array([float(i) for i in datalist]).reshape(7,7)
+
+
+        sys.exit()
+
+
+
 
         pass
+        # z_array = np.zeros((self.n_freqs(),2,2), 'complex')
+        # zerr_array = np.zeros((self.n_freqs(),2,2))
+ 
+        # self.z = z_array
+        # self.zerr = zerr_array
 
 
     def _read_zrot(self, edistring):
@@ -2048,12 +2119,9 @@ def _cut_sectionstring(edistring,sectionhead):
 
     #in this case, several blocks have to be handled together, therefore, a simple cut to the next block start does not work:
     if sectionhead.upper() == 'HMEAS_EMEAS':
-        #required for finding HMEAS and EMEAS at once:
-        import re
 
         lo_start_idxs = [m.start() for m in re.finditer('>[HE]MEAS', edistring) ]
         if len(lo_start_idxs) == 0 :
-            del re
             raise
 
         start_idx = lo_start_idxs[0]
@@ -2063,10 +2131,8 @@ def _cut_sectionstring(edistring,sectionhead):
         hmeas_emeas_string = edistring[start_idx:end_idx]
 
         if len(hmeas_emeas_string) == 0:
-            del re
             raise
 
-        del re
         return hmeas_emeas_string
 
 
@@ -2119,14 +2185,20 @@ def _validate_edifile_string(edistring):
     found *= np.sign(edistring.upper().find('>HMEAS') + 1 )
     found *= np.sign(edistring.upper().find('>EMEAS') + 1 )
     found *= np.sign(edistring.upper().find('NFREQ') + 1 )
-    found *= np.sign(edistring.upper().find('>FREQ') + 1 )
     found *= np.sign(edistring.upper().find('>END') + 1 )
     found *= np.sign(edistring.upper().find('>=DEFINEMEAS') + 1 )
-    found *= np.sign(edistring.upper().find('>=MTSECT') + 1 )
+
+    #allow spectral information as alternative:
+    if np.sign(edistring.upper().find('>FREQ') + 1 ) == 0:
+        if np.sign(edistring.upper().find('>SPECTRA') + 1 ) == 0 :
+            found *= 0
+    if np.sign(edistring.upper().find('>=MTSECT') + 1 ) == 0:
+        if np.sign(edistring.upper().find('>=SPECTRASECT') + 1 ) == 0:
+            found *= 0
 
 
     if found < 1 :
-        print 'Could not find all mandatory sections for a valid EDI file!\n (Most basic version must contain: "HEAD, INFO, =DEFINEMEAS, =MTSECT, FREQ, (Z,) END") '
+        print 'Could not find all mandatory sections for a valid EDI file!\n (Most basic version must contain: "HEAD, INFO, =DEFINEMEAS, =MTSECT or =SPECTRASECT, FREQ or SPECTRA, (Z,) END") '
         return False
 
 
@@ -2147,9 +2219,8 @@ def _validate_edifile_string(edistring):
             continue
 
     if n_numbers == 0:
-        print  MTexceptions.MTpyError_edi_file('Error in FREQ block: no frequencies found')
-
-        found *= 0
+        print  MTexceptions.MTpyError_edi_file('Problem in FREQ block: no frequencies found...checking for spectra instead')
+        #found *= 0
     #Check for data entry following priority:
     # 1. Z
     z_found = 0
@@ -2224,14 +2295,107 @@ def _validate_edifile_string(edistring):
                 rhophi_found += 1
 
     # If neither Z nor RHO/PHS  entries are found continue searching for spectra information
-    # 2. spectra
-    if z_found ==0 and rhophi_found == 0:
-        print 'ERROR - no data found in terms of "Z" or "RHO/PHS" - reading of spectra is not supported yet'
+    # 3. spectra
+    if z_found == 0 and rhophi_found == 0:
+
+        spectrasect = _cut_sectionstring(edistring, '=SPECTRASECT')
+        if len(spectrasect) == 0 :
+            found *=0
+        dummy4 = spectrasect.upper().find('NCHAN')
+        n_chan = int(float(spectrasect[dummy4:].strip().split('=')[1].split()[0]))
+
+        if n_chan not in [4,5,6,7]:
+            found *= 0 
+
+        dummy5 = spectrasect.upper().find('NFREQ')
+        n_freq = int(float(spectrasect[dummy5:].strip().split('=')[1].split()[0]))
+       
+        firstspectrum = _cut_sectionstring(edistring, 'SPECTRA')
+        if len(firstspectrum) == 0 :
+            found *=0
+
+        no_values = int(float(firstspectrum.split('\n')[0].strip().split('//')[1]))
+
+        if firstspectrum.upper().find('FREQ') <0 :
+            found *= 0
+        
+        if not n_chan**2 == no_values:
+            found *= 0
+
+        lo_valuelines = firstspectrum.split('\n')[1:]
+        dummy6 = ''
+        for i in lo_valuelines:
+            dummy6 += i
+
+        if not len(dummy6.split()) == no_values:
+            found *= 0
+
+        if not edistring.upper().count('>SPECTRA') ==  n_freq:
+            found *= 0
+        if found > 0:
+            print 'Found spectra data'
+            spectra_found = 1
+ 
+    if z_found == 0 and rhophi_found == 0 and spectra_found == 0 :
+        print 'ERROR - no data found in terms of "Z" or "RHO/PHS" or "SPECTRA" - reading of multiple stations is not supported (yet)!'
         found *= 0
-
-
 
     if found > 0: isvalid = True
 
     return isvalid
+
+
+
+def _build_id_channel_dict(lo_hmeas_emeas):
+
+    id_dict = {}
+
+    for line in lo_hmeas_emeas:
+        if len(''.join(line).strip()) == 0:
+            continue
+
+        channel = _find_key_value('CHTYPE','=',' '.join(line),valuelength=2)
+        ID = _find_key_value('ID','=',' '.join(line))
+
+        id_dict[ID] = channel
+
+    return id_dict
+
+def _find_key_value(key, separator, instring, valuelength=None):
+
+    line = instring.strip().split()
+
+    #loop over list/line elements
+    for idx, element in enumerate(line):
+        #if keyword is not found in entry:
+        if element.upper().find(key.upper()) < 0:
+            continue
+        #else check, if the separator is present in the same element (equiv. to no spacing)
+        if element.upper().find(separator) >= 0:
+
+            #, if the splitting worked out 
+            if len(element.split(separator)) == 2 :
+                #if all fine until now, read in the part after the separator as value
+                value = element.split(separator)[1].upper()
+                
+                #if the separator was at the end of the element, read the next element as value
+                if  len(element.split(separator)[1]) == 0 :
+                    value = line[idx+1]
+        
+        #else, the separator is in the next element
+        else:
+            #check, if the next line is entirely defined by separator -> value must be one later
+            if line[idx+1] == separator:
+                value = line[idx+2]
+            #else, cut off the separator from the value
+            else:
+                value = line[idx+1].split(separator)[1]
+                #check for correct length of value, if specified 
+        if valuelength is not None:
+            if len(value) != valuelength :
+                continue
+
+
+
+    return value
 
