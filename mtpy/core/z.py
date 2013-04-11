@@ -12,10 +12,6 @@ Contains classes and functions for handling impedance tensors (Z).
         - read_edi_object
         - set_z
         - set_zerr
-        - real
-        - set_real
-        - imag
-        - set_imag
         - rho
         - phi
         - set_rho_phi
@@ -37,11 +33,6 @@ Contains classes and functions for handling impedance tensors (Z).
         - _edi_object
         - set_tipper
         - set_tippererr
-        - real
-        - set_real
-        - imag
-        - set_imag
-        - r_phi
         - set_r_phi
         - rotate
 
@@ -253,7 +244,7 @@ class Z(object):
         self.zerr = zerr_array
 
 
-    def real(self):
+    def _get_real(self):
         """
             Return the real part of Z.
 
@@ -267,7 +258,7 @@ class Z(object):
         return np.real(self.z)
 
         
-    def set_real(self, real_array):
+    def _set_real(self, real_array):
         """
             Set the real part of 'z'.
 
@@ -297,8 +288,9 @@ class Z(object):
 
         self.z = z_new
 
+    real = property(_get_real, _set_real, doc='Real part of Z')
 
-    def imag(self):
+    def _get_imag(self):
         """
             Return the imaginary part of Z.
 
@@ -312,7 +304,7 @@ class Z(object):
         return np.imag(self.z)
 
         
-    def set_imag(self, imag_array):
+    def _set_imag(self, imag_array):
         """
             Set the imaginary part of 'z'.
 
@@ -342,8 +334,9 @@ class Z(object):
 
         self.z = z_new
 
+    imag = property(_get_imag, _set_imag, doc='Imaginary part of Z ')
 
-    def rho_phi(self):
+    def _get_rho_phi(self):
         """
             Return values for resistivity (rho - in Ohm m) and phase (phi - in degrees).
 
@@ -378,6 +371,8 @@ class Z(object):
 
         return rho, phi, rhoerr, phierr
 
+
+    rho_phi= property(_get_rho_phi, doc='Resistivity and Phase angle of Z')
 
 
     def set_rho_phi(self, rho_array, phi_array):
@@ -427,7 +422,7 @@ class Z(object):
         self.z = z_new
 
 
-    def inverse(self):
+    def _get_inverse(self):
         """
             Return the inverse of Z.
 
@@ -448,6 +443,7 @@ class Z(object):
 
         return inverse
 
+    inverse = property(_get_inverse, doc='Inverse of Z')
 
     def rotate(self, alpha):
         """
@@ -671,7 +667,7 @@ class Z(object):
         pass
 
 
-    def only1d(self):
+    def _get_only1d(self):
         """
             Return Z in 1D form.
 
@@ -691,8 +687,9 @@ class Z(object):
 
         return z1d
 
+    only1d = property(_get_only1d, doc=""" Return Z in 1D form. If Z is not 1D per se, the diagonal elements are set to zero, the off-diagonal elements keep their signs, but their absolute is set to the mean of the original Z off-diagonal absolutes.""")
 
-    def only2d(self):
+    def _get_only2d(self):
         """
             Return Z in 2D form.
 
@@ -706,9 +703,11 @@ class Z(object):
             z2d[i,1,1] = 0
             
         return z2d
+    
+    only2d = property(_get_only2d, doc="""Return Z in 2D form. If Z is not 2D per se, the diagonal elements are set to zero. """)
 
 
-    def trace(self):
+    def _get_trace(self):
         """
             Return the trace of Z (incl. uncertainties).
 
@@ -728,7 +727,9 @@ class Z(object):
 
         return tr, tr_err
 
-    def skew(self):
+    trace = property(_get_trace, doc='Trace of Z, incl. error')
+
+    def _get_skew(self):
         """
             Return the skew of Z (incl. uncertainties).
 
@@ -746,8 +747,9 @@ class Z(object):
             skewerr[:] = self.zerr[:,0,1] + self.zerr[:,1,0]
 
         return skew, skewerr
+    skew = property(_get_skew, doc='Skew of Z, incl. error')
 
-    def det(self):
+    def _get_det(self):
         """
             Return the determinant of Z (incl. uncertainties).
 
@@ -757,17 +759,18 @@ class Z(object):
 
         """
 
-        det_phi = np.array( [np.linalg.det(i) for i in self.z])
+        det_Z = np.array( [np.linalg.det(i) for i in self.z])
         
-        det_phi_err = None
+        det_Z_err = None
         if self.zerr is not None:
-            det_phi_err = np.zeros_like(det_phi)
-            det_phi_err[:] = np.abs(self.z[:,1,1] * self.zerr[:,0,0]) + np.abs(self.z[:,0,0] * self.zerr[:,1,1]) + np.abs(self.z[:,0,1] * self.zerr[:,1,0]) + np.abs(self.z[:,1,0] * self.zerr[:,0,1])
+            det_Z_err = np.zeros_like(det_phi)
+            det_Z_err[:] = np.abs(self.z[:,1,1] * self.zerr[:,0,0]) + np.abs(self.z[:,0,0] * self.zerr[:,1,1]) + np.abs(self.z[:,0,1] * self.zerr[:,1,0]) + np.abs(self.z[:,1,0] * self.zerr[:,0,1])
 
-        return det_phi, det_phi_err
+        return det_Z, det_Z_err
+    det = property(_get_det, doc='Determinant of Z, incl. error')
 
 
-    def norm(self):
+    def _get_norm(self):
         """
             Return the 2-/Frobenius-norm of Z (incl. uncertainties).
 
@@ -781,9 +784,10 @@ class Z(object):
         norm_z = np.array( [np.linalg.norm(i) for i in self.z ])
 
         return znorm, znormerr
+    norm = property(_get_norm, doc='Norm of Z, incl. error')
 
 
-    def invariants(self):
+    def _get_invariants(self):
         """
             Return a dictionary of Z-invariants.
 
@@ -824,7 +828,7 @@ class Z(object):
         invariants_dict['sigma_minus'] = sigma_minus
 
         return invariants_dict
-
+    invariants = property(_get_invariants, doc='Invariants of Z: z1, det, det_real, det_imag, trace, skew, norm, lambda_plus/minus, sigma_plus/minus')
 
 #------------------------
 
@@ -954,7 +958,7 @@ class Tipper(object):
         self.tippererr = tippererr_array
 
 
-    def real(self):
+    def _get_real(self):
         """
             Return the real part of the Tipper.
 
@@ -966,7 +970,7 @@ class Tipper(object):
         return np.real(self.tipper)
 
         
-    def set_real(self, real_array):
+    def _set_real(self, real_array):
         """
             Set the real part of 'tipper'.
 
@@ -997,8 +1001,9 @@ class Tipper(object):
 
         self.tipper = tipper_new
 
+    real = property(_get_real, _set_real, doc='Real part of the Tipper')
 
-    def imag(self):
+    def _get_imag(self):
         """
             Return the imaginary part of the Tipper.
 
@@ -1011,7 +1016,7 @@ class Tipper(object):
         return np.imag(self.tipper)
 
         
-    def set_imag(self, imag_array):
+    def _set_imag(self, imag_array):
         """
             Set the imaginary part of 'tipper'.
 
@@ -1041,8 +1046,9 @@ class Tipper(object):
 
         self.tipper = tipper_new
 
+    imag = property(_get_imag, _set_imag, doc='Imaginary part of the Tipper')
 
-    def r_phi(self):
+    def _get_r_phi(self):
         """
             Return values for amplitude (r) and argument (phi - in degrees).
 
@@ -1077,6 +1083,7 @@ class Tipper(object):
 
         return rho, phi, rhoerr, phierr
 
+    r_phi = property(_get_r_phi, doc='Amplitude and Phase angle of the Tipper')
 
     def set_r_phi(self, r_array, phi_array):
         """

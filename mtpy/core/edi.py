@@ -32,19 +32,11 @@ Contains classes and functions for handling EDI files.
         - rotate
         - rho
         - phi
-        - set_rho_phi
-        - set_head
-        - set_info_dict
-        - set_info_string
         - set_z
         - set_zerr
         - set_tipper
         - set_tippererr
-        - set_definemeas
-        - set_mtsect
         - get_datacomponent
-        - set_frequencies
-        - set_zrot
 
 
     Functions:
@@ -121,7 +113,7 @@ class Edi(object):
         self._hmeas_emeas = None
         self._mtsect = {}
         self._freq = None
-        self.zrot = None
+        self._zrot = None
         self.z = None
         self.zerr = None
         self.tipper = None
@@ -1409,9 +1401,10 @@ class Edi(object):
         self._freq = lo_frequencies
     def _get_frequencies(self): return self._freq
     freq = property(_get_frequencies, _set_frequencies, doc='list of frequencies')
+    frequencies = property(_get_frequencies, _set_frequencies, doc='list of frequencies')
 
 
-    def set_zrot(self, angle):
+    def _set_zrot(self, angle):
         """
             Set the list of rotation angles.
 
@@ -1435,7 +1428,10 @@ class Edi(object):
                 raise MTexceptions.MTpyError_edi_file('Angles is a non-numercal value')
 
 
-        self.zrot = angle
+        self._zrot = angle
+
+    def _get_zrot(self): return self._zrot
+    zrot = property(_get_zrot, _set_zrot, doc='')
 
 
 #end of Edi Class
