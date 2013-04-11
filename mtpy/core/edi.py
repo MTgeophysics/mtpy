@@ -226,26 +226,28 @@ class Edi(object):
 
 
         elif datatype == 'spectra':
-            if 1:
+            try:
                 self._read_spectra(edistring)
-            # except:
-            #     raise MTexceptions.MTpyError_edi_file('Could not read Spectra section: %s'%infile)
+            except:
+                raise MTexceptions.MTpyError_edi_file('Could not read Spectra section: %s'%infile)
 
 
         #Tipper is optional
-        try:
-            self._read_tipper(edistring)
-        except:
-            self.tipper = None
-            self.tippererr = None
-            print 'Could not read Tipper section: %s'%infile
+        if self.tipper is None:
+            try:
+                self._read_tipper(edistring)
+            except:
+                self.tipper = None
+                self.tippererr = None
+                print 'Could not read Tipper section: %s'%infile
 
         #rotation is optional
-        try:
-            self._read_zrot(edistring)
-        except:
-            self.zrot = None
-            print 'Could not read Zrot section: %s'%infile
+        if self.zrot is None:
+            try:
+                self._read_zrot(edistring)
+            except:
+                self.zrot = None
+                print 'Could not read Zrot section: %s'%infile
 
 
     def edi_dict(self):
@@ -423,7 +425,7 @@ class Edi(object):
             raise
 
         self._info_string = temp_string.strip()
-        
+       
 
         t1 = temp_string.strip().split('\n')
         t2 = [i.strip() for i in t1 if '=' in i or ':' in i]
@@ -517,6 +519,9 @@ class Edi(object):
         for j in t1:
             j = j.replace('>','')
             lo_j = j.split()
+            #skip empty lines
+            if len(lo_j) ==0:
+                continue
             lo_hmeas_emeas.append(tuple(lo_j))
 
         self._hmeas_emeas = lo_hmeas_emeas
@@ -845,6 +850,23 @@ class Edi(object):
 
         #identify and cut spectrasect part:
         specset_string = _cut_sectionstring(edistring,'SPECTRASECT')
+        s_dict = {}
+        t1 = specset_string.strip().split('\n')
+
+        s_dict['sectid'] = ''
+
+        sectid = _find_key_value('sectid', '=',specset_string )
+        if sectid is not None :
+            s_dict['sectid'] = sectid
+
+        for tmp_str in t1:
+            if '=' in tmp_str:
+                k = tmp_str.strip().split('=')
+                key = k[0].lower()
+                value = k[1].replace('"','').strip()
+                if len(value) != 0:
+                    s_dict[key] = value
+
         dummy4 = specset_string.upper().find('NCHAN')
         n_chan = int(float(specset_string[dummy4:].strip().split('=')[1].split()[0]))
         id_list = specset_string.split('//')[1].split('\n')[1].strip().split()
@@ -877,7 +899,14 @@ class Edi(object):
             raise MTexceptions.MTpyError_EDI('ERROR - EDI file does not contain readable SPECTRA sections!')
 
         z_array = np.zeros((len(lo_spectra_strings),2,2), 'complex')
-        zerr_array = np.zeros((len(lo_spectra_strings),2,2))  
+        zerr_array = np.zeros((len(lo_spectra_strings),2,2))
+        
+        id_comps = ['HX', 'HY', 'EX', 'EY','RX', 'RY']        
+        if n_chan%2 != 0 :
+            id_comps = ['HX', 'HY','HZ', 'EX', 'EY','RX', 'RY']        
+
+            tipper_array = np.zeros((len(lo_spectra_strings),1,2), 'complex')
+            tippererr_array = np.zeros((len(lo_spectra_strings),1,2))
 
         lo_freqs = []
         lo_rots = []
@@ -904,19 +933,27 @@ class Edi(object):
                 datalist.extend(innerline.strip().split())
             data = np.array([float(i) for i in datalist]).reshape(n_chan,n_chan)
 
-            z_array[s_idx] = spectra2z(data, channellist)
+            if n_chan%2 != 0 :
+                z_array[s_idx], tipper_array[s_idx] = spectra2z(data, channellist)
+            else:
+                z_array[s_idx] = spectra2z(data, channellist)[0]
 
-        sys.exit()
 
-
-
-
-        pass
         # z_array = np.zeros((self.n_freqs(),2,2), 'complex')
         # zerr_array = np.zeros((self.n_freqs(),2,2))
  
-        # self.z = z_array
-        # self.zerr = zerr_array
+        self.z = z_array
+        self.tipper = tipper_array
+        self.zrot = lo_rots
+        self.zerr = zerr_array
+        self.tippererr = tippererr_array
+        self.freq = lo_freqs
+
+        for i,j in enumerate(id_list):
+            s_dict[ id_comps[i] ] = j
+
+        self.mtsect = s_dict
+
 
 
     def _read_zrot(self, edistring):
@@ -977,6 +1014,7 @@ class Edi(object):
                     outfilename += '.edi'
             except:
                 fn = None
+                print 'ERROR - could not generate output file with given name - trying generic name instead!'
 
         if fn == None:
             outfilename = op.abspath(stationname.upper()+'.edi')
@@ -987,7 +1025,7 @@ class Edi(object):
             i = 0
             while op.isfile(newfile):
                 i += 1
-                newfile = outfilename+'_%i'%i
+                newfile = outfilename[:-4]+'_%i'%i+'.edi'
 
             outfilename = newfile
 
@@ -1939,8 +1977,10 @@ def _generate_edifile_string(edidict):
             head_dict = edidict['HEAD']
             for k in  sorted(head_dict.iterkeys()):
                 v = str(head_dict[k])
-                if len(v) == 0 or len(v.split()) > 1:
+                if len(v) == 0:
                     edistring += '\t%s=""\n'%(k.upper())
+                elif len(v.split()) > 1:
+                    edistring += '\t%s="%s"\n'%(k.upper(),v)
                 else:
                     try:
                         v = v.upper()
@@ -1961,14 +2001,16 @@ def _generate_edifile_string(edidict):
 
             for k in sorted(info_dict.iterkeys()):
                 v = str(info_dict[k])
-                if len(v) == 0  or len(v.split()) > 1:
-                    edistring += '\t%s: ""\n'%(k)
+                #get station name (to be returned aside with the edistring, allowing for proper naming of output file)
+                if k == 'station':
+                    v = v.upper().replace(' ','_')
+                    stationname = v
+
+                if len(v) == 0 or len(v.split()) > 1:
+                    edistring += '\t%s: "%s"\n'%(k,v)
                 else:
                     edistring += '\t%s: %s\n'%(k,v)
 
-                #get station name (to be returned aside with the edistring, allowing for proper naming of output file)
-                if k == 'station':
-                    stationname = v.upper()
 
 
         if sectionhead == 'DEFINEMEAS':
@@ -2423,36 +2465,57 @@ def spectra2z(data, channellist=None):
             otherwise, self-referencing is applied
     """
 
-    z_array = zeros((2,2), 'complex')
-    compl_data = zeros(data.shape, 'complex')
+    z_array = np.zeros((2,2), 'complex')
+    S = np.zeros(data.shape, 'complex')
     tipper_array = None
 
     #in case the components are in a crazy order
     comps =  ['HX', 'HY', 'HZ', 'EX', 'EY']
-    lo_idx = []
+    idx = []
     for c in comps:
         if c not in channellist:
+            idx.append(None)
             continue
-        lo_idx.append(channellist.index(c))
+
+        idx.append(channellist.index(c))
+    
+    #if remote ref. is applied, take the last two columns as rem ref for HX, Hy 
+    if data.shape[0] in [6,7]:
+        idx.append(data.shape[0]-2)
+        idx.append(data.shape[0]-1)
+    elif data.shape[0] < 6 :
+        idx.append(0)
+        idx.append(1)
 
 
+    #idx contains the indices/positions of the components within the data matrix. The entries are in the order 
+    # HX, HY, HZ, EX, EY, HXrem, HYrem
+    # if HY is not present, the list entry is a NONE
+
+    #build upper right triangular matrix with compex valued entries
     for i in range(data.shape[0]-1):
         for j in range(i+1,data.shape[0]):
             if i == j :
                 continue
-            compl_data[i,j] = np.complex( data[i,j] , data[j,i] )
+            #minus sign for keeping the TE/TM right 
+            # TODO - to be checked for generality
+            S[i,j] = np.complex( data[i,j] , +data[j,i] )
 
-    if data.shape[0] < 6:
-        #no remote reference, so use self-referencing
-        Z_det = compl_data[]*compl_data[] - compl_data[]*compl_data[]
+    #use formulas from Bahr/Simpson to convert the Spectra into Z entries:
 
+    Zdet = np.real( S[idx[0],idx[5]] * S[idx[1],idx[6]] - S[idx[0],idx[6]] * S[idx[1],idx[5]] )
 
+    z_array[0,0] =  S[idx[3],idx[5]] * S[idx[1],idx[6]] - S[idx[3],idx[6]] * S[idx[1],idx[5]] 
+    z_array[0,1] =  S[idx[3],idx[6]] * S[idx[0],idx[5]] - S[idx[3],idx[5]] * S[idx[0],idx[6]] 
+    z_array[1,0] =  S[idx[4],idx[5]] * S[idx[1],idx[6]] - S[idx[4],idx[6]] * S[idx[1],idx[5]] 
+    z_array[1,1] =  S[idx[4],idx[6]] * S[idx[0],idx[5]] - S[idx[4],idx[5]] * S[idx[0],idx[6]] 
 
-        if data.shape[0] == 5:
-            tipper_array = zeros((2,1), 'complex')
+    z_array /= Zdet
 
-
-
-
+    #if HZ information is present:
+    if data.shape[0] %2 != 0:
+        tipper_array = np.zeros((1,2),dtype=np.complex)
+        tipper_array[0,0] = S[idx[2],idx[5]] * S[idx[1],idx[6]] - S[idx[2],idx[6]] * S[idx[1],idx[5]] 
+        tipper_array[0,1] = S[idx[2],idx[6]] * S[idx[0],idx[5]] - S[idx[2],idx[5]] * S[idx[0],idx[6]] 
 
     return z_array, tipper_array
