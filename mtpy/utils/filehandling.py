@@ -732,3 +732,28 @@ def read_2c2_file(filename):
 
     return period, freq, coh1, zcoh1
 
+
+def read_header(mtdatafile):
+    """ Read in the header line from MTpy data files.
+        Return header as dictionary. Return empty dict, if no header line was found.
+    """
+
+    header_dict = {}
+
+    try:
+        with open(mtdatafile,'r') as F:
+            firstline = F.readline().strip()
+        if firstline[0] != '#':
+            raise
+    except:
+        return header_dict
+
+    firstline = firstline.replace('#','')
+    headerlist = firstline.split()
+
+    lo_headerelements = ['station', 'channel','samplingrate','t_min','nsamples','unit','lat','lon','elev']
+
+    for i in range(len(headerlist)):
+        header_dict[lo_headerelements[i]] = headerlist[i]
+
+    return header_dict
