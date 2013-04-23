@@ -679,8 +679,8 @@ class Z(object):
         for i in range(len(z1d)):
             z1d[i,0,0] = 0
             z1d[i,1,1] = 0
-            sign01 = z1d[i,0,1]/np.abs(z1d[i,0,1])
-            sign10 = z1d[i,1,0]/np.abs(z1d[i,1,0])
+            sign01 = np.sign(z1d[i,0,1])
+            sign10 = np.sign(z1d[i,1,0])
             mean1d = 0.5* (z1d[i,1,0]+z1d[i,0,1])
             z1d[i,0,1] = sign01 * mean1d
             z1d[i,1,0] = sign10 * mean1d
@@ -801,7 +801,7 @@ class Z(object):
         z1 = (self.z[:,0,1] - self.z[:,1,0])/2.
         invariants_dict['z1'] = z1 
 
-        invariants_dict['det'] = det()[0]
+        invariants_dict['det'] = self.det()[0]
         
         det_real = np.array( [np.linalg.det(i) for i in self.real() ])
         invariants_dict['det_real'] = det_real
@@ -815,16 +815,16 @@ class Z(object):
         
         invariants_dict['norm'] = norm()[0]
         
-        lambda_plus = np.array( [ z1[i] + np.sqrt(z1[i] * z1[i] - det_z[i]) for i in range(len(z1)) ])
+        lambda_plus = np.array( [ z1[i] + np.sqrt(z1[i] * z1[i] - self.det()[i]) for i in range(len(z1)) ])
         invariants_dict['lambda_plus'] = lambda_plus
         
-        lambda_minus = np.array( [ z1[i] - np.sqrt(z1[i] * z1[i] - det_z[i]) for i in range(len(z1)) ])
+        lambda_minus = np.array( [ z1[i] - np.sqrt(z1[i] * z1[i] - self.det()[i]) for i in range(len(z1)) ])
         invariants_dict['lambda_minus'] = lambda_minus
         
-        sigma_plus = np.array( [ 0.5*norm_z[i]**2 + np.sqrt( 0.25*norm_z[i]**4 + np.abs(det_z[i])**2) for i in range(len(norm_z)) ])
+        sigma_plus = np.array( [ 0.5*norm_z[i]**2 + np.sqrt( 0.25*norm_z[i]**4 + np.abs(self.det()[i])**2) for i in range(len(norm_z)) ])
         invariants_dict['sigma_plus'] = sigma_plus
         
-        sigma_minus = np.array( [ 0.5*norm_z[i]**2 - np.sqrt( 0.25*norm_z[i]**4 + np.abs(det_z[i])**2) for i in range(len(norm_z)) ])
+        sigma_minus = np.array( [ 0.5*norm_z[i]**2 - np.sqrt( 0.25*norm_z[i]**4 + np.abs(self.det()[i])**2) for i in range(len(norm_z)) ])
         invariants_dict['sigma_minus'] = sigma_minus
 
         return invariants_dict

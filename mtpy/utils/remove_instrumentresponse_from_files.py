@@ -194,7 +194,8 @@ def main():
 
                 #now, save this TS back into the appropriate files, including headers
                 #To do so, use the time axis and run over the input files again,determine the filenames. Use them, and put them (slightly modified) into the given output directory  
-
+                print 'sssss'
+                return corrected_timeseries
 
 
 
