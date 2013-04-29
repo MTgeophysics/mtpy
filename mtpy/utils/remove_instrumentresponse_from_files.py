@@ -201,8 +201,8 @@ def main():
                     files.append(fn)
                     headers.append(header)
                     starttimes.append(float(header['t_min']))
-                    print fn
                     cur_data = np.loadtxt(fn)
+
                     print 'current data section length: ',len(cur_data)
                     if ta_cur[-1] <= ta[-1]:
                         data.extend(cur_data[start_idx:].tolist())
@@ -251,13 +251,45 @@ def main():
 
             else:
                 #find partition into pieces of length 'winmax'. the remainder is equally split between start and end:
+
+                #total time axis length:
                 ta_length = ta[-1] - ta[0]
-                remainder = ta_length%winmax
+                
+                #partition into winmax long windows 
                 n_windows = int(ta_length/winmax)
-                lo_starttimes = [ta[0]]
+                remainder = ta_length%winmax
+                lo_windowstarts = [ta[0]]
                 for i in range(n_windows+1):
                     t0 = ta[0] + remainder/2. + i * winmax
-                    lo_starttimes.append(t0)
+                    lo_windowstarts.append(t0)
+
+                # loop over the winmax long sections:
+                for idx_t0, t0 in enumerate(lo_windowstarts):
+                    #for each step (except for he last one obviously), 3 consecutive parts are read in, concatenated and deconvolved. Then the central part is taken as 'true' data. 
+                    #only for the first and the last bit (start and end pieces) are handled together with the respective following/preceding section
+
+                    #a list of input file(s) containing the data:
+                    lo_input_files = []
+                    lo_output_files = []
+                    #the data currently under processing:
+                    data = []
+                    #since this loop is working as a moving window, there is no need to re-read a section 3 times:
+                    old_data = []
+
+                    1. find the 3 data pieces in the files 
+                    2. store the file name(s), perhaps including their respective time axes 
+                    3. define 'data'
+                    4. deconvolve 'data'
+                    5. cut the middle section
+                    6. find, from which files that came
+                    7. write it to the equivalent output file(s)
+                    8. for the first and last section: pre/append them to the middle section and write out the whole bit 
+
+
+
+
+
+
 
 
 
