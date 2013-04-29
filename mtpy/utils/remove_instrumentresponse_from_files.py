@@ -172,7 +172,7 @@ def main():
         # the minimum of the maximal resolvable signal period and the longest continuous time axis:
         winmax = 1./freq_min
         #for debugging set large window size:
-        winmax = 10e7
+        winmax = 5e4
         #later on, if the TS is longer than 3 times this time window, we want to cut out subsections of the time series. These cuts shall consist of triplets of subwindows, each of which shall not be longer than this maximum period.
 
         #Now the data set has to be corrected/deconvolved by looping over the collected time axes:
@@ -181,7 +181,7 @@ def main():
 
             #if the time section is shorter than 3 times the maximum defined by the response function, read in the whole data set at once for this interval
             if (ta[-1] - ta[0]) < (3 * winmax) : 
-                print 'time axis short enough - reading all at once'
+                print 'time axis short enough ({0} seconds) - reading all at once'.format(ta[-1] - ta[0])
 
                 #collect the appropriate files in a list
                 #after the MTpy preprocessing the start end end of the time series coincide with files start and endings, so no "half files" are involved. 
@@ -233,7 +233,7 @@ def main():
                         unit +='(true)'
                     header['unit'] = unit
                     headerline = FH.get_ts_header_string(header)
-                    outF.write(headerline+'\n')
+                    outF.write(headerline)
                     starttime = starttimes[idx]
                     length = int(float(header['nsamples']))
                     
@@ -250,10 +250,14 @@ def main():
                 #return corrected_timeseries
 
             else:
+
                 #find partition into pieces of length 'winmax'. the remainder is equally split between start and end:
 
+                #assume constant sampling rate, just use the last opened header (see above): 
+                samplingrate = float(header['samplingrate'])  
+
                 #total time axis length:
-                ta_length = ta[-1] - ta[0]
+                ta_length = ta[-1] - ta[0] + 1./samplingrate
                 
                 #partition into winmax long windows 
                 n_windows = int(ta_length/winmax)
@@ -262,32 +266,251 @@ def main():
                 for i in range(n_windows+1):
                     t0 = ta[0] + remainder/2. + i * winmax
                     lo_windowstarts.append(t0)
+                print 'time axis long ({0} seconds) - processing in {1} sections (window: {2})'.format(ta_length,n_windows, winmax)
+
+
+                # lists of input file(s) containing the data - for all 3 sections of the moving window
+                section1_lo_input_files = []
+                section2_lo_input_files = []
+                section3_lo_input_files = []
+                section1_data = []
+                section2_data = []
+                section3_data = []
+                section1_ta = []
+                section2_ta = []
+                section3_ta = []
+                file_open = False
 
                 # loop over the winmax long sections:
                 for idx_t0, t0 in enumerate(lo_windowstarts):
-                    #for each step (except for he last one obviously), 3 consecutive parts are read in, concatenated and deconvolved. Then the central part is taken as 'true' data. 
-                    #only for the first and the last bit (start and end pieces) are handled together with the respective following/preceding section
+                    print 'section {0}'.format(idx_t0 + 1)
 
-                    #a list of input file(s) containing the data:
-                    lo_input_files = []
-                    lo_output_files = []
+                    #for each step (except for he last one obviously), 3 consecutive parts are read in, concatenated and deconvolved. Then the central part is taken as 'true' data. 
+                    #only for the first and the last sections (start and end pieces) are handled together with the respective following/preceding section
+
+                    #the last two window-starts do not get an own window:
+                    if idx_t0 > n_windows - 1:
+                        # since there are 'n_windows' full intervals for the moving window
+                        break
+
                     #the data currently under processing:
                     data = []
-                    #since this loop is working as a moving window, there is no need to re-read a section 3 times:
-                    old_data = []
+                    timeaxis = []
 
-                    1. find the 3 data pieces in the files 
-                    2. store the file name(s), perhaps including their respective time axes 
-                    3. define 'data'
-                    4. deconvolve 'data'
-                    5. cut the middle section
-                    6. find, from which files that came
-                    7. write it to the equivalent output file(s)
-                    8. for the first and last section: pre/append them to the middle section and write out the whole bit 
+                    #if old data are present from the step before:
+                    if (len(section2_data) > 0) and (len(section3_data) > 0):
+                        section1_data = section2_data
+                        section2_data = section3_data
+                        section1_ta = section2_ta
+                        section2_ta = section3_ta
+                        section1_lo_input_files = section2_lo_input_files
+                        section2_lo_input_files = section3_lo_input_files
+                        section1_lo_t0s = section2_lo_t0s 
+                        section2_lo_t0s = section3_lo_t0s 
+
+                    #otherwise, it's the first step, so all 3 sections have to be read
+                    else:
+                        section1_data, section1_lo_input_files,section1_lo_t0s = read_ts_data_from_files(t0,lo_windowstarts[idx_t0 +1],lo_t_mins, lo_files)
+
+                        section2_data, section2_lo_input_files,section2_lo_t0s = read_ts_data_from_files(lo_windowstarts[idx_t0 +1],lo_windowstarts[idx_t0 +2],lo_t_mins, lo_files)
+
+                        section1_ta = np.arange(len(section1_data))/samplingrate + t0
+                        section2_ta = np.arange(len(section2_data))/samplingrate + lo_windowstarts[idx_t0 +1]
+                        print section1_lo_input_files,section2_lo_input_files
+
+                    try:
+                        section3_data, section3_lo_input_files,section3_lo_t0s  = read_ts_data_from_files(lo_windowstarts[idx_t0 +2],lo_windowstarts[idx_t0 +3],lo_t_mins, lo_files)
+
+                    except:
+                        #for the last section, there is no lo_windowstarts[idx_t0 +3], so it must be the end of the overall time axis
+                        section3_data, section3_lo_input_files,section3_lo_t0s  = read_ts_data_from_files(lo_windowstarts[idx_t0 +2],ta[-1]+1./samplingrate,lo_t_mins, lo_files)
+
+                    section3_ta = np.arange(len(section2_data))/samplingrate + lo_windowstarts[idx_t0 +2]
+                    data = np.concatenate([section1_data, section2_data, section3_data])
+                    timeaxis = np.concatenate([section1_ta, section2_ta, section3_ta])                
+
+
+                    corrected_data = PI.correct_for_instrument_response(np.array(data),samplingrate, responsedata)  
+
+                    lo_infiles = []
+                    lo_t0s = []
+                    print idx_t0
+
+                    if idx_t0 == 0:
+                        startidx = 0
+                        lo_infiles.extend(section1_lo_input_files)
+                        lo_t0s.extend(section1_lo_t0s)
+
+                    else:
+                        startidx = (np.abs(timeaxis - lo_windowstarts[idx_t0 + 1])).argmin()
+                    
+                    lo_infiles.extend(section2_lo_input_files)
+                    lo_t0s.extend(section2_lo_t0s)
+
+
+                    if idx_t0 == n_windows - 1:
+                        endidx = -1
+                        lo_infiles.extend(section3_lo_input_files)
+                        lo_t0s.extend(section3_lo_t0s)
+
+                    else:
+                        endidx = (np.abs(timeaxis - lo_windowstarts[idx_t0 + 2])).argmin() - 1
+
+                    print 'indizes:',startidx,endidx
+                    print lo_infiles
+                    data2write = corrected_data[startidx:endidx]
+                    timeaxis2write = timeaxis[startidx:endidx]
+
+                    # write data to file(s):
+                    tmax = timeaxis2write[-1]
+
+                    t = timeaxis2write[0]
+
+                    while t < tmax: 
+
+                        if file_open == False:
+                            # take the first of the input files in the list:
+                            header = FH.read_ts_header(lo_infiles[0])
+                            ta_tmp = np.arange(float(header['nsamples'])) * float(header['samplingrate']) + float(header['t_min'])
+                            unit = header['unit']
+                            if unit[-6:].lower() != '(true)':
+                                unit +='(true)'
+                            header['unit'] = unit
+                            headerline = FH.get_ts_header_string(header)
+
+                            # output file name: use input file name and append '_true'
+                            inbasename = op.basename(fn)
+                            outbasename = ''.join([op.splitext(inbasename)[0]+'_true',op.splitext(inbasename)[1]])
+                            outfn = op.join(outdir,outbasename)
+                            outF = open(outfn,'w')
+                            outF.write(headerline)
+
+                            # if the section exceeds the time axis of the file:
+                            if tmax > ta_tmp[-1]:
+                                #write as many samples to the files as there belong 
+                                np.savetxt( outF, data2write[:int(float(header['nsamples']))] )
+                                #close the file
+                                outF.close()
+                                file_open = False
+                                #drop out the first elements of the lists
+                                dummy = lo_infiles.pop[0]
+                                dummy = lo_t_mins.pop[0]
+                                #cut the written part of the data
+                                data2write = data2write[int(float(header['nsamples'])):]
+                                timeaxis2write = timeaxis2write[int(float(header['nsamples'])):]
+                                #define the current time as one sample after the end of the file, which was just closed
+                                t = ta_tmp[-1] + 1./ float(header['samplingrate'])
+                                # and back to the while condition, since there are unwritten data
+
+                            #if the section is not longer than the time axis of the newly opened file:
+                            else:
+                                #write everything
+                                np.savetxt(outF,data2write)
+                                #check, if by chance this is exactly the correct number of samples for this file: 
+                                if tmax == ta_tmp[-1]:
+                                    #if so, close it
+                                    outF.close()
+                                    file_open = False
+                                    dummy = lo_infiles.pop[0]
+                                    dummy = lo_t_mins.pop[0]
+                                    #actually, the infile list should be empty now, since the whole section has been written to a file!!
+                                
+                                # otherwise, the section is shorter, so the file (potentially) misses entries 
+                                else:
+                                    file_open = True
+
+                                #define the current time as at the end of the time axis of the section, i.e. 'go to next section':
+                                t = tmax
+                        
+                        #otherwise, a file is already open and the next section has to be appended there:
+                        else:
+                            header = FH.read_ts_header(lo_infiles[0])
+                            ta_tmp = np.arange(float(header['nsamples'])) * float(header['samplingrate']) + float(header['t_min'])
+
+                            #check, if the data exceeds the time axis of the open file:
+                            if tmax > ta_tmp[-1]:
+
+                                #determine the index of the section time axis, which belongs to the last entry of the currently open file - including the last value!
+                                endidx = (np.abs(timeaxis2write -ta_tmp )).argmin() +1 
+                                #write the respective part of the data to the file and close it then
+                                np.savetxt(data2write[:endidx],outF)
+                                outF.close()
+                                file_open = False
+                                #cut out the first bit, which is already written
+                                data2write = data2write[:endidx]
+                                timeaxis2write = timeaxis2write[:endidx]
+                                # drop the file, which is used and done
+                                dummy = lo_infiles.pop[0]
+                                dummy = lo_t_mins.pop[0]
+                                #set the current time to the start of the next file 
+                                t = ta_tmp[-1] + 1./ float(header['samplingrate'])
+
+                            #if the section is not longer than the time axis of the open file:
+                            else:
+                                #write everything
+                                np.savetxt(outF,data2write)
+                                #check, if by chance this is exactly the correct number of samples for this file: 
+                                if tmax == ta_tmp[-1]:
+                                    #if so, close it
+                                    outF.close()
+                                    file_open = False
+                                    dummy = lo_infiles.pop[0]
+                                    dummy = lo_t_mins.pop[0]
+                                    #actually, the infile list should be empty now, since the whole section has been written to a file!!
+                                
+                                # otherwise, the section is shorter, so the file (potentially) misses entries 
+                                else:
+                                    file_open = True
+
+                                #define the current time as at the end of the time axis of the section => go to next section:
+                                t = tmax
+
+                # after looping over all sections, check, if the last file has been closed:
+                if file_open == True:
+                    outF.close()
 
 
 
+def read_ts_data_from_files(starttime, endtime, list_of_starttimes, list_of_files):
+    """
+        Use the tmin_list to determine, which files have to be opened to obtain data from the time t0 (inclusive) to 'endtime(exclusive!!)'
 
+        Return the data as well as a list of files
+    """
+    
+    #sorting lists for starttimes:
+    sorted_idx = np.array(list_of_starttimes).argsort()
+    list_of_starttimes = [float(list_of_starttimes[i]) for i in sorted_idx]
+    list_of_files = [list_of_files[i] for i in sorted_idx]
+    filelist = []
+    t0_list = []
+    data = []
+
+    if starttime < list_of_starttimes[0]:
+        sys.exit('Cannot read any data - requested interval is not covered by the data files time axis -starttime {0} - {1}'.format(starttime, list_of_starttimes))
+
+    file_idx = 0
+    t = starttime
+    while t < endtime:        
+        fn = list_of_files[file_idx]
+        header = FH.read_ts_header(fn)
+        ta_tmp = np.arange(float(header['nsamples'])) * float(header['samplingrate']) + float(header['t_min'])
+        if ta_tmp[0] <= t <= ta_tmp[-1]:
+            startidx = (np.abs(t - ta_tmp)).argmin()
+            
+            if ta_tmp[0] <= endtime <= ta_tmp[-1]:
+                endidx = (np.abs(endtime - ta_tmp)).argmin()
+                data.extend(list(np.loadtxt(fn)[startidx:endidx]))
+                t = endtime
+            else:
+                data.extend(list(np.loadtxt(fn)[startidx:]))
+                t = ta_tmp[-1] + 1./ float(header['samplingrate'])
+            if fn not in filelist:
+                filelist.append(fn)
+            t0_list.append(float(header['t_min']))                    
+        file_idx += 1
+
+    return np.array(data), filelist, t0_list
 
 
 

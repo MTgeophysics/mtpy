@@ -761,7 +761,7 @@ def read_ts_header(mtdatafile):
         #old header had tmax instead of n_samples:
         if (i == 4) and float(headerlist[4])%1 != 0 and float(headerlist[i]) > float(headerlist[i-1]):
             header_dict[lo_headerelements[i]] = int((float(headerlist[i]) - float(headerlist[i-1]))*float(headerlist[i-2]) )+1
-            
+
     return header_dict
 
 def get_ts_header_string(header_dictionary):
@@ -778,5 +778,6 @@ def get_ts_header_string(header_dictionary):
         else:
             header_string += '\t '   
 
+    header_string += '\n'
     return header_string
 
