@@ -1698,17 +1698,6 @@ class PlotPhaseTensor(object):
     """
     pass
 
-class PlotPhaseTensorMaps(object):
-    """
-    PlotPhaseTensorMaps will plot the phase tensor in map view.
-    
-    *The options should be to plot the induction arrows
-    *Set a background image
-    
-    
-    """
-    
-    pass
 
 class PlotPhaseTensorPseudoSection(object):
     """
@@ -1757,6 +1746,7 @@ class PlotPhaseTensorPseudoSection(object):
                                        -'mt_wh2bl' -> white to blue
                                        -'mt_rd2bl' -> red to blue
                                        -'mt_bl2wh2rd' -> blue to white to red
+                                       -'mt_bl2gr2rd' -> blue to green to red
                                        -'mt_seg_bl2wh2rd' -> discrete blue to 
                                                              white to red
                                          
@@ -1871,26 +1861,44 @@ class PlotPhaseTensorPseudoSection(object):
                    min and max period to plot, note that the scaling will be
                    done in the code.  So if you want to plot from (.1s, 100s)
                    input ylim=(.1,100)
-        
-                     
+    
+    To get a list of .edi files that you want to plot -->
     :Example: ::
-        
         >>> import mtpy.imaging.mtplottools as mtplot
         >>> import os
         >>> edipath = r"/home/EDIfiles"
         >>> edilst = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
-        >>> ...       if edi.find('.edi')]
-        >>> # color by phimin with a range of 20-70 deg
-        >>> pt1 = mtplot.plotPTpseudoSection(edilst,ellipse_dict={'range':(20,70)})
-        >>> #
-        >>> # add induction arrows to skew angle with range (-5,5)
-        >>> pt1 = mtplot.plotPTpseudoSection(edilst,
-        >>> ...                              ellipse_dict={'size':5,
-        >>> ...                              'cmap':'mt_seg_bl2wh2rd'},
-        >>> ...                              plot_tipper='yr')
-        >>> # change xstretch and replot
-        >>> pt1.xstretch = 500
+        >>> ...       if edi.find('.edi')>0]
+    
+    *If you want to plot minimum phase colored from blue to red in a range of
+     20 to 70 degrees you can do it one of two ways--> 
+    
+    1)          
+    :Example: ::
+        >>> edict = {'range':(20,70), 'cmap':'mt_bl2gr2rd','colorby':'phimin'}
+        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilst,ellipse_dict=edict)
+     
+    2)
+    :Example: ::
+        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilst, plot_yn='n')
+        >>> pt1.ellipse_colorby = 'phimin'
+        >>> pt1.ellipse_cmap = 'mt_bl2gr2rd'
+        >>> pt1.ellipse_range = (20,70)
+        >>> pt1.plot()
+        
+    *If you want to add real induction arrows that are scaled by 10 and point
+     away from a conductor --> 
+    :Example: ::
+        >>> pt1.plot_tipper = 'yr'
+        >>> pt1.arrow_size = 10
+        >>> pt1.arrow_direction = -1
         >>> pt1.redraw_plot()
+    
+    *If you want to save the plot as a pdf with a generic name -->
+    :Example: ::
+        >>> pt1.save_figure(r"/home/PTFigures", file_format='pdf', dpi=300)
+        File saved to '/home/PTFigures/PTPseudoSection.pdf'
+
     """
     
     
@@ -2225,7 +2233,7 @@ class PlotPhaseTensorPseudoSection(object):
                     if cvar>1:
                         ellipd.set_facecolor((1,0,0))
                     elif cvar<0:
-                        ellipd.set_facecolor((0,0,0))
+                        ellipd.set_facecolor((1,1,0))
                     else:
                         ellipd.set_facecolor((1,1-abs(cvar),.1))
                         
@@ -2279,7 +2287,6 @@ class PlotPhaseTensorPseudoSection(object):
                 #--------- Add induction arrows if desired --------------------
                 if self.plot_tipper.find('y')==0:
                     
-                    
                     #--> plot real tipper
                     if self.plot_tipper=='yri' or self.plot_tipper=='yr':
                         txr = tmr[jj]*np.cos(tar[jj]*np.pi/180+\
@@ -2331,7 +2338,9 @@ class PlotPhaseTensorPseudoSection(object):
                                           head_length=aheight)
         
         #--> Set plot parameters 
+        self._plot_periodlst = plot_periodlst
         n = len(plot_periodlst)
+        
         
         #calculate minimum period and maximum period with a stretch factor
         pmin = np.log10(plot_periodlst.min())*self.ystretch
@@ -2506,58 +2515,137 @@ class PlotPhaseTensorPseudoSection(object):
         
         plt.show()
         
-    def writeTextFiles(self):
+    def writeTextFiles(self, save_path=None, ptol=0.10):
         """
         This will write text files for all the phase tensor parameters
         """
         
-        svpath = os.path.dirname(self.fn_list[0])
+        if save_path==None:
+            svpath = os.path.dirname(self.fn_list[0])
+        else:
+            svpath = save_path
         
+        #check to see if plot has been run if not run it
+        try:
+            plst=self._plot_periodlst
+
+        except AttributeError:
+            self.plot()
+            plst=self._plot_periodlst
         
+        if plst[0]>plst[-1]:
+            plst = plst[::-1] 
+            
+        if self.tscale=='frequency':
+            plst = 1./plst
+            
+        #set some empty lists to put things into
         sklst = []
         phiminlst = []
         phimaxlst = []
         elliplst = []
         azimlst = []
+        tiplstr = []
+        tiplsti = []
+        tiplstraz = []
+        tiplstiaz = []
+        
+        #initialize string
         stationstr = ''
         
-        for kk,fn in enumerate(self.fn_list):
+        #match station list with filename list
+        slst = [fn for ss in self.stationlst for fn in self.fn_list 
+                 if os.path.basename(fn).find(ss)>=0]
+        
+        #first write the period or frequency as the first column
+        for t1 in plst:
+            sklst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            phiminlst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            phimaxlst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            elliplst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            azimlst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            tiplstr.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            tiplstraz.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            tiplsti.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            tiplstiaz.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+        
+        for kk,fn in enumerate(slst):
             
             z1 = Z.Z(fn)
             pt = z1.getPhaseTensor(thetar=self.rotz)
+            tip = z1.getTipper()
             if self.tscale == 'period':
                 tlst = z1.period
+                    
             elif self.tscale == 'frequency':
                 tlst = z1.frequency
-            
+                
+                 
             if kk==0:
                 stationstr += '{0:>8}  '.format(self.tscale)
                 
             stationstr += '{0:^8}'.format(z1.station[self.stationid[0]:\
                                                 self.stationid[1]])
-            for ff,tt in enumerate(tlst):
-                #write the period in the first column
-                if kk==0:
-                    sklst.append('{0:>8}  '.format('{0:.3f}'.format(tt)))
-                    phiminlst.append('{0:>8}  '.format('{0:.3f}'.format(tt)))
-                    phimaxlst.append('{0:>8}  '.format('{0:.3f}'.format(tt)))
-                    elliplst.append('{0:>8}  '.format('{0:.3f}'.format(tt)))
-                    azimlst.append('{0:>8}  '.format('{0:.3f}'.format(tt)))
-                    
-                #add on the value to the present row
-                sklst[ff]+='{0:^8}'.format('{0: .2f}'.format(pt.beta[ff]))
-                phiminlst[ff]+='{0:^8}'.format('{0: .2f}'.format(pt.phiminang[ff]))
-                phimaxlst[ff]+='{0:^8}'.format('{0: .2f}'.format(pt.phimaxang[ff]))
-                elliplst[ff]+='{0:^8}'.format('{0: .2f}'.format(pt.ellipticity[ff]))
-                azimlst[ff]+='{0:^8}'.format('{0: .2f}'.format(pt.azimuth[ff]))
+            for mm,t1 in enumerate(plst):
+                #check to see if the periods match or are at least close in
+                #case there are frequencies missing
+                t1_yn = False
+                for ff,t2 in enumerate(tlst):
+                    if t1==t2: 
+                        #add on the value to the present row
+                        sklst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.beta[ff]))
+                        phiminlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phiminang[ff]))
+                        phimaxlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phimaxang[ff]))
+                        elliplst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.ellipticity[ff]))
+                        azimlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.azimuth[ff]))
+                        tiplstr[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magreal[ff]))
+                        tiplstraz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.anglereal[ff]))
+                        tiplsti[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magimag[ff]))
+                        tiplstiaz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.angleimag[ff]))
+                        t1_yn = True
+                        break
+                        
+                    elif t2>t1*(1-ptol) and t2<t1*(1+ptol):
+                        #add on the value to the present row
+                        sklst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.beta[ff]))
+                        phiminlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phiminang[ff]))
+                        phimaxlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phimaxang[ff]))
+                        elliplst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.ellipticity[ff]))
+                        azimlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.azimuth[ff]))
+                        tiplstr[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magreal[ff]))
+                        tiplstraz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.anglereal[ff]))
+                        tiplsti[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magimag[ff]))
+                        tiplstiaz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.angleimag[ff]))
+                        t1_yn = True                        
+                        break
+                    else:
+                        t1_yn = False
+                if t1_yn==False:
+                    print 'No value for {0} at {1:.2f}'.format(z1.station,t2)
+                    #add on the value to the present row
+                    sklst[mm]+='{0:^8}'.format('*'*6)
+                    phiminlst[mm]+='{0:^8}'.format('*'*6)
+                    phimaxlst[mm]+='{0:^8}'.format('*'*6)
+                    elliplst[mm]+='{0:^8}'.format('*'*6)
+                    azimlst[mm]+='{0:^8}'.format('*'*6)
+                    tiplstr[mm]+='{0:>8}  '.format('*'*6)
+                    tiplstraz[mm]+='{0:>8}  '.format('*'*6)
+                    tiplsti[mm]+='{0:>8}  '.format('*'*6)
+                    tiplstiaz[mm]+='{0:>8}  '.format('*'*6)
+
+        for mm in range(len(plst)):
+            sklst[mm] += '\n'
+            phiminlst[mm] += '\n'
+            phimaxlst[mm] += '\n'
+            elliplst[mm] += '\n'
+            azimlst[mm] += '\n'
+            tiplstr[mm]+='\n'
+            tiplstraz[mm]+='\n'
+            tiplsti[mm]+='\n'
+            tiplstiaz[mm]+='\n'
                 
-                #make sure to write end of line
-                if kk==len(self.fn_list)-1:
-                    sklst[ff] += '\n'
-                    phiminlst[ff] += '\n'
-                    phimaxlst[ff] += '\n'
-                    elliplst[ff] += '\n'
-                    azimlst[ff] += '\n'
+
+                
             
         #write end of line for station string
         stationstr += '\n'
@@ -2587,6 +2675,26 @@ class PlotPhaseTensorPseudoSection(object):
         azfid.write(stationstr)
         azfid.writelines(azimlst)
         azfid.close()
+        
+        tprfid = file(os.path.join(svpath,'PseudoSection.tipper_mag_real'),'w')
+        tprfid.write(stationstr)
+        tprfid.writelines(tiplstr)
+        tprfid.close()
+        
+        tprazfid = file(os.path.join(svpath,'PseudoSection.tipper_ang_real'),'w')
+        tprazfid.write(stationstr)
+        tprazfid.writelines(tiplstraz)
+        tprazfid.close()
+        
+        tpifid = file(os.path.join(svpath,'PseudoSection.tipper_mag_imag'),'w')
+        tpifid.write(stationstr)
+        tpifid.writelines(tiplsti)
+        tpifid.close()
+        
+        tpiazfid = file(os.path.join(svpath,'PseudoSection.tipper_ang_imag'),'w')
+        tpiazfid.write(stationstr)
+        tpiazfid.writelines(tiplstiaz)
+        tpiazfid.close()
     
     def update_plot(self):
         """
@@ -2597,11 +2705,9 @@ class PlotPhaseTensorPseudoSection(object):
         
         :Example: ::
             
-            >>> # to change the grid lines to only be on the major ticks
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
-            >>> [ax.grid(True, which='major') for ax in [p1.axr,p1.axp]]
-            >>> p1.update_plot()
+            >>> # to change the grid lines to be on the major ticks and gray 
+            >>> pt1.ax.grid(True, which='major', color=(.5,.5,.5))
+            >>> pt1.update_plot()
         
         """
 
@@ -2613,12 +2719,12 @@ class PlotPhaseTensorPseudoSection(object):
         
         :Example: ::
             
-            >>> # change the color and marker of the xy components
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
-            >>> p1.xy_color = (.5,.5,.9)
-            >>> p1.xy_marker = '*'
-            >>> p1.redraw_plot()
+            >>> # change ellipse size and color map to be segmented for skew 
+            >>> pt1.ellipse_size = 5
+            >>> pt1.ellipse_colorby = 'beta_seg'
+            >>> pt1.ellipse_cmap = 'mt_seg_bl2wh2rd'
+            >>> pt1.ellipse_range = (-9, 9, 3)
+            >>> pt1.redraw_plot()
         """
         
         plt.close(self.fig)
@@ -2631,9 +2737,72 @@ class PlotPhaseTensorPseudoSection(object):
         
         return "Plots pseudo section of phase tensor ellipses" 
         
-    def saveFigure(self,savepath):
+    def save_figure(self, save_fn, file_format='pdf', orientation='portrait', 
+                  fig_dpi=None, close_plot='y'):
+        """
+        save_plot will save the figure to save_fn.
         
-        pass
+        Arguments:
+        -----------
+        
+            **save_fn** : string
+                          full path to save figure to, can be input as
+                          * directory path -> the directory path to save to
+                            in which the file will be saved as 
+                            save_fn/station_name_ResPhase.file_format
+                            
+                          * full path -> file will be save to the given 
+                            path.  If you use this option then the format
+                            will be assumed to be provided by the path
+                            
+            **file_format** : [ pdf | eps | jpg | png | svg ]
+                              file type of saved figure pdf,svg,eps... 
+                              
+            **orientation** : [ landscape | portrait ]
+                              orientation in which the file will be saved
+                              *default* is portrait
+                              
+            **fig_dpi** : int
+                          The resolution in dots-per-inch the file will be
+                          saved.  If None then the dpi will be that at 
+                          which the figure was made.  I don't think that 
+                          it can be larger than dpi of the figure.
+                          
+            **close_plot** : [ y | n ]
+                             * 'y' will close the plot after saving.
+                             * 'n' will leave plot open
+                          
+        :Example: ::
+            >>> # save plot as a jpg
+            >>> pt1.save_plot(r'/home/MT/figures', file_format='jpg')
+            
+        """
+
+        if fig_dpi==None:
+            fig_dpi = self.dpi
+            
+        if os.path.isdir(save_fn)==False:
+            file_format = save_fn[-3:]
+            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+                             orientation=orientation)
+            plt.clf()
+            plt.close(self.fig)
+            
+        else:
+            save_fn = os.path.join(save_fn,'PTPseudoSection.'+
+                                    file_format)
+            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+                        orientation=orientation)
+        
+        if close_plot=='y':
+            plt.clf()
+            plt.close(self.fig)
+        
+        else:
+            pass
+        
+        self.fig_fn = save_fn
+        print 'Saved figure to: '+self.fig_fn
     
 class PlotPhaseTensorMaps(object):
 
@@ -2682,19 +2851,10 @@ class PlotPhaseTensorMaps(object):
                                        -'mt_wh2bl' -> white to blue
                                        -'mt_rd2bl' -> red to blue
                                        -'mt_bl2wh2rd' -> blue to white to red
+                                       -'mt_bl2gr2rd' -> blue to green to red
                                        -'mt_seg_bl2wh2rd' -> discrete blue to 
                                                              white to red
                                          
-        
-        **stretch** : float
-                            is a factor that scales the distance from one 
-                            station to the next to make the plot readable.
-                            *Default* is 1000
-        **linedir** : [ 'ns' | 'ew' ]
-                      predominant direction of profile line
-                      *'ns' -> North-South Line
-                      *'ew' -> East-West line
-                      **Default* is 'ns'
         
         **stationid** : tuple or list 
                         start and stop of station name indicies.  
@@ -2813,13 +2973,6 @@ class PlotPhaseTensorMaps(object):
                          *'extent' : tuple (xmin, xmax, ymin, ymax)
                                      coordinates according to mapscale. Must be
                                      input if image file is not None.
-                   
-        **imagefile** : string
-                        path to an image file jpg or png or svg
-        
-        **image_extent** : tuple (xmin,xmax,ymin,ymax)
-                           coordinates according to mapscale. Must be input if
-                           image file is not None.
         
         **reference_point** : tuple (x0,y0)
                               reference point estimate relative distance to.  
@@ -2865,7 +3018,7 @@ class PlotPhaseTensorMaps(object):
                  figsize=[8,8],station_dict=None,indarrows='n',tscale='period',
                  mapscale='latlon',fignum=1,image_dict=None,plot_yn='y',
                  arrow_legend_dict={},font_size=7,dpi=300,title=None,
-                 reference_point=(0,0)):
+                 reference_point=(0,0),plot_tipper='n'):
                                 
 
         #----set attributes for the class-------------------------
@@ -2879,7 +3032,7 @@ class PlotPhaseTensorMaps(object):
         try:
             self.ellipse_size = ellipse_dict['size']
         except KeyError:
-            self.ellipse_size = 2
+            self.ellipse_size = .05
         
         #set default colorby to phimin
         try:
@@ -2910,6 +3063,10 @@ class PlotPhaseTensorMaps(object):
         except KeyError:
             if self.ellipse_colorby=='beta':
                 self.ellipse_cmap = 'mt_bl2wh2rd'
+                
+            elif self.ellipse_colorby=='beta_seg':
+                self.ellipse_cmap = 'mt_seg_bl2wh2rd'
+                
             else:
                 self.ellipse_cmap = 'mt_yl2rd'
             
@@ -2939,87 +3096,86 @@ class PlotPhaseTensorMaps(object):
         self.mapscale = mapscale
         
         #--> set induction arrow properties -------------------------------
-        self.plot_tipper = indarrows
+        self.plot_tipper = plot_tipper
         
-        if self.plot_tipper.find('y')==0:
-            #set arrow length
-            try:
-                self.arrow_size = arrow_dict['size']
-            except KeyError:
-                self.arrow_size = 5
-                
-            #set head length
-            try:
-                self.arrow_head_length = arrow_dict['head_length']
-            except KeyError:
-                self.arrow_head_length = .15*self.arrow_size
-                
-            #set head width
-            try:
-                self.arrow_head_width = arrow_dict['head_width']
-            except KeyError:
-                self.arrow_head_width = .12*self.arrow_size
-                
-            #set line width
-            try:
-                self.arrow_lw = arrow_dict['lw']
-            except KeyError:
-                self.arrow_lw = .5*self.arrow_size
-                
-            #set real color to black
-            try:
-                self.arrow_color_real = arrow_dict['color'][0]
-            except KeyError:
-                self.arrow_color_real = 'k'
-                
-            #set imaginary color to black
-            try:
-                self.arrow_color_imag = arrow_dict['color'][1]
-            except KeyError:
-                self.arrow_color_imag = 'b'
-                
-            #set threshold of induction arrows to plot
-            try:
-                self.arrow_threshold = arrow_dict['threshold']
-            except KeyError:
-                self.arrow_threshold = 1
-                
-            #set arrow direction to point towards or away from conductor
-            try:
-                self.arrow_direction = arrow_dict['direction']
-            except KeyError:
-                self.arrow_direction = 0
-                
-            #--> set arrow legend properties -------------------------------
-            try:
-                self.arrow_legend_position = arrow_legend_dict['position']
-            except KeyError:
-                self.arrow_legend_position = 'lower right'
-                
-            #set x-border pad
-            try:
-                self.arrow_legend_xborderpad = arrow_legend_dict['xborderpad']
-            except KeyError:
-                self.arrow_legend_xborderpad = 0.2
-                
-            #set y-border pad
-            try:
-                self.arrow_legend_yborderpad = arrow_legend_dict['yborderpad']
-            except KeyError:
-                self.arrow_legend_yborderpad = 0.2
-                
-            #set font pad
-            try:
-                self.arrow_legend_fontpad = arrow_legend_dict['fontpad']
-            except KeyError:
-                self.arrow_legend_fontpad = .05
-                
-            #set font properties
-            try:
-                self.arrow_legend_fontdict = arrow_legend_dict['fontdict']
-            except KeyError:
-                self.arrow_legend_fontdict = {'size':self.font_size,
-                                              'weight':'bold'}
+        #set arrow length
+        try:
+            self.arrow_size = arrow_dict['size']
+        except KeyError:
+            self.arrow_size = 5*self.ellipse_size
+            
+        #set head length
+        try:
+            self.arrow_head_length = arrow_dict['head_length']
+        except KeyError:
+            self.arrow_head_length = .15*self.arrow_size
+            
+        #set head width
+        try:
+            self.arrow_head_width = arrow_dict['head_width']
+        except KeyError:
+            self.arrow_head_width = .12*self.arrow_size
+            
+        #set line width
+        try:
+            self.arrow_lw = arrow_dict['lw']
+        except KeyError:
+            self.arrow_lw = .5*self.arrow_size
+            
+        #set real color to black
+        try:
+            self.arrow_color_real = arrow_dict['color'][0]
+        except KeyError:
+            self.arrow_color_real = 'k'
+            
+        #set imaginary color to black
+        try:
+            self.arrow_color_imag = arrow_dict['color'][1]
+        except KeyError:
+            self.arrow_color_imag = 'b'
+            
+        #set threshold of induction arrows to plot
+        try:
+            self.arrow_threshold = arrow_dict['threshold']
+        except KeyError:
+            self.arrow_threshold = 1
+            
+        #set arrow direction to point towards or away from conductor
+        try:
+            self.arrow_direction = arrow_dict['direction']
+        except KeyError:
+            self.arrow_direction = 0
+            
+        #--> set arrow legend properties -------------------------------
+        try:
+            self.arrow_legend_position = arrow_legend_dict['position']
+        except KeyError:
+            self.arrow_legend_position = 'lower right'
+            
+        #set x-border pad
+        try:
+            self.arrow_legend_xborderpad = arrow_legend_dict['xborderpad']
+        except KeyError:
+            self.arrow_legend_xborderpad = 0.2
+            
+        #set y-border pad
+        try:
+            self.arrow_legend_yborderpad = arrow_legend_dict['yborderpad']
+        except KeyError:
+            self.arrow_legend_yborderpad = 0.2
+            
+        #set font pad
+        try:
+            self.arrow_legend_fontpad = arrow_legend_dict['fontpad']
+        except KeyError:
+            self.arrow_legend_fontpad = .05
+            
+        #set font properties
+        try:
+            self.arrow_legend_fontdict = arrow_legend_dict['fontdict']
+        except KeyError:
+            self.arrow_legend_fontdict = {'size':self.font_size,
+                                          'weight':'bold'}
 
         #--> set background image properties
         if image_dict!=None:
@@ -3037,7 +3193,7 @@ class PlotPhaseTensorMaps(object):
                 self.image_extent = image_dict['extent']
             except KeyError:
                 raise NameError('Need to include the extent of the image as '+\
-                                '(left,right,bottom,top)')
+                                '(left, right, bottom, top)')
                                 
         #--> set a central reference point
         self.plot_reference_point = reference_point
@@ -3105,17 +3261,31 @@ class PlotPhaseTensorMaps(object):
             
         #set some local parameters
         es = float(self.ellipse_size)
+        cmap = self.ellipse_cmap
         ckmin = float(self.ellipse_range[0])
         ckmax = float(self.ellipse_range[1])
+        try:
+            ckstep = float(self.ellipse_range[2])
+        except IndexError:
+            if cmap=='mt_seg_bl2wh2rd':
+                raise ValueError('Need to input range as (min,max,step)')
+            else:
+                ckstep=3
+        nseg = float((ckmax-ckmin)/(2*ckstep))
         ck = self.ellipse_colorby
         jj = self.jj
-        cmap = self.ellipse_cmap
-        
+
+
+        #--> set the bounds on the segmented colormap
+        if cmap=='mt_seg_bl2wh2rd':
+            bounds = np.arange(ckmin, ckmax+ckstep, ckstep) 
+            
         #set tick parameters depending on the mapscale
         if self.mapscale=='latlon':
-            self.tickstrfmt='%.3f'
+            self.tickstrfmt = '%.3f'
+            
         elif self.mapscale=='eastnorth' or self.mapscale=='eastnorthkm':
-            self.tickstrfmt='%.0f'
+            self.tickstrfmt = '%.0f'
         
         #make some empty arrays
         elliplst=[]
@@ -3213,12 +3383,13 @@ class PlotPhaseTensorMaps(object):
                 self.plot_xarr[ii] = plotx
                 self.plot_yarr[ii] = ploty
                 
-                #set local variables
+                #--> set local variables
                 phimin = pt.phimin[jj]
                 phimax = pt.phimax[jj]
                 eangle = pt.azimuth[jj]
                 
-                #get ellipse properties
+                #--> get ellipse properties
+                #if the ellipse size is not physically correct make it a dot
                 if phimax==0 or phimax>100 or phimin==0 or pt.phiminang[jj]<0 or \
                     pt.phiminang[jj]>100:
                     eheight=.0000001*es
@@ -3234,18 +3405,44 @@ class PlotPhaseTensorMaps(object):
                                        height=eheight,
                                        angle=eangle)
                 
-                elliplst.append(ellipd)
-                self.ax.add_artist(ellipd)
-                
                 #get face color info
                 if ck=='phiminang' or  ck=='phimin':
-                    cvar=(pt.phiminang[jj]-ckmin)/(ckmax-ckmin)
+                    cvar = (pt.phiminang[jj]-ckmin)/(ckmax-ckmin)
+                    if cmap=='mt_bl2wh2rd' or cmap=='mt_bl2yl2rd' or \
+                       cmap=='mt_bl2gr2rd':
+                        cvar = 2*cvar-1
+                    
                 elif ck=='phidet':
-                    cvar=(pt.phidet[jj]-ckmin)/(ckmax-ckmin)
+                    cvar = (pt.phidet[jj]-ckmin)/(ckmax-ckmin)
+                    if cmap=='mt_bl2wh2rd' or cmap=='mt_bl2yl2rd' or \
+                       cmap=='mt_bl2gr2rd':
+                        cvar = 2*cvar-1
+                    
                 elif ck=='beta':
-                    cvar=(pt.beta[jj]-abs(ckmin))/(ckmax-ckmin)
+                    cvar = 2*pt.beta[jj]/(ckmax-ckmin)
+                    
+                elif ck=='beta_seg':
+                    for bb in range(bounds.shape[0]):
+                        if pt.beta[jj]>=bounds[bb] and pt.beta[jj]<bounds[bb+1]:
+                            cvar = float(bounds[bb])/bounds.max()
+                            break
+                        
+                        #if the skew is extremely negative make it blue
+                        elif pt.beta[jj]<bounds[0]:
+                            cvar = -1.0
+                            break
+                        
+                        #if skew is extremely positive make it red
+                        elif pt.beta[jj]>bounds[-1]:
+                            cvar = 1.0
+                            break
+                        
                 elif ck=='ellipticity':
-                    cvar=(pt.ellipticity[jj]-ckmin)/(ckmax-ckmin)
+                    cvar = (pt.beta[jj]-ckmin)/(ckmax-ckmin)
+                    if cmap=='mt_bl2wh2rd' or cmap=='mt_bl2yl2rd' or \
+                       cmap=='mt_bl2gr2rd':
+                        cvar = 2*cvar-1
+                    
                 else:
                     raise NameError('color key '+ck+' not supported')
                 
@@ -3255,7 +3452,7 @@ class PlotPhaseTensorMaps(object):
                     if abs(cvar)>1:
                         ellipd.set_facecolor((1,0,0))
                     elif cvar<0:
-                        ellipd.set_facecolor((1-abs(cvar),1,abs(cvar)))
+                        ellipd.set_facecolor((1,1,0))
                     else:
                         ellipd.set_facecolor((1,1-abs(cvar),.1))
                 
@@ -3266,27 +3463,45 @@ class PlotPhaseTensorMaps(object):
                     else:
                         ellipd.set_facecolor((1-abs(cvar),1-abs(cvar),1))
 
+                #blue to white to red
+                elif cmap=='mt_bl2wh2rd' or cmap=='mt_seg_bl2wh2rd':
+                    if cvar<0 and cvar>-1:
+                        ellipd.set_facecolor((1+cvar,1+cvar,1))
+                    elif cvar<-1:
+                        ellipd.set_facecolor((0,0,1))
+                    elif cvar>=0 and cvar<1:
+                        ellipd.set_facecolor((1,1-cvar,1-cvar))
+                    elif cvar>1:
+                        ellipd.set_facecolor((1,0,0))
+                        
                 #blue to yellow to red
                 elif cmap=='mt_bl2yl2rd':
                     if cvar<0 and cvar>-1:
-                        ellipd.set_facecolor((1-abs(cvar),1-abs(cvar),1))
-                    elif cvar<-1:
-                        ellipd.set_facecolor((0,0,1))
-                    elif cvar>0 and cvar<1:
-                        ellipd.set_facecolor((1,1-abs(cvar),1-abs(cvar)))
-                    elif cvar>1:
-                        ellipd.set_facecolor((1,0,0))
- 
-               #blue to white to red
-                elif cmap=='mt_bl2wh2rd':
-                    if cvar<0 and cvar>-1:
-                        ellipd.set_facecolor((abs(cvar),abs(cvar),1-abs(cvar)))
+                        ellipd.set_facecolor((1+cvar,1+cvar,-cvar))
                     elif cvar<-1:
                         ellipd.set_facecolor((0,0,1))
                     elif cvar>0 and cvar<1:
                         ellipd.set_facecolor((1,1-abs(cvar),.01))
                     elif cvar>1:
                         ellipd.set_facecolor((1,0,0))
+                        
+                #blue to green to red
+                elif cmap=='mt_bl2gr2rd':
+                    if cvar<0 and cvar>-1:
+                        ellipd.set_facecolor((1+cvar,1+cvar/2,1))
+                    elif cvar<-1:
+                        ellipd.set_facecolor((0,0,1))
+                    elif cvar>0 and cvar<1:
+                        ellipd.set_facecolor((1,1-cvar/2,1-cvar))
+                    elif cvar>1:
+                        ellipd.set_facecolor((1,0,0))
+               
+                else:
+                    raise NameError('Colormap '+cmap+' is not supported')
+                
+                #==> add ellipse to the plot
+                elliplst.append(ellipd)
+                self.ax.add_artist(ellipd)
                         
                 #-----------Plot Induction Arrows---------------------------
                 if self.plot_tipper.find('y')==0:
@@ -3479,25 +3694,41 @@ class PlotPhaseTensorMaps(object):
         #make a grid with gray lines
         self.ax.grid(alpha=.25)
         
-        #get a position for the color bar close to the axes if one is not given
+        #==> make a colorbar with appropriate colors
         if self.cb_position==None:
-            #get the relative location of the axis box
-            axbbox = self.ax.get_position().bounds
-            
-            if self.cb_orientation=='vertical':
-                self.cb_position = (axbbox[2], 0.35, 0.025, 0.3)
-            
-            elif self.cb_orientation=='horizontal':
-                self.cb_position = (axbbox[2]-.3, axbbox[1]+.05, 0.2, 0.025)
-                        
-        #make a colorbar with appropriate colors             
-        self.ax2 = self.fig.add_axes(self.cb_position)
+            self.ax2, kw = mcb.make_axes(self.ax,
+                                         orientation=self.cb_orientation,
+                                         shrink=.35)
+        else:
+            self.ax2 = self.fig.add_axes(self.cb_position)
         
-        self.cb=mcb.ColorbarBase(self.ax2,
-                                 cmap=cmapdict[cmap],
-                                 norm=colors.Normalize(vmin=ckmin,vmax=ckmax),
-                                 orientation=self.cb_orientation)
-                                 
+        if cmap=='mt_seg_bl2wh2rd':
+            #make a color list
+            self.clst = [(cc,cc,1) for cc in np.arange(0,1+1./(nseg),1./(nseg))]+\
+                   [(1,cc,cc) for cc in np.arange(1,-1./(nseg),-1./(nseg))]
+            
+            #make segmented colormap
+            mt_seg_bl2wh2rd = colors.ListedColormap(self.clst)
+
+            #make bounds so that the middle is white
+            bounds = np.arange(ckmin-ckstep, ckmax+2*ckstep, ckstep)
+            
+            #normalize the colors
+            norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
+            
+            #make the colorbar
+            self.cb=mcb.ColorbarBase(self.ax2,
+                                     cmap=mt_seg_bl2wh2rd,
+                                     norm=norms,
+                                     orientation=self.cb_orientation,
+                                     ticks=bounds[1:-1])
+        else:
+            self.cb=mcb.ColorbarBase(self.ax2,
+                                     cmap=cmapdict[cmap],
+                                     norm=colors.Normalize(vmin=ckmin,
+                                                           vmax=ckmax),
+                                     orientation=self.cb_orientation)
+
         #label the color bar accordingly
         self.cb.set_label(ckdict[ck],
                           fontdict={'size':self.font_size,'weight':'bold'})
@@ -3631,6 +3862,226 @@ class PlotPhaseTensorMaps(object):
         
         plt.close(self.fig)
         self.plot()
+        
+    def writeTextFiles(self, save_path=None, ptol=0.10):
+        """
+        This will write text files for all the phase tensor parameters
+        """
+        
+        if save_path==None:
+            svpath = os.path.dirname(self.fn_list[0])
+        else:
+            svpath = save_path
+            
+        #make a grid of the station locations to put them into a text file
+        try: 
+            self.plot_xarr
+        except AttributeError:
+            self.plot()
+         
+        xlst = np.sort(self.plot_xarr)
+        dx = min([(xlst[ii+1]-xlst[ii]) for ii in range(len(xlst)-1)])
+        
+        ylst = np.sort(self.plot_yarr)
+        dy = min([(ylst[ii+1]-ylst[ii]) for ii in range(len(ylst)-1)])
+        
+        xgrid = np.arange(min(xlst), max(xlst)+dx, dx)
+        ygrid = np.arange(min(ylst), max(ylst)+dy, dy)
+        
+        xyloc = np.zeros((self.plot_xarr.shape[0],2))
+        for jj,xx in enumerate(self.plot_xarr):
+            for ii in range(xgrid.shape[0]-1):
+                if xx>xgrid[ii] and xx<xgrid[ii+1]:
+                    xyloc[jj,0] = ii   
+                    
+        for jj,yy in enumerate(self.plot_yarr):
+            for ii in range(ygrid.shape[0]-1):
+                if yy>ygrid[ii] and yy<ygrid[ii+1]:
+                    xyloc[jj,1] = ii
+        
+        phiminmap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
+        phimaxmap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
+        azimuthmap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
+        ellipmap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
+        trmap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
+        trazmap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
+        timap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
+        tiazmap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
+                    
+        for ii range(self.plot_xarr.shape[0]):
+            pass
+        
+        #check to see if plot has been run if not run it
+        try:
+            plst=self._plot_periodlst
+
+        except AttributeError:
+            self.plot()
+            plst=self._plot_periodlst
+        
+        if plst[0]>plst[-1]:
+            plst = plst[::-1] 
+            
+        if self.tscale=='frequency':
+            plst = 1./plst
+            
+        #set some empty lists to put things into
+        sklst = []
+        phiminlst = []
+        phimaxlst = []
+        elliplst = []
+        azimlst = []
+        tiplstr = []
+        tiplsti = []
+        tiplstraz = []
+        tiplstiaz = []
+        
+        #initialize string
+        stationstr = ''
+        
+        #match station list with filename list
+        slst = [fn for ss in self.stationlst for fn in self.fn_list 
+                 if os.path.basename(fn).find(ss)>=0]
+        
+        #first write the period or frequency as the first column
+        for t1 in plst:
+            sklst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            phiminlst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            phimaxlst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            elliplst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            azimlst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            tiplstr.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            tiplstraz.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            tiplsti.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+            tiplstiaz.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
+        
+        for kk,fn in enumerate(slst):
+            
+            z1 = Z.Z(fn)
+            pt = z1.getPhaseTensor(thetar=self.rotz)
+            tip = z1.getTipper()
+            if self.tscale == 'period':
+                tlst = z1.period
+                    
+            elif self.tscale == 'frequency':
+                tlst = z1.frequency
+                
+                 
+            if kk==0:
+                stationstr += '{0:>8}  '.format(self.tscale)
+                
+            stationstr += '{0:^8}'.format(z1.station[self.stationid[0]:\
+                                                self.stationid[1]])
+            for mm,t1 in enumerate(plst):
+                #check to see if the periods match or are at least close in
+                #case there are frequencies missing
+                t1_yn = False
+                for ff,t2 in enumerate(tlst):
+                    if t1==t2: 
+                        #add on the value to the present row
+                        sklst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.beta[ff]))
+                        phiminlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phiminang[ff]))
+                        phimaxlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phimaxang[ff]))
+                        elliplst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.ellipticity[ff]))
+                        azimlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.azimuth[ff]))
+                        tiplstr[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magreal[ff]))
+                        tiplstraz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.anglereal[ff]))
+                        tiplsti[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magimag[ff]))
+                        tiplstiaz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.angleimag[ff]))
+                        t1_yn = True
+                        break
+                        
+                    elif t2>t1*(1-ptol) and t2<t1*(1+ptol):
+                        #add on the value to the present row
+                        sklst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.beta[ff]))
+                        phiminlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phiminang[ff]))
+                        phimaxlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phimaxang[ff]))
+                        elliplst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.ellipticity[ff]))
+                        azimlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.azimuth[ff]))
+                        tiplstr[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magreal[ff]))
+                        tiplstraz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.anglereal[ff]))
+                        tiplsti[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magimag[ff]))
+                        tiplstiaz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.angleimag[ff]))
+                        t1_yn = True                        
+                        break
+                    else:
+                        t1_yn = False
+                if t1_yn==False:
+                    print 'No value for {0} at {1:.2f}'.format(z1.station,t2)
+                    #add on the value to the present row
+                    sklst[mm]+='{0:^8}'.format('*'*6)
+                    phiminlst[mm]+='{0:^8}'.format('*'*6)
+                    phimaxlst[mm]+='{0:^8}'.format('*'*6)
+                    elliplst[mm]+='{0:^8}'.format('*'*6)
+                    azimlst[mm]+='{0:^8}'.format('*'*6)
+                    tiplstr[mm]+='{0:>8}  '.format('*'*6)
+                    tiplstraz[mm]+='{0:>8}  '.format('*'*6)
+                    tiplsti[mm]+='{0:>8}  '.format('*'*6)
+                    tiplstiaz[mm]+='{0:>8}  '.format('*'*6)
+
+        for mm in range(len(plst)):
+            sklst[mm] += '\n'
+            phiminlst[mm] += '\n'
+            phimaxlst[mm] += '\n'
+            elliplst[mm] += '\n'
+            azimlst[mm] += '\n'
+            tiplstr[mm]+='\n'
+            tiplstraz[mm]+='\n'
+            tiplsti[mm]+='\n'
+            tiplstiaz[mm]+='\n'
+                
+
+                
+            
+        #write end of line for station string
+        stationstr += '\n'
+        
+        #write files
+        skfid = file(os.path.join(svpath,'PseudoSection.skew'),'w')
+        skfid.write(stationstr)
+        skfid.writelines(sklst)
+        skfid.close()
+        
+        phiminfid = file(os.path.join(svpath,'PseudoSection.phimin'),'w')
+        phiminfid.write(stationstr)
+        phiminfid.writelines(phiminlst)
+        phiminfid.close()
+        
+        phimaxfid = file(os.path.join(svpath,'PseudoSection.phimax'),'w')
+        phimaxfid.write(stationstr)
+        phimaxfid.writelines(phimaxlst)
+        phimaxfid.close()
+        
+        ellipfid = file(os.path.join(svpath,'PseudoSection.ellipticity'),'w')
+        ellipfid.write(stationstr)
+        ellipfid.writelines(elliplst)
+        ellipfid.close()
+        
+        azfid = file(os.path.join(svpath,'PseudoSection.azimuth'),'w')
+        azfid.write(stationstr)
+        azfid.writelines(azimlst)
+        azfid.close()
+        
+        tprfid = file(os.path.join(svpath,'PseudoSection.tipper_mag_real'),'w')
+        tprfid.write(stationstr)
+        tprfid.writelines(tiplstr)
+        tprfid.close()
+        
+        tprazfid = file(os.path.join(svpath,'PseudoSection.tipper_ang_real'),'w')
+        tprazfid.write(stationstr)
+        tprazfid.writelines(tiplstraz)
+        tprazfid.close()
+        
+        tpifid = file(os.path.join(svpath,'PseudoSection.tipper_mag_imag'),'w')
+        tpifid.write(stationstr)
+        tpifid.writelines(tiplsti)
+        tpifid.close()
+        
+        tpiazfid = file(os.path.join(svpath,'PseudoSection.tipper_ang_imag'),'w')
+        tpiazfid.write(stationstr)
+        tpiazfid.writelines(tiplstiaz)
+        tpiazfid.close()
+    
         
     def __str__(self):
         """
