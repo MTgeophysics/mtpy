@@ -733,12 +733,15 @@ def read_2c2_file(filename):
     return period, freq, coh1, zcoh1
 
 
-def read_header(mtdatafile):
+def read_ts_header(mtdatafile):
     """ Read in the header line from MTpy data files.
         Return header as dictionary. Return empty dict, if no header line was found.
     """
 
     header_dict = {}
+
+    if not op.isfile(mtdatafile):
+        raise MTpyError_inputarguments('Error - input file not existing: {0}'.format(mtdatafile))
 
     try:
         with open(mtdatafile,'r') as F:
@@ -755,5 +758,25 @@ def read_header(mtdatafile):
 
     for i in range(len(headerlist)):
         header_dict[lo_headerelements[i]] = headerlist[i]
-
+        #old header had tmax instead of n_samples:
+        if (i == 4) and float(headerlist[4])%1 != 0 and float(headerlist[i]) > float(headerlist[i-1]):
+            header_dict[lo_headerelements[i]] = int((float(headerlist[i]) - float(headerlist[i-1]))*float(headerlist[i-2]) )+1
+            
     return header_dict
+
+def get_ts_header_string(header_dictionary):
+    """
+        Return a MTpy time series data file header string from a dictionary.
+
+    """
+    
+    header_string = '# '
+    lo_headerelements = ['station', 'channel','samplingrate','t_min','nsamples','unit','lat','lon','elev']
+    for headerelement in lo_headerelements:
+        if header_dictionary.has_key(headerelement):
+            header_string += '{0} '.format(str(header_dictionary[headerelement]))
+        else:
+            header_string += '\t '   
+
+    return header_string
+

@@ -27,7 +27,7 @@ from scipy.signal import butter, lfilter, buttord
 
 import mtpy.utils.mseed as MTmseed
 #import obspy.mseed as Omseed
-import mtpy.utils.exceptions as MTexceptions
+import mtpy.utils.exceptions as EX
 
 #=================================================================
 
@@ -71,11 +71,8 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=4):
 
 
 def tukey(window_length, alpha=0.5):
-    '''The Tukey window, also known as the tapered cosine window, can be regarded as a cosine lobe of width \alpha * N / 2
-    that is convolved with a rectangle window of width (1 - \alpha / 2). At \alpha = 1 it becomes rectangular, and
-    at \alpha = 0 it becomes a Hann window.
+    '''The Tukey window, also known as the tapered cosine window, can be regarded as a cosine lobe of width alpha * N / 2  that is convolved with a rectangle window of width (1 - alpha / 2). At alpha = 1 it becomes rectangular, and at alpha = 0 it becomes a Hann window.
  
-    We use the same reference as MATLAB to provide the same results in case users compare a MATLAB output to this function
     output
  
     Reference
@@ -110,7 +107,7 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
     """Correct input time series for instrument response.
         Instr.Resp. is given as 3 column array: frequency, real part, imaginary part
 
-        The given section is demeaned, window tapered, zero padded, bandpassed(with the extreme frequencies of the response frequency axis), deconvolved (by straight division by the array values or interpolated values inbetween), re-transformed, mean-re-added and returned.
+        The given section is demeaned, window tapered, zero padded, bandpassed(with the extreme frequencies of the response frequency axis), FFT-ed, "deconvolved" (straight division by the array values or interpolated values inbetween - in frequency domain), re-transformed, mean-re-added and returned.
 
     """
 
@@ -119,13 +116,17 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
     
     freqmin = responsedata[0,0]
     freqmax = responsedata[-1,0]
-    print freqmin,freqmax
+    #print freqmin,freqmax
     
     N = len(data)
-    
-    window = tukey(N,0.2)#np.blackman(N)
+    if N < 1:
+        raise EX.MTpyError_ts_data('Error - Length of TS to correct is zero!')
+
+    #use double sided cosine taper function
+    window = tukey(N,0.2)
 
     tapered_data = data * window
+
 
     #check, if length is directly equal to power of 2:
     if np.log2(N)%1 == 0:
@@ -149,6 +150,8 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
     instr_spectrum = responsedata[:,1] + np.complex(0,1) * responsedata[:,2]
     instr_freqs = responsedata[:,0]
 
+    lo_mags = []
+    lo_freqs = []
 
     #return data_freqs,data_spectrum,instr_freqs,instr_spectrum
 
@@ -160,39 +163,44 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
 
         #this is effectively a boxcar window - maybe to be replaced by proper windowing function ?
         if not (freqmin <= np.abs(freq) <= freqmax):
-            print freq, i
+            print 'no instrument response in this frequency range - spectrum set to zero here: ', freq
             corrected_spectrum[i] = 0#spec
+            #lo_mags.append([np.abs(spec),np.abs(corrected_spectrum[i]), 0 ])
+            #lo_freqs.append([freq,0,0,0,0,0,0])
             continue
 
-        factor = 1.
-
-        #find the appropriate frequency most likely inbetween two values on the instr_freqs-axis
+        #find the appropriate frequencies ( since the current freq-value is most likely inbetween two values on the instr_freqs-axis)
         #get the respective value by linear interpolation
+
+        #find the value closest to the current freq, assume it's lower
         closest_lower = np.abs(freq-instr_freqs).argmin()
         
-        #if it coincides with the highest frequency:
+        #if it coincides with the highest frequency/last entry:
         if closest_lower == len(instr_freqs)-1:
             factor = data_spectrum[closest_lower]
-        # or the lowest (here: zero)
+        # or the lowest
         elif closest_lower == 0:
             factor = data_spectrum[0]
-        #in case the closest frequency value is not lower but higher, take the freq value below as lower bound for the interval:
-        else:            
+        else:
+            #in case the closest frequency value is not lower but higher, take the freq value below as lower bound for the interval:        
             if instr_freqs[closest_lower] > freq:
                 closest_lower -= 1
-
+            
+            #define the interval:
             instrfreq1 = instr_freqs[closest_lower]
             instrfreq2 = instr_freqs[closest_lower+1]
-            instrfactor1 = data_spectrum[closest_lower]
-            instrfactor2 = data_spectrum[closest_lower+1]
-            interval = instrfreq2 - instrfreq1
-            weight = (freq-instrfreq1)/interval
+            instrfactor1 = instr_spectrum[closest_lower]
+            instrfactor2 = instr_spectrum[closest_lower+1]
+            intervallength = instrfreq2 - instrfreq1
+            weight = (freq-instrfreq1)/intervallength
 
             factor = weight * instrfactor2 + (1-weight) * instrfactor1
+            #lo_freqs.append([freq,instrfreq1,instrfreq2,weight,instrfactor1,instrfactor2,factor])
+
         
-        corrected_spectrum[i] = spec #/ factor
-
-
+        #finally correct the data for the instrument influence by dividing the complex data spectral value by the instrument response value: 
+        corrected_spectrum[i] = spec / factor
+        #lo_mags.append([np.abs(spec),np.abs(corrected_spectrum[i]), factor ])
     #invert into time domain
     correctedTS = np.fft.irfft(corrected_spectrum)
 
@@ -202,4 +210,4 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
     #re-attach the mean
     correctedTS += datamean
 
-    return correctedTS
+    return correctedTS#, lo_mags,lo_freqs
