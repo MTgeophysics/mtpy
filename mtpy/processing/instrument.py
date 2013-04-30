@@ -107,7 +107,7 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
     """Correct input time series for instrument response.
         Instr.Resp. is given as 3 column array: frequency, real part, imaginary part
 
-        The given section is demeaned, window tapered, zero padded, bandpassed(with the extreme frequencies of the response frequency axis), FFT-ed, "deconvolved" (straight division by the array values or interpolated values inbetween - in frequency domain), re-transformed, mean-re-added and returned.
+        The given section is demeaned, window tapered, zero padded, (potentially bandpassed with the extreme frequencies of the response frequency axis), FFT-ed, "deconvolved" (straight division by the array values or interpolated values inbetween - in frequency domain), re-transformed, mean-re-added and returned.
 
     """
 
@@ -134,7 +134,7 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
     else:
         next2power = int(np.log2(N)) + 1
 
-    #zero pad data for significantly faster fft - YES, Numpy does not do that automatically
+    #zero pad data for significantly faster fft - NO, Numpy does not do that automatically
     padded_data = np.zeros((2**next2power))
     padded_data[:len(tapered_data)] = tapered_data
 
