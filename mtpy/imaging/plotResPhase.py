@@ -2815,7 +2815,15 @@ class PlotPhaseTensorMaps(object):
     
         **filenamelst** : list of strings
                           full paths to .edi files to plot
-        
+                          
+        **plot_frequency** : float
+                             frequency to plot in Hz
+                             *default* is 1
+                             
+        **ftol** : float
+                   tolerance in frequency range to look for in each file.
+                   *default* is 0.1 (10 percent)
+                             
         **ellipse_dict** : dictionary
                           dictionary of parameters for the phase tensor 
                           ellipses with keys:
@@ -2856,39 +2864,25 @@ class PlotPhaseTensorMaps(object):
                                                              white to red
                                          
         
-        **stationid** : tuple or list 
-                        start and stop of station name indicies.  
-                        ex: for MT01dr stationid=(0,4) will be MT01
+        **cb_dict** : dictionary to control the color bar
         
-        **rotz** : float
-                   angle in degrees to rotate the data clockwise positive.
-                   *Default* is 0
-        
-        **title** : string
-                    figure title
-                    
-        **dpi** : int 
-                  dots per inch of the resolution. *default* is 300
-                    
-                       
-        **fignum** : int
-                     figure number.  *Default* is 1
-        
-        **indarrow** : [ 'yri' | 'yr' | 'yi' | 'n' ]
-                        *'yri' to plot induction both real and imaginary 
-                           induction arrows 
-                           
-                        *'yr' to plot just the real induction arrows
-                        
-                        *'yi' to plot the imaginary induction arrows
-                        
-                        *'n' to not plot them
-                        
-                        * *Default* is 'n' 
-                        
-                        **Note: convention is to point towards a conductor but
-                        can be changed in arrow_dict['direction']**
-                         
+                      *'orientation' : [ 'vertical' | 'horizontal' ]
+                                       orientation of the color bar 
+                                       *default* is vertical
+                                       
+                      *'position' : tuple (x,y,dx,dy)
+                                    -x -> lateral position of left hand corner 
+                                          of the color bar in figure between 
+                                          [0,1], 0 is left side
+                                          
+                                    -y -> vertical position of the bottom of 
+                                          the color bar in figure between 
+                                          [0,1], 0 is bottom side.
+                                          
+                                    -dx -> width of the color bar [0,1]
+                                    
+                                    -dy -> height of the color bar [0,1]
+                                    
         **arrow_dict** : dictionary for arrow properties
                         *'size' : float
                                   multiplier to scale the arrow. *default* is 5
@@ -2914,39 +2908,108 @@ class PlotPhaseTensorMaps(object):
                         *'direction : [ 0 | 1 ]
                                      -0 for arrows to point toward a conductor
                                      -1 for arrow to point away from conductor
-    
+        
+        **xpad** : float
+                   padding in the east-west direction of plot boundaries.  Note
+                   this is by default set to lat and long units, so if you use
+                   easting/northing put it the respective units. 
+                   *default* is 0.2
+                   
+        **pad** : float
+                   padding in the north-south direction of plot boundaries.  
+                   Note this is by default set to lat and long units, so if you
+                   use easting/northing put it the respective units.
+                   *default* is 0.2
+        
+        **rotz** : float
+                   angle in degrees to rotate the data clockwise positive.
+                   *Default* is 0
+
+        **figsize** : tuple or list (x, y) in inches
+                      dimensions of the figure box in inches, this is a default
+                      unit of matplotlib.  You can use this so make the plot
+                      fit the figure box to minimize spaces from the plot axes
+                      to the figure box.  *default* is [8, 8]
+                      
+        **station_dict** : dictionary
+                            *'id' --> for station id index.  Ex: If you want 
+                                      'S01' from 'S01dr' input as (0,3).
+                                      
+                            *'pad' --> pad from the center of the ellipse to 
+                                       the station label
+                                       
+                            *'font_dict'--> dictionary of font properties
+                                           font dictionary for station name. 
+                                           Keys can be matplotlib.text 
+                                           properties, common ones are:
+                                           *'size'   -> for font size
+                                           *'weight' -> for font weight
+                                           *'color'  -> for color of font
+                                           *'angle'  -> for angle of text
+                               
         **tscale** : [ 'period' | 'frequency' ]
         
                      *'period'    -> plot vertical scale in period
                      
                      *'frequency' -> plot vertical scale in frequency
-                     
-        **cb_dict** : dictionary to control the color bar
         
-                      *'orientation' : [ 'vertical' | 'horizontal' ]
-                                       orientation of the color bar 
-                                       *default* is vertical
-                                       
-                      *'position' : tuple (x,y,dx,dy)
-                                    -x -> lateral position of left hand corner 
-                                          of the color bar in figure between 
-                                          [0,1], 0 is left side
-                                          
-                                    -y -> vertical position of the bottom of 
-                                          the color bar in figure between 
-                                          [0,1], 0 is bottom side.
-                                          
-                                    -dx -> width of the color bar [0,1]
-                                    
-                                    -dy -> height of the color bar [0,1]
+        **mapscale** : [ 'latlon ' | 'eastnorth' | 'eastnorthkm' ]
+                       Scale of the map coordinates.
+                       
+                       *'latlon' --> degrees in latitude and longitude
+                       
+                       *'eastnorth' --> meters for easting and northing
+                       
+                       *'eastnorthkm' --> kilometers for easting and northing
+             
+        **image_dict** : dictionary of image properties
+        
+                         *'file' : string
+                                   full path to image file name
+                                   
+                         *'extent' : tuple (xmin, xmax, ymin, ymax)
+                                     coordinates according to mapscale. Must be
+                                     input if image file is not None.
+         
+        **plot_yn** : [ 'y' | 'n' ]
+                      *'y' to plot on creating an instance
+                      
+                      *'n' to not plot on creating an instance           
+                       
+        **fignum** : int
+                     figure number.  *Default* is 1
+                     
+        **title** : string
+                    figure title
+                    
+        **dpi** : int 
+                  dots per inch of the resolution. *default* is 300
+        
+        **plot_tipper** : [ 'yri' | 'yr' | 'yi' | 'n' ]
+                        *'yri' to plot induction both real and imaginary 
+                           induction arrows 
+                           
+                        *'yr' to plot just the real induction arrows
+                        
+                        *'yi' to plot the imaginary induction arrows
+                        
+                        *'n' to not plot them
+                        
+                        * *Default* is 'n' 
+                        
+                        **Note: convention is to point towards a conductor but
+                        can be changed in arrow_dict['direction']**
+                         
+
+    
+
+                     
+
         **font_size** : float
                         size of the font that labels the plot, 2 will be added
                         to this number for the axis labels.
                         
-        **plot_yn** : [ 'y' | 'n' ]
-                      *'y' to plot on creating an instance
-                      
-                      *'n' to not plot on creating an instance
+
         
         **station_dict** : dictionary
                            font dictionary for station name. Keys can be
@@ -2967,12 +3030,7 @@ class PlotPhaseTensorMaps(object):
                                                legend text
                                *'fontdict'  -> dictionary of font properties
         
-        **image_dict** : dictionary of image properties
-                         *'file' : string
-                                   full path to image file name
-                         *'extent' : tuple (xmin, xmax, ymin, ymax)
-                                     coordinates according to mapscale. Must be
-                                     input if image file is not None.
+
         
         **reference_point** : tuple (x0,y0)
                               reference point estimate relative distance to.  
@@ -2985,7 +3043,7 @@ class PlotPhaseTensorMaps(object):
         >>> import os
         >>> edipath = r"/home/EDIfiles"
         >>> edilst = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
-        >>> ...       if edi.find('.edi')]
+        >>> ...       if edi.find('.edi')>0]
         >>> # color by phimin with a range of 20-70 deg
         >>> ptmap = mtplot.PlotPhaseTensorMaps(edilst,freqspot=10,
         >>> ...                                ellipse_dict={'size':1,
@@ -3009,23 +3067,31 @@ class PlotPhaseTensorMaps(object):
         >>> #
         >>> #---Save the plot---
         >>> ptmap.save_plot(r"/home/EDIfiles",file_format='pdf')
-        'Saved figure to /home/EDIfile/PTMaps/PTmap_phimin_10.0_Hz.pdf'
+        >>> 'Saved figure to /home/EDIfile/PTMaps/PTmap_phimin_10.0_Hz.pdf'
+        
+    :Example: ::
+        
+        >>> #change the axis label and grid color
+        >>> ptmap.ax.set_xlabel('Latitude (deg)')
+        >>> ptmap.ax.grid(which='major', color=(.5,1,0))
+        >>> ptmap.update_plot()
         
     """
     
-    def __init__(self,filenamelst,freqspot=10,ellipse_dict={},cb_dict={},
+    def __init__(self,filenamelst,plot_frequency=1,ellipse_dict={},cb_dict={},
                  arrow_dict={},xpad=.2,ypad=.2,tickstrfmt='%2.2f',rotz=0,
-                 figsize=[8,8],station_dict=None,indarrows='n',tscale='period',
+                 figsize=[8,8],station_dict=None,tscale='period',
                  mapscale='latlon',fignum=1,image_dict=None,plot_yn='y',
                  arrow_legend_dict={},font_size=7,dpi=300,title=None,
-                 reference_point=(0,0),plot_tipper='n'):
+                 reference_point=(0,0),plot_tipper='n', ftol=.1):
                                 
 
         #----set attributes for the class-------------------------
         self.fn_list = filenamelst
         
         #set the frequency to plot
-        self.jj = freqspot
+        self.plot_frequency = plot_frequency
+        self.ftol = ftol
         
         #--> set the ellipse properties -------------------
         #set default size to 2
@@ -3203,7 +3269,7 @@ class PlotPhaseTensorMaps(object):
             try:
                 self.station_id = station_dict['id']
             except KeyError:
-                self.stationid = (0,2)
+                self.station_id = (0,2)
             
             #set spacing of station name and ellipse
             try:
@@ -3273,7 +3339,6 @@ class PlotPhaseTensorMaps(object):
                 ckstep=3
         nseg = float((ckmax-ckmin)/(2*ckstep))
         ck = self.ellipse_colorby
-        jj = self.jj
 
 
         #--> set the bounds on the segmented colormap
@@ -3293,23 +3358,25 @@ class PlotPhaseTensorMaps(object):
         lonlst = np.zeros(len(self.fn_list))
         self.plot_xarr = np.zeros(len(self.fn_list))
         self.plot_yarr = np.zeros(len(self.fn_list))
-        self.plot_frequency_arr = np.zeros(len(self.fn_list))
         
         for ii,fn in enumerate(self.fn_list):
             #get phase tensor info
             imp = Z.Z(fn)
             
-            #get phase tensor
-            pt = imp.getPhaseTensor(thetar=self.rotz)
-
-            #change any nan to a number just in case
-            pt.phimax = np.nan_to_num(pt.phimax)
-            pt.phimin = np.nan_to_num(pt.phimin)
-            
-            #check to see if the period is there
+            #try to find the frequency in the frequency list of each file
+            freqfind = [ff for ff,f2 in enumerate(imp.frequency) 
+                         if f2>self.plot_frequency*(1-self.ftol) and
+                            f2<self.plot_frequency*(1+self.ftol)]
             try:
-                freq = imp.frequency[jj]
-                self.plot_frequency_arr[ii] = freq
+                self.jj = freqfind[0]
+                jj = self.jj
+
+                #get phase tensor
+                pt = imp.getPhaseTensor(thetar=self.rotz)
+    
+                #change any nan to a number just in case
+                pt.phimax = np.nan_to_num(pt.phimax)
+                pt.phimin = np.nan_to_num(pt.phimin)
                 
                 #if map scale is lat lon set parameters                
                 if self.mapscale=='latlon':
@@ -3462,7 +3529,7 @@ class PlotPhaseTensorMaps(object):
                         ellipd.set_facecolor((0,0,0))
                     else:
                         ellipd.set_facecolor((1-abs(cvar),1-abs(cvar),1))
-
+    
                 #blue to white to red
                 elif cmap=='mt_bl2wh2rd' or cmap=='mt_seg_bl2wh2rd':
                     if cvar<0 and cvar>-1:
@@ -3565,9 +3632,10 @@ class PlotPhaseTensorMaps(object):
                 except AttributeError:
                     pass
                 
-            #if the period is not there 
+            #==> print a message if couldn't find the frequency
             except IndexError:
-                print 'Did not find index for station'.format(jj)+imp.station
+                print 'Did not find {0:.5g} Hz for station {1}'.format(
+                                               self.plot_frequency,imp.station)
         
         #--> set axes properties depending on map scale------------------------
         if self.mapscale=='latlon':    
@@ -3607,9 +3675,9 @@ class PlotPhaseTensorMaps(object):
         
         #--> set title in period or frequency
         if self.tscale=='period':
-            titlefreq = '{0:.5g} (s)'.format(1./freq)
+            titlefreq = '{0:.5g} (s)'.format(1./self.plot_frequency)
         else:
-            titlefreq='{0:.5g} (Hz)'.format(freq)
+            titlefreq='{0:.5g} (Hz)'.format(self.plot_frequency)
         
         if not self.title:
             self.ax.set_title('Phase Tensor Map for '+titlefreq,
@@ -3863,225 +3931,210 @@ class PlotPhaseTensorMaps(object):
         plt.close(self.fig)
         self.plot()
         
-    def writeTextFiles(self, save_path=None, ptol=0.10):
+    def writeTextFiles(self, save_path=None):
         """
-        This will write text files for all the phase tensor parameters
+        This will write text files for all the phase tensor parameters.
+        
+        Arguments:
+        ----------
+            **save_path** : string
+                            path to save files to.  Files are saved as:
+                                save_path/Map_frequency.parameter
+                                
+        Returns:
+        --------
+            **files for:**
+                *phi_min
+                *phi_max
+                *skew
+                *ellipticity
+                *azimuth
+                *tipper_mag_real
+                *tipper_ang_real
+                *tipper_mag_imag
+                *tipper_ang_imag
+                *station
+                
+            These files are in condensed map view to follow the plot.  There
+            is also a file with that is in table format, which might be easier
+            to read.  This file has extenstion .table
+                
         """
         
+        #create a save path
         if save_path==None:
-            svpath = os.path.dirname(self.fn_list[0])
+            svpath = os.path.join(os.path.dirname(self.fn_list[0]),'PTMaps')
         else:
             svpath = save_path
+        
+        #if the folder doesn't exist make it
+        if not os.path.exists(svpath):
+            os.mkdir(svpath)
             
-        #make a grid of the station locations to put them into a text file
+        #make sure the attributes are there if not get them
         try: 
             self.plot_xarr
         except AttributeError:
             self.plot()
-         
-        xlst = np.sort(self.plot_xarr)
-        dx = min([(xlst[ii+1]-xlst[ii]) for ii in range(len(xlst)-1)])
         
-        ylst = np.sort(self.plot_yarr)
-        dy = min([(ylst[ii+1]-ylst[ii]) for ii in range(len(ylst)-1)])
+        #sort the x and y in ascending order to get placement in the file right
+        xlst = np.sort(abs(self.plot_xarr))
+        ylst = np.sort(abs(self.plot_yarr))
         
-        xgrid = np.arange(min(xlst), max(xlst)+dx, dx)
-        ygrid = np.arange(min(ylst), max(ylst)+dy, dy)
-        
-        xyloc = np.zeros((self.plot_xarr.shape[0],2))
+        #get the indicies of where the values should go in map view of the 
+        #text file
+        nx = self.plot_xarr.shape[0]
+        xyloc = np.zeros((nx, 2))
         for jj,xx in enumerate(self.plot_xarr):
-            for ii in range(xgrid.shape[0]-1):
-                if xx>xgrid[ii] and xx<xgrid[ii+1]:
-                    xyloc[jj,0] = ii   
-                    
-        for jj,yy in enumerate(self.plot_yarr):
-            for ii in range(ygrid.shape[0]-1):
-                if yy>ygrid[ii] and yy<ygrid[ii+1]:
-                    xyloc[jj,1] = ii
-        
-        phiminmap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
-        phimaxmap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
-        azimuthmap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
-        ellipmap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
-        trmap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
-        trazmap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
-        timap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
-        tiazmap = np.zeros((xgrid.shape[0], ygrid.shape[0]))
-                    
-        for ii range(self.plot_xarr.shape[0]):
-            pass
-        
-        #check to see if plot has been run if not run it
-        try:
-            plst=self._plot_periodlst
+            xyloc[jj,0] = np.where(xlst==abs(xx))[0][0]
+            xyloc[jj,1] = np.where(ylst==abs(self.plot_yarr[jj]))[0][0]
 
-        except AttributeError:
-            self.plot()
-            plst=self._plot_periodlst
+        #create arrays that simulate map view in a text file
+        phiminmap = np.zeros((xlst.shape[0], ylst.shape[0]))
+        phimaxmap = np.zeros((xlst.shape[0], ylst.shape[0]))
+        azimuthmap = np.zeros((xlst.shape[0], ylst.shape[0]))
+        ellipmap = np.zeros((xlst.shape[0], ylst.shape[0]))
+        betamap = np.zeros((xlst.shape[0], ylst.shape[0]))
+        trmap = np.zeros((xlst.shape[0], ylst.shape[0]))
+        trazmap = np.zeros((xlst.shape[0], ylst.shape[0]))
+        timap = np.zeros((xlst.shape[0], ylst.shape[0]))
+        tiazmap = np.zeros((xlst.shape[0], ylst.shape[0]))
+        stationmap = np.zeros((xlst.shape[0], ylst.shape[0]), 
+                              dtype='|S8')
         
-        if plst[0]>plst[-1]:
-            plst = plst[::-1] 
+        #put the information into the zeroed arrays
+        for ii in range(nx):
+            z1 = Z.Z(self.fn_list[ii])
+
+            #try to find the frequency in the frequency list of each file
+            freqfind = [ff for ff,f2 in enumerate(z1.frequency) 
+                         if f2>self.plot_frequency*(1-self.ftol) and
+                            f2<self.plot_frequency*(1+self.ftol)]
+            try:
+                self.jj = freqfind[0]
+                jj = self.jj            
             
-        if self.tscale=='frequency':
-            plst = 1./plst
-            
-        #set some empty lists to put things into
-        sklst = []
-        phiminlst = []
-        phimaxlst = []
-        elliplst = []
-        azimlst = []
-        tiplstr = []
-        tiplsti = []
-        tiplstraz = []
-        tiplstiaz = []
+                pt = z1.getPhaseTensor()
+                tp = z1.getTipper()
+                
+                phiminmap[xyloc[ii,0],xyloc[ii,1]] = pt.phiminang[self.jj]
+                phimaxmap[xyloc[ii,0],xyloc[ii,1]] = pt.phimaxang[self.jj]
+                azimuthmap[xyloc[ii,0],xyloc[ii,1]] = pt.azimuth[self.jj]
+                ellipmap[xyloc[ii,0],xyloc[ii,1]] = pt.ellipticity[self.jj]
+                betamap[xyloc[ii,0],xyloc[ii,1]] = pt.beta[self.jj]
+                trmap[xyloc[ii,0],xyloc[ii,1]] = tp.magreal[self.jj]
+                trazmap[xyloc[ii,0],xyloc[ii,1]] = tp.anglereal[self.jj]
+                timap[xyloc[ii,0],xyloc[ii,1]] = tp.magimag[self.jj]
+                tiazmap[xyloc[ii,0],xyloc[ii,1]] = tp.angleimag[self.jj]
+                try:
+                    stationmap[xyloc[ii,0],xyloc[ii,1]] = \
+                              z1.station[self.station_id[0]:self.station_id[1]]
+                except AttributeError:
+                    stationmap[xyloc[ii,0],xyloc[ii,1]] = z1.station
+            except IndexError:
+                print 'Did not find {0:.5g} Hz for station {1}'.format(
+                                               self.plot_frequency,z1.station)
+
+        #----------------------write files-------------------------------------
+        svfn = 'Map_{0:.6g}'.format(self.plot_frequency)
+        ptminfid = file(os.path.join(svpath,svfn+'.phimin'),'w')
+        ptmaxfid = file(os.path.join(svpath,svfn+'.phimax'),'w')
+        ptazmfid = file(os.path.join(svpath,svfn+'.azimuth'),'w')
+        ptskwfid = file(os.path.join(svpath,svfn+'.skew'),'w')
+        ptellfid = file(os.path.join(svpath,svfn+'.ellipticity'),'w')
+        tprmgfid = file(os.path.join(svpath,svfn+'.tipper_mag_real'),'w')
+        tprazfid = file(os.path.join(svpath,svfn+'.tipper_ang_real'),'w')
+        tpimgfid = file(os.path.join(svpath,svfn+'.tipper_mag_imag'),'w')
+        tpiazfid = file(os.path.join(svpath,svfn+'.tipper_ang_imag'),'w')
+        statnfid = file(os.path.join(svpath,svfn+'.station'),'w')
+        tablefid = file(os.path.join(svpath,svfn+'.table'),'w')
         
-        #initialize string
-        stationstr = ''
-        
-        #match station list with filename list
-        slst = [fn for ss in self.stationlst for fn in self.fn_list 
-                 if os.path.basename(fn).find(ss)>=0]
-        
-        #first write the period or frequency as the first column
-        for t1 in plst:
-            sklst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            phiminlst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            phimaxlst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            elliplst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            azimlst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            tiplstr.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            tiplstraz.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            tiplsti.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            tiplstiaz.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-        
-        for kk,fn in enumerate(slst):
-            
-            z1 = Z.Z(fn)
-            pt = z1.getPhaseTensor(thetar=self.rotz)
-            tip = z1.getTipper()
-            if self.tscale == 'period':
-                tlst = z1.period
+        for ly in range(ylst.shape[0]):
+            for lx in range(xlst.shape[0]):
+                #if there is nothing there write some spaces
+                if phiminmap[lx,ly]==0.0:
+                    ptminfid.write('{0:^8}'.format(' '))
+                    ptmaxfid.write('{0:^8}'.format(' '))
+                    ptazmfid.write('{0:^8}'.format(' '))
+                    ptskwfid.write('{0:^8}'.format(' '))
+                    ptellfid.write('{0:^8}'.format(' '))
+                    tprmgfid.write('{0:^8}'.format(' '))
+                    tprazfid.write('{0:^8}'.format(' '))
+                    tpimgfid.write('{0:^8}'.format(' '))
+                    tpiazfid.write('{0:^8}'.format(' '))
+                    statnfid.write('{0:^8}'.format(' '))
                     
-            elif self.tscale == 'frequency':
-                tlst = z1.frequency
-                
-                 
-            if kk==0:
-                stationstr += '{0:>8}  '.format(self.tscale)
-                
-            stationstr += '{0:^8}'.format(z1.station[self.stationid[0]:\
-                                                self.stationid[1]])
-            for mm,t1 in enumerate(plst):
-                #check to see if the periods match or are at least close in
-                #case there are frequencies missing
-                t1_yn = False
-                for ff,t2 in enumerate(tlst):
-                    if t1==t2: 
-                        #add on the value to the present row
-                        sklst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.beta[ff]))
-                        phiminlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phiminang[ff]))
-                        phimaxlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phimaxang[ff]))
-                        elliplst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.ellipticity[ff]))
-                        azimlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.azimuth[ff]))
-                        tiplstr[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magreal[ff]))
-                        tiplstraz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.anglereal[ff]))
-                        tiplsti[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magimag[ff]))
-                        tiplstiaz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.angleimag[ff]))
-                        t1_yn = True
-                        break
-                        
-                    elif t2>t1*(1-ptol) and t2<t1*(1+ptol):
-                        #add on the value to the present row
-                        sklst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.beta[ff]))
-                        phiminlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phiminang[ff]))
-                        phimaxlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phimaxang[ff]))
-                        elliplst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.ellipticity[ff]))
-                        azimlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.azimuth[ff]))
-                        tiplstr[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magreal[ff]))
-                        tiplstraz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.anglereal[ff]))
-                        tiplsti[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magimag[ff]))
-                        tiplstiaz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.angleimag[ff]))
-                        t1_yn = True                        
-                        break
-                    else:
-                        t1_yn = False
-                if t1_yn==False:
-                    print 'No value for {0} at {1:.2f}'.format(z1.station,t2)
-                    #add on the value to the present row
-                    sklst[mm]+='{0:^8}'.format('*'*6)
-                    phiminlst[mm]+='{0:^8}'.format('*'*6)
-                    phimaxlst[mm]+='{0:^8}'.format('*'*6)
-                    elliplst[mm]+='{0:^8}'.format('*'*6)
-                    azimlst[mm]+='{0:^8}'.format('*'*6)
-                    tiplstr[mm]+='{0:>8}  '.format('*'*6)
-                    tiplstraz[mm]+='{0:>8}  '.format('*'*6)
-                    tiplsti[mm]+='{0:>8}  '.format('*'*6)
-                    tiplstiaz[mm]+='{0:>8}  '.format('*'*6)
-
-        for mm in range(len(plst)):
-            sklst[mm] += '\n'
-            phiminlst[mm] += '\n'
-            phimaxlst[mm] += '\n'
-            elliplst[mm] += '\n'
-            azimlst[mm] += '\n'
-            tiplstr[mm]+='\n'
-            tiplstraz[mm]+='\n'
-            tiplsti[mm]+='\n'
-            tiplstiaz[mm]+='\n'
-                
-
-                
+                else:
+                    ptminfid.write('{0:^8}'.format(
+                                          '{0: .2f}'.format(phiminmap[lx,ly])))
+                    ptmaxfid.write('{0:^8}'.format(
+                                          '{0: .2f}'.format(phimaxmap[lx,ly])))
+                    ptazmfid.write('{0:^8}'.format(
+                                          '{0: .2f}'.format(azimuthmap[lx,ly])))
+                    ptskwfid.write('{0:^8}'.format(
+                                          '{0: .2f}'.format(betamap[lx,ly])))
+                    ptellfid.write('{0:^8}'.format(
+                                          '{0: .2f}'.format(ellipmap[lx,ly])))
+                    tprmgfid.write('{0:^8}'.format(
+                                          '{0: .2f}'.format(trmap[lx,ly])))
+                    tprazfid.write('{0:^8}'.format(
+                                          '{0: .2f}'.format(trazmap[lx,ly])))
+                    tpimgfid.write('{0:^8}'.format(
+                                          '{0: .2f}'.format(timap[lx,ly])))
+                    tpiazfid.write('{0:^8}'.format(
+                                          '{0: .2f}'.format(tiazmap[lx,ly])))
+                    statnfid.write('{0:^8}'.format(stationmap[lx,ly]))
             
-        #write end of line for station string
-        stationstr += '\n'
+            #make sure there is an end of line        
+            ptminfid.write('\n')
+            ptmaxfid.write('\n')
+            ptazmfid.write('\n')
+            ptskwfid.write('\n')
+            ptellfid.write('\n')
+            tprmgfid.write('\n')
+            tprazfid.write('\n')
+            tpimgfid.write('\n')
+            tpiazfid.write('\n')
+            statnfid.write('\n')
         
-        #write files
-        skfid = file(os.path.join(svpath,'PseudoSection.skew'),'w')
-        skfid.write(stationstr)
-        skfid.writelines(sklst)
-        skfid.close()
-        
-        phiminfid = file(os.path.join(svpath,'PseudoSection.phimin'),'w')
-        phiminfid.write(stationstr)
-        phiminfid.writelines(phiminlst)
-        phiminfid.close()
-        
-        phimaxfid = file(os.path.join(svpath,'PseudoSection.phimax'),'w')
-        phimaxfid.write(stationstr)
-        phimaxfid.writelines(phimaxlst)
-        phimaxfid.close()
-        
-        ellipfid = file(os.path.join(svpath,'PseudoSection.ellipticity'),'w')
-        ellipfid.write(stationstr)
-        ellipfid.writelines(elliplst)
-        ellipfid.close()
-        
-        azfid = file(os.path.join(svpath,'PseudoSection.azimuth'),'w')
-        azfid.write(stationstr)
-        azfid.writelines(azimlst)
-        azfid.close()
-        
-        tprfid = file(os.path.join(svpath,'PseudoSection.tipper_mag_real'),'w')
-        tprfid.write(stationstr)
-        tprfid.writelines(tiplstr)
-        tprfid.close()
-        
-        tprazfid = file(os.path.join(svpath,'PseudoSection.tipper_ang_real'),'w')
-        tprazfid.write(stationstr)
-        tprazfid.writelines(tiplstraz)
+        #close the files
+        ptminfid.close()
+        ptmaxfid.close()
+        ptazmfid.close()
+        ptskwfid.close()
+        ptellfid.close()
+        tprmgfid.close()
         tprazfid.close()
-        
-        tpifid = file(os.path.join(svpath,'PseudoSection.tipper_mag_imag'),'w')
-        tpifid.write(stationstr)
-        tpifid.writelines(tiplsti)
-        tpifid.close()
-        
-        tpiazfid = file(os.path.join(svpath,'PseudoSection.tipper_ang_imag'),'w')
-        tpiazfid.write(stationstr)
-        tpiazfid.writelines(tiplstiaz)
+        tpimgfid.close()
         tpiazfid.close()
-    
+        statnfid.close()
+        
+        #--> write the table file
+        #write header
+        for ss in ['station','phi_min','phi_max','skew','ellipticity',
+                   'azimuth','tip_mag_re','tip_ang_re','tip_mag_im',
+                   'tip_ang_im']:
+            tablefid.write('{0:^12}'.format(ss))
+        tablefid.write('\n')
+        
+        for ii in range(nx):
+            xx,yy=xyloc[ii,0],xyloc[ii,1]
+            tablefid.write('{0:^12}'.format(stationmap[xx,yy]))
+            tablefid.write('{0:^12}'.format('{0: .2f}'.format(phiminmap[xx,yy])))
+            tablefid.write('{0:^12}'.format('{0: .2f}'.format(phimaxmap[xx,yy])))
+            tablefid.write('{0:^12}'.format('{0: .2f}'.format(betamap[xx,yy])))
+            tablefid.write('{0:^12}'.format('{0: .2f}'.format(ellipmap[xx,yy])))
+            tablefid.write('{0:^12}'.format('{0: .2f}'.format(azimuthmap[xx,yy])))
+            tablefid.write('{0:^12}'.format('{0: .2f}'.format(trmap[xx,yy])))
+            tablefid.write('{0:^12}'.format('{0: .2f}'.format(trazmap[xx,yy])))
+            tablefid.write('{0:^12}'.format('{0: .2f}'.format(timap[xx,yy])))
+            tablefid.write('{0:^12}'.format('{0: .2f}'.format(tiazmap[xx,yy])))
+            tablefid.write('\n')
+            
+        tablefid.write('\n')
+        
+        print 'Wrote files to {}'.format(svpath)
+            
         
     def __str__(self):
         """
