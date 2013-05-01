@@ -19,7 +19,7 @@ import time
 import mtpy.utils.exceptions as EX
 reload(EX)
 
-import mtpy.processing.calibration as C
+import mtpy.processing.calibration as CAL
 reload(C)
 import mtpy.utils.filehandling as FH
 reload(FH)
@@ -41,15 +41,14 @@ def main():
 
 
     if not op.isdir(directory):
-        raise EX.MTpyError_inputarguments('Directory not existing: %s' % (directory))
+        raise EX.MTpyError_inputarguments('Input data directory not existing: %s' % (directory))
 
     if not op.isfile(configfile):
-        raise EX.MTpyError_inputarguments('Config file not existing: %s' % (configfile))
-
+        raise EX.MTpyError_inputarguments('Config file not found: %s' % (configfile))
 
     try:
         outdir_raw = sys.argv[3]
-        outdir = op.abspath(outdir_raw)
+        outdir = op.abspath(op.join(os.curdir,outdir_raw))
     except:
         outdir = op.join(directory,'calibrated')
 
@@ -58,7 +57,6 @@ def main():
             os.makedirs(outdir)
     except:
         raise EX.MTpyError_inputarguments('Output directory cannot be generated: %s' % (outdir))
-
 
     try:
         config_dir = FH.read_configfile(configfile)
@@ -153,7 +151,7 @@ def main():
                 angle = float(stationdict['e_yaxis_azimuth'])
                 dipolelength = float(stationdict['e_yaxis_length'])
                 if np.abs(270. - angle) < angleaccuracy:
-                    #X-axis points southwards
+                    #Y-axis points southwards
                     dipolelength *= 1
                 elif not np.abs(90. - angle) < angleaccuracy:
                     print 'Configuration file error. E-field Y-axis angle for station %s invalid: %f'%(stationname,angle)
@@ -172,7 +170,7 @@ def main():
             instrument_amplification = stationdict['b_instrument_amplification']
 
 
-        C.calibrate_file(f, outdir, instrument, logger, gain, dipolelength, stationname, channel, latitude, longitude, elevation,  offset = 0 )
+        CAL.calibrate_file(f, outdir, instrument, logger, gain, dipolelength, stationname, channel, latitude, longitude, elevation,  offset = 0 )
 
 if __name__=='__main__':
     main()

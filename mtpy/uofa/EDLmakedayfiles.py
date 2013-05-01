@@ -10,10 +10,6 @@ The data have to be either single column values or in 2-column form.
 """
 
 
-
-
-
-
 import numpy as np
 import re
 import sys, os
@@ -23,40 +19,68 @@ import glob
 import calendar
 import time
 
-
-from mtpy.utils.exceptions import *
-
-
+import mtpy.utils.exceptions as EX
 import mtpy.utils.filehandling as FH
+reload(EX)
 reload(FH)
 
 
-
-
-
-
-
 def main():
+    """
+        wrapper for the generation of dayfiles for EDL data.
+
+        2 mandatory arguments: 
+        - path to files 
+        - sampling interval (in seconds)
+
+        3 optional arguments:
+        - name of the output directory - cannot start with '-' 
+        - stationname - cannot start with '-' 
+        - flag '-R (or -r)', if the directory shall be searched for data recursively 
+
+    """
 
     if len(sys.argv) < 3:
-        raise MTpyError_inputarguments('Need 2 arguments: <path to files> <sampling in seconds>')
+        raise EX.MTpyError_inputarguments('Need at least 2 arguments: <path to files> <sampling in seconds>  [<output dir>] [<stationname>] [<recursive flag -R>]')
+    outdir = None
+    stationname = None
+    recursive = False
+    if len(sys.argv) > 3:
+        optionals = sys.argv[3:]
+        for o in optionals:
+            o = o.strip()
+            if o[0] == '-':
+                if o[1].lower() == 'r':
+                    recursive = True
+                continue
+            elif outdir is None:
+                outdir = o
+                continue
+            elif stationname is None:
+                stationname = o 
+                continue
 
 
-    pathname_raw = sys.argv[1] 
+    pathname_raw = sys.argv[1]
     pathname = op.abspath(op.realpath(pathname_raw))
 
-
     if not op.isdir(pathname):
-        raise MTpyError_inputarguments('Path not existing: %s' % (pathname))
+        raise EX.MTpyError_inputarguments('Data file(s) path not existing: %s' % (pathname))
 
     try:
         sampling = float(sys.argv[2])
         if sampling <= 0 : raise
     except:
-        raise MTpyError_float('Second argument must be sampling interval in seconds (int/float)')
+        raise EX.MTpyError_float('Second argument must be sampling interval in seconds (int/float)')
 
+    if recursive is True:
+        lo_files = []
+        for i,j,k in os.walk(pathname):
+            lof = [op.abspath(op.join(i,f)) for f in j]
+            lo_files.extend(lof)
+        pathname = list(set(lo_files))
 
-    FH.EDL_make_dayfiles(pathname, sampling)
+    FH.EDL_make_dayfiles(pathname, sampling, stationname, outdir)
 
 
 

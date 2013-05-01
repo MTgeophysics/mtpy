@@ -17,6 +17,7 @@ reading configuration files, ....
 
 
 import numpy as np
+import sys
 import os
 import glob
 import os.path as op
@@ -24,6 +25,7 @@ import glob
 import calendar
 import time
 import ConfigParser
+import fnmatch
 
 from mtpy.utils.exceptions import *
 import mtpy.utils.format as MTformat
@@ -377,60 +379,81 @@ def get_sampling_interval_fromdatafile(filename, length = 3600):
 
 
 
-def EDL_make_dayfiles(foldername, sampling , stationname = None):
+def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None):
     """
 
     Concatenate ascii time series to dayfiles (calendar day, UTC reference).
 
-    Files in the directory have to be for one station only !! 
+    Data can be within a single directory or a list of directories. However, the files in the directory(ies) 'inputdir' have to be for one station only, and named with a 2 character suffix, defining the channel !! 
 
-    If the time series are interrupted, a new file will be started after that point,
-    where the index idx is increased by 1.
+    If the time series are interrupted/discontinuous at some point, a new file will be started after that point, where the file index 'idx' is increased by 1.
     If no stationname is given, the leading non-datetime characters in the first filename are used.
 
 
     Files are named as 'stationname_samplingrate_date_idx.channel'
-    Stationname, channel,  and sampling are written to a header line.
+    Stationname, channel, and sampling are written to a header line.
 
-    Output data consists of two column array: (time, data); timestamp given in epoch seconds.
+    Output data consists of a single column float data array. The data are stored into one directory. If 'outputdir' is not specified, a subdirectory 'dayfiles' will be created witihn the current working directory. 
 
-    Attention: 
+    Note: 
     Midnight cannot be in the middle of a file, because only file starts are checked for a new day!!
 
     """
 
-
-    wd = op.abspath(op.realpath(foldername))
-    
-
-    if not op.isdir(wd):
-        raise MTpyError_inputarguments('Directory not existing: %s' % (wd))
+    try:
+        if type(inputdir)==str:
+            raise
+        lo_foldernames = [i for i in inputdir]
+    except TypeError:
+        lo_foldernames = [inputdir]
 
     #typical suffixes for EDL output file names
     components = ['ex', 'ey', 'bx', 'by', 'bz']
 
-    oldwd = os.getcwd()
-    os.chdir(wd)
-    lo_allfiles = glob.glob('*.??')
-    lo_allfiles = [op.abspath(i) for i in lo_allfiles]
-    os.chdir(oldwd)
+    lo_allfiles = []
+    pattern = '*.[ebEB][xyzXYZ]'
+    for folder in lo_foldernames:
+        wd = op.abspath(op.realpath(folder)) 
+        if not op.isdir(wd):
+            #print 'Directory not existing: %s' % (wd)
+            lo_foldernames.remove(wd)
+            continue    
 
+        lo_dirfiles = [op.abspath(op.join(wd,i))  for i in os.listdir(wd) if fnmatch.fnmatch(i,pattern) is True]
+        lo_allfiles.extend(lo_dirfiles)   
 
     #check, if list of files is empty
     if len(lo_allfiles) == 0:
         raise MTpyError_inputarguments('Directory does not contain files to combine: %s' % (wd))
 
     #define subfolder for storing dayfiles
-    outpath = op.join(wd,'dayfiles')
+    outpath = op.join(os.curdir,'dayfiles')    
+    if outputdir is not None:
+        try:
+            outpath = op.abspath(op.join(os.curdir,outputdir))
+            if not op.exists(outpath):
+                try:
+                    os.makedirs(outpath)
+                except:
+                    raise
+            if not os.access(outpath, os.W_OK):
+                raise
+        except:
+            print 'Cannot generate writable output directory {0} - using generic location "dayfiles" instead'.format(outpath)
+            outpath = op.join(wd,'dayfiles')    
+            pass
 
     #generate subfolder, if not existing
     if not op.exists(outpath):
-        os.makedirs(outpath)
+        try:
+            os.makedirs(outpath)
+        except:
+            EX.MTpyError_inputarguments('Cannot generate output directory {0} '.format(outpath))
 
     #outer loop over all components
     for comp in components:
 
-        #make list of files for thte current component
+        #make list of files for the current component
         lo_files = np.array([op.join(wd,i) for i in lo_allfiles if (i.lower()[-2:] == comp)])
 
         #make list of starting times for the respective files
@@ -440,13 +463,24 @@ def EDL_make_dayfiles(foldername, sampling , stationname = None):
         idx_chronologic = np.argsort(lo_starttimes)
         
         #obtain sorted lists of files and starting times
-        lo_sorted_files = lo_files[idx_chronologic]
-        lo_sorted_starttimes = lo_starttimes[idx_chronologic]
+        lo_sorted_files = list(lo_files[idx_chronologic])
+        lo_sorted_starttimes = list(lo_starttimes[idx_chronologic])
+        idx = 0
+        while idx < len(lo_sorted_starttimes):
+            try:
+                val = lo_sorted_starttimes[idx]
+            except:
+                break
+            if val is None:
+                dummy = lo_sorted_files.pop(idx)
+                dummy = lo_sorted_starttimes.pop(idx)
+            else:
+                idx += 1
+
 
         #set stationname, either from arguments or from filename
-        if not stationname:
+        if stationname is None:
             stationname = EDL_get_stationname_fromfilename(lo_sorted_files[0])
-
 
         #set counting variables - needed for handling of consecutive files
 
@@ -608,20 +642,24 @@ def EDL_get_starttime_fromfilename(filename):
     parts_of_bn = bn.split('.')
     timestamp = parts_of_bn[-2]
     
-    secs = int(float(timestamp[-2:]))
-    mins = int(float(timestamp[-4:-2]))
-    hours =int(float(timestamp[-6:-4]))
-    day =  int(float(timestamp[-8:-6]))
-    month =int( float(timestamp[-10:-8]))
-    year = int(float(timestamp[-12:-10]))
-    if year < 50:
-        year += 2000
-    else:
-        year += 1900
+    try:
+        secs = int(float(timestamp[-2:]))
+        mins = int(float(timestamp[-4:-2]))
+        hours =int(float(timestamp[-6:-4]))
+        day =  int(float(timestamp[-8:-6]))
+        month =int( float(timestamp[-10:-8]))
+        year = int(float(timestamp[-12:-10]))
+        if year < 50:
+            year += 2000
+        else:
+            year += 1900
 
-    timetuple = (year, month, day, hours, mins, secs)
+        timetuple = (year, month, day, hours, mins, secs)
 
-    epochtime = calendar.timegm(timetuple)
+        epochtime = calendar.timegm(timetuple)
+
+    except:
+        epochtime = None
 
     return epochtime
 
@@ -643,10 +681,10 @@ def EDL_get_stationname_fromfilename(filename):
 
 def read_data_header(fn_raw):
     """
-        Read the header line of MTpy data files.
+        Read the header line of MTpy TS data files.
 
     input: 
-    MTpy data file name
+    MTpy TS data file name
 
     output:
     list of header elements -
