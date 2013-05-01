@@ -88,12 +88,12 @@ def main():
     #-------------------------------------------------------
 
 
-    for f in lo_files:
+    for filename in lo_files:
 
         #find station 
         #try reading in a potentially existing header line
         try:
-            F = open(f,'r')
+            F = open(filename,'r')
             firstline = F.readline()
             F.close()
             firstlinesplit = firstline.strip().split()
@@ -113,9 +113,9 @@ def main():
             try:
 
                 stationname = FH.EDL_get_stationname_fromfilename(f)
-                channel = f[-2:].lower()
+                channel = filename[-2:].lower()
             except:
-                print 'stationname or channel for file %s could not be determined - skipping file'%(f)
+                print 'stationname or channel for file %s could not be determined - skipping file'%(filename)
                 continue
         
 
@@ -170,7 +170,9 @@ def main():
             instrument_amplification = stationdict['b_instrument_amplification']
 
 
-        CAL.calibrate_file(f, outdir, instrument, logger, gain, dipolelength, stationname, channel, latitude, longitude, elevation,  offset = 0 )
+        CAL.calibrate_file(filename, outdir, instrument, logger, gain, dipolelength, stationname, channel, latitude, longitude, elevation,  offset = 0 )
+
+TODO : re-orientate files !!
 
 if __name__=='__main__':
     main()
