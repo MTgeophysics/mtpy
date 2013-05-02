@@ -2,7 +2,9 @@
 """
 This is a convenience script for the calibration of all (station-) files within a directory (recursive/non-recursive).
 
-It needs the location of the directory and the location of the respective configuration file. If no output folder is specified, a subfolder 'calibrated' is set up within the input directory.
+Calibration includes the linear conversion from logger counts(mili volts) into physical quantities, the conversion from voltage to electrtic field strength for Efield components, and the re-orientation of the data traces into true North(X)/East(Y) coordinates.
+
+Required input: data files directory and the location of the respective configuration file (survey meta-data file). If no output folder is specified, a subfolder 'calibrated' is set up within the input directory.
 
     2 mandatory arguments: 
     - path to files 
@@ -102,66 +104,70 @@ def main():
         raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (configfile) )
 
     #----------------------------------------------------------------------------
-    #to be improved later - rather rely on header lines than filenames!! :
 
-    #select files by suffix, since header information is not necessarily present
-    #typical suffixes for EDL output file names
+    #select files by heder entries:
     components = ['ex', 'ey', 'bx', 'by', 'bz']
+    lo_allfiles = []
+    lo_allheaders = []
+    for folder in pathname:
+        wd = op.abspath(op.realpath(folder)) 
+        if not op.isdir(wd):
+            #print 'Directory not existing: %s' % (wd)
+            lo_foldernames.remove(wd)
+            continue    
+        dirfiles = os.listdir(wd)
+        for tmpfile in dirfiles:
+            header = FH.read_ts_header(tmpfile)
+            if header['channel'].lower() in components:
+                lo_allfiles.append(op.abspath(op.join(wd,tmpfile)))
+                lo_allheaders.append(header)
 
-    oldwd = os.getcwd()
-    os.chdir(directory)
-    lo_allfiles = glob.glob('*.??')
-    lo_allfiles = [op.abspath(i) for i in lo_allfiles]
-    os.chdir(oldwd)
-
-    lo_files = []
-
-    for f in lo_allfiles:
-        if f[-2:].lower() in components:
-            lo_files.append(f)
 
     #check, if list of files is empty
-    if len(lo_files) == 0:
-        raise EX.MTpyError_inputarguments('Directory does not contain files to calibrate: %s' % (wd))
+    if len(lo_allfiles) == 0:
+        raise EX.MTpyError_inputarguments('Directory(ies) do(es) not contain files to calibrate: {0}'.format(pathname))
     #-------------------------------------------------------
 
 
-    for filename in lo_files:
 
-        #find station 
-        #try reading in a potentially existing header line
-        try:
-            F = open(filename,'r')
-            firstline = F.readline()
-            F.close()
-            firstlinesplit = firstline.strip().split()
-            if firstlinesplit[0][0] == '#':
-                #check for missing whitespace after commenting symbol #:
-                if len(firstlinesplit[0]) == 1:
-                    stationname = firstlinesplit[1].upper()
-                    channel = firstlinesplit[2].lower()
-                #otherwise take the rest of the first string as stationname    
-                else:
-                    stationname = firstlinesplit[0][1:].upper()
-                    channel = firstlinesplit[1].lower()
-            else:
-                raise
+        # #find station 
+        # #try reading in a potentially existing header line
+        # try:
+        #     F = open(filename,'r')
+        #     firstline = F.readline()
+        #     F.close()
+        #     firstlinesplit = firstline.strip().split()
+        #     if firstlinesplit[0][0] == '#':
+        #         #check for missing whitespace after commenting symbol #:
+        #         if len(firstlinesplit[0]) == 1:
+        #             stationname = firstlinesplit[1].upper()
+        #             channel = firstlinesplit[2].lower()
+        #         #otherwise take the rest of the first string as stationname    
+        #         else:
+        #             stationname = firstlinesplit[0][1:].upper()
+        #             channel = firstlinesplit[1].lower()
+        #     else:
+        #         raise
 
-        except:
-            try:
+        # except:
+        #     try:
 
-                stationname = FH.EDL_get_stationname_fromfilename(f)
-                channel = filename[-2:].lower()
-            except:
-                print 'stationname or channel for file {0} could not be determined - skipping file'.format(filename)
-                continue
+        #         stationname = FH.EDL_get_stationname_fromfilename(f)
+        #         channel = filename[-2:].lower()
+        #     except:
+        #         print 'stationname or channel for file {0} could not be determined - skipping file'.format(filename)
+        #         continue
+
+    for file_idx, filename in enumerate(lo_allfiles):
         
+        stationname = lo_allheaders[file_idx]['station']
+        channel = lo_allheaders[file_idx]['channel']
 
         #get configuration dictionary for this station
         try:
             stationdict = config_dir[stationname]
         except:
-            print 'no entry for station %s found in configuration file %s skipping file'%(stationname, configfile )
+            print 'no entry for station {0} found in configuration file {1} skipping file'.format(stationname, configfile )
             continue
 
         latitude = stationdict['latitude']
@@ -177,22 +183,11 @@ def main():
             if direction == 'x':
                 angle = float(stationdict['e_xaxis_azimuth'])
                 dipolelength = float(stationdict['e_xaxis_length'])
-                if np.abs(180. - angle) < angleaccuracy:
-                    #X-axis points southwards
-                    dipolelength *= 1
-
-                elif not np.abs(angle) < angleaccuracy:
-                    print 'Configuration file error. E-field X-axis angle for station %s invalid: %f'%(stationname,angle)
 
             #check East-West axis orientation
             if direction == 'y':
                 angle = float(stationdict['e_yaxis_azimuth'])
                 dipolelength = float(stationdict['e_yaxis_length'])
-                if np.abs(270. - angle) < angleaccuracy:
-                    #Y-axis points southwards
-                    dipolelength *= 1
-                elif not np.abs(90. - angle) < angleaccuracy:
-                    print 'Configuration file error. E-field Y-axis angle for station %s invalid: %f'%(stationname,angle)
 
             logger = stationdict['e_logger_type']
             gain = stationdict['e_logger_gain']

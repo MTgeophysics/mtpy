@@ -412,6 +412,10 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
 
     lo_allfiles = []
     pattern = '*.[ebEB][xyzXYZ]'
+    if stationname is not None:
+        pattern = '*{0}*.[ebEB][xyzXYZ]'.format(stationname)
+        print 'pattern',pattern
+
     for folder in lo_foldernames:
         wd = op.abspath(op.realpath(folder)) 
         if not op.isdir(wd):
@@ -424,7 +428,10 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
 
     #check, if list of files is empty
     if len(lo_allfiles) == 0:
-        raise MTpyError_inputarguments('Directory does not contain files to combine: %s' % (wd))
+        if stationname is not None:
+            raise MTpyError_inputarguments('Directory(ies) do(es) not contain files to combine for station {0}: {1}'.format(stationname, inputdir))
+
+        raise MTpyError_inputarguments('Directory does not contain files to combine: {0}'.format(inputdir))
 
     #define subfolder for storing dayfiles
     outpath = op.join(os.curdir,'dayfiles')    
