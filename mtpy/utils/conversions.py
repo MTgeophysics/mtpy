@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-This modules contains functions for the conversion of certain data types.
+This modules contains functions for the conversion of  types.
 
 Examples:
 

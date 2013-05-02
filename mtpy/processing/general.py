@@ -18,7 +18,7 @@ import numpy as np
 
 import math, cmath
 
-import mtpy.utils.exceptions as MTexceptions
+import mtpy.utils.exceptions as EX
 
 
 #=================================================================
@@ -52,7 +52,7 @@ def correct4sensor_orientation(x_values, y_values, x_sensor_angle = 0 , y_sensor
         if len(x_values) != len(y_values):
             raise
     except:
-        raise MTexceptions.MTpyError_inputarguments('ERROR - both input arrays must be of same length')
+        raise EX.MTpyError_inputarguments('ERROR - both input arrays must be of same length')
 
     in_array = np.zeros((len(x_values), 2), x_values.dtype)
 
@@ -63,7 +63,7 @@ def correct4sensor_orientation(x_values, y_values, x_sensor_angle = 0 , y_sensor
         x_angle = math.radians(x_sensor_angle)
         y_angle = math.radians(y_sensor_angle)
     except:
-        raise MTexceptions.MTpyError_inputarguments('ERROR - both angles must be of type int or float')
+        raise EX.MTpyError_inputarguments('ERROR - both angles must be of type int or float')
        
 
     T = np.matrix( [[ np.real(cmath.rect(1,x_angle)), np.imag(cmath.rect(1,x_angle))],[np.real(cmath.rect(1,y_angle)), np.imag(cmath.rect(1,y_angle))]])
@@ -71,7 +71,7 @@ def correct4sensor_orientation(x_values, y_values, x_sensor_angle = 0 , y_sensor
     try:
         new_array = np.dot(in_array, T.I)
     except:
-        raise MTexceptions.MTpyError_inputarguments('ERROR - angles must define independent axes to span 2D')
+        raise EX.MTpyError_inputarguments('ERROR - angles must define independent axes to span 2D')
 
 
     return new_array[0,:], new_array[1,:]

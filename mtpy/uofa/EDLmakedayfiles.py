@@ -1,11 +1,24 @@
 #!/usr/bin/env python
-"""This is a convenience script for the generation of dayfiles. 
+"""
+
+This is a convenience script for the generation of dayfiles. 
 It needs the location of a folder with time series and the sampling period as arguments.
 
 The time series files have to be named in the EDL-ascii output standard, 
 which codes stationname and start time of the file in the name. 
 
 The data have to be either single column values or in 2-column form.
+
+        wrapper for the generation of dayfiles for EDL data.
+
+        2 mandatory arguments: 
+        - path to files 
+        - sampling interval (in seconds)
+
+        3 optional arguments:
+        - name of the output directory - cannot start with '-' 
+        - stationname - cannot start with '-' 
+        - flag '-R (or -r)', if the directory shall be searched for data recursively 
 
 """
 
@@ -26,19 +39,6 @@ reload(FH)
 
 
 def main():
-    """
-        wrapper for the generation of dayfiles for EDL data.
-
-        2 mandatory arguments: 
-        - path to files 
-        - sampling interval (in seconds)
-
-        3 optional arguments:
-        - name of the output directory - cannot start with '-' 
-        - stationname - cannot start with '-' 
-        - flag '-R (or -r)', if the directory shall be searched for data recursively 
-
-    """
 
     if len(sys.argv) < 3:
         raise EX.MTpyError_inputarguments('Need at least 2 arguments: <path to files> <sampling in seconds>  [<output dir>] [<stationname>] [<recursive flag -R>]')

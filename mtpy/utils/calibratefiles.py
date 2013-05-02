@@ -1,8 +1,17 @@
 #!/usr/bin/env python
 """
-This is a convenience script for the calibration of all files within a directory (non-recursive).
+This is a convenience script for the calibration of all (station-) files within a directory (recursive/non-recursive).
 
-It needs the location of the directory and the location of the respective configuration file. If no output folder is specified, a subfolder 'calibrated' is set up within the input directory
+It needs the location of the directory and the location of the respective configuration file. If no output folder is specified, a subfolder 'calibrated' is set up within the input directory.
+
+    2 mandatory arguments: 
+    - path to files 
+    - configuration file ('survey.cfg' style)
+
+    3 optional arguments:
+    - name of the output directory - cannot start with '-' 
+    - stationname - cannot start with '-' 
+    - flag '-R (or -r)', if the directory shall be searched for data recursively 
 
 """
 
@@ -17,12 +26,14 @@ import time
 
 
 import mtpy.utils.exceptions as EX
-reload(EX)
-
 import mtpy.processing.calibration as CAL
-reload(C)
+import mtpy.processing.general as GEN
 import mtpy.utils.filehandling as FH
+
 reload(FH)
+reload(EX)
+reload(CAL)
+reload(GEN)
 
 angleaccuracy = 1.
 
@@ -30,36 +41,63 @@ angleaccuracy = 1.
 def main():
 
     if len(sys.argv) < 3:
-        raise EX.MTpyError_inputarguments('Need 2 arguments: <path to files> <config file>')
+        raise EX.MTpyError_inputarguments('Need at least 2 arguments: <path to files> <config file>  [<output dir>] [<stationname>] [<recursive flag -R>]')
+    outdir = None
+    stationname = None
+    recursive = False
 
+    if len(sys.argv) > 3:
+        optionals = sys.argv[3:]
+        for o in optionals:
+            o = o.strip()
+            if o[0] == '-':
+                if o[1].lower() == 'r':
+                    recursive = True
+                continue
+            elif outdir is None:
+                outdir = o
+                continue
+            elif stationname is None:
+                stationname = o 
+                continue
 
     pathname_raw = sys.argv[1] 
-    directory = op.abspath(op.realpath(pathname_raw))
+    pathname = op.abspath(op.realpath(pathname_raw))
+
+    if not op.isdir(pathname):
+        raise EX.MTpyError_inputarguments('Data file(s) path not existing: {0}'.format(pathname))
 
     configfilename_raw = sys.argv[2]
-    configfile = op.abspath(op.realpath(configfilename_raw))
-
-
-    if not op.isdir(directory):
-        raise EX.MTpyError_inputarguments('Input data directory not existing: %s' % (directory))
+    configfile = op.abspath(op.realpath(op.join(os.curdir,configfilename_raw)))
 
     if not op.isfile(configfile):
-        raise EX.MTpyError_inputarguments('Config file not found: %s' % (configfile))
+        raise EX.MTpyError_inputarguments('Config file not found: {0}'.format(configfile))
+
+
+    if recursive is True:
+        lo_files = []
+        for i,j,k in os.walk(pathname):
+            lof = [op.abspath(op.join(i,f)) for f in j]
+            lo_files.extend(lof)
+        pathname = list(set(lo_files))
+    else:
+        pathname = [pathname]
+
+    if outdir is not None:
+        try:
+            outdir = op.abspath(op.join(os.curdir,outdir))
+            if not os.isdir(outdir):
+                os.makedirs(outdir)
+        except:
+            outdir = op.join(pathname[0],'calibrated')
+            if not os.isdir(outdir):
+                try:
+                    os.makedirs(outdir)
+                except:
+                    EX.MTpyError_inputarguments('Output directory cannot be generated: %s' % (outdir))
 
     try:
-        outdir_raw = sys.argv[3]
-        outdir = op.abspath(op.join(os.curdir,outdir_raw))
-    except:
-        outdir = op.join(directory,'calibrated')
-
-    try:
-        if not op.isdir(outdir):
-            os.makedirs(outdir)
-    except:
-        raise EX.MTpyError_inputarguments('Output directory cannot be generated: %s' % (outdir))
-
-    try:
-        config_dir = FH.read_configfile(configfile)
+        config_dict = FH.read_configfile(configfile)
     except:
         raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (configfile) )
 
@@ -115,7 +153,7 @@ def main():
                 stationname = FH.EDL_get_stationname_fromfilename(f)
                 channel = filename[-2:].lower()
             except:
-                print 'stationname or channel for file %s could not be determined - skipping file'%(filename)
+                print 'stationname or channel for file {0} could not be determined - skipping file'.format(filename)
                 continue
         
 
@@ -174,5 +212,6 @@ def main():
 
 TODO : re-orientate files !!
 
+        GEN.correct4sensor_orientation(x_values, y_values, x_sensor_angle = 0 , y_sensor_angle = 90):
 if __name__=='__main__':
     main()
