@@ -44,7 +44,7 @@ angleaccuracy = 1.
 def main():
 
     if len(sys.argv) < 3:
-        raise EX.MTpyError_inputarguments('Need at least 2 arguments: <path to files> <config file>  [<output dir>] [<station>] [<recursive flag -R>] [<re-orientation flag -O]')
+        raise EX.MTpyError_inputarguments('Need at least 2 arguments: <path to files> <config file> [<output dir>] [<station>] [<recursive flag -R>] [<re-orientation flag -O]')
     outdir = None
     stationname = None
     recursive = False
@@ -198,7 +198,7 @@ def main():
                 continue
 
         channel = lo_allheaders[file_idx]['channel']
-        lo_calibrated_stations.append(stationname)
+        lo_calibrated_stations.append(curr_station)
 
         #get configuration dictionary for this station
 

@@ -85,11 +85,9 @@ def main():
 
 
     #collect file names  within the folder 
-    oldwd = os.getcwd()
-    os.chdir(directory)
-    lo_allfiles = glob.glob('*')
-    lo_allfiles = [op.abspath(i)  for i in lo_allfiles if op.isfile(i)==True]
-    os.chdir(oldwd)
+    lo_allfiles = os.listdir(directory)
+
+    lo_allfiles = [op.abspath(op.join(directory,i))  for i in lo_allfiles if op.isfile(op.abspath(op.join(directory,i)))]# if op.isfile(i)==True]
 
     #generate list of list-of-files-for-each-channel:
     lo_lo_files_for_channels = [[] for i in lo_channels  ]
@@ -99,8 +97,10 @@ def main():
         header_dict = FH.read_ts_header(fn)
         if len(header_dict.keys()) == 0 :
             continue
-
         ch = header_dict['channel'].upper()
+        if ch not in lo_channels:
+            continue    
+
         try:
             ch_idx = lo_channels.index(ch)
         except ValueError:
@@ -112,7 +112,7 @@ def main():
     #if no files had header lines or did not contain data from the appropriate channel(s):
     if np.sum([len(i) for i in lo_lo_files_for_channels]) == 0:
         print 'channels: ', lo_channels, ' - directory: ',directory
-        raise EX.MTpyError_inputarguments('No information for channels found in the directory - Check header lines!')
+        raise EX.MTpyError_inputarguments('No information for channels found in directory {0} - Check header lines!'.format(directory))
 
     #=============================================
     # start the instrument correction
@@ -172,7 +172,7 @@ def main():
         # the minimum of the maximal resolvable signal period and the longest continuous time axis:
         winmax = 1./freq_min
         #for debugging set large window size:
-        winmax = 5e5
+        #winmax = 5e5
         #later on, if the TS is longer than 3 times this time window, we want to cut out subsections of the time series. These cuts shall consist of triplets of subwindows, each of which shall not be longer than this maximum period.
 
         #Now the data set has to be corrected/deconvolved by looping over the collected time axes:
@@ -208,7 +208,7 @@ def main():
                         data.extend(cur_data[start_idx:].tolist())
                         cur_time = ta_cur[-1] + 1./float(header['samplingrate'])  
                     else:
-                        end_idx = where(ta_cur == ta[-1])[0][0] 
+                        end_idx = np.where(ta_cur == ta[-1])[0][0] 
                         data.extend(cur_data[start_idx:end_idx+1].tolist())
                         cur_time = ta[-1]
                     print 'current data length: ',len(data)
@@ -241,7 +241,7 @@ def main():
                     
                     startidx = (np.abs(starttime - ta)).argmin()
                     print startidx,length,len(corrected_timeseries),len(ta)
-                    print 'handling file {0} - starttime {1}, - nsamples {2}'.format(outfn,starttime,length)
+                    print '\nhandling file {0} - starttime {1}, - nsamples {2}'.format(outfn,starttime,length)
                     print outdir,outfn
                     data = corrected_timeseries[startidx:startidx+length]
                     np.savetxt(outF,data)
