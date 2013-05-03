@@ -57,7 +57,7 @@ dict_of_bz_instrument_amplification = {'edl': 0.5, 'elogger': 1.}
 
 dict_of_EDL_gain_factors = {'high': 10., 'low': 1., 'verylow': 0.4, str(10): 10., str(1): 1. , str(0.4): 0.4}
 
-list_of_elogger_gain_factors = [11.]
+list_of_elogger_gain_factors = [11.,1]
 
 dict_of_efield_amplification = {'edl': 1., 'elogger': 10.}
 
@@ -259,7 +259,10 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
         raise MTpyError_inputarguments('wrong channel specification')
    
     field = channel[0]
-
+    
+    #print 'channel:...........',channel, field
+    #print 'read file',filename ,'wrote file...'
+    #return
 
     #separate way for B and E fields here:
     if field == 'e':
@@ -277,8 +280,8 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
 
         if logger == 'elogger':
 
-            if not gain in list_of_elogger_gain_factors:
-                raise MTpyError_inputarguments('invalid gain for elogger')
+            if not type(gain) in [float, int]:#list_of_elogger_gain_factors:
+                raise MTpyError_inputarguments('invalid gain for elogger: {0}'.format(gain))
 
             instrument_amplification = dict_of_efield_amplification[logger]
 
@@ -286,20 +289,22 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
         
         elif logger == 'edl':
 
-            if not str(gain) in  dict_of_EDL_gain_factors:
-                raise MTpyError_inputarguments('invalid gain for EDL')
+            if not type(gain) in [float, int, str]:
+                raise MTpyError_inputarguments('invalid gain for EDL: {0}'.format(gain))
 
             instrument_amplification = dict_of_efield_amplification[logger]
 
-            EDLgain = dict_of_EDL_gain_factors[gain] 
+            if type(gain) == str:
+                EDLgain = dict_of_EDL_gain_factors[gain] 
+            else:
+                EDLgain = float(gain)
 
             outfile_data = EDL_e_field(data_in, EDLgain, dipole, instrument_amplification)
     
         dataunit ='microvoltpermeter'
 
-    #B-field part
+    #B-field part 
     elif field == 'b':
-
         instrument = instrument.lower()
         if not instrument in list_of_bfield_instruments:
             raise MTpyError_inputarguments('invalid instrument for B field measurements')
@@ -318,11 +323,13 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
 
         if logger == 'edl':
 
-            if not str(gain) in  dict_of_EDL_gain_factors:
-                raise MTpyError_inputarguments('invalid gain for EDL')
+            if not type(gain) in [float,int,str]:
+                raise MTpyError_inputarguments('invalid gain: {0}'.format(gain))
 
-
-            EDLgain = dict_of_EDL_gain_factors[gain] 
+            if type(gain) == str:
+                EDLgain = dict_of_EDL_gain_factors[gain] 
+            else:
+                EDLgain = float(gain)
 
 
             if instrument == 'fluxgate' and channel == 'bz':
@@ -361,7 +368,7 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
     np.savetxt(Fout,data_out)
     Fout.close()
 
-    print 'wrote file %s'%(outfile)
+    print 'read file',filename ,'wrote file %s'%(outfile)
     
 
 #=================================================================

@@ -327,3 +327,63 @@ def multiplymatrices_incl_errors(inmatrix1, inmatrix2, inmatrix1_err = None,inma
 
 
     return prod, np.sqrt(var)
+
+
+
+def reorient_data2D(x_values, y_values, x_sensor_angle = 0 , y_sensor_angle = 90):
+    """
+        Re-orient time series data of a sensor pair, which has not been in default (x=0, y=90) orientation.
+
+        Input:
+        - x-values - Numpy array
+        - y-values - Numpy array
+        Note: same length for both! - If not, the shorter length is taken 
+
+        Optional:
+        - Angle of the x-sensor - measured in degrees, clockwise from North (0) 
+        - Angle of the y-sensor - measured in degrees, clockwise from North (0) 
+
+        Output:
+        - corrected x-values (North)
+        - corrected y-values (East)
+    """
+
+    x_values = np.array(x_values)
+    y_values = np.array(y_values)
+
+
+    try:
+        if x_values.dtype not in ['complex', 'float', 'int']:
+            raise
+        if len(x_values) != len(y_values):
+            raise
+    except:
+        raise EX.MTpyError_inputarguments('ERROR - both input arrays must be of same length')
+
+    if len(x_values) != len(y_values):
+        l = min(len(x_values) , len(y_values))
+        x_values = x_values[:l]
+        y_values = y_values[:l]
+
+    in_array = np.zeros((len(x_values), 2), x_values.dtype)
+
+    in_array[:,0] = x_values
+    in_array[:,1] = y_values
+
+    try:
+        x_angle = math.radians(x_sensor_angle)
+        y_angle = math.radians(y_sensor_angle)
+    except:
+        raise EX.MTpyError_inputarguments('ERROR - both angles must be of type int or float')
+       
+
+    T = np.matrix( [[ np.real(cmath.rect(1,x_angle)), np.imag(cmath.rect(1,x_angle))],[np.real(cmath.rect(1,y_angle)), np.imag(cmath.rect(1,y_angle))]])
+
+    try:
+        new_array = np.dot(in_array, T.I)
+    except:
+        raise EX.MTpyError_inputarguments('ERROR - angles must define independent axes to span 2D')
+
+    #print new_array.shape
+
+    return new_array[:,0], new_array[:,1]
