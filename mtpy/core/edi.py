@@ -68,10 +68,12 @@ import re
 import mtpy.utils.format as MTformat
 import mtpy.utils.calculator as MTc
 import mtpy.utils.exceptions as MTexceptions
+import mtpy.core.Z as MTz
 
 #reload(MTexceptions)
 reload(MTformat)
 reload(MTc)
+reload(MTz)
 
 
 #=================================================================
@@ -87,24 +89,15 @@ class Edi(object):
 
     """
 
-    def __init__(self, fn = None):
+    def __init__(self):
 
         """
             Initialise an instance of the Edi class.
 
-            Optional input:
-            fn : filename to connect with the object - not read in automatically!
-
             Initialise the attributes with None/empty dictionary
         """
 
-        self.filename = fn
-        if fn != None:
-            if op.isfile(op.abspath(fn)):
-                self.filename = op.abspath(fn)
-            else:
-                self.filename = None
-
+        self.filename = None
         self.in_filestring = None
         self._head = {}
         self._info_string = None
@@ -114,10 +107,9 @@ class Edi(object):
         self._mtsect = {}
         self._freq = None
         self._zrot = None
-        self.z = None
-        self.zerr = None
-        self.tipper = None
-        self.tippererr = None
+        self.Z = MTz.Z()
+        self.Tipper = None #MTz.Tipper()
+
 
 
     def readfile(self, fn, datatype = 'z'):
@@ -126,12 +118,15 @@ class Edi(object):
 
             Returns an exception, if the file is invalid (following MTpy standards).
 
-
-            'datatype' determines the way data  are provided. Default is 'z', so the full impedance tensor is expected to be present in the file. Other possibilities are 'resphase' and 'spectra' - they exclude the reading of a potentially present Z information.
+            'datatype' determines the way data are provided. Default is 'z', so the full impedance tensor is expected to be present in the file. Other possibilities are 'resphase' and 'spectra' - they exclude the reading of a potentially present Z information.
             TODO: 'spectra' - not implemented yet
 
 
         """
+
+        self.__init__()
+        print 'reading in Edi file ... nulled all attributes'
+
         infile = op.abspath(fn)
 
 
@@ -202,9 +197,8 @@ class Edi(object):
             try:
                 self._read_rhorot(edistring)
             except:
-                self.zrot = list(np.zeros((self.n_freqs())))
+                self.zrot = None #list(np.zeros((self.n_freqs())))
                 print 'Could not read Rhorot section: %s'%infile
-
 
         elif datatype == 'spectra':
             try:
@@ -214,20 +208,20 @@ class Edi(object):
 
 
         #Tipper is optional
-        if self.tipper is None:
+        if self.Tipper is None:
             try:
                 self._read_tipper(edistring)
             except:
-                self.tipper = None
-                self.tippererr = None
+                self.tipper = None #MTz.Tipper()
+                #self.tippererr = None
                 print 'Could not read Tipper section: %s'%infile
 
         #rotation is optional
-        if self.zrot is None:
+        if self._zrot is None:
             try:
                 self._read_zrot(edistring)
             except:
-                self.zrot = None
+                self.zrot = np.zeros((len(self.Z.z)))
                 print 'Could not read Zrot section: %s'%infile
 
 
@@ -245,10 +239,8 @@ class Edi(object):
         edi_dict['HMEAS_EMEAS'] = self.hmeas_emeas
         edi_dict['MTSECT'] = self.mtsect
         edi_dict['FREQ'] = self.freq
-
-        #update the dictionary information from the z and tipper arrays (those may have changed by rotation):
-        edi_dict['Z'] = self.z_dict()
-        edi_dict['TIPPER'] = self.tipper_dict()
+        edi_dict['Z'] = self.Z
+        edi_dict['TIPPER'] = self.tipper
         edi_dict['ZROT'] = self.zrot
 
 
@@ -258,86 +250,84 @@ class Edi(object):
     def data_dict(self):
         """
             Return collected raw data information in one dictionary:
-            Z, Tipper, Zrot, frequencies, Zerror, TipperError
+            Z, Tipper, Zrot, frequencies
 
         """
         data_dict = {}
 
-        data_dict['z'] = self.z
+        data_dict['z'] = self.Z
         data_dict['tipper'] = self.tipper
         data_dict['zrot'] = self.zrot
         data_dict['frequencies'] = self.freq
-        data_dict['zerr'] = self.zerr
-        data_dict['tippererr'] = self.tippererr
 
         return data_dict
 
-    def z_dict(self):
-        """
-            Return the content of the Z and Zerror arrays in a dictionary.
-        """
+    # def z_dict(self):
+    #     """
+    #         Return the content of the Z and Zerror arrays in a dictionary.
+    #     """
 
-        new_z_dict = {}
-        z_array = self.z
-        zerr_array = self.zerr
-        compstrings = ['ZXX','ZXY','ZYX','ZYY']
-        Z_entries = ['R','I','.VAR']
+    #     new_z_dict = {}
+    #     z_array = self.z
+    #     zerr_array = self.zerr
+    #     compstrings = ['ZXX','ZXY','ZYX','ZYY']
+    #     Z_entries = ['R','I','.VAR']
 
-        for idx_comp,comp in enumerate(compstrings):
-            for idx_zentry,zentry in enumerate(Z_entries):
-                section = comp + zentry
-                if idx_zentry == 0:
-                    new_z_dict[section] = list(np.real(z_array[:,idx_comp/2, idx_comp%2]))
-                elif idx_zentry == 1:
-                    new_z_dict[section] = list(np.imag(z_array[:,idx_comp/2, idx_comp%2]))
-                elif idx_zentry == 2:
-                    #squaring the errors (stddev) to get VAR values
-                    new_z_dict[section] = list( (zerr_array[:,idx_comp/2, idx_comp%2])**2 )
+    #     for idx_comp,comp in enumerate(compstrings):
+    #         for idx_zentry,zentry in enumerate(Z_entries):
+    #             section = comp + zentry
+    #             if idx_zentry == 0:
+    #                 new_z_dict[section] = list(np.real(z_array[:,idx_comp/2, idx_comp%2]))
+    #             elif idx_zentry == 1:
+    #                 new_z_dict[section] = list(np.imag(z_array[:,idx_comp/2, idx_comp%2]))
+    #             elif idx_zentry == 2:
+    #                 #squaring the errors (stddev) to get VAR values
+    #                 new_z_dict[section] = list( (zerr_array[:,idx_comp/2, idx_comp%2])**2 )
 
-        return new_z_dict
+    #     return new_z_dict
 
-    def tipper_dict(self):
-        """
-            Return the content of the Tipper and TipperError arrays in a dictionary.
-        """
+    # def tipper_dict(self):
+    #     """
+    #         Return the content of the Tipper and TipperError arrays in a dictionary.
+    #     """
 
-        new_t_dict = {}
-        t_array = self.tipper
-        if  t_array is None:
-            return None
-        terr_array = self.tippererr
-        compstrings = ['TX','TY']
-        T_entries = ['R','I','VAR']
+    #     new_t_dict = {}
+    #     t_array = self.tipper
+    #     if  t_array is None:
+    #         return None
+    #     terr_array = self.tippererr
+    #     compstrings = ['TX','TY']
+    #     T_entries = ['R','I','VAR']
 
-        for idx_comp,comp in enumerate(compstrings):
-            for idx_tentry,tentry in enumerate(T_entries):
-                section = comp + tentry
-                if idx_tentry == 0:
-                    new_t_dict[section] = list(np.real(t_array[:,idx_comp/2, idx_comp%2]))
-                elif idx_tentry == 1:
-                    new_t_dict[section] = list(np.imag(t_array[:,idx_comp/2, idx_comp%2]))
-                elif idx_tentry == 2:
-                    #square errors (stddev) to get VAR values
-                    new_t_dict[section] = list( (terr_array[:,idx_comp/2, idx_comp%2])**2)
+    #     for idx_comp,comp in enumerate(compstrings):
+    #         for idx_tentry,tentry in enumerate(T_entries):
+    #             section = comp + tentry
+    #             if idx_tentry == 0:
+    #                 new_t_dict[section] = list(np.real(t_array[:,idx_comp/2, idx_comp%2]))
+    #             elif idx_tentry == 1:
+    #                 new_t_dict[section] = list(np.imag(t_array[:,idx_comp/2, idx_comp%2]))
+    #             elif idx_tentry == 2:
+    #                 #square errors (stddev) to get VAR values
+    #                 new_t_dict[section] = list( (terr_array[:,idx_comp/2, idx_comp%2])**2)
 
 
-        return new_t_dict
+    #     return new_t_dict
 
     def _get_periods(self):
         """
-            Return a list of periods (output values in seconds).
+            Return an array of periods (output values in seconds).
         """
 
-        return list( 1./np.array(self.freq) )
+        return 1./np.array(self.freq)
     
     def _set_periods(self, list_of_periods):
         """
             Set frequencies by a list of periods (values in seconds).
         """
-        if len(list_of_periods) is not len(self.z):
-            print 'length of periods list not correct (%i instead of %i)'%(len(list_of_periods), len(self.z))
+        if len(list_of_periods) is not len(self.Z.z):
+            print 'length of periods list not correct (%i instead of %i)'%(len(list_of_periods), len(self.Z.z))
             return
-        self.freq = list(1./np.array(list_of_periods) )
+        self.freq = 1./np.array(list_of_periods)
 
     periods = property(_get_periods, _set_periods, doc='List of periods (values in seconds)')    
 
@@ -350,7 +340,7 @@ class Edi(object):
 
     def n_freqs(self):
         """
-            Return the number of frequencies/length of the Z array.
+            Return the number of frequencies/length of the Z data array .
         """
 
         return len(self.freq)
@@ -559,7 +549,11 @@ class Edi(object):
                 except:
                     passs
 
-        self._freq = lo_freqs
+        self._freq = np.array(lo_freqs)
+
+        self.Z.frequencies = self._freq
+        if self.Tipper is not None:
+            self.Tipper.frequencies = self._freq
 
 
     def _read_z(self, edistring):
@@ -604,6 +598,9 @@ class Edi(object):
 
                 z_dict[sectionhead] = lo_z_vals
 
+        if len(z_dict) == 0 :
+            raise MTexceptions.MTpyError_inputarguments("ERROR - Could not find any Z component")
+
 
         for idx_freq  in range( self.n_freqs()):
             try:
@@ -630,10 +627,10 @@ class Edi(object):
                     zerr_array[idx_freq, idx_comp/2, idx_comp%2] = z_dict[sectionhead][idx_freq]
 
 
-        self.z =  z_array
+        self.Z.set_z(z_array)
 
         #errors are stddev, not VAR :
-        self.zerr = np.sqrt(zerr_array)
+        self.Z.set_zerr(np.sqrt(zerr_array))
 
 
     def _read_tipper(self, edistring):
@@ -699,9 +696,9 @@ class Edi(object):
             tippererr_array[idx_freq,0,1] = t_dict['TYVAR'][idx_freq]
 
 
-        self.tipper = tipper_array
+        self.Tipper.set_tipper(tipper_array)
         #errors are stddev, not VAR :
-        self.tippererr = np.sqrt(tippererr_array)
+        self.Tipper.set_tippererr(np.sqrt(tippererr_array))
 
     def _read_res_phase(self, edistring):
         """
@@ -745,8 +742,9 @@ class Edi(object):
                                 pass
 
                     rhophi_dict[sectionhead] = lo_vals
-        #print rhophi_dict
-        #sys.exit()
+        
+        if len (rhophi_dict) == 0:
+            raise
 
         for idx_freq  in range( self.n_freqs()):
             r = np.zeros((2,2))
@@ -787,8 +785,8 @@ class Edi(object):
             zerr_array[idx_freq] = zerr
 
 
-        self.z = z_array
-        self.zerr = zerr_array
+        self.Z.set_z(z_array)
+        self.Z.set_zerr(zerr_array)
 
 
     def _read_rhorot(self, edistring):
@@ -801,6 +799,10 @@ class Edi(object):
         except:
             lo_angles = list( np.zeros((self.n_freqs())) )
             self.zrot = lo_angles
+            self.Z.rotation_angle = self.zrot
+            if self.Tipper is not None:
+                self.Tipper.rotation_angle = self.zrot
+
             return
 
 
@@ -816,9 +818,14 @@ class Edi(object):
                 except:
                     pass
 
-
+        
         if len(lo_angles) != self.n_freqs():
             raise
+
+        self.zrot = lo_angles
+        self.Z.rotation_angle = self.zrot
+        if self.Tipper is not None:
+            self.Tipper.rotation_angle = self.zrot
 
 
     def _read_spectra(self,edistring):
@@ -947,6 +954,7 @@ class Edi(object):
         except:
             lo_angles = list( np.zeros((self.n_freqs())) )
             self.zrot = lo_angles
+            self.Z.rotation_angle = self.zrot
             return
 
 
@@ -962,11 +970,11 @@ class Edi(object):
                 except:
                     pass
 
-
         if len(lo_angles) != self.n_freqs():
             raise
 
         self.zrot = lo_angles
+        self.Z.rotation_angle = self.zrot
 
 
     def writefile(self, *fn):
@@ -1031,49 +1039,72 @@ class Edi(object):
 
             In non-rotated state, X refs to North and Y to East direction.
 
-            Updates the attributes "z, zerr, zrot, tipper, tippererr".
+            Updates the attributes "z, zrot, tipper".
 
         """
 
-        angle = angle%360
-        zerr_rot = None
-        tipper_rot = None
-        tippererr_rot = None
+        if type(angle) in [float,int]:
+            angle = [float(angle)%360 for i in range(len(self.zrot))]
+        else:
+            try:
+                if type(angle) is str:
+                    raise
+                if len(angle) != len(self.zrot):
+                    raise
+                angle = [float(i)%360 for i in angle]
+            except:
+                raise MTexceptions.MTpyError_inputarguments('ERROR - "angle" must be a single numerical value or a list of values. In the latter case, its length must be {0}'.format(len(self.zrot)))
 
-        z_rot = copy.copy(self.z)
-        if self.zerr is not None:
-            zerr_rot = copy.copy(self.zerr)
-        if self.tipper is not None:
-            tipper_rot = copy.copy(self.tipper)
-        if self.tippererr is not None:
-            tippererr_rot = copy.copy(self.tippererr)
+        self.Z.rotate(angle)
+        self.zrot = [(ang0+angle[i])%360 for i,ang0 in enumerate(self.zrot)]
+        self.Z.rotation_angle = self.zrot
 
-        for idx_freq in range(self.n_freqs()):
+        if self.Tipper is not None:
+            self.Tipper.rotate(angle)
+            self.Tipper.rotation_angle = self.zrot
 
-            if self.zerr is not None:
-                z_rot[idx_freq], zerr_rot[idx_freq] = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle, self.zerr[idx_freq,:,:])
-            else:
-                z_rot[idx_freq], zerr_rot = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle)
-
-
-            if self.tipper is not None:
-
-                if self.tippererr is not None:
-                    tipper_rot[idx_freq], tippererr_rot[idx_freq] = MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle,self.tippererr[idx_freq,:,:] )
-                else:
-                    tipper_rot[idx_freq], tippererr_rot = MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle)
+        # zerr_rot = None
+        # tipper_rot = None
+        # tippererr_rot = None
 
 
 
-        self.z = z_rot
-        if zerr_rot is not None:
-            self.zerr = zerr_rot
-        if tipper_rot is not None:
-            self.tipper = tipper_rot
-        if tippererr_rot is not None:
-            self.tippererr = tippererr_rot
+        # z_rot = copy.copy(self.Z.z)
+        # if self.zerr is not None:
+        #     zerr_rot = copy.copy(self.zerr)
+        # if self.Tipper is not None:
+        #     tipper_rot = copy.copy(self.tipper)
+        # if self.tippererr is not None:
+        #     tippererr_rot = copy.copy(self.tippererr)
 
-        self.zrot = list( (np.array(self.zrot) + angle)%360)
+        # for idx_freq in range(self.n_freqs()):
+
+        #     if self.zerr is not None:
+        #         z_rot[idx_freq], zerr_rot[idx_freq] = MTc.rotatematrix_incl_errors(self.Z.z[idx_freq,:,:], angle, self.zerr[idx_freq,:,:])
+        #     else:
+        #         z_rot[idx_freq], zerr_rot = MTc.rotatematrix_incl_errors(self.Z.z[idx_freq,:,:], angle)
+
+
+        #     if self.Tipper is not None:
+
+        #         if self.tippererr is not None:
+        #             tipper_rot[idx_freq], tippererr_rot[idx_freq] = MTc.rotatevector_incl_errors(self.Tipper.tipper[idx_freq,:,:], angle,self.tippererr[idx_freq,:,:] )
+        #         else:
+        #             tipper_rot[idx_freq], tippererr_rot = MTc.rotatevector_incl_errors(self.Tipper.tipper[idx_freq,:,:], angle)
+
+
+
+        # self.z = z_rot
+        # if zerr_rot is not None:
+        #     self.zerr = zerr_rot
+        # if tipper_rot is not None:
+        #     self.tipper = tipper_rot
+        # if tippererr_rot is not None:
+        #     self.tippererr = tippererr_rot
+
+        # self.zrot = list( (np.array(self.zrot) + angle)%360)
+        # self.Z.rotation_angle = self.zrot
+
 
 
     def _get_res_phase(self):
@@ -1084,29 +1115,29 @@ class Edi(object):
             (Rho, Phi, RhoError, PhiError)
         """
 
-        if self.z is None:
-            print 'Z array is None - cannot calculate Resistivity/Phase'
+        if self.Z is None:
+            print 'Z is "None" - cannot calculate Resistivity/Phase'
             return
         reserr = None
         phierr = None
-        if self.zerr is not None:
-            reserr = np.zeros(self.zerr.shape)
-            phierr = np.zeros(self.zerr.shape)
+        if self.Z.zerr is not None:
+            reserr = np.zeros(self.Z.zerr.shape)
+            phierr = np.zeros(self.Z.zerr.shape)
 
-        res = np.zeros(self.z.shape)
-        phi = np.zeros(self.z.shape)
+        res = np.zeros(self.Z.z.shape)
+        phi = np.zeros(self.Z.z.shape)
 
 
-        for idx_f in range(len(self.z)):
+        for idx_f in range(len(self.Z.z)):
             for i in range(2):
                 for j in range(2):
 
-                    res[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /self.freq[idx_f] *0.2
-                    phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))
+                    res[idx_f,i,j] = np.abs(self.Z.z[idx_f,i,j])**2 /self.freq[idx_f] *0.2
+                    phi[idx_f,i,j] = math.degrees(cmath.phase(self.Z.z[idx_f,i,j]))
 
-                    if self.zerr is not None:
-                        r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
-                        reserr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/self.freq[idx_f] * r_err
+                    if self.Z.zerr is not None:
+                        r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.Z.z[idx_f,i,j]), self.Z.zerr[idx_f,i,j], np.imag(self.Z.z[idx_f,i,j]), self.Z.zerr[idx_f,i,j])
+                        reserr[idx_f,i,j] = 0.4 * np.abs(self.Z.z[idx_f,i,j])/self.freq[idx_f] * r_err
                         phierr[idx_f,i,j] = phi_err
 
         return res, phi, reserr, phierr
@@ -1121,15 +1152,15 @@ class Edi(object):
 
         """
 
-        if self.z is not None:
-            z_new = copy.copy(self.z)
+        if self.Z is not None:
+            z_new = copy.copy(self.Z.z)
 
-            if self.z.shape != res_array.shape:
-                print 'Error - shape of "res" array does not match shape of Z array: %s ; %s'%(str(res_array.shape),str(self.z.shape))
+            if self.Z.z.shape != res_array.shape:
+                print 'Error - shape of "res" array does not match shape of Z array: %s ; %s'%(str(res_array.shape),str(self.Z.z.shape))
                 return
 
-            if self.z.shape != phase_array.shape:
-                print 'Error - shape of "phase" array does not match shape of Z array: %s ; %s'%(str(phase_array.shape),str(self.z.shape))
+            if self.Z.z.shape != phase_array.shape:
+                print 'Error - shape of "phase" array does not match shape of Z array: %s ; %s'%(str(phase_array.shape),str(self.Z.z.shape))
                 return
         else:
             z_new = p.zeros(res_array.shape,'complex')
@@ -1154,7 +1185,7 @@ class Edi(object):
                     abs_z = np.sqrt(5 * self.freq[idx_f] * res_array[idx_f,i,j])
                     z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phase_array[idx_f,i,j] ))
 
-        self.z = z_new
+        self.Z.set_z(z_new)
 
 
     res_phase = property(_get_res_phase,_set_res_phase,doc='Values for resistivity (rho - in Ohm m) and phase (phi - in degrees). Updates the attributes "z, zerr"')
@@ -1210,78 +1241,78 @@ class Edi(object):
     info_string = property(_get_info_string, _set_info_string, doc='INFO section string')
 
 
-    def set_z(self, z_array):
-        """
-            Set the attribute 'z'.
+    # def set_z(self, z_array):
+    #     """
+    #         Set the attribute 'z'.
 
-            Input:
-            Z array
+    #         Input:
+    #         Z array
 
-            Test for shape, but no test for consistency!
+    #         Test for shape, but no test for consistency!
 
-        """
-
-
-        if (self.z is not None) and (self.z.shape != z_array.shape):
-            print 'Error - shape of "z" array does not match shape of existing Z array: %s ; %s'%(str(z_array.shape),str(self.z.shape))
-            return
-
-        self.z = z_array
+    #     """
 
 
-    def set_zerr(self, zerr_array):
-        """
-            Set the attribute 'zerr'.
+    #     if (self.Z is not None) and (self.Z.shape != z_array.shape):
+    #         print 'Error - shape of "z" array does not match shape of existing Z array: %s ; %s'%(str(z_array.shape),str(self.Z.shape))
+    #         return
 
-            Input:
-            Zerror array
-
-            Test for shape, but no test for consistency!
-
-        """
-
-        if (self.zerr is not None) and (self.zerr.shape != zerr_array.shape):
-            print 'Error - shape of "zerr" array does not match shape of Zerr array: %s ; %s'%(str(zerr_array.shape),str(self.zerr.shape))
-            return
-
-        self.zerr = zerr_array
+    #     self.z = z_array
 
 
-    def set_tipper(self, tipper_array):
-        """
-            Set the attribute 'tipper'.
+    # def set_zerr(self, zerr_array):
+    #     """
+    #         Set the attribute 'zerr'.
 
-            Input:
-            tipper array
+    #         Input:
+    #         Zerror array
 
-            Test for shape, but no test for consistency!
+    #         Test for shape, but no test for consistency!
 
-        """
+    #     """
 
-        if (self.tipper is not None) and (self.tipper.shape != tipper_array.shape):
-            print 'Error - shape of "tipper" array does not match shape of tipper-array: %s ; %s'%(str(tipper_array.shape),str(self.tipper.shape))
-            return
+    #     if (self.zerr is not None) and (self.zerr.shape != zerr_array.shape):
+    #         print 'Error - shape of "zerr" array does not match shape of Zerr array: %s ; %s'%(str(zerr_array.shape),str(self.zerr.shape))
+    #         return
 
-        self.tipper = tipper_array
-
-
-    def set_tippererr(self, tippererr_array):
-        """
-            Set the attribute 'tippererr'.
-
-            Input:
-            TipperError array
-
-            Test for shape, but no test for consistency!
-
-        """
+    #     self.zerr = zerr_array
 
 
-        if (self.tippererr is not None) and (self.tippererr.shape != tippererr_array.shape):
-            print 'Error - shape of "tippererr" array does not match shape of tippererr array: %s ; %s'%(str(tippererr_array.shape),str(self.tippererr.shape))
-            return
+    # def set_tipper(self, tipper_array):
+    #     """
+    #         Set the attribute 'tipper'.
 
-        self.tippererr = tippererr_array
+    #         Input:
+    #         tipper array
+
+    #         Test for shape, but no test for consistency!
+
+    #     """
+
+    #     if (self.Tipper is not None) and (self.Tipper.shape != tipper_array.shape):
+    #         print 'Error - shape of "tipper" array does not match shape of tipper-array: %s ; %s'%(str(tipper_array.shape),str(self.Tipper.shape))
+    #         return
+
+    #     self.tipper = tipper_array
+
+
+    # def set_tippererr(self, tippererr_array):
+    #     """
+    #         Set the attribute 'tippererr'.
+
+    #         Input:
+    #         TipperError array
+
+    #         Test for shape, but no test for consistency!
+
+    #     """
+
+
+    #     if (self.tippererr is not None) and (self.tippererr.shape != tippererr_array.shape):
+    #         print 'Error - shape of "tippererr" array does not match shape of tippererr array: %s ; %s'%(str(tippererr_array.shape),str(self.tippererr.shape))
+    #         return
+
+    #     self.tippererr = tippererr_array
 
 
     def _set_definemeas(self,definemeas_dict):
@@ -1330,7 +1361,7 @@ class Edi(object):
 
 
 
-    def get_datacomponent(self, componentname):
+    def _get_datacomponent(self, componentname):
         """
             Return a specific data component.
 
@@ -1363,7 +1394,7 @@ class Edi(object):
         return
 
 
-    def set_datacomponent(self, componentname, value):
+    def _set_datacomponent(self, componentname, value):
         """
             Set a specific data component.
 
@@ -1390,7 +1421,11 @@ class Edi(object):
             print 'length of frequency list not correct (%i instead of %i)'%(len(lo_frequencies), len(self.z))
             return
 
-        self._freq = lo_frequencies
+        self._freq = np.array(lo_frequencies)
+        self.Z.frequencies = self._freq
+        if self.Tipper is not None:
+            self.Tipper.frequencies = self._freq
+
     def _get_frequencies(self): return self._freq
     freq = property(_get_frequencies, _set_frequencies, doc='list of frequencies')
     frequencies = property(_get_frequencies, _set_frequencies, doc='list of frequencies')
@@ -1405,8 +1440,13 @@ class Edi(object):
 
             No test for consistency!
         """
+        
+
+        if type(angle) is str:
+            raise MTexceptions.MTpyError_edi_file('list of angles contains string literal(s)')
+
         if np.iterable(angle):
-            if len(angle) is not len(self.z):
+            if len(angle) is not len(self.Z.z):
                 print 'length of angle list not correct (%i instead of %i)'%(len(angle), len(self.z))
                 return
             try:
@@ -1415,14 +1455,17 @@ class Edi(object):
                 raise MTexceptions.MTpyError_edi_file('list of angles contains non-numercal values')
         else:
             try:
-                angle = [float(angle%360) for i in self.z]
+                angle = [float(angle%360) for i in self.Z.z]
             except:
                 raise MTexceptions.MTpyError_edi_file('Angles is a non-numercal value')
 
 
-        self._zrot = angle
+        self._zrot = np.array(angle)
+        self.Z.rotation_angle = angle
+        if self.Tipper is not None:
+            self.Tipper.rotation_angle = angle
 
-    def _get_zrot(self): return self._zrot
+    def _get_zrot(self): return np.array(self._zrot)
     zrot = property(_get_zrot, _set_zrot, doc='')
 
 

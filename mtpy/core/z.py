@@ -9,7 +9,6 @@ Contains classes and functions for handling impedance tensors (Z).
     "Z" contains information about an impedance tensor Z. 
 
         Methods:
-        - read_edi_object
         - set_z
         - set_zerr
         - rho
@@ -30,7 +29,6 @@ Contains classes and functions for handling impedance tensors (Z).
 
         Methods:
 
-        - _edi_object
         - set_tipper
         - set_tippererr
         - set_r_phi
@@ -74,7 +72,7 @@ class Z(object):
     """
         Z class - generates an impedance tensor (Z-) object.
 
-        Methods  include reading and writing from and to edi-objects, rotations/combinations of Z instances, as well as 
+        Methods  include rotations/combinations of Z instances, as well as 
         calculation of invariants, inverse, amplitude/phase,...
 
         
@@ -87,19 +85,16 @@ class Z(object):
 
     """
 
-    def __init__(self, z_array = None, zerr_array = None, edi_object = None):
+    def __init__(self, z_array = None, zerr_array = None):
         """
             Initialise an instance of the Z class.
 
             Optional input:
             z_array : Numpy array containing Z values
             zerr_array : Numpy array containing Z-error values (NOT variance, but stddev!)
-            edi_object : instance of the MTpy Edi class
 
             Initialise the attributes with None
         """    
-
-        import mtpy.core.edi as MTedi 
 
         self.z = None
         self.zerr = None
@@ -135,14 +130,13 @@ class Z(object):
 
             
         self.frequencies = None
-        self.edi_object = None
 
-        if isinstance(edi_object, MTedi.Edi):
-            self.edi_object = edi_object
-            self.frequencies = edi_object.frequencies
-            self.z = edi_object.z
-            if  edi_object.zerr  is not None:
-                self.zerr = edi_object.zerr
+        # if isinstance(edi_object, MTedi.Edi):
+        #     self.edi_object = edi_object
+        #     self.frequencies = edi_object.frequencies
+        #     self.z = edi_object.z
+        #     if  edi_object.zerr  is not None:
+        #         self.zerr = edi_object.zerr
         try:
             if len(self.z) != len(zerr):
                 self.zerr = None
@@ -156,40 +150,40 @@ class Z(object):
         self.rotation_angle = 0.
 
 
-    def read_edi_object(self, edi_object):
-        """
-            Read in an instance of the MTpy Edi class.
+    # def read_edi_object(self, edi_object):
+    #     """
+    #         Read in an instance of the MTpy Edi class.
 
-            Update attributes "z, zerr"
+    #         Update attributes "z, zerr"
 
-        """
-
-
-        if not isinstance(edi_object,MTedi.Edi):
-            print 'Object is not a valid instance of the Edi class - Z object not updated'
-            return
+    #     """
 
 
-        self.edi_object = edi_object
-        self.frequencies = edi_object.frequencies
+    #     if not isinstance(edi_object,MTedi.Edi):
+    #         print 'Object is not a valid instance of the Edi class - Z object not updated'
+    #         return
 
-        try:
-            if edi_object.z is None :
-                raise
+
+    #     self.edi_object = edi_object
+    #     self.frequencies = edi_object.frequencies
+
+    #     try:
+    #         if edi_object.z is None :
+    #             raise
             
-            z_new = edi_object.z
-            try:
-                zerr_new = edi_object.zerr
-            except:
-                zerr_new = np.zeros(z_new.shape)
+    #         z_new = edi_object.z
+    #         try:
+    #             zerr_new = edi_object.zerr
+    #         except:
+    #             zerr_new = np.zeros(z_new.shape)
 
-            if len(z_new) != len(zerr_new):
-                raise
-            self.z = z_new
-            self.zerr = zerr_new
+    #         if len(z_new) != len(zerr_new):
+    #             raise
+    #         self.z = z_new
+    #         self.zerr = zerr_new
 
-        except:
-            print 'Edi object does not contain correct z information - z object not updated'
+    #     except:
+    #         print 'Edi object does not contain correct z information - z object not updated'
 
 
        
@@ -274,7 +268,7 @@ class Z(object):
 
         self.z = z_new
 
-    real = property(_get_real, _set_real, doc='Real part of Z')
+    #real = property(_get_real, _set_real, doc='Real part of Z')
 
     def _get_imag(self):
         """
@@ -320,7 +314,7 @@ class Z(object):
 
         self.z = z_new
 
-    imag = property(_get_imag, _set_imag, doc='Imaginary part of Z ')
+    #imag = property(_get_imag, _set_imag, doc='Imaginary part of Z ')
 
     def _get_res_phase(self):
         """
@@ -347,18 +341,18 @@ class Z(object):
 
             for i in range(2):                        
                 for j in range(2):
-                    res[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /self.freq[idx_f] *0.2
+                    res[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /self.frequencies[idx_f] *0.2
                     phase[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))%360
                 
                     if self.zerr is not None:
                         r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
-                        reserr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/self.freq[idx_f] * r_err
+                        reserr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/self.frequencies[idx_f] * r_err
                         phaseerr[idx_f,i,j] = phi_err
 
         return res, phase, reserr, phaseerr
 
 
-    res_phase= property(_get_res_phase, doc='Resistivity and Phase angle of Z')
+    res_phase = property(_get_res_phase, doc='Resistivity and Phase angle of Z')
 
 
     def set_res_phase(self, res_array, phase_array):
@@ -387,7 +381,7 @@ class Z(object):
                 return
 
 
-        if (self.freq is None) or (len(self.freq) != len(res_array)) :
+        if (self.frequencies is None) or (len(self.frequencies) != len(res_array)) :
             raise MTexceptions.MTpyError_EDI('ERROR - cannot set res without proper frequency information - proper "freq" attribute must be defined ')
 
             
@@ -402,7 +396,7 @@ class Z(object):
         for idx_f in range(len(z_new)):
             for i in range(2):
                 for j in range(2):
-                    abs_z = np.sqrt(5 * self.freq[idx_f] * res_array[idx_f,i,j])
+                    abs_z = np.sqrt(5 * self.frequencies[idx_f] * res_array[idx_f,i,j])
                     z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phase_array[idx_f,i,j] ))
 
         self.z = z_new
@@ -443,10 +437,8 @@ class Z(object):
 
         """
 
-
-
         if self.z is None :
-            print 'z array is "None" - I cannot rotate that'
+            print 'Z array is "None" - I cannot rotate that'
             return
 
         #check for iterable list/set of angles - if so, it must have length 1 or same as len(tipper):
@@ -475,7 +467,7 @@ class Z(object):
                     print '"Angles" must be valid numbers (in degrees)'
                     return
             
-        self.rotation_angle = lo_angles
+        self.rotation_angle = [(oldangle + lo_angles[i])%360 for i,oldangle in enumerate(self.rotation_angle) ] 
 
         if len(lo_angles) != len(self.z):
             print 'Wrong number Number of "angles" - need %i '%(len(self.z))
@@ -830,14 +822,13 @@ class Tipper(object):
 
     """
 
-    def __init__(self, tipper_array = None, tippererr_array = None, edi_object = None):
+    def __init__(self, tipper_array = None, tippererr_array = None):
         """
             Initialise an instance of the Tipper class.
 
             Optional input:
             tipper_array : Numpy array containing Tipper values
             tippererr_array : Numpy array containing Tipper-error values (NOT variance, but stddev!)
-            edi_object : instance of the MTpy Edi class
 
             Initialise the attributes with None
         """    
@@ -858,15 +849,14 @@ class Tipper(object):
             pass
 
         self.frequencies = None
-        self.edi_object = None
 
-        if isinstance(edi_object,MTedi.Edi):
-            self.edi_object = edi_object
-            self.frequencies = edi_object.frequencies
-            if edi_object.tipper is not None:
-                self.tipper = edi_object.tipper
-            if edi_object.tippererr is not None:
-                self.tippererr = edi_object.tippererr
+        # if isinstance(edi_object,MTedi.Edi):
+        #     self.edi_object = edi_object
+        #     self.frequencies = edi_object.frequencies
+        #     if edi_object.tipper is not None:
+        #         self.tipper = edi_object.tipper
+        #     if edi_object.tippererr is not None:
+        #         self.tippererr = edi_object.tippererr
 
         try:
             if len(self.tipper) != len(tippererr):
@@ -878,36 +868,36 @@ class Tipper(object):
         self.rotation_angle = 0.
 
 
-    def read_edi_object(self, edi_object):
-        """
-            Read in an instance of the MTpy Edi class.
+    # def read_edi_object(self, edi_object):
+    #     """
+    #         Read in an instance of the MTpy Edi class.
 
-            Update attributes "tipper, tippererr"
+    #         Update attributes "tipper, tippererr"
 
-        """
+    #     """
 
-        if not isinstance(edi_object,MTedi.Edi):
-            print 'Object is not a valid Edi instance - Tipper object not updated'
-            return
+    #     if not isinstance(edi_object,MTedi.Edi):
+    #         print 'Object is not a valid Edi instance - Tipper object not updated'
+    #         return
 
 
-        self.edi_object = edi_object
-        self.frequencies = edi_object.frequencies
+    #     self.edi_object = edi_object
+    #     self.frequencies = edi_object.frequencies
         
-        try:
-            if edi_object.tipper is None or edi_object.tippererr is None:
-                raise
+    #     try:
+    #         if edi_object.tipper is None or edi_object.tippererr is None:
+    #             raise
             
-            tipper_new = edi_object.tipper
-            tippererr_new = edi_object.tippererr
+    #         tipper_new = edi_object.tipper
+    #         tippererr_new = edi_object.tippererr
 
-            if len(tipper_new) != len(tippererr_new):
-                raise
-            self.tipper = tipper_new
-            self.tippererr = tippererr_new
+    #         if len(tipper_new) != len(tippererr_new):
+    #             raise
+    #         self.tipper = tipper_new
+    #         self.tippererr = tippererr_new
 
-        except:
-            print 'Edi object does not contain correct tipper information - Tipper object not updated'
+    #     except:
+    #         print 'Edi object does not contain correct tipper information - Tipper object not updated'
 
         
     def set_tipper(self, tipper_array):
@@ -1158,7 +1148,7 @@ class Tipper(object):
                     print '"Angles" must be valid numbers (in degrees)'
                     return
             
-        self.rotation_angle = lo_angles
+        self.rotation_angle = [(oldangle + lo_angles[i])%360 for i,oldangle in enumerate(self.rotation_angle) ] 
 
         if len(lo_angles) != len(self.tipper):
             print 'Wrong number Number of "angles" - need %i '%(len(self.tipper))
