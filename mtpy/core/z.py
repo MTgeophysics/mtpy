@@ -87,7 +87,7 @@ class Z(object):
 
     """
 
-    def __init__(self, z_array = None, zerr_array = None, edi_object = None, Bscale = 1):
+    def __init__(self, z_array = None, zerr_array = None, edi_object = None):
         """
             Initialise an instance of the Z class.
 
@@ -95,19 +95,9 @@ class Z(object):
             z_array : Numpy array containing Z values
             zerr_array : Numpy array containing Z-error values (NOT variance, but stddev!)
             edi_object : instance of the MTpy Edi class
-            Bscale : scaling factor to convert the input Z values to unit km/s
 
             Initialise the attributes with None
-        """
-
-        if Bscale in ['h','H']:
-            Bscale =  1./MTc.mu0
-        try:
-            Bscale = float(Bscale)
-        except:
-            raise MTexceptions.MTpyError_edi_file('ERROR - B field scaling factor not understood ')
-    
-    
+        """    
 
         import mtpy.core.edi as MTedi 
 
@@ -143,10 +133,6 @@ class Z(object):
         except:
             pass
 
-        if self.z is not None:
-            self.z *= Bscale
-        if self.zerr is not None:
-            self.zerr *= Bscale
             
         self.frequencies = None
         self.edi_object = None
@@ -1196,7 +1182,7 @@ class Tipper(object):
 #------------------------
 
 
-def rotate_z(z_array, alpha, zerr_array = None, Bscale = 1.):
+def rotate_z(z_array, alpha, zerr_array = None):
     """
         Rotate a Z array
 
@@ -1206,7 +1192,6 @@ def rotate_z(z_array, alpha, zerr_array = None, Bscale = 1.):
 
         Optional:
         - Zerror : (1,2,2) or (2,2) shaped Numpy array
-        - Bscale : scaling factor to convert the input Z values to unit km/s
 
         Output:
         - rotated Z array
@@ -1214,7 +1199,7 @@ def rotate_z(z_array, alpha, zerr_array = None, Bscale = 1.):
 
     """
 
-    z_object = _read_z_array(z_array, zerr_array, Bscale = Bscale)
+    z_object = _read_z_array(z_array, zerr_array)
 
     z_object.rotate(alpha)
 
@@ -1284,7 +1269,7 @@ def remove_ss_and_distortion(z_array, zerr_array = None, rho_x = 1., rho_y = 1.)
 
 
 
-def z2rhophi(z_array, zerr_array = None, Bscale = 1):
+def z2rhophi(z_array, zerr_array = None):
     """
         Return the resistivity/phase information for Z (in km/s!!).
 
@@ -1293,7 +1278,6 @@ def z2rhophi(z_array, zerr_array = None, Bscale = 1):
 
         Optional:
         - Zerror array
-        - Bscale : scaling factor to convert the input Z values to unit km/s
 
         Output:
         - Resistivity array 
@@ -1302,7 +1286,7 @@ def z2rhophi(z_array, zerr_array = None, Bscale = 1):
         - Phase uncertainties array
     """
     
-    z_object = _read_z_array(z_array,zerr_array , Bscale = Bscale)
+    z_object = _read_z_array(z_array,zerr_array)
 
     return z_object.rho_phi()
 
@@ -1344,7 +1328,7 @@ def tipper2rhophi(tipper_array, tippererr_array = None):
     return tipper_object.rho_phi()
 
 
-def _read_z_array(z_array, zerr_array = None, Bscale = 1.):
+def _read_z_array(z_array, zerr_array = None):
     """
         Read a Z array and return an instance of the Z class.
 
@@ -1354,19 +1338,13 @@ def _read_z_array(z_array, zerr_array = None, Bscale = 1.):
 
         Optional:
         - Zerror array
-        - Bscale : scaling factor to convert the input Z values to unit km/s
     """
 
 
     try:
-        if Bscale in ['h','H']:
-            Bscale =  1./MTc.mu0
-        try:
-            Bscale = float(Bscale)
-        except:
-            raise MTexceptions.MTpyError_edi_file('ERROR - B field scaling factor not understood ')
-  
-        z_object = Z( z_array=z_array, zerr_array=zerr_array, Bscale = Bscale )
+
+
+        z_object = Z( z_array=z_array, zerr_array=zerr_array)
     except:
         raise MTexceptions.MTpyError_Z('Cannot generate Z instance - check z-array dimensions/type: (N,2,2)/complex ; %s'%(str(z_array.shape)))
 

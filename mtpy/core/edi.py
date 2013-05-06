@@ -120,31 +120,20 @@ class Edi(object):
         self.tippererr = None
 
 
-    def readfile(self, fn, Bscale = 1, datatype = 'z'):
+    def readfile(self, fn, datatype = 'z'):
         """
             Read in an EDI file.
 
             Returns an exception, if the file is invalid (following MTpy standards).
 
 
-            Bscale is the factor that needs to be applied to the data in the file to end up with km/s as unit for Z.
-            E.g., if the Z-data are given in E/H with E measured in V/m and H in A/m, the factor is 1e-3 / mu_0
-            (If the data are in basic units "mV/m" and "A/m", just use the letter 'H' instead )
-
-            datatype determines the way data  are provided. Default is 'z', so the full impedance tensor is expected to be present in the file. Other possibilities are 'rhophi' and 'spectra' - they exclude the reading of a potentially present Z information.
+            'datatype' determines the way data  are provided. Default is 'z', so the full impedance tensor is expected to be present in the file. Other possibilities are 'rhophi' and 'spectra' - they exclude the reading of a potentially present Z information.
             TODO: 'spectra' - not implemented yet
 
 
         """
         infile = op.abspath(fn)
 
-        #define the scaling factor for obtaining Z in Ohm
-        if Bscale in ['h','H']:
-            Bscale =  1./MTc.mu0
-        try:
-            Bscale = float(Bscale)
-        except:
-            raise MTexceptions.MTpyError_edi_file('ERROR - B field scaling factor not understood ')
 
         try:
             datatype = datatype.lower()
@@ -200,7 +189,7 @@ class Edi(object):
 
         if datatype == 'z':
             try:
-                self._read_z(edistring, Bscale)
+                self._read_z(edistring)
             except:
                 raise MTexceptions.MTpyError_edi_file('Could not read Z section: %s'%infile)
 
@@ -573,7 +562,7 @@ class Edi(object):
         self._freq = lo_freqs
 
 
-    def _read_z(self, edistring, Bscale):
+    def _read_z(self, edistring):
         """
         Read in impedances information from a raw EDI-string.
         Store it as attribute (complex array).
@@ -641,10 +630,10 @@ class Edi(object):
                     zerr_array[idx_freq, idx_comp/2, idx_comp%2] = z_dict[sectionhead][idx_freq]
 
 
-        self.z = Bscale * z_array
+        self.z =  z_array
 
         #errors are stddev, not VAR :
-        self.zerr = np.sqrt(Bscale * zerr_array)
+        self.zerr = np.sqrt(zerr_array)
 
 
     def _read_tipper(self, edistring):
@@ -1438,24 +1427,16 @@ class Edi(object):
 #=========================
 
 
-def read_edifile(fn, Bscale = 1):
+def read_edifile(fn):
     """
         Read in an EDI file.
 
         Return an instance of the Edi class.
     """
 
-    if Bscale in ['h','H']:
-        Bscale =  1./MTc.mu0
-    try:
-        Bscale = float(Bscale)
-    except:
-        raise MTexceptions.MTpyError_edi_file('ERROR - B field scaling factor not understood ')
-
-
     edi_object = Edi()
 
-    edi_object.readfile(fn, Bscale)
+    edi_object.readfile(fn)
 
 
     return edi_object
@@ -1493,7 +1474,7 @@ def write_edifile(edi_object, out_fn = None):
     return outfilename
 
 
-def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps = True, Bscale1 = 1, Bscale2 = 1 ):
+def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps = True):
     """
         Combine two EDI files.
 
@@ -1505,36 +1486,17 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         - merge_frequency : frequency in Hz, on which to merge the files - default is the middle of the overlap
         - out_fn : output EDI file name
         - allow_gaps : allow merging EDI files whose frequency ranges does not overlap
-        - Bscale1/2 : scaling factor to bring the Z values to unit km/s
-
 
         Outputs:
         - instance of Edi class, containing merged information
         - full path of the output EDI file
     """
 
-
-
-    if Bscale1 in ['h','H']:
-        Bscale1 =  1./MTc.mu0
-    try:
-        Bscale1 = float(Bscale1)
-    except:
-        raise MTexceptions.MTpyError_edi_file('ERROR - B field scaling factor 1 not understood ')
-
-    if Bscale2 in ['h','H']:
-        Bscale2 =  1./MTc.mu0
-    try:
-        Bscale2 = float(Bscale2)
-    except:
-        raise MTexceptions.MTpyError_edi_file('ERROR - B field scaling factor 2 not understood ')
-
-
     #edi objects:
     eo1 = Edi()
-    eo1.readfile(fn1, Bscale1)
+    eo1.readfile(fn1)
     eo2 = Edi()
-    eo2.readfile(fn2, Bscale2)
+    eo2.readfile(fn2)
     #edi object merged
     eom = Edi()
 
