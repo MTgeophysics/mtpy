@@ -14,7 +14,7 @@ Contains classes and functions for handling impedance tensors (Z).
         - set_zerr
         - rho
         - phi
-        - set_rho_phi
+        - set_res_phase
         - inverse
         - rotate
         - no_ss
@@ -322,48 +322,48 @@ class Z(object):
 
     imag = property(_get_imag, _set_imag, doc='Imaginary part of Z ')
 
-    def _get_rho_phi(self):
+    def _get_res_phase(self):
         """
-            Return values for resistivity (rho - in Ohm m) and phase (phi - in degrees).
+            Return values for resistivity (rho - in Ohm m) and phase (phase - in degrees).
 
             Output is a 4-tuple of arrays:
-            (Rho, Phi, RhoError, PhiError)
+            (Res, Phase, ResError, PhaseError)
         """ 
         
         if self.z is None:
-            print 'Z array is None - cannot calculate rho/phi'
+            print 'Z array is None - cannot calculate Res/Phase'
             return
-        rhoerr = None
-        phierr = None
+        reserr = None
+        phaseerr = None
         if self.zerr is not None:
-            rhoerr = np.zeros(self.zerr.shape)
-            phierr = np.zeros(self.zerr.shape)
+            reserr = np.zeros(self.zerr.shape)
+            phaseerr = np.zeros(self.zerr.shape)
 
-        rho = np.zeros(self.z.shape)
-        phi = np.zeros(self.z.shape)
+        res= np.zeros(self.z.shape)
+        phase = np.zeros(self.z.shape)
 
 
         for idx_f in range(len(self.z)): 
 
             for i in range(2):                        
                 for j in range(2):
-                    rho[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /self.freq[idx_f] *0.2
-                    phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))%360
+                    res[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /self.freq[idx_f] *0.2
+                    phase[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))%360
                 
                     if self.zerr is not None:
                         r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
-                        rhoerr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/self.freq[idx_f] * r_err
-                        phierr[idx_f,i,j] = phi_err
+                        reserr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/self.freq[idx_f] * r_err
+                        phaseerr[idx_f,i,j] = phi_err
 
-        return rho, phi, rhoerr, phierr
-
-
-    rho_phi= property(_get_rho_phi, doc='Resistivity and Phase angle of Z')
+        return res, phase, reserr, phaseerr
 
 
-    def set_rho_phi(self, rho_array, phi_array):
+    res_phase= property(_get_res_phase, doc='Resistivity and Phase angle of Z')
+
+
+    def set_res_phase(self, res_array, phase_array):
         """
-            Set values for resistivity (rho - in Ohm m) and phase (phi - in degrees).
+            Set values for resistivity (res - in Ohm m) and phase (phase - in degrees).
 
             Updates the attributes "z, zerr".
 
@@ -373,37 +373,37 @@ class Z(object):
         if self.z is not None: 
             z_new = copy.copy(self.z) 
 
-            if self.z.shape != rho_array.shape:
-                print 'Error - shape of "rho" array does not match shape of Z array: %s ; %s'%(str(rho_array.shape),str(self.z.shape))
+            if self.z.shape != res_array.shape:
+                print 'Error - shape of "res" array does not match shape of Z array: %s ; %s'%(str(res_array.shape),str(self.z.shape))
                 return
 
-            if self.z.shape != phi_array.shape:
-                print 'Error - shape of "phi" array does not match shape of Z array: %s ; %s'%(str(phi_array.shape),str(self.z.shape))
+            if self.z.shape != phase_array.shape:
+                print 'Error - shape of "phase" array does not match shape of Z array: %s ; %s'%(str(phase_array.shape),str(self.z.shape))
                 return
         else:
-            z_new = p.zeros(rho_array.shape,'complex')
-            if rho_array.shape != phi_array.shape:
-                print 'Error - shape of "phi" array does not match shape of "rho" array: %s ; %s'%(str(phi_array.shape),str(rho_array.shape))
+            z_new = p.zeros(res_array.shape,'complex')
+            if res_array.shape != phase_array.shape:
+                print 'Error - shape of "phase" array does not match shape of "res" array: %s ; %s'%(str(phase_array.shape),str(res_array.shape))
                 return
 
 
-        if (self.freq is None) or (len(self.freq) != len(rho_array)) :
-            raise MTexceptions.MTpyError_EDI('ERROR -cannot set rho without proper frequency information - proper "freq" attribute must be defined ')
+        if (self.freq is None) or (len(self.freq) != len(res_array)) :
+            raise MTexceptions.MTpyError_EDI('ERROR - cannot set res without proper frequency information - proper "freq" attribute must be defined ')
 
             
         #assert real array:
-        if np.linalg.norm(np.imag(rho_array )) != 0 :
-            print 'Error - array "rho" is not real valued !'
+        if np.linalg.norm(np.imag(res_array )) != 0 :
+            print 'Error - array "res" is not real valued !'
             return
-        if np.linalg.norm(np.imag(phi_array )) != 0 :
-            print 'Error - array "phi" is not real valued !'
+        if np.linalg.norm(np.imag(phase_array )) != 0 :
+            print 'Error - array "phase" is not real valued !'
             return
 
         for idx_f in range(len(z_new)):
             for i in range(2):
                 for j in range(2):
-                    abs_z = np.sqrt(5 * self.freq[idx_f] * rho_array[idx_f,i,j])
-                    z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phi_array[idx_f,i,j] ))
+                    abs_z = np.sqrt(5 * self.freq[idx_f] * res_array[idx_f,i,j])
+                    z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phase_array[idx_f,i,j] ))
 
         self.z = z_new
 
@@ -412,7 +412,7 @@ class Z(object):
         """
             Return the inverse of Z.
 
-            (no errors)
+            (no error propagtaion included yet)
 
         """
 
@@ -502,10 +502,10 @@ class Z(object):
     
 
 
-    def no_ss(self, reduce_rho_factor_x = 1., reduce_rho_factor_y = 1.):
+    def no_ss(self, reduce_res_factor_x = 1., reduce_res_factor_y = 1.):
         """
-        Remove the static shift by providing the correction factors for x and y components.
-        (Factor can be determined by using the "Analysis" module for the impedance tensor)
+        Remove the static shift by providing the respective correction factors for the resistivity in the x and y components.
+        (Factors can be determined by using the "Analysis" module for the impedance tensor)
 
         Assume the original observed tensor Z is built by a static shift S and an unperturbated "correct" Z0 :
             Z = S * Z0
@@ -513,62 +513,65 @@ class Z(object):
         returns:
             S, Z0   (over all frequencies)
 
+        Note:
+        The factors are on the resistivity scale, so the entries of the matrix "S" are given by their square-roots! 
+
         """
         
-        #check for iterable list/set of reduce_rho_factor_x - if so, it must have length 1 or same as len(z):
-        if np.iterable(reduce_rho_factor_x) == 0:
+        #check for iterable list/set of reduce_res_factor_x - if so, it must have length 1 or same as len(z):
+        if np.iterable(reduce_res_factor_x) == 0:
             try:
-                x_factor = float(reduce_rho_factor_x)
+                x_factor = float(reduce_res_factor_x)
             except:
-                print '"reduce_rho_factor_x" must be a valid numbers'
+                print '"reduce_res_factor_x" must be a valid numbers'
                 return
 
             lo_x_factors = [x_factor for i in self.z]
         else:
-            if len(reduce_rho_factor_x) == 1:
+            if len(reduce_res_factor_x) == 1:
                 try:
-                    x_factor = float(reduce_rho_factor_x)
+                    x_factor = float(reduce_res_factor_x)
                 except:
-                    print '"reduce_rho_factor_x" must be a valid numbers'
+                    print '"reduce_res_factor_x" must be a valid numbers'
                     return
                 lo_x_factors = [x_factor for i in self.z]
             else:                    
                 try:
-                    lo_x_factors = [x_factor for i in reduce_rho_factor_x]
+                    lo_x_factors = [x_factor for i in reduce_res_factor_x]
                 except:
-                    print '"reduce_rho_factor_x" must be valid numbers'
+                    print '"reduce_res_factor_x" must be valid numbers'
                     return
             
         if len(lo_x_factors) != len(self.z):
-            print 'Wrong number Number of "reduce_rho_factor_x" - need %i '%(len(self.z))
+            print 'Wrong number Number of "reduce_res_factor_x" - need %i '%(len(self.z))
             return
   
-        #check for iterable list/set of reduce_rho_factor_y - if so, it must have length 1 or same as len(z):
-        if np.iterable(reduce_rho_factor_y) == 0:
+        #check for iterable list/set of reduce_res_factor_y - if so, it must have length 1 or same as len(z):
+        if np.iterable(reduce_res_factor_y) == 0:
             try:
-                y_factor = float(reduce_rho_factor_y)
+                y_factor = float(reduce_res_factor_y)
             except:
-                print '"reduce_rho_factor_y" must be a valid numbers'
+                print '"reduce_res_factor_y" must be a valid numbers'
                 return
 
             lo_y_factors = [y_factor for i in self.z]
         else:
-            if len(reduce_rho_factor_y) == 1:
+            if len(reduce_res_factor_y) == 1:
                 try:
-                    y_factor = float(reduce_rho_factor_y)
+                    y_factor = float(reduce_res_factor_y)
                 except:
-                    print '"reduce_rho_factor_y" must be a valid numbers'
+                    print '"reduce_res_factor_y" must be a valid numbers'
                     return
                 lo_y_factors = [y_factor for i in self.z]
             else:                    
                 try:
-                    lo_y_factors = [y_factor for i in reduce_rho_factor_y]
+                    lo_y_factors = [y_factor for i in reduce_res_factor_y]
                 except:
-                    print '"reduce_rho_factor_y" must be valid numbers'
+                    print '"reduce_res_factor_y" must be valid numbers'
                     return
             
         if len(lo_y_factors) != len(self.z):
-            print 'Wrong number Number of "reduce_rho_factor_y" - need %i '%(len(self.z))
+            print 'Wrong number Number of "reduce_res_factor_y" - need %i '%(len(self.z))
             return
   
 
@@ -1034,9 +1037,9 @@ class Tipper(object):
 
     imag = property(_get_imag, _set_imag, doc='Imaginary part of the Tipper')
 
-    def _get_r_phi(self):
+    def _get_rho_phi(self):
         """
-            Return values for amplitude (r) and argument (phi - in degrees).
+            Return values for amplitude (rho) and argument (phi - in degrees).
 
             Output is a 4-tuple of arrays:
             (Rho, Phi, RhoError, PhiError)
@@ -1069,9 +1072,9 @@ class Tipper(object):
 
         return rho, phi, rhoerr, phierr
 
-    r_phi = property(_get_r_phi, doc='Amplitude and Phase angle of the Tipper')
+    rho_phi = property(_get_rho_phi, doc='Amplitude and Phase angle of the Tipper')
 
-    def set_r_phi(self, r_array, phi_array):
+    def set_rho_phi(self, r_array, phi_array):
         """
             Set values for amplitude(r) and argument (phi - in degrees).
 
@@ -1233,7 +1236,7 @@ def remove_distortion(z_array, distortion_tensor, distortion_err_tensor = None, 
     return  z_corrected, z_corrected_err, z_array
 
 
-def remove_ss(z_array, zerr_array = None, rho_x = 1., rho_y = 1.):
+def remove_ss(z_array, zerr_array = None, res_x = 1., res_y = 1.):
     """
         Remove the static shift from a given Z array.
 
@@ -1242,8 +1245,8 @@ def remove_ss(z_array, zerr_array = None, rho_x = 1., rho_y = 1.):
 
         Optional:
         - Zerror array : (1,2,2) or (2,2) shaped Numpy array
-        - rho_x : factor, by which the X component of the Resistivity is off
-        - rho_y : factor, by which the Y component of the Resistivity is off
+        - res_x : factor, by which the X component of the Resistivity is off
+        - res_y : factor, by which the Y component of the Resistivity is off
     
         Output:
         - corrected Z array
@@ -1260,7 +1263,7 @@ def remove_ss(z_array, zerr_array = None, rho_x = 1., rho_y = 1.):
     return z_corrected, static_shift, z_array
 
 
-def remove_ss_and_distortion(z_array, zerr_array = None, rho_x = 1., rho_y = 1.):
+def remove_ss_and_distortion(z_array, zerr_array = None, res_x = 1., res_y = 1.):
     """
         Not implemented yet !!
 
@@ -1269,9 +1272,10 @@ def remove_ss_and_distortion(z_array, zerr_array = None, rho_x = 1., rho_y = 1.)
 
 
 
-def z2rhophi(z_array, zerr_array = None):
+def z2resphi(z_array, zerr_array = None):
     """
-        Return the resistivity/phase information for Z (in km/s!!).
+        Return the resistivity/phase information for Z 
+        (Z must be given in units "km/s" = "mu m / nT"!!).
 
         Input:
         - Z array
@@ -1288,7 +1292,7 @@ def z2rhophi(z_array, zerr_array = None):
     
     z_object = _read_z_array(z_array,zerr_array)
 
-    return z_object.rho_phi()
+    return z_object.res_phase()
 
 
 def rotate_tipper(tipper_array, alpha, tippererr_array = None):

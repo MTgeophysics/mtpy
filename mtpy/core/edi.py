@@ -2,7 +2,7 @@
 
 """
 mtpy/mtpy/core/edi.py
-
+res_phase
 Contains classes and functions for handling EDI files.
 
     Class:
@@ -127,7 +127,7 @@ class Edi(object):
             Returns an exception, if the file is invalid (following MTpy standards).
 
 
-            'datatype' determines the way data  are provided. Default is 'z', so the full impedance tensor is expected to be present in the file. Other possibilities are 'rhophi' and 'spectra' - they exclude the reading of a potentially present Z information.
+            'datatype' determines the way data  are provided. Default is 'z', so the full impedance tensor is expected to be present in the file. Other possibilities are 'resphase' and 'spectra' - they exclude the reading of a potentially present Z information.
             TODO: 'spectra' - not implemented yet
 
 
@@ -137,7 +137,7 @@ class Edi(object):
 
         try:
             datatype = datatype.lower()
-            if not datatype in ['z' , 'rhophi', 'spectra']:
+            if not datatype in ['z' , 'resphase', 'spectra']:
                 raise
         except:
             raise MTexceptions.MTpyError_edi_file('ERROR - datatype not understood')
@@ -193,11 +193,11 @@ class Edi(object):
             except:
                 raise MTexceptions.MTpyError_edi_file('Could not read Z section: %s'%infile)
 
-        elif datatype == 'rhophi':
+        elif datatype == 'resphase':
             try:
-                self._read_rhophi(edistring)
+                self._read_res_phase(edistring)
             except:
-                raise MTexceptions.MTpyError_edi_file('Could not read RhoPhi section: %s'%infile)
+                raise MTexceptions.MTpyError_edi_file('Could not read ResPhase-/Rho-section: %s'%infile)
             #rotation is optional
             try:
                 self._read_rhorot(edistring)
@@ -703,9 +703,9 @@ class Edi(object):
         #errors are stddev, not VAR :
         self.tippererr = np.sqrt(tippererr_array)
 
-    def _read_rhophi(self, edistring):
+    def _read_res_phase(self, edistring):
         """
-            Read in RhoPhi information from a raw EDI-string.
+            Read in ResPhase-(RhoPhi-)information from a raw EDI-string.
             Convert the information into Z and Zerr.
             Store this as attribute (complex array).
 
@@ -756,7 +756,7 @@ class Edi(object):
             zerr = np.zeros((2,2))
 
             for idx_c, comp in enumerate(compstrings):
-                #convert rho to amplitude:
+                #convert rho to resistivity:
                 try:
                     r[idx_c/2,idx_c%2] = np.sqrt(rhophi_dict['RHO'+comp][idx_freq] * 5 * self.freq[idx_freq] )
                 except:
@@ -793,7 +793,7 @@ class Edi(object):
 
     def _read_rhorot(self, edistring):
         """
-            Read in the (optional) RhoRot  section from the raw edi-string for data file containing data in  RhoPhi style. Angles are stored in the ZROT attribute. 
+            Read in the (optional) RhoRot  section from the raw edi-string for data file containing data in  ResPhase style. Angles are stored in the ZROT attribute. 
         """
 
         try:
@@ -977,7 +977,9 @@ class Edi(object):
         if len(fn) == 0 :
             fn = None
         else:
-            fn = fn[0]
+            #see, if it's iterable
+            if type(fn) is not str:
+                fn = fn[0]
 
         self.info_dict['edifile_generated_with'] = 'MTpy'
 
@@ -1074,7 +1076,7 @@ class Edi(object):
         self.zrot = list( (np.array(self.zrot) + angle)%360)
 
 
-    def _get_rho_phi(self):
+    def _get_res_phase(self):
         """
             Return values for resistivity (rho - in Ohm m) and phase (phi - in degrees).
 
@@ -1083,15 +1085,15 @@ class Edi(object):
         """
 
         if self.z is None:
-            print 'Z array is None - cannot calculate rho/phi'
+            print 'Z array is None - cannot calculate Resistivity/Phase'
             return
-        rhoerr = None
+        reserr = None
         phierr = None
         if self.zerr is not None:
-            rhoerr = np.zeros(self.zerr.shape)
+            reserr = np.zeros(self.zerr.shape)
             phierr = np.zeros(self.zerr.shape)
 
-        rho = np.zeros(self.z.shape)
+        res = np.zeros(self.z.shape)
         phi = np.zeros(self.z.shape)
 
 
@@ -1099,21 +1101,21 @@ class Edi(object):
             for i in range(2):
                 for j in range(2):
 
-                    rho[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /self.freq[idx_f] *0.2
+                    res[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /self.freq[idx_f] *0.2
                     phi[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))
 
                     if self.zerr is not None:
                         r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
-                        rhoerr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/self.freq[idx_f] * r_err
+                        reserr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/self.freq[idx_f] * r_err
                         phierr[idx_f,i,j] = phi_err
 
-        return rho, phi, rhoerr, phierr
+        return res, phi, reserr, phierr
 
 
 
-    def _set_rho_phi(self, rho_array, phi_array):
+    def _set_res_phase(self, res_array, phase_array):
         """
-            Set values for resistivity (rho - in Ohm m) and phase (phi - in degrees).
+            Set values for resistivity (res - in Ohm m) and phase (phase - in degrees).
 
             Updates the attributes "z, zerr".
 
@@ -1122,39 +1124,40 @@ class Edi(object):
         if self.z is not None:
             z_new = copy.copy(self.z)
 
-            if self.z.shape != rho_array.shape:
-                print 'Error - shape of "rho" array does not match shape of Z array: %s ; %s'%(str(rho_array.shape),str(self.z.shape))
+            if self.z.shape != res_array.shape:
+                print 'Error - shape of "res" array does not match shape of Z array: %s ; %s'%(str(res_array.shape),str(self.z.shape))
                 return
 
-            if self.z.shape != phi_array.shape:
-                print 'Error - shape of "phi" array does not match shape of Z array: %s ; %s'%(str(phi_array.shape),str(self.z.shape))
+            if self.z.shape != phase_array.shape:
+                print 'Error - shape of "phase" array does not match shape of Z array: %s ; %s'%(str(phase_array.shape),str(self.z.shape))
                 return
         else:
-            z_new = p.zeros(rho_array.shape,'complex')
-            if rho_array.shape != phi_array.shape:
-                print 'Error - shape of "phi" array does not match shape of "rho" array: %s ; %s'%(str(phi_array.shape),str(rho_array.shape))
+            z_new = p.zeros(res_array.shape,'complex')
+            if res_array.shape != phase_array.shape:
+                print 'Error - shape of "phase" array does not match shape of "res" array: %s ; %s'%(str(phase_array.shape),str(res_array.shape))
                 return
 
-        if (self.freq is None) or (len(self.freq) != len(rho_array)) :
-            raise MTexceptions.MTpyError_EDI('ERROR - cannot set rho without proper frequency information - proper "freq" attribute must be defined ')
+        if (self.freq is None) or (len(self.freq) != len(res_array)) :
+            raise MTexceptions.MTpyError_EDI('ERROR - cannot set res without proper frequency information - proper "freq" attribute must be defined ')
 
         #assert real array:
-        if np.linalg.norm(np.imag(rho_array )) != 0 :
-            print 'Error - array "rho" is not real valued !'
+        if np.linalg.norm(np.imag(res_array )) != 0 :
+            print 'Error - array "res" is not real valued !'
             return
-        if np.linalg.norm(np.imag(phi_array )) != 0 :
-            print 'Error - array "phi" is not real valued !'
+        if np.linalg.norm(np.imag(phase_array )) != 0 :
+            print 'Error - array "phase" is not real valued !'
             return
 
         for idx_f in range(len(z_new)):
             for i in range(2):
                 for j in range(2):
-                    abs_z = np.sqrt(5 * self.freq[idx_f] * rho_array[idx_f,i,j])
-                    z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phi_array[idx_f,i,j] ))
+                    abs_z = np.sqrt(5 * self.freq[idx_f] * res_array[idx_f,i,j])
+                    z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phase_array[idx_f,i,j] ))
 
         self.z = z_new
 
-    rho_phi = property(_get_rho_phi,_set_rho_phi,doc='Values for resistivity (rho - in Ohm m) and phase (phi - in degrees). Updates the attributes "z, zerr"')
+
+    res_phase = property(_get_res_phase,_set_res_phase,doc='Values for resistivity (rho - in Ohm m) and phase (phi - in degrees). Updates the attributes "z, zerr"')
 
 
 
