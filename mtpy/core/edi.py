@@ -239,8 +239,9 @@ class Edi(object):
         edi_dict['HMEAS_EMEAS'] = self.hmeas_emeas
         edi_dict['MTSECT'] = self.mtsect
         edi_dict['FREQ'] = self.freq
-        edi_dict['Z'] = self.Z
-        edi_dict['TIPPER'] = self.tipper
+        edi_dict['Z'] = _make_z_dict(self.Z)
+        if self.Tipper is not None:
+            edi_dict['TIPPER'] = _make_tipper_dict(self.Tipper)
         edi_dict['ZROT'] = self.zrot
 
 
@@ -255,8 +256,10 @@ class Edi(object):
         """
         data_dict = {}
 
-        data_dict['z'] = self.Z
-        data_dict['tipper'] = self.tipper
+        data_dict['z'] = self.Z.z
+        data_dict['zerr'] = self.Z.zerr
+        data_dict['tipper'] = self.Tipper.tipper
+        data_dict['tippererr'] = self.Tipper.tippererr
         data_dict['zrot'] = self.zrot
         data_dict['frequencies'] = self.freq
 
@@ -2116,7 +2119,7 @@ def _generate_edifile_string(edidict):
                     edistring += '\n'
 
 
-        if sectionhead == 'TIPPER':
+        if sectionhead == 'TIPPER' and (edidict.has_key('TIPPER')):
 
             compstrings = ['TX','TY']
             T_entries = ['R','I','VAR']
@@ -2523,3 +2526,52 @@ def spectra2z(data, channellist=None):
         tipper_array[0,1] = S[idx[2],idx[6]] * S[idx[0],idx[5]] - S[idx[2],idx[5]] * S[idx[0],idx[6]] 
 
     return z_array, tipper_array
+
+
+def _make_z_dict(Z_object):
+
+    z_dict = {}
+
+    compstrings = ['ZXX','ZXY','ZYX','ZYY']
+    Z_entries = ['R','I','.VAR']
+    for idx_comp,comp in enumerate(compstrings):
+        for idx_zentry,zentry in enumerate(Z_entries):
+            section = comp + zentry
+            
+            if idx_zentry < 2:
+                data = Z_object.z[:,idx_comp/2, idx_comp%2]
+                if idx_zentry == 0 :
+                    data = np.real(data)
+                else:
+                    data = np.imag(data)
+            else: 
+                data = Z_object.zerr[:,idx_comp/2, idx_comp%2]
+ 
+            z_dict[section] = data
+
+
+    return z_dict
+
+
+def _make_tipper_dict(Tipper_object):
+
+    tipper_dict = {}
+    compstrings = ['TX','TY']
+    T_entries = ['R','I','VAR']
+    for idx_comp,comp in enumerate(compstrings):
+        for idx_tentry,tentry in enumerate(T_entries):
+            section = comp + tentry
+
+            if idx_tentry < 2:
+                data = Tipper_object.tipper[:,idx_comp/2, idx_comp%2]
+                if idx_tentry == 0 :
+                    data = np.real(data)
+                else:
+                    data = np.imag(data)
+            else: 
+                data = Tipper_object.tippererr[:,idx_comp/2, idx_comp%2]
+ 
+            tipper_dict[section] = data
+
+
+    return tipper_dict
