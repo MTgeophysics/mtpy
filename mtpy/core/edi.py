@@ -2,7 +2,7 @@
 
 """
 mtpy/mtpy/core/edi.py
-res_phase
+
 Contains classes and functions for handling EDI files.
 
     Class:
@@ -1147,16 +1147,18 @@ class Edi(object):
 
 
 
-    def _set_res_phase(self, res_array, phase_array):
+    def _set_res_phase(self, res_array, phase_array, reserr_array = None, phaseerr_array = None):
         """
             Set values for resistivity (res - in Ohm m) and phase (phase - in degrees).
 
-            Updates the attributes "z, zerr".
+            Updates the attributes "z".
 
         """
 
         if self.Z is not None:
             z_new = copy.copy(self.Z.z)
+            zerr_new = np.zeros_like(self.Z.zerr)
+           
 
             if self.Z.z.shape != res_array.shape:
                 print 'Error - shape of "res" array does not match shape of Z array: %s ; %s'%(str(res_array.shape),str(self.Z.z.shape))
@@ -1183,12 +1185,38 @@ class Edi(object):
             return
 
         for idx_f in range(len(z_new)):
-            for i in range(2):
-                for j in range(2):
-                    abs_z = np.sqrt(5 * self.freq[idx_f] * res_array[idx_f,i,j])
-                    z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phase_array[idx_f,i,j] ))
+            frequency =  self.freq[idx_f]
+            z_new[idx_f,i,j] = MTc.rhophi2z(res_array[idx_f], phase_array[idx_f], frequency)
 
         self.Z.set_z(z_new)
+
+
+        if (reserr_array is not None) and (phaseerr_array is not None):
+            for idx_f in range(len(z_new)):
+
+                for i in range(2):
+                    for j in range(2):
+                        abs_z = np.sqrt(5 * self.freq[idx_f] * res_array[idx_f,i,j])
+                        newerror = max( MTc.propagate_error_polar2rect(abs_z, reserr_array[idx_f,i,j],phase_array[idx_f,i,j], phaseerr_array[idx_f,i,j]  ) )
+                        zerr_new[idx_f,i,j] = newerror
+            
+            self.Z.set_zerr(zerr_new)
+
+        else:
+            print 'Warning - no errors given for phase and rsistivity - could not calculate errors for Z !!'
+
+            # for i in range(2):
+            #     for j in range(2):
+            #         abs_z = np.sqrt(5 * self.freq[idx_f] * res_array[idx_f,i,j])
+            #         z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phase_array[idx_f,i,j] ))
+
+        
+
+
+
+        #TODO!!!
+        #Error handling missing 
+        self.Z.zerr = np.zeros_like(self.Z.zerr)
 
 
     res_phase = property(_get_res_phase,_set_res_phase,doc='Values for resistivity (rho - in Ohm m) and phase (phi - in degrees). Updates the attributes "z, zerr"')

@@ -85,13 +85,14 @@ def invertmatrix_incl_errors(inmatrix, inmatrix_err = None):
  
     return inv_matrix, inv_matrix_err
 
-def rhophi2z(rho, phi):
+def rhophi2z(rho, phi, freq):
     """
-        Convert impedance information given in Rho/Phi format into complex valued Z.
+        Convert impedance-style information given in Rho/Phi format into complex valued Z.
 
         Input:
         rho - 2x2 array (real) - in Ohm m
         phi - 2x2 array (real) - in degrees
+        freq - scalar - frequency in Hz
 
         Output:
         Z - 2x2 array (complex)
@@ -109,7 +110,8 @@ def rhophi2z(rho, phi):
     z = np.zeros((2,2),'complex')
     for i in range(2):
         for j in range(2):
-            z[i,j] = cmath.rect(rho[i,j],math.radians(phi[i,j]))
+            abs_z  = np.sqrt(5 * freq * rho[i,j])
+            z[i,j] = cmath.rect(abs_z ,math.radians(phi[i,j]))
 
     return z 
 

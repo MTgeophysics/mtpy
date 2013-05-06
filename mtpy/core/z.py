@@ -470,7 +470,7 @@ class Z(object):
         self.rotation_angle = [(oldangle + lo_angles[i])%360 for i,oldangle in enumerate(self.rotation_angle) ] 
 
         if len(lo_angles) != len(self.z):
-            print 'Wrong number Number of "angles" - need %i '%(len(self.z))
+            print 'Wrong number Number of "angles" - I need %i '%(len(self.z))
             #self.rotation_angle = 0.
             return
 
