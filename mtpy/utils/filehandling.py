@@ -46,6 +46,7 @@ epsilon = 1e-9
 
 #=================================================================
 
+lo_headerelements = ['station', 'channel','samplingrate','t_min','nsamples','unit','lat','lon','elev']
 
 #=================================================================
 
@@ -378,6 +379,13 @@ def EDL_get_stationname_fromfilename(filename):
 
 def read_data_header(fn_raw):
     """
+    Deprecated!!!
+    USE 
+              read_ts_header
+
+    INSTEAD
+
+
         Read the header line of MTpy TS data files.
 
     input: 
@@ -467,29 +475,69 @@ def read_2c2_file(filename):
 
     return period, freq, coh1, zcoh1
 
+def validate_ts_file(tsfile):
+    """
+        Validate MTpy timeseries (TS) data file
+        Return Boolean True/False respectively.
 
-def read_ts_header(mtdatafile):
-    """ Read in the header line from MTpy data files.
+    """ 
+
+    try:
+        header = read_ts_header(tsfile)
+
+        if header['station'] is None:
+            print 'header'
+            raise
+        if header['channel'] is None:
+            print 'channel'
+            raise
+        
+        sr = float(header['samplingrate'])
+        t0 = float(header['t_min'])
+        ns = int(float(header['nsamples']))
+        
+        data = np.loadtxt(tsfile)
+        
+        if len(data) != ns:
+            print 'data length'
+            raise
+        if data.dtype not in [int, float]:
+            print 'data type'
+            raise
+
+    except:
+        print 'number'
+        return False
+
+
+    return True
+
+
+
+def read_ts_header(tsfile):
+    """ Read in the header line from MTpy timeseries data files.
         Return header as dictionary. Return empty dict, if no header line was found.
     """
 
     header_dict = {}
 
-    if not op.isfile(mtdatafile):
-        raise EX.MTpyError_inputarguments('Error - input file not existing: {0}'.format(mtdatafile))
+    tsfile = op.abspath(tsfile)
+    
+    if not op.isfile(tsfile):
+        raise EX.MTpyError_inputarguments('Error - input file not existing: {0}'.format(tsfile))
 
     try:
-        with open(mtdatafile,'r') as F:
+        with open(tsfile,'r') as F:
             firstline = F.readline().strip()
         if firstline[0] != '#':
             raise
     except:
-        return header_dict
+        raise EX.MTpyError_ts_data('No header line found - check file: {0}'.format(tsfile))
+        
 
     firstline = firstline.replace('#','')
     headerlist = firstline.split()
 
-    lo_headerelements = ['station', 'channel','samplingrate','t_min','nsamples','unit','lat','lon','elev']
 
     for i in range(len(headerlist)):
         header_dict[lo_headerelements[i]] = headerlist[i]
@@ -499,6 +547,7 @@ def read_ts_header(mtdatafile):
 
     return header_dict
 
+
 def get_ts_header_string(header_dictionary):
     """
         Return a MTpy time series data file header string from a dictionary.
@@ -506,7 +555,6 @@ def get_ts_header_string(header_dictionary):
     """
     
     header_string = '# '
-    lo_headerelements = ['station', 'channel','samplingrate','t_min','nsamples','unit','lat','lon','elev']
     for headerelement in lo_headerelements:
         if header_dictionary.has_key(headerelement):
             header_string += '{0} '.format(str(header_dictionary[headerelement]))
@@ -514,8 +562,72 @@ def get_ts_header_string(header_dictionary):
             header_string += '\t '   
 
     header_string += '\n'
+
     return header_string
 
+def write_ts_file_from_tuple(outfile,ts_tuple):
+    """
+        Write an MTpy TS data file, where the content is provided as tuple:
+
+        (station, channel,samplingrate,t_min,nsamples,unit,lat,lon,elev, data)
+
+        todo:
+        needs tuple-validation
+
+    """
+
+    
+    header_dict = {}
+    for i in range(len(ts_tuple) -1):
+        header_dict[lo_headerelements[i]] = ts_tuple[i]
+
+    header_string = get_ts_header_string(header_dict)
+    data = ts_tuple[-1]
+
+    try:
+        outfilename = op.abspath(outfile)
+        outF = open(outfilename,'w')
+        outF.write(header_string)
+        np.savetxt(outfilename,data)
+        outF.close()
+    except:
+        raise EX.MTpyError_inputarguments('ERROR - could not write content of TS tuple to file : {0}'.format(outfilename))
+
+    return outfilename
+
+
+def read_ts_file(mtdatafile):
+    """
+        Read an MTpy TS data file and provide the content as tuple:
+
+        (station, channel,samplingrate,t_min,nsamples,unit,lat,lon,elev, data)
+        If header information is incomplete, the tuple is filled up with 'None'
+
+    """
+
+    infile = op.abspath(mtdatafile)
+    if not op.isfile(infile):
+        raise EX.MTpyError_inputarguments('ERROR - Data file not existing: {0}'.format(infile))
+
+    header = read_ts_header(infile)
+    if len(header) == 0 :
+        raise EX.MTpyError_inputarguments('ERROR - Data file not valid - header is missing : {0}'.format(infile))
+
+    data = np.loadtxt(infile)
+    if len(data) != int(float(header['nsamples'])):
+        raise EX.MTpyError_inputarguments('ERROR - Data file not valid - wrong number of samples in data ({1} instead of {2}): {0}'.format(infile,len(data) , int(float(header['nsamples']))) )
+
+    lo_header_contents = []
+
+    for i in lo_headerelements:
+        if i in header:
+            lo_header_contents.append(header[i])
+        else:
+            lo_header_contents.append(None)
+ 
+    lo_header_contents.append(data)
+
+    return tuple(lo_header_contents)
 
 
 def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
