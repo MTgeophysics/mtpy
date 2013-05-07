@@ -68,7 +68,7 @@ import re
 import mtpy.utils.format as MTformat
 import mtpy.utils.calculator as MTc
 import mtpy.utils.exceptions as MTexceptions
-import mtpy.core.Z as MTz
+import mtpy.core.z as MTz
 
 #reload(MTexceptions)
 reload(MTformat)
