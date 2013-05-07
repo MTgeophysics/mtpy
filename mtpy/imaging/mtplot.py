@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from matplotlib.ticker import MultipleLocator,FormatStrFormatter
-import mtpy1.core.z as Z
-import mtpy1.utils.latlongutmconversion as utm2ll
+import mtpy.core.z as Z
+import mtpy.utils.latlongutmconversion as utm2ll
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
@@ -2173,12 +2173,13 @@ class PlotPhaseTensorPseudoSection(object):
                 ewidth = phimax[jj]/phimax[jj]*es
             
                 #create an ellipse scaled by phimin and phimax and oriented along
-                #the azimuth    
+                #the azimuth which is calculated as clockwise but needs to 
+                #be plotted counter-clockwise hence the negative sign.
                 ellipd=patches.Ellipse((offset*self.xstretch,
                                         np.log10(ff)*self.ystretch),
                                         width=ewidth,
                                         height=eheight,
-                                        angle=azimuth[jj])
+                                        angle=-azimuth[jj])
                 
                 #get face color info
                 if ck=='phiminang' or  ck=='phimin':
@@ -4296,9 +4297,7 @@ class PlotStrike(object):
         #set empty lists that will hold dictionaries with keys as the period
         invlst=[]
         ptlst=[]
-        
-        if self.plot_tipper=='y':
-            tiprlst=[]
+        tiprlst=[]
         
         #initialize some parameters
         nc=len(self.fn_list)
@@ -4396,8 +4395,7 @@ class PlotStrike(object):
         #make empty arrays to put data into for easy manipulation
         medinv = np.zeros((nt,nc))
         medpt = np.zeros((nt,nc))
-        if self.plot_tipper=='y':
-            medtipr = np.zeros((nt,nc))
+        medtipr = np.zeros((nt,nc))
         
         #make a list of periods from the longest period list
         plst = np.logspace(np.log10(minper),np.log10(maxper),num=nt,base=10)
