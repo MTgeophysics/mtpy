@@ -98,7 +98,7 @@ class Edi(object):
         """
 
         self.filename = None
-        self.in_filestring = None
+        self.infile_string = None
         self._head = {}
         self._info_string = None
         self._info_dict = {}
@@ -149,7 +149,7 @@ class Edi(object):
             raise MTexceptions.MTpyError_edi_file('%s is no proper EDI file'%infile)
 
         self.filename = infile
-        self.in_filestring = edistring
+        self.infile_string = edistring
 
         #read out the mandatory EDI file sections from the raw string
         try:
@@ -212,7 +212,7 @@ class Edi(object):
             try:
                 self._read_tipper(edistring)
             except:
-                self.tipper = None #MTz.Tipper()
+                self.Tipper = None #MTz.Tipper()
                 #self.tippererr = None
                 print 'Could not read Tipper section: %s'%infile
 
@@ -384,7 +384,17 @@ class Edi(object):
             if key in ['lat','long','lon','latitude','longitude','ele','elev','elevation']:
                 value = MTformat._assert_position_format(key,value)
 
+            if key in ['ele','elev','elevation']:
+                key = 'elev'
+            if key in ['lat','latitude']:
+                key = 'lat'
+            if key in ['long','lon','longitude']:
+                key = 'long'
+
             head_dict[key] = value
+
+        if not head_dict.has_key('elev'):
+            head_dict['elev'] = 0.
 
         self._head = head_dict
 
@@ -493,10 +503,12 @@ class Edi(object):
         for j in t1:
             j = j.replace('>','')
             lo_j = j.split()
+            hemeas_line = ' '.join(lo_j)
             #skip empty lines
-            if len(lo_j) ==0:
+            if len(lo_j) == 0 :
                 continue
-            lo_hmeas_emeas.append(tuple(lo_j))
+
+            lo_hmeas_emeas.append(hemeas_line)
 
         self._hmeas_emeas = lo_hmeas_emeas
 
@@ -550,14 +562,13 @@ class Edi(object):
                 try:
                     lo_freqs.append(float(k))
                 except:
-                    passs
+                    pass
 
         self._freq = np.array(lo_freqs)
 
         self.Z.frequencies = self._freq
         if self.Tipper is not None:
             self.Tipper.frequencies = self._freq
-
 
     def _read_z(self, edistring):
         """
@@ -628,7 +639,6 @@ class Edi(object):
                 sectionhead = comp + '.VAR'
                 if sectionhead in z_dict:
                     zerr_array[idx_freq, idx_comp/2, idx_comp%2] = z_dict[sectionhead][idx_freq]
-
 
         self.Z.set_z(z_array)
 
@@ -834,8 +844,7 @@ class Edi(object):
     def _read_spectra(self,edistring):
         """
             Read in Spectra information from a raw EDI-string.
-            Convert the information into Z and Zerr.
-            Store this as attribute (complex array).
+            Convert the information into Z and Tipper.
 
         """
 
@@ -843,6 +852,7 @@ class Edi(object):
         specset_string = _cut_sectionstring(edistring,'SPECTRASECT')
         s_dict = {}
         t1 = specset_string.strip().split('\n')
+        tipper_array = None
 
         s_dict['sectid'] = ''
 
@@ -933,12 +943,19 @@ class Edi(object):
         # z_array = np.zeros((self.n_freqs(),2,2), 'complex')
         # zerr_array = np.zeros((self.n_freqs(),2,2))
  
-        self.z = z_array
-        self.tipper = tipper_array
-        self.zrot = lo_rots
-        self.zerr = zerr_array
-        self.tippererr = tippererr_array
-        self.freq = lo_freqs
+        self.Z.set_z(z_array)
+        self.Z.set_zerr(zerr_array)
+
+        self.zrot = np.array(lo_rots)
+        self.Z.rotation_angle = self.zrot
+
+        self.freq = np.array(lo_freqs)
+        self.Z.frequencies = self.freq
+
+        if tipper_array is not None:
+            self.Tipper = MTz.Tipper(tipper_array=tipper_array,tippererr_array= tippererr_array)
+            self.Tipper.rotation_angle = self.zrot
+            self.Tipper.frequencies = self.freq
 
         for i,j in enumerate(id_list):
             s_dict[ id_comps[i] ] = j
@@ -978,6 +995,8 @@ class Edi(object):
 
         self.zrot = lo_angles
         self.Z.rotation_angle = self.zrot
+        if self.Tipper is not None:
+            self.Tipper.rotation_angle = self.zrot
 
 
     def writefile(self, *fn):
@@ -1440,16 +1459,16 @@ class Edi(object):
 
     def _set_frequencies(self, lo_frequencies):
         """
-            Set the list of frequencies.
+            Set the array of frequencies.
 
             Input:
-            list of frequencies
+            list/array of frequencies
 
             No test for consistency!
         """
 
-        if len(lo_frequencies) is not len(self.z):
-            print 'length of frequency list not correct (%i instead of %i)'%(len(lo_frequencies), len(self.z))
+        if len(lo_frequencies) is not len(self.Z.z):
+            print 'length of frequency list not correct (%i instead of %i)'%(len(lo_frequencies), len(self.Z.z))
             return
 
         self._freq = np.array(lo_frequencies)
@@ -1457,9 +1476,9 @@ class Edi(object):
         if self.Tipper is not None:
             self.Tipper.frequencies = self._freq
 
-    def _get_frequencies(self): return self._freq
-    freq = property(_get_frequencies, _set_frequencies, doc='list of frequencies')
-    frequencies = property(_get_frequencies, _set_frequencies, doc='list of frequencies')
+    def _get_frequencies(self): return np.array(self._freq)
+    freq = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
+    frequencies = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
 
 
     def _set_zrot(self, angle):
@@ -2437,6 +2456,7 @@ def _build_id_channel_dict(lo_hmeas_emeas):
     id_dict = {}
 
     for line in lo_hmeas_emeas:
+        line = line.split()
         if len(''.join(line).strip()) == 0:
             continue
 

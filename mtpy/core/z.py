@@ -55,6 +55,7 @@ import numpy as np
 import math, cmath
 import copy
 import mtpy.utils.calculator as MTc
+import sys
 
 
 import mtpy.utils.exceptions as MTexceptions
@@ -129,7 +130,7 @@ class Z(object):
             pass
 
             
-        self.frequencies = None
+        self._frequencies = None
 
         # if isinstance(edi_object, MTedi.Edi):
         #     self.edi_object = edi_object
@@ -148,6 +149,8 @@ class Z(object):
         #    self.zerr = np.zeros(self.z.shape)
 
         self.rotation_angle = 0.
+        if self.z is not None:
+            self.rotation_angle = np.zeros((len(self.z)))
 
 
     # def read_edi_object(self, edi_object):
@@ -185,6 +188,26 @@ class Z(object):
     #     except:
     #         print 'Edi object does not contain correct z information - z object not updated'
 
+
+    def _set_frequencies(self, lo_frequencies):
+        """
+            Set the array of frequencies.
+
+            Input:
+            list/array of frequencies
+
+            No test for consistency!
+        """
+
+        if self.z is not None:
+            if len(lo_frequencies) is not len(self.z):
+                print 'length of frequency list/array not correct (%i instead of %i)'%(len(lo_frequencies), len(self.z))
+                return
+         
+        self._frequencies = np.array(lo_frequencies)
+
+    def _get_frequencies(self): return np.array(self._frequencies)
+    frequencies = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
 
        
     def set_z(self, z_array):
@@ -744,7 +767,7 @@ class Z(object):
         
         det_Z_err = None
         if self.zerr is not None:
-            det_Z_err = np.zeros_like(det_phi)
+            det_Z_err = np.zeros_like(det_Z)
             det_Z_err[:] = np.abs(self.z[:,1,1] * self.zerr[:,0,0]) + np.abs(self.z[:,0,0] * self.zerr[:,1,1]) + np.abs(self.z[:,0,1] * self.zerr[:,1,0]) + np.abs(self.z[:,1,0] * self.zerr[:,0,1])
 
         return det_Z, det_Z_err
@@ -753,16 +776,16 @@ class Z(object):
 
     def _get_norm(self):
         """
-            Return the 2-/Frobenius-norm of Z (incl. uncertainties).
+            Return the 2-/Frobenius-norm of Z (NO uncertainties yet).
 
             Output:
             - Norm(Z) - Numpy array
-            - Error of Norm(Z) - Numpy array
+            [- Error of Norm(Z) - Numpy array]
 
         """
 
-        znormerr = None
-        norm_z = np.array( [np.linalg.norm(i) for i in self.z ])
+        znorm = np.array( [np.linalg.norm(i) for i in self.z ])
+        znormerr = np.zeros_like(znorm)
 
         return znorm, znormerr
     norm = property(_get_norm, doc='Norm of Z, incl. error')
@@ -782,34 +805,34 @@ class Z(object):
         z1 = (self.z[:,0,1] - self.z[:,1,0])/2.
         invariants_dict['z1'] = z1 
 
-        invariants_dict['det'] = self.det()[0]
+        invariants_dict['det'] = self.det[0]
         
-        det_real = np.array( [np.linalg.det(i) for i in self.real() ])
+        det_real = np.array( [np.linalg.det(i) for i in np.real(self.z) ])
         invariants_dict['det_real'] = det_real
         
-        det_imag = np.array( [np.linalg.det(i) for i in self.imag() ])
+        det_imag = np.array( [np.linalg.det(i) for i in np.imag(self.z) ])
         invariants_dict['det_imag'] = det_imag
 
-        invariants_dict['trace'] = trace()[0]
+        invariants_dict['trace'] = self.trace[0]
         
-        invariants_dict['skew'] = skew()[0]
+        invariants_dict['skew'] = self.skew[0]
         
-        invariants_dict['norm'] = norm()[0]
+        invariants_dict['norm'] = self.norm[0]
         
-        lambda_plus = np.array( [ z1[i] + np.sqrt(z1[i] * z1[i] - self.det()[i]) for i in range(len(z1)) ])
+        lambda_plus = np.array( [ z1[i] + np.sqrt(z1[i] * z1[i] - self.det[0][i]) for i in range(len(z1)) ])
         invariants_dict['lambda_plus'] = lambda_plus
         
-        lambda_minus = np.array( [ z1[i] - np.sqrt(z1[i] * z1[i] - self.det()[i]) for i in range(len(z1)) ])
+        lambda_minus = np.array( [ z1[i] - np.sqrt(z1[i] * z1[i] - self.det[0][i]) for i in range(len(z1)) ])
         invariants_dict['lambda_minus'] = lambda_minus
         
-        sigma_plus = np.array( [ 0.5*norm_z[i]**2 + np.sqrt( 0.25*norm_z[i]**4 + np.abs(self.det()[i])**2) for i in range(len(norm_z)) ])
+        sigma_plus = np.array( [ 0.5*self.norm[0][i]**2 + np.sqrt( 0.25*self.norm[0][i]**4 + np.abs(self.det[0][i])**2) for i in range(len(self.norm[0])) ])
         invariants_dict['sigma_plus'] = sigma_plus
         
-        sigma_minus = np.array( [ 0.5*norm_z[i]**2 - np.sqrt( 0.25*norm_z[i]**4 + np.abs(self.det()[i])**2) for i in range(len(norm_z)) ])
+        sigma_minus = np.array( [ 0.5*self.norm[0][i]**2 - np.sqrt( 0.25*self.norm[0][i]**4 + np.abs(self.det[0][i])**2) for i in range(len(self.norm[0])) ])
         invariants_dict['sigma_minus'] = sigma_minus
 
         return invariants_dict
-    invariants = property(_get_invariants, doc='Invariants of Z: z1, det, det_real, det_imag, trace, skew, norm, lambda_plus/minus, sigma_plus/minus')
+    invariants = property(_get_invariants, doc='Dictionary, containing the invariants of Z: z1, det, det_real, det_imag, trace, skew, norm, lambda_plus/minus, sigma_plus/minus')
 
 #------------------------
 
@@ -848,7 +871,7 @@ class Tipper(object):
         except:
             pass
 
-        self.frequencies = None
+        self._frequencies = None
 
         # if isinstance(edi_object,MTedi.Edi):
         #     self.edi_object = edi_object
@@ -898,6 +921,25 @@ class Tipper(object):
 
     #     except:
     #         print 'Edi object does not contain correct tipper information - Tipper object not updated'
+
+    def _set_frequencies(self, lo_frequencies):
+        """
+            Set the array of frequencies.
+
+            Input:
+            list/array of frequencies
+
+            No test for consistency!
+        """
+
+        if len(lo_frequencies) is not len(self.tipper):
+            print 'length of frequency list/array not correct (%i instead of %i)'%(len(lo_frequencies), len(self.tipper))
+            return
+
+        self._frequencies = np.array(lo_frequencies)
+
+    def _get_frequencies(self): return np.array(self._frequencies)
+    frequencies = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
 
         
     def set_tipper(self, tipper_array):
