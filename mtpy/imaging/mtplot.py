@@ -8,8 +8,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from matplotlib.ticker import MultipleLocator,FormatStrFormatter
-import mtpy.core.z as Z
-import mtpy.utils.latlongutmconversion as utm2ll
+import mtpy.core.edi as mtedi
+import mtpy.core.z as mtz
+import mtpy.analysis.pt as mtpt
+import mtpy1.core.z as Z
+import mtpy1.utils.latlongutmconversion as utm2ll
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
@@ -149,8 +152,380 @@ labeldict = {6:'$10^{6}$',
 zonedict = dict([(a,ii) for ii,a in enumerate(['a','b','c','d','e','f','g','h',
                'i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x',
                'y','z'])])
+               
+#==============================================================================
+#  make an MT object that has all the important information and methods               
+#==============================================================================
+               
+class MTplot(object):
+    """
+    This class will be able to read in the imporant information from either
+    an .edi file or information input by had.  
+    
+    Attributes:
+    -----------
+        -z
+        -z_err
+        -tipper
+        -tipper_err
+        -station
+        -period
+        -lat
+        -long
+        -elev
+        -edi_fn
+        
+    Methods:
+    --------
+        -get_resistivity_phase
+        -get_PhaseTensor
+        -get_Tipper
+        -plotResPhase
+        -plotPhaseTensor
+        
+    """
+    
+    def __init__(self, z=None, z_err=None, tipper=None, tipper_err=None,
+                 station=None, period=None, lat=None, lon=None, elev=None,
+                 edi_fn=None, rot_z=0):
+                     
+#        self._z = z
+#        self._z_err = z_err
+#        self._tipper = tipper
+#        self._tipper_err = tipper_err
+        self._station = station
+        self._period = period
+        self._lat = lat
+        self._lon = lon
+        self._elev = elev
+        self._edi_fn = edi_fn
+        self._rot_z = rot_z
+        self._Z = mtz.Z(z_array=z, zerr_array=z_err)
+        self._Tipper = mtz.Tipper(tipper_array=tipper, 
+                                  tippererr_array=tipper_err)
+        
+        
+        if self._edi_fn is not None:
+            self.read_edi()
+            
+    def read_edi(self):
+        """
+        read in an .edi file using mtpy.core.edi
+        """
+        
+        edi1 = mtedi.Edi()
+        edi1.readfile(self._edi_fn)
+        
+        #--> set the attributes accordingly
+        # impedance tensor and error
+        self._Z = edi1.Z
+        
+        # tipper and error
+        if edi1.Tipper==None:
+            self.set_tipper(np.zeros((self._Z.z.shape[0],1,2),dtype='complex'))
+            self.set_tipper_err(np.zeros((self._Z.z.shape[0],1,2)))
+            self._Tipper.rotation_angle=np.zeros(self._Z.z.shape[0])
+            
+        else:
+            self._Tipper = edi1.Tipper
+            
+        # station name
+        try:
+            self.set_station(edi1.head['dataid'])
+        except KeyError:
+            print 'Could not get station name set to MT01'
+            self.set_station('MT01')
+            
+        # period
+        self.set_period(1./edi1.freq)
+        
+        # lat, lon and elevation
+        self.set_lat(edi1.lat)
+        self.set_lon(edi1.long)
+        self.set_elev(edi1.elev)
+        
+        
+    # don't really like this way of programming but I'll do it anyway
+    #==========================================================================
+    #  make set methods for each of the attributes    
+    #==========================================================================
+    def set_z(self, z):
+        self._Z.z = z
+        
+    def set_z_err(self, z_err):
+        self._Z.zerr = z_err
+        
+    def set_tipper(self, tipper):
+        self._Tipper.tipper = tipper
+        
+    def set_tipper_err(self, tipper_err):
+        self._Tipper.tippererr = tipper_err
+        
+    def set_station(self, station):
+        self._station = station
+        
+    def set_period(self, period):
+        self._period = period
+        self._Z.frequencies = 1./period
+        
+    def set_lat(self, lat):
+        self._lat = lat
+        
+    def set_lon(self, lon):
+        self._lon = lon
+        
+    def set_elev(self, elev):
+        self._elev = elev
+        
+    def set_edi_fn(self, edi_fn):
+        self._edi_fn = edi_fn
+        
+    def set_rot_z(self, rot_z):
+        self._rot_z = rot_z
+        
+        # be sure to rotate the components if rot_z is set
+        self._Z.rotate(self._rot_z)
+        self._Tipper.rotate(self._rot_z)
+        
+    #==========================================================================
+    # make get methods for each attribute
+    #==========================================================================
+    def get_z(self):
+        return self._Z.z
+        
+    def get_z_err(self):
+        return self._Z.zerr
 
-class PlotResPhase(object):
+    def get_tipper(self):
+        return self._Tipper.tipper
+        
+    def get_tipper_err(self):
+        return self._Tipper.tipper_err
+        
+    def get_station(self):
+        return self._station
+        
+    def get_period(self):
+        return self._period
+        
+    def get_lat(self):
+        return self._lat
+        
+    def get_lon(self):
+        return self._lon
+        
+    def get_elev(self):
+        return self._elev
+        
+    def get_edi_fn(self):
+        return self._edi_fn
+        
+    def get_rot_z(self):
+        return self._rot_z
+        
+    #==========================================================================
+    # use the property built-in to make these get/set useable behind the scenes
+    #==========================================================================
+    z = property(get_z, set_z, 
+                 doc="Impedance tensor in the shape (nz,2,2) complex "+\
+                     "numpy.array")
+    
+    z_err = property(get_z_err, set_z_err, 
+                 doc="Impedance tensor error same shape as MT.z real "+\
+                     "numpy.array")
+                  
+    tipper = property(get_tipper, set_tipper, 
+                      doc="Tipper array in the shape (nz, 2) complex "+\
+                          "numpy.array")
+                       
+    tipper_err = property(get_tipper_err, set_tipper_err, 
+                          doc="Tipper error array same shape as MT.tipper"+\
+                              "real numpy.array")
+                          
+    station = property(get_station, set_station, 
+                       doc="Name of the station to be plotted")
+                       
+    period = property(get_period, set_period, 
+                      doc="array of periods corresponding to MT.z")
+                      
+    lat = property(get_lat, set_lat, 
+                   doc="Latitude in decimal degrees of the station")
+    
+    lon = property(get_lon, set_lon,
+                   doc="Longitude in decimal degrees of the station")
+    
+    elev = property(get_elev, set_elev, 
+                    doc="Elevation of the station in meters")
+                    
+    edi_fn = property(get_edi_fn, set_edi_fn,
+                      doc="full path to the .edi file of the station "+\
+                          "being plotted")
+                      
+    rot_z = property(get_rot_z, set_rot_z, 
+                     doc="Rotation angle positive clockwise assuming North "+\
+                         "is 0, can be an array with same shape at z")
+                      
+    #==========================================================================
+    # define methods to get resphase, phasetensor, invariants
+    #==========================================================================
+
+    def get_ResPhase(self):
+        rp = ResPhase(self._Z)
+        return rp
+
+    def get_PhaseTensor(self):
+        pt = mtpt.PhaseTensor(z_object=self._Z)
+        pt.frequencies = 1./self.period
+        
+        return pt
+    
+    def get_Invariants(self):
+        
+        zinv = Zinvariants(self._Z.z)
+        return zinv
+    #==========================================================================
+    # define plotting methods
+    #==========================================================================
+    
+
+#==============================================================================
+# object for computing resistivity and phase  
+#==============================================================================
+class ResPhase(object):
+    """
+    create a data type for just the resistivity and phase with an attribute 
+    period
+    """
+    def __init__(self, z_object,rot_z=0):
+        if z_object.frequencies==None:
+            raise AttributeError('Need to set z_object.frequencies')
+            
+        if rot_z!=0:
+            z_object.rotate(rot_z)
+            
+        res,  phase, res_err, phase_err = z_object._get_res_phase() 
+        
+        #--> set the attributes of the class to the components of each        
+        self.resxx = res[:,0,0]
+        self.resxy = res[:,0,1]
+        self.resyx = res[:,1,0]
+        self.resyy = res[:,1,1]
+        
+        self.resxx_err = res_err[:,0,0]
+        self.resxy_err = res_err[:,0,1]
+        self.resyx_err = res_err[:,1,0]
+        self.resyy_err = res_err[:,1,1]
+        
+        self.phasexx = phase[:,0,0]
+        self.phasexy = phase[:,0,1]
+        self.phaseyx = phase[:,1,0]
+        self.phaseyy = phase[:,1,1]
+        
+        self.phasexx_err = phase_err[:,0,0]
+        self.phasexy_err = phase_err[:,0,1]
+        self.phaseyx_err = phase_err[:,1,0]
+        self.phaseyy_err = phase_err[:,1,1]
+        
+        self.phaseyx[np.where(self.phaseyx>180)] -= 180
+        self.phaseyx[np.where(self.phaseyx<-90)] += 180
+        
+        
+
+#==============================================================================
+#  object for calculating the invariants of z according to Weaver et. al [2003]    
+#==============================================================================
+class Zinvariants:
+    """
+    calculates invariants from Weaver et al. [2003]
+    
+    Arguments:
+    ----------
+    
+        **z** : complex np.array (nf,2,2)
+                impedance tensor
+    """
+    
+    def __init__(self,z,rotz=0):
+        
+        try:
+            nz=len(z)
+        except TypeError:
+            z=np.array([z])
+            nz=len(z)
+            
+        self.z=np.array(z)
+        self.thetar=rotz
+        self.inv1=np.zeros(nz)
+        self.inv2=np.zeros(nz)
+        self.inv3=np.zeros(nz)
+        self.inv4=np.zeros(nz)
+        self.inv5=np.zeros(nz)
+        self.inv6=np.zeros(nz)
+        self.inv7=np.zeros(nz)
+        self.q=np.zeros(nz)
+        self.strike=np.zeros(nz)
+        self.strikeerr=np.zeros(nz)
+        
+        #rotate the data if desired
+        if self.thetar!=0:
+            #convert thetar into radians
+            if abs(self.thetar)>2*np.pi:
+                self.thetar=self.thetar*(np.pi/180)
+            #make rotation matrix
+            rotmatrix=np.array([[np.cos(self.thetar), np.sin(self.thetar)],
+                         [-np.sin(self.thetar), np.cos(self.thetar)]])
+            #rotate the data
+            for rr in range(nz):
+                self.z[rr]=np.dot(rotmatrix,np.dot(self.z[rr],rotmatrix.T))
+        
+        for ii in range(nz):
+            #compute invariant parameters
+            x1=.5*(self.z[ii,0,0].real+self.z[ii,1,1].real)
+            x2=.5*(self.z[ii,0,1].real+self.z[ii,1,0].real)
+            x3=.5*(self.z[ii,0,0].real-self.z[ii,1,1].real)
+            x4=.5*(self.z[ii,0,1].real-self.z[ii,1,0].real)
+            e1=.5*(self.z[ii,0,0].imag+self.z[ii,1,1].imag)
+            e2=.5*(self.z[ii,0,1].imag+self.z[ii,1,0].imag)
+            e3=.5*(self.z[ii,0,0].imag-self.z[ii,1,1].imag)
+            e4=.5*(self.z[ii,0,1].imag-self.z[ii,1,0].imag)
+            ex=x1*e1-x2*e2-x3*e3+x4*e4
+            d12=(x1*e2-x2*e1)/ex
+            d34=(x3*e4-x4*e3)/ex
+            d13=(x1*e3-x3*e1)/ex
+            d24=(x2*e4-x4*e2)/ex
+            d41=(x4*e1-x1*e4)/ex
+            d23=(x2*e3-x3*e2)/ex
+            inv1=np.sqrt(x4**2+x1**2)
+            inv2=np.sqrt(e4**2+e1**2)
+            inv3=np.sqrt(x2**2+x3**2)/inv1
+            inv4=np.sqrt(e2**2+e3**2)/inv2
+            s12=(x1*e2+x2*e1)/ex
+            s34=(x3*e4+x4*e3)/ex
+            s13=(x1*e3+x3*e1)/ex
+            s24=(x2*e4+x4*e2)/ex
+            s41=(x4*e1+x1*e4)/ex
+            s23=(x2*e3+x3*e2)/ex
+            inv5=s41*ex/(inv1*inv2)
+            inv6=d41*ex/(inv1*inv2)
+            q=np.sqrt((d12-d34)**2+(d13+d24)**2)
+            inv7=(d41-d23)/q
+            strikeang=.5*np.arctan2(d12-d34,d13+d24)*(180/np.pi)
+            strikeangerr=abs(.5*np.arcsin(inv7))*(180/np.pi)
+            self.inv1[ii]=inv1
+            self.inv2[ii]=inv2
+            self.inv3[ii]=inv3
+            self.inv4[ii]=inv4
+            self.inv5[ii]=inv5
+            self.inv6[ii]=inv6
+            self.inv7[ii]=inv7
+            self.q[ii]=q
+            self.strike[ii]=strikeang
+            self.strikeerr[ii]=strikeangerr
+
+#==============================================================================
+#  Plot apparent resistivity and phase
+#==============================================================================
+class PlotResPhase(MTplot):
     """
     Plots Resistivity and phase for the different modes of the MT response.  At
     the moment is supports the input of an .edi file. Other formats that will
@@ -159,38 +534,34 @@ class PlotResPhase(object):
     
     
     Arguments:
-        ----------
-            **filename** : string
-                           filename containing impedance (.edi) is the only 
-                           format supported at the moment
-                          
-            **fignum** : int
-                         figure number
-                         *default* is 1
-                         
-            **ffactor** : float
-                          scaling factor for computing resistivity from 
-                          impedances.
-                          *Default* is 1
-            
-            **rotz** : float
-                       rotation angle of impedance tensor (deg or radians), 
-                       *Note* : rotaion is clockwise positive
-                       *default* is 0
-            
-            **plotnum** : [ 1 | 2 | 3 ]
-                            * 1 for just Ex/By and Ey/Bx *default*
-                            * 2 for all 4 components
-                            * 3 for off diagonal plus the determinant
+    ----------
+        **filename** : string
+                       filename containing impedance (.edi) is the only 
+                       format supported at the moment
+                      
+        **fignum** : int
+                     figure number
+                     *default* is 1
+                     
+        **ffactor** : float
+                      scaling factor for computing resistivity from 
+                      impedances.
+                      *Default* is 1
         
-            **title** : string
-                        title of plot
-                        *default* is station name
-                        
-            **marker_dict** : dictionary
-                              Dictionary for the marker properties of the plot
-                              Keys include:
-                                  * 
+        **rotz** : float
+                   rotation angle of impedance tensor (deg or radians), 
+                   *Note* : rotaion is clockwise positive
+                   *default* is 0
+        
+        **plotnum** : [ 1 | 2 | 3 ]
+                        * 1 for just Ex/By and Ey/Bx *default*
+                        * 2 for all 4 components
+                        * 3 for off diagonal plus the determinant
+    
+        **title** : string
+                    title of plot
+                    *default* is station name
+                    
                         
         :Example: ::
             
@@ -201,8 +572,29 @@ class PlotResPhase(object):
     
     """   
     
-    def __init__(self, filename, fignum=1, plotnum=1, title=None, dpi=300, 
-                 rotz=0, plot_yn='y'):
+    def __init__(self, z_array=None, z_err_array=None, period=None, 
+                 res_phase_object=None, filename=None, fignum=1, plotnum=1, 
+                 title=None, dpi=300, rotz=0, plot_yn='y'):
+                     
+        #if a filename is input read it in and create an MTplot object
+        if filename[-3:]=='edi':
+            self.edi_fn = filename            
+            self.read_edi()
+            
+        else: 
+            raise IOError('File type {0} not supported yet'.format(filename[-4:]))
+        
+        #--> if z is given put, make it an MTplot object
+        if z_array is not None:
+            if period==None:
+                raise IOError('Need to input period array to compute Resistivity')
+            self.mt = MTplot(z=z_array, z_err=z_err_array, period=period)
+        
+        #if you have a resistivity and phase object 
+        #this isn't really supported yet, need to work on rotations
+        if res_phase_object is not None:
+            self.rp = res_phase_object
+            
         
         #set some of the properties as attributes much to Lars' discontent
         self.fn = filename
@@ -258,12 +650,8 @@ class PlotResPhase(object):
     def plot(self):
         """
         plotResPhase(filename,fignum) will plot the apparent resistivity and 
-        phase for TE and TM modes 
-        from a .dat file produced by writedat.  If you want to save the plot 
-        use the save button on top left.
-        
-        
-            
+        phase for a single station. 
+ 
         """
         
         #set figure size according to what the plot will be.
@@ -272,37 +660,34 @@ class PlotResPhase(object):
         elif self.plotnum==2:
             self.figsize = [6,6]
             
+        #--> rotate the impedance tensor if desired
+        if self.rotz!=0:
+            self.set_rot_z(self.rotz)
+        
+        #get the reistivity and phase object
+        self.rp = self.get_ResPhase()
+        
+        #set x-axis limits from short period to long period
+        if self.xlimits==None:
+            self.xlimits = (10**(np.floor(np.log10(self.period[0]))),
+                            10**(np.ceil(np.log10((self.period[-1])))))
+        if self.phase_limits==None:
+            pass
             
-        #check to see if the file given is an edi file
-        if self.fn.find('edi',-4,len(self.fn))>=0:
-            print 'Reading '+self.fn
-            #create a Z object from the file            
-            self.fn_z = Z.Z(self.fn)
-            
-            #get the reistivity and phase object
-            self.rp = self.fn_z.getResPhase(thetar=self.rotz)
-            
-            #set x-axis limits from short period to long period
-            if self.xlimits==None:
-                self.xlimits = (10**(np.floor(np.log10(self.fn_z.period[0]))),
-                                10**(np.ceil(np.log10((self.fn_z.period[-1])))))
-            if self.phase_limits==None:
-                pass
-                
-            if self.res_limits == None:
-                self.res_limits = (10**(np.floor(
-                                        np.log10(min([self.rp.resxy.min(),
-                                                      self.rp.resyx.min()])))),
-                                  10**(np.ceil(
-                                        np.log10(max([self.rp.resxy.max(),
-                                                      self.rp.resyx.max()])))))
+        if self.res_limits == None:
+            self.res_limits = (10**(np.floor(
+                                    np.log10(min([self.rp.resxy.min(),
+                                                  self.rp.resyx.min()])))),
+                              10**(np.ceil(
+                                    np.log10(max([self.rp.resxy.max(),
+                                                  self.rp.resyx.max()])))))
                      
         # ==> will add in other file types and the ability to put in just
         #     the impedance tensor and its error
             
             
-        else:
-            raise ValueError('Could not read file: '+self.fn)
+#        else:
+#            raise ValueError('Could not read file: '+self.fn)
         
         
         #set some parameters of the figure and subplot spacing
@@ -361,7 +746,7 @@ class PlotResPhase(object):
         #---------plot the apparent resistivity--------------------------------
         #--> plot as error bars and just as points xy-blue, yx-red
         #res_xy
-        self.ebxyr = self.axr.errorbar(self.fn_z.period, 
+        self.ebxyr = self.axr.errorbar(self.period, 
                                        self.rp.resxy, 
                                        marker=self.xy_marker, 
                                        ms=self.marker_size, 
@@ -369,13 +754,13 @@ class PlotResPhase(object):
                                        mec=self.xy_color, 
                                        mew=self.marker_lw, 
                                        ls=self.xy_ls, 
-                                       yerr=self.rp.resxyerr, 
+                                       yerr=self.rp.resxy_err, 
                                        ecolor=self.xy_color,
                                        capsize=self.marker_size,
                                        elinewidth=self.marker_lw)
         
         #res_yx                              
-        self.ebyxr = self.axr.errorbar(self.fn_z.period, 
+        self.ebyxr = self.axr.errorbar(self.period, 
                                        self.rp.resyx, 
                                        marker=self.yx_marker, 
                                        ms=self.marker_size, 
@@ -383,7 +768,7 @@ class PlotResPhase(object):
                                        mec=self.yx_color, 
                                        mew=self.marker_lw,
                                        ls=self.yx_ls, 
-                                       yerr=self.rp.resyxerr, 
+                                       yerr=self.rp.resyx_err, 
                                        ecolor=self.yx_color,
                                        capsize=self.marker_size,
                                        elinewidth=self.marker_lw)
@@ -409,7 +794,7 @@ class PlotResPhase(object):
         
         #-----Plot the phase---------------------------------------------------
         #phase_xy
-        self.ebxyp = self.axp.errorbar(self.fn_z.period, 
+        self.ebxyp = self.axp.errorbar(self.period, 
                                        self.rp.phasexy, 
                                        marker=self.xy_marker, 
                                        ms=self.marker_size, 
@@ -417,36 +802,36 @@ class PlotResPhase(object):
                                        mec=self.xy_color, 
                                        mew=self.marker_lw,
                                        ls=self.xy_ls,
-                                       yerr=self.rp.phasexyerr, 
+                                       yerr=self.rp.phasexy_err, 
                                        ecolor=self.xy_color,
                                        capsize=self.marker_size,
                                        elinewidth=self.marker_lw)
                                       
         #phase_yx: Note add 180 to place it in same quadrant as phase_xy
-        self.ebyxp = self.axp.errorbar(self.fn_z.period, 
-                                       self.rp.phaseyx+180, 
+        self.ebyxp = self.axp.errorbar(self.period, 
+                                       self.rp.phaseyx, 
                                        marker=self.yx_marker, 
                                        ms=self.marker_size, 
                                        mfc=self.yx_mfc, 
                                        mec=self.yx_color, 
                                        mew=self.marker_lw,
                                        ls=self.yx_ls, 
-                                       yerr=self.rp.phaseyxerr, 
+                                       yerr=self.rp.phaseyx_err, 
                                        ecolor=self.yx_color,
                                        capsize=self.marker_size,
                                        elinewidth=self.marker_lw)
 
         #check the phase to see if any point are outside of [0:90]
         if self.phase_limits==None:
-            if min(self.rp.phasexy)<0 or min(self.rp.phaseyx+180)<0:
-                 pymin = min([min(self.rp.phasexy), min(self.rp.phaseyx+180)])
+            if min(self.rp.phasexy)<0 or min(self.rp.phaseyx)<0:
+                 pymin = min([min(self.rp.phasexy), min(self.rp.phaseyx)])
                  if pymin>0:
                     pymin = 0
             else:
                 pymin = 0
             
-            if max(self.rp.phasexy)>90 or max(self.rp.phaseyx+180)>90:
-                pymax = min([max(self.rp.phasexy), max(self.rp.phaseyx+180)])
+            if max(self.rp.phasexy)>90 or max(self.rp.phaseyx)>90:
+                pymax = min([max(self.rp.phasexy), max(self.rp.phaseyx)])
                 if pymax<91:
                     pymax = 89.9
             else:
@@ -471,7 +856,7 @@ class PlotResPhase(object):
             self.axr2.yaxis.set_label_coords(-.1, 0.5)
             
             #res_xx
-            self.ebxxr = self.axr2.errorbar(self.fn_z.period, 
+            self.ebxxr = self.axr2.errorbar(self.period, 
                                             self.rp.resxx, 
                                             marker=self.xy_marker, 
                                             ms=self.marker_size, 
@@ -479,13 +864,13 @@ class PlotResPhase(object):
                                             mec=self.xy_color, 
                                             mew=self.marker_lw,
                                             ls=self.xy_ls, 
-                                            yerr=self.rp.resxxerr, 
+                                            yerr=self.rp.resxx_err, 
                                             ecolor=self.xy_color,
                                             capsize=self.marker_size,
                                             elinewidth=self.marker_lw)
             
             #res_yy                              
-            self.ebyyr = self.axr2.errorbar(self.fn_z.period, 
+            self.ebyyr = self.axr2.errorbar(self.period, 
                                             self.rp.resyy, 
                                             marker=self.yx_marker, 
                                             ms=self.marker_size, 
@@ -493,7 +878,7 @@ class PlotResPhase(object):
                                             mec=self.yx_color, 
                                             mew=self.marker_lw, 
                                             ls=self.yx_ls, 
-                                            yerr=self.rp.resyyerr, 
+                                            yerr=self.rp.resyy_err, 
                                             ecolor=self.yx_color,
                                             capsize=self.marker_size,
                                             elinewidth=self.marker_lw)
@@ -519,7 +904,7 @@ class PlotResPhase(object):
             self.axp2.yaxis.set_label_coords(-.1, 0.5)
             
             #phase_xx
-            self.ebxxp = self.axp2.errorbar(self.fn_z.period, 
+            self.ebxxp = self.axp2.errorbar(self.period, 
                                             self.rp.phasexx, 
                                             marker=self.xy_marker, 
                                             ms=self.marker_size, 
@@ -527,13 +912,13 @@ class PlotResPhase(object):
                                             mec=self.xy_color, 
                                             mew=self.marker_lw, 
                                             ls=self.xy_ls, 
-                                            yerr=self.rp.phasexxerr,
+                                            yerr=self.rp.phasexx_err,
                                             ecolor=self.xy_color,
                                             capsize=self.marker_size,
                                             elinewidth=self.marker_lw)
                                             
             #phase_yy
-            self.ebyyp = self.axp2.errorbar(self.fn_z.period,
+            self.ebyyp = self.axp2.errorbar(self.period,
                                             self.rp.phaseyy, 
                                             marker=self.yx_marker,
                                             ms=self.marker_size, 
@@ -541,7 +926,7 @@ class PlotResPhase(object):
                                             mec=self.yx_color, 
                                             mew=self.marker_lw, 
                                             ls=self.yx_ls, 
-                                            yerr=self.rp.phaseyyerr, 
+                                            yerr=self.rp.phaseyy_err, 
                                             ecolor=self.yx_color,
                                             capsize=self.marker_size,
                                             elinewidth=self.marker_lw)
@@ -559,7 +944,7 @@ class PlotResPhase(object):
         if self.plotnum==3:
                 
             #res_det
-            self.ebdetr = self.axr.errorbar(self.fn_z.period, 
+            self.ebdetr = self.axr.errorbar(self.period, 
                                             self.rp.resdet, 
                                             marker=self.det_marker, 
                                             ms=self.marker_size, 
@@ -567,13 +952,13 @@ class PlotResPhase(object):
                                             mec=self.det_color, 
                                             mew=self.marker_lw, 
                                             ls=self.det_ls, 
-                                            yerr=self.rp.resdeterr, 
+                                            yerr=self.rp.resdet_err, 
                                             ecolor=self.det_color,
                                             capsize=self.marker_size,
                                             elinewidth=self.marker_lw)
         
             #phase_det
-            self.ebdetp = self.axp.errorbar(self.fn_z.period, 
+            self.ebdetp = self.axp.errorbar(self.period, 
                                             self.rp.phasedet, 
                                             marker=self.det_marker, 
                                             ms=self.marker_size, 
@@ -581,7 +966,7 @@ class PlotResPhase(object):
                                             mec=self.det_color, 
                                             mew=self.marker_lw, 
                                             ls=self.det_ls, 
-                                            yerr=self.rp.phasedeterr, 
+                                            yerr=self.rp.phasedet_err, 
                                             ecolor=self.det_color,
                                             capsize=self.marker_size,
                                             elinewidth=self.marker_lw)
@@ -601,7 +986,7 @@ class PlotResPhase(object):
             self.fig.suptitle(self.title, fontsize=self.font_size+2, 
                               fontweight='bold')
         else:
-            self.fig.suptitle(self.fn_z.station, fontsize=self.font_size+2, 
+            self.fig.suptitle(self.station, fontsize=self.font_size+2, 
                          fontweight='bold')
         plt.show()
         
@@ -660,7 +1045,7 @@ class PlotResPhase(object):
             plt.close(self.fig)
             
         else:
-            save_fn = os.path.join(save_fn,self.fn_z.station+'_ResPhase.'+
+            save_fn = os.path.join(save_fn,self.station+'_ResPhase.'+
                                     file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
                         orientation=orientation)
@@ -965,7 +1350,7 @@ class PlotMultipleResistivityPhase(object):
                                          mec=self.xy_color, 
                                          mew=self.marker_lw, 
                                          ls=self.xy_ls, 
-                                         yerr=rp.resxyerr, 
+                                         yerr=rp.resxy_err, 
                                          ecolor=self.xy_color,
                                          capsize=self.marker_size,
                                          elinewidth=self.marker_lw)
@@ -979,7 +1364,7 @@ class PlotMultipleResistivityPhase(object):
                                          mec=self.yx_color, 
                                          mew=self.marker_lw,
                                          ls=self.yx_ls, 
-                                         yerr=rp.resyxerr, 
+                                         yerr=rp.resyx_err, 
                                          ecolor=self.yx_color,
                                          capsize=self.marker_size,
                                          elinewidth=self.marker_lw)
@@ -1018,7 +1403,7 @@ class PlotMultipleResistivityPhase(object):
                                          mec=self.xy_color, 
                                          mew=self.marker_lw,
                                          ls=self.xy_ls,
-                                         yerr=rp.phasexyerr, 
+                                         yerr=rp.phasexy_err, 
                                          ecolor=self.xy_color,
                                          capsize=self.marker_size,
                                          elinewidth=self.marker_lw)
@@ -1033,7 +1418,7 @@ class PlotMultipleResistivityPhase(object):
                                          mec=self.yx_color, 
                                          mew=self.marker_lw,
                                          ls=self.yx_ls, 
-                                         yerr=rp.phaseyxerr, 
+                                         yerr=rp.phaseyx_err, 
                                          ecolor=self.yx_color,
                                          capsize=self.marker_size,
                                          elinewidth=self.marker_lw)
@@ -1099,7 +1484,7 @@ class PlotMultipleResistivityPhase(object):
                                               mec=self.xy_color, 
                                               mew=self.marker_lw,
                                               ls=self.xy_ls, 
-                                              yerr=rp.resxxerr, 
+                                              yerr=rp.resxx_err, 
                                               ecolor=self.xy_color,
                                               capsize=self.marker_size,
                                               elinewidth=self.marker_lw)
@@ -1113,7 +1498,7 @@ class PlotMultipleResistivityPhase(object):
                                               mec=self.yx_color, 
                                               mew=self.marker_lw, 
                                               ls=self.yx_ls, 
-                                              yerr=rp.resyyerr, 
+                                              yerr=rp.resyy_err, 
                                               ecolor=self.yx_color,
                                               capsize=self.marker_size,
                                               elinewidth=self.marker_lw)
@@ -1154,7 +1539,7 @@ class PlotMultipleResistivityPhase(object):
                                               mec=self.xy_color, 
                                               mew=self.marker_lw, 
                                               ls=self.xy_ls, 
-                                              yerr=rp.phasexxerr,
+                                              yerr=rp.phasexx_err,
                                               ecolor=self.xy_color,
                                               capsize=self.marker_size,
                                               elinewidth=self.marker_lw)
@@ -1168,7 +1553,7 @@ class PlotMultipleResistivityPhase(object):
                                               mec=self.yx_color, 
                                               mew=self.marker_lw, 
                                               ls=self.yx_ls, 
-                                              yerr=rp.phaseyyerr, 
+                                              yerr=rp.phaseyy_err, 
                                               ecolor=self.yx_color,
                                               capsize=self.marker_size,
                                               elinewidth=self.marker_lw)
@@ -1200,7 +1585,7 @@ class PlotMultipleResistivityPhase(object):
                                           mec=self.det_color, 
                                           mew=self.marker_lw, 
                                           ls=self.det_ls, 
-                                          yerr=rp.resdeterr, 
+                                          yerr=rp.resdet_err, 
                                           ecolor=self.det_color,
                                           capsize=self.marker_size,
                                           elinewidth=self.marker_lw)
@@ -1214,7 +1599,7 @@ class PlotMultipleResistivityPhase(object):
                                           mec=self.det_color, 
                                           mew=self.marker_lw, 
                                           ls=self.det_ls, 
-                                          yerr=rp.phasedeterr, 
+                                          yerr=rp.phasedet_err, 
                                           ecolor=self.det_color,
                                           capsize=self.marker_size,
                                           elinewidth=self.marker_lw)
@@ -1384,7 +1769,7 @@ class PlotMultipleResistivityPhase(object):
                                          mec=cxy[ii], 
                                          mew=self.marker_lw, 
                                          ls=self.xy_ls, 
-                                         yerr=rp.resxyerr, 
+                                         yerr=rp.resxy_err, 
                                          ecolor=cxy[ii],
                                          capsize=self.marker_size,
                                          elinewidth=self.marker_lw)
@@ -1398,7 +1783,7 @@ class PlotMultipleResistivityPhase(object):
                                          mec=cyx[ii], 
                                          mew=self.marker_lw,
                                          ls=self.yx_ls, 
-                                         yerr=rp.resyxerr, 
+                                         yerr=rp.resyx_err, 
                                          ecolor=cyx[ii],
                                          capsize=self.marker_size,
                                          elinewidth=self.marker_lw)
@@ -1414,7 +1799,7 @@ class PlotMultipleResistivityPhase(object):
                                          mec=cxy[ii], 
                                          mew=self.marker_lw,
                                          ls=self.xy_ls,
-                                         yerr=rp.phasexyerr, 
+                                         yerr=rp.phasexy_err, 
                                          ecolor=cxy[ii],
                                          capsize=self.marker_size,
                                          elinewidth=self.marker_lw)
@@ -1429,7 +1814,7 @@ class PlotMultipleResistivityPhase(object):
                                          mec=cyx[ii], 
                                          mew=self.marker_lw,
                                          ls=self.yx_ls, 
-                                         yerr=rp.phaseyxerr, 
+                                         yerr=rp.phaseyx_err, 
                                          ecolor=cyx[ii],
                                          capsize=self.marker_size,
                                          elinewidth=self.marker_lw)
@@ -1451,7 +1836,7 @@ class PlotMultipleResistivityPhase(object):
                                               mec=cxy[ii], 
                                               mew=self.marker_lw,
                                               ls=self.xy_ls, 
-                                              yerr=rp.resxxerr, 
+                                              yerr=rp.resxx_err, 
                                               ecolor=cxy[ii],
                                               capsize=self.marker_size,
                                               elinewidth=self.marker_lw)
@@ -1465,7 +1850,7 @@ class PlotMultipleResistivityPhase(object):
                                               mec=cyx[ii], 
                                               mew=self.marker_lw, 
                                               ls=self.yx_ls, 
-                                              yerr=rp.resyyerr, 
+                                              yerr=rp.resyy_err, 
                                               ecolor=cyx[ii],
                                               capsize=self.marker_size,
                                               elinewidth=self.marker_lw)
@@ -1484,7 +1869,7 @@ class PlotMultipleResistivityPhase(object):
                                               mec=cxy[ii], 
                                               mew=self.marker_lw, 
                                               ls=self.xy_ls, 
-                                              yerr=rp.phasexxerr,
+                                              yerr=rp.phasexx_err,
                                               ecolor=cxy[ii],
                                               capsize=self.marker_size,
                                               elinewidth=self.marker_lw)
@@ -1498,7 +1883,7 @@ class PlotMultipleResistivityPhase(object):
                                               mec=cyx[ii], 
                                               mew=self.marker_lw, 
                                               ls=self.yx_ls, 
-                                              yerr=rp.phaseyyerr, 
+                                              yerr=rp.phaseyy_err, 
                                               ecolor=cyx[ii],
                                               capsize=self.marker_size,
                                               elinewidth=self.marker_lw)
@@ -1518,7 +1903,7 @@ class PlotMultipleResistivityPhase(object):
                                           mec=cdet[ii], 
                                           mew=self.marker_lw, 
                                           ls=self.det_ls, 
-                                          yerr=rp.resdeterr, 
+                                          yerr=rp.resdet_err, 
                                           ecolor=cdet[ii],
                                           capsize=self.marker_size,
                                           elinewidth=self.marker_lw)
@@ -1532,7 +1917,7 @@ class PlotMultipleResistivityPhase(object):
                                           mec=cdet[ii], 
                                           mew=self.marker_lw, 
                                           ls=self.det_ls, 
-                                          yerr=rp.phasedeterr, 
+                                          yerr=rp.phasedet_err, 
                                           ecolor=cdet[ii],
                                           capsize=self.marker_size,
                                           elinewidth=self.marker_lw)
