@@ -3,9 +3,12 @@
 """
 /mtpy/utils/mseed.py
 
-This modules contains functions for the conversion of raw time series: ASCII to/from miniSeed. 
+Functions for the conversion of raw time series: ASCII to/from miniSeed. 
 
-The functionality is based on obspy.mseed/pyrocko
+The functionality is based on the "obspy.core" module from the ObsPy package.
+
+Note: 
+  Only single trace miniSeed are handled !
 
 
 @UofA, 2013
@@ -60,6 +63,7 @@ def convertfile_ts2miniseed(infile, outfile,channel=None, station = None, locati
     return outfilename
 
 
+
 def convertfile_miniseed2ts(infile, outfile, unit=None, lat = None, lon = None, elev = None):
 
     station, channel, location, network,  samplingrate, t0, nsamples, data = readfile_obspy_singletrace(infile)
@@ -105,8 +109,6 @@ def convertfile_miniseed2ts(infile, outfile, unit=None, lat = None, lon = None, 
         ts_tuple.append(0.)
 
     ts_tuple.append(data)
-
-    print data[:10]
 
     outfilename = FH.write_ts_file_from_tuple(outfile,tuple(ts_tuple))
 
