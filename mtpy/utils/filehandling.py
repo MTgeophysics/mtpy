@@ -50,6 +50,18 @@ lo_headerelements = ['station', 'channel','samplingrate','t_min','nsamples','uni
 
 #=================================================================
 
+def make_unique_filename(infn):
+
+    fn = op.abspath(infn)
+    outfn = fn
+    i = 1
+    while op.isfile(outfn):
+        filebase = op.splitext(fn)[0]
+        outfn = filebase +'_%i'%i+ op.splitext(fn)[1]
+        i += 1
+
+    return outfn
+
 
 def get_sampling_interval_fromdatafile(filename, length = 3600):
     """ 
@@ -584,11 +596,13 @@ def write_ts_file_from_tuple(outfile,ts_tuple):
     header_string = get_ts_header_string(header_dict)
     data = ts_tuple[-1]
 
+    outfilename = make_unique_filename(outfile)
+
+
     try:
-        outfilename = op.abspath(outfile)
         outF = open(outfilename,'w')
         outF.write(header_string)
-        np.savetxt(outfilename,data)
+        np.savetxt(outF,data)
         outF.close()
     except:
         raise EX.MTpyError_inputarguments('ERROR - could not write content of TS tuple to file : {0}'.format(outfilename))

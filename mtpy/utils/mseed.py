@@ -16,13 +16,15 @@ The functionality is based on obspy.mseed/pyrocko
 #=================================================================
 
 #import obspy.mseed as omseed
-from obspy.core import read, Trace, Stream
+from obspy.core import read, Trace, Stream, UTCDateTime
 import os.path as op
 
 #import pyrocko as pmseed
 
 import mtpy.utils.exceptions as EX
 import mtpy.utils.filehandling as FH
+import mtpy.utils.format as FT
+reload(FT)
 reload(EX)
 reload(FH)
 
@@ -58,12 +60,85 @@ def convertfile_ts2miniseed(infile, outfile,channel=None, station = None, locati
     return outfilename
 
 
-def convertfile_miniseed2ts(infile, outfile, unit=None, lat = None, long = None, elev = None):
+def convertfile_miniseed2ts(infile, outfile, unit=None, lat = None, lon = None, elev = None):
 
-    
-    outfilename = FH.write_ts_file_from_tuple(outfile,ts_tuple)
+    station, channel, location, network,  samplingrate, t0, nsamples, data = readfile_obspy_singletrace(infile)
+
+    ts_tuple = [station.upper(), channel.lower(), samplingrate,t0, nsamples]
+
+    if unit is not None:
+        try:
+            unit = unit.lower()
+        except:
+            unit = None
+
+    if unit is None:
+        ts_tuple.append('unknown') 
+
+    if lat is not None:
+        try:
+            lat = FT._assert_position_format('lat', lat)
+        except:
+            lat = None
+
+    if lat is None:
+        ts_tuple.append(0.)
+
+
+    if lon is not None:
+        try:
+            lon = FT._assert_position_format('lon', lon)
+        except:
+            lon = None
+
+    if lon is None:
+        ts_tuple.append(0.)
+
+
+    if elev is not None:
+        try:
+            elev = FT._assert_position_format('elev', elev)
+        except:
+            elev = None
+
+    if elev is None:
+        ts_tuple.append(0.)
+
+    ts_tuple.append(data)
+
+    print data[:10]
+
+    outfilename = FH.write_ts_file_from_tuple(outfile,tuple(ts_tuple))
 
     return outfilename
+
+
+
+def readfile_obspy_singletrace(infilename):
+    
+    infile = op.abspath(infilename)
+    if not op.isfile(infile):
+        raise EX.MTpyError_inputarguments('ERROR - miniSeed file not existing: {0}'.format(infile))
+
+    try:
+        ms_stream = read(infile)
+    except:
+        EX.MTpyError_inputarguments('ERROR - File is not a valid miniSed file: {0}'.format(infile))
+
+    trace = ms_stream[0]
+    stats = trace.stats
+
+    t0 = stats['starttime'].timestamp
+    station = stats['station']
+    channel = stats['channel']
+    location = stats['location']
+    network = stats['network']
+    samplingrate = 1./float(stats['delta'])
+    nsamples = trace.count()
+
+    data = trace.data
+
+    return station, channel, location, network,  samplingrate, t0, nsamples, data
 
 
 
@@ -74,14 +149,12 @@ def writefile_obspy_singletrace(outfilename,station,channel,network,location, de
          'channel': channel.upper(), 'npts': len(data), 'sampling_rate': 1./delta_t, 'starttime' : t0}
     #define stream
     st = Stream([Trace(data=data, header=stats)])
-    if not outfilename.lower().endswith('mseed'):
+    if not outfilename.lower().endswith('.mseed'):
         outfilename += '.mseed'
-    #save to file
-    i = 1
-    while op.isfile(outfilename):
-        outfilename = outfilename[:-6]+'_%i'%i+'.mseed'
-        i += 1
+    
 
+    #save to file
+    outfilename = FH.make_unique_filename(outfilename)
     st.write(outfilename, format='MSEED')
 
     return outfilename
