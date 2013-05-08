@@ -1,0 +1,260 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed May 08 09:40:42 2013
+
+Interpreted from matlab code written by Stephan Thiel 2005
+
+@author: jpeacock
+"""
+
+import numpy as np
+import mtpy.core.z as mtz
+
+class Zinvariants:
+    """
+    calculates invariants from Weaver et al. [2000, 2003].  At the moment it 
+    does not calculate the error for each invariant, only the strike.
+    
+    Arguments:
+    ----------
+        **z_object** : type mtpy.core.z
+                       needs to have attributes:
+                           *z --> np.array((nf, 2, 2), dtype='complex')
+                           
+                           *zerr --> np.array((nf, 2, 2), dtype='real')
+                           
+                           *frequencies --> np.array(nf)
+                           
+        **z** : complex np.array(nf,2,2)
+                impedance tensor array
+                
+        **z_err** : real np.array(nf,2,2)
+                impedance tensor error array
+                
+        **frequencies** : np.array(nf)
+                          array of frequencies cooresponding to the impedance 
+                          tensor elements.
+                          
+    Attributes:
+    -----------
+        **inv1**       : real off diaganol part normalizing factor
+        
+        **inv2**       : imaginary off diaganol normalizing factor
+        
+        **inv3**       : real anisotropy factor (range from [0,1])
+        
+        **inv4**       : imaginary anisotropy factor (range from [0,1])
+        
+        **inv5**       : suggests electric field twist
+        
+        **inv6**       : suggests in phase small scale distortion
+        
+        **inv7**       : suggests 3D structure
+        
+        **strike**     : strike angle (deg) assuming positive clockwise 0=N
+        
+        **strike_err** : strike angle error (deg)
+        
+        **q**          : dependent variable suggesting dimensionality
+        
+        
+    Further reading:
+    ----------------
+        Weaver, J. T., Agarwal, A. K., Lilley, F. E. M., 2000,
+           Characterization of the magnetotelluric tensor in terms of its 
+           invariants, Geophysical Journal International, 141, 321--336.
+           
+        Weaver, J. T., Agarwal, A. K., Lilley, F. E. M., 2003,
+            The relationship between the magnetotelluric tensor invariants and 
+            the phase tensor of Caldwell, Bibby and Brown, 
+            presented at 3D Electromagnetics III, ASEG, paper 43.
+           
+        Lilley, F. E. M, 1998, Magnetotelluric tenosr dcomposition: 1: Theory
+            for a basic procedure, Geophysics, 63, 1885--1897.
+           
+        Lilley, F. E. M, 1998, Magnetotelluric tenosr dcomposition: 2: Examples
+            of a basic procedure, Geophysics, 63, 1898--1907.
+           
+        Szarka, L. and Menvielle, M., 1997, Analysis of rotational invariants 
+            of the magnetotelluric impedance tensor, Geophysical Journal 
+            International, 129, 133--142.
+    
+    """
+    
+    def __init__(self,z_object=None,z_array=None,z_err_array=None, 
+                 frequencies=None, rot_z=0):
+        
+        
+        #--> read in z_object
+        if z_object is not None:
+            if z_object.frequencies==None:
+                raise AttributeError('z_object needs to have attrtibute'+\
+                                     'frequencies filled')
+            
+            #--> make the z_object an attribute    
+            self._Z = z_object
+            
+        #--> if an array is input read it in and make it a z_object
+        if z_array is not None:
+            if frequencies is None:
+                raise IOError('frequencies needs to be input')
+                
+            self._Z = mtz.Z(z_array, z_err_array)
+            
+            assert len(frequencies)==len(self._Z.z), \
+                    'length of frequency is not the same as z'
+            
+            self._Z.frequencies = frequencies
+            
+        #--> rotate data if desired
+        self.rotate(rot_z)
+        
+        # compute the invariants
+        self.compute_invariants
+
+    def compute_invariants(self):
+        """
+        Computes the invariants according to Weaver et al., [2000, 2003]
+        
+        Mostly used to plot Mohr's circles
+        
+        In a 1D case: rho = mu (inv1**2+inv2**2)/w & phi = arctan(inv2/inv1)
+        
+        Sets the invariants as attributes:
+            **inv1**       : real off diaganol part normalizing factor
+            
+            **inv2**       : imaginary off diaganol normalizing factor
+            
+            **inv3**       : real anisotropy factor (range from [0,1])
+            
+            **inv4**       : imaginary anisotropy factor (range from [0,1])
+            
+            **inv5**       : suggests electric field twist
+            
+            **inv6**       : suggests in phase small scale distortion
+            
+            **inv7**       : suggests 3D structure
+            
+            **strike**     : strike angle (deg) assuming positive clockwise 0=N
+            
+            **strike_err** : strike angle error (deg)
+            
+            **q**          : dependent variable suggesting dimensionality
+            
+        """  
+
+        # get the length of z to initialize some empty arrays           
+        nz = self._Z.z.shape[0]
+        
+        # set some empty arrays to put stuff into
+        self.inv1 = np.zeros(nz)
+        self.inv2 = np.zeros(nz)
+        self.inv3 = np.zeros(nz)
+        self.inv4 = np.zeros(nz)
+        self.inv5 = np.zeros(nz)
+        self.inv6 = np.zeros(nz)
+        self.inv7 = np.zeros(nz)
+        self.q = np.zeros(nz)
+        self.strike = np.zeros(nz)
+        self.strike_err = np.zeros(nz)
+        
+        # loop over each frequency
+        for ii in range(nz):
+            #compute the mathematical invariants
+            x1 = .5 * (self._Z.z[ii,0,0].real + self._Z.z[ii,1,1].real) #trace
+            x2 = .5 * (self._Z.z[ii,0,1].real + self._Z.z[ii,1,0].real)
+            x3 = .5 * (self._Z.z[ii,0,0].real - self._Z.z[ii,1,1].real)
+            x4 = .5 * (self._Z.z[ii,0,1].real - self._Z.z[ii,1,0].real) #berd
+            e1 = .5 * (self._Z.z[ii,0,0].imag + self._Z.z[ii,1,1].imag) #trace
+            e2 = .5 * (self._Z.z[ii,0,1].imag + self._Z.z[ii,1,0].imag)
+            e3 = .5 * (self._Z.z[ii,0,0].imag - self._Z.z[ii,1,1].imag)
+            e4 = .5 * (self._Z.z[ii,0,1].imag - self._Z.z[ii,1,0].imag) #berd
+            ex = x1 * e1 - x2 * e2 - x3 * e3 + x4 * e4
+            
+            d12 = (x1*e2-x2*e1)/ex
+            d34 = (x3*e4-x4*e3)/ex
+            d13 = (x1*e3-x3*e1)/ex
+            d24 = (x2*e4-x4*e2)/ex
+            d41 = (x4*e1-x1*e4)/ex
+            d23 = (x2*e3-x3*e2)/ex
+            
+            inv1 = np.sqrt(x4**2 + x1**2)
+            inv2 = np.sqrt(e4**2 + e1**2)
+            inv3 = np.sqrt(x2**2 + x3**2)/inv1
+            inv4 = np.sqrt(e2**2 + e3**2)/inv2
+            
+            s41 = (x4*e1+x1*e4)/ex
+            
+            inv5 = s41*ex/(inv1*inv2)
+            inv6 = d41*ex/(inv1*inv2)
+            
+            q = np.sqrt((d12-d34)**2 + (d13+d24)**2)
+            
+            inv7 = (d41-d23)/q
+            
+            strikeang = .5*np.arctan2(d12-d34,d13+d24)*(180/np.pi)
+            strikeangerr = abs(.5*np.arcsin(inv7))*(180/np.pi)
+            
+            self.inv1[ii] = inv1
+            self.inv2[ii] = inv2
+            self.inv3[ii] = inv3
+            self.inv4[ii] = inv4
+            self.inv5[ii] = inv5
+            self.inv6[ii] = inv6
+            self.inv7[ii] = inv7
+            self.q[ii] = q
+            self.strike[ii] = strikeang
+            self.strike_err[ii] = strikeangerr
+            
+            
+    def rotate(self, rot_z):
+        """
+        Rotates the impedance tensor by the angle rot_z clockwise positive
+        assuming 0 is North
+        
+        """
+
+        self.rot_z = rot_z
+        # rotate the data
+        self._Z.rotate(self.rot_z)
+        
+        #--> update the invariants (though they should be rotationally 
+        # invariant except for the strike angle)
+        self.compute_invariants()        
+          
+    def set_z(self, z_array):
+        """
+        set the z array.
+
+        If the shape changes or the frequencies are changed need to input 
+        those as well.        
+        """
+        
+        self._Z.z = z_array
+        
+        # --> update the invariants
+        self.compute_invariants()
+        
+    def set_z_err(self, z_err_array):
+        """
+        set the z_err array.
+
+        If the shape changes or the frequencies are changed need to input 
+        those as well.        
+        """
+        
+        self._Z.zerr = z_err_array
+        
+        # --> update the invariants
+        self.compute_invariants()
+        
+    def set_frequencies(self, frequencies):
+        """
+        set the frequencies array, needs to be the same length at z
+        """
+        
+        self._Z.frequencies = frequencies
+
+    def __str__(self):
+        return "Computes the invariants of the impedance tensor according "+\
+               "Weaver et al., [2000, 2003]."

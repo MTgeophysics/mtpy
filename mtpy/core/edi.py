@@ -348,18 +348,81 @@ class Edi(object):
         return len(self.freq)
 
 
-    def _getlat(self): return self.head['lat']
-    def _setlat(self, value): self.head['lat'] = MTformat._assert_position_format('lat',value)
-    lat = property(_getlat, _setlat, doc='Location latitude in degrees')
+    def _get_lat(self):
+        """
+        get latitude from either header or definemeas
+        """
+        try:
+            return self.head['lat']
+        except KeyError:
+            try:
+                return self.definemeas['reflat']
+            except KeyError:
+                print 'Could not find Latitude'
+
+        
+    def _set_lat(self, value): 
+        try:
+            self.head['lat'] = MTformat._assert_position_format('lat',value)
+        except KeyError:
+            try:
+                self.definemeas['reflat'] = \
+                                 MTformat._assert_position_format('lat',value)
+            except KeyError:
+                print 'Could not find Longitude'
+                                 
+    lat = property(_get_lat, _set_lat, doc='Location latitude in degrees')
    
 
-    def _getlong(self): return self.head['long']
-    def _setlong(self, value): self.head['long'] = MTformat._assert_position_format('long',value)
-    long = property(_getlong, _setlong, doc='Location longitude in degrees')
+    def _get_lon(self): 
+        """
+        get longitude from either header or definmeas
+        
+        """
+        try:
+            return self.head['long']
+        except KeyError:
+            try:
+                return self.definemeas['reflong']
+            except KeyError:
+                print 'Could not find Latitude'
+        
+    def _set_lon(self, value): 
+        try:
+            self.head['long'] = MTformat._assert_position_format('lon',value)
+        except KeyError:
+            try:
+                self.definemeas['reflong'] = \
+                                 MTformat._assert_position_format('lon',value)
+            except KeyError:
+                print 'Could not find Longitude'
+                
+    lon = property(_get_lon, _set_lon, doc='Location longitude in degrees')
  
-    def _getelev(self): return self.head['elev']
-    def _setelev(self, value): self.head['elev'] = MTformat._assert_position_format('elev',value)
-    elev = property(_getelev, _setelev, doc='Location elevation in meters')
+    def _get_elev(self): 
+        """
+        get elevation from either header or definmeas
+        
+        """
+        try:
+            return self.head['elev']
+        except KeyError:
+            try:
+                return self.definemeas['refelev']
+            except KeyError:
+                print 'Could not find Latitude'
+        
+    def _set_elev(self, value): 
+        try:
+            self.head['elev'] = MTformat._assert_position_format('elev',value)
+        except KeyError:
+            try:
+                self.definemeas['refelev'] = \
+                                 MTformat._assert_position_format('elev',value)
+            except KeyError:
+                print 'Could not find Elevation'
+    
+    elev = property(_get_elev, _set_elev, doc='Location elevation in meters')
  
 
 
