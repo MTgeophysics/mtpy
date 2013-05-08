@@ -1032,15 +1032,7 @@ class Edi(object):
         if fn == None:
             outfilename = op.abspath(stationname.upper()+'.edi')
 
-        if op.isfile(outfilename):
-            newfile = outfilename
-
-            i = 0
-            while op.isfile(newfile):
-                i += 1
-                newfile = outfilename[:-4]+'_%i'%i+'.edi'
-
-            outfilename = newfile
+        outfilename = FH.make_unique_filename(outfilename)
 
         try:
             with open(outfilename , 'w') as F:

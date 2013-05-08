@@ -87,6 +87,9 @@ def read_survey_configfile(filename):
     - sampling_interval (in seconds)
     - station_type (MT, E, B)
 
+    Not mandatory, but recommended
+    - declination (in degrees, positive to East) - this is set to '0.0', if omitted
+
     Depending on the type of station the following entries are required.
 
     E-field recorded:
