@@ -478,7 +478,7 @@ def read_2c2_file(filename):
 def validate_ts_file(tsfile):
     """
         Validate MTpy timeseries (TS) data file
-        Return Boolean True/False respectively.
+        Return Boolean value True/False .
 
     """ 
 
@@ -486,10 +486,10 @@ def validate_ts_file(tsfile):
         header = read_ts_header(tsfile)
 
         if header['station'] is None:
-            print 'header'
+            #print 'header'
             raise
         if header['channel'] is None:
-            print 'channel'
+            #print 'channel'
             raise
         
         sr = float(header['samplingrate'])
@@ -499,14 +499,14 @@ def validate_ts_file(tsfile):
         data = np.loadtxt(tsfile)
         
         if len(data) != ns:
-            print 'data length'
+            #print 'data length'
             raise
         if data.dtype not in [int, float]:
-            print 'data type'
+            #print 'data type'
             raise
 
     except:
-        print 'number'
+        #print 'number'
         return False
 
 
