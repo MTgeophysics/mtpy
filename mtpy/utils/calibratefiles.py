@@ -28,15 +28,15 @@ import calendar
 import time
 
 
-import mtpy.utils.exceptions as EX
-import mtpy.processing.calibration as CAL
-import mtpy.utils.filehandling as FH
-import mtpy.utils.configfile as CF
+import mtpy.utils.exceptions as MTex
+import mtpy.processing.calibration as MTcb
+import mtpy.utils.filehandling as MTfh
+import mtpy.utils.configfile as MTcf
 
-reload(FH)
-reload(EX)
-reload(CAL)
-reload(CF)
+reload(MTfh)
+reload(MTex)
+reload(MTcb)
+reload(MTcf)
 
 angleaccuracy = 1.
 
@@ -44,7 +44,7 @@ angleaccuracy = 1.
 def main():
 
     if len(sys.argv) < 3:
-        raise EX.MTpyError_inputarguments('Need at least 2 arguments: <path to files> <config file> [<output dir>] [<station>] [<recursive flag -R>] [<re-orientation flag -O]')
+        raise MTex.MTpyError_inputarguments('Need at least 2 arguments: <path to files> <config file> [<output dir>] [<station>] [<recursive flag -R>] [<re-orientation flag -O]')
     outdir = None
     stationname = None
     recursive = False
@@ -71,13 +71,13 @@ def main():
     pathname = op.abspath(op.realpath(pathname_raw))
 
     if not op.isdir(pathname):
-        raise EX.MTpyError_inputarguments('Data file(s) path not existing: {0}'.format(pathname))
+        raise MTex.MTpyError_inputarguments('Data file(s) path not existing: {0}'.format(pathname))
 
     configfilename_raw = sys.argv[2]
     configfile = op.abspath(op.realpath(op.join(os.curdir,configfilename_raw)))
 
     if not op.isfile(configfile):
-        raise EX.MTpyError_inputarguments('Config file not found: {0}'.format(configfile))
+        raise MTex.MTpyError_inputarguments('Config file not found: {0}'.format(configfile))
 
 
     if recursive is True:
@@ -91,11 +91,11 @@ def main():
 
 
     try:
-        config_dict = CF.read_survey_configfile(configfile)
+        config_dict = MTcf.read_survey_configfile(configfile)
         #done internally already 
-        #CF.validate_dict(config_dict)
+        #MTcf.validate_dict(config_dict)
     except:
-        raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (configfile) )
+        raise MTex.MTpyError_config_file( 'Config file cannot be read: %s' % (configfile) )
 
     #----------------------------------------------------------------------------
 
@@ -112,7 +112,7 @@ def main():
             continue    
         dirfiles = [op.abspath(op.join(wd,i)) for i in os.listdir(wd)]
         for tmpfile in dirfiles:
-            header = FH.read_ts_header(tmpfile)
+            header = MTfh.read_ts_header(tmpfile)
             if header['channel'].lower() in components:
                 if stationname is not None:
                     if stationname.upper() != header['station'].upper():
@@ -125,7 +125,7 @@ def main():
 
     #check, if list of files is empty
     if len(lo_allfiles) == 0:
-        raise EX.MTpyError_inputarguments('Directory(ies) do(es) not contain files to calibrate: {0}'.format(pathname))
+        raise MTex.MTpyError_inputarguments('Directory(ies) do(es) not contain files to calibrate: {0}'.format(pathname))
 
     #-------------------------------------------------------
     # set up the directory structure for the output:
@@ -147,7 +147,7 @@ def main():
             os.makedirs(cal_outdir)
     except:
         #this only comes up, if the generic location cannot be generated
-        raise EX.MTpyError_inputarguments('Generic directory cannot be generated: {0}'.format(cal_outdir))
+        raise MTex.MTpyError_inputarguments('Generic directory cannot be generated: {0}'.format(cal_outdir))
 
     #if re-orientation is required, do it first:
     if orientation is True:
@@ -158,11 +158,11 @@ def main():
                 os.makedirs(ori_outdir)
         except:
             #this only comes up, if the generic location cannot be generated
-            raise EX.MTpyError_inputarguments('Re-orientation directory cannot be generated: {0}'.format(ori_outdir))
+            raise MTex.MTpyError_inputarguments('Re-orientation directory cannot be generated: {0}'.format(ori_outdir))
         
         #print configfile, lo_allstations,ori_outdir,cal_outdir
         
-        FH.reorient_files(lo_allfiles, configfile, lo_stations = lo_allstations, outdir = ori_outdir)
+        MTfh.reorient_files(lo_allfiles, configfile, lo_stations = lo_allstations, outdir = ori_outdir)
 
         #change to calibration setup :
         outdir = cal_outdir
@@ -175,7 +175,7 @@ def main():
         lo_allstations = []
         dirfiles = [op.abspath(op.join(new_inputdir,i)) for i in  os.listdir(new_inputdir) ]
         for tmpfile in dirfiles:
-            header = FH.read_ts_header(tmpfile)
+            header = MTfh.read_ts_header(tmpfile)
             lo_allstations.append(header['station'].upper())
             lo_allfiles.append(tmpfile)
             lo_allheaders.append(header)
@@ -184,7 +184,7 @@ def main():
 
         #check, if list of files is empty
         if len(lo_allfiles) == 0:
-            raise EX.MTpyError_inputarguments('Directory(ies) do(es) not contain files to calibrate: {0}'.format(ori_outdir))
+            raise MTex.MTpyError_inputarguments('Directory(ies) do(es) not contain files to calibrate: {0}'.format(ori_outdir))
 
     #-------------------------------------------------
     #calibration
@@ -246,7 +246,7 @@ def main():
             instrument_amplification = float(stationdict['b_instrument_amplification'])
 
 
-        CAL.calibrate_file(filename, outdir, instrument, logger, gain, dipolelength, curr_station, channel, latitude, longitude, elevation,  offset = 0 )
+        MTcb.calibrate_file(filename, outdir, instrument, logger, gain, dipolelength, curr_station, channel, latitude, longitude, elevation,  offset = 0 )
         #print 'calibrated file {0},{1}'.format(outdir, filename)
         lo_calibrated_files.append(filename)
     

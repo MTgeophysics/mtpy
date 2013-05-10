@@ -23,9 +23,8 @@ import os.path as op
 
 import copy
 
-import mtpy.processing.filter as FI
-
-import mtpy.utils.exceptions as EX
+import mtpy.processing.filter as MTfi
+import mtpy.utils.exceptions as MTex
 
 #=================================================================
 
@@ -46,10 +45,10 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
     
     N = len(data)
     if N < 1:
-        raise EX.MTpyError_ts_data('Error - Length of TS to correct is zero!')
+        raise MTex.MTpyError_ts_data('Error - Length of TS to correct is zero!')
 
     #use double sided cosine taper function
-    window = FI.tukey(N, 0.2)
+    window = MTfi.tukey(N, 0.2)
 
     tapered_data = data * window
 

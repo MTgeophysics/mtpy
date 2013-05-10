@@ -18,7 +18,7 @@ import numpy as np
 
 import math, cmath
 
-import mtpy.utils.exceptions as EX
+import mtpy.utils.exceptions as MTex
 
 
 #=================================================================

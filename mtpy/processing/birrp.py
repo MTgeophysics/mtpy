@@ -32,12 +32,10 @@ import time
 import fnmatch
 import math
 
-from mtpy.utils.exceptions import *
-import mtpy.utils.format as MTformat
+import mtpy.utils.exceptions as MTex
+import mtpy.utils.format as MTft
 import mtpy.utils.filehandling as MTfh
-import mtpy.utils.misc as MTm
-#reload(MTm)
-#reload(FH)
+import mtpy.utils.misc as MTmc
 
 
 #=================================================================
@@ -56,9 +54,9 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
     """
 
     if not op.isfile(birrp_exe):
-        raise MTpyError_inputarguments('birrp executable not found: %s'%birrp_exe)
+        raise MTex.MTpyError_inputarguments('birrp executable not found: %s'%birrp_exe)
     if not op.isdir(ts_directory):
-        raise MTpyError_inputarguments('time series files directory: %s'%ts_directory)
+        raise MTex.MTpyError_inputarguments('time series files directory: %s'%ts_directory)
 
     current_dir = op.abspath(os.curdir)
 
@@ -78,7 +76,7 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
         try:
             os.makedirs(wd) 
         except:
-            raise MTpyError_file_handling('cannot create working directory:%s'%(wd))
+            raise MTex.MTpyError_file_handling('cannot create working directory:%s'%(wd))
 
     os.chdir(wd)
 
@@ -113,7 +111,7 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
 def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_threshold, output_channels=2):
 
     if not output_channels in [2,3]:
-        raise MTpyError_inputarguments( 'Output channels must be 2 or 3' )
+        raise MTex.MTpyError_inputarguments( 'Output channels must be 2 or 3' )
 
 
     input_filename, length, sampling_rate, birrp_stationdict = set_birrp_input_file_simple(stationname, ts_directory, output_channels, op.join(ts_directory,'birrp_wd'))
@@ -212,7 +210,7 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
 
 
     if not len(set(lo_channels)) in [4,5]:
-        raise MTpyError_ts_data( 'Missing data files in directory %s - not all channels found'%ts_directory )
+        raise MTex.MTpyError_ts_data( 'Missing data files in directory %s - not all channels found'%ts_directory )
 
     #get a list with all existing time windows of consecutive data for all the channels
     lo_time_windows = []
@@ -295,7 +293,7 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
         outfn = op.join(w_directory, 'birrp_input_data.txt') 
         np.savetxt(outfn, data)
     except:
-        raise MTpyError_file_handling('Error - cannot write data to file:%s'%outfn)
+        raise MTex.MTpyError_file_handling('Error - cannot write data to file:%s'%outfn)
 
     print 'Wrote input data to file:%s'%outfn
 
@@ -382,7 +380,7 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
 
     input_dir = op.abspath(op.realpath(in_dir))
     if not op.isdir(input_dir):
-        raise MTpyError_inputarguments('Directory not existing:%s'%(input_dir))
+        raise MTex.MTpyError_inputarguments('Directory not existing:%s'%(input_dir))
 
     if out_dir == None:
         output_dir = input_dir
@@ -398,9 +396,9 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
     out_fn = op.join(output_dir,'%s.edi'%(stationname))
 
     if not op.isfile(survey_configfile):
-        raise MTpyError_inputarguments('Config file not existing:%s'%(survey_configfile))
+        raise MTex.MTpyError_inputarguments('Config file not existing:%s'%(survey_configfile))
     if not op.isfile(birrp_configfile):
-        raise MTpyError_inputarguments('Config file not existing:%s'%(birrp_configfile))
+        raise MTex.MTpyError_inputarguments('Config file not existing:%s'%(birrp_configfile))
      
     #read the survey config file:
     try:
@@ -426,10 +424,10 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
     try:
         j_filename = j_filename_list[0]
     except:
-        raise MTpyError_file_handling('j-file for station %s not found in directory %s'%(stationname, input_dir))
+        raise MTex.MTpyError_file_handling('j-file for station %s not found in directory %s'%(stationname, input_dir))
     
     if len(j_filename_list) > 1:
-        raise MTpyError_file_handling('More than one j-file for station %s found in directory %s'%(stationname, input_dir))
+        raise MTex.MTpyError_file_handling('More than one j-file for station %s found in directory %s'%(stationname, input_dir))
 
     #Having now:
     # station_config_dict - contains information about station setup
@@ -677,7 +675,7 @@ def read_j_file(fn):
 
     j_fn = op.abspath(fn)
     if not op.isfile(j_fn):
-        raise MTpyError_inputarguments('Cannot read j-file %s - file is not existing'%(j_fn))
+        raise MTex.MTpyError_inputarguments('Cannot read j-file %s - file is not existing'%(j_fn))
 
     
     
@@ -698,7 +696,7 @@ def read_j_file(fn):
     try:
         n_periods = int(float(j_lines[Z_start_row + 1] ))
     except:
-        raise MTpyError_inputarguments('File is not a proper j-file: %s'%(j_fn))
+        raise MTex.MTpyError_inputarguments('File is not a proper j-file: %s'%(j_fn))
 
     Z = np.zeros((n_periods,3,4))
     periods = np.zeros((n_periods,4))
@@ -835,17 +833,17 @@ def convert2coh(birrp_output_directory, stationname):
     directory = op.abspath(birrp_output_directory)
 
     if not os.isdir(directory):
-        raise MTpyError_inputarguments('Directory %s not existing'%directory)
+        raise MTex.MTpyError_inputarguments('Directory %s not existing'%directory)
 
     stationname = stationname.upper()
     #locate file names
     cohfilenames = [ op.abspath(i) for i in fnmatch.filter(os.listdir(directory), '*%s*.[123]r.2c2'%stationname.upper()) ] 
     
     if len(cohfilenames) < 1:
-        raise MTpyError_file_handling('No coherence files for station %s found in: %s'%(stationname, directory))
+        raise MTex.MTpyError_file_handling('No coherence files for station %s found in: %s'%(stationname, directory))
 
     if len(cohfilenames) > 3:
-        raise MTpyError_file_handling('Too many coherence files for station %s found in: %s'%(stationname, directory))
+        raise MTex.MTpyError_file_handling('Too many coherence files for station %s found in: %s'%(stationname, directory))
 
     try:
         period,freq,coh1,zcoh1 = MTfH.read_2c2_file(cohfilenames[0])
@@ -855,7 +853,7 @@ def convert2coh(birrp_output_directory, stationname):
 
             period,freq,coh3,zcoh3 = MTfH.read_2c2_file(cohfilenames[2])
     except:
-        raise MTpyError_file_handling('Cannot read coherence files for station %s found in: %s'%(stationname, directory))
+        raise MTex.MTpyError_file_handling('Cannot read coherence files for station %s found in: %s'%(stationname, directory))
 
     fn = '%s.coh'%(stationname)
     print fn

@@ -20,22 +20,22 @@ import time
 import scipy.signal
 
 
-import mtpy.utils.exceptions as EX
-import mtpy.processing.calibration as PC
-import mtpy.utils.filehandling as FH
-import mtpy.processing.instrument as PI
+import mtpy.utils.exceptions as MTex
+import mtpy.processing.calibration as MTcb
+import mtpy.utils.filehandling as MTfh
+import mtpy.processing.instrument as MTin
 
-reload(FH)
-reload(EX)
-reload(PC)
-reload(PI)
+reload(MTfh)
+reload(MTex)
+reload(MTcb)
+reload(MTin)
 
 
 
 def main():
 
     if len(sys.argv) < 3:
-        raise EX.MTpyError_inputarguments('Need at least 2 arguments: <path to files> <response file> [<output dir>] [<channel(s)>] ')
+        raise MTex.MTpyError_inputarguments('Need at least 2 arguments: <path to files> <response file> [<output dir>] [<channel(s)>] ')
 
 
     pathname_raw = sys.argv[1] 
@@ -46,10 +46,10 @@ def main():
 
 
     if not op.isdir(directory):
-        raise EX.MTpyError_inputarguments('Directory not existing: %s' % (directory))
+        raise MTex.MTpyError_inputarguments('Directory not existing: %s' % (directory))
 
     if not op.isfile(responsefile):
-        raise EX.MTpyError_inputarguments('Response file not existing: %s' % (responsefile))
+        raise MTex.MTpyError_inputarguments('Response file not existing: %s' % (responsefile))
     
     #check, if response file is in proper shape (3 columns freq,re,im of real values):
     try:
@@ -61,7 +61,7 @@ def main():
         freq_max = responsedata[-1,0]
 
     except: 
-        raise EX.MTpyError_inputarguments('Response file (%s) in wrong format - must be 3 columns: freq,real,imag' % (responsefile))
+        raise MTex.MTpyError_inputarguments('Response file (%s) in wrong format - must be 3 columns: freq,real,imag' % (responsefile))
 
     #set up output directory: 
     try:
@@ -74,7 +74,7 @@ def main():
         if not op.isdir(outdir):
             os.makedirs(outdir)
     except:
-        raise EX.MTpyError_inputarguments('Output directory cannot be generated: %s' % (outdir))
+        raise MTex.MTpyError_inputarguments('Output directory cannot be generated: %s' % (outdir))
 
     #define channels to be considered for correction:
     try:
@@ -94,7 +94,7 @@ def main():
 
     #check the files for information about the determined channels:
     for fn in lo_allfiles:
-        header_dict = FH.read_ts_header(fn)
+        header_dict = MTfh.read_ts_header(fn)
         if len(header_dict.keys()) == 0 :
             continue
         ch = header_dict['channel'].upper()
@@ -112,7 +112,7 @@ def main():
     #if no files had header lines or did not contain data from the appropriate channel(s):
     if np.sum([len(i) for i in lo_lo_files_for_channels]) == 0:
         print 'channels: ', lo_channels, ' - directory: ',directory
-        raise EX.MTpyError_inputarguments('No information for channels found in directory {0} - Check header lines!'.format(directory))
+        raise MTex.MTpyError_inputarguments('No information for channels found in directory {0} - Check header lines!'.format(directory))
 
     #=============================================
     # start the instrument correction
@@ -130,7 +130,7 @@ def main():
 
         #read in header lines and sort files by increasing starttimes t_min
         for fn in lo_files:
-            header_dict = FH.read_ts_header(fn)
+            header_dict = MTfh.read_ts_header(fn)
             lo_t_mins.append(header_dict['t_min'])
             lo_headers.append(header_dict)
 
@@ -216,7 +216,7 @@ def main():
                 data = np.array(data)
                 data = scipy.signal.detrend(data)
                 #at this point, the data set should be set up for the given time axis
-                corrected_timeseries = PI.correct_for_instrument_response(data,float(header['samplingrate']), responsedata)  
+                corrected_timeseries = MTin.correct_for_instrument_response(data,float(header['samplingrate']), responsedata)  
 
                 print 'corrected TS starting at {0}, length {1}'.format(ta[0],len(corrected_timeseries))
 
@@ -234,7 +234,7 @@ def main():
                     if unit[-6:].lower() != '(true)':
                         unit +='(true)'
                     header['unit'] = unit
-                    headerline = FH.get_ts_header_string(header)
+                    headerline = MTfh.get_ts_header_string(header)
                     outF.write(headerline)
                     starttime = starttimes[idx]
                     length = int(float(header['nsamples']))
@@ -354,7 +354,7 @@ def main():
                     
                     #----------------------------
                     # the actual deconvolution:
-                    corrected_data = PI.correct_for_instrument_response(data, samplingrate, responsedata) 
+                    corrected_data = MTin.correct_for_instrument_response(data, samplingrate, responsedata) 
                     #----------------------------
 
                     if idx_t0 == 0:
@@ -416,13 +416,13 @@ def main():
                             print 'no file open...preparing new one'
                             # take the first of the input files in the list:
                             print 'read header of input file {0} '.format(lo_infiles[0])
-                            header = FH.read_ts_header(lo_infiles[0])
+                            header = MTfh.read_ts_header(lo_infiles[0])
                             ta_tmp = np.arange(float(header['nsamples'])) / float(header['samplingrate']) + float(header['t_min'])
                             unit = header['unit']
                             if unit[-6:].lower() != '(true)':
                                 unit +='(true)'
                             header['unit'] = unit
-                            headerline = FH.get_ts_header_string(header)
+                            headerline = MTfh.get_ts_header_string(header)
 
                             # output file name: use input file name and append '_true'
                             inbasename = op.basename(fn)
@@ -493,7 +493,7 @@ def main():
                         #otherwise, a file is already open and the next section has to be appended there:
                         else:
                             print 'open file {0} is waiting for data...'.format(outF.name)
-                            header = FH.read_ts_header(lo_infiles[0])
+                            header = MTfh.read_ts_header(lo_infiles[0])
                             ta_tmp = np.arange(float(header['nsamples'])) / float(header['samplingrate']) + float(header['t_min'])
                             print tmax,ta_tmp[-1],'{0} of {1} samples used...{2} waiting\n'.format(datalength,len(ta_tmp),len(data2write))
 
@@ -575,7 +575,7 @@ def read_ts_data_from_files(starttime, endtime, list_of_starttimes, list_of_file
     t = starttime
     while t < endtime:  
         fn = list_of_files[file_idx]
-        header = FH.read_ts_header(fn)
+        header = MTfh.read_ts_header(fn)
         ta_tmp = np.arange(float(header['nsamples'])) / float(header['samplingrate']) + float(header['t_min'])
         if ta_tmp[0] <= t <= ta_tmp[-1]:
             startidx = (np.abs(t - ta_tmp)).argmin()

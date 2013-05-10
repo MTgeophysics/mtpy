@@ -61,13 +61,13 @@ import copy
 
 import mtpy.core.edi as MTedi 
 import mtpy.core.z as MTz 
-import mtpy.utils.exceptions as EX
-import mtpy.utils.calculator as CALC
+import mtpy.utils.exceptions as MTex
+import mtpy.utils.calculator as MTcc
 
-#reload(EX)
+#reload(MTex)
 #reload(MTedi)
 #reload(MTz)
-#reload(CALC)
+#reload(MTcc)
 
 
 #=================================================================
@@ -235,14 +235,14 @@ class PhaseTensor(object):
         """         
 
         if not len(pt_array.shape) in [2,3]:
-            raise EX.MTpyError_PT('ERROR - I cannot set new pt array! Invalid dimensions')
+            raise MTex.MTpyError_PT('ERROR - I cannot set new pt array! Invalid dimensions')
         if not pt_array.shape[-2:] == (2,2):
-            raise EX.MTpyError_PT('ERROR - I cannot set new pt array! Invalid dimensions')
+            raise MTex.MTpyError_PT('ERROR - I cannot set new pt array! Invalid dimensions')
         try:
             if not pt_array.dtype in ['float']:
                 raise
         except:
-            raise EX.MTpyError_PT('ERROR - I cannot set new pt array! Invalid data type (float expected)')
+            raise MTex.MTpyError_PT('ERROR - I cannot set new pt array! Invalid data type (float expected)')
 
         if len(pt_array.shape) == 3:
             self.pt = pt_array
@@ -283,18 +283,18 @@ class PhaseTensor(object):
         """         
 
         if not len(pterr_array.shape) in [2,3]:
-            raise EX.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid dimensions')
+            raise MTex.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid dimensions')
         if not pterr_array.shape[-2:] == (2,2):
-            raise EX.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid dimensions')
+            raise MTex.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid dimensions')
         try:
             if not pterr_array.dtype in ['float']:
                 raise
         except:
-            raise EX.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid data type (float expected)')
+            raise MTex.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid data type (float expected)')
 
         if self.pt is not None:
             if self.pt.shape != pterr_array.shape:
-                raise EX.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid dimensions')
+                raise MTex.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid dimensions')
  
 
         if len(pterr_array.shape) == 3:
@@ -748,9 +748,9 @@ class PhaseTensor(object):
                 angle = 0.
 
             if self.pterr is not None:
-                pt_rot[idx_freq], pterr_rot[idx_freq] = CALC.rotatematrix_incl_errors(self.pt[idx_freq,:,:], angle, self.pterr[idx_freq,:,:])
+                pt_rot[idx_freq], pterr_rot[idx_freq] = MTcc.rotatematrix_incl_errors(self.pt[idx_freq,:,:], angle, self.pterr[idx_freq,:,:])
             else:
-                pt_rot[idx_freq], pterr_rot = CALC.rotatematrix_incl_errors(self.pt[idx_freq,:,:], angle)
+                pt_rot[idx_freq], pterr_rot = MTcc.rotatematrix_incl_errors(self.pt[idx_freq,:,:], angle)
 
         
         self.pt = pt_rot
@@ -832,7 +832,7 @@ class ResidualPhaseTensor(PhaseTensor):
 
         if pt_object1 is not None or  pt_object2 is not None:
             if not (( isinstance(pt_object1,PhaseTensor) and isinstance(pt_object2,PhaseTensor))):
-                raise EX.MTpyError_PT('ERROR - arguments must be instances of the PhaseTensor class')
+                raise MTex.MTpyError_PT('ERROR - arguments must be instances of the PhaseTensor class')
             
             self.read_pt_objects(pt_object1,pt_object2)
 
@@ -847,7 +847,7 @@ class ResidualPhaseTensor(PhaseTensor):
         """
 
         if not ( (isinstance(pt_o1, PhaseTensor)) and (isinstance(pt_o2, PhaseTensor)) ):
-            raise EX.MTpyError_PT('ERROR - both arguments must be instances of the PhaseTensor class')
+            raise MTex.MTpyError_PT('ERROR - both arguments must be instances of the PhaseTensor class')
 
         pt1 = pt_object1.pt
         pt2 = pt_object2.pt
@@ -879,7 +879,7 @@ class ResidualPhaseTensor(PhaseTensor):
                     self._pt2[0] = pt2 
 
             except:
-                raise EX.MTpyError_PT('ERROR - both PhaseTensor objects must contain PT arrays of the same shape')
+                raise MTex.MTpyError_PT('ERROR - both PhaseTensor objects must contain PT arrays of the same shape')
 
         else:
             print  'Could not determine ResPT - both PhaseTensor objects must contain PT arrays of the same shape'
@@ -926,7 +926,7 @@ class ResidualPhaseTensor(PhaseTensor):
                     self._pt2err[0] = pt2err 
 
             except:
-                raise EX.MTpyError_PT('ERROR - both PhaseTensor objects must contain PT-error arrays of the same shape')
+                raise MTex.MTpyError_PT('ERROR - both PhaseTensor objects must contain PT-error arrays of the same shape')
                 
         else:
             print  'Could not determine ResPT uncertainties - both PhaseTensor objects must contain PT-error arrays of the same shape'
@@ -950,7 +950,7 @@ class ResidualPhaseTensor(PhaseTensor):
                 raise
 
         except:
-            raise EX.MTpyError_PT('ERROR - could not build ResPT array from given PT arrays - check shapes! ')
+            raise MTex.MTpyError_PT('ERROR - could not build ResPT array from given PT arrays - check shapes! ')
         #TODO - check arrays here:
 
 
@@ -1019,7 +1019,7 @@ def z2pt(z_array, zerr_array = None):
             if not z_array.dtype in ['complex', 'float']:
                 raise
         except:
-            raise EX.MTpyError_PT('Error - incorrect z array: %s;%s instead of (N,2,2);complex'%(str(z_array.shape), str(z_array.dtype)))    
+            raise MTex.MTpyError_PT('Error - incorrect z array: %s;%s instead of (N,2,2);complex'%(str(z_array.shape), str(z_array.dtype)))    
 
 
     if zerr_array is not None:
@@ -1031,10 +1031,10 @@ def z2pt(z_array, zerr_array = None):
             if not zerr_array.dtype in ['float']:
                 raise
         except:
-            raise EX.MTpyError_PT('Error - incorrect z-err-array: %s;%s instead of (N,2,2);real'%(str(zerr_array.shape), str(zerr_array.dtype)))
+            raise MTex.MTpyError_PT('Error - incorrect z-err-array: %s;%s instead of (N,2,2);real'%(str(zerr_array.shape), str(zerr_array.dtype)))
 
         if not z_array.shape == zerr_array.shape:
-            raise EX.MTpyError_PT('Error - z-array and z-err-array have different shape: %s;%s'%(str(z_array.shape), str(zerr_array.shape)))
+            raise MTex.MTpyError_PT('Error - z-array and z-err-array have different shape: %s;%s'%(str(z_array.shape), str(zerr_array.shape)))
 
 
 
@@ -1055,7 +1055,7 @@ def z2pt(z_array, zerr_array = None):
                 return pt_array, pterr_array
 
             else:
-                raise EX.MTpyError_PT('Error - z-array contains a singular matrix, thus it cannot be converted into a PT!' )
+                raise MTex.MTpyError_PT('Error - z-array contains a singular matrix, thus it cannot be converted into a PT!' )
 
 
 
@@ -1117,7 +1117,7 @@ def z2pt(z_array, zerr_array = None):
 
         detreal = np.linalg.det(realz)
         if detreal == 0 :
-            raise EX.MTpyError_PT('Error - z-array contains a singular matrix, thus it cannot be converted into a PT!' )
+            raise MTex.MTpyError_PT('Error - z-array contains a singular matrix, thus it cannot be converted into a PT!' )
 
         pt_array[idx_f,0,0] =  realz[1,1] * immagz[0,0] - realz[0,1] * immagz[1,0] 
         pt_array[idx_f,0,1] =  realz[1,1] * immagz[0,1] - realz[0,1] * immagz[1,1] 
@@ -1173,7 +1173,7 @@ def z_object2pt(z_object):
     """
 
     if not isinstance(z_object, MTz.Z):
-        raise EX.MTpyError_Z('Input argument is not an instance of the Z class')
+        raise MTex.MTpyError_Z('Input argument is not an instance of the Z class')
 
     p = PhaseTensor(z_object = z_object)
 
@@ -1199,7 +1199,7 @@ def edi_object2pt(edi_object):
 
 
     if not isinstance(z_object, MTedi.Edi):
-        raise EX.MTpyError_EDI('Input argument is not an instance of the Edi class')
+        raise MTex.MTpyError_EDI('Input argument is not an instance of the Edi class')
     p = PhaseTensor(edi_object = edi_object)
 
     pt_array = p.pt
