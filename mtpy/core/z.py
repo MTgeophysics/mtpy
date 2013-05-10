@@ -220,6 +220,8 @@ class Z(object):
 
             Test for shape, but no test for consistency!
 
+            Nulling the rotation_angle
+
         """         
 
         z_orig = self.z 
@@ -229,6 +231,7 @@ class Z(object):
             return
 
         self.z = z_array
+        self.rotation_angle = np.zeros((len(z_array)))
 
 
     def set_zerr(self, zerr_array):
@@ -438,10 +441,10 @@ class Z(object):
                     return
 
                 if self.zerr.shape != phaseerr_array.shape:
-                    print 'Error - shape of "phase" array does not match shape of Z array: %s ; %s'%(str(phase_array.shape),str(self.z.shape))
+                    print 'Error - shape of "phase" array does not match shape of Zerr array: %s ; %s'%(str(phase_array.shape),str(self.z.shape))
                     return
             except:
-                print 'Error - "phaseerr" or "resess" is/are not array(s) - Zerr not set'
+                print 'Error - "phaseerr" or "reserr" is/are not array(s) - Zerr not set'
                 self.zerr = None
                 return 
 
@@ -452,7 +455,7 @@ class Z(object):
                     print 'Error - shape of "phase" array does not match shape of "res" array: %s ; %s'%(str(phase_array.shape),str(res_array.shape))
                     return
             except:
-                print 'Error - "phaseerr" or "resess" is/are not array(s) - Zerr not set'
+                print 'Error - "phaseerr" or "reserr" is/are not array(s) - Zerr not set'
                 return 
 
                
@@ -461,6 +464,7 @@ class Z(object):
                 for j in range(2):
                     abs_z = np.sqrt(5 * self.frequencies[idx_f] * res_array[idx_f,i,j])
                     rel_error_res = reserr_array[idx_f,i,j]/res_array[idx_f,i,j]
+                    #relative error varies by a factor of 0.5, which is the exponent in the relation between them:
                     abs_z_error = 0.5 * abs_z * rel_error_res
 
                     zerr_new[idx_f,i,j] = max(CALC.propagate_error_polar2rect(abs_z, abs_z_error, phi, phi_error))
