@@ -59,6 +59,7 @@ import sys
 
 
 import mtpy.utils.exceptions as MTexceptions
+import mtpy.utils.calculator as CALC
 
 #reload(MTexceptions)
 #reload(MTformat)
@@ -378,14 +379,13 @@ class Z(object):
     res_phase = property(_get_res_phase, doc='Resistivity and Phase angle of Z')
 
 
-    def set_res_phase(self, res_array, phase_array):
+    def set_res_phase(self, res_array, phase_array, reserr_array = None, phaseerr_array = None):
         """
-            Set values for resistivity (res - in Ohm m) and phase (phase - in degrees).
+            Set values for resistivity (res - in Ohm m) and phase (phase - in degrees), incl. error propagation.
 
             Updates the attributes "z, zerr".
 
         """ 
-
 
         if self.z is not None: 
             z_new = copy.copy(self.z) 
@@ -405,16 +405,16 @@ class Z(object):
 
 
         if (self.frequencies is None) or (len(self.frequencies) != len(res_array)) :
-            raise MTexceptions.MTpyError_EDI('ERROR - cannot set res without proper frequency information - proper "freq" attribute must be defined ')
+            raise MTexceptions.MTpyError_EDI('ERROR - cannot set res without correct frequency information - proper "freq" attribute must be defined ')
 
             
         #assert real array:
         if np.linalg.norm(np.imag(res_array )) != 0 :
-            print 'Error - array "res" is not real valued !'
-            return
+            raise EX.MTpyError_inputarguments( 'Error - array "res" is not real valued !')
+            
         if np.linalg.norm(np.imag(phase_array )) != 0 :
-            print 'Error - array "phase" is not real valued !'
-            return
+            raise EX.MTpyError_inputarguments( 'Error - array "phase" is not real valued !')
+            
 
         for idx_f in range(len(z_new)):
             for i in range(2):
@@ -423,6 +423,49 @@ class Z(object):
                     z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phase_array[idx_f,i,j] ))
 
         self.z = z_new
+        
+        #---------------------------
+        # error propagation:
+        if reserr_array is None or  phaseerr_array is None:
+            return
+
+        if self.zerr is not None: 
+            zerr_new = copy.copy(self.zerr) 
+
+            try:
+                if self.zerr.shape != reserr_array.shape:
+                    print 'Error - shape of "reserr" array does not match shape of Zerr array: %s ; %s'%(str(reserr_array.shape),str(self.zerr.shape))
+                    return
+
+                if self.zerr.shape != phaseerr_array.shape:
+                    print 'Error - shape of "phase" array does not match shape of Z array: %s ; %s'%(str(phase_array.shape),str(self.z.shape))
+                    return
+            except:
+                print 'Error - "phaseerr" or "resess" is/are not array(s) - Zerr not set'
+                self.zerr = None
+                return 
+
+        else:
+            z_new = p.zeros(reserr_array.shape,'float')
+            try:
+                if reserr_array.shape != phaseerr_array.shape:
+                    print 'Error - shape of "phase" array does not match shape of "res" array: %s ; %s'%(str(phase_array.shape),str(res_array.shape))
+                    return
+            except:
+                print 'Error - "phaseerr" or "resess" is/are not array(s) - Zerr not set'
+                return 
+
+               
+        for idx_f in range(len(zerr_new)):
+            for i in range(2):
+                for j in range(2):
+                    abs_z = np.sqrt(5 * self.frequencies[idx_f] * res_array[idx_f,i,j])
+                    rel_error_res = reserr_array[idx_f,i,j]/res_array[idx_f,i,j]
+                    abs_z_error = 0.5 * abs_z * rel_error_res
+
+                    zerr_new[idx_f,i,j] = max(CALC.propagate_error_polar2rect(abs_z, abs_z_error, phi, phi_error))
+
+        self.zerr = zerr_new
 
 
     def _get_inverse(self):
