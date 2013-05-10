@@ -398,11 +398,10 @@ class Z(object):
                 print 'Error - shape of "phase" array does not match shape of Z array: %s ; %s'%(str(phase_array.shape),str(self.z.shape))
                 return
         else:
-            z_new = p.zeros(res_array.shape,'complex')
+            z_new = np.zeros(res_array.shape,'complex')
             if res_array.shape != phase_array.shape:
                 print 'Error - shape of "phase" array does not match shape of "res" array: %s ; %s'%(str(phase_array.shape),str(res_array.shape))
                 return
-
 
         if (self.frequencies is None) or (len(self.frequencies) != len(res_array)) :
             raise MTexceptions.MTpyError_EDI('ERROR - cannot set res without proper frequency information - proper "freq" attribute must be defined ')

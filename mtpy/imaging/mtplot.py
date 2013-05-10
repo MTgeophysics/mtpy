@@ -18,6 +18,7 @@ import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
+import mtpy.utils.exceptions as mtexcept
 
 #==============================================================================
 # Make some color maps for plotting
@@ -161,34 +162,160 @@ zonedict = dict([(a,ii) for ii,a in enumerate(['a','b','c','d','e','f','g','h',
 class MTplot(object):
     """
     This class will be able to read in the imporant information from either
-    an .edi file or information input by had.  
+    an .edi file or information input by had and can be extended to other 
+    file types in the future.  This is a helper class to get all the 
+    information needed in one place.
     
+    The normal usage is to input an edi file from which all the information
+    is read in.  However, it would seem that not everyone uses the .edi format
+    so an option is to write you're own class for that particular file type, or
+    give it to us to deal with.  Or write enough code to get it into one of 
+    the suppported forms as arrays of z or resistivity and phase, or put those
+    into a z_object or tipper_object.  
+    
+    
+    Arguments:
+    ----------
+    
+        **filename** : string
+                       full path to file to be read in.  At the moment only
+                       .edi type files are supported. *default* is None
+        
+        **z** : np.array((nf, 2, 2), dtype='complex')
+                impedance tensor with length of nf -> the number of frequencies
+                *default* is None
+                
+        **z_err** : np.array((nf, 2, 2), dtype='real')
+                    impedance tensor error estimates, same shape as z.
+                    *default* is None
+                    
+        **res_array** : np.array((nf, 2, 2))
+                        array of resistivity values in linear scale.
+                        *default* is None
+                        
+        **res_err_array** : np.array((nf, 2, 2))
+                            array of resistivity error estimates, same shape 
+                            as res_array. *default* is None
+                            
+        **phase_array** : np.array((nf, 2, 2))
+                          array of phase values in degrees, same shape as 
+                          res_array. *default* is None
+                          
+        **phase_err_array** : np.array((nf, 2, 2))
+                              array of phase error estimates, same shape as 
+                              phase_array. *default* is None
+                              
+        **tipper_array** : np.array((nf, 1, 2), dtype='complex')
+                           array of tipper values for tx, ty. *default* is None
+                           
+        **tipper_err_array** : np.array((nf, 1, 2))
+                               array of tipper error estimates, same shape as
+                               tipper_array. *default* is None
+        
+        **station** : string
+                      name of the station to be plotted. *default* is None
+                      
+        **period** : np.array(nf)
+                     array of periods that coorespond to the components of z
+                     *default* is None
+                      
+        **lat** : float
+                 latitude of the station to be plotted in decimal degrees.
+                 *default* is None
+                 
+        **lon** : float
+                 longitude of the station to be plotted in decimal degrees.
+                 *default* is None
+                 
+        **elev** : float
+                   elevation of the station to be plotted in meters.
+                   *default* is None
+                              
+        **rot_z** : float or np.array(nf)
+                    angle (deg) to rotate the data assuming North is 0 and 
+                    angle is positive clockwise.  Can be input as an array to
+                    rotate different periods by different angles. 
+                    *default* is 0
+                    
+        **z_object** : class mtpy.core.z.Z
+                      object of mtpy.core.z.  If this is input be sure the
+                      attribute z.frequencies is filled.  *default* is None
+                      
+        **tipper_object** : class mtpy.core.z.Tipper
+                            object of mtpy.core.z. If this is input be sure the
+                            attribute z.frequencies is filled.  
+                            *default* is None 
     Attributes:
     -----------
-        -z
-        -z_err
-        -tipper
-        -tipper_err
-        -station
-        -period
-        -lat
-        -long
-        -elev
-        -edi_fn
+        -z             impedance tensor as an np.array((nf, 2, 2))
+            
+        -z_err         estimates of impedance tensor error same shape as z
+        
+        -tipper        tipper elements in an np.array((nf, 1, 2))
+        
+        -tipper_err    estimates of tipper error, same shape as tipper
+        
+        -station       station name
+        
+        -period        period as an np.array(nf)
+        
+        -lat           latitude in decimal degrees
+        
+        -lon           longitude in decimal degrees
+        
+        -elev          elevation in meters
+        
+        -fn            filename read from
+        
+     
+     These can be get/set by simple dot syntax.  
+        
+    :Example: ::
+        
+        >>> mt1 = mtplot.MTplot(r'/home/mt/edifiles/mt01.edi')
+        >>> mt1.station
+        >>> 'mt01'
+        >>> mt1.station = 'pb075'
+        >>> mt1.station
+        >>> 'pb075'
+        
+    **Note:** that the format of z and tipper are:
+        
+        ::
+            
+          z[ii, :, :] = np.array([[z_xx, Z_xy], [Z_yx, Z_yy]])
+          z[ii, 0, 0] = z_xx
+          z[ii, 0, 1] = z_xy
+          z[ii, 1, 0] = z_yx
+          z[ii, 1, 1] = z_yy
+          tipper[ii, :, :] = np.array([[tx],[ty]])
+          tipper[ii, 0, 0] = tx
+          tipper[ii, 0, 1] = ty
         
     Methods:
     --------
-        -get_resistivity_phase
-        -get_PhaseTensor
-        -get_Tipper
-        -plotResPhase
-        -plotPhaseTensor
+        -get_ResPhase        returns a ResPhase object
+        -get_PhaseTensor     returns a PhaseTensor object
+        -get_Tipper          returns a Tipper object
+        -get_Zinvariants     returns a Zinvariants object
+        
+    :Example: ::
+        
+        >>> import mtpy.imaging.mtplot as mtplot
+        >>> mt1 = mtplot.MTplot(r'/home/mt/edifiles/mt01.edi')
+        >>> # if you don't have an .edi file but res and phase
+        >>> mt1 = mtplot.MTplot(res_array=res, phase_array=phase, 
+        >>> ...                 period=period, station='mt01')
+        
+        
         
     """
     
-    def __init__(self, edi_fn=None, z=None, z_err=None, tipper=None, 
-                 tipper_err=None, station=None, period=None, lat=None, 
-                 lon=None, elev=None, rot_z=0):
+    def __init__(self, filename=None, z=None, z_err=None, res_array=None,
+                 phase_array=None, res_err_array=None, phase_err_array=None,
+                 tipper=None, tipper_err=None, station=None, period=None, 
+                 lat=None, lon=None, elev=None, rot_z=0, z_object=None, 
+                 tipper_object=None):
                      
 
         self._station = station
@@ -196,23 +323,71 @@ class MTplot(object):
         self._lat = lat
         self._lon = lon
         self._elev = elev
-        self._edi_fn = edi_fn
+        self._fn = filename
         self._rot_z = rot_z
-        self._Z = mtz.Z(z_array=z, zerr_array=z_err)
-        self._Tipper = mtz.Tipper(tipper_array=tipper, 
-                                  tippererr_array=tipper_err)
         
+        #if a z_object is input make it the attribute _Z
+        if z_object is not None:
+            self._Z = z_object
+            if z_object.frequencies==None:
+                raise mtexcept.MTpyError_Z('Need to set Z.frequencies to an'+\
+                                           ' array that cooresponds to Z.z')
+            self.period = 1./z_object.frequencies
         
-        if self._edi_fn is not None:
-            self.read_edi()
+        #if z_array is input
+        elif z is not None:
+            #make sure period is input for plotting
+            if self.period==None:
+                raise mtexcept.MTpyError_Z('Need to input period array to '+\
+                                            'compute Resistivity')
+                               
+            self._Z = mtz.Z(z_array=z, zerr_array=z_err)
+            self._Z.frequencies = 1./period
+
+        #if a tipper object is input set it to _Tipper
+        if tipper_object is not None:
+            self._Tipper = tipper_object
+        else:
+            self._Tipper = mtz.Tipper(tipper_array=tipper, 
+                                      tippererr_array=tipper_err)
+        
+        #--> read in the edi file if its given
+        if self._fn is not None:
+            if self._fn[-3:]=='edi':
+                self._read_edi()
+            else:
+                not_fn = self._fn[os.path.basename(self._fn).find['.']:]
+                raise mtexcept.MTpyError_file_handling('File '+\
+                          'type {0} not supported yet.'.format(not_fn))
+        
             
-    def read_edi(self):
+        #--> if resistivity and phase are given set the z_array, z_err_array
+        if res_array!=None and phase_array!=None:
+            if period is None:
+                raise mtexcept.MTpyError_Z('Need to input period array for '+\
+                                           'plotting')
+            
+            if not res_array.shape==phase_array.shape:
+                raise mtexcept.MTpyError_shape('res_array and phase array '+\
+                                               'do not have the same shape')
+                                               
+            if not res_array.shape[0]==period.shape[0]:
+                raise mtexcept.MTpyError_shape('res_array and period array '+\
+                                               'do not have the same shape')
+            
+            self._Z = mtz.Z()
+            self._Z.frequencies = 1./period
+            self.set_res_phase(res_array,phase_array)
+            self.set_period(period)
+
+            
+    def _read_edi(self):
         """
         read in an .edi file using mtpy.core.edi
         """
         
         edi1 = mtedi.Edi()
-        edi1.readfile(self._edi_fn)
+        edi1.readfile(self._fn)
         
         #--> set the attributes accordingly
         # impedance tensor and error
@@ -279,16 +454,30 @@ class MTplot(object):
     def set_elev(self, elev):
         self._elev = elev
         
-    def set_edi_fn(self, edi_fn):
-        self._edi_fn = edi_fn
-        self.read_edi()
-        
+    def set_fn(self, fn):
+        self._fn = fn
+        if self._fn[-3:]=='edi':
+            self._read_edi()
+        else:
+            not_fn = self._fn[os.path.basename(self._fn).find['.']:]
+            raise mtexcept.MTpyError_file_handling('File '+\
+                              'type {0} not supported yet.'.format(not_fn))
+           
     def set_rot_z(self, rot_z):
         self._rot_z = rot_z
         
         # be sure to rotate the components if rot_z is set
-        self._Z.rotate(self._rot_z)
-        self._Tipper.rotate(self._rot_z)
+        try:
+            self._Z.rotate(self._rot_z)
+            self._Tipper.rotate(self._rot_z)
+        except TypeError:
+            self._Z.rotation_angle = np.array([rot_z 
+                                        for rr in range(self.period.shape[0])])
+        
+    def set_res_phase(self, res_array, phase_array):        
+        self._Z.set_res_phase(res_array, phase_array)
+        print 'Note the errors will not be updated, has not been implemented'
+        
         
     #==========================================================================
     # make get methods for each attribute
@@ -320,8 +509,8 @@ class MTplot(object):
     def get_elev(self):
         return self._elev
         
-    def get_edi_fn(self):
-        return self._edi_fn
+    def get_fn(self):
+        return self._fn
         
     def get_rot_z(self):
         return self._rot_z
@@ -360,8 +549,8 @@ class MTplot(object):
     elev = property(get_elev, set_elev, 
                     doc="Elevation of the station in meters")
                     
-    edi_fn = property(get_edi_fn, set_edi_fn,
-                      doc="full path to the .edi file of the station "+\
+    fn = property(get_fn, set_fn,
+                      doc="full path to the file of the station "+\
                           "being plotted")
                       
     rot_z = property(get_rot_z, set_rot_z, 
@@ -370,9 +559,12 @@ class MTplot(object):
                       
     #==========================================================================
     # define methods to get resphase, phasetensor, invariants
+    #
+    # --> used uppercase in the function names to signify that it is getting a 
+    #     class object
     #==========================================================================
 
-    def get_resphase(self):
+    def get_ResPhase(self):
         """
         returns a ResPhase object from z_object
         
@@ -380,7 +572,7 @@ class MTplot(object):
         rp = ResPhase(self._Z)
         return rp
 
-    def get_phasetensor(self):
+    def get_PhaseTensor(self):
         """
         returns a mtpy.analysis.pt.PhaseTensor object from z_object
         
@@ -390,7 +582,7 @@ class MTplot(object):
         
         return pt
     
-    def get_invariants(self):
+    def get_Zinvariants(self):
         """
         returns a mtpy.analysis.zinvariants.Zinvariants object
         """
@@ -399,7 +591,7 @@ class MTplot(object):
         
         return zinv
         
-    def get_tipper_obj(self):
+    def get_Tipper(self):
         """
         returns Tipper class
         
@@ -408,11 +600,6 @@ class MTplot(object):
         tp = Tipper(tipper_object=self._Tipper)
         
         return tp
-        
-    #==========================================================================
-    # define plotting methods
-    #==========================================================================
-    
 
 #==============================================================================
 # object for computing resistivity and phase  
@@ -422,11 +609,30 @@ class ResPhase(object):
     create a data type for just the resistivity and phase with an attribute 
     period
     """
-    def __init__(self, z_object,rot_z=0):
+    def __init__(self, z_object=None, res_array=None, res_err_array=None,
+                 phase_array=None, phase_err_array=None, rot_z=0, period=None):
         
         self._Z = z_object
+        self.res = res_array
+        self.res_err = res_err_array
+        self.phase = phase_array
+        self.phase_err = phase_err_array
+        self.period = period
+        
+        
+        #check to make sure they are the same size
+        if self.res!=None or self.phase!=None:
+            if self.res.shape!=self.phase.shape:
+                raise mtexcept.MTpyError_shape('res_array and phase_array '+\
+                                               'are not the same shape')
+        
         if self._Z.frequencies==None:
-            raise AttributeError('Need to set z_object.frequencies')
+            if period is not None:
+                self._Z.frequencies = 1./period
+            else:
+                raise mtexcept.MTpyError_Z('Need to set z_object.frequencies')
+        else:
+            self.period = 1./self._Z.frequencies
             
         if rot_z!=0:
             self.rotate(rot_z)
@@ -439,28 +645,51 @@ class ResPhase(object):
         computes the resistivity and phase and sets each component as an 
         attribute
         """
-        res,  phase, res_err, phase_err = self._Z._get_res_phase() 
+        
+        if self._Z is not None:
+            self.res,  self.phase, self.res_err, self.phase_err = \
+                                                       self._Z._get_res_phase()
+                                                       
+        #check to see if a res_err_array was input if not set to zeros
+        if self.res_err is None:
+            self.res_err = np.zeros_like(self.res)
+            
+        else:
+            #check to see if res and res_err are the same shape
+            if self.res.shape!=self.res_err.shape:
+                raise mtexcept.MTpyError_shape('res_array and res_err_array '+\
+                                               'are not the same shape')
+
+        #check to see if a phase_err_array was input, if not set to zeros
+        if self.phase_err is None:
+            self.phase_err = np.zeros_like(self.phase)
+            
+        else:
+            #check to see if res and res_err are the same shape
+            if self.phase.shape!=self.phase_err.shape:
+                raise mtexcept.MTpyError_shape('phase_array and '+\
+                                      'phase_err_array are not the same shape')
         
         #--> set the attributes of the class to the components of each        
-        self.resxx = res[:,0,0]
-        self.resxy = res[:,0,1]
-        self.resyx = res[:,1,0]
-        self.resyy = res[:,1,1]
+        self.resxx = self.res[:,0,0]
+        self.resxy = self.res[:,0,1]
+        self.resyx = self.res[:,1,0]
+        self.resyy = self.res[:,1,1]
         
-        self.resxx_err = res_err[:,0,0]
-        self.resxy_err = res_err[:,0,1]
-        self.resyx_err = res_err[:,1,0]
-        self.resyy_err = res_err[:,1,1]
+        self.resxx_err = self.res_err[:,0,0]
+        self.resxy_err = self.res_err[:,0,1]
+        self.resyx_err = self.res_err[:,1,0]
+        self.resyy_err = self.res_err[:,1,1]
         
-        self.phasexx = phase[:,0,0]
-        self.phasexy = phase[:,0,1]
-        self.phaseyx = phase[:,1,0]
-        self.phaseyy = phase[:,1,1]
+        self.phasexx = self.phase[:,0,0]
+        self.phasexy = self.phase[:,0,1]
+        self.phaseyx = self.phase[:,1,0]
+        self.phaseyy = self.phase[:,1,1]
         
-        self.phasexx_err = phase_err[:,0,0]
-        self.phasexy_err = phase_err[:,0,1]
-        self.phaseyx_err = phase_err[:,1,0]
-        self.phaseyy_err = phase_err[:,1,1]
+        self.phasexx_err = self.phase_err[:,0,0]
+        self.phasexy_err = self.phase_err[:,0,1]
+        self.phaseyx_err = self.phase_err[:,1,0]
+        self.phaseyy_err = self.phase_err[:,1,1]
         
         self.phaseyx[np.where(self.phaseyx>180)] -= 180
         self.phaseyx[np.where(self.phaseyx<-90)] += 180
@@ -473,7 +702,18 @@ class ResPhase(object):
         
         self.rot_z = rot_z
         
-        self._Z.rotate(self.rot_z)
+        #need to fill the rotation angles in Z for this to work
+        try:
+            len(self.rot_z)
+        except TypeError:
+            self._Z.rotation_angle = np.array([rot_z 
+                                           for rr in range(self.res.shape[0])])
+        if self._Z is not None:
+            self._Z.rotate(self.rot_z)
+        
+        else:
+            raise mtexcept.MTpyError_Z('Cannot rotate just resistivity and '+\
+                                        'phase data, need to input z')
         
         self.compute_res_phase()
         
@@ -496,9 +736,20 @@ class Tipper(object):
         -rotate
     """
     
-    def __init__(self, tipper_object=None, rot_t=0):
-        self._Tipper = tipper_object
-        self.rotate(rot_t)
+    def __init__(self, tipper_object=None, tipper_array=None, 
+                 tipper_err_array=None, rot_t=0):
+        
+        if tipper_object is not None:
+            self._Tipper = tipper_object
+        else:
+            self._Tipper = mtz.Tipper(tipper_array=tipper_array, 
+                                      tippererr_array=tipper_err_array)
+        
+        if rot_t!=0:
+            self.rotate(rot_t)
+            
+        else:
+            self.compute_components()
         
     def compute_components(self):
         
@@ -531,12 +782,76 @@ class PlotResPhase(object):
     be supported are the impedance tensor and errors with an array of periods
     and .j format.
     
+    The normal use is to input an .edi file, however it would seem that not
+    everyone uses this format, so you can input the data and put it into 
+    arrays or objects like class mtpy.core.z.Z.  Or if the data is in 
+    resistivity and phase format they can be input as arrays or a class
+    mtpy.imaging.mtplot.ResPhase.  Or you can put it into a class
+    mtpy.imaging.mtplot.MTplot.
+    
+    The plot places the apparent resistivity in log scale in the top panel(s), 
+    depending on the plotnum.  The phase is below this, note that 180 degrees
+    has been added to the yx phase so the xy and yx phases plot in the same
+    quadrant.  Both the resistivity and phase share the same x-axis which is in
+    log period, short periods on the left to long periods on the right.  So
+    if you zoom in on the plot both plots will zoom in to the same 
+    x-coordinates.  If there is tipper information, you can plot the tipper
+    as a third panel at the bottom, and also shares the x-axis.  The arrows are
+    in the convention of pointing towards a conductor.  The xx and yy 
+    components can be plotted as well, this adds two panels on the right.  
+    Here the phase is left unwrapped.
+    
+    To manipulate the plot you can change any of the attributes listed below
+    and call redraw_plot().  If you know more aout matplotlib and want to 
+    change axes parameters, that can be done by changing the parameters in the
+    axes attributes and then call update_plot(), note the plot must be open.
+    
     
     Arguments:
     ----------
         **filename** : string
                        filename containing impedance (.edi) is the only 
                        format supported at the moment
+                       
+        **z_array** : np.array((nf, 2, 2), dtype='complex')
+                impedance tensor with length of nf -> the number of frequencies
+                *default* is None
+                
+        **z_err_array** : np.array((nf, 2, 2), dtype='real')
+                    impedance tensor error estimates, same shape as z.
+                    *default* is None
+                    
+        **res_array** : np.array((nf, 2, 2))
+                        array of resistivity values in linear scale.
+                        *default* is None
+                        
+        **res_err_array** : np.array((nf, 2, 2))
+                            array of resistivity error estimates, same shape 
+                            as res_array. *default* is None
+                            
+        **phase_array** : np.array((nf, 2, 2))
+                          array of phase values in degrees, same shape as 
+                          res_array. *default* is None
+                          
+        **phase_err_array** : np.array((nf, 2, 2))
+                              array of phase error estimates, same shape as 
+                              phase_array. *default* is None
+                              
+        **tipper_array** : np.array((nf, 1, 2), dtype='complex')
+                           array of tipper values for tx, ty. *default* is None
+                           
+        **tipper_err_array** : np.array((nf, 1, 2))
+                               array of tipper error estimates, same shape as
+                               tipper_array. *default* is None
+                               
+        **z_object** : class mtpy.core.z.Z
+                      object of mtpy.core.z.  If this is input be sure the
+                      attribute z.frequencies is filled.  *default* is None
+                      
+        **tipper_object** : class mtpy.core.z.Tipper
+                            object of mtpy.core.z. If this is input be sure the
+                            attribute z.frequencies is filled.  
+                            *default* is None 
                       
         **fignum** : int
                      figure number
@@ -561,37 +876,166 @@ class PlotResPhase(object):
                     title of plot
                     *default* is station name
                     
+        **plot_tipper** : [ 'yri' | 'yr' | 'yi' | 'n' ]
+                          Plots the tipper in a bottom pannel
+                          * 'yri'  --> plots the real and imaginar parts
+                          * 'yr'   --> plots just the real part
+                          * 'yi'   --> plots just the imaginary part
+                          
+                          **Note:** the convention is to point towards a 
+                          conductor.  Can change this by setting the
+                          parameter arrow_direction = 1.
+                                    
+        **dpi** : int
+                 dots-per-inch resolution, *default* is 300
+                    
                         
         :Example: ::
             
             >>> import mtpy.imaging.mtplottools as mtplot
             >>> edifile = r"/home/MT01/MT01.edi"
-            >>> p1 = mtplot.PlotResPhase(edifile, plotnum=2)
+            >>> rp1 = mtplot.PlotResPhase(edifile, plotnum=2)
             >>> # plots all 4 components
-    
+            >>> rp1 = mtplot.PlotResPhase(edifile, plot_tipper='yr')
+            >>> # plots the real part of the tipper
+            
+    Attributes:
+    -----------
+        -fn           filename to be plotted (only supports .edi so far) 
+        -fignum       figure number for plotting
+        -plotnum         plot type, see arguments for details 
+        -title           title of the plot, *default* is station name
+        -dpi             Dots-per-inch resolution of plot, *default* is 300
+        -rotz            Rotate impedance tensor by this angle (deg) assuming
+                        that North is 0 and angle is positive clockwise
+                        
+        -plot_tipper     string to tell the program to plot tipper arrows or 
+                        not, see accepted values above in arguments
+                        
+                
+        -period          period array cooresponding to the impedance tensor
+        -font_size       size of font for the axis ticklabels, note that the 
+                         axis labels will be font_size+2
+        
+        -axr             matplotlib.axes object for the xy,yx resistivity plot.  
+        -axp             matplotlib.axes object for the xy,yx phase plot
+        -axt             matplotlib.axes object for the tipper plot
+        -ax2r            matplotlib.axes object for the xx,yy resistivity plot
+        -ax2p            matplotlib.axes object for the xx,yy phase plot
+        
+        ..
+        
+             **Note:** that from these axes object you have control of the
+             plot.  You can do this by changing any parameter in the 
+             axes object and then calling update_plot()
+        
+        -erxyr          class matplotlib.container.ErrorbarContainer for 
+                        xy apparent resistivity.
+        -erxyp          class matplotlib.container.ErrorbarContainer for 
+                        xy.
+        -eryxr          class matplotlib.container.ErrorbarContainer for 
+                        yx apparent resistivity.
+        -eryxp          class matplotlib.container.ErrorbarContainer for 
+                        yx phase.
+        
+        ..
+        
+            **Note:** that from these line objects you can manipulate the 
+            error bar properties and then call update_plot()
+                     
+        -xy_ls           line style for xy and xx components, *default* is None       
+        -yx_ls           line style for yx and yy components, *default* is None        
+        -det_ls          line style for determinant, *default* is None
+        
+        -xy_marker       marker for xy and xx, *default* is squares
+        -yx_marker       marker for yx and yy, *default* is circles
+        -det_marker      marker for determinant, *default* is diamonds
+        
+        -xy_color        marker color for xy and xx, *default* is blue
+        -yx_color        marker color for yx and yy, *default* is red
+        -det_color       marker color for determinant, *default* is green
+        
+        -xy_mfc          marker face color for xy and xx, *default* is None 
+        -yx_mfc          marker face color for yx and yy, *default* is None
+        -det_mfc         marker face color for determinant, *default* is None
+        
+        -marker_size     size of marker in relative dimenstions, *default* is 2
+        -marker_lw       line width of marker, *default* is 100./dpi 
+        ..
+        
+         *For more on line and marker styles see matplotlib.lines.Line2D*
+        
+        -arrow_lw          line width of the arrow, *default* is 0.75
+        -arrow_head_width  head width of the arrow, *default* is 0 for no arrow
+                           head.  Haven't found a good way to scale the arrow
+                           heads in a log scale.
+                         
+        -arrow_head_height  head width of the arrow, *default* is 0 for no arrow
+                            head.  Haven't found a good way to scale the arrow
+                            heads in a log scale.
+                          
+        -arrow_color_real  color of the real arrows, *default* is black
+        -arrow_color_imag  color of the imaginary arrows, *default* is blue
+        
+        -arrow_direction   0 for pointing towards a conductor and -1 for 
+                           pointing away from a conductor.
+                          
+
+        -xlimits        limits on the x-limits (period), *default* is None
+                        which will estimate the min and max from the data, 
+                        setting the min as the floor(min(period)) and the max
+                        as ceil(max(period)).  Input in linear scale if you
+                        want to change the period limits, ie. (.1,1000)
+                        
+        -res_limits     limits on the resistivity, *default* is None, which 
+                        will estimate the min and max from the data, rounding
+                        to the lowest and highest increments to the power of 10
+                        Input in linear scale if you want to change them, 
+                        ie. (1,10000). Note this only sets the xy and yx 
+                        components, not the xx and yy.
+                        
+        -phase_limits   limits on the phase, *default* is (0,90) but will 
+                        adapt to the data if there is phase above 90 or below
+                        0.  Input in degrees.  Note this only changes the xy
+                        and yx components.
+                        
+        -tipper_limits  limits of the y-axis, *default* is (-1,1)
+        
+
+
     """   
     
     def __init__(self, filename=None, z_array=None, z_err_array=None, 
-                 period=None, res_phase_object=None, fignum=1, plotnum=1, 
-                 title=None, dpi=300, rotz=0, plot_yn='y', plot_tipper='n'):
-                     
-        #if a filename is input read it in and create an MTplot object
-        if filename[-3:]=='edi':
-            self._mt = MTplot(edi_fn=filename)            
-            
-        else: 
-            raise IOError('File type {0} not supported yet'.format(filename[-4:]))
+                 period=None, fignum=1, plotnum=1, title=None, dpi=300, 
+                 rotz=0, plot_yn='y', plot_tipper='n', tipper_array=None, 
+                 tipper_err_array=None, tipper_object=None, res_array=None,
+                 res_err_array=None, phase_array=None, phase_err_array=None,
+                 res_phase_object=None, z_object=None, mt_object=None):
         
-        #--> if z is given put, make it an MTplot object
-        if z_array is not None:
-            if period==None:
-                raise IOError('Need to input period array to compute '+\
-                               'Resistivity')
-            self._mt = MTplot(z=z_array, z_err=z_err_array, period=period)
+        #--> initialize an MTplot object
+        if mt_object is None:
+            self._mt = MTplot(filename=filename, 
+                              z=z_array, 
+                              z_err=z_err_array,
+                              z_object=z_object,
+                              phase_array=phase_array, 
+                              res_array=res_array, 
+                              phase_err_array=phase_err_array,
+                              res_err_array=res_err_array,
+                              tipper=tipper_array, 
+                              tipper_err=tipper_err_array,
+                              tipper_object=tipper_object,
+                              period=period)
+                              
+        else:
+            self._mt = mt_object
+
         
         #if you have a resistivity and phase object 
-        #this isn't really supported yet, need to work on rotations
         if res_phase_object is not None:
+            if period is None:
+                raise mtexcept.MTpyError_Z('Need to input period array for '+\
+                                           'plotting')
             self.rp = res_phase_object
             
         
@@ -638,14 +1082,20 @@ class PlotResPhase(object):
         #set font parameters
         self.font_size = 7
         
-        #set scaling factor of the apparent resistivity
-        self.ffactor = 1
-        
         #set period
         self.period = self._mt.period
         
         #set plot tipper or not
         self.plot_tipper = plot_tipper
+        
+        #set arrow properties
+        self.arrow_lw = .75
+        self.arrow_head_width = 0.0
+        self.arrow_head_height = 0.0
+        self.arrow_color_real = 'k'
+        self.arrow_color_imag = 'b'
+        self.arrow_direction = 0
+        self.tipper_limits = (-.99,.99)
 
         #plot on initializing
         if plot_yn=='y':
@@ -670,7 +1120,10 @@ class PlotResPhase(object):
             self._mt.set_rot_z(self.rotz)
         
         #get the reistivity and phase object
-        self.rp = self._mt.get_resphase()
+        try:
+            self.rp = self._mt.get_ResPhase()
+        except AttributeError:
+            pass
         
         #set x-axis limits from short period to long period
         if self.xlimits==None:
@@ -695,6 +1148,7 @@ class PlotResPhase(object):
         plt.rcParams['figure.subplot.right'] = .98
         plt.rcParams['figure.subplot.bottom'] = .1
         plt.rcParams['figure.subplot.top'] = .93
+        plt.rcParams['figure.subplot.left'] = .88
         
         #set the font properties for the axis labels
         fontdict={'size':self.font_size+2, 'weight':'bold'}
@@ -728,9 +1182,9 @@ class PlotResPhase(object):
                 self.axt = self.fig.add_subplot(gs[2,:], sharex=self.axr)
                 
                 #place y coordinate labels in the same location                
-                self.axr.yaxis.set_label_coords(-.065, 0.5)
-                self.axp.yaxis.set_label_coords(-.065, 0.5)
-                self.axt.yaxis.set_label_coords(-.065, 0.5)
+                self.axr.yaxis.set_label_coords(-.075, 0.5)
+                self.axp.yaxis.set_label_coords(-.075, 0.5)
+                self.axt.yaxis.set_label_coords(-.075, 0.5)
             else:
                 #apparent resistivity axis
                 self.axr = plt.subplot(gs[0,:])
@@ -885,76 +1339,92 @@ class PlotResPhase(object):
         #-----plot tipper------------------------------------------------------              
         if self.plot_tipper.find('y')==0:
             plt.setp(self.axp.xaxis.get_ticklabels(), visible=False)
-            tp = self._mt.get_tipper_obj()
             
-            txr=tp.mag_real*np.cos(tp.ang_real*np.pi/180)
-            tyr=tp.mag_real*np.sin(tp.ang_real*np.pi/180)
+            tp = self._mt.get_Tipper()
+            
+            txr = tp.mag_real*np.cos(tp.ang_real*np.pi/180+\
+                                     np.pi*self.arrow_direction)
+            tyr = tp.mag_real*np.sin(tp.ang_real*np.pi/180+\
+                                     np.pi*self.arrow_direction)
     
-            txi=tp.mag_imag*np.cos(tp.ang_imag*np.pi/180)
-            tyi=tp.mag_imag*np.sin(tp.ang_imag*np.pi/180)
+            txi = tp.mag_imag*np.cos(tp.ang_imag*np.pi/180+\
+                                     np.pi*self.arrow_direction)
+            tyi = tp.mag_imag*np.sin(tp.ang_imag*np.pi/180+\
+                                     np.pi*self.arrow_direction)
             
-            nt=len(txr)
+            nt = len(txr)
             
             for aa in range(nt):
+                xlenr = txr[aa]*self.period[aa]
+                xleni = txi[aa]*self.period[aa]
+                
+                #scale the arrow head height and width to fit in a log scale
                 if np.log10(self.period[aa])<0:
-                     hwidth=.1*self.period[aa]
-                     hheight=.01*self.period[aa]
+                     hwidth = self.arrow_head_width*\
+                                 10**(np.floor(np.log10(self.period[aa])))
+                     hheight = self.arrow_head_height*\
+                                 10**(np.floor(np.log10(self.period[aa])))
                 else:
-                    hwidth=.2/self.period[aa]
-                    hheight=.01/self.period[aa]
-                overhang=1
+                    hwidth = self.arrow_head_width/\
+                                 10**(np.floor(np.log10(self.period[aa])))
+                    hheight = self.arrow_head_height/\
+                                 10**(np.floor(np.log10(self.period[aa]))) 
                 
                 #--> plot real arrows
                 if self.plot_tipper.find('r')>0:
                     self.axt.arrow(self.period[aa],
                                    0,
-                                   10**txr[aa],
+                                   xlenr,
                                    tyr[aa],
-                                   lw=1,
-                                   facecolor='k',
-                                   edgecolor='k',
+                                   lw=self.arrow_lw,
+                                   facecolor=self.arrow_color_real,
+                                   edgecolor=self.arrow_color_real,
                                    head_width=hwidth,
                                    head_length=hheight,
-                                   length_includes_head=False,
-                                   overhang=overhang)
+                                   length_includes_head=False)
                                    
                 #--> plot imaginary arrows
                 if self.plot_tipper.find('i')>0:               
-                    self.axt.arrow(np.log10(self.period[aa]),
+                    self.axt.arrow(self.period[aa],
                                    0,
-                                   txi[aa],
+                                   xleni,
                                    tyi[aa],
-                                   lw=1,
-                                   facecolor='b',
-                                   edgecolor='b',
+                                   lw=self.arrow_lw,
+                                   facecolor=self.arrow_color_imag,
+                                   edgecolor=self.arrow_color_imag,
                                    length_includes_head=False)
-                          
-            self.axt.plot(self.period,[0]*nt,'k')
-            self.axt.set_xscale('log')              
-            line1=self.axt.plot(0,0,'k')
-            line2=self.axt.plot(0,0,'b')
-
-            self.axt.yaxis.set_major_locator(MultipleLocator(.2))
-                         
+            
+            #make a line at 0 for reference
+            self.axt.plot(self.period,[0]*nt,'k',lw=.5)
+             
+            #make a legend for the induction arrows
+            line1=self.axt.plot(0, 0, self.arrow_color_real)
+            line2=self.axt.plot(0, 0, self.arrow_color_imag)
+          
             self.axt.legend([line1[0],line2[0]],['real','imag'],
                             loc='upper left',
                             markerscale=1,
                             borderaxespad=.01,
                             labelspacing=.07,
                             handletextpad=.2,
-                            borderpad=.02)
-                            
-            self.axt.set_xlabel('period (s)',fontdict={'size':12,'weight':'bold'})
-            self.axt.set_ylabel('tipper',fontdict={'size':12,'weight':'bold'})    
+                            borderpad=.02,
+                            prop={'size':self.font_size})
+
+            #set axis properties            
+            self.axt.yaxis.set_major_locator(MultipleLocator(.5))               
+            self.axt.yaxis.set_minor_locator(MultipleLocator(.1))               
+            self.axt.set_xlabel('Period (s)', fontdict=fontdict)
+            self.axt.set_ylabel('Tipper', fontdict=fontdict)    
             
-            self.axt.set_ylim([-.99,.99])
-            self.axt.set_xlim(self.axr.get_xlim())
-            self.axt.grid(True, alpha=.25)
+            self.axt.set_xscale('log')
+            self.axt.set_ylim(self.tipper_limits)
+            self.axt.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+                          lw=.25)
         
         #===Plot the xx, yy components if desired==============================
         if self.plotnum==2:
             #---------plot the apparent resistivity----------------------------
-            self.axr2 = plt.subplot(gs[0,1])
+            self.axr2 = self.fig.add_subplot(gs[0,1], sharex=self.axr)
             self.axr2.yaxis.set_label_coords(-.1, 0.5)
             
             #res_xx
@@ -1001,7 +1471,7 @@ class PlotResPhase(object):
                             borderpad=.02)
             
             #-----Plot the phase-----------------------------------------------
-            self.axp2=plt.subplot(gs[1,1],sharex=self.axr2)
+            self.axp2=self.fig.add_subplot(gs[1,1], sharex=self.axr)
             
             self.axp2.yaxis.set_label_coords(-.1, 0.5)
             
@@ -1040,7 +1510,11 @@ class PlotResPhase(object):
             self.axp2.yaxis.set_major_locator(MultipleLocator(30))
             self.axp2.yaxis.set_minor_locator(MultipleLocator(5))
             self.axp2.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
-                           lw=.25)       
+                           lw=.25) 
+                           
+            if self.plot_tipper.find('y')==0:
+                plt.setp(self.axp2.xaxis.get_ticklabels(), visible=False)
+                plt.setp(self.axp2.xaxis.get_label(),visible=False)
         
         #===Plot the Determinant if desired====================================                          
         if self.plotnum==3:
@@ -1085,11 +1559,10 @@ class PlotResPhase(object):
         
         #make title and show
         if self.title!=None:
-            self.fig.suptitle(self.title, fontsize=self.font_size+2, 
-                              fontweight='bold')
+            self.fig.suptitle(self.title, fontdict=fontdict)
         else:
-            self.fig.suptitle(self._mt.station, fontsize=self.font_size+2, 
-                         fontweight='bold')
+            if self._mt.station!=None:
+                self.fig.suptitle(self._mt.station, fontdict=fontdict)
         plt.show()
         
     def save_plot(self, save_fn, file_format='pdf', orientation='portrait', 
@@ -1215,20 +1688,43 @@ class PlotMultipleResistivityPhase(object):
     one plot of subfigures or in a single plot with subfigures for each 
     component.
     
+    expecting only one type of input --> can be:
+        **fn_lst** : list of filenames to plot
+        
+        **z_lst, z_err_lst, period_lst** : input z_arrays
+        
+        **res_lst, phase_lst, res_err_lst, phase_err_lst, period_lst** : input 
+           resistivity and phase lists
+           
+         **z_object_lst** : list of mtpy.core.z.Z objects
+         
+         **res_object_lst** : list of mtpy.imaging.mtplot.ResPhase objects
+         
+         **tipper_lst, tipper_err_lst, period_lst** : list of tipper arrays
+         
+         **tipper_object_lst** : list of mtpy.imaging.mtplot.Tipper objects
     
     """
 
-    def __init__(self, edilst, plotnum=1, plotstyle='1', fignum=1, dpi=300, 
-                 rotz=0, plot_yn='y'):
+    def __init__(self, fn_lst=None, z_lst=None, z_err_lst=None, 
+                 period_lst=None, res_lst=None, res_err_lst=None, 
+                 phase_lst=None, phase_err_lst=None, res_object_lst=None,
+                 z_object_lst=None, tipper_lst=None, tipper_err_lst=None, 
+                 tipper_object_lst=None, plot_num=1, plot_style='1', 
+                 fignum=1, dpi=300, rotz=0, 
+                 plot_yn='y', plot_tipper='n'):
         """
         Initialize parameters
         """
         
-        #set some of the properties as attributes much to Lars' discontent
-        self.edilst = edilst
-        self.plotstyle = plotstyle
+        self.mt_lst = []
+        #--> need to read in the inputs and make a list of mt objects
+        #--> get something to loop over first 
+        
+        #set some of the properties as attributes
+        self.plot_style = plot_style
         self.fignum = fignum
-        self.plotnum = plotnum
+        self.plot_num = plot_num
         self.dpi = dpi
         self.rotz = rotz
         
@@ -1256,6 +1752,9 @@ class PlotMultipleResistivityPhase(object):
         #size
         self.marker_size = 2
         
+        #marker line width
+        self.marker_lw = 100./self.dpi
+        
         #set plot limits
         self.xlimits = None
         self.res_limits = None
@@ -1264,8 +1763,17 @@ class PlotMultipleResistivityPhase(object):
         #set font parameters
         self.font_size = 5
         
-        #set scaling factor of the apparent resistivity
-        self.ffactor = 1
+        #set plot tipper or not
+        self.plot_tipper = plot_tipper
+        
+        #set arrow properties
+        self.arrow_lw = .75
+        self.arrow_head_width = 0.0
+        self.arrow_head_height = 0.0
+        self.arrow_color_real = 'k'
+        self.arrow_color_imag = 'b'
+        self.arrow_direction = 0
+        self.tipper_limits = (-.99,.99)
         
         self.label_dict = {-6:'$10^{-6}$',
                            -5:'$10^{-5}$',
@@ -1287,7 +1795,6 @@ class PlotMultipleResistivityPhase(object):
         if plot_yn=='y':
             self.plot()
         
-        
     def plot(self):
         """
         plot the apparent resistivity and phase
@@ -1295,49 +1802,120 @@ class PlotMultipleResistivityPhase(object):
         
         if self.plotstyle=='1':
             self.plotlst=[]
-            for ii,edi in enumerate(self.edilst,1):
-                p1 = PlotResPhase(edi, fignum=ii, plotnum=self.plotnum, 
-                                  dpi=self.dpi, rotz=self.rotz, plot_yn='n')
-                
-                #make sure all the properties are set to match the users
-                #line style between points
-                p1.xy_ls = self.xy_ls        
-                p1.yx_ls = self.yx_ls        
-                p1.det_ls = self.det_ls        
-                
-                #outline color
-                p1.xy_color = self.xy_color 
-                p1.yx_color = self.yx_color 
-                p1.det_color = self.det_color
-                
-                #face color
-                p1.xy_mfc = self.xy_mfc
-                p1.yx_mfc = self.yx_mfc
-                p1.det_mfc = self.det_mfc
-                
-                #maker
-                p1.xy_marker = self.xy_marker
-                p1.yx_marker = self.yx_marker
-                p1.det_marker = self.det_marker 
-                
-                #size
-                p1.marker_size = 2
-                
-                #set plot limits
-                p1.xlimits = self.xlimits
-                p1.res_limits = self.res_limits
-                p1.phase_limits = self.phase_limits
-
-                #set font parameters
-                p1.font_size = self.font_size
-                
-                #set scaling factor of the apparent resistivity
-                p1.ffactor = self.ffactor
-                
-                #--> plot the apparent resistivity and phase
-                self.plotlst.append(p1)
-                
-                p1.plot()
+            
+            #--> plot from edi's if given
+            if self.edilst is not None:
+                for ii,edi in enumerate(self.edilst,1):
+                    p1 = PlotResPhase(filename=edi, 
+                                      fignum=ii, 
+                                      plotnum=self.plotnum, 
+                                      dpi=self.dpi, 
+                                      rotz=self.rotz, 
+                                      plot_yn='n',
+                                      plot_tipper=self.plot_tipper)
+                    
+                    #make sure all the properties are set to match the users
+                    #line style between points
+                    p1.xy_ls = self.xy_ls        
+                    p1.yx_ls = self.yx_ls        
+                    p1.det_ls = self.det_ls        
+                    
+                    #outline color
+                    p1.xy_color = self.xy_color 
+                    p1.yx_color = self.yx_color 
+                    p1.det_color = self.det_color
+                    
+                    #face color
+                    p1.xy_mfc = self.xy_mfc
+                    p1.yx_mfc = self.yx_mfc
+                    p1.det_mfc = self.det_mfc
+                    
+                    #maker
+                    p1.xy_marker = self.xy_marker
+                    p1.yx_marker = self.yx_marker
+                    p1.det_marker = self.det_marker 
+                    
+                    #size
+                    p1.marker_size = 2
+                    
+                    #set plot limits
+                    p1.xlimits = self.xlimits
+                    p1.res_limits = self.res_limits
+                    p1.phase_limits = self.phase_limits
+    
+                    #set font parameters
+                    p1.font_size = self.font_size
+                    
+                    #set arrow properties
+                    p1.arrow_lw = self.arrow_lw
+                    p1.arrow_head_width = self.arrow_head_width 
+                    p1.arrow_head_height = self.arrow_head_height
+                    p1.arrow_color_real = self.arrow_color_real 
+                    p1.arrow_color_imag = self.arrow_color_imag 
+                    p1.arrow_direction = self.arrow_direction
+                    p1.tipper_limits = self.tipper_limits 
+                    
+                    #--> plot the apparent resistivity and phase
+                    self.plotlst.append(p1)
+                    
+                    p1.plot()
+                    
+            #--> plot from z_arrays if given
+            if self.edilst is not None:
+                for ii,edi in enumerate(self.edilst,1):
+                    p1 = PlotResPhase(filename=edi, 
+                                      fignum=ii, 
+                                      plotnum=self.plotnum, 
+                                      dpi=self.dpi, 
+                                      rotz=self.rotz, 
+                                      plot_yn='n',
+                                      plot_tipper=self.plot_tipper)
+                    
+                    #make sure all the properties are set to match the users
+                    #line style between points
+                    p1.xy_ls = self.xy_ls        
+                    p1.yx_ls = self.yx_ls        
+                    p1.det_ls = self.det_ls        
+                    
+                    #outline color
+                    p1.xy_color = self.xy_color 
+                    p1.yx_color = self.yx_color 
+                    p1.det_color = self.det_color
+                    
+                    #face color
+                    p1.xy_mfc = self.xy_mfc
+                    p1.yx_mfc = self.yx_mfc
+                    p1.det_mfc = self.det_mfc
+                    
+                    #maker
+                    p1.xy_marker = self.xy_marker
+                    p1.yx_marker = self.yx_marker
+                    p1.det_marker = self.det_marker 
+                    
+                    #size
+                    p1.marker_size = 2
+                    
+                    #set plot limits
+                    p1.xlimits = self.xlimits
+                    p1.res_limits = self.res_limits
+                    p1.phase_limits = self.phase_limits
+    
+                    #set font parameters
+                    p1.font_size = self.font_size
+                    
+                    #set arrow properties
+                    p1.arrow_lw = self.arrow_lw
+                    p1.arrow_head_width = self.arrow_head_width 
+                    p1.arrow_head_height = self.arrow_head_height
+                    p1.arrow_color_real = self.arrow_color_real 
+                    p1.arrow_color_imag = self.arrow_color_imag 
+                    p1.arrow_direction = self.arrow_direction
+                    p1.tipper_limits = self.tipper_limits 
+                    
+                    #--> plot the apparent resistivity and phase
+                    self.plotlst.append(p1)
+                    
+                    p1.plot()
         
         #-----Plot All in one figure with each plot as a subfigure------------        
         if self.plotstyle=='all':
