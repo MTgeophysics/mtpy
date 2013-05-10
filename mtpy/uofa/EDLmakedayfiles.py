@@ -32,16 +32,16 @@ import glob
 import calendar
 import time
 
-import mtpy.utils.exceptions as EX
-import mtpy.utils.filehandling as FH
-reload(EX)
-reload(FH)
+import mtpy.utils.exceptions as MTex
+import mtpy.utils.filehandling as MTfh
+reload(MTex)
+reload(MTfh)
 
 
 def main():
 
     if len(sys.argv) < 3:
-        raise EX.MTpyError_inputarguments('Need at least 2 arguments: <path to files> <sampling in seconds>  [<output dir>] [<stationname>] [<recursive flag -R>]')
+        raise MTex.MTpyError_inputarguments('Need at least 2 arguments: <path to files> <sampling in seconds>  [<output dir>] [<stationname>] [<recursive flag -R>]')
     outdir = None
     stationname = None
     recursive = False
@@ -65,13 +65,13 @@ def main():
     pathname = op.abspath(op.realpath(pathname_raw))
 
     if not op.isdir(pathname):
-        raise EX.MTpyError_inputarguments('Data file(s) path not existing: %s' % (pathname))
+        raise MTex.MTpyError_inputarguments('Data file(s) path not existing: %s' % (pathname))
 
     try:
         sampling = float(sys.argv[2])
         if sampling <= 0 : raise
     except:
-        raise EX.MTpyError_float('Second argument must be sampling interval in seconds (int/float)')
+        raise MTex.MTpyError_float('Second argument must be sampling interval in seconds (int/float)')
 
     if recursive is True:
         lo_files = []
@@ -80,7 +80,7 @@ def main():
             lo_files.extend(lof)
         pathname = list(set(lo_files))
 
-    FH.EDL_make_dayfiles(pathname, sampling, stationname, outdir)
+    MTfh.EDL_make_dayfiles(pathname, sampling, stationname, outdir)
 
 
 

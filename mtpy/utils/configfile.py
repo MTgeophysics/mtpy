@@ -25,14 +25,14 @@ import ConfigParser
 import fnmatch
 import shutil
 
-import mtpy.utils.calculator as CALC
-import mtpy.processing.general as GEN
-import mtpy.utils.exceptions as EX
-import mtpy.utils.format as MTformat
+import mtpy.utils.calculator as MTcc
+import mtpy.processing.general as MTgn
+import mtpy.utils.exceptions as MTex
+import mtpy.utils.format as MTft
 
-reload(GEN)
-reload(CALC)
-reload(EX)
+reload(MTgn)
+reload(MTcc)
+reload(MTex)
 
 #=================================================================
 
@@ -50,13 +50,13 @@ def read_configfile(filename):
     
     #check, if file is present
     if not op.isfile(filename):
-        raise EX.MTpyError_inputarguments( 'File does not exist: %s'%filename )
+        raise MTex.MTpyError_inputarguments( 'File does not exist: %s'%filename )
 
     # try to parse file - exit, if not a config file
     try:
         configobject.read(filename)
     except:
-        raise EX.MTpyError_inputarguments( 'File is not a proper configuration file: %s'%filename )
+        raise MTex.MTpyError_inputarguments( 'File is not a proper configuration file: %s'%filename )
 
 
     #if 0:#len(configobject.sections()) != 0:
@@ -162,14 +162,14 @@ def read_survey_configfile(filename):
 
     #check, if file is present
     if not op.isfile(filename):
-        raise EX.MTpyError_inputarguments( 'File does not exist: {0}'.format(filename) )
+        raise MTex.MTpyError_inputarguments( 'File does not exist: {0}'.format(filename) )
 
 
     # try to parse file - exit, if not a config file
     try:
         configobject.read(filename)
     except:
-        raise EX.MTpyError_inputarguments( 'File is not a proper configuration file: %s'%filename )
+        raise MTex.MTpyError_inputarguments( 'File is not a proper configuration file: %s'%filename )
 
     #obtain dict of dicts containing the input file's sections (station names)
     #excludes DEFAULT section and key-value pairs without section header
@@ -207,13 +207,13 @@ def read_survey_configfile(filename):
         for coordinate in ['latitude', 'longitude', 'elevation']:
             value = stationdict[coordinate]
             try:
-                new_value = MTformat._assert_position_format(coordinate,value)
+                new_value = MTft._assert_position_format(coordinate,value)
             except:
-                raise EX.MTpyError_config_file('Error - wrong coordinate format for station %s'%(stationname))
+                raise MTex.MTpyError_config_file('Error - wrong coordinate format for station %s'%(stationname))
             stationdict[coordinate] = new_value
 
         if not stationdict['station_type'] in list_of_station_types:
-            raise EX.MTpyError_config_file( 'Station type not valid' )
+            raise MTex.MTpyError_config_file( 'Station type not valid' )
 
 
         if stationdict['station_type'] in ['mt','e']:
@@ -287,9 +287,9 @@ def read_survey_configfile(filename):
         #check consistency of coordinates, if rr_station is present
         if stationdict['rr_station'] != None:
             try:
-                stationdict['rr_station_latitude'] = MTformat._assert_position_format('latitude',stationdict['rr_station_latitude'])
-                stationdict['rr_station_longitude'] = MTformat._assert_position_format('longitude',stationdict['rr_station_longitude'])
-                stationdict['rr_station_elevation'] = MTformat._assert_position_format('elevation',stationdict['rr_station_elevation'])
+                stationdict['rr_station_latitude'] = MTft._assert_position_format('latitude',stationdict['rr_station_latitude'])
+                stationdict['rr_station_longitude'] = MTft._assert_position_format('longitude',stationdict['rr_station_longitude'])
+                stationdict['rr_station_elevation'] = MTft._assert_position_format('elevation',stationdict['rr_station_elevation'])
 
             except:
                 print 'Problem with remote reference station (%s) - remote reference (%s) coordinates invalid - remote reference set to None'%(station, stationdict['rr_station'] )
@@ -358,7 +358,7 @@ def _validate_dictionary(dict2validate,referencedict):
                 tmp.append(str(i))  
         value = tmp
         if not value2validate in value:
-            raise EX.MTpyError_config_file( 'Config file error -- key %s, value %s not valid'%(key, value2validate) )
+            raise MTex.MTpyError_config_file( 'Config file error -- key %s, value %s not valid'%(key, value2validate) )
 
 
 

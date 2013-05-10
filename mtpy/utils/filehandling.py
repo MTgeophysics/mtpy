@@ -28,16 +28,16 @@ import ConfigParser
 import fnmatch
 import shutil
 
-import mtpy.utils.calculator as CALC
-import mtpy.processing.general as GEN
-import mtpy.utils.exceptions as EX
-import mtpy.utils.format as MTformat
-import mtpy.utils.configfile as CF
+import mtpy.utils.calculator as MTcc
+import mtpy.processing.general as MTgn
+import mtpy.utils.exceptions as MTex
+import mtpy.utils.format as MTft
+import mtpy.utils.configfile as MTcf
 
-reload(GEN)
-reload(CALC)
-reload(EX)
-reload(CF)
+reload(MTgn)
+reload(MTcc)
+reload(MTex)
+reload(MTcf)
 
 #=================================================================
 
@@ -132,9 +132,9 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
     #check, if list of files is empty
     if len(lo_allfiles) == 0:
         if stationname is not None:
-            raise EX.MTpyError_inputarguments('Directory(ies) do(es) not contain files to combine for station {0}: {1}'.format(stationname, inputdir))
+            raise MTex.MTpyError_inputarguments('Directory(ies) do(es) not contain files to combine for station {0}: {1}'.format(stationname, inputdir))
 
-        raise EX.MTpyError_inputarguments('Directory does not contain files to combine: {0}'.format(inputdir))
+        raise MTex.MTpyError_inputarguments('Directory does not contain files to combine: {0}'.format(inputdir))
 
     #define subfolder for storing dayfiles
     outpath = op.join(os.curdir,'dayfiles')    
@@ -158,7 +158,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
         try:
             os.makedirs(outpath)
         except:
-            EX.MTpyError_inputarguments('Cannot generate output directory {0} '.format(outpath))
+            MTex.MTpyError_inputarguments('Cannot generate output directory {0} '.format(outpath))
 
     #outer loop over all components
     for comp in components:
@@ -413,15 +413,15 @@ def read_data_header(fn_raw):
     fn = op.abspath(op.realpath(fn_raw))
 
     if not op.isfile(fn):
-        raise EX.MTpyError_inputarguments('Not a file:%s'%fn)
+        raise MTex.MTpyError_inputarguments('Not a file:%s'%fn)
     try:
         F = open(fn, 'r')
     except:
-        raise EX.MTpyError_inputarguments('File not readable:%s'%fn)
+        raise MTex.MTpyError_inputarguments('File not readable:%s'%fn)
 
     firstline = F.readline().strip().split()
     if not firstline[0][0] == '#':
-        raise EX.MTpyError_ts_data('Time series data file does not have a proper header:%s'%fn)
+        raise MTex.MTpyError_ts_data('Time series data file does not have a proper header:%s'%fn)
 
     F.close()
 
@@ -536,7 +536,7 @@ def read_ts_header(tsfile):
     tsfile = op.abspath(tsfile)
     
     if not op.isfile(tsfile):
-        raise EX.MTpyError_inputarguments('Error - input file not existing: {0}'.format(tsfile))
+        raise MTex.MTpyError_inputarguments('Error - input file not existing: {0}'.format(tsfile))
 
     try:
         with open(tsfile,'r') as F:
@@ -544,7 +544,7 @@ def read_ts_header(tsfile):
         if firstline[0] != '#':
             raise
     except:
-        raise EX.MTpyError_ts_data('No header line found - check file: {0}'.format(tsfile))
+        raise MTex.MTpyError_ts_data('No header line found - check file: {0}'.format(tsfile))
         
 
     firstline = firstline.replace('#','')
@@ -605,7 +605,7 @@ def write_ts_file_from_tuple(outfile,ts_tuple):
         np.savetxt(outF,data)
         outF.close()
     except:
-        raise EX.MTpyError_inputarguments('ERROR - could not write content of TS tuple to file : {0}'.format(outfilename))
+        raise MTex.MTpyError_inputarguments('ERROR - could not write content of TS tuple to file : {0}'.format(outfilename))
 
     return outfilename
 
@@ -621,15 +621,15 @@ def read_ts_file(mtdatafile):
 
     infile = op.abspath(mtdatafile)
     if not op.isfile(infile):
-        raise EX.MTpyError_inputarguments('ERROR - Data file not existing: {0}'.format(infile))
+        raise MTex.MTpyError_inputarguments('ERROR - Data file not existing: {0}'.format(infile))
 
     header = read_ts_header(infile)
     if len(header) == 0 :
-        raise EX.MTpyError_inputarguments('ERROR - Data file not valid - header is missing : {0}'.format(infile))
+        raise MTex.MTpyError_inputarguments('ERROR - Data file not valid - header is missing : {0}'.format(infile))
 
     data = np.loadtxt(infile)
     if len(data) != int(float(header['nsamples'])):
-        raise EX.MTpyError_inputarguments('ERROR - Data file not valid - wrong number of samples in data ({1} instead of {2}): {0}'.format(infile,len(data) , int(float(header['nsamples']))) )
+        raise MTex.MTpyError_inputarguments('ERROR - Data file not valid - wrong number of samples in data ({1} instead of {2}): {0}'.format(infile,len(data) , int(float(header['nsamples']))) )
 
     lo_header_contents = []
 
@@ -648,9 +648,9 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
 
     #read config file
     try:
-        config_dict = CF.read_survey_configfile(configfile)
+        config_dict = MTcf.read_survey_configfile(configfile)
     except:
-        raise EX.MTpyError_config_file( 'Config file cannot be read: {0}'.format(configfile) )
+        raise MTex.MTpyError_config_file( 'Config file cannot be read: {0}'.format(configfile) )
 
     if lo_stations is not None:
         try:
@@ -659,7 +659,7 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
             #check, if it's iterable:
             dummy = [i for i in lo_stations]
         except:
-            raise EX.MTpyError_inputarguments('ERROR - "lo_stations" argument must be iterable!')
+            raise MTex.MTpyError_inputarguments('ERROR - "lo_stations" argument must be iterable!')
     
     #Do not require list of headers as input, as this function can be called directly rather than from a 'calibratefiles.py'-like script - so the list not necessarily exists in beforehand - 
     #collect header lines of files in list
@@ -702,7 +702,7 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
             os.makedirs(ori_outdir)
     except:
         #this only comes up, if the generic location cannot be generated
-        raise EX.MTpyError_inputarguments('Generic directory cannot be generated: {0}'.format(ori_outdir))
+        raise MTex.MTpyError_inputarguments('Generic directory cannot be generated: {0}'.format(ori_outdir))
 
     #----------------------
     #start re-orientation
@@ -774,7 +774,7 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
                     xangle = float(stationconfig.get('b_xaxis_azimuth', 0.)) - declination
                     yangle = float(stationconfig.get('b_yaxis_azimuth',90.)) - declination                
 
-                newx, newy =  CALC.reorient_data2D(xdata, ydata, x_sensor_angle = xangle , y_sensor_angle = yangle)
+                newx, newy =  MTcc.reorient_data2D(xdata, ydata, x_sensor_angle = xangle , y_sensor_angle = yangle)
                 #print xdata.shape, ydata.shape, newx.shape, newy.shape 
 
                 #continue

@@ -25,6 +25,6 @@ import time
 import copy
 
 
-import  mtpy.utils.exceptions as EX
+import  mtpy.utils.exceptions as MTex
 
 #=================================================================

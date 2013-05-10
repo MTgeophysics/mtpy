@@ -28,7 +28,7 @@ from scipy.signal import butter, lfilter, buttord
 
 
 
-import  mtpy.utils.exceptions as EX
+import  mtpy.utils.exceptions as MTex
 
 #=================================================================
 

@@ -18,7 +18,7 @@ import  os
 import sys
 import re
 
-from mtpy.utils.exceptions import *
+import mtpy.utils.exceptions as MTex
 
 
 def _assert_position_format(coordinate, value): 
@@ -34,7 +34,7 @@ def _assert_position_format(coordinate, value):
         try:
             elev = float(value)
         except: 
-            raise MTpyError_config_file('Config file error: elevation value is not a number')
+            raise MTex.MTpyError_config_file('Config file error: elevation value is not a number')
         
         value = elev
 
@@ -62,10 +62,10 @@ def _assert_position_format(coordinate, value):
 
 
         if coordinate in ['latitude','lat'] and ( not -90 <= latlon <= 90):
-            raise MTpyError_config_file('Error - Latitude out of range')
+            raise MTex.MTpyError_config_file('Error - Latitude out of range')
 
         if coordinate in ['longitude','lon','long'] and ( not -180 <= latlon <= 180):
-            raise MTpyError_config_file('Error - Longitude out of range')
+            raise MTex.MTpyError_config_file('Error - Longitude out of range')
 
         value = latlon
 
@@ -90,11 +90,11 @@ def convert_dms_tuple2degrees(latlon_triple):
         try:
             latlon_list = re.split('[ :,]', latlon_raw)
         except:
-            raise MTpyError_config_file('Config file error: lat/lon is in invalid format')
+            raise MTex.MTpyError_config_file('Config file error: lat/lon is in invalid format')
         try:
             latlon_list = [float(i) for  i in latlon_list]
         except:
-            raise MTpyError_config_file('Config file error: lat/lon is in invalid format')
+            raise MTex.MTpyError_config_file('Config file error: lat/lon is in invalid format')
 
     deg = latlon_list[0]
 
