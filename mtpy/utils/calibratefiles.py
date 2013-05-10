@@ -1,8 +1,20 @@
 #!/usr/bin/env python
 """
-This is a convenience script for the calibration of all files within a directory (non-recursive).
+This is a convenience script for the calibration of all (station-) files within a directory (recursive/non-recursive).
 
-It needs the location of the directory and the location of the respective configuration file. If no output folder is specified, a subfolder 'calibrated' is set up within the input directory
+Calibration includes the linear conversion from logger counts(mili volts) into physical quantities, the conversion from voltage to electrtic field strength for Efield components, and, with the appropriate option given,the re-orientation of the data traces into true North(X)/East(Y) coordinates.
+
+Required input: data files directory and the location of the respective configuration file (survey meta-data file). If no output folder is specified, a subfolder 'calibrated' is set up within the input directory.
+
+    2 mandatory arguments: 
+    - path to files 
+    - configuration file ('survey.cfg' style)
+
+    4 optional arguments:
+    - name of the output directory - cannot start with '-' 
+    - stationname - cannot start with '-' 
+    - flag '-R (or -r)', if the directory shall be searched for data recursively 
+    - flag '-O (or -o)', if the data shall be re-oriented to geographical North/East first
 
 """
 
@@ -16,13 +28,15 @@ import calendar
 import time
 
 
-import mtpy.utils.exceptions as EX
-reload(EX)
+import mtpy.utils.exceptions as MTex
+import mtpy.processing.calibration as MTcb
+import mtpy.utils.filehandling as MTfh
+import mtpy.utils.configfile as MTcf
 
-import mtpy.processing.calibration as C
-reload(C)
-import mtpy.utils.filehandling as FH
-reload(FH)
+reload(MTfh)
+reload(MTex)
+reload(MTcb)
+reload(MTcf)
 
 angleaccuracy = 1.
 
@@ -30,149 +44,221 @@ angleaccuracy = 1.
 def main():
 
     if len(sys.argv) < 3:
-        raise EX.MTpyError_inputarguments('Need 2 arguments: <path to files> <config file>')
+        raise MTex.MTpyError_inputarguments('Need at least 2 arguments: <path to files> <config file> [<output dir>] [<station>] [<recursive flag -R>] [<re-orientation flag -O]')
+    outdir = None
+    stationname = None
+    recursive = False
+    orientation = False
 
+    if len(sys.argv) > 3:
+        optionals = sys.argv[3:]
+        for o in optionals:
+            o = o.strip()
+            if o[0] == '-':
+                if o[1].lower() == 'r':
+                    recursive = True
+                elif o[1].lower() == 'o':
+                    orientation = True
+                continue
+            elif outdir is None:
+                outdir = o
+                continue
+            elif stationname is None:
+                stationname = o.upper() 
+                continue
 
     pathname_raw = sys.argv[1] 
-    directory = op.abspath(op.realpath(pathname_raw))
+    pathname = op.abspath(op.realpath(pathname_raw))
+
+    if not op.isdir(pathname):
+        raise MTex.MTpyError_inputarguments('Data file(s) path not existing: {0}'.format(pathname))
 
     configfilename_raw = sys.argv[2]
-    configfile = op.abspath(op.realpath(configfilename_raw))
-
-
-    if not op.isdir(directory):
-        raise EX.MTpyError_inputarguments('Directory not existing: %s' % (directory))
+    configfile = op.abspath(op.realpath(op.join(os.curdir,configfilename_raw)))
 
     if not op.isfile(configfile):
-        raise EX.MTpyError_inputarguments('Config file not existing: %s' % (configfile))
+        raise MTex.MTpyError_inputarguments('Config file not found: {0}'.format(configfile))
+
+
+    if recursive is True:
+        lo_dirs = []
+        for i,j,k in os.walk(pathname):
+            lof = [op.abspath(op.join(i,f)) for f in j]
+            lo_dirs.extend(lof)
+        pathname = list(set(lo_dirs))
+    else:
+        pathname = [pathname]
 
 
     try:
-        outdir_raw = sys.argv[3]
-        outdir = op.abspath(outdir_raw)
+        config_dict = MTcf.read_survey_configfile(configfile)
+        #done internally already 
+        #MTcf.validate_dict(config_dict)
     except:
-        outdir = op.join(directory,'calibrated')
-
-    try:
-        if not op.isdir(outdir):
-            os.makedirs(outdir)
-    except:
-        raise EX.MTpyError_inputarguments('Output directory cannot be generated: %s' % (outdir))
-
-
-    try:
-        config_dir = FH.read_configfile(configfile)
-    except:
-        raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (configfile) )
+        raise MTex.MTpyError_config_file( 'Config file cannot be read: %s' % (configfile) )
 
     #----------------------------------------------------------------------------
-    #to be improved later - rather rely on header lines than filenames!! :
 
-    #select files by suffix, since header information is not necessarily present
-    #typical suffixes for EDL output file names
+    #select files by heder entries:
     components = ['ex', 'ey', 'bx', 'by', 'bz']
+    lo_allfiles = []
+    lo_allheaders = []
+    lo_allstations = []
+    for folder in pathname:
+        wd = op.abspath(op.realpath(folder)) 
+        if not op.isdir(wd):
+            #print 'Directory not existing: %s' % (wd)
+            lo_foldernames.remove(wd)
+            continue    
+        dirfiles = [op.abspath(op.join(wd,i)) for i in os.listdir(wd)]
+        for tmpfile in dirfiles:
+            header = MTfh.read_ts_header(tmpfile)
+            if header['channel'].lower() in components:
+                if stationname is not None:
+                    if stationname.upper() != header['station'].upper():
+                        continue
+                lo_allstations.append(header['station'].upper())
+                lo_allfiles.append(op.abspath(op.join(wd,tmpfile)))
+                lo_allheaders.append(header)
 
-    oldwd = os.getcwd()
-    os.chdir(directory)
-    lo_allfiles = glob.glob('*.??')
-    lo_allfiles = [op.abspath(i) for i in lo_allfiles]
-    os.chdir(oldwd)
-
-    lo_files = []
-
-    for f in lo_allfiles:
-        if f[-2:].lower() in components:
-            lo_files.append(f)
+    lo_allstations = list(set(lo_allstations))
 
     #check, if list of files is empty
-    if len(lo_files) == 0:
-        raise EX.MTpyError_inputarguments('Directory does not contain files to calibrate: %s' % (wd))
+    if len(lo_allfiles) == 0:
+        raise MTex.MTpyError_inputarguments('Directory(ies) do(es) not contain files to calibrate: {0}'.format(pathname))
+
     #-------------------------------------------------------
+    # set up the directory structure for the output:
+    
+    #1. generic calibration output directory
+    cal_outdir = op.abspath(op.join(pathname[0],'calibrated'))
 
-
-    for f in lo_files:
-
-        #find station 
-        #try reading in a potentially existing header line
+    if outdir is not None:
         try:
-            F = open(f,'r')
-            firstline = F.readline()
-            F.close()
-            firstlinesplit = firstline.strip().split()
-            if firstlinesplit[0][0] == '#':
-                #check for missing whitespace after commenting symbol #:
-                if len(firstlinesplit[0]) == 1:
-                    stationname = firstlinesplit[1].upper()
-                    channel = firstlinesplit[2].lower()
-                #otherwise take the rest of the first string as stationname    
-                else:
-                    stationname = firstlinesplit[0][1:].upper()
-                    channel = firstlinesplit[1].lower()
-            else:
-                raise
-
+            cal_outdir = op.abspath(op.join(os.curdir,outdir))
+            if not op.isdir(cal_outdir):
+                os.makedirs(cal_outdir)
+                print 'generated ', cal_outdir
         except:
-            try:
+            print 'Output directory cannot be generated: {0} - using generic location'.format(cal_outdir)
+            cal_outdir = op.abspath(op.join(pathname[0],'calibrated'))
+    try:
+        if not op.isdir(cal_outdir):
+            os.makedirs(cal_outdir)
+    except:
+        #this only comes up, if the generic location cannot be generated
+        raise MTex.MTpyError_inputarguments('Generic directory cannot be generated: {0}'.format(cal_outdir))
 
-                stationname = FH.EDL_get_stationname_fromfilename(f)
-                channel = f[-2:].lower()
-            except:
-                print 'stationname or channel for file %s could not be determined - skipping file'%(f)
-                continue
+    #if re-orientation is required, do it first:
+    if orientation is True:
+        print '....re-orient data first...\n'
+        ori_outdir = op.abspath(op.join(cal_outdir,'../reoriented'))
+        try:
+            if not op.isdir(ori_outdir):
+                os.makedirs(ori_outdir)
+        except:
+            #this only comes up, if the generic location cannot be generated
+            raise MTex.MTpyError_inputarguments('Re-orientation directory cannot be generated: {0}'.format(ori_outdir))
         
+        #print configfile, lo_allstations,ori_outdir,cal_outdir
+        
+        MTfh.reorient_files(lo_allfiles, configfile, lo_stations = lo_allstations, outdir = ori_outdir)
+
+        #change to calibration setup :
+        outdir = cal_outdir
+        new_inputdir = ori_outdir 
+
+        #file structure has changed, so the re-oriented files have to be read again:
+        components = ['ex', 'ey', 'bx', 'by', 'bz']
+        lo_allfiles = []
+        lo_allheaders = []
+        lo_allstations = []
+        dirfiles = [op.abspath(op.join(new_inputdir,i)) for i in  os.listdir(new_inputdir) ]
+        for tmpfile in dirfiles:
+            header = MTfh.read_ts_header(tmpfile)
+            lo_allstations.append(header['station'].upper())
+            lo_allfiles.append(tmpfile)
+            lo_allheaders.append(header)
+
+        lo_allstations = list(set(lo_allstations))
+
+        #check, if list of files is empty
+        if len(lo_allfiles) == 0:
+            raise MTex.MTpyError_inputarguments('Directory(ies) do(es) not contain files to calibrate: {0}'.format(ori_outdir))
+
+    #-------------------------------------------------
+    #calibration
+
+    lo_calibrated_files = []
+    lo_calibrated_stations = []
+    for file_idx, filename in enumerate(lo_allfiles):
+        curr_station = lo_allheaders[file_idx]['station']
+        if stationname is not None:
+            if stationname.upper() != curr_station.upper():
+                continue
+
+        channel = lo_allheaders[file_idx]['channel']
+        lo_calibrated_stations.append(curr_station)
 
         #get configuration dictionary for this station
+
         try:
-            stationdict = config_dir[stationname]
+            stationdict = config_dict[curr_station]
         except:
-            print 'no entry for station %s found in configuration file %s skipping file'%(stationname, configfile )
+            print 'no entry for station {0} found in configuration file {1} skipping file'.format(curr_station, configfile )
             continue
 
-        latitude = stationdict['latitude']
-        longitude = stationdict['longitude']
-        elevation = stationdict['elevation']
+        latitude = float(stationdict['latitude'])
+        longitude = float(stationdict['longitude'])
+        elevation = float(stationdict['elevation'])
 
         field = channel[0]
         direction = channel[1]
 
+        station_type = stationdict['station_type']
 
         if field == 'e':
+            if station_type == 'b':
+                continue
             #check North-South axis orientation
             if direction == 'x':
-                angle = float(stationdict['e_xaxis_azimuth'])
+                #angle = float(stationdict['e_xaxis_azimuth'])
                 dipolelength = float(stationdict['e_xaxis_length'])
-                if np.abs(180. - angle) < angleaccuracy:
-                    #X-axis points southwards
-                    dipolelength *= 1
-
-                elif not np.abs(angle) < angleaccuracy:
-                    print 'Configuration file error. E-field X-axis angle for station %s invalid: %f'%(stationname,angle)
 
             #check East-West axis orientation
             if direction == 'y':
-                angle = float(stationdict['e_yaxis_azimuth'])
+                #angle = float(stationdict['e_yaxis_azimuth'])
                 dipolelength = float(stationdict['e_yaxis_length'])
-                if np.abs(270. - angle) < angleaccuracy:
-                    #X-axis points southwards
-                    dipolelength *= 1
-                elif not np.abs(90. - angle) < angleaccuracy:
-                    print 'Configuration file error. E-field Y-axis angle for station %s invalid: %f'%(stationname,angle)
 
             logger = stationdict['e_logger_type']
-            gain = stationdict['e_logger_gain']
+            gain = float(stationdict['e_logger_gain'])
             instrument = stationdict['e_instrument_type']
-            instrument_amplification = stationdict['e_instrument_amplification']
+            instrument_amplification = float(stationdict['e_instrument_amplification'])
 
         elif field == 'b':
+            if station_type == 'e':
+                continue
 
             dipolelength = 1.
             logger = stationdict['b_logger_type']
-            gain = stationdict['b_logger_gain']
+            gain = float(stationdict['b_logger_gain'])
             instrument = stationdict['b_instrument_type']
-            instrument_amplification = stationdict['b_instrument_amplification']
+            instrument_amplification = float(stationdict['b_instrument_amplification'])
 
 
-        C.calibrate_file(f, outdir, instrument, logger, gain, dipolelength, stationname, channel, latitude, longitude, elevation,  offset = 0 )
+        MTcb.calibrate_file(filename, outdir, instrument, logger, gain, dipolelength, curr_station, channel, latitude, longitude, elevation,  offset = 0 )
+        #print 'calibrated file {0},{1}'.format(outdir, filename)
+        lo_calibrated_files.append(filename)
+    
+    lo_calibrated_stations = list(set(lo_calibrated_stations))
+    if len(lo_calibrated_files) == 0:
+        if stationname is not None:
+            print 'No files found for station {0}'.format(stationname)
+            return
+        else:
+            print 'No files found for stations {0}'.format(lo_allstations)
+
+    print '{0} files calibrated for stations {1}'.format(len(lo_calibrated_files),lo_calibrated_stations)
 
 if __name__=='__main__':
     main()

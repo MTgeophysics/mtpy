@@ -24,14 +24,14 @@ Other mehtods can be implemented, but since the optimal assumtions and constrain
 import numpy as np
 
 import mtpy.core.z as MTz 
-import mtpy.analysis.geometry as MTg 
-import mtpy.utils.exceptions as MTexceptions
-import mtpy.utils.calculator as MTc
+import mtpy.analysis.geometry as MTge 
+import mtpy.utils.exceptions as MTex
+import mtpy.utils.calculator as MTcc
 
-#reload(MTexceptions)
+#reload(MTex)
 #reload(MTz)
-#reload(MTc)
-#reload(MTg)
+#reload(MTcc)
+#reload(MTge)
 
 
 #=================================================================
@@ -55,10 +55,10 @@ def find_distortion(z_object, lo_dims = None):
     z_obj = z_object
 
     if lo_dims is None :
-        lo_dims = MTg.dimensionality(z_object = z_obj)
+        lo_dims = MTge.dimensionality(z_object = z_obj)
     try:
         if len(lo_dims) != len(z_obj.z):
-            lo_dims = MTg.dimensionality(z_object = z_obj)
+            lo_dims = MTge.dimensionality(z_object = z_obj)
     except:
         pass
 
@@ -111,7 +111,7 @@ def find_distortion(z_object, lo_dims = None):
         #follow bibby et al. 2005 first alternative: P = 1
         P = 1
 
-        lo_strikes = MTg.strike_angle(z_object = z_obj)
+        lo_strikes = MTge.strike_angle(z_object = z_obj)
         lo_tetms = [ ]
         lo_t = []
         lo_tetm_errs =[]
@@ -127,7 +127,7 @@ def find_distortion(z_object, lo_dims = None):
 
             if z_obj.zerr is not None:
                 errmat = z_obj.zerr[idx]
-            tetm_mat, tetm_err = MTc.rotatematrix_incl_errors(mat, ang, inmatrix_err = errmat)
+            tetm_mat, tetm_err = MTcc.rotatematrix_incl_errors(mat, ang, inmatrix_err = errmat)
 
             lo_tetms.append(tetm_mat)
          
@@ -234,17 +234,17 @@ def find_1d_distortion(z_object, include_non1d = False):
     """
 
     if not isinstance(z_object, MTz.Z):
-        raise MTexceptions.MTpyError_inputarguments('first argument must be an instance of the Z class')
+        raise MTex.MTpyError_inputarguments('first argument must be an instance of the Z class')
 
     z_obj = z_object
 
-    lo_dims = MTg.dimensionality(z_object = z_obj)
+    lo_dims = MTge.dimensionality(z_object = z_obj)
 
     if include_non1d is True:
         lo_dims = [1 for i in lo_dims]
 
     if len(list(np.where(np.array(lo_dims) == 1))) == 0:
-        raise MTexceptions.MTpyError_inputarguments('Z object does not have frequencies with spatial 1D characteristic')
+        raise MTex.MTpyError_inputarguments('Z object does not have frequencies with spatial 1D characteristic')
 
     print lo_dims
 
@@ -262,11 +262,11 @@ def find_2d_distortion(z_object, include_non2d = False):
     """
 
     if not isinstance(z_object, MTz.Z):
-        raise MTexceptions.MTpyError_inputarguments('first argument must be an instance of the Z class')
+        raise MTex.MTpyError_inputarguments('first argument must be an instance of the Z class')
 
     z_obj = z_object
 
-    lo_dims = MTg.dimensionality(z_object = z_obj)
+    lo_dims = MTge.dimensionality(z_object = z_obj)
 
     #avoid the (standard) 1D distortion call -> remove all 1
     lo_dims = [ 4 if i == 1 else i for i in lo_dims ]
@@ -275,7 +275,7 @@ def find_2d_distortion(z_object, include_non2d = False):
         lo_dims = [2 for i in lo_dims]
 
     if len(list(np.where(np.array(lo_dims) == 2))) == 0:
-        raise MTexceptions.MTpyError_inputarguments('Z object does not have frequencies with spatial 2D characteristic')
+        raise MTex.MTpyError_inputarguments('Z object does not have frequencies with spatial 2D characteristic')
 
 
     return  find_distortion(z_obj, lo_dims = lo_dims)

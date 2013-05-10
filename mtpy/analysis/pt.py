@@ -61,13 +61,8 @@ import copy
 
 import mtpy.core.edi as MTedi 
 import mtpy.core.z as MTz 
-import mtpy.utils.exceptions as MTexceptions
-import mtpy.utils.calculator as MTc
-
-#reload(MTexceptions)
-#reload(MTedi)
-#reload(MTz)
-#reload(MTc)
+import mtpy.utils.exceptions as MTex
+import mtpy.utils.calculator as MTcc
 
 
 #=================================================================
@@ -86,17 +81,18 @@ class PhaseTensor(object):
             PTxx: (0,0) - PTxy: (0,1) - PTyx: (1,0) - PTyy: (1,1)   
 
         All internal methods are based on (Caldwell et al.,2004) and 
-        (Bibby et al.,2005), in which they use the canonical cartesian 2D 
-        reference (x1, x2). However, all components, coordinates, and angles 
-        for in- and outputs are given in the geographical reference frame:
+		(Bibby et al.,2005), in which they use the canonical cartesian 2D reference 
+		(x1, x2). However, all components, coordinates, and angles for in- and 
+		outputs are given in the geographical reference frame:
             x-axis = North ; y-axis = East (; z-axis = Down) 
-            Therefore, all results from using those methods are consisting 
-            (angles are referenced from North rather than x1).
+            
+            Therefore, all results from using those methods are consistent 
+			(angles are referenced from North rather than x1).
 
     """
 
     def __init__(self, pt_array = None, pterr_array = None, z_array = None, 
-                 zerr_array = None, z_object = None, edi_object = None):
+				 zerr_array = None, z_object = None):
         """
             Initialise an instance of the PhaseTensor class.
 
@@ -105,9 +101,9 @@ class PhaseTensor(object):
             pterr_array : Numpy array containing Phase-Tensor-error values
             z_array : Numpy array containing Z values
             zerr_array : Numpy array containing Z-error values (NOT variance, but stddev!)
-            edi_object : instance of the MTpy Edi class
+            z_object: MTpy core.z Z class instance
 
-            Initialise the attributes with None
+            (Initialise attributes with None)
         """
     
         self.pt = None
@@ -132,6 +128,7 @@ class PhaseTensor(object):
                         self.pt[idx_f] = pt_array[idx_f]
 
         except:
+            self.pt = None
             pass
 
         try:
@@ -140,6 +137,7 @@ class PhaseTensor(object):
                     self.pt = np.zeros((1,2,2))
                     self.pt[0] = pt_array
         except:
+            self.pt = None
             pass
 
         try:
@@ -150,6 +148,7 @@ class PhaseTensor(object):
                             for idx_f in range(pterr_array.shape[0]):
                                 self.pterr[idx_f] = pterr_array[idx_f]
         except:
+            self.pterr = None  
             pass
 
         try:
@@ -160,27 +159,26 @@ class PhaseTensor(object):
                             self.pterr = np.zeros((1,2,2))
                             self.pterr[0] =  pt_array           
         except:
+            self.pterr = None  
             pass
 
  
-        #B) check, if z array is given as well
-        #1. check, if valid Edi object is given
-        #then compute pt
-        if isinstance(edi_object, MTedi.Edi):
-            print 'reading edi_object'
-            self.read_edi(edi_object)
-
-        #2. otherwise check, if valid Z object is given 
-        elif isinstance(z_object,MTz.Z):
+        #B) check, if z array is given in some form as well
+        # check, if valid Z object is given 
+        if isinstance(z_object, MTz.Z):
             
             try:
-                self._z = z_object.z
-                
+                z_array = z_object.z
+
+                try:
+                    zerr_array = z_object.zerr
+                    if z_array.shape != zerr_array.shape:
+                        zerr_array = None
+                except:
+                    pass
             except:
-                pass
-            try:
-                self._z_err = z_object.zerr
-            except:
+                z_array = None
+                zerr_array = None
                 pass
             
             #--> compute the phase tensor components
@@ -226,6 +224,8 @@ class PhaseTensor(object):
 
         #3. if provided PT array was invalid, try to use the Z array 
         if self.pt is None:
+            #nulling the error array:
+            self.pterr = None
             try:
                 if len(z_array.shape) == 3 and z_array.shape[1:3] == (2,2):
                     if z_array.dtype in ['complex', 'float']:
@@ -245,9 +245,11 @@ class PhaseTensor(object):
                                     
                         except:
                             self.pt = None
-
+                            self.pterr = None                        
             except:
-                pass
+                self.pt = None
+                self.pterr = None                        
+                
 
             try:
                 if len(z_array.shape) == 2 and z_array.shape == (2,2):
@@ -263,12 +265,13 @@ class PhaseTensor(object):
             except:
                 pass
            
-        self.frequencies = None
-        self.rotation_angle = 0.
+        self._rotation_angle = None
 
-        self.rotation_angle = None
         if self.pt is not None:
-            self.rotation_angle = [ 0. for i in self.pt ]
+            self._rotation_angle = np.zeros(len(self.pt))
+
+        self._frequencies = None
+
 
 
     #==========================================================================
@@ -286,14 +289,14 @@ class PhaseTensor(object):
         """         
 
         if not len(pt_array.shape) in [2,3]:
-            raise MTexceptions.MTpyError_PT('ERROR - I cannot set new pt array! Invalid dimensions')
+            raise MTex.MTpyError_PT('ERROR - I cannot set new pt array! Invalid dimensions')
         if not pt_array.shape[-2:] == (2,2):
-            raise MTexceptions.MTpyError_PT('ERROR - I cannot set new pt array! Invalid dimensions')
+            raise MTex.MTpyError_PT('ERROR - I cannot set new pt array! Invalid dimensions')
         try:
             if not pt_array.dtype in ['float']:
                 raise
         except:
-            raise MTexceptions.MTpyError_PT('ERROR - I cannot set new pt array! Invalid data type (float expected)')
+            raise MTex.MTpyError_PT('ERROR - I cannot set new pt array! Invalid data type (float expected)')
 
         if len(pt_array.shape) == 3:
             self.pt = pt_array
@@ -302,7 +305,27 @@ class PhaseTensor(object):
             self.pt[0] = pt_array
 
         #test all other attributes for proper dimensions!!!...    
-        self.compute_PT_parameters()
+        #self.compute_PT_parameters()
+        #testing existing atributes for consistent shapes:
+        try:
+            if shape(self.pt) != shape(self.pterr):
+                raise
+        except:
+            print 'Shape of new PT array and existing PTerror do not match - setting PTerror to "None"'
+            self.pterr = None
+        try:
+            if len(self.pt) != len(self.frequencies):
+                raise
+        except:
+            print 'Shape of new PT array and existing "Frequencies" do not match - setting frequencies to "None"'
+            self.frequencies = None
+        try:
+            if len(self.pt) != len(self.rotation_angle):
+                raise
+        except:
+            print 'Shape of new PT array and existing "Rotation_angle" do not match - setting rotation_angle to "None"'
+            self.rotation_angle = None
+
 
     def set_pterr(self, pterr_array):
         """
@@ -316,125 +339,51 @@ class PhaseTensor(object):
         """         
 
         if not len(pterr_array.shape) in [2,3]:
-            raise MTexceptions.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid dimensions')
+            raise MTex.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid dimensions')
         if not pterr_array.shape[-2:] == (2,2):
-            raise MTexceptions.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid dimensions')
+            raise MTex.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid dimensions')
         try:
             if not pterr_array.dtype in ['float']:
                 raise
         except:
-            raise MTexceptions.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid data type (float expected)')
+            raise MTex.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid data type (float expected)')
 
         if self.pt is not None:
             if self.pt.shape != pterr_array.shape:
-                raise MTexceptions.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid dimensions')
+                raise MTex.MTpyError_PT('ERROR - I cannot set new pterr array! Invalid dimensions')
  
 
         if len(pterr_array.shape) == 3:
             self.pterr = pterr_array
         else:
-            self.pterr = np.zeros((1,self.pt_array.shape[0],
-                                   self.pt_array.shape[1])) 
+            self.pterr = np.zeros((1,pt_array.shape[0],pt_array.shape[1])) 
             self.pterr[0] = pterr_array
-            
-        #--> be sure to update the parameters
-        self.compute_PT_parameters()
 
 
-    def set_frequencies(self,lo_frequencies):
+
+    def _set_frequencies(self, lo_frequencies):
         """
-            Set the list of frequencies.
+            Set array of frequencies.
 
             Input:
-            list of frequencies
+            list/array of frequencies (iterable)
 
             No test for consistency!
         """ 
 
-        if len(lo_frequencies) is not len(self.pt):
-            print 'length of frequency list not correct (%i instead of %i)'%(len(lo_frequencies), len(self.pt))
-            return
+        if (self.pt is not None):
+            if lo_frequencies is not None:
+                if (len(lo_frequencies) is not len(self.pt)):
+                    print 'length of frequency list not correct (%i instead of %i)'%(len(lo_frequencies), len(self.pt))
+                    return
+        try:
+            self._frequencies = np.array(lo_frequencies)
+        except:
+            self._frequencies = None
 
-        self.frequencies = lo_frequencies
-        
-    def set_z(self, z, zerr=None):
-        """
-        can set the impedance tensor which will recalculate the phase
-        tensor components.
-        
-        """
-        
-        self._z = z
-        self._z_err=zerr
-        
-        self.pt = np.zeros((len(self._z),2,2))
-        self.pterr = np.zeros_like(self.pt) 
- 
-        if self._z_err is not None:
-
-            for idx_f in range(len(self._z)):
-                try:
-                    self.pt[idx_f], self.pterr[idx_f] = z2pt(self._z[idx_f], 
-                                                             self._z_err[idx_f] )
-                except MTexceptions.MTpyError_PT:
-                    print 'Singular Matrix at {0:.5g}'.format(self.frequencies[idx_f])
-                    print '  --> pt[{0}]=np.zeros((2,2))'.format(idx_f)
-
-        else:
-
-            for idx_f in range(len(self._z)):
-                try:
-                    self.pt[idx_f] = z2pt(self._z[idx_f])[0]
-                except MTexceptions.MTpyError_PT:
-                    print 'Singular Matrix at {0:.5g}'.format(self.frequencies[idx_f])
-                    print '  --> pt[{0}]=np.zeros((2,2))'.format(idx_f)
-        
-        #--> be sure to update the parameters            
-        self.compute_PT_parameters()
-        
-
-    def read_edi_file(self,fn):
-        """
-            Read in EDI file and convert information into PhaseTensor object attributes.
-        """
-
-        e = MTedi.Edi()
-        self.read_edi(e)
-
-
-    def read_edi(self,edi_object):
-        """
-            Read in EDI object and convert information into PhaseTensor object attributes.
-        """
-
-        self._z = edi_object.Z.z
-        self._z_err = edi_object.Z.zerr
-        self.pt = np.zeros((len(self._z),2,2))
-        self.pterr = np.zeros_like(self.pt) 
- 
-        if self._z_err is not None:
-
-            for idx_f in range(len(self._z)):
-                try:
-                    self.pt[idx_f], self.pterr[idx_f] = z2pt(self._z[idx_f], 
-                                                             self._z_err[idx_f] )
-                except MTexceptions.MTpyError_PT:
-                    print 'Singular Matrix at {0:.5g}'.format(edi_object.freq[idx_f])
-                    print '  --> pt[{0}]=np.zeros((2,2))'.format(idx_f)
-
-        else:
-
-            for idx_f in range(len(self._z)):
-                try:
-                    self.pt[idx_f] = z2pt(self._z[idx_f])[0]
-                except MTexceptions.MTpyError_PT:
-                    print 'Singular Matrix at {0:.5g}'.format(edi_object.freq[idx_f])
-                    print '  --> pt[{0}]=np.zeros((2,2))'.format(idx_f)
-
-
-        self.frequencies = edi_object.freq
-        self.rotation_angle = edi_object.zrot
-        self.compute_PT_parameters()
+    def _get_frequencies(self): return self._frequencies
+    
+    frequencies = property(_get_frequencies, _set_frequencies,doc="")
 
 
     def read_z(self,z_object):
@@ -458,7 +407,8 @@ class PhaseTensor(object):
 
         self.frequencies = z_object.frequencies
         self.rotation_angle = z_object.rotation_angle
-        self.compute_PT_parameters()
+        #self.compute_PT_parameters()
+
 
 
     def read_z_array(self,z_array, zerr_array = None):
@@ -481,34 +431,42 @@ class PhaseTensor(object):
             for idx_f in range(len(z)):
                 self.pt[idx_f] = z2pt( z[idx_f])[0]
                 
-        self.compute_PT_parameters()
+        #self.compute_PT_parameters()
 
 #        self.frequencies = z_object.frequencies
 #        self.rotation_angle = z_object.rotation_angle
 
+        if self.frequencies is not None:
+            if len(self.frequencies) != len(z_array):
+                self.frequencies = None
+
     #==========================================================================
     #  define get methods
     #==========================================================================
-    def get_invariants(self):
+    def _get_invariants(self):
         """
             Return a dictionary of PT-invariants.
 
             Contains:
             trace, skew, det, phimax, phimin, beta
         """
+        if self.pt is None:
+            return None
 
         inv_dict = {}
-        inv_dict['trace'] = self.trace()[0] 
-        inv_dict['skew'] = self.skew()[0]
-        inv_dict['det'] = self.det()[0] 
+        inv_dict['trace'] = self.trace[0] 
+        inv_dict['skew'] = self.skew[0]
+        inv_dict['det'] = self.det[0] 
 
-        inv_dict['phimax'] = self.phimax()[0] 
-        inv_dict['phimin'] = self.phimin()[0] 
-        inv_dict['beta'] = self.beta()[0] 
+        inv_dict['phimax'] = self.phimax[0] 
+        inv_dict['phimin'] = self.phimin[0] 
+        inv_dict['beta'] = self.beta[0] 
 
         return inv_dict
 
-    def get_trace(self):
+    invariants = property(_get_invariants, doc="")
+
+    def _get_trace(self):
         """
             Return the trace of PT (incl. uncertainties).
 
@@ -517,6 +475,8 @@ class PhaseTensor(object):
             - Error of Trace(PT) - Numpy array
 
         """
+        if self.pt is None:
+            return None, None
         
         tr = np.array( [np.trace(i) for i in self.pt])
 
@@ -528,16 +488,22 @@ class PhaseTensor(object):
 
         return tr, tr_err
 
+    trace = property(_get_trace, doc= "")
 
-    def get_alpha(self):
+
+    def _get_alpha(self):
         """
-            Return the principal axis angle of PT in degrees (incl. uncertainties).
+            Return the principal axis angle (strike) of PT in degrees 
+			(incl. uncertainties).
 
             Output:
             - Alpha - Numpy array
             - Error of Alpha - Numpy array
 
         """
+
+        if self.pt is None:
+            return None, None
 
         alpha = np.degrees(0.5 * np.arctan2( self.pt[:,0,1] + self.pt[:,1,0],
                                             self.pt[:,0,0] - self.pt[:,1,1]))
@@ -555,7 +521,40 @@ class PhaseTensor(object):
 
         return alpha, alphaerr
         
-    def get_skew(self):
+    alpha = property(_get_alpha, doc = "")
+
+    def _get_beta(self):
+        """
+            Return the 3D-dimensionality angle Beta of PT in degrees (incl. uncertainties).
+
+            Output:
+            - Beta - Numpy array
+            - Error of Beta - Numpy array
+
+        """
+
+        if self.pt is None:
+            return None, None
+        
+        beta = np.degrees(0.5 * np.arctan2( self.skew[0], self.trace[0])  )
+        betaerr = None
+
+        if self.pterr is not None:
+            betaerr = np.zeros_like(beta)
+
+            y = self.skew[0]
+            yerr = self.skew[1]
+            x = self.trace[0]
+            xerr = self.trace[1]
+
+            betaerr[:] = 0.5 / ( x**2 + y**2) * np.sqrt( y**2 * xerr**2 +\
+                                                         x**2 * yerr**2 )
+
+        return beta, betaerr
+
+    beta = property(_get_beta, doc = "")
+
+    def _get_skew(self):
         """
             Return the skew of PT (incl. uncertainties).
 
@@ -564,7 +563,9 @@ class PhaseTensor(object):
             - Error of Skew(PT) - Numpy array
 
         """
-        
+        if self.pt is None:
+            return None, None
+       
         skew =  np.array( [ i[0,1] - i[1,0] for i in self.pt ] )
         
         skewerr = None
@@ -574,34 +575,9 @@ class PhaseTensor(object):
 
         return skew, skewerr
 
-    def get_beta(self):
-        """
-            Return the 3D-dimensionality angle Beta of PT in degrees (incl. uncertainties).
+    skew = property(_get_skew, doc = "")
 
-            Output:
-            - Beta - Numpy array
-            - Error of Beta - Numpy array
-
-        """
-        
-        beta = np.degrees(0.5 * np.arctan2(self.get_skew()[0],
-                                           self.get_trace()[0]))
-        betaerr = None
-
-        if self.pterr is not None:
-            betaerr = np.zeros_like(beta)
-
-            y = self.get_skew()[0]
-            yerr = self.get_skew()[1]
-            x = self.get_trace()[0]
-            xerr = self.get_trace()[1]
-
-            betaerr[:] = 0.5 / ( x**2 + y**2) * np.sqrt( y**2 * xerr**2 +\
-                                                         x**2 * yerr**2 )
-
-        return beta, betaerr
-
-    def get_det(self):
+    def _get_det(self):
         """
             Return the determinant of PT (incl. uncertainties).
 
@@ -610,6 +586,8 @@ class PhaseTensor(object):
             - Error of Det(PT) - Numpy array
 
         """
+        if self.pt is None:
+            return None, None
 
         det_phi = np.array( [np.linalg.det(i) for i in self.pt])
         
@@ -623,12 +601,14 @@ class PhaseTensor(object):
 
         return det_phi, det_phi_err
 
-    def get_pi1(self):
+    det = property(_get_det, doc = "")
+
+    def _pi1(self):
         """
             Return Pi1 (incl. uncertainties).
             
-            Pi1 is calculated according to Bibby et al. 2005: Pi1 = 0.5 * 
-            sqrt( PT[0,0] - PT[1,1] )**2 + (PT[0,1] + PT[1,0] )**2 )
+            Pi1 is calculated according to Bibby et al. 2005: 
+			Pi1 = 0.5 * sqrt(PT[0,0] - PT[1,1])**2 + (PT[0,1] + PT[1,0])**2)
 
             Output:
             - Phi_min - Numpy array
@@ -649,12 +629,12 @@ class PhaseTensor(object):
 
         return pi1, pi1err
 
-    def get_pi2(self):
+    def _pi2(self):
         """
             Return Pi1 (incl. uncertainties).
             
-            Pi1 is calculated according to Bibby et al. 2005: Pi1 = 0.5 * 
-            sqrt( PT[0,0] + PT[1,1] )**2 + (PT[0,1] - PT[1,0] )**2 )
+            Pi1 is calculated according to Bibby et al. 2005: 
+			Pi1 = 0.5 * sqrt(PT[0,0] + PT[1,1])**2 + (PT[0,1] - PT[1,0])**2)
 
             Output:
             - Phi_min - Numpy array
@@ -678,12 +658,11 @@ class PhaseTensor(object):
    
 
 
-    def get_phimin(self):
+    def _get_phimin(self):
         """
             Return the angle Phi_min of PT (incl. uncertainties).
             
-            Phi_min is calculated according to Bibby et al. 2005: 
-                Phi_min = Pi2 - Pi1 
+            Phi_min is calculated according to Bibby et al. 2005: Phi_min = Pi2 - Pi1 
 
             Output:
             - Phi_min - Numpy array
@@ -707,7 +686,10 @@ class PhaseTensor(object):
 
         #following bibby et al 2005:
 
-        phimin = self.get_pi2()[0] - self.get_pi1()[0]
+        if self.pt is None:
+            return None, None
+
+        phimin = self._pi2()[0] - self._pi1()[0]
 
         phiminerr = None
         if self.pterr is not None:
@@ -715,8 +697,9 @@ class PhaseTensor(object):
  
         return np.degrees(phimin), np.degrees(phiminerr)
 
+    phimin = property(_get_phimin, doc ="")
 
-    def get_phimax(self):
+    def _get_phimax(self):
         """
             Return the angle Phi_max of PT (incl. uncertainties).
             
@@ -739,14 +722,19 @@ class PhaseTensor(object):
 
         #following bibby et al 2005:
 
-        phimax = self.get_pi2()[0] + self.get_pi1()[0]
+        if self.pt is None:
+            return None, None
+
+        phimax = self._pi2()[0] + self._pi1()[0]
 
         phimaxerr = None
         if self.pterr is not None:
             phimaxerr = np.sqrt( self.get_pi2()[1]**2 + self.get_pi1()[1]**2 )
  
         return np.degrees(phimax), np.degrees(phimaxerr)
-        
+       
+	phimax = property(_get_phimax, doc = "")
+	
     def compute_PT_parameters(self):
         """
         computes the important parameters and makes them attributes
@@ -773,18 +761,16 @@ class PhaseTensor(object):
         #--> compute skew angle
         self.skew, self.skew_err = self.get_skew()
 
-
     def rotate(self,alpha):
         """
             Rotate PT array. Change the rotation angles attribute respectively.
 
-            Rotation angle must be given in degrees. All angles are referenced 
-            to geographic North, positive in clockwise direction. 
-            (Mathematically negative!)
+            Rotation angle must be given in degrees. All angles are referenced to 
+			geographic North, positive in clockwise direction. 
+			(Mathematically negative!)
 
             In non-rotated state, X refs to North and Y to East direction.
 
-            Updates the attributes "pt, pterr, rotation_angle".
 
         """
 
@@ -837,9 +823,9 @@ class PhaseTensor(object):
                 angle = 0.
 
             if self.pterr is not None:
-                pt_rot[idx_freq], pterr_rot[idx_freq] = MTc.rotatematrix_incl_errors(self.pt[idx_freq,:,:], angle, self.pterr[idx_freq,:,:])
+                pt_rot[idx_freq], pterr_rot[idx_freq] = MTcc.rotatematrix_incl_errors(self.pt[idx_freq,:,:], angle, self.pterr[idx_freq,:,:])
             else:
-                pt_rot[idx_freq], pterr_rot = MTc.rotatematrix_incl_errors(self.pt[idx_freq,:,:], angle)
+                pt_rot[idx_freq], pterr_rot = MTcc.rotatematrix_incl_errors(self.pt[idx_freq,:,:], angle)
 
         
         #--> set the rotated tensors as the current attributes
@@ -850,14 +836,15 @@ class PhaseTensor(object):
         self.compute_PT_parameters()
 
 
-    def only1d(self):
+    def _get_only1d(self):
         """
             Return PT in 1D form.
 
-            If PT is not 1D per se, the diagonal elements are set to zero, 
-            the off-diagonal elements keep their signs, but their absolute is 
-            set to the mean of the original PT off-diagonal absolutes.
+            If PT is not 1D per se, the diagonal elements are set to zero, the off-diagonal elements keep their signs, but their absolute is set to the mean of the original PT off-diagonal absolutes.
         """
+
+        if self.pt is None:
+            return None
 
         pt1d = copy.copy(self.pt)
 
@@ -871,13 +858,16 @@ class PhaseTensor(object):
 
         return pt1d
 
+    only1d = property(_get_only1d, doc = "")
 
-    def only2d(self):
+    def _get_only2d(self):
         """
             Return PT in 2D form.
 
             If PT is not 2D per se, the diagonal elements are set to zero.
         """
+        if self.pt is None:
+            return None
 
         pt2d = copy.copy(self.pt)
 
@@ -885,12 +875,12 @@ class PhaseTensor(object):
             pt2d[i,0,1] = 0
             pt2d[i,1,0] = 0
             
-            pt2d[i,0,0] = self.phimax()[i]
-            pt2d[i,1,1] = self.phimin()[i]
+            pt2d[i,0,0] = self.phimax[0][i]
+            pt2d[i,1,1] = self.phimin[0][i]
             
         return pt2d
 
-
+    only2d = property(_get_only2d, doc = "")
 
 
 class ResidualPhaseTensor(PhaseTensor):
@@ -921,7 +911,7 @@ class ResidualPhaseTensor(PhaseTensor):
 
         if pt_object1 is not None or  pt_object2 is not None:
             if not (( isinstance(pt_object1,PhaseTensor) and isinstance(pt_object2,PhaseTensor))):
-                raise MTexceptions.MTpyError_PT('ERROR - arguments must be instances of the PhaseTensor class')
+                raise MTex.MTpyError_PT('ERROR - arguments must be instances of the PhaseTensor class')
             
             self.read_pt_objects(pt_object1,pt_object2)
 
@@ -936,7 +926,7 @@ class ResidualPhaseTensor(PhaseTensor):
         """
 
         if not ( (isinstance(pt_o1, PhaseTensor)) and (isinstance(pt_o2, PhaseTensor)) ):
-            raise MTexceptions.MTpyError_PT('ERROR - both arguments must be instances of the PhaseTensor class')
+            raise MTex.MTpyError_PT('ERROR - both arguments must be instances of the PhaseTensor class')
 
         pt1 = pt_object1.pt
         pt2 = pt_object2.pt
@@ -968,7 +958,7 @@ class ResidualPhaseTensor(PhaseTensor):
                     self._pt2[0] = pt2 
 
             except:
-                raise MTexceptions.MTpyError_PT('ERROR - both PhaseTensor objects must contain PT arrays of the same shape')
+                raise MTex.MTpyError_PT('ERROR - both PhaseTensor objects must contain PT arrays of the same shape')
 
         else:
             print  'Could not determine ResPT - both PhaseTensor objects must contain PT arrays of the same shape'
@@ -1015,7 +1005,7 @@ class ResidualPhaseTensor(PhaseTensor):
                     self._pt2err[0] = pt2err 
 
             except:
-                raise MTexceptions.MTpyError_PT('ERROR - both PhaseTensor objects must contain PT-error arrays of the same shape')
+                raise MTex.MTpyError_PT('ERROR - both PhaseTensor objects must contain PT-error arrays of the same shape')
                 
         else:
             print  'Could not determine ResPT uncertainties - both PhaseTensor objects must contain PT-error arrays of the same shape'
@@ -1039,7 +1029,7 @@ class ResidualPhaseTensor(PhaseTensor):
                 raise
 
         except:
-            raise MTexceptions.MTpyError_PT('ERROR - could not build ResPT array from given PT arrays - check shapes! ')
+            raise MTex.MTpyError_PT('ERROR - could not build ResPT array from given PT arrays - check shapes! ')
         #TODO - check arrays here:
 
 
@@ -1108,7 +1098,7 @@ def z2pt(z_array, zerr_array = None):
             if not z_array.dtype in ['complex', 'float']:
                 raise
         except:
-            raise MTexceptions.MTpyError_PT('Error - incorrect z array: %s;%s instead of (N,2,2);complex'%(str(z_array.shape), str(z_array.dtype)))    
+            raise MTex.MTpyError_PT('Error - incorrect z array: %s;%s instead of (N,2,2);complex'%(str(z_array.shape), str(z_array.dtype)))    
 
 
     if zerr_array is not None:
@@ -1120,10 +1110,10 @@ def z2pt(z_array, zerr_array = None):
             if not zerr_array.dtype in ['float']:
                 raise
         except:
-            raise MTexceptions.MTpyError_PT('Error - incorrect z-err-array: %s;%s instead of (N,2,2);real'%(str(zerr_array.shape), str(zerr_array.dtype)))
+            raise MTex.MTpyError_PT('Error - incorrect z-err-array: %s;%s instead of (N,2,2);real'%(str(zerr_array.shape), str(zerr_array.dtype)))
 
         if not z_array.shape == zerr_array.shape:
-            raise MTexceptions.MTpyError_PT('Error - z-array and z-err-array have different shape: %s;%s'%(str(z_array.shape), str(zerr_array.shape)))
+            raise MTex.MTpyError_PT('Error - z-array and z-err-array have different shape: %s;%s'%(str(z_array.shape), str(zerr_array.shape)))
 
 
 
@@ -1144,7 +1134,7 @@ def z2pt(z_array, zerr_array = None):
                 return pt_array, pterr_array
 
             else:
-                raise MTexceptions.MTpyError_PT('Error - z-array contains a singular matrix, thus it cannot be converted into a PT!' )
+                raise MTex.MTpyError_PT('Error - z-array contains a singular matrix, thus it cannot be converted into a PT!' )
 
 
 
@@ -1206,7 +1196,7 @@ def z2pt(z_array, zerr_array = None):
 
         detreal = np.linalg.det(realz)
         if detreal == 0 :
-            raise MTexceptions.MTpyError_PT('Error - z-array contains a singular matrix, thus it cannot be converted into a PT!' )
+            raise MTex.MTpyError_PT('Error - z-array contains a singular matrix, thus it cannot be converted into a PT!' )
 
         pt_array[idx_f,0,0] =  realz[1,1] * imagz[0,0] - realz[0,1] * imagz[1,0] 
         pt_array[idx_f,0,1] =  realz[1,1] * imagz[0,1] - realz[0,1] * imagz[1,1] 
@@ -1262,7 +1252,7 @@ def z_object2pt(z_object):
     """
 
     if not isinstance(z_object, MTz.Z):
-        raise MTexceptions.MTpyError_Z('Input argument is not an instance of the Z class')
+        raise MTex.MTpyError_Z('Input argument is not an instance of the Z class')
 
     p = PhaseTensor(z_object = z_object)
 
@@ -1288,7 +1278,7 @@ def edi_object2pt(edi_object):
 
 
     if not isinstance(z_object, MTedi.Edi):
-        raise MTexceptions.MTpyError_EDI('Input argument is not an instance of the Edi class')
+        raise MTex.MTpyError_EDI('Input argument is not an instance of the Edi class')
     p = PhaseTensor(edi_object = edi_object)
 
     pt_array = p.pt

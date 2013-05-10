@@ -17,11 +17,12 @@ so if you want the first 12 frequencies from edi1 and the last 17
 frequencies from edi2, then n1=12 and n2=17
 """
 
-import mtpy.core.mttools as mt
 import os
 import os.path as op
 import sys
 import mtpy.imaging.mtplottools as mtplot
+import mtpy.core.mttools as mt
+
 
 def main():
 

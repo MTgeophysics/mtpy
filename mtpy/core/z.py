@@ -54,16 +54,11 @@ Contains classes and functions for handling impedance tensors (Z).
 import numpy as np
 import math, cmath
 import copy
-import mtpy.utils.calculator as MTc
 import sys
 
-
-import mtpy.utils.exceptions as MTexceptions
-
-#reload(MTexceptions)
-#reload(MTformat)
-#reload(MTc)
-
+import mtpy.utils.calculator as MTcc
+import mtpy.utils.exceptions as MTex
+import mtpy.utils.format as MTft
 
 #=================================================================
 
@@ -75,6 +70,7 @@ class Z(object):
 
         Methods  include rotations/combinations of Z instances, as well as 
         calculation of invariants, inverse, amplitude/phase,...
+        MTcculation of invariants, inverse, amplitude/phase,...
 
         
         Z is a complex array of the form (n_frequencies, 2, 2), 
@@ -92,7 +88,8 @@ class Z(object):
 
             Optional input:
             z_array : Numpy array containing Z values
-            zerr_array : Numpy array containing Z-error values (NOT variance, but stddev!)
+            zerr_array : Numpy array containing Z-error values (NOT variance, 
+			but stddev!)
 
             Initialise the attributes with None
         """    
@@ -153,42 +150,6 @@ class Z(object):
             self.rotation_angle = np.zeros((len(self.z)))
 
 
-    # def read_edi_object(self, edi_object):
-    #     """
-    #         Read in an instance of the MTpy Edi class.
-
-    #         Update attributes "z, zerr"
-
-    #     """
-
-
-    #     if not isinstance(edi_object,MTedi.Edi):
-    #         print 'Object is not a valid instance of the Edi class - Z object not updated'
-    #         return
-
-
-    #     self.edi_object = edi_object
-    #     self.frequencies = edi_object.frequencies
-
-    #     try:
-    #         if edi_object.z is None :
-    #             raise
-            
-    #         z_new = edi_object.z
-    #         try:
-    #             zerr_new = edi_object.zerr
-    #         except:
-    #             zerr_new = np.zeros(z_new.shape)
-
-    #         if len(z_new) != len(zerr_new):
-    #             raise
-    #         self.z = z_new
-    #         self.zerr = zerr_new
-
-    #     except:
-    #         print 'Edi object does not contain correct z information - z object not updated'
-
-
     def _set_frequencies(self, lo_frequencies):
         """
             Set the array of frequencies.
@@ -209,6 +170,28 @@ class Z(object):
     def _get_frequencies(self): return np.array(self._frequencies)
     frequencies = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
 
+    def _set_frequencies(self, lo_frequencies):
+        """
+            Set the array of frequencies.
+
+            Input:
+            list/array of frequencies
+
+            No test for consistency!
+        """
+
+        if self.z is not None:
+            if len(lo_frequencies) is not len(self.z):
+                print 'length of frequency list/array not correct (%i instead of %i)'%(len(lo_frequencies), len(self.z))
+                return
+         
+        self._frequencies = np.array(lo_frequencies)
+
+    def _get_frequencies(self): 
+		return np.array(self._frequencies)
+		
+    frequencies = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
+
        
     def set_z(self, z_array):
         """
@@ -219,6 +202,8 @@ class Z(object):
 
             Test for shape, but no test for consistency!
 
+            Nulling the rotation_angle
+
         """         
 
         z_orig = self.z 
@@ -228,6 +213,7 @@ class Z(object):
             return
 
         self.z = z_array
+        self.rotation_angle = np.zeros((len(z_array)))
 
 
     def set_zerr(self, zerr_array):
@@ -255,7 +241,7 @@ class Z(object):
         """ 
 
         if self.z is None:
-            print 'z array is None - cannot calculate real'
+            print 'z array is None - cannot MTcculate real'
             return
 
         return np.real(self.z)
@@ -300,7 +286,7 @@ class Z(object):
         """
 
         if self.z is None:
-            print 'z array is None - cannot calculate imag'
+            print 'z array is None - cannot MTcculate imag'
             return
 
 
@@ -348,8 +334,9 @@ class Z(object):
         """ 
         
         if self.z is None:
-            print 'Z array is None - cannot calculate Res/Phase'
+            print 'Z array is None - cannot MTcculate Res/Phase'
             return
+			
         reserr = None
         phaseerr = None
         if self.zerr is not None:
@@ -368,7 +355,9 @@ class Z(object):
                     phase[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))%360
                 
                     if self.zerr is not None:
-                        r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
+
+                        r_err, phi_err = MTcc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
+
                         reserr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/self.frequencies[idx_f] * r_err
                         phaseerr[idx_f,i,j] = phi_err
 
@@ -378,14 +367,16 @@ class Z(object):
     res_phase = property(_get_res_phase, doc='Resistivity and Phase angle of Z')
 
 
-    def set_res_phase(self, res_array, phase_array):
+
+    def set_res_phase(self, res_array, phase_array, reserr_array = None, 
+	phaseerr_array = None):
         """
-            Set values for resistivity (res - in Ohm m) and phase (phase - in degrees).
+            Set values for resistivity (res - in Ohm m) and phase (phase - in degrees), 
+			including error propagation.
 
             Updates the attributes "z, zerr".
 
         """ 
-
 
         if self.z is not None: 
             z_new = copy.copy(self.z) 
@@ -399,21 +390,23 @@ class Z(object):
                 return
         else:
             z_new = np.zeros(res_array.shape,'complex')
+			
             if res_array.shape != phase_array.shape:
                 print 'Error - shape of "phase" array does not match shape of "res" array: %s ; %s'%(str(phase_array.shape),str(res_array.shape))
                 return
 
+
         if (self.frequencies is None) or (len(self.frequencies) != len(res_array)) :
-            raise MTexceptions.MTpyError_EDI('ERROR - cannot set res without proper frequency information - proper "freq" attribute must be defined ')
+            raise MTex.MTpyError_EDI('ERROR - cannot set res without correct frequency information - proper "freq" attribute must be defined ')
 
             
         #assert real array:
         if np.linalg.norm(np.imag(res_array )) != 0 :
-            print 'Error - array "res" is not real valued !'
-            return
+            raise MTex.MTpyError_inputarguments( 'Error - array "res" is not real valued !')
+            
         if np.linalg.norm(np.imag(phase_array )) != 0 :
-            print 'Error - array "phase" is not real valued !'
-            return
+            raise MTex.MTpyError_inputarguments( 'Error - array "phase" is not real valued !')
+            
 
         for idx_f in range(len(z_new)):
             for i in range(2):
@@ -422,6 +415,49 @@ class Z(object):
                     z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phase_array[idx_f,i,j] ))
 
         self.z = z_new
+        
+        #---------------------------
+        # error propagation:
+        if reserr_array is None or  phaseerr_array is None:
+            return
+
+        if self.zerr is not None: 
+            zerr_new = copy.copy(self.zerr) 
+
+            try:
+                if self.zerr.shape != reserr_array.shape:
+                    print 'Error - shape of "reserr" array does not match shape of Zerr array: %s ; %s'%(str(reserr_array.shape),str(self.zerr.shape))
+                    return
+
+                if self.zerr.shape != phaseerr_array.shape:
+                    print 'Error - shape of "phase" array does not match shape of Zerr array: %s ; %s'%(str(phase_array.shape),str(self.z.shape))
+                    return
+            except:
+                print 'Error - "phaseerr" or "reserr" is/are not array(s) - Zerr not set'
+                self.zerr = None
+                return 
+
+        else:
+            z_new = p.zeros(reserr_array.shape,'float')
+            try:
+                if reserr_array.shape != phaseerr_array.shape:
+                    print 'Error - shape of "phase" array does not match shape of "res" array: %s ; %s'%(str(phase_array.shape),str(res_array.shape))
+                    return
+            except:
+                print 'Error - "phaseerr" or "reserr" is/are not array(s) - Zerr not set'
+                return 
+               
+        for idx_f in range(len(zerr_new)):
+            for i in range(2):
+                for j in range(2):
+                    abs_z = np.sqrt(5 * self.frequencies[idx_f] * res_array[idx_f,i,j])
+                    rel_error_res = reserr_array[idx_f,i,j]/res_array[idx_f,i,j]
+                    #relative error varies by a factor of 0.5, which is the exponent in the relation between them:
+                    abs_z_error = 0.5 * abs_z * rel_error_res
+
+                    zerr_new[idx_f,i,j] = max(MTcc.propagate_error_polar2rect(abs_z, abs_z_error, phi, phi_error))
+
+        self.zerr = zerr_new
 
 
     def _get_inverse(self):
@@ -441,7 +477,7 @@ class Z(object):
             try:
                 inverse[idx_f,:,:] = np.array( (np.matrix(self.z[idx_f,:,:])).I )
             except:
-                raise MTexceptions.MTpyError_Z('The %ith impedance tensor cannot be inverted'%(idx_f+1))
+                raise MTex.MTpyError_Z('The %ith impedance tensor cannot be inverted'%(idx_f+1))
 
         return inverse
 
@@ -490,7 +526,7 @@ class Z(object):
                     return
             
         self.rotation_angle = [(oldangle + lo_angles[i])%360 
-                              for i,oldangle in enumerate(self.rotation_angle)] 
+							for i,oldangle in enumerate(self.rotation_angle) ] 
 
         if len(lo_angles) != len(self.z):
             print 'Wrong number Number of "angles" - I need %i '%(len(self.z))
@@ -507,9 +543,9 @@ class Z(object):
                 angle = 0.
 
             if self.zerr is not None:
-                z_rot[idx_freq], zerr_rot[idx_freq] = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle, self.zerr[idx_freq,:,:])
+                z_rot[idx_freq], zerr_rot[idx_freq] = MTcc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle, self.zerr[idx_freq,:,:])
             else:
-                z_rot[idx_freq], zerr_rot = MTc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle)
+                z_rot[idx_freq], zerr_rot = MTcc.rotatematrix_incl_errors(self.z[idx_freq,:,:], angle)
 
 
         self.z = z_rot
@@ -613,7 +649,7 @@ class Z(object):
 
         if distortion_err_tensor is None:
             distortion_err_tensor = np.zeros_like(distortion_tensor)
-        #for all frequencies, calculate D.Inverse, then obtain Z0 = D.I * Z
+        #for all frequencies, MTcculate D.Inverse, then obtain Z0 = D.I * Z
         try:
             if not ( len(distortion_tensor.shape) in [2,3] ) and  (len(distortion_err_tensor.shape) in [2,3]):
                 raise
@@ -631,12 +667,12 @@ class Z(object):
             distortion_tensor = np.matrix(np.real(distortion_tensor))
 
         except:
-            raise MTexceptions.MTpyError_Z('The array provided is not a proper distortion tensor')
+            raise MTex.MTpyError_Z('The array provided is not a proper distortion tensor')
 
         try: 
             DI = distortion_tensor.I
         except:
-            raise MTexceptions.MTpyError_Z('The provided distortion tensor is singular - I cannot invert that!')
+            raise MTex.MTpyError_Z('The provided distortion tensor is singular - I cannot invert that!')
 
         #propagation of errors (using 1-norm) - step 1 - inversion of D:
         DI_err = np.zeros_like(distortion_err_tensor)
@@ -644,7 +680,7 @@ class Z(object):
         #todo :include error on  determinant!!
         D_det = np.linalg.det(distortion_tensor)
 
-        dummy, DI_err = MTc.invertmatrix_incl_errors(distortion_tensor, distortion_err_tensor)
+        dummy, DI_err = MTcc.invertmatrix_incl_errors(distortion_tensor, distortion_err_tensor)
 
         #propagation of errors - step 2 - product of D.inverse and Z; D.I * Z, making it 4 summands for each component:
         z_corrected = np.zeros_like(self.z)
@@ -789,7 +825,6 @@ class Z(object):
 
         return znorm, znormerr
     norm = property(_get_norm, doc='Norm of Z, incl. error')
-
 
     def _get_invariants(self):
         """
@@ -987,7 +1022,7 @@ class Tipper(object):
 
         """ 
         if self.tipper is None:
-            print 'tipper array is None - cannot calculate real'
+            print 'tipper array is None - cannot MTcculate real'
             return
 
         return np.real(self.tipper)
@@ -1033,7 +1068,7 @@ class Tipper(object):
         """ 
 
         if self.tipper is None:
-            print 'tipper array is None - cannot calculate imag'
+            print 'tipper array is None - cannot MTcculate imag'
             return
 
         return np.imag(self.tipper)
@@ -1082,7 +1117,7 @@ class Tipper(object):
 
         
         if self.tipper is None:
-            print 'tipper array is None - cannot calculate rho/phi'
+            print 'tipper array is None - cannot MTcculate rho/phi'
             return
         rhoerr = None
         phierr = None
@@ -1100,7 +1135,7 @@ class Tipper(object):
                 phi[idx_f,0,j] = math.degrees(cmath.phase(self.tipper[idx_f,0,j]))
                 
                 if self.tippererr is not None:
-                    r_err, phi_err = MTc.propagate_error_rect2polar( np.real(self.tipper[idx_f,0,j]), self.tippererr[idx_f,0,j], np.imag(self.tipper[idx_f,0,j]), self.tippererr[idx_f,0,j])
+                    r_err, phi_err = MTcc.propagate_error_rect2polar( np.real(self.tipper[idx_f,0,j]), self.tippererr[idx_f,0,j], np.imag(self.tipper[idx_f,0,j]), self.tippererr[idx_f,0,j])
                     rhoerr[idx_f,0,j] = r_err
                     phierr[idx_f,0,j] = phi_err
 
@@ -1210,9 +1245,9 @@ class Tipper(object):
             angle = lo_angles[idx_freq]
 
             if self.tippererr is not None:
-                tipper_rot[idx_freq], tippererr_rot[idx_freq] =  MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle,self.tippererr[idx_freq,:,:] )
+                tipper_rot[idx_freq], tippererr_rot[idx_freq] =  MTcc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle,self.tippererr[idx_freq,:,:] )
             else:
-                tipper_rot[idx_freq], tippererr_rot = MTc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle)
+                tipper_rot[idx_freq], tippererr_rot = MTcc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle)
 
 
  
@@ -1388,7 +1423,7 @@ def _read_z_array(z_array, zerr_array = None):
 
         z_object = Z( z_array=z_array, zerr_array=zerr_array)
     except:
-        raise MTexceptions.MTpyError_Z('Cannot generate Z instance - check z-array dimensions/type: (N,2,2)/complex ; %s'%(str(z_array.shape)))
+        raise MTex.MTpyError_Z('Cannot generate Z instance - check z-array dimensions/type: (N,2,2)/complex ; %s'%(str(z_array.shape)))
 
     return z_object
 
@@ -1409,7 +1444,7 @@ def _read_tipper_array(tipper_array, tippererr_array = None):
     try:
         tipper_object = Tipper( tipper_array=tipper_array, tippererr_array=tippererr_array )
     except:
-        raise MTexceptions.MTpyError_tipper('Cannot generate Tipper instance - check dimensions/type: (N,1,2)/complex ; %s'%(str(tipper_array.shape)))
+        raise MTex.MTpyError_tipper('Cannot generate Tipper instance - check dimensions/type: (N,1,2)/complex ; %s'%(str(tipper_array.shape)))
 
     return tipper_object
 
@@ -1471,7 +1506,7 @@ def correct4sensor_orientation(Z_prime, Bx=0, By=90, Ex=0, Ey=90, Z_prime_error 
         Z_prime = np.matrix(Z_prime)
 
     except:
-        raise MTexceptions.MTpyError_inputarguments('ERROR - Z array not valid! Must be 2x2 complex array')
+        raise MTex.MTpyError_inputarguments('ERROR - Z array not valid! Must be 2x2 complex array')
 
     if Z_prime_error is not None:
         try:
@@ -1484,7 +1519,7 @@ def correct4sensor_orientation(Z_prime, Bx=0, By=90, Ex=0, Ey=90, Z_prime_error 
                 raise
 
         except:
-            raise MTexceptions.MTpyError_inputarguments('ERROR - Z-error array not valid! Must be 2x2 real array')
+            raise MTex.MTpyError_inputarguments('ERROR - Z-error array not valid! Must be 2x2 real array')
 
 
     T = np.matrix(np.zeros((2,2)))
@@ -1509,10 +1544,10 @@ def correct4sensor_orientation(Z_prime, Bx=0, By=90, Ex=0, Ey=90, Z_prime_error 
     try:
         Z = np.array(np.dot(T,np.dot(Z_prime, U.I)))
     except:
-        raise MTexceptions.MTpyError_inputarguments("ERROR - Given angles do not define basis for 2 dimensions - cannot convert Z'")
+        raise MTex.MTpyError_inputarguments("ERROR - Given angles do not define basis for 2 dimensions - cannot convert Z'")
 
     Zerr = copy.copy(Z_prime_error)
 
-    #TODO: calculate error propagation
+    #TODO: MTcculate error propagation
 
     return Z, Zerr

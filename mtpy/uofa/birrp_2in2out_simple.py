@@ -20,16 +20,16 @@ import calendar
 import time
 
 
-from mtpy.utils.exceptions import *
+import mtpy.utils.exceptions import MTex
 
-import mtpy.processing.birrp as BP
-reload(BP)
+import mtpy.processing.birrp as MTbp
+reload(MTbp)
 
 
 def main():
 
     if len(sys.argv) < 4:
-        raise MTpyError_inputarguments('Need at least 3 arguments: <path to BIRRP executable> <station name> <directory for time series>')
+        raise MTex.MTpyError_inputarguments('Need at least 3 arguments: <path to BIRRP executable> <station name> <directory for time series>')
 
     try:
         coherence_th = float(sys.argv[4])
@@ -43,7 +43,7 @@ def main():
     birrp_exe = op.abspath(op.realpath(birrp_exe_raw))
 
     if not op.isfile(birrp_exe):
-        raise MTpyError_inputarguments('Birrp executable not existing: %s' % (birrp_exe))
+        raise MTex.MTpyError_inputarguments('Birrp executable not existing: %s' % (birrp_exe))
 
     stationname = sys.argv[2].upper()
 
@@ -52,9 +52,9 @@ def main():
 
 
     if not op.isdir(ts_dir):
-        raise MTpyError_inputarguments('Time series directory not existing: %s' % (ts_dir))
+        raise MTex.MTpyError_inputarguments('Time series directory not existing: %s' % (ts_dir))
 
-    BP.runbirrp2in2out_simple(birrp_exe, stationname, ts_dir, coherence_th)
+    MTbp.runbirrp2in2out_simple(birrp_exe, stationname, ts_dir, coherence_th)
 
 
 

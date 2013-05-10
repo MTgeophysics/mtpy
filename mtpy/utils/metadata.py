@@ -20,7 +20,7 @@ import ConfigParser
 
 import math, cmath
 
-import mtpy.utils.exceptions as MTexceptions
+import mtpy.utils.exceptions as MTex
 
 
 #=================================================================

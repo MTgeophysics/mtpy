@@ -24,6 +24,6 @@ import os.path as op
 import copy
 
 
-import  mtpy.utils.exceptions as MTexceptions
+import  mtpy.utils.exceptions as MTex
 
 #=================================================================

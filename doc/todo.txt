@@ -14,14 +14,27 @@ ________
 - Example data set
 - Test cases
 - Commenting!!
-- Doc strings!!
+(- Doc strings!!)
 - test on Windows
+- Documentation:
+  + mention unparsable dates due tu US style ambiguity
+  + Edi.writefile writes only info_dict...all info stuff from string has to be put in there manually
 
 
 ______
  CORE (handling of Edi files and resulting Z objects)
 ------
 
+-edi: take  z and tipper attributes as objects!!
+-edi: check definemeas entries, if they are necessary
+-edi: remove n_freqs entry
+-edi: Values are not Nulled, when a new file is read in 
+edi: get rid of 'filename' when initialising the object
+-Z: remove edi_object
+-Z: remove imag/real
+Z: rotation angle list of proper length - AND check,k if updated with angles from parent edi object
+-Z: rename rho_phi into res_phase
+- bscale factor not necessary
 - test reading of EDI for various Edi file versions
 - Include W for the analysis of GDS data
 
@@ -38,7 +51,7 @@ _________
 ---------
 
 - ALL 
-(if possible by setting up plot classes for the respective elements - than batch processing (plotting various stations can be handled by functions looping over the plot objects ...??)
+(if possible by setting up plot classes for the respective elements - rather than batch processing (plotting various stations can be handled by functions looping over the plot objects ...??)
 
 __________
  MODELING (wrapper for calling external modelling tools, functions for converting in- and outputs)
@@ -53,9 +66,12 @@ ____________
 
 - batch processing (various stations, whole folders)
 - extended BIRRP usage
+- Birrp: keep temporary birrp files for later reprocessing (needs to store meta data for that)
 - implement call of EMTF (Egbert's BIRRP alternative)
 - time frequency analysis
 - quality check
+-calibrate: mandatory entry for B-field sensor: X/Y axis orientation angle & Declination angle for geomag correction
+
 
 
 _______

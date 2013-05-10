@@ -28,13 +28,12 @@ import re
 import sys, os
 import glob
 import os.path as op
-import glob
 import calendar
 import time
 import copy
 
 
-from mtpy.utils.exceptions import *
+import  mtpy.utils.exceptions as MTex
 
 #=================================================================
 
@@ -57,7 +56,7 @@ dict_of_bz_instrument_amplification = {'edl': 0.5, 'elogger': 1.}
 
 dict_of_EDL_gain_factors = {'high': 10., 'low': 1., 'verylow': 0.4, str(10): 10., str(1): 1. , str(0.4): 0.4}
 
-list_of_elogger_gain_factors = [11.]
+list_of_elogger_gain_factors = [11.,1]
 
 dict_of_efield_amplification = {'edl': 1., 'elogger': 10.}
 
@@ -117,7 +116,7 @@ def calibrate(raw_data, field, instrument, logger,dipole_length=1.,
 
 def EDL_e_field(data, edl_gain, dipole, instrument_amplification):
     """
-    Convert EDL output (channels EX and EY) into E field values.
+    Convert EDL output (channels MTex and EY) into E field values.
 
     input:
     - time series of field values in microvolt (standard EDL output)
@@ -169,7 +168,7 @@ def EDL_b_field(data, edl_gain, instrument , instrument_amplification):
 
 def elogger_e_field(data, elogger_gain, dipole, instrument_amplification):
     """
-    Convert elogger output (channels EX and EY) into E field values.
+    Convert elogger output (channels MTex and EY) into E field values.
 
     input:
     - time series of field values in microvolt (standard EDL output)
@@ -212,22 +211,22 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
     time_axis = None
 
     if not instrument.lower() in list_of_instruments:
-        raise MTpyError_inputarguments('instrument type not known')
+        raise MTex.MTpyError_inputarguments('instrument type not known')
 
     if not logger.lower() in list_of_loggers:
-        raise MTpyError_inputarguments('data logger type not known')
+        raise MTex.MTpyError_inputarguments('data logger type not known')
 
 
 
     if not op.isfile(filename):
-        raise MTpyError_inputarguments('data file not existing')
+        raise MTex.MTpyError_inputarguments('data file not existing')
 
     infile_base = op.basename(filename)
 
     try:
         data_in = np.loadtxt(filename)
     except:
-        raise MTpyError_inputarguments('cannot read data file')
+        raise MTex.MTpyError_inputarguments('cannot read data file')
 
 
     data_out = copy.copy(data_in)
@@ -250,16 +249,19 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
         try:
             os.makedirs(outdir)
         except:
-            raise MTpyError_inputarguments('output directory is not existing and cannot be generated')
+            raise MTex.MTpyError_inputarguments('output directory is not existing and cannot be generated')
 
     if channel == None:
         channel = filename[-2:].lower()
         
     if not channel in list_of_channels:
-        raise MTpyError_inputarguments('wrong channel specification')
+        raise MTex.MTpyError_inputarguments('wrong channel specification')
    
     field = channel[0]
-
+    
+    #print 'channel:...........',channel, field
+    #print 'read file',filename ,'wrote file...'
+    #return
 
     #separate way for B and E fields here:
     if field == 'e':
@@ -277,8 +279,8 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
 
         if logger == 'elogger':
 
-            if not gain in list_of_elogger_gain_factors:
-                raise MTpyError_inputarguments('invalid gain for elogger')
+            if not type(gain) in [float, int]:#list_of_elogger_gain_factors:
+                raise MTex.MTpyError_inputarguments('invalid gain for elogger: {0}'.format(gain))
 
             instrument_amplification = dict_of_efield_amplification[logger]
 
@@ -286,29 +288,31 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
         
         elif logger == 'edl':
 
-            if not str(gain) in  dict_of_EDL_gain_factors:
-                raise MTpyError_inputarguments('invalid gain for EDL')
+            if not type(gain) in [float, int, str]:
+                raise MTex.MTpyError_inputarguments('invalid gain for EDL: {0}'.format(gain))
 
             instrument_amplification = dict_of_efield_amplification[logger]
 
-            EDLgain = dict_of_EDL_gain_factors[gain] 
+            if type(gain) == str:
+                EDLgain = dict_of_EDL_gain_factors[gain] 
+            else:
+                EDLgain = float(gain)
 
             outfile_data = EDL_e_field(data_in, EDLgain, dipole, instrument_amplification)
     
         dataunit ='microvoltpermeter'
 
-    #B-field part
+    #B-field part 
     elif field == 'b':
-
         instrument = instrument.lower()
         if not instrument in list_of_bfield_instruments:
-            raise MTpyError_inputarguments('invalid instrument for B field measurements')
+            raise MTex.MTpyError_inputarguments('invalid instrument for B field measurements')
 
 
         logger = logger.lower()
 
         if not logger in list_of_bfield_loggers:
-            raise MTpyError_inputarguments('invalid logger for B field measurements')
+            raise MTex.MTpyError_inputarguments('invalid logger for B field measurements')
 
 
         instrument_amplification = 1.
@@ -318,11 +322,13 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
 
         if logger == 'edl':
 
-            if not str(gain) in  dict_of_EDL_gain_factors:
-                raise MTpyError_inputarguments('invalid gain for EDL')
+            if not type(gain) in [float,int,str]:
+                raise MTex.MTpyError_inputarguments('invalid gain: {0}'.format(gain))
 
-
-            EDLgain = dict_of_EDL_gain_factors[gain] 
+            if type(gain) == str:
+                EDLgain = dict_of_EDL_gain_factors[gain] 
+            else:
+                EDLgain = float(gain)
 
 
             if instrument == 'fluxgate' and channel == 'bz':
@@ -361,7 +367,7 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
     np.savetxt(Fout,data_out)
     Fout.close()
 
-    print 'wrote file %s'%(outfile)
+    print 'read file',filename ,'wrote file %s'%(outfile)
     
 
 #=================================================================
@@ -373,44 +379,44 @@ def _data_instrument_consitency_check(data, field, dipole_length, instrument, am
     """
 
     if len(data) == 0 :
-        raise MTpyError_ts_data( 'no data provided for calibration' )
+        raise MTex.MTpyError_ts_data( 'no data provided for calibration' )
 
     if not field.lower() in ['e','b']:
-        raise MTpyError_inputarguments( 'Field must be E or B' )
+        raise MTex.MTpyError_inputarguments( 'Field must be E or B' )
 
 #    if float(dipole_length) <= 0:
 #        raise MTpyError_inputarguments( 'Dipole length must be positive' )
 
     if float(amplification) <= 0:
-        raise MTpyError_inputarguments( 'Amplification factor must be positive' )
+        raise MTex.MTpyError_inputarguments( 'Amplification factor must be positive' )
 
     if float(gain) <= 0:
-        raise MTpyError_inputarguments( 'Instrument gain must be positive' )
+        raise MTex.MTpyError_inputarguments( 'Instrument gain must be positive' )
 
     try:
         if not logger.lower() in list_of_loggers:
             raise
     except:
-        raise MTpyError_inputarguments( 'wrong choice of logger')
+        raise MTex.MTpyError_inputarguments( 'wrong choice of logger')
 
     try:
         if not instrument.lower() in list_of_instruments:
             raise
     except:
-        raise MTpyError_inputarguments( 'wrong choice of instrument')
+        raise MTex.MTpyError_inputarguments( 'wrong choice of instrument')
 
     if field.lower == 'b':
         if logger.lower() == 'elogger':
-            raise MTpyError_inputarguments( 'wrong choice of logger')
+            raise MTex.MTpyError_inputarguments( 'wrong choice of logger')
         if instrument.lower() == 'electrodes':
-            raise MTpyError_inputarguments( 'wrong choice of instrument')
+            raise MTex.MTpyError_inputarguments( 'wrong choice of instrument')
         if not float(dipole_length) == 1:
-            raise MTpyError_inputarguments( 'Dipole length must be 1 for B-field calibration')
+            raise MTex.MTpyError_inputarguments( 'Dipole length must be 1 for B-field calibration')
            
 
     if field.lower == 'e':
         if not instrument.lower() == 'electrodes':
-            raise MTpyError_inputarguments( 'wrong choice of instrument')
+            raise MTex.MTpyError_inputarguments( 'wrong choice of instrument')
 
 
 #----------------------------------------------------------
@@ -519,7 +525,7 @@ def convertfiles(dirpath,folder,infodict,fmt='%.6g'):
             clines.append('---'+dayfolder+'---'+'\n')
             for filename in os.listdir(os.path.join(dirpath,folder,dayfolder)):
                 if filename.find('.')>=0:
-                    if fnmatch.fnmatch(filename,'*.EX'):
+                    if fnmatch.fnmatch(filename,'*.MTex'):
                         exfid=file(os.path.join(dirpath,folder,dayfolder,
                                                 filename),'r')
                         exlines=exfid.readlines()
@@ -705,8 +711,8 @@ def convertCounts2Units(filenames,eyn='n',lpyn='n',egain=1.0,dlgain=1.0,exlen=10
     
     for ii in range(len(filenames)):
         if eyn=='n':
-            #convert EX chanel
-            if fnmatch.fnmatch(filenames[ii],'*.EX'):
+            #convert MTex chanel
+            if fnmatch.fnmatch(filenames[ii],'*.MTex'):
                 exfid=file(filenames[ii],'r')
                 exlines=exfid.readlines()
                 if exlines[0].find('.')>=0:
