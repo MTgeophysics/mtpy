@@ -109,7 +109,7 @@ class Edi(object):
         self._freq = None
         self._zrot = None
         self.Z = MTz.Z()
-        self.Tipper = None #MTz.Tipper()
+        self.Tipper = MTz.Tipper()
 
     def readfile(self, fn, datatype = 'z'):
         """
@@ -159,7 +159,7 @@ class Edi(object):
         try:
             self._read_info(edistring)
         except:
-           print 'Could not read INFO section: %s'%infile)
+           print 'Could not read INFO section: %s'%infile
 
         try:
             self._read_definemeas(edistring)
@@ -207,12 +207,10 @@ class Edi(object):
 
 
         #Tipper is optional
-        if self.Tipper is None:
+        if self.Tipper.tipper is None:
             try:
                 self._read_tipper(edistring)
             except:
-                self.Tipper = None #MTz.Tipper()
-                #self.tippererr = None
                 print 'Could not read Tipper section: %s'%infile
 
         #rotation is optional
@@ -258,71 +256,17 @@ class Edi(object):
         data_dict['z'] = self.Z.z
         data_dict['zerr'] = self.Z.zerr
         data_dict['tipper'] = self.Tipper.tipper
-        data_dict['tippererr'] = self.Tipper.tippererr
+        data_dict['tippererr'] = self.Tipper.tipper_err
         data_dict['zrot'] = self.zrot
         data_dict['frequencies'] = self.freq
 
         return data_dict
 
-    # def z_dict(self):
-    #     """
-    #         Return the content of the Z and Zerror arrays in a dictionary.
-    #     """
-
-    #     new_z_dict = {}
-    #     z_array = self.z
-    #     zerr_array = self.zerr
-    #     compstrings = ['ZXX','ZXY','ZYX','ZYY']
-    #     Z_entries = ['R','I','.VAR']
-
-    #     for idx_comp,comp in enumerate(compstrings):
-    #         for idx_zentry,zentry in enumerate(Z_entries):
-    #             section = comp + zentry
-    #             if idx_zentry == 0:
-    #                 new_z_dict[section] = list(np.real(z_array[:,idx_comp/2, idx_comp%2]))
-    #             elif idx_zentry == 1:
-    #                 new_z_dict[section] = list(np.imag(z_array[:,idx_comp/2, idx_comp%2]))
-    #             elif idx_zentry == 2:
-    #                 #squaring the errors (stddev) to get VAR values
-    #                 new_z_dict[section] = list( (zerr_array[:,idx_comp/2, idx_comp%2])**2 )
-
-    #     return new_z_dict
-
-    # def tipper_dict(self):
-    #     """
-    #         Return the content of the Tipper and TipperError arrays in a dictionary.
-    #     """
-
-    #     new_t_dict = {}
-    #     t_array = self.tipper
-    #     if  t_array is None:
-    #         return None
-    #     terr_array = self.tippererr
-    #     compstrings = ['TX','TY']
-    #     T_entries = ['R','I','VAR']
-
-    #     for idx_comp,comp in enumerate(compstrings):
-    #         for idx_tentry,tentry in enumerate(T_entries):
-    #             section = comp + tentry
-    #             if idx_tentry == 0:
-    #                 new_t_dict[section] = list(np.real(t_array[:,idx_comp/2, idx_comp%2]))
-    #             elif idx_tentry == 1:
-    #                 new_t_dict[section] = list(np.imag(t_array[:,idx_comp/2, idx_comp%2]))
-    #             elif idx_tentry == 2:
-    #                 #square errors (stddev) to get VAR values
-    #                 new_t_dict[section] = list( (terr_array[:,idx_comp/2, idx_comp%2])**2)
-
-
-    #     return new_t_dict
-
+    #----------------Periods----------------------------------------------
     def _get_periods(self):
         """
             Return an array of periods (output values in seconds).
         """
-        if len(list_of_periods) is not len(self.Z.z):
-            print 'length of periods list not correct (%i instead of %i)'%(len(list_of_periods), len(self.Z.z))
-            return
-        self.freq = 1./np.array(list_of_periods)
 
         return 1./np.array(self.freq)
     
@@ -337,30 +281,16 @@ class Edi(object):
 
     periods = property(_get_periods, _set_periods, doc='List of periods (values in seconds)')    
 
+    #----------------number of frequencies-------------------------------------
     def n_freqs(self):
         """
             Return the number of frequencies/length of the Z data array .
         """
-        try:
-            return self.head['long']
-        except KeyError:
-            try:
-                return self.definemeas['reflong']
-            except KeyError:
-                print 'Could not find Latitude'
         
-    def _set_lon(self, value): 
-        try:
-            self.head['long'] = MTformat._assert_position_format('lon',value)
-        except KeyError:
-            try:
-                self.definemeas['reflong'] = \
-                                 MTformat._assert_position_format('lon',value)
-            except KeyError:
-                print 'Could not find Longitude'
-                
-    lon = property(_get_lon, _set_lon, doc='Location longitude in degrees')
- 
+        return len(self.freq)
+    
+    
+    #----------------elevation----------------------------------------------
     def _get_elev(self): 
         """
         get elevation from either header or definmeas
@@ -376,33 +306,82 @@ class Edi(object):
         
     def _set_elev(self, value): 
         try:
-            self.head['elev'] = MTformat._assert_position_format('elev',value)
+            self.head['elev'] = MTft._assert_position_format('elev',value)
         except KeyError:
             try:
                 self.definemeas['refelev'] = \
-                                 MTformat._assert_position_format('elev',value)
+                                 MTft._assert_position_format('elev',value)
             except KeyError:
                 print 'Could not find Elevation'
     
     elev = property(_get_elev, _set_elev, doc='Location elevation in meters')
  
 
+    #----------------latitude----------------------------------------------
+    def _get_lat(self):
+        """
+        gets latitude looking for keywords lat in head or reflat in definemeas
+        """
+        try:
+            return self.head['lat']
+        except KeyError:
+            try:
+                return self.definemeas['reflat']
+            except KeyError:
+                print 'Could not find Latitude'
+        
+    def _set_lat(self, value):
+        try:
+            self.head['lat'] = MTft._assert_position_format('lat',value)
+        except KeyError:
+            try:
+                self.definemeas['reflat'] = \
+                                 MTft._assert_position_format('lat',value)
+            except KeyError:
+                print 'Could not find Latitude'
+                
+    lat = property(_get_lat, _set_lat, doc='Location latitude in degrees') 
+    
+    #----------------longitude----------------------------------------------      
+    def _get_lon(self): 
+        """
+        gets longitude looking for keywords long in head or reflong in definemeas
+        """
+        try:
+            return self.head['long']
+        except KeyError:
+            try:
+                return self.definemeas['reflong']
+            except KeyError:
+                try:
+                    return self.head['lon']
+                except KeyError:
+                    try:
+                        return self.definemeas['reflon']
+                    except KeyError:
+                        print 'Could not find Longitude'
+        
+    def _set_lon(self, value): 
+        try:
+            self.head['long'] = MTft._assert_position_format('lon',value)
+        except KeyError:
+            try:
+                self.definemeas['reflong'] = \
+                                 MTft._assert_position_format('lon',value)
+            except KeyError:
+                try:
+                    self.head['lon'] = \
+                                 MTft._assert_position_format('lon',value)    
+                except KeyError:
+                    try:
+                        self.definemeas['reflon'] = \
+                                 MTft._assert_position_format('lon',value)
+                    except KeyError:
+                        print 'Could not find Longitude'
+                
+    lon = property(_get_lon, _set_lon, doc='Location longitude in degrees')
 
-    def _getlat(self): return self.head['lat']
-    def _setlat(self, value): self.head['lat'] = MTft._assert_position_format('lat',value)
-    lat = property(_getlat, _setlat, doc='Location latitude in degrees')
-   
-
-    def _getlong(self): return self.head['long']
-    def _setlong(self, value): self.head['long'] = MTft._assert_position_format('long',value)
-    long = property(_getlong, _setlong, doc='Location longitude in degrees')
- 
-    def _getelev(self): return self.head['elev']
-    def _setelev(self, value): self.head['elev'] = MTft._assert_position_format('elev',value)
-    elev = property(_getelev, _setelev, doc='Location elevation in meters')
- 
-
-
+    #--------------Read Header----------------------------------------------
     def _read_head(self, edistring):
         """
             Read in the HEAD  section from the raw edi-string.
@@ -420,7 +399,8 @@ class Edi(object):
             k = j.split('=')
             key = str(k[0]).lower().strip()
             value = k[1].replace('"','')
-            if key in ['lat','long','lon','latitude','longitude','ele','elev','elevation']:
+            if key in ['lat','long','lon','latitude','longitude','ele','elev',
+                       'elevation']:
                 value = MTft._assert_position_format(key,value)
 
             if key in ['ele','elev','elevation']:
@@ -437,6 +417,7 @@ class Edi(object):
 
         self._head = head_dict
 
+    #--------------Read Info----------------------------------------------
     def _read_info(self, edistring):
         """
             Read in the INFO  section from the raw edi-string.
@@ -490,8 +471,7 @@ class Edi(object):
 
         self._info_dict = info_dict
 
-
-
+    #--------------Read Definemeas---------------------------------------------
     def _read_definemeas(self, edistring):
         """
             Read in the DEFINEMEAS  section from the raw edi-string.
@@ -526,8 +506,7 @@ class Edi(object):
 
         self._definemeas = d_dict
 
-
-
+    #--------------Read h and e measure----------------------------------------
     def _read_hmeas_emeas(self, edistring):
         """
             Read in the HMEAS/EMEAS  section from the raw edi-string.
@@ -552,7 +531,7 @@ class Edi(object):
         self._hmeas_emeas = lo_hmeas_emeas
 
         
-
+    #--------------Read mt sect--------------------------------------------
     def _read_mtsect(self, edistring):
         """
             Read in the MTSECT  section from the raw edi-string.
@@ -580,7 +559,7 @@ class Edi(object):
 
         self._mtsect = m_dict
 
-
+    #--------------Read frequencies--------------------------------------------
     def _read_freq(self, edistring):
         """
             Read in the FREQ  section from the raw edi-string.
@@ -609,6 +588,7 @@ class Edi(object):
         if self.Tipper.tipper is not None:
             self.Tipper.frequencies = self._freq
 
+    #--------------Read impedance tensor---------------------------------------
     def _read_z(self, edistring):
         """
         Read in impedances information from a raw EDI-string.
@@ -637,7 +617,9 @@ class Edi(object):
                 t0 = temp_string.strip().split('\n')[0]
                 n_dummy = int(float(t0.split('//')[1].strip()))
                 if not n_dummy == self.n_freqs():
-                    raise
+                    raise MTex.MTpyError_edi_file("Error - number of entries"+\
+                                                  " does not equal number of"+\
+                                                  " frequencies")
 
 
                 t1 = temp_string.strip().split('\n')[1:]
@@ -657,19 +639,23 @@ class Edi(object):
 
         for idx_freq  in range( self.n_freqs()):
             try:
-                z_array[idx_freq,0,0] = np.complex(z_dict['ZXXR'][idx_freq], z_dict['ZXXI'][idx_freq])
+                z_array[idx_freq,0,0] = np.complex(z_dict['ZXXR'][idx_freq], 
+                                                    z_dict['ZXXI'][idx_freq])
             except:
                 pass
             try:
-                z_array[idx_freq,0,1] = np.complex(z_dict['ZXYR'][idx_freq], z_dict['ZXYI'][idx_freq])
+                z_array[idx_freq,0,1] = np.complex(z_dict['ZXYR'][idx_freq], 
+                                                    z_dict['ZXYI'][idx_freq])
             except:
                 pass
             try:
-                z_array[idx_freq,1,0] = np.complex(z_dict['ZYXR'][idx_freq], z_dict['ZYXI'][idx_freq])
+                z_array[idx_freq,1,0] = np.complex(z_dict['ZYXR'][idx_freq], 
+                                                    z_dict['ZYXI'][idx_freq])
             except:
                 pass
             try:
-                z_array[idx_freq,1,1] = np.complex(z_dict['ZYYR'][idx_freq], z_dict['ZYYI'][idx_freq])
+                z_array[idx_freq,1,1] = np.complex(z_dict['ZYYR'][idx_freq], 
+                                                    z_dict['ZYYI'][idx_freq])
             except:
                 pass
 
@@ -677,14 +663,15 @@ class Edi(object):
             for idx_comp,comp in enumerate(compstrings):
                 sectionhead = comp + '.VAR'
                 if sectionhead in z_dict:
-                    zerr_array[idx_freq, idx_comp/2, idx_comp%2] = z_dict[sectionhead][idx_freq]
+                    zerr_array[idx_freq, idx_comp/2, idx_comp%2] = \
+                                                  z_dict[sectionhead][idx_freq]
 
         self.Z.set_z(z_array)
 
         #errors are stddev, not VAR :
         self.Z.set_zerr(np.sqrt(zerr_array))
 
-
+    #--------------Read Tipper----------------------------------------------
     def _read_tipper(self, edistring):
         """
         Read in Tipper information from a raw EDI-string.
@@ -715,7 +702,8 @@ class Edi(object):
                         if (idx_tentry == 2) and (temp_string is None):
                             try:
                                 sectionhead = comp + '.' + tentry
-                                temp_string = _cut_sectionstring(edistring,sectionhead)
+                                temp_string = _cut_sectionstring(edistring,
+                                                                 sectionhead)
                             except:
                                 pass
                         pass
@@ -727,7 +715,9 @@ class Edi(object):
                 n_dummy = int(float(t0.split('//')[1].strip()))
 
                 if not n_dummy == self.n_freqs():
-                    raise
+                    raise MTex.MTpyError_edi_file("Error - number of entries"+\
+                                                  " does not equal number of"+\
+                                                  " frequencies")
 
                 t1 = temp_string.strip().split('\n')[1:]
                 for j in t1:
@@ -742,16 +732,19 @@ class Edi(object):
 
 
         for idx_freq  in range( self.n_freqs()):
-            tipper_array[idx_freq,0,0] = np.complex(t_dict['TXR'][idx_freq], t_dict['TXI'][idx_freq])
+            tipper_array[idx_freq,0,0] = np.complex(t_dict['TXR'][idx_freq],
+                                                     t_dict['TXI'][idx_freq])
             tippererr_array[idx_freq,0,0] = t_dict['TXVAR'][idx_freq]
-            tipper_array[idx_freq,0,1] = np.complex(t_dict['TYR'][idx_freq], t_dict['TYI'][idx_freq])
+            tipper_array[idx_freq,0,1] = np.complex(t_dict['TYR'][idx_freq],
+                                                    t_dict['TYI'][idx_freq])
             tippererr_array[idx_freq,0,1] = t_dict['TYVAR'][idx_freq]
-
-
-        self.Tipper.set_tipper(tipper_array)
+        
+        self.Tipper.tipper = tipper_array
         #errors are stddev, not VAR :
-        self.Tipper.set_tippererr(np.sqrt(tippererr_array))
+        self.Tipper.tipper_err = np.sqrt(tippererr_array)
+        self.Tipper.frequencies = self.freq
 
+    #--------------Read Resistivity and Phase----------------------------------
     def _read_res_phase(self, edistring):
         """
             Read in ResPhase-(RhoPhi-)information from a raw EDI-string.
@@ -759,7 +752,10 @@ class Edi(object):
             Store this as attribute (complex array).
 
         """
-        #using the loop over all  components. For each component check, if Rho and Phi are given, raise exception if not! Then convert the polar RhoPhi representation into the cartesian Z. Rho is assumed to be in Ohm m, Phi in degrees. Z will be in km/s.
+        # using the loop over all  components. For each component check, 
+        # if Rho and Phi are given, raise exception if not! Then convert the 
+        # polar RhoPhi representation into the cartesian Z. Rho is assumed to
+        # be in Ohm m, Phi in degrees. Z will be in km/s.
         z_array = np.zeros((self.n_freqs(),2,2), 'complex')
         zerr_array = np.zeros((self.n_freqs(),2,2))
 
@@ -820,28 +816,32 @@ class Edi(object):
                         #check for small amplitude close to zero
                         if r[idx_c/2,idx_c%2] == 0:
                             raise
-                        f1 = np.abs(np.sqrt(2.5*self.freq[idx_freq]/r[idx_c/2,idx_c%2])*(rhophi_dict['RHO'+comp + '.ERR'][idx_freq]))
+                        f1 = np.abs(np.sqrt(2.5*self.freq[idx_freq]/\
+                                    r[idx_c/2,idx_c%2])*\
+                                    (rhophi_dict['RHO'+comp+'.ERR'][idx_freq]))
                     except:
-                        f1 = np.sqrt(rhophi_dict['RHO'+comp+ '.ERR'][idx_freq] * 5 * self.freq[idx_freq] )
+                        f1 = np.sqrt(rhophi_dict['RHO'+comp+'.ERR'][idx_freq]*\
+                                        5 * self.freq[idx_freq] )
                     rerr[idx_c/2,idx_c%2] = f1
                 except:
                     pass
                 try:
-                    phierr[idx_c/2,idx_c%2] = rhophi_dict['PHS'+comp + '.ERR'][idx_freq]
+                    phierr[idx_c/2,idx_c%2] = rhophi_dict['PHS'+comp +'.ERR'][idx_freq]
                 except:
                     pass
-                zerr[idx_c/2,idx_c%2] = max( MTcc.propagate_error_polar2rect( r[idx_c/2,idx_c%2], rerr[idx_c/2,idx_c%2], \
+                zerr[idx_c/2,idx_c%2] = max(MTcc.propagate_error_polar2rect(r[idx_c/2,idx_c%2], rerr[idx_c/2,idx_c%2], \
                                                                             phi[idx_c/2,idx_c%2], phierr[idx_c/2,idx_c%2]))
 
-			z_array[idx_freq] = MTcc.rhophi2z(r, phi)
+                z_array[idx_freq] = MTcc.rhophi2z(r, phi)
 				
-			zerr_array[idx_freq] = zerr
+                zerr_array[idx_freq] = zerr
 
 
         self.Z.set_z(z_array)
         self.Z.set_zerr(zerr_array)
 
 
+    #--------------Read Rho rotations------------------------------------------
     def _read_rhorot(self, edistring):
         """
             Read in the (optional) RhoRot  section from the raw edi-string for data file containing data in  ResPhase style. Angles are stored in the ZROT attribute. 
@@ -880,7 +880,7 @@ class Edi(object):
         if self.Tipper is not None:
             self.Tipper.rotation_angle = self.zrot
 
-
+    #--------------Read Spectra----------------------------------------------
     def _read_spectra(self,edistring):
         """
             Read in Spectra information from a raw EDI-string.
@@ -993,7 +993,9 @@ class Edi(object):
         self.Z.frequencies = self.freq
 
         if tipper_array is not None:
-            self.Tipper = MTz.Tipper(tipper_array=tipper_array,tippererr_array= tippererr_array)
+            self.Tipper = MTz.Tipper(tipper_array=tipper_array,
+                                     tippererr_array= tippererr_array,
+                                     frequencies=self.freq)
             self.Tipper.rotation_angle = self.zrot
             self.Tipper.frequencies = self.freq
 
@@ -1003,7 +1005,7 @@ class Edi(object):
         self.mtsect = s_dict
 
 
-
+    #--------------Read impedance rotation angles------------------------------
     def _read_zrot(self, edistring):
         """
             Read in the (optional) Zrot  section from the raw edi-string.
@@ -1038,7 +1040,7 @@ class Edi(object):
         if self.Tipper is not None:
             self.Tipper.rotation_angle = self.zrot
 
-
+    #--------------Write out file---------------------------------------------
     def writefile(self, *fn):
         """
             Write out the edi object into an EDI file.
@@ -1082,14 +1084,15 @@ class Edi(object):
 
         return outfilename
 
-
-
-
+    #--------------Rotate data----------------------------------------------
     def rotate(self,angle):
         """
-            Rotate the Z and tipper information in the Edi object. Change the rotation angles in Zrot respectively.
+            Rotate the Z and tipper information in the Edi object. Change the 
+            rotation angles in Zrot respectively.
 
-            Rotation angle must be given in degrees. All angles are referenced to geographic North, positive in clockwise direction. (Mathematically negative!)
+            Rotation angle must be given in degrees. All angles are referenced
+            to geographic North, positive in clockwise direction. 
+            (Mathematically negative!)
 
             In non-rotated state, X refs to North and Y to East direction.
 
@@ -1117,9 +1120,11 @@ class Edi(object):
             self.Tipper.rotate(angle)
             self.Tipper.rotation_angle = self.zrot
 
+    #--------------Get Resistivity and Phase-----------------------------------
     def _get_res_phase(self):
         """
-            Return values for resistivity (rho - in Ohm m) and phase (phi - in degrees).
+            Return values for resistivity (rho - in Ohm m) and phase 
+            (phi - in degrees).
 
             Output is a 4-tuple of arrays:
             (Rho, Phi, RhoError, PhiError)
@@ -1154,7 +1159,7 @@ class Edi(object):
         return res, phi, reserr, phierr
 
 
-
+    #--------------Set the Resistivity and Phase-------------------------------
     def _set_res_phase(self, res_array, phase_array, reserr_array = None, phaseerr_array = None):
         """
             Set values for resistivity (res - in Ohm m) and phase (phase - in degrees).
@@ -1176,7 +1181,7 @@ class Edi(object):
                 print 'Error - shape of "phase" array does not match shape of Z array: %s ; %s'%(str(phase_array.shape),str(self.Z.z.shape))
                 return
         else:
-            z_new = p.zeros(res_array.shape,'complex')
+            z_new = np.zeros(res_array.shape,'complex')
             if res_array.shape != phase_array.shape:
                 print 'Error - shape of "phase" array does not match shape of "res" array: %s ; %s'%(str(phase_array.shape),str(res_array.shape))
                 return
@@ -1194,7 +1199,9 @@ class Edi(object):
 
         for idx_f in range(len(z_new)):
             frequency =  self.freq[idx_f]
-            z_new[idx_f,i,j] = MTcc.rhophi2z(res_array[idx_f], phase_array[idx_f], frequency)
+            z_new[idx_f] = MTcc.rhophi2z(res_array[idx_f],
+                                         phase_array[idx_f], 
+                                         frequency)
 
         self.Z.set_z(z_new)
 
@@ -1227,10 +1234,12 @@ class Edi(object):
         self.Z.zerr = np.zeros_like(self.Z.zerr)
 
 
-    res_phase = property(_get_res_phase,_set_res_phase,doc='Values for resistivity (rho - in Ohm m) and phase (phi - in degrees). Updates the attributes "z, zerr"')
+    res_phase = property(_get_res_phase,_set_res_phase,
+                         doc='Values for resistivity (rho - in Ohm m) and'+\
+                             'phase (phi - in degrees). Updates the '+\
+                             'attributes "z, zerr"')
 
-
-
+    #--------------get/set header -------------------------------
     def _set_head(self, head_dict):
         """
             Set the attribute 'head'.
@@ -1243,11 +1252,14 @@ class Edi(object):
         """
 
         self._head = head_dict
-    def _get_head(self): return self._head
+    
+    def _get_head(self): 
+        return self._head
+        
     head = property(_get_head, _set_head, doc='HEAD attribute of EDI file')
 
 
-
+    #--------------get/set info dict -------------------------------
     def _set_info_dict(self,info_dict):
         """
             Set the attribute 'info_dict'.
@@ -1260,10 +1272,14 @@ class Edi(object):
         """
 
         self._info_dict = info_dict
-    def _get_info_dict(self): return self._info_dict
-    info_dict = property(_get_info_dict, _set_info_dict, doc='INFO section dictionary')
+        
+    def _get_info_dict(self): 
+        return self._info_dict
+    
+    info_dict = property(_get_info_dict, _set_info_dict, 
+                         doc='INFO section dictionary')
 
-
+    #--------------get/set info header -------------------------------
     def _set_info_string(self,info_string):
         """
             Set the attribute 'info_string'.
@@ -1276,84 +1292,14 @@ class Edi(object):
         """
 
         self._info_string = info_string
-    def _get_info_string(self): return self._info_string
-    info_string = property(_get_info_string, _set_info_string, doc='INFO section string')
+        
+    def _get_info_string(self): 
+        return self._info_string
+        
+    info_string = property(_get_info_string, _set_info_string, 
+                           doc='INFO section string')
 
-
-    # def set_z(self, z_array):
-    #     """
-    #         Set the attribute 'z'.
-
-    #         Input:
-    #         Z array
-
-    #         Test for shape, but no test for consistency!
-
-    #     """
-
-
-    #     if (self.Z is not None) and (self.Z.shape != z_array.shape):
-    #         print 'Error - shape of "z" array does not match shape of existing Z array: %s ; %s'%(str(z_array.shape),str(self.Z.shape))
-    #         return
-
-    #     self.z = z_array
-
-
-    # def set_zerr(self, zerr_array):
-    #     """
-    #         Set the attribute 'zerr'.
-
-    #         Input:
-    #         Zerror array
-
-    #         Test for shape, but no test for consistency!
-
-    #     """
-
-    #     if (self.zerr is not None) and (self.zerr.shape != zerr_array.shape):
-    #         print 'Error - shape of "zerr" array does not match shape of Zerr array: %s ; %s'%(str(zerr_array.shape),str(self.zerr.shape))
-    #         return
-
-    #     self.zerr = zerr_array
-
-
-    # def set_tipper(self, tipper_array):
-    #     """
-    #         Set the attribute 'tipper'.
-
-    #         Input:
-    #         tipper array
-
-    #         Test for shape, but no test for consistency!
-
-    #     """
-
-    #     if (self.Tipper is not None) and (self.Tipper.shape != tipper_array.shape):
-    #         print 'Error - shape of "tipper" array does not match shape of tipper-array: %s ; %s'%(str(tipper_array.shape),str(self.Tipper.shape))
-    #         return
-
-    #     self.tipper = tipper_array
-
-
-    # def set_tippererr(self, tippererr_array):
-    #     """
-    #         Set the attribute 'tippererr'.
-
-    #         Input:
-    #         TipperError array
-
-    #         Test for shape, but no test for consistency!
-
-    #     """
-
-
-    #     if (self.tippererr is not None) and (self.tippererr.shape != tippererr_array.shape):
-    #         print 'Error - shape of "tippererr" array does not match shape of tippererr array: %s ; %s'%(str(tippererr_array.shape),str(self.tippererr.shape))
-    #         return
-
-    #     self.tippererr = tippererr_array
-
-
+    #--------------get/set definemeas -------------------------------
     def _set_definemeas(self,definemeas_dict):
         """
             Set the attribute 'definemeas'.
@@ -1367,8 +1313,11 @@ class Edi(object):
         self._definemeas = definemeas_dict
     def _get_definemeas(self): 
 		return self._definemeas
-    definemeas = property(_get_definemeas, _set_definemeas, doc='DEFINEMEAS section dictionary')
+  
+    definemeas = property(_get_definemeas, _set_definemeas, 
+                          doc='DEFINEMEAS section dictionary')
 
+    #--------------get/set h and e measurements -------------------------------
     def _set_hmeas_emeas(self,hmeas_emeas_list):
         """
             Set the attribute 'hmeas_emeas'.
@@ -1380,11 +1329,14 @@ class Edi(object):
 
         """
         self._hmeas_emeas = hmeas_emeas_list
+        
     def _get_hmeas_emeas(self): 
 		return self._hmeas_emeas
-    hmeas_emeas = property(_get_hmeas_emeas, _set_hmeas_emeas, doc='hmeas_emeas section list of 7-tuples')
+  
+    hmeas_emeas = property(_get_hmeas_emeas, _set_hmeas_emeas, 
+                           doc='hmeas_emeas section list of 7-tuples')
 
-
+    #--------------get/set mtsect -------------------------------
     def _set_mtsect(self, mtsect_dict):
         """
             Set the attribute 'mtsect'.
@@ -1397,12 +1349,15 @@ class Edi(object):
         """
 
         self._mtsect = mtsect_dict
+        
     def _get_mtsect(self): 
 		return self._mtsect
-    mtsect = property(_get_mtsect, _set_mtsect, doc='MTSECT section dictionary')
+  
+    mtsect = property(_get_mtsect, _set_mtsect, 
+                      doc='MTSECT section dictionary')
 
 
-
+    #--------------get/set single component -------------------------------
     def _get_datacomponent(self, componentname):
         """
             Return a specific data component.
@@ -1448,7 +1403,7 @@ class Edi(object):
         """
         pass
 
-
+    #--------------get/set frequencies -------------------------------
     def _set_frequencies(self, lo_frequencies):
         """
             Set the array of frequencies.
@@ -1468,11 +1423,16 @@ class Edi(object):
         if self.Tipper is not None:
             self.Tipper.frequencies = self._freq
 
-    def _get_frequencies(self): return np.array(self._freq)
-    freq = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
-    frequencies = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
+    def _get_frequencies(self): 
+        return np.array(self._freq)
+        
+    freq = property(_get_frequencies, _set_frequencies, 
+                    doc='array of frequencies')
+    
+    frequencies = property(_get_frequencies, _set_frequencies, 
+                           doc='array of frequencies')
 
-
+    #--------------get/set impedance rotation -------------------------------
     def _set_zrot(self, angle):
         """
             Set the list of rotation angles.
@@ -1507,7 +1467,9 @@ class Edi(object):
         if self.Tipper is not None:
             self.Tipper.rotation_angle = angle
 
-    def _get_zrot(self): return np.array(self._zrot)
+    def _get_zrot(self):
+        return np.array(self._zrot)
+        
     zrot = property(_get_zrot, _set_zrot, doc='')
 
 
@@ -1538,7 +1500,7 @@ def write_edifile(edi_object, out_fn = None):
         EDI file name
     """
 
-    if not isinstance(z_object, MTedi.Edi):
+    if not isinstance(edi_object, Edi):
         raise MTex.MTpyError_EDI('Input argument is not an instance of the Edi class')
 
     if out_fn is not None:

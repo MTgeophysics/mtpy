@@ -880,85 +880,33 @@ class Tipper(object):
 
     """
 
-    def __init__(self, tipper_array = None, tippererr_array = None):
+    def __init__(self, tipper_array=None, tippererr_array=None, 
+                 frequencies=None):
         """
             Initialise an instance of the Tipper class.
 
             Optional input:
             tipper_array : Numpy array containing Tipper values
             tippererr_array : Numpy array containing Tipper-error values (NOT variance, but stddev!)
-
+            frequencies : np.array of frequencies corresponding to the 
+                          tipper matrices
+                          
             Initialise the attributes with None
         """    
 
-        self.tipper = None        
-        self.tippererr = None
-        try:
-            if len(tipper_array.shape) == 3 and tipper_array.shape[1:3] == (1,2):
-                if tipper_array.dtype in ['complex', 'float','int']:
-                    self.tipper = tipper_array
-        except:
-            pass
-        try:
-            if len(tippererr_array.shape) == 3 and tippererr_array.shape[1:3] == (1,2):
-                if tippererr_array.dtype in ['float','int']:
-                    self.tippererr = tippererr_array
-        except:
-            pass
-
+        self._tipper = tipper_array        
+        self._tipper_err = tippererr_array
         self._frequencies = None
-
-        # if isinstance(edi_object,MTedi.Edi):
-        #     self.edi_object = edi_object
-        #     self.frequencies = edi_object.frequencies
-        #     if edi_object.tipper is not None:
-        #         self.tipper = edi_object.tipper
-        #     if edi_object.tippererr is not None:
-        #         self.tippererr = edi_object.tippererr
-
-        try:
-            if len(self.tipper) != len(self.tippererr):
-                self.tippererr = None
-        except:
-            pass
-
 
         self.rotation_angle = 0.
         if self.tipper is not None:
             self.rotation_angle = np.zeros((len(self.tipper)))
 
 
-    # def read_edi_object(self, edi_object):
-    #     """
-    #         Read in an instance of the MTpy Edi class.
-
-    #         Update attributes "tipper, tippererr"
-
-    #     """
-
-    #     if not isinstance(edi_object,MTedi.Edi):
-    #         print 'Object is not a valid Edi instance - Tipper object not updated'
-    #         return
-
-
-    #     self.edi_object = edi_object
-    #     self.frequencies = edi_object.frequencies
-        
-    #     try:
-    #         if edi_object.tipper is None or edi_object.tippererr is None:
-    #             raise
-            
-    #         tipper_new = edi_object.tipper
-    #         tippererr_new = edi_object.tippererr
-
-    #         if len(tipper_new) != len(tippererr_new):
-    #             raise
-    #         self.tipper = tipper_new
-    #         self.tippererr = tippererr_new
-
-    #     except:
-    #         print 'Edi object does not contain correct tipper information - Tipper object not updated'
-
+    #==========================================================================
+    # Define get/set and properties
+    #==========================================================================
+    #----frequencies----------------------------------------------------------    
     def _set_frequencies(self, lo_frequencies):
         """
             Set the array of frequencies.
@@ -970,16 +918,20 @@ class Tipper(object):
         """
 
         if len(lo_frequencies) is not len(self.tipper):
-            print 'length of frequency list/array not correct (%i instead of %i)'%(len(lo_frequencies), len(self.tipper))
+            print 'length of frequency list/array not correct'+\
+                  ' (%i instead of %i)'%(len(lo_frequencies), len(self.tipper))
             return
 
         self._frequencies = np.array(lo_frequencies)
 
-    def _get_frequencies(self): return np.array(self._frequencies)
-    frequencies = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
-
+    def _get_frequencies(self): 
+        return np.array(self._frequencies)
         
-    def set_tipper(self, tipper_array):
+    frequencies = property(_get_frequencies, _set_frequencies, 
+                           doc='array of frequencies')
+
+    #---tipper--------------------------------------------------------------  
+    def _set_tipper(self, tipper_array):
         """
             Set the attribute 'tipper'.
 
@@ -989,15 +941,31 @@ class Tipper(object):
             Test for shape, but no test for consistency!
 
         """         
+        #make sure the array is of required shape
+        try:
+            if len(tipper_array.shape)==3 and tipper_array.shape[1:3]==(1,2):
+                if tipper_array.dtype in ['complex', 'float','int']:
+                    self._tipper = tipper_array
+        except:
+            pass
 
-        if (self.tipper is not None) and (self.tipper.shape != tipper_array.shape):
-            print 'Error - shape of "tipper" array does not match shape of tipper-array: %s ; %s'%(str(tipper_array.shape),str(self.tipper.shape))
+        #check to see if the new tipper array is the same shape as the old
+        if (self._tipper!=None) and (self._tipper.shape!=tipper_array.shape):
+            print 'Error - shape of "tipper" array does not match shape of '+\
+                  'tipper-array: %s ; %s'%(str(tipper_array.shape),
+                                           str(self.tipper.shape))
             return
 
-        self.tipper = tipper_array
-
-
-    def set_tippererr(self, tippererr_array):
+        self._tipper = tipper_array
+        
+    
+    def _get_tipper(self):
+        return self._tipper
+        
+    tipper = property(_get_tipper, _set_tipper, doc="Tipper array")
+    
+    #----tipper error---------------------------------------------------------
+    def _set_tipper_err(self, tippererr_array):
         """
             Set the attribute 'tippererr'.
 
@@ -1008,14 +976,39 @@ class Tipper(object):
 
         """         
 
+        #make sure the input array is of required shape
+        try:
+            if len(tippererr_array.shape)==3 and \
+                                        tippererr_array.shape[1:3]==(1,2):
+                if tippererr_array.dtype in ['float','int']:
+                    self._tipper_err = tippererr_array
+        except:
+            pass
+        
+        #make sure the error array is the same shape as tipper
+        try:
+            if len(self.tipper) != len(self._tipper_err):
+                self._tipper_err = None
+        except:
+            pass
 
-        if (self.tippererr is not None) and (self.tippererr.shape != tippererr_array.shape):
-            print 'Error - shape of "tippererr" array does not match shape of tippererr array: %s ; %s'%(str(tippererr_array.shape),str(self.tippererr.shape))
+        
+        if (self.tipper_err!=None) and \
+                            (self._tipper_err.shape!=tippererr_array.shape):
+            print 'Error - shape of "tippererr" array does not match shape '+\
+                  'of tippererr array: %s ; %s'%(str(tippererr_array.shape),
+                                                 str(self._tipper_err.shape))
             return
 
-        self.tippererr = tippererr_array
-
-
+        self._tipper_err = tippererr_array
+        
+    def _get_tipper_err(self):
+        return self._tipper_err
+        
+    tipper_err = property(_get_tipper_err, _set_tipper_err,
+                          doc="Estimated Tipper errors")
+                          
+    #----real part---------------------------------------------------------
     def _get_real(self):
         """
             Return the real part of the Tipper.
@@ -1027,7 +1020,6 @@ class Tipper(object):
 
         return np.real(self.tipper)
 
-        
     def _set_real(self, real_array):
         """
             Set the real part of 'tipper'.
@@ -1040,8 +1032,10 @@ class Tipper(object):
         """         
         
 
-        if (self.tipper is not None ) and (self.tipper.shape != real_array.shape):
-            print 'shape of "real" array does not match shape of tipper array: %s ; %s'%(str(real_array.shape),str(self.tipper.shape))
+        if (self.tipper is not None) and (self.tipper.shape!=real_array.shape):
+            print 'shape of "real" array does not match shape of tipper '+\
+                  'array: %s ; %s'%(str(real_array.shape),
+                                    str(self.tipper.shape))
             return
 
         #assert real array:
@@ -1049,11 +1043,8 @@ class Tipper(object):
             print 'Error - array "real" is not real valued !'
             return
 
-
-        i = np.complex(0,1)
-
         if self.tipper is not None:
-            tipper_new = real_array + i * self.imag() 
+            tipper_new = real_array + 1j* self.imag() 
         else:
             tipper_new = real_array
 
@@ -1061,6 +1052,7 @@ class Tipper(object):
 
     real = property(_get_real, _set_real, doc='Real part of the Tipper')
 
+    #---imaginary part------------------------------------------------------
     def _get_imag(self):
         """
             Return the imaginary part of the Tipper.
@@ -1085,9 +1077,10 @@ class Tipper(object):
 
         """         
 
-
-        if (self.tipper is not None) and (self.tipper.shape != imag_array.shape):
-            print 'Error - shape of "imag" array does not match shape of tipper array: %s ; %s'%(str(imag_array.shape),str(self.tipper.shape))
+        if (self.tipper is not None) and (self.tipper.shape!=imag_array.shape):
+            print 'shape of "real" array does not match shape of tipper '+\
+                  'array: %s ; %s'%(str(imag_array.shape),
+                                    str(self.tipper.shape))
             return
         
         #assert real array:
@@ -1106,9 +1099,10 @@ class Tipper(object):
 
     imag = property(_get_imag, _set_imag, doc='Imaginary part of the Tipper')
 
-    def _get_rho_phi(self):
+    #----amplitude anf phase
+    def _get_amp_phase(self):
         """
-            Return values for amplitude (rho) and argument (phi - in degrees).
+            Return values for amplitude and phase in degrees).
 
             Output is a 4-tuple of arrays:
             (Rho, Phi, RhoError, PhiError)
@@ -1132,18 +1126,22 @@ class Tipper(object):
         for idx_f in range(len(self.tipper)):                         
             for j in range(2):
                 rho[idx_f,0,j] = np.abs(self.tipper[idx_f,0,j])
-                phi[idx_f,0,j] = math.degrees(cmath.phase(self.tipper[idx_f,0,j]))
+                phi[idx_f,0,j] = math.degrees(cmath.phase(
+                                                      self.tipper[idx_f,0,j]))
                 
                 if self.tippererr is not None:
-                    r_err, phi_err = MTcc.propagate_error_rect2polar( np.real(self.tipper[idx_f,0,j]), self.tippererr[idx_f,0,j], np.imag(self.tipper[idx_f,0,j]), self.tippererr[idx_f,0,j])
+                    r_err, phi_err = MTcc.propagate_error_rect2polar(
+                                            np.real(self.tipper[idx_f,0,j]), 
+                                            self.tippererr[idx_f,0,j], 
+                                            np.imag(self.tipper[idx_f,0,j]), 
+                                            self.tippererr[idx_f,0,j])
+                                            
                     rhoerr[idx_f,0,j] = r_err
                     phierr[idx_f,0,j] = phi_err
 
         return rho, phi, rhoerr, phierr
 
-    rho_phi = property(_get_rho_phi, doc='Amplitude and Phase angle of the Tipper')
-
-    def set_rho_phi(self, r_array, phi_array):
+    def _set_amp_phase(self, r_array, phi_array):
         """
             Set values for amplitude(r) and argument (phi - in degrees).
 
@@ -1156,18 +1154,24 @@ class Tipper(object):
             tipper_new = copy.copy(self.tipper) 
 
             if self.tipper.shape != r_array.shape:
-                print 'Error - shape of "r" array does not match shape of tipper array: %s ; %s'%(str(r_array.shape),str(self.tipper.shape))
+                print 'Error - shape of "r" array does not match shape of '+\
+                      'tipper array: %s ; %s'%(str(r_array.shape),
+                                               str(self.tipper.shape))
                 return
 
             if self.tipper.shape != phi_array.shape:
-                print 'Error - shape of "phi" array does not match shape of tipper array: %s ; %s'%(str(phi_array.shape),str(self.tipper.shape))
+                print 'Error - shape of "phi" array does not match shape of '+\
+                      'tipper array: %s ; %s'%(str(phi_array.shape),
+                                               str(self.tipper.shape))
                 return
         else:
 
             tipper_new = np.zeros(r_array.shape,'complex')
 
             if r_array.shape != phi_array.shape:
-                print 'Error - shape of "phi" array does not match shape of "r" array: %s ; %s'%(str(phi_array.shape),str(r_array.shape))
+                print 'Error - shape of "phi" array does not match shape '+\
+                       'of "r" array: %s ; %s'%(str(phi_array.shape),
+                                                str(r_array.shape))
                 return
        
         #assert real array:
@@ -1180,17 +1184,87 @@ class Tipper(object):
 
         for idx_f in range(len(r_array)):
                 for j in range(2):
-                    tipper_new[idx_f,0,j] = cmath.rect( r_array[idx_f,0,j], math.radians(phi_array[idx_f,0,j] ))
+                    tipper_new[idx_f,0,j] = cmath.rect(r_array[idx_f,0,j], 
+                                            math.radians(phi_array[idx_f,0,j]))
 
         self.tipper = tipper_new
+        
+    amp_phase = property(_get_amp_phase, _set_amp_phase,
+                       doc='Amplitude and Phase angle of the Tipper')
+                       
+    #----magnitude and direction----------------------------------------------
+    def _get_mag_direction(self):
+        """
+        computes the magnitude and direction of the real and imaginary 
+        induction vectors.  
+        
+        Returns:
+        --------
+            **mag_real** : np.array(nf)
+                           magnitude of the real induction vector
+            
+            **ang_real** : np.array(nf)
+                           angle (deg) of the real induction vector assuming 
+                           that North is 0 and angle is positive clockwise
+            
+            **mag_imag** : np.array(nf)
+                           magnitude of the imaginary induction vector
+                           
+            **ang_imag** : np.array(nf)
+                           angle (deg) of the imaginary induction vector 
+                           assuming that North is 0 and angle is positive 
+                           clockwise
+                           
+                
+        """
+        
+        mag_real = np.sqrt(self.tipper[:,0,0].real**2 + \
+                            self.tipper[:,0,1].real**2)
+        mag_imag = np.sqrt(self.tipper[:,0,0].imag**2 + 
+                            self.tipper[:,0,1].imag**2)
+        
+        #get the angle, need to make both parts negative to get it into the
+        #parkinson convention where the arrows point towards the conductor
+        ang_real=np.rad2deg(np.arctan2(-self.tipper[:,0,1].real,
+                                       -self.tipper[:,0,0].real))
+                                       
+        ang_imag=np.rad2deg(np.arctan2(-self.tipper[:,0,1].imag,
+                                       -self.tipper[:,0,0].imag))
+                                       
+        return mag_real, ang_real, mag_imag, ang_imag
+        
+    def _set_mag_direction(self, mag_real, ang_real, mag_imag, ang_imag):
+        """
+        computes the tipper from the magnitude and direction of the real
+        and imaginary components.
+        
+        Updates tipper
+        
+        No error propagation yet
+        """
+        
+        self.tipper[:,0,0].real = np.sqrt((mag_real**2*np.arctan(ang_real)**2)/\
+                                          (1-np.arctan(ang_real)**2))
+                                       
+        self.tipper[:,0,1].real = np.sqrt(mag_real**2/\
+                                          (1-np.arctan(ang_real)**2))
+                                       
+        self.tipper[:,0,0].imag = np.sqrt((mag_imag**2*np.arctan(ang_imag)**2)/\
+                                       (1-np.arctan(ang_imag)**2))
+                                       
+        self.tipper[:,0,1].imag = np.sqrt(mag_imag**2/\
+                                         (1-np.arctan(ang_imag)**2))
+        
+    mag_direction = property(_get_mag_direction, _set_mag_direction,
+                             doc="Tipper magnitude and direction (deg)")
 
-
+    #----rotate---------------------------------------------------------------
     def rotate(self, alpha):
         """
-            Rotate  Tipper array. Change the rotation angles in Zrot respectively.
+            Rotate  Tipper array.
 
             Rotation angle must be given in degrees. All angles are referenced
-            to geographic North, positive in clockwise direction. 
+            to geographic North=0, positive in clockwise direction. 
             (Mathematically negative!)
 
             In non-rotated state, X refs to North and Y to East direction.
