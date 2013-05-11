@@ -167,26 +167,6 @@ class Z(object):
          
         self._frequencies = np.array(lo_frequencies)
 
-    def _get_frequencies(self): return np.array(self._frequencies)
-    frequencies = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
-
-    def _set_frequencies(self, lo_frequencies):
-        """
-            Set the array of frequencies.
-
-            Input:
-            list/array of frequencies
-
-            No test for consistency!
-        """
-
-        if self.z is not None:
-            if len(lo_frequencies) is not len(self.z):
-                print 'length of frequency list/array not correct (%i instead of %i)'%(len(lo_frequencies), len(self.z))
-                return
-         
-        self._frequencies = np.array(lo_frequencies)
-
     def _get_frequencies(self): 
 		return np.array(self._frequencies)
 		
@@ -438,7 +418,7 @@ class Z(object):
                 return 
 
         else:
-            z_new = p.zeros(reserr_array.shape,'float')
+            z_new = np.zeros(reserr_array.shape,'float')
             try:
                 if reserr_array.shape != phaseerr_array.shape:
                     print 'Error - shape of "phase" array does not match shape of "res" array: %s ; %s'%(str(phase_array.shape),str(res_array.shape))
@@ -455,7 +435,7 @@ class Z(object):
                     #relative error varies by a factor of 0.5, which is the exponent in the relation between them:
                     abs_z_error = 0.5 * abs_z * rel_error_res
 
-                    zerr_new[idx_f,i,j] = max(MTcc.propagate_error_polar2rect(abs_z, abs_z_error, phi, phi_error))
+                    zerr_new[idx_f,i,j] = max(MTcc.propagate_error_polar2rect(abs_z, abs_z_error, phase_array, phaseerr_array))
 
         self.zerr = zerr_new
 
