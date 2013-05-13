@@ -1293,20 +1293,25 @@ class Tipper(object):
             return
 
         tipper_rot = copy.copy(self.tipper)
-        tippererr_rot = copy.copy(self.tippererr)
+        tippererr_rot = copy.copy(self.tipper_err)
 
         for idx_freq in range(len(tipper_rot)):
             angle = lo_angles[idx_freq]
 
-            if self.tippererr is not None:
-                tipper_rot[idx_freq], tippererr_rot[idx_freq] =  MTcc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle,self.tippererr[idx_freq,:,:] )
+            if self.tipper_err is not None:
+                tipper_rot[idx_freq], tippererr_rot[idx_freq] =  \
+                    MTcc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], 
+                                                  angle,
+                                                  self.tipper_err[idx_freq,:,:] )
             else:
-                tipper_rot[idx_freq], tippererr_rot = MTcc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle)
+                tipper_rot[idx_freq], tippererr_rot = \
+                    MTcc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], 
+                                                  angle)
 
 
  
         self.tipper = tipper_rot
-        self.tippererr = tippererr_rot
+        self.tipper_err = tippererr_rot
 
 
 #------------------------

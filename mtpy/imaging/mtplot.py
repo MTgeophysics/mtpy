@@ -511,9 +511,9 @@ class MTplot(object):
             self._Tipper.tipper = self._Tipper.tipper[::-1]
             self._Tipper.tipper_err = self._Tipper.tipper_err[::-1]
             self._period = self._period[::-1]
-        self._Z.frequencies = 1./self._frequencies
-        self._frequencies = 1./self._frequencies
-        self._Tipper.frequencies = 1./self._frequencies
+        self._Z.frequencies = self._frequencies
+        self._frequencies = self._frequencies
+        self._Tipper.frequencies = self._frequencies
         
         
     #==========================================================================
@@ -630,7 +630,7 @@ class MTplot(object):
         returns a mtpy.analysis.zinvariants.Zinvariants object
         """
         
-        zinv = mtinv.Zinvariants(z_object=self._Z.z)
+        zinv = mtinv.Zinvariants(z_object=self._Z)
         
         return zinv
         
@@ -923,7 +923,25 @@ class PlotResPhase(object):
                           **Note:** the convention is to point towards a 
                           conductor.  Can change this by setting the
                           parameter arrow_direction = 1.
-                                    
+                          
+        **plot_strike** : [ 'y' | 1 | 2 | 3 | 'n' ]
+                          Plots the strike angle from different parameters:
+                              * 'y'  --> plots strike angle determined from 
+                                         the invariants of Weaver et al. [2000]
+                                         and the phase tensor of
+                                         Caldwell et al. [2004], if Tipper is 
+                                         plotted the strike of the tipper is
+                                         also plotted.
+                                         
+                               * 1  --> plots strike angle determined from 
+                                        the invariants of Weaver et al. [2000]
+                               * 2  --> plots strike angle determined from 
+                                        the phase tensor of 
+                                        Caldwell et al. [2004]
+                               * 3  --> plots strike angle determined from 
+                                        the tipper
+                               * 'n' --> doesn't plot the strike, *default*
+                          
         **dpi** : int
                  dots-per-inch resolution, *default* is 300
                     
@@ -939,16 +957,19 @@ class PlotResPhase(object):
             
     Attributes:
     -----------
-        -fn           filename to be plotted (only supports .edi so far) 
-        -fignum       figure number for plotting
-        -plotnum         plot type, see arguments for details 
-        -title           title of the plot, *default* is station name
-        -dpi             Dots-per-inch resolution of plot, *default* is 300
-        -rotz            Rotate impedance tensor by this angle (deg) assuming
+        -fn             filename to be plotted (only supports .edi so far) 
+        -fignum         figure number for plotting
+        -plotnum        plot type, see arguments for details 
+        -title          title of the plot, *default* is station name
+        -dpi            Dots-per-inch resolution of plot, *default* is 300
+        -rotz           Rotate impedance tensor by this angle (deg) assuming
                         that North is 0 and angle is positive clockwise
                         
-        -plot_tipper     string to tell the program to plot tipper arrows or 
+        -plot_tipper    string to tell the program to plot tipper arrows or 
                         not, see accepted values above in arguments
+        
+        -plot_strike    string or integer telling the program to plot the 
+                        strike angle, see values above in arguments
                         
                 
         -period          period array cooresponding to the impedance tensor
@@ -1045,9 +1066,10 @@ class PlotResPhase(object):
     
     def __init__(self, filename=None, z_array=None, z_err_array=None, 
                  period=None, fignum=1, plotnum=1, title=None, dpi=300, 
-                 rotz=0, plot_yn='y', plot_tipper='n', tipper_array=None, 
-                 tipper_err_array=None, tipper_object=None, res_array=None,
-                 res_err_array=None, phase_array=None, phase_err_array=None,
+                 rotz=0, plot_yn='y', plot_tipper='n', plot_strike='n',
+                 plot_skew='n', tipper_array=None, tipper_err_array=None, 
+                 tipper_object=None, res_array=None, res_err_array=None,
+                 phase_array=None, phase_err_array=None,
                  res_phase_object=None, z_object=None, mt_object=None):
         
         #--> initialize an MTplot object
@@ -1116,6 +1138,7 @@ class PlotResPhase(object):
         self.xlimits = None
         self.res_limits = None
         self.phase_limits = None
+        self.tipper_limits = None
         
         #set font parameters
         self.font_size = 7
@@ -1126,6 +1149,12 @@ class PlotResPhase(object):
         #set plot tipper or not
         self.plot_tipper = plot_tipper
         
+        #plot strike angle or not
+        self.plot_strike = plot_strike
+        
+        #plot skew angle
+        self.plot_skew = plot_skew
+        
         #set arrow properties
         self.arrow_lw = .75
         self.arrow_head_width = 0.0
@@ -1133,7 +1162,21 @@ class PlotResPhase(object):
         self.arrow_color_real = 'k'
         self.arrow_color_imag = 'b'
         self.arrow_direction = 0
-        self.tipper_limits = (-.99,.99)
+        
+        #skew properties
+        self.skew_color = (.85, .35, 0)
+        self.skew_marker = 'd'
+        
+        #strike properties
+        self.strike_inv_marker = '^'
+        self.strike_inv_color = (.2, .2, .7)
+        
+        self.strike_pt_marker = 'v'
+        self.strike_pt_color = (.7, .2, .2)
+        
+        self.strike_tip_marker = '>'
+        self.strike_tip_color = (.2, .7, .2)
+
 
         #plot on initializing
         if plot_yn=='y':
@@ -1155,7 +1198,7 @@ class PlotResPhase(object):
             
         #--> rotate the impedance tensor if desired
         if self.rotz!=0:
-            self._mt.set_rot_z(self.rotz)
+            self._mt.rot_z = self.rotz
         
         #get the reistivity and phase object
         try:
@@ -1177,16 +1220,16 @@ class PlotResPhase(object):
                               10**(np.ceil(
                                     np.log10(max([self.rp.resxy.max(),
                                                   self.rp.resyx.max()])))))
-                     
-        # ==> will add in other file types and the ability to put in just
-        #     the impedance tensor and its error
 
         #set some parameters of the figure and subplot spacing
         plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.right'] = .98
         plt.rcParams['figure.subplot.bottom'] = .1
         plt.rcParams['figure.subplot.top'] = .93
         plt.rcParams['figure.subplot.left'] = .88
+        if self.plot_skew=='y':
+            plt.rcParams['figure.subplot.right'] = .90
+        else:
+            plt.rcParams['figure.subplot.right'] = .98
         
         #set the font properties for the axis labels
         fontdict={'size':self.font_size+2, 'weight':'bold'}
@@ -1194,11 +1237,22 @@ class PlotResPhase(object):
         #create a grid to place the figures into, set to have 2 rows and 2 
         #columns to put any of the 4 components.  Make the phase plot
         #slightly shorter than the apparent resistivity plot and have the two
-        #close to eachother vertically.  If there is tipper add a 3rd row
+        #close to eachother vertically.  If there is tipper add a 3rd row and
+        #if there is strike add another row
         if self.plot_tipper.find('y')==0:
-            gs=gridspec.GridSpec(3,2,height_ratios=[2,1.5,1],hspace=.05)
+            if self.plot_strike!='n' or self.plot_skew=='y':
+                gs = gridspec.GridSpec(4, 2, height_ratios=[2, 1.5, 1, 1], 
+                                       hspace=.05)
+            else:
+                gs = gridspec.GridSpec(3, 2, height_ratios=[2, 1.5, 1], 
+                                       hspace=.05)
         else:
-            gs = gridspec.GridSpec(2, 2, height_ratios=[2,1.5], hspace=.01)
+            if self.plot_strike!='n' or self.plot_skew=='y':
+                gs = gridspec.GridSpec(3, 2, height_ratios=[2, 1.5, 1],
+                                       hspace=.05)
+            else:
+                gs = gridspec.GridSpec(2, 2, height_ratios=[2, 1.5], 
+                                       hspace=.01)
         
         #--> make figure for xy,yx components
         if self.plotnum==1 or self.plotnum==3:
@@ -1220,9 +1274,12 @@ class PlotResPhase(object):
                 self.axt = self.fig.add_subplot(gs[2,:], sharex=self.axr)
                 
                 #place y coordinate labels in the same location                
-                self.axr.yaxis.set_label_coords(-.075, 0.5)
-                self.axp.yaxis.set_label_coords(-.075, 0.5)
-                self.axt.yaxis.set_label_coords(-.075, 0.5)
+                self.axr.yaxis.set_label_coords(-.095, 0.5)
+                self.axp.yaxis.set_label_coords(-.095, 0.5)
+                self.axt.yaxis.set_label_coords(-.095, 0.5)
+                if self.plot_strike!='n' or self.plot_skew!='n':
+                    self.axs = self.fig.add_subplot(gs[3,:], sharex=self.axr)
+                    self.axs.yaxis.set_label_coords(-.095, 0.5)
             else:
                 #apparent resistivity axis
                 self.axr = plt.subplot(gs[0,:])
@@ -1231,8 +1288,13 @@ class PlotResPhase(object):
                 self.axp = plt.subplot(gs[1,:], sharex=self.axr)
                 
                 #place the y-coordinate labels in the same location
-                self.axr.yaxis.set_label_coords(-.0615, 0.5)
-                self.axp.yaxis.set_label_coords(-.0615, 0.5)
+                self.axr.yaxis.set_label_coords(-.075, 0.5)
+                self.axp.yaxis.set_label_coords(-.075, 0.5)
+                
+                #add stike axis if desired
+                if self.plot_strike!='n' or self.plot_skew!='n':
+                    self.axs = self.fig.add_subplot(gs[2,:], sharex=self.axr)
+                    self.axs.yaxis.set_label_coords(-.075, 0.5)
             
         #--> make figure for all 4 components
         elif self.plotnum==2:
@@ -1254,9 +1316,14 @@ class PlotResPhase(object):
                 self.axt = self.fig.add_subplot(gs[2,:], sharex=self.axr)
                 
                 #place y coordinate labels in the same location                
-                self.axr.yaxis.set_label_coords(-.085, 0.5)
-                self.axp.yaxis.set_label_coords(-.085, 0.5)
-                self.axt.yaxis.set_label_coords(-.085, 0.5)
+                self.axr.yaxis.set_label_coords(-.095, 0.5)
+                self.axp.yaxis.set_label_coords(-.095, 0.5)
+                self.axt.yaxis.set_label_coords(-.095, 0.5)
+                
+                #add strike axis if desired
+                if self.plot_strike!='n' or self.plot_skew!='n':
+                    self.axs = self.fig.add_subplot(gs[3,:], sharex=self.axr)
+                    self.axs.yaxis.set_label_coords(-.095, 0.5)
             else:
                 #apparent resistivity axis
                 self.axr = plt.subplot(gs[0,0])
@@ -1265,8 +1332,13 @@ class PlotResPhase(object):
                 self.axp = plt.subplot(gs[1,0], sharex=self.axr)
                 
                 #place the y-coordinate labels in the same location
-                self.axr.yaxis.set_label_coords(-.085, 0.5)
-                self.axp.yaxis.set_label_coords(-.085, 0.5)
+                self.axr.yaxis.set_label_coords(-.095, 0.5)
+                self.axp.yaxis.set_label_coords(-.095, 0.5)
+                
+                #add strike axis if desired
+                if self.plot_strike!='n' or self.plot_skew!='n':
+                    self.axs = self.fig.add_subplot(gs[2,:], sharex=self.axr)
+                    self.axs.yaxis.set_label_coords(-.095, 0.5)
         
         #---------plot the apparent resistivity--------------------------------
         #--> plot as error bars and just as points xy-blue, yx-red
@@ -1392,6 +1464,9 @@ class PlotResPhase(object):
             
             nt = len(txr)
             
+            tiplst=[]
+            tiplabel=[]
+            
             for aa in range(nt):
                 xlenr = txr[aa]*self.period[aa]
                 xleni = txi[aa]*self.period[aa]
@@ -1407,19 +1482,27 @@ class PlotResPhase(object):
                                  10**(np.floor(np.log10(self.period[aa])))
                     hheight = self.arrow_head_height/\
                                  10**(np.floor(np.log10(self.period[aa]))) 
-                
+                if np.log10(self.period[aa])<0:
+                    alw = self.arrow_lw*self.period[aa]
+                else:
+                    alw = self.arrow_lw
                 #--> plot real arrows
                 if self.plot_tipper.find('r')>0:
                     self.axt.arrow(self.period[aa],
                                    0,
                                    xlenr,
                                    tyr[aa],
-                                   lw=self.arrow_lw,
+                                   lw=alw,
                                    facecolor=self.arrow_color_real,
                                    edgecolor=self.arrow_color_real,
                                    head_width=hwidth,
                                    head_length=hheight,
                                    length_includes_head=False)
+                    
+                    if aa==0:
+                        line1=self.axt.plot(0, 0, self.arrow_color_real)
+                        tiplst.append(line1[0])
+                        tiplabel.append('real')
                                    
                 #--> plot imaginary arrows
                 if self.plot_tipper.find('i')>0:               
@@ -1427,38 +1510,218 @@ class PlotResPhase(object):
                                    0,
                                    xleni,
                                    tyi[aa],
-                                   lw=self.arrow_lw,
+                                   lw=alw,
                                    facecolor=self.arrow_color_imag,
                                    edgecolor=self.arrow_color_imag,
                                    length_includes_head=False)
-            
+                    if aa==0:              
+                        line2=self.axt.plot(0, 0, self.arrow_color_imag)
+                        tiplst.append(line2[0])
+                        tiplabel.append('imag')
+                
             #make a line at 0 for reference
             self.axt.plot(self.period,[0]*nt,'k',lw=.5)
-             
-            #make a legend for the induction arrows
-            line1=self.axt.plot(0, 0, self.arrow_color_real)
-            line2=self.axt.plot(0, 0, self.arrow_color_imag)
+        
           
-            self.axt.legend([line1[0],line2[0]],['real','imag'],
+            self.axt.legend(tiplst,tiplabel,
                             loc='upper left',
                             markerscale=1,
                             borderaxespad=.01,
                             labelspacing=.07,
                             handletextpad=.2,
-                            borderpad=.02,
+                            borderpad=.1,
                             prop={'size':self.font_size})
 
             #set axis properties            
-            self.axt.yaxis.set_major_locator(MultipleLocator(.5))               
+            self.axt.yaxis.set_major_locator(MultipleLocator(.2))               
             self.axt.yaxis.set_minor_locator(MultipleLocator(.1))               
             self.axt.set_xlabel('Period (s)', fontdict=fontdict)
             self.axt.set_ylabel('Tipper', fontdict=fontdict)    
             
             self.axt.set_xscale('log')
+            if self.tipper_limits is None:
+                tmax = max([np.sqrt(txr.max()**2+tyr.max()**2),
+                            np.sqrt(txi.max()**2+tyi.max()**2)])
+                            
+                tmin = -min([np.sqrt(txr.min()**2+tyr.min()**2),
+                            np.sqrt(txi.min()**2+tyi.min()**2)])
+                            
+                self.tipper_limits = (tmin-.1, tmax+.1)
+            
             self.axt.set_ylim(self.tipper_limits)
             self.axt.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
                           lw=.25)
-        
+                          
+        #------plot strike angles----------------------------------------------
+        if self.plot_strike!='n' or self.plot_skew=='y':
+            try:
+                plt.setp(self.axp.xaxis.get_ticklabels(), visible=False)
+                plt.setp(self.axt.xaxis.get_ticklabels(), visible=False)
+            except AttributeError:
+                pass
+            
+            stlst = []
+            stlabel=[]
+            st_maxlst =[]
+            st_minlst =[]
+            
+            if self.plot_strike=='y' or self.plot_strike==1:
+                #strike from invariants
+                zinv = self._mt.get_Zinvariants()
+                s1 = zinv.strike
+                
+                #fold angles so go from -90 to 90
+                s1[np.where(s1>90)] = s1[np.where(s1>90)]-180
+                s1[np.where(s1<-90)] = s1[np.where(s1<-90)]+180
+                
+                #plot strike with error bars
+                ps1 = self.axs.errorbar(self.period, 
+                                        s1, 
+                                        marker=self.strike_inv_marker, 
+                                        ms=self.marker_size, 
+                                        mfc=self.strike_inv_color, 
+                                        mec=self.strike_inv_color, 
+                                        mew=self.marker_lw,
+                                        ls='none', 
+                                        yerr=zinv.strike_err, 
+                                        ecolor=self.strike_inv_color,
+                                        capsize=self.marker_size,
+                                        elinewidth=self.marker_lw)
+                                        
+                stlst.append(ps1[0])
+                stlabel.append('Z_inv')
+                st_maxlst.append(s1.max())
+                st_minlst.append(s1.min())
+                                        
+            if self.plot_strike=='y' or self.plot_strike==2:
+                
+                #strike from phase tensor
+                pt = self._mt.get_PhaseTensor()
+                s2, s2_err = pt.azimuth
+                
+                #fold angles to go from -90 to 90
+                s2[np.where(s2>90)] = s2[np.where(s2>90)]-180
+                s2[np.where(s2<-90)] = s2[np.where(s2<-90)]+180
+                
+                #plot strike with error bars
+                ps2 = self.axs.errorbar(self.period, 
+                                        s2, 
+                                        marker=self.strike_pt_marker, 
+                                        ms=self.marker_size, 
+                                        mfc=self.strike_pt_color, 
+                                        mec=self.strike_pt_color, 
+                                        mew=self.marker_lw,
+                                        ls='none', 
+                                        yerr=s2_err, 
+                                        ecolor=self.strike_pt_color,
+                                        capsize=self.marker_size,
+                                        elinewidth=self.marker_lw)
+                                        
+                stlst.append(ps2[0])
+                stlabel.append('PT')
+                st_maxlst.append(s2.max())
+                st_minlst.append(s2.min())
+            
+            if self.plot_strike=='y' or self.plot_strike==3:
+                #strike from tipper
+                tp = self._mt.get_Tipper()
+                s3 = tp.ang_real+90
+                
+                #fold to go from -90 to 90
+                s3[np.where(s3>90)] = s3[np.where(s3>90)]-180
+                s3[np.where(s3<-90)] = s3[np.where(s3<-90)]+180
+                
+                #plot strike with error bars
+                ps3 = self.axs.errorbar(self.period, 
+                                        s3, 
+                                        marker=self.strike_tip_marker, 
+                                        ms=self.marker_size, 
+                                        mfc=self.strike_tip_color, 
+                                        mec=self.strike_tip_color, 
+                                        mew=self.marker_lw,
+                                        ls='none', 
+                                        yerr=np.zeros_like(s3), 
+                                        ecolor=self.strike_tip_color,
+                                        capsize=self.marker_size,
+                                        elinewidth=self.marker_lw)
+                                        
+                stlst.append(ps3[0])
+                stlabel.append('Tip')
+                st_maxlst.append(s3.max())
+                st_minlst.append(s3.min())
+            
+            #------plot skew angle---------------------------------------------
+            if self.plot_skew=='y':
+                #strike from phase tensor
+                pt = self._mt.get_PhaseTensor()
+                sk, sk_err = pt.skew
+                
+                
+                self.axs2 = self.axs.twinx()
+                ps4 = self.axs2.errorbar(self.period, 
+                                        sk, 
+                                        marker=self.skew_marker, 
+                                        ms=self.marker_size, 
+                                        mfc=self.skew_color, 
+                                        mec=self.skew_color, 
+                                        mew=self.marker_lw,
+                                        ls='none', 
+                                        yerr=sk_err, 
+                                        ecolor=self.skew_color,
+                                        capsize=self.marker_size,
+                                        elinewidth=self.marker_lw)
+                stlst.append(ps4[0])
+                stlabel.append('Skew')
+                
+                self.axs2.set_ylim(-9,9)
+                self.axs2.yaxis.set_major_locator(MultipleLocator(3))
+                self.axs2.yaxis.set_minor_locator(MultipleLocator(1))
+                self.axs2.set_ylabel('Skew', color=self.skew_color)
+                self.axs2.set_xscale('log')
+                for tl in self.axs2.get_yticklabels():
+                    tl.set_color(self.skew_color)
+                    
+                st_minlst.append(0.0)
+                st_maxlst.append(0.0)
+                
+            #--> set axes properties
+            stmin = min(st_minlst)
+            if stmin-3<-90:
+                stmin -= 3
+            else:
+                stmin = -89.99
+                
+            stmax = min(st_maxlst)
+            if stmin+3<90:
+                stmin += 3
+            else:
+                stmin = 89.99
+                
+            self.axs.plot(self.axr.get_xlim(),[0,0],color='k',lw=.5)
+            
+            self.axs.set_ylabel('Strike',
+                                fontdict=fontdict)
+            self.axs.set_xlabel('Period (s)',
+                                fontdict=fontdict)
+            self.axs.set_ylim((stmin, stmax))
+            self.axs.yaxis.set_major_locator(MultipleLocator(15))
+            self.axs.yaxis.set_minor_locator(MultipleLocator(5))
+            self.axs.set_xscale('log')
+            self.axs.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+                          lw=.25)
+            try:
+                self.axs.legend(stlst, 
+                                stlabel,
+                                loc=3, 
+                                markerscale=1, 
+                                borderaxespad=.01,
+                                labelspacing=.07, 
+                                handletextpad=.2, 
+                                borderpad=.02,
+                                prop={'size':self.font_size-1})
+            except:
+                pass
+
         #===Plot the xx, yy components if desired==============================
         if self.plotnum==2:
             #---------plot the apparent resistivity----------------------------
@@ -1550,7 +1813,7 @@ class PlotResPhase(object):
             self.axp2.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
                            lw=.25) 
                            
-            if self.plot_tipper.find('y')==0:
+            if self.plot_tipper.find('y')==0 or self.plot_skew=='y':
                 plt.setp(self.axp2.xaxis.get_ticklabels(), visible=False)
                 plt.setp(self.axp2.xaxis.get_label(),visible=False)
         
