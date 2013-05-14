@@ -20,7 +20,7 @@ import calendar
 import time
 
 
-import mtpy.utils.exceptions import MTex
+import mtpy.utils.exceptions as MTex
 
 import mtpy.processing.birrp as MTbp
 reload(MTbp)
@@ -54,7 +54,10 @@ def main():
     if not op.isdir(ts_dir):
         raise MTex.MTpyError_inputarguments('Time series directory not existing: %s' % (ts_dir))
 
-    MTbp.runbirrp2in2out_simple(birrp_exe, stationname, ts_dir, coherence_th)
+    if 1:
+        MTbp.runbirrp2in2out_simple(birrp_exe, stationname, ts_dir, coherence_th)
+    # except:
+    #     print 'ERROR - Could not process input data using BIRRP'
 
 
 

@@ -90,12 +90,12 @@ def main():
         pathname = [pathname]
 
 
-    if 1:
+    try:
         config_dict = MTcf.read_survey_configfile(configfile)
         #done internally already 
         #MTcf.validate_dict(config_dict)
-    # except:
-    #     raise MTex.MTpyError_config_file( 'Config file cannot be read: %s' % (configfile) )
+    except:
+        raise MTex.MTpyError_config_file( 'Config file cannot be read: %s' % (configfile) )
 
     #----------------------------------------------------------------------------
 

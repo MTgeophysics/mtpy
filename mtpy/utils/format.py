@@ -48,10 +48,8 @@ def _assert_position_format(coordinate, value):
         except: 
             try:
                 latlon_raw = str(value)
-                print latlon_raw
                 #allow separation by ':','.' or 'space' for (deg min sec) format
                 latlon_list = re.split('[ :,]', latlon_raw)
-                print latlon_list
                 if len(latlon_list) == 3:
                     try:
                         latlon_list = [float(i) for  i in latlon_list]

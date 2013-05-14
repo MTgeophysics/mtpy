@@ -88,7 +88,7 @@ def calibrate(raw_data, field, instrument, logger,dipole_length=1.,
     - amplification factor for the instrument
     - logger (EDL, elogger, other)
     - gain factor of the logger
-    - offset of the counts
+    - offset of the counts (will be subtracted)
 
     output:
     - 1D time series (numpy array)
@@ -99,7 +99,7 @@ def calibrate(raw_data, field, instrument, logger,dipole_length=1.,
 
     units_per_count = calibration_factor
 
-    _data_instrument_consitency_check(raw_data, field, dipole_length, instrument, amplification, logger, gain )
+    _data_instrument_consistency_check(raw_data, field, dipole_length, instrument, amplification, logger, gain )
     
 
     # converting counts into units, including  
@@ -367,12 +367,12 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
     np.savetxt(Fout,data_out)
     Fout.close()
 
-    print 'read file',filename ,'wrote file %s'%(outfile)
+    print 'read file',filename ,'  ->  wrote file %s'%(outfile)
     
 
 #=================================================================
 
-def _data_instrument_consitency_check(data, field, dipole_length, instrument, amplification, logger, gain):
+def _data_instrument_consistency_check(data, field, dipole_length, instrument, amplification, logger, gain):
     """
     Check, if the input values given  for the calibration make any sense at all.
 
@@ -420,7 +420,7 @@ def _data_instrument_consitency_check(data, field, dipole_length, instrument, am
 
 
 #----------------------------------------------------------
-#calibration factors from old fortran code:
+#calibration/instrument correction factors for coils from old fortran code:
 """
 
       data fcal/

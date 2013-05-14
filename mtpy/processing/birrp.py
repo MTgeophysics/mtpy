@@ -21,7 +21,7 @@ This module contains functions for handling BIRRP software.
 #=================================================================
 
 
-
+import StringIO
 import numpy as np
 import re
 import sys, os
@@ -35,6 +35,8 @@ import math
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.format as MTft
 import mtpy.utils.filehandling as MTfh
+import mtpy.utils.configfile as MTcf
+
 import mtpy.utils.misc as MTmc
 
 
@@ -56,7 +58,7 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
     if not op.isfile(birrp_exe):
         raise MTex.MTpyError_inputarguments('birrp executable not found: %s'%birrp_exe)
     if not op.isdir(ts_directory):
-        raise MTex.MTpyError_inputarguments('time series files directory: %s'%ts_directory)
+        raise MTex.MTpyError_inputarguments('time series files directory not existing: %s'%ts_directory)
 
     current_dir = op.abspath(os.curdir)
 
@@ -77,11 +79,14 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
             os.makedirs(wd) 
         except:
             raise MTex.MTpyError_file_handling('cannot create working directory:%s'%(wd))
+    
+    print "Successfully generated output directory", wd
 
     os.chdir(wd)
 
     inputstring, birrp_stationdict = generate_birrp_inputstring_simple(stationname, ts_directory, coherence_threshold)
 
+    print "generated inputstring and configuration dictionary for station {0}".format(stationname)
     #print inputstring
     #sys.exit()
     #correct inputstring for potential errorneous line endings:
@@ -89,22 +94,35 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
     tempstring = [i.strip() for i in tempstring]
     inputstring = '\n'.join(tempstring)
 
+    print 'opening logfile...'
+
     logfile = open('birrp_logfile.log','w')
 
-    birrpprocess = subprocess.Popen(birrp_exe, stdin=subprocess.PIPE, stdout=logfile,stderr=logfile)
 
-    out,err = birrpprocess.communicate(inputstring)
+    print 'starting Birrp processing...'
+
+    #birrpprocess = subprocess.Popen(birrp_exe, stdin=subprocess.PIPE)#, stdout=logfile,stderr=logfile)
+    instringhandler = StringIO.StringIO(inputstring)
+    birrpprocess = subprocess.Popen(birrp_exe, stdin=instringhandler, stdout=logfile,stderr=logfile)
+
+    out,err = birrpprocess.communicate()#inputstring)
+    
 
     logfile.close()
+    print 'logfile closed: {0}'.format(logfile.name)
 
     #generate a local configuration file, containing information about all BIRRP and station parameters
     #required for the header of the EDI file 
+
+    print 'generating configuration file containing the applied processing parameters'
     station_config_file = '%s_birrpconfig.cfg'%(stationname)
-    MTfH.write_dict_to_configfile(birrp_stationdict, station_config_file)
-    print 'Wrote BIRRP and time series configurations to file: %s'%(op.abspath(station_config_file))
+    MTcf.write_dict_to_configfile(birrp_stationdict, station_config_file)
+    print 'Wrote BIRRP and time series configurations to file: {0}'.format(op.abspath(station_config_file))
 
     #go back to initial directory
     os.chdir(current_dir)
+
+    print '\n \t\tDONE !!!\n\n'
 
 
 
@@ -114,9 +132,10 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
         raise MTex.MTpyError_inputarguments( 'Output channels must be 2 or 3' )
 
 
+    print 'setting basic input components,e.g. filenames, samplingrate,...'
     input_filename, length, sampling_rate, birrp_stationdict = set_birrp_input_file_simple(stationname, ts_directory, output_channels, op.join(ts_directory,'birrp_wd'))
 
-
+    print 'calculate optimal time window bisection parameters'
     longest_section, number_of_bisections = get_optimal_window_bisection(length, sampling_rate)
 
     birrp_stationdict['max_window_length'] = longest_section
@@ -126,7 +145,7 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
     #self referencing:
     birrp_stationdict['rr_station'] = birrp_stationdict['station']
 
-    birrp_stationdict = MTm.add_birrp_simple_parameters_to_dictionary(birrp_stationdict)
+    birrp_stationdict = MTmc.add_birrp_simple_parameters_to_dictionary(birrp_stationdict)
 
 
     if output_channels == 2:
@@ -182,25 +201,35 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
 
     for entry in os.listdir(ts_directory):
         fn = op.join(ts_directory,entry)
-        lo_files.append(fn)
+        if not op.isfile(fn):
+            continue
+
 
         try:
-            header = MTfH.read_data_header(fn)
+            header = MTfh.read_ts_header(fn)
         except:
             continue
 
-
-        stationname_read = header[0]
+        stationname_read = header['station']
 
         if not stationname_read == stationname.upper():
             continue
+        if not header['channel'] in channels:
+            continue
+
+        lo_files.append(fn)
 
                 
-        lo_channels.append(header[1])
-        lo_sampling_rates.append(header[2])
-        lo_starttimes.append(header[3])
-        endtime = (np.arange(header[4]+1)/header[2] + header[3])[-1]
+        lo_channels.append(header['channel'])
+        lo_sampling_rates.append(float(header['samplingrate']))
+        lo_starttimes.append(float(header['t_min']))
+        ta = np.arange(int(float(header['nsamples']))+1)/float(header['samplingrate']) + float(header['t_min'])
+        endtime = ta[-1]
         lo_endtimes.append(endtime)
+
+    if (len(lo_sampling_rates) == 0) or (len(lo_files) == 0):
+        print '\n\tERROR - no MTpy data files found in directory {0} !!\n'.format(ts_directory)
+        raise
 
     #take the most common sampling rate, if there are more than one:
     from collections import Counter
@@ -210,13 +239,14 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
 
 
     if not len(set(lo_channels)) in [4,5]:
-        raise MTex.MTpyError_ts_data( 'Missing data files in directory %s - not all channels found'%ts_directory )
+        raise MTex.MTpyError_ts_data( 'Missing data files in directory {0} - not all channels found'.format(ts_directory))
 
     #get a list with all existing time windows of consecutive data for all the channels
     lo_time_windows = []
     #find sorting of the files by their start time:
     starttime_sorting = np.argsort(lo_starttimes)
 
+    print 'start loop over all components...'
     #loop over the components:
     for ch in channels:
         tmp_starttime = None
@@ -243,7 +273,9 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
 
         lo_time_windows.append(tmp_timewindows_list_per_channel)
 
-    longest_common_time_window = MTm.find_longest_common_time_window_from_list(lo_time_windows, sampling_rate)
+
+    print 'find longest common time window for all channels...'
+    longest_common_time_window = MTmc.find_longest_common_time_window_from_list(lo_time_windows, sampling_rate)
 
 
     #data array to hold time series for longest possible time window for the files given 
@@ -252,8 +284,11 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
 
     #define time axis for referencing time and position in the output array
     #correct by rounding for internal floating point errors
-    ta = np.array([ np.round( i , -int(np.log10(1./sampling_rate))) for i in  np.linspace(*longest_common_time_window)])
+    #ta = np.array([ np.round( i , -int(np.log10(1./sampling_rate))) for i in  np.linspace(*longest_common_time_window)])
+    #alternative : no rounding
+    ta = np.linspace(*longest_common_time_window, endpoint=False)
 
+    print 'data array ({0}) and time axis ({1}) initialised...start looping over channels...'.format(data.shape, len(ta))
 
     for idx_ch, ch in enumerate(channels):
         for st in starttime_sorting:
@@ -266,36 +301,53 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
                 continue
 
             #read in data
+            print 'reading data from file {0}'.format(lo_files[st])
             data_in = np.loadtxt(lo_files[st])
+            print len(data_in), sampling_rate , lo_starttimes[st]
             #define time axis for read in data
             ta_file = np.arange(len(data_in))/sampling_rate + lo_starttimes[st]
-            #find overlap of overall time axis and the ta of current data set
-            overlap = np.sort(list(set(ta_file) & set(ta)))
+            #find overlap of overall time axis and the ta of current data set:
+            for min_idx,dummy in enumerate(ta_file):
+                if ta[0]<= dummy <= ta[-1]:
+                    break
+            for max_idx in range(-1,-(len(ta_file)+1), -1):
+                if ta[0]<=ta_file[max_idx] <= ta[-1]:
+                    break
+            #include the last sample:
+            max_idx = len(ta_file) + max_idx + 1
+            print min_idx,max_idx
+            overlap = ta_file[min_idx:max_idx]
+            print ta_file[0],ta_file[-1], '   ', ta[0],ta[-1]
 
             #find starting index of overlap for current data file time axis
-            idx_ta_file = np.argmin(np.abs(ta_file - overlap[0]))
+            idx_ta_file = min_idx#np.argmin(np.abs(ta_file - overlap[0]))
 
             #find starting index of overlap for overall time axis
             idx_overall_ta = np.argmin(np.abs(ta - overlap[0])) 
 
             #set data entries
+            print 'fill data from file into temporary array'
+            print idx_overall_ta, len(overlap), idx_ch, idx_ta_file
+            print data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch].shape, data_in[idx_ta_file:idx_ta_file+len(overlap)].shape
             data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch] = data_in[idx_ta_file:idx_ta_file+len(overlap)]
 
 
     #define output file for storing the output data array to:
+    w_directory = op.abspath(op.join(os.curdir, w_directory))
     if not op.isdir(w_directory):
         os.makedirs(w_directory)
-        print 'created directory:%s'%w_directory
+        print 'created directory: {0}'.format(w_directory)
 
-    print 'size of data arry',data.shape
+    print 'size of usable data arry: ',data.shape
 
     try:
         outfn = op.join(w_directory, 'birrp_input_data.txt') 
+        print 'save input data array to file: {0}'.format(outfn)
         np.savetxt(outfn, data)
     except:
-        raise MTex.MTpyError_file_handling('Error - cannot write data to file:%s'%outfn)
+        raise MTex.MTpyError_file_handling('Error - cannot write data to file:{0}'.format(outfn))
 
-    print 'Wrote input data to file:%s'%outfn
+    print 'Done...'
 
     birrp_stationdict = {}
     birrp_stationdict['station'] =  stationname.upper()
@@ -393,16 +445,16 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
                 print 'output directory could not be created - using input directory instead'
                 output_dir = input_dir
 
-    out_fn = op.join(output_dir,'%s.edi'%(stationname))
+    out_fn = op.join(output_dir,'{0}.edi'.format(stationname))
 
     if not op.isfile(survey_configfile):
-        raise MTex.MTpyError_inputarguments('Config file not existing:%s'%(survey_configfile))
+        raise MTex.MTpyError_inputarguments('Survey - configfile not existing: "{0}"'.format(survey_configfile))
     if not op.isfile(birrp_configfile):
-        raise MTex.MTpyError_inputarguments('Config file not existing:%s'%(birrp_configfile))
+        raise MTex.MTpyError_inputarguments('BIRRP - Configfile not existing: "{0}"'.format(birrp_configfile))
      
     #read the survey config file:
     try:
-        survey_config_dict = MTfH.read_survey_configfile(survey_configfile)
+        survey_config_dict = MTcf.read_survey_configfile(survey_configfile)
     except:
         raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (survey_configfile) )
 
@@ -414,7 +466,7 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
 
     #read the BIRRP/processing config file:
     try:
-        birrp_config_dict = MTfH.read_configfile(birrp_configfile)
+        birrp_config_dict = MTcf.read_configfile(birrp_configfile)
     except:
         raise EX.MTpyError_config_file( 'Config file with BIRRP processing parameters could not be read: %s' % (birrp_configfile) )
 
@@ -546,6 +598,7 @@ def _set_edi_info(station_config_dict,birrp_config_dict):
 
     return infostring.expandtabs(4)
 
+
 def _set_edi_head(station_config_dict,birrp_config_dict):
 
     headstring = ''
@@ -563,9 +616,9 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
     sampling_rate = float(birrp_config_dict['sampling_rate'])
     n_samples = int(float(birrp_config_dict['n_samples']))
     #new:
-    #acq_starttime = float(birrp_config_dict['processing_window_start'])
+    acq_starttime = float(birrp_config_dict['processing_window_start'])
     #old:
-    acq_starttime = float(birrp_config_dict['time_series_start'])
+    #acq_starttime = float(birrp_config_dict['time_series_start'])
 
     acq_start_date = (time.gmtime(acq_starttime)[:3])[::-1]
     acq_start_time = (time.gmtime(acq_starttime)[3:6])
@@ -846,12 +899,12 @@ def convert2coh(birrp_output_directory, stationname):
         raise MTex.MTpyError_file_handling('Too many coherence files for station %s found in: %s'%(stationname, directory))
 
     try:
-        period,freq,coh1,zcoh1 = MTfH.read_2c2_file(cohfilenames[0])
-        period,freq,coh2,zcoh2 = MTfH.read_2c2_file(cohfilenames[1])
+        period,freq,coh1,zcoh1 = MTfh.read_2c2_file(cohfilenames[0])
+        period,freq,coh2,zcoh2 = MTfh.read_2c2_file(cohfilenames[1])
 
         if len(cohfilenames) == 3:
 
-            period,freq,coh3,zcoh3 = MTfH.read_2c2_file(cohfilenames[2])
+            period,freq,coh3,zcoh3 = MTfh.read_2c2_file(cohfilenames[2])
     except:
         raise MTex.MTpyError_file_handling('Cannot read coherence files for station %s found in: %s'%(stationname, directory))
 

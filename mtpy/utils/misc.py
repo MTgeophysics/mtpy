@@ -37,7 +37,7 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
     totalmax = np.max(maxs)
 
     #do not correct for last sample, since 'end' in the MTpy handling is defined as the start time of the last sample already
-    totallength = (totalmax - totalmin ) * sampling_rate
+    totallength = int((totalmax - totalmin ) * sampling_rate + 1)
     
 
     #define time axis:
@@ -63,7 +63,9 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
     longest_window = 0 
 
     window_idx = 0
+    print 'total length:', totallength
 
+    print 'start while-loop until "totallength" is reached...'
     while t1 < totallength:
         if np.prod(d[t1,:]) == 0 :
             #check, if it's been a data window before
@@ -89,7 +91,10 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
             ts_tmp = t1
             window_idx += 1
         t1 += 1
-
+        if t1%(int(totallength/100.)) == 0:
+            print '{0} %'.format(np.round(t1/float(totallength) *100))
+    
+    print 'loop finished - checking last sample'
     #after the loop, check, if last sample belogs to a data window:
     if ts_tmp != None:
         te_tmp = t1 -1
@@ -101,7 +106,13 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
 
     #rounding limits of the time window to precision defined by the sampling rate
     precision = -int(np.log10(1./sampling_rate))
+    print 'return time window parameters:'
+    print (round(ta[start_idx], precision), round(ta[end_idx], precision), window_length, len(ta))
     return (round(ta[start_idx], precision), round(ta[end_idx], precision), window_length)
+
+
+
+
 
 def add_birrp_simple_parameters_to_dictionary(birrp_dictionary):
 
