@@ -48,14 +48,22 @@ def _assert_position_format(coordinate, value):
         except: 
             try:
                 latlon_raw = str(value)
+                print latlon_raw
                 #allow separation by ':','.' or 'space' for (deg min sec) format
                 latlon_list = re.split('[ :,]', latlon_raw)
-                try:
-                    latlon_list = [float(i) for  i in latlon_list]
-                except:
-                    raise MTpyError_config_file('Config file error: lat/lon is in invalid format')
-
-                latlon = convert_dms_tuple2degrees(latlon_list)
+                print latlon_list
+                if len(latlon_list) == 3:
+                    try:
+                        latlon_list = [float(i) for  i in latlon_list]
+                    except:
+                        raise 
+                    latlon = convert_dms_tuple2degrees(latlon_list)
+                elif len(latlon_list) == 2:
+                    try:
+                        latlon_list = [float(i) for  i in latlon_list]
+                    except:
+                        raise 
+                    latlon = convert_degmin_tuple2degrees(latlon_list)
                 
             except:
                 raise MTpyError_config_file('Config file error: lat/lon is in invalid format')
@@ -110,7 +118,7 @@ def convert_dms_tuple2degrees(latlon_triple):
 
 
 
-def convert_degrees2_dms_tuple(degrees):
+def convert_degrees2dms_tuple(degrees):
     """
     Convert a geographical degree value into a triple (array) of degrees, minutes, seconds.
     """
@@ -139,3 +147,57 @@ def convert_degrees2_dms_tuple(degrees):
 
 
     return dms_triple
+
+
+
+
+def convert_degmin_tuple2degrees(latlon_list):
+
+    """
+    Convert a 2tuple (list, tuple, array) of form "(degrees,minutes)" into degrees.
+
+    Validity of the triple is assumed and has to be asserted in advance.
+    """
+
+
+    try:
+        latlon_list = [float(i) for i in latlon_list]
+    except:
+        raise
+
+    deg = latlon_list[0]
+    minutes = latlon_list[1]
+
+    #take out sign for easier conversion into degrees
+    sign = np.sign(deg)
+    if deg < 0:
+        deg *= -1
+
+    degrees = deg + 1/60. * minutes
+
+    return degrees * sign
+
+
+def convert_degrees2degmin_tuple(degrees):
+    """
+    Convert a geographical degree value into a 2tuple (array) of form "(degrees, minutes)"
+    """
+
+    deg = float(degrees)
+
+    #take out sign for easier conversion:
+    sign = np.sign(deg)
+    if deg < 0:
+        deg *= -1
+
+    d = int(deg)
+
+    minutes = 60 * (deg - d)
+
+    dms_tuple = np.zeros((2))
+
+
+    dms_tuple[0] = sign * d
+    dms_tuple[1] = minutes
+
+    return dms_tuple
