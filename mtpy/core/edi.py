@@ -124,7 +124,8 @@ class Edi(object):
         """
 
         self.__init__()
-        print 'reading in Edi file ... nulled all attributes'
+        print 'reading in Edi file: {0}'.format(fn)
+        print ' ...nulled all attributes of current MTedi.Edi instance.'
 
         infile = op.abspath(fn)
 
