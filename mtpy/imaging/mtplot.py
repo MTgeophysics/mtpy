@@ -2051,6 +2051,7 @@ class PlotMultipleResistivityPhase(object):
         #set some of the properties as attributes much to Lars' discontent
         self.fignum = fignum
         self.plotnum = plotnum
+        self.plot_style = plot_style
         self.title = title
         self.dpi = dpi
         
@@ -2105,10 +2106,7 @@ class PlotMultipleResistivityPhase(object):
         self.skew_limits = None
         
         #set font parameters
-        self.font_size = 7
-        
-        #set period
-        self.period = self._mt.period
+        self.font_size = 6
         
         #set plot tipper or not
         self.plot_tipper = plot_tipper
@@ -2224,7 +2222,7 @@ class PlotMultipleResistivityPhase(object):
         plot the apparent resistivity and phase
         """
         
-        if self.plotstyle=='1':
+        if self.plot_style=='1':
             self.plotlst=[]
             
             #--> plot from edi's if given
@@ -2233,7 +2231,7 @@ class PlotMultipleResistivityPhase(object):
                                   fignum=ii, 
                                   plotnum=self.plotnum, 
                                   dpi=self.dpi, 
-                                  rotz=self.rot_z[ii], 
+                                  rotz=self.rot_z[ii-1], 
                                   plot_yn='n',
                                   plot_tipper=self.plot_tipper,
                                   plot_strike=self.plot_strike,
@@ -2301,13 +2299,16 @@ class PlotMultipleResistivityPhase(object):
                     
         
         #-----Plot All in one figure with each plot as a subfigure------------        
-        if self.plotstyle=='all':
+        if self.plot_style=='all':
 
             ns = len(self.mt_lst)
 
             #set some parameters of the figure and subplot spacing
             plt.rcParams['font.size'] = self.font_size
-            plt.rcParams['figure.subplot.right'] = .98
+            if self.plot_skew=='y':
+                plt.rcParams['figure.subplot.right'] = .94
+            else:
+                plt.rcParams['figure.subplot.right'] = .98
             plt.rcParams['figure.subplot.bottom'] = .1
             plt.rcParams['figure.subplot.top'] = .93
             
@@ -2328,11 +2329,12 @@ class PlotMultipleResistivityPhase(object):
             gs0 = gridspec.GridSpec(1, ns)
                 
             #space out the subplots
-            gs0.update(hspace=.05, wspace=.05, left=.085)
+            gs0.update(hspace=.025, wspace=.025, left=.085)
      
             for ii,mt in enumerate(self.mt_lst):
                 #get the reistivity and phase object
-                rp = mt.get_ResPhase(rot_z=self.rot_z[ii])
+                rp = mt.get_ResPhase()
+                rp.rotate(self.rot_z[ii])
                 
                 #set x-axis limits from short period to long period
                 if self.xlimits==None:
@@ -2343,11 +2345,11 @@ class PlotMultipleResistivityPhase(object):
                     
                 if self.res_limits==None:
                     self.res_limits = (10**(np.floor(
-                                    np.log10(min([self.rp.resxy.min(),
-                                                  self.rp.resyx.min()])))),
+                                    np.log10(min([rp.resxy.min(),
+                                                  rp.resyx.min()])))),
                               10**(np.ceil(
-                                    np.log10(max([self.rp.resxy.max(),
-                                                  self.rp.resyx.max()])))))
+                                    np.log10(max([rp.resxy.max(),
+                                                  rp.resyx.max()])))))
 
                 # create a grid to place the figures into, set to have 2 rows 
                 # and 2 columns to put any of the 4 components.  Make the phase
@@ -2363,11 +2365,11 @@ class PlotMultipleResistivityPhase(object):
                             #make subplots for each subplot in the figure
                             ax1 = gridspec.GridSpecFromSubplotSpec(4, 1, 
                                                        subplot_spec=gs0[ii],
-                                                       height_ratios=[2,1.5], 
-                                                       hspace=.01)
+                                                       height_ratios=[2,1.5,1,1], 
+                                                       hspace=.00)
                             axr = self.fig.add_subplot(ax1[0,0])
                             axp = self.fig.add_subplot(ax1[1,0], sharex=axr)
-                            axt = self.fig.add_subplot(ax1[2,0], shares=axr)
+                            axt = self.fig.add_subplot(ax1[2,0], sharex=axr)
                             axs = self.fig.add_subplot(ax1[3,0], sharex=axr)
                        
                        #--> don't plot strike or skew    
@@ -2375,19 +2377,19 @@ class PlotMultipleResistivityPhase(object):
                             #make subplots for each subplot in the figure
                             ax1 = gridspec.GridSpecFromSubplotSpec(3, 1, 
                                                        subplot_spec=gs0[ii],
-                                                       height_ratios=[2,1.5], 
-                                                       hspace=.01)
+                                                       height_ratios=[2,1.5,1], 
+                                                       hspace=.00)
                             axr = self.fig.add_subplot(ax1[0,0])
                             axp = self.fig.add_subplot(ax1[1,0], sharex=axr)
-                            axt = self.fig.add_subplot(ax1[2,0], shares=axr)
+                            axt = self.fig.add_subplot(ax1[2,0], sharex=axr)
                     
                     #--> don't plot tipper but plot skew and or strike
                     elif self.plot_strike=='y' or self.plot_skew=='y':
                         #make subplots for each subplot in the figure
                         ax1 = gridspec.GridSpecFromSubplotSpec(3, 1, 
                                                          subplot_spec=gs0[ii],
-                                                         height_ratios=[2,1.5], 
-                                                         hspace=.01)
+                                                         height_ratios=[2,1.5,1], 
+                                                         hspace=.00)
                         axr = self.fig.add_subplot(ax1[0,0])
                         axp = self.fig.add_subplot(ax1[1,0], sharex=axr)
                         axs = self.fig.add_subplot(ax1[2,0], sharex=axr)
@@ -2398,7 +2400,7 @@ class PlotMultipleResistivityPhase(object):
                         ax1 = gridspec.GridSpecFromSubplotSpec(2, 1, 
                                                          subplot_spec=gs0[ii],
                                                          height_ratios=[2,1.5], 
-                                                         hspace=.01)
+                                                         hspace=.00)
                         axr = self.fig.add_subplot(ax1[0,0])
                         axp = self.fig.add_subplot(ax1[1,0], sharex=axr)
                         
@@ -2421,9 +2423,13 @@ class PlotMultipleResistivityPhase(object):
                             #make subplots for each subplot in the figure
                             ax1 = gridspec.GridSpecFromSubplotSpec(4, 2, 
                                                        subplot_spec=gs0[ii],
-                                                       height_ratios=[2,1.5], 
-                                                       hspace=.01)
-                            axt = self.fig.add_subplot(ax1[2,:], shares=axr)
+                                                       height_ratios=[2,1.5,1,1], 
+                                                       hspace=.00)
+                            axr = self.fig.add_subplot(ax1[0,0])
+                            axp = self.fig.add_subplot(ax1[1,0], sharex=axr)
+                            axr2 = self.fig.add_subplot(ax1[0,1], sharex=axr)
+                            axp2 = self.fig.add_subplot(ax1[1,1], sharex=axr)
+                            axt = self.fig.add_subplot(ax1[2,:], sharex=axr)
                             axs = self.fig.add_subplot(ax1[3,:], sharex=axr)
                        
                        #--> don't plot strike or skew    
@@ -2431,19 +2437,25 @@ class PlotMultipleResistivityPhase(object):
                             #make subplots for each subplot in the figure
                             ax1 = gridspec.GridSpecFromSubplotSpec(3, 2, 
                                                        subplot_spec=gs0[ii],
-                                                       height_ratios=[2,1.5], 
-                                                       hspace=.01)
-
-                            axt = self.fig.add_subplot(ax1[2,:], shares=axr)
+                                                       height_ratios=[2,1.5,1], 
+                                                       hspace=.00)
+                            axr = self.fig.add_subplot(ax1[0,0])
+                            axp = self.fig.add_subplot(ax1[1,0], sharex=axr)
+                            axr2 = self.fig.add_subplot(ax1[0,1], sharex=axr)
+                            axp2 = self.fig.add_subplot(ax1[1,1], sharex=axr)
+                            axt = self.fig.add_subplot(ax1[2,:], sharex=axr)
                     
                     #--> don't plot tipper but plot skew and or strike
                     elif self.plot_strike=='y' or self.plot_skew=='y':
                         #make subplots for each subplot in the figure
                         ax1 = gridspec.GridSpecFromSubplotSpec(3, 2, 
                                                          subplot_spec=gs0[ii],
-                                                         height_ratios=[2,1.5], 
-                                                         hspace=.01)
-
+                                                         height_ratios=[2,1.5,1], 
+                                                         hspace=.00)
+                        axr = self.fig.add_subplot(ax1[0,0])
+                        axp = self.fig.add_subplot(ax1[1,0], sharex=axr)
+                        axr2 = self.fig.add_subplot(ax1[0,1], sharex=axr)
+                        axp2 = self.fig.add_subplot(ax1[1,1], sharex=axr)
                         axs = self.fig.add_subplot(ax1[2,:], sharex=axr)
                    
                     #--> just plot resistivity and phase 
@@ -2452,12 +2464,12 @@ class PlotMultipleResistivityPhase(object):
                         ax1 = gridspec.GridSpecFromSubplotSpec(2, 2, 
                                                          subplot_spec=gs0[ii],
                                                          height_ratios=[2,1.5], 
-                                                         hspace=.01)
-                    axr = self.fig.add_subplot(ax1[0,0])
-                    axp = self.fig.add_subplot(ax1[1,0], sharex=axr)
-                    axr2 = self.fig.add_subplot(ax1[0,1], sharex=axr)
-                    axp2 = self.fig.add_subplot(ax1[1,1], sharex=axr)
-                        
+                                                         hspace=.00)
+                    
+                        axr = self.fig.add_subplot(ax1[0,0])
+                        axp = self.fig.add_subplot(ax1[1,0], sharex=axr)
+                        axr2 = self.fig.add_subplot(ax1[0,1], sharex=axr)
+                        axp2 = self.fig.add_subplot(ax1[1,1], sharex=axr)
                     #place the y-coordinate labels in the same location for
                     #each axis
                     if ii==0:
@@ -2479,7 +2491,7 @@ class PlotMultipleResistivityPhase(object):
                                      mec=self.xy_color, 
                                      mew=self.marker_lw, 
                                      ls=self.xy_ls, 
-                                     yerr=self.rp.resxy_err, 
+                                     yerr=rp.resxy_err, 
                                      ecolor=self.xy_color,
                                      capsize=self.marker_size,
                                      elinewidth=self.marker_lw)
@@ -2493,7 +2505,7 @@ class PlotMultipleResistivityPhase(object):
                                      mec=self.yx_color, 
                                      mew=self.marker_lw,
                                      ls=self.yx_ls, 
-                                     yerr=self.rp.resyx_err, 
+                                     yerr=rp.resyx_err, 
                                      ecolor=self.yx_color,
                                      capsize=self.marker_size,
                                      elinewidth=self.marker_lw)
@@ -2518,6 +2530,8 @@ class PlotMultipleResistivityPhase(object):
                                 labelspacing=.07, 
                                 handletextpad=.2, 
                                 borderpad=.02)
+                else:
+                    plt.setp(axr.get_yticklabels(),visible=False)
                     
                     
                   #-----Plot the phase---------------------------------------------------
@@ -2530,7 +2544,7 @@ class PlotMultipleResistivityPhase(object):
                                      mec=self.xy_color, 
                                      mew=self.marker_lw,
                                      ls=self.xy_ls,
-                                     yerr=self.rp.phasexy_err, 
+                                     yerr=rp.phasexy_err, 
                                      ecolor=self.xy_color,
                                      capsize=self.marker_size,
                                      elinewidth=self.marker_lw)
@@ -2544,7 +2558,7 @@ class PlotMultipleResistivityPhase(object):
                                      mec=self.yx_color, 
                                      mew=self.marker_lw,
                                      ls=self.yx_ls, 
-                                     yerr=self.rp.phaseyx_err, 
+                                     yerr=rp.phaseyx_err, 
                                      ecolor=self.yx_color,
                                      capsize=self.marker_size,
                                      elinewidth=self.marker_lw)
@@ -2571,8 +2585,14 @@ class PlotMultipleResistivityPhase(object):
                 
                 #--> set axes properties
                 if ii==0:
-                    axp.set_xlabel('Period (s)', fontdict)
                     axp.set_ylabel('Phase (deg)', fontdict)
+                else:
+                    plt.setp(axp.get_yticklabels(), visible=False)
+                    
+                if self.plot_tipper=='n' and self.plot_skew=='n' and \
+                        self.plot_strike=='n':
+                    axp.set_xlabel('Period (s)', fontdict)
+                    
                 axp.set_xscale('log')
                 axp.set_ylim(self.phase_limits)        
                 axp.yaxis.set_major_locator(MultipleLocator(15))
@@ -2616,18 +2636,18 @@ class PlotMultipleResistivityPhase(object):
                         xleni = txi[aa]*mt.period[aa]
                         
                         #scale the arrow head height and width to fit in a log scale
-                        if np.log10(self.period[aa])<0:
+                        if np.log10(mt.period[aa])<0:
                              hwidth = self.arrow_head_width*\
-                                     10**(np.floor(np.log10(self.period[aa])))
+                                     10**(np.floor(np.log10(mt.period[aa])))
                              hheight = self.arrow_head_height*\
-                                     10**(np.floor(np.log10(self.period[aa])))
+                                     10**(np.floor(np.log10(mt.period[aa])))
                         else:
                             hwidth = self.arrow_head_width/\
-                                    10**(np.floor(np.log10(self.period[aa])))
+                                    10**(np.floor(np.log10(mt.period[aa])))
                             hheight = self.arrow_head_height/\
-                                    10**(np.floor(np.log10(self.period[aa]))) 
-                        if np.log10(self.period[aa])<0:
-                            alw = self.arrow_lw*self.period[aa]
+                                    10**(np.floor(np.log10(mt.period[aa]))) 
+                        if np.log10(mt.period[aa])<0:
+                            alw = self.arrow_lw*mt.period[aa]
                         else:
                             alw = self.arrow_lw
                         #--> plot real arrows
@@ -2678,6 +2698,8 @@ class PlotMultipleResistivityPhase(object):
                                     prop={'size':self.font_size})
                         
                         axt.set_ylabel('Tipper', fontdict=fontdict) 
+                    else:
+                        plt.setp(axt.get_yticklabels(), visible=False)
         
                     #set axis properties            
                     axt.yaxis.set_major_locator(MultipleLocator(.2))               
@@ -2703,6 +2725,15 @@ class PlotMultipleResistivityPhase(object):
                     axt.grid(True, alpha=.25, which='both', 
                              color=(.25,.25,.25),
                              lw=.25)
+                             
+                    tklabels=[self.label_dict[tt] 
+                              for tt in np.arange(np.log10(self.xlimits[0]),
+                                              np.log10(self.xlimits[1])+1)]
+                    tklabels[0]=''
+                    tklabels[-1]=''
+                
+                    axt.set_xticklabels(tklabels,
+                                    fontdict={'size':self.font_size})
                     
                 #------plot strike angles----------------------------------------------
                 if self.plot_strike!='n' or self.plot_skew=='y':
@@ -2756,7 +2787,7 @@ class PlotMultipleResistivityPhase(object):
                         s2[np.where(s2<-90)] = s2[np.where(s2<-90)]+180
                         
                         #plot strike with error bars
-                        ps2 = axs.errorbar(period, 
+                        ps2 = axs.errorbar(mt.period, 
                                            s2, 
                                            marker=self.strike_pt_marker, 
                                            ms=self.marker_size, 
@@ -2801,6 +2832,107 @@ class PlotMultipleResistivityPhase(object):
                         stlabel.append('Tip')
                         st_maxlst.append(s3.max())
                         st_minlst.append(s3.min())
+                        
+                    #------plot skew angle-------------------------------------
+                    if self.plot_skew=='y':
+                        #strike from phase tensor
+                        pt = mt.get_PhaseTensor()
+                        sk, sk_err = pt.skew
+                        
+                        
+                        axs2 = axs.twinx()
+                        ps4 = axs2.errorbar(mt.period, 
+                                            sk, 
+                                            marker=self.skew_marker, 
+                                            ms=self.marker_size, 
+                                            mfc=self.skew_color, 
+                                            mec=self.skew_color, 
+                                            mew=self.marker_lw,
+                                            ls='none', 
+                                            yerr=sk_err, 
+                                            ecolor=self.skew_color,
+                                            capsize=self.marker_size,
+                                            elinewidth=self.marker_lw)
+                                            
+                        stlst.append(ps4[0])
+                        stlabel.append('Skew')
+                        if self.skew_limits is None:
+                            self.skew_limits = (-9,9)
+                        
+                        
+                        axs2.set_ylim(self.skew_limits)
+                        axs2.yaxis.set_major_locator(MultipleLocator(3))
+                        axs2.yaxis.set_minor_locator(MultipleLocator(1))
+                        if ii==len(self.mt_lst)-1:
+                            axs2.set_ylabel('Skew', color=self.skew_color)
+                        else:
+                            plt.setp(axs2.get_yticklabels(), visible=False)
+                            
+                        axs2.set_xscale('log')
+                        for tl in axs2.get_yticklabels():
+                            tl.set_color(self.skew_color)
+                            
+                        st_minlst.append(0.0)
+                        st_maxlst.append(0.0)
+                        
+                    #--> set axes properties
+                    if self.strike_limits is None:
+                        stmin = min(st_minlst)
+                        if stmin-3<-90:
+                            stmin -= 3
+                        else:
+                            stmin = -89.99
+                            
+                        stmax = max(st_maxlst)
+                        if stmin+3<90:
+                            stmin += 3
+                        else:
+                            stmin = 89.99
+                        self.strike_limits = (-max([abs(stmin), abs(stmax)]),
+                                               max([abs(stmin), abs(stmax)]))
+                                                
+                        
+                    axs.plot(axr.get_xlim(),[0,0],color='k',lw=.5)
+                    
+                    if ii==0:
+                        axs.set_ylabel('Strike',
+                                            fontdict=fontdict)
+                        try:
+                            axs.legend(stlst, 
+                                       stlabel,
+                                       loc=3, 
+                                       markerscale=1, 
+                                       borderaxespad=.01,
+                                       labelspacing=.07, 
+                                       handletextpad=.2, 
+                                       borderpad=.02,
+                                       prop={'size':self.font_size-1})
+                        except:
+                            pass
+                    else:
+                        plt.setp(axs.get_yticklabels(), visible=False)
+                    
+                    axs.set_xlabel('Period (s)',
+                                        fontdict=fontdict)
+                    axs.set_ylim(self.strike_limits)
+                    axs.yaxis.set_major_locator(MultipleLocator(30))
+                    axs.yaxis.set_minor_locator(MultipleLocator(5))
+                    axs.set_xscale('log')
+                    axs.grid(True, 
+                             alpha=.25, 
+                             which='both', 
+                             color=(.25,.25,.25),
+                             lw=.25)
+                             
+                    tklabels=[self.label_dict[tt] 
+                              for tt in np.arange(np.log10(self.xlimits[0]),
+                                              np.log10(self.xlimits[1])+1)]
+                    tklabels[0]=''
+                    tklabels[-1]=''
+                
+                    axs.set_xticklabels(tklabels,
+                                    fontdict={'size':self.font_size})
+                    
                     #====Plot the Z_xx, Z_yy components if desired=============
                     if self.plotnum==2:
                         #---------plot the apparent resistivity----------------
@@ -2854,8 +2986,6 @@ class PlotMultipleResistivityPhase(object):
                                         handletextpad=.2, 
                                         borderpad=.02)
                                             
-    #                    else:
-    #                        plt.setp(axr2.get_yticklabels(), visible=False)
                         
                         #-----Plot the phase-----------------------------------
                         
@@ -2935,16 +3065,6 @@ class PlotMultipleResistivityPhase(object):
                                           capsize=self.marker_size,
                                           elinewidth=self.marker_lw)
                     
-#                    if ii==0:                                
-#                        axr.legend((ebdetr[0]),
-#                                    ('$\det(\mathbf{\hat{Z}})$'),
-#                                    loc=3,
-#                                    markerscale=1,
-#                                    borderaxespad=.01,
-#                                    labelspacing=.07,
-#                                    handletextpad=.2,
-#                                    borderpad=.02)
-                                    
                     #--> set axes properties
                     plt.setp(axr.get_xticklabels(), visible=False)
                     if ii==0:
@@ -2993,7 +3113,7 @@ class PlotMultipleResistivityPhase(object):
                 plt.show()
         
         #=====Plot all responses into one plot to compare changes=============
-        if self.plotstyle=='compare':
+        if self.plot_style=='compare':
             ns = len(self.edilst)
             
             cxy=[(0,0+float(cc)/ns,1-float(cc)/ns) for cc in range(ns)]
