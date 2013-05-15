@@ -73,7 +73,7 @@ class Z(object):
         MTcculation of invariants, inverse, amplitude/phase,...
 
         
-        Z is a complex array of the form (n_frequencies, 2, 2), 
+        Z is a complex array of the form (n_frequency, 2, 2), 
         with indices in the following order: 
             Zxx: (0,0) - Zxy: (0,1) - Zyx: (1,0) - Zyy: (1,1)   
 
@@ -127,11 +127,11 @@ class Z(object):
             pass
 
             
-        self._frequencies = None
+        self._frequency = None
 
         # if isinstance(edi_object, MTedi.Edi):
         #     self.edi_object = edi_object
-        #     self.frequencies = edi_object.frequencies
+        #     self.frequency = edi_object.frequency
         #     self.z = edi_object.z
         #     if  edi_object.zerr  is not None:
         #         self.zerr = edi_object.zerr
@@ -150,27 +150,27 @@ class Z(object):
             self.rotation_angle = np.zeros((len(self.z)))
 
 
-    def _set_frequencies(self, lo_frequencies):
+    def _set_frequency(self, lo_frequency):
         """
-            Set the array of frequencies.
+            Set the array of frequency.
 
             Input:
-            list/array of frequencies
+            list/array of frequency
 
             No test for consistency!
         """
 
         if self.z is not None:
-            if len(lo_frequencies) is not len(self.z):
-                print 'length of frequency list/array not correct (%i instead of %i)'%(len(lo_frequencies), len(self.z))
+            if len(lo_frequency) is not len(self.z):
+                print 'length of frequency list/array not correct (%i instead of %i)'%(len(lo_frequency), len(self.z))
                 return
          
-        self._frequencies = np.array(lo_frequencies)
+        self._frequency = np.array(lo_frequency)
 
-    def _get_frequencies(self): 
-		return np.array(self._frequencies)
+    def _get_frequency(self): 
+		return np.array(self._frequency)
 		
-    frequencies = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
+    frequency = property(_get_frequency, _set_frequency, doc='array of frequency')
 
        
     def set_z(self, z_array):
@@ -331,14 +331,14 @@ class Z(object):
 
             for i in range(2):                        
                 for j in range(2):
-                    res[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /self.frequencies[idx_f] *0.2
+                    res[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /self.frequency[idx_f] *0.2
                     phase[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))%360
                 
                     if self.zerr is not None:
 
                         r_err, phi_err = MTcc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
 
-                        reserr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/self.frequencies[idx_f] * r_err
+                        reserr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/self.frequency[idx_f] * r_err
                         phaseerr[idx_f,i,j] = phi_err
 
         return res, phase, reserr, phaseerr
@@ -376,7 +376,7 @@ class Z(object):
                 return
 
 
-        if (self.frequencies is None) or (len(self.frequencies) != len(res_array)) :
+        if (self.frequency is None) or (len(self.frequency) != len(res_array)) :
             raise MTex.MTpyError_EDI('ERROR - cannot set res without correct frequency information - proper "freq" attribute must be defined ')
 
             
@@ -391,7 +391,7 @@ class Z(object):
         for idx_f in range(len(z_new)):
             for i in range(2):
                 for j in range(2):
-                    abs_z = np.sqrt(5 * self.frequencies[idx_f] * res_array[idx_f,i,j])
+                    abs_z = np.sqrt(5 * self.frequency[idx_f] * res_array[idx_f,i,j])
                     z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phase_array[idx_f,i,j] ))
 
         self.z = z_new
@@ -430,7 +430,7 @@ class Z(object):
         for idx_f in range(len(zerr_new)):
             for i in range(2):
                 for j in range(2):
-                    abs_z = np.sqrt(5 * self.frequencies[idx_f] * res_array[idx_f,i,j])
+                    abs_z = np.sqrt(5 * self.frequency[idx_f] * res_array[idx_f,i,j])
                     rel_error_res = reserr_array[idx_f,i,j]/res_array[idx_f,i,j]
                     #relative error varies by a factor of 0.5, which is the exponent in the relation between them:
                     abs_z_error = 0.5 * abs_z * rel_error_res
@@ -542,7 +542,7 @@ class Z(object):
             Z = S * Z0
 
         returns:
-            S, Z0   (over all frequencies)
+            S, Z0   (over all frequency)
 
         Note:
         The factors are on the resistivity scale, so the entries of the matrix "S" are given by their square-roots! 
@@ -629,7 +629,7 @@ class Z(object):
 
         if distortion_err_tensor is None:
             distortion_err_tensor = np.zeros_like(distortion_tensor)
-        #for all frequencies, MTcculate D.Inverse, then obtain Z0 = D.I * Z
+        #for all frequency, MTcculate D.Inverse, then obtain Z0 = D.I * Z
         try:
             if not ( len(distortion_tensor.shape) in [2,3] ) and  (len(distortion_err_tensor.shape) in [2,3]):
                 raise
@@ -861,14 +861,14 @@ class Tipper(object):
     """
 
     def __init__(self, tipper_array=None, tippererr_array=None, 
-                 frequencies=None):
+                 frequency=None):
         """
             Initialise an instance of the Tipper class.
 
             Optional input:
             tipper_array : Numpy array containing Tipper values
             tippererr_array : Numpy array containing Tipper-error values (NOT variance, but stddev!)
-            frequencies : np.array of frequencies corresponding to the 
+            frequency : np.array of frequency corresponding to the 
                           tipper matrices
                           
             Initialise the attributes with None
@@ -876,7 +876,7 @@ class Tipper(object):
 
         self._tipper = tipper_array        
         self._tipper_err = tippererr_array
-        self._frequencies = None
+        self._frequency = None
 
         self.rotation_angle = 0.
         if self.tipper is not None:
@@ -886,29 +886,29 @@ class Tipper(object):
     #==========================================================================
     # Define get/set and properties
     #==========================================================================
-    #----frequencies----------------------------------------------------------    
-    def _set_frequencies(self, lo_frequencies):
+    #----frequency----------------------------------------------------------    
+    def _set_frequency(self, lo_frequency):
         """
-            Set the array of frequencies.
+            Set the array of frequency.
 
             Input:
-            list/array of frequencies
+            list/array of frequency
 
             No test for consistency!
         """
 
-        if len(lo_frequencies) is not len(self.tipper):
+        if len(lo_frequency) is not len(self.tipper):
             print 'length of frequency list/array not correct'+\
-                  ' (%i instead of %i)'%(len(lo_frequencies), len(self.tipper))
+                  ' (%i instead of %i)'%(len(lo_frequency), len(self.tipper))
             return
 
-        self._frequencies = np.array(lo_frequencies)
+        self._frequency = np.array(lo_frequency)
 
-    def _get_frequencies(self): 
-        return np.array(self._frequencies)
+    def _get_frequency(self): 
+        return np.array(self._frequency)
         
-    frequencies = property(_get_frequencies, _set_frequencies, 
-                           doc='array of frequencies')
+    frequency = property(_get_frequency, _set_frequency, 
+                           doc='array of frequency')
 
     #---tipper--------------------------------------------------------------  
     def _set_tipper(self, tipper_array):

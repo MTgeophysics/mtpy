@@ -25,8 +25,8 @@ import mtpy.imaging.mtcolors as mtcl
 #define text formating for plotting
 ckdict = {'phiminang':'$\Phi_{min}$ (deg)','phimin':'$\Phi_{min}$ (deg)',
           'phimaxang':'$\Phi_{max}$ (deg)','phimax':'$\Phi_{max}$ (deg)',
-          'phidet':'Det{$\Phi$} (deg)','beta':'Skew (deg)',
-          'ellipticity':'Ellipticity','beta_seg':'Skew (deg)'}
+          'phidet':'Det{$\Phi$} (deg)','skew':'Skew (deg)',
+          'ellipticity':'Ellipticity','skew_seg':'Skew (deg)'}
           
 
             
@@ -50,6 +50,165 @@ labeldict = {6:'$10^{6}$',
 zonedict = dict([(a,ii) for ii,a in enumerate(['a','b','c','d','e','f','g','h',
                'i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x',
                'y','z'])])
+               
+class MTArrows(object):
+    
+    def __init__(self,arrow_dict):
+        self._arrow_dict = arrow_dict
+
+    def _read_arrow_dict(self):        
+    
+        #set arrow length
+        try:
+            self.arrow_size = self._arrow_dict['size']
+        except KeyError:
+            self.arrow_size = 2.5
+            
+        #set head length
+        try:
+            self.arrow_head_length = self._arrow_dict['head_length']
+        except KeyError:
+            self.arrow_head_length = .15*self.arrow_size
+            
+        #set head width
+        try:
+            self.arrow_head_width = self._arrow_dict['head_width']
+        except KeyError:
+            self.arrow_head_width = .1*self.arrow_size
+            
+        #set line width
+        try:
+            self.arrow_lw = self._arrow_dict['lw']
+        except KeyError:
+            self.arrow_lw = .5*self.arrow_size
+            
+        #set real color to black
+        try:
+            self.arrow_color_real = self._arrow_dict['color'][0]
+        except KeyError:
+            self.arrow_color_real = 'k'
+            
+        #set imaginary color to black
+        try:
+            self.arrow_color_imag = self._arrow_dict['color'][1]
+        except KeyError:
+            self.arrow_color_imag = 'b'
+            
+        #set threshold of induction arrows to plot
+        try:
+            self.arrow_threshold = self._arrow_dict['threshold']
+        except KeyError:
+            self.arrow_threshold = 1
+            
+        #set arrow direction to point towards or away from conductor
+        try:
+            self.arrow_direction = self._arrow_dict['direction']
+        except KeyError:
+            self.arrow_direction = 0
+            
+class MTEllipse(object):
+    """
+    helper class for getting ellipse properties from an input dictionary
+    
+    Arguments:
+    ----------
+        **ellipse_dict** : dictionary
+                          dictionary of parameters for the phase tensor 
+                          ellipses with keys:
+                              
+                          * 'size' -> size of ellipse in points 
+                                     *default* is .25
+                          
+                          * 'colorby' : [ 'phimin' | 'phimax' | 'beta' | 
+                                    'skew_seg' | 'phidet' | 'ellipticity' ]
+                                    
+                                    - 'phimin' -> colors by minimum phase
+                                    - 'phimax' -> colors by maximum phase
+                                    - 'skew' -> colors by skew
+                                    - 'skew_seg' -> colors by skew in 
+                                                   discrete segments 
+                                                   defined by the range
+                                    - 'phidet' -> colors by determinant of
+                                                 the phase tensor
+                                    - 'ellipticity' -> colors by ellipticity
+                                    *default* is 'phimin'
+                            
+                          * 'range' : tuple (min, max, step)
+                                     Need to input at least the min and max
+                                     and if using 'skew_seg' to plot
+                                     discrete values input step as well
+                                     *default* depends on 'colorby'
+                                     
+                          * 'cmap' : [ 'mt_yl2rd' | 'mt_bl2yl2rd' | 
+                                       'mt_wh2bl' | 'mt_rd2bl' | 
+                                       'mt_bl2wh2rd' | 'mt_seg_bl2wh2rd' | 
+                                       'mt_rd2gr2bl']
+                                      
+                                   - 'mt_yl2rd'       --> yellow to red
+                                   - 'mt_bl2yl2rd'    --> blue to yellow to red
+                                   - 'mt_wh2bl'       --> white to blue
+                                   - 'mt_rd2bl'       --> red to blue
+                                   - 'mt_bl2wh2rd'    --> blue to white to red
+                                   - 'mt_bl2gr2rd'    --> blue to green to red
+                                   - 'mt_rd2gr2bl'    --> red to green to blue
+                                   - 'mt_seg_bl2wh2rd' --> discrete blue to 
+                                                           white to red
+                                                           
+                                                           
+    """
+    
+    def __init__(self, ellipse_dict):
+        self._ellipse_dict = ellipse_dict
+        
+    def _read_ellipse_dict(self):
+        
+        #--> set the ellipse properties
+        
+        #set default size to 2
+        try:
+            self.ellipse_size = self._ellipse_dict['size']
+        except KeyError:
+            self.ellipse_size = 2
+        
+        #set default colorby to phimin
+        try:
+            self.ellipse_colorby = self._ellipse_dict['colorby']
+        except KeyError:
+            self.ellipse_colorby = 'phimin'
+        
+        #set color range to 0-90
+        try:
+            self.ellipse_range = self._ellipse_dict['range']
+        except KeyError:
+            if self.ellipse_colorby=='skew' or \
+                self.ellipse_colorby=='skew_seg':
+                
+                self.ellipse_range = (-9,9,3)
+            
+            elif self.ellipse_colorby=='ellipticity':
+                self.ellipse_range = (0,1,.1)
+            
+            else:
+                self.ellipse_range = (0,90,5)
+                
+        try:
+            self.ellipse_range[2]
+        except IndexError:
+            self.ellipse_range = (self.ellipse_range[0], 
+                                  self.ellipse_range[1],1)
+            
+        #set colormap to yellow to red
+        try:
+            self.ellipse_cmap = self._ellipse_dict['cmap']
+        except KeyError:
+            if self.ellipse_colorby=='skew':
+                self.ellipse_cmap = 'mt_bl2wh2rd'
+                
+            elif self.ellipse_colorby=='skew_seg':
+                self.ellipse_cmap = 'mt_seg_bl2wh2rd'
+                
+            else:
+                self.ellipse_cmap = 'mt_bl2gr2rd'
                
 #==============================================================================
 #  make an MT object that has all the important information and methods               
@@ -78,7 +237,7 @@ class MTplot(object):
                        .edi type files are supported. *default* is None
         
         **z** : np.array((nf, 2, 2), dtype='complex')
-                impedance tensor with length of nf -> the number of frequencies
+                impedance tensor with length of nf -> the number of frequency
                 *default* is None
                 
         **z_err** : np.array((nf, 2, 2), dtype='real')
@@ -135,11 +294,11 @@ class MTplot(object):
                     
         **z_object** : class mtpy.core.z.Z
                       object of mtpy.core.z.  If this is input be sure the
-                      attribute z.frequencies is filled.  *default* is None
+                      attribute z.frequency is filled.  *default* is None
                       
         **tipper_object** : class mtpy.core.z.Tipper
                             object of mtpy.core.z. If this is input be sure the
-                            attribute z.frequencies is filled.  
+                            attribute z.frequency is filled.  
                             *default* is None 
     Attributes:
     -----------
@@ -211,12 +370,12 @@ class MTplot(object):
                  phase_array=None, res_err_array=None, phase_err_array=None,
                  tipper=None, tipper_err=None, station=None, period=None, 
                  lat=None, lon=None, elev=None, rot_z=0, z_object=None, 
-                 tipper_object=None, frequencies=None):
+                 tipper_object=None, frequency=None):
                      
 
         self._station = station
         self._period = period
-        self._frequencies = frequencies
+        self._frequenc = frequency
         self._lat = lat
         self._lon = lon
         self._elev = elev
@@ -226,10 +385,10 @@ class MTplot(object):
         #if a z_object is input make it the attribute _Z
         if z_object is not None:
             self._Z = z_object
-            if z_object.frequencies==None:
-                raise mtexcept.MTpyError_Z('Need to set Z.frequencies to an'+\
+            if z_object.frequency==None:
+                raise mtexcept.MTpyError_Z('Need to set Z.frequency to an'+\
                                            ' array that cooresponds to Z.z')
-            self.period = 1./z_object.frequencies
+            self.period = 1./z_object.frequency
         
         #if z_array is input
         elif z is not None:
@@ -239,7 +398,7 @@ class MTplot(object):
                                             'compute Resistivity')
                                
             self._Z = mtz.Z(z_array=z, zerr_array=z_err)
-            self._Z.frequencies = 1./period
+            self._Z.frequency = 1./period
 
         #if a tipper object is input set it to _Tipper
         if tipper_object is not None:
@@ -247,7 +406,7 @@ class MTplot(object):
         else:
             self._Tipper = mtz.Tipper(tipper_array=tipper, 
                                       tippererr_array=tipper_err,
-                                      frequencies=frequencies)
+                                      frequency=frequency)
         
         #--> read in the edi file if its given
         if self._fn is not None:
@@ -261,7 +420,7 @@ class MTplot(object):
             
         #--> if resistivity and phase are given set the z_array, z_err_array
         if res_array!=None and phase_array!=None:
-            if period is None and frequencies is None:
+            if period is None and frequency is None:
                 raise mtexcept.MTpyError_Z('Need to input period array for '+\
                                            'plotting')
             
@@ -274,8 +433,11 @@ class MTplot(object):
                                                'do not have the same shape')
             
             self._Z = mtz.Z()
-            self._Z.frequencies = 1./period
-            self.set_res_phase(res_array,phase_array)
+            self._Z.frequency = 1./period
+            self.set_res_phase(res_array,phase_array, 
+                               res_err_array=res_err_array,
+                               phase_err_array=phase_err_array)
+                               
             self.set_period(period)
 
             
@@ -312,7 +474,7 @@ class MTplot(object):
             
         # period
         self.period = 1./edi1.freq
-        self.frequencies = edi1.freq
+        self.frequency = edi1.freq
         
         # lat, lon and elevation
         self.lat=edi1.lat
@@ -361,10 +523,10 @@ class MTplot(object):
                 self._Tipper.tipper = self._Tipper.tipper[::-1]
                 self._Tipper.tipper_err = self._Tipper.tipper_err[::-1]
             
-        self._Z.frequencies = 1./self._period
-        self._frequencies = 1./self._period
+        self._Z.frequency = 1./self._period
+        self._frequency = 1./self._period
         if self._Tipper.tipper is not None:
-            self._Tipper.frequencies = 1./self._period
+            self._Tipper.frequency = 1./self._period
         
     def _set_lat(self, lat):
         self._lat = lat
@@ -395,15 +557,16 @@ class MTplot(object):
             self._Z.rotation_angle = np.array([rot_z 
                                         for rr in range(self.period.shape[0])])
         
-    def _set_res_phase(self, res_array, phase_array):        
-        self._Z.set_res_phase(res_array, phase_array)
-        print 'Note the errors will not be updated, has not been implemented'
+    def _set_res_phase(self, res_array, phase_array, res_err_array=None,
+                       phase_err_array=None):        
+        self._Z.set_res_phase(res_array, phase_array, res_err_array, 
+                              phase_err_array)
         
-    def _set_frequencies(self, frequencies):
-        self._frequencies = frequencies
+    def _set_frequency(self, frequency):
+        self._frequency = frequency
         
         #make sure things are in order from highest frequency first
-        if self._frequencies[0]<self._frequencies[-1]:
+        if self._frequency[0]<self._frequency[-1]:
             self._Z.z = self._Z.z[::-1]
             self._Z.zerr = self._Z.zerr[::-1]
             self._period = self._period[::-1]
@@ -411,10 +574,10 @@ class MTplot(object):
                 self._Tipper.tipper = self._Tipper.tipper[::-1]
                 self._Tipper.tipper_err = self._Tipper.tipper_err[::-1]
             
-        self._Z.frequencies = self._frequencies
-        self._frequencies = self._frequencies
+        self._Z.frequency = self._frequency
+        self._frequency = self._frequency
         if self._Tipper.tipper is not None:
-            self._Tipper.frequencies = self._frequencies
+            self._Tipper.frequency = self._frequency
         
         
     #==========================================================================
@@ -453,8 +616,8 @@ class MTplot(object):
     def _get_rot_z(self):
         return self._rot_z
         
-    def _get_frequencies(self):
-        return self._frequencies
+    def _get_frequency(self):
+        return self._frequency
         
     #==========================================================================
     # use the property built-in to make these get/set useable behind the scenes
@@ -498,7 +661,7 @@ class MTplot(object):
                      doc="Rotation angle positive clockwise assuming North "+\
                          "is 0, can be an array with same shape at z")
                          
-    frequencies = property(_get_frequencies, _set_frequencies,
+    frequency = property(_get_frequency, _set_frequency,
                            doc="frequency array corresponding to elemens in z")
                       
     #==========================================================================
@@ -522,7 +685,7 @@ class MTplot(object):
         
         """
         pt = mtpt.PhaseTensor(z_object=self._Z)
-        pt.frequencies = 1./self.period
+        pt.frequency = 1./self.period
         
         return pt
     
@@ -544,6 +707,63 @@ class MTplot(object):
         tp = Tipper(tipper_object=self._Tipper)
         
         return tp
+        
+#---- get list of mt objects----------------------------------------------        
+def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None, 
+               tipper_object_lst=None, mt_object_lst=None):
+                 
+    """
+    gets a list of mt objects from the inputs       
+    
+    """
+    
+    #first need to find something to loop over
+    try:
+        ns = len(fn_lst)
+        mt_lst = [MTplot(filename=fn) for fn in fn_lst]
+        print 'Reading {0} stations'.format(ns)
+        return mt_lst
+    except TypeError:
+        try:
+            ns = len(res_object_lst)
+            mt_lst = [MTplot(res_phase_object=res_obj) 
+                        for res_obj in res_object_lst]
+            try:
+                nt = len(tipper_object_lst)
+                if nt!=ns:
+                    raise mtexcept.MTpyError_inputarguments('length '+\
+                          ' of z_lst is not equal to tip_lst'+\
+                          '; nz={0}, nt={1}'.format(ns, nt))
+                for mt,tip_obj in zip(mt_lst,tipper_object_lst):
+                    mt._Tipper = tip_obj 
+            except TypeError:
+                pass
+            print 'Reading {0} stations'.format(ns)
+            return mt_lst
+        except TypeError:
+            try: 
+                ns = len(z_object_lst)
+                mt_lst = [MTplot(z_object=z_obj) for z_obj in z_object_lst]
+                try:
+                    nt = len(tipper_object_lst)
+                    if nt!=ns:
+                        raise mtexcept.MTpyError_inputarguments('length '+\
+                              ' of z_lst is not equal to tip_lst'+\
+                              '; nz={0}, nt={1}'.format(ns, nt))
+                    for mt,tip_obj in zip(mt_lst,tipper_object_lst):
+                        mt._Tipper = tip_obj 
+                except TypeError:
+                    pass
+                print 'Reading {0} stations'.format(ns)
+                return mt_lst
+                
+            except TypeError:
+                try:
+                    ns = len(mt_object_lst)
+                    print 'Reading {0} stations'.format(ns)
+                    return mt_lst
+                except TypeError:
+                    raise IOError('Need to input an iteratble list')
 
 #==============================================================================
 # object for computing resistivity and phase  
@@ -570,13 +790,13 @@ class ResPhase(object):
                 raise mtexcept.MTpyError_shape('res_array and phase_array '+\
                                                'are not the same shape')
         
-        if self._Z.frequencies==None:
+        if self._Z.frequency==None:
             if period is not None:
-                self._Z.frequencies = 1./period
+                self._Z.frequency = 1./period
             else:
-                raise mtexcept.MTpyError_Z('Need to set z_object.frequencies')
+                raise mtexcept.MTpyError_Z('Need to set z_object.frequency')
         else:
-            self.period = 1./self._Z.frequencies
+            self.period = 1./self._Z.frequency
             
         if rot_z!=0:
             self.rotate(rot_z)
@@ -643,8 +863,8 @@ class ResPhase(object):
         zdetvar = np.array([np.linalg.det(zzv)**.5 for zzv in self._Z.zerr])
         
         #apparent resistivity
-        self.resdet = 0.2*(1./self._Z.frequencies)*abs(zdet)**2
-        self.resdet_err = 0.2*(1./self._Z.frequencies)*\
+        self.resdet = 0.2*(1./self._Z.frequency)*abs(zdet)**2
+        self.resdet_err = 0.2*(1./self._Z.frequency)*\
                                         np.abs(zdet+zdetvar)**2-self.resdet
         
         #phase
@@ -694,16 +914,16 @@ class Tipper(object):
     """
     
     def __init__(self, tipper_object=None, tipper_array=None, 
-                 tipper_err_array=None, rot_t=0, frequencies=None):
+                 tipper_err_array=None, rot_t=0, frequency=None):
         
         if tipper_object is not None:
             self._Tipper = tipper_object
         else:
             self._Tipper = mtz.Tipper(tipper_array=tipper_array, 
                                       tippererr_array=tipper_err_array,
-                                      frequencies=frequencies)
+                                      frequency=frequency)
                                       
-        self.frequencies = frequencies
+        self.frequency = frequency
         
         if rot_t!=0:
             self.rotate(rot_t)
@@ -766,7 +986,7 @@ class PlotResPhase(object):
                        format supported at the moment
                        
         **z_array** : np.array((nf, 2, 2), dtype='complex')
-                impedance tensor with length of nf -> the number of frequencies
+                impedance tensor with length of nf -> the number of frequency
                 *default* is None
                 
         **z_err_array** : np.array((nf, 2, 2), dtype='real')
@@ -798,12 +1018,16 @@ class PlotResPhase(object):
                                
         **z_object** : class mtpy.core.z.Z
                       object of mtpy.core.z.  If this is input be sure the
-                      attribute z.frequencies is filled.  *default* is None
+                      attribute z.frequency is filled.  *default* is None
                       
         **tipper_object** : class mtpy.core.z.Tipper
                             object of mtpy.core.z. If this is input be sure the
-                            attribute z.frequencies is filled.  
+                            attribute z.frequency is filled.  
                             *default* is None 
+                            
+        **mt_object** : class mtpy.imaging.mtplot.MTplot
+                        object of mtpy.imaging.mtplot.MTplot
+                        *default* is None
                       
         **fignum** : int
                      figure number
@@ -855,6 +1079,13 @@ class PlotResPhase(object):
                                * 3  --> plots strike angle determined from 
                                         the tipper
                                * 'n' --> doesn't plot the strike, *default*
+                               
+        **plot_skew** : [ 'y' | 'n' ]
+                        plots the skew angle calculated from the phase tensor
+                        in the same subfigure as the strike angle.  The axes
+                        are labelled on the right hand side.
+                            * 'y' --> plots skew angle
+                            * 'n' --> does not plot skew angle *default*
                           
         **dpi** : int
                  dots-per-inch resolution, *default* is 300
@@ -1598,13 +1829,13 @@ class PlotResPhase(object):
             if self.plot_skew=='y':
                 #strike from phase tensor
                 pt = self._mt.get_PhaseTensor()
-                sk, sk_err = pt.skew
+                sk, sk_err = pt.beta
                 
                 
                 self.axs2 = self.axs.twinx()
                 ps4 = self.axs2.errorbar(self.period, 
                                         sk, 
-                                        marker=self.skew_marker, 
+                                        marker=self.beta_marker, 
                                         ms=self.marker_size, 
                                         mfc=self.skew_color, 
                                         mec=self.skew_color, 
@@ -2213,11 +2444,11 @@ class PlotMultipleResPhase(object):
         """
         
         #--> get the inputs into a list of mt objects
-        self.mt_lst = self._get_mtlst(fn_lst=fn_lst, 
-                                      res_object_lst=res_object_lst,
-                                      z_object_lst=z_object_lst, 
-                                      tipper_object_lst=tipper_object_lst, 
-                                      mt_object_lst=mt_object_lst)
+        self.mt_lst = get_mtlst(fn_lst=fn_lst, 
+                                 res_object_lst=res_object_lst,
+                                 z_object_lst=z_object_lst, 
+                                 tipper_object_lst=tipper_object_lst, 
+                                 mt_object_lst=mt_object_lst)
         
         #set some of the properties as attributes much to Lars' discontent
         self.fignum = fignum
@@ -2232,7 +2463,7 @@ class PlotMultipleResPhase(object):
             self.rot_z = np.array([rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
-        #frequencies than repeat that rotation array to the len(mt_lst)
+        #frequency than repeat that rotation array to the len(mt_lst)
         elif type(rot_z) is np.ndarray:
             if rot_z.shape[0]!=len(self.mt_lst):
                 self.rot_z = np.repeat(rot_z, len(self.mt_lst))
@@ -2329,63 +2560,6 @@ class PlotMultipleResPhase(object):
         #plot on initializing
         if plot_yn=='y':
             self.plot()
-    
-    #---- get list of mt objects----------------------------------------------        
-    def _get_mtlst(self, fn_lst=None, res_object_lst=None, z_object_lst=None, 
-                   tipper_object_lst=None, mt_object_lst=None):
-                     
-        """
-        gets a list of mt objects from the inputs       
-        
-        """
-        
-        #first need to find something to loop over
-        try:
-            ns = len(fn_lst)
-            mt_lst = [MTplot(filename=fn) for fn in fn_lst]
-            print 'Reading {0} stations'.format(ns)
-            return mt_lst
-        except TypeError:
-            try:
-                ns = len(res_object_lst)
-                mt_lst = [MTplot(res_phase_object=res_obj) 
-                            for res_obj in res_object_lst]
-                try:
-                    nt = len(tipper_object_lst)
-                    if nt!=ns:
-                        raise mtexcept.MTpyError_inputarguments('length '+\
-                              ' of z_lst is not equal to tip_lst'+\
-                              '; nz={0}, nt={1}'.format(ns, nt))
-                    for mt,tip_obj in zip(mt_lst,tipper_object_lst):
-                        mt._Tipper = tip_obj 
-                except TypeError:
-                    pass
-                print 'Reading {0} stations'.format(ns)
-                return mt_lst
-            except TypeError:
-                try: 
-                    ns = len(z_object_lst)
-                    mt_lst = [MTplot(z_object=z_obj) for z_obj in z_object_lst]
-                    try:
-                        nt = len(tipper_object_lst)
-                        if nt!=ns:
-                            raise mtexcept.MTpyError_inputarguments('length '+\
-                                  ' of z_lst is not equal to tip_lst'+\
-                                  '; nz={0}, nt={1}'.format(ns, nt))
-                        for mt,tip_obj in zip(mt_lst,tipper_object_lst):
-                            mt._Tipper = tip_obj 
-                    except TypeError:
-                        pass
-                    print 'Reading {0} stations'.format(ns)
-                    return mt_lst
-                    
-                except TypeError:
-                    try:
-                        ns = len(mt_object_lst)
-                        print 'Reading {0} stations'.format(ns)
-                        return mt_lst
-                    except TypeError:
-                        raise IOError('Need to input an iteratble list')
                             
     #---plot the resistivity and phase
     def plot(self):
@@ -3008,7 +3182,7 @@ class PlotMultipleResPhase(object):
                     if self.plot_skew=='y':
                         #strike from phase tensor
                         pt = mt.get_PhaseTensor()
-                        sk, sk_err = pt.skew
+                        sk, sk_err = pt.beta
                         
                         
                         axs2 = axs.twinx()
@@ -3709,7 +3883,7 @@ class PlotMultipleResPhase(object):
                 if self.plot_skew=='y':
                     #strike from phase tensor
                     pt = mt.get_PhaseTensor()
-                    sk, sk_err = pt.skew
+                    sk, sk_err = pt.beta
                     
                     ps4 = self.axs2.errorbar(mt.period, 
                                             sk, 
@@ -3967,7 +4141,7 @@ class PlotMultipleResPhase(object):
               "and .j format.\n"        
 
     
-class PlotPhaseTensor(object):
+class PlotPhaseTensor(MTEllipse):
     """
     Will plot phase tensor, strike angle, min and max phase angle, 
     azimuth, skew, and ellipticity as subplots on one plot.  It can plot
@@ -3975,63 +4149,149 @@ class PlotPhaseTensor(object):
     
     Arguments:
     ----------
-        **xspacing** : float 
-                        spacing of tensors along x direction.
-                        *Default* is 6
+    
+        **filename** : string
+                       filename containing impedance (.edi) is the only 
+                       format supported at the moment
+                 
+        **z_object** : class mtpy.core.z.Z
+                      object of mtpy.core.z.  If this is input be sure the
+                      attribute z.frequency is filled.  *default* is None
+                      
+        **mt_object** : class mtpy.imaging.mtplot.MTplot
+                        object of mtpy.imaging.mtplot.MTplot
+                        *default* is None
                         
-        **esize** : float
-                    size of tensor ellipses.
-                    *Default* is 5
-                    
+        **pt_object** : class mtpy.analysis.pt
+                        phase tensor object of mtpy.analysis.pt.  If this is
+                        input then the ._mt attribute is set to None cause
+                        at the moment cannot tranform the phase tensor to z
+                        *default* is None
+                        
         **fignum** : int (figure number)
         
-        **thetar** : float (angle in degrees)
+        **rot_z** : float (angle in degrees)
                      rotation angle clockwise positive assuming 0 is North.
                      *Default* is 0
                      
-        **save** : [ 'y' | 'n' ]
-                   * 'y' to save figure
-                   * 'n' to not save figure
-                   * *Default* is 'n'
-        
-        **savepath** : string
-                       path to save to, saves as savepath\statioAll.fmt
-                       
-        **fmt** : [ 'pdf' | 'eps' | 'svg' | 'png' | 'jpeg' ]
-                  format of save figure pdf,svg,eps,ps,png
+        **plot_yn** : [ 'y' | 'n' ]
+            
         
         **dpi** : int
                   Dots-per-inch resolution of figure.
                   *Default* is 300
+                  
+        **ellipse_dict** : dictionary
+                          dictionary of parameters for the phase tensor 
+                          ellipses with keys:
+                          * 'size' -> size of ellipse in points 
+                                     *default* is .25
+                          
+                          * 'colorby' : [ 'phimin' | 'phimax' | 'beta' | 
+                                    'skew_seg' | 'phidet' | 'ellipticity' ]
+                                    
+                                    - 'phimin' -> colors by minimum phase
+                                    - 'phimax' -> colors by maximum phase
+                                    - 'skew' -> colors by skew
+                                    - 'skew_seg' -> colors by skew in 
+                                                   discrete segments 
+                                                   defined by the range
+                                    - 'phidet' -> colors by determinant of
+                                                 the phase tensor
+                                    - 'ellipticity' -> colors by ellipticity
+                                    *default* is 'phimin'
+                            
+                          * 'range' : tuple (min, max, step)
+                                     Need to input at least the min and max
+                                     and if using 'skew_seg' to plot
+                                     discrete values input step as well
+                                     *default* depends on 'colorby'
+                                     
+                          * 'cmap' : [ 'mt_yl2rd' | 'mt_bl2yl2rd' | 
+                                      'mt_wh2bl' | 'mt_rd2bl' | 
+                                      'mt_bl2wh2rd' | 'mt_seg_bl2wh2rd' |
+                                      'mt_rd2gr2bl' ]
+                                      
+                                   - 'mt_yl2rd' -> yellow to red
+                                   - 'mt_bl2yl2rd' -> blue to yellow to red
+                                   - 'mt_wh2bl' -> white to blue
+                                   - 'mt_rd2bl' -> red to blue
+                                   - 'mt_bl2wh2rd' -> blue to white to red
+                                   - 'mt_bl2gr2rd' -> blue to green to red
+                                   - 'mt_rd2gr2bl' -> red to green to blue
+                                   - 'mt_seg_bl2wh2rd' -> discrete blue to 
+                                                         white to red
         
-        **coordrot** : [ 90 | 180 | 270 ]
-                      rotation of coordinate directions assuming Y North
-                      and X East.  If data measured in X North, Y East
-                      coordrot=180.  *Default* is 180
-                      
-        **rpmm** : tuple (min,max)
-                   min and max of resistivity tensor on log10 scale
-        
-        **ptmm** : tuple (min,max)
-                   min an max of phase tensor
-        
-        **restensor** : [ 'y' | 'n' ]
-                        * 'y' to plot the resistivity tensors along with 
-                           the phase tensors
-                        * 'n' to not plot resistivity tensors
-                        * *Default* is 'n'
+
                         
     :Example: ::
         
         #To plot just the phase tensor components
-        >>> z1 = Z.Z(edifile)
-        >>> z1.plotPTAll()
+        >>> import mtpy.imaging.mtplot as mtplot
+        >>> pt1 = mtplot.PlotPhaseTensor(r"/home/MT/edifiles/MT01.edi")
+        
+    Attributes:
+    -----------
+        -ax1      matplotlib.axes object for the phase tensor ellipses
+        -cbpt     matplotlib.colors.ColorBarBase object for coloring ellipses
+        -ax2      matplotlib.axes object for the strike angle
+        -ax3      matplotlib.axes object for minimum and maximum phase
+        -ax4      matplotlib.axes object for skew angle
+        -ax5      matplotlib.axes object for ellipticity
+        
+        -font_size  size of font for the axes labels, titles will be +2
+        -fignum     number of the figure instance
+        -fig_size   size of figure in inches
+        -plot_yn    boolean to tell the class to plot on instance creation
+        -dpi        dots-per-inch resolution of figure
+        
+        -strike_inv_marker   marker for strike determined from invariants 
+                             in ax2
+        -strike_inv_color    color for invariant marker in ax2
+        -strike_pt_marker    marker for strike determined from pt in ax2
+        -strike_pt_color     color for pt strike in ax2
+        -strike_tp_marker    marker for strike determined from Tipper in ax2
+        -strike_tp_color     color for tipper strike in ax2
+        
+        -ptmin_marker  marker for minimum phase in ax3
+        -ptmin_color   color for minimum phase markers in ax3
+        -ptmax_marker  marker for maximum phase in ax3
+        -ptmax_color   color for maximum phase markers in ax3
+        
+        -skew_marker   marker for skew angle determined from pt in ax4
+        -skew_color    color for skew angle in ax4
+        
+        -ellip_marker  marker for ellipticity determined from pt in ax5
+        -ellip_color   color for ellipticity in ax5
+        
+        -marker_size   size of the marker in all plots
+        -marker_lw     width of face lines for markers in all plots
+        
+        -pt_limits      limits on the minimu phase and maximum phase (deg)
+        -strike_limits  limits on the strike angle in degrees, note the strike
+                        is calculated to go from -90 to 90.
+        -skew_limits    limits on skew angles (deg)
+        -ellip_limits   limits on ellipticity ratio from [0,1]
+        
+        -skew_cutoff    plots a line in ax4 at positive and negative of this 
+                        value to visually recognize 3D effects
+        -ellip_cutoff   plots a line in ax5 to represent the cutoff of 2D
+        
+        -ellipse_cmap     color map for coloring ellipses of ax1
+        -ellipse_colorby  parameter to color the ellipses by
+        -ellipse_range    min and max values for coloring ellipses
+        -ellipse_size     scaling factor of ellipses
+        -ellipse_spacing  spacing between ellipses
+        
+        -mt            mtpy.imaging.mtplot.MTplot object (PlotPhaseTensor._mt)
+        
         
     """
         
         
     def __init__(self, filename=None, z_object=None, mt_object=None, 
-                 pt_object=None, fignum=1, dpi=300, rot_z=0, plot_yn='y'):
+                 pt_object=None, fignum=1, dpi=300, rot_z=0, plot_yn='y',
+                 ellipse_dict=None):
         
         #--> get mt object 
         if filename is not None:
@@ -4043,7 +4303,7 @@ class PlotPhaseTensor(object):
         elif pt_object is not None:
             self.pt = pt_object
             self._mt = MTplot()
-            self._mt.frequencies = self.pt.frequencies
+            self._mt.frequency = self.pt.frequency
             
         self.font_size = 7
         self.dpi = dpi
@@ -4078,15 +4338,15 @@ class PlotPhaseTensor(object):
 
         self.skew_cutoff = 3
         self.ellip_cutoff = 0.2
-
-        self.ellipse_cmap = 'mt_rd2gr2bl'
-        self.ellipse_colorby = 'phimin'
-        self.ellipse_size = .25
-        if self.ellipse_cmap=='mt_segbl2wh2rd' or self.ellipse_colorby=='skew':
-            self.ellipse_range = (-9,9,3)
+        
+        #read ellipse dict
+        if ellipse_dict is None:
+            self._ellipse_dict = {'size':.25}
         else:
-            self.ellipse_range = (0,90)
-
+            self._ellipse_dict = ellipse_dict
+    
+        self._read_ellipse_dict()
+        
         self.ellipse_spacing = 1
 
         self.label_dict = {-6:'$10^{-6}$',
@@ -4231,9 +4491,7 @@ class PlotPhaseTensor(object):
         
         plt.setp(self.ax1.get_yticklabels(), visible=False)
         #add colorbar for PT
-#        self.cbax = self.fig.add_subplot(3,32,1)
         self.cbax = self.fig.add_axes(self.cb_position)
-#        self.cbax.set_axis_off()
         if cmap=='mt_seg_bl2wh2rd':
             #make a color list
             clst = [(cc,cc,1) for cc in np.arange(0,1+1./(nseg),1./(nseg))]+\
@@ -4267,8 +4525,8 @@ class PlotPhaseTensor(object):
         self.cbpt.ax.yaxis.set_label_coords(-1.05,.5)
         self.cbpt.ax.yaxis.tick_right()
         self.cbpt.ax.tick_params(axis='y',direction='in')
-        self.cbpt.set_label(self.ellipse_colorby, 
-                            fontdict={'size':self.font_size})
+        self.cbpt.set_label(ckdict[self.ellipse_colorby], 
+                            fontdict={'size':self.font_size, 'weight':'bold'})
         
         #---------------plotStrikeAngle-----------------------------------
         self.ax2 = self.fig.add_subplot(3, 2, 3)
@@ -4354,7 +4612,7 @@ class PlotPhaseTensor(object):
         self.ax2.legend(stlst,
                         stlabel,
                         loc='lower left',
-                        markerscale=.2,
+                        markerscale=.5*self.marker_size,
                         borderaxespad=.01,
                         labelspacing=.1,
                         handletextpad=.2,
@@ -4431,7 +4689,7 @@ class PlotPhaseTensor(object):
         self.ax3.legend((ermin[0],ermax[0]),
                         ('$\phi_{min}$','$\phi_{max}$'),
                         loc='lower left',
-                        markerscale=.2,
+                        markerscale=.5*self.marker_size,
                         borderaxespad=.01,
                         labelspacing=.1,
                         handletextpad=.2,
@@ -4453,11 +4711,11 @@ class PlotPhaseTensor(object):
 
         #-----------------------plotSkew---------------------------------------
         
-        skew = self.pt.skew[0]
-        skewerr = self.pt.skew[1]
+        skew = self.pt.beta[0]
+        skewerr = self.pt.beta[1]
 
-        self.ax5 = self.fig.add_subplot(3, 2, 5,sharex=self.ax2)
-        erskew = self.ax5.errorbar(self._mt.period,
+        self.ax4 = self.fig.add_subplot(3, 2, 5,sharex=self.ax2)
+        erskew = self.ax4.errorbar(self._mt.period,
                                    skew,
                                    marker=self.skew_marker,
                                    ms=self.marker_size,
@@ -4471,38 +4729,38 @@ class PlotPhaseTensor(object):
                                    elinewidth=self.marker_lw)
         
         #plot lines indicating not 3d
-        self.ax5.plot([10**xlimits[0], 10**xlimits[-1]],
+        self.ax4.plot([10**xlimits[0], 10**xlimits[-1]],
                       [self.skew_cutoff, self.skew_cutoff],
                       ls='--',
                       color=self.skew_color,
                       lw=1)
                       
-        self.ax5.plot([10**xlimits[0], 10**xlimits[-1]],
+        self.ax4.plot([10**xlimits[0], 10**xlimits[-1]],
                       [-self.skew_cutoff, -self.skew_cutoff],
                       ls='--',
                       color=self.skew_color,
                       lw=1)
 
         
-        self.ax5.set_xscale('log')
-        self.ax5.set_yscale('linear')
-        self.ax5.yaxis.set_major_locator(MultipleLocator(ckstep))
+        self.ax4.set_xscale('log')
+        self.ax4.set_yscale('linear')
+        self.ax4.yaxis.set_major_locator(MultipleLocator(ckstep))
 
         if self.skew_limits is None:
             self.skew_limits=(-10,10)
-        self.ax5.set_ylim(self.skew_limits)
-        self.ax5.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+        self.ax4.set_ylim(self.skew_limits)
+        self.ax4.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
                       lw=.25)
-        self.ax5.set_xlabel('Period (s)',fontdict=font_dict)
-        self.ax5.set_ylabel('Skew Angle (deg)',fontdict=font_dict)
-        self.ax5.set_title('Skew Angle',fontdict=font_dictt)
+        self.ax4.set_xlabel('Period (s)',fontdict=font_dict)
+        self.ax4.set_ylabel('Skew Angle (deg)',fontdict=font_dict)
+        self.ax4.set_title('Skew Angle',fontdict=font_dictt)
         
         #----------------------plotEllipticity--------------------------------
         ellipticity = self.pt.ellipticity[0]
         ellipticityerr=self.pt.ellipticity[1]
 
-        self.ax6 = self.fig.add_subplot(3, 2, 6, sharex=self.ax2)
-        erskew = self.ax6.errorbar(self._mt.period,
+        self.ax5 = self.fig.add_subplot(3, 2, 6, sharex=self.ax2)
+        erskew = self.ax5.errorbar(self._mt.period,
                                    ellipticity,
                                    marker=self.ellip_marker,
                                    ms=self.marker_size,
@@ -4516,30 +4774,148 @@ class PlotPhaseTensor(object):
                                    elinewidth=self.marker_lw)
         
         #draw a line where the ellipticity is not 2d                           
-        self.ax6.plot([10**xlimits[0], 10**xlimits[-1]],
+        self.ax5.plot([10**xlimits[0], 10**xlimits[-1]],
                       [self.ellip_cutoff, self.ellip_cutoff],
                       ls='--',
                       color=self.ellip_color,
                       lw=1)
                       
-        self.ax6.set_xscale('log')
-        self.ax6.set_yscale('linear')
+        self.ax5.set_xscale('log')
+        self.ax5.set_yscale('linear')
 
-        self.ax6.yaxis.set_major_locator(MultipleLocator(.1))
+        self.ax5.yaxis.set_major_locator(MultipleLocator(.1))
 
-        self.ax6.set_ylim(ymin=0,ymax=1)
-        self.ax6.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+        self.ax5.set_ylim(ymin=0,ymax=1)
+        self.ax5.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
                       lw=.25)
-        self.ax6.set_xlabel('Period (s)',fontdict=font_dict)
-        self.ax6.set_ylabel('$\mathbf{\phi_{max}-\phi_{min}/\phi_{max}+\phi_{min}}$',
+        self.ax5.set_xlabel('Period (s)',fontdict=font_dict)
+        self.ax5.set_ylabel('$\mathbf{\phi_{max}-\phi_{min}/\phi_{max}+\phi_{min}}$',
                             fontdict=font_dict)
-        self.ax6.set_title('Ellipticity',fontdict=font_dictt)
+        self.ax5.set_title('Ellipticity',fontdict=font_dictt)
         
         self.fig.suptitle('Phase Tensor Elements for: '+self._mt.station,
                           fontdict={'size':self.font_size+3, 'weight':'bold'})
+                          
+    
+    def save_plot(self, save_fn, file_format='pdf', orientation='portrait', 
+                  fig_dpi=None, close_plot='y'):
+        """
+        save_plot will save the figure to save_fn.
+        
+        Arguments:
+        -----------
+        
+            **save_fn** : string
+                          full path to save figure to, can be input as
+                          * directory path -> the directory path to save to
+                            in which the file will be saved as 
+                            save_fn/station_name_PhaseTensor.file_format
+                            
+                          * full path -> file will be save to the given 
+                            path.  If you use this option then the format
+                            will be assumed to be provided by the path
+                            
+            **file_format** : [ pdf | eps | jpg | png | svg ]
+                              file type of saved figure pdf,svg,eps... 
+                              
+            **orientation** : [ landscape | portrait ]
+                              orientation in which the file will be saved
+                              *default* is portrait
+                              
+            **fig_dpi** : int
+                          The resolution in dots-per-inch the file will be
+                          saved.  If None then the dpi will be that at 
+                          which the figure was made.  I don't think that 
+                          it can be larger than dpi of the figure.
+                          
+            **close_plot** : [ y | n ]
+                             * 'y' will close the plot after saving.
+                             * 'n' will leave plot open
+                          
+        :Example: ::
+            
+            >>> # to save plot as jpg
+            >>> import mtpy.imaging.mtplottools as mtplot
+            >>> p1 = mtplot.PlotPhaseTensor(r'/home/MT/mt01.edi')
+            >>> p1.save_plot(r'/home/MT/figures', file_format='jpg')
+            
+        """
+
+        if fig_dpi==None:
+            fig_dpi = self.dpi
+            
+        if os.path.isdir(save_fn)==False:
+            file_format = save_fn[-3:]
+            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+                             orientation=orientation)
+            plt.clf()
+            plt.close(self.fig)
+            
+        else:
+            station = self._mt.station
+            if station is None:
+                station='MT01'
+            save_fn = os.path.join(save_fn, station+'_PhaseTensor.'+
+                                    file_format)
+            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+                        orientation=orientation)
+        
+        if close_plot=='y':
+            plt.clf()
+            plt.close(self.fig)
+        
+        else:
+            pass
+        
+        self.fig_fn = save_fn
+        print 'Saved figure to: '+self.fig_fn
+
+    def update_plot(self):
+        """
+        update any parameters that where changed using the built-in draw from
+        canvas.  
+        
+        Use this if you change an of the .fig or axes properties
+        
+        :Example: ::
+            
+            >>> # to change the grid lines to only be on the major ticks
+            >>> import mtpy.imaging.mtplottools as mtplot
+            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
+            >>> [ax.grid(True, which='major') for ax in [p1.axr,p1.axp]]
+            >>> p1.update_plot()
+        
+        """
+
+        self.fig.canvas.draw()
+        
+    def redraw_plot(self):
+        """
+        use this function if you updated some attributes and want to re-plot.
+        
+        :Example: ::
+            
+            >>> # change the color and marker of the xy components
+            >>> import mtpy.imaging.mtplottools as mtplot
+            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
+            >>> p1.xy_color = (.5,.5,.9)
+            >>> p1.xy_marker = '*'
+            >>> p1.redraw_plot()
+        """
+        
+        plt.close(self.fig)
+        self.plot()
+        
+    def __str__(self):
+        """
+        rewrite the string builtin to give a useful message
+        """
+        
+        return "Plots the phase tensor ellipses and other properties such\n"+\
+               "strike angle, minimum and maximum phase, skew and ellipticity"
 
 
-class PlotPhaseTensorPseudoSection(object):
+class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
     """
     PlotPhaseTensorPseudoSection will plot the phase tensor ellipses in a 
     pseudo section format 
@@ -4750,54 +5126,15 @@ class PlotPhaseTensorPseudoSection(object):
                  font_size=7, plot_yn='y', xlim=None, ylim=None):
 
         #----set attributes for the class-------------------------
-        self.mt_lst = self._get_mtlst(fn_lst=fn_lst, 
-                                      res_object_lst=res_object_lst,
-                                      z_object_lst=z_object_lst, 
-                                      tipper_object_lst=tipper_object_lst, 
-                                      mt_object_lst=mt_object_lst)
+        self.mt_lst = get_mtlst(fn_lst=fn_lst, 
+                                res_object_lst=res_object_lst,
+                                z_object_lst=z_object_lst, 
+                                tipper_object_lst=tipper_object_lst, 
+                                mt_object_lst=mt_object_lst)
         
         #--> set the ellipse properties
-        
-        #set default size to 2
-        try:
-            self.ellipse_size = ellipse_dict['size']
-        except KeyError:
-            self.ellipse_size = 2
-        
-        #set default colorby to phimin
-        try:
-            self.ellipse_colorby = ellipse_dict['colorby']
-        except KeyError:
-            self.ellipse_colorby = 'phimin'
-        
-        #set color range to 0-90
-        try:
-            self.ellipse_range = ellipse_dict['range']
-        except KeyError:
-            if self.ellipse_colorby=='skew' or self.ellipse_colorby=='skew_seg':
-                self.ellipse_range = (-9,9,3)
-            elif self.ellipse_colorby=='ellipticity':
-                self.ellipse_range = (0,1,.1)
-            else:
-                self.ellipse_range = (0,90,5)
-                
-        try:
-            self.ellipse_range[2]
-        except IndexError:
-            self.ellipse_range = (self.ellipse_range[0],self.ellipse_range[1],1)
-            
-        #set colormap to yellow to red
-        try:
-            self.ellipse_cmap = ellipse_dict['cmap']
-        except KeyError:
-            if self.ellipse_colorby=='skew':
-                self.ellipse_cmap = 'mt_bl2wh2rd'
-                
-            elif self.ellipse_colorby=='skew_seg':
-                self.ellipse_cmap = 'mt_seg_bl2wh2rd'
-                
-            else:
-                self.ellipse_cmap = 'mt_yl2rd'
+        self._ellipse_dict = ellipse_dict
+        self._read_ellipse_dict()
             
         #--> set colorbar properties
         #set orientation to horizontal
@@ -4839,7 +5176,7 @@ class PlotPhaseTensorPseudoSection(object):
             self.rot_z = np.array([rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
-        #frequencies than repeat that rotation array to the len(mt_lst)
+        #frequency than repeat that rotation array to the len(mt_lst)
         elif type(rot_z) is np.ndarray:
             if rot_z.shape[0]!=len(self.mt_lst):
                 self.rot_z = np.repeat(rot_z, len(self.mt_lst))
@@ -4850,116 +5187,15 @@ class PlotPhaseTensorPseudoSection(object):
         #--> set induction arrow properties 
         self.plot_tipper = plot_tipper
         
-        #set arrow length
-        try:
-            self.arrow_size = arrow_dict['size']
-        except KeyError:
-            self.arrow_size = 2.5*self.ellipse_size
-            
-        #set head length
-        try:
-            self.arrow_head_length = arrow_dict['head_length']
-        except KeyError:
-            self.arrow_head_length = .5*self.ellipse_size
-            
-        #set head width
-        try:
-            self.arrow_head_width = arrow_dict['head_width']
-        except KeyError:
-            self.arrow_head_width = .2*self.ellipse_size
-            
-        #set line width
-        try:
-            self.arrow_lw = arrow_dict['lw']
-        except KeyError:
-            self.arrow_lw = .5*self.ellipse_size
-            
-        #set real color to black
-        try:
-            self.arrow_color_real = arrow_dict['color'][0]
-        except KeyError:
-            self.arrow_color_real = 'k'
-            
-        #set imaginary color to black
-        try:
-            self.arrow_color_imag = arrow_dict['color'][1]
-        except KeyError:
-            self.arrow_color_imag = 'b'
-            
-        #set threshold of induction arrows to plot
-        try:
-            self.arrow_threshold = arrow_dict['threshold']
-        except KeyError:
-            self.arrow_threshold = 1
-            
-        #set arrow direction to point towards or away from conductor
-        try:
-            self.arrow_direction = arrow_dict['direction']
-        except KeyError:
-            self.arrow_direction = 0
+        #--> set arrow properties
+        self._arrow_dict = arrow_dict
+        self._read_arrow_dict()
+        
             
         #--> plot if desired
         self.plot_yn = plot_yn
         if self.plot_yn=='y':
             self.plot()
-            
-    #---- get list of mt objects----------------------------------------------        
-    def _get_mtlst(self, fn_lst=None, res_object_lst=None, z_object_lst=None, 
-                   tipper_object_lst=None, mt_object_lst=None):
-                     
-        """
-        gets a list of mt objects from the inputs       
-        
-        """
-        
-        #first need to find something to loop over
-        try:
-            ns = len(fn_lst)
-            mt_lst = [MTplot(filename=fn) for fn in fn_lst]
-            print 'Reading {0} stations'.format(ns)
-            return mt_lst
-        except TypeError:
-            try:
-                ns = len(res_object_lst)
-                mt_lst = [MTplot(res_phase_object=res_obj) 
-                            for res_obj in res_object_lst]
-                try:
-                    nt = len(tipper_object_lst)
-                    if nt!=ns:
-                        raise mtexcept.MTpyError_inputarguments('length '+\
-                              ' of z_lst is not equal to tip_lst'+\
-                              '; nz={0}, nt={1}'.format(ns, nt))
-                    for mt,tip_obj in zip(mt_lst,tipper_object_lst):
-                        mt._Tipper = tip_obj 
-                except TypeError:
-                    pass
-                print 'Reading {0} stations'.format(ns)
-                return mt_lst
-            except TypeError:
-                try: 
-                    ns = len(z_object_lst)
-                    mt_lst = [MTplot(z_object=z_obj) for z_obj in z_object_lst]
-                    try:
-                        nt = len(tipper_object_lst)
-                        if nt!=ns:
-                            raise mtexcept.MTpyError_inputarguments('length '+\
-                                  ' of z_lst is not equal to tip_lst'+\
-                                  '; nz={0}, nt={1}'.format(ns, nt))
-                        for mt,tip_obj in zip(mt_lst,tipper_object_lst):
-                            mt._Tipper = tip_obj 
-                    except TypeError:
-                        pass
-                    print 'Reading {0} stations'.format(ns)
-                    return mt_lst
-                    
-                except TypeError:
-                    try:
-                        ns = len(mt_object_lst)
-                        print 'Reading {0} stations'.format(ns)
-                        return mt_lst
-                    except TypeError:
-                        raise IOError('Need to input an iteratble list')
-            
         
     def plot(self):
         """
@@ -5031,7 +5267,7 @@ class PlotPhaseTensorPseudoSection(object):
             self.offsetlst.append(offset)
             
             #get phase tensor elements and flip so the top is small periods/high 
-            #frequencies
+            #frequency
             pt = mt.get_PhaseTensor()
             pt.rotate(self.rot_z[ii])
             
@@ -5060,16 +5296,18 @@ class PlotPhaseTensorPseudoSection(object):
                 alw = self.arrow_lw
                 
             #get the properties to color the ellipses by
-            if self.ellipse_colorby=='phiminang' or \
-               self.ellipse_colorby=='phimin':
+            if self.ellipse_colorby=='phimin':
+                colorarray = pt.phimin[0][::-1]
+                
+            elif self.ellipse_colorby=='phimax':
                 colorarray = pt.phimin[0][::-1]
                 
             elif self.ellipse_colorby=='phidet':
-                 colorarray = np.sqrt(abs(pt.phidet[::-1]))*(180/np.pi)
+                 colorarray = np.sqrt(abs(pt.det[::-1]))*(180/np.pi)
                 
             elif self.ellipse_colorby=='skew' or\
                  self.ellipse_colorby=='skew_seg':
-                colorarray = pt.skew[0][::-1]
+                colorarray = pt.beta[0][::-1]
                 
             elif self.ellipse_colorby=='ellipticity':
                 colorarray = pt.ellipticity[::-1]
@@ -5097,109 +5335,29 @@ class PlotPhaseTensorPseudoSection(object):
                 eheight = phimin[jj]/phimax[jj]*es
                 ewidth = phimax[jj]/phimax[jj]*es
             
-                #create an ellipse scaled by phimin and phimax and oriented along
-                #the azimuth which is calculated as clockwise but needs to 
-                #be plotted counter-clockwise hence the negative sign.
+                #create an ellipse scaled by phimin and phimax and orient
+                #the ellipse so that north is up and east is right
+                #need to add 90 to do so instead of subtracting
                 ellipd=patches.Ellipse((offset*self.xstretch,
                                         np.log10(ff)*self.ystretch),
                                         width=ewidth,
                                         height=eheight,
                                         angle=azimuth[jj]+90)
                 
-                #get face color info
-                if ck=='phiminang' or  ck=='phimin':
-                    cvar = (colorarray[jj]-ckmin)/(ckmax-ckmin)
-                    if cmap=='mt_bl2wh2rd' or cmap=='mt_bl2yl2rd' or \
-                       cmap=='mt_bl2gr2rd':
-                        cvar = 2*cvar-1
-                    
-                elif ck=='phidet':
-                    cvar = (colorarray[jj]-ckmin)/(ckmax-ckmin)
-                    if cmap=='mt_bl2wh2rd' or cmap=='mt_bl2yl2rd' or \
-                       cmap=='mt_bl2gr2rd':
-                        cvar = 2*cvar-1
-                    
-                elif ck=='skew':
-                    cvar = 2*colorarray[jj]/(ckmax-ckmin)
-                    
-                elif ck=='skew_seg':
-                    for bb in range(bounds.shape[0]):
-                        if colorarray[jj]>=bounds[bb] and colorarray[jj]<bounds[bb+1]:
-                            cvar = float(bounds[bb])/bounds.max()
-                            break
-                        
-                        #if the skew is extremely negative make it blue
-                        elif colorarray[jj]<bounds[0]:
-                            cvar = -1.0
-                            break
-                        
-                        #if skew is extremely positive make it red
-                        elif colorarray[jj]>bounds[-1]:
-                            cvar = 1.0
-                            break
-                        
-                elif ck=='ellipticity':
-                    cvar = (colorarray[jj]-ckmin)/(ckmax-ckmin)
-                    if cmap=='mt_bl2wh2rd' or cmap=='mt_bl2yl2rd' or \
-                       cmap=='mt_bl2gr2rd':
-                        cvar = 2*cvar-1
-                    
+                #get ellipse color
+                if cmap.find('seg')>0:
+                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray[jj],
+                                                             self.ellipse_colorby,
+                                                             cmap,
+                                                             ckmin,
+                                                             ckmax,
+                                                             bounds=bounds))
                 else:
-                    raise NameError('color key '+ck+' not supported')
-                    
-                
-                #set facecolor depending on the colormap
-                #yellow to red
-                if cmap=='mt_yl2rd':
-                    if cvar>1:
-                        ellipd.set_facecolor((1,0,0))
-                    elif cvar<0:
-                        ellipd.set_facecolor((1,1,0))
-                    else:
-                        ellipd.set_facecolor((1,1-abs(cvar),.1))
-                        
-                #white to blue
-                elif cmap=='mt_wh2bl':
-                    if abs(cvar)>1:
-                        ellipd.set_facecolor((0,0,0))
-                    else:
-                        ellipd.set_facecolor((1-abs(cvar),1-abs(cvar),1))
-                        
-                #blue to white to red
-                elif cmap=='mt_bl2wh2rd' or cmap=='mt_seg_bl2wh2rd':
-                    if cvar<0 and cvar>-1:
-                        ellipd.set_facecolor((1+cvar,1+cvar,1))
-                    elif cvar<-1:
-                        ellipd.set_facecolor((0,0,1))
-                    elif cvar>=0 and cvar<1:
-                        ellipd.set_facecolor((1,1-cvar,1-cvar))
-                    elif cvar>1:
-                        ellipd.set_facecolor((1,0,0))
-                        
-                #blue to yellow to red
-                elif cmap=='mt_bl2yl2rd':
-                    if cvar<0 and cvar>-1:
-                        ellipd.set_facecolor((1+cvar,1+cvar,-cvar))
-                    elif cvar<-1:
-                        ellipd.set_facecolor((0,0,1))
-                    elif cvar>0 and cvar<1:
-                        ellipd.set_facecolor((1,1-abs(cvar),.01))
-                    elif cvar>1:
-                        ellipd.set_facecolor((1,0,0))
-                        
-                #blue to green to red
-                elif cmap=='mt_bl2gr2rd':
-                    if cvar<0 and cvar>-1:
-                        ellipd.set_facecolor((1+cvar,1+cvar/2,1))
-                    elif cvar<-1:
-                        ellipd.set_facecolor((0,0,1))
-                    elif cvar>0 and cvar<1:
-                        ellipd.set_facecolor((1,1-cvar/2,1-cvar))
-                    elif cvar>1:
-                        ellipd.set_facecolor((1,0,0))
-               
-                else:
-                    raise NameError('Colormap '+cmap+' is not supported')
+                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray[jj],
+                                                             self.ellipse_colorby,
+                                                             cmap,
+                                                             ckmin,
+                                                             ckmax))
                     
                 #===add the ellipse to the plot==========
                 self.ax.add_artist(ellipd)
@@ -5414,7 +5572,7 @@ class PlotPhaseTensorPseudoSection(object):
                                      ticks=bounds[1:-1])
         else:
             self.cb=mcb.ColorbarBase(self.ax2,
-                                     cmap=cmapdict[cmap],
+                                     cmap=mtcl.cmapdict[cmap],
                                      norm=colors.Normalize(vmin=ckmin,
                                                            vmax=ckmax),
                                      orientation=self.cb_orientation)
@@ -5510,7 +5668,7 @@ class PlotPhaseTensorPseudoSection(object):
                                                 self.stationid[1]])
             for mm,t1 in enumerate(plst):
                 #check to see if the periods match or are at least close in
-                #case there are frequencies missing
+                #case there are frequency missing
                 t1_yn = False
                 for ff,t2 in enumerate(tlst):
                     if t1==t2: 
@@ -5726,7 +5884,7 @@ class PlotPhaseTensorPseudoSection(object):
         self.fig_fn = save_fn
         print 'Saved figure to: '+self.fig_fn
     
-class PlotPhaseTensorMaps(object):
+class PlotPhaseTensorMaps(MTArrows, MTEllipse):
 
     """  
     Plots phase tensor ellipses in map view from a list of edifiles with full 
@@ -6000,16 +6158,22 @@ class PlotPhaseTensorMaps(object):
         
     """
     
-    def __init__(self,filenamelst,plot_frequency=1,ellipse_dict={},cb_dict={},
-                 arrow_dict={},xpad=.2,ypad=.2,tickstrfmt='%2.2f',rotz=0,
-                 figsize=[8,8],station_dict=None,tscale='period',
-                 mapscale='latlon',fignum=1,image_dict=None,plot_yn='y',
-                 arrow_legend_dict={},font_size=7,dpi=300,title=None,
-                 reference_point=(0,0),plot_tipper='n', ftol=.1):
+    def __init__(self,fn_lst=None, res_object_lst=None,
+                 z_object_lst=None, tipper_object_lst=None, mt_object_lst=None,
+                 plot_frequency=1, ellipse_dict={}, cb_dict={},
+                 arrow_dict={}, xpad=.2, ypad=.2, rot_z=0,
+                 fig_size=[8,8], station_dict=None, tscale='period',
+                 mapscale='latlon', fignum=1, image_dict=None, plot_yn='y',
+                 arrow_legend_dict={}, font_size=7, dpi=300, title=None,
+                 reference_point=(0,0), plot_tipper='n', ftol=.1):
                                 
 
         #----set attributes for the class-------------------------
-        self.fn_list = filenamelst
+        self.mt_lst = get_mtlst(fn_lst=fn_lst, 
+                                res_object_lst=res_object_lst,
+                                z_object_lst=z_object_lst, 
+                                tipper_object_lst=tipper_object_lst, 
+                                mt_object_lst=mt_object_lst)
         
         #set the frequency to plot
         self.plot_frequency = plot_frequency
@@ -6017,46 +6181,8 @@ class PlotPhaseTensorMaps(object):
         
         #--> set the ellipse properties -------------------
         #set default size to 2
-        try:
-            self.ellipse_size = ellipse_dict['size']
-        except KeyError:
-            self.ellipse_size = .05
-        
-        #set default colorby to phimin
-        try:
-            self.ellipse_colorby = ellipse_dict['colorby']
-        except KeyError:
-            self.ellipse_colorby = 'phimin'
-        
-        #set color range to 0-90
-        try:
-            self.ellipse_range = ellipse_dict['range']
-        except KeyError:
-            if self.ellipse_colorby=='beta' or self.ellipse_colorby=='beta_seg':
-                self.ellipse_range = (-9,9,3)
-            elif self.ellipse_colorby=='ellipticity':
-                self.ellipse_range = (0,1,.1)
-            else:
-                self.ellipse_range = (0,90,5)
-                
-        #check to see if there is a dividor given        
-        try:
-            self.ellipse_range[2]
-        except IndexError:
-            self.ellipse_range = (self.ellipse_range[0],self.ellipse_range[1],1)
-            
-        #set colormap to yellow to red
-        try:
-            self.ellipse_cmap = ellipse_dict['cmap']
-        except KeyError:
-            if self.ellipse_colorby=='beta':
-                self.ellipse_cmap = 'mt_bl2wh2rd'
-                
-            elif self.ellipse_colorby=='beta_seg':
-                self.ellipse_cmap = 'mt_seg_bl2wh2rd'
-                
-            else:
-                self.ellipse_cmap = 'mt_yl2rd'
+        self._ellipse_dict = ellipse_dict
+        self._read_ellipse_dict()
             
         #--> set colorbar properties---------------------------------
         #set orientation to horizontal
@@ -6075,64 +6201,32 @@ class PlotPhaseTensorMaps(object):
         self.dpi = dpi
         self.font_size = font_size
         self.tscale = tscale
-        self.rotz = rotz
-        self.figsize = figsize
+        self.figsize = fig_size
         self.fignum = fignum
         self.title = title
         self.xpad = xpad
         self.ypad = ypad
         self.mapscale = mapscale
         
+        #if rotation angle is an int or float make an array the length of 
+        #mt_lst for plotting purposes
+        if type(rot_z) is float or type(rot_z) is int:
+            self.rot_z = np.array([rot_z]*len(self.mt_lst))
+        
+        #if the rotation angle is an array for rotation of different 
+        #frequency than repeat that rotation array to the len(mt_lst)
+        elif type(rot_z) is np.ndarray:
+            if rot_z.shape[0]!=len(self.mt_lst):
+                self.rot_z = np.repeat(rot_z, len(self.mt_lst))
+                
+        else:
+            self.rot_z = rot_z
+        
         #--> set induction arrow properties -------------------------------
         self.plot_tipper = plot_tipper
         
-        #set arrow length
-        try:
-            self.arrow_size = arrow_dict['size']
-        except KeyError:
-            self.arrow_size = 5*self.ellipse_size
-            
-        #set head length
-        try:
-            self.arrow_head_length = arrow_dict['head_length']
-        except KeyError:
-            self.arrow_head_length = .15*self.arrow_size
-            
-        #set head width
-        try:
-            self.arrow_head_width = arrow_dict['head_width']
-        except KeyError:
-            self.arrow_head_width = .12*self.arrow_size
-            
-        #set line width
-        try:
-            self.arrow_lw = arrow_dict['lw']
-        except KeyError:
-            self.arrow_lw = .5*self.arrow_size
-            
-        #set real color to black
-        try:
-            self.arrow_color_real = arrow_dict['color'][0]
-        except KeyError:
-            self.arrow_color_real = 'k'
-            
-        #set imaginary color to black
-        try:
-            self.arrow_color_imag = arrow_dict['color'][1]
-        except KeyError:
-            self.arrow_color_imag = 'b'
-            
-        #set threshold of induction arrows to plot
-        try:
-            self.arrow_threshold = arrow_dict['threshold']
-        except KeyError:
-            self.arrow_threshold = 1
-            
-        #set arrow direction to point towards or away from conductor
-        try:
-            self.arrow_direction = arrow_dict['direction']
-        except KeyError:
-            self.arrow_direction = 0
+        self._arrow_dict = arrow_dict
+        self._read_arrow_dict()
             
         #--> set arrow legend properties -------------------------------
         try:
@@ -6276,15 +6370,13 @@ class PlotPhaseTensorMaps(object):
         
         #make some empty arrays
         elliplst=[]
-        latlst = np.zeros(len(self.fn_list))
-        lonlst = np.zeros(len(self.fn_list))
-        self.plot_xarr = np.zeros(len(self.fn_list))
-        self.plot_yarr = np.zeros(len(self.fn_list))
+        latlst = np.zeros(len(self.mt_lst))
+        lonlst = np.zeros(len(self.mt_lst))
+        self.plot_xarr = np.zeros(len(self.mt_lst))
+        self.plot_yarr = np.zeros(len(self.mt_lst))
         
-        for ii,fn in enumerate(self.fn_list):
-            #get phase tensor info
-            imp = Z.Z(fn)
-            
+        
+        for ii,mt in enumerate(self.mt_lst):
             #try to find the frequency in the frequency list of each file
             freqfind = [ff for ff,f2 in enumerate(mt.frequency) 
                          if f2>self.plot_frequency*(1-self.ftol) and
@@ -6294,11 +6386,8 @@ class PlotPhaseTensorMaps(object):
                 jj = self.jj
 
                 #get phase tensor
-                pt = mt.getPhaseTensor(thetar=self.rotz)
-    
-                #change any nan to a number just in case
-                pt.phimax = np.nan_to_num(pt.phimax)
-                pt.phimin = np.nan_to_num(pt.phimin)
+                pt = mt.get_PhaseTensor()
+                pt.rotate(self.rot_z[ii])
                 
                 #if map scale is lat lon set parameters                
                 if self.mapscale=='latlon':
@@ -6373,16 +6462,40 @@ class PlotPhaseTensorMaps(object):
                 self.plot_yarr[ii] = ploty
                 
                 #--> set local variables
-                phimin = pt.phimin[jj]
-                phimax = pt.phimax[jj]
-                eangle = pt.azimuth[jj]
+                phimin = np.nan_to_num(pt.phimin[0][jj])
+                phimax = np.nan_to_num(pt.phimax[0][jj])
+                eangle = np.nan_to_num(pt.azimuth[0][jj])
+                
+                if cmap=='mt_seg_bl2wh2rd':
+                    bounds = np.arange(ckmin, ckmax+ckstep, ckstep)
+                    nseg = float((ckmax-ckmin)/(2*ckstep))
+        
+                #get the properties to color the ellipses by
+                if self.ellipse_colorby=='phiminang' or \
+                   self.ellipse_colorby=='phimin':
+                    colorarray = pt.phimin[0][jj]
+            
+                                                   
+                elif self.ellipse_colorby=='phidet':
+                     colorarray = np.sqrt(abs(pt.det[0][jj]))*(180/np.pi)
+                     
+                    
+                elif self.ellipse_colorby=='skew' or\
+                     self.ellipse_colorby=='skew_seg':
+                    colorarray = pt.beta[0][jj]
+                    
+                elif self.ellipse_colorby=='ellipticity':
+                    colorarray = pt.ellipticity[0][jj]
+                    
+                else:
+                    raise NameError(self.ellipse_colorby+' is not supported')
                 
                 #--> get ellipse properties
                 #if the ellipse size is not physically correct make it a dot
-                if phimax==0 or phimax>100 or phimin==0 or pt.phiminang[jj]<0 or \
-                    pt.phiminang[jj]>100:
+                if phimax==0 or phimax>100 or phimin==0 or phimin>100:
                     eheight=.0000001*es
                     ewidth=.0000001*es
+                    print mt.station
                 else:
                     scaling = es/phimax
                     eheight = phimin*scaling
@@ -6392,101 +6505,22 @@ class PlotPhaseTensorMaps(object):
                 ellipd=patches.Ellipse((plotx,ploty),
                                        width=ewidth,
                                        height=eheight,
-                                       angle=eangle)
+                                       angle=90-eangle)
                 
-                #get face color info
-                if ck=='phiminang' or  ck=='phimin':
-                    cvar = (pt.phiminang[jj]-ckmin)/(ckmax-ckmin)
-                    if cmap=='mt_bl2wh2rd' or cmap=='mt_bl2yl2rd' or \
-                       cmap=='mt_bl2gr2rd':
-                        cvar = 2*cvar-1
-                    
-                elif ck=='phidet':
-                    cvar = (pt.phidet[jj]-ckmin)/(ckmax-ckmin)
-                    if cmap=='mt_bl2wh2rd' or cmap=='mt_bl2yl2rd' or \
-                       cmap=='mt_bl2gr2rd':
-                        cvar = 2*cvar-1
-                    
-                elif ck=='beta':
-                    cvar = 2*pt.beta[jj]/(ckmax-ckmin)
-                    
-                elif ck=='beta_seg':
-                    for bb in range(bounds.shape[0]):
-                        if pt.beta[jj]>=bounds[bb] and pt.beta[jj]<bounds[bb+1]:
-                            cvar = float(bounds[bb])/bounds.max()
-                            break
-                        
-                        #if the skew is extremely negative make it blue
-                        elif pt.beta[jj]<bounds[0]:
-                            cvar = -1.0
-                            break
-                        
-                        #if skew is extremely positive make it red
-                        elif pt.beta[jj]>bounds[-1]:
-                            cvar = 1.0
-                            break
-                        
-                elif ck=='ellipticity':
-                    cvar = (pt.beta[jj]-ckmin)/(ckmax-ckmin)
-                    if cmap=='mt_bl2wh2rd' or cmap=='mt_bl2yl2rd' or \
-                       cmap=='mt_bl2gr2rd':
-                        cvar = 2*cvar-1
-                    
+                #get ellipse color
+                if cmap.find('seg')>0:
+                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray,
+                                                             self.ellipse_colorby,
+                                                             cmap,
+                                                             ckmin,
+                                                             ckmax,
+                                                             bounds=bounds))
                 else:
-                    raise NameError('color key '+ck+' not supported')
-                
-                #set facecolor depending on the colormap
-                #yellow to red
-                if cmap=='mt_yl2rd':
-                    if abs(cvar)>1:
-                        ellipd.set_facecolor((1,0,0))
-                    elif cvar<0:
-                        ellipd.set_facecolor((1,1,0))
-                    else:
-                        ellipd.set_facecolor((1,1-abs(cvar),.1))
-                
-                #white to blue
-                elif cmap=='mt_wh2bl':
-                    if abs(cvar)>1:
-                        ellipd.set_facecolor((0,0,0))
-                    else:
-                        ellipd.set_facecolor((1-abs(cvar),1-abs(cvar),1))
-    
-                #blue to white to red
-                elif cmap=='mt_bl2wh2rd' or cmap=='mt_seg_bl2wh2rd':
-                    if cvar<0 and cvar>-1:
-                        ellipd.set_facecolor((1+cvar,1+cvar,1))
-                    elif cvar<-1:
-                        ellipd.set_facecolor((0,0,1))
-                    elif cvar>=0 and cvar<1:
-                        ellipd.set_facecolor((1,1-cvar,1-cvar))
-                    elif cvar>1:
-                        ellipd.set_facecolor((1,0,0))
-                        
-                #blue to yellow to red
-                elif cmap=='mt_bl2yl2rd':
-                    if cvar<0 and cvar>-1:
-                        ellipd.set_facecolor((1+cvar,1+cvar,-cvar))
-                    elif cvar<-1:
-                        ellipd.set_facecolor((0,0,1))
-                    elif cvar>0 and cvar<1:
-                        ellipd.set_facecolor((1,1-abs(cvar),.01))
-                    elif cvar>1:
-                        ellipd.set_facecolor((1,0,0))
-                        
-                #blue to green to red
-                elif cmap=='mt_bl2gr2rd':
-                    if cvar<0 and cvar>-1:
-                        ellipd.set_facecolor((1+cvar,1+cvar/2,1))
-                    elif cvar<-1:
-                        ellipd.set_facecolor((0,0,1))
-                    elif cvar>0 and cvar<1:
-                        ellipd.set_facecolor((1,1-cvar/2,1-cvar))
-                    elif cvar>1:
-                        ellipd.set_facecolor((1,0,0))
-               
-                else:
-                    raise NameError('Colormap '+cmap+' is not supported')
+                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray,
+                                                             self.ellipse_colorby,
+                                                             cmap,
+                                                             ckmin,
+                                                             ckmax))
                 
                 #==> add ellipse to the plot
                 elliplst.append(ellipd)
@@ -6714,7 +6748,7 @@ class PlotPhaseTensorMaps(object):
                                      ticks=bounds[1:-1])
         else:
             self.cb=mcb.ColorbarBase(self.ax2,
-                                     cmap=cmapdict[cmap],
+                                     cmap=mtcl.cmapdict[cmap],
                                      norm=colors.Normalize(vmin=ckmin,
                                                            vmax=ckmax),
                                      orientation=self.cb_orientation)
@@ -8485,7 +8519,7 @@ class PlotTimeSeries(object):
 #                    offset=0
 #        offsetlst.append(offset)
 #        #get phase tensor elements and flip so the top is small periods/high 
-#        #frequencies
+#        #frequency
 #        rt=imp.getResTensor(thetar=rotz)
 #        periodlst=imp.period[::-1]
 #        phimax=rt.rhomax[::-1]

@@ -16,7 +16,7 @@ Contains classes and functions for handling EDI files.
         - z_dict
         - tipper_dict
         - periods
-        - frequencies
+        - frequency
         - n_freqs
         - _read_head
         - _read_info
@@ -249,7 +249,7 @@ class Edi(object):
     def data_dict(self):
         """
             Return collected raw data information in one dictionary:
-            Z, Tipper, Zrot, frequencies
+            Z, Tipper, Zrot, frequency
 
         """
         data_dict = {}
@@ -259,7 +259,7 @@ class Edi(object):
         data_dict['tipper'] = self.Tipper.tipper
         data_dict['tippererr'] = self.Tipper.tipper_err
         data_dict['zrot'] = self.zrot
-        data_dict['frequencies'] = self.freq
+        data_dict['frequency'] = self.freq
 
         return data_dict
 
@@ -273,7 +273,7 @@ class Edi(object):
     
     def _set_periods(self, list_of_periods):
         """
-            Set frequencies by a list of periods (values in seconds).
+            Set frequency by a list of periods (values in seconds).
         """
         if len(list_of_periods) is not len(self.Z.z):
             print 'length of periods list not correct (%i instead of %i)'%(len(list_of_periods), len(self.Z.z))
@@ -282,10 +282,10 @@ class Edi(object):
 
     periods = property(_get_periods, _set_periods, doc='List of periods (values in seconds)')    
 
-    #----------------number of frequencies-------------------------------------
+    #----------------number of frequency-------------------------------------
     def n_freqs(self):
         """
-            Return the number of frequencies/length of the Z data array .
+            Return the number of frequency/length of the Z data array .
         """
         
         return len(self.freq)
@@ -560,7 +560,7 @@ class Edi(object):
 
         self._mtsect = m_dict
 
-    #--------------Read frequencies--------------------------------------------
+    #--------------Read frequency--------------------------------------------
     def _read_freq(self, edistring):
         """
             Read in the FREQ  section from the raw edi-string.
@@ -585,9 +585,9 @@ class Edi(object):
 
         self._freq = np.array(lo_freqs)
 
-        self.Z.frequencies = self._freq
+        self.Z.frequency = self._freq
         if self.Tipper.tipper is not None:
-            self.Tipper.frequencies = self._freq
+            self.Tipper.frequency = self._freq
 
     #--------------Read impedance tensor---------------------------------------
     def _read_z(self, edistring):
@@ -620,7 +620,7 @@ class Edi(object):
                 if not n_dummy == self.n_freqs():
                     raise MTex.MTpyError_edi_file("Error - number of entries"+\
                                                   " does not equal number of"+\
-                                                  " frequencies")
+                                                  " frequency")
 
 
                 t1 = temp_string.strip().split('\n')[1:]
@@ -718,7 +718,7 @@ class Edi(object):
                 if not n_dummy == self.n_freqs():
                     raise MTex.MTpyError_edi_file("Error - number of entries"+\
                                                   " does not equal number of"+\
-                                                  " frequencies")
+                                                  " frequency")
 
                 t1 = temp_string.strip().split('\n')[1:]
                 for j in t1:
@@ -743,7 +743,7 @@ class Edi(object):
         self.Tipper.tipper = tipper_array
         #errors are stddev, not VAR :
         self.Tipper.tipper_err = np.sqrt(tippererr_array)
-        self.Tipper.frequencies = self.freq
+        self.Tipper.frequency = self.freq
 
     #--------------Read Resistivity and Phase----------------------------------
     def _read_res_phase(self, edistring):
@@ -991,14 +991,14 @@ class Edi(object):
         self.Z.rotation_angle = self.zrot
 
         self.freq = np.array(lo_freqs)
-        self.Z.frequencies = self.freq
+        self.Z.frequency = self.freq
 
         if tipper_array is not None:
             self.Tipper = MTz.Tipper(tipper_array=tipper_array,
                                      tippererr_array= tippererr_array,
-                                     frequencies=self.freq)
+                                     frequency=self.freq)
             self.Tipper.rotation_angle = self.zrot
-            self.Tipper.frequencies = self.freq
+            self.Tipper.frequency = self.freq
 
         for i,j in enumerate(id_list):
             s_dict[ id_comps[i] ] = j
@@ -1404,34 +1404,34 @@ class Edi(object):
         """
         pass
 
-    #--------------get/set frequencies -------------------------------
-    def _set_frequencies(self, lo_frequencies):
+    #--------------get/set frequency -------------------------------
+    def _set_frequency(self, lo_frequency):
         """
-            Set the array of frequencies.
+            Set the array of frequency.
 
             Input:
-            list/array of frequencies
+            list/array of frequency
 
             No test for consistency!
         """
 
-        if len(lo_frequencies) is not len(self.Z.z):
-            print 'length of frequency list not correct (%i instead of %i)'%(len(lo_frequencies), len(self.Z.z))
+        if len(lo_frequency) is not len(self.Z.z):
+            print 'length of frequency list not correct (%i instead of %i)'%(len(lo_frequency), len(self.Z.z))
             return
 
-        self._freq = np.array(lo_frequencies)
-        self.Z.frequencies = self._freq
+        self._freq = np.array(lo_frequency)
+        self.Z.frequency = self._freq
         if self.Tipper is not None:
-            self.Tipper.frequencies = self._freq
+            self.Tipper.frequency = self._freq
 
-    def _get_frequencies(self): 
+    def _get_frequency(self): 
         return np.array(self._freq)
         
-    freq = property(_get_frequencies, _set_frequencies, 
-                    doc='array of frequencies')
+    freq = property(_get_frequency, _set_frequency, 
+                    doc='array of frequency')
     
-    frequencies = property(_get_frequencies, _set_frequencies, 
-                           doc='array of frequencies')
+    frequency = property(_get_frequency, _set_frequency, 
+                           doc='array of frequency')
 
     #--------------get/set impedance rotation -------------------------------
     def _set_zrot(self, angle):
@@ -1552,8 +1552,8 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
     eom = Edi()
 
     #check frequency lists
-    lo_freqs1 = eo1.frequencies()
-    lo_freqs2 = eo2.frequencies()
+    lo_freqs1 = eo1.frequency()
+    lo_freqs2 = eo2.frequency()
 
 
     lo_eos = []
@@ -1579,13 +1579,13 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         else:
             lo_eos = [eo2, eo1]
 
-    #find sorting indices for obtaining strictly increasing frequencies:
-    inc_freq_idxs_lower = np.array(lo_eos[0].frequencies()).argsort()
-    inc_freq_idxs_upper = np.array(lo_eos[1].frequencies()).argsort()
+    #find sorting indices for obtaining strictly increasing frequency:
+    inc_freq_idxs_lower = np.array(lo_eos[0].frequency()).argsort()
+    inc_freq_idxs_upper = np.array(lo_eos[1].frequency()).argsort()
 
-    #determine overlap in frequencies
-    upper_bound = max(lo_eos[0].frequencies())
-    lower_bound = min(lo_eos[1].frequencies())
+    #determine overlap in frequency
+    upper_bound = max(lo_eos[0].frequency())
+    lower_bound = min(lo_eos[1].frequency())
 
     overlap_mid_freq = 0.5*(upper_bound + lower_bound)
 
@@ -1599,13 +1599,13 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         merge_frequency = overlap_mid_freq
 
 
-    #find indices for all frequencies from the frequency lists, which are below(lower part) or above (upper part) of the merge frequency - use sorted frequency lists !:
+    #find indices for all frequency from the frequency lists, which are below(lower part) or above (upper part) of the merge frequency - use sorted frequency lists !:
 
-    lower_idxs = list(np.where( np.array(lo_eos[0].frequencies())[inc_freq_idxs_lower] <= merge_frequency)[0])
-    upper_idxs = list(np.where( np.array(lo_eos[1].frequencies())[inc_freq_idxs_upper]  > merge_frequency)[0])
+    lower_idxs = list(np.where( np.array(lo_eos[0].frequency())[inc_freq_idxs_lower] <= merge_frequency)[0])
+    upper_idxs = list(np.where( np.array(lo_eos[1].frequency())[inc_freq_idxs_upper]  > merge_frequency)[0])
 
 
-    #total of frequencies in new edi object
+    #total of frequency in new edi object
     n_total_freqs = len(lower_idxs) + len(upper_idxs)
 
     #------------
@@ -1630,7 +1630,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         in_terr_lower = eo1.tippererr[inc_freq_idxs_lower]
 
     for li in lower_idxs:
-        lo_freqs.append(np.array(lo_eos[0].frequencies())[inc_freq_idxs_lower][li])
+        lo_freqs.append(np.array(lo_eos[0].frequency())[inc_freq_idxs_lower][li])
         eom.z[freq_idx,:,:] = in_z_lower[li,:,:]
         eom.zerr[freq_idx,:,:] = in_zerr_lower[li,:,:]
         if eom.tipper is not None:
@@ -1651,7 +1651,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         in_terr_upper = eo2.tippererr[inc_freq_idxs_upper]
 
     for ui in upper_idxs:
-        lo_freqs.append(np.array(lo_eos[1].frequencies())[inc_freq_idxs_upper][ui])
+        lo_freqs.append(np.array(lo_eos[1].frequency())[inc_freq_idxs_upper][ui])
         eom.z[freq_idx,:,:] = in_z_upper[ui,:,:]
         eom.zerr[freq_idx,:,:] = in_zerr_upper[ui,:,:]
 
@@ -2279,7 +2279,7 @@ def _validate_edifile_string(edistring):
             continue
 
     if n_numbers == 0:
-        print  MTex.MTpyError_edi_file('Problem in FREQ block: no frequencies found...checking for spectra instead')
+        print  MTex.MTpyError_edi_file('Problem in FREQ block: no frequency found...checking for spectra instead')
         #found *= 0
     #Check for data entry following priority:
     # 1. Z

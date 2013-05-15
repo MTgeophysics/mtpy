@@ -6,7 +6,6 @@ Created on Tue May 14 18:05:59 2013
 """
 
 import matplotlib.colors as colors
-import numpy as np
 
 #==============================================================================
 # Make some color maps for plotting
@@ -146,7 +145,6 @@ def get_color(cvar,cmap):
     gets the color to plot for the given color map
     
     """
-    
     if cmap=='mt_yl2rd':
         plot_color = get_mt_yl2rd(cvar)
         return plot_color
@@ -182,9 +180,9 @@ def get_mt_yl2rd(cvar):
     
     """
     
-    if cvar>1:
+    if cvar>=1:
         plot_color = (1, 0, 0)
-    elif cvar<0:
+    elif cvar<=0:
         plot_color = (1, 1, 0)
     else:
         plot_color = (1, 1-abs(cvar), 0.1)
@@ -197,9 +195,9 @@ def get_mt_wh2bl(cvar):
     
     """
     
-    if cvar>1:
+    if cvar>=1:
         plot_color = (0, 0, 1)
-    elif cvar<0:
+    elif cvar<=0:
         plot_color = (1, 1, 1)
     else:
         plot_color = (1-abs(cvar), 1-abs(cvar), 1)
@@ -214,11 +212,11 @@ def get_mt_bl2wh2rd(cvar):
     
     if cvar<0 and cvar>-1:
         plot_color = (1+cvar, 1+cvar, 1)
-    elif cvar<-1:
+    elif cvar<=-1:
         plot_color = (0, 0, 1)
     elif cvar>=0 and cvar<1:
         plot_color = (1, 1-cvar, 1-cvar)
-    elif cvar>1:
+    elif cvar>=1:
         plot_color = (1, 0, 0)
         
     return plot_color
@@ -231,11 +229,11 @@ def get_mt_bl2yl2rd(cvar):
     
     if cvar<0 and cvar>-1:
         plot_color = (1+cvar, 1+cvar, -cvar)
-    elif cvar<-1:
+    elif cvar<=-1:
         plot_color = (0, 0, 1)
     elif cvar>=0 and cvar<1:
         plot_color = (1, 1-cvar, .01)
-    elif cvar>1:
+    elif cvar>=1:
         plot_color = (1, 0, 0)
         
     return plot_color
@@ -248,11 +246,11 @@ def get_mt_bl2gr2rd(cvar):
     
     if cvar<0 and cvar>-1:
         plot_color = (1+cvar, 1+cvar/2, 1)
-    elif cvar<-1:
+    elif cvar<=-1:
         plot_color = (0, 0, 1)
     elif cvar>=0 and cvar<1:
         plot_color = (1, 1-cvar/2, 1-cvar)
-    elif cvar>1:
+    elif cvar>=1:
         plot_color = (1, 0, 0)
         
     return plot_color
@@ -265,16 +263,16 @@ def get_mt_rd2gr2bl(cvar):
     
     if cvar<0 and cvar>-1:
         plot_color = (1, 1+cvar/2, 1+cvar)
-    elif cvar<-1:
+    elif cvar<=-1:
         plot_color = (1, 0, 0)
     elif cvar>=0 and cvar<1:
         plot_color = (1-cvar, 1-cvar/2, 1)
-    elif cvar>1:
+    elif cvar>=1:
         plot_color = (0, 0, 1)
         
     return plot_color
     
-def get_plot_color(colorx, comp, cmap, ckmin, ckmax, bounds=None):
+def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
     """
     gets the color for the given compnent, color array and cmap
     """
@@ -282,6 +280,9 @@ def get_plot_color(colorx, comp, cmap, ckmin, ckmax, bounds=None):
     
     #get face color info
     if comp=='phimin' or comp=='phimax' or comp=='phidet' or comp=='ellipticity':
+        if ckmin is None or ckmax is None:
+            raise IOError('Need to input min and max values for plotting')
+        
         cvar = (colorx-ckmin)/(ckmax-ckmin)
         if cmap=='mt_bl2wh2rd' or cmap=='mt_bl2yl2rd' or \
            cmap=='mt_bl2gr2rd' or cmap=='mt_rd2gr2bl':
