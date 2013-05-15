@@ -19,106 +19,8 @@ import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
 import mtpy.utils.exceptions as mtexcept
+import mtpy.imaging.mtcolors as mtcl
 
-#==============================================================================
-# Make some color maps for plotting
-#==============================================================================
-#yellow to red
-ptcmapdict = {'red':((0.0, 1.0, 1.0), 
-                     (1.0, 1.0, 1.0)),
-
-              'green':((0.0, 0.0, 1.0), 
-                       (1.0, 0.0, 1.0)),
-
-              'blue':((0.0, 0.0, 0.0), 
-                      (1.0, 0.0, 0.0))}
-                      
-mt_yl2rd=colors.LinearSegmentedColormap('mt_yl2rd', ptcmapdict, 256)
-
-#blue to yellow to red
-skcmapdict = {'red':((0.0, 0.0, 0.0),
-                     (.5, 1.0, 1.0),
-                     (0.5, 0.0, 1.0),
-                     (1.0, 1.0, 1.0)),
-              'green':((0.0, 1.0, 0.0),
-                       (.5, 1.0, 0.0),
-                       (.5, 0.0, 1.0),
-                       (1.0, 0.0, 1.0)),
-              'blue':((0.0, 0.0, 1.0),
-                      (.5, 0.0, 1.0),
-                      (0.5, 0.1, 0.1),
-                      (1.0, 0.1, 0.1))}
-                      
-mt_bl2yl2rd=colors.LinearSegmentedColormap('mt_bl2yl2rd', skcmapdict, 256)
-
-#blue to white to red
-skcmapdict2 = {'red':  ((0.0, 0.0, 0.0),
-                        (0.25,0.0, 0.0),
-                        (0.5, 0.8, 1.0),
-                        (0.75,1.0, 1.0),
-                        (1.0, 0.4, 1.0)),
-
-               'green': ((0.0, 0.0, 0.0),
-                         (0.25,0.0, 0.0),
-                         (0.5, 0.9, 0.9),
-                         (0.75,0.0, 0.0),
-                         (1.0, 0.0, 0.0)),
-
-               'blue':  ((0.0, 0.0, 0.4),
-                         (0.25,1.0, 1.0),
-                         (0.5, 1.0, 0.8),
-                         (0.75,0.0, 0.0),
-                         (1.0, 0.0, 0.0))}
-                       
-mt_bl2wh2rd=colors.LinearSegmentedColormap('mt_bl2wh2rd', skcmapdict2, 256)
-
-            
-#blue to white to red in segmented colors
-mt_seg_bl2wh2rd = colors.ListedColormap(((0, 0, 1), (.5, .5, 1), (.75, .75, 1),
-                                         (.9, .9, 1), (1, 1, 1), (1.0, .9, .9),
-                                         (1, .75, .75), (1, .5, .5),(1, 0, 0)))
-
-#white to blue
-ptcmapdict3 = {'red':((0.0, 1.0, 1.0),
-                      (1.0, 0.0, 0.0)),
-
-               'green':((0.0, 1.0, 1.0),
-                        (1.0, 0.0, 0.0)),
-
-               'blue':((0.0, 1.0, 1.0),
-                       (1.0, 1.0, 1.0))}
-mt_wh2bl = colors.LinearSegmentedColormap('mt_wh2bl', ptcmapdict3, 256)
-
-#red to blue
-rtcmapdict = {'red':((0.0, 0.0, 1.0),
-                     (1.0, 0.0, 1.0)),
-
-              'green':((0.0, 0.0, 0.0),
-                       (1.0, 0.0, 0.0)),
-
-              'blue':((0.0, 1.0, 0.0),
-                      (1.0, 1.0, 0.0))}
-mt_rd2bl = colors.LinearSegmentedColormap('mt_rd2bl', rtcmapdict, 256)
-
-#blue to green to red
-ptcmapdict4 = {'red':  ((0.0, 0.0, 0.0),
-                        (0.25, 0.0, 0.0),
-                        (0.5, 0.9, 1.0),
-                        (0.75,1.0, 1.0),
-                        (1.0, 0.45, 1.0)),
-
-               'green': ((0.0, 0.0, 0.0),
-                         (0.25, 0.5, 0.5),
-                         (0.5, 1.0, 1.0),
-                         (0.75,0.5, 0.5),
-                         (1.0, 0.0, 0.0)),
-
-              'blue':  ((0.0, 0.0, 0.45),
-                        (0.25, 1.0, 1.0),
-                        (0.5, 1.0, 0.9),
-                        (0.75,0.0, 0.0),
-                        (1.0, 0.0, 0.0))}
-mt_bl2gr2rd = colors.LinearSegmentedColormap('mt_bl2gr2rd', ptcmapdict4, 256)
 
 #define text formating for plotting
 ckdict = {'phiminang':'$\Phi_{min}$ (deg)','phimin':'$\Phi_{min}$ (deg)',
@@ -126,13 +28,7 @@ ckdict = {'phiminang':'$\Phi_{min}$ (deg)','phimin':'$\Phi_{min}$ (deg)',
           'phidet':'Det{$\Phi$} (deg)','beta':'Skew (deg)',
           'ellipticity':'Ellipticity','beta_seg':'Skew (deg)'}
           
-cmapdict = {'mt_yl2rd':mt_yl2rd,
-            'mt_bl2yl2rd':mt_bl2yl2rd,
-            'mt_wh2bl':mt_wh2bl,
-            'mt_rd2bl':mt_rd2bl,
-            'mt_bl2wh2rd':mt_bl2wh2rd,
-            'mt_seg_bl2wh2rd':mt_seg_bl2wh2rd,
-            'mt_bl2gr2rd':mt_bl2gr2rd}
+
             
 labeldict = {6:'$10^{6}$',
              5:'$10^{5}$',
@@ -460,13 +356,15 @@ class MTplot(object):
         if self._period[0]>self._period[-1]:
             self._Z.z = self._Z.z[::-1]
             self._Z.zerr = self._Z.zerr[::-1]
-            self._Tipper.tipper = self._Tipper.tipper[::-1]
-            self._Tipper.tipper_err = self._Tipper.tipper_err[::-1]
             self._period = self._period[::-1]
-
+            if self._Tipper.tipper is not None:
+                self._Tipper.tipper = self._Tipper.tipper[::-1]
+                self._Tipper.tipper_err = self._Tipper.tipper_err[::-1]
+            
         self._Z.frequencies = 1./self._period
         self._frequencies = 1./self._period
-        self._Tipper.frequencies = 1./self._period
+        if self._Tipper.tipper is not None:
+            self._Tipper.frequencies = 1./self._period
         
     def _set_lat(self, lat):
         self._lat = lat
@@ -508,12 +406,15 @@ class MTplot(object):
         if self._frequencies[0]<self._frequencies[-1]:
             self._Z.z = self._Z.z[::-1]
             self._Z.zerr = self._Z.zerr[::-1]
-            self._Tipper.tipper = self._Tipper.tipper[::-1]
-            self._Tipper.tipper_err = self._Tipper.tipper_err[::-1]
             self._period = self._period[::-1]
+            if self._Tipper.tipper is not None:
+                self._Tipper.tipper = self._Tipper.tipper[::-1]
+                self._Tipper.tipper_err = self._Tipper.tipper_err[::-1]
+            
         self._Z.frequencies = self._frequencies
         self._frequencies = self._frequencies
-        self._Tipper.frequencies = self._frequencies
+        if self._Tipper.tipper is not None:
+            self._Tipper.frequencies = self._frequencies
         
         
     #==========================================================================
@@ -734,8 +635,21 @@ class ResPhase(object):
         self.phaseyx_err = self.phase_err[:,1,0]
         self.phaseyy_err = self.phase_err[:,1,1]
         
-        self.phaseyx[np.where(self.phaseyx>180)] -= 180
+        self.phaseyx[np.where(self.phaseyx>120)] -= 180 
         self.phaseyx[np.where(self.phaseyx<-90)] += 180
+        
+        #calculate determinant values
+        zdet = np.array([np.linalg.det(zz)**.5 for zz in self._Z.z])
+        zdetvar = np.array([np.linalg.det(zzv)**.5 for zzv in self._Z.zerr])
+        
+        #apparent resistivity
+        self.resdet = 0.2*(1./self._Z.frequencies)*abs(zdet)**2
+        self.resdet_err = 0.2*(1./self._Z.frequencies)*\
+                                        np.abs(zdet+zdetvar)**2-self.resdet
+        
+        #phase
+        self.phasedet = np.arctan2(zdet.imag,zdet.real)*(180/np.pi)
+        self.phasedet_err = np.arcsin(zdetvar/abs(zdet))*(180/np.pi)
         
     def rotate(self, rot_z):
         """
@@ -971,6 +885,10 @@ class PlotResPhase(object):
         -plot_strike    string or integer telling the program to plot the 
                         strike angle, see values above in arguments
                         
+        -plot_skew      string to tell the program to plot skew angle.
+                        The skew is plotted in the same subplot as the strike
+                        angle at the moment
+                        
                 
         -period          period array cooresponding to the impedance tensor
         -font_size       size of font for the axis ticklabels, note that the 
@@ -981,7 +899,8 @@ class PlotResPhase(object):
         -axt             matplotlib.axes object for the tipper plot
         -ax2r            matplotlib.axes object for the xx,yy resistivity plot
         -ax2p            matplotlib.axes object for the xx,yy phase plot
-        
+        -axs             matplotlib.axes object for the strike plot
+        -axs2            matplotlib.axes object for the skew plot       
         ..
         
              **Note:** that from these axes object you have control of the
@@ -1017,6 +936,23 @@ class PlotResPhase(object):
         -xy_mfc          marker face color for xy and xx, *default* is None 
         -yx_mfc          marker face color for yx and yy, *default* is None
         -det_mfc         marker face color for determinant, *default* is None
+        
+        -skew_marker     marker for skew angle, *default* is 'd'
+        -skew_color      color for skew angle, *default* is 'orange'
+        
+        -strike_inv_marker  marker for strike angle determined by invariants
+                            *default* is '^'
+        -strike_inv_color   color for strike angle determined by invaraiants 
+                            *default* is (.2, .2, .7)
+        -strike_pt_marker  marker for strike angle determined by pt, 
+                           *default* is'v'
+        -strike_pt_color   color for strike angle determined by pt
+                           *default* is (.7, .2, .2)
+        
+        -strike_tip_marker  marker for strike angle determined by tipper
+                            *default* is '>'
+        -strike_tip_color   color for strike angle determined by tipper
+                            *default* is (.2, .7, .2)
         
         -marker_size     size of marker in relative dimenstions, *default* is 2
         -marker_lw       line width of marker, *default* is 100./dpi 
@@ -1059,6 +995,10 @@ class PlotResPhase(object):
                         and yx components.
                         
         -tipper_limits  limits of the y-axis, *default* is (-1,1)
+        
+        -skew_limits    limits for skew angle, *default* is (-9,9)
+        
+        -strike_limits  limits for strike angle, *default* is (-90,90)   
         
 
 
@@ -1256,11 +1196,11 @@ class PlotResPhase(object):
                 gs = gridspec.GridSpec(2, 2, height_ratios=[2, 1.5], 
                                        hspace=.01)
         
+        #make figure instance
+        self.fig = plt.figure(self.fignum, self.figsize, dpi=self.dpi)
+        
         #--> make figure for xy,yx components
         if self.plotnum==1 or self.plotnum==3:
-            #make figure instance
-            self.fig = plt.figure(self.fignum, self.figsize, dpi=self.dpi)
-            
             #space out the subplots
             gs.update(hspace=.05, wspace=.15, left=.1)
             
@@ -1300,8 +1240,6 @@ class PlotResPhase(object):
             
         #--> make figure for all 4 components
         elif self.plotnum==2:
-            #make figure instance
-            self.fig = plt.figure(self.fignum, self.figsize, dpi=self.dpi)
             
             #space out the subplots
             gs.update(hspace=.05, wspace=.15, left=.07)
@@ -2013,7 +1951,7 @@ class PlotResPhase(object):
               "tensor and errors with an array of periods and .j format.\n"
 
 
-class PlotMultipleResistivityPhase(object):
+class PlotMultipleResPhase(object):
     """
     plots multiple MT responses simultaneously either in single plots or in 
     one plot of subfigures or in a single plot with subfigures for each 
@@ -2029,6 +1967,239 @@ class PlotMultipleResistivityPhase(object):
          **tipper_object_lst** : list of mtpy.imaging.mtplot.Tipper objects
          
          **mt_object_lst** : list of mtpy.imaging.mtplot.MTplot objects
+         
+        
+    Arguments:
+    ----------
+        **fn_lst** : list of filenames to plot
+                     ie. [fn_1, fn_2, ...], *default* is None
+           
+         **z_object_lst** : list of mtpy.core.z.Z objects
+                            *default* is None
+         
+         **res_object_lst** : list of mtpy.imaging.mtplot.ResPhase objects
+                              *default* is None
+         
+         **tipper_object_lst** : list of mtpy.imaging.mtplot.Tipper objects
+                                 *default* is None
+         
+         **mt_object_lst** : list of mtpy.imaging.mtplot.MTplot objects
+                             *default* is None
+                      
+        **fignum** : int
+                     figure number
+                     *default* is 1
+        
+        **rot_z** : float or np.ndarray
+                   rotation angle of impedance tensor (deg or radians), 
+                   *Note* : rotaion is clockwise positive
+                   *default* is 0
+                   Can input so each station is rotated at a constant angle or
+                   each period is rotated differently, or both.
+        
+        **plotnum** : [ 1 | 2 | 3 ]
+                        * 1 for just Ex/By and Ey/Bx *default*
+                        * 2 for all 4 components
+                        * 3 for off diagonal plus the determinant
+                        
+        **plot_style** : [ '1' | 'all' | 'compare' ]
+                        determines the plotting style:
+                            * '1' for plotting each station in a different 
+                                  figure. *default*
+                                  
+                            * 'all' for plotting each station in a subplot
+                                    all in the same figure
+                            
+                            * 'compare' for comparing the responses all in 
+                                        one plot.  Here the responses are 
+                                        colored from dark to light.  This 
+                                        plot can get messy if too many stations
+                                        are plotted.  
+                                    
+    
+        **title** : string
+                    title of plot
+                    *default* is station name
+                    
+        **plot_tipper** : [ 'yri' | 'yr' | 'yi' | 'n' ]
+                          Plots the tipper in a bottom pannel
+                          * 'yri'  --> plots the real and imaginar parts
+                          * 'yr'   --> plots just the real part
+                          * 'yi'   --> plots just the imaginary part
+                          
+                          **Note:** the convention is to point towards a 
+                          conductor.  Can change this by setting the
+                          parameter arrow_direction = 1.
+                          
+        **plot_strike** : [ 'y' | 1 | 2 | 3 | 'n' ]
+                          Plots the strike angle from different parameters:
+                              * 'y'  --> plots strike angle determined from 
+                                         the invariants of Weaver et al. [2000]
+                                         and the phase tensor of
+                                         Caldwell et al. [2004], if Tipper is 
+                                         plotted the strike of the tipper is
+                                         also plotted.
+                                         
+                               * 1  --> plots strike angle determined from 
+                                        the invariants of Weaver et al. [2000]
+                               * 2  --> plots strike angle determined from 
+                                        the phase tensor of 
+                                        Caldwell et al. [2004]
+                               * 3  --> plots strike angle determined from 
+                                        the tipper
+                               * 'n' --> doesn't plot the strike, *default*
+                               
+        **plot_skew** : [ 'y' | 'n' ]
+                       string for plotting skew angle.  This is plotted in 
+                       the same plot as strike angle at the moment.  
+                           * 'y' for plotting the skew
+                           * 'n' for not plotting skew *default*
+                          
+        **dpi** : int
+                 dots-per-inch resolution, *default* is 300
+                    
+                        
+        :Example: ::
+            
+            >>> import mtpy.imaging.mtplottools as mtplot
+            >>> import os
+            >>> edipath = r"/home/Edifiles"
+            >>> edilst = [os.path.join(edipath,edi) 
+            >>> ...       for edi in os.listdir(edipath)
+            >>> ...       if edi.find('.edi')>0]
+            >>> plot each station in a subplot all in one figure with tipper
+            >>> rp1 = mtplot.PlotMultipleResPhase(edilst, plotnum=1, 
+            >>> ...                                plot_tipper='yr,
+            >>> ...                                plot_style='all')
+
+            
+    Attributes:
+    -----------
+        -mt_lst         list of mtplot.MTplot objects made from inputs 
+        -fignum         figure number for plotting
+        -plotnum        plot type, see arguments for details 
+        -title          title of the plot, *default* is station name
+        -dpi            Dots-per-inch resolution of plot, *default* is 300
+        -rotz           Rotate impedance tensor by this angle (deg) assuming
+                        that North is 0 and angle is positive clockwise
+                        
+        -plot_tipper    string to tell the program to plot tipper arrows or 
+                        not, see accepted values above in arguments
+        
+        -plot_strike    string or integer telling the program to plot the 
+                        strike angle, see values above in arguments
+        
+        -plot_skew      string to tell the program to plot skew angle.
+                        The skew is plotted in the same subplot as the strike
+                        angle at the moment
+                        
+                
+        -period          period array cooresponding to the impedance tensor
+        -font_size       size of font for the axis ticklabels, note that the 
+                         axis labels will be font_size+2
+        
+        -axr             matplotlib.axes object for the xy,yx resistivity plot.  
+        -axp             matplotlib.axes object for the xy,yx phase plot
+        -axt             matplotlib.axes object for the tipper plot
+        -ax2r            matplotlib.axes object for the xx,yy resistivity plot
+        -ax2p            matplotlib.axes object for the xx,yy phase plot
+        -axs             matplotlib.axes object for the strike plot
+        -axs2            matplotlib.axes object for the skew plot
+        
+        ..
+        
+             **Note:** that from these axes object you have control of the
+             plot.  You can do this by changing any parameter in the 
+             axes object and then calling update_plot()
+        
+        -erxyr          class matplotlib.container.ErrorbarContainer for 
+                        xy apparent resistivity.
+        -erxyp          class matplotlib.container.ErrorbarContainer for 
+                        xy.
+        -eryxr          class matplotlib.container.ErrorbarContainer for 
+                        yx apparent resistivity.
+        -eryxp          class matplotlib.container.ErrorbarContainer for 
+                        yx phase.
+        
+        ..
+        
+            **Note:** that from these line objects you can manipulate the 
+            error bar properties and then call update_plot()
+                     
+        -xy_ls           line style for xy and xx components, *default* is None       
+        -yx_ls           line style for yx and yy components, *default* is None        
+        -det_ls          line style for determinant, *default* is None
+        
+        -xy_marker       marker for xy and xx, *default* is squares
+        -yx_marker       marker for yx and yy, *default* is circles
+        -det_marker      marker for determinant, *default* is diamonds
+        
+        -xy_color        marker color for xy and xx, *default* is blue
+        -yx_color        marker color for yx and yy, *default* is red
+        -det_color       marker color for determinant, *default* is green
+        
+        -xy_mfc          marker face color for xy and xx, *default* is None 
+        -yx_mfc          marker face color for yx and yy, *default* is None
+        -det_mfc         marker face color for determinant, *default* is None
+        
+        -skew_marker     marker for skew angle, *default* is 'd'
+        -skew_color      color for skew angle, *default* is 'orange'
+        
+        -strike_inv_marker  marker for strike angle determined by invariants
+                            *default* is '^'
+        -strike_inv_color   color for strike angle determined by invaraiants 
+                            *default* is (.2, .2, .7)
+        -strike_pt_marker  marker for strike angle determined by pt, 
+                           *default* is'v'
+        -strike_pt_color   color for strike angle determined by pt
+                           *default* is (.7, .2, .2)
+        
+        -strike_tip_marker  marker for strike angle determined by tipper
+                            *default* is '>'
+        -strike_tip_color   color for strike angle determined by tipper
+                            *default* is (.2, .7, .2)
+        
+        -marker_size     size of marker in relative dimenstions, *default* is 2
+        -marker_lw       line width of marker, *default* is 100./dpi 
+        ..
+        
+         *For more on line and marker styles see matplotlib.lines.Line2D*
+        
+        -arrow_lw          line width of the arrow, *default* is 0.75
+        -arrow_head_width  head width of the arrow, *default* is 0 for no arrow
+                           head.  Haven't found a good way to scale the arrow
+                           heads in a log scale.
+                         
+        -arrow_head_height  head width of the arrow, *default* is 0 for no arrow
+                            head.  Haven't found a good way to scale the arrow
+                            heads in a log scale.
+                          
+        -arrow_color_real  color of the real arrows, *default* is black
+        -arrow_color_imag  color of the imaginary arrows, *default* is blue
+        
+        -arrow_direction   0 for pointing towards a conductor and -1 for 
+                           pointing away from a conductor.
+                          
+
+        -xlimits        limits on the x-limits (period), *default* is None
+                        which will estimate the min and max from the data, 
+                        setting the min as the floor(min(period)) and the max
+                        as ceil(max(period)).  Input in linear scale if you
+                        want to change the period limits, ie. (.1,1000)
+                        
+        -res_limits     limits on the resistivity, *default* is None, which 
+                        will estimate the min and max from the data, rounding
+                        to the lowest and highest increments to the power of 10
+                        Input in linear scale if you want to change them, 
+                        ie. (1,10000). Note this only sets the xy and yx 
+                        components, not the xx and yy.
+                        
+        -phase_limits   limits on the phase, *default* is (0,90) but will 
+                        adapt to the data if there is phase above 90 or below
+                        0.  Input in degrees.  Note this only changes the xy
+                        and yx components.
+                        
+        -tipper_limits  limits of the y-axis, *default* is (-1,1)
     
     """
 
@@ -2407,12 +2578,12 @@ class PlotMultipleResistivityPhase(object):
                     #place the y-coordinate labels in the same location for
                     #each axis
                     if ii==0:
-                        axr.yaxis.set_label_coords(-.195, 0.5)
-                        axp.yaxis.set_label_coords(-.195, 0.5)
+                        axr.yaxis.set_label_coords(-.145, 0.5)
+                        axp.yaxis.set_label_coords(-.145, 0.5)
                         if self.plot_tipper.find('y')==0:
-                            axt.yaxis.set_label_coords(-.195, 0.5)
+                            axt.yaxis.set_label_coords(-.145, 0.5)
                         if self.plot_skew=='y' or self.plot_strike=='y':
-                            axs.yaxis.set_label_coords(-.195, 0.5)
+                            axs.yaxis.set_label_coords(-.145, 0.5)
                     
                 #--> make figure for all 4 components
                 elif self.plotnum==2:
@@ -2473,12 +2644,12 @@ class PlotMultipleResistivityPhase(object):
                     #place the y-coordinate labels in the same location for
                     #each axis
                     if ii==0:
-                        axr.yaxis.set_label_coords(-.195, 0.5)
-                        axp.yaxis.set_label_coords(-.195, 0.5)
+                        axr.yaxis.set_label_coords(-.145, 0.5)
+                        axp.yaxis.set_label_coords(-.145, 0.5)
                         if self.plot_tipper.find('y')==0:
-                            axt.yaxis.set_label_coords(-.195, 0.5)
+                            axt.yaxis.set_label_coords(-.145, 0.5)
                         if self.plot_skew=='y' or self.plot_strike=='y':
-                            axs.yaxis.set_label_coords(-.195, 0.5)
+                            axs.yaxis.set_label_coords(-.145, 0.5)
                  
                 #---------plot the apparent resistivity------------------------
                 #--> plot as error bars and just as points xy-blue, yx-red
@@ -3114,29 +3285,43 @@ class PlotMultipleResistivityPhase(object):
         
         #=====Plot all responses into one plot to compare changes=============
         if self.plot_style=='compare':
-            ns = len(self.edilst)
+            ns = len(self.mt_lst)
             
-            cxy=[(0,0+float(cc)/ns,1-float(cc)/ns) for cc in range(ns)]
-            cyx=[(1,float(cc)/ns,0) for cc in range(ns)]
-            cdet=[(0,1-float(cc)/ns,0) for cc in range(ns)]
+            #make color lists for the plots going light to dark
+            cxy = [(0, 0+float(cc)/ns, 1-float(cc)/ns) for cc in range(ns)]
+            cyx = [(1, float(cc)/ns, 0) for cc in range(ns)]
+            cdet = [(0, 1-float(cc)/ns, 0) for cc in range(ns)]
+            ctipr = [(.75*cc/ns, .75*cc/ns, .75*cc/ns) for cc in range(ns)]
+            ctipi = [(float(cc)/ns, 1-float(cc)/ns, .25) for cc in range(ns)]
+            cst = [(.5*cc/ns, 0, .5*cc/ns) for cc in range(ns)]
+            csk = [(.75*cc/ns, .25*cc/ns, 0) for cc in range(ns)]
+            
+            #make marker lists for the different components
             mxy=['s','D','x','+','*','1','3','4']*5
             myx=['o','h','8','p','H',7,4,6]*5
             
             legendlst=[]
             stationlst=[]
+            tiplst=[]
+            stlst=[]
+            sklst=[]
 
             #set some parameters of the figure and subplot spacing
             plt.rcParams['font.size'] = self.font_size
-            plt.rcParams['figure.subplot.right'] = .98
             plt.rcParams['figure.subplot.bottom'] = .1
             plt.rcParams['figure.subplot.top'] = .93
+            plt.rcParams['figure.subplot.left'] = .80
+            if self.plot_skew=='y':
+                plt.rcParams['figure.subplot.right'] = .90
+            else:
+                plt.rcParams['figure.subplot.right'] = .98
             
             #set the font properties for the axis labels
             fontdict={'size':self.font_size+2, 'weight':'bold'}
             
             #set figure size according to what the plot will be.
             if self.plotnum==1 or self.plotnum==3:
-                self.figsize = [4,6]
+                self.figsize = [5,7]
                 
             elif self.plotnum==2:
                 self.figsize = [6,6]
@@ -3145,130 +3330,185 @@ class PlotMultipleResistivityPhase(object):
             self.fig = plt.figure(self.fignum, self.figsize, dpi=self.dpi)
             
             #make subplots
-            gs = gridspec.GridSpec(2, 2, height_ratios=[2,1.5], hspace=.01) 
+            if self.plot_tipper.find('y')==0:
+                if self.plot_strike!='n' or self.plot_skew=='y':
+                    gs = gridspec.GridSpec(4, 2, height_ratios=[2, 1.5, 1, 1], 
+                                           hspace=.05)
+                else:
+                    gs = gridspec.GridSpec(3, 2, height_ratios=[2, 1.5, 1], 
+                                           hspace=.05)
+            else:
+                if self.plot_strike!='n' or self.plot_skew=='y':
+                    gs = gridspec.GridSpec(3, 2, height_ratios=[2, 1.5, 1],
+                                           hspace=.05)
+                else:
+                    gs = gridspec.GridSpec(2, 2, height_ratios=[2, 1.5], 
+                                       hspace=.01) 
             
-             #--> make figure for xy,yx components
+            #--> make figure for xy,yx components
             if self.plotnum==1 or self.plotnum==3:
-                
                 #space out the subplots
                 gs.update(hspace=.05, wspace=.15, left=.1)
                 
                 #--> create the axes instances
-                #apparent resistivity axis
-                axr = plt.subplot(gs[0,:])
-                
-                #phase axis which shares the x axis (period) with the resistivity
-                axp = plt.subplot(gs[1,:], sharex=axr)
-                
-                #place the y-coordinate labels in the same location for each axis
-                axr.yaxis.set_label_coords(-.0565, 0.5)
-                axp.yaxis.set_label_coords(-.0565, 0.5)
+                if self.plot_tipper.find('y')==0:
+                    #apparent resistivity axis
+                    self.axr = self.fig.add_subplot(gs[0,:])
+                    
+                    #phase axis that shares period axis with resistivity
+                    self.axp = self.fig.add_subplot(gs[1,:], sharex=self.axr)
+                    
+                    #tipper axis  
+                    self.axt = self.fig.add_subplot(gs[2,:], sharex=self.axr)
+                    
+                    #place y coordinate labels in the same location                
+                    self.axr.yaxis.set_label_coords(-.075, 0.5)
+                    self.axp.yaxis.set_label_coords(-.075, 0.5)
+                    self.axt.yaxis.set_label_coords(-.075, 0.5)
+                    if self.plot_strike!='n' or self.plot_skew!='n':
+                        self.axs = self.fig.add_subplot(gs[3,:], sharex=self.axr)
+                        self.axs.yaxis.set_label_coords(-.075, 0.5)
+                else:
+                    #apparent resistivity axis
+                    self.axr = plt.subplot(gs[0,:])
+                    
+                    #phase axis which shares the x axis with the resistivity
+                    self.axp = plt.subplot(gs[1,:], sharex=self.axr)
+                    
+                    #place the y-coordinate labels in the same location
+                    self.axr.yaxis.set_label_coords(-.075, 0.5)
+                    self.axp.yaxis.set_label_coords(-.075, 0.5)
+                    
+                    #add stike axis if desired
+                    if self.plot_strike!='n' or self.plot_skew!='n':
+                        self.axs = self.fig.add_subplot(gs[2,:], sharex=self.axr)
+                        self.axs.yaxis.set_label_coords(-.075, 0.5)
+                        
                 
             #--> make figure for all 4 components
             elif self.plotnum==2:
-                #make figure instance
-                self.fig = plt.figure(self.fignum, self.figsize, dpi=self.dpi)
                 
                 #space out the subplots
                 gs.update(hspace=.05, wspace=.15, left=.07)
                 
-                #--> create axes instance
-                #apparent resistivity
-                axr = plt.subplot(gs[0,0])
-                axr2 = plt.subplot(gs[0,1])
-                
-                #phase axis which shares the x axis (period) with the resistivity
-                axp = plt.subplot(gs[1,0],sharex=axr)
-                axp2 = plt.subplot(gs[1,1],sharex=axr)
-                
-                #place the y-coordinate labels in the same location for each axis
-                axr.yaxis.set_label_coords(-.075, 0.5)
-                axp.yaxis.set_label_coords(-.075, 0.5)
-    
-            for ii,edi in enumerate(self.edilst):
-                #check to see if the file given is an edi file
-                if edi.find('edi',-4,len(edi))>=0:
-                    print 'Reading ' + edi
-                    #create a Z object from the file            
-                    mt = Z.Z(edi)
+                #--> create the axes instances
+                if self.plot_tipper.find('y')==0:
+                    #apparent resistivity axis
+                    self.axr = self.fig.add_subplot(gs[0,0])
                     
-                    #get the reistivity and phase object
-                    rp = mt.getResPhase(thetar=self.rotz)
+                    #phase axis that shares period axis with resistivity
+                    self.axp = self.fig.add_subplot(gs[1,0], sharex=self.axr)
                     
-                    #set x-axis limits from short period to long period
-                    if self.xlimits==None:
-                        self.xlimits = (10**(np.floor(np.log10(mt.period[0]))),
-                                        10**(np.ceil(np.log10((mt.period[-1])))))
-                    if self.phase_limits==None:
-                        self.phase_limits = (0,89.9)
+                    #tipper axis that shares period with resistivity 
+                    self.axt = self.fig.add_subplot(gs[2,:], sharex=self.axr)
                     
-                    stationlst.append(mt.station)
-
+                    #place y coordinate labels in the same location                
+                    self.axr.yaxis.set_label_coords(-.095, 0.5)
+                    self.axp.yaxis.set_label_coords(-.095, 0.5)
+                    self.axt.yaxis.set_label_coords(-.095, 0.5)
+                    
+                    #add strike axis if desired
+                    if self.plot_strike!='n' or self.plot_skew!='n':
+                        self.axs = self.fig.add_subplot(gs[3,:], 
+                                                        sharex=self.axr)
+                        self.axs.yaxis.set_label_coords(-.095, 0.5)
                 else:
-                    raise ValueError('Could not read file: ' + edi)
+                    #apparent resistivity axis
+                    self.axr = plt.subplot(gs[0,0])
+                    
+                    #phase axis which shares the x axis with the resistivity
+                    self.axp = plt.subplot(gs[1,0], sharex=self.axr)
+                    
+                    #place the y-coordinate labels in the same location
+                    self.axr.yaxis.set_label_coords(-.095, 0.5)
+                    self.axp.yaxis.set_label_coords(-.095, 0.5)
+                    
+                    #add strike axis if desired
+                    if self.plot_strike!='n' or self.plot_skew!='n':
+                        self.axs = self.fig.add_subplot(gs[2,:], 
+                                                        sharex=self.axr)
+                        self.axs.yaxis.set_label_coords(-.095, 0.5)
+                        
+            if self.plot_skew=='y':
+                self.axs2 = self.axs.twinx()
+    
+            for ii,mt in enumerate(self.mt_lst):
+                    
+                #get the reistivity and phase object
+                rp = mt.get_ResPhase()
+                rp.rotate(self.rot_z[ii])
+                
+                #set x-axis limits from short period to long period
+                if self.xlimits==None:
+                    self.xlimits = (10**(np.floor(np.log10(mt.period[0]))),
+                                    10**(np.ceil(np.log10((mt.period[-1])))))
+                if self.phase_limits==None:
+                    self.phase_limits = (0,89.9)
+                
+                stationlst.append(mt.station)
                 
                 #=========Plot Z_xy and Z_yx=================================== 
                 if self.plotnum==1 or self.plotnum==2:
                     #---------plot the apparent resistivity--------------------
                     #--> plot as error bars and just as points xy-blue, yx-red
                     #res_xy
-                    ebxyr = axr.errorbar(mt.period, 
-                                         rp.resxy, 
-                                         marker=mxy[ii], 
-                                         ms=self.marker_size, 
-                                         mfc='None', 
-                                         mec=cxy[ii], 
-                                         mew=self.marker_lw, 
-                                         ls=self.xy_ls, 
-                                         yerr=rp.resxy_err, 
-                                         ecolor=cxy[ii],
-                                         capsize=self.marker_size,
-                                         elinewidth=self.marker_lw)
+                    ebxyr = self.axr.errorbar(mt.period, 
+                                             rp.resxy, 
+                                             marker=mxy[ii], 
+                                             ms=self.marker_size, 
+                                             mfc='None', 
+                                             mec=cxy[ii], 
+                                             mew=self.marker_lw, 
+                                             ls=self.xy_ls, 
+                                             yerr=rp.resxy_err, 
+                                             ecolor=cxy[ii],
+                                             capsize=self.marker_size,
+                                             elinewidth=self.marker_lw)
                     
                     #res_yx                              
-                    ebyxr = axr.errorbar(mt.period, 
-                                         rp.resyx, 
-                                         marker=myx[ii], 
-                                         ms=self.marker_size, 
-                                         mfc='None',
-                                         mec=cyx[ii], 
-                                         mew=self.marker_lw,
-                                         ls=self.yx_ls, 
-                                         yerr=rp.resyx_err, 
-                                         ecolor=cyx[ii],
-                                         capsize=self.marker_size,
-                                         elinewidth=self.marker_lw)
+                    ebyxr = self.axr.errorbar(mt.period, 
+                                             rp.resyx, 
+                                             marker=myx[ii], 
+                                             ms=self.marker_size, 
+                                             mfc='None',
+                                             mec=cyx[ii], 
+                                             mew=self.marker_lw,
+                                             ls=self.yx_ls, 
+                                             yerr=rp.resyx_err, 
+                                             ecolor=cyx[ii],
+                                             capsize=self.marker_size,
+                                             elinewidth=self.marker_lw)
                                                   
 
                     #-----Plot the phase---------------------------------------
                     #phase_xy
-                    ebxyp = axp.errorbar(mt.period, 
-                                         rp.phasexy, 
-                                         marker=mxy[ii], 
-                                         ms=self.marker_size, 
-                                         mfc='None',
-                                         mec=cxy[ii], 
-                                         mew=self.marker_lw,
-                                         ls=self.xy_ls,
-                                         yerr=rp.phasexy_err, 
-                                         ecolor=cxy[ii],
-                                         capsize=self.marker_size,
-                                         elinewidth=self.marker_lw)
+                    ebxyp = self.axp.errorbar(mt.period, 
+                                             rp.phasexy, 
+                                             marker=mxy[ii], 
+                                             ms=self.marker_size, 
+                                             mfc='None',
+                                             mec=cxy[ii], 
+                                             mew=self.marker_lw,
+                                             ls=self.xy_ls,
+                                             yerr=rp.phasexy_err, 
+                                             ecolor=cxy[ii],
+                                             capsize=self.marker_size,
+                                             elinewidth=self.marker_lw)
                                                   
                     #phase_yx: Note add 180 to place it in same quadrant as
                     #phase_xy
-                    ebyxp = axp.errorbar(mt.period, 
-                                         rp.phaseyx+180, 
-                                         marker=myx[ii], 
-                                         ms=self.marker_size, 
-                                         mfc='None',
-                                         mec=cyx[ii], 
-                                         mew=self.marker_lw,
-                                         ls=self.yx_ls, 
-                                         yerr=rp.phaseyx_err, 
-                                         ecolor=cyx[ii],
-                                         capsize=self.marker_size,
-                                         elinewidth=self.marker_lw)
+                    ebyxp = self.axp.errorbar(mt.period, 
+                                             rp.phaseyx, 
+                                             marker=myx[ii], 
+                                             ms=self.marker_size, 
+                                             mfc='None',
+                                             mec=cyx[ii], 
+                                             mew=self.marker_lw,
+                                             ls=self.yx_ls, 
+                                             yerr=rp.phaseyx_err, 
+                                             ecolor=cyx[ii],
+                                             capsize=self.marker_size,
+                                             elinewidth=self.marker_lw)
             
 
                     legendlst.append([ebxyr,ebyxr])             
@@ -3276,68 +3516,68 @@ class PlotMultipleResistivityPhase(object):
                     #====Plot the Z_xx, Z_yy components if desired=============
                     if self.plotnum==2:
                         #---------plot the apparent resistivity----------------
-                        axr2.yaxis.set_label_coords(-.1, 0.5)
+                        self.axr2.yaxis.set_label_coords(-.1, 0.5)
                         
                         #res_xx
-                        ebxxr = axr2.errorbar(mt.period, 
-                                              rp.resxx, 
-                                              marker=mxy[ii], 
-                                              ms=self.marker_size, 
-                                              mfc='None',
-                                              mec=cxy[ii], 
-                                              mew=self.marker_lw,
-                                              ls=self.xy_ls, 
-                                              yerr=rp.resxx_err, 
-                                              ecolor=cxy[ii],
-                                              capsize=self.marker_size,
-                                              elinewidth=self.marker_lw)
+                        ebxxr = self.axr2.errorbar(mt.period, 
+                                                  rp.resxx, 
+                                                  marker=mxy[ii], 
+                                                  ms=self.marker_size, 
+                                                  mfc='None',
+                                                  mec=cxy[ii], 
+                                                  mew=self.marker_lw,
+                                                  ls=self.xy_ls, 
+                                                  yerr=rp.resxx_err, 
+                                                  ecolor=cxy[ii],
+                                                  capsize=self.marker_size,
+                                                  elinewidth=self.marker_lw)
                         
                         #res_yy                              
-                        ebyyr = axr2.errorbar(mt.period, 
-                                              rp.resyy, 
-                                              marker=myx[ii], 
-                                              ms=self.marker_size, 
-                                              mfc='None', 
-                                              mec=cyx[ii], 
-                                              mew=self.marker_lw, 
-                                              ls=self.yx_ls, 
-                                              yerr=rp.resyy_err, 
-                                              ecolor=cyx[ii],
-                                              capsize=self.marker_size,
-                                              elinewidth=self.marker_lw)
+                        ebyyr = self.axr2.errorbar(mt.period, 
+                                                  rp.resyy, 
+                                                  marker=myx[ii], 
+                                                  ms=self.marker_size, 
+                                                  mfc='None', 
+                                                  mec=cyx[ii], 
+                                                  mew=self.marker_lw, 
+                                                  ls=self.yx_ls, 
+                                                  yerr=rp.resyy_err, 
+                                                  ecolor=cyx[ii],
+                                                  capsize=self.marker_size,
+                                                  elinewidth=self.marker_lw)
             
                                             
                         #-----Plot the phase-----------------------------------
                         
-                        axp2.yaxis.set_label_coords(-.1, 0.5)
+                        self.axp2.yaxis.set_label_coords(-.1, 0.5)
                         
                         #phase_xx
-                        ebxxp = axp2.errorbar(mt.period, 
-                                              rp.phasexx, 
-                                              marker=mxy[ii], 
-                                              ms=self.marker_size, 
-                                              mfc='None', 
-                                              mec=cxy[ii], 
-                                              mew=self.marker_lw, 
-                                              ls=self.xy_ls, 
-                                              yerr=rp.phasexx_err,
-                                              ecolor=cxy[ii],
-                                              capsize=self.marker_size,
-                                              elinewidth=self.marker_lw)
+                        ebxxp = self.axp2.errorbar(mt.period, 
+                                                  rp.phasexx, 
+                                                  marker=mxy[ii], 
+                                                  ms=self.marker_size, 
+                                                  mfc='None', 
+                                                  mec=cxy[ii], 
+                                                  mew=self.marker_lw, 
+                                                  ls=self.xy_ls, 
+                                                  yerr=rp.phasexx_err,
+                                                  ecolor=cxy[ii],
+                                                  capsize=self.marker_size,
+                                                  elinewidth=self.marker_lw)
                                                         
                         #phase_yy
-                        ebyyp = axp2.errorbar(mt.period,
-                                              rp.phaseyy, 
-                                              marker=myx[ii],
-                                              ms=self.marker_size, 
-                                              mfc='None',
-                                              mec=cyx[ii], 
-                                              mew=self.marker_lw, 
-                                              ls=self.yx_ls, 
-                                              yerr=rp.phaseyy_err, 
-                                              ecolor=cyx[ii],
-                                              capsize=self.marker_size,
-                                              elinewidth=self.marker_lw)
+                        ebyyp = self.axp2.errorbar(mt.period,
+                                                  rp.phaseyy, 
+                                                  marker=myx[ii],
+                                                  ms=self.marker_size, 
+                                                  mfc='None',
+                                                  mec=cyx[ii], 
+                                                  mew=self.marker_lw, 
+                                                  ls=self.yx_ls, 
+                                                  yerr=rp.phaseyy_err, 
+                                                  ecolor=cyx[ii],
+                                                  capsize=self.marker_size,
+                                                  elinewidth=self.marker_lw)
                         
 
                                    
@@ -3346,59 +3586,172 @@ class PlotMultipleResistivityPhase(object):
                 if self.plotnum==3:
                         
                     #res_det
-                    ebdetr = axr.errorbar(mt.period, 
-                                          rp.resdet, 
-                                          marker=mxy[ii], 
-                                          ms=self.marker_size, 
-                                          mfc='None',
-                                          mec=cdet[ii], 
-                                          mew=self.marker_lw, 
-                                          ls=self.det_ls, 
-                                          yerr=rp.resdet_err, 
-                                          ecolor=cdet[ii],
-                                          capsize=self.marker_size,
-                                          elinewidth=self.marker_lw)
+                    ebdetr = self.axr.errorbar(mt.period, 
+                                              rp.resdet, 
+                                              marker=mxy[ii], 
+                                              ms=self.marker_size, 
+                                              mfc='None',
+                                              mec=cdet[ii], 
+                                              mew=self.marker_lw, 
+                                              ls=self.det_ls, 
+                                              yerr=rp.resdet_err, 
+                                              ecolor=cdet[ii],
+                                              capsize=self.marker_size,
+                                              elinewidth=self.marker_lw)
                 
                     #phase_det
-                    ebdetp = axp.errorbar(mt.period, 
-                                          rp.phasedet, 
-                                          marker=mxy[ii], 
-                                          ms=self.marker_size, 
-                                          mfc='None', 
-                                          mec=cdet[ii], 
-                                          mew=self.marker_lw, 
-                                          ls=self.det_ls, 
-                                          yerr=rp.phasedet_err, 
-                                          ecolor=cdet[ii],
-                                          capsize=self.marker_size,
-                                          elinewidth=self.marker_lw)
+                    ebdetp = self.axp.errorbar(mt.period, 
+                                              rp.phasedet, 
+                                              marker=mxy[ii], 
+                                              ms=self.marker_size, 
+                                              mfc='None', 
+                                              mec=cdet[ii], 
+                                              mew=self.marker_lw, 
+                                              ls=self.det_ls, 
+                                              yerr=rp.phasedet_err, 
+                                              ecolor=cdet[ii],
+                                              capsize=self.marker_size,
+                                              elinewidth=self.marker_lw)
                     
                     legendlst.append(ebdetr)
+                    
+                #-----plot tipper----------------------------------------------              
+                if self.plot_tipper.find('y')==0:
+                    
+                    tp = mt.get_Tipper()
+                    
+                    txr = tp.mag_real*np.cos(tp.ang_real*np.pi/180+\
+                                             np.pi*self.arrow_direction)
+                    tyr = tp.mag_real*np.sin(tp.ang_real*np.pi/180+\
+                                             np.pi*self.arrow_direction)
+            
+                    txi = tp.mag_imag*np.cos(tp.ang_imag*np.pi/180+\
+                                             np.pi*self.arrow_direction)
+                    tyi = tp.mag_imag*np.sin(tp.ang_imag*np.pi/180+\
+                                             np.pi*self.arrow_direction)
+                    
+                    nt = len(txr)
+                    
+                    for aa in range(nt):
+                        xlenr = txr[aa]*mt.period[aa]
+                        xleni = txi[aa]*mt.period[aa]
+                        
+                        #scale the arrow head height and width to fit in a log scale
+                        if np.log10(mt.period[aa])<0:
+                            hwidth = self.arrow_head_width*\
+                                      10**(np.floor(np.log10(mt.period[aa])))
+                            hheight = self.arrow_head_height*\
+                                      10**(np.floor(np.log10(mt.period[aa])))
+                        else:
+                            hwidth = self.arrow_head_width/\
+                                      10**(np.floor(np.log10(mt.period[aa])))
+                            hheight = self.arrow_head_height/\
+                                      10**(np.floor(np.log10(mt.period[aa]))) 
+                            
+                        #--> plot real arrows
+                        if self.plot_tipper.find('r')>0:
+                            self.axt.arrow(mt.period[aa],
+                                           0,
+                                           xlenr,
+                                           tyr[aa],
+                                           lw=self.arrow_lw,
+                                           facecolor=ctipr[ii],
+                                           edgecolor=ctipr[ii],
+                                           head_width=hwidth,
+                                           head_length=hheight,
+                                           length_includes_head=False)
+                            
+                                           
+                        #--> plot imaginary arrows
+                        if self.plot_tipper.find('i')>0:               
+                            self.axt.arrow(self.period[aa],
+                                           0,
+                                           xleni,
+                                           tyi[aa],
+                                           lw=alw,
+                                           facecolor=ctipi[ii],
+                                           edgecolor=ctipi[ii],
+                                           length_includes_head=False)
+                        
+                    lt = self.axt.plot(0,0,lw=1, color=ctipr[ii])
+                    tiplst.append(lt[0])
+                        
+                    
+            
+                #---plot strike------------------------------------------------
+                if self.plot_strike=='y' or self.plot_strike==2:
+                    
+                    #strike from phase tensor
+                    pt = mt.get_PhaseTensor()
+                    s2, s2_err = pt.azimuth
+                    
+                    #fold angles to go from -90 to 90
+                    s2[np.where(s2>90)] = s2[np.where(s2>90)]-180
+                    s2[np.where(s2<-90)] = s2[np.where(s2<-90)]+180
+                    
+                    #plot strike with error bars
+                    ps2 = self.axs.errorbar(mt.period, 
+                                            s2, 
+                                            marker=mxy[ii], 
+                                            ms=self.marker_size, 
+                                            mfc=cst[ii], 
+                                            mec=cst[ii], 
+                                            mew=self.marker_lw,
+                                            ls='none', 
+                                            yerr=s2_err, 
+                                            ecolor=cst[ii],
+                                            capsize=self.marker_size,
+                                            elinewidth=self.marker_lw)
+                                            
+                    stlst.append(ps2[0])
+                                        
+                #------plot skew angle-----------------------------------------
+                if self.plot_skew=='y':
+                    #strike from phase tensor
+                    pt = mt.get_PhaseTensor()
+                    sk, sk_err = pt.skew
+                    
+                    ps4 = self.axs2.errorbar(mt.period, 
+                                            sk, 
+                                            marker=myx[ii], 
+                                            ms=self.marker_size, 
+                                            mfc=csk[ii], 
+                                            mec=csk[ii], 
+                                            mew=self.marker_lw,
+                                            ls='none', 
+                                            yerr=sk_err, 
+                                            ecolor=csk[ii],
+                                            capsize=self.marker_size,
+                                            elinewidth=self.marker_lw)
+    
+                    if self.skew_limits is None:
+                        self.skew_limits = (-9,9)
+                    sklst.append(ps4[0])
                                     
             #-------set axis properties----------------------------------------
-            axr.set_yscale('log')
-            axr.set_xscale('log')
-            axr.set_ylim(self.res_limits)
-            axr.set_xlim(self.xlimits)
-            axr.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+            self.axr.set_yscale('log')
+            self.axr.set_xscale('log')
+            self.axr.set_ylim(self.res_limits)
+            self.axr.set_xlim(self.xlimits)
+            self.axr.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
                           lw=.25)
-            plt.setp(axr.get_xticklabels(), visible=False)
+            plt.setp(self.axr.get_xticklabels(), visible=False)
             
-            axr.set_ylabel('App. Resistivity ($\Omega \cdot$m)',
-                           fontdict=fontdict)
+            self.axr.set_ylabel('App. Resistivity ($\Omega \cdot$m)',
+                                fontdict=fontdict)
                           
             #check the phase to see if any point are outside of [0:90]
             if self.phase_limits==None:
                 self.phase_limits = (0, 89.99)
             
             #--> set axes properties
-            axp.set_xlabel('Period (s)', fontdict=fontdict)
-            axp.set_ylabel('Phase (deg)',fontdict=fontdict)
-            axp.set_xscale('log')
-            axp.set_ylim(self.phase_limits)        
-            axp.yaxis.set_major_locator(MultipleLocator(15))
-            axp.yaxis.set_minor_locator(MultipleLocator(5))
-            axp.grid(True, alpha=.25, 
+            self.axp.set_xlabel('Period (s)', fontdict=fontdict)
+            self.axp.set_ylabel('Phase (deg)',fontdict=fontdict)
+            self.axp.set_xscale('log')
+            self.axp.set_ylim(self.phase_limits)        
+            self.axp.yaxis.set_major_locator(MultipleLocator(15))
+            self.axp.yaxis.set_minor_locator(MultipleLocator(5))
+            self.axp.grid(True, alpha=.25, 
                           which='both', 
                           color=(.25,.25,.25),
                           lw=.25)
@@ -3409,27 +3762,27 @@ class PlotMultipleResistivityPhase(object):
                 slst=[ss+'_xy' for ss in stationlst]+\
                      [ss+'_yx' for ss in stationlst]
                      
-                axr.legend(llst, 
-                        slst,
-                        loc=3,
-                        ncol=2,
-                        markerscale=1, 
-                        borderaxespad=.01,
-                        labelspacing=.07, 
-                        handletextpad=.2, 
-                        borderpad=.02)
+                self.axr.legend(llst, 
+                                slst,
+                                loc=3,
+                                ncol=2,
+                                markerscale=1, 
+                                borderaxespad=.01,
+                                labelspacing=.07, 
+                                handletextpad=.2, 
+                                borderpad=.02)
             elif self.plotnum==3:
                 llst=[ll[0] for ll in legendlst]
                 slst=[ss+'_det' for ss in stationlst]
                      
-                axr.legend(llst, 
-                        slst,
-                        loc=3,
-                        markerscale=1, 
-                        borderaxespad=.01,
-                        labelspacing=.07, 
-                        handletextpad=.2, 
-                        borderpad=.02)
+                self.axr.legend(llst, 
+                                slst,
+                                loc=3,
+                                markerscale=1, 
+                                borderaxespad=.01,
+                                labelspacing=.07, 
+                                handletextpad=.2, 
+                                borderpad=.02)
 
             
             if self.plotnum==2:
@@ -3437,42 +3790,134 @@ class PlotMultipleResistivityPhase(object):
                 slst=[ss+'_xx' for ss in stationlst]+\
                      [ss+'_yy' for ss in stationlst]
                      
-                axr2.legend(llst, 
-                        slst,
-                        loc=3,
-                        ncol=2,
-                        markerscale=1, 
-                        borderaxespad=.01,
-                        labelspacing=.07, 
-                        handletextpad=.2, 
-                        borderpad=.02)
+                self.axr2.legend(llst, 
+                                 slst,
+                                 loc=3,
+                                 ncol=2,
+                                 markerscale=1, 
+                                 borderaxespad=.01,
+                                 labelspacing=.07, 
+                                 handletextpad=.2, 
+                                 borderpad=.02)
                 
-                axr2.set_yscale('log')
-                axr2.set_xscale('log')
-                axr2.set_xlim(self.xlimits)
-                axr2.grid(True, 
-                          alpha=.25, 
-                          which='both', 
-                          color=(.25,.25,.25),
-                          lw=.25)
-                plt.setp(axr2.get_xticklabels(), visible=False)
+                self.axr2.set_yscale('log')
+                self.axr2.set_xscale('log')
+                self.axr2.set_xlim(self.xlimits)
+                self.axr2.grid(True, 
+                               alpha=.25, 
+                               which='both', 
+                               color=(.25,.25,.25),
+                              lw=.25)
+                plt.setp(self.axr2.get_xticklabels(), visible=False)
                                 
-                #--> set axes properties
-                axp2.set_xlabel('Period (s)', fontdict)
-                axp2.set_xscale('log')
-                axp2.set_ylim(ymin=-179.9, ymax=179.9)        
-                axp2.yaxis.set_major_locator(MultipleLocator(30))
-                axp2.yaxis.set_minor_locator(MultipleLocator(5))
-                axp2.grid(True, 
-                          alpha=.25, 
-                          which='both', 
-                          color=(.25,.25,.25),
-                          lw=.25) 
-        
-        
+                #--> set axes properties Phaseyx
+                self.axp2.set_xlabel('Period (s)', fontdict)
+                self.axp2.set_xscale('log')
+                self.axp2.set_ylim(ymin=-179.9, ymax=179.9)        
+                self.axp2.yaxis.set_major_locator(MultipleLocator(30))
+                self.axp2.yaxis.set_minor_locator(MultipleLocator(5))
+                self.axp2.grid(True, 
+                               alpha=.25, 
+                               which='both', 
+                               color=(.25,.25,.25),
+                              lw=.25) 
+                          
+            if self.plot_tipper.find('y')==0:
+                self.axt.plot(self.axr.get_xlim(),[0,0],color='k',lw=.5)
+                #--> set axis properties Tipper 
+                plt.setp(self.axp.get_xticklabels(), visible=False)
+                self.axp.set_xlabel('')
+                if self.plotnum==2:
+                    plt.setp(self.axp2.get_xticklabels(), visible=False)
+                    self.axp2.set_xlabel('')
+                    
+                self.axt.yaxis.set_major_locator(MultipleLocator(.2))               
+                self.axt.yaxis.set_minor_locator(MultipleLocator(.1))               
+                self.axt.set_xlabel('Period (s)', fontdict=fontdict)
+                self.axt.set_ylabel('Tipper', fontdict=fontdict)    
+                
+                self.axt.set_xscale('log')
+                if self.tipper_limits is None:
+                    tmax = max([np.sqrt(txr.max()**2+tyr.max()**2),
+                                np.sqrt(txi.max()**2+tyi.max()**2)])
+                    if tmax>1:
+                        tmax=.899
+                                
+                    tmin = -min([np.sqrt(txr.min()**2+tyr.min()**2),
+                                np.sqrt(txi.min()**2+tyi.min()**2)])
+                    if tmin<-1:
+                        tmin=-.899
+                                
+                    self.tipper_limits = (tmin-.1, tmax+.1)
+                
+                self.axt.set_ylim(self.tipper_limits)
+                self.axt.grid(True, alpha=.25, 
+                              which='both', 
+                              color=(.25,.25,.25),
+                              lw=.25)
+                              
+                self.axt.legend(tiplst, 
+                                stationlst,
+                                loc=3,
+                                ncol=2,
+                                markerscale=1, 
+                                borderaxespad=.01,
+                                labelspacing=.07, 
+                                handletextpad=.2, 
+                                borderpad=.02)
+                              
+            #--> set axes properties for strike and skew
+            if self.plot_strike=='y':
+                plt.setp(self.axt.get_xticklabels(), visible=False)
+                self.axt.set_xlabel('')
+                                        
+                if self.strike_limits is None:
+                    self.strike_limits = (-89.99, 89.99)
+                self.axs.plot(self.axr.get_xlim(),[0,0],color='k',lw=.5)
+                
+                self.axs.set_ylabel('Strike',
+                                    fontdict=fontdict)
+                self.axs.set_xlabel('Period (s)',
+                                    fontdict=fontdict)
+                self.axs.set_ylim(self.strike_limits)
+                self.axs.yaxis.set_major_locator(MultipleLocator(30))
+                self.axs.yaxis.set_minor_locator(MultipleLocator(5))
+                self.axs.set_xscale('log')
+                self.axs.grid(True, alpha=.25, 
+                              which='both', 
+                              color=(.25,.25,.25),
+                              lw=.25)
+                self.axs.legend(stlst, 
+                                stationlst,
+                                loc=3,
+                                ncol=2,
+                                markerscale=1, 
+                                borderaxespad=.01,
+                                labelspacing=.07, 
+                                handletextpad=.2, 
+                                borderpad=.02)
+           
+           #--> set axes properties for skew
+            if self.plot_skew=='y':
+                self.axs2.set_ylim(self.skew_limits)
+                self.axs2.yaxis.set_major_locator(MultipleLocator(3))
+                self.axs2.yaxis.set_minor_locator(MultipleLocator(1))
+                self.axs2.set_ylabel('Skew', color=self.skew_color)
+                self.axs2.set_xscale('log')
+                for tl in self.axs2.get_yticklabels():
+                    tl.set_color(self.skew_color)
+                    
+                self.axs2.legend(sklst, 
+                                 stationlst,
+                                 loc=4,
+                                 ncol=2,
+                                 markerscale=1, 
+                                 borderaxespad=.01,
+                                 labelspacing=.07, 
+                                 handletextpad=.2, 
+                                 borderpad=.02)
+                    
             plt.show()
-            
-            
 
     def update_plot(self):
         """
@@ -3524,10 +3969,574 @@ class PlotMultipleResistivityPhase(object):
     
 class PlotPhaseTensor(object):
     """
-    PlotPhaseTensor will plot the components of the phase tensor as ellipses
-    as well as the azimuth, phi_min and phi_max, ellipticity and skew.
+    Will plot phase tensor, strike angle, min and max phase angle, 
+    azimuth, skew, and ellipticity as subplots on one plot.  It can plot
+    the resistivity tensor along side the phase tensor for comparison.
+    
+    Arguments:
+    ----------
+        **xspacing** : float 
+                        spacing of tensors along x direction.
+                        *Default* is 6
+                        
+        **esize** : float
+                    size of tensor ellipses.
+                    *Default* is 5
+                    
+        **fignum** : int (figure number)
+        
+        **thetar** : float (angle in degrees)
+                     rotation angle clockwise positive assuming 0 is North.
+                     *Default* is 0
+                     
+        **save** : [ 'y' | 'n' ]
+                   * 'y' to save figure
+                   * 'n' to not save figure
+                   * *Default* is 'n'
+        
+        **savepath** : string
+                       path to save to, saves as savepath\statioAll.fmt
+                       
+        **fmt** : [ 'pdf' | 'eps' | 'svg' | 'png' | 'jpeg' ]
+                  format of save figure pdf,svg,eps,ps,png
+        
+        **dpi** : int
+                  Dots-per-inch resolution of figure.
+                  *Default* is 300
+        
+        **coordrot** : [ 90 | 180 | 270 ]
+                      rotation of coordinate directions assuming Y North
+                      and X East.  If data measured in X North, Y East
+                      coordrot=180.  *Default* is 180
+                      
+        **rpmm** : tuple (min,max)
+                   min and max of resistivity tensor on log10 scale
+        
+        **ptmm** : tuple (min,max)
+                   min an max of phase tensor
+        
+        **restensor** : [ 'y' | 'n' ]
+                        * 'y' to plot the resistivity tensors along with 
+                           the phase tensors
+                        * 'n' to not plot resistivity tensors
+                        * *Default* is 'n'
+                        
+    :Example: ::
+        
+        #To plot just the phase tensor components
+        >>> z1 = Z.Z(edifile)
+        >>> z1.plotPTAll()
+        
     """
-    pass
+        
+        
+    def __init__(self, filename=None, z_object=None, mt_object=None, 
+                 pt_object=None, fignum=1, dpi=300, rot_z=0, plot_yn='y'):
+        
+        #--> get mt object 
+        if filename is not None:
+            self._mt = MTplot(filename=filename)
+        elif z_object is not None:
+            self._mt = MTplot(z_object=z_object)
+        elif mt_object is not None:
+            self._mt = mt_object
+        elif pt_object is not None:
+            self.pt = pt_object
+            self._mt = MTplot()
+            self._mt.frequencies = self.pt.frequencies
+            
+        self.font_size = 7
+        self.dpi = dpi
+        self.fignum = fignum
+        self.fig_size = [8,8]
+        self.rot_z = rot_z
+        self.plot_yn=plot_yn
+        
+        self.ptmin_marker = 'o'
+        self.ptmax_marker = 's'
+        self.strike_inv_marker = 's'
+        self.strike_pt_marker = 'o'
+        self.strike_tp_marker = 'v'
+        self.skew_marker = 's'
+        self.ellip_marker = 's'
+        
+        self.ptmin_color = 'r'
+        self.ptmax_color = 'b'
+        self.strike_inv_color = 'c'
+        self.strike_pt_color = 'purple'
+        self.strike_tp_color= (.5, .5, 0)
+        self.skew_color = 'g'
+        self.ellip_color = 'orange'
+
+        self.marker_size = 2
+        self.marker_lw = .5
+        
+        self.pt_limits = None
+        self.strike_limits = None
+        self.ellip_limits = None
+        self.skew_limits = None
+
+        self.skew_cutoff = 3
+        self.ellip_cutoff = 0.2
+
+        self.ellipse_cmap = 'mt_rd2gr2bl'
+        self.ellipse_colorby = 'phimin'
+        self.ellipse_size = .25
+        if self.ellipse_cmap=='mt_segbl2wh2rd' or self.ellipse_colorby=='skew':
+            self.ellipse_range = (-9,9,3)
+        else:
+            self.ellipse_range = (0,90)
+
+        self.ellipse_spacing = 1
+
+        self.label_dict = {-6:'$10^{-6}$',
+                           -5:'$10^{-5}$',
+                           -4:'$10^{-4}$',
+                           -3:'$10^{-3}$',
+                           -2:'$10^{-2}$', 
+                           -1:'$10^{-1}$', 
+                            0:'$10^{0}$',
+                            1:'$10^{1}$',
+                            2:'$10^{2}$',
+                            3:'$10^{3}$',
+                            4:'$10^{4}$',
+                            5:'$10^{5}$',
+                            6:'$10^{6}$',
+                            7:'$10^{7}$',
+                            8:'$10^{8}$'} 
+                            
+        self.cb_position = (.045, .78, .015, .12)
+                            
+        if self.plot_yn=='y':
+            self.plot()
+
+    def plot(self):
+        """
+        plots the phase tensor elements
+        """
+        
+        #Set plot parameters
+        plt.rcParams['font.size']=self.font_size
+        plt.rcParams['figure.subplot.left']=.1
+        plt.rcParams['figure.subplot.right']=.98
+        plt.rcParams['figure.subplot.bottom']=.1
+        plt.rcParams['figure.subplot.top']=.95
+        plt.rcParams['figure.subplot.wspace']=.21
+        plt.rcParams['figure.subplot.hspace']=.5
+        
+        font_dict = {'size':self.font_size, 'weight':'bold'}
+        font_dictt = {'size':self.font_size+2, 'weight':'bold'}
+        
+        #--> create plot instance
+        self.fig = plt.figure(self.fignum, self.fig_size, dpi=self.dpi)
+        plt.clf()
+        
+        #get phase tensor instance
+        try:
+            self.pt
+            self.pt.rotate(self.rot_z)
+        except AttributeError:
+            self.pt = self._mt.get_PhaseTensor()
+            self.pt.rotate(self.rot_z)
+            self.zinv = self._mt.get_Zinvariants()
+            self.zinv.rotate(self.rot_z)
+        
+        cmap = self.ellipse_cmap
+        ckmin = self.ellipse_range[0]
+        ckmax = self.ellipse_range[1]
+        try:
+            ckstep = float(self.ellipse_range[2])
+        except IndexError:
+            ckstep = 3
+            
+        if cmap=='mt_seg_bl2wh2rd':
+            bounds = np.arange(ckmin, ckmax+ckstep, ckstep)
+            nseg = float((ckmax-ckmin)/(2*ckstep))
+
+        #get the properties to color the ellipses by
+        if self.ellipse_colorby=='phiminang' or \
+           self.ellipse_colorby=='phimin':
+            colorarray = self.pt.phimin[0]
+    
+                                           
+        elif self.ellipse_colorby=='phidet':
+             colorarray = np.sqrt(abs(self.pt.det[0]))*(180/np.pi)
+             
+            
+        elif self.ellipse_colorby=='skew' or\
+             self.ellipse_colorby=='skew_seg':
+            colorarray = self.pt.beta[0]
+            
+        elif self.ellipse_colorby=='ellipticity':
+            colorarray = self.pt.ellipticity[0]
+            
+        else:
+            raise NameError(self.ellipse_colorby+' is not supported')
+     
+        #-------------plotPhaseTensor-----------------------------------
+        self.ax1 = self.fig.add_subplot(3, 1, 1,aspect='equal')
+        for ii, ff in enumerate(self._mt.period):
+            #make sure the ellipses will be visable
+            eheight = self.pt.phimin[0][ii]/self.pt.phimax[0][ii]*\
+                                                              self.ellipse_size
+            ewidth = self.pt.phimax[0][ii]/self.pt.phimax[0][ii]*\
+                                                              self.ellipse_size
+        
+            #create an ellipse scaled by phimin and phimax and oriented along
+            #the azimuth which is calculated as clockwise but needs to 
+            #be plotted counter-clockwise hence the negative sign.
+            ellipd=patches.Ellipse((np.log10(ff)*self.ellipse_spacing, 0),
+                                    width=ewidth,
+                                    height=eheight,
+                                    angle=90-self.pt.azimuth[0][ii])
+                                    
+            self.ax1.add_patch(ellipd)
+            
+        
+            #get ellipse color
+            if cmap.find('seg')>0:
+                ellipd.set_facecolor(mtcl.get_plot_color(colorarray[ii],
+                                                         self.ellipse_colorby,
+                                                         cmap,
+                                                         ckmin,
+                                                         ckmax,
+                                                         bounds=bounds))
+            else:
+                ellipd.set_facecolor(mtcl.get_plot_color(colorarray[ii],
+                                                         self.ellipse_colorby,
+                                                         cmap,
+                                                         ckmin,
+                                                         ckmax))
+            
+    
+        #----set axes properties-----------------------------------------------
+        #--> set tick labels and limits
+        xlimits = (np.floor(np.log10(self._mt.period[0])),
+                   np.ceil(np.log10(self._mt.period[-1])))
+        tklabels=[self.label_dict[np.round(tt)] 
+                              for tt in np.arange(xlimits[0],xlimits[-1]+1)]
+            
+
+        self.ax1.set_xlim(xlimits)
+        self.ax1.set_xticklabels(tklabels, fontdict={'size':self.font_size})
+        self.ax1.set_xlabel('Period (s)', fontdict=font_dict)
+        self.ax1.set_ylim(ymin=-1.5*self.ellipse_size, 
+                          ymax=1.5*self.ellipse_size)
+        
+        self.ax1.grid(True, 
+                     alpha=.25, 
+                     which='major', 
+                     color=(.25,.25,.25),
+                     lw=.25)
+        
+        plt.setp(self.ax1.get_yticklabels(), visible=False)
+        #add colorbar for PT
+#        self.cbax = self.fig.add_subplot(3,32,1)
+        self.cbax = self.fig.add_axes(self.cb_position)
+#        self.cbax.set_axis_off()
+        if cmap=='mt_seg_bl2wh2rd':
+            #make a color list
+            clst = [(cc,cc,1) for cc in np.arange(0,1+1./(nseg),1./(nseg))]+\
+                       [(1,cc,cc) for cc in np.arange(1,-1./(nseg),-1./(nseg))]
+            
+            #make segmented colormap
+            mt_seg_bl2wh2rd = colors.ListedColormap(clst)
+
+            #make bounds so that the middle is white
+            bounds = np.arange(ckmin-ckstep, ckmax+2*ckstep, ckstep)
+            
+            #normalize the colors
+            norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
+            
+            #make the colorbar
+            self.cbpt = mcb.ColorbarBase(self.cbax,
+                                       cmap=mt_seg_bl2wh2rd,
+                                       norm=norms,
+                                       orientation='vertical',
+                                       ticks=bounds[1:-1])
+        else:
+            self.cbpt = mcb.ColorbarBase(self.cbax,
+                                       cmap=mtcl.cmapdict[cmap],
+                                       norm=colors.Normalize(vmin=ckmin,
+                                                             vmax=ckmax),
+                                        orientation='vertical')
+        self.cbpt.set_ticks([ckmin,ckmax])
+        self.cbpt.set_ticklabels(['{0:.0f}'.format(ckmin),
+                                  '{0:.0f}'.format(ckmax)])
+        self.cbpt.ax.yaxis.set_label_position('left')
+        self.cbpt.ax.yaxis.set_label_coords(-1.05,.5)
+        self.cbpt.ax.yaxis.tick_right()
+        self.cbpt.ax.tick_params(axis='y',direction='in')
+        self.cbpt.set_label(self.ellipse_colorby, 
+                            fontdict={'size':self.font_size})
+        
+        #---------------plotStrikeAngle-----------------------------------
+        self.ax2 = self.fig.add_subplot(3, 2, 3)
+        az = self.pt.azimuth[0]
+        azerr = self.pt.azimuth[1]
+        
+        #put the strike into a coordinate system that goes from -90 to 90
+        az[np.where(az>90)] = az[np.where(az>90)]-180
+        az[np.where(az<-90)] = az[np.where(az<-90)]+180
+        
+        stlst = []
+        stlabel = []
+        
+        #plot phase tensor strike
+        ps2 = self.ax2.errorbar(self._mt.period, 
+                                az, 
+                                marker=self.strike_pt_marker, 
+                                ms=self.marker_size, 
+                                mfc=self.strike_pt_color, 
+                                mec=self.strike_pt_color, 
+                                mew=self.marker_lw,
+                                ls='none', 
+                                yerr=azerr, 
+                                ecolor=self.strike_pt_color,
+                                capsize=self.marker_size,
+                                elinewidth=self.marker_lw)
+                                
+        stlst.append(ps2[0])
+        stlabel.append('PT')
+        try:
+            strike = self.zinv.strike
+            strikeerr = np.nan_to_num(self.zinv.strike_err)
+            #put the strike into a coordinate system that goes from -90 to 90
+            strike[np.where(strike>90)] = strike[np.where(strike>90)]-180
+            strike[np.where(strike<-90)] = strike[np.where(strike<-90)]+180
+            
+            #plot invariant strike
+            erxy = self.ax2.errorbar(self._mt.period, 
+                                    strike, 
+                                    marker=self.strike_inv_marker, 
+                                    ms=self.marker_size, 
+                                    mfc=self.strike_inv_color, 
+                                    mec=self.strike_inv_color, 
+                                    mew=self.marker_lw,
+                                    ls='none', 
+                                    yerr=strikeerr, 
+                                    ecolor=self.strike_inv_color,
+                                    capsize=self.marker_size,
+                                    elinewidth=self.marker_lw)
+                              
+            stlst.append(erxy[0])
+            stlabel.append('Z_inv')
+        except AttributeError:
+            print 'Could not get z_invariants from pt, input z if desired.'
+            
+        if self._mt.tipper is not None:
+            #strike from tipper
+            tp = self._mt.get_Tipper()
+            s3 = tp.ang_real+90
+            
+            #fold to go from -90 to 90
+            s3[np.where(s3>90)] = s3[np.where(s3>90)]-180
+            s3[np.where(s3<-90)] = s3[np.where(s3<-90)]+180
+            
+            #plot strike with error bars
+            ps3 = self.ax2.errorbar(self._mt.period, 
+                                    s3, 
+                                    marker=self.strike_tp_marker, 
+                                    ms=self.marker_size, 
+                                    mfc=self.strike_tp_color, 
+                                    mec=self.strike_tp_color, 
+                                    mew=self.marker_lw,
+                                    ls='none', 
+                                    yerr=np.zeros_like(s3), 
+                                    ecolor=self.strike_tp_color,
+                                    capsize=self.marker_size,
+                                    elinewidth=self.marker_lw)
+                                    
+            stlst.append(ps3[0])
+            stlabel.append('Tipper')
+        
+             
+        self.ax2.legend(stlst,
+                        stlabel,
+                        loc='lower left',
+                        markerscale=.2,
+                        borderaxespad=.01,
+                        labelspacing=.1,
+                        handletextpad=.2,
+                        ncol=len(stlst),
+                        borderpad=.1,
+                        columnspacing=.1)
+                   
+        leg = plt.gca().get_legend()
+        ltext  = leg.get_texts()  # all the text.Text instance in the legend
+        plt.setp(ltext, fontsize=6)    # the legend text fontsize
+
+        if self.strike_limits==None:
+            self.strike_limits = (-89.99, 89.99)
+        
+        self.ax2.set_yscale('linear')
+        self.ax2.set_xscale('log')
+        self.ax2.set_xlim(xmax=10**xlimits[-1], xmin=10**xlimits[0])
+        self.ax2.set_ylim(self.strike_limits)
+        self.ax2.yaxis.set_major_locator(MultipleLocator(20))
+        self.ax2.yaxis.set_minor_locator(MultipleLocator(5))
+        self.ax2.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+                      lw=.25)
+        self.ax2.set_ylabel('Angle (deg)',fontdict=font_dict)
+        self.ax2.set_title('Strike',fontdict=font_dictt)
+        
+        #---------plot Min & Max Phase-----------------------------------------
+        minphi = self.pt.phimin[0]
+        minphierr = self.pt.phimin[1]
+        maxphi = self.pt.phimax[0]
+        maxphierr = self.pt.phimax[1]
+
+        self.ax3 = self.fig.add_subplot(3, 2, 4,sharex=self.ax2)
+        
+        ermin = self.ax3.errorbar(self._mt.period,
+                                  minphi,
+                                  marker=self.ptmin_marker,
+                                  ms=self.marker_size,
+                                  mfc='None',
+                                  mec=self.ptmin_color,
+                                  mew=self.marker_lw,
+                                  ls='None',
+                                  yerr=minphierr,
+                                  ecolor=self.ptmin_color,
+                                  capsize=self.marker_size,
+                                  elinewidth=self.marker_lw)
+                                
+        ermax = self.ax3.errorbar(self._mt.period,
+                                  maxphi,
+                                  marker=self.ptmax_marker,
+                                  ms=self.marker_size,
+                                  mfc='None',
+                                  mec=self.ptmax_color,
+                                  mew=self.marker_lw,
+                                  ls='None',
+                                  yerr=maxphierr,
+                                  ecolor=self.ptmax_color,
+                                  capsize=self.marker_size,
+                                  elinewidth=self.marker_lw)
+                           
+                
+        if self.pt_limits==None:
+            self.pt_limits = [min([self.pt.phimax[0].min(), 
+                                   self.pt.phimin[0].min()])-3, 
+                              max([self.pt.phimax[0].max(), 
+                                   self.pt.phimin[0].max()])+3]
+            if self.pt_limits[0]<-10:
+                self.pt_limits[0] = -9.9
+            if self.pt_limits[1]>100:
+                self.pt_limits[1] = 99.99
+        
+        self.ax3.set_xscale('log')
+        self.ax3.set_yscale('linear')
+        
+        self.ax3.legend((ermin[0],ermax[0]),
+                        ('$\phi_{min}$','$\phi_{max}$'),
+                        loc='lower left',
+                        markerscale=.2,
+                        borderaxespad=.01,
+                        labelspacing=.1,
+                        handletextpad=.2,
+                        ncol=2,
+                        borderpad=.01,
+                        columnspacing=.01)
+        
+        leg = plt.gca().get_legend()
+        ltext  = leg.get_texts()  # all the text.Text instance in the legend
+        plt.setp(ltext, fontsize=6.5)    # the legend text fontsize
+        
+        self.ax3.set_ylim(self.pt_limits)
+        self.ax3.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+                      lw=.25)
+
+        self.ax3.set_ylabel('Phase (deg)', fontdict=font_dict)
+        self.ax3.set_title('$\mathbf{\phi_{min}}$ and $\mathbf{\phi_{max}}$',
+                       fontdict=font_dictt)
+
+        #-----------------------plotSkew---------------------------------------
+        
+        skew = self.pt.skew[0]
+        skewerr = self.pt.skew[1]
+
+        self.ax5 = self.fig.add_subplot(3, 2, 5,sharex=self.ax2)
+        erskew = self.ax5.errorbar(self._mt.period,
+                                   skew,
+                                   marker=self.skew_marker,
+                                   ms=self.marker_size,
+                                   mfc='None',
+                                   mec=self.skew_color,
+                                   mew=self.marker_lw,
+                                   ls='None',
+                                   yerr=skewerr,
+                                   ecolor=self.skew_color,
+                                   capsize=self.marker_size,
+                                   elinewidth=self.marker_lw)
+        
+        #plot lines indicating not 3d
+        self.ax5.plot([10**xlimits[0], 10**xlimits[-1]],
+                      [self.skew_cutoff, self.skew_cutoff],
+                      ls='--',
+                      color=self.skew_color,
+                      lw=1)
+                      
+        self.ax5.plot([10**xlimits[0], 10**xlimits[-1]],
+                      [-self.skew_cutoff, -self.skew_cutoff],
+                      ls='--',
+                      color=self.skew_color,
+                      lw=1)
+
+        
+        self.ax5.set_xscale('log')
+        self.ax5.set_yscale('linear')
+        self.ax5.yaxis.set_major_locator(MultipleLocator(ckstep))
+
+        if self.skew_limits is None:
+            self.skew_limits=(-10,10)
+        self.ax5.set_ylim(self.skew_limits)
+        self.ax5.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+                      lw=.25)
+        self.ax5.set_xlabel('Period (s)',fontdict=font_dict)
+        self.ax5.set_ylabel('Skew Angle (deg)',fontdict=font_dict)
+        self.ax5.set_title('Skew Angle',fontdict=font_dictt)
+        
+        #----------------------plotEllipticity--------------------------------
+        ellipticity = self.pt.ellipticity[0]
+        ellipticityerr=self.pt.ellipticity[1]
+
+        self.ax6 = self.fig.add_subplot(3, 2, 6, sharex=self.ax2)
+        erskew = self.ax6.errorbar(self._mt.period,
+                                   ellipticity,
+                                   marker=self.ellip_marker,
+                                   ms=self.marker_size,
+                                   mfc='None',
+                                   mec=self.ellip_color,
+                                   mew=self.marker_lw,
+                                   ls='None',
+                                   yerr=ellipticityerr,
+                                   ecolor=self.ellip_color,
+                                   capsize=self.marker_size,
+                                   elinewidth=self.marker_lw)
+        
+        #draw a line where the ellipticity is not 2d                           
+        self.ax6.plot([10**xlimits[0], 10**xlimits[-1]],
+                      [self.ellip_cutoff, self.ellip_cutoff],
+                      ls='--',
+                      color=self.ellip_color,
+                      lw=1)
+                      
+        self.ax6.set_xscale('log')
+        self.ax6.set_yscale('linear')
+
+        self.ax6.yaxis.set_major_locator(MultipleLocator(.1))
+
+        self.ax6.set_ylim(ymin=0,ymax=1)
+        self.ax6.grid(True, alpha=.25, which='both', color=(.25,.25,.25),
+                      lw=.25)
+        self.ax6.set_xlabel('Period (s)',fontdict=font_dict)
+        self.ax6.set_ylabel('$\mathbf{\phi_{max}-\phi_{min}/\phi_{max}+\phi_{min}}$',
+                            fontdict=font_dict)
+        self.ax6.set_title('Ellipticity',fontdict=font_dictt)
+        
+        self.fig.suptitle('Phase Tensor Elements for: '+self._mt.station,
+                          fontdict={'size':self.font_size+3, 'weight':'bold'})
 
 
 class PlotPhaseTensorPseudoSection(object):
@@ -3733,14 +4742,19 @@ class PlotPhaseTensorPseudoSection(object):
     """
     
     
-    def __init__(self, filenamelst, ellipse_dict={}, stretch=(50,25), 
-                 stationid=(0,4), title=None, cb_dict={}, linedir='ns', 
-                 fignum=1, rotz=0, figsize=[6,6], dpi=300, plot_tipper='n', 
-                 arrow_dict={}, tscale='period', font_size=7, plot_yn='y',
-                 xlim=None, ylim=None):
+    def __init__(self, fn_lst=None, res_object_lst=None,
+                 z_object_lst=None, tipper_object_lst=None, mt_object_lst=None,
+                 ellipse_dict={}, stretch=(50,25), stationid=(0,4), title=None,
+                 cb_dict={}, linedir='ns', fignum=1, rot_z=0, figsize=[6,6], 
+                 dpi=300, plot_tipper='n', arrow_dict={}, tscale='period', 
+                 font_size=7, plot_yn='y', xlim=None, ylim=None):
 
         #----set attributes for the class-------------------------
-        self.fn_list = filenamelst
+        self.mt_lst = self._get_mtlst(fn_lst=fn_lst, 
+                                      res_object_lst=res_object_lst,
+                                      z_object_lst=z_object_lst, 
+                                      tipper_object_lst=tipper_object_lst, 
+                                      mt_object_lst=mt_object_lst)
         
         #--> set the ellipse properties
         
@@ -3760,7 +4774,7 @@ class PlotPhaseTensorPseudoSection(object):
         try:
             self.ellipse_range = ellipse_dict['range']
         except KeyError:
-            if self.ellipse_colorby=='beta' or self.ellipse_colorby=='beta_seg':
+            if self.ellipse_colorby=='skew' or self.ellipse_colorby=='skew_seg':
                 self.ellipse_range = (-9,9,3)
             elif self.ellipse_colorby=='ellipticity':
                 self.ellipse_range = (0,1,.1)
@@ -3776,10 +4790,10 @@ class PlotPhaseTensorPseudoSection(object):
         try:
             self.ellipse_cmap = ellipse_dict['cmap']
         except KeyError:
-            if self.ellipse_colorby=='beta':
+            if self.ellipse_colorby=='skew':
                 self.ellipse_cmap = 'mt_bl2wh2rd'
                 
-            elif self.ellipse_colorby=='beta_seg':
+            elif self.ellipse_colorby=='skew_seg':
                 self.ellipse_cmap = 'mt_seg_bl2wh2rd'
                 
             else:
@@ -3810,7 +4824,6 @@ class PlotPhaseTensorPseudoSection(object):
         self.dpi = dpi
         self.font_size = font_size
         self.tscale = tscale
-        self.rotz = rotz
         self.figsize = figsize
         self.fignum = fignum
         self.linedir = linedir
@@ -3819,6 +4832,20 @@ class PlotPhaseTensorPseudoSection(object):
         self.ystep = 4
         self.xlimits = xlim
         self.ylimits = ylim
+        
+        #if rotation angle is an int or float make an array the length of 
+        #mt_lst for plotting purposes
+        if type(rot_z) is float or type(rot_z) is int:
+            self.rot_z = np.array([rot_z]*len(self.mt_lst))
+        
+        #if the rotation angle is an array for rotation of different 
+        #frequencies than repeat that rotation array to the len(mt_lst)
+        elif type(rot_z) is np.ndarray:
+            if rot_z.shape[0]!=len(self.mt_lst):
+                self.rot_z = np.repeat(rot_z, len(self.mt_lst))
+                
+        else:
+            self.rot_z = rot_z
         
         #--> set induction arrow properties 
         self.plot_tipper = plot_tipper
@@ -3876,6 +4903,63 @@ class PlotPhaseTensorPseudoSection(object):
         if self.plot_yn=='y':
             self.plot()
             
+    #---- get list of mt objects----------------------------------------------        
+    def _get_mtlst(self, fn_lst=None, res_object_lst=None, z_object_lst=None, 
+                   tipper_object_lst=None, mt_object_lst=None):
+                     
+        """
+        gets a list of mt objects from the inputs       
+        
+        """
+        
+        #first need to find something to loop over
+        try:
+            ns = len(fn_lst)
+            mt_lst = [MTplot(filename=fn) for fn in fn_lst]
+            print 'Reading {0} stations'.format(ns)
+            return mt_lst
+        except TypeError:
+            try:
+                ns = len(res_object_lst)
+                mt_lst = [MTplot(res_phase_object=res_obj) 
+                            for res_obj in res_object_lst]
+                try:
+                    nt = len(tipper_object_lst)
+                    if nt!=ns:
+                        raise mtexcept.MTpyError_inputarguments('length '+\
+                              ' of z_lst is not equal to tip_lst'+\
+                              '; nz={0}, nt={1}'.format(ns, nt))
+                    for mt,tip_obj in zip(mt_lst,tipper_object_lst):
+                        mt._Tipper = tip_obj 
+                except TypeError:
+                    pass
+                print 'Reading {0} stations'.format(ns)
+                return mt_lst
+            except TypeError:
+                try: 
+                    ns = len(z_object_lst)
+                    mt_lst = [MTplot(z_object=z_obj) for z_obj in z_object_lst]
+                    try:
+                        nt = len(tipper_object_lst)
+                        if nt!=ns:
+                            raise mtexcept.MTpyError_inputarguments('length '+\
+                                  ' of z_lst is not equal to tip_lst'+\
+                                  '; nz={0}, nt={1}'.format(ns, nt))
+                        for mt,tip_obj in zip(mt_lst,tipper_object_lst):
+                            mt._Tipper = tip_obj 
+                    except TypeError:
+                        pass
+                    print 'Reading {0} stations'.format(ns)
+                    return mt_lst
+                    
+                except TypeError:
+                    try:
+                        ns = len(mt_object_lst)
+                        print 'Reading {0} stations'.format(ns)
+                        return mt_lst
+                    except TypeError:
+                        raise IOError('Need to input an iteratble list')
+            
         
     def plot(self):
         """
@@ -3910,29 +4994,25 @@ class PlotPhaseTensorPseudoSection(object):
         try:
             ckstep = float(self.ellipse_range[2])
         except IndexError:
-            if cmap=='mt_seg_bl2wh2rd':
-                raise ValueError('Need to input range as (min,max,step)')
-            else:
-                ckstep=3
+            ckstep=3
                 
         nseg = float((ckmax-ckmin)/(2*ckstep))
 
         if cmap=='mt_seg_bl2wh2rd':
             bounds = np.arange(ckmin, ckmax+ckstep, ckstep)
         #plot phase tensor ellipses
-        for ii,fn in enumerate(self.fn_list):
-            imp = Z.Z(fn)
-            self.stationlst.append(imp.station[self.stationid[0]:self.stationid[1]])
+        for ii,mt in enumerate(self.mt_lst):
+            self.stationlst.append(mt.station[self.stationid[0]:self.stationid[1]])
             
             #set the an arbitrary origin to compare distance to all other 
             #stations.
             if ii==0:
-                east0 = imp.lon
-                north0 = imp.lat
+                east0 = mt.lon
+                north0 = mt.lat
                 offset = 0.0
             else:
-                east = imp.lon
-                north = imp.lat
+                east = mt.lon
+                north = mt.lat
                 if self.linedir=='ew': 
                     if east0<east:
                         offset = np.sqrt((east0-east)**2+(north0-north)**2)
@@ -3952,20 +5032,29 @@ class PlotPhaseTensorPseudoSection(object):
             
             #get phase tensor elements and flip so the top is small periods/high 
             #frequencies
-            pt = imp.getPhaseTensor(thetar=self.rotz)
-            periodlst = imp.period[::-1]
-            phimax = pt.phimax[::-1]
-            phimin = pt.phimin[::-1]
-            azimuth = pt.azimuth[::-1]
+            pt = mt.get_PhaseTensor()
+            pt.rotate(self.rot_z[ii])
             
+            periodlst = mt.period[::-1]
+            phimax = pt.phimax[0][::-1]
+            phimin = pt.phimin[0][::-1]
+            azimuth = pt.azimuth[0][::-1]
+        
             #if there are induction arrows, flip them as pt
             if self.plot_tipper.find('y')==0:
-                tip = imp.getTipper(thetar=self.rotz)
-                tmr = tip.magreal[::-1]
-                tmi = tip.magimag[::-1]
-                tar = tip.anglereal[::-1]
-                tai = tip.angleimag[::-1]
-                
+                tip = mt.get_Tipper()
+                tip.rotate(self.rot_z[ii])
+                if tip.mag_real is not None:
+                    tmr = tip.mag_real[::-1]
+                    tmi = tip.mag_imag[::-1]
+                    tar = tip.ang_real[::-1]
+                    tai = tip.ang_imag[::-1]
+                else:
+                    tmr = np.zeros(len(mt.period))
+                    tmi = np.zeros(len(mt.period))
+                    tar = np.zeros(len(mt.period))
+                    tai = np.zeros(len(mt.period))
+                    
                 aheight = self.arrow_head_length 
                 awidth = self.arrow_head_width
                 alw = self.arrow_lw
@@ -3973,14 +5062,14 @@ class PlotPhaseTensorPseudoSection(object):
             #get the properties to color the ellipses by
             if self.ellipse_colorby=='phiminang' or \
                self.ellipse_colorby=='phimin':
-                colorarray = pt.phiminang[::-1]
+                colorarray = pt.phimin[0][::-1]
                 
             elif self.ellipse_colorby=='phidet':
                  colorarray = np.sqrt(abs(pt.phidet[::-1]))*(180/np.pi)
                 
-            elif self.ellipse_colorby=='beta' or\
-                 self.ellipse_colorby=='beta_seg':
-                colorarray = pt.beta[::-1]
+            elif self.ellipse_colorby=='skew' or\
+                 self.ellipse_colorby=='skew_seg':
+                colorarray = pt.skew[0][::-1]
                 
             elif self.ellipse_colorby=='ellipticity':
                 colorarray = pt.ellipticity[::-1]
@@ -4015,7 +5104,7 @@ class PlotPhaseTensorPseudoSection(object):
                                         np.log10(ff)*self.ystretch),
                                         width=ewidth,
                                         height=eheight,
-                                        angle=-azimuth[jj])
+                                        angle=azimuth[jj]+90)
                 
                 #get face color info
                 if ck=='phiminang' or  ck=='phimin':
@@ -4030,10 +5119,10 @@ class PlotPhaseTensorPseudoSection(object):
                        cmap=='mt_bl2gr2rd':
                         cvar = 2*cvar-1
                     
-                elif ck=='beta':
+                elif ck=='skew':
                     cvar = 2*colorarray[jj]/(ckmax-ckmin)
                     
-                elif ck=='beta_seg':
+                elif ck=='skew_seg':
                     for bb in range(bounds.shape[0]):
                         if colorarray[jj]>=bounds[bb] and colorarray[jj]<bounds[bb+1]:
                             cvar = float(bounds[bb])/bounds.max()
@@ -4130,6 +5219,7 @@ class PlotPhaseTensorPseudoSection(object):
                         
                         maxlength = np.sqrt((txr/self.arrow_size)**2+\
                                             (tyr/self.arrow_size)**2)
+                                            
                         if maxlength>self.arrow_threshold:
                             pass
                         else:
@@ -5196,7 +6286,7 @@ class PlotPhaseTensorMaps(object):
             imp = Z.Z(fn)
             
             #try to find the frequency in the frequency list of each file
-            freqfind = [ff for ff,f2 in enumerate(imp.frequency) 
+            freqfind = [ff for ff,f2 in enumerate(mt.frequency) 
                          if f2>self.plot_frequency*(1-self.ftol) and
                             f2<self.plot_frequency*(1+self.ftol)]
             try:
@@ -5204,7 +6294,7 @@ class PlotPhaseTensorMaps(object):
                 jj = self.jj
 
                 #get phase tensor
-                pt = imp.getPhaseTensor(thetar=self.rotz)
+                pt = mt.getPhaseTensor(thetar=self.rotz)
     
                 #change any nan to a number just in case
                 pt.phimax = np.nan_to_num(pt.phimax)
@@ -5212,14 +6302,14 @@ class PlotPhaseTensorMaps(object):
                 
                 #if map scale is lat lon set parameters                
                 if self.mapscale=='latlon':
-                    latlst[ii] = imp.lat
-                    lonlst[ii] = imp.lon
-                    plotx = imp.lon-refpoint[0]
-                    ploty = imp.lat-refpoint[1]
+                    latlst[ii] = mt.lat
+                    lonlst[ii] = mt.lon
+                    plotx = mt.lon-refpoint[0]
+                    ploty = mt.lat-refpoint[1]
                 
                 #if map scale is in meters easting and northing
                 elif self.mapscale=='eastnorth':
-                    zone,east,north = utm2ll.LLtoUTM(23, imp.lat, imp.lon)
+                    zone,east,north = utm2ll.LLtoUTM(23, mt.lat, mt.lon)
                     
                     #set the first point read in as a refernce other points                    
                     if ii==0:
@@ -5232,7 +6322,7 @@ class PlotPhaseTensorMaps(object):
                         #check to make sure the zone is the same this needs
                         #to be more rigorously done
                         if zone1!=zone:
-                            print 'Zone change at station '+imp.station
+                            print 'Zone change at station '+mt.station
                             if zone1[0:2]==zone[0:2]:
                                 pass
                             elif int(zone1[0:2])<int(zone[0:2]):
@@ -5251,7 +6341,7 @@ class PlotPhaseTensorMaps(object):
                 
                 #if mapscale is in km easting and northing
                 elif self.mapscale=='eastnorthkm':
-                    zone,east,north = utm2ll.LLtoUTM(23, imp.lat, imp.lon)
+                    zone,east,north = utm2ll.LLtoUTM(23, mt.lat, mt.lon)
                     if ii==0:
                         zone1 = zone
                         plotx = (east-refpoint[0])/1000.
@@ -5259,7 +6349,7 @@ class PlotPhaseTensorMaps(object):
                     
                     else:
                         if zone1!=zone:
-                            print 'Zone change at station '+imp.station
+                            print 'Zone change at station '+mt.station
                             if zone1[0:2]==zone[0:2]:
                                 pass
                             elif int(zone1[0:2])<int(zone[0:2]):
@@ -5406,7 +6496,7 @@ class PlotPhaseTensorMaps(object):
                 if self.plot_tipper.find('y')==0:
                     
                     #get tipper
-                    tip = imp.getTipper(thetar=self.rotz)
+                    tip = mt.getTipper(thetar=self.rotz)
                     
                     #make some local parameters for easier typing                    
                     ascale = self.arrow_size
@@ -5457,7 +6547,7 @@ class PlotPhaseTensorMaps(object):
                 try:
                     self.ax.text(plotx,
                             ploty+self.station_pad,
-                            imp.station[self.station_id[0]:self.station_id[1]],
+                            mt.station[self.station_id[0]:self.station_id[1]],
                             horizontalalignment='center',
                             verticalalignment='baseline',
                             fontdict=self.station_font_dict)
@@ -5467,7 +6557,7 @@ class PlotPhaseTensorMaps(object):
             #==> print a message if couldn't find the frequency
             except IndexError:
                 print 'Did not find {0:.5g} Hz for station {1}'.format(
-                                               self.plot_frequency,imp.station)
+                                               self.plot_frequency,mt.station)
         
         #--> set axes properties depending on map scale------------------------
         if self.mapscale=='latlon':    
@@ -7371,8 +8461,8 @@ class PlotTimeSeries(object):
 #    #plot phase tensor ellipses
 #    for ii,fn in enumerate(filenamelst):
 #        imp=Z.Z(fn)
-#        stationlst.append(imp.station[stationid[0]:stationid[1]])
-#        zone,east,north=utm2ll.LLtoUTM(23,imp.lat,imp.lon)
+#        stationlst.append(mt.station[stationid[0]:stationid[1]])
+#        zone,east,north=utm2ll.LLtoUTM(23,mt.lat,mt.lon)
 #        
 #        if ii==0:
 #            east0=east

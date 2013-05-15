@@ -1198,18 +1198,26 @@ class Tipper(object):
                 
         """
         
-        mag_real = np.sqrt(self.tipper[:,0,0].real**2 + \
-                            self.tipper[:,0,1].real**2)
-        mag_imag = np.sqrt(self.tipper[:,0,0].imag**2 + 
-                            self.tipper[:,0,1].imag**2)
+        if self.tipper is not None:
+            mag_real = np.sqrt(self.tipper[:,0,0].real**2 + \
+                                self.tipper[:,0,1].real**2)
+            mag_imag = np.sqrt(self.tipper[:,0,0].imag**2 + 
+                                self.tipper[:,0,1].imag**2)
+            #get the angle, need to make both parts negative to get it into the
+            #parkinson convention where the arrows point towards the conductor
         
-        #get the angle, need to make both parts negative to get it into the
-        #parkinson convention where the arrows point towards the conductor
-        ang_real=np.rad2deg(np.arctan2(-self.tipper[:,0,1].real,
-                                       -self.tipper[:,0,0].real))
-                                       
-        ang_imag=np.rad2deg(np.arctan2(-self.tipper[:,0,1].imag,
-                                       -self.tipper[:,0,0].imag))
+            ang_real=np.rad2deg(np.arctan2(-self.tipper[:,0,1].real,
+                                           -self.tipper[:,0,0].real))
+                                           
+            ang_imag=np.rad2deg(np.arctan2(-self.tipper[:,0,1].imag,
+                                           -self.tipper[:,0,0].imag))
+        else:
+            mag_real = None
+            mag_imag = None
+            ang_real = None
+            ang_imag = None
+        
+
                                        
         return mag_real, ang_real, mag_imag, ang_imag
         
