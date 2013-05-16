@@ -764,6 +764,56 @@ def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None,
                     return mt_lst
                 except TypeError:
                     raise IOError('Need to input an iteratble list')
+                    
+#---function for writing values to file
+def _make_value_str(value, value_lst=None, spacing='{0:^8}', 
+                    value_format='{0: .2f}', append=False, add=False):
+    """
+    helper function for writing values to a file, takes in a value and either
+    appends or adds value to value_lst according to the spacing and format of 
+    the string.
+    
+    Arguments:
+    ----------
+        **value** : float
+        
+        **value_lst** : list of values converted to strings
+        
+        **spacing** : spacing of the string that the value will be converted
+                      to.
+                      
+        **value_format** : format of the string that the value is being 
+                            coverted to.
+        
+        **append** : [ True | False]
+                     if True then appends the value to value list
+        
+        **add** : [ True | False ]
+                  if True adds value string to the other value strings in
+                  value_lst
+    
+    Returns:
+    --------
+        **value_lst** : the input value_lst with the new value either 
+                        added or appended.
+        or
+        
+        **value_str** : value string if add and append are false
+    """                        
+    
+    value_str = spacing.format(value_format.format(value))
+    
+    if append is True:
+        value_lst.append(value_str)
+        return value_lst
+    if add is True:
+        value_lst += value_str
+        return value_lst
+        
+    if append==False and add==False:
+        return value_str
+        
+    return value_lst
 
 #==============================================================================
 # object for computing resistivity and phase  
@@ -2560,6 +2610,31 @@ class PlotMultipleResPhase(object):
         #plot on initializing
         if plot_yn=='y':
             self.plot()
+            
+    #---rotate data on setting rot_z
+    def _set_rot_z(self, rot_z):
+        """
+        need to rotate data when setting z
+        """
+        
+        #if rotation angle is an int or float make an array the length of 
+        #mt_lst for plotting purposes
+        if type(rot_z) is float or type(rot_z) is int:
+            rot_z = np.array([rot_z]*len(self.mt_lst))
+        
+        #if the rotation angle is an array for rotation of different 
+        #frequency than repeat that rotation array to the len(mt_lst)
+        elif type(rot_z) is np.ndarray:
+            if rot_z.shape[0]!=len(self.mt_lst):
+                rot_z = np.repeat(rot_z, len(self.mt_lst))
+                
+        else:
+            pass
+            
+        for ii,mt in enumerate(self.mt_lst):
+            mt.rot_z = rot_z[ii]
+            
+    rot_z = property(fset=_set_rot_z, doc="rotation angle(s)")
                             
     #---plot the resistivity and phase
     def plot(self):
@@ -5196,6 +5271,31 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
         self.plot_yn = plot_yn
         if self.plot_yn=='y':
             self.plot()
+            
+    #---rotate data on setting rot_z
+    def _set_rot_z(self, rot_z):
+        """
+        need to rotate data when setting z
+        """
+        
+        #if rotation angle is an int or float make an array the length of 
+        #mt_lst for plotting purposes
+        if type(rot_z) is float or type(rot_z) is int:
+            rot_z = np.array([rot_z]*len(self.mt_lst))
+        
+        #if the rotation angle is an array for rotation of different 
+        #frequency than repeat that rotation array to the len(mt_lst)
+        elif type(rot_z) is np.ndarray:
+            if rot_z.shape[0]!=len(self.mt_lst):
+                rot_z = np.repeat(rot_z, len(self.mt_lst))
+                
+        else:
+            pass
+            
+        for ii,mt in enumerate(self.mt_lst):
+            mt.rot_z = rot_z[ii]
+            
+    rot_z = property(fset=_set_rot_z, doc="rotation angle(s)")
         
     def plot(self):
         """
@@ -5269,7 +5369,6 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
             #get phase tensor elements and flip so the top is small periods/high 
             #frequency
             pt = mt.get_PhaseTensor()
-            pt.rotate(self.rot_z[ii])
             
             periodlst = mt.period[::-1]
             phimax = pt.phimax[0][::-1]
@@ -5279,7 +5378,6 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
             #if there are induction arrows, flip them as pt
             if self.plot_tipper.find('y')==0:
                 tip = mt.get_Tipper()
-                tip.rotate(self.rot_z[ii])
                 if tip.mag_real is not None:
                     tmr = tip.mag_real[::-1]
                     tmi = tip.mag_imag[::-1]
@@ -5601,7 +5699,10 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
         """
         
         if save_path==None:
-            svpath = os.path.dirname(self.fn_list[0])
+            try:
+                svpath = os.path.dirname(self.mt_lst[0].fn)
+            except TypeError:
+                raise IOError('Need to input save_path, could not find a path')
         else:
             svpath = save_path
         
@@ -5618,162 +5719,268 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
             
         if self.tscale=='frequency':
             plst = 1./plst
-            
+        
+        #match station list with mt list
+        slst = [mt for ss in self.stationlst for mt in self.mt_lst 
+                 if os.path.basename(mt.fn).find(ss)>=0]
+           
+        ns = len(slst)+1
+        nt = len(plst)+1
+        
         #set some empty lists to put things into
-        sklst = []
-        phiminlst = []
-        phimaxlst = []
-        elliplst = []
-        azimlst = []
-        tiplstr = []
-        tiplsti = []
-        tiplstraz = []
-        tiplstiaz = []
+        sklst = np.zeros((nt, ns), dtype='|S8')
+        phiminlst = np.zeros((nt, ns), dtype='|S8')
+        phimaxlst = np.zeros((nt, ns), dtype='|S8')
+        elliplst = np.zeros((nt, ns), dtype='|S8')
+        azimlst = np.zeros((nt, ns), dtype='|S8')
+        tiplstr = np.zeros((nt, ns), dtype='|S8')
+        tiplsti = np.zeros((nt, ns), dtype='|S8')
+        tiplstraz = np.zeros((nt, ns), dtype='|S8')
+        tiplstiaz = np.zeros((nt, ns), dtype='|S8')
         
-        #initialize string
-        stationstr = ''
+         
+        sklst[0,0] = '{0:>8} '.format(self.tscale)
+        phiminlst[0,0] = '{0:>8} '.format(self.tscale)
+        phimaxlst[0,0] = '{0:>8} '.format(self.tscale)
+        elliplst[0,0] = '{0:>8} '.format(self.tscale)
+        azimlst[0,0] = '{0:>8} '.format(self.tscale)
+        tiplstr[0,0] = '{0:>8} '.format(self.tscale)
+        tiplstraz[0,0] = '{0:>8} '.format(self.tscale)
+        tiplsti[0,0] = '{0:>8} '.format(self.tscale)
+        tiplstiaz[0,0] = '{0:>8} '.format(self.tscale)           
         
-        #match station list with filename list
-        slst = [fn for ss in self.stationlst for fn in self.fn_list 
-                 if os.path.basename(fn).find(ss)>=0]
-        
-        #first write the period or frequency as the first column
-        for t1 in plst:
-            sklst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            phiminlst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            phimaxlst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            elliplst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            azimlst.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            tiplstr.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            tiplstraz.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            tiplsti.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-            tiplstiaz.append('{0:>8}  '.format('{0:.3f}'.format(t1)))
-        
-        for kk,fn in enumerate(slst):
+        #get the period as the first column
+        for tt,t1 in enumerate(plst,1):
+            sklst[tt,0] = t1
+            phiminlst[tt,0] = t1
+            phimaxlst[tt,0] = t1
+            elliplst[tt,0] = t1
+            azimlst[tt,0] = t1
+            tiplstr[tt,0] = t1
+            tiplstraz[tt,0] = t1
+            tiplsti[tt,0] = t1
+            tiplstiaz[tt,0] = t1
             
-            z1 = Z.Z(fn)
-            pt = z1.getPhaseTensor(thetar=self.rotz)
-            tip = z1.getTipper()
+        #fill out the rest of the values
+        for kk,mt in enumerate(slst,1):
+            
+            pt = mt.get_PhaseTensor()
+            tip = mt.get_Tipper()
+                
             if self.tscale == 'period':
-                tlst = z1.period
+                tlst = mt.period
                     
             elif self.tscale == 'frequency':
-                tlst = z1.frequency
-                
-                 
-            if kk==0:
-                stationstr += '{0:>8}  '.format(self.tscale)
-                
-            stationstr += '{0:^8}'.format(z1.station[self.stationid[0]:\
-                                                self.stationid[1]])
-            for mm,t1 in enumerate(plst):
-                #check to see if the periods match or are at least close in
-                #case there are frequency missing
-                t1_yn = False
-                for ff,t2 in enumerate(tlst):
-                    if t1==t2: 
-                        #add on the value to the present row
-                        sklst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.beta[ff]))
-                        phiminlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phiminang[ff]))
-                        phimaxlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phimaxang[ff]))
-                        elliplst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.ellipticity[ff]))
-                        azimlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.azimuth[ff]))
-                        tiplstr[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magreal[ff]))
-                        tiplstraz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.anglereal[ff]))
-                        tiplsti[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magimag[ff]))
-                        tiplstiaz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.angleimag[ff]))
-                        t1_yn = True
-                        break
-                        
-                    elif t2>t1*(1-ptol) and t2<t1*(1+ptol):
-                        #add on the value to the present row
-                        sklst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.beta[ff]))
-                        phiminlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phiminang[ff]))
-                        phimaxlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.phimaxang[ff]))
-                        elliplst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.ellipticity[ff]))
-                        azimlst[mm]+='{0:^8}'.format('{0: .2f}'.format(pt.azimuth[ff]))
-                        tiplstr[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magreal[ff]))
-                        tiplstraz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.anglereal[ff]))
-                        tiplsti[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.magimag[ff]))
-                        tiplstiaz[mm]+='{0:>8}  '.format('{0:.3f}'.format(tip.angleimag[ff]))
-                        t1_yn = True                        
-                        break
-                    else:
-                        t1_yn = False
-                if t1_yn==False:
-                    print 'No value for {0} at {1:.2f}'.format(z1.station,t2)
-                    #add on the value to the present row
-                    sklst[mm]+='{0:^8}'.format('*'*6)
-                    phiminlst[mm]+='{0:^8}'.format('*'*6)
-                    phimaxlst[mm]+='{0:^8}'.format('*'*6)
-                    elliplst[mm]+='{0:^8}'.format('*'*6)
-                    azimlst[mm]+='{0:^8}'.format('*'*6)
-                    tiplstr[mm]+='{0:>8}  '.format('*'*6)
-                    tiplstraz[mm]+='{0:>8}  '.format('*'*6)
-                    tiplsti[mm]+='{0:>8}  '.format('*'*6)
-                    tiplstiaz[mm]+='{0:>8}  '.format('*'*6)
-
-        for mm in range(len(plst)):
-            sklst[mm] += '\n'
-            phiminlst[mm] += '\n'
-            phimaxlst[mm] += '\n'
-            elliplst[mm] += '\n'
-            azimlst[mm] += '\n'
-            tiplstr[mm]+='\n'
-            tiplstraz[mm]+='\n'
-            tiplsti[mm]+='\n'
-            tiplstiaz[mm]+='\n'
-                
-
-                
+                tlst = mt.frequency
+ 
+            try:
+                stationstr = '{0:^8}'.format(mt.station[self.stationid[0]:\
+                                                    self.stationid[1]])
+            except AttributeError:
+                stationstr = '{0:^8}'.format(mt.station)
             
-        #write end of line for station string
-        stationstr += '\n'
+            #-->  get station name as header in each file                                     
+            sklst[0,kk] = stationstr
+            phiminlst[0,kk] = stationstr
+            phimaxlst[0,kk] = stationstr
+            elliplst[0,kk] = stationstr
+            azimlst[0,kk] = stationstr
+            tiplstr[0,kk] = stationstr
+            tiplstraz[0,kk] = stationstr
+            tiplsti[0,kk] = stationstr
+            tiplstiaz[0,kk] = stationstr
+                                                
+            # If the all periods match for the station and the plotting period         
+            if tlst.all()==plst.all():
+                if pt.pt is not None:
+                    sklst[1:,kk] = pt.beta[0]
+                    phiminlst[1:,kk] = pt.phimin[0]
+                    phimaxlst[1:,kk] = pt.phimax[0]
+                    elliplst[1:,kk] = pt.ellipticity[0]
+                    azimlst[1:,kk] = pt.azimuth[0]
+                if tip.mag_real is not None:
+                    tiplstr[1:,kk] = tip.mag_real
+                    tiplstraz[1:,kk] = tip.ang_real
+                    tiplsti[1:,kk] = tip.mag_imag
+                    tiplstiaz[1:,kk] = tip.ang_imag
+                    
+            # otherwise search the period list to find a cooresponding period
+            else:   
+                for mm,t1 in enumerate(plst):
+                    #check to see if the periods match or are at least close in
+                    #case there are frequency missing
+                    t1_yn = False
+                    if t1==tlst[mm]:
+                        t1_yn = True
+                    elif tlst[mm]>t1*(1-ptol) and tlst[mm]<t1*(1+ptol):
+                        t1_yn = True
+                    
+                    if t1_yn==True:
+                        #add on the value to the present row
+                        if pt.beta[0] is not None:
+                            sklst[mm+1,kk] = pt.beta[0][mm]
+                            phiminlst[mm+1,kk] =pt.phimin[0][mm]
+                            phimaxlst[mm+1,kk] = pt.phimax[0][mm]
+                            elliplst[mm+1,kk] = pt.ellipticity[0][mm]
+                            azimlst[mm+1,kk] =pt.azimuth[0][mm]
+                        
+                        #add on the value to the present row
+                        if tip.mag_real is not None:
+                            tiplstr[mm+1,kk] = tip.mag_real[mm]
+                            tiplstraz[mm+1,kk] = tip.ang_real[mm]
+                            tiplsti[mm+1,kk] = tip.mag_imag[mm]
+                            tiplstiaz[mm+1,kk] = tip.ang_imag[mm]
+                    
+                    elif t1_yn==False:
+                        for ff,t2 in enumerate(tlst):
+                            if t2>t1*(1-ptol) and t2<t1*(1+ptol):
+                                #add on the value to the present row
+                                if pt.beta[0] is not None:
+                                    sklst[mm+1,kk] = pt.beta[0][ff]
+                                    phiminlst[mm+1,kk] =pt.phimin[0][ff]
+                                    phimaxlst[mm+1,kk] = pt.phimax[0][ff]
+                                    elliplst[mm+1,kk] = pt.ellipticity[0][ff]
+                                    azimlst[mm+1,kk] =pt.azimuth[0][ff]
+                                
+                                #add on the value to the present row
+                                if tip.mag_real is not None:
+                                    tiplstr[mm+1,kk] = tip.mag_real[ff]
+                                    tiplstraz[mm+1,kk] = tip.ang_real[ff]
+                                    tiplsti[mm+1,kk] = tip.mag_imag[ff]
+                                    tiplstiaz[mm+1,kk] = tip.ang_imag[ff]
+                                t1_yn = True
+                                break
+                            else:
+                                t1_yn = False
+
+        #write the arrays into lines properly formatted
+        t1_kwargs = {'spacing':'{0:^8} ', 'value_format':'{0:.2e}', 
+                     'append':False,'add':False}
+        t2_kwargs = {'spacing':'{0:^8}', 'value_format':'{0: .2f}', 
+                     'append':False,'add':False}
+        #create empty lists to put the concatenated strings into
+        sklines = []
+        phiminlines = []
+        phimaxlines = []
+        elliplines = []
+        azimlines = []
+        tprlines = []
+        tprazlines = []
+        tpilines = []
+        tpiazlines = []
+        
+        #if there are any blank strings set them as 0
+        sklst[np.where(sklst=='')]='0.0'
+        phiminlst[np.where(phiminlst=='')]='0.0'
+        phimaxlst[np.where(phimaxlst=='')]='0.0'
+        elliplst[np.where(elliplst=='')]='0.0'
+        azimlst[np.where(azimlst=='')]='0.0'
+        tiplstr[np.where(tiplstr=='')]='0.0'
+        tiplstraz[np.where(tiplstraz=='')]='0.0'
+        tiplsti[np.where(tiplsti=='')]='0.0'
+        tiplstiaz[np.where(tiplstiaz=='')]='0.0'
+        
+        for tt in range(nt):
+            if tt==0:
+                skline = sklst[tt,0]+' '
+                pminline = phiminlst[tt,0]+' '
+                pmaxline = phimaxlst[tt,0]+' '
+                elliline = elliplst[tt,0]+' '
+                azline = azimlst[tt,0]+' '
+                tprline = tiplstr[tt,0]+' '
+                tprazline = tiplstraz[tt,0]+' '
+                tpiline = tiplsti[tt,0]+' '
+                tpiazline = tiplstiaz[tt,0]+' '
+                for ss in range(1,ns):
+                    skline += sklst[tt,ss]
+                    pminline += phiminlst[tt,ss]
+                    pmaxline += phimaxlst[tt,ss]
+                    elliline += elliplst[tt,ss]
+                    azline += azimlst[tt,ss]
+                    tprline += tiplstr[tt,ss]
+                    tprazline += tiplstraz[tt,ss]
+                    tpiline += tiplsti[tt,ss]
+                    tpiazline += tiplstiaz[tt,ss]
+            else:
+                #get period or frequency
+                skline = _make_value_str(float(sklst[tt,0]), **t1_kwargs)
+                pminline = _make_value_str(float(phiminlst[tt,0]), **t1_kwargs)
+                pmaxline = _make_value_str(float(phimaxlst[tt,0]), **t1_kwargs)
+                elliline = _make_value_str(float(elliplst[tt,0]), **t1_kwargs)
+                azline = _make_value_str(float(azimlst[tt,0]), **t1_kwargs)
+                tprline = _make_value_str(float(tiplstr[tt,0]), **t1_kwargs)
+                tprazline = _make_value_str(float(tiplstraz[tt,0]), 
+                                            **t1_kwargs)
+                tpiline = _make_value_str(float(tiplsti[tt,0]), **t1_kwargs)
+                tpiazline = _make_value_str(float(tiplstiaz[tt,0]), 
+                                            **t1_kwargs)
+                
+                #get parameter values
+                for ss in range(1,ns):
+                    skline += _make_value_str(float(sklst[tt,ss]), **t2_kwargs)
+                    pminline += _make_value_str(float(phiminlst[tt,ss]),
+                                                **t2_kwargs)
+                    pmaxline += _make_value_str(float(phimaxlst[tt,ss]),
+                                                **t2_kwargs)
+                    elliline += _make_value_str(float(elliplst[tt,ss]),
+                                                **t2_kwargs)
+                    azline += _make_value_str(float(azimlst[tt,ss]),
+                                              **t2_kwargs)
+                    tprline += _make_value_str(float(tiplstr[tt,ss]),
+                                               **t2_kwargs)
+                    tprazline += _make_value_str(float(tiplstraz[tt,ss]),
+                                                 **t2_kwargs)
+                    tpiline += _make_value_str(float(tiplsti[tt,ss]),
+                                               **t2_kwargs)
+                    tpiazline += _make_value_str(float(tiplstiaz[tt,ss]),
+                                                 **t2_kwargs)
+            
+            # be sure to end the line after each period
+            sklines.append(skline+'\n')
+            phiminlines.append(pminline+'\n')
+            phimaxlines.append(pmaxline+'\n')
+            elliplines.append(elliline+'\n')
+            azimlines.append(azline+'\n')
+            tprlines.append(tprline+'\n')
+            tprazlines.append(tprazline+'\n')
+            tpilines.append(tpiline+'\n')
+            tpiazlines.append(tpiazline+'\n')
         
         #write files
         skfid = file(os.path.join(svpath,'PseudoSection.skew'),'w')
-        skfid.write(stationstr)
-        skfid.writelines(sklst)
+        skfid.writelines(sklines)
         skfid.close()
         
         phiminfid = file(os.path.join(svpath,'PseudoSection.phimin'),'w')
-        phiminfid.write(stationstr)
-        phiminfid.writelines(phiminlst)
+        phiminfid.writelines(phiminlines)
         phiminfid.close()
         
         phimaxfid = file(os.path.join(svpath,'PseudoSection.phimax'),'w')
-        phimaxfid.write(stationstr)
-        phimaxfid.writelines(phimaxlst)
+        phimaxfid.writelines(phimaxlines)
         phimaxfid.close()
         
         ellipfid = file(os.path.join(svpath,'PseudoSection.ellipticity'),'w')
-        ellipfid.write(stationstr)
-        ellipfid.writelines(elliplst)
+        ellipfid.writelines(elliplines)
         ellipfid.close()
         
         azfid = file(os.path.join(svpath,'PseudoSection.azimuth'),'w')
-        azfid.write(stationstr)
-        azfid.writelines(azimlst)
+        azfid.writelines(azimlines)
         azfid.close()
         
         tprfid = file(os.path.join(svpath,'PseudoSection.tipper_mag_real'),'w')
-        tprfid.write(stationstr)
-        tprfid.writelines(tiplstr)
+        tprfid.writelines(tprlines)
         tprfid.close()
         
         tprazfid = file(os.path.join(svpath,'PseudoSection.tipper_ang_real'),'w')
-        tprazfid.write(stationstr)
-        tprazfid.writelines(tiplstraz)
+        tprazfid.writelines(tprazlines)
         tprazfid.close()
         
         tpifid = file(os.path.join(svpath,'PseudoSection.tipper_mag_imag'),'w')
-        tpifid.write(stationstr)
-        tpifid.writelines(tiplsti)
+        tpifid.writelines(tpilines)
         tpifid.close()
         
         tpiazfid = file(os.path.join(svpath,'PseudoSection.tipper_ang_imag'),'w')
-        tpiazfid.write(stationstr)
-        tpiazfid.writelines(tiplstiaz)
+        tpiazfid.writelines(tpiazlines)
         tpiazfid.close()
     
     def update_plot(self):
@@ -6305,6 +6512,31 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
         self.plot_yn = plot_yn
         if self.plot_yn=='y':
             self.plot()
+            
+    #---need to rotate data on setting rotz
+    def _set_rot_z(self, rot_z):
+        """
+        need to rotate data when setting z
+        """
+        
+        #if rotation angle is an int or float make an array the length of 
+        #mt_lst for plotting purposes
+        if type(rot_z) is float or type(rot_z) is int:
+            rot_z = np.array([rot_z]*len(self.mt_lst))
+        
+        #if the rotation angle is an array for rotation of different 
+        #frequency than repeat that rotation array to the len(mt_lst)
+        elif type(rot_z) is np.ndarray:
+            if rot_z.shape[0]!=len(self.mt_lst):
+                rot_z = np.repeat(rot_z, len(self.mt_lst))
+                
+        else:
+            pass
+            
+        for ii,mt in enumerate(self.mt_lst):
+            mt.rot_z = rot_z[ii]
+            
+    rot_z = property(fset=_set_rot_z, doc="rotation angle(s)")
         
 
     def plot(self): 
@@ -6387,7 +6619,6 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
 
                 #get phase tensor
                 pt = mt.get_PhaseTensor()
-                pt.rotate(self.rot_z[ii])
                 
                 #if map scale is lat lon set parameters                
                 if self.mapscale=='latlon':
@@ -6530,7 +6761,11 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
                 if self.plot_tipper.find('y')==0:
                     
                     #get tipper
-                    tip = mt.getTipper(thetar=self.rotz)
+                    tip = mt.get_Tipper()
+                    if tip._Tipper.tipper is None:
+                        tip._Tipper.tipper = np.zeros((len(mt.period), 1, 2), 
+                                                       dtype='complex')
+                        tip.compute_components()
                     
                     #make some local parameters for easier typing                    
                     ascale = self.arrow_size
@@ -6538,11 +6773,11 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
                     
                     #plot real tipper
                     if self.plot_tipper=='yri' or self.plot_tipper=='yr':
-                        if tip.magreal[jj]<=1.0:
-                            txr = tip.magreal[jj]*ascale*\
-                                  np.sin((tip.anglereal[jj])*np.pi/180+adir)
-                            tyr=tip.magreal[jj]*ascale*\
-                                np.cos((tip.anglereal[jj])*np.pi/180+adir)
+                        if tip.mag_real[jj]<=1.0:
+                            txr = tip.mag_real[jj]*ascale*\
+                                  np.sin((tip.ang_real[jj])*np.pi/180+adir)
+                            tyr=tip.mag_real[jj]*ascale*\
+                                np.cos((tip.ang_real[jj])*np.pi/180+adir)
         
                             self.ax.arrow(plotx,
                                           ploty,
@@ -6559,11 +6794,11 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
                         
                     #plot imaginary tipper
                     if self.plot_tipper=='yri' or self.plot_tipper=='yi':
-                        if tip.magimag[jj]<=1.0:
-                            txi = tip.magimag[jj]*ascale*\
-                                 np.sin((tip.angleimag[jj])*np.pi/180+adir)
+                        if tip.mag_imag[jj]<=1.0:
+                            txi = tip.mag_imag[jj]*ascale*\
+                                 np.sin((tip.ang_imag[jj])*np.pi/180+adir)
                             tyi = tip.magimag[jj]*ascale*\
-                                 np.cos((tip.angleimag[jj])*np.pi/180+adir)
+                                 np.cos((tip.ang_imag[jj])*np.pi/180+adir)
         
                             self.ax.arrow(plotx,
                                           ploty,
@@ -6919,7 +7154,10 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
         
         #create a save path
         if save_path==None:
-            svpath = os.path.join(os.path.dirname(self.fn_list[0]),'PTMaps')
+            try:
+                svpath = os.path.join(os.path.dirname(self.mt_lst[0].fn),'PTMaps')
+            except TypeError:
+                raise IOError('Need to input save_path, could not find path')
         else:
             svpath = save_path
         
@@ -6960,39 +7198,42 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
         
         #put the information into the zeroed arrays
         for ii in range(nx):
-            z1 = Z.Z(self.fn_list[ii])
+            mt1 = self.mt_lst[ii]
 
             #try to find the frequency in the frequency list of each file
-            freqfind = [ff for ff,f2 in enumerate(z1.frequency) 
+            freqfind = [ff for ff,f2 in enumerate(mt1.frequency) 
                          if f2>self.plot_frequency*(1-self.ftol) and
                             f2<self.plot_frequency*(1+self.ftol)]
             try:
                 self.jj = freqfind[0]
                 jj = self.jj            
             
-                pt = z1.getPhaseTensor()
-                tp = z1.getTipper()
+                pt = mt1.get_PhaseTensor()
+                tp = mt1.get_Tipper()
                 
-                phiminmap[xyloc[ii,0],xyloc[ii,1]] = pt.phiminang[self.jj]
-                phimaxmap[xyloc[ii,0],xyloc[ii,1]] = pt.phimaxang[self.jj]
-                azimuthmap[xyloc[ii,0],xyloc[ii,1]] = pt.azimuth[self.jj]
-                ellipmap[xyloc[ii,0],xyloc[ii,1]] = pt.ellipticity[self.jj]
-                betamap[xyloc[ii,0],xyloc[ii,1]] = pt.beta[self.jj]
-                trmap[xyloc[ii,0],xyloc[ii,1]] = tp.magreal[self.jj]
-                trazmap[xyloc[ii,0],xyloc[ii,1]] = tp.anglereal[self.jj]
-                timap[xyloc[ii,0],xyloc[ii,1]] = tp.magimag[self.jj]
-                tiazmap[xyloc[ii,0],xyloc[ii,1]] = tp.angleimag[self.jj]
+                if pt.phimin[0] is not None:
+                    phiminmap[xyloc[ii,0],xyloc[ii,1]] = pt.phimin[0][self.jj]
+                    phimaxmap[xyloc[ii,0],xyloc[ii,1]] = pt.phimax[0][self.jj]
+                    azimuthmap[xyloc[ii,0],xyloc[ii,1]] = pt.azimuth[0][self.jj]
+                    ellipmap[xyloc[ii,0],xyloc[ii,1]] = pt.ellipticity[0][self.jj]
+                    betamap[xyloc[ii,0],xyloc[ii,1]] = pt.beta[0][self.jj]
+                
+                if tp.mag_real is not None:
+                    trmap[xyloc[ii,0],xyloc[ii,1]] = tp.mag_real[self.jj]
+                    trazmap[xyloc[ii,0],xyloc[ii,1]] = tp.ang_real[self.jj]
+                    timap[xyloc[ii,0],xyloc[ii,1]] = tp.mag_imag[self.jj]
+                    tiazmap[xyloc[ii,0],xyloc[ii,1]] = tp.ang_imag[self.jj]
                 try:
                     stationmap[xyloc[ii,0],xyloc[ii,1]] = \
-                              z1.station[self.station_id[0]:self.station_id[1]]
+                              mt1.station[self.station_id[0]:self.station_id[1]]
                 except AttributeError:
-                    stationmap[xyloc[ii,0],xyloc[ii,1]] = z1.station
+                    stationmap[xyloc[ii,0],xyloc[ii,1]] = mt1.station
             except IndexError:
                 print 'Did not find {0:.5g} Hz for station {1}'.format(
-                                               self.plot_frequency,z1.station)
+                                               self.plot_frequency,mt1.station)
 
         #----------------------write files-------------------------------------
-        svfn = 'Map_{0:.6g}'.format(self.plot_frequency)
+        svfn = 'Map_{0:.6g}Hz'.format(self.plot_frequency)
         ptminfid = file(os.path.join(svpath,svfn+'.phimin'),'w')
         ptmaxfid = file(os.path.join(svpath,svfn+'.phimax'),'w')
         ptazmfid = file(os.path.join(svpath,svfn+'.azimuth'),'w')
@@ -7021,24 +7262,15 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
                     statnfid.write('{0:^8}'.format(' '))
                     
                 else:
-                    ptminfid.write('{0:^8}'.format(
-                                          '{0: .2f}'.format(phiminmap[lx,ly])))
-                    ptmaxfid.write('{0:^8}'.format(
-                                          '{0: .2f}'.format(phimaxmap[lx,ly])))
-                    ptazmfid.write('{0:^8}'.format(
-                                          '{0: .2f}'.format(azimuthmap[lx,ly])))
-                    ptskwfid.write('{0:^8}'.format(
-                                          '{0: .2f}'.format(betamap[lx,ly])))
-                    ptellfid.write('{0:^8}'.format(
-                                          '{0: .2f}'.format(ellipmap[lx,ly])))
-                    tprmgfid.write('{0:^8}'.format(
-                                          '{0: .2f}'.format(trmap[lx,ly])))
-                    tprazfid.write('{0:^8}'.format(
-                                          '{0: .2f}'.format(trazmap[lx,ly])))
-                    tpimgfid.write('{0:^8}'.format(
-                                          '{0: .2f}'.format(timap[lx,ly])))
-                    tpiazfid.write('{0:^8}'.format(
-                                          '{0: .2f}'.format(tiazmap[lx,ly])))
+                    ptminfid.write(_make_value_str(phiminmap[lx,ly]))
+                    ptmaxfid.write(_make_value_str(phimaxmap[lx,ly]))
+                    ptazmfid.write(_make_value_str(azimuthmap[lx,ly]))
+                    ptskwfid.write(_make_value_str(betamap[lx,ly]))
+                    ptellfid.write(_make_value_str(ellipmap[lx,ly]))
+                    tprmgfid.write(_make_value_str(trmap[lx,ly]))
+                    tprazfid.write(_make_value_str(trazmap[lx,ly]))
+                    tpimgfid.write(_make_value_str(timap[lx,ly]))
+                    tpiazfid.write(_make_value_str(tiazmap[lx,ly]))
                     statnfid.write('{0:^8}'.format(stationmap[lx,ly]))
             
             #make sure there is an end of line        
@@ -7076,15 +7308,15 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
         for ii in range(nx):
             xx,yy=xyloc[ii,0],xyloc[ii,1]
             tablefid.write('{0:^12}'.format(stationmap[xx,yy]))
-            tablefid.write('{0:^12}'.format('{0: .2f}'.format(phiminmap[xx,yy])))
-            tablefid.write('{0:^12}'.format('{0: .2f}'.format(phimaxmap[xx,yy])))
-            tablefid.write('{0:^12}'.format('{0: .2f}'.format(betamap[xx,yy])))
-            tablefid.write('{0:^12}'.format('{0: .2f}'.format(ellipmap[xx,yy])))
-            tablefid.write('{0:^12}'.format('{0: .2f}'.format(azimuthmap[xx,yy])))
-            tablefid.write('{0:^12}'.format('{0: .2f}'.format(trmap[xx,yy])))
-            tablefid.write('{0:^12}'.format('{0: .2f}'.format(trazmap[xx,yy])))
-            tablefid.write('{0:^12}'.format('{0: .2f}'.format(timap[xx,yy])))
-            tablefid.write('{0:^12}'.format('{0: .2f}'.format(tiazmap[xx,yy])))
+            tablefid.write(_make_value_str(phiminmap[xx,yy],spacing='{0:^12}'))
+            tablefid.write(_make_value_str(phimaxmap[xx,yy],spacing='{0:^12}'))
+            tablefid.write(_make_value_str(betamap[xx,yy],spacing='{0:^12}'))
+            tablefid.write(_make_value_str(ellipmap[xx,yy],spacing='{0:^12}'))
+            tablefid.write(_make_value_str(azimuthmap[xx,yy],spacing='{0:^12}'))
+            tablefid.write(_make_value_str(trmap[xx,yy],spacing='{0:^12}'))
+            tablefid.write(_make_value_str(trazmap[xx,yy],spacing='{0:^12}'))
+            tablefid.write(_make_value_str(timap[xx,yy],spacing='{0:^12}'))
+            tablefid.write(_make_value_str(tiazmap[xx,yy],spacing='{0:^12}'))
             tablefid.write('\n')
             
         tablefid.write('\n')
@@ -7189,17 +7421,40 @@ class PlotStrike(object):
         'Figure saved to /home/Figures/StrikeAnalysis_.pdf'
     """
     
-    def __init__(self,filenamelst,fignum=1,font_size=10,dpi=300,thetar=0,
-                 period_tolerance=.05,text_dict={},plot_range='data',
-                 plot_type=1,plot_tipper='n',pt_error_floor=None,
-                 plot_yn='y',fold=True,bin_width=5):
+    def __init__(self,fn_lst=None, res_object_lst=None,
+                 z_object_lst=None, tipper_object_lst=None, mt_object_lst=None,
+                 fignum=1, font_size=10, dpi=300, rot_z=0,
+                 period_tolerance=.05, text_dict={}, plot_range='data',
+                 plot_type=1, plot_tipper='n', pt_error_floor=None,
+                 plot_yn='y', fold=True, bin_width=5):
         
-        #------Set attributes of the class-------------------
-        self.fn_list = filenamelst
+        #------Set attributes of the class-----------------
+            
+        #--> get the inputs into a list of mt objects
+        self.mt_lst = get_mtlst(fn_lst=fn_lst, 
+                                 res_object_lst=res_object_lst,
+                                 z_object_lst=z_object_lst, 
+                                 tipper_object_lst=tipper_object_lst, 
+                                 mt_object_lst=mt_object_lst)
+        
+        #if rotation angle is an int or float make an array the length of 
+        #mt_lst for plotting purposes
+        if type(rot_z) is float or type(rot_z) is int:
+            self.rot_z = np.array([rot_z]*len(self.mt_lst))
+        
+        #if the rotation angle is an array for rotation of different 
+        #frequency than repeat that rotation array to the len(mt_lst)
+        elif type(rot_z) is np.ndarray:
+            if rot_z.shape[0]!=len(self.mt_lst):
+                self.rot_z = np.repeat(rot_z, len(self.mt_lst))
+                
+        else:
+            self.rot_z = rot_z
+                                 
+
         self.fignum = fignum
         self.font_size = font_size
         self.dpi = dpi
-        self.thetar = thetar
         self.plot_type = plot_type
         self.plot_range = plot_range
         self.period_tolerance = period_tolerance
@@ -7207,6 +7462,7 @@ class PlotStrike(object):
         self.pt_error_floor = pt_error_floor
         self.fold = fold
         self.bin_width = bin_width
+        self._rot_z = None
         
         try:
             self.text_pad = text_dict['pad']
@@ -7236,7 +7492,30 @@ class PlotStrike(object):
         if self.plot_yn=='y':
             self.plot()
             
+    def _set_rot_z(self, rot_z):
+        """
+        need to rotate data when setting z
+        """
+        
+        #if rotation angle is an int or float make an array the length of 
+        #mt_lst for plotting purposes
+        if type(rot_z) is float or type(rot_z) is int:
+            rot_z = np.array([rot_z]*len(self.mt_lst))
+        
+        #if the rotation angle is an array for rotation of different 
+        #frequency than repeat that rotation array to the len(mt_lst)
+        elif type(rot_z) is np.ndarray:
+            if rot_z.shape[0]!=len(self.mt_lst):
+                rot_z = np.repeat(rot_z, len(self.mt_lst))
+                
+        else:
+            pass
             
+        for ii,mt in enumerate(self.mt_lst):
+            mt.rot_z = rot_z[ii]
+            
+    rot_z = property(fset=_set_rot_z, doc="rotation angle(s)")
+                      
     def plot(self):
         
         plt.rcParams['font.size']=self.font_size
@@ -7250,33 +7529,31 @@ class PlotStrike(object):
         bw = self.bin_width
         
         if self.fold==True:
-            histrange=(-180,180)
+            histrange = (-180,180)
         elif self.fold==False:
-            histrange=(0,360)
+            histrange = (0,360)
             
         #set empty lists that will hold dictionaries with keys as the period
-        invlst=[]
-        ptlst=[]
-        tiprlst=[]
+        invlst = []
+        ptlst = []
+        tiprlst = []
         
         #initialize some parameters
-        nc=len(self.fn_list)
-        nt=0
-        kk=0
+        nc = len(self.mt_lst)
+        nt = 0
+        kk = 0
         
-        for dd,edi in enumerate(self.fn_list):
-            #read in the edi files
-            z1 = Z.Z(edi)
+        for dd,mt in enumerate(self.mt_lst):
             
             #--> set the period
-            period = z1.period
+            period = mt.period
         
             #get maximum length of periods
             if len(period)>nt:
                 nt = len(period)
                 
             #-----------get strike angle from invariants-----------------------
-            zinv = z1.getInvariants(thetar=self.thetar)
+            zinv = mt.get_Zinvariants()
             
             #add 90 degrees because invariants assume 0 is north, but plotting 
             #assumes that 90 is north and measures clockwise, thus the negative
@@ -7297,16 +7574,16 @@ class PlotStrike(object):
                 #zs = 360-zs
             
             #make a dictionary of strikes with keys as period
-            mdictinv = dict([(ff,jj) for ff,jj in zip(z1.period,zs)])
+            mdictinv = dict([(ff,jj) for ff,jj in zip(mt.period,zs)])
             invlst.append(mdictinv)
         
             #------------get strike from phase tensor strike angle---------------
-            pt = z1.getPhaseTensor(thetar=self.thetar)
-            az = pt.azimuth
-            azerr = pt.azimuthvar
+            pt = mt.get_PhaseTensor()
+            az = 90-pt.azimuth[0]
+            azerr = pt.azimuth[1]
             
-            #don't need to add 90 because pt assumes 90 is north and 
-            #measures clockwise.
+            #need to add 90 because pt assumes 0 is north and 
+            #negative because measures clockwise.
             
             #put an error max on the estimation of strike angle
             if self.pt_error_floor:
@@ -7320,17 +7597,20 @@ class PlotStrike(object):
             #leave as the total unit circle 0 to 360
             elif self.fold==False:
                 az[np.where(az<0)] = az[np.where(az<0)]+360
-                print np.where(az>360)
             
             #make a dictionary of strikes with keys as period
-            mdictpt = dict([(ff,jj) for ff,jj in zip(z1.period,az)])
+            mdictpt = dict([(ff,jj) for ff,jj in zip(mt.period,az)])
             ptlst.append(mdictpt)
             
             #-----------get tipper strike------------------------------------
-            tip = z1.getTipper(thetar=self.thetar)
+            tip = mt.get_Tipper()
+            if tip._Tipper.tipper is None:
+                tip._Tipper.tipper = np.zeros((len(mt.period), 1, 2), 
+                                               dtype='complex')
+                tip.compute_components()
             
             #needs to be negative because measures clockwise
-            tipr = -tip.anglereal
+            tipr = -tip.ang_real
             
             tipr[np.where(tipr==180.)] = 0.0
             
@@ -7345,7 +7625,7 @@ class PlotStrike(object):
                 tipr[np.where(tipr==360.0)] = 0.0
             
             #make a dictionary of strikes with keys as period
-            tiprdict = dict([(ff,jj) for ff,jj in zip(z1.period,tipr)])
+            tiprdict = dict([(ff,jj) for ff,jj in zip(mt.period,tipr)])
             tiprlst.append(tiprdict)
 
         #--> get min and max period
@@ -7980,7 +8260,10 @@ class PlotStrike(object):
         
         #get the path to save the file to
         if save_path==None:
-            svpath = os.path.dirname(self.fn_list[0])
+            try:
+                svpath = os.path.dirname(self.mt_lst[0].fn)
+            except TypeError:
+                raise IOError('Need to input save_path, could not find path')
         
         else:
             svpath = save_path
@@ -8009,20 +8292,20 @@ class PlotStrike(object):
             slsttip[0].append(tstr)
             
             #calculate the strike for the different period bands per station
-            for kk,fn in enumerate(self.fn_list,1):
-                z1 = Z.Z(fn)
+            for kk,mt in enumerate(self.mt_lst,1):
+
                 
                 if jj==0:
-                    slstinv.append([z1.station])
-                    slstpt.append([z1.station])
-                    slsttip.append([z1.station])
+                    slstinv.append([mt.station])
+                    slstpt.append([mt.station])
+                    slsttip.append([mt.station])
                 
-                zinv = z1.getInvariants()
-                pt = z1.getPhaseTensor()
-                tp = z1.getTipper()
+                zinv = mt.get_Zinvariants()
+                pt = mt.get_PhaseTensor()
+                tp = mt.get_Tipper()
                 
                 bnlst = []
-                for nn,per in enumerate(z1.period):
+                for nn,per in enumerate(mt.period):
                     if per>10**bb and per<10**(bb+1):
                         bnlst.append(nn)
                 
@@ -8069,7 +8352,7 @@ class PlotStrike(object):
                                     invmode))
                 
                 #---> strike from phase tensor
-                az = pt.azimuth[bnlst]
+                az = pt.azimuth[0][bnlst]
                 #fold so the angle goes from 0 to 180
                 if self.fold==True:
                     az[np.where(az>90)] = az[np.where(az>90)]-180
@@ -8101,7 +8384,12 @@ class PlotStrike(object):
 
                 #---> strike from tipper
                 #needs to be negative because measures clockwise
-                tipr = -tp.anglereal[bnlst]
+                if tp._Tipper.tipper is None:
+                    tp._Tipper.tipper = np.zeros((len(mt.period), 1, 2), 
+                                                  dtype='complex')
+                    tp.compute_components()
+                
+                tipr = -tp.ang_real[bnlst]
                 
                 #fold so the angle goes from 0 to 180
                 if self.fold==True:
