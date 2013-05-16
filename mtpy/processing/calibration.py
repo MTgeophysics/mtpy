@@ -58,7 +58,7 @@ dict_of_EDL_gain_factors = {'high': 10., 'low': 1., 'verylow': 0.4, str(10): 10.
 
 list_of_elogger_gain_factors = [11.,1]
 
-dict_of_efield_amplification = {'edl': 1., 'elogger': 10.}
+#dict_of_efield_amplification = {'edl': 10., 'elogger': 1.}
 
 #=================================================================
 
@@ -189,7 +189,7 @@ def elogger_e_field(data, elogger_gain, dipole, instrument_amplification):
 
 #=================================================================
 
-def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationname, channel, latitude, longitude, elevation, offset = 0 ):
+def calibrate_file(filename, outdir, instrument, instrument_amplification, logger, gain, dipole, stationname, channel, latitude, longitude, elevation, offset = 0 ):
     """
     Calibrate data from one given file and store the output to another file.
     If the channel is not given explicitly, it's taken from the filename suffix.
@@ -291,7 +291,7 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
             if not type(gain) in [float, int, str]:
                 raise MTex.MTpyError_inputarguments('invalid gain for EDL: {0}'.format(gain))
 
-            instrument_amplification = dict_of_efield_amplification[logger]
+            #instrument_amplification = dict_of_efield_amplification[logger]
 
             if type(gain) == str:
                 EDLgain = dict_of_EDL_gain_factors[gain] 
@@ -315,9 +315,9 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
             raise MTex.MTpyError_inputarguments('invalid logger for B field measurements')
 
 
-        instrument_amplification = 1.
+        #instrument_amplification = 1.
  
-        calibration_factor = dict_of_calibration_factors_volt2nanotesla[instrument]
+        #calibration_factor = dict_of_calibration_factors_volt2nanotesla[instrument]
 
 
         if logger == 'edl':
@@ -332,7 +332,7 @@ def calibrate_file(filename, outdir, instrument, logger, gain, dipole, stationna
 
 
             if instrument == 'fluxgate' and channel == 'bz':
-                instrument_amplification = dict_of_bz_instrument_amplification[logger]
+                instrument_amplification *= dict_of_bz_instrument_amplification[logger]
 
 
             outfile_data = EDL_b_field(data_in, EDLgain, instrument, instrument_amplification)

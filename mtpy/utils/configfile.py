@@ -148,8 +148,7 @@ def read_survey_configfile(filename):
     
     dict_of_allowed_values_bfield = {'B_logger_type':['edl'] ,
                                     'B_logger_gain': ['low', 'verylow','high', 0.4, 1, 10],
-                                    'B_instrument_type':['fluxgate', 'coil'],
-                                    'B_instrument_amplification':[1]
+                                    'B_instrument_type':['fluxgate', 'coil']
                                     }
 
     list_of_station_types = ['mt','e','b']

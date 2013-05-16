@@ -44,7 +44,7 @@ angleaccuracy = 1.
 def main():
 
     if len(sys.argv) < 3:
-        raise MTex.MTpyError_inputarguments('Need at least 2 arguments: <path to files> <config file> [<output dir>] [<station>] [<recursive flag -R>] [<re-orientation flag -O]')
+        sys.exit('Need at least 2 arguments: <path to files> <config file> [<output dir>] [<station>] [<recursive flag -R>] [<re-orientation flag -O]')
     outdir = None
     stationname = None
     recursive = False
@@ -66,7 +66,6 @@ def main():
             elif stationname is None:
                 stationname = o.upper() 
                 continue
-
     pathname_raw = sys.argv[1] 
     pathname = op.abspath(op.realpath(pathname_raw))
 
@@ -79,9 +78,8 @@ def main():
     if not op.isfile(configfile):
         raise MTex.MTpyError_inputarguments('Config file not found: {0}'.format(configfile))
 
-
     if recursive is True:
-        lo_dirs = []
+        lo_dirs = [pathname]
         for i,j,k in os.walk(pathname):
             lof = [op.abspath(op.join(i,f)) for f in j]
             lo_dirs.extend(lof)
@@ -95,7 +93,7 @@ def main():
         #done internally already 
         #MTcf.validate_dict(config_dict)
     except:
-        raise MTex.MTpyError_config_file( 'Config file cannot be read: %s' % (configfile) )
+        sys.exit( 'Config file cannot be read: %s' % (configfile) )
 
     #----------------------------------------------------------------------------
 
@@ -125,7 +123,7 @@ def main():
 
     #check, if list of files is empty
     if len(lo_allfiles) == 0:
-        raise MTex.MTpyError_inputarguments('Directory(ies) do(es) not contain files to calibrate: {0}'.format(pathname))
+        sys.exit( 'Directory(ies) do(es) not contain files to calibrate: {0}'.format(pathname)) 
 
     #-------------------------------------------------------
     # set up the directory structure for the output:
@@ -151,7 +149,7 @@ def main():
 
     #if re-orientation is required, do it first:
     if orientation is True:
-        print '....re-orient data first...\n'
+        print '\n....re-orient data first...\n'
         ori_outdir = op.abspath(op.join(cal_outdir,'../reoriented'))
         try:
             if not op.isdir(ori_outdir):
@@ -246,7 +244,7 @@ def main():
             instrument_amplification = float(stationdict['b_instrument_amplification'])
 
 
-        MTcb.calibrate_file(filename, outdir, instrument, logger, gain, dipolelength, curr_station, channel, latitude, longitude, elevation,  offset = 0 )
+        MTcb.calibrate_file(filename, outdir, instrument, instrument_amplification,logger, gain, dipolelength, curr_station, channel, latitude, longitude, elevation,  offset = 0 )
         #print 'calibrated file {0},{1}'.format(outdir, filename)
         lo_calibrated_files.append(filename)
     

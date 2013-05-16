@@ -20,7 +20,7 @@ This module contains functions for handling BIRRP software.
 
 #=================================================================
 
-
+import gc
 import StringIO
 import numpy as np
 import re
@@ -38,7 +38,9 @@ import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
 
 import mtpy.utils.misc as MTmc
-
+reload(MTcf)
+reload(MTft)
+reload(MTfh)
 
 #=================================================================
 
@@ -89,24 +91,24 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
     print "generated inputstring and configuration dictionary for station {0}".format(stationname)
     #print inputstring
     #sys.exit()
-    #correct inputstring for potential errorneous line endings:
+    #correct inputstring for potential errorneous line endings due to strange operating systems:
     tempstring = inputstring.split()
     tempstring = [i.strip() for i in tempstring]
     inputstring = '\n'.join(tempstring)
+    inputstring += '\n'
 
     #print 'opening logfile...'
     
     # dummy1 = sys.stdout
     # dummy2 = sys.stderr
-    # logfile = open('birrp_logfile.log','w')
+    logfile = open('birrp_logfile.log','w')
     # sys.stdout = logfile
     # sys.stderr =  logfile
 
     print 'starting Birrp processing...'
-
     #os.system("{0} < {1}".format(birrp_exe,inputfilename))
 
-    birrpprocess = subprocess.Popen(birrp_exe, stdin=subprocess.PIPE)#, stdout=logfile,stderr=logfile)
+    birrpprocess = subprocess.Popen(birrp_exe, stdin=subprocess.PIPE, stdout=logfile,stderr=logfile)
     #instringhandler = StringIO.StringIO(inputstring)
     #birrpprocess = subprocess.Popen(birrp_exe, stdin=instringhandler, stdout=logfile,stderr=logfile)
 
@@ -114,13 +116,14 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
     
     #sys.stdout = dummy1
     #sys.stderr = dummy2
-    #logfile.close()
+    logfile.close()
 
-    #print 'logfile closed: {0}'.format(logfile.name)
+    print 'logfile closed: {0}'.format(logfile.name)
 
     #generate a local configuration file, containing information about all BIRRP and station parameters
     #required for the header of the EDI file 
-
+    print out
+    print err
     print 'generating configuration file containing the applied processing parameters'
     station_config_file = '%s_birrpconfig.cfg'%(stationname)
     MTcf.write_dict_to_configfile(birrp_stationdict, station_config_file)
@@ -236,8 +239,8 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
         lo_endtimes.append(endtime)
 
     if (len(lo_sampling_rates) == 0) or (len(lo_files) == 0):
-        print '\n\tERROR - no MTpy data files found in directory {0} !!\n'.format(ts_directory)
-        raise
+        sys.exit( '\n\tERROR - no MTpy data files found in directory {0} !!\n'.format(ts_directory))
+        
 
     #take the most common sampling rate, if there are more than one:
     from collections import Counter
@@ -247,7 +250,7 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
 
 
     if not len(set(lo_channels)) in [4,5]:
-        raise MTex.MTpyError_ts_data( 'Missing data files in directory {0} - not all channels found'.format(ts_directory))
+        sys.exit( 'Missing data files in directory {0} - not all channels found'.format(ts_directory))
 
     #get a list with all existing time windows of consecutive data for all the channels
     lo_time_windows = []
@@ -288,8 +291,12 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
 
     #data array to hold time series for longest possible time window for the files given 
     #order Ex, Ey, Bx, By (,Bz)
+    totalmemory, freememory = MTmc.show_memory()
+    print '\nTotal memory available: {0} MB - free: {1} MB'.format(totalmemory,freememory)
+
     data = np.zeros((longest_common_time_window[2],output_channels+2))
 
+    print 'Size of data array: {0} MB\n'.format(np.round(data.nbytes/1024.**2,2))
     #define time axis for referencing time and position in the output array
     #correct by rounding for internal floating point errors
     #ta = np.array([ np.round( i , -int(np.log10(1./sampling_rate))) for i in  np.linspace(*longest_common_time_window)])
@@ -339,6 +346,7 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
             print data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch].shape, data_in[idx_ta_file:idx_ta_file+len(overlap)].shape
             data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch] = data_in[idx_ta_file:idx_ta_file+len(overlap)]
 
+            gc.collect()
 
     #define output file for storing the output data array to:
     w_directory = op.abspath(op.join(os.curdir, w_directory))
@@ -365,8 +373,9 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
     birrp_stationdict['processing_window_start'] = longest_common_time_window[0]
     birrp_stationdict['recording_start'] =  lo_starttimes[0]
 
+    gc.collect()
 
-    return op.abspath(outfn), len(data), sampling_rate, birrp_stationdict
+    return op.abspath(outfn), birrp_stationdict['n_samples'] , sampling_rate, birrp_stationdict
 
 
 def get_optimal_window_bisection(length, sampling_rate):
@@ -461,10 +470,11 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
         raise MTex.MTpyError_inputarguments('BIRRP - Configfile not existing: "{0}"'.format(birrp_configfile))
      
     #read the survey config file:
-    try:
+    if 1:
         survey_config_dict = MTcf.read_survey_configfile(survey_configfile)
-    except:
-        raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (survey_configfile) )
+
+    # except:
+    #     raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (survey_configfile) )
 
     if not stationname in survey_config_dict:
         raise EX.MTpyError_config_file( 'No information about station %s found in configuration file: %s' % (stationname, survey_configfile) )
@@ -591,14 +601,14 @@ def _set_edi_info(station_config_dict,birrp_config_dict):
     infostring += '\tStation parameters:\n'
 
     for key in sorted(station_config_dict.iterkeys()):
-        infostring += '\t\t%s: %s  \n'%(str(key),str(station_config_dict[key]))   
+        infostring += '\t\t{0}: {1}  \n'.format(str(key),str(station_config_dict[key]))   
     
 
     infostring += '\n'
     infostring += '\tProcessing parameters:\n'
 
     for key in sorted(birrp_config_dict.iterkeys()):
-        infostring += '\t\t%s: %s  \n'%(str(key),str(birrp_config_dict[key]))   
+        infostring += '\t\t{0}: {1}  \n'.format(str(key),str(birrp_config_dict[key]))   
     infostring += '\n'    
 
 
@@ -889,12 +899,12 @@ def _check_j_file_content( periods_array, Z_array, tipper_array):
 
     
 
-def convert2coh(birrp_output_directory, stationname):
+def convert2coh(stationname, birrp_output_directory):
 
     directory = op.abspath(birrp_output_directory)
 
-    if not os.isdir(directory):
-        raise MTex.MTpyError_inputarguments('Directory %s not existing'%directory)
+    if not op.isdir(directory):
+        raise MTex.MTpyError_inputarguments('Directory {0} does not exist'.format(directory))
 
     stationname = stationname.upper()
     #locate file names
