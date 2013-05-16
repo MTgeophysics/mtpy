@@ -84,7 +84,7 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
 
     os.chdir(wd)
 
-    inputstring, birrp_stationdict = generate_birrp_inputstring_simple(stationname, ts_directory, coherence_threshold)
+    inputstring, birrp_stationdict, inputfilename = generate_birrp_inputstring_simple(stationname, ts_directory, coherence_threshold)
 
     print "generated inputstring and configuration dictionary for station {0}".format(stationname)
     #print inputstring
@@ -94,22 +94,29 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
     tempstring = [i.strip() for i in tempstring]
     inputstring = '\n'.join(tempstring)
 
-    print 'opening logfile...'
-
-    logfile = open('birrp_logfile.log','w')
-
+    #print 'opening logfile...'
+    
+    # dummy1 = sys.stdout
+    # dummy2 = sys.stderr
+    # logfile = open('birrp_logfile.log','w')
+    # sys.stdout = logfile
+    # sys.stderr =  logfile
 
     print 'starting Birrp processing...'
 
-    #birrpprocess = subprocess.Popen(birrp_exe, stdin=subprocess.PIPE)#, stdout=logfile,stderr=logfile)
-    instringhandler = StringIO.StringIO(inputstring)
-    birrpprocess = subprocess.Popen(birrp_exe, stdin=instringhandler, stdout=logfile,stderr=logfile)
+    #os.system("{0} < {1}".format(birrp_exe,inputfilename))
 
-    out,err = birrpprocess.communicate()#inputstring)
+    birrpprocess = subprocess.Popen(birrp_exe, stdin=subprocess.PIPE)#, stdout=logfile,stderr=logfile)
+    #instringhandler = StringIO.StringIO(inputstring)
+    #birrpprocess = subprocess.Popen(birrp_exe, stdin=instringhandler, stdout=logfile,stderr=logfile)
+
+    out,err = birrpprocess.communicate(inputstring)
     
+    #sys.stdout = dummy1
+    #sys.stderr = dummy2
+    #logfile.close()
 
-    logfile.close()
-    print 'logfile closed: {0}'.format(logfile.name)
+    #print 'logfile closed: {0}'.format(logfile.name)
 
     #generate a local configuration file, containing information about all BIRRP and station parameters
     #required for the header of the EDI file 
@@ -151,21 +158,22 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
     if output_channels == 2:
         birrp_stationdict['nout'] = 2
 
-        inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n%i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,input_filename)
+        inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n%i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,input_filename)
 
     elif output_channels == 3:
         birrp_stationdict['nout'] = 3
         birrp_stationdict['nz'] = 2
 
 
-        inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n\i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,stationname)
+        inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n\i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,stationname)
 
     string_file = op.join(ts_directory,'birrp_wd','birrp_input_string.txt')
     with open(string_file,'w') as F:
         F.write(inputstring)
+        F.write('\n')
     
 
-    return inputstring, birrp_stationdict
+    return inputstring, birrp_stationdict,string_file
 
 
 
