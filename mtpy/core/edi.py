@@ -333,7 +333,7 @@ class Edi(object):
             return
         self.freq = 1./np.array(list_of_periods)
 
-    periods = property(_get_periods, _set_periods, doc='List of periods (values in seconds)')    
+    _periods = property(_get_periods, _set_periods, doc='List of periods (values in seconds)')    
 
     # def frequencies(self):
     #     """
@@ -355,9 +355,9 @@ class Edi(object):
     lat = property(_getlat, _setlat, doc='Location latitude in degrees')
    
 
-    def _getlong(self): return self.head['long']
-    def _setlong(self, value): self.head['long'] = MTft._assert_position_format('long',value)
-    long = property(_getlong, _setlong, doc='Location longitude in degrees')
+    def _getlon(self): return self.head['long']
+    def _setlon(self, value): self.head['long'] = MTft._assert_position_format('long',value)
+    lon = property(_getlon, _setlon, doc='Location longitude in degrees')
  
     def _getelev(self): return self.head['elev']
     def _setelev(self, value): self.head['elev'] = MTft._assert_position_format('elev',value)
@@ -567,9 +567,8 @@ class Edi(object):
 
         self._freq = np.array(lo_freqs)
 
-        self.Z.frequencies = self._freq
         if self.Tipper is not None:
-            self.Tipper.frequencies = self._freq
+            self.Tipper.freq = self._freq
 
     def _read_z(self, edistring):
         """
@@ -951,12 +950,11 @@ class Edi(object):
         self.Z.rotation_angle = self.zrot
 
         self.freq = np.array(lo_freqs)
-        self.Z.frequencies = self.freq
 
         if tipper_array is not None:
             self.Tipper = MTz.Tipper(tipper_array=tipper_array,tippererr_array= tippererr_array)
             self.Tipper.rotation_angle = self.zrot
-            self.Tipper.frequencies = self.freq
+            self.Tipper.freq = self.freq
 
         for i,j in enumerate(id_list):
             s_dict[ id_comps[i] ] = j
@@ -1465,13 +1463,11 @@ class Edi(object):
             return
 
         self._freq = np.array(lo_frequencies)
-        self.Z.frequencies = self._freq
         if self.Tipper is not None:
-            self.Tipper.frequencies = self._freq
+            self.Tipper.freq = self._freq
 
     def _get_frequencies(self): return np.array(self._freq)
     freq = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
-    frequencies = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
 
 
     def _set_zrot(self, angle):
@@ -1590,8 +1586,8 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
     eom = Edi()
 
     #check frequency lists
-    lo_freqs1 = eo1.frequencies()
-    lo_freqs2 = eo2.frequencies()
+    lo_freqs1 = eo1.freq
+    lo_freqs2 = eo2.freq
 
 
     lo_eos = []
@@ -1618,12 +1614,12 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
             lo_eos = [eo2, eo1]
 
     #find sorting indices for obtaining strictly increasing frequencies:
-    inc_freq_idxs_lower = np.array(lo_eos[0].frequencies()).argsort()
-    inc_freq_idxs_upper = np.array(lo_eos[1].frequencies()).argsort()
+    inc_freq_idxs_lower = np.array(lo_eos[0].freq).argsort()
+    inc_freq_idxs_upper = np.array(lo_eos[1].freq).argsort()
 
     #determine overlap in frequencies
-    upper_bound = max(lo_eos[0].frequencies())
-    lower_bound = min(lo_eos[1].frequencies())
+    upper_bound = max(lo_eos[0].freq)
+    lower_bound = min(lo_eos[1].freq)
 
     overlap_mid_freq = 0.5*(upper_bound + lower_bound)
 
@@ -1639,8 +1635,8 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
 
     #find indices for all frequencies from the frequency lists, which are below(lower part) or above (upper part) of the merge frequency - use sorted frequency lists !:
 
-    lower_idxs = list(np.where( np.array(lo_eos[0].frequencies())[inc_freq_idxs_lower] <= merge_frequency)[0])
-    upper_idxs = list(np.where( np.array(lo_eos[1].frequencies())[inc_freq_idxs_upper]  > merge_frequency)[0])
+    lower_idxs = list(np.where( np.array(lo_eos[0].freq)[inc_freq_idxs_lower] <= merge_frequency)[0])
+    upper_idxs = list(np.where( np.array(lo_eos[1].freq)[inc_freq_idxs_upper]  > merge_frequency)[0])
 
 
     #total of frequencies in new edi object
@@ -1668,7 +1664,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         in_terr_lower = eo1.tippererr[inc_freq_idxs_lower]
 
     for li in lower_idxs:
-        lo_freqs.append(np.array(lo_eos[0].frequencies())[inc_freq_idxs_lower][li])
+        lo_freqs.append(np.array(lo_eos[0].freq)[inc_freq_idxs_lower][li])
         eom.z[freq_idx,:,:] = in_z_lower[li,:,:]
         eom.zerr[freq_idx,:,:] = in_zerr_lower[li,:,:]
         if eom.tipper is not None:
@@ -1689,7 +1685,7 @@ def combine_edifiles(fn1, fn2,  merge_frequency=None, out_fn = None, allow_gaps 
         in_terr_upper = eo2.tippererr[inc_freq_idxs_upper]
 
     for ui in upper_idxs:
-        lo_freqs.append(np.array(lo_eos[1].frequencies())[inc_freq_idxs_upper][ui])
+        lo_freqs.append(np.array(lo_eos[1].freq)[inc_freq_idxs_upper][ui])
         eom.z[freq_idx,:,:] = in_z_upper[ui,:,:]
         eom.zerr[freq_idx,:,:] = in_zerr_upper[ui,:,:]
 
