@@ -23,7 +23,7 @@ class Zinvariants:
                            
                            *zerr --> np.array((nf, 2, 2), dtype='real')
                            
-                           *frequency --> np.array(nf)
+                           *freq --> np.array(nf)
                            
         **z** : complex np.array(nf,2,2)
                 impedance tensor array
@@ -31,8 +31,8 @@ class Zinvariants:
         **z_err** : real np.array(nf,2,2)
                 impedance tensor error array
                 
-        **frequency** : np.array(nf)
-                          array of frequency cooresponding to the impedance 
+        **freq** : np.array(nf)
+                          array of freq cooresponding to the impedance 
                           tensor elements.
                           
     Attributes:
@@ -82,29 +82,29 @@ class Zinvariants:
     """
     
     def __init__(self,z_object=None,z_array=None,z_err_array=None, 
-                 frequency=None, rot_z=0):
+                 freq=None, rot_z=0):
         
         
         #--> read in z_object
         if z_object is not None:
-            if z_object.frequency==None:
+            if z_object.freq==None:
                 raise AttributeError('z_object needs to have attrtibute'+\
-                                     'frequency filled')
+                                     'freq filled')
             
             #--> make the z_object an attribute    
             self._Z = z_object
             
         #--> if an array is input read it in and make it a z_object
         if z_array is not None:
-            if frequency is None:
-                raise IOError('frequency needs to be input')
+            if freq is None:
+                raise IOError('freq needs to be input')
                 
             self._Z = mtz.Z(z_array, z_err_array)
             
-            assert len(frequency)==len(self._Z.z), \
-                    'length of frequency is not the same as z'
+            assert len(freq)==len(self._Z.z), \
+                    'length of freq is not the same as z'
             
-            self._Z.frequency = frequency
+            self._Z.freq = freq
             
         #--> rotate data if desired
         self.rotate(rot_z)
@@ -158,7 +158,7 @@ class Zinvariants:
         self.strike = np.zeros(nz)
         self.strike_err = np.zeros(nz)
         
-        # loop over each frequency
+        # loop over each freq
         for ii in range(nz):
             #compute the mathematical invariants
             x1 = .5 * (self._Z.z[ii,0,0].real + self._Z.z[ii,1,1].real) #trace
@@ -226,7 +226,7 @@ class Zinvariants:
         """
         set the z array.
 
-        If the shape changes or the frequency are changed need to input 
+        If the shape changes or the freq are changed need to input 
         those as well.        
         """
         
@@ -239,7 +239,7 @@ class Zinvariants:
         """
         set the z_err array.
 
-        If the shape changes or the frequency are changed need to input 
+        If the shape changes or the freq are changed need to input 
         those as well.        
         """
         
@@ -248,12 +248,12 @@ class Zinvariants:
         # --> update the invariants
         self.compute_invariants()
         
-    def set_frequency(self, frequency):
+    def set_freq(self, freq):
         """
-        set the frequency array, needs to be the same length at z
+        set the freq array, needs to be the same length at z
         """
         
-        self._Z.frequency = frequency
+        self._Z.freq = freq
 
     def __str__(self):
         return "Computes the invariants of the impedance tensor according "+\

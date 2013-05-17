@@ -1,8 +1,96 @@
-'''
-This module contains functions to plot different MT things.
+"""
+========    
+mtplot
+========
 
-J Peacock
-'''
+**Provides** 
+
+    1. Different plotting options to represent the MT response.
+    2. Ability to create text files of the plots for further analysis
+    3. Class object that contains all the important information for an MT
+       station.
+============================= =================================================   
+Classes                       Description
+============================= =================================================
+MTArrow                       helper class for reading in induction arrow 
+                              properties   
+MTEllipse                     helper class for reading in ellipse properties   
+ResPhase                      helper class for getting resistivity and phase 
+                              into an incluseive data type                  
+Tipper                        helper class for getting tipper into an
+                              inclusive data type                
+PlotResPhase                  plots resistivity and phase for a single station 
+                              Options include tipper, strike and skew.                      
+PlotMultipleResPhase          plots multiple stations at once with options
+                              of plotting in single figure, all in one
+                              figure as subplots or all in one plot for
+                              direct comparison.                              
+PlotPhaseTensor               plots the phase tensor ellipses and parameters
+                              in one plot including strike angle, minimum
+                              and maximum phase, skew angle and ellipticity                           
+PlotPhaseTensorPseudoSection  plots a pseudo section of phase
+                              tensor ellipses assuming the 
+                              stations are along a profile line.
+                              Options to plot induction arrows.                                   
+PlotPhaseTensorMaps           plots phase tensor ellipses in map view for
+                              a single frequency.  Options to plot 
+                              induction arrows.                                 
+PlotStrike                    plots strike angle estimated from the
+                              invariants of the impedance tensor defined
+                              by Weaver et al. [2000,2003], strike angle
+                              from the phase tensor and option to plot
+                              strike estimated from the induction arrows.
+============================= =================================================
+
+All plots are classes where the important properties are made as attributes
+which can be manipulated by the user.  All classes have been written with the
+basic input being edi files.  This was assumed to be the standard MT response
+file, but turns out to be not as widely used as thought.  So the inputs can be
+other arrays and class objects (see MTplot doc string for details).  If you 
+have a data file format you can create a class using the objects in mtpy.core
+to create an input, otherwise contact us and we can try to build something. 
+
+A typical use might be loading in all the .edi files in and plotting them in 
+different modes, like apparent resistivity and phase, phase tensor pseudo 
+section and strike angle.
+ 
+:Example: ::
+    
+    >>> import mtpy.imaging.mtplot as mtplot
+    >>> import os
+    >>> import matplotlib.pyplot as plt
+    >>> edipath = r"/home/MT/EDIfiles"
+    >>> #create a list of full paths to the edi files
+    >>> edilst = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
+    >>> ...        if edi.find('.edi')>0]
+    >>> #plot apparent resisitivity, phase and induction arrows as individual
+    >>> #figures
+    >>> rpm = mtplot.PlotMultipleResPhase(fn_lst=edilst, plot_style='1', 
+    >>> ...                                plot_tipper='yr')
+    >>> #close all the plots after done looking at them
+    >>> plt.close('all')
+    >>> #plot phase tensor pseudo section with induction arrows
+    >>> pts = mtplot.PlotPhaseTensorPseudoSection(fn_lst=edilst, 
+    >>> ...                                       plot_tipper='yr')
+    >>> # write out the phase tensor parameter values to files
+    >>> pts.writeTextFiles()
+    >>> #change coloring scheme to color by skew and a segmented colormap
+    >>> pts.ellipse_colorby = 'skew_seg'
+    >>> pts.ellipse_cmap = 'mt_seg_bl2wh2rd'
+    >>> pts.ellipse_range = (-9,9,3)
+    >>> pts.redraw_plot()
+
+:Authors:
+    Lars Krieger,
+    Jared Peacock, and
+    Kent Invariarty
+    
+
+:Version: 0.0.1 of 2013
+
+
+"""
+#==============================================================================
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,14 +100,15 @@ import mtpy.core.edi as mtedi
 import mtpy.core.z as mtz
 import mtpy.analysis.pt as mtpt
 import mtpy.analysis.zinvariants as mtinv
-import mtpy1.core.z as Z
-import mtpy1.utils.latlongutmconversion as utm2ll
+import mtpy.utils.conversions as utm2ll
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
-import mtpy.utils.exceptions as mtexcept
+import mtpy.utils.exceptions as mtex
 import mtpy.imaging.mtcolors as mtcl
+
+#==============================================================================
 
 
 #define text formating for plotting
@@ -291,7 +380,7 @@ class MTplot(object):
                        .edi type files are supported. *default* is None
         
         **z** : np.array((nf, 2, 2), dtype='complex')
-                impedance tensor with length of nf -> the number of frequency
+                impedance tensor with length of nf -> the number of freq
                 *default* is None
                 
         **z_err** : np.array((nf, 2, 2), dtype='real')
@@ -348,11 +437,11 @@ class MTplot(object):
                     
         **z_object** : class mtpy.core.z.Z
                       object of mtpy.core.z.  If this is input be sure the
-                      attribute z.frequency is filled.  *default* is None
+                      attribute z.freq is filled.  *default* is None
                       
         **tipper_object** : class mtpy.core.z.Tipper
                             object of mtpy.core.z. If this is input be sure the
-                            attribute z.frequency is filled.  
+                            attribute z.freq is filled.  
                             *default* is None 
     Attributes:
     -----------
@@ -424,12 +513,12 @@ class MTplot(object):
                  phase_array=None, res_err_array=None, phase_err_array=None,
                  tipper=None, tipper_err=None, station=None, period=None, 
                  lat=None, lon=None, elev=None, rot_z=0, z_object=None, 
-                 tipper_object=None, frequency=None):
+                 tipper_object=None, freq=None):
                      
 
         self._station = station
         self._period = period
-        self._frequenc = frequency
+        self._freq = freq
         self._lat = lat
         self._lon = lon
         self._elev = elev
@@ -439,28 +528,28 @@ class MTplot(object):
         #if a z_object is input make it the attribute _Z
         if z_object is not None:
             self._Z = z_object
-            if z_object.frequency==None:
-                raise mtexcept.MTpyError_Z('Need to set Z.frequency to an'+\
+            if z_object.freq==None:
+                raise mtex.MTpyError_Z('Need to set Z.freq to an'+\
                                            ' array that cooresponds to Z.z')
-            self.period = 1./z_object.frequency
+            self.period = 1./z_object.freq
         
         #if z_array is input
         elif z is not None:
             #make sure period is input for plotting
             if self.period==None:
-                raise mtexcept.MTpyError_Z('Need to input period array to '+\
+                raise mtex.MTpyError_Z('Need to input period array to '+\
                                             'compute Resistivity')
                                
             self._Z = mtz.Z(z_array=z, zerr_array=z_err)
-            self._Z.frequency = 1./period
+            self._Z.freq = 1./period
 
         #if a tipper object is input set it to _Tipper
         if tipper_object is not None:
             self._Tipper = tipper_object
         else:
             self._Tipper = mtz.Tipper(tipper_array=tipper, 
-                                      tippererr_array=tipper_err,
-                                      frequency=frequency)
+                                      tipper_err_array=tipper_err,
+                                      freq=freq)
         
         #--> read in the edi file if its given
         if self._fn is not None:
@@ -468,26 +557,26 @@ class MTplot(object):
                 self._read_edi()
             else:
                 not_fn = self._fn[os.path.basename(self._fn).find['.']:]
-                raise mtexcept.MTpyError_file_handling('File '+\
+                raise mtex.MTpyError_file_handling('File '+\
                           'type {0} not supported yet.'.format(not_fn))
         
             
         #--> if resistivity and phase are given set the z_array, z_err_array
         if res_array!=None and phase_array!=None:
-            if period is None and frequency is None:
-                raise mtexcept.MTpyError_Z('Need to input period array for '+\
+            if period is None and freq is None:
+                raise mtex.MTpyError_Z('Need to input period array for '+\
                                            'plotting')
             
             if not res_array.shape==phase_array.shape:
-                raise mtexcept.MTpyError_shape('res_array and phase array '+\
+                raise mtex.MTpyError_shape('res_array and phase array '+\
                                                'do not have the same shape')
                                                
             if not res_array.shape[0]==period.shape[0]:
-                raise mtexcept.MTpyError_shape('res_array and period array '+\
+                raise mtex.MTpyError_shape('res_array and period array '+\
                                                'do not have the same shape')
             
             self._Z = mtz.Z()
-            self._Z.frequency = 1./period
+            self._Z.freq = 1./period
             self.set_res_phase(res_array,phase_array, 
                                res_err_array=res_err_array,
                                phase_err_array=phase_err_array)
@@ -528,7 +617,7 @@ class MTplot(object):
             
         # period
         self.period = 1./edi1.freq
-        self.frequency = edi1.freq
+        self.freq = edi1.freq
         
         # lat, lon and elevation
         self.lat=edi1.lat
@@ -577,10 +666,10 @@ class MTplot(object):
                 self._Tipper.tipper = self._Tipper.tipper[::-1]
                 self._Tipper.tipper_err = self._Tipper.tipper_err[::-1]
             
-        self._Z.frequency = 1./self._period
-        self._frequency = 1./self._period
+        self._Z.freq = 1./self._period
+        self._freq = 1./self._period
         if self._Tipper.tipper is not None:
-            self._Tipper.frequency = 1./self._period
+            self._Tipper.freq = 1./self._period
         
     def _set_lat(self, lat):
         self._lat = lat
@@ -597,7 +686,7 @@ class MTplot(object):
             self._read_edi()
         else:
             not_fn = self._fn[os.path.basename(self._fn).find['.']:]
-            raise mtexcept.MTpyError_file_handling('File '+\
+            raise mtex.MTpyError_file_handling('File '+\
                               'type {0} not supported yet.'.format(not_fn))
            
     def _set_rot_z(self, rot_z):
@@ -616,11 +705,11 @@ class MTplot(object):
         self._Z.set_res_phase(res_array, phase_array, res_err_array, 
                               phase_err_array)
         
-    def _set_frequency(self, frequency):
-        self._frequency = frequency
+    def _set_freq(self, freq):
+        self._freq = freq
         
-        #make sure things are in order from highest frequency first
-        if self._frequency[0]<self._frequency[-1]:
+        #make sure things are in order from highest freq first
+        if self._freq[0]<self._freq[-1]:
             self._Z.z = self._Z.z[::-1]
             self._Z.zerr = self._Z.zerr[::-1]
             self._period = self._period[::-1]
@@ -628,10 +717,10 @@ class MTplot(object):
                 self._Tipper.tipper = self._Tipper.tipper[::-1]
                 self._Tipper.tipper_err = self._Tipper.tipper_err[::-1]
             
-        self._Z.frequency = self._frequency
-        self._frequency = self._frequency
+        self._Z.freq = self._freq
+        self._freq = self._freq
         if self._Tipper.tipper is not None:
-            self._Tipper.frequency = self._frequency
+            self._Tipper.freq = self._freq
         
         
     #==========================================================================
@@ -670,8 +759,8 @@ class MTplot(object):
     def _get_rot_z(self):
         return self._rot_z
         
-    def _get_frequency(self):
-        return self._frequency
+    def _get_freq(self):
+        return self._freq
         
     #==========================================================================
     # use the property built-in to make these get/set useable behind the scenes
@@ -715,8 +804,8 @@ class MTplot(object):
                      doc="Rotation angle positive clockwise assuming North "+\
                          "is 0, can be an array with same shape at z")
                          
-    frequency = property(_get_frequency, _set_frequency,
-                           doc="frequency array corresponding to elemens in z")
+    freq = property(_get_freq, _set_freq,
+                           doc="freq array corresponding to elemens in z")
                       
     #==========================================================================
     # define methods to get resphase, phasetensor, invariants
@@ -739,7 +828,7 @@ class MTplot(object):
         
         """
         pt = mtpt.PhaseTensor(z_object=self._Z)
-        pt.frequency = 1./self.period
+        pt.freq = 1./self.period
         
         return pt
     
@@ -779,7 +868,7 @@ def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None,
                           
         **z_object_lst** : list of class mtpy.core.z.Z
                            object of mtpy.core.z.  If this is input be sure the
-                           attribute z.frequency is filled.  *default* is None
+                           attribute z.freq is filled.  *default* is None
                       
         **mt_object_lst** : list of class mtpy.imaging.mtplot.MTplot
                             object of mtpy.imaging.mtplot.MTplot
@@ -805,7 +894,7 @@ def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None,
             try:
                 nt = len(tipper_object_lst)
                 if nt!=ns:
-                    raise mtexcept.MTpyError_inputarguments('length '+\
+                    raise mtex.MTpyError_inputarguments('length '+\
                           ' of z_lst is not equal to tip_lst'+\
                           '; nz={0}, nt={1}'.format(ns, nt))
                 for mt,tip_obj in zip(mt_lst,tipper_object_lst):
@@ -821,7 +910,7 @@ def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None,
                 try:
                     nt = len(tipper_object_lst)
                     if nt!=ns:
-                        raise mtexcept.MTpyError_inputarguments('length '+\
+                        raise mtex.MTpyError_inputarguments('length '+\
                               ' of z_lst is not equal to tip_lst'+\
                               '; nz={0}, nt={1}'.format(ns, nt))
                     for mt,tip_obj in zip(mt_lst,tipper_object_lst):
@@ -837,7 +926,7 @@ def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None,
                     print 'Reading {0} stations'.format(ns)
                     return mt_lst
                 except TypeError:
-                    raise IOError('Need to input an iteratble list')
+                    raise IOError('Need to input an iteratable list')
                     
 #---function for writing values to file
 def _make_value_str(value, value_lst=None, spacing='{0:^8}', 
@@ -900,7 +989,7 @@ class ResPhase(object):
     ----------
         **z_object** : class mtpy.core.z.Z
                       object of mtpy.core.z.  If this is input be sure the
-                      attribute z.frequency is filled.  *default* is None
+                      attribute z.freq is filled.  *default* is None
                       
         **res_array** : np.ndarray((nf,2,2))
                         Array of resistivity values on a linear scale with 
@@ -983,7 +1072,7 @@ class ResPhase(object):
         #check to make sure they are the same size
         if self.res!=None or self.phase!=None:
             if self.res.shape!=self.phase.shape:
-                raise mtexcept.MTpyError_Z('res_array and phase_array '+\
+                raise mtex.MTpyError_Z('res_array and phase_array '+\
                                                'are not the same shape')
                                                
             if self._Z is None:
@@ -992,17 +1081,17 @@ class ResPhase(object):
                                       res_err_array=res_err_array,
                                       phase_err_array=phase_err_array)
                 if self.period is None:
-                    raise mtexcept.MTpyError_Z('Need to input period to '+\
+                    raise mtex.MTpyError_Z('Need to input period to '+\
                                                 'compute z.')
-                self._Z.frequency = 1./period
+                self._Z.freq = 1./period
         
-        if self._Z.frequency==None:
+        if self._Z.freq==None:
             if period is not None:
-                self._Z.frequency = 1./period
+                self._Z.freq = 1./period
             else:
-                raise mtexcept.MTpyError_Z('Need to set z_object.frequency')
+                raise mtex.MTpyError_Z('Need to set z_object.freq')
         else:
-            self.period = 1./self._Z.frequency
+            self.period = 1./self._Z.freq
             
         if rot_z!=0:
             self.rotate(rot_z)
@@ -1027,7 +1116,7 @@ class ResPhase(object):
         else:
             #check to see if res and res_err are the same shape
             if self.res.shape!=self.res_err.shape:
-                raise mtexcept.MTpyError_shape('res_array and res_err_array '+\
+                raise mtex.MTpyError_shape('res_array and res_err_array '+\
                                                'are not the same shape')
 
         #check to see if a phase_err_array was input, if not set to zeros
@@ -1037,7 +1126,7 @@ class ResPhase(object):
         else:
             #check to see if res and res_err are the same shape
             if self.phase.shape!=self.phase_err.shape:
-                raise mtexcept.MTpyError_shape('phase_array and '+\
+                raise mtex.MTpyError_shape('phase_array and '+\
                                       'phase_err_array are not the same shape')
         
         #--> set the attributes of the class to the components of each        
@@ -1069,8 +1158,8 @@ class ResPhase(object):
         zdetvar = np.array([np.linalg.det(zzv)**.5 for zzv in self._Z.zerr])
         
         #apparent resistivity
-        self.resdet = 0.2*(1./self._Z.frequency)*abs(zdet)**2
-        self.resdet_err = 0.2*(1./self._Z.frequency)*\
+        self.resdet = 0.2*(1./self._Z.freq)*abs(zdet)**2
+        self.resdet_err = 0.2*(1./self._Z.freq)*\
                                         np.abs(zdet+zdetvar)**2-self.resdet
         
         #phase
@@ -1095,7 +1184,7 @@ class ResPhase(object):
             self._Z.rotate(self.rot_z)
         
         else:
-            raise mtexcept.MTpyError_Z('Cannot rotate just resistivity and '+\
+            raise mtex.MTpyError_Z('Cannot rotate just resistivity and '+\
                                         'phase data, need to input z')
         
         self.compute_res_phase()
@@ -1135,16 +1224,16 @@ class Tipper(object):
     """
     
     def __init__(self, tipper_object=None, tipper_array=None, 
-                 tipper_err_array=None, rot_t=0, frequency=None):
+                 tipper_err_array=None, rot_t=0, freq=None):
         
         if tipper_object is not None:
             self._Tipper = tipper_object
         else:
             self._Tipper = mtz.Tipper(tipper_array=tipper_array, 
-                                      tippererr_array=tipper_err_array,
-                                      frequency=frequency)
+                                      tipper_err_array=tipper_err_array,
+                                      freq=freq)
                                       
-        self.frequency = frequency
+        self.freq = freq
         
         if rot_t!=0:
             self.rotate(rot_t)
@@ -1207,7 +1296,7 @@ class PlotResPhase(object):
                        format supported at the moment
                        
         **z_array** : np.array((nf, 2, 2), dtype='complex')
-                impedance tensor with length of nf -> the number of frequency
+                impedance tensor with length of nf -> the number of freq
                 *default* is None
                 
         **z_err_array** : np.array((nf, 2, 2), dtype='real')
@@ -1239,11 +1328,11 @@ class PlotResPhase(object):
                                
         **z_object** : class mtpy.core.z.Z
                       object of mtpy.core.z.  If this is input be sure the
-                      attribute z.frequency is filled.  *default* is None
+                      attribute z.freq is filled.  *default* is None
                       
         **tipper_object** : class mtpy.core.z.Tipper
                             object of mtpy.core.z. If this is input be sure the
-                            attribute z.frequency is filled.  
+                            attribute z.freq is filled.  
                             *default* is None 
                             
         **mt_object** : class mtpy.imaging.mtplot.MTplot
@@ -1486,7 +1575,7 @@ class PlotResPhase(object):
         #if you have a resistivity and phase object 
         if res_phase_object is not None:
             if period is None:
-                raise mtexcept.MTpyError_Z('Need to input period array for '+\
+                raise mtex.MTpyError_Z('Need to input period array for '+\
                                            'plotting')
             self.rp = res_phase_object
             
@@ -2684,7 +2773,7 @@ class PlotMultipleResPhase(object):
             self.rot_z = np.array([rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
-        #frequency than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_lst)
         elif type(rot_z) is np.ndarray:
             if rot_z.shape[0]!=len(self.mt_lst):
                 self.rot_z = np.repeat(rot_z, len(self.mt_lst))
@@ -2794,7 +2883,7 @@ class PlotMultipleResPhase(object):
             rot_z = np.array([rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
-        #frequency than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_lst)
         elif type(rot_z) is np.ndarray:
             if rot_z.shape[0]!=len(self.mt_lst):
                 rot_z = np.repeat(rot_z, len(self.mt_lst))
@@ -2925,7 +3014,6 @@ class PlotMultipleResPhase(object):
             for ii,mt in enumerate(self.mt_lst):
                 #get the reistivity and phase object
                 rp = mt.get_ResPhase()
-                rp.rotate(self.rot_z[ii])
                 
                 #set x-axis limits from short period to long period
                 if self.xlimits==None:
@@ -3330,8 +3418,11 @@ class PlotMultipleResPhase(object):
                 if self.plot_strike!='n' or self.plot_skew=='y':
                     try:
                         plt.setp(axp.xaxis.get_ticklabels(), visible=False)
+                    except UnboundLocalError:
+                        pass
+                    try:
                         plt.setp(axt.xaxis.get_ticklabels(), visible=False)
-                    except AttributeError:
+                    except UnboundLocalError:
                         pass
                     
                     stlst = []
@@ -4402,7 +4493,7 @@ class PlotPhaseTensor(MTEllipse):
                  
         **z_object** : class mtpy.core.z.Z
                       object of mtpy.core.z.  If this is input be sure the
-                      attribute z.frequency is filled.  *default* is None
+                      attribute z.freq is filled.  *default* is None
                       
         **mt_object** : class mtpy.imaging.mtplot.MTplot
                         object of mtpy.imaging.mtplot.MTplot
@@ -4549,7 +4640,7 @@ class PlotPhaseTensor(MTEllipse):
         elif pt_object is not None:
             self.pt = pt_object
             self._mt = MTplot()
-            self._mt.frequency = self.pt.frequency
+            self._mt.freq = self.pt.freq
             
         self.font_size = 7
         self.dpi = dpi
@@ -5175,7 +5266,7 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
                           
         **z_object** : class mtpy.core.z.Z
                       object of mtpy.core.z.  If this is input be sure the
-                      attribute z.frequency is filled.  *default* is None
+                      attribute z.freq is filled.  *default* is None
                       
         **mt_object** : class mtpy.imaging.mtplot.MTplot
                         object of mtpy.imaging.mtplot.MTplot
@@ -5309,11 +5400,11 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
                                      -0 for arrows to point toward a conductor
                                      -1 for arrow to point away from conductor
     
-        **tscale** : [ 'period' | 'frequency' ]
+        **tscale** : [ 'period' | 'freq' ]
         
                      * 'period'    -> plot vertical scale in period
                      
-                     * 'frequency' -> plot vertical scale in frequency
+                     * 'freq' -> plot vertical scale in freq
                      
         **cb_dict** : dictionary to control the color bar
         
@@ -5439,7 +5530,7 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
         -stationid            index [min, max] to reaad station name
         -stationlst           list of stations plotted
         -title                title of figure
-        -tscale               temporal scale of y-axis ('frequency' | 'period')
+        -tscale               temporal scale of y-axis ('freq' | 'period')
         
         -xlimits              limits on x-axis (xmin, xmax)
         -xstretch             scaling factor to stretch x offsets
@@ -5519,7 +5610,7 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
             self.rot_z = np.array([rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
-        #frequency than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_lst)
         elif type(rot_z) is np.ndarray:
             if rot_z.shape[0]!=len(self.mt_lst):
                 self.rot_z = np.repeat(rot_z, len(self.mt_lst))
@@ -5552,7 +5643,7 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
             rot_z = np.array([rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
-        #frequency than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_lst)
         elif type(rot_z) is np.ndarray:
             if rot_z.shape[0]!=len(self.mt_lst):
                 rot_z = np.repeat(rot_z, len(self.mt_lst))
@@ -5636,7 +5727,7 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
             self.offsetlst.append(offset)
             
             #get phase tensor elements and flip so the top is small periods/high 
-            #frequency
+            #freq
             pt = mt.get_PhaseTensor()
             
             periodlst = mt.period[::-1]
@@ -5805,12 +5896,12 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
                                fontsize=self.font_size,
                                fontweight='bold')
                                
-        elif self.tscale=='frequency':
+        elif self.tscale=='freq':
             yticklabels = ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlst[ll])) 
                             for ll in np.arange(0, n, self.ystep)]+\
                             ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlst[-1]))]
             
-            self.ax.set_ylabel('Frequency (Hz)',
+            self.ax.set_ylabel('freq (Hz)',
                                fontsize=self.font_size,
                                fontweight='bold')
         #set x-axis label                       
@@ -5986,7 +6077,7 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
         if plst[0]>plst[-1]:
             plst = plst[::-1] 
             
-        if self.tscale=='frequency':
+        if self.tscale=='freq':
             plst = 1./plst
         
         #match station list with mt list
@@ -6039,8 +6130,8 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
             if self.tscale == 'period':
                 tlst = mt.period
                     
-            elif self.tscale == 'frequency':
-                tlst = mt.frequency
+            elif self.tscale == 'freq':
+                tlst = mt.freq
  
             try:
                 stationstr = '{0:^8}'.format(mt.station[self.stationid[0]:\
@@ -6077,7 +6168,7 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
             else:   
                 for mm,t1 in enumerate(plst):
                     #check to see if the periods match or are at least close in
-                    #case there are frequency missing
+                    #case there are freq missing
                     t1_yn = False
                     if t1==tlst[mm]:
                         t1_yn = True
@@ -6171,7 +6262,7 @@ class PlotPhaseTensorPseudoSection(MTEllipse, MTArrows):
                     tpiline += tiplsti[tt,ss]
                     tpiazline += tiplstiaz[tt,ss]
             else:
-                #get period or frequency
+                #get period or freq
                 skline = _make_value_str(float(sklst[tt,0]), **t1_kwargs)
                 pminline = _make_value_str(float(phiminlst[tt,0]), **t1_kwargs)
                 pmaxline = _make_value_str(float(phimaxlst[tt,0]), **t1_kwargs)
@@ -6374,7 +6465,7 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
                           
         **z_object** : class mtpy.core.z.Z
                       object of mtpy.core.z.  If this is input be sure the
-                      attribute z.frequency is filled.  *default* is None
+                      attribute z.freq is filled.  *default* is None
                       
         **mt_object** : class mtpy.imaging.mtplot.MTplot
                         object of mtpy.imaging.mtplot.MTplot
@@ -6386,12 +6477,12 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
                         at the moment cannot tranform the phase tensor to z
                         *default* is None
                           
-        **plot_frequency** : float
-                             frequency to plot in Hz
+        **plot_freq** : float
+                             freq to plot in Hz
                              *default* is 1
                              
         **ftol** : float
-                   tolerance in frequency range to look for in each file.
+                   tolerance in freq range to look for in each file.
                    *default* is 0.1 (10 percent)
                              
         **ellipse_dict** : dictionary
@@ -6520,11 +6611,11 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
                                            * 'color'  -> for color of font
                                            * 'angle'  -> for angle of text
                                
-        **tscale** : [ 'period' | 'frequency' ]
+        **tscale** : [ 'period' | 'freq' ]
         
                      * 'period'    -> plot vertical scale in period
                      
-                     * 'frequency' -> plot vertical scale in frequency
+                     * 'freq' -> plot vertical scale in freq
         
         **mapscale** : [ 'latlon ' | 'eastnorth' | 'eastnorthkm' ]
                        Scale of the map coordinates.
@@ -6681,15 +6772,15 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
         -font_size            font size of axes tick label, axes labels will be
                               font_size + 2
                               
-        -ftol                 tolerance to look for matching frequency
-        -jj                   index of plot frequency
+        -ftol                 tolerance to look for matching freq
+        -jj                   index of plot freq
 
         -mapscale             scale of map
         
         -mt_lst               list of mtplot.MTplot instances containing all 
                               the important information for each station
                               
-        -plot_frequency       frequency in Hz to plot
+        -plot_freq       freq in Hz to plot
         -plot_reference_point  reference point of map, everything will be 
                                measured relative to this point
         -plot_tipper           string to indicate to plot induction arrows
@@ -6703,7 +6794,7 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
                               
         -tickstrfmt           format of tick strings
         -title                title of figure
-        -tscale               temporal scale of y-axis ('frequency' | 'period')
+        -tscale               temporal scale of y-axis ('freq' | 'period')
         -xpad                 padding between furthest station in x-direction 
                               and the axes edge
         -ypad                 padding between furthes station in y-direction 
@@ -6723,7 +6814,7 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
     
     def __init__(self,fn_lst=None, res_object_lst=None,
                  z_object_lst=None, tipper_object_lst=None, mt_object_lst=None,
-                 plot_frequency=1, ellipse_dict={}, cb_dict={},
+                 plot_freq=1, ellipse_dict={}, cb_dict={},
                  arrow_dict={}, xpad=.2, ypad=.2, rot_z=0,
                  fig_size=[8,8], station_dict=None, tscale='period',
                  mapscale='latlon', fignum=1, image_dict=None, plot_yn='y',
@@ -6738,8 +6829,8 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
                                 tipper_object_lst=tipper_object_lst, 
                                 mt_object_lst=mt_object_lst)
         
-        #set the frequency to plot
-        self.plot_frequency = plot_frequency
+        #set the freq to plot
+        self.plot_freq = plot_freq
         self.ftol = ftol
         
         #--> set the ellipse properties -------------------
@@ -6777,7 +6868,7 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
             self.rot_z = np.array([rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
-        #frequency than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_lst)
         elif type(rot_z) is np.ndarray:
             if rot_z.shape[0]!=len(self.mt_lst):
                 self.rot_z = np.repeat(rot_z, len(self.mt_lst))
@@ -6881,7 +6972,7 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
             rot_z = np.array([rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
-        #frequency than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_lst)
         elif type(rot_z) is np.ndarray:
             if rot_z.shape[0]!=len(self.mt_lst):
                 rot_z = np.repeat(rot_z, len(self.mt_lst))
@@ -6965,10 +7056,10 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
         
         
         for ii,mt in enumerate(self.mt_lst):
-            #try to find the frequency in the frequency list of each file
-            freqfind = [ff for ff,f2 in enumerate(mt.frequency) 
-                         if f2>self.plot_frequency*(1-self.ftol) and
-                            f2<self.plot_frequency*(1+self.ftol)]
+            #try to find the freq in the freq list of each file
+            freqfind = [ff for ff,f2 in enumerate(mt.freq) 
+                         if f2>self.plot_freq*(1-self.ftol) and
+                            f2<self.plot_freq*(1+self.ftol)]
             try:
                 self.jj = freqfind[0]
                 jj = self.jj
@@ -7179,10 +7270,10 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
                 except AttributeError:
                     pass
                 
-            #==> print a message if couldn't find the frequency
+            #==> print a message if couldn't find the freq
             except IndexError:
                 print 'Did not find {0:.5g} Hz for station {1}'.format(
-                                               self.plot_frequency,mt.station)
+                                               self.plot_freq,mt.station)
         
         #--> set axes properties depending on map scale------------------------
         if self.mapscale=='latlon':    
@@ -7220,11 +7311,11 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
         self.ax.xaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
         self.ax.yaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
         
-        #--> set title in period or frequency
+        #--> set title in period or freq
         if self.tscale=='period':
-            titlefreq = '{0:.5g} (s)'.format(1./self.plot_frequency)
+            titlefreq = '{0:.5g} (s)'.format(1./self.plot_freq)
         else:
-            titlefreq='{0:.5g} (Hz)'.format(self.plot_frequency)
+            titlefreq='{0:.5g} (Hz)'.format(self.plot_freq)
         
         if not self.title:
             self.ax.set_title('Phase Tensor Map for '+titlefreq,
@@ -7408,7 +7499,7 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
             
         """
 
-        sf='_{0:.6g}'.format(np.median(self.plot_frequency_arr))
+        sf='_{0:.6g}'.format(np.median(self.plot_freq_arr))
         
         if fig_dpi==None:
             fig_dpi = self.dpi
@@ -7486,7 +7577,7 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
         ----------
             **save_path** : string
                             path to save files to.  Files are saved as:
-                                save_path/Map_frequency.parameter
+                                save_path/Map_freq.parameter
                                 
         Returns:
         --------
@@ -7556,10 +7647,10 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
         for ii in range(nx):
             mt1 = self.mt_lst[ii]
 
-            #try to find the frequency in the frequency list of each file
-            freqfind = [ff for ff,f2 in enumerate(mt1.frequency) 
-                         if f2>self.plot_frequency*(1-self.ftol) and
-                            f2<self.plot_frequency*(1+self.ftol)]
+            #try to find the freq in the freq list of each file
+            freqfind = [ff for ff,f2 in enumerate(mt1.freq) 
+                         if f2>self.plot_freq*(1-self.ftol) and
+                            f2<self.plot_freq*(1+self.ftol)]
             try:
                 self.jj = freqfind[0]
                 jj = self.jj            
@@ -7586,10 +7677,10 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
                     stationmap[xyloc[ii,0],xyloc[ii,1]] = mt1.station
             except IndexError:
                 print 'Did not find {0:.5g} Hz for station {1}'.format(
-                                               self.plot_frequency,mt1.station)
+                                               self.plot_freq,mt1.station)
 
         #----------------------write files-------------------------------------
-        svfn = 'Map_{0:.6g}Hz'.format(self.plot_frequency)
+        svfn = 'Map_{0:.6g}Hz'.format(self.plot_freq)
         ptminfid = file(os.path.join(svpath,svfn+'.phimin'),'w')
         ptmaxfid = file(os.path.join(svpath,svfn+'.phimax'),'w')
         ptazmfid = file(os.path.join(svpath,svfn+'.azimuth'),'w')
@@ -7685,7 +7776,7 @@ class PlotPhaseTensorMaps(MTArrows, MTEllipse):
         rewrite the string builtin to give a useful message
         """
         
-        return "Plots phase tensor maps for one frequency"
+        return "Plots phase tensor maps for one freq"
 
 class PlotStrike(object):
     """
@@ -7712,7 +7803,7 @@ class PlotStrike(object):
                           
         **z_object** : class mtpy.core.z.Z
                       object of mtpy.core.z.  If this is input be sure the
-                      attribute z.frequency is filled.  *default* is None
+                      attribute z.freq is filled.  *default* is None
                       
         **mt_object** : class mtpy.imaging.mtplot.MTplot
                         object of mtpy.imaging.mtplot.MTplot
@@ -7852,7 +7943,7 @@ class PlotStrike(object):
             self.rot_z = np.array([rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
-        #frequency than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_lst)
         elif type(rot_z) is np.ndarray:
             if rot_z.shape[0]!=len(self.mt_lst):
                 self.rot_z = np.repeat(rot_z, len(self.mt_lst))
@@ -7912,7 +8003,7 @@ class PlotStrike(object):
             rot_z = np.array([rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
-        #frequency than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_lst)
         elif type(rot_z) is np.ndarray:
             if rot_z.shape[0]!=len(self.mt_lst):
                 rot_z = np.repeat(rot_z, len(self.mt_lst))
@@ -8654,7 +8745,7 @@ class PlotStrike(object):
         rewrite the string builtin to give a useful message
         """
         
-        return "Plots phase tensor maps for one frequency"
+        return "Plots phase tensor maps for one freq"
         
     def writeTextFiles(self, save_path=None):
         """
