@@ -161,7 +161,7 @@ class Edi(object):
         try:
             self._read_info(edistring)
         except:
-            raise MTex.MTpyError_edi_file('Could not read INFO section: %s'%infile)
+            print 'Could not read INFO section: {0}'.format(infile)
 
         try:
             self._read_definemeas(edistring)
@@ -2255,11 +2255,10 @@ def _cut_sectionstring(edistring,sectionhead):
 
 def _validate_edifile_string(edistring):
     """
-        Read the file as string and check, if blocks 'HEAD, INFO, =DEFINEMEAS, =MTSECT, FREQ, (Z,) END' are present. If 'Z' is missing, check for 'spectra' or 'rho'/'phs'!
+        Read the file as string and check, if blocks 'HEAD,  =DEFINEMEAS, =MTSECT, FREQ, (Z,) END' are present. If 'Z' is missing, check for 'spectra' or 'rho'/'phs'!
 
         Within the blocks look for mandatory entries:
         HEAD: 'DATAID'
-        INFO: None
         DEFINEMEAS: subblocks 'HMEAS, EMEAS'
                     ('REFLAT, REFLONG, REFELEV' have to be present for measured data though)
         MTSECT: 'NFREQ'
@@ -2292,7 +2291,7 @@ def _validate_edifile_string(edistring):
 
 
     if found < 1 :
-        print 'Could not find all mandatory sections for a valid EDI file!\n (Most basic version must contain: "HEAD, INFO, =DEFINEMEAS, =MTSECT or =SPECTRASECT, FREQ or SPECTRA, (Z,) END") '
+        print 'Could not find all mandatory sections for a valid EDI file!\n (Most basic version must contain: "HEAD, =DEFINEMEAS, =MTSECT or =SPECTRASECT, FREQ or SPECTRA, (Z,) END") '
         return False
 
 
