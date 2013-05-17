@@ -364,7 +364,7 @@ class PhaseTensor(object):
         pt.rotation_angle = edi_object.zrot
 
 
-    def read_z(self,z_object):
+    def read_z_object(self,z_object):
         """
             Read in Z object and convert information into PhaseTensor object attributes.
         """
