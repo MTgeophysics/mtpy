@@ -470,14 +470,14 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
         raise MTex.MTpyError_inputarguments('BIRRP - Configfile not existing: "{0}"'.format(birrp_configfile))
      
     #read the survey config file:
-    if 1:
-        survey_config_dict = MTcf.read_survey_configfile(survey_configfile)
+    #try:
+    survey_config_dict = MTcf.read_survey_configfile(survey_configfile)
 
     # except:
     #     raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (survey_configfile) )
 
     if not stationname in survey_config_dict:
-        raise EX.MTpyError_config_file( 'No information about station %s found in configuration file: %s' % (stationname, survey_configfile) )
+        raise EX.MTpyError_config_file( 'No information about station {0} found in configuration file: {1}'.format(stationname, survey_configfile) )
 
     station_config_dict = survey_config_dict[stationname]
 
@@ -517,6 +517,8 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
 
     DEFINEMEAS = _set_edi_defmeas(station_config_dict)
     MTSECT = _set_edi_mtsect(birrp_config_dict,periods)
+    
+    out_fn = MTfh.make_unique_filename(out_fn)
 
     F_out = open(out_fn,'w') 
     
@@ -532,7 +534,178 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
     return out_fn
 
     
-  
+def convert2edi_incl_instrument_correction(stationname, in_dir, survey_configfile, birrp_configfile, instr_response_file, out_dir = None):
+    """
+    Convert BIRRP output files into EDI file.
+
+    The list of BIRRP output files is searched for in the in_dir directory for the given stationname (base part of filenames). Meta-data must be provided in two config files.  If MTpy standard processing has been applied, the first one is the same file as used from the beginning of the processing. If this survey-config-file is missing, a temporary config file must been created from the header information of the time series files that have been used as BIRRP input.
+    A second config file contains information about the BIRRP processing parameters. It's generated when BIRRP is called with MTpy.
+
+    The outputfile 'stationname.edi' and is stored in the out_dir directory. If out_dir is not given, the files are stored in the in_dir.
+
+    Input:
+    - name of the station
+    - directory, which contains the BIRRP output files
+    - configuration file of the survey, containing all station setup information
+    - configuration file for the processing of the station, containing all BIRRP and other processing parameters
+    - instrument response file (3 column data: frequencies, real, imaginary)
+    [- location to store the EDI file]
+    """ 
+
+    stationname = stationname.upper()
+
+    input_dir = op.abspath(op.realpath(in_dir))
+    if not op.isdir(input_dir):
+        raise MTex.MTpyError_inputarguments('Directory not existing:%s'%(input_dir))
+
+    if out_dir == None:
+        output_dir = input_dir
+    else:
+        output_dir = op.abspath(op.realpath(out_dir))
+        if not op.isdir(output_dir):
+            try:
+                os.makedirs(output_dir)
+            except:
+                print 'output directory could not be created - using input directory instead'
+                output_dir = input_dir
+
+    out_fn = op.join(output_dir,'{0}.edi'.format(stationname))
+
+    if not op.isfile(survey_configfile):
+        raise MTex.MTpyError_inputarguments('Survey - configfile not existing: "{0}"'.format(survey_configfile))
+    if not op.isfile(birrp_configfile):
+        raise MTex.MTpyError_inputarguments('BIRRP - Configfile not existing: "{0}"'.format(birrp_configfile))
+     
+    #read the survey config file:
+    #try:
+    survey_config_dict = MTcf.read_survey_configfile(survey_configfile)
+
+    # except:
+    #     raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (survey_configfile) )
+
+    if not stationname in survey_config_dict:
+        raise EX.MTpyError_config_file( 'No information about station {0} found in configuration file: {1}'.format(stationname, survey_configfile) )
+
+    station_config_dict = survey_config_dict[stationname]
+
+    instr_response_file = op.abspath(instr_response_file)
+    try: 
+        instr_resp = np.loadtxt(instr_response_file)
+    except:
+        sys.exit('ERROR - cannot read instrument response file {0}'.format(instr_response_file))
+
+    try:
+        if not instr_resp.shape[1]==3:
+            raise
+    except:
+        sys.exit('ERROR - instrument response file {0} has wrong format - need 3 columns'.format(instr_response_file))
+
+
+    
+    #read the BIRRP/processing config file:
+    try:
+        birrp_config_dict = MTcf.read_configfile(birrp_configfile)
+    except:
+        raise EX.MTpyError_config_file( 'Config file with BIRRP processing parameters could not be read: %s' % (birrp_configfile) )
+
+
+    #find the birrp-output j-file for the current station 
+    j_filename_list = [i for i in os.listdir(input_dir) if op.basename(i).upper() == ('%s.j'%stationname).upper() ]
+    try:
+        j_filename = j_filename_list[0]
+    except:
+        raise MTex.MTpyError_file_handling('j-file for station %s not found in directory %s'%(stationname, input_dir))
+    
+    if len(j_filename_list) > 1:
+        raise MTex.MTpyError_file_handling('More than one j-file for station %s found in directory %s'%(stationname, input_dir))
+
+    #Having now:
+    # station_config_dict - contains information about station setup
+    # birrp_config_dict - contains information about the processing (BIRRP parameters, selected time window, Rem.Ref.,..)
+    # directory - contains BIRRP output files, coded by stationname
+
+    # To be converted into .EDI
+    # Dictionaries information goes into EDI header: HEAD and INFO section - check for other sections though
+    # output EDI file is out_fn
+    
+    periods, Z_array, tipper_array = read_j_file(j_filename)
+
+    frequencies = 1./periods
+    
+    def correct_z_for_instrument_response(Z_array, instr_resp, frequencies):
+        
+        for idx_f, freq in enumerate(frequencies):
+            if not (instr_resp[0,0] <= np.abs(freq) <= instr_resp[-1,0]):
+                print 'no instrument response in this frequency range - array values set to zero here: ', freq
+                correction_factor = 0.
+                continue
+
+            #find the appropriate frequencies ( since the current freq-value is most likely inbetween two values on the instr_freqs-axis) - get the respective value by linear interpolation
+
+            #find the value closest to the current freq, assume it's lower
+            closest_lower = np.abs(freq-instr_resp[:,0]).argmin()
+            
+            #if it coincides with the highest frequency/last entry:
+            if closest_lower == len(instr_resp)-1:
+                correction_factor = np.complex(instr_resp[-1,1],instr_resp[-1,2])
+            # or the lowest
+            elif closest_lower == 0:
+                correction_factor = np.complex(instr_resp[0,1],instr_resp[0,2])
+            else:
+                #in case the closest frequency value is not lower but higher, take the freq value below as lower bound for the interval:        
+                if instr_resp[closest_lower,0] > freq:
+                    closest_lower -= 1
+                
+                #define the interval:
+                instrfreq1 = instr_resp[closest_lower,0]
+                instrfreq2 = instr_resp[closest_lower+1,0]
+                instrfactor1 = np.complex( instr_resp[closest_lower,1]  , instr_resp[closest_lower,2] )
+                instrfactor2 = np.complex( instr_resp[closest_lower+1,1], instr_resp[closest_lower+1,2])
+                intervallength = instrfreq2 - instrfreq1
+                weight = (freq-instrfreq1)/intervallength
+
+                correction_factor = weight * instrfactor2 + (1-weight) * instrfactor1
+                #lo_freqs.append([freq,instrfreq1,instrfreq2,weight,instrfactor1,instrfactor2,factor])
+            
+            #finally correct Z for the instrument influence by multiplying with the instrument response value: 
+            for i in range(4):
+                zentry = np.complex(Z_array[idx_f,0,i], Z_array[idx_f,1,i] )
+                corrected = zentry * correction_factor
+                Z_array[idx_f,0,i] = np.real(corrected)
+                Z_array[idx_f,1,i] = np.imag(corrected)
+
+
+        return Z_array
+
+
+    Z_array = correct_z_for_instrument_response(Z_array, instr_resp, frequencies)
+
+
+
+    HEAD = _set_edi_head(station_config_dict,birrp_config_dict)
+    INFO = _set_edi_info(station_config_dict,birrp_config_dict)
+    DATA = _set_edi_data(periods, Z_array, tipper_array)
+
+    DEFINEMEAS = _set_edi_defmeas(station_config_dict)
+    MTSECT = _set_edi_mtsect(birrp_config_dict,periods)
+
+
+    out_fn = MTfh.make_unique_filename(out_fn)
+
+    F_out = open(out_fn,'w') 
+    
+    F_out.write(HEAD)
+    F_out.write(INFO)
+    F_out.write(DEFINEMEAS)
+    F_out.write(MTSECT)
+    F_out.write(DATA)
+    F_out.write('>END\n')
+
+    F_out.close()
+
+    return out_fn
+
+     
 
 def _set_edi_data(lo_periods, Z_array, tipper_array):
     
@@ -894,7 +1067,7 @@ def _check_j_file_content( periods_array, Z_array, tipper_array):
  
 
 
-    return lo_periods_out, Z_array_out, tipper_array_out  
+    return np.array(lo_periods_out), Z_array_out, tipper_array_out  
 
 
     

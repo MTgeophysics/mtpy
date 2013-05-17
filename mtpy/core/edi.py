@@ -69,6 +69,7 @@ import mtpy.utils.format as MTft
 import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
 import mtpy.core.z as MTz
+import mtpy.utils.filehandling as MTfh
 
 reload(MTex)
 reload(MTft)
@@ -1032,7 +1033,7 @@ class Edi(object):
         if fn == None:
             outfilename = op.abspath(stationname.upper()+'.edi')
 
-        outfilename = FH.make_unique_filename(outfilename)
+        outfilename = MTfh.make_unique_filename(outfilename)
 
         try:
             with open(outfilename , 'w') as F:
