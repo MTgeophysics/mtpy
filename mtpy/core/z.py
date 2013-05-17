@@ -207,7 +207,7 @@ class Z(object):
         self._frequencies = np.array(lo_frequencies)
 
     def _get_frequencies(self): return np.array(self._frequencies)
-    frequencies = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
+    freq = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
 
        
     def set_z(self, z_array):

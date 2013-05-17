@@ -258,11 +258,11 @@ class PhaseTensor(object):
             print 'Shape of new PT array and existing PTerror do not match - setting PTerror to "None"'
             self.pterr = None
         try:
-            if len(self.pt) != len(self.frequencies):
+            if len(self.pt) != len(self.freq):
                 raise
         except:
             print 'Shape of new PT array and existing "Frequencies" do not match - setting frequencies to "None"'
-            self.frequencies = None
+            self.freq = None
         try:
             if len(self.pt) != len(self.rotation_angle):
                 raise
@@ -327,7 +327,7 @@ class PhaseTensor(object):
 
     def _get_frequencies(self): return self._frequencies
     
-    frequencies = property(_get_frequencies, _set_frequencies,doc="")
+    freq = property(_get_frequencies, _set_frequencies,doc="")
 
 
 
@@ -360,7 +360,7 @@ class PhaseTensor(object):
                 self.pt[idx_f] = z2pt( z[idx_f])[0]
 
 
-        pt.frequencies = edi_object.freq
+        pt.freq = edi_object.freq
         pt.rotation_angle = edi_object.zrot
 
 
@@ -383,7 +383,7 @@ class PhaseTensor(object):
             for idx_f in range(len(z)):
                 self.pt[idx_f] = z2pt( z[idx_f])[0]
 
-        self.frequencies = z_object.frequencies
+        self.freq = z_object.freq
         self.rotation_angle = z_object.rotation_angle
 
 
@@ -407,9 +407,9 @@ class PhaseTensor(object):
             for idx_f in range(len(z)):
                 self.pt[idx_f] = z2pt( z[idx_f])[0]
 
-        if self.frequencies is not None:
-            if len(self.frequencies) != len(z_array):
-                self.frequencies = None
+        if self.freq is not None:
+            if len(self.freq) != len(z_array):
+                self.freq = None
 
 
     def _get_invariants(self):
