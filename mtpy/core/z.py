@@ -60,11 +60,6 @@ import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.format as MTft
 
-#reload(MTex)
-#reload(MTft)
-#reload(MTcc)
-
-
 #=================================================================
 
 
@@ -74,10 +69,11 @@ class Z(object):
         Z class - generates an impedance tensor (Z-) object.
 
         Methods  include rotations/combinations of Z instances, as well as 
+        calculation of invariants, inverse, amplitude/phase,...
         MTcculation of invariants, inverse, amplitude/phase,...
 
         
-        Z is a complex array of the form (n_frequencies, 2, 2), 
+        Z is a complex array of the form (n_frequency, 2, 2), 
         with indices in the following order: 
             Zxx: (0,0) - Zxy: (0,1) - Zyx: (1,0) - Zyy: (1,1)   
 
@@ -92,7 +88,8 @@ class Z(object):
 
             Optional input:
             z_array : Numpy array containing Z values
-            zerr_array : Numpy array containing Z-error values (NOT variance, but stddev!)
+            zerr_array : Numpy array containing Z-error values (NOT variance, 
+			but stddev!)
 
             Initialise the attributes with None
         """    
@@ -130,16 +127,16 @@ class Z(object):
             pass
 
             
-        self._frequencies = None
+        self._frequency = None
 
         # if isinstance(edi_object, MTedi.Edi):
         #     self.edi_object = edi_object
-        #     self.frequencies = edi_object.frequencies
+        #     self.frequency = edi_object.frequency
         #     self.z = edi_object.z
         #     if  edi_object.zerr  is not None:
         #         self.zerr = edi_object.zerr
         try:
-            if len(self.z) != len(zerr):
+            if len(self.z) != len(zerr_array):
                 self.zerr = None
         except:
             pass
@@ -153,63 +150,28 @@ class Z(object):
             self.rotation_angle = np.zeros((len(self.z)))
 
 
-    # def read_edi_object(self, edi_object):
-    #     """
-    #         Read in an instance of the MTpy Edi class.
-
-    #         Update attributes "z, zerr"
-
-    #     """
-
-
-    #     if not isinstance(edi_object,MTedi.Edi):
-    #         print 'Object is not a valid instance of the Edi class - Z object not updated'
-    #         return
-
-
-    #     self.edi_object = edi_object
-    #     self.frequencies = edi_object.frequencies
-
-    #     try:
-    #         if edi_object.z is None :
-    #             raise
-            
-    #         z_new = edi_object.z
-    #         try:
-    #             zerr_new = edi_object.zerr
-    #         except:
-    #             zerr_new = np.zeros(z_new.shape)
-
-    #         if len(z_new) != len(zerr_new):
-    #             raise
-    #         self.z = z_new
-    #         self.zerr = zerr_new
-
-    #     except:
-    #         print 'Edi object does not contain correct z information - z object not updated'
-
-
-    def _set_frequencies(self, lo_frequencies):
+    def _set_frequency(self, lo_frequency):
         """
-            Set the array of frequencies.
+            Set the array of frequency.
 
             Input:
-            list/array of frequencies
+            list/array of frequency
 
             No test for consistency!
         """
 
         if self.z is not None:
-            if len(lo_frequencies) is not len(self.z):
-                print 'length of frequency list/array not correct (%i instead of %i)'%(len(lo_frequencies), len(self.z))
+            if len(lo_frequency) is not len(self.z):
+                print 'length of frequency list/array not correct (%i instead of %i)'%(len(lo_frequency), len(self.z))
                 return
          
-        self._frequencies = np.array(lo_frequencies)
+        self._frequency = np.array(lo_frequency)
 
-    def _get_frequencies(self): return np.array(self._frequencies)
-    freq = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
-
-       
+    def _get_frequency(self): 
+		return np.array(self._frequency)
+		
+    frequency = property(_get_frequency, _set_frequency, doc='array of frequency')
+   
     def set_z(self, z_array):
         """
             Set the attribute 'z'.
@@ -353,6 +315,7 @@ class Z(object):
         if self.z is None:
             print 'Z array is None - cannot MTcculate Res/Phase'
             return
+			
         reserr = None
         phaseerr = None
         if self.zerr is not None:
@@ -367,12 +330,14 @@ class Z(object):
 
             for i in range(2):                        
                 for j in range(2):
-                    res[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /self.frequencies[idx_f] *0.2
+                    res[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2 /self.frequency[idx_f] *0.2
                     phase[idx_f,i,j] = math.degrees(cmath.phase(self.z[idx_f,i,j]))%360
                 
                     if self.zerr is not None:
+
                         r_err, phi_err = MTcc.propagate_error_rect2polar( np.real(self.z[idx_f,i,j]), self.zerr[idx_f,i,j], np.imag(self.z[idx_f,i,j]), self.zerr[idx_f,i,j])
-                        reserr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/self.frequencies[idx_f] * r_err
+
+                        reserr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/self.frequency[idx_f] * r_err
                         phaseerr[idx_f,i,j] = phi_err
 
         return res, phase, reserr, phaseerr
@@ -381,9 +346,12 @@ class Z(object):
     res_phase = property(_get_res_phase, doc='Resistivity and Phase angle of Z')
 
 
-    def set_res_phase(self, res_array, phase_array, reserr_array = None, phaseerr_array = None):
+
+    def set_res_phase(self, res_array, phase_array, reserr_array = None, 
+	phaseerr_array = None):
         """
-            Set values for resistivity (res - in Ohm m) and phase (phase - in degrees), incl. error propagation.
+            Set values for resistivity (res - in Ohm m) and phase (phase - in degrees), 
+			including error propagation.
 
             Updates the attributes "z, zerr".
 
@@ -400,28 +368,29 @@ class Z(object):
                 print 'Error - shape of "phase" array does not match shape of Z array: %s ; %s'%(str(phase_array.shape),str(self.z.shape))
                 return
         else:
-            z_new = p.zeros(res_array.shape,'complex')
+            z_new = np.zeros(res_array.shape,'complex')
+			
             if res_array.shape != phase_array.shape:
                 print 'Error - shape of "phase" array does not match shape of "res" array: %s ; %s'%(str(phase_array.shape),str(res_array.shape))
                 return
 
 
-        if (self.frequencies is None) or (len(self.frequencies) != len(res_array)) :
+        if (self.frequency is None) or (len(self.frequency) != len(res_array)) :
             raise MTex.MTpyError_EDI('ERROR - cannot set res without correct frequency information - proper "freq" attribute must be defined ')
 
             
         #assert real array:
         if np.linalg.norm(np.imag(res_array )) != 0 :
-            raise EX.MTpyError_inputarguments( 'Error - array "res" is not real valued !')
+            raise MTex.MTpyError_inputarguments( 'Error - array "res" is not real valued !')
             
         if np.linalg.norm(np.imag(phase_array )) != 0 :
-            raise EX.MTpyError_inputarguments( 'Error - array "phase" is not real valued !')
+            raise MTex.MTpyError_inputarguments( 'Error - array "phase" is not real valued !')
             
 
         for idx_f in range(len(z_new)):
             for i in range(2):
                 for j in range(2):
-                    abs_z = np.sqrt(5 * self.frequencies[idx_f] * res_array[idx_f,i,j])
+                    abs_z = np.sqrt(5 * self.frequency[idx_f] * res_array[idx_f,i,j])
                     z_new[idx_f,i,j] = cmath.rect( abs_z, math.radians(phase_array[idx_f,i,j] ))
 
         self.z = z_new
@@ -448,7 +417,7 @@ class Z(object):
                 return 
 
         else:
-            z_new = p.zeros(reserr_array.shape,'float')
+            z_new = np.zeros(reserr_array.shape,'float')
             try:
                 if reserr_array.shape != phaseerr_array.shape:
                     print 'Error - shape of "phase" array does not match shape of "res" array: %s ; %s'%(str(phase_array.shape),str(res_array.shape))
@@ -456,17 +425,16 @@ class Z(object):
             except:
                 print 'Error - "phaseerr" or "reserr" is/are not array(s) - Zerr not set'
                 return 
-
                
         for idx_f in range(len(zerr_new)):
             for i in range(2):
                 for j in range(2):
-                    abs_z = np.sqrt(5 * self.frequencies[idx_f] * res_array[idx_f,i,j])
+                    abs_z = np.sqrt(5 * self.frequency[idx_f] * res_array[idx_f,i,j])
                     rel_error_res = reserr_array[idx_f,i,j]/res_array[idx_f,i,j]
                     #relative error varies by a factor of 0.5, which is the exponent in the relation between them:
                     abs_z_error = 0.5 * abs_z * rel_error_res
 
-                    zerr_new[idx_f,i,j] = max(MTcc.propagate_error_polar2rect(abs_z, abs_z_error, phi, phi_error))
+                    zerr_new[idx_f,i,j] = max(MTcc.propagate_error_polar2rect(abs_z, abs_z_error, phase_array, phaseerr_array))
 
         self.zerr = zerr_new
 
@@ -536,7 +504,8 @@ class Z(object):
                     print '"Angles" must be valid numbers (in degrees)'
                     return
             
-        self.rotation_angle = [(oldangle + lo_angles[i])%360 for i,oldangle in enumerate(self.rotation_angle) ] 
+        self.rotation_angle = [(oldangle + lo_angles[i])%360 
+							for i,oldangle in enumerate(self.rotation_angle) ] 
 
         if len(lo_angles) != len(self.z):
             print 'Wrong number Number of "angles" - I need %i '%(len(self.z))
@@ -572,7 +541,7 @@ class Z(object):
             Z = S * Z0
 
         returns:
-            S, Z0   (over all frequencies)
+            S, Z0   (over all frequency)
 
         Note:
         The factors are on the resistivity scale, so the entries of the matrix "S" are given by their square-roots! 
@@ -659,7 +628,7 @@ class Z(object):
 
         if distortion_err_tensor is None:
             distortion_err_tensor = np.zeros_like(distortion_tensor)
-        #for all frequencies, MTcculate D.Inverse, then obtain Z0 = D.I * Z
+        #for all frequency, MTcculate D.Inverse, then obtain Z0 = D.I * Z
         try:
             if not ( len(distortion_tensor.shape) in [2,3] ) and  (len(distortion_err_tensor.shape) in [2,3]):
                 raise
@@ -836,7 +805,6 @@ class Z(object):
         return znorm, znormerr
     norm = property(_get_norm, doc='Norm of Z, incl. error')
 
-
     def _get_invariants(self):
         """
             Return a dictionary of Z-invariants.
@@ -891,104 +859,58 @@ class Tipper(object):
 
     """
 
-    def __init__(self, tipper_array = None, tippererr_array = None):
+    def __init__(self, tipper_array=None, tippererr_array=None, 
+                 frequency=None):
         """
             Initialise an instance of the Tipper class.
 
             Optional input:
             tipper_array : Numpy array containing Tipper values
             tippererr_array : Numpy array containing Tipper-error values (NOT variance, but stddev!)
-
+            frequency : np.array of frequency corresponding to the 
+                          tipper matrices
+                          
             Initialise the attributes with None
         """    
 
-        self.tipper = None        
-        self.tippererr = None
-        try:
-            if len(tipper_array.shape) == 3 and tipper_array.shape[1:3] == (1,2):
-                if tipper_array.dtype in ['complex', 'float','int']:
-                    self.tipper = tipper_array
-        except:
-            pass
-        try:
-            if len(tippererr_array.shape) == 3 and tippererr_array.shape[1:3] == (1,2):
-                if tippererr_array.dtype in ['float','int']:
-                    self.tippererr = tippererr_array
-        except:
-            pass
-
-        self._frequencies = None
-
-        # if isinstance(edi_object,MTedi.Edi):
-        #     self.edi_object = edi_object
-        #     self.frequencies = edi_object.frequencies
-        #     if edi_object.tipper is not None:
-        #         self.tipper = edi_object.tipper
-        #     if edi_object.tippererr is not None:
-        #         self.tippererr = edi_object.tippererr
-
-        try:
-            if len(self.tipper) != len(tippererr):
-                self.tippererr = None
-        except:
-            pass
-
+        self._tipper = tipper_array        
+        self._tipper_err = tippererr_array
+        self._frequency = None
 
         self.rotation_angle = 0.
+        if self.tipper is not None:
+            self.rotation_angle = np.zeros((len(self.tipper)))
 
 
-    # def read_edi_object(self, edi_object):
-    #     """
-    #         Read in an instance of the MTpy Edi class.
-
-    #         Update attributes "tipper, tippererr"
-
-    #     """
-
-    #     if not isinstance(edi_object,MTedi.Edi):
-    #         print 'Object is not a valid Edi instance - Tipper object not updated'
-    #         return
-
-
-    #     self.edi_object = edi_object
-    #     self.frequencies = edi_object.frequencies
-        
-    #     try:
-    #         if edi_object.tipper is None or edi_object.tippererr is None:
-    #             raise
-            
-    #         tipper_new = edi_object.tipper
-    #         tippererr_new = edi_object.tippererr
-
-    #         if len(tipper_new) != len(tippererr_new):
-    #             raise
-    #         self.tipper = tipper_new
-    #         self.tippererr = tippererr_new
-
-    #     except:
-    #         print 'Edi object does not contain correct tipper information - Tipper object not updated'
-
-    def _set_frequencies(self, lo_frequencies):
+    #==========================================================================
+    # Define get/set and properties
+    #==========================================================================
+    #----frequency----------------------------------------------------------    
+    def _set_frequency(self, lo_frequency):
         """
-            Set the array of frequencies.
+            Set the array of frequency.
 
             Input:
-            list/array of frequencies
+            list/array of frequency
 
             No test for consistency!
         """
 
-        if len(lo_frequencies) is not len(self.tipper):
-            print 'length of frequency list/array not correct (%i instead of %i)'%(len(lo_frequencies), len(self.tipper))
+        if len(lo_frequency) is not len(self.tipper):
+            print 'length of frequency list/array not correct'+\
+                  ' (%i instead of %i)'%(len(lo_frequency), len(self.tipper))
             return
 
-        self._frequencies = np.array(lo_frequencies)
+        self._frequency = np.array(lo_frequency)
 
-    def _get_frequencies(self): return np.array(self._frequencies)
-    freq = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
-
+    def _get_frequency(self): 
+        return np.array(self._frequency)
         
-    def set_tipper(self, tipper_array):
+    frequency = property(_get_frequency, _set_frequency, 
+                           doc='array of frequency')
+
+    #---tipper--------------------------------------------------------------  
+    def _set_tipper(self, tipper_array):
         """
             Set the attribute 'tipper'.
 
@@ -998,15 +920,31 @@ class Tipper(object):
             Test for shape, but no test for consistency!
 
         """         
+        #make sure the array is of required shape
+        try:
+            if len(tipper_array.shape)==3 and tipper_array.shape[1:3]==(1,2):
+                if tipper_array.dtype in ['complex', 'float','int']:
+                    self._tipper = tipper_array
+        except:
+            pass
 
-        if (self.tipper is not None) and (self.tipper.shape != tipper_array.shape):
-            print 'Error - shape of "tipper" array does not match shape of tipper-array: %s ; %s'%(str(tipper_array.shape),str(self.tipper.shape))
+        #check to see if the new tipper array is the same shape as the old
+        if (self._tipper!=None) and (self._tipper.shape!=tipper_array.shape):
+            print 'Error - shape of "tipper" array does not match shape of '+\
+                  'tipper-array: %s ; %s'%(str(tipper_array.shape),
+                                           str(self.tipper.shape))
             return
 
-        self.tipper = tipper_array
-
-
-    def set_tippererr(self, tippererr_array):
+        self._tipper = tipper_array
+        
+    
+    def _get_tipper(self):
+        return self._tipper
+        
+    tipper = property(_get_tipper, _set_tipper, doc="Tipper array")
+    
+    #----tipper error---------------------------------------------------------
+    def _set_tipper_err(self, tippererr_array):
         """
             Set the attribute 'tippererr'.
 
@@ -1017,14 +955,39 @@ class Tipper(object):
 
         """         
 
+        #make sure the input array is of required shape
+        try:
+            if len(tippererr_array.shape)==3 and \
+                                        tippererr_array.shape[1:3]==(1,2):
+                if tippererr_array.dtype in ['float','int']:
+                    self._tipper_err = tippererr_array
+        except:
+            pass
+        
+        #make sure the error array is the same shape as tipper
+        try:
+            if len(self.tipper) != len(self._tipper_err):
+                self._tipper_err = None
+        except:
+            pass
 
-        if (self.tippererr is not None) and (self.tippererr.shape != tippererr_array.shape):
-            print 'Error - shape of "tippererr" array does not match shape of tippererr array: %s ; %s'%(str(tippererr_array.shape),str(self.tippererr.shape))
+        
+        if (self.tipper_err!=None) and \
+                            (self._tipper_err.shape!=tippererr_array.shape):
+            print 'Error - shape of "tippererr" array does not match shape '+\
+                  'of tippererr array: %s ; %s'%(str(tippererr_array.shape),
+                                                 str(self._tipper_err.shape))
             return
 
-        self.tippererr = tippererr_array
-
-
+        self._tipper_err = tippererr_array
+        
+    def _get_tipper_err(self):
+        return self._tipper_err
+        
+    tipper_err = property(_get_tipper_err, _set_tipper_err,
+                          doc="Estimated Tipper errors")
+                          
+    #----real part---------------------------------------------------------
     def _get_real(self):
         """
             Return the real part of the Tipper.
@@ -1036,7 +999,6 @@ class Tipper(object):
 
         return np.real(self.tipper)
 
-        
     def _set_real(self, real_array):
         """
             Set the real part of 'tipper'.
@@ -1049,8 +1011,10 @@ class Tipper(object):
         """         
         
 
-        if (self.tipper is not None ) and (self.tipper.shape != real_array.shape):
-            print 'shape of "real" array does not match shape of tipper array: %s ; %s'%(str(real_array.shape),str(self.tipper.shape))
+        if (self.tipper is not None) and (self.tipper.shape!=real_array.shape):
+            print 'shape of "real" array does not match shape of tipper '+\
+                  'array: %s ; %s'%(str(real_array.shape),
+                                    str(self.tipper.shape))
             return
 
         #assert real array:
@@ -1058,11 +1022,8 @@ class Tipper(object):
             print 'Error - array "real" is not real valued !'
             return
 
-
-        i = np.complex(0,1)
-
         if self.tipper is not None:
-            tipper_new = real_array + i * self.imag() 
+            tipper_new = real_array + 1j* self.imag() 
         else:
             tipper_new = real_array
 
@@ -1070,6 +1031,7 @@ class Tipper(object):
 
     _real = property(_get_real, _set_real, doc='Real part of the Tipper')
 
+    #---imaginary part------------------------------------------------------
     def _get_imag(self):
         """
             Return the imaginary part of the Tipper.
@@ -1094,9 +1056,10 @@ class Tipper(object):
 
         """         
 
-
-        if (self.tipper is not None) and (self.tipper.shape != imag_array.shape):
-            print 'Error - shape of "imag" array does not match shape of tipper array: %s ; %s'%(str(imag_array.shape),str(self.tipper.shape))
+        if (self.tipper is not None) and (self.tipper.shape!=imag_array.shape):
+            print 'shape of "real" array does not match shape of tipper '+\
+                  'array: %s ; %s'%(str(imag_array.shape),
+                                    str(self.tipper.shape))
             return
         
         #assert real array:
@@ -1115,9 +1078,10 @@ class Tipper(object):
 
     _imag = property(_get_imag, _set_imag, doc='Imaginary part of the Tipper')
 
-    def _get_rho_phi(self):
+    #----amplitude and phase
+    def _get_amp_phase(self):
         """
-            Return values for amplitude (rho) and argument (phi - in degrees).
+            Return values for amplitude and phase in degrees).
 
             Output is a 4-tuple of arrays:
             (Rho, Phi, RhoError, PhiError)
@@ -1138,21 +1102,25 @@ class Tipper(object):
         phi = np.zeros(self.tipper.shape)
 
 
-        for idx_f in range(len(tipper)):                         
+        for idx_f in range(len(self.tipper)):                         
             for j in range(2):
                 rho[idx_f,0,j] = np.abs(self.tipper[idx_f,0,j])
-                phi[idx_f,0,j] = math.degrees(cmath.phase(self.tipper[idx_f,0,j]))
+                phi[idx_f,0,j] = math.degrees(cmath.phase(
+                                                      self.tipper[idx_f,0,j]))
                 
                 if self.tippererr is not None:
-                    r_err, phi_err = MTcc.propagate_error_rect2polar( np.real(self.tipper[idx_f,0,j]), self.tippererr[idx_f,0,j], np.imag(self.tipper[idx_f,0,j]), self.tippererr[idx_f,0,j])
+                    r_err, phi_err = MTcc.propagate_error_rect2polar(
+                                            np.real(self.tipper[idx_f,0,j]), 
+                                            self.tippererr[idx_f,0,j], 
+                                            np.imag(self.tipper[idx_f,0,j]), 
+                                            self.tippererr[idx_f,0,j])
+                                            
                     rhoerr[idx_f,0,j] = r_err
                     phierr[idx_f,0,j] = phi_err
 
         return rho, phi, rhoerr, phierr
 
-    rho_phi = property(_get_rho_phi, doc='Amplitude and Phase angle of the Tipper')
-
-    def set_rho_phi(self, r_array, phi_array):
+    def _set_amp_phase(self, r_array, phi_array):
         """
             Set values for amplitude(r) and argument (phi - in degrees).
 
@@ -1165,18 +1133,24 @@ class Tipper(object):
             tipper_new = copy.copy(self.tipper) 
 
             if self.tipper.shape != r_array.shape:
-                print 'Error - shape of "r" array does not match shape of tipper array: %s ; %s'%(str(r_array.shape),str(self.tipper.shape))
+                print 'Error - shape of "r" array does not match shape of '+\
+                      'tipper array: %s ; %s'%(str(r_array.shape),
+                                               str(self.tipper.shape))
                 return
 
             if self.tipper.shape != phi_array.shape:
-                print 'Error - shape of "phi" array does not match shape of tipper array: %s ; %s'%(str(phi_array.shape),str(self.tipper.shape))
+                print 'Error - shape of "phi" array does not match shape of '+\
+                      'tipper array: %s ; %s'%(str(phi_array.shape),
+                                               str(self.tipper.shape))
                 return
         else:
 
             tipper_new = np.zeros(r_array.shape,'complex')
 
             if r_array.shape != phi_array.shape:
-                print 'Error - shape of "phi" array does not match shape of "r" array: %s ; %s'%(str(phi_array.shape),str(r_array.shape))
+                print 'Error - shape of "phi" array does not match shape '+\
+                       'of "r" array: %s ; %s'%(str(phi_array.shape),
+                                                str(r_array.shape))
                 return
        
         #assert real array:
@@ -1189,16 +1163,96 @@ class Tipper(object):
 
         for idx_f in range(len(r_array)):
                 for j in range(2):
-                    tipper_new[idx_f,0,j] = cmath.rect( r_array[idx_f,0,j], math.radians(phi_array[idx_f,0,j] ))
+                    tipper_new[idx_f,0,j] = cmath.rect(r_array[idx_f,0,j], 
+                                            math.radians(phi_array[idx_f,0,j]))
 
         self.tipper = tipper_new
+        
+    amp_phase = property(_get_amp_phase, _set_amp_phase,
+                       doc='Amplitude and Phase angle of the Tipper')
+                       
+    #----magnitude and direction----------------------------------------------
+    def _get_mag_direction(self):
+        """
+        computes the magnitude and direction of the real and imaginary 
+        induction vectors.  
+        
+        Returns:
+        --------
+            **mag_real** : np.array(nf)
+                           magnitude of the real induction vector
+            
+            **ang_real** : np.array(nf)
+                           angle (deg) of the real induction vector assuming 
+                           that North is 0 and angle is positive clockwise
+            
+            **mag_imag** : np.array(nf)
+                           magnitude of the imaginary induction vector
+                           
+            **ang_imag** : np.array(nf)
+                           angle (deg) of the imaginary induction vector 
+                           assuming that North is 0 and angle is positive 
+                           clockwise
+                           
+                
+        """
+        
+        if self.tipper is not None:
+            mag_real = np.sqrt(self.tipper[:,0,0].real**2 + \
+                                self.tipper[:,0,1].real**2)
+            mag_imag = np.sqrt(self.tipper[:,0,0].imag**2 + 
+                                self.tipper[:,0,1].imag**2)
+            #get the angle, need to make both parts negative to get it into the
+            #parkinson convention where the arrows point towards the conductor
+        
+            ang_real=np.rad2deg(np.arctan2(-self.tipper[:,0,1].real,
+                                           -self.tipper[:,0,0].real))
+                                           
+            ang_imag=np.rad2deg(np.arctan2(-self.tipper[:,0,1].imag,
+                                           -self.tipper[:,0,0].imag))
+        else:
+            mag_real = None
+            mag_imag = None
+            ang_real = None
+            ang_imag = None
+        
 
+                                       
+        return mag_real, ang_real, mag_imag, ang_imag
+        
+    def _set_mag_direction(self, mag_real, ang_real, mag_imag, ang_imag):
+        """
+        computes the tipper from the magnitude and direction of the real
+        and imaginary components.
+        
+        Updates tipper
+        
+        No error propagation yet
+        """
+        
+        self.tipper[:,0,0].real = np.sqrt((mag_real**2*np.arctan(ang_real)**2)/\
+                                          (1-np.arctan(ang_real)**2))
+                                       
+        self.tipper[:,0,1].real = np.sqrt(mag_real**2/\
+                                          (1-np.arctan(ang_real)**2))
+                                       
+        self.tipper[:,0,0].imag = np.sqrt((mag_imag**2*np.arctan(ang_imag)**2)/\
+                                       (1-np.arctan(ang_imag)**2))
+                                       
+        self.tipper[:,0,1].imag = np.sqrt(mag_imag**2/\
+                                         (1-np.arctan(ang_imag)**2))
+        
+    mag_direction = property(_get_mag_direction, _set_mag_direction,
+                             doc="Tipper magnitude and direction (deg)")
 
+    #----rotate---------------------------------------------------------------
     def rotate(self, alpha):
         """
-            Rotate  Tipper array. Change the rotation angles in Zrot respectively.
+            Rotate  Tipper array.
 
-            Rotation angle must be given in degrees. All angles are referenced to geographic North, positive in clockwise direction. (Mathematically negative!)
+            Rotation angle must be given in degrees. All angles are referenced
+            to geographic North=0, positive in clockwise direction. 
+            (Mathematically negative!)
 
             In non-rotated state, X refs to North and Y to East direction.
 
@@ -1210,7 +1264,8 @@ class Tipper(object):
             print 'tipper array is "None" - I cannot rotate that'
             return
 
-        #check for iterable list/set of angles - if so, it must have length 1 or same as len(tipper):
+        #check for iterable list/set of angles - if so, it must have length 1
+        #or same as len(tipper):
         if np.iterable(alpha) == 0:
             try:
                 degreeangle = float(alpha%360)
@@ -1228,15 +1283,16 @@ class Tipper(object):
                     print '"Angle" must be a valid number (in degrees)'
                     return
                 #make an n long list of identical angles
-                lo_angles = [degreeangle for i in self.z]
+                lo_angles = [degreeangle for i in self.tipper]
             else:                    
                 try:
                     lo_angles = [ float(i%360) for i in alpha]
                 except:
                     print '"Angles" must be valid numbers (in degrees)'
                     return
-            
-        self.rotation_angle = [(oldangle + lo_angles[i])%360 for i,oldangle in enumerate(self.rotation_angle) ] 
+           
+        self.rotation_angle = [(oldangle + lo_angles[i])%360 
+                              for i,oldangle in enumerate(self.rotation_angle)] 
 
         if len(lo_angles) != len(self.tipper):
             print 'Wrong number Number of "angles" - need %i '%(len(self.tipper))
@@ -1244,20 +1300,25 @@ class Tipper(object):
             return
 
         tipper_rot = copy.copy(self.tipper)
-        tippererr_rot = copy.copy(self.tippererr)
+        tippererr_rot = copy.copy(self.tipper_err)
 
         for idx_freq in range(len(tipper_rot)):
             angle = lo_angles[idx_freq]
 
-            if self.tippererr is not None:
-                tipper_rot[idx_freq], tippererr_rot[idx_freq] =  MTcc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle,self.tippererr[idx_freq,:,:] )
+            if self.tipper_err is not None:
+                tipper_rot[idx_freq], tippererr_rot[idx_freq] =  \
+                    MTcc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], 
+                                                  angle,
+                                                  self.tipper_err[idx_freq,:,:] )
             else:
-                tipper_rot[idx_freq], tippererr_rot = MTcc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], angle)
+                tipper_rot[idx_freq], tippererr_rot = \
+                    MTcc.rotatevector_incl_errors(self.tipper[idx_freq,:,:], 
+                                                  angle)
 
 
  
         self.tipper = tipper_rot
-        self.tippererr = tippererr_rot
+        self.tipper_err = tippererr_rot
 
 
 #------------------------
@@ -1447,7 +1508,7 @@ def _read_tipper_array(tipper_array, tippererr_array = None):
     """
 
     try:
-        tipper_object = tipper( tipper_array=tipper_array, tippererr_array=tippererr_array )
+        tipper_object = Tipper( tipper_array=tipper_array, tippererr_array=tippererr_array )
     except:
         raise MTex.MTpyError_tipper('Cannot generate Tipper instance - check dimensions/type: (N,1,2)/complex ; %s'%(str(tipper_array.shape)))
 

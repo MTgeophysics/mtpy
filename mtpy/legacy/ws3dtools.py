@@ -8,18 +8,15 @@ Created on Mon Apr 02 11:54:33 2012
 import os
 import numpy as np
 
-from  mtpy.modeling.winglinktools import *
-from mtpy.core.mttools import *
-
-
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
 from matplotlib.ticker import MultipleLocator,FormatStrFormatter
 from matplotlib.patches import Ellipse,Rectangle,Arrow
 from matplotlib.colors import LinearSegmentedColormap,Normalize
-from matplotlib.colorbar import *
+import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
-
+import mtpy1.core.z as Z
+import mtpy1.utils.latlongutmconversion as ll2utm
 
 #tolerance to find frequencies
 ptol=.15
@@ -86,40 +83,611 @@ class ListPeriods:
     def disconnect(self):
         self.fig.canvas.mpl_disconnect(self.cid)
 
+def readWLOutFile(outfn,ncol=5):
+    """
+    read .out file from winglink
+    
+    Inputs:
+        outfn = full path to .out file from winglink
+        
+    Outputs:
+        dx,dy,dz = cell nodes in x,y,z directions (note x is to the East here
+                    and y is to the north.)
+    """
+    
+    wingLinkDataFH = file(outfn,'r')
+    raw_data       = wingLinkDataFH.read().strip().split()
+    
+    nx = int(raw_data[0])
+    ny = int(raw_data[1])
+    nz = int(raw_data[2])
 
 
+    dx=np.zeros(nx)
+    dy=np.zeros(ny)
+    dz=np.zeros(nz)
+    
+    for x_idx in range(nx):
+      dx[x_idx] = raw_data[x_idx + 5]
+    for y_idx in range(ny):
+      dy[y_idx] = raw_data[y_idx + 5 + nx]
+    for z_idx in range(nz):
+      dz[z_idx] = raw_data[z_idx + 5 + nx + ny]
+
+    #dx[0:nx/2]=-dx[0:nx/2]
+    #dy[0:ny/2]=-dy[0:ny/2]
     
 
 
+            
+    return dx,dy,dz
     
-def writeWSDataFile(sitesfn,outfn,periodlst,edipath,zerr=.05,ptol=.15,
-                    zerrmap=[10,1,1,10],savepath=None,ncol=5,units='mv'):
+def readSitesFile(sitesfn):
+    """
+    read sites_ file output from winglink
+    
+    Input: 
+        sitesfn = full path to the sites file output by winglink
+        
+    Output:
+        slst = list of dictionaries for each station.  Keys include:
+            station = station name
+            dx = number of blocks from center of grid in East-West direction
+            dy = number of blocks from center of grid in North-South direction
+            dz = number of blocks from center of grid vertically
+            number = block number in the grid
+        sitelst = list of station names 
+    """
+    
+    sfid=file(sitesfn,'r')
+    slines=sfid.readlines()
+    
+    slst=[]
+    sitelst=[]
+    for ss in slines:
+        sdict={}
+        sline=ss.strip().split()
+        sdict['station']=sline[0][0:-4]
+        sdict['dx']=int(sline[1])-1
+        sdict['dy']=int(sline[2])-1
+        sdict['dz']=int(sline[3])-1
+        sdict['something']=int(sline[4])
+        sdict['number']=int(sline[5])
+        slst.append(sdict)
+        sitelst.append(sline[0][0:-4])
+    return slst,sitelst
+    
+def getXY(sitesfn,outfn,ncol=5):
+    """
+    get x (e-w) and y (n-s) position of station and put in middle of cell
+    
+    Input:
+        sitesfn = full path to sites file output from winglink
+        outfn = full path to .out file output from winglink
+        ncol = number of columns the data is in
+        
+    Outputs:
+        xarr = array of relative distance for each station from center of the
+                grid.  Note this is E-W direction
+        yarr = array of relative distance for each station from center of the
+                grid.  Note this is N-S direction
+                
+    """
+    
+    slst,sitelst=readSitesFile(sitesfn)
+    
+    dx,dy,dz=readWLOutFile(outfn,ncol=ncol)
+    
+    ns=len(slst)
+    nxh=len(dx)/2
+    nyh=len(dy)/2
+    xarr=np.zeros(ns)
+    yarr=np.zeros(ns)
+    
+    
+    for ii,sdict in enumerate(slst):
+        xx=sdict['dx']
+        yy=sdict['dy']
+        if xx<nxh:
+            xarr[ii]=dx[xx:nxh].sum()-dx[xx]/2
+        else:
+            xarr[ii]=dx[nxh:xx].sum()+dx[xx]/2                    
+        if yy<nyh:
+            yarr[ii]=-1*(dy[yy:nyh].sum()-dy[yy]/2)
+        else:
+            yarr[ii]=-1*(dy[nyh:yy].sum()+dy[yy]/2)   
+
+    return xarr,yarr  
+
+def getPeriods(edilst,errthresh=10):
+    """
+    Plots periods for all stations in edipath and the plot is interactive, just
+    click on the period you want to select and it will appear in the console,
+    it will also be saved to lp.plst.  To sort this list type lp.plst.sort()
+    
+    The x's mark a conformation that the station contains that period.  So 
+    when looking for the best periods to invert for look for a dense line of 
+    x's
+    
+    Inputs:
+        edipath = path to where all your edi files are.  Note that only the 
+            impedance components are supported so if you have spectra data, 
+            export them from wingling to have impedance information.
+        errthresh = threshold on the error in impedance estimation, this just 
+                    gives an indication on where bad stations and bad periods
+                    are, anything above this level will be colored in red.
+    
+    Outputs:
+        periodlst = list of periods for each station
+        errorlst = error in the impedance determinant for each station at 
+                   each period.
+        lp = data type lp has attributes: 
+            plst = period list of chosen periods, again to sort this list type
+                    lp.plst.sort().  this will then be the input to make the 
+                    data file later.
+        
+    """
+
+    
+    plt.rcParams['font.size']=10
+    plt.rcParams['figure.subplot.left']=.13
+    plt.rcParams['figure.subplot.right']=.98
+    plt.rcParams['figure.subplot.bottom']=.1
+    plt.rcParams['figure.subplot.top']=.95
+    plt.rcParams['figure.subplot.wspace']=.25
+    plt.rcParams['figure.subplot.hspace']=.05    
+    
+    periodlst=[]
+    errorlst=[]
+    
+    fig1=plt.figure(5)
+    ax=fig1.add_subplot(1,1,1)
+    for edi in edilst:
+        if not os.path.isfile(edi):
+            print 'Could not find '+edi
+        else:
+            z1=Z.Z(edi)
+            periodlst.append(z1.period)
+            zdet=np.array([np.sqrt(abs(np.linalg.det(zz))) for zz in z1.z])
+            error=np.array([np.sqrt(abs(np.linalg.det(zz))) for zz in z1.zvar])
+            perror=(error/zdet)*100            
+            errorlst.append(perror)
+            #make a plot to pick frequencies from showing period and percent 
+            #error
+            ax.scatter(z1.period,perror,marker='x',picker=5)
+            pfind=np.where(perror>errthresh)[0]
+            if len(pfind)>0: 
+                print 'Error greater than {0:.3f} for '.format(errthresh)+z1.station
+                for jj in pfind:
+                    ax.scatter(z1.period[jj],perror[jj],marker='x',color='r')
+                    ax.text(z1.period[jj],perror[jj]*1.05,z1.station,
+                            horizontalalignment='center',
+                            verticalalignment='baseline',
+                            fontdict={'size':8,'color':'red'})
+                    print jj,z1.period[jj]
+                    
+    ax.set_xscale('log')
+    ax.set_xlim(10**np.floor(np.log10(z1.period[0])),
+                10**np.ceil(np.log10(z1.period[-1])))
+    ax.set_ylim(0,3*errthresh)
+    ax.set_yscale('log')
+    ax.set_xlabel('Period (s)',fontdict={'size':12,'weight':'bold'})
+    ax.set_ylabel('Percent Error',fontdict={'size':12,'weight':'bold'})
+    ax.grid('on',which='both')    
+    
+    lp=ListPeriods(fig1)
+    lp.connect()
+    
+    plt.show()
+        
+    return periodlst,errorlst,lp
+    
+def make3DGrid(edilst,xspacing=500,yspacing=500,z1layer=10,xpad=5,ypad=5,
+               zpad=5,xpadroot=5,ypadroot=5,zpadroot=2,zpadpow=(5,15),nz=30,
+               plotyn='y',plotxlimits=None,plotylimits=None,plotzlimits=None):
+    """
+    makes a grid from the edifiles to go into wsinv3d.  The defaults usually
+    work relatively well, but it might take some effort to get a desired grid.
+
+    Inputs:
+    --------
+        **edilst** : list
+                     list of full paths to the .edi files to be included in 
+                     the inversion.
+        
+        **xspacing** : float
+                       spacing of cells in the east-west direction in meters.
+                       *default* is 500 (m)
+                       
+        **yspacing** : float
+                       spacing of cells in the north-south direction in meters.
+                       *default* is 500 (m)
+                       
+        **z1layer** : float
+                      the depth of the first layer in the model in meters.  
+                      This is usually about 1/10th of your shallowest skin 
+                      depth.
+                      *default* is 10 (m)
+                      
+        **xpad** : int
+                   number of cells to pad on either side in the east-west 
+                   direction.  The width of these cells grows exponentially 
+                   to the edge.
+                   *default* is 5
+                      
+        **ypad** : int
+                   number of cells to pad on either side in the north-south 
+                   direction.  The width of these cells grows exponentially 
+                   to the edge.
+                   *default* is 5
+                      
+        **zpad** : int
+                   number of cells to pad on either side in the vertical 
+                   direction.  This is to pad beneath the depth of 
+                   investigation and grows faster exponentially than the zone 
+                   of study.  The purpose is to decrease the number of cells
+                   in the model.
+                   *default* is 5
+                   
+        **xpadroot** : float
+                       the root number that is multiplied to itself for 
+                       calculating the width of the padding cells in the 
+                       east-west direction.
+                       *default* is 5
+                   
+        **ypadroot** : float
+                       the root number that is multiplied to itself for 
+                       calculating the width of the padding cells in the 
+                       north-south direction.
+                       *default* is 5
+                       
+        **zpadroot** : float
+                       the root number that is multiplied to itself for 
+                       calculating the width of the padding cells in the 
+                       vertical direction.
+                       *default* is 2
+                       
+        **zpadpow** : tuple (min,max)
+                      the power to which zpadroot is raised for the padding
+                      cells in the vertical direction.  Input as a tuple with
+                      minimum power and maximum power.
+                      *default* is (5,15)
+                      
+        **nz** : int
+                 number of layers in the vertical direction.  Remember that 
+                 the inversion code automatically adds 7 air layers to the 
+                 model which need to be used when estimating the memory that
+                 it is going to take to run the model.
+                 *default* is 30
+                 
+        **plotyn** : [ 'y' | 'n' ]
+                     if plotyn=='y' then a plot showing map view (east:north)
+                     and a cross sectional view (east:vertical) plane                     
+                     
+                     * 'y' to plot the grid with station locations
+                     
+                     * 'n' to suppress the plotting.
+                    
+        **plotxlimits** : tuple (xmin,xmax)
+                         plot min and max distances in meters for the east-west 
+                         direction.  If not input, the xlimits will be set to 
+                         the furthest stations east and west.
+                         *default* is None
+                    
+        **plotylimits** : tuple (ymin,ymax)
+                         plot min and max distances in meters for the east-west 
+                         direction. If not input, the ylimits will be set to 
+                         the furthest stations north and south.
+                         *default* is None
+                    
+        **plotzlimits** : tuple (zmin,zmax)
+                         plot min and max distances in meters for the east-west 
+                         direction.  If not input, the zlimits will be set to 
+                         the nz layer and 0.
+                         *default* is None
+                         
+    Returns:
+    --------
+        xgrid,ygrid,zgrid,locations,slst
+        **xgrid** : np.array
+                    array of the east-west cell locations  
+                    
+        **ygrid** : np.array
+                    array of the north-south cell locations
+                    
+        **zgrid** : np.array
+                    array of the vertical cell locations 
+                    
+        **locations** : np.array (ns,2)
+                        array of station locations placed in the center of 
+                        the cells. 
+                        * column 1 is for east-west locations
+                        * column 2 is for the north-south location
+                        
+        **slst** : list
+                   list of dictionaries for each station with keys:
+                       * *'station'* for the station name
+                       * *'east'* for easting in model coordinates
+                       * *'east_c'* for easting in model coordinates to place 
+                                    the station at the center of the cell 
+                       * *'north'* for northing in model coordinates
+                       * *'north_c'* for northing in model coordinates to place 
+                                    the station at the center of the cell 
+                        
+                       
+    :Example: ::
+        
+        >>> import mtpy.modeling.ws3dtools as ws
+        >>> import os
+        >>> edipath=r"/home/edifiles"
+        >>> edilst=[os.path.join(edipath,edi) for os.listdir(edipath)]
+        >>> xg,yg,zg,loc,statlst=ws.make3DGrid(edilst,plotzlimits=(-2000,200))
+    
+    """
+    ns=len(edilst)
+    locations=np.zeros((ns,2))
+    slst=[]
+    for ii,edi in enumerate(edilst):
+        zz=Z.Z(edi)
+        zone,east,north=ll2utm.LLtoUTM(23,zz.lat,zz.lon)
+        locations[ii,0]=east
+        locations[ii,1]=north
+        slst.append({'station':zz.station,'east':east,'north':north})
+    
+    #estimate the mean distance to  get into relative coordinates
+    xmean=locations[:,0].mean()
+    ymean=locations[:,1].mean()
+     
+    #remove the average distance to get coordinates in a relative space
+    locations[:,0]-=xmean
+    locations[:,1]-=ymean
+    for sdict in slst:
+        sdict['east']-=xmean
+        sdict['north']-=ymean
+        
+    #translate the stations so they are relative to 0,0
+    xcenter=(locations[:,0].max()-np.abs(locations[:,0].min()))/2
+    ycenter=(locations[:,1].max()-np.abs(locations[:,1].min()))/2
+    
+    #remove the average distance to get coordinates in a relative space
+    locations[:,0]-=xcenter
+    locations[:,1]-=ycenter
+    for sdict in slst:
+        sdict['east']-=xcenter
+        sdict['north']-=ycenter
+    
+    
+    #pickout the furtherst south and west locations 
+    #and put that station as the bottom left corner of the main grid
+    xleft=locations[:,0].min()-xspacing/2
+    xright=locations[:,0].max()+xspacing/2
+    ybottom=locations[:,1].min()-yspacing/2
+    ytop=locations[:,1].max()+yspacing/2
+
+    #---make a grid around the stations from the parameters above---
+    #make grid in east-west direction
+    midxgrid=np.arange(start=xleft,stop=xright+xspacing,
+                       step=xspacing)
+    xpadleft=np.round(-xspacing*5**np.arange(start=.5,stop=3,step=3./xpad))+\
+                       xleft
+    xpadright=np.round(xspacing*5**np.arange(start=.5,stop=3,step=3./xpad))+\
+                       xright
+    xgridr=np.append(np.append(xpadleft[::-1],midxgrid),xpadright)
+    
+    #make grid in north-south direction 
+    midygrid=np.arange(start=ybottom,stop=ytop+yspacing,
+                       step=yspacing)
+    ypadbottom=np.round(-yspacing*5**np.arange(start=.5,stop=3,step=3./xpad))+\
+                        ybottom
+    ypadtop=np.round(yspacing*5**np.arange(start=.5,stop=3,step=3./xpad))+\
+                     ytop
+    ygridr=np.append(np.append(ypadbottom[::-1],midygrid),ypadtop)
+    
+    
+    #make depth grid
+    zgrid1=z1layer*2**np.round(np.arange(0,zpadpow[0],zpadpow[0]/(nz-zpad)))
+    zgrid2=z1layer*2**np.round(np.arange(zpadpow[0],zpadpow[1],
+                                         (zpadpow[1]-zpadpow[0])/(zpad)))
+    
+    zgrid=np.append(zgrid1,zgrid2)
+    
+    #--Need to make an array of the individual cell dimensions for the wsinv3d
+    xnodes=xgridr.copy()    
+    nx=xgridr.shape[0]
+    xnodes[:nx/2]=np.array([abs(xgridr[ii]-xgridr[ii+1]) 
+                            for ii in range(int(nx/2))])
+    xnodes[nx/2:]=np.array([abs(xgridr[ii]-xgridr[ii+1]) 
+                            for ii in range(int(nx/2)-1,nx-1)])
+
+    ynodes=ygridr.copy()
+    ny=ygridr.shape[0]
+    ynodes[:ny/2]=np.array([abs(ygridr[ii]-ygridr[ii+1]) 
+                            for ii in range(int(ny/2))])
+    ynodes[ny/2:]=np.array([abs(ygridr[ii]-ygridr[ii+1]) 
+                            for ii in range(int(ny/2)-1,ny-1)])
+                            
+    #--put the grids into coordinates relative to the center of the grid
+    xgrid=xnodes.copy()
+    xgrid[:int(nx/2)]=-np.array([xnodes[ii:int(nx/2)].sum() 
+                                    for ii in range(int(nx/2))])
+    xgrid[int(nx/2):]=np.array([xnodes[int(nx/2):ii+1].sum() 
+                            for ii in range(int(nx/2),nx)])-xnodes[int(nx/2)]
+                            
+    ygrid=ynodes.copy()
+    ygrid[:int(ny/2)]=-np.array([ynodes[ii:int(ny/2)].sum() 
+                                    for ii in range(int(ny/2))])
+    ygrid[int(ny/2):]=np.array([ynodes[int(ny/2):ii+1].sum() 
+                            for ii in range(int(ny/2),ny)])-ynodes[int(ny/2)]
+                            
+                            
+    #make sure that the stations are in the center of the cell as requested by
+    #the code.
+    for sdict in slst:
+        #look for the closest grid line
+        xx=[nn for nn,xf in enumerate(xgrid) if xf>(sdict['east']-xspacing) 
+            and xf<(sdict['east']+xspacing)]
+        
+        #shift the station to the center in the east-west direction
+        if xgrid[xx[0]]<sdict['east']:
+            sdict['east_c']=xgrid[xx[0]]+xspacing/2
+        elif xgrid[xx[0]]>sdict['east']:
+            sdict['east_c']=xgrid[xx[0]]-xspacing/2
+        
+        #look for closest grid line
+        yy=[mm for mm,yf in enumerate(ygrid) if yf>(sdict['north']-yspacing) 
+            and yf<(sdict['north']+yspacing)]
+        
+        #shift station to center of cell in north-south direction
+        if ygrid[yy[0]]<sdict['north']:
+            sdict['north_c']=ygrid[yy[0]]+yspacing/2
+        elif ygrid[yy[0]]>sdict['north']:
+            sdict['north_c']=ygrid[yy[0]]-yspacing/2
+            
+        
+    #=Plot the data if desired=========================
+    if plotyn=='y':
+        fig=plt.figure(1,figsize=[10,10],dpi=300)
+        
+        #---plot map view    
+        ax1=fig.add_subplot(1,2,1,aspect='equal')
+        
+        for sdict in slst:
+            #make sure the station is in the center of the cell
+            
+            ax1.scatter(sdict['east_c'],sdict['north_c'],marker='v')
+                
+        for xp in xgrid:
+            ax1.plot([xp,xp],[ygrid.min(),ygrid.max()],color='k')
+            
+        for yp in ygrid:
+            ax1.plot([xgrid.min(),xgrid.max()],[yp,yp],color='k')
+        
+        if plotxlimits==None:
+            ax1.set_xlim(locations[:,0].min()-10*xspacing,
+                         locations[:,0].max()+10*xspacing)
+        else:
+            ax1.set_xlim(plotxlimits)
+        
+        if plotylimits==None:
+            ax1.set_ylim(locations[:,1].min()-50*yspacing,
+                         locations[:,1].max()+50*yspacing)
+        else:
+            ax1.set_ylim(plotylimits)
+            
+        ax1.set_ylabel('Northing (m)',fontdict={'size':10,'weight':'bold'})
+        ax1.set_xlabel('Easting (m)',fontdict={'size':10,'weight':'bold'})
+        
+        ##----plot depth view
+        ax2=fig.add_subplot(1,2,2,aspect='auto')
+                
+        for xp in xgrid:
+            ax2.plot([xp,xp],[-zgrid.sum(),0],color='k')
+            
+        for sdict in slst:
+            ax2.scatter(sdict['east_c'],0,marker='v')
+            
+        for zz,zp in enumerate(zgrid):
+            ax2.plot([xgrid.min(),xgrid.max()],[-zgrid[0:zz].sum(),
+                      -zgrid[0:zz].sum()],color='k')
+        
+        if plotzlimits==None:
+            ax2.set_ylim(-zgrid1.max(),200)
+        else:
+            ax2.set_ylim(plotzlimits)
+            
+        if plotxlimits==None:
+            ax2.set_xlim(locations[:,0].min()-xspacing,
+                         locations[:,0].max()+xspacing)
+        else:
+            ax2.set_xlim(plotxlimits)
+            
+        ax2.set_ylabel('Depth (m)',fontdict={'size':10,'weight':'bold'})
+        ax2.set_xlabel('Easting (m)',fontdict={'size':10,'weight':'bold'})  
+        
+        plt.show()
+    
+
+    
+    
+    print '-'*15
+    print '   Number of stations = {0}'.format(len(slst))
+    print '   Dimensions: '
+    print '      e-w = {0}'.format(xgrid.shape[0])
+    print '      n-s = {0}'.format(ygrid.shape[0])
+    print '       z  = {0}'.format(zgrid.shape[0])
+    print '   Extensions: '
+    print '      e-w = {0:.1f} (m)'.format(xgrid.__abs__().sum())
+    print '      n-s = {0:.1f} (m)'.format(ygrid.__abs__().sum())
+    print '      0-z = {0:.1f} (m)'.format(zgrid.__abs__().sum())
+    print '-'*15
+    return ynodes,xnodes,zgrid,locations,slst            
+    
+    
+def writeWSDataFile(periodlst,edilst,sitesfn=None,outfn=None,
+                    sitelocations=None,zerr=.05,
+                    ptol=.15,zerrmap=[10,1,1,10],savepath=None,ncol=5,
+                    units='mv'):
     """
     writes a data file for WSINV3D from winglink outputs
     
     Inputs:
-        sitesfn = sites filename (full path)
-        outfn = winglink .out file
-        periodlst = periods to extract from edifiles can get them from 
-                    using the function getPeriods.
-        edipath = path to edifiles
-        savepath = directory or full path to save data file to, default path
-                    is dirname sitesfn.  saves as: savepath/WSDataFile.dat
-        zerr = percent error to give to impedance tensor components
-        ptol = percent tolerance to locate frequencies in case edi files don't
-                have the same frequencies.  Need to add interpolation
-        zerrmap = multiple to multiply err of zxx,zxy,zyx,zyy by.
-                  Note the total error is zerr*zerrmap[ii]
-        ncol = number of columns in outfn
+    --------
+        **periodlst** :list
+                        periods to extract from edifiles, can get them from 
+                        using the function getPeriods.
+                        
+        **edilst** : list
+                    list of full paths to .edi files to use for inversion
+                    
+        **sitelocations**  : np.array (ns,2)
+                            array of station locations where [:,0] corresponds
+                            to the east-west location and [:,1] corresponds to
+                            the north-south location.  This can be found from 
+                            Make3DGrid.  Locations are in meters in grid
+                            coordinates.
+                            
+        **sitesfn** : string
+                     if you used Winglink to make the model then you need to
+                     input the sites filename (full path)
+                     
+        **outfn** : string
+                    if you used Winglink to make the model need to input the
+                    winglink .out file (full path)
+                    
+        **savepath** : string
+                       directory or full path to save data file to, default 
+                       path is dirname sitesfn.  
+                       saves as: savepath/WSDataFile.dat
+                       *Need to input if you did not use Winglink*
+                       
+        **zerr** : float
+                  percent error to give to impedance tensor components in 
+                  decimal form --> 10% = 0.10
+                  *default* is .05
+                  
+        **ptol** : float
+                   percent tolerance to locate frequencies in case edi files 
+                   don't have the same frequencies.  Need to add interpolation.
+                   *default* is 0.15
+                   
+        **zerrmap** :  tuple (zxx,zxy,zyx,zyy)
+                       multiple to multiply err of zxx,zxy,zyx,zyy by.
+                       Note the total error is zerr*zerrmap[ii]
+                       
+        **ncol** : int
+                   number of columns in outfn, sometimes it outputs different
+                   number of columns.
         
     
-    Outputs:
-        datafn = full path to data file, saved in dirname(sitesfn) or savepath
-                where savepath can be a directory or full filename
+    Returns:
+    --------
+        
+        **datafn** : full path to data file, saved in dirname(sitesfn) or 
+                     savepath where savepath can be a directory or full 
+                     filename
     """
-
-    import mtpy.core.z as Z
-
+    
+    ns=len(edilst)
     
     #get units correctly
     if units=='mv':
@@ -132,15 +700,30 @@ def writeWSDataFile(sitesfn,outfn,periodlst,edipath,zerr=.05,ptol=.15,
         ofile=os.path.join(savepath,'WSDataFile.dat')
     else:
         ofile=savepath
+    
+    #if there is a site file from someone who naively used winglink
+    if sitesfn!=None:    
+        #read in stations from sites file
+        sitelst,slst=readSitesFile(sitesfn)
         
-    #read in stations from sites file
-    sitelst,slst=readSitesFile(sitesfn)
+        #get x and y locations on a relative grid
+        xlst,ylst=getXY(sitesfn,outfn,ncol=ncol)
     
-    #get x and y locations on a relative grid
-    xlst,ylst, xy_dict = getXY(sitesfn,outfn,ncol=ncol)
-    
+    #if the user made a grid in python or some other fashion
+    if sitelocations!=None:
+        if type(sitelocations[0]) is dict:
+            xlst=np.zeros(ns)
+            ylst=np.zeros(ns)
+            slst=[]
+            for dd,sd in enumerate(sitelocations):
+                xlst[dd]=sd['east_c']
+                ylst[dd]=sd['north_c']
+                slst.append(sd['station'])
+        else:
+            xlst=sitelocations[:,0]
+            ylst=sitelocations[:,1]
+            
     #define some lengths
-    ns=len(slst)
     nperiod=len(periodlst)
     
     #make an array to put data into for easy writing
@@ -148,34 +731,28 @@ def writeWSDataFile(sitesfn,outfn,periodlst,edipath,zerr=.05,ptol=.15,
     
     #--------find frequencies---------------------------------------------------
     linelst=[]
-    for ss,s1 in enumerate(slst):
-        edifn=os.path.join(edipath,s1+'.edi')
-        #find the edi file if not named the same as in the site file
-        count=1
-        while os.path.isfile(edifn)==False:
-            edifn=os.path.join(edipath,s1[0:-count]+'.edi')
-            count+=1
-            if count>6:
-                raise IOError('Could not find an .edi file for:'+s1)
-    
-        z1=Z.Z(os.path.join(edifn))
-        if s1[0:len(z1.station)]==z1.station:
-            sdict={}
-            fspot={}
-            for ff,f1 in enumerate(periodlst):
-                for kk,f2 in enumerate(z1.period):
-                    if f2>=(1-ptol)*f1 and f2<=(1+ptol)*f1:
-                        zderr=np.array([abs(z1.zvar[kk,nn,mm])/
-                                        abs(z1.z[kk,nn,mm])*100 
-                                        for nn in range(2) for mm in range(2)])
-                        fspot['{0:.6g}'.format(f1)]=(kk,f2,zderr[0],zderr[1],
-                                                      zderr[2],zderr[3])
-                        zarr[ss,ff,:]=z1.z[kk].reshape(4,)
-                        
-            print z1.station, len(fspot)
-            sdict['fspot']=fspot
-            sdict['station']=z1.station
-            linelst.append(sdict)
+    for ss,edi in enumerate(edilst):
+        if not os.path.isfile(edi):
+            raise IOError('Could not find '+edi)
+            
+        
+        z1=Z.Z(edi)
+        sdict={}
+        fspot={}
+        for ff,f1 in enumerate(periodlst):
+            for kk,f2 in enumerate(z1.period):
+                if f2>=(1-ptol)*f1 and f2<=(1+ptol)*f1:
+                    zderr=np.array([abs(z1.zvar[kk,nn,mm])/
+                                    abs(z1.z[kk,nn,mm])*100 
+                                    for nn in range(2) for mm in range(2)])
+                    fspot['{0:.6g}'.format(f1)]=(kk,f2,zderr[0],zderr[1],
+                                                  zderr[2],zderr[3])
+                    zarr[ss,ff,:]=z1.z[kk].reshape(4,)
+                    
+        print z1.station, len(fspot)
+        sdict['fspot']=fspot
+        sdict['station']=z1.station
+        linelst.append(sdict)
     
     #-----Write data file-------------------------------------------------------
     
@@ -264,7 +841,7 @@ def writeWSDataFile(sitesfn,outfn,periodlst,edipath,zerr=.05,ptol=.15,
     return ofile,linelst
 
 
-def writeInit3DFile(outfn,rhostart=100,ncol=5,savepath=None):
+def writeInit3DFile_wl(outfn,rhostart=100,ncol=5,savepath=None):
     """
     Makes an init3d file for WSINV3D
     
@@ -345,13 +922,275 @@ def writeInit3DFile(outfn,rhostart=100,ncol=5,savepath=None):
 
     
     return ifile
+    
+    
+def writeInit3DFile(xgrid,ygrid,zgrid,savepath,reslst=100,
+                    title='Initial File for WSINV3D',resmodel=None):
+                        
+    """
+    will write an initial file for wsinv3d.  At the moment can only make a 
+    layered model that can then be manipulated later.  Input for a layered
+    model is in layers which is [(layer1,layer2,resistivity index for reslst)]
+    
+    Note that x is assumed to be S --> N, y is assumed to be W --> E and
+    z is positive downwards. 
+    
+    Also, the xgrid, ygrid and zgrid are assumed to be the relative distance
+    between neighboring nodes.  This is needed because wsinv3d builds the 
+    model from the bottom NW corner assuming the cell width from the init file.
+    
+    Therefore the first line or index=0 is the southern most row of cells, so
+    if you build a model by hand the the layer block will look upside down if
+    you were to picture it in map view. Confusing, perhaps, but that is the 
+    way it is.  
+    
+    Argumens:
+    ----------
+    
+        **xgrid** : np.array(nx)
+                    block dimensions (m) in the N-S direction. **Note** that 
+                    the code reads the grid assuming that index=0 is the 
+                    southern most point.
+        
+        **ygrid** : np.array(ny)
+                    block dimensions (m) in the E-W direction.  **Note** that
+                    the code reads in the grid assuming that index=0 is the 
+                    western most point.
+                    
+        **zgrid** : np.array(nz)
+                    block dimensions (m) in the vertical direction.  This is
+                    positive downwards.
+                    
+        **savepath** : string
+                      Path to the director where the initial file will be saved
+                      as savepath/init3d
+                      
+        **reslst** : float or list
+                    The start resistivity as a float or a list of resistivities
+                    that coorespond to the starting resistivity model 
+                    **resmodel**.  This must be input if you input **resmodel**
+                    
+        **title** : string
+                    Title that goes into the first line of savepath/init3d
+                    
+        **resmodel** : np.array((nx,ny,nz))
+                        Starting resistivity model.  Each cell is allocated an
+                        integer value that cooresponds to the index value of
+                        **reslst**.  **Note** again that the modeling code 
+                        assumes that the first row it reads in is the southern
+                        most row and the first column it reads in is the 
+                        western most column.  Similarly, the first plane it 
+                        reads in is the Earth's surface.
+                        
+    Returns:
+    --------
+        
+        **initfn** : full path to initial file 
+                        
+                    
+                      
+    """
+        
+    if type(reslst) is not list:
+        reslst=[reslst]
+     
+    if os.path.isdir(savepath)==True:
+        ifn=os.path.join(savepath,"init3d")
+
+    else:
+        ifn=os.path.join(savepath)
+    
+    ifid=file(ifn,'w')
+    ifid.write('# '+title+'\n'.upper())
+    ifid.write('{0} {1} {2} {3}\n'.format(xgrid.shape[0],ygrid.shape[0],
+                                          zgrid.shape[0],len(reslst)))
+
+    #write S --> N node block
+    for ii,xx in enumerate(xgrid):
+        ifid.write('{0:>12}'.format('{:.1f}'.format(abs(xx))))
+        if ii!=0 and np.remainder(ii+1,5)==0:
+            ifid.write('\n')
+        elif ii==xgrid.shape[0]-1:
+            ifid.write('\n')
+    
+    #write W --> E node block        
+    for jj,yy in enumerate(ygrid):
+        ifid.write('{0:>12}'.format('{:.1f}'.format(abs(yy))))
+        if jj!=0 and np.remainder(jj+1,5)==0:
+            ifid.write('\n')
+        elif jj==ygrid.shape[0]-1:
+            ifid.write('\n')
+
+    #write top --> bottom node block
+    for kk,zz in enumerate(zgrid):
+        ifid.write('{0:>12}'.format('{:.1f}'.format(abs(zz))))
+        if kk!=0 and np.remainder(kk+1,5)==0:
+            ifid.write('\n')
+        elif kk==zgrid.shape[0]-1:
+            ifid.write('\n')
+
+    #write the resistivity list
+    for ff in reslst:
+        ifid.write('{0:.1f} '.format(ff))
+    ifid.write('\n')
+    
+    
+#    else:
+    if resmodel==None:
+        ifid.close()
+    else:
+        #get similar layers
+        l1=0
+        layers=[]
+        for zz in range(zgrid.shape[0]-1):
+            if (resmodel[:,:,zz]==resmodel[:,:,zz+1]).all()==False:
+                layers.append((l1,zz))
+                l1=zz+1
+        #need to add on the bottom layers
+        layers.append((l1,zgrid.shape[0]-1))
+        
+        #write out the layers from resmodel
+        for ll in layers:
+            ifid.write('{0} {1}\n'.format(ll[0]+1,ll[1]+1))
+            for xx in range(xgrid.shape[0]):
+                for yy in range(ygrid.shape[0]):
+                    ifid.write('{0:.0f} '.format(resmodel[xx,yy,ll[0]]))
+                ifid.write('\n')
+    
+    print 'Wrote file to: '+ifn
+    return ifn 
+
+def readInit3D(initfn):
+    """
+    read an initial file and return the pertinent information including grid
+    positions in coordinates relative to the center point (0,0) and 
+    starting model.
+
+    Arguments:
+    ----------
+    
+        **initfn** : full path to initializing file.
+        
+    Returns:
+    --------
+        
+        **xgrid** : np.array(nx)
+                    array of nodes in S --> N direction
+        
+        **ygrid** : np.array(ny) 
+                    array of nodes in the W --> E direction
+                    
+        **zgrid** : np.array(nz)
+                    array of nodes in vertical direction positive downwards
+        
+        **resistivitivityModel** : dictionary
+                    dictionary of the starting model with keys as layers
+                    
+        **reslst** : list
+                    list of resistivity values in the model
+        
+        **titlestr** : string
+                       title string
+                       
+    """
+
+    ifid=file(initfn,'r')    
+    ilines=ifid.readlines()
+    ifid.close()
+    
+    titlestr=ilines[0]
+
+    #get size of dimensions, remembering that x is N-S, y is E-W, z is + down    
+    nsize=ilines[1].strip().split()
+    nx=int(nsize[0])
+    ny=int(nsize[1])
+    nz=int(nsize[2])
+
+    #initialize empy arrays to put things into
+    xnodes=np.zeros(nx)
+    ynodes=np.zeros(ny)
+    znodes=np.zeros(nz)
+    resmodel=np.zeros((nx,ny,nz))
+    
+    #get the grid line locations
+    nn=2
+    xx=0
+    while xx<nx:
+        iline=ilines[nn].strip().split()
+        for xg in iline:
+            xnodes[xx]=float(xg)
+            xx+=1
+        nn+=1
+    
+    yy=0
+    while yy<ny:
+        iline=ilines[nn].strip().split()
+        for yg in iline:
+            ynodes[yy]=float(yg)
+            yy+=1
+        nn+=1
+    
+    zz=0
+    while zz<nz:
+        iline=ilines[nn].strip().split()
+        for zg in iline:
+            znodes[zz]=float(zg)
+            zz+=1
+        nn+=1
+    
+    #put the grids into coordinates relative to the center of the grid
+    xgrid=xnodes.copy()
+    xgrid[:int(nx/2)]=-np.array([xnodes[ii:int(nx/2)].sum() 
+                                    for ii in range(int(nx/2))])
+    xgrid[int(nx/2):]=np.array([xnodes[int(nx/2):ii+1].sum() 
+                            for ii in range(int(nx/2),nx)])-xnodes[int(nx/2)]
+                            
+    ygrid=ynodes.copy()
+    ygrid[:int(ny/2)]=-np.array([ynodes[ii:int(ny/2)].sum() 
+                                    for ii in range(int(ny/2))])
+    ygrid[int(ny/2):]=np.array([ynodes[int(ny/2):ii+1].sum() 
+                            for ii in range(int(ny/2),ny)])-ynodes[int(ny/2)]
+                            
+    zgrid=np.array([znodes[:ii+1].sum() for ii in range(nz)])
+    
+    #get the resistivity values
+    reslst=[float(rr) for rr in ilines[nn].strip().split()]
+    nn+=1    
+    
+    #get model
+    iline=ilines[nn].strip().split()
+    if len(iline)==0 or len(iline)==1:
+        return xgrid,ygrid,zgrid,reslst,titlestr,resmodel
+    else:
+        while nn<len(ilines):
+            
+            iline=ilines[nn].strip().split()
+            if len(iline)==2:
+                l1=int(iline[0])-1
+                l2=int(iline[1])
+                nn+=1
+                xx=0
+            elif len(iline)==0:
+                break
+            else:
+                yy=0
+                while yy<ny:
+                    resmodel[xx,yy,l1:l2]=int(iline[yy])
+#                        if l1==20:
+#                            print nn,xx,yy,l1,l2,iline[yy]
+                    yy+=1
+                xx+=1
+                nn+=1
+            
+        return xgrid,ygrid,zgrid,reslst,titlestr,resmodel,xnodes,ynodes,znodes
+        
         
 def writeStartupFile(datafn,initialfn=None,outputfn=None,savepath=None,
                     apriorfn=None,modells=[5,0.3,0.3,0.3],targetrms=1.0,
                     control=None,maxiter=10,errortol=None,staticfn=None,
                     lagrange=None):
     """
-    makes a startup file for WSINV3D .  Most of these parameters are not input
+    makes a startup file for WSINV3D t.  Most of these parameters are not input
     
     Inputs:
         datafn = full path to the data file written for inversion
@@ -412,18 +1251,18 @@ def writeStartupFile(datafn,initialfn=None,outputfn=None,savepath=None,
                 '{0} {1:.1f} {1:.1f} {1:.1f} \n'.format(modells[0],modells[1],
                                                         modells[2],modells[3]))
         
-    if initialfn==None:
+    if lagrange==None:
         sfid.write('LAGRANGE_INFO'+' '*7+'default \n')
     else:
          sfid.write('LAGRANGE_INFO'+' '*7+lagrange+' \n')
     
 
-    if initialfn==None:
+    if errortol==None:
         sfid.write('ERROR_TOL_LEVEL'+' '*5+'default \n')
     else:
          sfid.write('ERROR_TOL_LEVEL'+' '*5+errortol+' \n')
          
-    if initialfn==None:
+    if staticfn==None:
         sfid.write('STATIC_FILE'+' '*9+'default \n')
     else:
          sfid.write('STATIC_FILE'+' '*9+staticfn+' \n')
@@ -436,7 +1275,7 @@ def writeStartupFile(datafn,initialfn=None,outputfn=None,savepath=None,
     
 def readDataFile(datafn,sitesfn=None,units='mv'):
     """
-    read in Ws3Dinv data file
+    read in data file
     
     Inputs:
         datafn = full path to data file
@@ -604,7 +1443,6 @@ def plotDataResPhase(datafn,respfn=None,sitesfn=None,plottype='1',plotnum=1,
         plotnum = 1 for just xy,yx
                   2 for all components
     """
-    import mtpy.core.z as Z
 
     
     #plot in color mode or black and white
@@ -750,10 +1588,10 @@ def plotDataResPhase(datafn,respfn=None,sitesfn=None,plottype='1',plotnum=1,
 #                rms=np.sqrt(np.sum([abs(np.linalg.det(rp.z[ll])-
 #                                        np.linalg.det(rpr.z[ll]))**2 
 #                            for ll in range(len(rp.period))])/len(rp.period))
-                rms=np.sqrt(np.mean([abs(abs(np.linalg.det(rp.z[ll]))-
-                                    abs(np.linalg.det(rpr.z[ll]))) 
+                rms=np.sqrt(np.mean([(np.sqrt(abs(np.linalg.det(rp.z[ll])))-
+                                    np.sqrt(abs(np.linalg.det(rpr.z[ll]))))**2 
                                     for ll in range(len(rp.period))]))
-                print rms
+                print 'RMS = {:.2f}'.format(rms)
                 erxyr=ax.errorbar(period[nzxy],rpr.resxy[nzxy],marker=mtem,
                                   ms=8,mfc='None',mec=cxy,mew=1,ls='--',
                                   yerr=rpr.resxyerr[nzxy],
@@ -925,7 +1763,7 @@ def plotTensorMaps(datafn,respfn=None,sitesfn=None,periodlst=None,
     plot phase tensor maps for data and or response, each figure is of a
     different period.  If response is input a third column is added which is 
     the residual phase tensor showing where the model is not fitting the data 
-    well.  The data are plotted in km in units of ohm-m.
+    well.  The data is plotted in km in units of ohm-m.
     
     Inputs:
         datafn = full path to data file
@@ -948,7 +1786,6 @@ def plotTensorMaps(datafn,respfn=None,sitesfn=None,periodlst=None,
         units = 'mv' to convert to Ohm-m 
         dpi = dots per inch of figure
     """
-    import mtpy.core.z as Z
     
     period,zd,zderr,nsarr,ewarr,sitelst=readDataFile(datafn,sitesfn=sitesfn,
                                                       units=units)
@@ -1162,9 +1999,9 @@ def plotTensorMaps(datafn,respfn=None,sitesfn=None,periodlst=None,
                 else:
                     pylab.setp(ax.get_yticklabels(),visible=False)
                 
-                cbax=make_axes(ax,shrink=.9,pad=.05,orientation='vertical')
+                cbax=mcb.make_axes(ax,shrink=.9,pad=.05,orientation='vertical')
                 if aa==0 or aa==1:
-                    cbx=ColorbarBase(cbax[0],cmap=ptcmap,
+                    cbx=mcb.ColorbarBase(cbax[0],cmap=ptcmap,
                                      norm=Normalize(vmin=ptmin*180/np.pi,
                                                     vmax=ptmax*180/np.pi),
                                      orientation='vertical',format='%.2g')
@@ -1172,7 +2009,7 @@ def plotTensorMaps(datafn,respfn=None,sitesfn=None,periodlst=None,
                     cbx.set_label('Phase (deg)',
                                   fontdict={'size':7,'weight':'bold'})
                 if aa==2:
-                    cbx=ColorbarBase(cbax[0],cmap=ptcmap2,
+                    cbx=mcb.ColorbarBase(cbax[0],cmap=ptcmap2,
                                      norm=Normalize(vmin=ptrmin,
                                                     vmax=ptrmax),
                                      orientation='vertical',format='%.2g')
@@ -1180,7 +2017,7 @@ def plotTensorMaps(datafn,respfn=None,sitesfn=None,periodlst=None,
                     cbx.set_label('$\Delta_{\Phi}$',
                                   fontdict={'size':7,'weight':'bold'})
                 if aa==3 or aa==4:
-                    cbx=ColorbarBase(cbax[0],cmap=rtcmapr,
+                    cbx=mcb.ColorbarBase(cbax[0],cmap=rtcmapr,
                                      norm=Normalize(vmin=10**rtmin,
                                                     vmax=10**rtmax),
                                      orientation='vertical',format='%.2g')
@@ -1188,7 +2025,7 @@ def plotTensorMaps(datafn,respfn=None,sitesfn=None,periodlst=None,
                     cbx.set_label('App. Res. ($\Omega \cdot$m)',
                                   fontdict={'size':7,'weight':'bold'})
                 if aa==5:
-                    cbx=ColorbarBase(cbax[0],cmap=rtcmap,
+                    cbx=mcb.ColorbarBase(cbax[0],cmap=rtcmap,
                                      norm=Normalize(vmin=rtrmin,
                                                     vmax=rtrmax),
                                      orientation='vertical',format='%.2g')
@@ -1273,13 +2110,13 @@ def plotTensorMaps(datafn,respfn=None,sitesfn=None,periodlst=None,
                 else:
                     ax.set_ylabel('northing (km)',fontdict={'size':10,
                               'weight':'bold'})
-#                cbax=make_axes(ax,shrink=.8,pad=.15,orientation='horizontal',
+#                cbax=mcb.make_axes(ax,shrink=.8,pad=.15,orientation='horizontal',
 #                               anchor=(.5,1))
                 #l,b,w,h
 #                cbax=fig.add_axes([.1,.95,.35,.05])
                 if aa==0:
                     cbax=fig.add_axes([.12,.97,.31,.02])
-                    cbx=ColorbarBase(cbax,cmap=ptcmap,
+                    cbx=mcb.ColorbarBase(cbax,cmap=ptcmap,
                                      norm=Normalize(vmin=ptmin*180/np.pi,
                                                     vmax=ptmax*180/np.pi),
                                      orientation='horizontal',format='%.2g')
@@ -1288,7 +2125,7 @@ def plotTensorMaps(datafn,respfn=None,sitesfn=None,periodlst=None,
                                   fontdict={'size':7,'weight':'bold'})
                 if aa==1:
                     cbax=fig.add_axes([.59,.97,.31,.02])
-                    cbx=ColorbarBase(cbax,cmap=rtcmapr,
+                    cbx=mcb.ColorbarBase(cbax,cmap=rtcmapr,
                                      norm=Normalize(vmin=10**rtmin,
                                                     vmax=10**rtmax),
                                      orientation='horizontal',format='%.2g')
@@ -1301,7 +2138,7 @@ def plotTensorMaps(datafn,respfn=None,sitesfn=None,periodlst=None,
 
 def readModelFile(mfile,ncol=7):
     """
-    read in a Ws3Dinv model file
+    read in a model file as x-north, y-east, z-positive down
     """            
     
     mfid=file(mfile,'r')
@@ -1318,61 +2155,243 @@ def readModelFile(mfile,ncol=7):
     xarr=np.zeros(nx)
     yarr=np.zeros(ny)
     zarr=np.zeros(nz)
-#    resarr=np.zeros((nx,ny,nz))
-    resarr=np.zeros(nx*ny*nz)
+    resarr=np.zeros((nx,ny,nz))
     
-    #make indices to get information from
-    ls=2
-    lx=nx/ncol+ls
-    ly=lx+ny/ncol
-    lz=ly+nz/ncol+1
-    
-    print lx,ly,lz
-    
-    #get x positions
-    for ii,mline in enumerate(mlines[ls:lx+1]):
-        xline=mline.strip().split()
-        for ll in range(ncol):
-            try:
-                xarr[ll+ii*ncol]=float(xline[ll])/1000.
-            except IndexError:
-                break
-    xarr[nx/2:]=-xarr[nx/2:]
-
-    #get y positions
-    for ii,mline in enumerate(mlines[lx:ly+1]):
-        yline=mline.strip().split()
-        for ll in range(ncol):
-            try:
-                yarr[ll+ii*ncol]=float(yline[ll])/1000.
-            except IndexError:
-                break
-    yarr[ny/2:]=-yarr[ny/2:]
-            
-    #get z positions        
-    for ii,mline in enumerate(mlines[ly+1:lz+1]):
-        zline=mline.strip().split()
-        for ll in range(ncol):
-            try:
-                zarr[ll+ii*ncol]=-float(zline[ll])/1000.
-            except IndexError:
-                break
+    mm=0
+    nn=2
+    while mm<nx:
+        xline=mlines[nn].strip().split()
+        for xx in xline:
+            xarr[mm]=float(xx)
+            mm+=1
+        nn+=1
         
-#    get resistivity values
+    mm=0
+    while mm<ny:
+        yline=mlines[nn].strip().split()
+        for yy in yline:
+            yarr[mm]=float(yy)
+            mm+=1
+        nn+=1
+    
+    mm=0
+    while mm<nz:
+        zline=mlines[nn].strip().split()
+        for zz in zline:
+            zarr[mm]=float(zz)
+            mm+=1
+        nn+=1
+        
+    #put the grids into coordinates relative to the center of the grid
+    nsarr=xarr.copy()
+    nsarr[:int(nx/2)]=-np.array([xarr[ii:int(nx/2)].sum() 
+                                    for ii in range(int(nx/2))])
+    nsarr[int(nx/2):]=np.array([xarr[int(nx/2):ii+1].sum() 
+                            for ii in range(int(nx/2),nx)])-xarr[int(nx/2)]
+                            
+    ewarr=yarr.copy()
+    ewarr[:int(ny/2)]=-np.array([yarr[ii:int(ny/2)].sum() 
+                                    for ii in range(int(ny/2))])
+    ewarr[int(ny/2):]=np.array([yarr[int(ny/2):ii+1].sum() 
+                            for ii in range(int(ny/2),ny)])-yarr[int(ny/2)]
+                            
+    zdepth=np.array([zarr[0:ii+1].sum()-zarr[0] for ii in range(nz)])
+
     mm=0
     for kk in range(nz):
         for jj in range(ny):
             for ii in range(nx):
-                resarr[mm]=float(mlines[lz+1+mm].strip())
+                resarr[(nx-1)-ii,jj,kk]=float(mlines[nn+mm].strip())
                 mm+=1
     
-#    resarr=resarr.reshape(nz,ny,nx)
-    return xarr,yarr,zarr,resarr,infodict
-        
-                
+    return nsarr,ewarr,zdepth,resarr,infodict
+ 
+
+def plotDepthSlice(datafn,modelfn,savepath=None,map_scale='km',ew_limits=None,
+                   ns_limits=None,depth_index=None,fig_dimensions=[4,4],
+                   dpi=300,font_size=7,climits=(0,4),cmap='jet_r',
+                   plot_grid='n',cb_dict={}): 
+                       
+    """
+    plot depth slices
+    """
     
+    #create a path to save figure to if it doesn't already exist
+    if savepath!=None:
+        if not os.path.exists(savepath):
+            os.mkdir(savepath)
         
+    #make map scale
+    if map_scale=='km':
+        dscale=1000.
+    elif map_scale=='m':
+        dscale=1.
     
+    #read in data file to station locations
+    period,zz,zzerr,ns,ew,slst=readDataFile(datafn)
+    
+    #scale the station locations to the desired units
+    ns/=dscale
+    ew/=dscale
+    
+    #read in model file    
+    x,y,z,resarr,idict=readModelFile(modelfn)
+    
+    #scale the model grid to desired units
+    x/=dscale
+    y/=dscale
+    z/=dscale
+
+     
+    #create an list of depth slices to plot
+    if depth_index==None:
+        zrange=range(z.shape[0])
+    elif type(depth_index) is int:
+        zrange=[depth_index]
+    elif type(depth_index) is list:
+        zrange=depth_index
+    
+    #set the limits of the plot
+    if ew_limits==None:
+        xlimits=(np.floor(ew.min()),np.ceil(ew.max()))
+    else:
+        xlimits=ew_limits
+        
+    if ns_limits==None:
+        ylimits=(np.floor(ns.min()),np.ceil(ns.max()))
+    else:
+        ylimits=ns_limits
+        
+        
+    #make a mesh grid of north and east
+    north1,east1=np.meshgrid(x,y)
+    
+    fdict={'size':font_size+2,'weight':'bold'}
+    
+    cblabeldict={-2:'$10^{-3}$',-1:'$10^{-1}$',0:'$10^{0}$',1:'$10^{1}$',
+                 2:'$10^{2}$',3:'$10^{3}$',4:'$10^{4}$',5:'$10^{5}$',
+                 6:'$10^{6}$',7:'$10^{7}$',8:'$10^{8}$'}
+    
+    
+    plt.rcParams['font.size']=font_size
+    for ii in zrange: 
+        fig=plt.figure(ii,figsize=fig_dimensions,dpi=dpi)
+        plt.clf()
+        ax1=fig.add_subplot(1,1,1,aspect='equal')
+        ax1.pcolormesh(east1,north1,
+                       np.log10(np.rot90(resarr[:,:,ii],3)),
+                       cmap=cmap,vmin=climits[0],vmax=climits[1])
+                       
+        #plot the stations
+        for ee,nn in zip(ew,ns):
+            ax1.text(ee,nn,'*',verticalalignment='center',
+                     horizontalalignment='center',
+                     fontdict={'size':5,'weight':'bold'})
+
+        #set axis properties
+        ax1.set_xlim(xlimits)
+        ax1.set_ylim(ylimits)
+        ax1.xaxis.set_minor_locator(MultipleLocator(100*1./dscale))
+        ax1.yaxis.set_minor_locator(MultipleLocator(100*1./dscale))
+        ax1.set_ylabel('Northing ('+map_scale+')',fontdict=fdict)
+        ax1.set_xlabel('Easting ('+map_scale+')',fontdict=fdict)
+        ax1.set_title('Depth = {:.3f} '.format(z[ii])+'('+map_scale+')',
+                      fontdict=fdict)
+        
+        #plot the grid if desired              
+        if plot_grid=='y':
+            for xx in x:
+                ax1.plot([y.min(),y.max()],[xx,xx],lw=.1,color='k')
+            for yy in y:
+                ax1.plot([yy,yy],[x.min(),x.max()],lw=.1,color='k')
+        
+        #plot the colorbar
+        try:
+            cb_dict['orientation']
+        except KeyError:
+            cb_dict['orientation']='horizontal'
+        
+        if cb_dict['orientation']=='horizontal':
+            try:
+                ax2 = fig.add_axes(cb_dict['position'])
+            except KeyError:
+                ax2 = fig.add_axes((ax1.axes.figbox.bounds[3]-.225,
+                                    ax1.axes.figbox.bounds[1]+.05,.3,.025))
+                                    
+        elif cb_dict['orientation']=='vertical':
+            try:
+                ax2 = fig.add_axes(cb_dict['position'])
+            except KeyError:
+                ax2 = fig.add_axes((ax1.axes.figbox.bounds[2]-.15,
+                                    ax1.axes.figbox.bounds[3]-.21,.025,.3))
+        
+        cb=mcb.ColorbarBase(ax2,cmap=cmap,
+                        norm=Normalize(vmin=climits[0],vmax=climits[1]),
+                        orientation=cb_dict['orientation'])
+                            
+        if cb_dict['orientation']=='horizontal':
+            cb.ax.xaxis.set_label_position('top')
+            cb.ax.xaxis.set_label_coords(.5,1.3)
+            
+            
+        elif cb_dict['orientation']=='vertical':
+            cb.ax.yaxis.set_label_position('right')
+            cb.ax.yaxis.set_label_coords(1.25,.5)
+            cb.ax.yaxis.tick_left()
+            cb.ax.tick_params(axis='y',direction='in')
+                            
+        cb.set_label('Resistivity ($\Omega \cdot$m)',
+                     fontdict={'size':font_size})
+        cb.set_ticks(np.arange(climits[0],climits[1]+1))
+        cb.set_ticklabels([cblabeldict[cc] 
+                            for cc in np.arange(climits[0],climits[1]+1)])
+
+        if savepath!=None:
+            
+            fig.savefig(os.path.join(savepath,
+                        "Depth_{}_{:.4f}.png".format(ii,z[ii])),
+                        dpi=dpi)
+            fig.clear()
+            plt.close()
+
+        else:
+            pass
+
+           
+        
+def computeMemoryUsage(nx, ny, nz, n_stations, n_zelements, n_period):
+    """
+    compute the memory usage of a model
+    
+    Arguments:
+    ----------
+        **nx** : int
+                 number of cells in N-S direction
+                 
+        **ny** : int
+                 number of cells in E-W direction
+                 
+        **nz** : int
+                 number of cells in vertical direction including air layers (7)
+                 
+        **n_stations** : int
+                         number of stations
+                         
+        **n_zelements** : int
+                          number of impedence tensor elements either 4 or 8
+        
+        **n_period** : int
+                       number of periods to invert for
+                       
+    Returns:
+    --------
+        **mem_req** : float
+                      approximate memory useage in GB
+    """
+
+    mem_req = 1.2*(8*(n_stations*n_period*n_zelements)**2+
+                   8*(nx*ny*nz*n_stations*n_period*n_zelements))
+    return mem_req*1E-9
                         
         
         

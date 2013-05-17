@@ -1,5 +1,7 @@
 '''
 This module contains functions to plot different MT things.
+
+J Peacock
 '''
 
 import matplotlib.pyplot as plt
@@ -12,10 +14,18 @@ from matplotlib.ticker import MultipleLocator,FormatStrFormatter
 import mtpy.legacy.old_z as Z
 reload(Z)
 import mtpy.utils.latlongutmconversion as utm2ll
-from matplotlib.patches import Ellipse,Rectangle,Arrow
-from matplotlib.colors import LinearSegmentedColormap,Normalize
-from matplotlib.colorbar import *
-import matplotlib.gridspec as gridspec
+from matplotlib import colors
+from matplotlib import patches
+import matplotlib.colorbar as mcb
+from matplotlib import gridspec
+
+np.random.seed(101)
+zvals = np.random.rand(100, 100) * 10
+
+# make a color map of fixed colors
+cmap = colors.ListedColormap(['white', 'red'])
+bounds=[0,5,10]
+norm = colors.BoundaryNorm(bounds, cmap.N)
 
 #==============================================================================
 # Make some color maps for plotting
@@ -24,32 +34,37 @@ import matplotlib.gridspec as gridspec
 ptcmapdict={'red':((0.0,1.0,1.0),(1.0,1.0,1.0)),
             'green':((0.0,0.0,1.0),(1.0,0.0,1.0)),
             'blue':((0.0,0.0,0.0),(1.0,0.0,0.0))}
-ptcmap=LinearSegmentedColormap('ptcmap',ptcmapdict,256)
+ptcmap=colors.LinearSegmentedColormap('ptcmap',ptcmapdict,256)
 
 #blue to yellow to red
 skcmapdict={'red':((0.0,0.0,0.0),(.5,1.0,1.0),(0.5,0.0,1.0),(1.0,1.0,1.0)),
             'green':((0.0,1.0,0.0),(.5,1.0,0.0),(.5,0.0,1.0),(1.0,0.0,1.0)),
             'blue':((0.0,0.0,1.0),(.5,0.0,1.0),(0.5,0.1,0.1),(1.0,0.1,0.1))}
-skcmap=LinearSegmentedColormap('skcmap',skcmapdict,256)
+skcmap=colors.LinearSegmentedColormap('skcmap',skcmapdict,256)
 
 #blue to white to red
 skcmapdict2={'red':((0.0,0.0,0.0),(.5,1.0,1.0),(0.5,0.0,1.0),(1.0,1.0,1.0)),
             'green':((0.0,1.0,0.0),(.5,1.0,0.0),(.5,0.0,1.0),(1.0,0.0,1.0)),
             'blue':((0.0,0.0,1.0),(.5,1.0,1.0),(0.5,0.0,1.0),(1.0,0.0,0.0))}
-skcmap2=LinearSegmentedColormap('skcmap2',skcmapdict2,256)
+skcmap2=colors.LinearSegmentedColormap('skcmap2',skcmapdict2,256)
+
+#color segmented map from blue to red
+skmapdict3={'red':((0.0,0.0,0.0),()),
+            'green':((0.0,0.0,0.0)),
+            'blue':((0.0,0.0,1.0))}
 
 
 #white to blue
 ptcmapdict3={'red':((0.0,1.0,1.0),(1.0,0.0,0.0)),
             'green':((0.0,1.0,1.0),(1.0,0.0,0.0)),
             'blue':((0.0,1.0,1.0),(1.0,1.0,1.0))}
-ptcmap3=LinearSegmentedColormap('ptcmap3',ptcmapdict3,256)
+ptcmap3=colors.LinearSegmentedColormap('ptcmap3',ptcmapdict3,256)
 
 #red to blue
 rtcmapdict={'red':((0.0,0.0,1.0),(1.0,0.0,1.0)),
             'green':((0.0,0.0,0.0),(1.0,0.0,0.0)),
             'blue':((0.0,1.0,0.0),(1.0,1.0,0.0))}
-rtcmap=LinearSegmentedColormap('rtcmap',rtcmapdict,256)
+rtcmap=colors.LinearSegmentedColormap('rtcmap',rtcmapdict,256)
 
 ckdict={'phiminang':'$\Phi_{min}$ (deg)','phimin':'$\Phi_{min}$ (deg)',
         'phimaxang':'$\Phi_{max}$ (deg)','phimax':'$\Phi_{max}$ (deg)',
