@@ -985,7 +985,7 @@ class Tipper(object):
         self._frequencies = np.array(lo_frequencies)
 
     def _get_frequencies(self): return np.array(self._frequencies)
-    frequencies = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
+    freq = property(_get_frequencies, _set_frequencies, doc='array of frequencies')
 
         
     def set_tipper(self, tipper_array):
@@ -1068,7 +1068,7 @@ class Tipper(object):
 
         self.tipper = tipper_new
 
-    real = property(_get_real, _set_real, doc='Real part of the Tipper')
+    _real = property(_get_real, _set_real, doc='Real part of the Tipper')
 
     def _get_imag(self):
         """
@@ -1113,7 +1113,7 @@ class Tipper(object):
 
         self.tipper = tipper_new
 
-    imag = property(_get_imag, _set_imag, doc='Imaginary part of the Tipper')
+    _imag = property(_get_imag, _set_imag, doc='Imaginary part of the Tipper')
 
     def _get_rho_phi(self):
         """

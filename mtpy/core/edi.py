@@ -109,7 +109,7 @@ class Edi(object):
         self._freq = None
         self._zrot = None
         self.Z = MTz.Z()
-        self.Tipper = None #MTz.Tipper()
+        self.Tipper = MTz.Tipper()
 
 
 
@@ -213,7 +213,7 @@ class Edi(object):
             try:
                 self._read_tipper(edistring)
             except:
-                self.Tipper = None #MTz.Tipper()
+                self.Tipper = MTz.Tipper()
                 #self.tippererr = None
                 print 'Could not read Tipper section: %s'%infile
 
