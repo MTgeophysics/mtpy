@@ -120,8 +120,10 @@ def strike_angle(z_array = None, z_object = None, pt_array= None, pt_object = No
             strike2 = strike1 + 90
         else:
             strike2 = strike1 - 90
-
-        lo_strikes.append(( min(strike1,strike2), max(strike1,strike2)) )
+        if 1:#min(strike1,strike2)>=0:
+            lo_strikes.append(( min(strike1,strike2), max(strike1,strike2)) )
+        # else:
+        #     lo_strikes.append(( max(strike1,strike2), min(strike1,strike2)) )
 
     return np.array(lo_strikes)
 

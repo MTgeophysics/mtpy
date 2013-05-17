@@ -95,31 +95,47 @@ class Edi(object):
         #get indexes of important information
         edict={}
         for ii,eline in enumerate(edilines):
-            if eline.find('FREQUENCIES')>0:
+
+            if eline.find('FREQ')>0:
                 edict['freq']=ii
-            elif eline.find('SPECTRASECT')>0:
+                continue
+            if eline.find('SPECTRASECT')>0:
                 edict['spectra']=ii
-            elif eline.find('IMPEDANCE')>0:
-                if eline.find('ROTATION')>0:
+                continue
+            if eline.find('>ZROT')>=0:
+                if not edict.has_key('zrot'):
                     edict['zrot']=ii
-                else:
+                continue
+            #elif eline.find('IMPEDANCE')>0:
+            #    if eline.find('ROTATION')>0:
+            #        edict['zrot']=ii
+            #    else:
+            #        edict['z']=ii
+            if eline.find('>Z')>=0:
+                if not edict.has_key('z'):
                     edict['z']=ii
-            elif eline.find('TIPPER')>0:
+                continue
+
+            if eline.find('TIPPER')>0:
                 if eline.find('ROTATION')>0:
                     edict['trot']=ii
                 else:
                     edict['tipper']=ii
-            
+
         #-------Read in header information------------------------
         ii=0
         while type(ii) is int:
+        
             eline=edilines[ii]
-            if eline.find('SPECTRA')>0:      
+            if eline.find('SPECTRA')>=0:      
                 ii=None
-            elif eline.find('IMPEDANCE')>0:      
+            elif eline.find('IMPEDANCE')>=0:      
                 ii=None
-            elif eline.find('FREQUENCIES')>0:     
+            elif eline.find('FREQUENCIES')>=0:     
                 ii=None
+            elif eline.find('>END')>=0:
+                ii=None
+                continue
             else:
                 #get the block header
                 if eline.find('>')==0:
@@ -209,10 +225,9 @@ class Edi(object):
         #======================================================================
         #-------------------Get Frequencies------------------------------------        
         try:
-            ii=edict['freq']+1
+            ii=edict['freq']
             #get number of frequencies
             nf=int(edilines[ii].strip().split('//')[1])
-            
             #initialize some arrays    
             self.frequency=np.zeros(nf)
             
@@ -220,7 +235,7 @@ class Edi(object):
             kk=0
             ii+=1
             while type(kk) is int:
-                if edilines[ii].find('!')>0 or edilines[ii].find('*')>0:
+                if edilines[ii].find('>')>=0 or edilines[ii].find('*')>0 :
                     kk=None
                 else:
                     eline=edilines[ii].strip().split()
@@ -371,7 +386,7 @@ class Edi(object):
         
         #--------------Get Impedance Rotation angles----------------------
         try:
-            ii=edict['zrot']+1
+            ii=edict['zrot']
             
             #get number of frequencies
             nf=int(edilines[ii].strip().split('//')[1])
@@ -383,7 +398,7 @@ class Edi(object):
             kk=0
             ii+=1
             while type(kk) is int:
-                if edilines[ii].find('!')>0 or edilines[ii].find('*')>0:
+                if edilines[ii].find('>')>=0 or edilines[ii].find('*')>0:
                     kk=None
                 else:     
                     eline=edilines[ii].strip().split()
@@ -403,7 +418,7 @@ class Edi(object):
         
         #--------------Get impedance--------------------------------------                           
         try:
-            ii=edict['z']+1
+            ii=edict['z']
             
             #define a dictionary of indecies to put information into z array
             zdict=dict([('ZXX',(0,0)),('ZXY',(0,1)),('ZYX',(1,0)),
