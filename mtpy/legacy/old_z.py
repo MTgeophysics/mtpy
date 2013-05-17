@@ -2369,37 +2369,46 @@ class ResPhase:
             self.resyx[jj]=wt*abs(self.z[jj,1,0])**2
             self.resyy[jj]=wt*abs(self.z[jj,1,1])**2
             
-            self.resxxerr[jj]=wt*(abs(self.z[jj,0,0])+self.zvar[jj,0,0])**2-\
-                        self.resxx[jj].real
-            self.resxyerr[jj]=wt*(abs(self.z[jj,0,1])+self.zvar[jj,0,1])**2-\
-                        self.resxy[jj].real
-            self.resyxerr[jj]=wt*(abs(self.z[jj,1,0])+self.zvar[jj,1,0])**2-\
-                        self.resyx[jj].real
-            self.resyyerr[jj]=wt*(abs(self.z[jj,1,1])+self.zvar[jj,1,1])**2-\
-                        self.resyy[jj].real
+            self.resxxerr[jj]= 2 * wt * abs(self.z[jj,0,0]) * np.sqrt(self.zvar[jj,0,0])
+            self.resxyerr[jj]= 2 * wt * abs(self.z[jj,0,1]) * np.sqrt(self.zvar[jj,0,1])
+            self.resyxerr[jj]= 2 * wt * abs(self.z[jj,1,0]) * np.sqrt(self.zvar[jj,1,0])
+            self.resyyerr[jj]= 2 * wt * abs(self.z[jj,1,1]) * np.sqrt(self.zvar[jj,1,1])
             
-            self.phasexx[jj]=np.arctan2(self.z[jj,0,0].imag,
-                                        self.z[jj,0,0].real)*(180/np.pi)
-            self.phasexy[jj]=np.arctan2(self.z[jj,0,1].imag,
-                                        self.z[jj,0,1].real)*(180/np.pi)
-            self.phaseyx[jj]=np.arctan2(self.z[jj,1,0].imag,
-                                        self.z[jj,1,0].real)*(180/np.pi)
-            self.phaseyy[jj]=np.arctan2(self.z[jj,1,1].imag,
-                                        self.z[jj,1,1].real)*(180/np.pi)
+            self.phasexx[jj]=(np.arctan2(self.z[jj,0,0].imag,
+                                        self.z[jj,0,0].real)*(180/np.pi))%360
+            self.phasexy[jj]=(np.arctan2(self.z[jj,0,1].imag,
+                                        self.z[jj,0,1].real)*(180/np.pi))%360
+            # if not 0 <= self.phasexy[jj] <= 90:
+            #     print self.phasexy[jj]
+            #     self.phasexy[jj] = ((self.phasexy[jj]))%90
+            self.phaseyx[jj]=(np.arctan2(self.z[jj,1,0].imag,
+                                        self.z[jj,1,0].real)*(180/np.pi))%360
+            # if not 180 <= self.phaseyx[jj] <= 270:
+            #     self.phaseyx[jj] = ((self.phaseyx[jj])+180)%360
+
+            self.phaseyy[jj]=(np.arctan2(self.z[jj,1,1].imag,
+                                        self.z[jj,1,1].real)*(180/np.pi))%360
             
-            self.phasexxerr[jj]=np.arcsin(self.zvar[jj,0,0]/
-                                            abs(self.z[jj,0,0]))*(180/np.pi)
-            self.phasexyerr[jj]=np.arcsin(self.zvar[jj,0,1]/
-                                            abs(self.z[jj,0,1]))*(180/np.pi)
-            self.phaseyxerr[jj]=np.arcsin(self.zvar[jj,1,0]/
-                                            abs(self.z[jj,1,0]))*(180/np.pi)
-            self.phaseyyerr[jj]=np.arcsin(self.zvar[jj,1,1]/
-                                            abs(self.z[jj,1,1]))*(180/np.pi)
+            self.phasexxerr[jj]=np.sqrt(self.zvar[jj,0,0]/((self.z[jj,0,0].imag)**2+(self.z[jj,0,0].real)**2))*(180/np.pi)
+            self.phasexyerr[jj]=np.sqrt(self.zvar[jj,0,1]/((self.z[jj,0,1].imag)**2+(self.z[jj,0,1].real)**2))*(180/np.pi)
+            self.phaseyxerr[jj]=np.sqrt(self.zvar[jj,1,0]/((self.z[jj,1,0].imag)**2+(self.z[jj,1,0].real)**2))*(180/np.pi)
+            self.phaseyyerr[jj]=np.sqrt(self.zvar[jj,1,1]/((self.z[jj,1,1].imag)**2+(self.z[jj,1,1].real)**2))*(180/np.pi)
+
+
+            #old
+            # self.phasexxerr[jj]=np.arcsin(self.zvar[jj,0,0]/
+            #                                 abs(self.z[jj,0,0]))*(180/np.pi)
+            # self.phasexyerr[jj]=np.arcsin(self.zvar[jj,0,1]/
+            #                                 abs(self.z[jj,0,1]))*(180/np.pi)
+            # self.phaseyxerr[jj]=np.arcsin(self.zvar[jj,1,0]/
+            #                                 abs(self.z[jj,1,0]))*(180/np.pi)
+            # self.phaseyyerr[jj]=np.arcsin(self.zvar[jj,1,1]/
+            #                                 abs(self.z[jj,1,1]))*(180/np.pi)
             
             #calculate determinant values
             #apparent resistivity
-            zdet=np.linalg.det(self.z[jj])**.5
-            zdetvar=np.linalg.det(self.zvar[jj])**.5
+            zdet=np.sqrt(np.linalg.det(self.z[jj]))
+            zdetvar=np.linalg.det(self.zvar[jj])
             self.resdet[jj]=wt*abs(zdet)**2
             self.resdeterr[jj]=wt*np.abs(zdet+zdetvar)**2-self.resdet[jj]
             

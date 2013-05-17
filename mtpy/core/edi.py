@@ -2082,7 +2082,7 @@ def _generate_edifile_string(edidict):
             lo_hemeas = edidict['HMEAS_EMEAS']
 
             for hemeas in lo_hemeas:
-                edistring += ('>'+' '.join(hemeas)+'\n').upper()
+                edistring += ('>'+' '.join(hemeas.split())+'\n').upper()
 
 
         if sectionhead == 'MTSECT':

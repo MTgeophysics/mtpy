@@ -13,7 +13,7 @@ import fnmatch
 import datetime
 from scipy import interpolate
 import time
-import mtpy.core.mttools as mt
+import mtpy.legacy.mttools as mt
 import shutil
 import subprocess
 #import winsound as ws

@@ -171,6 +171,7 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
         inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n\i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,stationname)
 
     string_file = op.join(ts_directory,'birrp_wd','birrp_input_string.txt')
+    string_file = MTfh.make_unique_filename(string_file)
     with open(string_file,'w') as F:
         F.write(inputstring)
         F.write('\n')
@@ -358,6 +359,7 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
 
     try:
         outfn = op.join(w_directory, 'birrp_input_data.txt') 
+        outfn = MTfh.make_unique_filename(outfn)
         print 'save input data array to file: {0}'.format(outfn)
         np.savetxt(outfn, data)
     except:
@@ -673,6 +675,8 @@ def convert2edi_incl_instrument_correction(stationname, in_dir, survey_configfil
                 corrected = zentry * correction_factor
                 Z_array[idx_f,0,i] = np.real(corrected)
                 Z_array[idx_f,1,i] = np.imag(corrected)
+                #correct the error: stretch by the ratio of amplitudes of original and correct Z value
+                Z_array[idx_f,2,i] = Z_array[idx_f,2,i]/np.abs(zentry)*np.abs(corrected)
 
 
         return Z_array
@@ -732,6 +736,9 @@ def _set_edi_data(lo_periods, Z_array, tipper_array):
             datastring += '>%s%s // %i\n'%(compstrings[Z_comp], Z_entries[entry], len(periods))
             for i,period in enumerate(periods):
                 data = Z_array[i,entry,Z_comp]
+                #EDI files carries variances, not standard deviations:
+                if entry == 2:
+                    data = data**2
                 datastring += '\t%E'%(data)
                 if (i+1)%5 == 0 and (i != len(periods) - 1) and i > 0:
                     datastring += '\n'

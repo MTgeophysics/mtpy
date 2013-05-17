@@ -93,9 +93,11 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
             window_idx += 1
         t1 += 1
         if t1%(int(totallength/100.)) == 0:
-            print '{0} %'.format(np.round(t1/float(totallength) *100))
+            sys.stdout.write('{0:3} %\r'.format(int(np.round(t1/float(totallength) *100))))
+            sys.stdout.flush()
+
     
-    print 'loop finished - checking last sample'
+    print '\nloop finished - checking last sample'
     #after the loop, check, if last sample belogs to a data window:
     if ts_tmp != None:
         te_tmp = t1 -1
