@@ -6,7 +6,9 @@ mtpy/mtpy/core/edi.py
 Contains classes and functions for handling EDI files.
 
     Class:
-    "Edi" contains all information from or for an EDI file. Sections of EDI files are given as respective attributes, section-keys and values are stored in dictionaries.
+    "Edi" contains all information from or for an EDI file. 
+    Sections of EDI files are given as respective attributes, 
+    section-keys and values are stored in dictionaries.
 
     Methods:
     --------
@@ -128,7 +130,9 @@ class Edi(object):
     """
         Edi class - generates an edi-object.
 
-        Methods  include reading and writing from and to edi-files, rotations/combinations of edi-files, as well as 'get' and 'set' for all edi file sections
+        Methods  include reading and writing from and to edi-files, 
+        rotations/combinations of edi-files, as well as 'get' and 
+        'set' for all edi file sections
 
         Errors are given as standard deviations (sqrt(VAR))
 
@@ -160,9 +164,13 @@ class Edi(object):
         """
             Read in an EDI file.
 
-            Returns an exception, if the file is invalid (following MTpy standards).
+            Returns an exception, if the file is invalid 
+            (following MTpy standards).
 
-            'datatype' determines the way data are provided. Default is 'z', so the full impedance tensor is expected to be present in the file. Other possibilities are 'resphase' and 'spectra' - they exclude the reading of a potentially present Z information.
+            'datatype' determines the way data are provided. Default is 'z', 
+            so the full impedance tensor is expected to be present. 
+            Other possibilities are 'resphase' and 'spectra' - they exclude 
+            the reading of a potentially present Z information.
             TODO: 'spectra' - not implemented yet
 
 
@@ -200,7 +208,8 @@ class Edi(object):
         try:
             self._read_head(edistring)
         except:
-            raise MTex.MTpyError_edi_file('Could not read HEAD section: %s'%infile)
+            raise MTex.MTpyError_edi_file(
+                'Could not read HEAD section: %s'%infile)
 
         try:
             self._read_info(edistring)
@@ -211,7 +220,8 @@ class Edi(object):
         try:
             self._read_definemeas(edistring)
         except:
-            raise MTex.MTpyError_edi_file('Could not read DEFINEMEAS section: %s'%infile)
+            raise MTex.MTpyError_edi_file(
+                'Could not read DEFINEMEAS section: %s'%infile)
 
         try:
             self._read_hmeas_emeas(edistring)
@@ -232,13 +242,15 @@ class Edi(object):
             try:
                 self._read_z(edistring)
             except:
-                raise MTex.MTpyError_edi_file('Could not read Z section: %s'%infile)
+                raise MTex.MTpyError_edi_file(
+                    'Could not read Z section: %s'%infile)
 
         elif datatype == 'resphase':
             try:
                 self._read_res_phase(edistring)
             except:
-                raise MTex.MTpyError_edi_file('Could not read ResPhase-/Rho-section: %s'%infile)
+                raise MTex.MTpyError_edi_file(
+                    'Could not read ResPhase-/Rho-section: %s'%infile)
             #rotation is optional
             try:
                 self._read_rhorot(edistring)
@@ -250,7 +262,8 @@ class Edi(object):
             try:
                 self._read_spectra(edistring)
             except:
-                raise MTex.MTpyError_edi_file('Could not read Spectra section: %s'%infile)
+                raise MTex.MTpyError_edi_file(
+                    'Could not read Spectra section: %s'%infile)
 
 
         #Tipper is optional
@@ -338,8 +351,10 @@ class Edi(object):
         """
             Return the number of freq/length of the Z data array .
         """
-        
-        return len(self.freq)
+        if self.freq is not None:
+            return len(self.freq)
+        else:
+            return None
      
     #----------------elevation----------------------------------------------
     def _get_elev(self): 
@@ -353,7 +368,7 @@ class Edi(object):
             try:
                 return self.definemeas['refelev']
             except KeyError:
-                print 'Could not find Latitude'
+                print 'Could not find elevation value'
         
     def _set_elev(self, value): 
         try:
@@ -522,7 +537,7 @@ class Edi(object):
 
         self._info_dict = info_dict
 
-    #--------------Read Definemeas---------------------------------------------
+    #--------------Read Definemeas--------------------------------------------
     def _read_definemeas(self, edistring):
         """
             Read in the DEFINEMEAS  section from the raw edi-string.
@@ -557,7 +572,7 @@ class Edi(object):
 
         self._definemeas = d_dict
 
-    #--------------Read h and e measure----------------------------------------
+    #--------------Read h and e measure---------------------------------------
     def _read_hmeas_emeas(self, edistring):
         """
             Read in the HMEAS/EMEAS  section from the raw edi-string.
@@ -642,7 +657,7 @@ class Edi(object):
         #be sure to set z_object's freq
         self.Z.freq = self._freq
 
-    #--------------Read impedance tensor---------------------------------------
+    #--------------Read impedance tensor--------------------------------------
     def _read_z(self, edistring):
         """
         Read in impedances information from a raw EDI-string.
@@ -799,7 +814,7 @@ class Edi(object):
         self.Tipper.tipper_err = np.sqrt(tippererr_array)
         self.Tipper.freq = self.freq
 
-    #--------------Read Resistivity and Phase----------------------------------
+    #--------------Read Resistivity and Phase---------------------------------
     def _read_res_phase(self, edistring):
         """
             Read in ResPhase-(RhoPhi-)information from a raw EDI-string.
@@ -972,11 +987,13 @@ class Edi(object):
                     s_dict[key] = value
 
         dummy4 = specset_string.upper().find('NCHAN')
-        n_chan = int(float(specset_string[dummy4:].strip().split('=')[1].split()[0]))
+        n_chan = int(float(
+                    specset_string[dummy4:].strip().split('=')[1].split()[0]))
         id_list = specset_string.split('//')[1].split('\n')[1].strip().split()
 
         dummy5 = specset_string.upper().find('NFREQ')
-        n_freq = int(float(specset_string[dummy5:].strip().split('=')[1].split()[0]))
+        n_freq = int(float(
+                    specset_string[dummy5:].strip().split('=')[1].split()[0]))
         
         lo_spectra_strings = []
         tmp_string = copy.copy(edistring)
@@ -1075,7 +1092,7 @@ class Edi(object):
         self.mtsect = s_dict
 
 
-    #--------------Read impedance rotation angles------------------------------
+    #--------------Read impedance rotation angles-----------------------------
     def _read_zrot(self, edistring):
         """
             Read in the (optional) Zrot  section from the raw edi-string.
@@ -1125,7 +1142,12 @@ class Edi(object):
 
         self.info_dict['edifile_generated_with'] = 'MTpy'
 
-        outstring, stationname = _generate_edifile_string(self.edi_dict())
+        try:
+            outstring, stationname = _generate_edifile_string(self.edi_dict())
+        except:
+            print 'ERROR - could not generate valid EDI file \n-> check, if'\
+                   ' method "edi_dict" returns sufficient information '
+            return
 
         if not _validate_edifile_string(outstring):
             #return outstring
@@ -1189,7 +1211,7 @@ class Edi(object):
                                                     'values. In the latter'+\
                                                     ' case, its length must'+\
                                                     'be {0}'.format(
-                                                               len(self.zrot)))
+                                                            len(self.zrot)))
 
         self.Z.rotate(angle)
         self.zrot = [(ang0+angle[i])%360 for i,ang0 in enumerate(self.zrot)]
@@ -1199,7 +1221,7 @@ class Edi(object):
             self.Tipper.rotate(angle)
             self.Tipper.rotation_angle = self.zrot
 
-    #--------------Get Resistivity and Phase-----------------------------------
+    #--------------Get Resistivity and Phase----------------------------------
     def _get_res_phase(self):
         """
             Return values for resistivity (rho - in Ohm m) and phase 
@@ -1211,7 +1233,11 @@ class Edi(object):
 
         if self.Z is None:
             print 'Z is "None" - cannot calculate Resistivity/Phase'
-            return
+            return None
+        if self.Z.z is None:
+            print 'Z array is "None" - cannot calculate Resistivity/Phase'
+            return None
+
         reserr = None
         phierr = None
         if self.Z.zerr is not None:
@@ -1244,7 +1270,7 @@ class Edi(object):
         return res, phi, reserr, phierr
 
 
-    #--------------Set the Resistivity and Phase-------------------------------
+    #--------------Set the Resistivity and Phase------------------------------
     def _set_res_phase(self, res_array, phase_array, reserr_array = None, 
                        phaseerr_array = None):
         """
@@ -1407,7 +1433,7 @@ class Edi(object):
     definemeas = property(_get_definemeas, _set_definemeas, 
                           doc='DEFINEMEAS section dictionary')
 
-    #--------------get/set h and e measurements -------------------------------
+    #--------------get/set h and e measurements ------------------------------
     def _set_hmeas_emeas(self,hmeas_emeas_list):
         """
             Set the attribute 'hmeas_emeas'.
@@ -1516,7 +1542,9 @@ class Edi(object):
             self.Tipper.freq = self._freq
 
     def _get_freq(self): 
-        return np.array(self._freq)
+        if self._freq is not None:
+            self._freq = np.array(self._freq)
+        return self._freq
         
     freq = property(_get_freq, _set_freq, 
                     doc='array of freq')
@@ -1560,7 +1588,9 @@ class Edi(object):
             self.Tipper.rotation_angle = angle
 
     def _get_zrot(self):
-        return np.array(self._zrot)
+        if self._zrot is not None:
+            self._zrot = np.array(self._zrot)
+        return self._zrot
         
     zrot = property(_get_zrot, _set_zrot, doc='')
 
@@ -2112,7 +2142,8 @@ def _generate_edifile_string(edidict):
     Can be extended later on...
 
     """
-    # define section heads explicitely instead of iteration over the dictionary for getting the correct order!
+    # define section heads explicitely instead of iteration over the dictionary
+    # for getting the correct order!
     lo_sectionheads = ['HEAD', 'INFO', 'DEFINEMEAS', 'HMEAS_EMEAS', 'MTSECT',
                        'ZROT', 'FREQ', 'Z', 'TIPPER']
 
@@ -2345,7 +2376,7 @@ def _cut_sectionstring(edistring,sectionhead):
     #simple cut to the next block start does not work:
     if sectionhead.upper() == 'HMEAS_EMEAS':
 
-        lo_start_idxs = [m.start() for m in re.finditer('>[HE]MEAS', edistring) ]
+        lo_start_idxs = [m.start() for m in re.finditer('>[HE]MEAS',edistring)]
         if len(lo_start_idxs) == 0 :
             raise
 
@@ -2728,6 +2759,8 @@ def spectra2z(data, channellist=None):
 def _make_z_dict(Z_object):
 
     z_dict = {}
+    if Z_object.z is None:
+        return None
 
     compstrings = ['ZXX','ZXY','ZYX','ZYY']
     Z_entries = ['R','I','.VAR']
@@ -2751,6 +2784,9 @@ def _make_z_dict(Z_object):
 
 
 def _make_tipper_dict(Tipper_object):
+
+    if Tipper_object.tipper is None:
+        return None
 
     tipper_dict = {}
     compstrings = ['TX','TY']
