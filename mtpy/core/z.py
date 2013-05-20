@@ -1050,7 +1050,9 @@ class Tipper(object):
         self._freq = np.array(lo_freq)
 
     def _get_freq(self): 
-        return np.array(self._freq)
+        if self._freq is not None:
+            self._freq = np.array(self._freq)
+        return self._freq
         
     freq = property(_get_freq, _set_freq, 
                            doc='array of freq')
