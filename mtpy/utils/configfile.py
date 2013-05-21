@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 """
-Helper functions for the handling of configuration files (survey.cfg  and BIRRP.cfg style).
+Helper functions for the handling of configuration files 
+(survey.cfg  and BIRRP.cfg style).
 
 
 
@@ -40,9 +41,14 @@ def read_configfile(filename):
     """
         Read a general config file and return the content as dictionary.
 
-        Config files without sections or only DEFAULT section -> return dictionary
-        Config files with sections -> return nested dictionary (main level keys are section heads)
-        Config files with sections as well as section-less entries -> return nested dictionary, which includes a 'DEFAULT' key
+        Config files without sections or only DEFAULT section 
+        -> return dictionary
+        
+        Config files with sections 
+        -> return nested dictionary (main level keys are section heads)
+        
+        Config files with sections as well as section-less entries 
+        -> return nested dictionary, which includes a 'DEFAULT' key
     """
 
     #generate config parser instance
@@ -50,13 +56,14 @@ def read_configfile(filename):
     
     #check, if file is present
     if not op.isfile(filename):
-        raise MTex.MTpyError_inputarguments( 'File does not exist: %s'%filename )
+        raise MTex.MTpyError_inputarguments( 'File does not exist: {0}'.format(filename))
 
     # try to parse file - exit, if not a config file
     try:
         configobject.read(filename)
     except:
-        raise MTex.MTpyError_inputarguments( 'File is not a proper configuration file: %s'%filename )
+        raise MTex.MTpyError_inputarguments( 'File is not a proper '
+                        'configuration file: {0}'.format(filename) )
 
 
     #if 0:#len(configobject.sections()) != 0:
@@ -78,8 +85,9 @@ def read_survey_configfile(filename):
 
     Input config file must contain station names as section headers!
 
-    The output dictionary keys are station names (capitalised), the values are (sub-)dictionaries.
-    The configuration file must contain sections for all stations, each containing all mandatory keywords:
+    The output dictionary keys are station names (capitalised), 
+    the values are (sub-)dictionaries. The configuration file must contain
+    sections for all stations, each containing all mandatory keywords:
     
     - latitude (deg)
     - longitude (deg)
@@ -161,14 +169,16 @@ def read_survey_configfile(filename):
 
     #check, if file is present
     if not op.isfile(filename):
-        raise MTex.MTpyError_inputarguments( 'File does not exist: {0}'.format(filename) )
+        raise MTex.MTpyError_inputarguments( 'File does not'
+                            ' exist: {0}'.format(filename) )
 
 
     # try to parse file - exit, if not a config file
     try:
         configobject.read(filename)
     except:
-        raise MTex.MTpyError_inputarguments( 'File is not a proper configuration file: %s'%filename )
+        raise MTex.MTpyError_inputarguments( 'File is not a '
+                    'proper configuration file: {0}'.format(filename) )
 
     #obtain dict of dicts containing the input file's sections (station names)
     #excludes DEFAULT section and key-value pairs without section header
@@ -198,7 +208,7 @@ def read_survey_configfile(filename):
                 if req_keyword[:3] in temp_dict_in.keys():
                     stationdict[req_keyword] = temp_dict_in[req_keyword[:3]]
             else:  
-                print 'Station %s - keyword %s missing'%(stationname, req_keyword)
+                print 'Station {0} - keyword {1} missing'.format(stationname, req_keyword)
                 error_counter += 1
                 continue
 
@@ -208,7 +218,8 @@ def read_survey_configfile(filename):
             try:
                 new_value = MTft._assert_position_format(coordinate,value)
             except:
-                raise MTex.MTpyError_config_file('Error - wrong coordinate format for station %s'%(stationname))
+                raise MTex.MTpyError_config_file('Error - wrong '
+                        'coordinate format for station {0}'.format(stationname))
             stationdict[coordinate] = new_value
 
         if not stationdict['station_type'] in list_of_station_types:
@@ -221,7 +232,7 @@ def read_survey_configfile(filename):
                 if req_keyword.lower() in temp_dict_in.keys():
                     stationdict[req_keyword.lower()] = temp_dict_in[req_keyword.lower()].lower()
                 else:  
-                    print 'Station %s - keyword %s missing'%(stationname, req_keyword)
+                    print 'Station {0} - keyword {1} missing'.format(stationname, req_keyword)
                     error_counter += 1
                     continue
 
@@ -234,7 +245,7 @@ def read_survey_configfile(filename):
                 if req_keyword.lower() in temp_dict_in.keys():
                     stationdict[req_keyword.lower()] = temp_dict_in[req_keyword.lower()].lower()
                 else:  
-                    print 'Station %s - keyword %s missing'%(stationname, req_keyword)
+                    print 'Station {0} - keyword {1} missing'.format(stationname, req_keyword)
                     error_counter += 1
                     continue
 
@@ -265,9 +276,12 @@ def read_survey_configfile(filename):
             except:
                 try:
                     #check for shortened form
-                    stationdict['rr_station_latitude']  = float(stationdict['rr_station_lat'] )
-                    stationdict['rr_station_longitude'] = float(stationdict['rr_station_lon'] )
-                    stationdict['rr_station_elevation'] = float(stationdict['rr_station_ele'] )                 
+                    stationdict['rr_station_latitude']  = float(
+                                            stationdict['rr_station_lat'] )
+                    stationdict['rr_station_longitude'] = float(
+                                            stationdict['rr_station_lon'] )
+                    stationdict['rr_station_elevation'] = float(
+                                            stationdict['rr_station_ele'] )                 
 
                 except:
                     try:
@@ -286,12 +300,18 @@ def read_survey_configfile(filename):
         #check consistency of coordinates, if rr_station is present
         if stationdict['rr_station'] != None:
             try:
-                stationdict['rr_station_latitude'] = MTft._assert_position_format('latitude',stationdict['rr_station_latitude'])
-                stationdict['rr_station_longitude'] = MTft._assert_position_format('longitude',stationdict['rr_station_longitude'])
-                stationdict['rr_station_elevation'] = MTft._assert_position_format('elevation',stationdict['rr_station_elevation'])
+                stationdict['rr_station_latitude'] = MTft._assert_position_format(
+                                'latitude',stationdict['rr_station_latitude'])
+                stationdict['rr_station_longitude'] = MTft._assert_position_format(
+                                'longitude',stationdict['rr_station_longitude'])
+                stationdict['rr_station_elevation'] = MTft._assert_position_format(
+                                'elevation',stationdict['rr_station_elevation'])
 
             except:
-                print 'Problem with remote reference station (%s) - remote reference (%s) coordinates invalid - remote reference set to None'%(station, stationdict['rr_station'] )
+                print 'Problem with remote reference station ({0}) -'
+                ' remote reference ({1}) coordinates invalid -'
+                ' remote reference set to None'.format(station, stationdict['rr_station'] )
+
                 stationdict['rr_station'] = None
                 stationdict['rr_station_latitude'] = None
                 stationdict['rr_station_longitude'] = None
@@ -299,7 +319,9 @@ def read_survey_configfile(filename):
 
 
     if error_counter != 0:
-        print 'Could not read all mandatory sections and options in config file - found %i errors - check configuration file before continuing!' %error_counter
+        print 'Could not read all mandatory sections and options'\
+                ' in config file - found {0} errors - check configuration'\
+                ' file before continuing!'.format(error_counter)
     
     else:
         return config_dict
@@ -310,7 +332,11 @@ def write_dict_to_configfile(dictionary, output_filename):
     """
     Write a dictionary into a configuration file.
 
-    The dictionary can contain pure key-value pairs as well as a level-1 nested dictionary. In the first case, the entries are stored in a 'DEFAULT' section. In the latter case, the dictionary keys are taken as section heads and the sub-dictionaries key-value pairs fill up the respective section  
+    The dictionary can contain pure key-value pairs as well as a 
+    level-1 nested dictionary. In the first case, the entries are 
+    stored in a 'DEFAULT' section. In the latter case, the dictionary 
+    keys are taken as section heads and the sub-dictionaries key-value 
+    pairs fill up the respective section  
 
     """
 
@@ -357,7 +383,8 @@ def _validate_dictionary(dict2validate,referencedict):
                 tmp.append(str(i))  
         value = tmp
         if not value2validate in value:
-            raise MTex.MTpyError_config_file( 'Config file error -- key %s, value %s not valid'%(key, value2validate) )
+            raise MTex.MTpyError_config_file('Config file error --'
+                ' key {0}, value {1} not valid'.format(key, value2validate) )
 
 
 

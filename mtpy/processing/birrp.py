@@ -1107,9 +1107,9 @@ def convert2coh(stationname, birrp_output_directory):
         raise MTex.MTpyError_file_handling('Cannot read coherence files for station %s found in: %s'%(stationname, directory))
 
     fn = '%s.coh'%(stationname)
-    print fn
     out_fn = op.abspath(op.join(directory,fn))
-    print out_fn
+    out_fn = MTfh.make_unique_filename(out_fn)
+
 
     F_out =  open(out_fn,'w')
     F_out.write('period \t freq \t coh1 \t zcoh1 \t coh2 \t zcoh2 \t coh3 \t zcoh3 \n'.expandtabs(4))
@@ -1145,4 +1145,4 @@ def convert2coh(stationname, birrp_output_directory):
         F_out.write(('%f \t %f \t %f \t %f \t %f \t %f \t %f \t %f \n'%(period[ff], freq[ff], c1, zc1, c2, zc2, c3, zc3)).expandtabs(4))
     F_out.close()
 
-    return out_fn
+    #return out_fn

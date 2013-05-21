@@ -23,25 +23,22 @@ The data have to be either single column values or in 2-column form.
 """
 
 
-import numpy as np
-import re
 import sys, os
-import glob
 import os.path as op
-import glob
-import calendar
-import time
 
-import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
-reload(MTex)
 reload(MTfh)
 
 
 def main():
 
     if len(sys.argv) < 3:
-        raise MTex.MTpyError_inputarguments('Need at least 2 arguments: <path to files> <sampling in seconds>  [<output dir>] [<stationname>] [<recursive flag -R>]')
+        sys.exit('\nNeed at least 2 arguments: \n\n '
+            '<path to files> \n <sampling in seconds> \n\n'
+            '[optional: <output dir>] \n [optional: <stationname>]\n'
+            '[optional: <recursive flag -R>]\n'
+            '(set this option for including all subfolders)\n\n')
+
     outdir = None
     stationname = None
     recursive = False
@@ -65,13 +62,13 @@ def main():
     pathname = op.abspath(op.realpath(pathname_raw))
 
     if not op.isdir(pathname):
-        raise MTex.MTpyError_inputarguments('Data file(s) path not existing: %s' % (pathname))
+        sys.exit('Data file(s) path not existing: {0}'.format(pathname))
 
     try:
         sampling = float(sys.argv[2])
         if sampling <= 0 : raise
     except:
-        raise MTex.MTpyError_float('Second argument must be sampling interval in seconds (int/float)')
+        sys.exit('Second argument must be sampling interval in seconds (int/float)')
 
     if recursive is True:
         lo_files = []

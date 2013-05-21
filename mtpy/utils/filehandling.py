@@ -67,8 +67,11 @@ def get_sampling_interval_fromdatafile(filename, length = 3600):
     """ 
     Find sampling interval from data file.
 
-    Provide data file (purely numerical content) and total data length in seconds (default 3600). 
-    Data are read in by loadtxt-function, the lentgh of the data array yields the sampling interval. 
+    Provide data file (purely numerical content) and total 
+    data length in seconds (default 3600). Data are read in by 
+    the Numpy 'loadtxt'-function, the lentgh of the data array yields
+    the sampling interval.  
+
     Lines beginning with # are ignored.
 
     """
@@ -540,7 +543,12 @@ def read_ts_header(tsfile):
 
     try:
         with open(tsfile,'r') as F:
-            firstline = F.readline().strip()
+            firstline =''
+            #ignoring empty lines or lines with just the '#' character in it
+            while len(firstline) == 0:
+                firstline = F.readline().strip()
+                if firstline == '#':
+                    firstline = ''
         if firstline[0] != '#':
             raise
     except:
@@ -576,6 +584,8 @@ def get_ts_header_string(header_dictionary):
     header_string += '\n'
 
     return header_string
+
+
 
 def write_ts_file_from_tuple(outfile,ts_tuple):
     """
