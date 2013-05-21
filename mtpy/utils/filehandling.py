@@ -19,12 +19,9 @@ reading configuration files, ....
 import numpy as np
 import sys
 import os
-import glob
 import os.path as op
-import glob
 import calendar
 import time
-import ConfigParser
 import fnmatch
 import shutil
 
@@ -46,7 +43,8 @@ epsilon = 1e-9
 
 #=================================================================
 
-lo_headerelements = ['station', 'channel','samplingrate','t_min','nsamples','unit','lat','lon','elev']
+lo_headerelements = ['station', 'channel','samplingrate','t_min',
+                    'nsamples','unit','lat','lon','elev']
 
 #=================================================================
 
@@ -90,19 +88,26 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
 
     Concatenate ascii time series to dayfiles (calendar day, UTC reference).
 
-    Data can be within a single directory or a list of directories. However, the files in the directory(ies) 'inputdir' have to be for one station only, and named with a 2 character suffix, defining the channel !! 
+    Data can be within a single directory or a list of directories. 
+    However, the files in the directory(ies) 'inputdir' have to be for 
+    one station only, and named with a 2 character suffix, defining the channel! 
 
-    If the time series are interrupted/discontinuous at some point, a new file will be started after that point, where the file index 'idx' is increased by 1.
-    If no stationname is given, the leading non-datetime characters in the first filename are used.
+    If the time series are interrupted/discontinuous at some point, a new file 
+    will be started after that point, where the file index 'idx' is increased by 1.
+    If no stationname is given, the leading non-datetime characters in the first 
+    filename are used.
 
 
     Files are named as 'stationname_samplingrate_date_idx.channel'
     Stationname, channel, and sampling are written to a header line.
 
-    Output data consists of a single column float data array. The data are stored into one directory. If 'outputdir' is not specified, a subdirectory 'dayfiles' will be created witihn the current working directory. 
+    Output data consists of a single column float data array. The data are 
+    stored into one directory. If 'outputdir' is not specified, a subdirectory 
+    'dayfiles' will be created witihn the current working directory. 
 
     Note: 
-    Midnight cannot be in the middle of a file, because only file starts are checked for a new day!!
+    Midnight cannot be in the middle of a file, because only file starts are 
+    checked for a new day!!
 
     """
 
@@ -129,15 +134,18 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
             lo_foldernames.remove(wd)
             continue    
 
-        lo_dirfiles = [op.abspath(op.join(wd,i))  for i in os.listdir(wd) if fnmatch.fnmatch(i,pattern) is True]
+        lo_dirfiles = [op.abspath(op.join(wd,i))  for i in os.listdir(wd) 
+                        if fnmatch.fnmatch(i,pattern) is True]
         lo_allfiles.extend(lo_dirfiles)   
 
     #check, if list of files is empty
     if len(lo_allfiles) == 0:
         if stationname is not None:
-            raise MTex.MTpyError_inputarguments('Directory(ies) do(es) not contain files to combine for station {0}: {1}'.format(stationname, inputdir))
+            raise MTex.MTpyError_inputarguments('Directory(ies) do(es) not contain'
+            ' files to combine for station {0}: {1}'.format(stationname, inputdir))
 
-        raise MTex.MTpyError_inputarguments('Directory does not contain files to combine: {0}'.format(inputdir))
+        raise MTex.MTpyError_inputarguments('Directory does not contain files'
+                                            ' to combine: {0}'.format(inputdir))
 
     #define subfolder for storing dayfiles
     outpath = op.join(os.curdir,'dayfiles')    
@@ -152,7 +160,8 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
             if not os.access(outpath, os.W_OK):
                 raise
         except:
-            print 'Cannot generate writable output directory {0} - using generic location "dayfiles" instead'.format(outpath)
+            print 'Cannot generate writable output directory {0} - using'\
+                    ' generic location "dayfiles" instead'.format(outpath)
             outpath = op.join(wd,'dayfiles')    
             pass
 
@@ -161,16 +170,19 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
         try:
             os.makedirs(outpath)
         except:
-            MTex.MTpyError_inputarguments('Cannot generate output directory {0} '.format(outpath))
+            MTex.MTpyError_inputarguments('Cannot generate output'\
+                                ' directory {0} '.format(outpath))
 
     #outer loop over all components
     for comp in components:
 
         #make list of files for the current component
-        lo_files = np.array([op.join(wd,i) for i in lo_allfiles if (i.lower()[-2:] == comp)])
+        lo_files = np.array([op.join(wd,i) for i in lo_allfiles 
+                            if (i.lower()[-2:] == comp)])
 
         #make list of starting times for the respective files
-        lo_starttimes = np.array([EDL_get_starttime_fromfilename(f) for f in lo_files])
+        lo_starttimes = np.array([EDL_get_starttime_fromfilename(f) 
+                                    for f in lo_files])
         
         #sort the files by their starting times
         idx_chronologic = np.argsort(lo_starttimes)
@@ -217,7 +229,8 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
 
             no_samples = len(data_in)
 
-            file_time_axis = (np.arange(no_samples)*sampling + file_start_time).tolist()
+            file_time_axis = (np.arange(no_samples)*sampling +
+                             file_start_time).tolist()
 
 
             #time of the last sample + 1x sampling-interval
@@ -239,11 +252,14 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                     outfile_data = data_in[:,1].tolist()
 
 
-                file_date = '%i%02i%02i'%(file_start[0], file_start[1], file_start[2]) 
+                file_date = '{0}{1:02}{2:02}'.format(file_start[0],
+                                                 file_start[1], file_start[2]) 
 
 
                 #define output filename
-                new_fn = '%s_1day_%s_%i.%s'%(stationname, file_date, fileindex, comp)
+                new_fn = '{0}_1day_{1}_{2}.{3}'.format(stationname,
+                                                 file_date, fileindex, comp)
+                
                 new_file = op.abspath(op.join(outpath,new_fn))
                 
                 #open output file 
@@ -263,12 +279,19 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                 elif (outfile_timeaxis[-1] - file_start_time) > epsilon:
 
                     #find point on the outfile time axis for the beginning of current file:
-                    overlap_idx = np.argmin(np.abs(np.array(outfile_timeaxis) - file_start_time)) 
+                    overlap_idx = np.argmin(np.abs(np.array(
+                                            outfile_timeaxis) - file_start_time)) 
 
                     #re-define outfile time axis and data
-                    outfile_timeaxis = np.delete(outfile_timeaxis, np.arange(len(outfile_timeaxis)- overlap_idx) + overlap_idx).tolist()
+                    outfile_timeaxis = np.delete(outfile_timeaxis,
+                                                 np.arange(len(outfile_timeaxis) - 
+                                                 overlap_idx) + 
+                                                 overlap_idx).tolist()
 
-                    outfile_data = np.delete(outfile_data, np.arange(len(outfile_data) - overlap_idx) + overlap_idx).tolist()
+                    outfile_data = np.delete(outfile_data, 
+                                                np.arange(len(outfile_data) - 
+                                                overlap_idx) + 
+                                                overlap_idx).tolist()
                 
 
                 #append current file's time axis
@@ -322,7 +345,9 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
             if incomplete == 1 :
 
                 #define header info
-                headerline = '# %s %s %.1f %f %i \n'%(stationname, comp.lower(), 1./sampling, outfile_timeaxis[0], len(outfile_timeaxis) )
+                headerline = '# {0} {1} {2:.1f} {3} {4} \n'.format(
+                                    stationname, comp.lower(), 1./sampling, 
+                                    outfile_timeaxis[0], len(outfile_timeaxis))
 
                 F.write(headerline)
 
@@ -403,12 +428,15 @@ def read_data_header(fn_raw):
 
         Read the header line of MTpy TS data files.
 
-    input: 
+    input
+    -----
     MTpy TS data file name
 
-    output:
-    list of header elements -
-    stationname, channel, sampling rate, starttime first sample, starttime last sample, unit, lat, lon, elevation
+    output
+    -------
+    list of header elements:
+    stationname, channel, sampling rate, starttime first sample, 
+    starttime last sample, unit, lat, lon, elevation
 
     """
 
@@ -424,7 +452,8 @@ def read_data_header(fn_raw):
 
     firstline = F.readline().strip().split()
     if not firstline[0][0] == '#':
-        raise MTex.MTpyError_ts_data('Time series data file does not have a proper header:%s'%fn)
+        raise MTex.MTpyError_ts_data('Time series data file does '
+            'not have a proper header:%s'%fn)
 
     F.close()
 
@@ -531,7 +560,9 @@ def validate_ts_file(tsfile):
 
 def read_ts_header(tsfile):
     """ Read in the header line from MTpy timeseries data files.
-        Return header as dictionary. Return empty dict, if no header line was found.
+        
+        Return header as dictionary. Return empty dict, 
+        if no header line was found.
     """
 
     header_dict = {}
@@ -539,7 +570,8 @@ def read_ts_header(tsfile):
     tsfile = op.abspath(tsfile)
     
     if not op.isfile(tsfile):
-        raise MTex.MTpyError_inputarguments('Error - input file not existing: {0}'.format(tsfile))
+        raise MTex.MTpyError_inputarguments('Error - '
+            'input file not existing: {0}'.format(tsfile))
 
     try:
         with open(tsfile,'r') as F:
@@ -552,7 +584,8 @@ def read_ts_header(tsfile):
         if firstline[0] != '#':
             raise
     except:
-        raise MTex.MTpyError_ts_data('No header line found - check file: {0}'.format(tsfile))
+        raise MTex.MTpyError_ts_data('No header line found -'
+            ' check file: {0}'.format(tsfile))
         
 
     firstline = firstline.replace('#','')
@@ -562,8 +595,11 @@ def read_ts_header(tsfile):
     for i in range(len(headerlist)):
         header_dict[lo_headerelements[i]] = headerlist[i]
         #old header had tmax instead of n_samples:
-        if (i == 4) and float(headerlist[4])%1 != 0 and float(headerlist[i]) > float(headerlist[i-1]):
-            header_dict[lo_headerelements[i]] = int((float(headerlist[i]) - float(headerlist[i-1]))*float(headerlist[i-2]) )+1
+        if ((i == 4) and float(headerlist[4])%1 != 0 
+            and float(headerlist[i]) > float(headerlist[i-1])):
+            header_dict[lo_headerelements[i]] = int(
+                    (float(headerlist[i]) - float(headerlist[i-1])
+                    )*float(headerlist[i-2]) )+1
 
     return header_dict
 
@@ -615,7 +651,8 @@ def write_ts_file_from_tuple(outfile,ts_tuple):
         np.savetxt(outF,data)
         outF.close()
     except:
-        raise MTex.MTpyError_inputarguments('ERROR - could not write content of TS tuple to file : {0}'.format(outfilename))
+        raise MTex.MTpyError_inputarguments('ERROR - could not write content'
+                            ' of TS tuple to file : {0}'.format(outfilename))
 
     return outfilename
 
@@ -631,15 +668,21 @@ def read_ts_file(mtdatafile):
 
     infile = op.abspath(mtdatafile)
     if not op.isfile(infile):
-        raise MTex.MTpyError_inputarguments('ERROR - Data file not existing: {0}'.format(infile))
+        raise MTex.MTpyError_inputarguments('ERROR - Data file not '
+                                                'existing: {0}'.format(infile))
 
     header = read_ts_header(infile)
     if len(header) == 0 :
-        raise MTex.MTpyError_inputarguments('ERROR - Data file not valid - header is missing : {0}'.format(infile))
+        raise MTex.MTpyError_inputarguments('ERROR - Data file not valid - '
+                                        'header is missing : {0}'.format(infile))
 
     data = np.loadtxt(infile)
     if len(data) != int(float(header['nsamples'])):
-        raise MTex.MTpyError_inputarguments('ERROR - Data file not valid - wrong number of samples in data ({1} instead of {2}): {0}'.format(infile,len(data) , int(float(header['nsamples']))) )
+        raise MTex.MTpyError_inputarguments('ERROR - Data file not valid '
+                                    '- wrong number of samples in data ({1} '
+                                    'instead of {2}): {0}'.format(
+                                    infile,len(data) , int(float(
+                                        header['nsamples']))) )
 
     lo_header_contents = []
 
@@ -660,7 +703,8 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
     try:
         config_dict = MTcf.read_survey_configfile(configfile)
     except:
-        raise MTex.MTpyError_config_file( 'Config file cannot be read: {0}'.format(configfile) )
+        raise MTex.MTpyError_config_file( 'Config file cannot be read:'
+                                                    ' {0}'.format(configfile) )
 
     if lo_stations is not None:
         try:
@@ -669,7 +713,8 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
             #check, if it's iterable:
             dummy = [i for i in lo_stations]
         except:
-            raise MTex.MTpyError_inputarguments('ERROR - "lo_stations" argument must be iterable!')
+            raise MTex.MTpyError_inputarguments('ERROR - "lo_stations"'
+                                                ' argument must be iterable!')
     
     #Do not require list of headers as input, as this function can be called directly rather than from a 'calibratefiles.py'-like script - so the list not necessarily exists in beforehand - 
     #collect header lines of files in list
@@ -689,7 +734,8 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
 
     if len(lo_headers) == 0 :
         if lo_stations is not None:
-            print 'ERROR - No files with header lines found for station(s) {0}'.format(lo_stations)
+            print 'ERROR - No files with header lines found for station(s)'
+                                                    ' {0}'.format(lo_stations)
         else:
             print 'ERROR - No files with header lines found'
         return 1
@@ -705,14 +751,16 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
             if not op.isdir(ori_outdir):
                 os.makedirs(ori_outdir)
         except:
-            print 'Output directory cannot be generated: {0} - using generic location'.format(ori_outdir)
+            print 'Output directory cannot be generated: {0} - using generic'
+                                                ' location'.format(ori_outdir)
             ori_outdir = op.abspath(op.join(os.curdir,'reoriented'))
     try:
         if not op.isdir(ori_outdir):
             os.makedirs(ori_outdir)
     except:
         #this only comes up, if the generic location cannot be generated
-        raise MTex.MTpyError_inputarguments('Generic directory cannot be generated: {0}'.format(ori_outdir))
+        raise MTex.MTpyError_inputarguments('Generic directory cannot be'
+                                        ' generated: {0}'.format(ori_outdir))
 
     #----------------------
     #start re-orientation
@@ -723,7 +771,8 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
         try:
             stationconfig = config_dict[sta]
         except:
-            print 'Warning - No config file entry for station {0} - no processing possible'.format(sta)
+            print 'Warning - No config file entry for station {0} -'
+                                        ' no processing possible'.format(sta)
             continue
         
         declination = float(stationconfig.get('declination',0.))
@@ -778,13 +827,18 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
                 ydata = np.loadtxt(y_file)
 
                 if sensor == 'e':
-                    xangle = float(stationconfig.get('e_xaxis_azimuth', 0.)) - declination
-                    yangle = float(stationconfig.get('e_yaxis_azimuth',90.)) - declination
+                    xangle = float(stationconfig.get(
+                                    'e_xaxis_azimuth', 0.)) - declination
+                    yangle = float(stationconfig.get(
+                                    'e_yaxis_azimuth',90.)) - declination
                 else:
-                    xangle = float(stationconfig.get('b_xaxis_azimuth', 0.)) - declination
-                    yangle = float(stationconfig.get('b_yaxis_azimuth',90.)) - declination                
+                    xangle = float(stationconfig.get(
+                                    'b_xaxis_azimuth', 0.)) - declination
+                    yangle = float(stationconfig.get(
+                                    'b_yaxis_azimuth',90.)) - declination                
 
-                newx, newy =  MTcc.reorient_data2D(xdata, ydata, x_sensor_angle = xangle , y_sensor_angle = yangle)
+                newx, newy =  MTcc.reorient_data2D(xdata, ydata, 
+                            x_sensor_angle = xangle , y_sensor_angle = yangle)
                 #print xdata.shape, ydata.shape, newx.shape, newy.shape 
 
                 #continue
