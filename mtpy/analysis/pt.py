@@ -296,6 +296,7 @@ class PhaseTensor(object):
     freq = property(_get_freq, _set_freq,doc="freq array")
 
     #---z_object---------------------------------------------------------------
+    
     def _set_z_object(self, z_object):
         """
             Read in Z object and convert information into PhaseTensor object 
@@ -350,8 +351,7 @@ class PhaseTensor(object):
     #---z array---------------------------------------------------------------
     def _set_z(self, z_array):
         """
-            Read in Z array (optional Z-error) and convert information into 
-            PhaseTensor object attributes.
+            Set  Z array as PhaseTensor object attribute.
         """
 
         self._z = z_array
@@ -396,8 +396,7 @@ class PhaseTensor(object):
     #---Z Error array---------------------------------------------------------------
     def _set_z_err(self,z_err_array):
         """
-            Read in Z array (optional Z-error) and convert information into 
-            PhaseTensor object attributes.
+            Set  Z-error array as PhaseTensor object attribute.
         """
 
         self._z_err = z_err_array
@@ -1070,7 +1069,7 @@ class ResidualPhaseTensor(PhaseTensor):
 
     def set_rpt(self, rpt_array):
         """
-            Set the attribute 'rpt'.
+            Set the attribute 'rpt' (ResidualPhaseTensor array).
 
             Input:
             ResPT array
@@ -1086,7 +1085,7 @@ class ResidualPhaseTensor(PhaseTensor):
 
     def set_rpterr(self, rpterr_array):
         """
-            Set the attribute 'rpterr'.
+            Set the attribute 'rpterr' (ResidualPhaseTensor-error array).
 
             Input:
             ResPT-error array
@@ -1222,9 +1221,8 @@ def z2pt(z_array, zerr_array = None):
 
         detreal = np.linalg.det(realz)
         if detreal == 0 :
-            print 'Warning - z-array no. {0} contains a singular matrix,'\
-            ' thus it cannot be converted into a PT!'.format(idx_f)
-            continue
+            raise MTex.MTpyError_Z('Warning - z-array no. {0} contains a singular matrix,'\
+            ' thus it cannot be converted into a PT!'.format(idx_f))            
 
         pt_array[idx_f,0,0] =  realz[1,1] * imagz[0,0] - realz[0,1] * imagz[1,0] 
         pt_array[idx_f,0,1] =  realz[1,1] * imagz[0,1] - realz[0,1] * imagz[1,1] 
@@ -1274,23 +1272,25 @@ def z_object2pt(z_object):
 
 
         Return:
-        - PT : nx2x2 real valued Numpy array
-        - PT-error : nx2x2 real valued Numpy array
-
+        - PT object
     """
+    #     - PT : nx2x2 real valued Numpy array
+    #     - PT-error : nx2x2 real valued Numpy array
+
+    # """
 
     if not isinstance(z_object, MTz.Z):
         raise MTex.MTpyError_Z('Input argument is not an instance of the Z class')
 
     p = PhaseTensor(z_object = z_object)
 
-    pt_array = p.pt
-    pterr_array = p.pterr
+    # pt_array = p.pt
+    # pterr_array = p.pterr
 
-    return pt_array, pterr_array
+    # return pt_array, pterr_array
+    return p
 
-
-def edi_object2pt(edi_object):
+def _edi_object2pt(edi_object):
     """
         Calculate Phase Tensor from Edi object (incl. uncertainties)
 
@@ -1323,23 +1323,27 @@ def edi_file2pt(filename):
         Input:
         - Edi-file : full path to the Edi-file
 
-
         Return:
-        - PT : nx2x2 real valued Numpy array
-        - PT-error : nx2x2 real valued Numpy array
+        - PT object
 
     """
+        # Return:
+        # - PT : nx2x2 real valued Numpy array
+        # - PT-error : nx2x2 real valued Numpy array
+
+    #"""
 
     e = MTedi.Edi()
     e.readfile(filename)
 
-    p = PhaseTensor(edi_object = e)
+    p = PhaseTensor(z_object = e.Z)
 
-    pt_array = p.pt
+    # pt_array = p.pt
     
-    pterr_array = p.pterr
+    # pterr_array = p.pterr
 
-    return pt_array, pterr_array
-
+    # return pt_array, pterr_array
+    
+    return p
 
 
