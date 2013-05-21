@@ -1103,7 +1103,7 @@ class ResidualPhaseTensor(PhaseTensor):
 
 #=======================================================================
 
-def z2pt(z_array, zerr_array = None, coord_rot=180):
+def z2pt(z_array, zerr_array = None):
     """
         Calculate Phase Tensor from Z array (incl. uncertainties)
 
@@ -1222,7 +1222,9 @@ def z2pt(z_array, zerr_array = None, coord_rot=180):
 
         detreal = np.linalg.det(realz)
         if detreal == 0 :
-            raise MTex.MTpyError_PT('Error - z-array contains a singular matrix, thus it cannot be converted into a PT!' )
+            print 'Warning - z-array no. {0} contains a singular matrix,'\
+            ' thus it cannot be converted into a PT!'.format(idx_f)
+            continue
 
         pt_array[idx_f,0,0] =  realz[1,1] * imagz[0,0] - realz[0,1] * imagz[1,0] 
         pt_array[idx_f,0,1] =  realz[1,1] * imagz[0,1] - realz[0,1] * imagz[1,1] 
