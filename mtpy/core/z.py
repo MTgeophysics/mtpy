@@ -76,7 +76,7 @@ class Z(object):
 
         Methods  include rotations/combinations of Z instances, as well as 
         calculation of invariants, inverse, amplitude/phase,...
-        MTcculation of invariants, inverse, amplitude/phase,...
+        Calculation of invariants, inverse, amplitude/phase,...
 
         
         Z is a complex array of the form (n_freq, 2, 2), 
@@ -152,7 +152,8 @@ class Z(object):
 
         if self.z is not None:
             if len(lo_freq) is not len(self.z):
-                print 'length of freq list/array not correct (%i instead of %i)'%(len(lo_freq), len(self.z))
+                print 'length of freq list/array not correct (%i instead of %i)'\
+                ''%(len(lo_freq), len(self.z))
                 return
          
         self._freq = np.array(lo_freq)
@@ -280,7 +281,7 @@ class Z(object):
         """
 
         if self.z is None:
-            print 'z array is None - cannot MTcculate imag'
+            print 'z array is None - cannot calculate imag'
             return
 
 
@@ -331,7 +332,7 @@ class Z(object):
         """ 
         
         if self.z is None:
-            print 'Z array is None - cannot MTcculate Res/Phase'
+            print 'Z array is None - cannot calculate Res/Phase'
             return
 			
         reserr = None
@@ -706,7 +707,7 @@ class Z(object):
 
         if distortion_err_tensor is None:
             distortion_err_tensor = np.zeros_like(distortion_tensor)
-        #for all freq, MTcculate D.Inverse, then obtain Z0 = D.I * Z
+        #for all freq, calculate D.Inverse, then obtain Z0 = D.I * Z
         try:
             if not ( len(distortion_tensor.shape) in [2,3] ) and \
                    (len(distortion_err_tensor.shape) in [2,3]):
@@ -1050,7 +1051,9 @@ class Tipper(object):
         self._freq = np.array(lo_freq)
 
     def _get_freq(self): 
-        return np.array(self._freq)
+        if self._freq is not None:
+            self._freq = np.array(self._freq)
+        return self._freq
         
     freq = property(_get_freq, _set_freq, 
                            doc='array of freq')
@@ -1145,7 +1148,7 @@ class Tipper(object):
 
         """ 
         if self.tipper is None:
-            print 'tipper array is None - cannot MTcculate real'
+            print 'tipper array is None - cannot calculate real'
             return
 
         return np.real(self.tipper)
@@ -1190,7 +1193,7 @@ class Tipper(object):
         """ 
 
         if self.tipper is None:
-            print 'tipper array is None - cannot MTcculate imag'
+            print 'tipper array is None - cannot calculate imag'
             return
 
         return np.imag(self.tipper)
@@ -1241,8 +1244,9 @@ class Tipper(object):
 
         
         if self.tipper is None:
-            print 'tipper array is None - cannot MTcculate rho/phi'
-            return
+            #print 'tipper array is None - cannot calculate rho/phi'
+            return None
+
         rhoerr = None
         phierr = None
         if self.tippererr is not None:
@@ -1348,24 +1352,26 @@ class Tipper(object):
                 
         """
         
-        if self.tipper is not None:
-            mag_real = np.sqrt(self.tipper[:,0,0].real**2 + \
-                                self.tipper[:,0,1].real**2)
-            mag_imag = np.sqrt(self.tipper[:,0,0].imag**2 + 
-                                self.tipper[:,0,1].imag**2)
-            #get the angle, need to make both parts negative to get it into the
-            #parkinson convention where the arrows point towards the conductor
-        
-            ang_real=np.rad2deg(np.arctan2(-self.tipper[:,0,1].real,
-                                           -self.tipper[:,0,0].real))
-                                           
-            ang_imag=np.rad2deg(np.arctan2(-self.tipper[:,0,1].imag,
-                                           -self.tipper[:,0,0].imag))
-        else:
-            mag_real = None
-            mag_imag = None
-            ang_real = None
-            ang_imag = None
+
+        if self.tipper is None:
+            return None
+        mag_real = np.sqrt(self.tipper[:,0,0].real**2 + \
+                            self.tipper[:,0,1].real**2)
+        mag_imag = np.sqrt(self.tipper[:,0,0].imag**2 + 
+                            self.tipper[:,0,1].imag**2)
+        #get the angle, need to make both parts negative to get it into the
+        #parkinson convention where the arrows point towards the conductor
+    
+        ang_real=np.rad2deg(np.arctan2(-self.tipper[:,0,1].real,
+                                       -self.tipper[:,0,0].real))
+                                       
+        ang_imag=np.rad2deg(np.arctan2(-self.tipper[:,0,1].imag,
+                                       -self.tipper[:,0,0].imag))
+        # else:
+        #     mag_real = None
+        #     mag_imag = None
+        #     ang_real = None
+        #     ang_imag = None
         
 
                                        
@@ -1405,9 +1411,9 @@ class Tipper(object):
             to geographic North=0, positive in clockwise direction. 
             (Mathematically negative!)
 
-            In non-rotated state, X refs to North and Y to East direction.
+            In non-rotated state, 'X' refs to North and 'Y' to East direction.
 
-            Updates the attributes "tipper, tippererr, zrot".
+            Updates the attributes "tipper, tippererr, rotation_angle".
 
         """
 
@@ -1786,6 +1792,6 @@ def correct4sensor_orientation(Z_prime, Bx=0, By=90, Ex=0, Ey=90,
 
     Zerr = copy.copy(Z_prime_error)
 
-    #TODO: MTcculate error propagation
+    #TODO: calculate error propagation
 
     return Z, Zerr
