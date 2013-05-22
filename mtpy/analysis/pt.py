@@ -297,7 +297,7 @@ class PhaseTensor(object):
 
     #---z_object---------------------------------------------------------------
     
-    def _set_z_object(self, z_object):
+    def set_z_object(self, z_object):
         """
             Read in Z object and convert information into PhaseTensor object 
             attributes.
@@ -337,19 +337,19 @@ class PhaseTensor(object):
         self._freq = z_object.freq
         self.rotation_angle = z_object.rotation_angle
         
-    def _get_z_object(self):
-        z_object = MTz.Z(z_array=self._z, zerr_array=self._z_err)
-        z_object.freq = self._freq
-        z_object.rotation_angle = self.rotation_angle
+    # def _get_z_object(self):
+    #     z_object = MTz.Z(z_array=self._z, zerr_array=self._z_err)
+    #     z_object.freq = self._freq
+    #     z_object.rotation_angle = self.rotation_angle
         
-        return z_object
+    #     return z_object
         
-    z_object = property(_get_z_object, _set_z_object, 
-                        doc="class mtpy.core.z.Z")
+    # _z_object = property(_get_z_object, _set_z_object, 
+    #                     doc="class mtpy.core.z.Z")
 
 
     #---z array---------------------------------------------------------------
-    def _set_z(self, z_array):
+    def set_z(self, z_array):
         """
             Set  Z array as PhaseTensor object attribute.
         """
@@ -387,11 +387,11 @@ class PhaseTensor(object):
         else:
             pass
                 
-    def _get_z(self):
-        return self._z
+    # def _get_z(self):
+    #     return self._z
         
-    z = property(_get_z, _set_z, 
-                 doc="impedance tensor numpy.array((nf, 2, 2))")
+    # z = property(_get_z, _set_z, 
+    #              doc="impedance tensor numpy.array((nf, 2, 2))")
                  
     #---Z Error array---------------------------------------------------------------
     def _set_z_err(self,z_err_array):
@@ -433,11 +433,11 @@ class PhaseTensor(object):
                             print 'Computed singular matrix'
                             print '  --> pt[{0}]=np.zeros((2,2))'.format(idx_f)
 
-    def _get_z_err(self):
-        return self._z_err
+    # def _get_z_err(self):
+    #     return self._z_err
         
-    z_err = property(_get_z_err, _set_z_err, 
-                     doc="impedance tensor numpy.array((nf, 2, 2))")
+    # z_err = property(_get_z_err, _set_z_err, 
+    #                  doc="impedance tensor numpy.array((nf, 2, 2))")
         
                 
 
