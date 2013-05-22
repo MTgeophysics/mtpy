@@ -2204,7 +2204,7 @@ def readModelFile(mfile,ncol=7):
                 resarr[(nx-1)-ii,jj,kk]=float(mlines[nn+mm].strip())
                 mm+=1
     
-    return nsarr,ewarr,zdepth,resarr,infodict
+    return nsarr,ewarr,zdepth,resarr,infodict, xarr, yarr, zarr
  
 
 def plotDepthSlice(datafn,modelfn,savepath=None,map_scale='km',ew_limits=None,
@@ -2235,7 +2235,7 @@ def plotDepthSlice(datafn,modelfn,savepath=None,map_scale='km',ew_limits=None,
     ew/=dscale
     
     #read in model file    
-    x,y,z,resarr,idict=readModelFile(modelfn)
+    x, y, z, resarr, idict, xg, yg, zg = readModelFile(modelfn)
     
     #scale the model grid to desired units
     x/=dscale
