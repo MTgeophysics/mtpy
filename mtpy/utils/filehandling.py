@@ -734,7 +734,7 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
 
     if len(lo_headers) == 0 :
         if lo_stations is not None:
-            print 'ERROR - No files with header lines found for station(s)'
+            print 'ERROR - No files with header lines found for station(s)'\
                                                     ' {0}'.format(lo_stations)
         else:
             print 'ERROR - No files with header lines found'
@@ -751,7 +751,7 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
             if not op.isdir(ori_outdir):
                 os.makedirs(ori_outdir)
         except:
-            print 'Output directory cannot be generated: {0} - using generic'
+            print 'Output directory cannot be generated: {0} - using generic'\
                                                 ' location'.format(ori_outdir)
             ori_outdir = op.abspath(op.join(os.curdir,'reoriented'))
     try:
@@ -771,7 +771,7 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
         try:
             stationconfig = config_dict[sta]
         except:
-            print 'Warning - No config file entry for station {0} -'
+            print 'Warning - No config file entry for station {0} -'\
                                         ' no processing possible'.format(sta)
             continue
         

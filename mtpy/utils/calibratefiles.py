@@ -143,7 +143,7 @@ def main():
                 os.makedirs(cal_outdir)
                 print 'generated ', cal_outdir
         except:
-            print 'Output directory cannot be generated: '
+            print 'Output directory cannot be generated: '\
             '{0} - using generic location'.format(cal_outdir)
 
             cal_outdir = op.abspath(op.join(pathname[0],'calibrated'))
@@ -156,7 +156,7 @@ def main():
 
     #if re-orientation is required, do it first:
     if orientation is True:
-        print '\n....re-orient data first...\n'
+        print '\n....re-orient data first...\n'\
         ori_outdir = op.abspath(op.join(cal_outdir,'../reoriented'))
         try:
             if not op.isdir(ori_outdir):
@@ -213,7 +213,7 @@ def main():
         try:
             stationdict = config_dict[curr_station]
         except:
-            print 'no entry for station {0} found in configuration file'
+            print 'no entry for station {0} found in configuration file'\
             ' {1} skipping file'.format(curr_station, configfile )
             continue
 
@@ -269,7 +269,7 @@ def main():
         else:
             print 'No files found for stations {0}'.format(lo_allstations)
 
-    print '{0} files calibrated for stations'
+    print '{0} files calibrated for stations'\
             ' {1}'.format(len(lo_calibrated_files),lo_calibrated_stations)
 
 if __name__=='__main__':

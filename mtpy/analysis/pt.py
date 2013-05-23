@@ -349,7 +349,7 @@ class PhaseTensor(object):
 
 
     #---z array---------------------------------------------------------------
-    def set_z(self, z_array):
+    def _set_z(self, z_array):
         """
             Set  Z array as PhaseTensor object attribute.
         """
@@ -357,7 +357,7 @@ class PhaseTensor(object):
         self._z = z_array
         self._pt = np.zeros_like(self._z, dtype=np.float)
         self._pt_err = np.zeros_like(self._z, dtype=np.float)
- 
+
         if self._z_err is not None and self._z is not None:
             for idx_f in range(len(self._z)):
                 try:
@@ -375,7 +375,7 @@ class PhaseTensor(object):
         elif self._z is not None:
             for idx_f in range(len(self._z)):
                 try:
-                    self._pt[idx_f] = z2pt(self.z[idx_f])[0]
+                    self._pt[idx_f] = z2pt(self._z[idx_f])[0]
                 except MTex.MTpyError_PT:
                     try:
                         print 'Singular Matrix at {0:.5g}'.format(
@@ -384,8 +384,7 @@ class PhaseTensor(object):
                         print 'Computed singular matrix'
                         print '  --> pt[{0}]=np.zeros((2,2))'.format(idx_f)
                 
-        else:
-            pass
+
                 
     # def _get_z(self):
     #     return self._z
@@ -911,7 +910,7 @@ class PhaseTensor(object):
     only2d = property(_get_only2d, doc = "")
 
 
-class ResidualPhaseTensor(PhaseTensor):
+class ResidualPhaseTensor():#PhaseTensor):
     """
         PhaseTensor class - generates a Phase Tensor (PT) object DeltaPhi
 
@@ -941,7 +940,7 @@ class ResidualPhaseTensor(PhaseTensor):
             if not (( isinstance(pt_object1,PhaseTensor) and isinstance(pt_object2,PhaseTensor))):
                 raise MTex.MTpyError_PT('ERROR - arguments must be instances of the PhaseTensor class')
             
-            self.read_pt_objects(pt_object1,pt_object2)
+        self.read_pt_objects(pt_object1, pt_object2)
 
 
     def read_pt_objects(self, pt_o1, pt_o2):
@@ -956,12 +955,15 @@ class ResidualPhaseTensor(PhaseTensor):
         if not ( (isinstance(pt_o1, PhaseTensor)) and (isinstance(pt_o2, PhaseTensor)) ):
             raise MTex.MTpyError_PT('ERROR - both arguments must be instances of the PhaseTensor class')
 
-        pt1 = pt_object1.pt
-        pt2 = pt_object2.pt
+        pt1 = pt_o1.pt
+        pt2 = pt_o2.pt
+
 
         if pt1 is not None and pt2 is not None:
             try:
-                if (not np.dtype(pt1) in ['float']) or (not np.dtype(pt2) in ['float']):
+                if pt1.dtype not in [float,int]:
+                    raise
+                if pt2.dtype not in [float,int]:
                     raise
                 if not pt1.shape == pt2.shape:
                     raise
@@ -972,13 +974,18 @@ class ResidualPhaseTensor(PhaseTensor):
                     self.rpt = np.zeros((len(pt1),2,2))
 
                     for idx in range(len(pt1)):
-                        self.rpt[idx] = np.eye(2) - 0.5 * np.array( np.dot( np.matrix(pt2[idx]).I, np.matrix(pt1[idx]) ) + np.dot( np.matrix(pt1[idx]), np.matrix(pt2[idx]).I ) ) 
+                        self.rpt[idx] = np.eye(2) - 0.5 * np.array(
+                             np.dot( np.matrix(pt2[idx]).I, np.matrix(pt1[idx]) ) 
+                         + np.dot( np.matrix(pt1[idx]), np.matrix(pt2[idx]).I ) ) 
+                 
                     self._pt1 = pt1  
                     self._pt2 = pt2  
 
                 else:
                     self.rpt = np.zeros((1,2,2))
-                    self.rpt[0] = np.eye(2) - 0.5 * np.array( np.dot( np.matrix(pt2).I, np.matrix(pt1) ) + np.dot( np.matrix(pt1), np.matrix(pt2).I ) ) 
+                    self.rpt[0] = np.eye(2) - 0.5 * np.array(
+                                     np.dot( np.matrix(pt2).I, np.matrix(pt1) ) 
+                                 + np.dot( np.matrix(pt1), np.matrix(pt2).I ) ) 
                     
                     self._pt1 =  np.zeros((1,2,2))  
                     self._pt1[0] = pt1 
@@ -986,26 +993,28 @@ class ResidualPhaseTensor(PhaseTensor):
                     self._pt2[0] = pt2 
 
             except:
-                raise MTex.MTpyError_PT('ERROR - both PhaseTensor objects must contain PT arrays of the same shape')
+                raise MTex.MTpyError_PT('ERROR - both PhaseTensor objects must'
+                ' contain valid PT arrays of the same shape')
 
         else:
             print  'Could not determine ResPT - both PhaseTensor objects must contain PT arrays of the same shape'
 
 
-        pt1err = pt_object1.pterr
-        pt2err = pt_object2.pterr
+        pt1err = pt_o1.pt_err
+        pt2err = pt_o2.pt_err
 
         if pt1err is not None and pt2err is not None:
+            self.rpterr = np.zeros(self.rpt.shape)
             try:
-                if (not np.dtype(pt1err) in ['float']) or (not np.dtype(pt2err) in ['float']):
+                if (pt1err.dtype not in [float,int]) or (pt2err.dtype not in [float,int]):
                     raise
                 if not pt1err.shape == pt2err.shape:
                     raise
                 if (not len(pt1err.shape) in [2,3] ):
                     raise
-
-                if self.rpterr.shape != self.rpt.shape:
-                    raise
+                if self.rpterr is not None:
+                    if self.rpterr.shape != pt1err.shape:
+                        raise
 
                 if len(pt1err.shape) == 3:
                     self.rpt = np.zeros((len(pt1),2,2))
@@ -1013,10 +1022,17 @@ class ResidualPhaseTensor(PhaseTensor):
                     for idx in range(len(pt1err)):
                         matrix1 = pt1[idx]
                         matrix1err = pt1err[idx]                        
-                        matrix2, matrix2err = invertmatrix_incl_errors(pt2[idx], inmatrix_err = pt2err[idx])
+                        matrix2, matrix2err = MTcc.invertmatrix_incl_errors(
+                                        pt2[idx], inmatrix_err = pt2err[idx])
 
-                        summand1,err1 = multiplymatrices_incl_errors(matrix2, matrix1, inmatrix1_err = matrix2err,inmatrix2_err =  matrix1err)
-                        summand2,err2 = multiplymatrices_incl_errors(matrix1, matrix2, inmatrix1_err = matrix1err,inmatrix2_err =  matrix2err)
+                        summand1,err1 = MTcc.multiplymatrices_incl_errors(
+                                            matrix2, matrix1, 
+                                            inmatrix1_err = matrix2err,
+                                            inmatrix2_err =  matrix1err)
+                        summand2,err2 = MTcc.multiplymatrices_incl_errors(
+                                            matrix1, matrix2, 
+                                            inmatrix1_err = matrix1err,
+                                            inmatrix2_err =  matrix2err)
 
                         self.rpterr[idx] = np.sqrt( 0.25 * err1**2 + 0.25 * err2**2 )
 
@@ -1025,7 +1041,9 @@ class ResidualPhaseTensor(PhaseTensor):
 
                 else:
                     self.rpt = np.zeros((1,2,2))
-                    self.rpt[0] = np.eye(2) - 0.5 * np.array( np.dot( np.matrix(pt2).I, np.matrix(pt1) ) + np.dot( np.matrix(pt1), np.matrix(pt2).I ) ) 
+                    self.rpt[0] = np.eye(2) - 0.5 * np.array( 
+                                    np.dot( np.matrix(pt2).I, np.matrix(pt1) ) 
+                                    + np.dot( np.matrix(pt1), np.matrix(pt2).I)) 
             
                     self._pt1err =  np.zeros((1,2,2))  
                     self._pt1err[0] = pt1err
@@ -1143,9 +1161,9 @@ def z2pt(z_array, zerr_array = None):
         if not z_array.shape == zerr_array.shape:
             raise MTex.MTpyError_PT('Error - z-array and z-err-array have different shape: %s;%s'%(str(z_array.shape), str(zerr_array.shape)))
 
-
     #for a single matrix as input:
     if len(z_array.shape) == 2:
+
         pt_array = np.zeros((2,2))
 
         realz = np.real(z_array)
@@ -1209,7 +1227,6 @@ def z2pt(z_array, zerr_array = None):
 
 
         return pt_array, pterr_array
-
 
     #else:
     pt_array = np.zeros((z_array.shape[0],2,2))
@@ -1285,7 +1302,7 @@ def z_object2pt(z_object):
     p = PhaseTensor(z_object = z_object)
 
     # pt_array = p.pt
-    # pterr_array = p.pterr
+    # pterr_array = p.pt_err
 
     # return pt_array, pterr_array
     return p
@@ -1311,7 +1328,7 @@ def _edi_object2pt(edi_object):
 
     pt_array = p.pt
     
-    pterr_array = p.pterr
+    pterr_array = p.pt_err
 
     return pt_array, pterr_array
 
@@ -1340,7 +1357,7 @@ def edi_file2pt(filename):
 
     # pt_array = p.pt
     
-    # pterr_array = p.pterr
+    # pterr_array = p.pt_err
 
     # return pt_array, pterr_array
     
