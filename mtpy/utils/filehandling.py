@@ -205,7 +205,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
 
         #set stationname, either from arguments or from filename
         if stationname is None:
-            stationname = EDL_get_stationname_fromfilename(lo_sorted_files[0])
+            stationname = EDL_get_stationname_fromfilename(lo_sorted_files[0]).upper()
 
         #set counting variables - needed for handling of consecutive files
 
@@ -728,7 +728,7 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
             lo_files.remove(filename)
             continue
         lo_headers.append(header)
-        lo_stationnames.append(station)
+        lo_stationnames.append(station.upper())
 
 
 
