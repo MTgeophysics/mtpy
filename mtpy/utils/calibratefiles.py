@@ -200,7 +200,7 @@ def main():
     lo_calibrated_files = []
     lo_calibrated_stations = []
     for file_idx, filename in enumerate(lo_allfiles):
-        curr_station = lo_allheaders[file_idx]['station']
+        curr_station = lo_allheaders[file_idx]['station'].upper()
         if stationname is not None:
             if stationname.upper() != curr_station.upper():
                 continue
