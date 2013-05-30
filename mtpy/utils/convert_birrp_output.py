@@ -28,29 +28,53 @@ reload(MTbp)
 
 def main():
 
-    if len(sys.argv) < 5:
-        sys.exit('\nNeed at least 4 arguments:\n '
+    if len(sys.argv) < 4:
+        sys.exit('\nNeed at least 3 arguments:\n '
                 '<stationname> \n <path to Birrp output files> \n '
-                '<survey config file>\n <Birrp config file>\n\n'
-                '[optional: instrument response file in (freq,real,imag)-format]\n')
+                '<survey config file>\n\n[optinal: -b <Birrp config file>\n'
+                '[optional: -i <instrument response file> in (freq,real,imag)-format]\n')
         
     stationname = sys.argv[1]
     datadir = sys.argv[2]
     survey_cfg_fn = sys.argv[3]
-    birrp_cfg_fn = sys.argv[4]
     
+    birrp_cfg_fn = None
     instr_resp_fn = None
-    if len(sys.argv) > 5:
-        instr_resp_fn = sys.argv[5]
 
+    if len(sys.argv) > 4:
+        optionals = sys.argv[4:]
 
-    convertbirrp(stationname,datadir,survey_cfg_fn,birrp_cfg_fn,instr_resp_fn)
+        for idx_o, o in enumerate(optionals):
+            if o[0] =='-':
+                option = o[1].lower()
+                if option not in ['b','i']:
+                    print 'unknown option: {0}'.format(option)
+                    continue
+                else:
+                    try:
+                        argument = ''
+                        argument = optionals[idx_o+1]
+                        if argument[0] == '-':
+                            argument =''
+                            raise
+                        if option == 'b':
+                            birrp_cfg_fn = argument
+                        if option == 'i':
+                            instr_resp_fn = argument
+                    except:
+                        print 'option "{0}" not followed by valid argument: "{1}"'\
+                            ''.format(option, argument)
 
+    edifn, cohfn = convertbirrp(stationname,datadir,survey_cfg_fn, birrp_cfg_fn,instr_resp_fn)
+    print 'EDI/coh - files generated for station {0}:\n{1}\n{2}'\
+            ''.format(stationname,edifn, cohfn)
     
 
-def convertbirrp(stationname, datadir, survey_configfile, 
-                birrp_configfile, instr_response_file):
+def convertbirrp(stationname, datadir, survey_configfile,birrp_configfile=None,
+                instr_response_file=None):
 
+    edifn = None
+    cohfn = None
 
     try:
         datadir = op.realpath(op.abspath(datadir))
@@ -66,12 +90,16 @@ def convertbirrp(stationname, datadir, survey_configfile,
     except:
         sys.exit('Survey config file not existing: {0}'.format(survey_configfile))
 
-    try:
-        birrp_configfile = op.abspath(birrp_configfile)
-        if not op.isfile(birrp_configfile):
-            raise
-    except:
-        sys.exit('Birrp config file not existing: {0}'.format(birrp_configfile))
+    if birrp_configfile is not None:
+        try:
+            birrp_configfile = op.abspath(birrp_configfile)
+            if not op.isfile(birrp_configfile):
+                raise
+        except:
+            print 'Birrp config file not existing: {0} - using generic values'\
+                                                    ''.format(birrp_configfile)
+            birrp_configfile = None
+
 
     if instr_response_file is not None:
         try:
@@ -82,22 +110,23 @@ def convertbirrp(stationname, datadir, survey_configfile,
             sys.exit('Instrument response file not existing: {0}'.format(ir_fn))
 
         try:
-            MTbp.convert2coh(stationname, datadir)
+            cohfn = MTbp.convert2coh(stationname, datadir)
         except:
             try:
-                MTbp.convert2coh(stationname.upper(), datadir) 
+                cohfn = MTbp.convert2coh(stationname.upper(), datadir) 
             except:
                 print 'Could not generate coherence file'
 
+
         try:
-            MTbp.convert2edi_incl_instrument_correction(stationname,\
+            edifn = MTbp.convert2edi_incl_instrument_correction(stationname,\
                                                         datadir,\
                                                         survey_configfile,\
                                                         birrp_configfile,\
                                                         ir_fn)
         except:
             try:
-                MTbp.convert2edi_incl_instrument_correction(stationname.upper(),\
+                edifn = MTbp.convert2edi_incl_instrument_correction(stationname.upper(),\
                                                         datadir,\
                                                         survey_configfile,\
                                                         birrp_configfile,\
@@ -105,25 +134,25 @@ def convertbirrp(stationname, datadir, survey_configfile,
             except:
                 print 'Could not generate EDI file'
         
-        return
+        return edifn, cohfn    
  
 
     try:
-        MTbp.convert2coh(stationname, datadir)
+        cohfn = MTbp.convert2coh(stationname, datadir)
     except:
         try:
-            MTbp.convert2coh(stationname.upper(), datadir) 
+            cohfn = MTbp.convert2coh(stationname.upper(), datadir) 
         except:
             print 'Could not generate coherence file'
 
     try:
-        MTbp.convert2edi(stationname,\
+        edifn = MTbp.convert2edi(stationname,\
                         datadir,\
                         survey_configfile,\
                         birrp_configfile)
     except:
         try:
-            MTbp.convert2edi(stationname.upper(),\
+            edifn = MTbp.convert2edi(stationname.upper(),\
                             datadir,\
                             survey_configfile,\
                             birrp_configfile)
@@ -131,7 +160,7 @@ def convertbirrp(stationname, datadir, survey_configfile,
         except:
             print 'Could not generate EDI file'
     
-    
+    return edifn, cohfn    
 
 if __name__=='__main__':
     main()

@@ -468,8 +468,9 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
 
     if not op.isfile(survey_configfile):
         raise MTex.MTpyError_inputarguments('Survey - configfile not existing: "{0}"'.format(survey_configfile))
-    if not op.isfile(birrp_configfile):
-        raise MTex.MTpyError_inputarguments('BIRRP - Configfile not existing: "{0}"'.format(birrp_configfile))
+    if birrp_configfile is not None:
+        if not op.isfile(birrp_configfile):
+            raise MTex.MTpyError_inputarguments('BIRRP - Configfile not existing: "{0}"'.format(birrp_configfile))
      
     #read the survey config file:
     #try:
@@ -485,11 +486,15 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
 
 
     #read the BIRRP/processing config file:
-    try:
-        birrp_config_dict = MTcf.read_configfile(birrp_configfile)
-    except:
-        raise EX.MTpyError_config_file( 'Config file with BIRRP processing parameters could not be read: %s' % (birrp_configfile) )
-
+    birrp_config_dict = {}
+    if birrp_configfile is not None:
+        try:
+            birrp_config_dict = MTcf.read_configfile(birrp_configfile)
+        except:
+            print 'Config file with BIRRP processing parameters could not'\
+            ' be read: {0} - using generic values'.format(birrp_configfile) 
+            birrp_config_dict = {}
+    
 
     #find the birrp-output j-file for the current station 
     j_filename_list = [i for i in os.listdir(input_dir) if op.basename(i).upper() == ('%s.j'%stationname).upper() ]
@@ -514,11 +519,14 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
 
 
     HEAD = _set_edi_head(station_config_dict,birrp_config_dict)
+
     INFO = _set_edi_info(station_config_dict,birrp_config_dict)
+
     DATA = _set_edi_data(periods, Z_array, tipper_array)
 
     DEFINEMEAS = _set_edi_defmeas(station_config_dict)
-    MTSECT = _set_edi_mtsect(birrp_config_dict,periods)
+    MTSECT = _set_edi_mtsect(station_config_dict,periods)
+
     
     out_fn = MTfh.make_unique_filename(out_fn)
 
@@ -689,9 +697,8 @@ def convert2edi_incl_instrument_correction(stationname, in_dir, survey_configfil
     HEAD = _set_edi_head(station_config_dict,birrp_config_dict)
     INFO = _set_edi_info(station_config_dict,birrp_config_dict)
     DATA = _set_edi_data(periods, Z_array, tipper_array)
-
     DEFINEMEAS = _set_edi_defmeas(station_config_dict)
-    MTSECT = _set_edi_mtsect(birrp_config_dict,periods)
+    MTSECT = _set_edi_mtsect(station_config_dict,periods)
 
 
     out_fn = MTfh.make_unique_filename(out_fn)
@@ -790,6 +797,8 @@ def _set_edi_info(station_config_dict,birrp_config_dict):
     for key in sorted(birrp_config_dict.iterkeys()):
         infostring += '\t\t{0}: {1}  \n'.format(str(key),str(birrp_config_dict[key]))   
     infostring += '\n'    
+    if len(birrp_config_dict) == 0 :
+        infostring += '\t\tunknown\n\n'
 
 
     infostring += '\n'
@@ -799,9 +808,10 @@ def _set_edi_info(station_config_dict,birrp_config_dict):
 
 def _set_edi_head(station_config_dict,birrp_config_dict):
 
+
     headstring = ''
     headstring += '>HEAD\n\n'
-    headstring += '\tDATAID="%s"\n'%(birrp_config_dict['station'])
+    headstring += '\tDATAID="%s"\n'%(station_config_dict['station'])
 
     if station_config_dict.has_key('company'):
         acqby = station_config_dict.has_key('company')
@@ -810,28 +820,28 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
 
     headstring += '\tACQBY="%s"\n'%(acqby)
 
+    if len(birrp_config_dict) !=0 :
+        sampling_rate = float(birrp_config_dict['sampling_rate'])
+        n_samples = int(float(birrp_config_dict['n_samples']))
+        #new:
+        acq_starttime = float(birrp_config_dict['processing_window_start'])
+        #old:
+        #acq_starttime = float(birrp_config_dict['time_series_start'])
 
-    sampling_rate = float(birrp_config_dict['sampling_rate'])
-    n_samples = int(float(birrp_config_dict['n_samples']))
-    #new:
-    acq_starttime = float(birrp_config_dict['processing_window_start'])
-    #old:
-    #acq_starttime = float(birrp_config_dict['time_series_start'])
+        acq_start_date = (time.gmtime(acq_starttime)[:3])[::-1]
+        acq_start_time = (time.gmtime(acq_starttime)[3:6])
+        acq_start = '%02i/%02i/%02i'%(acq_start_date[0],acq_start_date[1],acq_start_date[2]%100)
+        #acq_start = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_start_date[0],acq_start_date[1],acq_start_date[2],acq_start_time[0],acq_start_time[1],acq_start_time[2]) 
 
-    acq_start_date = (time.gmtime(acq_starttime)[:3])[::-1]
-    acq_start_time = (time.gmtime(acq_starttime)[3:6])
-    acq_start = '%02i/%02i/%02i'%(acq_start_date[0],acq_start_date[1],acq_start_date[2]%100)
-    #acq_start = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_start_date[0],acq_start_date[1],acq_start_date[2],acq_start_time[0],acq_start_time[1],acq_start_time[2]) 
-
-    acq_endtime = acq_starttime + 1./sampling_rate * (n_samples )
-    acq_end_date = (time.gmtime(acq_endtime)[:3])[::-1]
-    acq_end_time = (time.gmtime(acq_endtime)[3:6])
-    acq_end = '%02i/%02i/%02i'%(acq_end_date[0],acq_end_date[1],acq_end_date[2]%100)
-    #acq_end = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_end_date[0],acq_end_date[1],acq_end_date[2],acq_end_time[0],acq_end_time[1],acq_end_time[2]) 
+        acq_endtime = acq_starttime + 1./sampling_rate * (n_samples )
+        acq_end_date = (time.gmtime(acq_endtime)[:3])[::-1]
+        acq_end_time = (time.gmtime(acq_endtime)[3:6])
+        acq_end = '%02i/%02i/%02i'%(acq_end_date[0],acq_end_date[1],acq_end_date[2]%100)
+        #acq_end = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_end_date[0],acq_end_date[1],acq_end_date[2],acq_end_time[0],acq_end_time[1],acq_end_time[2]) 
 
 
-    headstring +='\tACQDATE=%s \n'%(acq_start)
-    headstring +='\tENDDATE=%s \n'%(acq_end)
+        headstring +='\tACQDATE=%s \n'%(acq_start)
+        headstring +='\tENDDATE=%s \n'%(acq_end)
 
 
     current_date = (time.gmtime()[:3])[::-1]
@@ -899,10 +909,10 @@ def _set_edi_defmeas(station_config_dict):
     return dmeasstring.expandtabs(4)
 
 
-def _set_edi_mtsect(birrp_config_dict,periods):
+def _set_edi_mtsect(station_config_dict,periods):
     mtsectstring = ''
     mtsectstring += '>=MTSECT\n' 
-    mtsectstring += '\tSECTID=%s\n'%birrp_config_dict['station']
+    mtsectstring += '\tSECTID=%s\n'%station_config_dict['station']
     mtsectstring += '\tNFREQ=%i\n'%(len(periods))
     mtsectstring += '\tHX=1001.001\n'
     mtsectstring += '\tHY=1002.001\n'
@@ -1145,4 +1155,4 @@ def convert2coh(stationname, birrp_output_directory):
         F_out.write(('%f \t %f \t %f \t %f \t %f \t %f \t %f \t %f \n'%(period[ff], freq[ff], c1, zc1, c2, zc2, c3, zc3)).expandtabs(4))
     F_out.close()
 
-    #return out_fn
+    return out_fn

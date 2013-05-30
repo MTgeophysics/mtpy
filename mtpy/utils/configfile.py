@@ -197,7 +197,7 @@ def read_survey_configfile(filename):
 
         #stationnames are uppercase in MTpy
         stationname = station.upper()
-
+        stationdict['station'] = stationname
 
         #check for presence of all mandatory keywords for the current station
         #case insensitive - allow for short forms 'lat', 'lon', and 'ele'
