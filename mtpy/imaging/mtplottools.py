@@ -1,0 +1,1179 @@
+# -*- coding: utf-8 -*-
+"""
+===========
+mtplottools
+===========
+
+Contains helper functions and classes for plotting
+
+
+
+@author: jpeacock-pr
+"""
+#==============================================================================
+
+import numpy as np
+import os
+import mtpy.core.edi as mtedi
+import mtpy.core.z as mtz
+import mtpy.analysis.pt as mtpt
+import mtpy.analysis.zinvariants as mtinv
+import mtpy.utils.exceptions as mtex
+
+#==============================================================================
+
+
+#define text formating for plotting
+ckdict = {'phiminang':'$\Phi_{min}$ (deg)','phimin':'$\Phi_{min}$ (deg)',
+          'phimaxang':'$\Phi_{max}$ (deg)','phimax':'$\Phi_{max}$ (deg)',
+          'phidet':'Det{$\Phi$} (deg)','skew':'Skew (deg)',
+          'ellipticity':'Ellipticity','skew_seg':'Skew (deg)'}
+          
+
+            
+labeldict = {6:'$10^{6}$',
+             5:'$10^{5}$',
+             4:'$10^{4}$',
+             3:'$10^{3}$',
+             2:'$10^{2}$',
+             1:'$10^{1}$',
+             0:'$10^{0}$',
+             -1:'$10^{-1}$',
+             -2:'$10^{-2}$',
+             -3:'$10^{-3}$',
+             -4:'$10^{-4}$',
+             -5:'$10^{-5}$',
+             -6:'$10^{-6}$',
+             -7:'$10^{-7}$',}
+
+#define a dictionary for different zones of utm to put stations in correct 
+#location
+zonedict = dict([(a,ii) for ii,a in enumerate(['a','b','c','d','e','f','g','h',
+               'i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x',
+               'y','z'])])
+
+#==============================================================================
+# Arrows properties for induction vectors               
+#==============================================================================
+class MTArrows(object):
+    """
+    Helper class to read a dictionary of arrow properties
+    
+    Arguments:
+    -----------
+        **arrow_dict** : dictionary for arrow properties
+                        * 'size' : float
+                                  multiplier to scale the arrow. *default* is 5
+                        * 'head_length' : float
+                                         length of the arrow head *default* is 
+                                         1.5
+                        * 'head_width' : float
+                                        width of the arrow head *default* is 
+                                        1.5
+                        * 'lw' : float
+                                line width of the arrow *default* is .5
+                                
+                        * 'color' : tuple (real, imaginary)
+                                   color of the arrows for real and imaginary
+                                   
+                        * 'threshold': float
+                                      threshold of which any arrow larger than
+                                      this number will not be plotted, helps 
+                                      clean up if the data is not good. 
+                                      *default* is 1, note this is before 
+                                      scaling by 'size'
+                                      
+                        * 'direction : [ 0 | 1 ]
+                                     - 0 for arrows to point toward a conductor
+                                     - 1 for arrow to point away from conductor
+    
+    Attributes:
+    -----------
+    
+        -arrow_color_imag     color of imaginary induction arrow
+        -arrow_color_real     color of real induction arrow
+        -arrow_direction      convention of arrows pointing to or away from 
+                              conductors, see above.
+        -arrow_head_length    length of arrow head in relative points
+        -arrow_head_width     width of arrow head in relative points
+        -arrow_lw             line width of arrows
+        -arrow_size           scaling factor to multiple arrows by to be visible
+        -arrow_threshold      threshold for plotting arrows, anything above 
+                              this number will not be plotted.
+                              
+    """
+    
+    def __init__(self,arrow_dict):
+        self._arrow_dict = arrow_dict
+
+    def _read_arrow_dict(self):        
+    
+        #set arrow length
+        try:
+            self.arrow_size = self._arrow_dict['size']
+        except KeyError:
+            self.arrow_size = 2.5
+            
+        #set head length
+        try:
+            self.arrow_head_length = self._arrow_dict['head_length']
+        except KeyError:
+            self.arrow_head_length = .15*self.arrow_size
+            
+        #set head width
+        try:
+            self.arrow_head_width = self._arrow_dict['head_width']
+        except KeyError:
+            self.arrow_head_width = .1*self.arrow_size
+            
+        #set line width
+        try:
+            self.arrow_lw = self._arrow_dict['lw']
+        except KeyError:
+            self.arrow_lw = .5*self.arrow_size
+            
+        #set real color to black
+        try:
+            self.arrow_color_real = self._arrow_dict['color'][0]
+        except KeyError:
+            self.arrow_color_real = 'k'
+            
+        #set imaginary color to black
+        try:
+            self.arrow_color_imag = self._arrow_dict['color'][1]
+        except KeyError:
+            self.arrow_color_imag = 'b'
+            
+        #set threshold of induction arrows to plot
+        try:
+            self.arrow_threshold = self._arrow_dict['threshold']
+        except KeyError:
+            self.arrow_threshold = 1
+            
+        #set arrow direction to point towards or away from conductor
+        try:
+            self.arrow_direction = self._arrow_dict['direction']
+        except KeyError:
+            self.arrow_direction = 0
+
+
+#==============================================================================
+#  ellipse properties           
+#==============================================================================
+class MTEllipse(object):
+    """
+    helper class for getting ellipse properties from an input dictionary
+    
+    Arguments:
+    ----------
+        **ellipse_dict** : dictionary
+                          dictionary of parameters for the phase tensor 
+                          ellipses with keys:
+                              
+                          * 'size' -> size of ellipse in points 
+                                     *default* is .25
+                          
+                          * 'colorby' : [ 'phimin' | 'phimax' | 'beta' | 
+                                    'skew_seg' | 'phidet' | 'ellipticity' ]
+                                    
+                                    - 'phimin' -> colors by minimum phase
+                                    - 'phimax' -> colors by maximum phase
+                                    - 'skew' -> colors by skew
+                                    - 'skew_seg' -> colors by skew in 
+                                                   discrete segments 
+                                                   defined by the range
+                                    - 'phidet' -> colors by determinant of
+                                                 the phase tensor
+                                    - 'ellipticity' -> colors by ellipticity
+                                    *default* is 'phimin'
+                            
+                          * 'range' : tuple (min, max, step)
+                                     Need to input at least the min and max
+                                     and if using 'skew_seg' to plot
+                                     discrete values input step as well
+                                     *default* depends on 'colorby'
+                                     
+                          * 'cmap' : [ 'mt_yl2rd' | 'mt_bl2yl2rd' | 
+                                       'mt_wh2bl' | 'mt_rd2bl' | 
+                                       'mt_bl2wh2rd' | 'mt_seg_bl2wh2rd' | 
+                                       'mt_rd2gr2bl']
+                                      
+                                   - 'mt_yl2rd'       --> yellow to red
+                                   - 'mt_bl2yl2rd'    --> blue to yellow to red
+                                   - 'mt_wh2bl'       --> white to blue
+                                   - 'mt_rd2bl'       --> red to blue
+                                   - 'mt_bl2wh2rd'    --> blue to white to red
+                                   - 'mt_bl2gr2rd'    --> blue to green to red
+                                   - 'mt_rd2gr2bl'    --> red to green to blue
+                                   - 'mt_seg_bl2wh2rd' --> discrete blue to 
+                                                           white to red
+    
+    Attributes:
+    ------------
+    
+        -ellipse_cmap         ellipse color map, see above for options
+        -ellipse_colorby      parameter to color ellipse by
+        -ellipse_range        (min, max, step) values to color ellipses
+        -ellipse_size         scaling factor to make ellipses visible
+                                                           
+                                                           
+    """
+    
+    def __init__(self, ellipse_dict):
+        self._ellipse_dict = ellipse_dict
+        
+    def _read_ellipse_dict(self):
+        
+        #--> set the ellipse properties
+        
+        #set default size to 2
+        try:
+            self.ellipse_size = self._ellipse_dict['size']
+        except KeyError:
+            self.ellipse_size = 2
+        
+        #set default colorby to phimin
+        try:
+            self.ellipse_colorby = self._ellipse_dict['colorby']
+        except KeyError:
+            self.ellipse_colorby = 'phimin'
+        
+        #set color range to 0-90
+        try:
+            self.ellipse_range = self._ellipse_dict['range']
+        except KeyError:
+            if self.ellipse_colorby=='skew' or \
+                self.ellipse_colorby=='skew_seg':
+                
+                self.ellipse_range = (-9,9,3)
+            
+            elif self.ellipse_colorby=='ellipticity':
+                self.ellipse_range = (0,1,.1)
+            
+            else:
+                self.ellipse_range = (0,90,5)
+                
+        try:
+            self.ellipse_range[2]
+        except IndexError:
+            self.ellipse_range = (self.ellipse_range[0], 
+                                  self.ellipse_range[1],1)
+            
+        #set colormap to yellow to red
+        try:
+            self.ellipse_cmap = self._ellipse_dict['cmap']
+        except KeyError:
+            if self.ellipse_colorby=='skew':
+                self.ellipse_cmap = 'mt_bl2wh2rd'
+                
+            elif self.ellipse_colorby=='skew_seg':
+                self.ellipse_cmap = 'mt_seg_bl2wh2rd'
+                
+            else:
+                self.ellipse_cmap = 'mt_bl2gr2rd'
+                
+#==============================================================================
+# object for computing resistivity and phase  
+#==============================================================================
+class ResPhase(object):
+    """
+    HJelper class to create a data type for just the resistivity and phase
+    
+    Arguments:
+    ----------
+        **z_object** : class mtpy.core.z.Z
+                      object of mtpy.core.z.  If this is input be sure the
+                      attribute z.freq is filled.  *default* is None
+                      
+        **res_array** : np.ndarray((nf,2,2))
+                        Array of resistivity values on a linear scale with 
+                        the shape being [[rho_xx, rho_xy],[rho_yx, rho_yy]]
+                        *default* is None
+                        
+        **res_err_array** : np.ndarray((nf,2,2))
+                        Array of resistivity error values on a linear scale,  
+                        the shape being [[rho_xx, rho_xy],[rho_yx, rho_yy]]
+                        *default* is None
+                        
+        **phase_array** : np.ndarray((nf,2,2))
+                        Array of resistivity values on a linear scale with 
+                        the shape being [[phi_xx, phi_xy],[phi_yx, phi_yy]]
+                        *default* is None
+                        
+        **phase_err_array** : np.ndarray((nf,2,2))
+                        Array of resistivity error values on a linear scale,  
+                        the shape being [[phi_xx, phi_xy],[phi_yx, phi_yy]]
+                        *default* is None
+                        
+        **rot_z** : float
+                    angle to rotate data by assuming North is 0 and measured
+                    clockwise positive
+                    
+        **period** : np.ndarray(nf)
+                     period array same length as res_array.  Needs to be input 
+                     if inputing res and phase.
+                        
+    
+    Attributes:
+    ------------
+    
+        -period       array of periods corresponding to elements in res/phase
+        
+        -phase         phase array of shape (nf, 2, 2)
+        -phase_err     phase error array of shape (nf, 2, 2)
+        -phasedet      determinant of phase with shape (nf)
+        -phasedet_err  determinant error of phase with shape (nf)
+        -phasexx       xx component of phase with shape (nf)
+        -phasexx_err   xx component of phase error with shape (nf)
+        -phasexy       xy component of phase with shape (nf)
+        -phasexy_err   xy component of phase error with shape (nf)
+        -phaseyx       yx component of phase with shape (nf)
+        -phaseyx_err   yx component of phase error with shape (nf)
+        -phaseyy       yy component of phase with shape (nf)
+        -phaseyy_err   yy component of phase error with shape (nf)
+        
+        -res           res array of shape (nf, 2, 2)
+        -res_err       res error array of shape (nf, 2, 2)
+        -resdet        determinant of res with shape (nf)
+        -resdet_err    determinant error of res with shape (nf)
+        -resxx         xx component of res with shape (nf)
+        -resxx_err     xx component of res error with shape (nf)
+        -resxy         xy component of res with shape (nf)
+        -resxy_err     xy component of res error with shape (nf)
+        -resyx         yx component of res with shape (nf)
+        -resyx_err     yx component of res error with shape (nf)
+        -resyy         yy component of res with shape (nf)
+        -resyy_err     yy component of res error with shape (nf)
+        
+    Methods:
+    ---------
+    
+        -compute_res_phase   computes the above attributes on call
+        -rotate              rotates the data
+     
+    """
+    def __init__(self, z_object=None, res_array=None, res_err_array=None,
+                 phase_array=None, phase_err_array=None, rot_z=0, period=None):
+        
+        self._Z = z_object
+        self.res = res_array
+        self.res_err = res_err_array
+        self.phase = phase_array
+        self.phase_err = phase_err_array
+        self.period = period
+        
+        
+        #check to make sure they are the same size
+        if self.res!=None or self.phase!=None:
+            if self.res.shape!=self.phase.shape:
+                raise mtex.MTpyError_Z('res_array and phase_array '+\
+                                               'are not the same shape')
+                                               
+            if self._Z is None:
+                self._Z = mtz.Z()
+                self._Z.set_res_phase(res_array, phase_array, 
+                                      res_err_array=res_err_array,
+                                      phase_err_array=phase_err_array)
+                if self.period is None:
+                    raise mtex.MTpyError_Z('Need to input period to '+\
+                                                'compute z.')
+                self._Z.freq = 1./period
+        
+        if self._Z.freq==None:
+            if period is not None:
+                self._Z.freq = 1./period
+            else:
+                raise mtex.MTpyError_Z('Need to set z_object.freq')
+        else:
+            self.period = 1./self._Z.freq
+            
+        if rot_z!=0:
+            self.rotate(rot_z)
+            
+        #compute the resistivity and phase components
+        self.compute_res_phase()
+    
+    def compute_res_phase(self):
+        """
+        computes the resistivity and phase and sets each component as an 
+        attribute
+        """
+        
+        if self._Z is not None:
+            self.res,  self.phase, self.res_err, self.phase_err = \
+                                                       self._Z._get_res_phase()
+                                                       
+        #check to see if a res_err_array was input if not set to zeros
+        if self.res_err is None:
+            self.res_err = np.zeros_like(self.res)
+            
+        else:
+            #check to see if res and res_err are the same shape
+            if self.res.shape!=self.res_err.shape:
+                raise mtex.MTpyError_shape('res_array and res_err_array '+\
+                                               'are not the same shape')
+
+        #check to see if a phase_err_array was input, if not set to zeros
+        if self.phase_err is None:
+            self.phase_err = np.zeros_like(self.phase)
+            
+        else:
+            #check to see if res and res_err are the same shape
+            if self.phase.shape!=self.phase_err.shape:
+                raise mtex.MTpyError_shape('phase_array and '+\
+                                      'phase_err_array are not the same shape')
+        
+        #--> set the attributes of the class to the components of each        
+        self.resxx = self.res[:,0,0]
+        self.resxy = self.res[:,0,1]
+        self.resyx = self.res[:,1,0]
+        self.resyy = self.res[:,1,1]
+        
+        self.resxx_err = self.res_err[:,0,0]
+        self.resxy_err = self.res_err[:,0,1]
+        self.resyx_err = self.res_err[:,1,0]
+        self.resyy_err = self.res_err[:,1,1]
+        
+        self.phasexx = self.phase[:,0,0]
+        self.phasexy = self.phase[:,0,1]
+        self.phaseyx = self.phase[:,1,0]
+        self.phaseyy = self.phase[:,1,1]
+        
+        self.phasexx_err = self.phase_err[:,0,0]
+        self.phasexy_err = self.phase_err[:,0,1]
+        self.phaseyx_err = self.phase_err[:,1,0]
+        self.phaseyy_err = self.phase_err[:,1,1]
+        
+        self.phaseyx[np.where(self.phaseyx>120)] -= 180 
+        self.phaseyx[np.where(self.phaseyx<-90)] += 180
+        
+        #calculate determinant values
+        zdet = np.array([np.linalg.det(zz)**.5 for zz in self._Z.z])
+        zdetvar = np.array([np.linalg.det(zzv)**.5 for zzv in self._Z.zerr])
+        
+        #apparent resistivity
+        self.resdet = 0.2*(1./self._Z.freq)*abs(zdet)**2
+        self.resdet_err = 0.2*(1./self._Z.freq)*\
+                                        np.abs(zdet+zdetvar)**2-self.resdet
+        
+        #phase
+        self.phasedet = np.arctan2(zdet.imag,zdet.real)*(180/np.pi)
+        self.phasedet_err = np.arcsin(zdetvar/abs(zdet))*(180/np.pi)
+        
+    def rotate(self, rot_z):
+        """
+        rotate the impedance tensor by the angle rot_z (deg) assuming 
+        0 is North and angle is positve clockwise.
+        """
+        
+        self.rot_z = rot_z
+        
+        #need to fill the rotation angles in Z for this to work
+        try:
+            len(self.rot_z)
+        except TypeError:
+            self._Z.rotation_angle = np.array([rot_z 
+                                           for rr in range(self.res.shape[0])])
+        if self._Z is not None:
+            self._Z.rotate(self.rot_z)
+        
+        else:
+            raise mtex.MTpyError_Z('Cannot rotate just resistivity and '+\
+                                        'phase data, need to input z')
+        
+        self.compute_res_phase()
+
+        
+#==============================================================================
+#  Define a tipper object
+#==============================================================================
+class Tipper(object):
+    """
+    Helper class to put tipper data into a usable format
+    
+    Arguments:
+    ----------
+        **tipper_object** : class mtpy.core.z.Tipper
+    
+        **tipper_array** : np.ndarray((nf, 1, 2))
+                           array of the complex tipper as [tx, ty]
+        **tipper_err_array** : np.ndarray((nf, 1, 2))
+                               array of the tipper error as [tx, ty]
+   
+   Attributes:
+    -----------
+    
+        -mag_real   magnitude of real induction arrow
+        -mag_imag   magnitude of imaginary induction arrow
+        -ang_real   angle of real induction arrow assuming 0 is North positive 
+                    clockwise
+        _ang_imag   angle of imaginary induction arrow assuming 0 is North 
+                    positive clockwise
+        
+    Methods:
+    --------
+    
+        -compute_components   computes above attributes on call
+        -rotate     rotates the data assuming 0 is North positive 
+                    clockwise  
+    """
+    
+    def __init__(self, tipper_object=None, tipper_array=None, 
+                 tipper_err_array=None, rot_t=0, freq=None):
+        
+        if tipper_object is not None:
+            self._Tipper = tipper_object
+        else:
+            self._Tipper = mtz.Tipper(tipper_array=tipper_array, 
+                                      tipper_err_array=tipper_err_array,
+                                      freq=freq)
+                                      
+        self.freq = freq
+        
+        if rot_t!=0:
+            self.rotate(rot_t)
+            
+        else:
+            self.compute_components()
+        
+    def compute_components(self):
+        
+        self.mag_real, self.ang_real, self.mag_imag, self.ang_imag = \
+                                                   self._Tipper.mag_direction 
+
+        
+    def rotate(self, rot_t):
+        
+        self.rot_t = rot_t
+        self._Tipper.rotate(self.rot_t)
+        
+        self.compute_components()
+                
+#==============================================================================
+#  make an MT object that has all the important information and methods               
+#==============================================================================
+               
+class MTplot(object):
+    """
+    This class will be able to read in the imporant information from either
+    an .edi file or information input by had and can be extended to other 
+    file types in the future.  This is a helper class to get all the 
+    information needed in one place.
+    
+    The normal usage is to input an edi file from which all the information
+    is read in.  However, it would seem that not everyone uses the .edi format
+    so an option is to write you're own class for that particular file type, or
+    give it to us to deal with.  Or write enough code to get it into one of 
+    the suppported forms as arrays of z or resistivity and phase, or put those
+    into a z_object or tipper_object.  
+    
+    
+    Arguments:
+    ----------
+    
+        **filename** : string
+                       full path to file to be read in.  At the moment only
+                       .edi type files are supported. *default* is None
+        
+        **z** : np.array((nf, 2, 2), dtype='complex')
+                impedance tensor with length of nf -> the number of freq
+                *default* is None
+                
+        **z_err** : np.array((nf, 2, 2), dtype='real')
+                    impedance tensor error estimates, same shape as z.
+                    *default* is None
+                    
+        **res_array** : np.array((nf, 2, 2))
+                        array of resistivity values in linear scale.
+                        *default* is None
+                        
+        **res_err_array** : np.array((nf, 2, 2))
+                            array of resistivity error estimates, same shape 
+                            as res_array. *default* is None
+                            
+        **phase_array** : np.array((nf, 2, 2))
+                          array of phase values in degrees, same shape as 
+                          res_array. *default* is None
+                          
+        **phase_err_array** : np.array((nf, 2, 2))
+                              array of phase error estimates, same shape as 
+                              phase_array. *default* is None
+                              
+        **tipper_array** : np.array((nf, 1, 2), dtype='complex')
+                           array of tipper values for tx, ty. *default* is None
+                           
+        **tipper_err_array** : np.array((nf, 1, 2))
+                               array of tipper error estimates, same shape as
+                               tipper_array. *default* is None
+        
+        **station** : string
+                      name of the station to be plotted. *default* is None
+                      
+        **period** : np.array(nf)
+                     array of periods that coorespond to the components of z
+                     *default* is None
+                      
+        **lat** : float
+                 latitude of the station to be plotted in decimal degrees.
+                 *default* is None
+                 
+        **lon** : float
+                 longitude of the station to be plotted in decimal degrees.
+                 *default* is None
+                 
+        **elev** : float
+                   elevation of the station to be plotted in meters.
+                   *default* is None
+                              
+        **rot_z** : float or np.array(nf)
+                    angle (deg) to rotate the data assuming North is 0 and 
+                    angle is positive clockwise.  Can be input as an array to
+                    rotate different periods by different angles. 
+                    *default* is 0
+                    
+        **z_object** : class mtpy.core.z.Z
+                      object of mtpy.core.z.  If this is input be sure the
+                      attribute z.freq is filled.  *default* is None
+                      
+        **tipper_object** : class mtpy.core.z.Tipper
+                            object of mtpy.core.z. If this is input be sure the
+                            attribute z.freq is filled.  
+                            *default* is None 
+    Attributes:
+    -----------
+        -z             impedance tensor as an np.array((nf, 2, 2))
+            
+        -z_err         estimates of impedance tensor error same shape as z
+        
+        -tipper        tipper elements in an np.array((nf, 1, 2))
+        
+        -tipper_err    estimates of tipper error, same shape as tipper
+        
+        -station       station name
+        
+        -period        period as an np.array(nf)
+        
+        -lat           latitude in decimal degrees
+        
+        -lon           longitude in decimal degrees
+        
+        -elev          elevation in meters
+        
+        -fn            filename read from
+        
+     
+     These can be get/set by simple dot syntax.  
+        
+    :Example: ::
+        
+        >>> mt1 = mtplot.MTplot(r'/home/mt/edifiles/mt01.edi')
+        >>> mt1.station
+        >>> 'mt01'
+        >>> mt1.station = 'pb075'
+        >>> mt1.station
+        >>> 'pb075'
+        
+    **Note:** that the format of z and tipper are:
+        
+        ::
+            
+          z[ii, :, :] = np.array([[z_xx, Z_xy], [Z_yx, Z_yy]])
+          z[ii, 0, 0] = z_xx
+          z[ii, 0, 1] = z_xy
+          z[ii, 1, 0] = z_yx
+          z[ii, 1, 1] = z_yy
+          tipper[ii, :, :] = np.array([[tx],[ty]])
+          tipper[ii, 0, 0] = tx
+          tipper[ii, 0, 1] = ty
+        
+    Methods:
+    --------
+        -get_ResPhase        returns a ResPhase object
+        -get_PhaseTensor     returns a PhaseTensor object
+        -get_Tipper          returns a Tipper object
+        -get_Zinvariants     returns a Zinvariants object
+        
+    :Example: ::
+        
+        >>> import mtpy.imaging.mtplot as mtplot
+        >>> mt1 = mtplot.MTplot(r'/home/mt/edifiles/mt01.edi')
+        >>> # if you don't have an .edi file but res and phase
+        >>> mt1 = mtplot.MTplot(res_array=res, phase_array=phase, 
+        >>> ...                 period=period, station='mt01')
+        
+        
+        
+    """
+    
+    def __init__(self, filename=None, z=None, z_err=None, res_array=None,
+                 phase_array=None, res_err_array=None, phase_err_array=None,
+                 tipper=None, tipper_err=None, station=None, period=None, 
+                 lat=None, lon=None, elev=None, rot_z=0, z_object=None, 
+                 tipper_object=None, freq=None):
+                     
+
+        self._station = station
+        self._period = period
+        self._freq = freq
+        self._lat = lat
+        self._lon = lon
+        self._elev = elev
+        self._fn = filename
+        self._rot_z = rot_z
+        
+        #if a z_object is input make it the attribute _Z
+        if z_object is not None:
+            self._Z = z_object
+            if z_object.freq==None:
+                raise mtex.MTpyError_Z('Need to set Z.freq to an'+\
+                                           ' array that cooresponds to Z.z')
+            self.period = 1./z_object.freq
+        
+        #if z_array is input
+        elif z is not None:
+            #make sure period is input for plotting
+            if self.period==None:
+                raise mtex.MTpyError_Z('Need to input period array to '+\
+                                            'compute Resistivity')
+                               
+            self._Z = mtz.Z(z_array=z, zerr_array=z_err)
+            self._Z.freq = 1./period
+
+        #if a tipper object is input set it to _Tipper
+        if tipper_object is not None:
+            self._Tipper = tipper_object
+        else:
+            self._Tipper = mtz.Tipper(tipper_array=tipper, 
+                                      tipper_err_array=tipper_err,
+                                      freq=freq)
+        
+        #--> read in the edi file if its given
+        if self._fn is not None:
+            if self._fn[-3:]=='edi':
+                self._read_edi()
+            else:
+                not_fn = self._fn[os.path.basename(self._fn).find['.']:]
+                raise mtex.MTpyError_file_handling('File '+\
+                          'type {0} not supported yet.'.format(not_fn))
+        
+            
+        #--> if resistivity and phase are given set the z_array, z_err_array
+        if res_array!=None and phase_array!=None:
+            if period is None and freq is None:
+                raise mtex.MTpyError_Z('Need to input period array for '+\
+                                           'plotting')
+            
+            if not res_array.shape==phase_array.shape:
+                raise mtex.MTpyError_shape('res_array and phase array '+\
+                                               'do not have the same shape')
+                                               
+            if not res_array.shape[0]==period.shape[0]:
+                raise mtex.MTpyError_shape('res_array and period array '+\
+                                               'do not have the same shape')
+            
+            self._Z = mtz.Z()
+            self._Z.freq = 1./period
+            self.set_res_phase(res_array,phase_array, 
+                               res_err_array=res_err_array,
+                               phase_err_array=phase_err_array)
+                               
+            self.set_period(period)
+
+            
+    def _read_edi(self):
+        """
+        read in an .edi file using mtpy.core.edi
+        """
+        
+        edi1 = mtedi.Edi()
+        edi1.readfile(self._fn)
+        
+        #--> set the attributes accordingly
+        # impedance tensor and error
+        self._Z = edi1.Z
+        
+        # tipper and error
+        if edi1.Tipper==None:
+            self._plot_tipper = 'n'
+            self.set_tipper(np.zeros((self._Z.z.shape[0], 1, 2),
+                                     dtype='complex'))
+            self.set_tipper_err(np.zeros((self._Z.z.shape[0], 1, 2)))
+            self._Tipper.rotation_angle=np.zeros(self._Z.z.shape[0])
+            
+        else:
+            self._Tipper = edi1.Tipper
+            self._plot_tipper = 'y'
+            
+        # station name
+        try:
+            self.station = edi1.head['dataid']
+        except KeyError:
+            print 'Could not get station name set to MT01'
+            self.station = 'MT01'
+            
+        # period
+        self.period = 1./edi1.freq
+        self.freq = edi1.freq
+        
+        # lat, lon and elevation
+        self.lat=edi1.lat
+        self.lon = edi1.lon
+        self.elev = edi1.elev
+        
+        # put arrays into descending period order, so that the first index
+        # is the shortest period.
+        
+        if self.period[0]>self.period[-1]:
+            self.z = self.z[::-1]
+            self.zerr = self.zerr[::-1]
+            self.tipper = self.tipper[::-1]
+            self.tipper_err = self.tipper_err[::-1]
+            self.period = self.period[::-1]
+            
+        
+        
+    # don't really like this way of programming but I'll do it anyway
+    #==========================================================================
+    #  make set methods for each of the attributes    
+    #==========================================================================
+    def _set_z(self, z):
+        self._Z.z = z
+        
+    def _set_z_err(self, z_err):
+        self._Z.zerr = z_err
+        
+    def _set_tipper(self, tipper):
+        self._Tipper.tipper = tipper
+        self._plot_tipper = 'y'
+        
+    def _set_tipper_err(self, tipper_err):
+        self._Tipper.tippererr = tipper_err
+        
+    def _set_station(self, station):
+        self._station = station
+        
+    def _set_period(self, period):
+        self._period = period
+        if self._period[0]>self._period[-1]:
+            self._Z.z = self._Z.z[::-1]
+            self._Z.zerr = self._Z.zerr[::-1]
+            self._period = self._period[::-1]
+            if self._Tipper.tipper is not None:
+                self._Tipper.tipper = self._Tipper.tipper[::-1]
+                self._Tipper.tipper_err = self._Tipper.tipper_err[::-1]
+            
+        self._Z.freq = 1./self._period
+        self._freq = 1./self._period
+        if self._Tipper.tipper is not None:
+            self._Tipper.freq = 1./self._period
+        
+    def _set_lat(self, lat):
+        self._lat = lat
+        
+    def _set_lon(self, lon):
+        self._lon = lon
+        
+    def _set_elev(self, elev):
+        self._elev = elev
+        
+    def _set_fn(self, fn):
+        self._fn = fn
+        if self._fn[-3:]=='edi':
+            self._read_edi()
+        else:
+            not_fn = self._fn[os.path.basename(self._fn).find['.']:]
+            raise mtex.MTpyError_file_handling('File '+\
+                              'type {0} not supported yet.'.format(not_fn))
+           
+    def _set_rot_z(self, rot_z):
+        self._rot_z = rot_z
+        
+        # be sure to rotate the components if rot_z is set
+        try:
+            self._Z.rotate(self._rot_z)
+            self._Tipper.rotate(self._rot_z)
+        except TypeError:
+            self._Z.rotation_angle = np.array([rot_z 
+                                        for rr in range(self.period.shape[0])])
+        
+    def _set_res_phase(self, res_array, phase_array, res_err_array=None,
+                       phase_err_array=None):        
+        self._Z.set_res_phase(res_array, phase_array, res_err_array, 
+                              phase_err_array)
+        
+    def _set_freq(self, freq):
+        self._freq = freq
+        
+        #make sure things are in order from highest freq first
+        if self._freq[0]<self._freq[-1]:
+            self._Z.z = self._Z.z[::-1]
+            self._Z.zerr = self._Z.zerr[::-1]
+            self._period = self._period[::-1]
+            if self._Tipper.tipper is not None:
+                self._Tipper.tipper = self._Tipper.tipper[::-1]
+                self._Tipper.tipper_err = self._Tipper.tipper_err[::-1]
+            
+        self._Z.freq = self._freq
+        self._freq = self._freq
+        if self._Tipper.tipper is not None:
+            self._Tipper.freq = self._freq
+        
+        
+    #==========================================================================
+    # make get methods for each attribute
+    #==========================================================================
+    def _get_z(self):
+        return self._Z.z
+        
+    def _get_z_err(self):
+        return self._Z.zerr
+
+    def _get_tipper(self):
+        return self._Tipper.tipper
+        
+    def _get_tipper_err(self):
+        return self._Tipper.tipper_err
+        
+    def _get_station(self):
+        return self._station
+        
+    def _get_period(self):
+        return self._period
+        
+    def _get_lat(self):
+        return self._lat
+        
+    def _get_lon(self):
+        return self._lon
+        
+    def _get_elev(self):
+        return self._elev
+        
+    def _get_fn(self):
+        return self._fn
+        
+    def _get_rot_z(self):
+        return self._rot_z
+        
+    def _get_freq(self):
+        return self._freq
+        
+    #==========================================================================
+    # use the property built-in to make these get/set useable behind the scenes
+    #==========================================================================
+    z = property(_get_z, _set_z, 
+                 doc="Impedance tensor in the shape (nz,2,2) complex "+\
+                     "numpy.array")
+    
+    z_err = property(_get_z_err, _set_z_err, 
+                 doc="Impedance tensor error same shape as MT.z real "+\
+                     "numpy.array")
+                  
+    tipper = property(_get_tipper, _set_tipper, 
+                      doc="Tipper array in the shape (nz, 2) complex "+\
+                          "numpy.array")
+                       
+    tipper_err = property(_get_tipper_err, _set_tipper_err, 
+                          doc="Tipper error array same shape as MT.tipper"+\
+                              "real numpy.array")
+                          
+    station = property(_get_station, _set_station, 
+                       doc="Name of the station to be plotted")
+                       
+    period = property(_get_period, _set_period, 
+                      doc="array of periods corresponding to MT.z")
+                      
+    lat = property(_get_lat, _set_lat, 
+                   doc="Latitude in decimal degrees of the station")
+    
+    lon = property(_get_lon, _set_lon,
+                   doc="Longitude in decimal degrees of the station")
+    
+    elev = property(_get_elev, _set_elev, 
+                    doc="Elevation of the station in meters")
+                    
+    fn = property(_get_fn, _set_fn,
+                      doc="full path to the file of the station "+\
+                          "being plotted")
+                      
+    rot_z = property(_get_rot_z, _set_rot_z, 
+                     doc="Rotation angle positive clockwise assuming North "+\
+                         "is 0, can be an array with same shape at z")
+                         
+    freq = property(_get_freq, _set_freq,
+                           doc="freq array corresponding to elemens in z")
+                      
+    #==========================================================================
+    # define methods to get resphase, phasetensor, invariants
+    #
+    # --> used uppercase in the function names to signify that it is getting a 
+    #     class object
+    #==========================================================================
+
+    def get_ResPhase(self):
+        """
+        returns a ResPhase object from z_object
+        
+        """
+        rp = ResPhase(self._Z)
+        return rp
+
+    def get_PhaseTensor(self):
+        """
+        returns a mtpy.analysis.pt.PhaseTensor object from z_object
+        
+        """
+        pt = mtpt.PhaseTensor(z_object=self._Z)
+        pt.freq = 1./self.period
+        
+        return pt
+    
+    def get_Zinvariants(self):
+        """
+        returns a mtpy.analysis.zinvariants.Zinvariants object
+        """
+        
+        zinv = mtinv.Zinvariants(z_object=self._Z)
+        
+        return zinv
+        
+    def get_Tipper(self):
+        """
+        returns Tipper class
+        
+        """
+        
+        tp = Tipper(tipper_object=self._Tipper)
+        
+        return tp
+        
+#==============================================================================
+# get list of mt objects     
+#==============================================================================
+def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None, 
+               tipper_object_lst=None, mt_object_lst=None):
+                 
+    """
+    gets a list of mt objects from the inputs  
+
+    Arguments:     
+    -----------
+        **filenamelst** : list of strings
+                          full paths to .edi files to plot
+                          
+        **res_object_lst** : list of mtplot.ResPhase objects
+                             *default* is none
+                          
+        **z_object_lst** : list of class mtpy.core.z.Z
+                           object of mtpy.core.z.  If this is input be sure the
+                           attribute z.freq is filled.  *default* is None
+                      
+        **mt_object_lst** : list of class mtpy.imaging.mtplot.MTplot
+                            object of mtpy.imaging.mtplot.MTplot
+                            *default* is None
+                            
+    Returns:
+    ---------
+    
+        **mt_lst** : list of MTplot instances
+    """
+    
+    #first need to find something to loop over
+    try:
+        ns = len(fn_lst)
+        mt_lst = [MTplot(filename=fn) for fn in fn_lst]
+        print 'Reading {0} stations'.format(ns)
+        return mt_lst
+    except TypeError:
+        try:
+            ns = len(res_object_lst)
+            mt_lst = [MTplot(res_phase_object=res_obj) 
+                        for res_obj in res_object_lst]
+            try:
+                nt = len(tipper_object_lst)
+                if nt!=ns:
+                    raise mtex.MTpyError_inputarguments('length '+\
+                          ' of z_lst is not equal to tip_lst'+\
+                          '; nz={0}, nt={1}'.format(ns, nt))
+                for mt,tip_obj in zip(mt_lst,tipper_object_lst):
+                    mt._Tipper = tip_obj 
+            except TypeError:
+                pass
+            print 'Reading {0} stations'.format(ns)
+            return mt_lst
+        except TypeError:
+            try: 
+                ns = len(z_object_lst)
+                mt_lst = [MTplot(z_object=z_obj) for z_obj in z_object_lst]
+                try:
+                    nt = len(tipper_object_lst)
+                    if nt!=ns:
+                        raise mtex.MTpyError_inputarguments('length '+\
+                              ' of z_lst is not equal to tip_lst'+\
+                              '; nz={0}, nt={1}'.format(ns, nt))
+                    for mt,tip_obj in zip(mt_lst,tipper_object_lst):
+                        mt._Tipper = tip_obj 
+                except TypeError:
+                    pass
+                print 'Reading {0} stations'.format(ns)
+                return mt_lst
+                
+            except TypeError:
+                try:
+                    ns = len(mt_object_lst)
+                    print 'Reading {0} stations'.format(ns)
+                    return mt_lst
+                except TypeError:
+                    raise IOError('Need to input an iteratable list')
+                    
+#==============================================================================
+# function for writing values to file
+#==============================================================================
+def _make_value_str(value, value_lst=None, spacing='{0:^8}', 
+                    value_format='{0: .2f}', append=False, add=False):
+    """
+    helper function for writing values to a file, takes in a value and either
+    appends or adds value to value_lst according to the spacing and format of 
+    the string.
+    
+    Arguments:
+    ----------
+        **value** : float
+        
+        **value_lst** : list of values converted to strings
+        
+        **spacing** : spacing of the string that the value will be converted
+                      to.
+                      
+        **value_format** : format of the string that the value is being 
+                            coverted to.
+        
+        **append** : [ True | False]
+                     if True then appends the value to value list
+        
+        **add** : [ True | False ]
+                  if True adds value string to the other value strings in
+                  value_lst
+    
+    Returns:
+    --------
+        **value_lst** : the input value_lst with the new value either 
+                        added or appended.
+        or
+        
+        **value_str** : value string if add and append are false
+    """                        
+    
+    value_str = spacing.format(value_format.format(value))
+    
+    if append is True:
+        value_lst.append(value_str)
+        return value_lst
+    if add is True:
+        value_lst += value_str
+        return value_lst
+        
+    if append==False and add==False:
+        return value_str
+        
+    return value_lst
