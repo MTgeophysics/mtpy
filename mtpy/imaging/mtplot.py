@@ -134,7 +134,6 @@ def plot_mt_response(filename=None, z_array=None, z_err_array=None,
               'res_phase_object' : res_phase_object,
               'z_object' : z_object,
               'mt_object' : mt_object}
-              
     
     return plotresponse(**kwargs)
 
@@ -197,11 +196,7 @@ def plot_pt_pseudosection(fn_lst=None, res_object_lst=None,
                           fig_size=[6,6], dpi=300, plot_tipper='n', 
                           arrow_dict={}, tscale='period', 
                           font_size=7, plot_yn='y', xlim=None, ylim=None):
-    """
-    plots a pseudo section of phase tensor ellipses for a given profile.    
-    
-    """
-    
+
     kwargs = {'fn_lst' : fn_lst,
               'res_object_lst' : res_object_lst,
               'z_object_lst' : z_object_lst,
