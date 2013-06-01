@@ -48,6 +48,17 @@ class PlotResPhasePseudoSection(object):
         self.stationid = stationid
         self.linedir = linedir
         self.aspect = 'auto'
+        self.xtickspace = 1
+        self.plot_yn = plot_yn
+        self.plot_xx = plot_xx
+        self.plot_xy = plot_xy
+        self.plot_yx = plot_yx
+        self.plot_yy = plot_yy
+        self.plot_style = 'imshow'
+        self.res_limits = (0, 3)
+        self.phase_limits = (0, 90)
+        self.pstep = 3
+        self.imshow_interp = 'bicubic'
         
         self.cb_pad = .02
         self.cb_orientation = 'horizontal'
@@ -67,8 +78,8 @@ class PlotResPhasePseudoSection(object):
         else:
             self.rot_z = rot_z
             
-        self.res_cmap = 'mt_rd2gr2bl'
-        self.phase_cmap = 'mt_bl2gr2rd'
+        self.res_cmap = mtcl.cmapdict['mt_rd2gr2bl']
+        self.phase_cmap = mtcl.cmapdict['mt_bl2gr2rd']
         
         #create empty lists to put things into
         self.stationlst = []
@@ -101,6 +112,9 @@ class PlotResPhasePseudoSection(object):
         self.phasexy = np.zeros((nt, ns))
         self.phaseyx = np.zeros((nt, ns))
         self.phaseyy = np.zeros((nt, ns))
+        
+        if self.plot_yn == 'y':
+            self.plot()
         
     #---need to rotate data on setting rotz
     def _set_rot_z(self, rot_z):
@@ -186,7 +200,7 @@ class PlotResPhasePseudoSection(object):
         new_mt_lst = [self.mt_lst[ii] for ii in index_lst]
         
         #set the mt_lst attribute as the new sorted mt_lst
-        self.mt_lst = new_mt_lst
+        self.mt_lst_sort = new_mt_lst
         
     def get_rp_arrays(self):
         """
@@ -195,20 +209,34 @@ class PlotResPhasePseudoSection(object):
 
         """        
         
-        #make sure that mt_lst has been sorted according to offset
         self.sort_by_offsets()
+        
+        #create empty arrays to put data into need to reset to zero in case 
+        #something has changed
+        ns = len(self.mt_lst)
+        nt = len(self.plot_period)
+        
+        self.resxx = np.zeros((nt, ns))
+        self.resxy = np.zeros((nt, ns))
+        self.resyx = np.zeros((nt, ns))
+        self.resyy = np.zeros((nt, ns))
+        
+        self.phasexx = np.zeros((nt, ns))
+        self.phasexy = np.zeros((nt, ns))
+        self.phaseyx = np.zeros((nt, ns))
+        self.phaseyy = np.zeros((nt, ns))
         
         #make a dictionary of the periods to plot for a reference
         period_dict = dict([(key, vv) 
                              for vv, key in enumerate(self.plot_period)])
                              
-        for ii, mt in enumerate(self.mt_lst):
+        for ii, mt in enumerate(self.mt_lst_sort):
             #get resisitivity and phase in a dictionary and append to a list
             rp = mt.get_ResPhase()
             
-            for kk, iper in enumerate(mt.period):
+            for rr, rper in enumerate(self.plot_period):
                 jj = None
-                for rr, rper in enumerate(self.plot_period):
+                for kk, iper in enumerate(mt.period):
                     if iper == rper:
                         jj = period_dict[rper]
                         self.resxx[jj, ii] = np.log10(rp.resxx[kk])
@@ -242,7 +270,7 @@ class PlotResPhasePseudoSection(object):
                         
                 if jj is None:
                     print 'did not find period {0:.6g} (s) for {1}'.format(
-                               iper, self.station_lst[ii])
+                               rper, self.station_lst[ii])
         
     def plot(self):
         
@@ -255,115 +283,240 @@ class PlotResPhasePseudoSection(object):
         plt.rcParams['figure.subplot.hspace'] = .20
 
         self.get_rp_arrays()
+        
+        ynlst = [self.plot_xx+'xx', self.plot_xy+'xy', self.plot_yx+'yx', 
+                 self.plot_yy+'yy']
+        reslst = [self.resxx, self.resxy, self.resyx, self.resyy]
+        phaselst = [self.phasexx, self.phasexy, self.phaseyx, self.phaseyy]
+        plst = [(yn[1:], res, phase) for yn, res, phase in zip(ynlst, 
+                                                           reslst, 
+                                                           phaselst) 
+                                                           if yn[0]=='y']
             
         #make a general subplot array
-        gs = gridspec.GridSpec(2, 4, height_ratios=[2, 1.5], hspace=.05, 
-                               wspace=.1)
+        gs = gridspec.GridSpec(2, len(plst), 
+                               height_ratios=[1, 1], 
+                               hspace=.00, 
+                               wspace=.025)
                                
         
-        #plot data
-        self.fig = plt.figure( 1, self.fig_size, dpi=self.dpi)
-        extent=(0, nt, self.plot_period[-1], self.plot_period[0])
-
-        rkwargs = {'aspect':self.aspect,
-                   'cmap':self.res_cmap,
-                   'extent':extent}
-                   
-        pkwargs = {'aspect':self.aspect,
-                   'cmap':self.phase_cmap,
-                   'extent':extent}
+        #--> plot data
+        self.fig = plt.figure(self.fignum, self.fig_size, dpi=self.dpi)
                    
         cbarkwargs = {'shrink':self.cb_shrink,
                       'orientation':self.cb_orientation,
                       'pad':self.cb_pad}
-    
-        ax2=plt.subplot(2,4,2)
-        plt.imshow(resxy[0:nperiod,:],**kwargs)
-        plt.colorbar(**cbarkwargs)
-        plt.xticks(np.arange(0,n,xtickspace),
-                   [stationlst[st] for st in range(0,n,xtickspace)])
-    #    plt.ylabel('Log$_{10}$ Period',fontsize=10,fontweight='bold')
-        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
-        plt.title('Log$_{10}\mathbf{(1/\sigma_{xy})}$',fontsize=fs+4,fontweight='bold')
-        ax2.yaxis.set_minor_locator(MultipleLocator(.2))
-        plt.grid()
         
-        ax3=plt.subplot(2,4,3)
-        plt.imshow(resyx[0:nperiod,:],**kwargs)
-        plt.colorbar(**cbarkwargs)
-        plt.xticks(np.arange(0,n,xtickspace),
-                   [stationlst[st] for st in range(0,n,xtickspace)])
-    #    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
-        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
-        plt.title('Log$_{10}\mathbf{(1/\sigma_{yx})}$',fontsize=fs+4,fontweight='bold')
-        ax3.yaxis.set_minor_locator(MultipleLocator(.2))
-        plt.grid()
+        ns = len(self.station_lst)
         
-        ax6=plt.subplot(2,4,6)
-        plt.imshow(phasexy[0:nperiod,:],vmin=0,vmax=90,**kwargs)
-        plt.colorbar(**cbarkwargs)
-        plt.xticks(np.arange(0,n,xtickspace),
-                   [stationlst[st] for st in range(0,n,xtickspace)])
-    #    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
-        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
-        plt.title('$\mathbf{\phi_{xy}}$',fontsize=fs+4)
-        ax6.yaxis.set_minor_locator(MultipleLocator(.2))
-        plt.grid()
-        
-        ax7=plt.subplot(2,4,7)
-        plt.imshow(phaseyx[0:nperiod,:],vmin=0,vmax=90,**kwargs)
-        plt.colorbar(**cbarkwargs)
-        plt.xticks(np.arange(0,n,xtickspace),
-                   [stationlst[st] for st in range(0,n,xtickspace)])
-    #    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
-        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
-        plt.title('$\mathbf{\phi_{yx}}$',fontsize=fs+4)
-        ax7.yaxis.set_minor_locator(MultipleLocator(.2))
-        plt.grid()
-        
-    #    fig2=plt.figure(2,dpi=150)    
-    
-        ax1=plt.subplot(2,4,1)
-        plt.imshow(resxx[0:nperiod,:],**kwargs)
-        plt.colorbar(**cbarkwargs)
-        plt.xticks(np.arange(0,n,xtickspace),
-                   [stationlst[st] for st in range(0,n,xtickspace)])
-        plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
-        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
-        plt.title('Log$_{10}\mathbf{(1/\sigma_{xx})}$',fontsize=fs+4,fontweight='bold')
-        ax1.yaxis.set_minor_locator(MultipleLocator(.2))
-        plt.grid()
-        
-        ax4=plt.subplot(2,4,4)
-        plt.imshow(resyy[0:nperiod,:],**kwargs)
-        plt.colorbar(**cbarkwargs)
-        plt.xticks(np.arange(0,n,xtickspace),
-                   [stationlst[st] for st in range(0,n,xtickspace)])
-    #    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
-        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
-        plt.title('Log$_{10}\mathbf{(1/\sigma_{yy})}$',fontsize=fs+4,fontweight='bold')
-        ax4.yaxis.set_minor_locator(MultipleLocator(.2))
-        plt.grid()
-        
-        ax5=plt.subplot(2,4,5)
-        plt.imshow(phasexx[0:nperiod,:],**kwargs)
-        plt.colorbar(**cbarkwargs)
-        plt.xticks(np.arange(0,n,xtickspace),
-                   [stationlst[st] for st in range(0,n,xtickspace)])
-        plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
-        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
-        plt.title('$\mathbf{\phi_{xx}}$',fontsize=fs+4)
-        ax5.yaxis.set_minor_locator(MultipleLocator(.2))
-        plt.grid()
-        
-        ax8=plt.subplot(2,4,8)
-        plt.imshow(phaseyy[0:nperiod,:],**kwargs)
-        plt.colorbar(**cbarkwargs)
-        plt.xticks(np.arange(0,n,xtickspace),
-                   [stationlst[st] for st in range(0,n,xtickspace)])
-    #    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
-        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
-        plt.title('$\mathbf{\phi_{yy}}$',fontsize=fs+4)
-        ax8.yaxis.set_minor_locator(MultipleLocator(.2))
-        plt.grid()
-        plt.show()
+        if self.plot_style == 'pcolormesh':
+            xgrid, ygrid = np.meshgrid(self.offset_lst, self.plot_period)
+            
+            for ii, tt in enumerate(plst):
+                axr = self.fig.add_subplot(gs[0, ii])
+                axp = self.fig.add_subplot(gs[1, ii])
+                
+                #plot apparent resistivity
+                axr.pcolormesh(xgrid, ygrid, np.flipud(tt[1]), 
+                               cmap=self.res_cmap, 
+                               vmin=self.res_limits[0], 
+                               vmax=self.res_limits[1])
+                               
+                axr.set_xticks(self.offset_lst)
+                plt.setp(axr.get_xticklabels(), visible=False)
+                axr.grid(which='major', alpha=.25)
+                axr.set_yscale('log')
+                axr.set_xlim(self.offset_lst.min(), self.offset_lst.max())
+                axr.set_ylim(self.plot_period.min(), self.plot_period.max())
+                
+                #plot phase
+                axp.pcolormesh(xgrid, ygrid, np.flipud(tt[2]), 
+                               cmap=self.phase_cmap, 
+                               vmin=self.phase_limits[0],
+                               vmax=self.phase_limits[1])
+                axp.grid(which='major', alpha=.25)
+                axp.set_xticks(self.offset_lst)
+                axp.set_xticklabels([self.station_lst[st] 
+                                    for st in range(0,ns,self.xtickspace)])
+                axp.set_yscale('log')
+                axp.set_xlim(self.offset_lst.min(), self.offset_lst.max())
+                axp.set_ylim(self.plot_period.min(), self.plot_period.max())
+                
+                if ii != 0:
+                    plt.setp(axr.get_yticklabels(), visible=False)
+                    plt.setp(axp.get_yticklabels(), visible=False)
+                    
+                
+            plt.show()
+        elif self.plot_style == 'imshow':
+            nt = len(self.plot_period)
+            major_yticks = [np.log10(self.plot_period[ll]) 
+                            for ll in np.arange(0, nt, self.pstep)][::-1]
+            minor_yticks = [np.log10(self.plot_period[ll]) 
+                            for ll in np.arange(0, nt, 1)][::-1]
+            yticklabels = ['{0:>4}'.format('{0:.1e}'.format(
+                                                       self.plot_period[ll])) 
+                            for ll in np.arange(0, nt, self.pstep)]+\
+                          ['{0:>4}'.format('{0:.1e}'.format(
+                                                       self.plot_period[-1]))]
+            for ii, tt in enumerate(plst):
+                axr = self.fig.add_subplot(gs[0, ii])
+                axp = self.fig.add_subplot(gs[1, ii])
+                
+                
+                #plot apparent resistivity
+                axr.imshow(tt[1], 
+                           cmap=self.res_cmap, 
+                           vmin=self.res_limits[0], 
+                           vmax=self.res_limits[1],
+                           aspect=self.aspect,
+                           interpolation=self.imshow_interp,
+                           extent=(self.offset_lst.min(), 
+                                   self.offset_lst.max(),
+                                   np.log10(self.plot_period.min()),
+                                   np.log10(self.plot_period.max())))
+                            
+                axr.set_xticks(self.offset_lst)
+                plt.setp(axr.get_xticklabels(), visible=False)
+                axr.grid(which='major', alpha=.25)
+                axr.set_xlim(self.offset_lst.min(), self.offset_lst.max())
+                axr.set_ylim(np.log10(self.plot_period.min()), 
+                             np.log10(self.plot_period.max()))
+                
+                #set y-axis major ticks
+                axr.yaxis.set_ticks(major_yticks)
+                #set y-axis minor ticks                     
+                axr.yaxis.set_ticks(minor_yticks, minor=True)
+                #set y-axis tick labels
+                axr.set_yticklabels(yticklabels[1:-1]+['',''])
+                
+                #plot phase
+                axp.imshow(tt[2], 
+                           cmap=self.phase_cmap, 
+                           vmin=self.phase_limits[0],
+                           vmax=self.phase_limits[1],
+                           aspect=self.aspect,
+                           interpolation=self.imshow_interp,
+                           extent=(self.offset_lst.min(), 
+                                   self.offset_lst.max(),
+                                   np.log10(self.plot_period.min()),
+                                   np.log10(self.plot_period.max())))
+                                       
+                axp.grid(which='major', alpha=.25)
+                axp.set_xticks(self.offset_lst)
+                axp.set_xticklabels([self.station_lst[st] 
+                                    for st in range(0,ns,self.xtickspace)])
+                axp.set_xlim(self.offset_lst.min(), self.offset_lst.max())
+                axp.set_ylim(np.log10(self.plot_period.min()),
+                             np.log10(self.plot_period.max()))
+                
+                if ii != 0:
+                    plt.setp(axr.get_yticklabels(), visible=False)
+                    plt.setp(axp.get_yticklabels(), visible=False)
+                
+                #set y-axis major ticks
+                axp.yaxis.set_ticks(major_yticks)
+                #set y-axis minor ticks                     
+                axp.yaxis.set_ticks(minor_yticks, minor=True)
+                #set y-axis tick labels
+                axp.set_yticklabels(yticklabels[1:]+[''])
+                    
+                
+            plt.show()
+#            plt.title('Log$_{10}\mathbf{(1/\sigma_{xy})}$',fontsize=fs+4,fontweight='bold')
+#            ax2.yaxis.set_minor_locator(MultipleLocator(.2))
+#            plt.grid()       
+#            if tt[0] == 'xx':
+#                self.ax_rxx = axr
+#                self.ax_pxx = axp
+#    
+#        ax2=plt.subplot(2,4,2)
+#        plt.imshow(resxy[0:nperiod,:],**kwargs)
+#        plt.colorbar(**cbarkwargs)
+#        plt.xticks(np.arange(0,n,xtickspace),
+#                   [stationlst[st] for st in range(0,n,xtickspace)])
+#    #    plt.ylabel('Log$_{10}$ Period',fontsize=10,fontweight='bold')
+#        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+#        plt.title('Log$_{10}\mathbf{(1/\sigma_{xy})}$',fontsize=fs+4,fontweight='bold')
+#        ax2.yaxis.set_minor_locator(MultipleLocator(.2))
+#        plt.grid()
+#        
+#        ax3=plt.subplot(2,4,3)
+#        plt.imshow(resyx[0:nperiod,:],**kwargs)
+#        plt.colorbar(**cbarkwargs)
+#        plt.xticks(np.arange(0,n,xtickspace),
+#                   [stationlst[st] for st in range(0,n,xtickspace)])
+#    #    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
+#        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+#        plt.title('Log$_{10}\mathbf{(1/\sigma_{yx})}$',fontsize=fs+4,fontweight='bold')
+#        ax3.yaxis.set_minor_locator(MultipleLocator(.2))
+#        plt.grid()
+#        
+#        ax6=plt.subplot(2,4,6)
+#        plt.imshow(phasexy[0:nperiod,:],vmin=0,vmax=90,**kwargs)
+#        plt.colorbar(**cbarkwargs)
+#        plt.xticks(np.arange(0,n,xtickspace),
+#                   [stationlst[st] for st in range(0,n,xtickspace)])
+#    #    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
+#        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+#        plt.title('$\mathbf{\phi_{xy}}$',fontsize=fs+4)
+#        ax6.yaxis.set_minor_locator(MultipleLocator(.2))
+#        plt.grid()
+#        
+#        ax7=plt.subplot(2,4,7)
+#        plt.imshow(phaseyx[0:nperiod,:],vmin=0,vmax=90,**kwargs)
+#        plt.colorbar(**cbarkwargs)
+#        plt.xticks(np.arange(0,n,xtickspace),
+#                   [stationlst[st] for st in range(0,n,xtickspace)])
+#    #    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
+#        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+#        plt.title('$\mathbf{\phi_{yx}}$',fontsize=fs+4)
+#        ax7.yaxis.set_minor_locator(MultipleLocator(.2))
+#        plt.grid()
+#        
+#    #    fig2=plt.figure(2,dpi=150)    
+#    
+#        ax1=plt.subplot(2,4,1)
+#        plt.imshow(resxx[0:nperiod,:],**kwargs)
+#        plt.colorbar(**cbarkwargs)
+#        plt.xticks(np.arange(0,n,xtickspace),
+#                   [stationlst[st] for st in range(0,n,xtickspace)])
+#        plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
+#        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+#        plt.title('Log$_{10}\mathbf{(1/\sigma_{xx})}$',fontsize=fs+4,fontweight='bold')
+#        ax1.yaxis.set_minor_locator(MultipleLocator(.2))
+#        plt.grid()
+#        
+#        ax4=plt.subplot(2,4,4)
+#        plt.imshow(resyy[0:nperiod,:],**kwargs)
+#        plt.colorbar(**cbarkwargs)
+#        plt.xticks(np.arange(0,n,xtickspace),
+#                   [stationlst[st] for st in range(0,n,xtickspace)])
+#    #    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
+#        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+#        plt.title('Log$_{10}\mathbf{(1/\sigma_{yy})}$',fontsize=fs+4,fontweight='bold')
+#        ax4.yaxis.set_minor_locator(MultipleLocator(.2))
+#        plt.grid()
+#        
+#        ax5=plt.subplot(2,4,5)
+#        plt.imshow(phasexx[0:nperiod,:],**kwargs)
+#        plt.colorbar(**cbarkwargs)
+#        plt.xticks(np.arange(0,n,xtickspace),
+#                   [stationlst[st] for st in range(0,n,xtickspace)])
+#        plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
+#        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+#        plt.title('$\mathbf{\phi_{xx}}$',fontsize=fs+4)
+#        ax5.yaxis.set_minor_locator(MultipleLocator(.2))
+#        plt.grid()
+#        
+#        ax8=plt.subplot(2,4,8)
+#        plt.imshow(phaseyy[0:nperiod,:],**kwargs)
+#        plt.colorbar(**cbarkwargs)
+#        plt.xticks(np.arange(0,n,xtickspace),
+#                   [stationlst[st] for st in range(0,n,xtickspace)])
+#    #    plt.ylabel('Log$_{10}$ Period',fontsize=fs+4,fontweight='bold')
+#        plt.xlabel('Station',fontsize=fs+4,fontweight='bold')
+#        plt.title('$\mathbf{\phi_{yy}}$',fontsize=fs+4)
+#        ax8.yaxis.set_minor_locator(MultipleLocator(.2))
+#        plt.grid()
+#        plt.show()
