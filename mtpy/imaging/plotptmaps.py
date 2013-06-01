@@ -598,9 +598,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             ckstep = float(self.ellipse_range[2])
         except IndexError:
             if cmap == 'mt_seg_bl2wh2rd':
-                raise ValueError('Need to input range as (min,max,step)')
+                raise ValueError('Need to input range as (min, max, step)')
             else:
-                ckstep=3
+                ckstep = 3
         nseg = float((ckmax-ckmin)/(2*ckstep))
         ck = self.ellipse_colorby
 
@@ -645,7 +645,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 
                 #if map scale is in meters easting and northing
                 elif self.mapscale == 'eastnorth':
-                    zone,east,north = utm2ll.LLtoUTM(23, mt.lat, mt.lon)
+                    zone, east, north = utm2ll.LLtoUTM(23, mt.lat, mt.lon)
                     
                     #set the first point read in as a refernce other points                    
                     if ii == 0:
@@ -842,7 +842,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             #==> print a message if couldn't find the freq
             except IndexError:
                 print 'Did not find {0:.5g} Hz for station {1}'.format(
-                                               self.plot_freq,mt.station)
+                                               self.plot_freq, mt.station)
         
         #--> set axes properties depending on map scale------------------------
         if self.mapscale == 'latlon':    

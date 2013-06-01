@@ -10,7 +10,6 @@ Created on Thu May 30 18:10:55 2013
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-from matplotlib.ticker import MultipleLocator
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
@@ -19,22 +18,21 @@ import mtpy.imaging.mtplottools as mtpl
 
 #==============================================================================
 
-class PlotPhaseTensor(mtpl.MTEllipse):
+class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
     """
-    Will plot phase tensor, strike angle, min and max phase angle, 
-    azimuth, skew, and ellipticity as subplots on one plot.  It can plot
-    the resistivity tensor along side the phase tensor for comparison.
+    PlotPhaseTensorPseudoSection will plot the phase tensor ellipses in a 
+    pseudo section format 
+    
     
     Arguments:
     ----------
     
-        **filename** : string
-                       filename containing impedance (.edi) is the only 
-                       format supported at the moment
-                 
+        **filenamelst** : list of strings
+                          full paths to .edi files to plot
+                          
         **z_object** : class mtpy.core.z.Z
                       object of mtpy.core.z.  If this is input be sure the
-                      attribute z.freq is filled.  *default* is None
+                      attribute z.frequency is filled.  *default* is None
                       
         **mt_object** : class mtpy.imaging.mtplot.MTplot
                         object of mtpy.imaging.mtplot.MTplot
@@ -45,41 +43,29 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                         input then the ._mt attribute is set to None cause
                         at the moment cannot tranform the phase tensor to z
                         *default* is None
-                        
-        **fignum** : int (figure number)
         
-        **rot_z** : float (angle in degrees)
-                     rotation angle clockwise positive assuming 0 is North.
-                     *Default* is 0
-                     
-        **plot_yn** : [ 'y' | 'n' ]
-            
-        
-        **dpi** : int
-                  Dots-per-inch resolution of figure.
-                  *Default* is 300
-                  
         **ellipse_dict** : dictionary
                           dictionary of parameters for the phase tensor 
                           ellipses with keys:
-                          * 'size' -> size of ellipse in points 
-                                     *default* is .25
-                          
-                          * 'colorby' : [ 'phimin' | 'phimax' | 'beta' | 
-                                    'skew_seg' | 'phidet' | 'ellipticity' ]
-                                    
-                                    - 'phimin' -> colors by minimum phase
-                                    - 'phimax' -> colors by maximum phase
-                                    - 'skew' -> colors by skew
-                                    - 'skew_seg' -> colors by skew in 
-                                                   discrete segments 
-                                                   defined by the range
-                                    - 'phidet' -> colors by determinant of
-                                                 the phase tensor
-                                    - 'ellipticity' -> colors by ellipticity
-                                    *default* is 'phimin'
-                            
-                          * 'range' : tuple (min, max, step)
+                              * 'size' -> size of ellipse in points 
+                                         *default* is 2
+                              
+                              * 'colorby' : [ 'phimin' | 'phimax' | 'skew' | 
+                                              'skew_seg' | 'phidet' | 
+                                              'ellipticity' ]
+                                        
+                                        - 'phimin' -> colors by minimum phase
+                                        - 'phimax' -> colors by maximum phase
+                                        - 'skew' -> colors by beta (skew)
+                                        - 'skew_seg' -> colors by beta in 
+                                                       discrete segments 
+                                                       defined by the range
+                                        - 'phidet' -> colors by determinant of
+                                                     the phase tensor
+                                        - 'ellipticity' -> colors by ellipticity
+                                        *default* is 'phimin'
+                                
+                               * 'range' : tuple (min, max, step)
                                      Need to input at least the min and max
                                      and if using 'skew_seg' to plot
                                      discrete values input step as well
@@ -100,290 +86,704 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                                    - 'mt_seg_bl2wh2rd' -> discrete blue to 
                                                          white to red
         
-
+                                         
+        
+        **stretch** : float or tuple (xstretch, ystretch)
+                        is a factor that scales the distance from one 
+                        station to the next to make the plot readable.
+                        *Default* is 200
                         
+        **linedir** : [ 'ns' | 'ew' ]
+                      predominant direction of profile line
+                      * 'ns' -> North-South Line
+                      * 'ew' -> East-West line
+                      *Default* is 'ns'
+        
+        **stationid** : tuple or list 
+                        start and stop of station name indicies.  
+                        ex: for MT01dr stationid=(0,4) will be MT01
+        
+        **rotz** : float or np.ndarray
+                   angle in degrees to rotate the data clockwise positive.
+                   Can be an array of angle to individually rotate stations or
+                   periods or both. 
+                       - If rotating each station by a constant
+                         angle the array needs to have a shape of 
+                         (# of stations)
+                        - If rotating by period needs to have shape 
+                           # of periods
+                        - If rotating both individually shape=(ns, nf)
+                  *Default* is 0
+        
+        **title** : string
+                    figure title
+                    
+        **dpi** : int 
+                  dots per inch of the resolution. *default* is 300
+                    
+                       
+        **fignum** : int
+                     figure number.  *Default* is 1
+        
+        **plot_tipper** : [ 'yri' | 'yr' | 'yi' | 'n' ]
+                        * 'yri' to plot induction both real and imaginary 
+                           induction arrows 
+                           
+                        * 'yr' to plot just the real induction arrows
+                        
+                        * 'yi' to plot the imaginary induction arrows
+                        
+                        * 'n' to not plot them
+                        
+                        *Default* is 'n' 
+                        
+                        **Note: convention is to point towards a conductor but
+                        can be changed in arrow_dict['direction']**
+                         
+        **arrow_dict** : dictionary for arrow properties
+                        * 'size' : float
+                                  multiplier to scale the arrow. *default* is 5
+                        * 'head_length' : float
+                                         length of the arrow head *default* is 
+                                         1.5
+                        * 'head_width' : float
+                                        width of the arrow head *default* is 
+                                        1.5
+                        * 'lw' : float
+                                line width of the arrow *default* is .5
+                                
+                        * 'color' : tuple (real, imaginary)
+                                   color of the arrows for real and imaginary
+                                   
+                        * 'threshold': float
+                                      threshold of which any arrow larger than
+                                      this number will not be plotted, helps 
+                                      clean up if the data is not good. 
+                                      *default* is 1, note this is before 
+                                      scaling by 'size'
+                                      
+                        * 'direction : [ 0 | 1 ]
+                                     -0 for arrows to point toward a conductor
+                                     -1 for arrow to point away from conductor
+    
+        **tscale** : [ 'period' | 'frequency' ]
+        
+                     * 'period'    -> plot vertical scale in period
+                     
+                     * 'frequency' -> plot vertical scale in frequency
+                     
+        **cb_dict** : dictionary to control the color bar
+        
+                      * 'orientation' : [ 'vertical' | 'horizontal' ]
+                                       orientation of the color bar 
+                                       *default* is vertical
+                                       
+                      * 'position' : tuple (x,y,dx,dy)
+                                    - x -> lateral position of left hand corner 
+                                          of the color bar in figure between 
+                                          [0,1], 0 is left side
+                                          
+                                    - y -> vertical position of the bottom of 
+                                          the color bar in figure between 
+                                          [0,1], 0 is bottom side.
+                                          
+                                    - dx -> width of the color bar [0,1]
+                                    
+                                    - dy -> height of the color bar [0,1]
+        **font_size** : float
+                        size of the font that labels the plot, 2 will be added
+                        to this number for the axis labels.
+                        
+        **plot_yn** : [ 'y' | 'n' ]
+                      * 'y' to plot on creating an instance
+                      
+                      * 'n' to not plot on creating an instance
+                      
+        **xlim** : tuple(xmin, xmax)
+                   min and max along the x-axis in relative distance of degrees
+                   and multiplied by xstretch
+                   
+        **ylim** : tuple(ymin, ymax)
+                   min and max period to plot, note that the scaling will be
+                   done in the code.  So if you want to plot from (.1s, 100s)
+                   input ylim=(.1,100)
+    
+    To get a list of .edi files that you want to plot -->
     :Example: ::
         
-        #To plot just the phase tensor components
-        >>> import mtpy.imaging.mtplot as mtplot
-        >>> pt1 = mtplot.PlotPhaseTensor(r"/home/MT/edifiles/MT01.edi")
+        >>> import mtpy.imaging.mtplottools as mtplot
+        >>> import os
+        >>> edipath = r"/home/EDIfiles"
+        >>> edilst = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
+        >>> ...       if edi.find('.edi')>0]
+    
+    * If you want to plot minimum phase colored from blue to red in a range of
+     20 to 70 degrees you can do it one of two ways--> 
+    
+    1)          
+    :Example: ::
+        
+        >>> edict = {'range':(20,70), 'cmap':'mt_bl2gr2rd','colorby':'phimin'}
+        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilst,ellipse_dict=edict)
+     
+    2)
+    :Example: ::
+        
+        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilst, plot_yn='n')
+        >>> pt1.ellipse_colorby = 'phimin'
+        >>> pt1.ellipse_cmap = 'mt_bl2gr2rd'
+        >>> pt1.ellipse_range = (20,70)
+        >>> pt1.plot()
+        
+    * If you want to add real induction arrows that are scaled by 10 and point
+     away from a conductor --> 
+    :Example: ::
+        
+        >>> pt1.plot_tipper = 'yr'
+        >>> pt1.arrow_size = 10
+        >>> pt1.arrow_direction = -1
+        >>> pt1.redraw_plot()
+    
+    * If you want to save the plot as a pdf with a generic name -->
+    :Example: ::
+        >>> pt1.save_figure(r"/home/PTFigures", file_format='pdf', dpi=300)
+        File saved to '/home/PTFigures/PTPseudoSection.pdf'
         
     Attributes:
     -----------
-        -ax1      matplotlib.axes object for the phase tensor ellipses
-        -cbpt     matplotlib.colors.ColorBarBase object for coloring ellipses
-        -ax2      matplotlib.axes object for the strike angle
-        -ax3      matplotlib.axes object for minimum and maximum phase
-        -ax4      matplotlib.axes object for skew angle
-        -ax5      matplotlib.axes object for ellipticity
+        -arrow_color_imag     color of imaginary induction arrow
+        -arrow_color_real     color of real induction arrow
+        -arrow_direction      convention of arrows pointing to or away from 
+                              conductors, see above.
+        -arrow_head_length    length of arrow head in relative points
+        -arrow_head_width     width of arrow head in relative points
+        -arrow_lw             line width of arrows
+        -arrow_size           scaling factor to multiple arrows by to be visible
+        -arrow_threshold      threshold for plotting arrows, anything above 
+                              this number will not be plotted.
         
-        -font_size  size of font for the axes labels, titles will be +2
-        -fignum     number of the figure instance
-        -fig_size   size of figure in inches
-        -plot_yn    boolean to tell the class to plot on instance creation
-        -dpi        dots-per-inch resolution of figure
+        -ax                   matplotlib.axes instance for the main plot
+        -ax2                  matplotlib.axes instance for the color bar
+        -cb                   matplotlib.colors.ColorBar instance for color bar
+        -cb_orientation       color bar orientation ('vertical' | 'horizontal')
+        -cb_position          color bar position (x, y, dx, dy)
         
-        -strike_inv_marker   marker for strike determined from invariants 
-                             in ax2
-        -strike_inv_color    color for invariant marker in ax2
-        -strike_pt_marker    marker for strike determined from pt in ax2
-        -strike_pt_color     color for pt strike in ax2
-        -strike_tp_marker    marker for strike determined from Tipper in ax2
-        -strike_tp_color     color for tipper strike in ax2
+        -dpi                  dots-per-inch resolution
         
-        -ptmin_marker  marker for minimum phase in ax3
-        -ptmin_color   color for minimum phase markers in ax3
-        -ptmax_marker  marker for maximum phase in ax3
-        -ptmax_color   color for maximum phase markers in ax3
+        -ellipse_cmap         ellipse color map, see above for options
+        -ellipse_colorby      parameter to color ellipse by
+        -ellipse_range        (min, max, step) values to color ellipses
+        -ellipse_size         scaling factor to make ellipses visible
         
-        -skew_marker   marker for skew angle determined from pt in ax4
-        -skew_color    color for skew angle in ax4
+        -fig                  matplotlib.figure instance for the figure 
+        -fignum               number of figure being plotted
+        -figsize              size of figure in inches
+        -font_size            font size of axes tick label, axes labels will be
+                              font_size + 2
         
-        -ellip_marker  marker for ellipticity determined from pt in ax5
-        -ellip_color   color for ellipticity in ax5
+        -linedir              prominent direction of profile being plotted 
+             
+        -mt_lst               list of mtplot.MTplot instances containing all
+                              the important information for each station
+        -offsetlst            array of relative offsets of each station
         
-        -marker_size   size of the marker in all plots
-        -marker_lw     width of face lines for markers in all plots
+        -plot_tipper          string to inform program to plot induction arrows
+        -plot_yn              plot the pseudo section on instance creation
         
-        -pt_limits      limits on the minimu phase and maximum phase (deg)
-        -strike_limits  limits on the strike angle in degrees, note the strike
-                        is calculated to go from -90 to 90.
-        -skew_limits    limits on skew angles (deg)
-        -ellip_limits   limits on ellipticity ratio from [0,1]
+        -rot_z                rotates the data by this angle assuming North is
+                              0 and angle measures clockwise
+                              
+        -stationid            index [min, max] to reaad station name
+        -stationlst           list of stations plotted
+        -title                title of figure
+        -tscale               temporal scale of y-axis ('frequency' | 'period')
         
-        -skew_cutoff    plots a line in ax4 at positive and negative of this 
-                        value to visually recognize 3D effects
-        -ellip_cutoff   plots a line in ax5 to represent the cutoff of 2D
+        -xlimits              limits on x-axis (xmin, xmax)
+        -xstretch             scaling factor to stretch x offsets
         
-        -ellipse_cmap     color map for coloring ellipses of ax1
-        -ellipse_colorby  parameter to color the ellipses by
-        -ellipse_range    min and max values for coloring ellipses
-        -ellipse_size     scaling factor of ellipses
-        -ellipse_spacing  spacing between ellipses
+        -ylimits              limits on y-axis (ymin, ymax)
+        -ystep                step to set major ticks on y-axis
+        -ystretch             scaling factor to strech axes in y direction
         
-        -mt            mtpy.imaging.mtplot.MTplot object (PlotPhaseTensor._mt)
-        
-        
+    Methods:
+    --------
+
+        -plot                 plots the pseudo section
+        -redraw_plot          on call redraws the plot from scratch
+        -save_figure          saves figure to a file of given format
+        -update_plot          updates the plot while still active
+        -writeTextFiles       writes parameters of the phase tensor and tipper
+                              to text files.
+
     """
-        
-        
-    def __init__(self, filename=None, z_object=None, mt_object=None, 
-                 pt_object=None, fignum=1, dpi=300, rot_z=0, plot_yn='y',
-                 ellipse_dict=None):
-        
-        #--> get mt object 
-        if filename is not None:
-            self._mt = mtpl.MTplot(filename=filename)
-        elif z_object is not None:
-            self._mt = mtpl.MTplot(z_object=z_object)
-        elif mt_object is not None:
-            self._mt = mt_object
-        elif pt_object is not None:
-            self.pt = pt_object
-            self._mt = mtpl.MTplot()
-            self._mt.freq = self.pt.freq
-            
-        self.font_size = 7
-        self.dpi = dpi
-        self.fignum = fignum
-        self.fig_size = [8, 8]
-        self.rot_z = rot_z
-        self.plot_yn = plot_yn
-        
-        self.ptmin_marker = 'o'
-        self.ptmax_marker = 's'
-        self.strike_inv_marker = 's'
-        self.strike_pt_marker = 'o'
-        self.strike_tp_marker = 'v'
-        self.skew_marker = 's'
-        self.ellip_marker = 's'
-        
-        self.ptmin_color = 'r'
-        self.ptmax_color = 'b'
-        self.strike_inv_color = 'c'
-        self.strike_pt_color = 'purple'
-        self.strike_tp_color = (.5, .5, 0)
-        self.skew_color = 'g'
-        self.ellip_color = 'orange'
-
-        self.marker_size = 2
-        self.marker_lw = .5
-        
-        self.pt_limits = None
-        self.strike_limits = None
-        self.ellip_limits = None
-        self.skew_limits = None
-
-        self.skew_cutoff = 3
-        self.ellip_cutoff = 0.2
-        
-        #read ellipse dict
-        if ellipse_dict is None:
-            self._ellipse_dict = {'size':.25}
-        else:
-            self._ellipse_dict = ellipse_dict
     
-        self._read_ellipse_dict()
-        
-        self.ellipse_spacing = 1
+    
+    def __init__(self, fn_lst=None, res_object_lst=None,
+                 z_object_lst=None, tipper_object_lst=None, mt_object_lst=None,
+                 ellipse_dict={}, stretch=(50,25), stationid=(0,4), title=None,
+                 cb_dict={}, linedir='ns', fignum=1, rot_z=0, figsize=[6,6], 
+                 dpi=300, plot_tipper='n', arrow_dict={}, tscale='period', 
+                 font_size=7, plot_yn='y', xlim=None, ylim=None):
 
-        self.label_dict = {-6:'$10^{-6}$',
-                           -5:'$10^{-5}$',
-                           -4:'$10^{-4}$',
-                           -3:'$10^{-3}$',
-                           -2:'$10^{-2}$', 
-                           -1:'$10^{-1}$', 
-                            0:'$10^{0}$',
-                            1:'$10^{1}$',
-                            2:'$10^{2}$',
-                            3:'$10^{3}$',
-                            4:'$10^{4}$',
-                            5:'$10^{5}$',
-                            6:'$10^{6}$',
-                            7:'$10^{7}$',
-                            8:'$10^{8}$'} 
-                            
-        self.cb_position = (.045, .78, .015, .12)
-                            
+        #----set attributes for the class-------------------------
+        self.mt_lst = mtpl.get_mtlst(fn_lst=fn_lst, 
+                                res_object_lst=res_object_lst,
+                                z_object_lst=z_object_lst, 
+                                tipper_object_lst=tipper_object_lst, 
+                                mt_object_lst=mt_object_lst)
+        
+        #--> set the ellipse properties
+        self._ellipse_dict = ellipse_dict
+        self._read_ellipse_dict()
+            
+        #--> set colorbar properties
+        #set orientation to horizontal
+        try:
+            self.cb_orientation = cb_dict['orientation']
+        except KeyError:
+            self.cb_orientation = 'vertical'
+        
+        #set the position to middle outside the plot            
+        try:
+            self.cb_position = cb_dict['position']
+        except KeyError:
+            self.cb_position = None
+            
+        #set the stretching in each direction
+        if type(stretch) == float or type(stretch) == int:
+            self.xstretch = stretch
+            self.ystretch = stretch
+        else:
+            self.xstretch = stretch[0]
+            self.ystretch = stretch[1]
+            
+        #--> set plot properties    
+        self.dpi = dpi
+        self.font_size = font_size
+        self.tscale = tscale
+        self.figsize = figsize
+        self.fignum = fignum
+        self.linedir = linedir
+        self.stationid = stationid
+        self.title = title
+        self.ystep = 4
+        self.xlimits = xlim
+        self.ylimits = ylim
+        
+        #if rotation angle is an int or float make an array the length of 
+        #mt_lst for plotting purposes
+        if type(rot_z) is float or type(rot_z) is int:
+            self.rot_z = np.array([rot_z]*len(self.mt_lst))
+        
+        #if the rotation angle is an array for rotation of different 
+        #frequency than repeat that rotation array to the len(mt_lst)
+        elif type(rot_z) is np.ndarray:
+            if rot_z.shape[0] != len(self.mt_lst):
+                self.rot_z = np.repeat(rot_z, len(self.mt_lst))
+                
+        else:
+            self.rot_z = rot_z
+        
+        #--> set induction arrow properties 
+        self.plot_tipper = plot_tipper
+        
+        #--> set arrow properties
+        self._arrow_dict = arrow_dict
+        self._read_arrow_dict()
+        
+            
+        #--> plot if desired
+        self.plot_yn = plot_yn
         if self.plot_yn == 'y':
             self.plot()
-
+            
+    #---rotate data on setting rot_z
+    def _set_rot_z(self, rot_z):
+        """
+        need to rotate data when setting z
+        """
+        
+        #if rotation angle is an int or float make an array the length of 
+        #mt_lst for plotting purposes
+        if type(rot_z) is float or type(rot_z) is int:
+            rot_z = np.array([rot_z]*len(self.mt_lst))
+        
+        #if the rotation angle is an array for rotation of different 
+        #frequency than repeat that rotation array to the len(mt_lst)
+        elif type(rot_z) is np.ndarray:
+            if rot_z.shape[0] != len(self.mt_lst):
+                rot_z = np.repeat(rot_z, len(self.mt_lst))
+                
+        else:
+            pass
+            
+        for ii, mt in enumerate(self.mt_lst):
+            mt.rot_z = rot_z[ii]
+            
+    rot_z = property(fset=_set_rot_z, doc="rotation angle(s)")
+        
     def plot(self):
         """
-        plots the phase tensor elements
+        plots the phase tensor pseudo section.  See class doc string for 
+        more details.
         """
-        
-        #Set plot parameters
+            
         plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.left'] = .1
+        plt.rcParams['figure.subplot.left'] = .08
         plt.rcParams['figure.subplot.right'] = .98
-        plt.rcParams['figure.subplot.bottom'] = .1
-        plt.rcParams['figure.subplot.top'] = .95
-        plt.rcParams['figure.subplot.wspace'] = .21
-        plt.rcParams['figure.subplot.hspace'] = .5
+        plt.rcParams['figure.subplot.bottom'] = .06
+        plt.rcParams['figure.subplot.top'] = .96
+        plt.rcParams['figure.subplot.wspace'] = .55
+        plt.rcParams['figure.subplot.hspace'] = .70
         
-        font_dict = {'size':self.font_size, 'weight':'bold'}
-        font_dictt = {'size':self.font_size+2, 'weight':'bold'}
+        #create a plot instance
+        self.fig = plt.figure(self.fignum, self.figsize, dpi=self.dpi)
+        self.ax = self.fig.add_subplot(1, 1, 1, aspect='equal')
         
-        #--> create plot instance
-        self.fig = plt.figure(self.fignum, self.fig_size, dpi=self.dpi)
-        plt.clf()
+        #create empty lists to put things into
+        self.stationlst = []
+        self.offsetlst = []
+        minlst = []
+        maxlst = []
+        plot_periodlst = None
         
-        #get phase tensor instance
-        try:
-            self.pt
-            self.pt.rotate(self.rot_z)
-        except AttributeError:
-            self.pt = self._mt.get_PhaseTensor()
-            self.pt.rotate(self.rot_z)
-            self.zinv = self._mt.get_Zinvariants()
-            self.zinv.rotate(self.rot_z)
-        
+        #set local parameters with shorter names
+        es = self.ellipse_size
+        ck = self.ellipse_colorby
         cmap = self.ellipse_cmap
-        ckmin = self.ellipse_range[0]
-        ckmax = self.ellipse_range[1]
+        ckmin = float(self.ellipse_range[0])
+        ckmax = float(self.ellipse_range[1])
         try:
             ckstep = float(self.ellipse_range[2])
         except IndexError:
             ckstep = 3
-            
+                
+        nseg = float((ckmax-ckmin)/(2*ckstep))
+
         if cmap == 'mt_seg_bl2wh2rd':
             bounds = np.arange(ckmin, ckmax+ckstep, ckstep)
-            nseg = float((ckmax-ckmin)/(2*ckstep))
-
-        #get the properties to color the ellipses by
-        if self.ellipse_colorby == 'phiminang' or \
-           self.ellipse_colorby == 'phimin':
-            colorarray = self.pt.phimin[0]
-    
-                                           
-        elif self.ellipse_colorby  ==  'phidet':
-            colorarray = np.sqrt(abs(self.pt.det[0]))*(180/np.pi)
-             
+        #plot phase tensor ellipses
+        for ii, mt in enumerate(self.mt_lst):
+            self.stationlst.append(
+                              mt.station[self.stationid[0]:self.stationid[1]])
             
-        elif self.ellipse_colorby == 'skew' or\
-             self.ellipse_colorby == 'skew_seg':
-            colorarray = self.pt.beta[0]
-            
-        elif self.ellipse_colorby == 'ellipticity':
-            colorarray = self.pt.ellipticity[0]
-            
-        else:
-            raise NameError(self.ellipse_colorby+' is not supported')
-     
-        #-------------plotPhaseTensor-----------------------------------
-        self.ax1 = self.fig.add_subplot(3, 1, 1, aspect='equal')
-        for ii, ff in enumerate(self._mt.period):
-            #make sure the ellipses will be visable
-            eheight = self.pt.phimin[0][ii]/self.pt.phimax[0][ii]*\
-                                                              self.ellipse_size
-            ewidth = self.pt.phimax[0][ii]/self.pt.phimax[0][ii]*\
-                                                              self.ellipse_size
-        
-            #create an ellipse scaled by phimin and phimax and oriented along
-            #the azimuth which is calculated as clockwise but needs to 
-            #be plotted counter-clockwise hence the negative sign.
-            ellipd = patches.Ellipse((np.log10(ff)*self.ellipse_spacing, 0),
-                                    width=ewidth,
-                                    height=eheight,
-                                    angle=90-self.pt.azimuth[0][ii])
-                                    
-            self.ax1.add_patch(ellipd)
-            
-        
-            #get ellipse color
-            if cmap.find('seg')>0:
-                ellipd.set_facecolor(mtcl.get_plot_color(colorarray[ii],
-                                                         self.ellipse_colorby,
-                                                         cmap,
-                                                         ckmin,
-                                                         ckmax,
-                                                         bounds=bounds))
+            #set the an arbitrary origin to compare distance to all other 
+            #stations.
+            if ii == 0:
+                east0 = mt.lon
+                north0 = mt.lat
+                offset = 0.0
             else:
-                ellipd.set_facecolor(mtcl.get_plot_color(colorarray[ii],
-                                                         self.ellipse_colorby,
-                                                         cmap,
-                                                         ckmin,
-                                                         ckmax))
+                east = mt.lon
+                north = mt.lat
+                if self.linedir == 'ew': 
+                    if east0 < east:
+                        offset = np.sqrt((east0-east)**2+(north0-north)**2)
+                    elif east0 > east:
+                        offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
+                    else:
+                        offset = 0
+                elif self.linedir == 'ns':
+                    if north0 < north:
+                        offset = np.sqrt((east0-east)**2+(north0-north)**2)
+                    elif north0 > north:
+                        offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
+                    else:
+                        offset = 0
+                        
+            self.offsetlst.append(offset)
             
-    
-        #----set axes properties-----------------------------------------------
-        #--> set tick labels and limits
-        xlimits = (np.floor(np.log10(self._mt.period[0])),
-                   np.ceil(np.log10(self._mt.period[-1])))
-
-
-        self.ax1.set_xlim(xlimits)
-        tklabels = []
-        xticks = []
-        for tk in self.ax1.get_xticks():
-            try:
-                tklabels.append(self.label_dict[tk])
-                xticks.append(tk)
-            except KeyError:
-                pass
-        self.ax1.set_xticks(xticks)
-        self.ax1.set_xticklabels(tklabels, fontdict={'size':self.font_size})
-        self.ax1.set_xlabel('Period (s)', fontdict=font_dict)
-        self.ax1.set_ylim(ymin=-1.5*self.ellipse_size, 
-                          ymax=1.5*self.ellipse_size)
+            #get phase tensor elements and flip so the top is small 
+            #periods/high frequency
+            pt = mt.get_PhaseTensor()
+            
+            periodlst = mt.period[::-1]
+            phimax = pt.phimax[0][::-1]
+            phimin = pt.phimin[0][::-1]
+            azimuth = pt.azimuth[0][::-1]
         
-        self.ax1.grid(True, 
-                     alpha=.25, 
-                     which='major', 
-                     color=(.25, .25, .25),
-                     lw=.25)
+            #if there are induction arrows, flip them as pt
+            if self.plot_tipper.find('y') == 0:
+                tip = mt.get_Tipper()
+                if tip.mag_real is not None:
+                    tmr = tip.mag_real[::-1]
+                    tmi = tip.mag_imag[::-1]
+                    tar = tip.ang_real[::-1]
+                    tai = tip.ang_imag[::-1]
+                else:
+                    tmr = np.zeros(len(mt.period))
+                    tmi = np.zeros(len(mt.period))
+                    tar = np.zeros(len(mt.period))
+                    tai = np.zeros(len(mt.period))
+                    
+                aheight = self.arrow_head_length 
+                awidth = self.arrow_head_width
+                alw = self.arrow_lw
+                
+            #get the properties to color the ellipses by
+            if self.ellipse_colorby == 'phimin':
+                colorarray = pt.phimin[0][::-1]
+                
+            elif self.ellipse_colorby == 'phimax':
+                colorarray = pt.phimin[0][::-1]
+                
+            elif self.ellipse_colorby == 'phidet':
+                colorarray = np.sqrt(abs(pt.det[::-1]))*(180/np.pi)
+                
+            elif self.ellipse_colorby == 'skew' or\
+                 self.ellipse_colorby == 'skew_seg':
+                colorarray = pt.beta[0][::-1]
+                
+            elif self.ellipse_colorby == 'ellipticity':
+                colorarray = pt.ellipticity[::-1]
+                
+            else:
+                raise NameError(self.ellipse_colorby+' is not supported')
+            
+            #get the number of periods
+            n = len(periodlst)
+            
+            if ii == 0:
+                plot_periodlst = periodlst
+            
+            else:
+                if n > len(plot_periodlst):
+                    plot_periodlst = periodlst
+            
+            #get min and max of the color array for scaling later
+            minlst.append(min(colorarray))
+            maxlst.append(max(colorarray))
+
+            for jj, ff in enumerate(periodlst):
+                
+                #make sure the ellipses will be visable
+                eheight = phimin[jj]/phimax[jj]*es
+                ewidth = phimax[jj]/phimax[jj]*es
+            
+                #create an ellipse scaled by phimin and phimax and orient
+                #the ellipse so that north is up and east is right
+                #need to add 90 to do so instead of subtracting
+                ellipd = patches.Ellipse((offset*self.xstretch,
+                                          np.log10(ff)*self.ystretch),
+                                            width=ewidth,
+                                            height=eheight,
+                                            angle=azimuth[jj]+90)
+                                            
+                #get ellipse color
+                if cmap.find('seg')>0:
+                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray[jj],
+                                                             self.ellipse_colorby,
+                                                             cmap,
+                                                             ckmin,
+                                                             ckmax,
+                                                             bounds=bounds))
+                else:
+                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray[jj],
+                                                             self.ellipse_colorby,
+                                                             cmap,
+                                                             ckmin,
+                                                             ckmax))
+                    
+                # == =add the ellipse to the plot == ========
+                self.ax.add_artist(ellipd)
+                
+                
+                #--------- Add induction arrows if desired --------------------
+                if self.plot_tipper.find('y') == 0:
+                    
+                    #--> plot real tipper
+                    if self.plot_tipper == 'yri' or self.plot_tipper == 'yr':
+                        txr = tmr[jj]*np.cos(tar[jj]*np.pi/180+\
+                                             np.pi*self.arrow_direction)*\
+                                             self.arrow_size
+                        tyr = tmr[jj]*np.sin(tar[jj]*np.pi/180+\
+                                             np.pi*self.arrow_direction)*\
+                                             self.arrow_size
+                        
+                        maxlength = np.sqrt((txr/self.arrow_size)**2+\
+                                            (tyr/self.arrow_size)**2)
+                                            
+                        if maxlength > self.arrow_threshold:
+                            pass
+                        else:
+                            self.ax.arrow(offset*self.xstretch, 
+                                          np.log10(ff)*self.ystretch, 
+                                          txr,
+                                          tyr,
+                                          lw=alw,
+                                          facecolor=self.arrow_color_real,
+                                          edgecolor=self.arrow_color_real,
+                                          length_includes_head=False,
+                                          head_width=awidth,
+                                          head_length=aheight)
+                                      
+                    #--> plot imaginary tipper
+                    if self.plot_tipper == 'yri' or self.plot_tipper == 'yi':
+                        txi = tmi[jj]*np.cos(tai[jj]*np.pi/180+\
+                                             np.pi*self.arrow_direction)*\
+                                             self.arrow_size
+                        tyi = tmi[jj]*np.sin(tai[jj]*np.pi/180+\
+                                             np.pi*self.arrow_direction)*\
+                                             self.arrow_size
+                        
+                        maxlength = np.sqrt((txi/self.arrow_size)**2+\
+                                            (tyi/self.arrow_size)**2)
+                        if maxlength > self.arrow_threshold:
+                            pass
+                        else:
+                            self.ax.arrow(offset*self.xstretch,
+                                          np.log10(ff)*self.ystretch,
+                                          txi,
+                                          tyi,
+                                          lw=alw,
+                                          facecolor=self.arrow_color_imag,
+                                          edgecolor=self.arrow_color_imag,
+                                          length_includes_head=False,
+                                          head_width=awidth,
+                                          head_length=aheight)
         
-        plt.setp(self.ax1.get_yticklabels(), visible=False)
-        #add colorbar for PT
-        self.cbax = self.fig.add_axes(self.cb_position)
+        #--> Set plot parameters 
+        self._plot_periodlst = plot_periodlst
+        n = len(plot_periodlst)
+        
+        
+        #calculate minimum period and maximum period with a stretch factor
+        pmin = np.log10(plot_periodlst.min())*self.ystretch
+        pmax = np.log10(plot_periodlst.max())*self.ystretch
+               
+        self.offsetlst = np.array(self.offsetlst)
+        
+        #set y-ticklabels
+        if self.tscale == 'period':
+            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(plot_periodlst[ll])) 
+                            for ll in np.arange(0, n, self.ystep)]+\
+                        ['{0:>4}'.format('{0: .1e}'.format(plot_periodlst[-1]))]
+            
+            self.ax.set_ylabel('Period (s)',
+                               fontsize=self.font_size,
+                               fontweight='bold')
+                               
+        elif self.tscale == 'frequency':
+            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlst[ll])) 
+                            for ll in np.arange(0, n, self.ystep)]+\
+                            ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlst[-1]))]
+            
+            self.ax.set_ylabel('Frequency (Hz)',
+                               fontsize=self.font_size,
+                               fontweight='bold')
+        #set x-axis label                       
+        self.ax.set_xlabel('Station',
+                           fontsize=self.font_size+2,
+                           fontweight='bold')
+         
+        #--> set tick locations and labels
+        #set y-axis major ticks
+        self.ax.yaxis.set_ticks([np.log10(plot_periodlst[ll])*self.ystretch 
+                             for ll in np.arange(0, n, self.ystep)])
+        
+        #set y-axis minor ticks                     
+        self.ax.yaxis.set_ticks([np.log10(plot_periodlst[ll])*self.ystretch 
+                             for ll in np.arange(0, n, 1)],minor=True)
+        #set y-axis tick labels
+        self.ax.set_yticklabels(yticklabels)
+        
+        #set x-axis ticks
+        self.ax.set_xticks(self.offsetlst*self.xstretch)
+        
+        #set x-axis tick labels as station names
+        self.ax.set_xticklabels(self.stationlst)
+        
+        #--> set x-limits
+        if self.xlimits == None:
+            self.ax.set_xlim(self.offsetlst.min()*self.xstretch-es*2,
+                             self.offsetlst.max()*self.xstretch+es*2)
+        else:
+            self.ax.set_xlim(self.xlimits)
+            
+        #--> set y-limits
+        if self.ylimits == None:
+            self.ax.set_ylim(pmax+es*2, pmin-es*2)
+        else:
+            pmin = np.log10(self.ylimits[0])*self.ystretch
+            pmax = np.log10(self.ylimits[1])*self.ystretch
+            self.ax.set_ylim(pmax+es*2, pmin-es*2)
+            
+        #--> set title of the plot
+        if self.title == None:
+            pass
+        else:
+            self.ax.set_title(self.title, fontsize=self.font_size+2)
+        
+        #make a legend for the induction arrows
+        if self.plot_tipper.find('y') == 0:
+            if self.plot_tipper == 'yri':
+                treal = self.ax.plot(np.arange(10)*.000005,
+                                     np.arange(10)*.00005,
+                                     color=self.arrow_color_real)
+                timag = self.ax.plot(np.arange(10)*.000005,
+                                     np.arange(10)*.00005,
+                                     color=self.arrow_color_imag)
+                self.ax.legend([treal[0], timag[0]],
+                               ['Tipper_real','Tipper_imag'],
+                               loc='lower right',
+                               prop={'size':self.font_size-1,'weight':'bold'},
+                               ncol=2,
+                               markerscale=.5,
+                               borderaxespad=.005,
+                               borderpad=.25)
+                          
+            elif self.plot_tipper == 'yr':
+                treal = self.ax.plot(np.arange(10)*.000005,
+                                     np.arange(10)*.00005,
+                                     color=self.arrow_color_real)
+                self.ax.legend([treal[0]],
+                               ['Tipper_real'],
+                               loc='lower right',
+                               prop={'size':self.font_size-1,'weight':'bold'},
+                               ncol=2,
+                               markerscale=.5,
+                               borderaxespad=.005,
+                               borderpad=.25)
+                          
+            elif self.plot_tipper == 'yi':
+                timag = self.ax.plot(np.arange(10)*.000005,
+                                     np.arange(10)*.00005,
+                                     color=self.arrow_color_imag)
+                self.ax.legend([timag[0]],
+                               ['Tipper_imag'],
+                               loc='lower right',
+                               prop={'size':self.font_size-1,'weight':'bold'},
+                               ncol=2,
+                               markerscale=.5,
+                               borderaxespad=.005,
+                               borderpad=.25)
+        
+        #put a grid on the plot
+        self.ax.grid(alpha=.25, which='both', color=(.25, .25, .25))
+        
+        #print out the min an max of the parameter plotted
+        print '-'*25
+        print ck+' min = {0:.2f}'.format(min(minlst))
+        print ck+' max = {0:.2f}'.format(max(maxlst))
+        print '-'*25
+
+        #==> make a colorbar with appropriate colors
+        if self.cb_position == None:
+            self.ax2, kw = mcb.make_axes(self.ax,
+                                         orientation=self.cb_orientation,
+                                         shrink=.35)
+        else:
+            self.ax2 = self.fig.add_axes(self.cb_position)
+        
         if cmap == 'mt_seg_bl2wh2rd':
             #make a color list
-            clst = [(cc,cc,1) for cc in np.arange(0,1+1./(nseg),1./(nseg))]+\
-                       [(1,cc,cc) for cc in np.arange(1,-1./(nseg),-1./(nseg))]
+            self.clst = [(cc, cc, 1) 
+                         for cc in np.arange(0, 1+1./(nseg), 1./(nseg))]+\
+                        [(1, cc, cc) 
+                         for cc in np.arange(1, -1./(nseg), -1./(nseg))]
             
             #make segmented colormap
-            mt_seg_bl2wh2rd = colors.ListedColormap(clst)
+            mt_seg_bl2wh2rd = colors.ListedColormap(self.clst)
 
             #make bounds so that the middle is white
             bounds = np.arange(ckmin-ckstep, ckmax+2*ckstep, ckstep)
@@ -392,297 +792,383 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
             
             #make the colorbar
-            self.cbpt = mcb.ColorbarBase(self.cbax,
+            self.cb = mcb.ColorbarBase(self.ax2,
                                        cmap=mt_seg_bl2wh2rd,
                                        norm=norms,
-                                       orientation='vertical',
+                                       orientation=self.cb_orientation,
                                        ticks=bounds[1:-1])
         else:
-            self.cbpt = mcb.ColorbarBase(self.cbax,
+            self.cb = mcb.ColorbarBase(self.ax2,
                                        cmap=mtcl.cmapdict[cmap],
                                        norm=colors.Normalize(vmin=ckmin,
                                                              vmax=ckmax),
-                                        orientation='vertical')
-        self.cbpt.set_ticks([ckmin, ckmax])
-        self.cbpt.set_ticklabels(['{0:.0f}'.format(ckmin),
-                                  '{0:.0f}'.format(ckmax)])
-        self.cbpt.ax.yaxis.set_label_position('left')
-        self.cbpt.ax.yaxis.set_label_coords(-1.05, .5)
-        self.cbpt.ax.yaxis.tick_right()
-        self.cbpt.ax.tick_params(axis='y',direction='in')
-        self.cbpt.set_label(mtpl.ckdict[self.ellipse_colorby], 
-                            fontdict={'size':self.font_size, 'weight':'bold'})
+                                       orientation=self.cb_orientation)
+
+        #label the color bar accordingly
+        self.cb.set_label(mtpl.ckdict[ck],
+                          fontdict={'size':self.font_size,'weight':'bold'})
+            
+        #place the label in the correct location                   
+        if self.cb_orientation == 'horizontal':
+            self.cb.ax.xaxis.set_label_position('top')
+            self.cb.ax.xaxis.set_label_coords(.5, 1.3)
+            
+            
+        elif self.cb_orientation == 'vertical':
+            self.cb.ax.yaxis.set_label_position('right')
+            self.cb.ax.yaxis.set_label_coords(1.25, .5)
+            self.cb.ax.yaxis.tick_left()
+            self.cb.ax.tick_params(axis='y', direction='in')
         
-        #---------------plotStrikeAngle-----------------------------------
-        self.ax2 = self.fig.add_subplot(3, 2, 3)
-        az = self.pt.azimuth[0]
-        azerr = self.pt.azimuth[1]
+        plt.show()
         
-        #put the strike into a coordinate system that goes from -90 to 90
-        az[np.where(az > 90)] -= 180
-        az[np.where(az < -90)] += 180
+    def writeTextFiles(self, save_path=None, ptol=0.10):
+        """
+        This will write text files for all the phase tensor parameters
+        """
         
-        stlst = []
-        stlabel = []
+        if save_path == None:
+            try:
+                svpath = os.path.dirname(self.mt_lst[0].fn)
+            except TypeError:
+                raise IOError('Need to input save_path, could not find a path')
+        else:
+            svpath = save_path
         
-        #plot phase tensor strike
-        ps2 = self.ax2.errorbar(self._mt.period, 
-                                az, 
-                                marker=self.strike_pt_marker, 
-                                ms=self.marker_size, 
-                                mfc=self.strike_pt_color, 
-                                mec=self.strike_pt_color, 
-                                mew=self.marker_lw,
-                                ls='none', 
-                                yerr=azerr, 
-                                ecolor=self.strike_pt_color,
-                                capsize=self.marker_size,
-                                elinewidth=self.marker_lw)
-                                
-        stlst.append(ps2[0])
-        stlabel.append('PT')
+        #check to see if plot has been run if not run it
         try:
-            strike = self.zinv.strike
-            strikeerr = np.nan_to_num(self.zinv.strike_err)
-            #put the strike into a coordinate system that goes from -90 to 90
-            strike[np.where(strike > 90)] -= -180
-            strike[np.where(strike < -90)] += 180
-            
-            #plot invariant strike
-            erxy = self.ax2.errorbar(self._mt.period, 
-                                    strike, 
-                                    marker=self.strike_inv_marker, 
-                                    ms=self.marker_size, 
-                                    mfc=self.strike_inv_color, 
-                                    mec=self.strike_inv_color, 
-                                    mew=self.marker_lw,
-                                    ls='none', 
-                                    yerr=strikeerr, 
-                                    ecolor=self.strike_inv_color,
-                                    capsize=self.marker_size,
-                                    elinewidth=self.marker_lw)
-                              
-            stlst.append(erxy[0])
-            stlabel.append('Z_inv')
+            plst = self._plot_periodlst
+
         except AttributeError:
-            print 'Could not get z_invariants from pt, input z if desired.'
+            self.plot()
+            plst = self._plot_periodlst
+        
+        if plst[0] > plst[-1]:
+            plst = plst[::-1] 
             
-        if self._mt.tipper is not None:
-            #strike from tipper
-            tp = self._mt.get_Tipper()
-            s3 = tp.ang_real+90
+        if self.tscale == 'frequency':
+            plst = 1./plst
+        
+        #match station list with mt list
+        slst = [mt for ss in self.stationlst for mt in self.mt_lst 
+                 if os.path.basename(mt.fn).find(ss)>=0]
+           
+        ns = len(slst)+1
+        nt = len(plst)+1
+        
+        #set some empty lists to put things into
+        sklst = np.zeros((nt, ns), dtype='|S8')
+        phiminlst = np.zeros((nt, ns), dtype='|S8')
+        phimaxlst = np.zeros((nt, ns), dtype='|S8')
+        elliplst = np.zeros((nt, ns), dtype='|S8')
+        azimlst = np.zeros((nt, ns), dtype='|S8')
+        tiplstr = np.zeros((nt, ns), dtype='|S8')
+        tiplsti = np.zeros((nt, ns), dtype='|S8')
+        tiplstraz = np.zeros((nt, ns), dtype='|S8')
+        tiplstiaz = np.zeros((nt, ns), dtype='|S8')
+        
+         
+        sklst[0, 0] = '{0:>8} '.format(self.tscale)
+        phiminlst[0, 0] = '{0:>8} '.format(self.tscale)
+        phimaxlst[0, 0] = '{0:>8} '.format(self.tscale)
+        elliplst[0, 0] = '{0:>8} '.format(self.tscale)
+        azimlst[0, 0] = '{0:>8} '.format(self.tscale)
+        tiplstr[0, 0] = '{0:>8} '.format(self.tscale)
+        tiplstraz[0, 0] = '{0:>8} '.format(self.tscale)
+        tiplsti[0, 0] = '{0:>8} '.format(self.tscale)
+        tiplstiaz[0, 0] = '{0:>8} '.format(self.tscale)           
+        
+        #get the period as the first column
+        for tt, t1 in enumerate(plst, 1):
+            sklst[tt, 0] = t1
+            phiminlst[tt, 0] = t1
+            phimaxlst[tt, 0] = t1
+            elliplst[tt, 0] = t1
+            azimlst[tt, 0] = t1
+            tiplstr[tt, 0] = t1
+            tiplstraz[tt, 0] = t1
+            tiplsti[tt, 0] = t1
+            tiplstiaz[tt, 0] = t1
             
-            #fold to go from -90 to 90
-            s3[np.where(s3 > 90)] -= 180
-            s3[np.where(s3 < -90)] += 180
+        #fill out the rest of the values
+        for kk, mt in enumerate(slst, 1):
             
-            #plot strike with error bars
-            ps3 = self.ax2.errorbar(self._mt.period, 
-                                    s3, 
-                                    marker=self.strike_tp_marker, 
-                                    ms=self.marker_size, 
-                                    mfc=self.strike_tp_color, 
-                                    mec=self.strike_tp_color, 
-                                    mew=self.marker_lw,
-                                    ls='none', 
-                                    yerr=np.zeros_like(s3), 
-                                    ecolor=self.strike_tp_color,
-                                    capsize=self.marker_size,
-                                    elinewidth=self.marker_lw)
-                                    
-            stlst.append(ps3[0])
-            stlabel.append('Tipper')
-        
-             
-        self.ax2.legend(stlst,
-                        stlabel,
-                        loc='lower left',
-                        markerscale=.5*self.marker_size,
-                        borderaxespad=.01,
-                        labelspacing=.1,
-                        handletextpad=.2,
-                        ncol=len(stlst),
-                        borderpad=.1,
-                        columnspacing=.1)
-                   
-        leg = plt.gca().get_legend()
-        ltext  = leg.get_texts()  # all the text.Text instance in the legend
-        plt.setp(ltext, fontsize=6)    # the legend text fontsize
-
-        if self.strike_limits == None:
-            self.strike_limits = (-89.99, 89.99)
-        
-        self.ax2.set_yscale('linear')
-        self.ax2.set_xscale('log')
-        self.ax2.set_xlim(xmax=10**xlimits[-1], xmin=10**xlimits[0])
-        self.ax2.set_ylim(self.strike_limits)
-        self.ax2.yaxis.set_major_locator(MultipleLocator(20))
-        self.ax2.yaxis.set_minor_locator(MultipleLocator(5))
-        self.ax2.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
-                      lw=.25)
-        self.ax2.set_ylabel('Angle (deg)', fontdict=font_dict)
-        self.ax2.set_title('Strike', fontdict=font_dictt)
-        
-        #---------plot Min & Max Phase-----------------------------------------
-        minphi = self.pt.phimin[0]
-        minphierr = self.pt.phimin[1]
-        maxphi = self.pt.phimax[0]
-        maxphierr = self.pt.phimax[1]
-
-        self.ax3 = self.fig.add_subplot(3, 2, 4, sharex=self.ax2)
-        
-        ermin = self.ax3.errorbar(self._mt.period,
-                                  minphi,
-                                  marker=self.ptmin_marker,
-                                  ms=self.marker_size,
-                                  mfc='None',
-                                  mec=self.ptmin_color,
-                                  mew=self.marker_lw,
-                                  ls='None',
-                                  yerr=minphierr,
-                                  ecolor=self.ptmin_color,
-                                  capsize=self.marker_size,
-                                  elinewidth=self.marker_lw)
-                                
-        ermax = self.ax3.errorbar(self._mt.period,
-                                  maxphi,
-                                  marker=self.ptmax_marker,
-                                  ms=self.marker_size,
-                                  mfc='None',
-                                  mec=self.ptmax_color,
-                                  mew=self.marker_lw,
-                                  ls='None',
-                                  yerr=maxphierr,
-                                  ecolor=self.ptmax_color,
-                                  capsize=self.marker_size,
-                                  elinewidth=self.marker_lw)
-                           
+            pt = mt.get_PhaseTensor()
+            tip = mt.get_Tipper()
                 
-        if self.pt_limits == None:
-            self.pt_limits = [min([self.pt.phimax[0].min(), 
-                                   self.pt.phimin[0].min()])-3, 
-                              max([self.pt.phimax[0].max(), 
-                                   self.pt.phimin[0].max()])+3]
-            if self.pt_limits[0] < -10:
-                self.pt_limits[0] = -9.9
-            if self.pt_limits[1] > 100:
-                self.pt_limits[1] = 99.99
-        
-        self.ax3.set_xscale('log')
-        self.ax3.set_yscale('linear')
-        
-        self.ax3.legend((ermin[0], ermax[0]),
-                        ('$\phi_{min}$', '$\phi_{max}$'),
-                        loc='lower left',
-                        markerscale=.5*self.marker_size,
-                        borderaxespad=.01,
-                        labelspacing=.1,
-                        handletextpad=.2,
-                        ncol=2,
-                        borderpad=.01,
-                        columnspacing=.01)
-        
-        leg = plt.gca().get_legend()
-        ltext  = leg.get_texts()  # all the text.Text instance in the legend
-        plt.setp(ltext, fontsize=6.5)    # the legend text fontsize
-        
-        self.ax3.set_ylim(self.pt_limits)
-        self.ax3.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
-                      lw=.25)
+            if self.tscale == 'period':
+                tlst = mt.period
+                    
+            elif self.tscale == 'frequency':
+                tlst = mt.frequency
+ 
+            try:
+                stationstr = '{0:^8}'.format(mt.station[self.stationid[0]:\
+                                                    self.stationid[1]])
+            except AttributeError:
+                stationstr = '{0:^8}'.format(mt.station)
+            
+            #-->  get station name as header in each file                                     
+            sklst[0, kk] = stationstr
+            phiminlst[0, kk] = stationstr
+            phimaxlst[0, kk] = stationstr
+            elliplst[0, kk] = stationstr
+            azimlst[0, kk] = stationstr
+            tiplstr[0, kk] = stationstr
+            tiplstraz[0, kk] = stationstr
+            tiplsti[0, kk] = stationstr
+            tiplstiaz[0, kk] = stationstr
+                                                
+            # If the all periods match for the station and the plotting period         
+            if tlst.all() == plst.all():
+                if pt.pt is not None:
+                    sklst[1:, kk] = pt.beta[0]
+                    phiminlst[1:, kk] = pt.phimin[0]
+                    phimaxlst[1:, kk] = pt.phimax[0]
+                    elliplst[1:, kk] = pt.ellipticity[0]
+                    azimlst[1:, kk] = pt.azimuth[0]
+                if tip.mag_real is not None:
+                    tiplstr[1:, kk] = tip.mag_real
+                    tiplstraz[1:, kk] = tip.ang_real
+                    tiplsti[1:, kk] = tip.mag_imag
+                    tiplstiaz[1:, kk] = tip.ang_imag
+                    
+            # otherwise search the period list to find a cooresponding period
+            else:   
+                for mm, t1 in enumerate(plst):
+                    #check to see if the periods match or are at least close in
+                    #case there are frequency missing
+                    t1_yn = False
+                    if t1 == tlst[mm]:
+                        t1_yn = True
+                    elif tlst[mm] > t1*(1-ptol) and tlst[mm] < t1*(1+ptol):
+                        t1_yn = True
+                    
+                    if t1_yn == True:
+                        #add on the value to the present row
+                        if pt.beta[0] is not None:
+                            sklst[mm+1, kk] = pt.beta[0][mm]
+                            phiminlst[mm+1, kk] = pt.phimin[0][mm]
+                            phimaxlst[mm+1, kk] = pt.phimax[0][mm]
+                            elliplst[mm+1, kk] = pt.ellipticity[0][mm]
+                            azimlst[mm+1, kk] = pt.azimuth[0][mm]
+                        
+                        #add on the value to the present row
+                        if tip.mag_real is not None:
+                            tiplstr[mm+1, kk] = tip.mag_real[mm]
+                            tiplstraz[mm+1, kk] = tip.ang_real[mm]
+                            tiplsti[mm+1, kk] = tip.mag_imag[mm]
+                            tiplstiaz[mm+1, kk] = tip.ang_imag[mm]
+                    
+                    elif t1_yn == False:
+                        for ff, t2 in enumerate(tlst):
+                            if t2 > t1*(1-ptol) and t2 < t1*(1+ptol):
+                                #add on the value to the present row
+                                if pt.beta[0] is not None:
+                                    sklst[mm+1, kk] = pt.beta[0][ff]
+                                    phiminlst[mm+1, kk] = pt.phimin[0][ff]
+                                    phimaxlst[mm+1, kk] = pt.phimax[0][ff]
+                                    elliplst[mm+1, kk] = pt.ellipticity[0][ff]
+                                    azimlst[mm+1, kk] = pt.azimuth[0][ff]
+                                
+                                #add on the value to the present row
+                                if tip.mag_real is not None:
+                                    tiplstr[mm+1, kk] = tip.mag_real[ff]
+                                    tiplstraz[mm+1, kk] = tip.ang_real[ff]
+                                    tiplsti[mm+1, kk] = tip.mag_imag[ff]
+                                    tiplstiaz[mm+1, kk] = tip.ang_imag[ff]
+                                t1_yn = True
+                                break
+                            else:
+                                t1_yn = False
 
-        self.ax3.set_ylabel('Phase (deg)', fontdict=font_dict)
-        self.ax3.set_title('$\mathbf{\phi_{min}}$ and $\mathbf{\phi_{max}}$',
-                       fontdict=font_dictt)
-
-        #-----------------------plotSkew---------------------------------------
+        #write the arrays into lines properly formatted
+        t1_kwargs = {'spacing':'{0:^8} ', 'value_format':'{0:.2e}', 
+                     'append':False, 'add':False}
+        t2_kwargs = {'spacing':'{0:^8}', 'value_format':'{0: .2f}', 
+                     'append':False, 'add':False}
+        #create empty lists to put the concatenated strings into
+        sklines = []
+        phiminlines = []
+        phimaxlines = []
+        elliplines = []
+        azimlines = []
+        tprlines = []
+        tprazlines = []
+        tpilines = []
+        tpiazlines = []
         
-        skew = self.pt.beta[0]
-        skewerr = self.pt.beta[1]
-
-        self.ax4 = self.fig.add_subplot(3, 2, 5, sharex=self.ax2)
-        erskew = self.ax4.errorbar(self._mt.period,
-                                   skew,
-                                   marker=self.skew_marker,
-                                   ms=self.marker_size,
-                                   mfc='None',
-                                   mec=self.skew_color,
-                                   mew=self.marker_lw,
-                                   ls='None',
-                                   yerr=skewerr,
-                                   ecolor=self.skew_color,
-                                   capsize=self.marker_size,
-                                   elinewidth=self.marker_lw)
+        #if there are any blank strings set them as 0
+        sklst[np.where(sklst=='')] = '0.0'
+        phiminlst[np.where(phiminlst=='')] = '0.0'
+        phimaxlst[np.where(phimaxlst=='')] = '0.0'
+        elliplst[np.where(elliplst=='')] = '0.0'
+        azimlst[np.where(azimlst=='')] = '0.0'
+        tiplstr[np.where(tiplstr=='')] = '0.0'
+        tiplstraz[np.where(tiplstraz=='')] = '0.0'
+        tiplsti[np.where(tiplsti=='')] = '0.0'
+        tiplstiaz[np.where(tiplstiaz=='')] = '0.0'
         
-        #plot lines indicating not 3d
-        self.ax4.plot([10**xlimits[0], 10**xlimits[-1]],
-                      [self.skew_cutoff, self.skew_cutoff],
-                      ls='--',
-                      color=self.skew_color,
-                      lw=1)
-                      
-        self.ax4.plot([10**xlimits[0], 10**xlimits[-1]],
-                      [-self.skew_cutoff, -self.skew_cutoff],
-                      ls='--',
-                      color=self.skew_color,
-                      lw=1)
-
+        for tt in range(nt):
+            if tt == 0:
+                skline = sklst[tt, 0]+' '
+                pminline = phiminlst[tt, 0]+' '
+                pmaxline = phimaxlst[tt, 0]+' '
+                elliline = elliplst[tt, 0]+' '
+                azline = azimlst[tt, 0]+' '
+                tprline = tiplstr[tt, 0]+' '
+                tprazline = tiplstraz[tt, 0]+' '
+                tpiline = tiplsti[tt, 0]+' '
+                tpiazline = tiplstiaz[tt, 0]+' '
+                for ss in range(1, ns):
+                    skline += sklst[tt, ss]
+                    pminline += phiminlst[tt, ss]
+                    pmaxline += phimaxlst[tt, ss]
+                    elliline += elliplst[tt, ss]
+                    azline += azimlst[tt, ss]
+                    tprline += tiplstr[tt, ss]
+                    tprazline += tiplstraz[tt, ss]
+                    tpiline += tiplsti[tt, ss]
+                    tpiazline += tiplstiaz[tt, ss]
+            else:
+                #get period or frequency
+                skline = mtpl._make_value_str(float(sklst[tt, 0]), 
+                                                   **t1_kwargs)
+                pminline = mtpl._make_value_str(float(phiminlst[tt, 0]), 
+                                                **t1_kwargs)
+                pmaxline = mtpl._make_value_str(float(phimaxlst[tt, 0]),
+                                                **t1_kwargs)
+                elliline = mtpl._make_value_str(float(elliplst[tt, 0]), 
+                                                **t1_kwargs)
+                azline = mtpl._make_value_str(float(azimlst[tt, 0]), 
+                                              **t1_kwargs)
+                tprline = mtpl._make_value_str(float(tiplstr[tt, 0]), 
+                                               **t1_kwargs)
+                tprazline = mtpl._make_value_str(float(tiplstraz[tt, 0]), 
+                                            **t1_kwargs)
+                tpiline = mtpl._make_value_str(float(tiplsti[tt, 0]), 
+                                               **t1_kwargs)
+                tpiazline = mtpl._make_value_str(float(tiplstiaz[tt, 0]), 
+                                                 **t1_kwargs)
+                
+                #get parameter values
+                for ss in range(1, ns):
+                    skline += mtpl._make_value_str(float(sklst[tt, ss]), 
+                                                   **t2_kwargs)
+                    pminline += mtpl._make_value_str(float(phiminlst[tt, ss]),
+                                                **t2_kwargs)
+                    pmaxline += mtpl._make_value_str(float(phimaxlst[tt, ss]),
+                                                **t2_kwargs)
+                    elliline += mtpl._make_value_str(float(elliplst[tt, ss]),
+                                                **t2_kwargs)
+                    azline += mtpl._make_value_str(float(azimlst[tt, ss]),
+                                              **t2_kwargs)
+                    tprline += mtpl._make_value_str(float(tiplstr[tt, ss]),
+                                               **t2_kwargs)
+                    tprazline += mtpl._make_value_str(float(tiplstraz[tt, ss]),
+                                                 **t2_kwargs)
+                    tpiline += mtpl._make_value_str(float(tiplsti[tt, ss]),
+                                               **t2_kwargs)
+                    tpiazline += mtpl._make_value_str(float(tiplstiaz[tt, ss]),
+                                                 **t2_kwargs)
+            
+            # be sure to end the line after each period
+            sklines.append(skline+'\n')
+            phiminlines.append(pminline+'\n')
+            phimaxlines.append(pmaxline+'\n')
+            elliplines.append(elliline+'\n')
+            azimlines.append(azline+'\n')
+            tprlines.append(tprline+'\n')
+            tprazlines.append(tprazline+'\n')
+            tpilines.append(tpiline+'\n')
+            tpiazlines.append(tpiazline+'\n')
         
-        self.ax4.set_xscale('log')
-        self.ax4.set_yscale('linear')
-        self.ax4.yaxis.set_major_locator(MultipleLocator(ckstep))
-
-        if self.skew_limits is None:
-            self.skew_limits=(-10, 10)
-        self.ax4.set_ylim(self.skew_limits)
-        self.ax4.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
-                      lw=.25)
-        self.ax4.set_xlabel('Period (s)', fontdict=font_dict)
-        self.ax4.set_ylabel('Skew Angle (deg)', fontdict=font_dict)
-        self.ax4.set_title('Skew Angle', fontdict=font_dictt)
+        #write files
+        skfid = file(os.path.join(svpath,'PseudoSection.skew'),'w')
+        skfid.writelines(sklines)
+        skfid.close()
         
-        #----------------------plotEllipticity--------------------------------
-        ellipticity = self.pt.ellipticity[0]
-        ellipticityerr=self.pt.ellipticity[1]
-
-        self.ax5 = self.fig.add_subplot(3, 2, 6, sharex=self.ax2)
-        erskew = self.ax5.errorbar(self._mt.period,
-                                   ellipticity,
-                                   marker=self.ellip_marker,
-                                   ms=self.marker_size,
-                                   mfc='None',
-                                   mec=self.ellip_color,
-                                   mew=self.marker_lw,
-                                   ls='None',
-                                   yerr=ellipticityerr,
-                                   ecolor=self.ellip_color,
-                                   capsize=self.marker_size,
-                                   elinewidth=self.marker_lw)
+        phiminfid = file(os.path.join(svpath,'PseudoSection.phimin'),'w')
+        phiminfid.writelines(phiminlines)
+        phiminfid.close()
         
-        #draw a line where the ellipticity is not 2d                           
-        self.ax5.plot([10**xlimits[0], 10**xlimits[-1]],
-                      [self.ellip_cutoff, self.ellip_cutoff],
-                      ls='--',
-                      color=self.ellip_color,
-                      lw=1)
-                      
-        self.ax5.set_xscale('log')
-        self.ax5.set_yscale('linear')
-
-        self.ax5.yaxis.set_major_locator(MultipleLocator(.1))
-
-        self.ax5.set_ylim(ymin=0,ymax=1)
-        self.ax5.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
-                      lw=.25)
-        self.ax5.set_xlabel('Period (s)', fontdict=font_dict)
-        self.ax5.set_ylabel('$\mathbf{\phi_{max}-\phi_{min}/\phi_{max}+\phi_{min}}$',
-                            fontdict=font_dict)
-        self.ax5.set_title('Ellipticity', fontdict=font_dictt)
+        phimaxfid = file(os.path.join(svpath,'PseudoSection.phimax'), 
+                         'w')
+        phimaxfid.writelines(phimaxlines)
+        phimaxfid.close()
         
-        self.fig.suptitle('Phase Tensor Elements for: '+self._mt.station,
-                          fontdict={'size':self.font_size+3, 'weight':'bold'})
-                          
+        ellipfid = file(os.path.join(svpath,'PseudoSection.ellipticity'), 
+                        'w')
+        ellipfid.writelines(elliplines)
+        ellipfid.close()
+        
+        azfid = file(os.path.join(svpath,'PseudoSection.azimuth'), 
+                     'w')
+        azfid.writelines(azimlines)
+        azfid.close()
+        
+        tprfid = file(os.path.join(svpath,'PseudoSection.tipper_mag_real'), 
+                      'w')
+        tprfid.writelines(tprlines)
+        tprfid.close()
+        
+        tprazfid = file(os.path.join(svpath,'PseudoSection.tipper_ang_real'),
+                        'w')
+        tprazfid.writelines(tprazlines)
+        tprazfid.close()
+        
+        tpifid = file(os.path.join(svpath,'PseudoSection.tipper_mag_imag'),
+                      'w')
+        tpifid.writelines(tpilines)
+        tpifid.close()
+        
+        tpiazfid = file(os.path.join(svpath,'PseudoSection.tipper_ang_imag'),
+                        'w')
+        tpiazfid.writelines(tpiazlines)
+        tpiazfid.close()
     
-    def save_plot(self, save_fn, file_format='pdf', orientation='portrait', 
+    def update_plot(self):
+        """
+        update any parameters that where changed using the built-in draw from
+        canvas.  
+        
+        Use this if you change an of the .fig or axes properties
+        
+        :Example: ::
+            
+            >>> # to change the grid lines to be on the major ticks and gray 
+            >>> pt1.ax.grid(True, which='major', color=(.5,.5,.5))
+            >>> pt1.update_plot()
+        
+        """
+
+        self.fig.canvas.draw()
+        
+    def redraw_plot(self):
+        """
+        use this function if you updated some attributes and want to re-plot.
+        
+        :Example: ::
+            
+            >>> # change ellipse size and color map to be segmented for skew 
+            >>> pt1.ellipse_size = 5
+            >>> pt1.ellipse_colorby = 'beta_seg'
+            >>> pt1.ellipse_cmap = 'mt_seg_bl2wh2rd'
+            >>> pt1.ellipse_range = (-9, 9, 3)
+            >>> pt1.redraw_plot()
+        """
+        
+        plt.close(self.fig)
+        self.plot()
+        
+    def __str__(self):
+        """
+        rewrite the string builtin to give a useful message
+        """
+        
+        return "Plots pseudo section of phase tensor ellipses" 
+        
+    def save_figure(self, save_fn, file_format='pdf', orientation='portrait', 
                   fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.
@@ -694,7 +1180,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                           full path to save figure to, can be input as
                           * directory path -> the directory path to save to
                             in which the file will be saved as 
-                            save_fn/station_name_PhaseTensor.file_format
+                            save_fn/station_name_ResPhase.file_format
                             
                           * full path -> file will be save to the given 
                             path.  If you use this option then the format
@@ -718,11 +1204,8 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                              * 'n' will leave plot open
                           
         :Example: ::
-            
-            >>> # to save plot as jpg
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotPhaseTensor(r'/home/MT/mt01.edi')
-            >>> p1.save_plot(r'/home/MT/figures', file_format='jpg')
+            >>> # save plot as a jpg
+            >>> pt1.save_plot(r'/home/MT/figures', file_format='jpg')
             
         """
 
@@ -737,13 +1220,10 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             plt.close(self.fig)
             
         else:
-            station = self._mt.station
-            if station is None:
-                station='MT01'
-            save_fn = os.path.join(save_fn, station+'_PhaseTensor.'+
-                                    file_format)
+            save_fn = os.path.join(save_fn, 'PTPseudoSection.'+
+                                   file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                        orientation=orientation)
+                             orientation=orientation)
         
         if close_plot == 'y':
             plt.clf()
@@ -754,48 +1234,3 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         
         self.fig_fn = save_fn
         print 'Saved figure to: '+self.fig_fn
-
-    def update_plot(self):
-        """
-        update any parameters that where changed using the built-in draw from
-        canvas.  
-        
-        Use this if you change an of the .fig or axes properties
-        
-        :Example: ::
-            
-            >>> # to change the grid lines to only be on the major ticks
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
-            >>> [ax.grid(True, which='major') for ax in [p1.axr,p1.axp]]
-            >>> p1.update_plot()
-        
-        """
-
-        self.fig.canvas.draw()
-        
-    def redraw_plot(self):
-        """
-        use this function if you updated some attributes and want to re-plot.
-        
-        :Example: ::
-            
-            >>> # change the color and marker of the xy components
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotResPhase(r'/home/MT/mt01.edi')
-            >>> p1.xy_color = (.5,.5,.9)
-            >>> p1.xy_marker = '*'
-            >>> p1.redraw_plot()
-        """
-        
-        plt.close(self.fig)
-        self.plot()
-        
-    def __str__(self):
-        """
-        rewrite the string builtin to give a useful message
-        """
-        
-        return "Plots the phase tensor ellipses and other properties such\n"+\
-               "strike angle, minimum and maximum phase, skew and ellipticity"
-
