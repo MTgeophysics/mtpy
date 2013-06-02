@@ -321,7 +321,6 @@ class PlotResPhasePseudoSection(object):
                                                  self.offset_lst[-1]*1.1), 
                                        np.append(self.plot_period,
                                                  self.plot_period[-1]*1.1))
-            print xgrid.shape
             
             for ii, tt in enumerate(plst):
                 axr = self.fig.add_subplot(gs[0, ii])
@@ -596,9 +595,9 @@ class PlotResPhasePseudoSection(object):
                                             norm=colors.Normalize(vmin=cminp,
                                                                   vmax=cmaxp),
                                             orientation='vertical')
-                    self.cbp.set_ticks([cminp, (cmaxp-cminp)/2, cmaxp])
+                    self.cbp.set_ticks([cminp, (cmaxp-cminp)/2+cminp, cmaxp])
                     self.cbp.set_ticklabels(['{0:.0f}'.format(cminp),
-                                             '{0:.0f}'.format((cmaxp-cminp)/2),
+                                             '{0:.0f}'.format((cmaxp-cminp)/2+cminp),
                                              '{0:.0f}'.format(cmaxp)])
                     self.cbp.ax.yaxis.set_label_position('right')
                     self.cbp.ax.yaxis.set_label_coords(1.35, .5)
