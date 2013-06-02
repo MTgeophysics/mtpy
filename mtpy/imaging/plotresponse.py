@@ -824,6 +824,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             #set th xaxis tick labels to invisible
             if pdict['tip'] != nrows-1:
                 plt.setp(self.axt.xaxis.get_ticklabels(), visible=False)
+        
         #------plot strike angles----------------------------------------------
         if self._plot_strike.find('y') == 0:
             
