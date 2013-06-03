@@ -359,7 +359,7 @@ def reorient_data2D(x_values, y_values, x_sensor_angle = 0 , y_sensor_angle = 90
         if len(x_values) != len(y_values):
             raise
     except:
-        raise EX.MTpyError_inputarguments('ERROR - both input arrays must be of same length')
+        raise MTex.MTpyError_inputarguments('ERROR - both input arrays must be of same length')
 
     if len(x_values) != len(y_values):
         l = min(len(x_values) , len(y_values))

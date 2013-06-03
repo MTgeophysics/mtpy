@@ -292,7 +292,7 @@ def calibrate_file(filename, outdir, instrument, instrument_amplification,
                 raise MTex.MTpyError_inputarguments('invalid gain for elogger:'
                                                     ' {0}'.format(gain))
 
-            instrument_amplification = dict_of_efield_amplification[logger]
+            #instrument_amplification = dict_of_efield_amplification[logger]
 
             outfile_data = elogger_e_field(data_in, gain, dipole,
                                              instrument_amplification)
