@@ -45,7 +45,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
     mtpy.imaging.mtplot.MTplot.
     
     The plot places the apparent resistivity in log scale in the top panel(s), 
-    depending on the plotnum.  The phase is below this, note that 180 degrees
+    depending on the plot_num.  The phase is below this, note that 180 degrees
     has been added to the yx phase so the xy and yx phases plot in the same
     quadrant.  Both the resistivity and phase share the same x-axis which is in
     log period, short periods on the left to long periods on the right.  So
@@ -54,7 +54,8 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
     as a third panel at the bottom, and also shares the x-axis.  The arrows are
     in the convention of pointing towards a conductor.  The xx and yy 
     components can be plotted as well, this adds two panels on the right.  
-    Here the phase is left unwrapped.
+    Here the phase is left unwrapped.  Other parameters can be added as 
+    subplots such as strike, skew and phase tensor ellipses.
     
     To manipulate the plot you can change any of the attributes listed below
     and call redraw_plot().  If you know more aout matplotlib and want to 
@@ -64,88 +65,91 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
     
     Arguments:
     ----------
-        **filename** : string
+        **fn**: string
                        filename containing impedance (.edi) is the only 
                        format supported at the moment
                        
-        **z_array** : np.array((nf, 2, 2), dtype='complex')
+        **z_array**: np.ndarray((nf, 2, 2), dtype='complex')
                 impedance tensor with length of nf -> the number of freq
                 *default* is None
                 
-        **z_err_array** : np.array((nf, 2, 2), dtype='real')
+        **z_err_array**: np.ndarray((nf, 2, 2), dtype='real')
                     impedance tensor error estimates, same shape as z.
                     *default* is None
                     
-        **res_array** : np.array((nf, 2, 2))
+        **res_array**: np.ndarray((nf, 2, 2))
                         array of resistivity values in linear scale.
                         *default* is None
                         
-        **res_err_array** : np.array((nf, 2, 2))
+        **res_err_array**: np.ndarray((nf, 2, 2))
                             array of resistivity error estimates, same shape 
                             as res_array. *default* is None
                             
-        **phase_array** : np.array((nf, 2, 2))
+        **phase_array**: np.ndarray((nf, 2, 2))
                           array of phase values in degrees, same shape as 
                           res_array. *default* is None
                           
-        **phase_err_array** : np.array((nf, 2, 2))
+        **phase_err_array**: np.ndarray((nf, 2, 2))
                               array of phase error estimates, same shape as 
                               phase_array. *default* is None
                               
-        **tipper_array** : np.array((nf, 1, 2), dtype='complex')
+        **tipper_array**: np.ndarray((nf, 1, 2), dtype='complex')
                            array of tipper values for tx, ty. *default* is None
                            
-        **tipper_err_array** : np.array((nf, 1, 2))
+        **tipper_err_array**: np.ndarray((nf, 1, 2))
                                array of tipper error estimates, same shape as
                                tipper_array. *default* is None
                                
-        **z_object** : class mtpy.core.z.Z
+        **z_object**: class mtpy.core.z.Z
                       object of mtpy.core.z.  If this is input be sure the
                       attribute z.freq is filled.  *default* is None
                       
-        **tipper_object** : class mtpy.core.z.Tipper
+        **tipper_object**: class mtpy.core.z.Tipper
                             object of mtpy.core.z. If this is input be sure the
                             attribute z.freq is filled.  
                             *default* is None 
                             
-        **mt_object** : class mtpy.imaging.mtplot.MTplot
-                        object of mtpy.imaging.mtplot.MTplot
+        **mt_object** : class mtpy.imaging.mtplottools.MTplot
+                        object of mtpy.imaging.mtplottools.MTplot
                         *default* is None
-                      
-        **fignum** : int
+                        
+    Optional Key Words:
+    --------------------
+                  
+        *fig_num*: int
                      figure number
                      *default* is 1
                      
-        **ffactor** : float
+        *ffactor*: float
                       scaling factor for computing resistivity from 
                       impedances.
                       *Default* is 1
         
-        **rot_z** : float
+        *rot_z*: float
                    rotation angle of impedance tensor (deg or radians), 
                    *Note* : rotaion is clockwise positive
                    *default* is 0
         
-        **plotnum** : [ 1 | 2 | 3 ]
+        *plot_num*: [ 1 | 2 | 3 ]
                         * 1 for just Ex/By and Ey/Bx *default*
                         * 2 for all 4 components
                         * 3 for off diagonal plus the determinant
     
-        **title** : string
-                    title of plot
-                    *default* is station name
+        *plot_title*: string
+                         plot_title of plot
+                         *default* is station name
                     
-        **plot_tipper** : [ 'yri' | 'yr' | 'yi' | 'n' ]
+        *plot_tipper*: [ 'yri' | 'yr' | 'yi' | 'n' ]
                           Plots the tipper in a bottom pannel
                           * 'yri'  --> plots the real and imaginar parts
                           * 'yr'   --> plots just the real part
                           * 'yi'   --> plots just the imaginary part
                           
-                          **Note:** the convention is to point towards a 
+                          *Note:* the convention is to point towards a 
                           conductor.  Can change this by setting the
                           parameter arrow_direction = 1.
                           
-        **plot_strike** : [ 'y' | 1 | 2 | 3 | 'n' ]
+        *plot_strike*: [ 'y' | 1 | 2 | 3 | 'n' ]
                           Plots the strike angle from different parameters:
                               * 'y'  --> plots strike angle determined from 
                                          the invariants of Weaver et al. [2000]
@@ -163,14 +167,18 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                                         the tipper
                                * 'n' --> doesn't plot the strike, *default*
                                
-        **plot_skew** : [ 'y' | 'n' ]
+        *plot_skew*: [ 'y' | 'n' ]
                         plots the skew angle calculated from the phase tensor
-                        in the same subfigure as the strike angle.  The axes
-                        are labelled on the right hand side.
                             * 'y' --> plots skew angle
                             * 'n' --> does not plot skew angle *default*
+                            
+        *plot_pt*: [ 'y' | 'n' ]
+                    plots the phase tensor ellipses which have the properties
+                    of ellipse_
+                        * 'y' --> plots phase tensor ellipses
+                        * 'n' --> does not plot ellipses *default*
                           
-        **dpi** : int
+        *fig_dpi*: int
                  dots-per-inch resolution, *default* is 300
                     
                         
@@ -178,20 +186,20 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             
             >>> import mtpy.imaging.mtplottools as mtplot
             >>> edifile = r"/home/MT01/MT01.edi"
-            >>> rp1 = mtplot.PlotResPhase(edifile, plotnum=2)
+            >>> rp1 = mtplot.PlotResPhase(fn=edifile, plot_num=2)
             >>> # plots all 4 components
-            >>> rp1 = mtplot.PlotResPhase(edifile, plot_tipper='yr')
+            >>> rp1 = mtplot.PlotResPhase(fn=edifile, plot_tipper='yr')
             >>> # plots the real part of the tipper
             
     Attributes:
     -----------
-        -fn             filename to be plotted (only supports .edi so far) 
-        -fignum         figure number for plotting
-        -plotnum        plot type, see arguments for details 
-        -title          title of the plot, *default* is station name
-        -dpi            Dots-per-inch resolution of plot, *default* is 300
+        -fn              filename to be plotted (only supports .edi so far) 
+        -fig_num         figure number for plotting
+        -plot_num        plot type, see arguments for details 
+        -plot_title      title of the plot, *default* is station name
+        -fig_dpi         Dots-per-inch resolution of plot, *default* is 300
         -rot_z           Rotate impedance tensor by this angle (deg) assuming
-                        that North is 0 and angle is positive clockwise
+                         that North is 0 and angle is positive clockwise
                         
         -plot_tipper    string to tell the program to plot tipper arrows or 
                         not, see accepted values above in arguments
@@ -269,7 +277,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                             *default* is (.2, .7, .2)
         
         -marker_size     size of marker in relative dimenstions, *default* is 2
-        -marker_lw       line width of marker, *default* is 100./dpi 
+        -marker_lw       line width of marker, *default* is 100./fig_dpi 
         ..
         
          *For more on line and marker styles see matplotlib.lines.Line2D*
@@ -315,20 +323,29 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         -strike_limits  limits for strike angle, *default* is (-90,90)   
         
 
-
     """   
     
-    def __init__(self, filename=None, z_array=None, z_err_array=None, 
-                 period=None, fignum=1, plotnum=1, title=None, dpi=300, 
-                 rot_z=0, plot_yn='y', plot_tipper='n', plot_strike='n',
-                 plot_skew='n', tipper_array=None, tipper_err_array=None, 
-                 tipper_object=None, res_array=None, res_err_array=None,
-                 phase_array=None, phase_err_array=None, plot_pt='n',
-                 res_phase_object=None, z_object=None, mt_object=None):
+    def __init__(self, **kwargs):
+        
+        fn = kwargs.pop('fn', None)
+        z_array = kwargs.pop('z_array', None)
+        z_err_array = kwargs.pop('z_err_array', None)
+        z_object = kwargs.pop('z_object', None)
+        phase_array = kwargs.pop('phase_array', None)
+        phase_err_array = kwargs.pop('phase_err_array', None)
+        res_array = kwargs.pop('res_array', None)
+        res_err_array = kwargs.pop('res__err_array', None)
+        tipper_array = kwargs.pop('tipper_array', None)
+        tipper_err_array = kwargs.pop('tipper_err_array', None)
+        tipper_object = kwargs.pop('tipper_object', None)
+        mt_object = kwargs.pop('mt_object', None)
+        period = kwargs.pop('period', None)
+        res_phase_object = kwargs.pop('res_phase_object', None)
+        
         
         #--> initialize an MTplot object
         if mt_object is None:
-            self._mt = mtpl.MTplot(filename=filename, 
+            self._mt = mtpl.MTplot(filename=fn, 
                                    z=z_array, 
                                    z_err=z_err_array,
                                    z_object=z_object,
@@ -354,68 +371,71 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             
         
         #set some of the properties as attributes much to Lars' discontent
-        self.fn = filename
-        self.fignum = fignum
-        self.plotnum = plotnum
-        self.title = title
-        self.dpi = dpi
-        self.rot_z = rot_z
+        self.fn = fn
+        self.fig_num = kwargs.pop('fig_num', 1)
+        self.plot_num = kwargs.pop('plot_num', 1)
+        self.plot_title = kwargs.pop('plot_title', None)
+        self.fig_dpi = kwargs.pop('fig_dpi', 300)
+        self.rot_z = kwargs.pop('rot_z', 0)
         
         #-->line properties
         #line style between points
-        self.xy_ls = 'None'        
-        self.yx_ls = 'None'        
-        self.det_ls = 'None'        
+        self.xy_ls = kwargs.pop('xy_ls', 'None')        
+        self.yx_ls = kwargs.pop('yx_ls', 'None')
+        self.det_ls = kwargs.pop('det_ls', 'None')
         
         #outline color
-        self.xy_color = 'b'
-        self.yx_color = 'r'
-        self.det_color = 'g'
+        self.xy_color = kwargs.pop('xy_color', 'b')
+        self.yx_color = kwargs.pop('yx_color', 'r')
+        self.det_color = kwargs.pop('det_color', 'g')
         
         #face color
-        self.xy_mfc = 'None'
-        self.yx_mfc = 'None'
-        self.det_mfc = 'None'
+        self.xy_mfc = kwargs.pop('xy_mfc', 'None')
+        self.yx_mfc = kwargs.pop('yx_mfc', 'None')
+        self.det_mfc = kwargs.pop('det_mfc', 'None')
         
         #maker
-        self.xy_marker = 's'
-        self.yx_marker = 'o'
-        self.det_marker = 'd'
+        self.xy_marker = kwargs.pop('xy_marker', 's')
+        self.yx_marker = kwargs.pop('yx_marker', 'o')
+        self.det_marker = kwargs.pop('det_marker', 'd')
         
         #size
-        self.marker_size = 2
+        self.marker_size = kwargs.pop('marker_size', 2)
         
         #marker line width
-        self.marker_lw = 100./self.dpi
+        self.marker_lw = kwargs.pop('marker_lw', 100./self.fig_dpi)
         
         #set plot limits
-        self.xlimits = None
-        self.res_limits = None
-        self.phase_limits = None
-        self.tipper_limits = None
-        self.strike_limits = None
-        self.skew_limits = None
+        self.xlimits = kwargs.pop('xlimits', None)
+        self.res_limits = kwargs.pop('res_limits', None)
+        self.phase_limits = kwargs.pop('phase_limits', None)
+        self.tipper_limits = kwargs.pop('tipper_limits', None)
+        self.strike_limits = kwargs.pop('strike_limits', None)
+        self.skew_limits = kwargs.pop('skew_limits', None)
+        self.pt_limits = kwargs.pop('pt_limits', None)
         
         #set font parameters
-        self.font_size = 7
+        self.font_size = kwargs.pop('font_size', 7)
         
         #set period
         self.period = self._mt.period
         
         #set plot tipper or not
-        self._plot_tipper = plot_tipper
+        self._plot_tipper = kwargs.pop('plot_tipper', 'n')
         
         #plot strike angle or not
-        self._plot_strike = plot_strike
+        self._plot_strike = kwargs.pop('plot_strike', 'n')
         
         #plot skew angle
-        self._plot_skew = plot_skew
+        self._plot_skew = kwargs.pop('plot_skew', 'n')
         
         #plot phase tensor ellipses
-        self._plot_pt = plot_pt
+        self._plot_pt = kwargs.pop('plot_pt', 'n')
         
         #order of plots
-        self.plot_order = ['tip' , 'pt', 'strike', 'skew']
+        self.plot_order = kwargs.pop('plot_order', 
+                                     ['tip' , 'pt', 'strike', 'skew'])
+                                     
         self.plot_dict = dict([(kk, vv) for kk, vv in zip(['tip' , 'pt', 
                                                            'strike', 'skew'],
                                                            [self._plot_tipper, 
@@ -424,50 +444,50 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                                                             self._plot_skew])])
         
         #set arrow properties
-        self._arrow_dict = {'color' : ('k', 'b'),
-                           'direction' : 0,
-                           'head_length' : 0,
-                           'head_width' : 0,
-                           'lw' : .75}
+        self._arrow_dict = kwargs.pop('arrow_dict', {'color' : ('k', 'b'),
+                                                     'direction' : 0,
+                                                     'head_length' : 0,
+                                                     'head_width' : 0,
+                                                     'lw' : .75})
                            
         self._read_arrow_dict()
         
         #ellipse_properties
-        self._ellipse_dict = {'size':.25}
+        self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':.25})
         self._read_ellipse_dict()
-        self.ellipse_spacing = 1
+        self.ellipse_spacing = kwargs.pop('ellipse_spacing', 1)
         
         #skew properties
-        self.skew_color = (.85, .35, 0)
-        self.skew_marker = 'd'
+        self.skew_color = kwargs.pop('skew_color', (.85, .35, 0))
+        self.skew_marker = kwargs.pop('skew_marker', 'd')
         
         #strike properties
-        self.strike_inv_marker = '^'
-        self.strike_inv_color = (.2, .2, .7)
+        self.strike_inv_marker = kwargs.pop('strike_inv_marker', '^')
+        self.strike_inv_color = kwargs.pop('strike_inv_color', (.2, .2, .7))
         
-        self.strike_pt_marker = 'v'
-        self.strike_pt_color = (.7, .2, .2)
+        self.strike_pt_marker = kwargs.pop('strike_pt_marker', 'v')
+        self.strike_pt_color = kwargs.pop('strike_pt_color', (.7, .2, .2))
         
-        self.strike_tip_marker = '>'
-        self.strike_tip_color = (.2, .7, .2)
+        self.strike_tip_marker = kwargs.pop('strike_tip_marker', '>')
+        self.strike_tip_color = kwargs.pop('strike_tip_color', (.2, .7, .2))
 
-
+        self.plot_yn = kwargs.pop('plot_yn', 'y')
         #plot on initializing
-        if plot_yn == 'y':
+        if self.plot_yn == 'y':
             self.plot()
 
     def plot(self):
         """
-        plotResPhase(filename,fignum) will plot the apparent resistivity and 
+        plotResPhase(filename,fig_num) will plot the apparent resistivity and 
         phase for a single station. 
  
         """
         
         #set figure size according to what the plot will be.
-        if self.plotnum == 1 or self.plotnum == 3:
+        if self.plot_num == 1 or self.plot_num == 3:
             self.figsize = [5, 7]
         
-        elif self.plotnum == 2:
+        elif self.plot_num == 2:
             self.figsize = [7, 7]
             
         #--> rotate the impedance tensor if desired
@@ -533,10 +553,10 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         gs = gridspec.GridSpec(nrows, 2, height_ratios=hr,hspace=.05)
 
         #make figure instance
-        self.fig = plt.figure(self.fignum, self.figsize, dpi=self.dpi)
+        self.fig = plt.figure(self.fig_num, self.figsize, dpi=self.fig_dpi)
         
         #--> make figure for xy,yx components
-        if self.plotnum == 1 or self.plotnum == 3:
+        if self.plot_num == 1 or self.plot_num == 3:
             #set label coordinates
             labelcoords = (-0.075, 0.5)
             
@@ -553,7 +573,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
 
         
         #--> make figure for all 4 components
-        elif self.plotnum == 2:
+        elif self.plot_num == 2:
             #set label coordinates
             labelcoords = (-0.095, 0.5)            
             
@@ -1136,8 +1156,9 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                                            norm=colors.Normalize(vmin=ckmin,
                                                                  vmax=ckmax),
                                             orientation='vertical')
-            self.cbpt.set_ticks([ckmin, ckmax])
+            self.cbpt.set_ticks([ckmin, (ckmax-ckmin)/2, ckmax])
             self.cbpt.set_ticklabels(['{0:.0f}'.format(ckmin),
+                                      '{0:.0f}'.format((ckmax-ckmin)/2),
                                       '{0:.0f}'.format(ckmax)])
             self.cbpt.ax.yaxis.set_label_position('left')
             self.cbpt.ax.yaxis.set_label_coords(-1.05, .5)
@@ -1148,7 +1169,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                         
             
         #===Plot the xx, yy components if desired==============================
-        if self.plotnum == 2:
+        if self.plot_num == 2:
             #---------plot the apparent resistivity----------------------------
             self.axr2 = self.fig.add_subplot(gs[0, 1], sharex=self.axr)
             self.axr2.yaxis.set_label_coords(-.1, 0.5)
@@ -1248,7 +1269,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                 plt.setp(self.axp2.xaxis.get_label(), visible=False)
         
         #===Plot the Determinant if desired==================================                          
-        if self.plotnum == 3:
+        if self.plot_num == 3:
                 
             #res_det
             self.ebdetr = self.axr.errorbar(self.period, 
@@ -1288,9 +1309,9 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                             borderpad=.02)
         
         
-        #make title and show
-        if self.title != None:
-            self.fig.suptitle(self.title, fontdict=fontdict)
+        #make plot_title and show
+        if self.plot_title != None:
+            self.fig.suptitle(self.plot_title, fontdict=fontdict)
         else:
             if self._mt.station != None:
                 self.fig.suptitle(self._mt.station, fontdict=fontdict)
@@ -1361,7 +1382,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         
 
     def save_plot(self, save_fn, file_format='pdf', orientation='portrait', 
-                  fig_dpi=None, close_plot='y'):
+                  fig_fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.
         
@@ -1385,11 +1406,11 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                               orientation in which the file will be saved
                               *default* is portrait
                               
-            **fig_dpi** : int
+            **fig_fig_dpi** : int
                           The resolution in dots-per-inch the file will be
-                          saved.  If None then the dpi will be that at 
+                          saved.  If None then the fig_dpi will be that at 
                           which the figure was made.  I don't think that 
-                          it can be larger than dpi of the figure.
+                          it can be larger than fig_dpi of the figure.
                           
             **close_plot** : [ y | n ]
                              * 'y' will close the plot after saving.
@@ -1404,12 +1425,12 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             
         """
 
-        if fig_dpi == None:
-            fig_dpi = self.dpi
+        if fig_fig_dpi == None:
+            fig_fig_dpi = self.fig_dpi
             
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+            self.fig.savefig(save_fn, fig_dpi=fig_fig_dpi, format=file_format,
                              orientation=orientation)
             plt.clf()
             plt.close(self.fig)
@@ -1417,7 +1438,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         else:
             save_fn = os.path.join(save_fn, self._mt.station+'_ResPhase.'+
                                     file_format)
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+            self.fig.savefig(save_fn, fig_dpi=fig_fig_dpi, format=file_format,
                         orientation=orientation)
         
         if close_plot == 'y':
