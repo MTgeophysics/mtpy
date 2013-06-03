@@ -637,7 +637,8 @@ def write_ts_file_from_tuple(outfile,ts_tuple):
     
     header_dict = {}
     for i in range(len(ts_tuple) -1):
-        header_dict[lo_headerelements[i]] = ts_tuple[i]
+        if ts_tuple[i] is not None:
+            header_dict[lo_headerelements[i]] = ts_tuple[i]
 
     header_string = get_ts_header_string(header_dict)
     data = ts_tuple[-1]
@@ -826,16 +827,21 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
                 xdata = np.loadtxt(x_file)
                 ydata = np.loadtxt(y_file)
 
+                #declination is positive, if magnetic North is east of true North.
+                # the measured angles are w.r.t. magnetic North, so the given 
+                # azimuths do not include the declination 
+                #-> thus the declination value is added to azimuths
+                
                 if sensor == 'e':
                     xangle = float(stationconfig.get(
-                                    'e_xaxis_azimuth', 0.)) - declination
+                                    'e_xaxis_azimuth', 0.)) + declination
                     yangle = float(stationconfig.get(
-                                    'e_yaxis_azimuth',90.)) - declination
+                                    'e_yaxis_azimuth',90.)) + declination
                 else:
                     xangle = float(stationconfig.get(
-                                    'b_xaxis_azimuth', 0.)) - declination
+                                    'b_xaxis_azimuth', 0.)) + declination
                     yangle = float(stationconfig.get(
-                                    'b_yaxis_azimuth',90.)) - declination                
+                                    'b_yaxis_azimuth',90.)) + declination                
 
                 newx, newy =  MTcc.reorient_data2D(xdata, ydata, 
                             x_sensor_angle = xangle , y_sensor_angle = yangle)

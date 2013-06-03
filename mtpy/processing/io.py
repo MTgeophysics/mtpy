@@ -30,14 +30,10 @@ ASCII Table  text                                  yes      [#f5]_
 '''
 
 import os
-import mseed, sac, kan, segy, yaff, file, seisan_waveform, util, logging
 import trace
-from pyrocko.mseed_ext import MSeedError
-from io_common import FileLoadError
 
 import numpy as num
 
-logger = logging.getLogger('pyrocko.io')
 
 def load(filename, format='mseed', getdata=True, substitutions=None ):
     '''Load traces from file.
@@ -59,9 +55,9 @@ def load(filename, format='mseed', getdata=True, substitutions=None ):
 
 def detect_format(filename):
     try:
-        f = open(filename, 'r')
-        data = f.read(512)
-        f.close()
+        with open(filename, 'r') as f:
+            data = f.read(512)
+        
     except OSError, e:
         raise FileLoadError(e)
 
@@ -133,7 +129,7 @@ def iload(filename, format='mseed', getdata=True, substitutions=None ):
         yield subs(tr)
 
     
-def save(traces, filename_template, format='mseed', additional={}, stations=None):
+def save(traces, filename_template, format='mtpy', additional={}, stations=None):
     '''Save traces to file(s).
     
     :param traces: a trace or an iterable of traces to store
@@ -144,7 +140,7 @@ def save(traces, filename_template, format='mseed', additional={}, stations=None
             sample), ``tmin_ms``, ``tmax_ms``, ``tmin_us``, ``tmax_us``. The
             versions with '_ms' include milliseconds, the versions with '_us'
             include microseconds.
-    :param format: ``mseed``, ``sac``, ``text``, or ``yaff``.
+    :param format: ``mseed``, ``mtpy``
     :param additional: dict with custom template placeholder fillins.
     :returns: list of generated filenames
 
@@ -181,7 +177,7 @@ def save(traces, filename_template, format='mseed', additional={}, stations=None
             
         return fns
    
-    elif format == 'text':
+    elif format == 'mtpy':
         fns = []
         for tr in traces:
             fn = tr.fill_template(filename_template, **additional)
@@ -196,13 +192,17 @@ def save(traces, filename_template, format='mseed', additional={}, stations=None
 
 class UnknownFormat(Exception):
     def __init__(self, filename):
-        Exception.__init__(self, 'Unknown file format: %s' % filename)
+        Exception.__init__(self, 'Unknown file format: {0}'.format(filename))
 
 class UnsupportedFormat(Exception):
     def __init__(self, format):
-        Exception.__init__(self, 'Unsupported file format: %s' % format)
+        Exception.__init__(self, 'Unsupported file format: {0}'.format(format))
 
 def make_substitutions(tr, substitutions):
     if substitutions:
         tr.set_codes(**substitutions)
+
+class FileLoadError(Exception):
+    '''Raised when a problem occurred while loading of a file.'''
+    pass
 
