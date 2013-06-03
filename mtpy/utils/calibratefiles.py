@@ -114,14 +114,17 @@ def main():
             continue    
         dirfiles = [op.abspath(op.join(wd,i)) for i in os.listdir(wd)]
         for tmpfile in dirfiles:
-            header = MTfh.read_ts_header(tmpfile)
-            if header['channel'].lower() in components:
-                if stationname is not None:
-                    if stationname.upper() != header['station'].upper():
-                        continue
-                lo_allstations.append(header['station'].upper())
-                lo_allfiles.append(op.abspath(op.join(wd,tmpfile)))
-                lo_allheaders.append(header)
+            try:
+                header = MTfh.read_ts_header(tmpfile)
+                if header['channel'].lower() in components:
+                    if stationname is not None:
+                        if stationname.upper() != header['station'].upper():
+                            continue
+                    lo_allstations.append(header['station'].upper())
+                    lo_allfiles.append(op.abspath(op.join(wd,tmpfile)))
+                    lo_allheaders.append(header)
+            except:
+                continue
 
     lo_allstations = list(set(lo_allstations))
 

@@ -19,17 +19,18 @@ Note:
 #=================================================================
 
 #import obspy.mseed as omseed
+import numpy as np
 from obspy.core import read, Trace, Stream, UTCDateTime
 import os.path as op
 
 #import pyrocko as pmseed
 
 import mtpy.utils.exceptions as EX
-import mtpy.utils.filehandling as FH
+import mtpy.utils.filehandling as MTfh
 import mtpy.utils.format as FT
 reload(FT)
 reload(EX)
-reload(FH)
+#reload(FH)
 
 #=================================================================
 
@@ -37,7 +38,7 @@ reload(FH)
 
 def convertfile_ts2miniseed(infile, outfile,channel=None, station = None, location=None, network = None):
 
-    sta, cha, samplingrate, t_min, nsamples, unit, lat, lon, elev, data = FH.read_ts_file(infile)
+    sta, cha, samplingrate, t_min, nsamples, unit, lat, lon, elev, data = MTfh.read_ts_file(infile)
 
     if station is None:
         station = sta.upper()
@@ -64,59 +65,202 @@ def convertfile_ts2miniseed(infile, outfile,channel=None, station = None, locati
 
 
 
+def quadrupol_convertfile_miniseed2ts(infile, outfile,combine,invert):
+    
+    try:
+        dummystream = read(infile)
+    except:
+        raise MTpyError_inputarguments('no valid miniSeed file')
+
+
+    no_traces = len(dummystream)
+
+    if no_traces < 4:
+        print 'found only {0} traces in file - cannot combine all traces'
+
+
+    lo_outfn = []
+    lo_tuples = []
+    for trace in range(no_traces):
+
+        station, channel, location, network,  samplingrate, t0, nsamples, data =\
+                                         readfile_obspy(infile,trace)
+
+        channel = channel.lower()
+
+        ts_tuple = [station.upper(), channel.lower(), samplingrate,t0, int(nsamples)]
+
+        ts_tuple.append(data)
+
+        lo_tuples.append(ts_tuple)
+
+    if combine is True:
+
+        lo_newtuples = []
+        northtup = None
+        southtup = None
+        for tup in lo_tuples:
+            if tup[1].lower()[-1] in ['n']:
+                northtup = tup
+                continue
+            if tup[1].lower()[-1] in ['s']:
+                southtup = tup
+                continue
+        if (northtup is not None) and (southtup is not None):
+            newtup = [northtup[0], 'ex',northtup[2],northtup[3],northtup[4]]
+            if invert is True:
+                data = 0.5*(northtup[5] - southtup[5])
+            else:
+                data = 0.5*(northtup[5] + southtup[5])
+            newtup.append(data)
+
+            newtup = tuple(newtup)
+        elif (northtup is not None):
+            newtup = northtup
+        else:
+            newtup = southtup
+
+        lo_newtuples.append(newtup)
+
+
+        easttup = None
+        westtup = None
+        for tup in lo_tuples:
+            if tup[1].lower()[-1] in ['e']:
+                easttup = tup
+                continue
+            if tup[1].lower()[-1] in ['w']:
+                westtup = tup
+                continue
+
+        if (easttup is not None) and (westtup is not None):
+            newtup = [easttup[0], 'ey',easttup[2],easttup[3],easttup[4]]
+            if invert is True:
+                data = 0.5*(easttup[5] - westtup[5])
+            else:
+                data = 0.5*(easttup[5] + westtup[5])
+            newtup.append(data)
+
+            newtup = tuple(newtup)
+        elif (easttup is not None):
+            newtup = easttup
+        else:
+            newtup = westtup
+
+        lo_newtuples.append(newtup)
+
+    else:
+        lo_newtuples = []
+        for tup in lo_tuples:
+            if tup[1].lower()[-1] in ['s','w']:
+                if invert is True:
+                    newtup = tuple([tup[:4],-tup[4]] )
+                else:
+                    newtup = tup
+            else:
+                newtup = tup
+            lo_newtuples.append(newtup)
+
+    for tup in lo_newtuples:
+
+        outfilebase = op.splitext(op.abspath(outfile))[0]
+        newoutfile = '{0}.{1}'.format(outfilebase,tup[1])
+
+
+        outfilename = MTfh.write_ts_file_from_tuple(newoutfile,tup)
+        #print 'wrote file {0}'.format(outfilename)
+        
+        lo_outfn.append(outfilename)
+
+    return lo_outfn
+
+
+
+
+
+
 def convertfile_miniseed2ts(infile, outfile, unit=None, lat = None, lon = None, elev = None):
 
-    station, channel, location, network,  samplingrate, t0, nsamples, data = readfile_obspy_singletrace(infile)
+    try:
+        dummystream = read(infile)
+    except: 
+        raise MTpyError_inputarguments('infile is not miniSeed')
 
-    ts_tuple = [station.upper(), channel.lower(), samplingrate,t0, nsamples]
-
-    if unit is not None:
-        try:
-            unit = unit.lower()
-        except:
-            unit = None
-
-    if unit is None:
-        ts_tuple.append('unknown') 
-
-    if lat is not None:
-        try:
-            lat = FT._assert_position_format('lat', lat)
-        except:
-            lat = None
-
-    if lat is None:
-        ts_tuple.append(0.)
+    no_traces = len(dummystream)
+    lo_outfn = []
 
 
-    if lon is not None:
-        try:
-            lon = FT._assert_position_format('lon', lon)
-        except:
-            lon = None
+    for trace in range(no_traces):
 
-    if lon is None:
-        ts_tuple.append(0.)
+        station, channel, location, network,  samplingrate, t0, nsamples, data =\
+                                         readfile_obspy(infile,trace)
 
+        channel = channel.lower()
+        if channel[-1] == 'e':
+            channel = channel[:-1]+ 'y'
+        if channel[-1] == 'n':
+            channel = channel[:-1] +'x'
 
-    if elev is not None:
-        try:
-            elev = FT._assert_position_format('elev', elev)
-        except:
-            elev = None
-
-    if elev is None:
-        ts_tuple.append(0.)
-
-    ts_tuple.append(data)
-
-    outfilename = FH.write_ts_file_from_tuple(outfile,tuple(ts_tuple))
-
-    return outfilename
+        ts_tuple = [station.upper(), channel.lower(), samplingrate,t0, nsamples]
 
 
+        if unit is not None:
+            try:
+                unit = unit.lower()
+            except:
+                unit = None
 
-def readfile_obspy_singletrace(infilename):
+        # if unit is None:
+        #     ts_tuple.append('unknown') 
+
+        if lat is not None:
+            try:
+                lat = FT._assert_position_format('lat', lat)
+            except:
+                lat = None
+
+        # if lat is None:
+        #     ts_tuple.append(0.)
+
+
+        if lon is not None:
+            try:
+                lon = FT._assert_position_format('lon', lon)
+            except:
+                lon = None
+
+        # if lon is None:
+        #     ts_tuple.append(0.)
+
+
+        if elev is not None:
+            try:
+                elev = FT._assert_position_format('elev', elev)
+            except:
+                elev = None
+
+        # if elev is None:
+        #     ts_tuple.append(0.)
+
+
+        ts_tuple.append(data)
+
+        if outfile.lower().endswith('mseed'):
+            outfilebase = op.splitext(op.abspath(outfile))[0]
+            newoutfile = '{0}.{1}'.format(outfilebase,ts_tuple[1])
+        else:
+            newoutfile = outfile
+
+
+        outfilename = MTfh.write_ts_file_from_tuple(newoutfile,tuple(ts_tuple))
+        outfilename = newoutfile
+        lo_outfn.append(outfilename)
+
+    return lo_outfn
+
+
+
+def readfile_obspy(infilename, trace = 0):
     
     infile = op.abspath(infilename)
     if not op.isfile(infile):
@@ -125,9 +269,10 @@ def readfile_obspy_singletrace(infilename):
     try:
         ms_stream = read(infile)
     except:
-        EX.MTpyError_inputarguments('ERROR - File is not a valid miniSed file: {0}'.format(infile))
+        raise EX.MTpyError_inputarguments('ERROR - File is not a valid miniSed file: {0}'.format(infile))
 
-    trace = ms_stream[0]
+
+    trace = ms_stream[trace]
     stats = trace.stats
 
     t0 = stats['starttime'].timestamp
@@ -156,7 +301,7 @@ def writefile_obspy_singletrace(outfilename,station,channel,network,location, de
     
 
     #save to file
-    outfilename = FH.make_unique_filename(outfilename)
+    outfilename = MTfh.make_unique_filename(outfilename)
     st.write(outfilename, format='MSEED')
 
     return outfilename
