@@ -831,7 +831,6 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
                 # the measured angles are w.r.t. magnetic North, so the given 
                 # azimuths do not include the declination 
                 #-> thus the declination value is added to azimuths
-                
                 if sensor == 'e':
                     xangle = float(stationconfig.get(
                                     'e_xaxis_azimuth', 0.)) + declination
@@ -842,6 +841,7 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
                                     'b_xaxis_azimuth', 0.)) + declination
                     yangle = float(stationconfig.get(
                                     'b_yaxis_azimuth',90.)) + declination                
+
 
                 newx, newy =  MTcc.reorient_data2D(xdata, ydata, 
                             x_sensor_angle = xangle , y_sensor_angle = yangle)

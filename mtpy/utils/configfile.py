@@ -193,7 +193,7 @@ def read_survey_configfile(filename):
         temp_dict_in = dict((k.lower(),v) for k,v in configobject_dict[station].items())
 
         #initialise output sub-directory for current station 
-        stationdict = {}
+        stationdict = temp_dict_in
 
         #stationnames are uppercase in MTpy
         stationname = station.upper()

@@ -160,7 +160,7 @@ def main():
     #if re-orientation is required, do it first:
     if orientation is True:
         print '\n....re-orient data first...\n'
-        ori_outdir = op.abspath(op.join(cal_outdir,'../reoriented'))
+        ori_outdir = op.abspath(op.join(cal_outdir,'../reoriented_tmp'))
         try:
             if not op.isdir(ori_outdir):
                 os.makedirs(ori_outdir)
