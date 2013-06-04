@@ -163,9 +163,6 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         
         -mt            mtpy.imaging.mtpl.MTplot.mtpl.MTplot object (PlotPhaseTensor._mt)
         
-        filename=None, z_object=None, mt_object=None, 
-                 pt_object=None, fignum=1, dpi=300, rot_z=0, plot_yn='y',
-                 ellipse_dict=None
     """
         
         

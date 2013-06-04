@@ -381,15 +381,13 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                               
     """
     
-    def __init__(self,fn_lst=None, res_object_lst=None,
-                 z_object_lst=None, tipper_object_lst=None, mt_object_lst=None,
-                 plot_freq=1, ellipse_dict={}, cb_dict={},
-                 arrow_dict={}, xpad=.2, ypad=.2, rot_z=0,
-                 fig_size=[8,8], station_dict=None, tscale='period',
-                 mapscale='latlon', fignum=1, image_dict=None, plot_yn='y',
-                 arrow_legend_dict={}, font_size=7, dpi=300, title=None,
-                 reference_point=(0,0), plot_tipper='n', ftol=.1):
-                                
+    def __init__(self, **kwargs):
+        
+        fn_lst = kwargs.pop('fn_lst', None)
+        z_object_lst = kwargs.pop('z_object_lst', None)
+        tipper_object_lst = kwargs.pop('tipper_object_lst', None)
+        mt_object_lst = kwargs.pop('mt_object_lst', None)
+        res_object_lst = kwargs.pop('res_object_lst', None)
 
         #----set attributes for the class-------------------------
         self.mt_lst = mtpl.get_mtlst(fn_lst=fn_lst, 
@@ -399,16 +397,17 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                      mt_object_lst=mt_object_lst)
         
         #set the freq to plot
-        self.plot_freq = plot_freq
-        self.ftol = ftol
+        self.plot_freq = kwargs.pop('plot_freq', 1.0)
+        self.ftol = kwargs.pop('ftol', .1)
         
         #--> set the ellipse properties -------------------
         #set default size to 2
-        self._ellipse_dict = ellipse_dict
+        self._ellipse_dict = kwargs.pop('ellipse_dict', {})
         self._read_ellipse_dict()
             
         #--> set colorbar properties---------------------------------
         #set orientation to horizontal
+        cb_dict = kwargs.pop('cb_dict', {})
         try:
             self.cb_orientation = cb_dict['orientation']
         except KeyError:
@@ -421,37 +420,44 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             self.cb_position = None
             
         #--> set plot properties ------------------------------
-        self.dpi = dpi
-        self.font_size = font_size
-        self.tscale = tscale
-        self.figsize = fig_size
-        self.fignum = fignum
-        self.title = title
-        self.xpad = xpad
-        self.ypad = ypad
-        self.mapscale = mapscale
+        #set some of the properties as attributes much to Lars' discontent
+        self.fig_num = kwargs.pop('fig_num', 1)
+        self.plot_num = kwargs.pop('plot_num', 1)
+        self.plot_style = kwargs.pop('plot_style', '1')
+        self.plot_title = kwargs.pop('plot_title', None)
+        self.fig_dpi = kwargs.pop('fig_dpi', 300)
+        
+        self.tscale = kwargs.pop('tscale', 'period')
+        self.figsize = kwargs.pop('fig_size', [8, 8])
+        self.xpad = kwargs.pop('xpad', .2)
+        self.ypad = kwargs.pop('ypad', .2)
+        self.mapscale = kwargs.pop('mapscale', 'latlon')
+        self.font_size = kwargs.pop('font_size', 7)
         
         #if rotation angle is an int or float make an array the length of 
         #mt_lst for plotting purposes
-        if type(rot_z) is float or type(rot_z) is int:
-            self.rot_z = np.array([rot_z]*len(self.mt_lst))
+        
+        self._rot_z = kwargs.pop('rot_z', 0)
+        if type(self._rot_z) is float or type(self._rot_z) is int:
+            self._rot_z = np.array([self._rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
         #freq than repeat that rotation array to the len(mt_lst)
-        elif type(rot_z) is np.ndarray:
-            if rot_z.shape[0]!=len(self.mt_lst):
-                self.rot_z = np.repeat(rot_z, len(self.mt_lst))
+        elif type(self._rot_z) is np.ndarray:
+            if self._rot_z.shape[0]  !=  len(self.mt_lst):
+                self._rot_z = np.repeat(self._rot_z, len(self.mt_lst))
                 
         else:
-            self.rot_z = rot_z
+            pass
         
         #--> set induction arrow properties -------------------------------
-        self.plot_tipper = plot_tipper
+        self.plot_tipper = kwargs.pop('plot_tipper', 'n')
         
-        self._arrow_dict = arrow_dict
+        self._arrow_dict = kwargs.pop('arrow_dict', {})
         self._read_arrow_dict()
             
         #--> set arrow legend properties -------------------------------
+        arrow_legend_dict = kwargs.pop('arrow_legend_dict', {})
         try:
             self.arrow_legend_position = arrow_legend_dict['position']
         except KeyError:
@@ -483,6 +489,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                           'weight':'bold'}
 
         #--> set background image properties
+        image_dict = kwargs.pop('image_dict', None)
         if image_dict!=None:
             # make sure there is a file
             try:
@@ -501,9 +508,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                 '(left, right, bottom, top)')
                                 
         #--> set a central reference point
-        self.plot_reference_point = reference_point
+        self.plot_reference_point = kwargs.pop('reference_point', (0, 0))
             
         #--> set station name properties
+        station_dict = kwargs.pop('station_dict', None)
         if station_dict!=None:
             try:
                 self.station_id = station_dict['id']
@@ -525,7 +533,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 
 
         #--> plot if desired ------------------------
-        self.plot_yn = plot_yn
+        self.plot_yn = kwargs.pop('plot_yn', 'y')
         if self.plot_yn == 'y':
             self.plot()
             
@@ -538,21 +546,24 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         #if rotation angle is an int or float make an array the length of 
         #mt_lst for plotting purposes
         if type(rot_z) is float or type(rot_z) is int:
-            rot_z = np.array([rot_z]*len(self.mt_lst))
+            self._rot_z = np.array([rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
         #freq than repeat that rotation array to the len(mt_lst)
         elif type(rot_z) is np.ndarray:
             if rot_z.shape[0]!=len(self.mt_lst):
-                rot_z = np.repeat(rot_z, len(self.mt_lst))
+                self._rot_z = np.repeat(rot_z, len(self.mt_lst))
                 
         else:
             pass
             
         for ii,mt in enumerate(self.mt_lst):
             mt.rot_z = rot_z[ii]
-            
-    rot_z = property(fset=_set_rot_z, doc="rotation angle(s)")
+    def _get_rot_z(self):
+        return self._rot_z
+        
+    rot_z = property(fget=_get_rot_z, fset=_set_rot_z, 
+                     doc="""rotation angle(s)""")
         
 
     def plot(self): 
@@ -570,7 +581,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         plt.rcParams['figure.subplot.hspace']=.70        
         
         #make figure instanc
-        self.fig = plt.figure(self.fignum, self.figsize, dpi=self.dpi)
+        self.fig = plt.figure(self.fig_num, self.figsize, dpi=self.fig_dpi)
         
         #clear the figure if there is already one up
         plt.clf()
@@ -886,11 +897,11 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         else:
             titlefreq='{0:.5g} (Hz)'.format(self.plot_freq)
         
-        if not self.title:
+        if not self.plot_title:
             self.ax.set_title('Phase Tensor Map for '+titlefreq,
                               fontsize=self.font_size+2,fontweight='bold')
         else:
-            self.ax.set_title(self.title+titlefreq,
+            self.ax.set_title(self.plot_title+titlefreq,
                               fontsize=self.font_size+2,fontweight='bold')
                               
         #--> plot induction arrow scale bar -----------------------------------
@@ -1073,7 +1084,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         sf='_{0:.6g}'.format(self.plot_freq)
         
         if fig_dpi == None:
-            fig_dpi = self.dpi
+            fig_dpi = self.fig_dpi
             
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
