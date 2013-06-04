@@ -24,10 +24,14 @@ import mtpy.utils.exceptions as mtex
 
 
 #define text formating for plotting
-ckdict = {'phiminang':'$\Phi_{min}$ (deg)','phimin':'$\Phi_{min}$ (deg)',
-          'phimaxang':'$\Phi_{max}$ (deg)','phimax':'$\Phi_{max}$ (deg)',
-          'phidet':'Det{$\Phi$} (deg)','skew':'Skew (deg)',
-          'ellipticity':'Ellipticity','skew_seg':'Skew (deg)'}
+ckdict = {'phiminang' : '$\Phi_{min}$ (deg)',
+          'phimin' : '$\Phi_{min}$ (deg)',
+          'phimaxang' : '$\Phi_{max}$ (deg)',
+          'phimax' : '$\Phi_{max}$ (deg)',
+          'phidet' : 'Det{$\Phi$} (deg)',
+          'skew' : 'Skew (deg)',
+          'ellipticity' : 'Ellipticity',
+          'skew_seg' : 'Skew (deg)'}
           
 
             
@@ -45,12 +49,6 @@ labeldict = {6:'$10^{6}$',
              -5:'$10^{-5}$',
              -6:'$10^{-6}$',
              -7:'$10^{-7}$',}
-
-#define a dictionary for different zones of utm to put stations in correct 
-#location
-zonedict = dict([(a,ii) for ii,a in enumerate(['a','b','c','d','e','f','g','h',
-               'i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x',
-               'y','z'])])
 
 #==============================================================================
 # Arrows properties for induction vectors               
@@ -223,6 +221,9 @@ class MTEllipse(object):
         self._ellipse_dict = ellipse_dict
         
     def _read_ellipse_dict(self):
+        """
+        read in dictionary and set default values if no entry given
+        """
         
         #--> set the ellipse properties
         
@@ -242,31 +243,32 @@ class MTEllipse(object):
         try:
             self.ellipse_range = self._ellipse_dict['range']
         except KeyError:
-            if self.ellipse_colorby=='skew' or \
-                self.ellipse_colorby=='skew_seg':
+            if self.ellipse_colorby == 'skew' or \
+                self.ellipse_colorby == 'skew_seg':
                 
-                self.ellipse_range = (-9,9,3)
+                self.ellipse_range = (-9, 9, 3)
             
-            elif self.ellipse_colorby=='ellipticity':
-                self.ellipse_range = (0,1,.1)
+            elif self.ellipse_colorby == 'ellipticity':
+                self.ellipse_range = (0, 1, .1)
             
             else:
-                self.ellipse_range = (0,90,5)
+                self.ellipse_range = (0, 90, 5)
                 
         try:
             self.ellipse_range[2]
         except IndexError:
             self.ellipse_range = (self.ellipse_range[0], 
-                                  self.ellipse_range[1],1)
+                                  self.ellipse_range[1],
+                                  1)
             
         #set colormap to yellow to red
         try:
             self.ellipse_cmap = self._ellipse_dict['cmap']
         except KeyError:
-            if self.ellipse_colorby=='skew':
+            if self.ellipse_colorby == 'skew':
                 self.ellipse_cmap = 'mt_bl2wh2rd'
                 
-            elif self.ellipse_colorby=='skew_seg':
+            elif self.ellipse_colorby == 'skew_seg':
                 self.ellipse_cmap = 'mt_seg_bl2wh2rd'
                 
             else:
@@ -364,8 +366,8 @@ class ResPhase(object):
         
         
         #check to make sure they are the same size
-        if self.res!=None or self.phase!=None:
-            if self.res.shape!=self.phase.shape:
+        if self.res != None or self.phase != None:
+            if self.res.shape != self.phase.shape:
                 raise mtex.MTpyError_Z('res_array and phase_array '+\
                                                'are not the same shape')
                                                
@@ -379,7 +381,7 @@ class ResPhase(object):
                                                 'compute z.')
                 self._Z.freq = 1./period
         
-        if self._Z.freq==None:
+        if self._Z.freq == None:
             if period is not None:
                 self._Z.freq = 1./period
             else:
@@ -387,7 +389,7 @@ class ResPhase(object):
         else:
             self.period = 1./self._Z.freq
             
-        if rot_z!=0:
+        if rot_z != 0:
             self.rotate(rot_z)
             
         #compute the resistivity and phase components
@@ -409,8 +411,9 @@ class ResPhase(object):
             
         else:
             #check to see if res and res_err are the same shape
-            if self.res.shape!=self.res_err.shape:
-                raise mtex.MTpyError_shape('res_array and res_err_array '+\
+            if self.res.shape != self.res_err.shape:
+                mtex.MTpyError_inputarguments
+                raise mtex.MTpyError_inputarguments('res_array and res_err_array '+\
                                                'are not the same shape')
 
         #check to see if a phase_err_array was input, if not set to zeros
@@ -419,30 +422,30 @@ class ResPhase(object):
             
         else:
             #check to see if res and res_err are the same shape
-            if self.phase.shape!=self.phase_err.shape:
-                raise mtex.MTpyError_shape('phase_array and '+\
+            if self.phase.shape != self.phase_err.shape:
+                raise mtex.MTpyError_inputarguments('phase_array and '+\
                                       'phase_err_array are not the same shape')
         
         #--> set the attributes of the class to the components of each        
-        self.resxx = self.res[:,0,0]
-        self.resxy = self.res[:,0,1]
-        self.resyx = self.res[:,1,0]
-        self.resyy = self.res[:,1,1]
+        self.resxx = self.res[:, 0, 0]
+        self.resxy = self.res[:, 0, 1]
+        self.resyx = self.res[:, 1, 0]
+        self.resyy = self.res[:, 1, 1]
         
-        self.resxx_err = self.res_err[:,0,0]
-        self.resxy_err = self.res_err[:,0,1]
-        self.resyx_err = self.res_err[:,1,0]
-        self.resyy_err = self.res_err[:,1,1]
+        self.resxx_err = self.res_err[:, 0, 0]
+        self.resxy_err = self.res_err[:, 0, 1]
+        self.resyx_err = self.res_err[:, 1, 0]
+        self.resyy_err = self.res_err[:, 1, 1]
         
-        self.phasexx = self.phase[:,0,0]
-        self.phasexy = self.phase[:,0,1]
-        self.phaseyx = self.phase[:,1,0]
-        self.phaseyy = self.phase[:,1,1]
+        self.phasexx = self.phase[:, 0, 0]
+        self.phasexy = self.phase[:, 0, 1]
+        self.phaseyx = self.phase[:, 1, 0]
+        self.phaseyy = self.phase[:, 1, 1]
         
-        self.phasexx_err = self.phase_err[:,0,0]
-        self.phasexy_err = self.phase_err[:,0,1]
-        self.phaseyx_err = self.phase_err[:,1,0]
-        self.phaseyy_err = self.phase_err[:,1,1]
+        self.phasexx_err = self.phase_err[:, 0, 0]
+        self.phasexy_err = self.phase_err[:, 0, 1]
+        self.phaseyx_err = self.phase_err[:, 1, 0]
+        self.phaseyy_err = self.phase_err[:, 1, 1]
         
         self.phaseyx[np.where(self.phaseyx>120)] -= 180 
         self.phaseyx[np.where(self.phaseyx<-90)] += 180
@@ -530,7 +533,7 @@ class Tipper(object):
                                       
         self.freq = freq
         
-        if rot_t!=0:
+        if rot_t != 0:
             self.rotate(rot_t)
             
         else:
@@ -538,7 +541,13 @@ class Tipper(object):
         
     def compute_components(self):
         
-        self.mag_real, self.ang_real, self.mag_imag, self.ang_imag = \
+        if self._Tipper.tipper is None:
+            self.mag_imag = np.zeros_like(self.freq)
+            self.mag_real = np.zeros_like(self.freq)
+            self.ang_real = np.zeros_like(self.freq)
+            self.ang_imag = np.zeros_like(self.freq)
+        else:
+            self.mag_real, self.ang_real, self.mag_imag, self.ang_imag = \
                                                    self._Tipper.mag_direction 
 
         
@@ -724,7 +733,7 @@ class MTplot(object):
         #if a z_object is input make it the attribute _Z
         if z_object is not None:
             self._Z = z_object
-            if z_object.freq==None:
+            if z_object.freq == None:
                 raise mtex.MTpyError_Z('Need to set Z.freq to an'+\
                                            ' array that cooresponds to Z.z')
             self.period = 1./z_object.freq
@@ -732,7 +741,7 @@ class MTplot(object):
         #if z_array is input
         elif z is not None:
             #make sure period is input for plotting
-            if self.period==None:
+            if self.period == None:
                 raise mtex.MTpyError_Z('Need to input period array to '+\
                                             'compute Resistivity')
                                
@@ -749,7 +758,7 @@ class MTplot(object):
         
         #--> read in the edi file if its given
         if self._fn is not None:
-            if self._fn[-3:]=='edi':
+            if self._fn[-3:] == 'edi':
                 self._read_edi()
             else:
                 not_fn = self._fn[os.path.basename(self._fn).find['.']:]
@@ -758,26 +767,26 @@ class MTplot(object):
         
             
         #--> if resistivity and phase are given set the z_array, z_err_array
-        if res_array!=None and phase_array!=None:
+        if res_array != None and phase_array != None:
             if period is None and freq is None:
                 raise mtex.MTpyError_Z('Need to input period array for '+\
                                            'plotting')
             
-            if not res_array.shape==phase_array.shape:
-                raise mtex.MTpyError_shape('res_array and phase array '+\
+            if not res_array.shape == phase_array.shape:
+                raise mtex.MTpyError_inputarguments('res_array and phase array '+\
                                                'do not have the same shape')
                                                
-            if not res_array.shape[0]==period.shape[0]:
-                raise mtex.MTpyError_shape('res_array and period array '+\
+            if not res_array.shape[0] == period.shape[0]:
+                raise mtex.MTpyError_inputarguments('res_array and period array '+\
                                                'do not have the same shape')
             
             self._Z = mtz.Z()
             self._Z.freq = 1./period
-            self.set_res_phase(res_array,phase_array, 
-                               res_err_array=res_err_array,
-                               phase_err_array=phase_err_array)
+            self._set_res_phase(res_array,phase_array, 
+                                res_err_array=res_err_array,
+                                phase_err_array=phase_err_array)
                                
-            self.set_period(period)
+            self._set_period(period)
 
             
     def _read_edi(self):
@@ -793,16 +802,15 @@ class MTplot(object):
         self._Z = edi1.Z
         
         # tipper and error
-        if edi1.Tipper==None:
-            self._plot_tipper = 'n'
-            self.set_tipper(np.zeros((self._Z.z.shape[0], 1, 2),
+        if edi1.Tipper.tipper == None:
+            self._set_tipper(np.zeros((self._Z.z.shape[0], 1, 2),
                                      dtype='complex'))
-            self.set_tipper_err(np.zeros((self._Z.z.shape[0], 1, 2)))
+            self._set_tipper_err(np.zeros((self._Z.z.shape[0], 1, 2)))
             self._Tipper.rotation_angle=np.zeros(self._Z.z.shape[0])
+            self._Tipper.freq = edi1.freq
             
         else:
             self._Tipper = edi1.Tipper
-            self._plot_tipper = 'y'
             
         # station name
         try:
@@ -823,7 +831,7 @@ class MTplot(object):
         # put arrays into descending period order, so that the first index
         # is the shortest period.
         
-        if self.period[0]>self.period[-1]:
+        if self.period[0] > self.period[-1]:
             self.z = self.z[::-1]
             self.zerr = self.zerr[::-1]
             self.tipper = self.tipper[::-1]
@@ -878,7 +886,7 @@ class MTplot(object):
         
     def _set_fn(self, fn):
         self._fn = fn
-        if self._fn[-3:]=='edi':
+        if self._fn[-3:] == 'edi':
             self._read_edi()
         else:
             not_fn = self._fn[os.path.basename(self._fn).find['.']:]
@@ -1091,7 +1099,7 @@ def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None,
                         for res_obj in res_object_lst]
             try:
                 nt = len(tipper_object_lst)
-                if nt!=ns:
+                if nt != ns:
                     raise mtex.MTpyError_inputarguments('length '+\
                           ' of z_lst is not equal to tip_lst'+\
                           '; nz={0}, nt={1}'.format(ns, nt))
@@ -1107,7 +1115,7 @@ def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None,
                 mt_lst = [MTplot(z_object=z_obj) for z_obj in z_object_lst]
                 try:
                     nt = len(tipper_object_lst)
-                    if nt!=ns:
+                    if nt != ns:
                         raise mtex.MTpyError_inputarguments('length '+\
                               ' of z_lst is not equal to tip_lst'+\
                               '; nz={0}, nt={1}'.format(ns, nt))
@@ -1173,7 +1181,7 @@ def _make_value_str(value, value_lst=None, spacing='{0:^8}',
         value_lst += value_str
         return value_lst
         
-    if append==False and add==False:
+    if append == False and add == False:
         return value_str
         
     return value_lst

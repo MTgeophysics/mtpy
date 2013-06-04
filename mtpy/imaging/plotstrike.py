@@ -127,9 +127,10 @@ class PlotStrike(object):
 
         -bin_width         width of histogram bins in degrees
         
-        -dpi               dots-per-inch resolution of figure
         -fig               matplotlib.figure instance of plot
-        -fignum            number of figure being plotted
+        -fig_dpi           dots-per-inch resolution of figure
+        -fig_num           number of figure being plotted
+        -fig_size          size of figure in inches
         -fold              boolean to fold angles to range from [0,180] or 
                            [0,360]
       
@@ -158,14 +159,15 @@ class PlotStrike(object):
         -update_plot          updates the plot while still active
         -writeTextFiles       writes parameters of the phase tensor and tipper
                               to text files.
-                              
+                            
     """
     
-    def __init__(self, fn_lst=None, z_object_lst=None, tipper_object_lst=None,
-                 mt_object_lst=None, fignum=1, font_size=10, dpi=300, rot_z=0,
-                 period_tolerance=.05, text_dict={}, plot_range='data',
-                 plot_type=1, plot_tipper='n', pt_error_floor=None,
-                 plot_yn='y', fold=True, bin_width=5):
+    def __init__(self, **kwargs):
+        
+        fn_lst = kwargs.pop('fn_lst', None)
+        z_object_lst = kwargs.pop('z_object_lst', None)
+        tipper_object_lst = kwargs.pop('tipper_object_lst', None)
+        mt_object_lst = kwargs.pop('mt_object_lst', None)
         
         #------Set attributes of the class-----------------
             
@@ -175,33 +177,39 @@ class PlotStrike(object):
                                      tipper_object_lst=tipper_object_lst, 
                                      mt_object_lst=mt_object_lst)
         
-        #if rotation angle is an int or float make an array the length of 
-        #mt_lst for plotting purposes
-        if type(rot_z) is float or type(rot_z) is int:
-            self.rot_z = np.array([rot_z]*len(self.mt_lst))
+        self._rot_z = kwargs.pop('rot_z', 0)
+        if type(self._rot_z) is float or type(self._rot_z) is int:
+            self._rot_z = np.array([self._rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
         #freq than repeat that rotation array to the len(mt_lst)
-        elif type(rot_z) is np.ndarray:
-            if rot_z.shape[0]!=len(self.mt_lst):
-                self.rot_z = np.repeat(rot_z, len(self.mt_lst))
+        elif type(self._rot_z) is np.ndarray:
+            if self._rot_z.shape[0]  !=  len(self.mt_lst):
+                self._rot_z = np.repeat(self._rot_z, len(self.mt_lst))
                 
         else:
-            self.rot_z = rot_z
+            pass
                                  
 
-        self.fignum = fignum
-        self.font_size = font_size
-        self.dpi = dpi
-        self.plot_type = plot_type
-        self.plot_range = plot_range
-        self.period_tolerance = period_tolerance
-        self.plot_tipper = plot_tipper
-        self.pt_error_floor = pt_error_floor
-        self.fold = fold
-        self.bin_width = bin_width
-        self._rot_z = None
+        #--> set plot properties
+        self.fig_num = kwargs.pop('fig_num', 1)
+        self.fig_dpi = kwargs.pop('fig_dpi', 300)
+        self.fig_size = kwargs.pop('fig_size', [7, 5])
         
+        self.plot_num = kwargs.pop('plot_num', 1)
+        self.plot_type = kwargs.pop('plot_type', 2)
+        self.plot_title = kwargs.pop('plot_title', None)
+        self.plot_range = kwargs.pop('plot_range', 'data')
+        self.plot_tipper = kwargs.pop('plot_tipper', 'n')
+        
+        self.period_tolerance = kwargs.pop('period_tolerance', .05)
+        self.pt_error_floor = kwargs.pop('pt_error_floor', None)
+        self.fold = kwargs.pop('fold', True) 
+        self.bin_width = kwargs.pop('bin_width', 5)
+        
+        self.font_size = kwargs.pop('font_size', 7)
+        
+        text_dict = kwargs.pop('text_dict', {})
         try:
             self.text_pad = text_dict['pad']
         except KeyError:
@@ -226,10 +234,11 @@ class PlotStrike(object):
         self.title_dict[4] = '10$^{4}$--10$^{5}$s'
         self.title_dict[5] = '10$^{5}$--10$^{6}$s'
         
-        self.plot_yn = plot_yn
+        self.plot_yn = kwargs.pop('plot_yn', 'y')
         if self.plot_yn=='y':
             self.plot()
             
+    #---need to rotate data on setting rotz
     def _set_rot_z(self, rot_z):
         """
         need to rotate data when setting z
@@ -238,21 +247,24 @@ class PlotStrike(object):
         #if rotation angle is an int or float make an array the length of 
         #mt_lst for plotting purposes
         if type(rot_z) is float or type(rot_z) is int:
-            rot_z = np.array([rot_z]*len(self.mt_lst))
+            self._rot_z = np.array([rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
         #freq than repeat that rotation array to the len(mt_lst)
         elif type(rot_z) is np.ndarray:
             if rot_z.shape[0]!=len(self.mt_lst):
-                rot_z = np.repeat(rot_z, len(self.mt_lst))
+                self._rot_z = np.repeat(rot_z, len(self.mt_lst))
                 
         else:
             pass
             
         for ii,mt in enumerate(self.mt_lst):
             mt.rot_z = rot_z[ii]
-            
-    rot_z = property(fset=_set_rot_z, doc="rotation angle(s)")
+    def _get_rot_z(self):
+        return self._rot_z
+        
+    rot_z = property(fget=_get_rot_z, fset=_set_rot_z, 
+                     doc="""rotation angle(s)""")
                       
     def plot(self):
         
@@ -421,7 +433,7 @@ class PlotStrike(object):
             plt.rcParams['figure.subplot.hspace'] = .3
             plt.rcParams['figure.subplot.wspace'] = .3
             
-            self.fig = plt.figure(self.fignum, dpi=self.dpi)
+            self.fig = plt.figure(self.fig_num, dpi=self.fig_dpi)
             plt.clf()
             nb = len(brange)
             for jj,bb in enumerate(brange,1):
@@ -669,7 +681,9 @@ class PlotStrike(object):
             plt.rcParams['figure.subplot.hspace']=.3
             plt.rcParams['figure.subplot.wspace']=.2
             
-            self.fig = plt.figure(self.fignum,dpi=self.dpi)
+            self.fig = plt.figure(self.fig_num,
+                                  self.fig_size, 
+                                  dpi=self.fig_dpi)
             plt.clf()
             #make subplots for invariants and phase tensor azimuths
             if self.plot_tipper == 'n':
@@ -916,7 +930,7 @@ class PlotStrike(object):
         """
         
         if fig_dpi == None:
-            fig_dpi = self.dpi
+            fig_dpi = self.fig_dpi
             
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]

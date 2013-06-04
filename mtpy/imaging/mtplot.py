@@ -97,8 +97,7 @@ from mtpy.imaging.plotstrike import PlotStrike as plotstrike
 #==============================================================================
 
 
-def plot_mt_response(**kwargs):
-                         
+def plot_mt_response(**kwargs):                    
     """
     plots the MT response for a single station.  
     
@@ -114,8 +113,7 @@ def plot_multiple_mt_responses(**kwargs):
     
     return plotnresponses(**kwargs)
 
-def plot_pt(**kwargs):
-                
+def plot_pt(**kwargs):           
     """
     plots the phase tensor ellipses along with the strike, minimum phase,
     maximum phase, skew and ellipticity.    
@@ -125,6 +123,10 @@ def plot_pt(**kwargs):
     return plotpt(**kwargs)
 
 def plot_pt_pseudosection(**kwargs):
+    """
+    plots the phase tensor ellipses as a pseudo section.
+    
+    """
               
     return plotptps(**kwargs)
 
@@ -142,8 +144,7 @@ def plot_strike(**kwargs):
     plots the strike angle.    
     
     """
-                    
-              
+                           
     return plotstrike(**kwargs)
 
 def plot_resphase_pseudosection(**kwargs):
@@ -153,3 +154,14 @@ def plot_resphase_pseudosection(**kwargs):
     """
     
     return plotrpps(**kwargs)
+
+#reset the doc strings of these helper functions to that of the class
+#there is probably a more elegant way to do this, but for now, this
+#works
+plot_mt_response.__doc__ = plotresponse.__doc__
+plot_multiple_mt_responses.__doc__ = plotnresponses.__doc__
+plot_pt.__doc__ = plotpt.__doc__
+plot_pt_pseudosection.__doc__ = plotptps.__doc__
+plot_pt_map.__doc__ = plotptmaps.__doc__
+plot_strike.__doc__ = plotstrike.__doc__
+plot_resphase_pseudosection.__doc__ = plotrpps.__doc__

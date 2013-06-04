@@ -428,7 +428,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         self.fig_dpi = kwargs.pop('fig_dpi', 300)
         
         self.tscale = kwargs.pop('tscale', 'period')
-        self.figsize = kwargs.pop('fig_size', [8, 8])
+        self.fig_size = kwargs.pop('fig_size', [8, 8])
         self.xpad = kwargs.pop('xpad', .2)
         self.ypad = kwargs.pop('ypad', .2)
         self.mapscale = kwargs.pop('mapscale', 'latlon')
@@ -581,7 +581,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         plt.rcParams['figure.subplot.hspace']=.70        
         
         #make figure instanc
-        self.fig = plt.figure(self.fig_num, self.figsize, dpi=self.fig_dpi)
+        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         
         #clear the figure if there is already one up
         plt.clf()

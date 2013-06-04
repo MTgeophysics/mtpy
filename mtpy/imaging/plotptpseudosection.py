@@ -318,13 +318,14 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
     """
     
     
-    def __init__(self, fn_lst=None, res_object_lst=None,
-                 z_object_lst=None, tipper_object_lst=None, mt_object_lst=None,
-                 ellipse_dict={}, stretch=(50,25), stationid=(0,4), title=None,
-                 cb_dict={}, linedir='ns', fignum=1, rot_z=0, figsize=[6,6], 
-                 dpi=300, plot_tipper='n', arrow_dict={}, tscale='period', 
-                 font_size=7, plot_yn='y', xlim=None, ylim=None):
-
+    def __init__(self, **kwargs):
+        
+        fn_lst = kwargs.pop('fn_lst', None)
+        z_object_lst = kwargs.pop('z_object_lst', None)
+        tipper_object_lst = kwargs.pop('tipper_object_lst', None)
+        mt_object_lst = kwargs.pop('mt_object_lst', None)
+        res_object_lst = kwargs.pop('res_object_lst', None)
+        
         #----set attributes for the class-------------------------
         self.mt_lst = mtpl.get_mtlst(fn_lst=fn_lst, 
                                 res_object_lst=res_object_lst,
@@ -333,11 +334,12 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                                 mt_object_lst=mt_object_lst)
         
         #--> set the ellipse properties
-        self._ellipse_dict = ellipse_dict
+        self._ellipse_dict = kwargs.pop('ellipse_dict', {})
         self._read_ellipse_dict()
             
         #--> set colorbar properties
         #set orientation to horizontal
+        cb_dict = kwargs.pop('cb_dict', {})
         try:
             self.cb_orientation = cb_dict['orientation']
         except KeyError:
@@ -350,6 +352,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             self.cb_position = None
             
         #set the stretching in each direction
+        stretch = kwargs.pop('stretch', (50, 25))
         if type(stretch) == float or type(stretch) == int:
             self.xstretch = stretch
             self.ystretch = stretch
@@ -357,47 +360,46 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             self.xstretch = stretch[0]
             self.ystretch = stretch[1]
             
-        #--> set plot properties    
-        self.dpi = dpi
-        self.font_size = font_size
-        self.tscale = tscale
-        self.figsize = figsize
-        self.fignum = fignum
-        self.linedir = linedir
-        self.stationid = stationid
-        self.title = title
-        self.ystep = 4
-        self.xlimits = xlim
-        self.ylimits = ylim
+        #--> set plot properties
+        self.fig_num = kwargs.pop('fig_num', 1)
+        self.plot_num = kwargs.pop('plot_num', 1)
+        self.plot_title = kwargs.pop('plot_title', None)
+        self.fig_dpi = kwargs.pop('fig_dpi', 300)
+        self.tscale = kwargs.pop('tscale', 'period')
+        self.fig_size = kwargs.pop('fig_size', [6, 6])
+        self.linedir = kwargs.pop('linedir', 'ew')
+        self.font_size = kwargs.pop('font_size', 7)
+        self.stationid = kwargs.pop('stationid', [0,4])
+        self.ystep = kwargs.pop('ystep', 4)
+        self.xlimits = kwargs.pop('xlimits', None)
+        self.ylimits = kwargs.pop('ylimits', None)
         
-        #if rotation angle is an int or float make an array the length of 
-        #mt_lst for plotting purposes
-        if type(rot_z) is float or type(rot_z) is int:
-            self.rot_z = np.array([rot_z]*len(self.mt_lst))
+        self._rot_z = kwargs.pop('rot_z', 0)
+        if type(self._rot_z) is float or type(self._rot_z) is int:
+            self._rot_z = np.array([self._rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
-        #frequency than repeat that rotation array to the len(mt_lst)
-        elif type(rot_z) is np.ndarray:
-            if rot_z.shape[0] != len(self.mt_lst):
-                self.rot_z = np.repeat(rot_z, len(self.mt_lst))
+        #freq than repeat that rotation array to the len(mt_lst)
+        elif type(self._rot_z) is np.ndarray:
+            if self._rot_z.shape[0]  !=  len(self.mt_lst):
+                self._rot_z = np.repeat(self._rot_z, len(self.mt_lst))
                 
         else:
-            self.rot_z = rot_z
+            pass
         
-        #--> set induction arrow properties 
-        self.plot_tipper = plot_tipper
+        #--> set induction arrow properties -------------------------------
+        self.plot_tipper = kwargs.pop('plot_tipper', 'n')
         
-        #--> set arrow properties
-        self._arrow_dict = arrow_dict
+        self._arrow_dict = kwargs.pop('arrow_dict', {})
         self._read_arrow_dict()
         
             
         #--> plot if desired
-        self.plot_yn = plot_yn
+        self.plot_yn = kwargs.pop('plot_yn', 'y')
         if self.plot_yn == 'y':
             self.plot()
             
-    #---rotate data on setting rot_z
+     #---need to rotate data on setting rotz
     def _set_rot_z(self, rot_z):
         """
         need to rotate data when setting z
@@ -406,21 +408,24 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         #if rotation angle is an int or float make an array the length of 
         #mt_lst for plotting purposes
         if type(rot_z) is float or type(rot_z) is int:
-            rot_z = np.array([rot_z]*len(self.mt_lst))
+            self._rot_z = np.array([rot_z]*len(self.mt_lst))
         
         #if the rotation angle is an array for rotation of different 
-        #frequency than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_lst)
         elif type(rot_z) is np.ndarray:
-            if rot_z.shape[0] != len(self.mt_lst):
-                rot_z = np.repeat(rot_z, len(self.mt_lst))
+            if rot_z.shape[0]!=len(self.mt_lst):
+                self._rot_z = np.repeat(rot_z, len(self.mt_lst))
                 
         else:
             pass
             
-        for ii, mt in enumerate(self.mt_lst):
+        for ii,mt in enumerate(self.mt_lst):
             mt.rot_z = rot_z[ii]
-            
-    rot_z = property(fset=_set_rot_z, doc="rotation angle(s)")
+    def _get_rot_z(self):
+        return self._rot_z
+        
+    rot_z = property(fget=_get_rot_z, fset=_set_rot_z, 
+                     doc="""rotation angle(s)""")
         
     def plot(self):
         """
@@ -437,7 +442,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         plt.rcParams['figure.subplot.hspace'] = .70
         
         #create a plot instance
-        self.fig = plt.figure(self.fignum, self.figsize, dpi=self.dpi)
+        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         self.ax = self.fig.add_subplot(1, 1, 1, aspect='equal')
         
         #create empty lists to put things into
@@ -709,10 +714,10 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             self.ax.set_ylim(pmax+es*2, pmin-es*2)
             
         #--> set title of the plot
-        if self.title == None:
+        if self.plot_title == None:
             pass
         else:
-            self.ax.set_title(self.title, fontsize=self.font_size+2)
+            self.ax.set_title(self.plot_title, fontsize=self.font_size+2)
         
         #make a legend for the induction arrows
         if self.plot_tipper.find('y') == 0:
@@ -1210,7 +1215,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         """
 
         if fig_dpi == None:
-            fig_dpi = self.dpi
+            fig_dpi = self.fig_dpi
             
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
