@@ -163,17 +163,22 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         
         -mt            mtpy.imaging.mtpl.MTplot.mtpl.MTplot object (PlotPhaseTensor._mt)
         
-        
+        filename=None, z_object=None, mt_object=None, 
+                 pt_object=None, fignum=1, dpi=300, rot_z=0, plot_yn='y',
+                 ellipse_dict=None
     """
         
         
-    def __init__(self, filename=None, z_object=None, mt_object=None, 
-                 pt_object=None, fignum=1, dpi=300, rot_z=0, plot_yn='y',
-                 ellipse_dict=None):
+    def __init__(self, **kwargs):
+        
+        fn = kwargs.pop('fn', None)
+        z_object = kwargs.pop('z_object', None)
+        mt_object = kwargs.pop('mt_object', None)
+        pt_object = kwargs.pop('pt_object', None)
         
         #--> get mt object 
-        if filename is not None:
-            self._mt = mtpl.MTplot(filename=filename)
+        if fn is not None:
+            self._mt = mtpl.MTplot(fn=fn)
         elif z_object is not None:
             self._mt = mtpl.MTplot(z_object=z_object)
         elif mt_object is not None:
@@ -183,41 +188,42 @@ class PlotPhaseTensor(mtpl.MTEllipse):
             self._mt = mtpl.MTplot()
             self._mt.freq = self.pt.freq
             
-        self.font_size = 7
-        self.dpi = dpi
-        self.fignum = fignum
-        self.fig_size = [8, 8]
-        self.rot_z = rot_z
-        self.plot_yn = plot_yn
+        self.font_size = kwargs.pop('font_size', 7)
+        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.fig_num = kwargs.pop('fig_num', 1)
+        self.fig_size = kwargs.pop('fig_size', [8, 8])
+        self.rot_z = kwargs.pop('rot_z', 0)
+        self.plot_yn = kwargs.pop('plot_yn', 'y')
         
-        self.ptmin_marker = 'o'
-        self.ptmax_marker = 's'
-        self.strike_inv_marker = 's'
-        self.strike_pt_marker = 'o'
-        self.strike_tp_marker = 'v'
-        self.skew_marker = 's'
-        self.ellip_marker = 's'
+        self.ptmin_marker = kwargs.pop('ptmin_marker', 'o')
+        self.ptmax_marker = kwargs.pop('ptmax_marker', 's')
+        self.strike_inv_marker = kwargs.pop('strike_inv_marker', 's')
+        self.strike_pt_marker = kwargs.pop('strike_pt_marker', 'o')
+        self.strike_tp_marker = kwargs.pop('strike_tp_marker', 'v')
+        self.skew_marker = kwargs.pop('skew_marker', 's')
+        self.ellip_marker = kwargs.pop('ellip_marker', 's')
         
-        self.ptmin_color = 'r'
-        self.ptmax_color = 'b'
-        self.strike_inv_color = 'c'
-        self.strike_pt_color = 'purple'
-        self.strike_tp_color = (.5, .5, 0)
-        self.skew_color = 'g'
-        self.ellip_color = 'orange'
+        self.ptmin_color = kwargs.pop('ptmin_color', 'r')
+        self.ptmax_color = kwargs.pop('ptmax_color', 'b')
+        self.strike_inv_color = kwargs.pop('strike_inv_color', 'c')
+        self.strike_pt_color = kwargs.pop('strike_pt_color', 'purple')
+        self.strike_tp_color = kwargs.pop('strike_tp_color', (.5, .5, 0))
+        self.skew_color = kwargs.pop('skew_color', 'g')
+        self.ellip_color = kwargs.pop('ellip_color', 'orange')
 
-        self.marker_size = 2
-        self.marker_lw = .5
+        self.marker_size = kwargs.pop('marker_size', 2)
+        self.marker_lw = kwargs.pop('marker_lw', .5)
         
-        self.pt_limits = None
-        self.strike_limits = None
-        self.ellip_limits = None
-        self.skew_limits = None
+        self.pt_limits = kwargs.pop('pt_limits', None)
+        self.strike_limits = kwargs.pop('strike_limits', None)
+        self.ellip_limits = kwargs.pop('ellip_limits', None)
+        self.skew_limits = kwargs.pop('skew_limits', None)
 
-        self.skew_cutoff = 3
-        self.ellip_cutoff = 0.2
+        self.skew_cutoff = kwargs.pop('skew_cutoff', 3)
+        self.ellip_cutoff = kwargs.pop('ellip_cutoff', 0.2)
         
         #read ellipse dict
+        ellipse_dict = kwargs.pop('ellipse_dict', None)
         if ellipse_dict is None:
             self._ellipse_dict = {'size':.25}
         else:
@@ -225,25 +231,9 @@ class PlotPhaseTensor(mtpl.MTEllipse):
     
         self._read_ellipse_dict()
         
-        self.ellipse_spacing = 1
-
-        self.label_dict = {-6:'$10^{-6}$',
-                           -5:'$10^{-5}$',
-                           -4:'$10^{-4}$',
-                           -3:'$10^{-3}$',
-                           -2:'$10^{-2}$', 
-                           -1:'$10^{-1}$', 
-                            0:'$10^{0}$',
-                            1:'$10^{1}$',
-                            2:'$10^{2}$',
-                            3:'$10^{3}$',
-                            4:'$10^{4}$',
-                            5:'$10^{5}$',
-                            6:'$10^{6}$',
-                            7:'$10^{7}$',
-                            8:'$10^{8}$'} 
+        self.ellipse_spacing = kwargs.pop('ellipse_spacing', 1) 
                             
-        self.cb_position = (.045, .78, .015, .12)
+        self.cb_position = kwargs.pop('cb_position', (.045, .78, .015, .12))
                             
         if self.plot_yn == 'y':
             self.plot()
@@ -266,7 +256,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         font_dictt = {'size':self.font_size+2, 'weight':'bold'}
         
         #--> create plot instance
-        self.fig = plt.figure(self.fignum, self.fig_size, dpi=self.dpi)
+        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         plt.clf()
         
         #get phase tensor instance
@@ -358,7 +348,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         xticks = []
         for tk in self.ax1.get_xticks():
             try:
-                tklabels.append(self.label_dict[tk])
+                tklabels.append(mtpl.labeldict[tk])
                 xticks.append(tk)
             except KeyError:
                 pass
@@ -727,7 +717,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         """
 
         if fig_dpi == None:
-            fig_dpi = self.dpi
+            fig_dpi = self.fig_dpi
             
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
