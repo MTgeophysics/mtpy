@@ -97,198 +97,59 @@ from mtpy.imaging.plotstrike import PlotStrike as plotstrike
 #==============================================================================
 
 
-def plot_mt_response(filename=None, z_array=None, z_err_array=None, 
-                     period=None, fignum=1, plotnum=1, title=None, dpi=300, 
-                     rot_z=0, plot_yn='y', plot_tipper='n', plot_strike='n',
-                     plot_skew='n', tipper_array=None, tipper_err_array=None, 
-                     tipper_object=None, res_array=None, res_err_array=None,
-                     phase_array=None, phase_err_array=None, plot_pt='n',
-                     res_phase_object=None, z_object=None, mt_object=None):
+def plot_mt_response(**kwargs):
                          
     """
     plots the MT response for a single station.  
     
     """
-                         
-    kwargs = {'filename' : filename,
-              'z_array' : z_array,
-              'z_err_array' : z_err_array,
-              'period' : period,
-              'fignum' : fignum,
-              'plotnum' : plotnum,
-              'title' : title,
-              'dpi' : dpi,
-              'rot_z' : rot_z,
-              'plot_yn' : plot_yn,
-              'plot_tipper' : plot_tipper,
-              'plot_strike' : plot_strike,
-              'plot_skew' : plot_skew,
-              'plot_pt' : plot_pt,
-              'tipper_array' : tipper_array,
-              'tipper_err_array' : tipper_err_array,
-              'tipper_object' : tipper_object,
-              'res_array' : res_array,
-              'res_err_array' : res_err_array,
-              'phase_array' : phase_array,
-              'phase_err_array' : phase_err_array,
-              'res_phase_object' : res_phase_object,
-              'z_object' : z_object,
-              'mt_object' : mt_object}
     
     return plotresponse(**kwargs)
 
-def plot_multiple_mt_responses(fn_lst=None, res_object_lst=None,
-                               z_object_lst=None, tipper_object_lst=None,
-                               mt_object_lst=None, fignum=1, dpi=300, rot_z=0,
-                               plot_num=1, plot_style='1', plot_yn='y', 
-                               plot_tipper='n',plot_strike='n', plot_skew='n',
-                               title=None):
+def plot_multiple_mt_responses(**kwargs):
     """
     plot multiple MT responses    
     
     """
     
-    kwargs = {'fn_lst' : fn_lst,
-              'res_object_lst' : res_object_lst,
-              'z_object_lst' : z_object_lst,
-              'tipper_object_lst' : tipper_object_lst,
-              'mt_object_lst' : mt_object_lst,
-              'fignum' : fignum,
-              'dpi' : dpi,
-              'rot_z' : rot_z,
-              'plot_num' : plot_num,
-              'plot_style' : plot_style,
-              'plot_yn' : plot_yn,
-              'plot_tipper' : plot_tipper,
-              'plot_strike' : plot_strike,
-              'plot_skew' : plot_skew,
-              'title' : title}
-              
     return plotnresponses(**kwargs)
 
-def plot_pt(filename=None, z_object=None, mt_object=None, 
-            pt_object=None, fignum=1, dpi=300, rot_z=0, plot_yn='y',
-            ellipse_dict=None):
+def plot_pt(**kwargs):
                 
     """
     plots the phase tensor ellipses along with the strike, minimum phase,
     maximum phase, skew and ellipticity.    
     
     """
-                
-    kwargs = {'filename' : filename,
-              'z_object' : z_object,
-              'mt_object' : mt_object,
-              'pt_object' : pt_object,
-              'fignum' : fignum,
-              'dpi' : dpi,
-              'rot_z' : rot_z,
-              'plot_yn' : plot_yn,
-              'ellipse_dict' : ellipse_dict}
               
     return plotpt(**kwargs)
 
-def plot_pt_pseudosection(fn_lst=None, res_object_lst=None,
-                          z_object_lst=None, tipper_object_lst=None, 
-                          mt_object_lst=None, ellipse_dict={}, 
-                          stretch=(50,25), stationid=(0,4), title=None,
-                          cb_dict={}, linedir='ns', fignum=1, rot_z=0, 
-                          fig_size=[6,6], dpi=300, plot_tipper='n', 
-                          arrow_dict={}, tscale='period', 
-                          font_size=7, plot_yn='y', xlim=None, ylim=None):
-
-    kwargs = {'fn_lst' : fn_lst,
-              'res_object_lst' : res_object_lst,
-              'z_object_lst' : z_object_lst,
-              'tipper_object_lst' : tipper_object_lst,
-              'mt_object_lst' : mt_object_lst,
-              'ellipse_dict' : ellipse_dict,
-              'stretch' : stretch,
-              'stationid' : stationid,
-              'cb_dict' : cb_dict,
-              'linedir' : linedir,
-              'arrow_dict' : arrow_dict,
-              'rot_z' : rot_z,
-              'fig_size' : fig_size,
-              'tscale' : tscale,
-              'fignum' : fignum,
-              'plot_yn' : plot_yn,
-              'font_size' : font_size,
-              'dpi' : dpi,
-              'title' : title,
-              'plot_tipper' : plot_tipper,
-              'xlim' : xlim,
-              'ylim' : ylim}
+def plot_pt_pseudosection(**kwargs):
               
     return plotptps(**kwargs)
 
-def plot_pt_map(fn_lst=None, res_object_lst=None,
-                z_object_lst=None, tipper_object_lst=None, mt_object_lst=None,
-                plot_freq=1, ellipse_dict={}, cb_dict={},
-                arrow_dict={}, xpad=.2, ypad=.2, rot_z=0,
-                fig_size=[8,8], station_dict=None, tscale='period',
-                mapscale='latlon', fignum=1, image_dict=None, plot_yn='y',
-                arrow_legend_dict={}, font_size=7, dpi=300, title=None,
-                reference_point=(0,0), plot_tipper='n', ftol=.1):
+def plot_pt_map(**kwargs):
                     
     """
     plots a map of phase tensor ellipses for a given frequency.
     
     """
     
-    kwargs = {'fn_lst' : fn_lst,
-              'res_object_lst' : res_object_lst,
-              'tipper_object_lst' : tipper_object_lst,
-              'mt_object_lst' : mt_object_lst,
-              'plot_freq' : plot_freq,
-              'ellipse_dict' : ellipse_dict,
-              'cb_dict' : cb_dict,
-              'arrow_dict' : arrow_dict,
-              'xpad' : xpad,
-              'ypad' : ypad,
-              'rot_z' : rot_z,
-              'fig_size' : fig_size,
-              'station_dict' : station_dict,
-              'tscale' : tscale,
-              'mapscale' : mapscale,
-              'fignum' : fignum,
-              'image_dict' : image_dict,
-              'plot_yn' : plot_yn,
-              'arrow_legend_dict' : arrow_legend_dict,
-              'font_size' : font_size,
-              'dpi' : dpi,
-              'title' : title,
-              'reference_point' : reference_point,
-              'plot_tipper' : plot_tipper,
-              'ftol' : ftol}
-    
     return plotptmaps(**kwargs) 
 
-def plot_strike(fn_lst=None, z_object_lst=None, tipper_object_lst=None,
-                mt_object_lst=None, fignum=1, font_size=10, dpi=300, rot_z=0,
-                period_tolerance=.05, text_dict={}, plot_range='data',
-                plot_type=1, plot_tipper='n', pt_error_floor=None,
-                plot_yn='y', fold=True, bin_width=5):
+def plot_strike(**kwargs):
+    """
+    plots the strike angle.    
+    
+    """
                     
-    kwargs = {'fn_lst' : fn_lst,
-              'z_object_lst' : z_object_lst,
-              'tipper_object_lst' : tipper_object_lst,
-              'mt_object_lst' : mt_object_lst,
-              'fignum' : fignum,
-              'font_size' : font_size,
-              'dpi' : dpi,
-              'rot_z' : rot_z,
-              'period_tolerance' : period_tolerance,
-              'text_dict' : text_dict,
-              'plot_range' : plot_range,
-              'plot_type' : plot_type,
-              'plot_tipper' : plot_tipper,
-              'pt_error_floor' : pt_error_floor,
-              'plot_yn' : plot_yn,
-              'fold' : fold,
-              'bin_width' : bin_width}
               
     return plotstrike(**kwargs)
 
-def plot_resphase_pseudosection():
-    pass
+def plot_resphase_pseudosection(**kwargs):
+    """
+    plots resistivity and phase as a pseudo section    
+    
+    """
+    
+    return plotrpps(**kwargs)

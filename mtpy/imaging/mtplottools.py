@@ -571,7 +571,7 @@ class MTplot(object):
     Arguments:
     ----------
     
-        **filename** : string
+        **fn** : string
                        full path to file to be read in.  At the moment only
                        .edi type files are supported. *default* is None
         
@@ -666,7 +666,7 @@ class MTplot(object):
         
     :Example: ::
         
-        >>> mt1 = mtplot.MTplot(r'/home/mt/edifiles/mt01.edi')
+        >>> mt1 = mtplot.MTplot(fn=r'/home/mt/edifiles/mt01.edi')
         >>> mt1.station
         >>> 'mt01'
         >>> mt1.station = 'pb075'
@@ -696,7 +696,7 @@ class MTplot(object):
     :Example: ::
         
         >>> import mtpy.imaging.mtplot as mtplot
-        >>> mt1 = mtplot.MTplot(r'/home/mt/edifiles/mt01.edi')
+        >>> mt1 = mtplot.MTplot(fn=r'/home/mt/edifiles/mt01.edi')
         >>> # if you don't have an .edi file but res and phase
         >>> mt1 = mtplot.MTplot(res_array=res, phase_array=phase, 
         >>> ...                 period=period, station='mt01')
@@ -705,7 +705,7 @@ class MTplot(object):
         
     """
     
-    def __init__(self, filename=None, z=None, z_err=None, res_array=None,
+    def __init__(self, fn=None, z=None, z_err=None, res_array=None,
                  phase_array=None, res_err_array=None, phase_err_array=None,
                  tipper=None, tipper_err=None, station=None, period=None, 
                  lat=None, lon=None, elev=None, rot_z=0, z_object=None, 
@@ -718,7 +718,7 @@ class MTplot(object):
         self._lat = lat
         self._lon = lon
         self._elev = elev
-        self._fn = filename
+        self._fn = fn
         self._rot_z = rot_z
         
         #if a z_object is input make it the attribute _Z
@@ -1058,7 +1058,7 @@ def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None,
 
     Arguments:     
     -----------
-        **filenamelst** : list of strings
+        **fn_lst** : list of strings
                           full paths to .edi files to plot
                           
         **res_object_lst** : list of mtplot.ResPhase objects
@@ -1081,7 +1081,7 @@ def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None,
     #first need to find something to loop over
     try:
         ns = len(fn_lst)
-        mt_lst = [MTplot(filename=fn) for fn in fn_lst]
+        mt_lst = [MTplot(fn=fn) for fn in fn_lst]
         print 'Reading {0} stations'.format(ns)
         return mt_lst
     except TypeError:

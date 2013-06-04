@@ -345,7 +345,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         
         #--> initialize an MTplot object
         if mt_object is None:
-            self._mt = mtpl.MTplot(filename=fn, 
+            self._mt = mtpl.MTplot(fn=fn, 
                                    z=z_array, 
                                    z_err=z_err_array,
                                    z_object=z_object,
@@ -602,7 +602,8 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         #--> plot phase tensors
         try:
             #can't share axis because not on the same scale
-            self.axpt = self.fig.add_subplot(gs[pdict['pt'], :])
+            self.axpt = self.fig.add_subplot(gs[pdict['pt'], :], 
+                                             aspect='equal')
             self.axpt.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
         except KeyError:
             pass
@@ -1015,7 +1016,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             self.axsk.set_xscale('log')
            
             #set th xaxis tick labels to invisible
-            if pdict['strike'] != nrows-1:
+            if pdict['skew'] != nrows-1:
                 plt.setp(self.axst.xaxis.get_ticklabels(), visible=False)
         
         #----plot phase tensor ellipse---------------------------------------    
@@ -1264,7 +1265,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                            color=(.25, .25, .25),
                            lw=.25) 
                            
-            if self.plot_tipper.find('y')==0 or self.plot_skew=='y':
+            if len(pdict.keys())>2:
                 plt.setp(self.axp2.xaxis.get_ticklabels(), visible=False)
                 plt.setp(self.axp2.xaxis.get_label(), visible=False)
         
