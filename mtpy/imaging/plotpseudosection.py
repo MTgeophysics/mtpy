@@ -1008,9 +1008,69 @@ class PlotResPhasePseudoSection(object):
         plt.close(self.fig)
         self.plot()
         
+        
+    def writeTextFiles(self, save_path=None, ptol=0.10):
+        """
+        This will write text files for all the phase tensor parameters
+        """
+        
+        if save_path == None:
+            try:
+                svpath = os.path.dirname(self.mt_lst[0].fn)
+            except TypeError:
+                raise IOError('Need to input save_path, could not find a path')
+        else:
+            svpath = save_path
+        
+        if self.resxy.mean() == 0 :
+            self.get_rp_arrays()
+            
+        header_lst = ['{0:^10}'.format('period(s)')]+\
+                     ['{0:^8}'.format(ss) for ss in self.station_lst]+['\n']
+        
+        fn_dict = {'resxx':self.resxx, 
+                   'resxy':self.resxy, 
+                   'resyx':self.resyx,
+                   'resyy':self.resyy,
+                   'phasexx':self.phasexx,
+                   'phasexy':self.phasexy,
+                   'phaseyx':self.phaseyx,
+                   'phaseyy':self.phaseyy}
+        
+        #write the arrays into lines properly formatted
+        t1_kwargs = {'spacing':'{0:^10} ', 'value_format':'{0:.2e}', 
+                     'append':False, 'add':False}
+                     
+        tr_kwargs = {'spacing':'{0:^8}', 'value_format':'{0: .2f}', 
+                     'append':False, 'add':False}
+                     
+        tp_kwargs = {'spacing':'{0:^8}', 'value_format':'{0: .2f}', 
+                     'append':False, 'add':False}
+                     
+                     
+        for key in fn_dict.keys():
+            fid = file(os.path.join(svpath, 'PseudoSection.'+key), 'w')
+            fid.write(''.join(header_lst))
+            for ii, per in enumerate(self.plot_period):
+                if key[0] == 'r':
+                    line = [mtpl._make_value_str(per, **t1_kwargs)]+\
+                           [mtpl._make_value_str(rr, **tr_kwargs) 
+                            for rr in fn_dict[key][ii]]+['\n']
+                elif key[0] == 'p':
+                    line = [mtpl._make_value_str(per, **t1_kwargs)]+\
+                           [mtpl._make_value_str(rr, **tp_kwargs) 
+                            for rr in fn_dict[key][ii]]+['\n']
+                fid.write(''.join(line))
+            fid.close()
+        
+        print 'Wrote files to: '+\
+                        os.path.join(svpath, 'PseudoSection.component')
+                 
     def __str__(self):
         """
         rewrite the string builtin to give a useful message
         """
         
         return "Plots Resistivity and phase as a pseudo section."
+        
+    

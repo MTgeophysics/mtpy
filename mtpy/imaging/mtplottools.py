@@ -19,6 +19,7 @@ import mtpy.core.z as mtz
 import mtpy.analysis.pt as mtpt
 import mtpy.analysis.zinvariants as mtinv
 import mtpy.utils.exceptions as mtex
+import mtpy.utils.conversions as utm2ll
 
 #==============================================================================
 
@@ -1055,6 +1056,228 @@ class MTplot(object):
         
         return tp
         
+        
+#==============================================================================
+# define a class object that contains list of mt_objects
+#==============================================================================
+class MTplot_lst(object):
+    """
+    manipulates a list of MTplot objects
+    
+    """
+
+    def _init__(self, fn_lst=None, res_object_lst=None, z_object_lst=None, 
+               tipper_object_lst=None, mt_object_lst=None):
+                   
+        self.mt_lst = get_mtlst(fn_lst=fn_lst, 
+                                res_object_lst=res_object_lst, 
+                                z_object_lst=z_object_lst, 
+                                tipper_object_lst=tipper_object_lst, 
+                                mt_object_lst=mt_object_lst)
+                                    
+    def sort_by_offsets_profile(self, line_direction='ew'):
+        """
+        get list of offsets to sort the mt list
+        
+        """
+            
+        dtype = [('station', 'S10'), ('offset', float), ('spot', int)]
+        slst = []
+        #get offsets
+        for ii, mt in enumerate(self.mt_lst):
+            #get offsets between stations
+            if ii == 0:
+                east0 = mt.lon
+                north0 = mt.lat
+                offset = 0.0
+            else:
+                east = mt.lon
+                north = mt.lat
+                #if line is predominantly e-w
+                if line_direction=='ew': 
+                    if east0 < east:
+                        offset = np.sqrt((east0-east)**2+(north0-north)**2)
+                    elif east0 > east:
+                        offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
+                    else:
+                        offset = 0
+                #if line is predominantly n-s
+                elif line_direction == 'ns':
+                    if north0 < north:
+                        offset = np.sqrt((east0-east)**2+(north0-north)**2)
+                    elif north0 > north:
+                        offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
+                    else:
+                        offset=0
+            #append values to list for sorting            
+            slst.append((mt.station, offset, ii))
+        
+        #create a structured array according to the data type and values
+        v_array = np.array(slst, dtype=dtype)
+        
+        #sort the structured array by offsets
+        sorted_array = np.sort(v_array, order=['offset'])
+        
+        #create an offset list as an attribute
+        self.offset_lst = np.array([ss[1] for ss in sorted_array])
+        
+        #create a station lst as an attribute
+        self.station_lst = np.array([ss[0][self.stationid[0]:self.stationid[1]]
+                                     for ss in sorted_array])
+        
+        #create an index list of the sorted index values 
+        index_lst = [ss[2] for ss in sorted_array]
+        
+        #create a new mt_lst according to the offsets from the new index_lst
+        new_mt_lst = [self.mt_lst[ii] for ii in index_lst]
+        
+        #set the mt_lst attribute as the new sorted mt_lst
+        self.mt_lst_sort = new_mt_lst 
+        
+    def sort_by_offset_map(self, map_scale='latlon', ref_point=(0,0)):
+        """
+        
+        """
+        
+        #make some empty arrays
+        latlst = np.zeros(len(self.mt_lst))
+        lonlst = np.zeros(len(self.mt_lst))
+        self.plot_xarr = np.zeros(len(self.mt_lst))
+        self.plot_yarr = np.zeros(len(self.mt_lst))
+        
+        #need to sort by station
+        for ii,mt in enumerate(self.mt_lst):
+                
+            #if map scale is lat lon set parameters                
+            if self.mapscale == 'latlon':
+                latlst[ii] = mt.lat
+                lonlst[ii] = mt.lon
+                plotx = mt.lon-ref_point[0]
+                ploty = mt.lat-ref_point[1]
+            
+            #if map scale is in meters easting and northing
+            elif self.mapscale == 'eastnorth':
+                zone, east, north = utm2ll.LLtoUTM(23, mt.lat, mt.lon)
+                
+                #set the first point read in as a refernce other points                    
+                if ii == 0:
+                    zone1 = zone
+                    plotx = east-ref_point[0]
+                    ploty = north-ref_point[1]
+                    
+                #read in all the other point
+                else:
+                    #check to make sure the zone is the same this needs
+                    #to be more rigorously done
+                    if zone1!=zone:
+                        print 'Zone change at station '+mt.station
+                        if zone1[0:2] == zone[0:2]:
+                            pass
+                        elif int(zone1[0:2])<int(zone[0:2]):
+                            east += 500000
+                        else:
+                            east -= -500000
+                        latlst[ii] = north-ref_point[1]
+                        lonlst[ii] = east-ref_point[0]
+                        plotx = east-ref_point[0]
+                        ploty = north-ref_point[1]
+                    else:
+                        latlst[ii] = north-ref_point[1]
+                        lonlst[ii] = east-ref_point[0]
+                        plotx = east-ref_point[0]
+                        ploty = north-ref_point[1]
+            else:
+                raise NameError('mapscale not recognized')
+            
+            #put the location of each ellipse into an array in x and y
+            self.plot_xarr[ii] = plotx
+            self.plot_yarr[ii] = ploty
+        
+    def get_rp_arrays(self, sort_by='line', line_direction='ew', 
+                      map_scale='latlon'):
+        """
+        get resistivity and phase values in the correct order according to 
+        offsets and periods.
+
+        Attributes:
+        -----------
+            **sort_by**: [ 'line' | 'map' ]
+                         * 'line' --> sort the station distances into a line 
+                                      according to line_direction
+                         * 'map' --> sort the station distances into map 
+                                     coordinates
+            
+            **line_direction**: [ 'ew' | 'ns' ]
+            
+            **map_scale**: [ 'latlon' | 'eastnorth' ]
+        """        
+        
+        try:
+            self.mt_lst_sort
+        except AttributeError:
+            self.sort_by_offsets_profile()
+        
+        #create empty arrays to put data into need to reset to zero in case 
+        #something has changed
+        ns = len(self.mt_lst)
+        nt = len(self.plot_period)
+        
+        self.resxx = np.zeros((nt, ns))
+        self.resxy = np.zeros((nt, ns))
+        self.resyx = np.zeros((nt, ns))
+        self.resyy = np.zeros((nt, ns))
+        
+        self.phasexx = np.zeros((nt, ns))
+        self.phasexy = np.zeros((nt, ns))
+        self.phaseyx = np.zeros((nt, ns))
+        self.phaseyy = np.zeros((nt, ns))
+        
+        #make a dictionary of the periods to plot for a reference
+        period_dict = dict([(key, vv) 
+                             for vv, key in enumerate(self.plot_period)])
+                             
+        for ii, mt in enumerate(self.mt_lst_sort):
+            #get resisitivity and phase in a dictionary and append to a list
+            rp = mt.get_ResPhase()
+            
+            for rr, rper in enumerate(self.plot_period):
+                jj = None
+                for kk, iper in enumerate(mt.period):
+                    if iper == rper:
+                        jj = period_dict[rper]
+                        self.resxx[jj, ii] = np.log10(rp.resxx[kk])
+                        self.resxy[jj, ii] = np.log10(rp.resxy[kk])
+                        self.resyx[jj, ii] = np.log10(rp.resyx[kk])
+                        self.resyy[jj, ii] = np.log10(rp.resyy[kk])
+                        
+                        self.phasexx[jj, ii] = rp.phasexx[kk]
+                        self.phasexy[jj, ii] = rp.phasexy[kk]
+                        self.phaseyx[jj, ii] = rp.phaseyx[kk]
+                        self.phaseyy[jj, ii] = rp.phaseyy[kk]
+                        
+                        break
+                        
+                    elif rper*(1-self.ftol) <= iper and \
+                         iper <= rper*(1+self.ftol):
+                             jj = period_dict[rper]
+                             self.resxx[jj, ii] = np.log10(rp.resxx[kk])
+                             self.resxy[jj, ii] = np.log10(rp.resxy[kk])
+                             self.resyx[jj, ii] = np.log10(rp.resyx[kk])
+                             self.resyy[jj, ii] = np.log10(rp.resyy[kk])
+                            
+                             self.phasexx[jj, ii] = rp.phasexx[kk]
+                             self.phasexy[jj, ii] = rp.phasexy[kk]
+                             self.phaseyx[jj, ii] = rp.phaseyx[kk]
+                             self.phaseyy[jj, ii] = rp.phaseyy[kk]
+                             
+                             break
+                    else:
+                        pass
+                        
+                if jj is None:
+                    print 'did not find period {0:.6g} (s) for {1}'.format(
+                               rper, self.station_lst[ii])
+
 #==============================================================================
 # get list of mt objects     
 #==============================================================================
@@ -1133,6 +1356,68 @@ def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None,
                     return mt_lst
                 except TypeError:
                     raise IOError('Need to input an iteratable list')
+
+#==============================================================================
+# sort an mt                    
+#==============================================================================
+def sort_by_offsets(self):
+        """
+        get list of offsets to sort the mt list
+        
+        """
+        
+        dtype = [('station', 'S10'), ('offset', float), ('spot', int)]
+        slst = []
+        #get offsets
+        for ii, mt in enumerate(self.mt_lst):
+            #get offsets between stations
+            if ii == 0:
+                east0 = mt.lon
+                north0 = mt.lat
+                offset = 0.0
+            else:
+                east = mt.lon
+                north = mt.lat
+                #if line is predominantly e-w
+                if self.linedir=='ew': 
+                    if east0 < east:
+                        offset = np.sqrt((east0-east)**2+(north0-north)**2)
+                    elif east0 > east:
+                        offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
+                    else:
+                        offset = 0
+                #if line is predominantly n-s
+                elif self.linedir == 'ns':
+                    if north0 < north:
+                        offset = np.sqrt((east0-east)**2+(north0-north)**2)
+                    elif north0 > north:
+                        offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
+                    else:
+                        offset=0
+            #append values to list for sorting            
+            slst.append((mt.station, offset, ii))
+        
+        #create a structured array according to the data type and values
+        v_array = np.array(slst, dtype=dtype)
+        
+        #sort the structured array by offsets
+        sorted_array = np.sort(v_array, order=['offset'])
+        
+        #create an offset list as an attribute
+        self.offset_lst = np.array([ss[1] for ss in sorted_array])
+        
+        #create a station lst as an attribute
+        self.station_lst = np.array([ss[0][self.stationid[0]:self.stationid[1]]
+                                     for ss in sorted_array])
+        
+        #create an index list of the sorted index values 
+        index_lst = [ss[2] for ss in sorted_array]
+        
+        #create a new mt_lst according to the offsets from the new index_lst
+        new_mt_lst = [self.mt_lst[ii] for ii in index_lst]
+        
+        #set the mt_lst attribute as the new sorted mt_lst
+        self.mt_lst_sort = new_mt_lst
                     
 #==============================================================================
 # function for writing values to file
