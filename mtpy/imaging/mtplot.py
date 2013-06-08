@@ -86,13 +86,14 @@ section and strike angle.
 """
 #==============================================================================
 
-from mtpy.imaging.plotnreponses import PlotMultipleResponses as plotnresponses
-from mtpy.imaging.plotpseudosection import PlotResPhasePseudoSection as plotrpps
-from mtpy.imaging.plotpt import PlotPhaseTensor as plotpt
-from mtpy.imaging.plotptpseudosection import PlotPhaseTensorPseudoSection as plotptps
-from mtpy.imaging.plotptmaps import PlotPhaseTensorMaps as plotptmaps
-from mtpy.imaging.plotresponse import PlotResponse as plotresponse
-from mtpy.imaging.plotstrike import PlotStrike as plotstrike
+import mtpy.imaging.plotnreponses as plotnresponses
+import mtpy.imaging.plotpseudosection as plotrpps
+import mtpy.imaging.plotpt as plotpt
+import mtpy.imaging.plotptpseudosection as plotptps
+import mtpy.imaging.plotptmaps as plotptmaps
+import mtpy.imaging.plotresponse as plotresponse
+import mtpy.imaging.plotstrike as plotstrike
+import mtpy.imaging.plotstations as plotstations
 
 #==============================================================================
 
@@ -103,7 +104,7 @@ def plot_mt_response(**kwargs):
     
     """
     
-    return plotresponse(**kwargs)
+    return plotresponse.PlotResponse(**kwargs)
 
 def plot_multiple_mt_responses(**kwargs):
     """
@@ -111,7 +112,7 @@ def plot_multiple_mt_responses(**kwargs):
     
     """
     
-    return plotnresponses(**kwargs)
+    return plotnresponses.PlotMultipleResponses(**kwargs)
 
 def plot_pt(**kwargs):           
     """
@@ -120,7 +121,7 @@ def plot_pt(**kwargs):
     
     """
               
-    return plotpt(**kwargs)
+    return plotpt.PlotPhaseTensor(**kwargs)
 
 def plot_pt_pseudosection(**kwargs):
     """
@@ -128,7 +129,7 @@ def plot_pt_pseudosection(**kwargs):
     
     """
               
-    return plotptps(**kwargs)
+    return plotptps.PlotPhaseTensorPseudoSection(**kwargs)
 
 def plot_pt_map(**kwargs):
                     
@@ -137,7 +138,7 @@ def plot_pt_map(**kwargs):
     
     """
     
-    return plotptmaps(**kwargs) 
+    return plotptmaps.PlotPhaseTensorMaps(**kwargs) 
 
 def plot_strike(**kwargs):
     """
@@ -145,7 +146,7 @@ def plot_strike(**kwargs):
     
     """
                            
-    return plotstrike(**kwargs)
+    return plotstrike.PlotStrike(**kwargs)
 
 def plot_resphase_pseudosection(**kwargs):
     """
@@ -153,15 +154,26 @@ def plot_resphase_pseudosection(**kwargs):
     
     """
     
-    return plotrpps(**kwargs)
+    return plotrpps.PlotResPhasePseudoSection(**kwargs)
+    
+def plot_station_locations(**kwargs):
+    """
+    Plot station locations in map view.
+    
+    """
+    
+    return plotstations.PlotStations(**kwargs)
 
 #reset the doc strings of these helper functions to that of the class
 #there is probably a more elegant way to do this, but for now, this
 #works
-plot_mt_response.__doc__ = plotresponse.__doc__
-plot_multiple_mt_responses.__doc__ = plotnresponses.__doc__
-plot_pt.__doc__ = plotpt.__doc__
-plot_pt_pseudosection.__doc__ = plotptps.__doc__
-plot_pt_map.__doc__ = plotptmaps.__doc__
-plot_strike.__doc__ = plotstrike.__doc__
-plot_resphase_pseudosection.__doc__ = plotrpps.__doc__
+plot_mt_response.__doc__ = plotresponse.PlotResponse.__doc__
+plot_multiple_mt_responses.__doc__ = \
+                                plotnresponses.PlotMultipleResponses.__doc__
+plot_pt.__doc__ = plotpt.PlotPhaseTensor.__doc__
+plot_pt_pseudosection.__doc__ = plotptps.PlotPhaseTensorPseudoSection.__doc__
+plot_pt_map.__doc__ = plotptmaps.PlotPhaseTensorMaps.__doc__
+plot_strike.__doc__ = plotstrike.PlotStrike.__doc__
+plot_resphase_pseudosection.__doc__ = \
+                                    plotrpps.PlotResPhasePseudoSection.__doc__
+plot_station_locations.__doc__ = plotstations.PlotStations.__doc__

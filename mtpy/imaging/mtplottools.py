@@ -20,6 +20,7 @@ import mtpy.analysis.pt as mtpt
 import mtpy.analysis.zinvariants as mtinv
 import mtpy.utils.exceptions as mtex
 import mtpy.utils.conversions as utm2ll
+import matplotlib.mlab as mlab
 
 #==============================================================================
 
@@ -1066,139 +1067,76 @@ class MTplot_lst(object):
     
     """
 
-    def _init__(self, fn_lst=None, res_object_lst=None, z_object_lst=None, 
+    def __init__(self, fn_lst=None, res_object_lst=None, z_object_lst=None, 
                tipper_object_lst=None, mt_object_lst=None):
-                   
-        self.mt_lst = get_mtlst(fn_lst=fn_lst, 
-                                res_object_lst=res_object_lst, 
-                                z_object_lst=z_object_lst, 
-                                tipper_object_lst=tipper_object_lst, 
-                                mt_object_lst=mt_object_lst)
+        
+        self._fn_lst = fn_lst
+        self._res_object_lst = res_object_lst
+        self._z_object_lst = z_object_lst
+        self._tipper_object_lst = tipper_object_lst
+        self.mt_lst = mt_object_lst
+        
+        if self.mt_lst is None:
+            self.mt_lst = get_mtlst(fn_lst=self._fn_lst, 
+                                    res_object_lst=self._res_object_lst, 
+                                    z_object_lst=self._z_object_lst, 
+                                    tipper_object_lst=self._tipper_object_lst)
+                                    
                                     
     def sort_by_offsets_profile(self, line_direction='ew'):
         """
         get list of offsets to sort the mt list
         
         """
+        
+        mm = sort_by_offsets(self.mt_lst, line_direction=line_direction)
+        
+        self.mt_lst_sort = mm[0]
+        self.station_lst = mm[1]
+        self.offset_lst = mm[2]
+                                     
+        
+    def get_station_locations(self, map_scale='latlon', ref_point=(0,0)):
+        """
+        creates a dictionary where the keys are the stations and the values
+        are the index in the plot_mesh grid for the station location.
+        
+        *Note*: the handling of zone changes in UTM coordinates is rough and 
+        needs to be changed.  If there are zone changes in your survey, stick
+        to latlon.
+        
+        Arguments:
+        ----------
+            **map_scale**: [ 'latlon' | 'eastnorth' | 'eastnorthkm' ]
             
-        dtype = [('station', 'S10'), ('offset', float), ('spot', int)]
-        slst = []
-        #get offsets
-        for ii, mt in enumerate(self.mt_lst):
-            #get offsets between stations
-            if ii == 0:
-                east0 = mt.lon
-                north0 = mt.lat
-                offset = 0.0
-            else:
-                east = mt.lon
-                north = mt.lat
-                #if line is predominantly e-w
-                if line_direction=='ew': 
-                    if east0 < east:
-                        offset = np.sqrt((east0-east)**2+(north0-north)**2)
-                    elif east0 > east:
-                        offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
-                    else:
-                        offset = 0
-                #if line is predominantly n-s
-                elif line_direction == 'ns':
-                    if north0 < north:
-                        offset = np.sqrt((east0-east)**2+(north0-north)**2)
-                    elif north0 > north:
-                        offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
-                    else:
-                        offset=0
-            #append values to list for sorting            
-            slst.append((mt.station, offset, ii))
-        
-        #create a structured array according to the data type and values
-        v_array = np.array(slst, dtype=dtype)
-        
-        #sort the structured array by offsets
-        sorted_array = np.sort(v_array, order=['offset'])
-        
-        #create an offset list as an attribute
-        self.offset_lst = np.array([ss[1] for ss in sorted_array])
-        
-        #create a station lst as an attribute
-        self.station_lst = np.array([ss[0][self.stationid[0]:self.stationid[1]]
-                                     for ss in sorted_array])
-        
-        #create an index list of the sorted index values 
-        index_lst = [ss[2] for ss in sorted_array]
-        
-        #create a new mt_lst according to the offsets from the new index_lst
-        new_mt_lst = [self.mt_lst[ii] for ii in index_lst]
-        
-        #set the mt_lst attribute as the new sorted mt_lst
-        self.mt_lst_sort = new_mt_lst 
-        
-    def sort_by_offset_map(self, map_scale='latlon', ref_point=(0,0)):
+            **ref_point**: (map_scale_x, map_scale_y)
+                           reference point to center the map on, needs to be in
+                           map_scale coordinates.
+                           
+        Returns:
+        --------
+            **map_dict**: dictionary
+                          where keys are station names, and the values are the
+                          index values (x, y) for the plot_meshgrid
+                          
+            **plot_meshgrid**: np.ndarray(num_stations, num_stations)
+                               a meshgrid (x, y) for plotting map view in 
+                               map_scale coordinates.  
         """
         
-        """
+        mm = get_station_locations(self.mt_lst,map_scale=map_scale,
+                                   ref_point=ref_point)
         
-        #make some empty arrays
-        latlst = np.zeros(len(self.mt_lst))
-        lonlst = np.zeros(len(self.mt_lst))
-        self.plot_xarr = np.zeros(len(self.mt_lst))
-        self.plot_yarr = np.zeros(len(self.mt_lst))
+        self.map_dict = mm[0]
+        self.map_xarr = mm[1]
+        self.map_yarr = mm[2]
         
-        #need to sort by station
-        for ii,mt in enumerate(self.mt_lst):
-                
-            #if map scale is lat lon set parameters                
-            if self.mapscale == 'latlon':
-                latlst[ii] = mt.lat
-                lonlst[ii] = mt.lon
-                plotx = mt.lon-ref_point[0]
-                ploty = mt.lat-ref_point[1]
-            
-            #if map scale is in meters easting and northing
-            elif self.mapscale == 'eastnorth':
-                zone, east, north = utm2ll.LLtoUTM(23, mt.lat, mt.lon)
-                
-                #set the first point read in as a refernce other points                    
-                if ii == 0:
-                    zone1 = zone
-                    plotx = east-ref_point[0]
-                    ploty = north-ref_point[1]
-                    
-                #read in all the other point
-                else:
-                    #check to make sure the zone is the same this needs
-                    #to be more rigorously done
-                    if zone1!=zone:
-                        print 'Zone change at station '+mt.station
-                        if zone1[0:2] == zone[0:2]:
-                            pass
-                        elif int(zone1[0:2])<int(zone[0:2]):
-                            east += 500000
-                        else:
-                            east -= -500000
-                        latlst[ii] = north-ref_point[1]
-                        lonlst[ii] = east-ref_point[0]
-                        plotx = east-ref_point[0]
-                        ploty = north-ref_point[1]
-                    else:
-                        latlst[ii] = north-ref_point[1]
-                        lonlst[ii] = east-ref_point[0]
-                        plotx = east-ref_point[0]
-                        ploty = north-ref_point[1]
-            else:
-                raise NameError('mapscale not recognized')
-            
-            #put the location of each ellipse into an array in x and y
-            self.plot_xarr[ii] = plotx
-            self.plot_yarr[ii] = ploty
-        
-    def get_rp_arrays(self, sort_by='line', line_direction='ew', 
-                      map_scale='latlon'):
+    def get_rp_arrays(self, plot_period, sort_by='line', line_direction='ew', 
+                      map_scale='latlon', ref_point=(0, 0), ftol=.1):
         """
         get resistivity and phase values in the correct order according to 
-        offsets and periods.
-
+        offsets and periods for either map view or pseudosection.
+    
         Attributes:
         -----------
             **sort_by**: [ 'line' | 'map' ]
@@ -1209,74 +1147,170 @@ class MTplot_lst(object):
             
             **line_direction**: [ 'ew' | 'ns' ]
             
-            **map_scale**: [ 'latlon' | 'eastnorth' ]
-        """        
-        
-        try:
-            self.mt_lst_sort
-        except AttributeError:
-            self.sort_by_offsets_profile()
-        
-        #create empty arrays to put data into need to reset to zero in case 
-        #something has changed
-        ns = len(self.mt_lst)
-        nt = len(self.plot_period)
-        
-        self.resxx = np.zeros((nt, ns))
-        self.resxy = np.zeros((nt, ns))
-        self.resyx = np.zeros((nt, ns))
-        self.resyy = np.zeros((nt, ns))
-        
-        self.phasexx = np.zeros((nt, ns))
-        self.phasexy = np.zeros((nt, ns))
-        self.phaseyx = np.zeros((nt, ns))
-        self.phaseyy = np.zeros((nt, ns))
-        
-        #make a dictionary of the periods to plot for a reference
-        period_dict = dict([(key, vv) 
-                             for vv, key in enumerate(self.plot_period)])
-                             
-        for ii, mt in enumerate(self.mt_lst_sort):
-            #get resisitivity and phase in a dictionary and append to a list
-            rp = mt.get_ResPhase()
+            **map_scale**: [ 'latlon' | 'eastnorth' | 'eastnorthkm' ]
             
-            for rr, rper in enumerate(self.plot_period):
-                jj = None
-                for kk, iper in enumerate(mt.period):
-                    if iper == rper:
-                        jj = period_dict[rper]
-                        self.resxx[jj, ii] = np.log10(rp.resxx[kk])
-                        self.resxy[jj, ii] = np.log10(rp.resxy[kk])
-                        self.resyx[jj, ii] = np.log10(rp.resyx[kk])
-                        self.resyy[jj, ii] = np.log10(rp.resyy[kk])
-                        
-                        self.phasexx[jj, ii] = rp.phasexx[kk]
-                        self.phasexy[jj, ii] = rp.phasexy[kk]
-                        self.phaseyx[jj, ii] = rp.phaseyx[kk]
-                        self.phaseyy[jj, ii] = rp.phaseyy[kk]
-                        
-                        break
-                        
-                    elif rper*(1-self.ftol) <= iper and \
-                         iper <= rper*(1+self.ftol):
-                             jj = period_dict[rper]
-                             self.resxx[jj, ii] = np.log10(rp.resxx[kk])
-                             self.resxy[jj, ii] = np.log10(rp.resxy[kk])
-                             self.resyx[jj, ii] = np.log10(rp.resyx[kk])
-                             self.resyy[jj, ii] = np.log10(rp.resyy[kk])
-                            
-                             self.phasexx[jj, ii] = rp.phasexx[kk]
-                             self.phasexy[jj, ii] = rp.phasexy[kk]
-                             self.phaseyx[jj, ii] = rp.phaseyx[kk]
-                             self.phaseyy[jj, ii] = rp.phaseyy[kk]
+            **ref_point**: (x, y)
+                           reference point to center the plot on, this point 
+                           needs to be in map coordinates
+                           
+            **ftol**: float
+                      tolerance to match periods in mt_lst with plot_period
+                      
+            **plot_period**: np.ndarray(nt)
+                             array of periods in seconds to get data for.
                              
-                             break
-                    else:
-                        pass
-                        
-                if jj is None:
-                    print 'did not find period {0:.6g} (s) for {1}'.format(
-                               rper, self.station_lst[ii])
+        Returns:
+        --------
+            Returns the individual components of resisitivity (in log scale) 
+            and phase (deg) with a shape according to sort_by.  
+            
+            * If sort_by == 'line', the returned shape is (num_periods, 
+                                                           num_stations)
+            * If sort_by == 'map', the returned shape is (num_periods, 
+                                                          num_stations, 
+                                                          num_stations)
+                                                           
+        
+            **resxx**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                       apparent resistivity (log 10 scale) for xx component
+            **resxy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                       apparent resistivity (log 10 scale) for xy component
+            **resyx**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                       apparent resistivity (log 10 scale) for yx component
+            **resyy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                       apparent resistivity (log 10 scale) for yy component
+                       
+            **phasexx**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                       phase (deg) for xx component
+            **phasexy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                       phase (deg) for xy component
+            **phaseyx**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                       phase (deg) for yx component
+            **phaseyy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                       phase (deg) for yy component
+        
+        """         
+        
+        mm = get_rp_arrays(self.mt_lst, sort_by=sort_by, 
+                           line_direction=line_direction, 
+                           map_scale=map_scale, 
+                           ref_point=ref_point, 
+                           ftol=ftol, 
+                           plot_period=plot_period)
+                           
+        if sort_by == 'line':
+            self.resxx_ps = mm[0]
+            self.resxy_ps = mm[1]
+            self.resyx_ps = mm[2]
+            self.resyy_ps = mm[3]
+            
+            self.phasexx_ps = mm[4]
+            self.phasexy_ps = mm[5]
+            self.phaseyx_ps = mm[6]
+            self.phaseyy_ps = mm[7]
+            
+            self.station_lst = mm[8]
+            self.offset_lst = mm[9]
+        
+        if sort_by == 'map':
+            self.resxx_map = mm[0]
+            self.resxy_map = mm[1]
+            self.resyx_map = mm[2]
+            self.resyy_map = mm[3]
+            
+            self.phasexx_map = mm[4]
+            self.phasexy_map = mm[5]
+            self.phaseyx_map = mm[6]
+            self.phaseyy_map = mm[7]
+            
+            self.map_x = mm[8]
+            self.map_y = mm[9]
+            
+            
+    def get_pt_arrays(self, plot_period, sort_by='line', line_direction='ew', 
+                  map_scale='latlon', ref_point=(0, 0), ftol=.1):
+        """
+        get resistivity and phase values in the correct order according to 
+        offsets and periods for either map view or pseudosection.
+    
+        Attributes:
+        -----------
+            **sort_by**: [ 'line' | 'map' ]
+                         * 'line' --> sort the station distances into a line 
+                                      according to line_direction
+                         * 'map' --> sort the station distances into map 
+                                     coordinates
+            
+            **line_direction**: [ 'ew' | 'ns' ]
+            
+            **map_scale**: [ 'latlon' | 'eastnorth' | 'eastnorthkm' ]
+            
+            **ref_point**: (x, y)
+                           reference point to center the plot on, this point needs
+                           to be in map coordinates
+                           
+            **ftol**: float
+                      tolerance to match periods in mt_lst with plot_period
+                      
+            **plot_period**: np.ndarray(nt)
+                             array of periods in seconds to get data for.
+                             
+        Returns:
+        --------
+            Returns the individual parameters of the phase tensor (deg)
+            
+            * If sort_by == 'line', the returned shape is (num_periods, 
+                                                           num_stations)
+            * If sort_by == 'map', the returned shape is (num_periods, 
+                                                          num_stations, 
+                                                          num_stations)
+                                                           
+        
+            **phimin**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                       minimum phase or 2nd principal component of phase tensor
+                       
+            **phimax**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                        maximum phase or 1st principal component of phase tensor
+                       
+            **skew**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                      skew angle of phase tensor
+                       
+            **azimuth**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                         regional strike direction estimated from phase tensor,
+                         with a 90 degree ambiguity
+                       
+            **ellipticity**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                             ratio of phimin to phimax suggesting dimensionality.
+        
+        """ 
+    
+        mm = get_pt_arrays(self.mt_lst, 
+                           sort_by=sort_by,
+                           line_direction=line_direction,
+                           map_scale=map_scale,
+                           ref_point=ref_point,
+                           ftol=ftol,
+                           plot_period=plot_period)
+                           
+        if sort_by == 'line':
+            self.phimin_ps = mm[0]
+            self.phimax_ps = mm[1]
+            self.skew_ps = mm[2]
+            self.azimuth_ps = mm[3]
+            self.ellipticity_ps = mm[4]
+            
+            self.station_lst = mm[5]
+            self.offset_lst = mm[6]
+            
+        elif sort_by == 'map':
+            self.phimin_map = mm[0]
+            self.phimax_map = mm[1]
+            self.skew_map = mm[2]
+            self.azimuth_map = mm[3]
+            self.ellipticity_map = mm[4]
+            
+            self.map_x = mm[5]
+            self.map_y = mm[6]
 
 #==============================================================================
 # get list of mt objects     
@@ -1358,67 +1392,605 @@ def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None,
                     raise IOError('Need to input an iteratable list')
 
 #==============================================================================
-# sort an mt                    
+# sort an mt_lst by offset values in a particular direction                  
 #==============================================================================
-def sort_by_offsets(self):
-        """
-        get list of offsets to sort the mt list
+def sort_by_offsets(mt_lst, line_direction='ew'):
+    """
+    get list of offsets for the given line_direction.
+    
+    Arguments:
+    ----------
+        **mt_lst**: list
+                    list of MTplot objects
         
-        """
+        **line_direction**: [ 'ew' | 'ns' ]
         
-        dtype = [('station', 'S10'), ('offset', float), ('spot', int)]
-        slst = []
-        #get offsets
-        for ii, mt in enumerate(self.mt_lst):
-            #get offsets between stations
+    Returns:
+    --------
+        **sort_mt_lst**: list
+                         list of MTplot objects sorted by offset in the
+                         line_direction
+                         
+        **station_lst**: list
+                         list of stations sorted by offset
+        
+        **offset_lst**: np.ndarray(num_stations)
+                        array of sorted offset values corresponding to station
+                        in station_lst
+    """
+    
+    dtype = [('station', 'S10'), ('offset', float), ('spot', int)]
+    slst = []
+    #get offsets
+    for ii, mt in enumerate(mt_lst):
+        #get offsets between stations
+        if ii == 0:
+            east0 = mt.lon
+            north0 = mt.lat
+            offset = 0.0
+        else:
+            east = mt.lon
+            north = mt.lat
+            #if line is predominantly e-w
+            if line_direction == 'ew': 
+                if east0 < east:
+                    offset = np.sqrt((east0-east)**2+(north0-north)**2)
+                elif east0 > east:
+                    offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
+                else:
+                    offset = 0
+            #if line is predominantly n-s
+            elif line_direction == 'ns':
+                if north0 < north:
+                    offset = np.sqrt((east0-east)**2+(north0-north)**2)
+                elif north0 > north:
+                    offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
+                else:
+                    offset=0
+        #append values to list for sorting            
+        slst.append((mt.station, offset, ii))
+    
+    #create a structured array according to the data type and values
+    v_array = np.array(slst, dtype=dtype)
+    
+    #sort the structured array by offsets
+    sorted_array = np.sort(v_array, order=['offset'])
+    
+    #create an offset list as an attribute
+    offset_lst = np.array([ss[1] for ss in sorted_array])
+    
+    #create a station lst as an attribute
+    station_lst = np.array([ss[0] for ss in sorted_array])
+    
+    #create an index list of the sorted index values 
+    index_lst = [ss[2] for ss in sorted_array]
+    
+    #create a new mt_lst according to the offsets from the new index_lst
+    sort_mt_lst = [mt_lst[ii] for ii in index_lst]
+    
+    return sort_mt_lst, station_lst, offset_lst
+
+#==============================================================================
+# get map values
+#==============================================================================
+def get_station_locations(mt_lst, map_scale='latlon', ref_point=(0,0)):
+    """
+    creates a dictionary where the keys are the stations and the values
+    are the index in the plot_mesh grid for the station location.
+    
+    *Note*: the handling of zone changes in UTM coordinates is rough and 
+    needs to be changed.  If there are zone changes in your survey, stick
+    to latlon.
+    
+    Arguments:
+    ----------
+        **map_scale**: [ 'latlon' | 'eastnorth' | 'eastnorthkm' ]
+        
+        **ref_point**: (map_scale_x, map_scale_y)
+                       reference point to center the map on, needs to be in
+                       map_scale coordinates.
+ 
+                       
+    Returns:
+    --------
+        **map_dict**: dictionary
+                      where keys are station names, and the values are the
+                      index values (x, y) for the plot_meshgrid
+                      
+        **plot_meshgrid**: np.ndarray(num_stations, num_stations)
+                           a meshgrid (x, y) for plotting map view in 
+                           map_scale coordinates.  
+    """
+    
+    #make some empty arrays
+    latlst = np.zeros(len(mt_lst))
+    lonlst = np.zeros(len(mt_lst))
+    xarr = np.zeros(len(mt_lst))
+    yarr = np.zeros(len(mt_lst))
+    
+    if map_scale == 'eastnorth':
+        dscale = 1.
+    elif map_scale == 'eastnorth':
+        dscale = 1000.
+    
+    map_station_dict = {}
+    #need to sort by station
+    for ii,mt in enumerate(mt_lst):
+        latlst[ii] = mt.lat
+        lonlst[ii] = mt.lon
+        
+        #if map scale is lat lon set parameters                
+        if map_scale == 'latlon':
+            x = mt.lon-ref_point[0]
+            y = mt.lat-ref_point[1]
+        
+        #if map scale is in meters easting and northing
+        elif map_scale == 'eastnorth' or map_scale == 'eastnorthkm' :
+            zone, east, north = utm2ll.LLtoUTM(23, mt.lat, mt.lon)
+            
+            east /= dscale
+            north /= dscale
+            
+            #set the first point read in as a refernce other points                    
             if ii == 0:
-                east0 = mt.lon
-                north0 = mt.lat
-                offset = 0.0
+                zone1 = zone
+                x = east-ref_point[0]
+                y = north-ref_point[1]
+                
+            #read in all the other point
             else:
-                east = mt.lon
-                north = mt.lat
-                #if line is predominantly e-w
-                if self.linedir=='ew': 
-                    if east0 < east:
-                        offset = np.sqrt((east0-east)**2+(north0-north)**2)
-                    elif east0 > east:
-                        offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
+                #check to make sure the zone is the same this needs
+                #to be more rigorously done
+                if zone1!=zone:
+                    print 'Zone change at station '+mt.station
+                    if zone1[0:2] == zone[0:2]:
+                        pass
+                    elif int(zone1[0:2]) < int(zone[0:2]):
+                        east += 500000
                     else:
-                        offset = 0
-                #if line is predominantly n-s
-                elif self.linedir == 'ns':
-                    if north0 < north:
-                        offset = np.sqrt((east0-east)**2+(north0-north)**2)
-                    elif north0 > north:
-                        offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
+                        east -= -500000
+                        
+                    x = east-ref_point[0]
+                    y = north-ref_point[1]
+                else:
+                    x = east-ref_point[0]
+                    y = north-ref_point[1]
+        else:
+            raise NameError('mapscale not recognized')
+        
+        #put the location of each ellipse into an array in x and y
+        xarr[ii] = x
+        yarr[ii] = y
+        
+        map_station_dict[mt.station] = (x, y)
+        
+    return map_station_dict, xarr, yarr
+    
+    
+#==============================================================================
+# grid data onto a map view
+#==============================================================================
+def grid_data(data_array, x, y, nx=None, ny=None):
+    """
+    Project data onto a regular grid for plotting.
+    
+    
+    Arguments:
+    -----------
+        **data_array**: np.ndarray (len(x), len(y))
+                        array of data values to be gridded
+                        
+        **x**: np.ndarray(len(x))
+               array of values that coorespond  
+    
+        **nx**: int
+                number of cells in the x-direction.  If none, 2 times the 
+                number of x components
+                
+        **ny**: int
+                number of cells in the x-direction.  If none, 2 times the 
+                number of y components
+                
+    Returns:
+    ---------
+        **grid_array**: np.ndarray(nx, ny)
+                        array of data set on a regular grid
+        
+        **xg**: np.ndarray(nx, ny)
+                array of x-grid values
+                
+        **yg**: np.ndarray(nx, ny)
+                array of y-grid values
+                
+        
+    """
+    
+    if nx is None:
+        nx = 2*len(x)
+        
+    if ny is None:
+        ny = 2*len(y)
+     
+    #create evenly spaced intervals to grid over
+    xi = np.linspace(x.min(), x.max(), num=nx, endpoint=True)
+    yi = np.linspace(y.min(), y.max(), num=ny, endpoint=True)
+    
+    xg, yg = np.meshgrid(xi, yi)
+
+    grid_array = mlab.griddata(x, y, data_array, xg, yg)        
+    
+    return grid_array, xg, yg
+    
+    
+
+#==============================================================================
+# get resistivity and phase arrays for plotting
+#==============================================================================
+def get_rp_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew', 
+                  map_scale='latlon', ref_point=(0, 0), ftol=.1):
+    """
+    get resistivity and phase values in the correct order according to 
+    offsets and periods for either map view or pseudosection.
+
+    Attributes:
+    -----------
+        **sort_by**: [ 'line' | 'map' ]
+                     * 'line' --> sort the station distances into a line 
+                                  according to line_direction
+                     * 'map' --> sort the station distances into map 
+                                 coordinates
+        
+        **line_direction**: [ 'ew' | 'ns' ]
+        
+        **map_scale**: [ 'latlon' | 'eastnorth' | 'eastnorthkm' ]
+        
+        **ref_point**: (x, y)
+                       reference point to center the plot on, this point needs
+                       to be in map coordinates
+                       
+        **ftol**: float
+                  tolerance to match periods in mt_lst with plot_period
+                  
+        **plot_period**: np.ndarray(nt)
+                         array of periods in seconds to get data for.
+                         
+    Returns:
+    --------
+        Returns the individual components of resisitivity (in log scale) and 
+        phase (deg) with a shape according to sort_by.  
+        
+        * If sort_by == 'line', the returned shape is (num_periods, 
+                                                       num_stations)
+        * If sort_by == 'map', the returned shape is (num_periods, 
+                                                      num_stations, 
+                                                      num_stations)
+                                                       
+    
+        **resxx**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                   apparent resistivity (log 10 scale) for xx component
+        **resxy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                   apparent resistivity (log 10 scale) for xy component
+        **resyx**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                   apparent resistivity (log 10 scale) for yx component
+        **resyy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                   apparent resistivity (log 10 scale) for yy component
+                   
+        **phasexx**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                   phase (deg) for xx component
+        **phasexy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                   phase (deg) for xy component
+        **phaseyx**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                   phase (deg) for yx component
+        **phaseyy**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                   phase (deg) for yy component
+    
+    """        
+    if plot_period is None:
+            raise mtex.MTpyError_inputarguments('Need to input an array of '+\
+                                                'periods')
+                                                
+    ns = len(mt_lst)
+    nt = len(plot_period)
+    
+    #make a dictionary of the periods to plot for a reference
+    period_dict = dict([(key, vv) 
+                         for vv, key in enumerate(plot_period)])
+                         
+    #get arrays in pseudosection format
+    if sort_by == 'line':
+        #sort the data by offset
+        mt_lst_sort, station_lst, offset_lst = sort_by_offsets(mt_lst, 
+                                                  line_direction=line_direction)
+                                                  
+        #create empty arrays to put data into 
+        resxx = np.zeros((nt, ns))
+        resxy = np.zeros((nt, ns))
+        resyx = np.zeros((nt, ns))
+        resyy = np.zeros((nt, ns))
+        
+        phasexx = np.zeros((nt, ns))
+        phasexy = np.zeros((nt, ns))
+        phaseyx = np.zeros((nt, ns))
+        phaseyy = np.zeros((nt, ns))
+                             
+        for ii, mt in enumerate(mt_lst_sort):
+            #get resisitivity and phase in a dictionary and append to a list
+            rp = mt.get_ResPhase()
+            
+            for rr, rper in enumerate(plot_period):
+                jj = None
+                for kk, iper in enumerate(mt.period):
+                    if iper == rper:
+                        jj = period_dict[rper]
+                        resxx[jj, ii] = np.log10(rp.resxx[kk])
+                        resxy[jj, ii] = np.log10(rp.resxy[kk])
+                        resyx[jj, ii] = np.log10(rp.resyx[kk])
+                        resyy[jj, ii] = np.log10(rp.resyy[kk])
+                        
+                        phasexx[jj, ii] = rp.phasexx[kk]
+                        phasexy[jj, ii] = rp.phasexy[kk]
+                        phaseyx[jj, ii] = rp.phaseyx[kk]
+                        phaseyy[jj, ii] = rp.phaseyy[kk]
+                        
+                        break
+                        
+                    elif rper*(1-ftol) <= iper and \
+                         iper <= rper*(1+ftol):
+                             jj = period_dict[rper]
+                             resxx[jj, ii] = np.log10(rp.resxx[kk])
+                             resxy[jj, ii] = np.log10(rp.resxy[kk])
+                             resyx[jj, ii] = np.log10(rp.resyx[kk])
+                             resyy[jj, ii] = np.log10(rp.resyy[kk])
+                            
+                             phasexx[jj, ii] = rp.phasexx[kk]
+                             phasexy[jj, ii] = rp.phasexy[kk]
+                             phaseyx[jj, ii] = rp.phaseyx[kk]
+                             phaseyy[jj, ii] = rp.phaseyy[kk]
+                             
+                             break
                     else:
-                        offset=0
-            #append values to list for sorting            
-            slst.append((mt.station, offset, ii))
+                        pass
+                        
+                if jj is None:
+                    print 'did not find period {0:.6g} (s) for {1}'.format(
+                               rper, mt.station)
+        return resxx, resxy, resyx, resyy, phasexx, phasexy, phaseyx, phaseyy,\
+               station_lst, offset_lst
         
-        #create a structured array according to the data type and values
-        v_array = np.array(slst, dtype=dtype)
+    elif sort_by == 'map':
+        map_dict, x, y = get_station_locations(mt_lst, 
+                                               map_scale=map_scale, 
+                                               ref_point=ref_point)
+                                            
+        resxx = np.zeros((nt, ns))
+        resxy = np.zeros((nt, ns))
+        resyx = np.zeros((nt, ns, ns))
+        resyy = np.zeros((nt, ns, ns))
         
-        #sort the structured array by offsets
-        sorted_array = np.sort(v_array, order=['offset'])
+        phasexx = np.zeros((nt, ns))
+        phasexy = np.zeros((nt, ns))
+        phaseyx = np.zeros((nt, ns))
+        phaseyy = np.zeros((nt, ns))
         
-        #create an offset list as an attribute
-        self.offset_lst = np.array([ss[1] for ss in sorted_array])
         
-        #create a station lst as an attribute
-        self.station_lst = np.array([ss[0][self.stationid[0]:self.stationid[1]]
-                                     for ss in sorted_array])
+        for ii, mt in enumerate(mt_lst):
+            #get resisitivity and phase in a dictionary and append to a list
+            rp = mt.get_ResPhase()
+            
+            for rr, rper in enumerate(plot_period):
+                jj = None
+                for kk, iper in enumerate(mt.period):
+                    if iper == rper:
+                        jj = period_dict[rper]
+                        
+                        resxx[jj, ii] = np.log10(rp.resxx[kk])
+                        resxy[jj, ii] = np.log10(rp.resxy[kk])
+                        resyx[jj, ii] = np.log10(rp.resyx[kk])
+                        resyy[jj, ii] = np.log10(rp.resyy[kk])
+                        
+                        phasexx[jj, ii] = rp.phasexx[kk]
+                        phasexy[jj, ii] = rp.phasexy[kk]
+                        phaseyx[jj, ii] = rp.phaseyx[kk]
+                        phaseyy[jj, ii] = rp.phaseyy[kk]
+                        
+                        break
+                        
+                    elif rper*(1-ftol) <= iper and \
+                         iper <= rper*(1+ftol):
+                        jj = period_dict[rper]
+                        
+                        resxx[jj, ii] = np.log10(rp.resxx[kk])
+                        resxy[jj, ii] = np.log10(rp.resxy[kk])
+                        resyx[jj, ii] = np.log10(rp.resyx[kk])
+                        resyy[jj, ii] = np.log10(rp.resyy[kk])
+                        
+                        phasexx[jj, ii] = rp.phasexx[kk]
+                        phasexy[jj, ii] = rp.phasexy[kk]
+                        phaseyx[jj, ii] = rp.phaseyx[kk]
+                        phaseyy[jj, ii] = rp.phaseyy[kk]
+                         
+                        break
+                    else:
+                        pass
+                        
+                if jj is None:
+                    print 'did not find period {0:.6g} (s) for {1}'.format(
+                               rper, mt.station)
+        return resxx, resxy, resyx, resyy, +\
+                phasexx, phasexy, phaseyx, phaseyy, x, y, map_dict
         
-        #create an index list of the sorted index values 
-        index_lst = [ss[2] for ss in sorted_array]
+#==============================================================================
+# get phase tensor arrays for plotting
+#==============================================================================
+def get_pt_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew', 
+                  map_scale='latlon', ref_point=(0, 0), ftol=.1):
+    """
+    get resistivity and phase values in the correct order according to 
+    offsets and periods for either map view or pseudosection.
+
+    Attributes:
+    -----------
+        **sort_by**: [ 'line' | 'map' ]
+                     * 'line' --> sort the station distances into a line 
+                                  according to line_direction
+                     * 'map' --> sort the station distances into map 
+                                 coordinates
         
-        #create a new mt_lst according to the offsets from the new index_lst
-        new_mt_lst = [self.mt_lst[ii] for ii in index_lst]
+        **line_direction**: [ 'ew' | 'ns' ]
         
-        #set the mt_lst attribute as the new sorted mt_lst
-        self.mt_lst_sort = new_mt_lst
-                    
+        **map_scale**: [ 'latlon' | 'eastnorth' | 'eastnorthkm' ]
+        
+        **ref_point**: (x, y)
+                       reference point to center the plot on, this point needs
+                       to be in map coordinates
+                       
+        **ftol**: float
+                  tolerance to match periods in mt_lst with plot_period
+                  
+        **plot_period**: np.ndarray(nt)
+                         array of periods in seconds to get data for.
+                         
+    Returns:
+    --------
+        Returns the individual parameters of the phase tensor (deg)
+        
+        * If sort_by == 'line', the returned shape is (num_periods, 
+                                                       num_stations)
+        * If sort_by == 'map', the returned shape is (num_periods, 
+                                                      num_stations, 
+                                                      num_stations)
+                                                       
+    
+        **phimin**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                   minimum phase or 2nd principal component of phase tensor
+                   
+        **phimax**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                    maximum phase or 1st principal component of phase tensor
+                   
+        **skew**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                  skew angle of phase tensor
+                   
+        **azimuth**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                     regional strike direction estimated from phase tensor,
+                     with a 90 degree ambiguity
+                   
+        **ellipticity**: np.ndarray(nt, ns) or np.ndarray(nt, ns, ns)
+                         ratio of phimin to phimax suggesting dimensionality.
+    
+    """        
+    if plot_period is None:
+            raise mtex.MTpyError_inputarguments('Need to input an array of '+\
+                                                'periods')
+                                                
+    ns = len(mt_lst)
+    nt = len(plot_period)
+    
+    #make a dictionary of the periods to plot for a reference
+    period_dict = dict([(key, vv) 
+                         for vv, key in enumerate(plot_period)])
+                         
+    #get arrays in pseudosection format
+    if sort_by == 'line':
+        
+        mt_lst_sort, slst, olst = sort_by_offsets(mt_lst, 
+                                                  line_direction=line_direction)
+                                                  
+        #create empty arrays to put data into need to reset to zero in case 
+        #something has changed
+        
+        
+        phimin = np.zeros((nt, ns))
+        phimax = np.zeros((nt, ns))
+        skew = np.zeros((nt, ns))
+        azimuth = np.zeros((nt, ns))
+        ellipticity = np.zeros((nt, ns))
+                             
+        for ii, mt in enumerate(mt_lst_sort):
+            #get resisitivity and phase in a dictionary and append to a list
+            pt = mt.get_PhaseTensor()
+            
+            for rr, rper in enumerate(plot_period):
+                jj = None
+                for kk, iper in enumerate(mt.period):
+                    if iper == rper:
+                        jj = period_dict[rper]
+                        phimin[jj, ii] = pt.phimin[kk]
+                        phimax[jj, ii] = pt.phimax[kk]
+                        skew[jj, ii] = pt.beta[kk]
+                        azimuth[jj, ii] = pt.azimuth[kk]
+                        ellipticity[jj, ii] = pt.ellipticity[kk]
+                        
+                        break
+                        
+                    elif rper*(1-ftol) <= iper and \
+                         iper <= rper*(1+ftol):
+                        jj = period_dict[rper]
+                        phimin[jj, ii] = pt.phimin[kk]
+                        phimax[jj, ii] = pt.phimax[kk]
+                        skew[jj, ii] = pt.beta[kk]
+                        azimuth[jj, ii] = pt.azimuth[kk]
+                        ellipticity[jj, ii] = pt.ellipticity[kk]
+                             
+                        break
+                    else:
+                        pass
+                        
+                if jj is None:
+                    print 'did not find period {0:.6g} (s) for {1}'.format(
+                               rper, mt.station)
+        return phimin, phimax, skew, azimuth, ellipticity, slst, olst
+        
+    elif sort_by == 'map':
+        map_dict, x, y = get_station_locations(mt_lst, 
+                                               map_scale=map_scale, 
+                                               ref_point=ref_point)
+                                            
+        phimin = np.zeros((nt, ns))
+        phimax = np.zeros((nt, ns))
+        skew = np.zeros((nt, ns))
+        azimuth = np.zeros((nt, ns))
+        ellipticity = np.zeros((nt, ns))
+        
+        
+        for ii, mt in enumerate(mt_lst):
+            #get resisitivity and phase in a dictionary and append to a list
+            pt = mt.get_PhaseTensor()
+            
+            for rr, rper in enumerate(plot_period):
+                jj = None
+                for kk, iper in enumerate(mt.period):
+                    if iper == rper:
+                        jj = period_dict[rper]
+
+                        phimin[jj, ii] = pt.phimin[0][kk]
+                        phimax[jj, ii] = pt.phimax[0][kk]
+                        skew[jj, ii] = pt.beta[0][kk]
+                        azimuth[jj, ii] = pt.azimuth[0][kk]
+                        ellipticity[jj, ii] = pt.ellipticity[0][kk]
+                        
+                        break
+                        
+                    elif rper*(1-ftol) <= iper and \
+                         iper <= rper*(1+ftol):
+                        jj = period_dict[rper]
+                        phimin[jj, ii] = pt.phimin[0][kk]
+                        phimax[jj, ii] = pt.phimax[0][kk]
+                        skew[jj, ii] = pt.beta[0][kk]
+                        azimuth[jj, ii] = pt.azimuth[0][kk]
+                        ellipticity[jj, ii] = pt.ellipticity[0][kk]
+                             
+                        break
+                    else:
+                        pass
+                        
+                if jj is None:
+                    print 'did not find period {0:.6g} (s) for {1}'.format(
+                               rper, mt.station)
+        return phimin, phimax, skew, azimuth, ellipticity, x, y, map_dict
+                                                
+                                            
+                                            
+    
 #==============================================================================
 # function for writing values to file
 #==============================================================================
