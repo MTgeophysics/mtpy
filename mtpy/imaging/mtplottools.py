@@ -1119,9 +1119,11 @@ class MTplot_lst(object):
                           where keys are station names, and the values are the
                           index values (x, y) for the plot_meshgrid
                           
-            **plot_meshgrid**: np.ndarray(num_stations, num_stations)
-                               a meshgrid (x, y) for plotting map view in 
-                               map_scale coordinates.  
+            **map_xarr**: np.ndarray(num_stations)
+                          east-west values to of station to plot. 
+                          
+            **map_yarr**: np.ndarray(num_stations)
+                          north-south values to of station to plot.  
         """
         
         mm = get_station_locations(self.mt_lst,map_scale=map_scale,
@@ -1309,8 +1311,8 @@ class MTplot_lst(object):
             self.azimuth_map = mm[3]
             self.ellipticity_map = mm[4]
             
-            self.map_x = mm[5]
-            self.map_y = mm[6]
+            self.map_xarr = mm[5]
+            self.map_yarr = mm[6]
 
 #==============================================================================
 # get list of mt objects     

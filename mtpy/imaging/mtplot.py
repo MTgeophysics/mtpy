@@ -54,21 +54,20 @@ section and strike angle.
     >>> import os
     >>> import matplotlib.pyplot as plt
     >>> edipath = r"/home/MT/EDIfiles"
-    >>> #create a list of full paths to the edi files
+    >>> #--> create a list of full paths to the edi files
     >>> edilst = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
     >>> ...        if edi.find('.edi')>0]
-    >>> #plot apparent resisitivity, phase and induction arrows as individual
-    >>> #figures
+    >>> #--> plot apparent resisitivity, phase and induction arrows 
     >>> rpm = mtplot.plot_multiple_mt_responses(fn_lst=edilst, plot_style='1',
     >>> ...                                     plot_tipper='yr')
-    >>> #close all the plots after done looking at them
+    >>> #--> close all the plots after done looking at them
     >>> plt.close('all')
-    >>> #plot phase tensor pseudo section with induction arrows
+    >>> #--> plot phase tensor pseudo section with induction arrows
     >>> pts = mtplot.plot_pt_pseudosection(fn_lst=edilst, 
     >>> ...                                plot_tipper='yr')
-    >>> # write out the phase tensor parameter values to files
+    >>> #--> write out the phase tensor parameter values to files
     >>> pts.writeTextFiles()
-    >>> #change coloring scheme to color by skew and a segmented colormap
+    >>> #--> change coloring scheme to color by skew and a segmented colormap
     >>> pts.ellipse_colorby = 'skew_seg'
     >>> pts.ellipse_cmap = 'mt_seg_bl2wh2rd'
     >>> pts.ellipse_range = (-9, 9, 3)

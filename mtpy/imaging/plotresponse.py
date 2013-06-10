@@ -320,7 +320,17 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         
         -skew_limits    limits for skew angle, *default* is (-9,9)
         
-        -strike_limits  limits for strike angle, *default* is (-90,90)   
+        -strike_limits  limits for strike angle, *default* is (-90,90) 
+        
+        
+    Methods:
+    --------
+        * *plot*: plots the pseudosection according to keywords
+        * *redraw_plot*: redraws the plot, use if you change some of the 
+                         attributes.
+        * *update_plot*: updates the plot, use if you change some of the 
+                         axes attributes, figure needs to be open to update.
+        * *save_plot*: saves the plot to given filepath.
         
 
     """   
