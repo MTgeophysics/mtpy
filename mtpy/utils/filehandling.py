@@ -781,7 +781,8 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
 
         for sensor in ['e','b']:
             #TODO:
-            # reduce this function to the re-orientation of files that have the same length for X and Y. Do the puzzlling for varying lengths later!!
+            # reduce this function to the re-orientation of files that have the 
+            # same length for X and Y. Do the puzzlling for varying lengths later!!
 
             for idx_h_x, header_x in enumerate(lo_headers):
                 #looking for one specific station
@@ -795,7 +796,7 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
                     continue
 
                 x_file = lo_files[idx_h_x]
-                x_header_string = get_ts_header_string(header_x)
+                #x_header_string = get_ts_header_string(header_x)
 
                 t0 = float(header_x['t_min'])
                 #print t0 
@@ -808,7 +809,8 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
                         (float(header_y['t_min']) == float(header_x['t_min'] ) ):
                         if (header_y['channel'].lower()[1] == 'y') :
                             y_file = lo_files[idx_h_y]
-                            y_header_string = get_ts_header_string(header_y)
+                            y_header = header_y#_string = get_ts_header_string(header_y)
+                            x_header = header_x
 
                         elif   (header_y['channel'].lower()[1] == 'z') :
                             z_file = lo_files[idx_h_y]
@@ -826,6 +828,15 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
 
                 xdata = np.loadtxt(x_file)
                 ydata = np.loadtxt(y_file)
+
+                #check for different lengths of data 
+                if len(xdata) < len(ydata):
+                    ydata = ydata[:len(xdata)]
+                    y_header['nsamples'] = len(ydata)
+
+                if len(ydata) < len(xdata):
+                    xdata = xdata[:len(ydata)]
+                    x_header['nsamples'] = len(xdata)
 
                 #declination is positive, if magnetic North is east of true North.
                 # the measured angles are w.r.t. magnetic North, so the given 
@@ -846,6 +857,9 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
                 newx, newy =  MTcc.reorient_data2D(xdata, ydata, 
                             x_sensor_angle = xangle , y_sensor_angle = yangle)
                 #print xdata.shape, ydata.shape, newx.shape, newy.shape 
+
+                x_header_string = get_ts_header_string(x_header)
+                y_header_string = get_ts_header_string(y_header)
 
                 #continue
                 outFx = open(x_outfn,'w')
