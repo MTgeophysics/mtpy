@@ -371,6 +371,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         self.font_size = kwargs.pop('font_size', 7)
         self.stationid = kwargs.pop('stationid', [0,4])
         self.ystep = kwargs.pop('ystep', 4)
+        self.xstep = kwargs.pop('xstep', 1)
         self.xlimits = kwargs.pop('xlimits', None)
         self.ylimits = kwargs.pop('ylimits', None)
         
@@ -420,7 +421,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             pass
             
         for ii,mt in enumerate(self.mt_lst):
-            mt.rot_z = rot_z[ii]
+            mt.rot_z = self._rot_z[ii]
     def _get_rot_z(self):
         return self._rot_z
         
@@ -436,7 +437,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         plt.rcParams['font.size'] = self.font_size
         plt.rcParams['figure.subplot.left'] = .08
         plt.rcParams['figure.subplot.right'] = .98
-        plt.rcParams['figure.subplot.bottom'] = .06
+        plt.rcParams['figure.subplot.bottom'] = .1
         plt.rcParams['figure.subplot.top'] = .96
         plt.rcParams['figure.subplot.wspace'] = .55
         plt.rcParams['figure.subplot.hspace'] = .70
@@ -655,8 +656,17 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         #calculate minimum period and maximum period with a stretch factor
         pmin = np.log10(plot_periodlst.min())*self.ystretch
         pmax = np.log10(plot_periodlst.max())*self.ystretch
-               
-        self.offsetlst = np.array(self.offsetlst)
+        
+        #need to sort the offsets and station labels so they plot correctly
+        sdtype = [('offset', np.float), ('station','|S10')]
+        slst = np.array([(oo, ss) for oo, ss in zip(self.offsetlst, 
+                         self.stationlst)], dtype=sdtype)
+        offset_sort = np.sort(slst, order='offset')
+     
+        self.offsetlst = offset_sort['offset']
+        self.stationlst = offset_sort['station']
+        if self.offsetlst[0] < 0:
+            self.stationlst = self.stationlst[::-1]
         
         #set y-ticklabels
         if self.tscale == 'period':
@@ -696,7 +706,13 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         self.ax.set_xticks(self.offsetlst*self.xstretch)
         
         #set x-axis tick labels as station names
-        self.ax.set_xticklabels(self.stationlst)
+        xticklabels = self.stationlst
+        if self.xstep != 1:
+            xticklabels = np.zeros(len(self.stationlst), 
+                                   dtype=self.stationlst.dtype)
+            for xx in range(0,len(self.stationlst),self.xstep):
+                xticklabels[xx] = self.stationlst[xx]
+        self.ax.set_xticklabels(xticklabels)
         
         #--> set x-limits
         if self.xlimits == None:
@@ -1185,7 +1201,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                           full path to save figure to, can be input as
                           * directory path -> the directory path to save to
                             in which the file will be saved as 
-                            save_fn/station_name_ResPhase.file_format
+                            save_fn/station_name_PTPseudoSection.file_format
                             
                           * full path -> file will be save to the given 
                             path.  If you use this option then the format
@@ -1225,7 +1241,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             plt.close(self.fig)
             
         else:
-            save_fn = os.path.join(save_fn, 'PTPseudoSection.'+
+            save_fn = os.path.join(save_fn, '_PTPseudoSection.'+
                                    file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
                              orientation=orientation)

@@ -834,10 +834,10 @@ class MTplot(object):
         # is the shortest period.
         
         if self.period[0] > self.period[-1]:
-            self.z = self.z[::-1]
-            self.zerr = self.zerr[::-1]
-            self.tipper = self.tipper[::-1]
-            self.tipper_err = self.tipper_err[::-1]
+            self.z = self._Z.z[::-1]
+            self.zerr = self._Z.zerr[::-1]
+            self.tipper = self._Tipper.tipper[::-1]
+            self.tipper_err = self._Tipper.tipper_err[::-1]
             self.period = self.period[::-1]
             
         

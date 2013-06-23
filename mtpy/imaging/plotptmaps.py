@@ -558,7 +558,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             pass
             
         for ii,mt in enumerate(self.mt_lst):
-            mt.rot_z = rot_z[ii]
+            mt.rot_z = self._rot_z[ii]
     def _get_rot_z(self):
         return self._rot_z
         
