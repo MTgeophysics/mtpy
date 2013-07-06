@@ -600,6 +600,13 @@ def read_ts_header(tsfile):
             header_dict[lo_headerelements[i]] = int(
                     (float(headerlist[i]) - float(headerlist[i-1])
                     )*float(headerlist[i-2]) )+1
+                    
+    header_dict['samplingrate'] = float(header_dict['samplingrate'])
+    header_dict['t_min'] = float(header_dict['t_min'])
+    header_dict['nsamples'] = int(header_dict['nsamples'])
+    header_dict['lat'] = float(header_dict['lat'])
+    header_dict['lon'] = float(header_dict['lon'])
+    header_dict['elev'] = float(header_dict['elev'])
 
     return header_dict
 
@@ -623,7 +630,7 @@ def get_ts_header_string(header_dictionary):
 
 
 
-def write_ts_file_from_tuple(outfile,ts_tuple):
+def write_ts_file_from_tuple(outfile,ts_tuple, fmt='%.8e'):
     """
         Write an MTpy TS data file, where the content is provided as tuple:
 
@@ -649,7 +656,7 @@ def write_ts_file_from_tuple(outfile,ts_tuple):
     try:
         outF = open(outfilename,'w')
         outF.write(header_string)
-        np.savetxt(outF,data)
+        np.savetxt(outF, data, fmt=fmt)
         outF.close()
     except:
         raise MTex.MTpyError_inputarguments('ERROR - could not write content'

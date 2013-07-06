@@ -45,22 +45,35 @@ reload(MTfh)
 #=================================================================
 
 
-def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_threshold = 0.5, output_dir = None):
+def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, 
+                           coherence_threshold = 0.5, output_dir = None):
     """
     Call BIRRP for 2 input and 2 output channels with the simplest setup. 
 
-    Provide stationname and directory containing the data folders. Data must be in 1-column ascii format, including one header line for identification of station, channel and sampling rate. For this function, the files must have aligned time series!
-    All parameters are automatically determined, the threshold for coherence is set to 0.5 by default.
-    If no output directory is specified, output files are put into a subfolder of the source directory, named 'birrp_processed'.
+    Provide stationname and directory containing the data folders. Data must 
+    be in 1-column ascii format, including one header line for identification 
+    of station, channel and sampling rate. For this function, the files must 
+    have aligned time series!
+    
+    All parameters are automatically determined, the threshold for coherence 
+    is set to 0.5 by default.
+    
+    If no output directory is specified, output files are put into a subfolder 
+    of the source directory, named 'birrp_processed'.
 
-    Additionally, a configuration file is created. It contains information about the processing paramters for the station. Keys are generic for the common parameters and named after BIRRP input keywords for the processing parameters.
+    Additionally, a configuration file is created. It contains information 
+    about the processing paramters for the station. Keys are generic for the 
+    common parameters and named after BIRRP input keywords for the processing 
+    parameters.
 
     """
 
     if not op.isfile(birrp_exe):
-        raise MTex.MTpyError_inputarguments('birrp executable not found: %s'%birrp_exe)
+        raise MTex.MTpyError_inputarguments('birrp executable not found:'+\
+                                                       '{0}'.format(birrp_exe))
     if not op.isdir(ts_directory):
-        raise MTex.MTpyError_inputarguments('time series files directory not existing: %s'%ts_directory)
+        raise MTex.MTpyError_inputarguments('time series files directory not'+\
+                                            'existing: {0}'.format(ts_directory))
 
     current_dir = op.abspath(os.curdir)
 
@@ -72,7 +85,8 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, coherence_thres
                 os.makedirs(output_dir)
                 wd = output_dir
             except:
-                print ('Could not find or generate specified output directory %s - using default instead!'%(output_dir))
+                print 'Could not find or generate specified output '+\
+                      'directory {0} - using default instead!'.format(output_dir)
         else:
             wd = output_dir 
 
@@ -401,6 +415,621 @@ def get_optimal_window_bisection(length, sampling_rate):
 
     return longest_window, number_of_bisections
 
+
+def write_script_file(processing_dict, save_path=None):
+    """
+    writeScriptfile(processingdict will write a script file for BIRRP using 
+    info in processingdict which is a dictionary with keys:
+    
+    ================== ========================================================
+    parameter          description
+    ================== ======================================================== 
+    station            station name
+    fn_lst             list of file names to be processed
+    rrfn_lst           list of remote reference file names
+    ilev               processing mode 0 for basic and 1 for advanced RR-2 
+                       stage
+    nout               Number of Output time series (2 or 3-> for BZ)
+    ninp               Number of input time series for E-field (1,2,3) 
+    nref               Number of reference channels (2 for MT)
+    nrr                bounded remote reference (0) or 2 stage bounded 
+                       influence (1)
+    tbw                Time bandwidth for Sepian sequence
+    deltat             Sampling rate (+) for (s), (-) for (Hz)
+    nfft               Length of FFT (should be even)
+    nsctinc            section increment divisor (2 to divide by half)
+    nsctmax            Number of windows used in FFT
+    nf1                1st frequency to extract from FFT window (>=3)
+    nfinc              frequency extraction increment 
+    nfsect             number of frequencies to extract
+    mfft               AR filter factor, window divisor (2 for half)
+    uin                Quantile factor determination
+    ainlin             Residual rejection factor low end (usually 0)
+    ainuin             Residual rejection factor high end (.95-.99)
+    c2threshb          Coherence threshold for magnetics (0 if undesired)
+    c2threshe          Coherence threshold for electrics (0 if undesired)
+    nz                 Threshold for Bz (0=separate from E, 1=E threshold, 
+                                         2=E and B) 
+                       Input if 3 B components else None
+    c2thresh1          Squared coherence for Bz, input if NZ=0, Nout=3
+    perlo              longest period to apply coherence threshold over
+    perhi              shortes period to apply coherence threshold over
+    ofil               Output file root(usually three letters, can add full
+                                        path)
+    nlev               Output files (0=Z; 1=Z,qq; 2=Z,qq,w; 3=Z,qq,w,d)
+    nprej              number of frequencies to reject
+    prej               frequencies to reject (+) for period, (-) for frequency
+    npcs               Number of independent data to be processed (1 for one 
+                       segement)
+    nar                Prewhitening Filter (3< >15) or 0 if not desired',
+    imode              Output file mode (0=ascii; 1=binary; 2=headerless ascii; 
+                       3=ascii in TS mode',
+    jmode              input file mode (0=user defined; 1=start time 
+                                        YYYY-MM-DD HH:MM:SS)',
+    nread              Number of points to be read for each data set  
+                       (if segments>1 -> npts1,npts2...)',
+    nfil               Filter parameters (0=none; >0=input parameters; 
+                                          <0=filename)
+    nskip              Skip number of points in time series (0) if no skip, 
+                        (if segements >1 -> input1,input2...)',
+    nskipr             Number of points to skip over (0) if none,
+                       (if segements >1 -> input1,input2...)',
+    thetae             Rotation angles for electrics (relative to geomagnetic 
+                       North)(N,E,rot)',
+    thetab             Rotation angles for magnetics (relative to geomagnetic 
+                       North)(N,E,rot)',
+    thetar             Rotation angles for calculation (relative to geomagnetic 
+                       North)(N,E,rot)'
+    ================== ========================================================              
+    
+    .. see also::                
+                
+        => see BIRRP Manual for more details on the parameters
+        => see A. D. Chave and D. J. Thomson [1989,2003,2004] for more
+            information on Bounded influence and robust processing.
+            
+    Arguments:
+    -----------
+        **processing_dict** : dictionary with keys as above
+        
+    Outputs:
+    --------
+        **script_file** : full path to script file to guide birrp
+        
+        **birrp_dict** : dictionary of birrp parameters input into script file
+        
+    
+    """
+     
+    #===================================================================
+    # Write a script file for BIRRP, Chave et al. [2004]            
+    #===================================================================
+    #print processingdict
+    #compute how many timeseries and days there are 
+    #ndf = # of files per day
+    #nds = # of day
+    pdict = processing_dict
+    
+    try:
+        fn_array = np.array(pdict['fn_lst'])
+    except KeyError:
+        raise KeyError('fn_lst --> Need to input a list of files to process')
+    
+    try:
+        nds, ndf = fn_array.shape
+    except ValueError:
+        ndf = fn_array.shape[0]
+        nds = 0
+    if save_path is None:
+        if nds == 0 or nds == 1:
+            bfpath = os.path.join(os.path.dirname(pdict['fn_lst'][0]),
+                                 'BF')
+        else:
+            bfpath = os.path.join(os.path.dirname(pdict['fn_lst'][0][0]),
+                                  'BF')
+    else:
+        bfpath = save_path
+    
+    
+    if nds == 0:
+        npcs=1
+    elif nds==1:
+        nds=0
+        npcs=1
+        pdict['fn_lst'] = pdict['fn_lst'][0]
+        try:
+            pdict['rrfn_lst'] = pdict['rrfn_lst'][0]  
+        except KeyError:
+            pass
+
+    else:
+        npcs=int(nds)
+        
+    #make a directory to put BIRRP Files (BF)
+    if not os.path.exists(bfpath):
+        os.mkdir(bfpath)
+        print 'Made directory: ', bfpath
+
+    #output file stem, full path
+    ofil = os.path.join(bfpath,pdict['station']) 
+    
+    #mode to process: default is basic
+    ilev = int(pdict.pop('ilev', 0))
+    
+    #number of output channels
+    try:
+        nout = int(pdict['nout'])
+    except KeyError:
+        if nds!=0:
+            if ndf==5:
+                nout = 3
+            else:
+                nout = 2
+        elif ndf==5:
+            nout = 3
+        else:
+            nout = 2
+    
+    #number of input channels default is 2
+    ninp = int(pdict.pop('ninp', 2))
+        
+    #time bandwidth window size            
+    tbw = int(pdict.pop('tbw', 2))
+        
+    #------------Options for Advanced mode-------------------------
+    if ilev == 1:
+        #Advanced: number of remote reference channels
+        nref = int(pdict.pop('nref', 2))
+            
+        #Advanced: remote reference type processing
+        nrr = int(pdict.pop('nrr', 1))          
+            
+        #Advanced: magnetic coherence threshold
+        c2threshb = float(pdict.pop('c2threshb', 0))
+            
+        #Advanced: window increment divisor
+        nsctinc = int(pdict.pop('nsctinc', 2))
+            
+        #Advanced: first frequency to extract
+        nf1 = int(pdict.pop('nf1', tbw+2))
+        
+        #Advanced: frequency increment
+        nfinc = int(pdict.pop('nfinc', tbw))
+            
+        #number of frequencies to extract
+        nfsect = int(pdict.pop('nfsec', 2))
+            
+        #number AR filter is divided by
+        mfft = int(pdict.pop('mfft', 2))
+        
+        #Advanced: lower bound of leverage point rejection
+        ainlin = float(pdict.pop('ainlin', .0001))
+        
+        #Advanced: coherence threshold low period
+        perlo = int(pdict.pop('perlo', 1000))
+            
+        #Advanced: coherenct threshold high period
+        perhi = float(pdict.pop('perhi', .0001))
+            
+        #Advanced:  number of frequencies to reject
+        nprej = int(pdict.pop('nprej', 0))
+        
+        #Advanced
+        try:
+            prej = pdict['prej'].split(',')
+            if type(prej) is list:
+                prej = [float(ff) for ff in prej]
+            if nprej != len(prej):
+                nprej = len(prej)
+        except KeyError:
+            prej = []
+            
+    #---------------------Options for Basic Mode--------------------------
+    
+    #time series sampling rate
+    deltat = int(pdict.pop('deltat', -100))
+    
+    #max length of fft window 
+    nfft = int(pdict.pop('nfft', 2**16))
+
+    #maximum number of sections
+    nsctmax = int(pdict.pop('nsctmax', 12))
+    
+    #quantile factor
+    uin = int(pdict.pop('uin', 0))            
+    
+    #upper bound of leverage point rejection
+    ainuin = float(pdict.pop('ainuin', .9999))
+ 
+    #electric channel coherence threshold
+    c2threshe = int(pdict.pop('c2threshe', 0))
+
+    #Bz coherency threshold mode
+    try:
+        nz = int(pdict['nz'])
+    except KeyError:
+        if nout == 3:
+            nz = 0
+        else:
+            nz = None
+    
+    #Bz coherence threshold
+    try:
+        c2threshe1 = float(pdict['c2threshe1'])
+    except KeyError:
+        if nout == 3:
+            c2threshe1 = 0
+        else:
+            c2threshe1 = None
+    
+    #output level
+    nlev = int(pdict.pop('nlev', 0))
+    
+    #order of prewhitening auto regressive filter
+    nar = int(pdict.pop('nar', 5))
+        
+    #input mode
+    imode = int(pdict.pop('imode', 0))
+    
+    #output mode
+    jmode = int(pdict.pop('jmode', 0))       
+    
+    #name of filter file
+    nfil = int(pdict.pop('nfil', 0))
+    
+    if jmode == 0:
+        #number of points to read
+        nread = pdict.pop('nread', 1440000)
+        if type(nread) is not list and type(nread) is not np.ndarray:
+            nread = int(nread)
+        #number of points to skip in time series
+        try:
+            nskip = pdict['nskip']
+        except KeyError:
+            if nds != 0:
+                nskip = [0 for ii in range(nds)]
+            else:
+                nskip = 0
+        
+        #number of point to skip from remote reference time series    
+        try:
+            nskipr = pdict['nskipr']
+            if nds != 0:
+                if type(nskipr) is list:
+                    pass
+        
+                else:        
+                    nskipr = [nskip for ii in range(nds)]
+        except KeyError:
+            if nds==0:
+                nskip = 0
+            else:
+                nskip = [0 for ii in range(nds)]
+    
+    if jmode == 1:
+        #start time of data
+        dstim = pdict.pop('dstim', '1970-01-01 00:00:00')
+        
+        #window start time
+        wstim = pdict.pop('wstim', '1970-01-01 00:00:00')
+        
+        #window end time
+        wetim = pdict.pop('wetim', '1970-01-02 00:00:00')
+        
+    
+    #rotation angle of electric channels
+    thetae = pdict.pop('thetae', '0,90,0')
+    
+    #rotation angle of magnetic channels
+    thetab = pdict.pop('thetab', '0,90,0')
+    
+    #rotation angle of final impedance tensor
+    thetaf = pdict.pop('thetaf', '0,90,0')
+
+    #===================================================================
+    # Write values to a .script file
+    #===================================================================
+    #print '+++ ',nskipr
+    #print ndf,nds
+    #write to a file
+    scriptfile=ofil+'.script'
+    fid=file(scriptfile,'w')
+    if ilev==0: 
+        fid.write('{0:d} \n'.format(ilev))
+        fid.write('{0:d} \n'.format(nout))
+        fid.write('{0:d} \n'.format(ninp))
+        fid.write('{0:.3f} \n'.format(tbw))
+        fid.write('{0:.3f} \n'.format(deltat))
+        fid.write('{0:d},{1:d} \n'.format(nfft,nsctmax))
+        fid.write('y \n')
+        fid.write('{0:.5f},{1:.5f} \n'.format(uin,ainuin))
+        fid.write('{0:.3f} \n'.format(c2threshe))
+        #parameters for bz component if ninp=3
+        if nout==3:
+            if c2threshe==0:
+                fid.write('{0:d} \n'.format(0))
+                fid.write('{0:.3f} \n'.format(c2threshe1))
+            else:
+                fid.write('{0:d} \n'.format(nz))
+                fid.write('{0:.3f} \n'.format(c2threshe1))
+        else:
+            pass
+        fid.write(ofil+'\n')
+        fid.write('{0:d} \n'.format(nlev))
+        
+    elif ilev==1:
+        print 'Writing Advanced mode'
+        fid.write('{0:d} \n'.format(ilev))
+        fid.write('{0:d} \n'.format(nout))
+        fid.write('{0:d} \n'.format(ninp))
+        fid.write('{0:d} \n'.format(nref))
+        if nref>3:
+            nrrlst=np.array([len(rrlst) 
+                            for rrlst in pdict['rrfn_lst']])
+            nr3=len(np.where(nrrlst==3)[0])
+            nr2=len(np.where(nrrlst==2)[0])
+            fid.write('{0:d},{1:d} \n'.format(nr3,nr2))
+        fid.write('{0:d} \n'.format(nrr))
+        #if remote referencing
+        if int(nrr)==0:
+            fid.write('{0:.3f} \n'.format(tbw))
+            fid.write('{0:.3f} \n'.format(deltat))
+            fid.write('{0:d},{1:.2g},{2:d} \n'.format(nfft,nsctinc,nsctmax))
+            fid.write('{0:d},{1:.2g},{2:d} \n'.format(nf1,nfinc,nfsect))
+            fid.write('y \n')
+            fid.write('{0:.2g} \n'.format(mfft))        
+            fid.write('{0:.5g},{1:.5g},{2:.5g} \n'.format(uin,ainlin,ainuin))
+            fid.write('{0:.3f} \n'.format(c2threshe))
+            #parameters for bz component if ninp=3
+            if nout==3:
+                if c2threshe!=0:
+                    fid.write('{0:d} \n'.format(nz))
+                    fid.write('{0:.3f} \n'.format(c2threshe1))
+                else:
+                    fid.write('{0:d} \n'.format(0))
+                    fid.write('{0:.3f} \n'.format(c2threshe1))
+                if c2threshe1!=0.0 or c2threshe!=0.0:
+                    fid.write('{0:.6g},{1:.6g} \n'.format(perlo,perhi))
+            else:
+                if c2threshe!=0.0:
+                    fid.write('{0:.6g},{1:.6g} \n'.format(perlo,perhi))
+            fid.write(ofil+'\n')
+            fid.write('{0:d} \n'.format(nlev))
+            fid.write('{0:d} \n'.format(nprej))
+            if nprej!=0:
+                if type(prej) is not list:
+                    prej=[prej]
+                fid.writelines(['{0:.5g} \n'.format(nn) for nn in prej])
+        #if 2 stage processing
+        elif int(nrr)==1:
+            fid.write('{0:.5g} \n'.format(tbw))
+            fid.write('{0:.5g} \n'.format(deltat))
+            fid.write('{0:d},{1:.2g},{2:d} \n'.format(nfft,nsctinc,nsctmax))        
+            fid.write('{0:d},{1:.2g},{2:d} \n'.format(nf1,nfinc,nfsect))
+            fid.write('y \n')
+            fid.write('{0:.2g} \n'.format(mfft))        
+            fid.write('{0:.5g},{1:.5g},{2:.5g} \n'.format(uin,ainlin,ainuin))
+            fid.write('{0:.3f} \n'.format(c2threshb))        
+            fid.write('{0:.3f} \n'.format(c2threshe))
+            if nout==3:
+                if c2threshb!=0 or c2threshe!=0:
+                    fid.write('{0:d} \n'.format(nz))
+                    fid.write('{0:.3f} \n'.format(c2threshe1))
+                elif c2threshb==0 and c2threshe==0:
+                    fid.write('{0:d} \n'.format(0))
+                    fid.write('{0:.3f} \n'.format(0))
+            if c2threshb!=0.0 or c2threshe!=0.0:
+                fid.write('{0:.6g},{1:.6g} \n'.format(perlo,perhi))
+            fid.write(ofil+'\n')
+            fid.write('{0:d} \n'.format(nlev))
+            fid.write('{0:d} \n'.format(nprej))
+            if nprej!=0:
+                if type(prej) is not list:
+                    prej=[prej]
+                fid.writelines(['{0:.5g} \n'.format(nn) for nn in prej])
+        
+    fid.write('{0:d} \n'.format(npcs))    
+    fid.write('{0:d} \n'.format(nar))    
+    fid.write('{0:d} \n'.format(imode))    
+    fid.write('{0:d} \n'.format(jmode))    
+    #write in filenames 
+    if npcs != 1:
+        if jmode == 0:
+            fid.write(str(nread[0])+'\n')
+            #write filenames
+            for tfile in pdict['fn_lst'][0]:
+                fid.write(str(nfil)+'\n')
+                fid.write(tfile+'\n')
+                fid.write(str(nskip[0])+'\n')
+            for rfile in pdict['rrfn_lst'][0]:
+                fid.write(str(nfil)+'\n')
+                fid.write(rfile+'\n')
+                fid.write(str(nskipr[0])+'\n')
+            for nn in range(1,npcs):
+                fid.write(str(nread[nn])+'\n')            
+                #write filenames
+                for tfile in pdict['fn_lst'][nn]:
+                    fid.write(tfile+'\n')
+                    fid.write(str(nskip[0])+'\n')
+                for rfile in pdict['rrfn_lst'][nn]:
+                    fid.write(rfile+'\n')
+                    fid.write(str(nskipr[nn])+'\n')
+        elif jmode == 1:
+            #write filenames
+            for tfile in pdict['fn_lst'][0]:
+                fid.write(str(nfil)+'\n')
+                fid.write(tfile+'\n')
+                fid.write(dstim+'\n')
+                fid.write(wstim+'\n')
+                fid.write(wetim+'\n')
+            for rfile in pdict['rrfn_lst'][0]:
+                fid.write(str(nfil)+'\n')
+                fid.write(rfile+'\n')
+                fid.write(dstim+'\n')
+                fid.write(wstim+'\n')
+                fid.write(wetim+'\n')
+            for nn in range(1,npcs):
+                fid.write(str(nread[nn])+'\n')            
+                #write filenames
+                for tfile in pdict['fn_lst'][nn]:
+                    fid.write(tfile+'\n')
+                    fid.write(dstim+'\n')
+                    fid.write(wstim+'\n')
+                    fid.write(wetim+'\n')
+                for rfile in pdict['rrfn_lst'][nn]:
+                    fid.write(rfile+'\n')
+                    fid.write(dstim+'\n')
+                    fid.write(wstim+'\n')
+                    fid.write(wetim+'\n')
+    else:
+        if jmode == 0:
+            if type(nread) is list:
+                fid.write(str(nread[0])+'\n')
+            else:
+                fid.write(str(nread)+'\n')
+            #write filenames
+            if nds==0:
+                for tfile in pdict['fn_lst']:
+                    fid.write(str(nfil)+'\n')
+                    fid.write(tfile+'\n')
+                    if type(nskip) is list:
+                        fid.write(str(nskip[0])+'\n')
+                    else:
+                        fid.write(str(nskip)+'\n')
+                for rfile in pdict['rrfn_lst']:
+                    fid.write(str(nfil)+'\n')
+                    fid.write(rfile+'\n')
+                    if type(nskipr) is list:
+                        fid.write(str(nskipr[0])+'\n')
+                    else:
+                        fid.write(str(nskipr)+'\n')
+            else:
+                for tfile in pdict['fn_lst'][0]:
+                    fid.write(str(nfil)+'\n')
+                    fid.write(tfile+'\n')
+                    if type(nskip) is list:
+                        fid.write(str(nskip[0])+'\n')
+                    else:
+                        fid.write(str(nskip)+'\n')
+                for rfile in pdict['rrfn_lst'][0]:
+                    fid.write(str(nfil)+'\n')
+                    fid.write(rfile+'\n')
+                    if type(nskipr) is list:
+                        fid.write(str(nskipr[0])+'\n')
+                    else:
+                        fid.write(str(nskipr)+'\n')
+                        
+        elif jmode == 1:
+            #write filenames
+            if nds==0:
+                for tfile in pdict['fn_lst']:
+                    fid.write(str(nfil)+'\n')
+                    fid.write(tfile+'\n')
+                    fid.write(dstim+'\n')
+                    fid.write(wstim+'\n')
+                    fid.write(wetim+'\n')
+                for rfile in pdict['rrfn_lst']:
+                    fid.write(str(nfil)+'\n')
+                    fid.write(rfile+'\n')
+                    fid.write(dstim+'\n')
+                    fid.write(wstim+'\n')
+                    fid.write(wetim+'\n')
+            else:
+                for tfile in pdict['fn_lst'][0]:
+                    fid.write(str(nfil)+'\n')
+                    fid.write(tfile+'\n')
+                    fid.write(dstim+'\n')
+                    fid.write(wstim+'\n')
+                    fid.write(wetim+'\n')
+                for rfile in pdict['rrfn_lst'][0]:
+                    fid.write(str(nfil)+'\n')
+                    fid.write(rfile+'\n')
+                    fid.write(dstim+'\n')
+                    fid.write(wstim+'\n')
+                    fid.write(wetim+'\n')
+                    
+    #write rotation angles
+    fid.write(thetae.replace(',',' ')+'\n')
+    fid.write(thetab.replace(',',' ')+'\n')
+    fid.write(thetaf.replace(',',' '))    
+    fid.close()
+    
+    birrp_dict = {}
+    
+    if ilev == 0:
+        birrp_dict['ilev'] = ilev
+        birrp_dict['nout'] = nout
+        birrp_dict['ninp'] = ninp
+        birrp_dict['tbw'] = tbw
+        birrp_dict['nfft'] = nfft
+        birrp_dict['nsctmax'] = nsctmax
+        birrp_dict['uin'] = uin
+        birrp_dict['ainuin'] = ainuin
+        birrp_dict['c2threshe'] = c2threshe
+        birrp_dict['nz'] = nz
+        birrp_dict['c2threshe1'] = c2threshe1
+        birrp_dict['ofil'] = ofil
+        birrp_dict['nlev'] = nlev
+        birrp_dict['nar'] = nar
+        birrp_dict['imode'] = imode
+        birrp_dict['jmode'] = jmode
+        birrp_dict['nfil'] = nfil
+        birrp_dict['nskip'] = nskip
+        birrp_dict['nskipr'] = nskipr
+        birrp_dict['thetae'] = thetae
+        birrp_dict['thetab'] = thetab
+        birrp_dict['thetaf'] = thetaf
+    elif ilev == 1:
+        birrp_dict['ilev'] = ilev
+        birrp_dict['nout'] = nout
+        birrp_dict['ninp'] = ninp
+        birrp_dict['nref'] = nref
+        birrp_dict['nrr'] = nrr
+        birrp_dict['tbw'] = tbw
+        birrp_dict['nfft'] = nfft
+        birrp_dict['nsctinc'] = nsctinc
+        birrp_dict['nsctmax'] = nsctmax
+        birrp_dict['nf1'] = nf1
+        birrp_dict['nfinc'] = nfinc
+        birrp_dict['nfsect'] = nfsect
+        birrp_dict['uin'] = uin
+        birrp_dict['ainlin'] = ainlin
+        birrp_dict['ainuin'] = ainuin
+        if nrr == 1:
+            birrp_dict['c2threshb'] = c2threshb
+            birrp_dict['c2threshe'] = c2threshe
+            if c2threshe == 0 and c2threshb == 0:
+                birrp_dict['nz'] = 0
+            else:
+                birrp_dict['nz'] = 0
+                birrp_dict['perlo'] = perlo
+                birrp_dict['perhi'] = perhi
+        elif nrr == 0:
+            birrp_dict['c2threshb'] = 0
+            birrp_dict['c2threshe'] = c2threshe
+        birrp_dict['nprej'] = nprej
+        birrp_dict['prej'] = prej
+        birrp_dict['c2threshe1'] = c2threshe1
+        birrp_dict['ofil'] = ofil
+        birrp_dict['nlev'] = nlev
+        birrp_dict['nar'] = nar
+        birrp_dict['imode'] = imode
+        birrp_dict['jmode'] = jmode
+        birrp_dict['nfil'] = nfil
+        if jmode == 0:
+            birrp_dict['nskip'] = nskip
+            birrp_dict['nskipr'] = nskipr
+        elif jmode == 1:
+            birrp_dict['dstim'] = dstim
+            birrp_dict['wstim'] = wstim
+            birrp_dict['wetim'] = wetim
+        birrp_dict['thetae'] = thetae
+        birrp_dict['thetab'] = thetab
+        birrp_dict['thetaf'] = thetaf
+
+    print 'Made .script file: '+ofil+'.script'
+    
+    return scriptfile,birrp_dict
 
 def run():
 

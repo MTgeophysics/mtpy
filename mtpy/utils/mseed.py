@@ -289,19 +289,27 @@ def readfile_obspy(infilename, trace = 0):
 
 
 
-def writefile_obspy_singletrace(outfilename,station,channel,network,location, delta_t, t0, data):
+def writefile_obspy_singletrace(outfilename,station,channel,network,location,
+                                delta_t, t0, data):
 
     # Fill header attributes
-    stats = {'network': network.upper(), 'station': station.upper(), 'location': location.upper(),
-         'channel': channel.upper(), 'npts': len(data), 'sampling_rate': 1./delta_t, 'starttime' : t0}
+    stats = {'network': network.upper(), 
+             'station': station.upper(), 
+             'location': location.upper(),
+             'channel': channel.upper(), 
+             'npts': len(data), 
+             'sampling_rate': 1./delta_t, 
+             'starttime' : t0}
     #define stream
     st = Stream([Trace(data=data, header=stats)])
+    return st
     if not outfilename.lower().endswith('.mseed'):
         outfilename += '.mseed'
+    print outfilename
     
 
     #save to file
     outfilename = MTfh.make_unique_filename(outfilename)
-    st.write(outfilename, format='MSEED')
+    st.write(outfilename, 'MSEED')
 
     return outfilename
