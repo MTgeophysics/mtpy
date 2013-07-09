@@ -2139,7 +2139,7 @@ def _generate_edifile_string(edidict):
     sections:
     HEAD, INFO, DEFINEMEAS, HMEAS_EMEAS, MTSECT, ZROT, FREQ, Z, TIPPER
 
-    Can be extended later on...
+    (Can be extended later on...)
 
     """
     # define section heads explicitely instead of iteration over the dictionary
@@ -2802,7 +2802,7 @@ def _make_tipper_dict(Tipper_object):
                 else:
                     data = np.imag(data)
             else: 
-                data = Tipper_object.tippererr[:,idx_comp/2, idx_comp%2]
+                data = Tipper_object.tipper_err[:,idx_comp/2, idx_comp%2]
  
             tipper_dict[section] = data
 
