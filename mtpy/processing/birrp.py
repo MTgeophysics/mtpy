@@ -69,11 +69,11 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
     """
 
     if not op.isfile(birrp_exe):
-        raise MTex.MTpyError_inputarguments('birrp executable not found:'+\
-                                                       '{0}'.format(birrp_exe))
+        raise MTex.MTpyError_inputarguments('birrp executable not found: {0}'\
+                                            ''.format(birrp_exe))
     if not op.isdir(ts_directory):
-        raise MTex.MTpyError_inputarguments('time series files directory not'+\
-                                            'existing: {0}'.format(ts_directory))
+        raise MTex.MTpyError_inputarguments('time series files directory'\
+                                    ' not existing: {0}'.format(ts_directory))
 
     current_dir = op.abspath(os.curdir)
 
@@ -85,8 +85,8 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
                 os.makedirs(output_dir)
                 wd = output_dir
             except:
-                print 'Could not find or generate specified output '+\
-                      'directory {0} - using default instead!'.format(output_dir)
+                print ('Could not find or generate specified output directory'\
+                        ' {0} - using default instead!'.format(output_dir))
         else:
             wd = output_dir 
 
@@ -94,15 +94,18 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
         try:
             os.makedirs(wd) 
         except:
-            raise MTex.MTpyError_file_handling('cannot create working directory:%s'%(wd))
+            raise MTex.MTpyError_file_handling('cannot create working directory'\
+                                                ': {0}'.format(wd))
     
     print "Successfully generated output directory", wd
 
     os.chdir(wd)
 
-    inputstring, birrp_stationdict, inputfilename = generate_birrp_inputstring_simple(stationname, ts_directory, coherence_threshold)
+    inputstring, birrp_stationdict, inputfilename = \
+    generate_birrp_inputstring_simple(stationname, ts_directory, coherence_threshold)
 
-    print "generated inputstring and configuration dictionary for station {0}".format(stationname)
+    print "generated inputstring and configuration dictionary for station"\
+            " {0}".format(stationname)
     #print inputstring
     #sys.exit()
     #correct inputstring for potential errorneous line endings due to strange operating systems:
@@ -141,7 +144,8 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
     print 'generating configuration file containing the applied processing parameters'
     station_config_file = '%s_birrpconfig.cfg'%(stationname)
     MTcf.write_dict_to_configfile(birrp_stationdict, station_config_file)
-    print 'Wrote BIRRP and time series configurations to file: {0}'.format(op.abspath(station_config_file))
+    print 'Wrote BIRRP and time series configurations to file:'\
+                                ' {0}'.format(op.abspath(station_config_file))
 
     #go back to initial directory
     os.chdir(current_dir)
@@ -150,17 +154,21 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
 
 
 
-def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_threshold, output_channels=2):
+def generate_birrp_inputstring_simple(stationname, ts_directory, 
+                                        coherence_threshold, output_channels=2):
 
     if not output_channels in [2,3]:
         raise MTex.MTpyError_inputarguments( 'Output channels must be 2 or 3' )
 
 
     print 'setting basic input components,e.g. filenames, samplingrate,...'
-    input_filename, length, sampling_rate, birrp_stationdict = set_birrp_input_file_simple(stationname, ts_directory, output_channels, op.join(ts_directory,'birrp_wd'))
+    input_filename, length, sampling_rate, birrp_stationdict = \
+                        set_birrp_input_file_simple(stationname, ts_directory, 
+                            output_channels, op.join(ts_directory,'birrp_wd'))
 
     print 'calculate optimal time window bisection parameters'
-    longest_section, number_of_bisections = get_optimal_window_bisection(length, sampling_rate)
+    longest_section, number_of_bisections = get_optimal_window_bisection(length, 
+                                                                sampling_rate)
 
     birrp_stationdict['max_window_length'] = longest_section
     birrp_stationdict['n_bisections'] = number_of_bisections
@@ -169,20 +177,27 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
     #self referencing:
     birrp_stationdict['rr_station'] = birrp_stationdict['station']
 
-    birrp_stationdict = MTmc.add_birrp_simple_parameters_to_dictionary(birrp_stationdict)
+    birrp_stationdict = MTmc.add_birrp_simple_parameters_to_dictionary(
+                                                            birrp_stationdict)
 
 
     if output_channels == 2:
         birrp_stationdict['nout'] = 2
 
-        inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n%i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,input_filename)
+        inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n%s\n0\n1\n3\n2'\
+        '\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n%i\n4,3,4\n%s\n0\n0,90,0\n0'\
+        ',90,0\n0,90,0\n'%(sampling_rate,longest_section,number_of_bisections,
+            coherence_threshold,stationname,input_filename,length,input_filename)
 
     elif output_channels == 3:
         birrp_stationdict['nout'] = 3
         birrp_stationdict['nz'] = 2
 
 
-        inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n\i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,stationname)
+        inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1\n3'\
+        '\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n\i\n4,3,4\n%s\n0\n0,90,0'\
+        '\n0,90,0\n0,90,0\n'%(sampling_rate,longest_section,number_of_bisections,
+            coherence_threshold,stationname,input_filename,length,stationname)
 
     string_file = op.join(ts_directory,'birrp_wd','birrp_input_string.txt')
     string_file = MTfh.make_unique_filename(string_file)
@@ -195,15 +210,24 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
 
 
 
-def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_directory = '.'):
+def set_birrp_input_file_simple(stationname, ts_directory, output_channels, 
+                                w_directory = '.'):
+
     """
-    File handling: collect longest possible input for BIRRP from different files for the given station name. Generate a new input file in the working directory and return the name of this file, as well as time series and processing properties in form of a dictionary. 
+    File handling: collect longest possible input for BIRRP from different files 
+    for the given station name. Generate a new input file in the working 
+    directory and return the name of this file, as well as time series and 
+    processing properties in form of a dictionary. 
 
-    Scan all files in the directory by their headers: if the stationname matches, add the data file to the list.
-    Additionally read out channels and start-/end times. Find longest consecutive time available on all channels.
-    Then generate nx4/5 array for n consecutive time steps. Array in order Ex, Ey, Bx, By (,Bz) saved into file 'birrp_input_data.txt'
+    Scan all files in the directory by their headers: if the stationname matches, 
+    add the data file to the list.
+    Additionally read out channels and start-/end times. Find longest 
+    consecutive time available on all channels.
+    Then generate nx4/5 array for n consecutive time steps. Array in order 
+    Ex, Ey, Bx, By (,Bz) saved into file 'birrp_input_data.txt'
 
-    Output_channels determine the number of output channels: 2 for Ex, Ey - 3 for additional Bz
+    Output_channels determine the number of output channels: 
+    2 for Ex, Ey - 3 for additional Bz
 
     Output:
     - filename for birrp input data_in
@@ -358,8 +382,10 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
             #set data entries
             print 'fill data from file into temporary array'
             print idx_overall_ta, len(overlap), idx_ch, idx_ta_file
-            print data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch].shape, data_in[idx_ta_file:idx_ta_file+len(overlap)].shape
-            data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch] = data_in[idx_ta_file:idx_ta_file+len(overlap)]
+            print data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch].shape,\
+                    data_in[idx_ta_file:idx_ta_file+len(overlap)].shape
+            data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch] = \
+            data_in[idx_ta_file:idx_ta_file+len(overlap)]
 
             gc.collect()
 
@@ -393,6 +419,129 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
 
     return op.abspath(outfn), birrp_stationdict['n_samples'] , sampling_rate, birrp_stationdict
 
+#-------------------------------------------------------------------------------
+
+def runbirrp2in2out(birrp_exe, stationname, ts_directory, birrp_mode,
+                    parameter_dict, output_dir = None):
+
+    """
+    Call BIRRP for 2 input and 2 output channels.
+
+    Provide
+    - BIRRP executable 
+    - stationname 
+    - data directory 
+    - BIRRP processing mode: 'normal'/'full'/'advanced'
+    - parameter dictionary 
+            * minimum content: 'starttime' and 'endtime' (in epoch seconds)
+
+    Optional:
+    - output directory
+
+    Data must be in MTpy-ts data format. The time series must all contain the 
+    full data for the given interval [starttime, endtime]. Otherwise, the time 
+    interval will be reduced to the longest possible without gaps. 
+
+    All other parameters are automatically determined.
+
+    If no output directory is specified, output files are put into a subfolder 
+    of the source directory, named 'birrp_processed'.
+
+    During pthe processing a configuration file is created. It contains 
+    information about the processing paramters for the station. 
+    Keys are generic (for common parameters) or named after BIRRP input 
+    keywords (for processing parameters).
+
+    """
+
+    pass
+
+#-------------------------------------------------------------------------------
+
+def runbirrp2in3out(birrp_exe, stationname, ts_directory, birrp_mode, 
+                    parameter_dict, output_dir = None):
+
+    """
+    Call BIRRP for 2 input and 3 output channels. Common case is 2 E-field and 
+    3 B-field channels. Remote reference can be 2 or 3 channels.
+
+    Provide
+    - BIRRP executable 
+    - stationname 
+    - data directory 
+    - BIRRP processing mode: 'normal'/'full'/'advanced'
+    - parameter dictionary 
+            * minimum content: 'starttime' and 'endtime' (in epoch seconds)
+
+    Optional:
+    - output directory
+
+    Data must be in MTpy-ts data format. The time series must all contain the 
+    full data for the given interval [starttime, endtime]. Otherwise, the time 
+    interval will be reduced to the longest possible without gaps. 
+
+    All other parameters are automatically determined.
+
+    If no output directory is specified, output files are put into a subfolder 
+    of the source directory, named 'birrp_processed'.
+
+    During pthe processing a configuration file is created. It contains 
+    information about the processing paramters for the station. 
+    Keys are generic (for common parameters) or named after BIRRP input 
+    keywords (for processing parameters).
+
+    """
+
+    pass
+
+#-------------------------------------------------------------------------------
+
+def runbirrp_transferfunctions_2in2out(birrp_exe, stationname1, stationname2,
+                                        ts_directory1, ts_directory2, birrp_mode,
+                                        parameter_dict, output_dir = None):
+
+    """
+    Call BIRRP for 2 input and 2 output channels of different stations. 
+    Calculates the transfer function between stations, usually between E-fields.
+    No remote reference!
+
+    Provide
+    - BIRRP executable 
+    - first stationname 
+    - second stationname
+    - first data directory 
+    - second data directory
+    - BIRRP processing mode: 'normal'/'full'/'advanced'
+    - parameter dictionary 
+
+    Optional:
+    - output directory
+
+    Data must be in MTpy-ts data format. The time series must all contain the 
+    full data for the given interval [starttime, endtime]. Otherwise, the time 
+    interval will be reduced to the longest possible without gaps. 
+
+    All other parameters are automatically determined.
+
+    If no output directory is specified, output files are put into a subfolder 
+    of the source directory, named 'birrp_processed'.
+
+    During pthe processing a configuration file is created. It contains 
+    information about the processing paramters for the station. 
+    Keys are generic (for common parameters) or named after BIRRP input 
+    keywords (for processing parameters).
+
+    """
+
+    pass
+
+
+#-------------------------------------------------------------------------------
+
+
+
+
+
 
 def get_optimal_window_bisection(length, sampling_rate):
     """
@@ -403,15 +552,19 @@ def get_optimal_window_bisection(length, sampling_rate):
 
     """
 
-    # longest time window cannot exceed 1/30 of the total length in order to obtain statistically sound results (maybe correcting this to 1/100 later); value given in samples
+    # longest time window cannot exceed 1/30 of the total length in order to 
+    #obtain statistically sound results (maybe correcting this to 1/100 later); 
+    #value given in samples
     longest_window = int(length/30.)
 
-    #shortest_window cannot be smaller than 2^4=16 times the sampling interval in order to suit Nyquist and other criteria; value given in samples
+    #shortest_window cannot be smaller than 2^4=16 times the sampling interval 
+    #in order to suit Nyquist and other criteria; value given in samples
     shortest_window = 16 
 
 
-    #find maximal number of bisections so that the current window is still longer than the shortest window allowed
-    number_of_bisections = int(np.ceil(np.log(16./longest_window) / np.log(0.5) ))
+    #find maximal number of bisections so that the current window is still 
+    #longer than the shortest window allowed
+    number_of_bisections = int(np.ceil(np.log(16./longest_window)/np.log(0.5) ))
 
     return longest_window, number_of_bisections
 
@@ -1058,21 +1211,33 @@ def setup_arguments():
 
     pass
 
+#===============================================================================
 
-def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_dir = None):
+def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, 
+                out_dir = None):
+    
     """
     Convert BIRRP output files into EDI file.
 
-    The list of BIRRP output files is searched for in the in_dir directory for the given stationname (base part of filenames). Meta-data must be provided in two config files.  If MTpy standard processing has been applied, the first one is the same file as used from the beginning of the processing. If this survey-config-file is missing, a temporary config file must been created from the header information of the time series files that have been used as BIRRP input.
-    A second config file contains information about the BIRRP processing parameters. It's generated when BIRRP is called with MTpy.
+    The list of BIRRP output files is searched for in the in_dir directory for 
+    the given stationname (base part of filenames). Meta-data must be provided 
+    in two config files.  If MTpy standard processing has been applied, the 
+    first one is the same file as used from the beginning of the processing. 
+    If this survey-config-file is missing, a temporary config file must been 
+    created from the header information of the time series files that have been 
+    used as BIRRP input.
+    A second config file contains information about the BIRRP processing 
+    parameters. It's generated when BIRRP is called with MTpy.
 
-    The outputfile 'stationname.edi' and is stored in the out_dir directory. If out_dir is not given, the files are stored in the in_dir.
+    The outputfile 'stationname.edi' and is stored in the out_dir directory. 
+    If out_dir is not given, the files are stored in the in_dir.
 
     Input:
     - name of the station
     - directory, which contains the BIRRP output files
     - configuration file of the survey, containing all station setup information
-    - configuration file for the processing of the station, containing all BIRRP and other processing parameters
+    - configuration file for the processing of the station, containing all BIRRP 
+    and other processing parameters
     [- location to store the EDI file]
     """ 
 
@@ -1090,7 +1255,8 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile, out_di
             try:
                 os.makedirs(output_dir)
             except:
-                print 'output directory could not be created - using input directory instead'
+                print 'output directory could not be created - using input '\
+                                                            'directory instead'
                 output_dir = input_dir
 
     out_fn = op.join(output_dir,'{0}.edi'.format(stationname))
@@ -1353,7 +1519,9 @@ def _set_edi_data(lo_periods, Z_array, tipper_array):
     periods = lo_periods
 
     datastring = ''
-    datastring += '>!****FREQUENCIES****!\n'
+    
+    #unnecessary comment line:
+    #datastring += '>!****FREQUENCIES****!\n'
     datastring += '>FREQ NFREQ=%i ORDER=DEC // %i\n'%(len(periods),len(periods))
     for i,period in enumerate(periods):
         freq = 1./period
@@ -1363,7 +1531,8 @@ def _set_edi_data(lo_periods, Z_array, tipper_array):
 
     datastring += '\n'
 
-    datastring += '>!****IMPEDANCES****!\n'
+    #unnecessary comment line:
+    #datastring += '>!****IMPEDANCES****!\n'
     compstrings = ['ZXX','ZXY','ZYX','ZYY']
     Z_entries = ['R','I','.VAR']
     
@@ -1384,7 +1553,8 @@ def _set_edi_data(lo_periods, Z_array, tipper_array):
         
         
     #datastring += '\n'
-    datastring += '>!****TIPPER****!\n'
+    #unnecessary comment line:
+    #datastring += '>!****TIPPER****!\n'
 
     compstrings = ['TX','TY']
     T_entries = ['R.EXP','I.EXP','VAR.EXP']
@@ -1459,14 +1629,20 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
 
         acq_start_date = (time.gmtime(acq_starttime)[:3])[::-1]
         acq_start_time = (time.gmtime(acq_starttime)[3:6])
-        acq_start = '%02i/%02i/%02i'%(acq_start_date[0],acq_start_date[1],acq_start_date[2]%100)
-        #acq_start = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_start_date[0],acq_start_date[1],acq_start_date[2],acq_start_time[0],acq_start_time[1],acq_start_time[2]) 
+        acq_start = '%02i/%02i/%02i'%(acq_start_date[0],acq_start_date[1],
+                                                        acq_start_date[2]%100)
+        #acq_start = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_start_date[0],
+            #acq_start_date[1],acq_start_date[2],acq_start_time[0],
+            #acq_start_time[1],acq_start_time[2]) 
 
         acq_endtime = acq_starttime + 1./sampling_rate * (n_samples )
         acq_end_date = (time.gmtime(acq_endtime)[:3])[::-1]
         acq_end_time = (time.gmtime(acq_endtime)[3:6])
-        acq_end = '%02i/%02i/%02i'%(acq_end_date[0],acq_end_date[1],acq_end_date[2]%100)
-        #acq_end = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_end_date[0],acq_end_date[1],acq_end_date[2],acq_end_time[0],acq_end_time[1],acq_end_time[2]) 
+        acq_end = '%02i/%02i/%02i'%(acq_end_date[0],acq_end_date[1],
+                                                            acq_end_date[2]%100)
+        #acq_end = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(acq_end_date[0],
+            #acq_end_date[1],acq_end_date[2],acq_end_time[0],acq_end_time[1],
+            #acq_end_time[2]) 
 
 
         headstring +='\tACQDATE=%s \n'%(acq_start)
@@ -1475,8 +1651,11 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
 
     current_date = (time.gmtime()[:3])[::-1]
     current_time = time.gmtime()[3:6]
-    todaystring = '%02i/%02i/%02i'%(current_date[0],current_date[1],current_date[2]%100)
-    #todaystring = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(current_date[0],current_date[1],current_date[2],current_time[0],current_time[1],current_time[2]) 
+    todaystring = '%02i/%02i/%02i'%(current_date[0],current_date[1],
+                                                            current_date[2]%100)
+    #todaystring = '%02i.%02i.%4i %02i:%02i:%02i UTC'%(current_date[0],
+        #current_date[1],current_date[2],current_time[0],current_time[1],
+        #current_time[2]) 
     headstring += '\tFILEDATE=%s\n'%(todaystring)
 
 
