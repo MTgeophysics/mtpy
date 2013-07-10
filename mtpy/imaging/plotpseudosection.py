@@ -948,14 +948,19 @@ class PlotResPhasePseudoSection(object):
         if fig_dpi == None:
             fig_dpi = self.fig_dpi
             
-        if os.path.isdir(save_fn) == False:
-            file_format = save_fn[-3:]
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+        try:          
+            if os.path.isfile(save_fn) == False:
+                file_format = op.splitext(save_fn)[1][1:]
+                if file_format == '':
+                    file_format = 'pdf'
+                self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
                              orientation=orientation)
-            plt.clf()
-            plt.close(self.fig)
+                plt.clf()
+                plt.close(self.fig)
             
-        else:
+            else:
+                raise
+        except:
             save_fn = os.path.join(save_fn, 
                                    self._mt.station+'_ResPhasePseudoSection.'+
                                     file_format)
@@ -970,7 +975,7 @@ class PlotResPhasePseudoSection(object):
             pass
         
         self.fig_fn = save_fn
-        print 'Saved figure to: '+self.fig_fn
+        print 'Saved figure to: {0}'.format(self.fig_fn)
 
     def update_plot(self):
         """
