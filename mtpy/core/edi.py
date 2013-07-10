@@ -2775,7 +2775,8 @@ def _make_z_dict(Z_object):
                 else:
                     data = np.imag(data)
             else: 
-                data = Z_object.zerr[:,idx_comp/2, idx_comp%2]
+                #errors are in std deviations, but EDI files expect variance
+                data = (Z_object.zerr[:,idx_comp/2, idx_comp%2])**2
  
             z_dict[section] = data
 
@@ -2802,7 +2803,8 @@ def _make_tipper_dict(Tipper_object):
                 else:
                     data = np.imag(data)
             else: 
-                data = Tipper_object.tipper_err[:,idx_comp/2, idx_comp%2]
+                #errors are in std deviations, but EDI files expect variance
+                data = (Tipper_object.tipper_err[:,idx_comp/2, idx_comp%2])**2
  
             tipper_dict[section] = data
 
