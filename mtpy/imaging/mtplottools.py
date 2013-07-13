@@ -857,14 +857,14 @@ class MTplot(object):
         self._plot_tipper = 'y'
         
     def _set_tipper_err(self, tipper_err):
-        self._Tipper.tippererr = tipper_err
+        self._Tipper.tipper_err = tipper_err
         
     def _set_station(self, station):
         self._station = station
         
     def _set_period(self, period):
         self._period = period
-        if self._period[0]>self._period[-1]:
+        if self._period[0] > self._period[-1]:
             self._Z.z = self._Z.z[::-1]
             self._Z.zerr = self._Z.zerr[::-1]
             self._period = self._period[::-1]
