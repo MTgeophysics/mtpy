@@ -941,6 +941,7 @@ class ZenCache(object):
         self.ts = None
         self.verbose = True
         self.log_lines = []
+        self.chn_order = ['hx','hy','hz','ex','ey']
         
         self.meta_data = {'SURVEY.ACQMETHOD' : ',timeseries',
                            'SURVEY.TYPE' : ',',
@@ -1083,7 +1084,16 @@ class ZenCache(object):
         write a cache file from given filenames
         
         """
-        
+        #sort the files so they are in order
+        fn_sort_lst = []
+        for cs in self.chn_order:
+            for fn in fn_lst:
+                if cs in fn.lower():
+                    fn_sort_lst.append(fn)
+
+        fn_lst = fn_sort_lst
+        print fn_lst
+            
         n_fn = len(fn_lst)
         self.zt_lst = []
         for fn in fn_lst:
@@ -1369,7 +1379,7 @@ class ZenCache(object):
 #==============================================================================
 # class for  mtft24
 #==============================================================================
-class ZenMTFT():
+class ZongeMTFT():
     """
     deal with mtft
     
@@ -1417,8 +1427,8 @@ class ZenMTFT():
 
         #--> survey parameters
         self.Unit_Length = 'm'
-        self.Chn_Cmp = ['Ex', 'Ey', 'Hx', 'Hy', 'Hz']
-        self.Chn_ID = ['4', '5', '2314', '2324', '2334']
+        self.Chn_Cmp = ['Hx', 'Hy', 'Hz', 'Ex', 'Ey']
+        self.Chn_ID = ['2314', '2324', '2334', '4', '5']
         self.Chn_Gain = [1, 1, 1, 1, 1]
         self.Chn_Length = [100]*5
         self.Chn_dict = dict([(chkey, [cid, cg, cl]) for chkey, cid, cg, cl in 
@@ -1453,7 +1463,7 @@ class ZenMTFT():
                           'MTFT.Despike',
                           'MTFT.SpikePnt',
                           'MTFT.SpikeDev',
-                          'MTFTNotchFlt',
+                          'MTFT.NotchFlt',
                           'MTFT.NotchFrq',
                           'MTFT.NotchWidth',
                           'MTFT.StackFlt',
@@ -1582,7 +1592,25 @@ class ZenMTFT():
         self.Remote_Rotation = self.meta_dict['Remote.Rotation'] 
         self.Remote_Path= self.meta_dict['Remote.Path']
     
-                             
+    def sort_ts_lst(self):
+        """
+        sort the time series list such that all the same sampling rates are
+        in sequential order, this needs to be done to get reasonable 
+        coefficients out of mtft
+        """
+        
+        if self.ts_info_lst == []:
+            return
+        
+        new_ts_lst = sorted(self.ts_info_lst, key=lambda k: k['ADFrequency'])
+        
+        for ii, new_ts in enumerate(new_ts_lst, 1):
+            new_ts['File#'] = ii
+            for tkey in self.ts_info_keys:
+                if not type(new_ts[tkey]) is str:
+                    new_ts[tkey] = str(new_ts[tkey])
+                    
+        self.ts_info_lst = new_ts_lst
           
     def write_mtft_cfg(self, cache_path, station_name, meta_data_dict=None, 
                        survey_file=None, save_path=None):
@@ -1605,17 +1633,17 @@ class ZenMTFT():
                     
                     info_dict = dict([(key, []) for key in self.ts_info_keys])
                     #put metadata information into info dict
-                    info_dict['File#'] = str(cc+1)
-                    info_dict['Setup'] = str(1)
-                    info_dict['SkipWgt'] = str(1)
+                    info_dict['File#'] = cc+1
+                    info_dict['Setup'] = 1
+                    info_dict['SkipWgt'] = 1
                     info_dict['LocalFile'] = cfn
                     info_dict['RemoteFile'] = ''
-                    info_dict['LocalBlock'] = str(cc)
+                    info_dict['LocalBlock'] = cc
                     info_dict['RemoteBlock'] = ''
-                    info_dict['LocalByte'] = str(65)
+                    info_dict['LocalByte'] = 65
                     info_dict['RemoteByte'] = ''
                     try:
-                        info_dict['Date'] = zc.meta_data['Data.Date0'][0]
+                        info_dict['Date'] = zc.meta_data['DATA.DATE0'][0]
                     except KeyError:
                         info_dict['Date'] = zc.meta_data['DATE0'][0]
                     if info_dict['Date'].find('/') >= 0:
@@ -1623,14 +1651,14 @@ class ZenMTFT():
                         info_dict['Date'] = '20{0}-{1}-{2}'.format(dlst[2], 
                                                                    dlst[0],
                                                                    dlst[1])
-                    #info_dict['Time0'] = '0'
-                    try:
-                        info_dict['Time0'] = zc.meta_data['Data.Time0'][0]
-                    except KeyError:
-                        info_dict['Time0'] = zc.meta_data['TIMEO'][0]
+                    info_dict['Time0'] = '0'
+                    #try:
+                    #    info_dict['Time0'] = zc.meta_data['Data.Time0'][0]
+                    #except KeyError:
+                    #    info_dict['Time0'] = zc.meta_data['TIMEO'][0]
                     info_dict['T0Offset'] = '0'
-                    info_dict['ADFrequency'] = zc.meta_data['TS.ADFREQ'][0]
-                    info_dict['NLocalPnt'] = zc.meta_data['TS.NPNT'][0]
+                    info_dict['ADFrequency'] = int(zc.meta_data['TS.ADFREQ'][0])
+                    info_dict['NLocalPnt'] = int(zc.meta_data['TS.NPNT'][0])
                     info_dict['NRemotePnt'] = ''
                     info_dict['ChnGain1'] = '1'                
                     info_dict['ChnGain2'] = '1'                
@@ -1640,28 +1668,31 @@ class ZenMTFT():
                     
                     cc += 1
                     self.ts_info_lst.append(info_dict)
-                
+        
+        self.sort_ts_lst()
         self.TS_Number = len(self.ts_info_lst)
         
         #--> get information from survey file
         if survey_file is not None:
-            survey_lst = read_survey_file(survey_file)
-            for sdict in survey_lst:
-                if sdict['station'] == station_name:
-                    survey_dict = sdict
-                    break
-            self.Chn_dict['Hx'][0] = survey_dict['hx']
-            self.Chn_dict['Hy'][0] = survey_dict['hy']
-            if survey_dict['hz'].find('*') >= 0:
-                self.Chn_dict['Hz'][0] = '3'
-            else:
-                self.Chn_dict['Hz'][0] = survey_dict['hz']
-            self.Chn_dict['Ex'][2] = survey_dict['e_xaxis_length']
-            self.Chn_dict['Ey'][2] = survey_dict['e_yaxis_length']
-            self.Chn_Cmp = sorted(self.Chn_dict.keys())
-            self.Chn_Gain = [self.Chn_dict[ckey][1] for ckey in self.Chn_Cmp]
-            self.Chn_ID = [self.Chn_dict[ckey][0] for ckey in self.Chn_Cmp]
-            self.Chn_Length = [self.Chn_dict[ckey][2] for ckey in self.Chn_Cmp]
+            sdict = mtcf.read_survey_configfile(survey_file)
+            try:
+                survey_dict = sdict[station_name.upper()]
+                self.Chn_dict['Hx'][0] = survey_dict['hx']
+                self.Chn_dict['Hy'][0] = survey_dict['hy']
+                if survey_dict['hz'].find('*') >= 0:
+                    self.Chn_dict['Hz'][0] = '3'
+                else:
+                    self.Chn_dict['Hz'][0] = survey_dict['hz']
+                self.Chn_dict['Ex'][2] = survey_dict['e_xaxis_length']
+                self.Chn_dict['Ey'][2] = survey_dict['e_yaxis_length']
+            except KeyError:
+                print ('Could not find survey information from ' 
+                       '{0} for {1}'.format(survey_file, station_name))
+                       
+            
+        self.Chn_Gain = [self.Chn_dict[ckey][1] for ckey in self.Chn_Cmp]
+        self.Chn_ID = [self.Chn_dict[ckey][0] for ckey in self.Chn_Cmp]
+        self.Chn_Length = [self.Chn_dict[ckey][2] for ckey in self.Chn_Cmp]
         
         #make a dictionary of all the values to write file
         self.make_value_dict()
@@ -1679,6 +1710,7 @@ class ZenMTFT():
             if ii == 24 or ii == 29:
                 cfid.write('\n')
         cfid.write('\n')
+        
         #write time series information
         cfid.write(','.join(self.ts_info_keys)+'\n')
         for cfn in self.ts_info_lst:
@@ -3086,9 +3118,250 @@ def read_survey_file(survey_file):
 #==============================================================================
 # Deal with mtedit outputs  
 #==============================================================================
-class ZenMTEdit():
+class ZongeMTEdit():
     """
-    deal with inputs and outputs of MTEdit
+    deal with input and output config files for mtedit
+    """
+    
+    def __init__(self):
+        self.meta_keys = ['MTEdit:Version', 'Auto.PhaseFlip', 
+                          'PhaseSlope.Smooth', 'PhaseSlope.toZMag',
+                          'DPlus.Use', 'AutoSkip.onDPlus', 'AutoSkip.DPlusDev']
+                          
+        self.mtedit_version = '3.10d applied on {0}'.format(time.ctime())
+        self.phase_flip = 'No'
+        self.phaseslope_smooth = 'Minimal'
+        self.phaseslope_tozmag = 'Yes'
+        self.dplus_use = 'Yes'
+        self.autoskip_ondplus = 'No'
+        self.autoskip_dplusdev = 500.0
+        
+        self.meta_dict = None
+        self.meta_lst = None
+        
+        self.cfg_fn = None
+        
+        self.param_header = ['Frequency  ', 'AResXYmin', 'AResXYmax', 
+                              'ZPhzXYmin', 'ZPhzXYmax', 'AResYXmin', 
+                              'AResYXmax', 'ZPhzYXmin', 'ZPhzYXmax', 
+                              'CoherXYmin', 'CoherYXmin', 'CoherXYmax', 
+                              'CoherYXmax', 'ExMin', 'ExMax', 'EyMin', 
+                              'EyMax', 'HxMin', 'HxMax', 'HyMin', 'HyMax', 
+                              'NFC/Stack']
+                              
+        self.freq_lst = [7.32420000e-04, 9.76560000e-04, 1.22070000e-03, 
+                         1.46480000e-03, 1.95310000e-03, 2.44140000e-03,  
+                         2.92970000e-03, 3.90620000e-03, 4.88280000e-03, 
+                         5.85940000e-03, 7.81250000e-03, 9.76560000e-03, 
+                         1.17190000e-02, 1.56250000e-02, 1.95310000e-02, 
+                         2.34380000e-02, 3.12500000e-02, 3.90620000e-02, 
+                         4.68750000e-02, 6.25000000e-02, 7.81250000e-02, 
+                         9.37500000e-02, 1.25000000e-01, 1.56200000e-01, 
+                         1.87500000e-01, 2.50000000e-01, 3.12500000e-01, 
+                         3.75000000e-01, 5.00000000e-01, 6.25000000e-01, 
+                         7.50000000e-01, 1.00000000e+00, 1.25000000e+00, 
+                         1.50000000e+00, 2.00000000e+00, 2.50000000e+00, 
+                         3.00000000e+00, 4.00000000e+00, 5.00000000e+00, 
+                         6.00000000e+00, 8.00000000e+00, 1.00000000e+01, 
+                         1.20000000e+01, 1.60000000e+01, 2.00000000e+01, 
+                         2.40000000e+01, 3.20000000e+01, 4.00000000e+01, 
+                         4.80000000e+01, 6.40000000e+01, 8.00000000e+01, 
+                         9.60000000e+01, 1.28000000e+02, 1.60000000e+02, 
+                         1.92000000e+02, 2.56000000e+02, 3.20000000e+02, 
+                         3.84000000e+02, 5.12000000e+02, 6.40000000e+02, 
+                         7.68000000e+02, 1.02400000e+03, 1.28000000e+03, 
+                         1.53600000e+03, 2.04800000e+03, 2.56000000e+03, 
+                         3.07200000e+03, 4.09600000e+03, 5.12000000e+03, 
+                         6.14400000e+03, 8.19200000e+03, 1.02400000e+04, 
+                         0.00000000e+00]
+                         
+        self.num_freq = len(self.freq_lst)
+        
+        #--> default parameters for MTEdit                 
+        self.AResXYmin = [1.0e-2]*self.num_freq
+        self.AResXYmax = [1.0e6]*self.num_freq
+        self.ZPhzXYmin = [-3150.]*self.num_freq
+        self.ZPhzXYmax = [3150.]*self.num_freq
+        
+        self.AResYXmin = [1.0e-2]*self.num_freq
+        self.AResYXmax = [1.0e6]*self.num_freq
+        self.ZPhzYXmin = [-3150.]*self.num_freq
+        self.ZPhzYXmax = [3150.]*self.num_freq
+        
+        self.CoherXYmin = [0.6]*self.num_freq
+        self.CoherYXmin = [0.6]*self.num_freq
+        self.CoherXYmax = [0.999]*self.num_freq
+        self.CoherYXmax = [0.999]*self.num_freq
+        
+        self.ExMin = [0]*self.num_freq
+        self.ExMax = [1.0e6]*self.num_freq
+        
+        self.EyMin = [0]*self.num_freq
+        self.EyMax = [1.0e6]*self.num_freq
+        
+        self.HxMin = [0]*self.num_freq
+        self.HxMax = [1.0e6]*self.num_freq
+        
+        self.HyMin = [0]*self.num_freq
+        self.HyMax = [1.0e6]*self.num_freq
+        
+        self.NFCStack = [8]*self.num_freq
+        
+        self.param_dict = None
+        self.param_lst = None
+        
+        self.string_fmt_lst = ['.4e', '.4e', '.4e', '.1f', '.1f', '.4e', '.4e',
+                               '.1f', '.1f', '.3f', '.3f', '.3f', '.3f', '.1g',
+                               '.4e', '.1g', '.4e', '.1g', '.4e', '.1g', '.4e',
+                               '.0f']
+        
+    def make_meta_dict(self):
+        """
+        make meta data dictionary
+        """
+        if not self.meta_lst:
+            self.make_meta_lst()
+            
+        self.meta_dict = dict([(mkey, mvalue) for mkey, mvalue in 
+                                zip(self.meta_keys, self.meta_lst)])
+                                
+    def make_meta_lst(self):
+        """
+        make metadata list
+        """
+        
+        self.meta_lst = [self.mtedit_version,
+                         self.phase_flip,
+                         self.phaseslope_smooth,
+                         self.phaseslope_tozmag,
+                         self.dplus_use,
+                         self.autoskip_ondplus,
+                         self.autoskip_dplusdev]
+        
+    def make_param_dict(self):
+        """
+        make a parameter dictionary
+        """
+        if not self.param_lst:
+            self.make_param_lst()
+            
+        self.param_dict = dict([(mkey, mvalue) for mkey, mvalue in
+                                 zip(self.param_header, self.param_lst)])
+        
+    def make_param_lst(self):
+        """
+        make a list of parameters
+        """
+        
+        self.param_lst = [self.freq_lst,
+                          self.AResXYmin, 
+                          self.AResXYmax, 
+                          self.ZPhzXYmin, 
+                          self.ZPhzXYmax,
+                          self.AResYXmin, 
+                          self.AResYXmax, 
+                          self.ZPhzYXmin, 
+                          self.ZPhzYXmax,
+                          self.CoherXYmin,
+                          self.CoherYXmin,
+                          self.CoherXYmax,
+                          self.CoherYXmax,
+                          self.ExMin,
+                          self.ExMax,
+                          self.EyMin,
+                          self.EyMax,
+                          self.HxMin,
+                          self.HxMax,
+                          self.HyMin,
+                          self.HyMax,
+                          self.NFCStack]
+                          
+
+    def read_config(self, cfg_fn):
+        """
+        read a MTEdit.cfg file
+        """
+
+        if not os.path.isfile(cfg_fn):
+            raise IOError('{0} does not exist'.format(cfg_fn))
+            
+        self.cfg_fn = cfg_fn
+        self.meta_dict = {}
+        self.param_dict = {}
+        
+        cfid = file(cfg_fn, 'r')
+        clines = cfid.readlines()
+        for ii, cline in enumerate(clines):
+            #--> get metadata 
+            if cline[0] == '$':
+                clst = cline[1:].strip().split('=')
+                self.meta_dict[clst[0]] = clst[1]
+            
+            #--> get filter parameters header            
+            elif cline.find('Frequency') == 0:
+                pkeys = [cc.strip() for cc in cline.strip().split(',')]
+                nparams = len(clines)-ii
+                self.param_dict = dict([(pkey, np.zeros(nparams))
+                                           for pkey in pkeys])
+                jj = 0
+            
+            #--> get filter parameters as a function of frequency
+            else:
+                if len(cline) > 3:
+                    clst = [cc.strip() for cc in cline.strip().split(',')]
+                    for nn, pkey in enumerate(pkeys):
+                        self.param_dict[pkey][jj] = float(clst[nn])
+                    jj += 1
+        self.num_freq = len(self.param_dict['Frequency'])
+                    
+    def write_config(self, save_path, mtedit_params_dict=None):
+        """
+        write a mtedit.cfg file        
+        
+        """
+
+        if os.path.isdir(save_path) == True:
+            save_path = os.path.join(save_path, 'mtedit.cfg')
+        
+        self.cfg_fn = save_path
+        if not self.meta_dict:
+            self.make_meta_dict()
+            
+        if not self.param_dict:
+            self.make_param_dict()
+        
+        #--- write file ---
+        cfid = file(self.cfg_fn, 'w')
+        
+        #--> write metadata
+        for mkey in self.meta_keys:
+            cfid.write('${0}={1}\n'.format(mkey, self.meta_dict[mkey]))
+        
+        #--> write parameter header
+        for header in self.param_header[:-1]:
+            cfid.write('{0:>11},'.format(header))
+        cfid.write('{0:>11}\n'.format(self.param_header[-1]))
+        
+        #--> write filter parameters
+        for ii in range(self.num_freq):
+            for jj, pkey in enumerate(self.param_header[:-1]):
+                cfid.write('{0:>11},'.format('{0:{1}}'.format(
+                                self.param_dict[pkey][ii], 
+                                self.string_fmt_lst[jj])))
+            cfid.write('{0:>11}\n'.format('{0:{1}}'.format(
+                                self.param_dict[self.param_header[-1]][ii], 
+                                self.string_fmt_lst[-1])))
+    
+        cfid.close()
+        print 'Wrote mtedit config file to {0}'.format(self.cfg_fn)
+        
+    
+#==============================================================================
+# deal with avg files output from mtedit
+#==============================================================================    
+class ZongeMTAvg():
+    """
+    deal with avg files output from mtedit
     
     """                     
 
@@ -3141,6 +3414,8 @@ class ZenMTEdit():
         self.comp = None
         self.nfreq = None
         self.freq_dict = None
+        self.avg_dict = {'ex':'4', 'ey':'5'}
+
         
     def read_avg_file(self, avg_fn):
         """
@@ -3357,40 +3632,11 @@ class ZenMTEdit():
         self.Tipper.tipper = np.nan_to_num(self.Tipper.tipper)
         self.Tipper.tipper_err = np.nan_to_num(self.Tipper.tipper_err)
         
-    def read_config(self, cfg_fn):
-        """
-        read a MTEdit.cfg file
-        """
-
-        if not os.path.isfile(cfg_fn):
-            raise IOError('{0} does not exist'.format(cfg_fn))
-        self.meta_dict = {}
-        self.mtedit_params = {}
-        
-        cfid = file(cfg_fn, 'r')
-        clines = cfid.readlines()
-        for ii, cline in enumerate(clines):
-            if cline[0] == '$':
-                clst = cline[1:].strip().split('=')
-                self.meta_dict[clst[0]] = clst[1]
-            elif cline.find('Frequency') == 0:
-                pkeys = [cc.strip() for cc in cline.strip().split(',')]
-                nparams = len(clines)-ii
-                self.mtedit_params = dict([(pkey, np.zeros(nparams))
-                                           for pkey in pkeys])
-                jj = 0
-            else:
-                if len(cline) > 3:
-                    clst = [cc.strip() for cc in cline.strip().split(',')]
-                    for nn, pkey in enumerate(pkeys):
-                        self.mtedit_params[pkey][jj] = float(clst[nn])
-                    jj += 1
-        
-    
-    def write_edi(self, fnx, fny, station, survey_dict=None, 
+    def write_edi(self, avg_dirpath, station, survey_dict=None, 
                   survey_cfg_file=None,  mtft_cfg_file=None, 
-                  mtedit_cfg_file=None, save_path=None,
-                  rrstation=None):
+                  mtedit_cfg_file=r"c:\MinGW32-xy\Peacock\zen\bin\mtedit.cfg", 
+                  save_path=None, rrstation=None, 
+                  copy_path=r"d:\Peacock\MTData\EDI_Files", avg_ext='.avg'):
         """
         write an edi file from the .avg files
         
@@ -3432,7 +3678,7 @@ class ZenMTEdit():
         """
         
         if save_path is None:
-            save_dir = os.path.dirname(os.path.dirname(fnx))
+            save_dir = os.path.dirname(avg_dirpath)
             save_path = os.path.join(save_dir, station+'.edi')
         print save_path
         
@@ -3441,11 +3687,19 @@ class ZenMTEdit():
         self.edi.Z = self.Z
         self.edi.Tipper = self.Tipper
         
+        
         #read in ex file
+        fnx = os.path.join(avg_dirpath, 
+                           self.avg_dict['ex'],
+                           self.avg_dict['ex']+avg_ext)            
         self.read_avg_file(fnx)
         
         #read in ey file
+        fny = os.path.join(avg_dirpath, 
+                           self.avg_dict['ey'],
+                           self.avg_dict['ey']+avg_ext)
         self.read_avg_file(fny)
+ 
         
         #read in survey file
         if survey_cfg_file is not None:
@@ -3480,17 +3734,24 @@ class ZenMTEdit():
             rrsurvey_dict = None
             
         #read in mtft24.cfg file
-        if mtft_cfg_file:
-            zmtft = ZenMTFT()
-            zmtft.read_cfg()
-            mtft_dict = zmtft.meta_dict
+        if mtft_cfg_file is None:
+            try:
+                mtft_cfg_file = os.path.join(avg_dirpath, 'mtft24.cfg')
+                zmtft = ZongeMTFT()
+                zmtft.read_cfg(mtft_cfg_file)
+                mtft_dict = zmtft.meta_dict
+            except:
+                mtft_dict = None
         else:
-            mtft_dict = None
+            zmtft = ZongeMTFT()
+            zmtft.read_cfg(mtft_cfg_file)
+            mtft_dict = zmtft.meta_dict
             
         #read in mtedit.cfg file
         if mtedit_cfg_file:
-            self.read_config(mtedit_cfg_file)
-            mtedit_dict = self.meta_dict
+            zmtedit = ZongeMTEdit()
+            zmtedit.read_config(mtedit_cfg_file)
+            mtedit_dict = zmtedit.meta_dict
         else:
             mtedit_dict = None
             
@@ -3699,6 +3960,13 @@ class ZenMTEdit():
         edi_fn = self.edi.writefile(save_path)
         
         print 'Wrote .edi file to {0}'.format(edi_fn)
+        
+        if copy_path is not None:
+            copy_edi_fn = os.path.join(copy_path, os.path.basename(edi_fn))
+            if not os.path.exists(copy_path):
+                os.mkdir(copy_path)
+            shutil.copy(edi_fn, copy_edi_fn)
+            print 'Copied {0} to {1}'.format(edi_fn, copy_edi_fn)
         
         return edi_fn
         
