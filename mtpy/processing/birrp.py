@@ -1906,13 +1906,17 @@ def convert2coh(stationname, birrp_output_directory):
 
     stationname = stationname.upper()
     #locate file names
-    cohfilenames = [ op.abspath(i) for i in fnmatch.filter(os.listdir(directory), '*%s*.[123]r.2c2'%stationname.upper()) ] 
+    cohfilenames = [ op.abspath(op.join(directory,i)) for i in fnmatch.filter(
+                os.listdir(directory), '*%s*.[123]r.2c2'%stationname.upper()) ] 
     
     if len(cohfilenames) < 1:
-        raise MTex.MTpyError_file_handling('No coherence files for station %s found in: %s'%(stationname, directory))
+        #raise MTex.MTpyError_file_handling('No coherence files for station %s found in: %s'%(stationname, directory))
+        print 'No coherence files for station %s found in: %s'%(stationname, directory)
+
 
     if len(cohfilenames) > 3:
-        raise MTex.MTpyError_file_handling('Too many coherence files for station %s found in: %s'%(stationname, directory))
+        #raise MTex.MTpyError_file_handling('Too many coherence files for station %s found in: %s'%(stationname, directory))
+        print 'Too many coherence files for station %s found in: %s'%(stationname, directory)
 
     try:
         period,freq,coh1,zcoh1 = MTfh.read_2c2_file(cohfilenames[0])
@@ -1922,7 +1926,8 @@ def convert2coh(stationname, birrp_output_directory):
 
             period,freq,coh3,zcoh3 = MTfh.read_2c2_file(cohfilenames[2])
     except:
-        raise MTex.MTpyError_file_handling('Cannot read coherence files for station %s found in: %s'%(stationname, directory))
+        #raise MTex.MTpyError_file_handling('Cannot read coherence files for station %s found in: %s'%(stationname, directory))
+        print 'Cannot read coherence files for station %s found in: %s'%(stationname, directory)
 
     fn = '%s.coh'%(stationname)
     out_fn = op.abspath(op.join(directory,fn))
