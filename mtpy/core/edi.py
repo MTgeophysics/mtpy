@@ -2139,7 +2139,7 @@ def _generate_edifile_string(edidict):
     sections:
     HEAD, INFO, DEFINEMEAS, HMEAS_EMEAS, MTSECT, ZROT, FREQ, Z, TIPPER
 
-    (Can be extended later on...)
+    Can be extended later on...
 
     """
     # define section heads explicitely instead of iteration over the dictionary
@@ -2255,6 +2255,7 @@ def _generate_edifile_string(edidict):
                                               'section "FREQ" missing!')
             lo_freqs = edidict['FREQ']
 
+            edistring += '>!****FREQUENCIES****!\n'
             edistring+= '>FREQ // {0}\n'.format(len(lo_freqs))
 
             for i,freq in enumerate(lo_freqs):
@@ -2269,6 +2270,7 @@ def _generate_edifile_string(edidict):
             except:
                 continue
 
+            edistring += '>!****IMPEDANCE ROTATION ANGLES****!\n'
             edistring+= '>ZROT // {0}\n'.format(len(lo_rots))
 
             for i,angle in enumerate(lo_rots):
@@ -2289,7 +2291,7 @@ def _generate_edifile_string(edidict):
                 raise MTex.MTpyError_edi_file('Cannot write file - required'+\
                                               'section "Z" missing!')
 
-
+            edistring += '>!****IMPEDANCES****!\n'
             for idx_comp,comp in enumerate(compstrings):
                 for idx_zentry,zentry in enumerate(Z_entries):
                     section = comp + zentry
@@ -2325,6 +2327,7 @@ def _generate_edifile_string(edidict):
             except:
                 continue
 
+            edistring += '>!****TIPPER PARAMETERS****!\n'
             for idx_comp,comp in enumerate(compstrings):
                 for idx_tentry,tentry in enumerate(T_entries):
                     section = comp + tentry
@@ -2442,13 +2445,26 @@ def _validate_edifile_string(edistring):
     #adding 1 to position of find to correct for possible occurrence at 
     #position 0 )
     found *= np.sign(edistring.upper().find('>HEAD') + 1 )
+    if found == 0:
+        print 'Could not find >HEAD block'
     found *= np.sign(edistring.upper().find('DATAID') + 1 )
+    if found == 0:
+        print 'Could not find DATAID block'
     found *= np.sign(edistring.upper().find('>HMEAS') + 1 )
+    if found == 0:
+        print 'Could not find >HMEAS block'
     found *= np.sign(edistring.upper().find('>EMEAS') + 1 )
+    if found == 0:
+        print 'Could not find >EMEAS block'
     found *= np.sign(edistring.upper().find('NFREQ') + 1 )
+    if found == 0:
+        print 'Could not find NFREQ block'
     found *= np.sign(edistring.upper().find('>END') + 1 )
+    if found == 0:
+        print 'Could not find END block'
     found *= np.sign(edistring.upper().find('>=DEFINEMEAS') + 1 )
-
+    if found == 0:
+        print 'Could not find >=DEFINEMEAS block'
     #allow spectral information as alternative:
     if np.sign(edistring.upper().find('>FREQ') + 1 ) == 0:
         if np.sign(edistring.upper().find('>SPECTRA') + 1 ) == 0 :
@@ -2463,9 +2479,6 @@ def _validate_edifile_string(edistring):
               '(Most basic version must contain: "HEAD, =DEFINEMEAS, =MTSECT'+\
               'or =SPECTRASECT, FREQ or SPECTRA, (Z,) END") '
         return False
-
-
-
 
     #checking for non empty freq list:
     freq_start_idx = edistring.upper().find('>FREQ')
@@ -2775,8 +2788,7 @@ def _make_z_dict(Z_object):
                 else:
                     data = np.imag(data)
             else: 
-                #errors are in std deviations, but EDI files expect variance
-                data = (Z_object.zerr[:,idx_comp/2, idx_comp%2])**2
+                data = Z_object.zerr[:,idx_comp/2, idx_comp%2]
  
             z_dict[section] = data
 
@@ -2803,8 +2815,7 @@ def _make_tipper_dict(Tipper_object):
                 else:
                     data = np.imag(data)
             else: 
-                #errors are in std deviations, but EDI files expect variance
-                data = (Tipper_object.tipper_err[:,idx_comp/2, idx_comp%2])**2
+                data = Tipper_object.tipper_err[:,idx_comp/2, idx_comp%2]
  
             tipper_dict[section] = data
 

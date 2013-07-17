@@ -52,7 +52,8 @@ setup_kwargs['packages'] = ['mtpy',
                             'mtpy.processing',
                             'mtpy.analysis',
                             'mtpy.test',
-                            'mtpy.uofa'
+                            'mtpy.uofa',
+							'mtpy.usgs'
                            ]
 
 	

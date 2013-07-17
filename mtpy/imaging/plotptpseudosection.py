@@ -675,7 +675,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                         ['{0:>4}'.format('{0: .1e}'.format(plot_periodlst[-1]))]
             
             self.ax.set_ylabel('Period (s)',
-                               fontsize=self.font_size,
+                               fontsize=self.font_size+2,
                                fontweight='bold')
                                
         elif self.tscale == 'frequency':
@@ -684,7 +684,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                             ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlst[-1]))]
             
             self.ax.set_ylabel('Frequency (Hz)',
-                               fontsize=self.font_size,
+                               fontsize=self.font_size+2,
                                fontweight='bold')
         #set x-axis label                       
         self.ax.set_xlabel('Station',
@@ -1237,8 +1237,6 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             file_format = save_fn[-3:]
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
                              orientation=orientation)
-            plt.clf()
-            plt.close(self.fig)
             
         else:
             save_fn = os.path.join(save_fn, '_PTPseudoSection.'+
