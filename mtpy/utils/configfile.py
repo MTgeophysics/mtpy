@@ -415,27 +415,30 @@ def read_survey_txt_file(survey_file, delimiter='\t'):
     read survey file and return a dictionary of dictionaries where the first
     nested dictionary is keyed by the station name.  Each station dictionarly
     includes all the information input in the survey file with keywords 
-    verbatim as the headers in survey file, all lower case.  Some suggestions
-    on important infromation include:
+    verbatim as the headers in survey file, all lower case.  
     
-    *Should always be included in survey file*
+    *Must be included in survey file*
     ================= =========================================================
     key word           description
     ================= =========================================================
     station           station name
-    lat               latitude (decimal degrees is best)
-    lon               longitude (decimal degrees is best)
-    elev              elevation (should be in meters)
-    ex                dipole length in north direction (in meters)
-    ey                dipole length in east direction (in meters)
+    lat(itude)        latitude (decimal degrees is best)
+    long(itude)       longitude (decimal degrees is best)
+    elev(ation)       elevation (in meters)
+    ex/E_Xaxis_length dipole length in north direction (in meters)
+    ey/E_Yaxis_length dipole length in east direction (in meters)
+    E_Xaxis_azimuth   orientaion of Ex (degrees)
+    E_Yaxis_azimuth   orientaion of Ey (degrees)
+
+
+    sampling_interval sampling interval in seconds
     hx                coil number in north direction for calibration
     hy                coil number in east direction for calibration
     hz                coil number in vertical direction for calibration
     date              date of deployment
     notes             any notes that might help later
-    sampling_interval time interval used to make the edi file
     station_type      type of data collected  (MT, E, B)
-    declination       dclination in degrees assuming N = 0 and East = 90
+    declination       declination in degrees (N = 0 and East = 90)
     ================= =========================================================
      
     *Information on E-field data*:
@@ -447,9 +450,9 @@ def read_survey_txt_file(survey_file, delimiter='\t'):
     E_instrument_type           type of electrodes used
     E_instrument_amplification  applied amplification factor
     E_Xaxis_azimuth             orientaion of Ex (degrees)
-    E_Xaxis_length              length of dipole for ex(in meters)
-    E_Yaxis_azimuth (degrees)   orientaion of Ex (degrees)
-    E_Yaxis_length (in meters)  length of dipole for ex(in meters)
+    E_Xaxis_length              length of dipole for Ex (in meters)
+    E_Yaxis_azimuth             orientaion of Ey (degrees)
+    E_Yaxis_length              length of dipole for Ey (in meters)
     ========================== ================================================
    
    *Information on B-field data*:
