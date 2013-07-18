@@ -478,12 +478,13 @@ def read_survey_txt_file(survey_file, delimiter='\t'):
                          headers in survey file, all lower case
     """                  
         
-        
-    sfid = open(survey_file, 'r')
-    slines = sfid.readlines()
+    with open(survey_file, 'r') as sfid:
+        slines = sfid.readlines()
+
     skeys = slines[0].rstrip()
     skeys = skeys.split(delimiter)
     survey_dict = {}
+    
     for ss, sline in enumerate(slines[1:]):
         sstr = sline.rstrip()
         sstr = sstr.split(delimiter)
