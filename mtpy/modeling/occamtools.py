@@ -17,7 +17,7 @@ import matplotlib.colorbar as mcb
 from matplotlib.colors import Normalize
 from matplotlib.ticker import MultipleLocator
 import matplotlib.gridspec as gridspec
-import mtpy.core.z as Z
+import mtpy.core.edi as mtedi
 import mtpy1.modeling.winglinktools as wlt
 import matplotlib.pyplot as plt
 import mtpy1.utils.latlongutmconversion as utm2ll
@@ -2569,13 +2569,14 @@ class Occam2DData:
     """    
     
     def __init__(self,datafn=None):
-        self.datafn=datafn
+        self.datafn = datafn
         
-    def make2DdataFile(self,edipath,mmode='both',savepath=None,stationlst=None,
-                       title=None,thetar=0,resxyerr=10,resyxerr=10,
-                       phasexyerr=5,phaseyxerr=5,ss=3*' ',fmt='%+2.6f',
-                       freqstep=1,plotyn='y',lineori='ew',proj_strike='yes',
-                       tippererr=None,ftol=.05):
+    def make2DdataFile(self,edipath, mmode='both', savepath=None, 
+                       stationlst=None, title=None, thetar=0, resxyerr=10,
+                       resyxerr=10, phasexyerr=5, phaseyxerr=5, ss=3*' ', 
+                       string_fmt='%+2.6f', freqstep=1, plotyn='y', 
+                       lineori='ew', proj_strike='yes', tippererr=None,
+                       ftol=.05):
         """
         Make a data file that Occam can read.  At the moment the inversion line
         is the best fit line through all the stations used for the inversion.
@@ -2635,10 +2636,11 @@ class Occam2DData:
                              data are used otherwise enter as a percentage.
                              enter 10 for 10 percent. *Default* is 5  
             
-            **ss** : is the spacing parameter for the data file. 
-                     *Default* is '   ' 
+            **ss** : string
+                    is the spacing parameter for the data file. 
+                     *Default* is ' '*3 (3 spaces) 
             
-            **fmt** : format of the numbers for the data file, see string 
+            **string_fmt** : format of the numbers for the data file, see string 
                       formats for a full description. *Default* is '%+2.6f
             
             **freqstep** : take frequencies at this step, so if you want to 
@@ -2696,101 +2698,106 @@ class Occam2DData:
             >>> #write data file that is rotated 50 degrees east of north and
             >>> #projected on to the strike direction 50 degrees east of north
             >>> ocd.make2DdataFile(edipath,stationlst=slst,savepath=svpath,
-            >>>                    thetar=50,proj_strike='yes',lineori='ew')
+            >>> ...                thetar=50,proj_strike='yes',lineori='ew')
             >>>                       
-            >>> Wrote Occam2D data file to: /home/Occam2D/Line1/Inv1/Data.dat 
+            >>> 'Wrote Occam2D data file to: /home/Occam2D/Line1/Inv1/Data.dat' 
 
                      
         """
         
-        if abs(thetar)>2*np.pi:
-            thetar=thetar*(np.pi/180)
-        #create rotation matrix which rotates clockwise positive
-        rotmatrix=np.array([[np.cos(thetar), np.sin(thetar)],
-                             [-np.sin(thetar), np.cos(thetar)]])
+        if abs(thetar) > 2*np.pi:
+            thetar = thetar*(np.pi/180)
         
-        #-----------------------Station Locations-----------------------------------    
+        #-----------------------Station Locations------------------------------   
         #create a list to put all the station dictionaries into
-        surveylst=[]
-        eastlst=[]
-        northlst=[]
-        pstationlst=[]
-        freqlst=[]
+        surveylst = []
+        eastlst = []
+        northlst = []
+        pstationlst = []
+        freqlst = []
         
-        if stationlst==None:
-            stationlst=[edifile[:-4] 
+        #get edi files for all stations in edipath if stationlst is None
+        if stationlst == None:
+            stationlst = [edifile[:-4] 
                 for edifile in os.listdir(edipath) if edifile.find('.edi')]
         
-        for kk,station in enumerate(stationlst):
-            #search for filenames in the given directory and match to station name
+        for kk, station in enumerate(stationlst):
+            #search for filenames in the given directory and match to station 
+            #name
             for filename in os.listdir(edipath):
                 if fnmatch.fnmatch(filename,station+'*.edi'):
                     print 'Found station edifile: ', filename
+                   
                     #create a dictionary for the station data and info 
-                    surveydict={} 
-                    edifile=os.path.join(edipath,filename) 
-                    z1=Z.Z(edifile)
-                    freq=z1.frequency                
+                    surveydict = {} 
+                    edifile = os.path.join(edipath,filename) 
+                    
+                    #read in edi file
+                    z1 = mtedi.Edi()
+                    z1.readfile(edifile)
+                    freq = z1.freq
+                    
+                    #rotate data
+                    if thetar != 0:
+                        z1.Z.rotate(thetar)
+                        if z1.Tipper.tipper is not None:
+                            z1.Tipper.rotate(thetar)
+       
                     #check to see if the frequency is in descending order
                     if freq[0]<freq[-1]:
-                        freq=freq[::-1]
-                        z=z1.z[::-1,:,:]
-                        zvar=z1.zvar[::-1,:,:]
-                        tip=z1.tipper[::-1,:]
-                        tipvar=z1.tippervar[::-1,:]
+                        freq = freq[::-1]
+                        z = z1.Z.z[::-1,:,:]
+                        zvar = z1.Z.zerr[::-1,:,:]
+                        if z1.Tipper.tipper is not None:
+                            tip = z1.Tipper.tipper[::-1,:,:]
+                            tipvar = z1.Tipper.tipper_err[::-1,:]
                         
-                        print 'Flipped to descending frequency for station '+station
+                        print ('Flipped frequency to descending for station: '
+                               '{0}'.format(station))
                     else:
-                        z=z1.z
-                        zvar=z1.zvar
-                        tip=z1.tipper
-                        tipvar=z1.tippervar
-                    #rotate matrices if angle is greater than 0
-                    if thetar!=0:
-                        for rr in range(len(z)):
-                            z[rr,:,:]=np.dot(rotmatrix,np.dot(z[rr],
-                                                                rotmatrix.T))
-                            zvar[rr,:,:]=np.dot(rotmatrix,np.dot(zvar[rr],
-                                                                 rotmatrix.T))
-                    else:
-                        pass
+                        z = z1.Z.z
+                        zvar = z1.Z.zerr
+                        if z1.Tipper.tipper is not None:
+                            tip = z1.Tipper.tipper
+                            tipvar = z1.Tipper.tipper_err
                             
                     #get eastings and northings so everything is in meters
-                    zone,east,north=utm2ll.LLtoUTM(23,z1.lat,z1.lon)
+                    zone, east, north = utm2ll.LLtoUTM(23, z1.lat, z1.lon)
+                    
                     #put things into a dictionary to sort out order of stations
-                    surveydict['station']=station
-                    surveydict['east']=east
-                    surveydict['north']=north
-                    surveydict['zone']=zone
-                    surveydict['z']=z
-                    surveydict['zvar']=zvar
-                    surveydict['freq']=freq
-                    surveydict['tipper']=tip
-                    surveydict['tippervar']=tipvar
-                    surveydict['lat']=z1.lat
-                    surveydict['lon']=z1.lon
+                    surveydict['station'] = station
+                    surveydict['east'] = east
+                    surveydict['north'] = north
+                    surveydict['zone'] = zone
+                    surveydict['z'] = z
+                    surveydict['zvar'] = zvar
+                    surveydict['freq'] = freq
+                    surveydict['tipper'] = tip
+                    surveydict['tippervar'] = tipvar
+                    surveydict['lat'] = z1.lat
+                    surveydict['lon'] = z1.lon
                     freqlst.append(freq)
                     eastlst.append(east)
                     northlst.append(north)
                     pstationlst.append(station)
                     surveylst.append(surveydict)
         
-        self.eastlst=np.array(eastlst)
-        self.northlst=np.array(northlst)
+        self.eastlst = np.array(eastlst)
+        self.northlst = np.array(northlst)
         #-----------------------------------------------------------------            
         #project stations onto a best fitting line taking into account the 
-        #strike direction to get relative MT distance correct
+        #strike direction to get relative MT distances correct
         #-----------------------------------------------------------------
         
         #get bestfitting line
-        p=sp.polyfit(self.eastlst,self.northlst,1)
+        p = sp.polyfit(self.eastlst, self.northlst, 1)
         
         #now project this line onto the strike direction so that the distances
         #are relative to geoelectric strike.  Needs to be negative cause 
         #the strike angles is measured clockwise, where as the line angle is 
         #measured counterclockwise.
-        if proj_strike=='yes':
-            p[0]=-thetar
+        if proj_strike == 'yes':
+            p[0] = thetar
         else:
             pass
         
@@ -2800,70 +2807,68 @@ class Occam2DData:
         #the angle of the line is now the angle of the best fitting line added
         #to the geoelectric strike direction, which gives the relative distance
         #along the strike direction.
-        theta=np.arctan(p[0])
+        theta = np.arctan(p[0])
         print 'Profile Line Angle is: {0:.4g}'.format(theta*180/np.pi)
         
         #plot stations on profile line
-        if plotyn=='y':
-            lfig=plt.figure(4,dpi=200)
+        if plotyn == 'y':
+            lfig = plt.figure(4, dpi=200)
             plt.clf()
-            ploty=sp.polyval(p,self.eastlst)
-            lax=lfig.add_subplot(1,1,1,aspect='equal')
-            lax.plot(self.eastlst,ploty,'-b',lw=2)
+            ploty = sp.polyval(p, self.eastlst)
+            lax = lfig.add_subplot(1, 1, 1,aspect='equal')
+            lax.plot(self.eastlst, ploty, '-b', lw=2)
             lax.set_title('Projected Stations')
-            lax.set_ylim(ploty.min()-1000.,ploty.max()+1000.)
-            lax.set_xlim(self.eastlst.min()-1000,self.eastlst.max()+1000.)
-            lax.set_xlabel('Easting (m)',fontdict={'size':12,'weight':'bold'})
-            lax.set_ylabel('Northing (m)',fontdict={'size':12,'weight':'bold'})
+            lax.set_ylim(ploty.min()-1000., ploty.max()+1000.)
+            lax.set_xlim(self.eastlst.min()-1000, self.eastlst.max()+1000.)
+            lax.set_xlabel('Easting (m)', 
+                           fontdict={'size':12, 'weight':'bold'})
+            lax.set_ylabel('Northing (m)',
+                           fontdict={'size':12, 'weight':'bold'})
             plt.show()
         for ii in range(len(surveylst)):
-            if surveylst[ii]['zone']!=surveylst[0]['zone']:
+            if surveylst[ii]['zone'] != surveylst[0]['zone']:
                 print surveylst[ii]['station']
-            d=(northlst[ii]-sp.polyval(p,self.eastlst[ii]))*np.cos(theta)
-            x0=self.eastlst[ii]+d*np.sin(theta)
-            y0=self.northlst[ii]-d*np.cos(theta)
-            surveylst[ii]['east']=x0
-            surveylst[ii]['north']=y0
-            
-            
+            d = (northlst[ii]-sp.polyval(p,self.eastlst[ii]))*np.cos(theta)
+            x0 = self.eastlst[ii]+d*np.sin(theta)
+            y0 = self.northlst[ii]-d*np.cos(theta)
+            surveylst[ii]['east'] = x0
+            surveylst[ii]['north'] = y0
             
             #need to figure out a way to account for zone changes
             
-            if lineori=='ew': 
-                if surveylst[0]['east']<surveylst[ii]['east']:
-                    surveylst[ii]['offset']=np.sqrt((surveylst[0]['east']-
+            if lineori == 'ew': 
+                if surveylst[0]['east'] < surveylst[ii]['east']:
+                    surveylst[ii]['offset'] = np.sqrt((surveylst[0]['east']-
                                                     surveylst[ii]['east'])**2+
                                                     (surveylst[0]['north']-
                                                     surveylst[ii]['north'])**2)
-                elif surveylst[0]['east']>surveylst[ii]['east']:
-                    surveylst[ii]['offset']=-1*np.sqrt((surveylst[0]['east']-
-                                                    surveylst[ii]['east'])**2+
-                                                    (surveylst[0]['north']-
-                                                    surveylst[ii]['north'])**2)
-                else:
-                    surveylst[ii]['offset']=0
-            elif lineori=='ns': 
-                if surveylst[0]['north']<surveylst[ii]['north']:
-                    surveylst[ii]['offset']=np.sqrt((surveylst[0]['east']-
-                                                    surveylst[ii]['east'])**2+
-                                                    (surveylst[0]['north']-
-                                                    surveylst[ii]['north'])**2)
-                elif surveylst[0]['north']>surveylst[ii]['north']:
-                    surveylst[ii]['offset']=-1*np.sqrt((surveylst[0]['east']-
+                elif surveylst[0]['east'] > surveylst[ii]['east']:
+                    surveylst[ii]['offset'] = -1*np.sqrt((surveylst[0]['east']-
                                                     surveylst[ii]['east'])**2+
                                                     (surveylst[0]['north']-
                                                     surveylst[ii]['north'])**2)
                 else:
-                    surveylst[ii]['offset']=0
+                    surveylst[ii]['offset'] = 0
+            elif lineori == 'ns': 
+                if surveylst[0]['north'] < surveylst[ii]['north']:
+                    surveylst[ii]['offset'] = np.sqrt((surveylst[0]['east']-
+                                                    surveylst[ii]['east'])**2+
+                                                    (surveylst[0]['north']-
+                                                    surveylst[ii]['north'])**2)
+                elif surveylst[0]['north'] > surveylst[ii]['north']:
+                    surveylst[ii]['offset'] = -1*np.sqrt((surveylst[0]['east']-
+                                                    surveylst[ii]['east'])**2+
+                                                    (surveylst[0]['north']-
+                                                    surveylst[ii]['north'])**2)
+                else:
+                    surveylst[ii]['offset'] = 0
                     
-            if plotyn=='y':
-#                ds=surveylst[ii]['offset']*np.sin(thetar)*(1-np.tan(thetar)**2)
-#                lax.plot(x0+ds*np.cos(thetar),y0+ds*np.sin(thetar),'v',
-#                         color='k',ms=8,mew=3)
-                lax.plot(x0,y0,'v',color='k',ms=8,mew=3)
-                lax.text(x0,y0+100,pstationlst[ii],horizontalalignment='center',
-                     verticalalignment='baseline',fontdict={'size':12,
-                                                            'weight':'bold'})
+            if plotyn == 'y':
+                lax.plot(x0, y0, 'v', color='k', ms=8, mew=3)
+                lax.text(x0, y0+100, pstationlst[ii],
+                         horizontalalignment='center',
+                         verticalalignment='baseline',
+                         fontdict={'size':12, 'weight':'bold'})
         
         #sort by ascending order of distance from first station
         surveylst=sorted(surveylst,key=itemgetter('offset'))
@@ -2992,19 +2997,19 @@ class Occam2DData:
                     
                     #if include the tipper
                     if tippererr!=None:
-                        if tip[jj,0].real==0.0 or tip[jj,1]==0.0:
+                        if tip[jj,0,0].real==0.0 or tip[jj,0,1]==0.0:
                             tipyn='n'
                         else:
                             #calculate the projection angle for real and imaginary
-                            tipphir=np.arctan(tip[jj,0].real/tip[jj,1].real)-\
+                            tipphir=np.arctan(tip[jj, 0, 0].real/tip[jj,0,1].real)-\
                                     theta
-                            tipphii=np.arctan(tip[jj,0].imag/tip[jj,1].imag)-\
+                            tipphii=np.arctan(tip[jj,0,0].imag/tip[jj,0,1].imag)-\
                                     theta
                             
                             #project the tipper onto the profile line
-                            projtipr=np.sqrt(tip[jj,0].real**2+tip[jj,1].real**2)*\
+                            projtipr=np.sqrt(tip[jj,0,0].real**2+tip[jj,0,1].real**2)*\
                                       np.cos(tipphir)
-                            projtipi=np.sqrt(tip[jj,0].imag**2+tip[jj,1].imag**2)*\
+                            projtipi=np.sqrt(tip[jj,0,0].imag**2+tip[jj,0,1].imag**2)*\
                                       np.cos(tipphii)
                                       
                             #error of tipper is a decimal percentage
@@ -3110,13 +3115,13 @@ class Occam2DData:
                                         tipyn='n'
                                     else:
                                         #calculate the projection angle for real and imaginary
-                                        tipphir=np.arctan(tip[jj,0].real/tip[jj,1].real)-theta
-                                        tipphii=np.arctan(tip[jj,0].imag/tip[jj,1].imag)-theta
+                                        tipphir=np.arctan(tip[jj,0,0].real/tip[jj,0,1].real)-theta
+                                        tipphii=np.arctan(tip[jj,0,0].imag/tip[jj,0,1].imag)-theta
                                         
                                         #project the tipper onto the profile line
-                                        projtipr=np.sqrt(tip[jj,0].real**2+tip[jj,1].real**2)*\
+                                        projtipr=np.sqrt(tip[jj,0,0].real**2+tip[jj,0,1].real**2)*\
                                                   np.cos(tipphir)
-                                        projtipi=np.sqrt(tip[jj,0].imag**2+tip[jj,1].imag**2)*\
+                                        projtipi=np.sqrt(tip[jj,0,0].imag**2+tip[jj,0,1].imag**2)*\
                                                   np.cos(tipphii)
                                                   
                                         #error of tipper is a decimal percentage
@@ -3678,7 +3683,7 @@ class Occam2DData:
                             reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
                                         fmt % srp['phaseyx'][0,jj-1]+ss+
                                         fmt % srp['phaseyx'][1,jj-1]+'\n')
-                        if tippererr!=None and tipyn=='y':
+                        if tippererr!=None:
                             if srp['realtip'][0,jj-1]!=0.0:
                                 reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
                                         fmt % srp['realtip'][0,jj-1]+ss+
@@ -3696,7 +3701,7 @@ class Occam2DData:
                             reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
                                         fmt % srp['phaseyx'][0,jj-1]+ss+
                                         fmt % srp['phaseyx'][1,jj-1]+'\n')
-                        if tippererr!=None and tipyn=='y':
+                        if tippererr!=None:
                             if srp['realtip'][0,jj-1]!=0.0:
                                 reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
                                         fmt % srp['realtip'][0,jj-1]+ss+
@@ -3714,7 +3719,7 @@ class Occam2DData:
                             reslst.append(ss+str(kk)+ss+str(jj)+ss+'2'+ss+
                                         fmt % srp['phasexy'][0,jj-1]+ss+
                                         fmt % srp['phasexy'][1,jj-1]+'\n')
-                        if tippererr!=None and tipyn=='y':
+                        if tippererr!=None:
                             if srp['realtip'][0,jj-1]!=0.0:
                                 reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
                                         fmt % srp['realtip'][0,jj-1]+ss+
@@ -3729,16 +3734,24 @@ class Occam2DData:
         #===========================================================================
         
         #make the file name of the data file
-        if self.datafn.find('RW')>0:
-            if savepath==None:
-                self.ndatafn=self.datafn
-            else:
+        if self.datafn.find('RW') > 0:
+            if savepath == None:
+                self.ndatafn = self.datafn
+            elif os.path.isdir(savepath) == True:
                 self.ndatafn=os.path.join(savepath,'DataRW.dat')
+            elif os.path.isfile(savepath) == True:
+                self.ndatafn = savepath
+            elif savepath.find('.dat') > 0:
+                self.ndatafn = savepath
         else:
             if savepath==None:
                 self.ndatafn=self.datafn[:-4]+'RW.dat'
-            else:
+            elif os.path.isdir(savepath) == True:
                 self.ndatafn=os.path.join(savepath,'DataRW.dat')
+            elif os.path.isfile(savepath) == True:
+                self.ndatafn = savepath
+            elif savepath.find('.dat') > 0:
+                self.ndatafn = savepath
             
         nstat=len(stationlst)
             
