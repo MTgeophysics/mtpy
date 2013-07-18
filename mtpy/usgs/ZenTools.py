@@ -1189,25 +1189,17 @@ class ZenCache(object):
         
         ts_block_len = int(ts_len)*n_fn*4+2
         
+        #--> make sure none of the data is above the allowed level
+        self.ts[np.where(self.ts>2.14e9)] = 2.14e9
+        self.ts[np.where(self.ts<-2.14e9)] = -2.14e9
+        
+        #--> write time series block
         cfid.write(struct.pack('<i', ts_block_len))
         cfid.write(struct.pack('<i', self._flag))
         cfid.write(struct.pack('<h', self._type_dict['ts']))
         for zz in range(ts_len):
-            try:
-                cfid.write(struct.pack('<'+'i'*n_fn, *self.ts[zz]))
-            except struct.error:
-                for nn in range(n_fn):
-                    if abs(self.ts[zz,nn]) > 2.14e9:
-                        print 'had to clip number for {0} at point {1}'.format(
-                               nn, zz)
-                        self.log_lines.append('had to clip number for {0} at point {1}'.format(
-                               nn, zz))
-                        cfid.write(struct.pack('<i',
-                                               np.sign(self.ts[zz,nn]*2.14e9)))
-                    else:
-                        cfid.write(struct.pack('<i', self.ts[zz,nn]))
-                        
-                
+            cfid.write(struct.pack('<'+'f'*n_fn, *self.ts[zz]))
+                                
         cfid.write(struct.pack('<i', ts_block_len))
          
         
@@ -1220,12 +1212,79 @@ class ZenCache(object):
         self.log_lines.append(' '*4+'{0}\n'.format(self.save_fn))
         self.log_lines.append('='*72+'\n')
         
-    
+    def rewrite_cache_file(self):
+        """
+        rewrite a cache file if parameters changed
+        
+        """
+        self.save_fn_rw = mtfh.make_unique_filename(self.save_fn)
+        
+        cfid = file(self.save_fn_rw, 'wb+')
+        
+        n_fn = self.ts.shape[1]
+        
+        #--> write navigation records first        
+        cfid.write(struct.pack('<i', self._nav_len))
+        cfid.write(struct.pack('<i', self._flag))
+        cfid.write(struct.pack('<h', self._type_dict['nav']))
+        for nd in range(self._nav_len-2):
+            cfid.write(struct.pack('<b', 0))
+        cfid.write(struct.pack('<i', self._nav_len))
+        
+        #--> write meta data
+        meta_str = ''.join([key+','+','.join(self.meta_data[key])+'\n' 
+                             for key in np.sort(self.meta_data.keys())
+                             if key != ''])
+        
+        meta_len = len(meta_str)
+        
+        cfid.write(struct.pack('<i', meta_len+2))
+        cfid.write(struct.pack('<i', self._flag))
+        cfid.write(struct.pack('<h', self._type_dict['meta']))
+        cfid.write(meta_str)
+        cfid.write(struct.pack('<i', meta_len+2))
+        
+        #--> write calibrations
+        cal_data1 = 'HEADER.TYPE,Calibrate\nCAL.VER,019\nCAL.SYS,0000,'+\
+                   ''.join([' 0.000000: '+'0.000000      0.000000,'*3]*27)
+        cal_data2 = '\nCAL.SYS,0000,'+\
+                    ''.join([' 0.000000: '+'0.000000      0.000000,'*3]*27)
+                    
+        cal_data = cal_data1+(cal_data2*(self.ts.shape[1]-1))
+        cal_len = len(cal_data)
+        
+        cfid.write(struct.pack('<i', cal_len+2))
+        cfid.write(struct.pack('<i', self._flag))
+        cfid.write(struct.pack('<h', self._type_dict['cal']))
+        cfid.write(cal_data[:-1]+'\n')
+        cfid.write(struct.pack('<i', cal_len+2))
+        
+        #--> write data
+        ts_block_len = self.ts.shape[0]*n_fn*4+2
+        
+        #--> make sure none of the data is above the allowed level
+        self.ts[np.where(self.ts>2.14e9)] = 2.14e9
+        self.ts[np.where(self.ts<-2.14e9)] = -2.14e9
+        
+        #--> write time series block
+        cfid.write(struct.pack('<i', ts_block_len))
+        cfid.write(struct.pack('<i', self._flag))
+        cfid.write(struct.pack('<h', self._type_dict['ts']))
+        for zz in range(self.ts.shape[0]):
+            cfid.write(struct.pack('<'+'f'*n_fn, *self.ts[zz]))
+                                
+        cfid.write(struct.pack('<i', ts_block_len))
+                 
+        cfid.close()
+        
+        print 'Rewrote {0}\n to {1}'.format(self.save_fn, self.save_fn_rw)        
+        
     def read_cache_metadata(self, cache_fn):
         """
         read only the meta data from the cache file
         """
         
+        self.save_fn = cache_fn
         #open cache file to read in as a binary file
         cfid = file(cache_fn, 'rb')
         
@@ -1283,6 +1342,7 @@ class ZenCache(object):
         
         """
         
+        self.save_fn = cache_fn
         #open cache file to read in as a binary file
         cfid = file(cache_fn, 'rb')
         
@@ -1361,7 +1421,7 @@ class ZenCache(object):
         #get time series data
         ii = int(jj)
         jj = ii+ts_block['len']-2
-        self.ts = np.fromstring(cdata[ii:jj], dtype = np.int32)
+        self.ts = np.fromstring(cdata[ii:jj], dtype = np.float32)
         #resize time series to be length of each channel
         num_chn = len(self.meta_data['ch.cmp'.upper()])
         self.ts = self.ts.reshape(self.ts.shape[0]/num_chn, num_chn)
@@ -1388,7 +1448,7 @@ class ZongeMTFT():
         
         #--> standard MTFT meta data
         self.MTFT_Version = '1.10v'
-        self.MTFT_MHAFreq = 2
+        self.MTFT_MHAFreq = 3
         self.MTFT_WindowTaper = '4 Pi Prolate'
         self.MTFT_WindowLength = 64
         self.MTFT_WindowOverlap = 48
@@ -1434,12 +1494,14 @@ class ZongeMTFT():
         self.Chn_dict = dict([(chkey, [cid, cg, cl]) for chkey, cid, cg, cl in 
                                zip(self.Chn_Cmp, self.Chn_ID, self.Chn_Gain,
                                    self.Chn_Length)])
+        self.num_comp = len(self.Chn_Cmp)
         self.Ant_FrqMin = 7.31E-4
         self.Ant_FrqMax = 10240
         self.Rx_HPR = [90, 0, 0]
         self.Remote_Component = 'Hx,Hy'
         self.Remote_Rotation = 0
         self.Remote_Path = ''
+        self.cache_path = None
         
         #info dict
         self.ts_info_keys = ['File#', 'Setup', 'SkipWgt', 'LocalFile', 
@@ -1497,6 +1559,8 @@ class ZongeMTFT():
         self.value_lst = []
         self.make_value_dict()
         self.meta_dict = None
+        
+        self.rr_tdiff_dict = {'256':'060000', '1024':'002000', '4096':'000500'}
         
      
     def make_value_dict(self):
@@ -1611,25 +1675,214 @@ class ZongeMTFT():
                     new_ts[tkey] = str(new_ts[tkey])
                     
         self.ts_info_lst = new_ts_lst
-          
-    def write_mtft_cfg(self, cache_path, station_name, meta_data_dict=None, 
-                       survey_file=None, save_path=None):
+        
+    def get_rr_ts(self, ts_info_lst, remote_path=None):
         """
-        write a config file for mtft24 from the cache files in cache_path
+        get remote reference time series such that it has the same starting
+        time and number of points as the collected time series
         
         """
+
+        if remote_path is not None:
+            self.Remote_Path = remote_path
+            
+        if self.Remote_Path is None or self.Remote_Path == '':
+            return 
+            
+        new_ts_info_lst = []  
+        rrfnlst = [rrfn for rrfn in os.listdir(self.Remote_Path) 
+                   if rrfn.find('.cac')>0]
+                       
+        for ts_dict in ts_info_lst:
+            local_fn_lst = os.path.splitext(ts_dict['LocalFile'])[0].split('_')
+            tdiff = self.rr_tdiff_dict[local_fn_lst[3]]
+            
+            rrfind = False
+            #look backwards because if a new file was already created it will
+            #be found before the original file
+            for rrfn in rrfnlst[::-1]:
+                rrfn_lst = os.path.splitext(rrfn)[0].split('_')
+                if local_fn_lst[1] == rrfn_lst[1] and \
+                   local_fn_lst[3] == rrfn_lst[3]:
+                    if local_fn_lst[2] == rrfn_lst[2]:
+                        zcrr = ZenCache()
+                        zcrr.read_cache_metadata(os.path.join(self.Remote_Path,
+                                                              rrfn))
+                        if int(zcrr.meta_data['TS.NPNT'][0]) == ts_dict['NLocalPnt']:
+                            ts_dict['RemoteFile'] = rrfn
+                            ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
+                            ts_dict['RemoteByte'] = ts_dict['LocalByte']
+                            ts_dict['NRemotePnt'] = ts_dict['NLocalPnt']
+                            for ii in range(self.num_comp+1,
+                                            self.num_comp+3):
+                                ts_dict['ChnGain{0}'.format(ii)] = '1'
+                            new_ts_info_lst.append(ts_dict)
+                            rrfind = True
+                            break
+                        
+                        #if time series is longer than remote reference
+                        elif int(zcrr.meta_data['TS.NPNT'][0]) < ts_dict['NLocalPnt']:
+                            zcl = ZenCache()
+                            zcl.read_cache(os.path.join(self.cache_path, 
+                                                        ts_dict['LocalFile']))
+                            zcl.ts = np.resize(zcl.ts, 
+                                               (int(zcrr.meta_data['TS.NPNT'][0]),
+                                                zcl.ts.shape[1]))
+                            zcl.meta_data['TS.NPNT'] = [str(zcl.ts.shape[0])]
+                            zcl.rewrite_cache_file()
+                            
+                            print 'Resized TS in {0} to {1}'.format(
+                                    os.path.join(self.cache_path, 
+                                                 ts_dict['LocalFile']),
+                                    zcl.ts.shape)
+                                    
+                            ts_dict['LocalFile'] = \
+                                              os.path.basename(zcl.save_fn_rw)
+                            ts_dict['RemoteFile'] = rrfn
+                            ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
+                            ts_dict['RemoteByte'] = ts_dict['LocalByte']
+                            ts_dict['NLocalPnt'] = zcl.ts.shape[0]
+                            ts_dict['NRemotePnt'] = ts_dict['NLocalPnt']
+                            for ii in range(self.num_comp+1,
+                                            self.num_comp+3):
+                                ts_dict['ChnGain{0}'.format(ii)] = '1'
+                            new_ts_info_lst.append(ts_dict)
+                            rrfind = True
+                            break
+                                                        
+                        #if remote reference is longer than time series
+                        elif int(zcrr.meta_data['TS.NPNT'][0]) > ts_dict['NLocalPnt']:
+                            zcl = ZenCache()
+                            zcl.read_cache_metadata(os.path.join(self.cache_path, 
+                                                        ts_dict['LocalFile']))
+                            
+                            zcrr.read_cache(os.path.join(self.Remote_Path,
+                                                         rrfn))
+
+                            zcrr.ts = np.resize(zcrr.ts, 
+                                                (ts_dict['NLocalPnt'],2))
+                                                
+                            zcrr.meta_data['TS.NPNT'] = [str(zcrr.ts.shape[0])]
+                            zcrr.rewrite_cache_file()
+                            
+                            print 'Resized RR_TS in {0} to {1}'.format(
+                                           os.path.join(self.Remote_Path,rrfn),
+                                           zcrr.ts.shape)
+                            ts_dict['RemoteFile'] = \
+                                            os.path.basename(zcrr.save_fn_rw)
+                            ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
+                            ts_dict['RemoteByte'] = ts_dict['LocalByte']
+                            ts_dict['NRemotePnt'] = ts_dict['NLocalPnt']
+                            for ii in range(self.num_comp+1,
+                                            self.num_comp+3):
+                                ts_dict['ChnGain{0}'.format(ii)] = '1'
+                            new_ts_info_lst.append(ts_dict)
+                            rrfind = True
+                            break
+                            
+                    #if the starting time is different
+                    elif abs(int(local_fn_lst[2])-int(rrfn_lst[2])) < int(tdiff):
+                        zcl = ZenCache()
+                        zcl.read_cache_metadata(os.path.join(self.cache_path,
+                                                        ts_dict['LocalFile']))
+                                                        
+                        zcrr = ZenCache()
+                        zcrr.read_cache_metadata(os.path.join(self.Remote_Path,
+                                                     rrfn))
+                        
+                        if int(zcl.meta_data['TS.NPNT'][0]) != \
+                           int(zcrr.meta_data['TS.NPNT'][0]):
+                            local_hour = int(local_fn_lst[2][0:2])
+                            local_minute = int(local_fn_lst[2][2:4])
+                            local_second = int(local_fn_lst[2][4:])
+                            
+                            rr_hour = int(rrfn_lst[2][0:2])
+                            rr_minute = int(rrfn_lst[2][2:4])
+                            rr_second = int(rrfn_lst[2][4:])
+                            
+                            hour_diff = (rr_hour-local_hour)*3600
+                            minute_diff = (rr_minute-local_minute)*60
+                            second_diff = rr_second-local_second
+                            
+                            time_diff = abs(hour_diff+minute_diff+second_diff)
+                            skip_points = int(local_fn_lst[3])*time_diff
+                            
+                            print ('Time difference is {0} seconds'.format(
+                                                                time_diff))
+                            print 'Skipping {0} points in {1}'.format(
+                                                skip_points,
+                                                os.path.join(self.Remote_Path,
+                                                             rrfn))
+                            
+                            zcrr.read_cache(os.path.join(self.Remote_Path,
+                                                         rrfn))
+                            #resize remote reference
+                            new_rr_ts = zcrr.ts[skip_points:,:]
+                            
+                            zcrr.ts = new_rr_ts
+                            zcrr.meta_data['TS.NPNT'] = [str(zcrr.ts.shape[0])]
+                            
+                            zcrr.rewrite_cache_file()
+                            
+                            print 'Resized RR_TS in {0} to {1}'.format(
+                                   os.path.join(self.cache_path, rrfn),
+                                   zcrr.ts.shape)
+                                   
+                            ts_dict['RemoteFile'] = \
+                                                os.path.basename(zcrr.save_fn_rw)
+                            ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
+                            ts_dict['RemoteByte'] = ts_dict['LocalByte']
+                            ts_dict['NRemotePnt'] = ts_dict['NLocalPnt']
+                            for ii in range(self.num_comp+1,
+                                            self.num_comp+3):
+                                ts_dict['ChnGain{0}'.format(ii)] = '1'
+                            new_ts_info_lst.append(ts_dict)
+                            rrfind = True
+                            break
+                        else:
+                            ts_dict['RemoteFile'] = \
+                                                os.path.basename(zcrr.save_fn)
+                            ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
+                            ts_dict['RemoteByte'] = ts_dict['LocalByte']
+                            ts_dict['NRemotePnt'] = ts_dict['NLocalPnt']
+                            for ii in range(self.num_comp+1,
+                                            self.num_comp+3):
+                                ts_dict['ChnGain{0}'.format(ii)] = '1'
+                            new_ts_info_lst.append(ts_dict)
+                            rrfind = True
+                            break
+                        
+            if rrfind == False:
+                print ('Did not find remote reference time series '
+                       'for {0}'.format(ts_dict['LocalFile']))
+                       
+                new_ts_info_lst.append(ts_dict)
+                        
+        self.ts_info_lst = new_ts_info_lst
         
-        if save_path is None:
-            save_path = os.path.join(cache_path, 'mtft24.cfg')
+    def get_ts_info_lst(self, cache_path):
+        """
+        get information about time series and put it into dictionaries with
+        keys according to header line in .cfg file
         
+        """
+
         #--> get .cac files and read meta data
         cc = 0
+        
+        self.cache_path = cache_path
         
         if len(self.ts_info_lst) == 0:
             for cfn in os.listdir(cache_path):
                 if cfn[-4:] == '.cac' and cfn.find('$') == -1:
                     zc = ZenCache()
                     zc.read_cache_metadata(os.path.join(cache_path, cfn))
+                    
+                    self.Chn_Cmp = [md.capitalize() 
+                                    for md in zc.meta_data['CH.CMP']
+                                    if md.capitalize() in self.Chn_Cmp]
+                    self.num_comp = len(self.Chn_Cmp)
+                    
                     
                     info_dict = dict([(key, []) for key in self.ts_info_keys])
                     #put metadata information into info dict
@@ -1660,15 +1913,72 @@ class ZongeMTFT():
                     info_dict['ADFrequency'] = int(zc.meta_data['TS.ADFREQ'][0])
                     info_dict['NLocalPnt'] = int(zc.meta_data['TS.NPNT'][0])
                     info_dict['NRemotePnt'] = ''
-                    info_dict['ChnGain1'] = '1'                
-                    info_dict['ChnGain2'] = '1'                
-                    info_dict['ChnGain3'] = '1'                
-                    info_dict['ChnGain4'] = '1'                
-                    info_dict['ChnGain5'] = '1'                
+                    for ii in range(1,self.num_comp+1):
+                        info_dict['ChnGain{0}'.format(ii)] = '1'               
                     
                     cc += 1
                     self.ts_info_lst.append(info_dict)
+    
+    def compute_number_of_components(self):
+        """
+        get number of components and set all the necessary values
         
+        """
+        
+        self.num_comp = len(self.Chn_Cmp)
+        self.Chn_Gain = [1]*self.num_comp
+        self.Chn_Length = [100]*self.num_comp
+        self.Chn_ID = range(self.num_comp)
+        self.Chn_dict = dict([(chkey, [cid, cg, cl]) 
+                                  for chkey, cid, cg, cl in 
+                                  zip(self.Chn_Cmp, self.Chn_ID, self.Chn_Gain,
+                                      self.Chn_Length)])
+        
+        self.ts_info_keys = self.ts_info_keys[:len(self.ts_info_keys)-\
+                                                  (5-self.num_comp)]
+
+    def write_mtft_cfg(self, cache_path, station_name, rrstation=None,
+                       remote_path=None, survey_file=None, save_path=None):
+        """
+        write a config file for mtft24 from the cache files in cache_path
+        
+        """
+        
+        if save_path is None:
+            save_path = os.path.join(cache_path, 'mtft24.cfg')
+
+        self.cache_path = cache_path
+        
+        #--> get information about the time series
+        self.get_ts_info_lst(cache_path)
+        
+        #--> get number of components
+        self.compute_number_of_components()
+        
+        #--> get remote reference information if needed
+        if remote_path is not None:
+            self.Remote_Path = remote_path
+            self.Chn_Cmp += ['Hxr', 'Hyr']
+            self.Chn_ID += ['2284', '2274']
+            self.Chn_Gain += [1]*2
+            self.Chn_Length += [100]*2
+            self.Chn_dict = dict([(chkey, [cid, cg, cl]) 
+                                  for chkey, cid, cg, cl in 
+                                  zip(self.Chn_Cmp, self.Chn_ID, self.Chn_Gain,
+                                      self.Chn_Length)])
+            
+            self.ts_info_keys += ['ChnGain{0}'.format(ii) 
+                                   for ii in range(self.num_comp+1, 
+                                                   self.num_comp+3)]
+            if rrstation is None:
+                rrstation = os.path.basename(os.path.dirname(
+                                             os.path.dirname(remote_path)))
+            
+            
+        self.get_rr_ts(self.ts_info_lst)
+        
+        #--> sort the time series such that each section with the same sampling
+        #    rate is in sequential order
         self.sort_ts_lst()
         self.TS_Number = len(self.ts_info_lst)
         
@@ -1677,27 +1987,62 @@ class ZongeMTFT():
             sdict = mtcf.read_survey_configfile(survey_file)
             try:
                 survey_dict = sdict[station_name.upper()]
-                self.Chn_dict['Hx'][0] = survey_dict['hx']
-                self.Chn_dict['Hy'][0] = survey_dict['hy']
-                if survey_dict['hz'].find('*') >= 0:
-                    self.Chn_dict['Hz'][0] = '3'
-                else:
-                    self.Chn_dict['Hz'][0] = survey_dict['hz']
-                self.Chn_dict['Ex'][2] = survey_dict['e_xaxis_length']
-                self.Chn_dict['Ey'][2] = survey_dict['e_yaxis_length']
+                try:
+                    self.Chn_dict['Hx'][0] = survey_dict['hx']
+                except KeyError:
+                    print 'No hx data'
+                try:
+                    self.Chn_dict['Hy'][0] = survey_dict['hy']
+                except KeyError:
+                    print 'No hy data'
+                
+                try:
+                    if survey_dict['hz'].find('*') >= 0:
+                        self.Chn_dict['Hz'][0] = '3'
+                    else:
+                        self.Chn_dict['Hz'][0] = survey_dict['hz']
+                except KeyError:
+                    print 'No hz data'
+                
+                try:
+                    self.Chn_dict['Ex'][2] = survey_dict['e_xaxis_length']
+                except KeyError:
+                    print 'No ex data'
+                try:
+                    self.Chn_dict['Ey'][2] = survey_dict['e_yaxis_length']
+                except KeyError:
+                    print 'No ey data'
             except KeyError:
                 print ('Could not find survey information from ' 
                        '{0} for {1}'.format(survey_file, station_name))
-                       
             
+            if rrstation is not None:
+                try:
+                    survey_dict = sdict[rrstation.upper()]
+                    try:
+                        self.Chn_dict['Hxr'][0] = survey_dict['hx']
+                    except KeyError:
+                        print 'No hxr data'
+                    try:
+                        self.Chn_dict['Hyr'][0] = survey_dict['hy']
+                    except KeyError:
+                        print 'No hyr data'
+                except KeyError:
+                    print ('Could not find survey information from ' 
+                           '{0} for {1}'.format(survey_file, rrstation))
+        
+        #set channel information                  
         self.Chn_Gain = [self.Chn_dict[ckey][1] for ckey in self.Chn_Cmp]
         self.Chn_ID = [self.Chn_dict[ckey][0] for ckey in self.Chn_Cmp]
         self.Chn_Length = [self.Chn_dict[ckey][2] for ckey in self.Chn_Cmp]
         
         #make a dictionary of all the values to write file
+        if self.Remote_Path is not '' or self.Remote_Path is not None:
+            self.Remote_Path += os.path.sep
+            
         self.make_value_dict()
        
-       #--> write mtft24.cfg file
+        #--> write mtft24.cfg file
         cfid = file(save_path, 'w')
         cfid.write('\n')
         for ii, mkey in enumerate(self.meta_keys):
@@ -1958,8 +2303,15 @@ def merge_3d_files(fn_lst, savepath=None, verbose=False,
     
     end_time = time.ctime()
     
-    shutil.copy(calibration_fn, 
-                os.path.join(save_path, os.path.basename(calibration_fn)))
+    #copy the calibration file into the merged folder for mtft24
+    try:
+        copy_cal_fn = os.path.join(save_path, 'Merged',
+                                 os.path.basename(calibration_fn))
+    except:
+        copy_cal_fn = os.path.join(save_path, os.path.basename(calibration_fn))
+        
+    shutil.copy(calibration_fn, copy_cal_fn)
+    print 'copied {0} to {1}'.format(calibration_fn, copy_cal_fn)
     
     print 'Start time: {0}'.format(start_time)
     print 'End time:   {0}'.format(end_time)
@@ -3413,6 +3765,7 @@ class ZongeMTAvg():
         self.comp_dict = None
         self.comp = None
         self.nfreq = None
+        self.nfreq_tipper = None
         self.freq_dict = None
         self.avg_dict = {'ex':'4', 'ey':'5'}
 
@@ -3488,6 +3841,7 @@ class ZongeMTAvg():
         nz = flst.max()
         freq = self.comp_dict[self.comp_lst_z[np.where(flst==nz)[0][0]]]['freq']
         freq = freq[np.nonzero(freq)]
+
         if self.nfreq:
             if nz > self.nfreq:
                 self.freq_dict = dict([('{0:.4g}'.format(ff), nn) for nn, ff
@@ -3497,8 +3851,9 @@ class ZongeMTAvg():
                 new_Z = mtz.Z()
                 new_Z.z = np.zeros((nz, 2, 2), dtype='complex')
                 new_Z.zerr = np.zeros((nz, 2, 2))
-                new_Z.z[self.Z.z.shape] = self.Z.z
-                new_Z.zerr[self.Z.zerr.shape] = self.Z.zerr
+                nzx, nzy, nzz = self.Z.z.shape
+                new_Z.z[0:nzx, 0:nzy, 0:nzz] = self.Z.z
+                new_Z.zerr[0:nzx, 0:nzy, 0:nzz] = self.Z.zerr
                 new_Z.freq = freq
                 self.Z = new_Z
             
@@ -3564,22 +3919,23 @@ class ZongeMTAvg():
         flst = np.array([len(np.nonzero(self.comp_dict[comp]['freq'])[0])
                          for comp in self.comp_lst_tip])
         nz = flst.max()
+        print nz, self.nfreq_tipper
         freq = self.comp_dict[self.comp_lst_tip[np.where(flst==nz)[0][0]]]['freq']
         freq = freq[np.nonzero(freq)]
-        if self.nfreq and self.Tipper.tipper is not None:
-            if nz > self.nfreq:
+        if self.nfreq_tipper and self.Tipper.tipper is not None:
+            if nz > self.nfreq_tipper:
                 self.freq_dict = dict([('{0:.4g}'.format(ff), nn) for nn, ff
                                        in enumerate(freq)])
-                self.nfreq = nz
+                self.nfreq_tipper = nz
                 #reshape tipper
-                new_T = mtz.Tipper()
-                new_T.tipper = np.zeros((nz, 1, 2), dtype='complex')
-                new_T.tipper_err = np.zeros((nz, 1, 2))
-                new_T.tipper[self.Tipper.tipper.shape] = self.Tipper.tipper
-                new_T.tipper_err[self.Tipper.tipper_err.shape] = \
-                                                      self.Tipper.tipper_err
-                new_T.freq = freq
-                self.Tipper = new_T
+                new_Tipper = mtz.Tipper()
+                new_Tipper.tipper = np.zeros((nz, 1, 2), dtype='complex')
+                new_Tipper.tipper_err = np.zeros((nz, 1, 2))
+                nzx, nzy, nzz = self.Tipper.tipper.shape
+                new_Tipper.tipper[0:nzx, :, 0:nzz] = self.Tipper.tipper
+                new_Tipper.tipper_err[0:nzx, :, 0:nzz] = self.Tipper.tipper_err
+                new_Tipper.freq = freq
+                self.Tipper = new_Tipper
            
             #fill z with values from comp_dict
             for ikey in self.comp_lst_tip:
@@ -3587,7 +3943,7 @@ class ZongeMTAvg():
 
                 tr, ti = self.convert2complex(self.comp_dict[ikey]['z.mag'][:nz],
                                               self.comp_dict[ikey]['z.phz'][:nz])
-                if nz != self.nfreq:
+                if nz != self.nfreq_tipper:
                     for kk, tzr, tzi in zip(range(len(tr)), tr, ti):
                         ll = self.freq_dict['{0:.4g}'.format(
                                             self.comp_dict[ikey]['freq'][kk])]
@@ -3596,8 +3952,7 @@ class ZongeMTAvg():
                                     self.comp_dict[ikey]['ares.%err'][kk]*\
                                                     .05*np.sqrt(tzr**2+tzi**2)
                 else:
-                    self.Tipper.tipper[:, ii, jj].real += tr
-                    self.Tipper.tipper[:, ii, jj].imag += ti
+                    self.Tipper.tipper[:, ii, jj] += tr+ti*1j
                     self.Tipper.tipper_err[:, ii, jj] += \
                                      self.comp_dict[ikey]['ares.%err'][:nz]*\
                                                      .05*np.sqrt(tr**2+ti**2)
@@ -3607,7 +3962,7 @@ class ZongeMTAvg():
             self.Tipper.tipper_err / 2.
            
         else:
-            self.nfreq = nz
+            self.nfreq_tipper = nz
             self.freq_dict = dict([('{0:.4g}'.format(ff), nn) for nn, ff
                                        in enumerate(freq)])
             #fill z with values
@@ -3691,14 +4046,16 @@ class ZongeMTAvg():
         #read in ex file
         fnx = os.path.join(avg_dirpath, 
                            self.avg_dict['ex'],
-                           self.avg_dict['ex']+avg_ext)            
-        self.read_avg_file(fnx)
+                           self.avg_dict['ex']+avg_ext)
+        if os.path.isfile(fnx) == True:
+            self.read_avg_file(fnx)
         
         #read in ey file
         fny = os.path.join(avg_dirpath, 
                            self.avg_dict['ey'],
                            self.avg_dict['ey']+avg_ext)
-        self.read_avg_file(fny)
+        if os.path.isfile(fny) == True:
+            self.read_avg_file(fny)
  
         
         #read in survey file
