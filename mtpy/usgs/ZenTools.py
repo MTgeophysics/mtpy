@@ -1484,6 +1484,7 @@ class ZongeMTFT():
         self.Setup_Number = 1
         self.Setup_ID = 1
         self.Setup_Use = 'Yes'
+        self.setup_lst = []
 
         #--> survey parameters
         self.Unit_Length = 'm'
@@ -1494,6 +1495,8 @@ class ZongeMTFT():
         self.Chn_dict = dict([(chkey, [cid, cg, cl]) for chkey, cid, cg, cl in 
                                zip(self.Chn_Cmp, self.Chn_ID, self.Chn_Gain,
                                    self.Chn_Length)])
+                                   
+        self.Chn_Cmp_lst = []
         self.num_comp = len(self.Chn_Cmp)
         self.Ant_FrqMin = 7.31E-4
         self.Ant_FrqMax = 10240
@@ -1542,19 +1545,21 @@ class ZongeMTFT():
                           'TS.FrqBand',
                           'TS.T0Offset',
                           'TS.T0Error',
-                          'Setup.ID',
-                          'Setup.Use',
-                          'Unit.Length',
-                          'Chn.Cmp',
-                          'Chn.ID',
-                          'Chn.Length',
-                          'Chn.Gain',
-                          'Ant.FrqMin',
-                          'Ant.FrqMax',
-                          'Rx.HPR',
-                          'Remote.Component',
-                          'Remote.Rotation',
-                          'Remote.Path']
+                          'setup_lst']
+                          
+        self.setup_keys = ['Setup.ID',
+                           'Setup.Use',
+                           'Unit.Length',
+                           'Chn.Cmp',
+                           'Chn.ID',
+                           'Chn.Length',
+                           'Chn.Gain',
+                           'Ant.FrqMin',
+                           'Ant.FrqMax',
+                           'Rx.HPR',
+                           'Remote.Component',
+                           'Remote.Rotation',
+                           'Remote.Path']
                           
         self.value_lst = []
         self.make_value_dict()
@@ -1594,19 +1599,7 @@ class ZongeMTFT():
                           self.TS_FrqBand, 
                           self.TS_T0Offset, 
                           self.TS_T0Error,  
-                          self.Setup_ID,
-                          self.Setup_Use, 
-                          self.Unit_Length, 
-                          self.Chn_Cmp,  
-                          self.Chn_ID, 
-                          self.Chn_Length, 
-                          self.Chn_Gain, 
-                          self.Ant_FrqMin,  
-                          self.Ant_FrqMax, 
-                          self.Rx_HPR,  
-                          self.Remote_Component,  
-                          self.Remote_Rotation, 
-                          self.Remote_Path]
+                          self.setup_lst]
                           
         self.meta_dict = dict([(mkey, mvalue) for mkey, mvalue in
                                zip(self.meta_keys, self.value_lst)])
@@ -1642,19 +1635,7 @@ class ZongeMTFT():
         self.TS_FrqBand = self.meta_dict['TS.FrqBand'] 
         self.TS_T0Offset = self.meta_dict['TS.T0Offset'] 
         self.TS_T0Error = self.meta_dict['TS.T0Error']  
-        self.Setup_ID = self.meta_dict['Setup.ID']
-        self.Setup_Use = self.meta_dict['Setup.Use'] 
-        self.Unit_Length = self.meta_dict['Unit.Length'] 
-        self.Chn_Cmp = self.meta_dict['Chn.Cmp']  
-        self.Chn_ID = self.meta_dict['Chn.ID'] 
-        self.Chn_Length = self.meta_dict[ 'Chn.Length']
-        self.Chn_Gain = self.meta_dict['Chn.Gain'] 
-        self.Ant_FrqMin = self.meta_dict['Ant.FrqMin']  
-        self.Ant_FrqMax = self.meta_dict['Ant.FrqMax'] 
-        self.Rx_HPR = self.meta_dict['Rx.HPR']  
-        self.Remote_Component = self.meta_dict['Remote.Component']  
-        self.Remote_Rotation = self.meta_dict['Remote.Rotation'] 
-        self.Remote_Path= self.meta_dict['Remote.Path']
+        self.setup_lst = self.meta_dict['setup_lst']
     
     def sort_ts_lst(self):
         """
@@ -1877,12 +1858,9 @@ class ZongeMTFT():
                 if cfn[-4:] == '.cac' and cfn.find('$') == -1:
                     zc = ZenCache()
                     zc.read_cache_metadata(os.path.join(cache_path, cfn))
-                    
-                    self.Chn_Cmp = [md.capitalize() 
+                    self.Chn_Cmp_lst.append([md.capitalize() 
                                     for md in zc.meta_data['CH.CMP']
-                                    if md.capitalize() in self.Chn_Cmp]
-                    self.num_comp = len(self.Chn_Cmp)
-                    
+                                    if md.capitalize() in self.Chn_Cmp])
                     
                     info_dict = dict([(key, []) for key in self.ts_info_keys])
                     #put metadata information into info dict
@@ -1919,25 +1897,140 @@ class ZongeMTFT():
                     cc += 1
                     self.ts_info_lst.append(info_dict)
     
-    def compute_number_of_components(self):
+    def compute_number_of_setups(self):
         """
         get number of components and set all the necessary values
         
         """
+        self.setup_lst = []
+        len_lst = []
+        ii = 1
+        for cc in self.Chn_Cmp_lst:
+            comp_num = len(cc)
+            if comp_num not in len_lst:
+                len_lst.append(comp_num)
+                setup_dict = {}
+                setup_dict['Setup.ID'] = ii
+                setup_dict['Setup.Use'] = 'Yes'
+                setup_dict['Unit.Length'] = 'm'
+                setup_dict['Chn.Cmp'] = cc
+                setup_dict['Chn.ID'] = range(1,comp_num+1)
+                setup_dict['Chn.Length'] = [100]*len(cc)
+                setup_dict['Chn.Gain'] = [1]*len(cc)
+                setup_dict['Ant.FrqMin'] = self.Ant_FrqMin
+                setup_dict['Ant.FrqMax'] = self.Ant_FrqMax
+                setup_dict['Rx.HPR'] = self.Rx_HPR
+                setup_dict['Remote.Component'] = self.Remote_Component
+                setup_dict['Remote.Rotation'] = self.Remote_Rotation
+                setup_dict['Remote.Path'] = self.Remote_Path
+                setup_dict['chn_dict'] = dict([(chkey, [cid, cg, cl]) 
+                                                for chkey, cid, cg, cl in 
+                                                zip(setup_dict['Chn.Cmp'],
+                                                    setup_dict['Chn.ID'],
+                                                    setup_dict['Chn.Gain'],
+                                                    setup_dict['Chn.Length'])])
+                ts_key_skip = len(self.ts_info_keys)-(5-len(cc)) 
+                setup_dict['ts_info_keys'] = self.ts_info_keys[:ts_key_skip]
+                self.setup_lst.append(setup_dict)
+                ii += 1
+        self.Setup_Number = len(self.setup_lst)
+                
+    def set_remote_reference_info(self, remote_path):
+        """
+        set the remote reference information 
+        """
         
-        self.num_comp = len(self.Chn_Cmp)
-        self.Chn_Gain = [1]*self.num_comp
-        self.Chn_Length = [100]*self.num_comp
-        self.Chn_ID = range(self.num_comp)
-        self.Chn_dict = dict([(chkey, [cid, cg, cl]) 
-                                  for chkey, cid, cg, cl in 
-                                  zip(self.Chn_Cmp, self.Chn_ID, self.Chn_Gain,
-                                      self.Chn_Length)])
+        if remote_path is None:
+            return
         
-        self.ts_info_keys = self.ts_info_keys[:len(self.ts_info_keys)-\
-                                                  (5-self.num_comp)]
+        self.Remote_Path = remote_path
+        for setup_dict in self.setup_lst:
+            setup_dict['Chn.Cmp'] += ['Hxr', 'Hyr']
+            setup_dict['Chn.ID'] += ['2284', '2274']
+            setup_dict['Chn.Length'] += [100]*2
+            setup_dict['Chn.Gain'] += [1]*2
+            setup_dict['Ant.FrqMin'] = self.Ant_FrqMin
+            setup_dict['Ant.FrqMax'] = self.Ant_FrqMax
+            setup_dict['Rx.HPR'] = self.Rx_HPR
+            setup_dict['Remote.Component'] = self.Remote_Component
+            setup_dict['Remote.Rotation'] = self.Remote_Rotation
+            setup_dict['Remote.Path'] = self.Remote_Path+os.path.sep
+            setup_dict['chn_dict'] = dict([(chkey, [cid, cg, cl]) 
+                                            for chkey, cid, cg, cl in 
+                                            zip(setup_dict['Chn.Cmp'],
+                                                setup_dict['Chn.ID'],
+                                                setup_dict['Chn.Gain'],
+                                                setup_dict['Chn.Length'])])
+            num_comp = len(setup_dict['Chn.Cmp'])
+            setup_dict['ts_info_keys'] += ['ChnGain{0}'.format(ii) 
+                                           for ii in range(num_comp-1, 
+                                                           num_comp+1)]
+            
+                                                           
+    def get_survey_info(self, survey_file, station_name, rr_station_name=None):
+        """
+        extract information from survey file
+        
+        """
 
-    def write_mtft_cfg(self, cache_path, station_name, rrstation=None,
+        if survey_file is None:
+            return
+            
+        #--> get information from survey file
+        for setup_dict in self.setup_lst:
+            sdict = mtcf.read_survey_configfile(survey_file)
+            
+            try:
+                survey_dict = sdict[station_name.upper()]
+                try:
+                    setup_dict['chn_dict']['Hx'][0] = survey_dict['hx']
+                except KeyError:
+                    print 'No hx data'
+                try:
+                    setup_dict['chn_dict']['Hy'][0] = survey_dict['hy']
+                except KeyError:
+                    print 'No hy data'
+                
+                try:
+                    if survey_dict['hz'].find('*') >= 0:
+                        setup_dict['chn_dict']['Hz'][0] = '3'
+                    else:
+                        setup_dict['chn_dict']['Hz'][0] = survey_dict['hz']
+                except KeyError:
+                    print 'No hz data'
+                
+                try:
+                    setup_dict['chn_dict']['Ex'][2] = \
+                                                 survey_dict['e_xaxis_length']
+                except KeyError:
+                    print 'No ex data'
+                try:
+                    setup_dict['chn_dict']['Ey'][2] = \
+                                                 survey_dict['e_yaxis_length']
+                except KeyError:
+                    print 'No ey data'
+                    
+            except KeyError:
+                print ('Could not find survey information from ' 
+                       '{0} for {1}'.format(survey_file, station_name))
+            
+            if rr_station_name is not None:
+                try:
+                    survey_dict = sdict[rr_station_name.upper()]
+                    try:
+                        setup_dict['chn_dict']['Hxr'][0] = survey_dict['hx']
+                    except KeyError:
+                        print 'No hxr data'
+                    try:
+                        setup_dict['chn_dict']['Hyr'][0] = survey_dict['hy']
+                    except KeyError:
+                        print 'No hyr data'
+               
+                except KeyError:
+                    print ('Could not find survey information from ' 
+                           '{0} for {1}'.format(survey_file, rr_station_name))
+                           
+    def write_mtft_cfg(self, cache_path, station, rrstation=None,
                        remote_path=None, survey_file=None, save_path=None):
         """
         write a config file for mtft24 from the cache files in cache_path
@@ -1953,28 +2046,15 @@ class ZongeMTFT():
         self.get_ts_info_lst(cache_path)
         
         #--> get number of components
-        self.compute_number_of_components()
+        self.compute_number_of_setups()
         
         #--> get remote reference information if needed
         if remote_path is not None:
-            self.Remote_Path = remote_path
-            self.Chn_Cmp += ['Hxr', 'Hyr']
-            self.Chn_ID += ['2284', '2274']
-            self.Chn_Gain += [1]*2
-            self.Chn_Length += [100]*2
-            self.Chn_dict = dict([(chkey, [cid, cg, cl]) 
-                                  for chkey, cid, cg, cl in 
-                                  zip(self.Chn_Cmp, self.Chn_ID, self.Chn_Gain,
-                                      self.Chn_Length)])
-            
-            self.ts_info_keys += ['ChnGain{0}'.format(ii) 
-                                   for ii in range(self.num_comp+1, 
-                                                   self.num_comp+3)]
+            self.set_remote_reference_info(remote_path)
             if rrstation is None:
                 rrstation = os.path.basename(os.path.dirname(
                                              os.path.dirname(remote_path)))
-            
-            
+
         self.get_rr_ts(self.ts_info_lst)
         
         #--> sort the time series such that each section with the same sampling
@@ -1982,81 +2062,59 @@ class ZongeMTFT():
         self.sort_ts_lst()
         self.TS_Number = len(self.ts_info_lst)
         
-        #--> get information from survey file
-        if survey_file is not None:
-            sdict = mtcf.read_survey_configfile(survey_file)
-            try:
-                survey_dict = sdict[station_name.upper()]
-                try:
-                    self.Chn_dict['Hx'][0] = survey_dict['hx']
-                except KeyError:
-                    print 'No hx data'
-                try:
-                    self.Chn_dict['Hy'][0] = survey_dict['hy']
-                except KeyError:
-                    print 'No hy data'
-                
-                try:
-                    if survey_dict['hz'].find('*') >= 0:
-                        self.Chn_dict['Hz'][0] = '3'
-                    else:
-                        self.Chn_dict['Hz'][0] = survey_dict['hz']
-                except KeyError:
-                    print 'No hz data'
-                
-                try:
-                    self.Chn_dict['Ex'][2] = survey_dict['e_xaxis_length']
-                except KeyError:
-                    print 'No ex data'
-                try:
-                    self.Chn_dict['Ey'][2] = survey_dict['e_yaxis_length']
-                except KeyError:
-                    print 'No ey data'
-            except KeyError:
-                print ('Could not find survey information from ' 
-                       '{0} for {1}'.format(survey_file, station_name))
-            
-            if rrstation is not None:
-                try:
-                    survey_dict = sdict[rrstation.upper()]
-                    try:
-                        self.Chn_dict['Hxr'][0] = survey_dict['hx']
-                    except KeyError:
-                        print 'No hxr data'
-                    try:
-                        self.Chn_dict['Hyr'][0] = survey_dict['hy']
-                    except KeyError:
-                        print 'No hyr data'
-                except KeyError:
-                    print ('Could not find survey information from ' 
-                           '{0} for {1}'.format(survey_file, rrstation))
-        
-        #set channel information                  
-        self.Chn_Gain = [self.Chn_dict[ckey][1] for ckey in self.Chn_Cmp]
-        self.Chn_ID = [self.Chn_dict[ckey][0] for ckey in self.Chn_Cmp]
-        self.Chn_Length = [self.Chn_dict[ckey][2] for ckey in self.Chn_Cmp]
+        #--> fill in data from survey file
+        self.get_survey_info(survey_file, station, rr_station_name=rrstation)
         
         #make a dictionary of all the values to write file
         if self.Remote_Path is not '' or self.Remote_Path is not None:
             self.Remote_Path += os.path.sep
-            
+        
+        #--> set a dictionary with all attributes
         self.make_value_dict()
        
         #--> write mtft24.cfg file
         cfid = file(save_path, 'w')
         cfid.write('\n')
-        for ii, mkey in enumerate(self.meta_keys):
+        #---- write processing parameters ----
+        for ii, mkey in enumerate(self.meta_keys[:-1]):
+
             if type(self.meta_dict[mkey]) is list:
                 cfid.write('${0}={1}\n'.format(mkey, ','.join(['{0}'.format(mm) 
                                              for mm in self.meta_dict[mkey]])))
             else:
                 cfid.write('${0}={1}\n'.format(mkey, self.meta_dict[mkey]))
             
-            if ii == 24 or ii == 29:
-                cfid.write('\n')
+            #blanks line before setup and ts number
+            if ii == 24:
+               cfid.write('\n')
         cfid.write('\n')
-        
-        #write time series information
+        #---- write setup parameters ----
+        for setup_dict in self.setup_lst:
+            #set channel information                  
+            setup_dict['Chn.Gain'] = [setup_dict['chn_dict'][ckey][1] 
+                                      for ckey in setup_dict['Chn.Cmp']]
+            setup_dict['Chn.ID'] = [setup_dict['chn_dict'][ckey][0] 
+                                      for ckey in setup_dict['Chn.Cmp']]
+            setup_dict['Chn.Length'] = [setup_dict['chn_dict'][ckey][2] 
+                                        for ckey in setup_dict['Chn.Cmp']]
+            
+            for ii, mkey in enumerate(self.setup_keys):
+                #write setups
+                if type(setup_dict[mkey]) is list:
+                    cfid.write('${0}={1}\n'.format(mkey,
+                               ','.join(['{0}'.format(mm) 
+                               for mm in setup_dict[mkey]])))
+                else:
+                    cfid.write('${0}={1}\n'.format(mkey, setup_dict[mkey]))
+            cfid.write('\n')
+                                    
+
+        #---- write time series information ----
+        ts_key_len = np.array([len(sd['ts_info_keys']) 
+                                for sd in self.setup_lst])
+        ts_key_find = np.where(ts_key_len==ts_key_len.max())[0][0]
+        self.ts_info_keys = self.setup_lst[ts_key_find]['ts_info_keys']
+
         cfid.write(','.join(self.ts_info_keys)+'\n')
         for cfn in self.ts_info_lst:
             cfid.write(','.join([cfn[ikey] for ikey in self.ts_info_keys])+'\n')        
@@ -3919,7 +3977,6 @@ class ZongeMTAvg():
         flst = np.array([len(np.nonzero(self.comp_dict[comp]['freq'])[0])
                          for comp in self.comp_lst_tip])
         nz = flst.max()
-        print nz, self.nfreq_tipper
         freq = self.comp_dict[self.comp_lst_tip[np.where(flst==nz)[0][0]]]['freq']
         freq = freq[np.nonzero(freq)]
         if self.nfreq_tipper and self.Tipper.tipper is not None:
@@ -4060,10 +4117,10 @@ class ZongeMTAvg():
         
         #read in survey file
         if survey_cfg_file is not None:
-            survey_dict = mtcf.read_survey_configfile(survey_cfg_file)
+            sdict = mtcf.read_survey_configfile(survey_cfg_file)
             
         try:
-            survey_dict = survey_dict[station.upper()]
+            survey_dict = sdict[station.upper()]
         except KeyError:
             try:
                 survey_dict['station']
@@ -4073,20 +4130,13 @@ class ZongeMTAvg():
                 except KeyError:
                     raise KeyError('Could not find station information in'
                                    ', check inputs')
-                                   
+                                 
         #get remote reference information if desired
         if rrstation:
             try:
-                rrsurvey_dict = survey_dict[rrstation.upper()]
+                rrsurvey_dict = sdict[rrstation.upper()]
             except KeyError:
-                try:
-                    rrsurvey_dict['rrstation']
-                except KeyError:
-                    try:
-                        rrsurvey_dict['rrstation_name']
-                    except KeyError:
-                        raise KeyError('Could not find station information'
-                                       ', check inputs')
+                print 'Could not find station information for remote reference'
         else:
             rrsurvey_dict = None
             

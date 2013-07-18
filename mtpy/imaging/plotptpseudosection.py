@@ -665,8 +665,10 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
      
         self.offsetlst = offset_sort['offset']
         self.stationlst = offset_sort['station']
-        if self.offsetlst[0] < 0:
-            self.stationlst = self.stationlst[::-1]
+#        if self.offsetlst[0] > 0:
+#            print 'rotating'
+#            print self.stationlst
+#            self.stationlst = self.stationlst[::-1]
         
         #set y-ticklabels
         if self.tscale == 'period':
@@ -837,7 +839,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             
         elif self.cb_orientation == 'vertical':
             self.cb.ax.yaxis.set_label_position('right')
-            self.cb.ax.yaxis.set_label_coords(1.25, .5)
+            self.cb.ax.yaxis.set_label_coords(1.5, .5)
             self.cb.ax.yaxis.tick_left()
             self.cb.ax.tick_params(axis='y', direction='in')
         
