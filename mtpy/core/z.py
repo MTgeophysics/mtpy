@@ -595,7 +595,8 @@ class Z(object):
 
 
         self.z = z_rot
-        self.zerr = zerr_rot
+        if self.zerr is not None:
+            self.zerr = zerr_rot
     
 
 
@@ -1571,16 +1572,17 @@ def remove_ss_and_distortion(z_array, zerr_array = None, res_x = 1.,
 
 
 
-def z2resphi(z_array, zerr_array = None):
+def z2resphi(z_array, periods, zerr_array = None):
     """
         Return the resistivity/phase information for Z 
         (Z must be given in units "km/s" = "mu m / nT"!!).
 
         Input:
         - Z array
+        - periods
 
         Optional:
-        - Zerror array
+        - Z-error array
 
         Output:
         - Resistivity array 
@@ -1590,8 +1592,9 @@ def z2resphi(z_array, zerr_array = None):
     """
     
     z_object = _read_z_array(z_array,zerr_array)
+    z_object.freq= 1./periods
 
-    return z_object.res_phase()
+    return z_object.res_phase
 
 
 def rotate_tipper(tipper_array, alpha, tippererr_array = None):
