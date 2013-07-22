@@ -133,6 +133,24 @@ class PhaseTensor(object):
             except:
                 pass
 
+        elif z_array is not None:
+
+            try:
+                self._set_z(z_array)
+            except:
+                self._z = None
+                self._z_err = None
+                print 'Can not calculate pt from z==None'
+
+            if zerr_array is not None:
+                
+                try:
+                    self._set_z_err(zerr_array)
+                    if z_array.shape != zerr_array.shape:
+                        self._set_z_err(None)
+                except:
+                    pass
+
         
         if self._freq is None:
             print 'Should input a freq array to know which index of the'+\

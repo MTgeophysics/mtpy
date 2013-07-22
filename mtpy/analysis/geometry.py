@@ -45,10 +45,14 @@ import mtpy.utils.exceptions as MTex
 
 
 
-def dimensionality(z_array = None, z_object = None, pt_array= None, pt_object = None, beta_threshold = 5, eccentricity_threshold = 0.1):
+def dimensionality(z_array = None, z_object = None, pt_array= None, 
+                    pt_object = None, beta_threshold = 5, 
+                    eccentricity_threshold = 0.1):
     """
     beta_threshold: angle in degrees - if beta is smaller than this, it's 2d
-    eccentricity_threshold: fraction of eccentricity (0: circle - 1: line) - if eccentricity (ellipticity) is small than this, it's 1D
+    
+    eccentricity_threshold: fraction of eccentricity (0: circle - 1: line) -
+    if eccentricity (ellipticity) is small than this, it's a 1D geometry.
 
     """
 
@@ -83,11 +87,13 @@ def dimensionality(z_array = None, z_object = None, pt_array= None, pt_object = 
             else:
                 lo_dimensionality.append(1)
 
-    return lo_dimensionality
+    return np.array(lo_dimensionality)
 
 
 
-def strike_angle(z_array = None, z_object = None, pt_array= None, pt_object = None, beta_threshold = 5, eccentricity_threshold = 0.1):
+def strike_angle(z_array = None, z_object = None, pt_array= None, 
+                    pt_object = None, beta_threshold = 5, 
+                    eccentricity_threshold = 0.1):
 
     if z_array is not None:
         pt_obj = MTpt.PhaseTensor(z_array = z_array)
@@ -120,10 +126,13 @@ def strike_angle(z_array = None, z_object = None, pt_array= None, pt_object = No
             strike2 = strike1 + 90
         else:
             strike2 = strike1 - 90
-        if 1:#min(strike1,strike2)>=0:
-            lo_strikes.append(( min(strike1,strike2), max(strike1,strike2)) )
-        # else:
-        #     lo_strikes.append(( max(strike1,strike2), min(strike1,strike2)) )
+        
+        s1 = min(strike1,strike2)
+        s2 = max(strike1,strike2)
+
+        lo_strikes.append(( s1,s2) )
+        
+        
 
     return np.array(lo_strikes)
 
@@ -163,4 +172,4 @@ def eccentricity(z_array = None, z_object = None, pt_array= None, pt_object = No
 
         lo_eccerr.append(ecc_err)
 
-    return lo_ecc, lo_eccerr 
+    return np.array(lo_ecc), np.array(lo_eccerr) 
