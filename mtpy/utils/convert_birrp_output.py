@@ -65,12 +65,13 @@ def main():
                         print 'option "{0}" not followed by valid argument: "{1}"'\
                             ''.format(option, argument)
 
-    edifn, cohfn = convertbirrp(stationname,datadir,survey_cfg_fn, birrp_cfg_fn,instr_resp_fn)
+    edifn, cohfn = convertbirrpoutput(stationname,datadir,survey_cfg_fn, birrp_cfg_fn,instr_resp_fn)
+
     print 'EDI/coh - files generated for station {0}:\n{1}\n{2}'\
             ''.format(stationname,edifn, cohfn)
     
 
-def convertbirrp(stationname, datadir, survey_configfile,birrp_configfile=None,
+def convertbirrpoutput(stationname, datadir, survey_configfile,birrp_configfile=None,
                 instr_response_file=None):
 
     edifn = None
@@ -108,11 +109,25 @@ def convertbirrp(stationname, datadir, survey_configfile,birrp_configfile=None,
                 raise
         except:
             sys.exit('Instrument response file not existing: {0}'.format(ir_fn))
+        try:
+            instr_resp = np.loadtxt(ir_fn)
+            if np.shape(instr_resp)[1] != 3:
+                raise
+            if len(np.shape(instr_resp)) != 2 :
+                raise
+            if np.shape(instr_resp)[0] < 2:
+                raise
+        except:
+            sys.exit('\n\t!!! Instrument response file has wrong format !!!\n'
+                    '\nNeeds 3 columns and at least 2 rows containing complex'
+                    ' valued transfer function:\n\n\tfrequency, real,'
+                    ' imaginary\n\n')
 
         try:
             cohfn = MTbp.convert2coh(stationname, datadir)
         except:
             try:
+                print 'trying to find files for uppercase stationname'
                 cohfn = MTbp.convert2coh(stationname.upper(), datadir) 
             except:
                 print 'Could not generate coherence file'
@@ -137,10 +152,11 @@ def convertbirrp(stationname, datadir, survey_configfile,birrp_configfile=None,
         return edifn, cohfn    
  
 
-    try:
+    try :
         cohfn = MTbp.convert2coh(stationname, datadir)
     except:
         try:
+            print 'trying to find files for uppercase stationname'
             cohfn = MTbp.convert2coh(stationname.upper(), datadir) 
         except:
             print 'Could not generate coherence file'

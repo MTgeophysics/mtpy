@@ -28,7 +28,8 @@ import sys, os
 import glob
 import os.path as op
 import subprocess
-import time 
+import time
+import datetime 
 import fnmatch
 import math
 
@@ -1416,7 +1417,9 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
     return out_fn
 
     
-def convert2edi_incl_instrument_correction(stationname, in_dir, survey_configfile, birrp_configfile, instr_response_file, out_dir = None):
+def convert2edi_incl_instrument_correction(stationname, in_dir, 
+                                        survey_configfile, birrp_configfile, 
+                                        instr_response_file, out_dir = None):
     """
     Convert BIRRP output files into EDI file.
 
@@ -1489,7 +1492,6 @@ def convert2edi_incl_instrument_correction(stationname, in_dir, survey_configfil
         birrp_config_dict = MTcf.read_configfile(birrp_configfile)
     except:
         raise MTex.MTpyError_config_file( 'Config file with BIRRP processing parameters could not be read: %s' % (birrp_configfile) )
-
 
     #find the birrp-output j-file for the current station 
     j_filename_list = [i for i in os.listdir(input_dir) if op.basename(i).upper() == ('%s.j'%stationname).upper() ]
@@ -1596,8 +1598,8 @@ def _set_edi_data(lo_periods, Z_array, tipper_array):
     periods = lo_periods
 
     datastring = ''
-    datastring += '>!****FREQUENCIES****!\n'
-    datastring += '>FREQ NFREQ=%i ORDER=DEC // %i\n'%(len(periods),len(periods))
+    #datastring += '>!****FREQUENCIES****!\n'
+    datastring += '>FREQ nfreq=%i // %i\n'%(len(periods),len(periods))
     for i,period in enumerate(periods):
         freq = 1./period
         datastring += '\t%E'%(freq)
@@ -1606,7 +1608,7 @@ def _set_edi_data(lo_periods, Z_array, tipper_array):
 
     datastring += '\n'
 
-    datastring += '>!****IMPEDANCES****!\n'
+    #datastring += '>!****IMPEDANCES****!\n'
     compstrings = ['ZXX','ZXY','ZYX','ZYY']
     Z_entries = ['R','I','.VAR']
     
@@ -1627,7 +1629,7 @@ def _set_edi_data(lo_periods, Z_array, tipper_array):
         
         
     #datastring += '\n'
-    datastring += '>!****TIPPER****!\n'
+    #datastring += '>!****TIPPER****!\n'
 
     compstrings = ['TX','TY']
     T_entries = ['R.EXP','I.EXP','VAR.EXP']
@@ -1656,8 +1658,8 @@ def _set_edi_data(lo_periods, Z_array, tipper_array):
 def _set_edi_info(station_config_dict,birrp_config_dict):
 
     infostring = ''
-    infostring += '>INFO\t MAX LINES=1000\n'
-    infostring += '\tStation parameters:\n'
+    infostring += '>INFO\t max lines=1000\n'
+    infostring += '\tStation parameters\n'
 
     for key in sorted(station_config_dict.iterkeys()):
         infostring += '\t\t{0}: {1}  \n'.format(str(key),
@@ -1665,7 +1667,7 @@ def _set_edi_info(station_config_dict,birrp_config_dict):
     
 
     infostring += '\n'
-    infostring += '\tProcessing parameters:\n'
+    infostring += '\tProcessing parameters\n'
 
     for key in sorted(birrp_config_dict.iterkeys()):
         infostring += '\t\t{0}: {1}  \n'.format(str(key),
@@ -1684,20 +1686,28 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
     """
     set header string
     
-    set date to format YYYY-MM-DD
+    set date to format YYYY-MM-DD,HH:MM:SS
     """
-
+    frmt = '%Y-%m-%d,%H:%M:%S'
 
     headstring = ''
     headstring += '>HEAD\n\n'
-    headstring += '\tDATAID="%s"\n'%(station_config_dict['station'])
+    if len((station_config_dict['station'].split())) != 1: 
+        headstring += '\tdataid="%s"\n'%(station_config_dict['station'])
+    else:
+        headstring += '\tdataid={0}\n'.format(station_config_dict['station'])
+
 
     if station_config_dict.has_key('company'):
         acqby = station_config_dict.has_key('company')
     else:
         acqby = ''
 
-    headstring += '\tACQBY="%s"\n'%(acqby)
+    if len(acqby.split()) != 1:
+        headstring += '\tacqby="%s"\n'%(acqby)
+    else:
+        headstring += '\tacqby={0}\n'.format(acqby)
+
 
     if len(birrp_config_dict) !=0 :
         sampling_rate = float(birrp_config_dict['sampling_rate'])
@@ -1709,41 +1719,39 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
         #new:
         try:
             acq_starttime = float(birrp_config_dict['processing_window_start'])
-            acq_start = time.strftime('%Y-%m-%d,%H:%M:%S', 
-                                      time.gmtime(acq_starttime))
-                                      
-            acq_end = time.strftime('%Y-%m-%d,%H:%M:%S', 
-                                      time.gmtime(acq_starttime+
-                                                 1./sampling_rate*(n_samples)))
+            dt_start = datetime.datetime.fromtimestamp(acq_starttime)
+            acq_start = dt_start.combine(dt_start.date(),dt_start.time()).strftime(frmt+'.%f')
 
-            headstring +='\tACQDATE=%s \n'%(acq_start)
-            headstring +='\tENDDATE=%s \n'%(acq_end)
+            dt_end =  acq_starttime + 1./sampling_rate*(n_samples) 
+            acq_end = dt_end.combine(dt_end.date(),dt_end.time()).strftime(frmt+'.%f')
+            
+            headstring +='\tacqdate=%s \n'%(acq_start)
+            headstring +='\tenddate=%s \n'%(acq_end)
         except KeyError:
             try:
                 acq_start = station_config_dict.has_key('acq_date')
-                headstring += '\tACQDATE={0} \n'.format(acq_start)
+                headstring += '\tacqdate={0} \n'.format(acq_start)
             except KeyError:
-                 headstring += '\tACQDATE={0} \n'.format('1970-01-01')
+                 headstring += '\tacqdate={0} \n'.format('1970-01-01')
                 
 
-    todaystring = time.strftime('%Y-%m-%d,%H:%M:%S', 
-                                      time.gmtime())
-    headstring += '\tFILEDATE=%s\n'%(todaystring)
+    todaystring = datetime.datetime.now().strftime(frmt)
+    headstring += '\tfiledate=%s\n'%(todaystring)
 
 
     network = ''
     if station_config_dict.has_key('network'):
         location = station_config_dict.has_key('network')
-    headstring += '\tPROSPECT="%s"\n'%(network)
+    headstring += '\tprospect="%s"\n'%(network)
 
     location = ''
     if station_config_dict.has_key('location'):
         location = station_config_dict.has_key('location')
-    headstring += '\tLOC="%s"\n'%(location)
+    headstring += '\tloc="%s"\n'%(location)
 
-    headstring += '\tLAT=%.5f\n'%station_config_dict['latitude']
-    headstring += '\tLONG=%.5f\n'%station_config_dict['longitude']
-    headstring += '\tELEV=%.1f\n'%station_config_dict['elevation']
+    headstring += '\tlat=%.5f\n'%station_config_dict['latitude']
+    headstring += '\tlong=%.5f\n'%station_config_dict['longitude']
+    headstring += '\telev=%.1f\n'%station_config_dict['elevation']
 
     headstring += '\n'
 
@@ -1756,32 +1764,34 @@ def _set_edi_defmeas(station_config_dict):
     dmeasstring += '>=DEFINEMEAS\n'
     dmeasstring += '\n'
 
-    dmeasstring += '\tMAXCHAN=7\n'
-    dmeasstring += '\tMAXRUN=999\n'
-    dmeasstring += '\tMAXMEAS=9999\n'
-    dmeasstring += '\tUNITS=M\n'
-    dmeasstring += '\tREFTYPE="WGS 84"\n'
-    dmeasstring += '\tREFLAT=%f\n'%station_config_dict['latitude']
-    dmeasstring += '\tREFLONG=%f\n'%station_config_dict['longitude']
-    dmeasstring += '\tREFELEV=%.1f\n'%station_config_dict['elevation']
+    dmeasstring += '\tmaxchan=7\n'
+    dmeasstring += '\tmaxrun=999\n'
+    dmeasstring += '\tmaxmeas=9999\n'
+
+    #NOT necessary:
+    #dmeasstring += '\tunits=m\n'
+    #dmeasstring += '\treftype="WGS 84"\n'
+    #dmeasstring += '\treflat=%f\n'%station_config_dict['latitude']
+    #dmeasstring += '\treflong=%f\n'%station_config_dict['longitude']
+    #dmeasstring += '\trefelev=%.1f\n'%station_config_dict['elevation']
     
     dmeasstring += '\n'
-    dmeasstring += '>HMEAS ID=1001.001 CHTYPE=HX X=0. Y=0. AZM=0.\n'
-    dmeasstring += '>HMEAS ID=1002.001 CHTYPE=HY X=0. Y=0. AZM=90.\n'
-    dmeasstring += '>HMEAS ID=1003.001 CHTYPE=HZ X=0. Y=0. AZM=0.\n'
+    dmeasstring += '>HMEAS id=1001.001 chtype=hx x=0. y=0. azm=0.\n'
+    dmeasstring += '>HMEAS id=1002.001 chtype=hy x=0. y=0. azm=90.\n'
+    dmeasstring += '>HMEAS id=1003.001 chtype=hz x=0. y=0. azm=0.\n'
 
     try:
-        dmeasstring += '>EMEAS ID=1004.001 CHTYPE=EX X=0. Y=0. X2=%.1f Y2=0\n'%float(station_config_dict['e_xaxis_length'])
+        dmeasstring += '>EMEAS id=1004.001 chtype=ex x=0. y=0. x2=%.1f y2=0\n'%float(station_config_dict['e_xaxis_length'])
     except:
-        dmeasstring += '>EMEAS ID=1004.001 CHTYPE=EX X=0. Y=0. X2=0. Y2=0.\n'
+        dmeasstring += '>EMEAS id=1004.001 chtype=ex x=0. y=0. x2=0. y2=0.\n'
         
     try:
-        dmeasstring += '>EMEAS ID=1005.001 CHTYPE=EY X=0. Y=0. X2=0. Y2=%.1f\n'%float(station_config_dict['e_yaxis_length'])
+        dmeasstring += '>EMEAS id=1005.001 chtype=ey x=0. y=0. x2=0. y2=%.1f\n'%float(station_config_dict['e_yaxis_length'])
     except:
-        dmeasstring += '>EMEAS ID=1005.001 CHTYPE=EY X=0. Y=0. X2=0. Y2=0.\n'
+        dmeasstring += '>EMEAS id=1005.001 chtype=ey x=0. y=0. x2=0. y2=0.\n'
 
-    dmeasstring += '>HMEAS ID=1006.001 CHTYPE=RX X=0. Y=0. AZM=0.\n'
-    dmeasstring += '>HMEAS ID=1007.001 CHTYPE=RY X=0. Y=0. AZM=90.\n'
+    dmeasstring += '>HMEAS id=1006.001 chtype=rx x=0. y=0. azm=0.\n'
+    dmeasstring += '>HMEAS id=1007.001 chtype=ry x=0. y=0. azm=90.\n'
 
 
     dmeasstring += '\n'
@@ -1792,15 +1802,15 @@ def _set_edi_defmeas(station_config_dict):
 def _set_edi_mtsect(station_config_dict,periods):
     mtsectstring = ''
     mtsectstring += '>=MTSECT\n' 
-    mtsectstring += '\tSECTID=%s\n'%station_config_dict['station']
-    mtsectstring += '\tNFREQ=%i\n'%(len(periods))
-    mtsectstring += '\tHX=1001.001\n'
-    mtsectstring += '\tHY=1002.001\n'
-    mtsectstring += '\tHZ=1003.001\n'
-    mtsectstring += '\tEX=1004.001\n'
-    mtsectstring += '\tEY=1005.001\n'
-    mtsectstring += '\tRX=1006.001\n'
-    mtsectstring += '\tRY=1007.001\n'
+    mtsectstring += '\tsectid=%s\n'%station_config_dict['station']
+    mtsectstring += '\tnfreq=%i\n'%(len(periods))
+    mtsectstring += '\thx=1001.001\n'
+    mtsectstring += '\thy=1002.001\n'
+    mtsectstring += '\thz=1003.001\n'
+    mtsectstring += '\tex=1004.001\n'
+    mtsectstring += '\tey=1005.001\n'
+    mtsectstring += '\trx=1006.001\n'
+    mtsectstring += '\try=1007.001\n'
 
     mtsectstring += '\n'
 
@@ -1905,8 +1915,12 @@ def _check_j_file_content( periods_array, Z_array, tipper_array):
     """ 
     Check the content of j file.
     
-    If 'nan' appears at any part for some period, the respective period must be deleted together with all respective entries of the Z_array and tipper_array.
-    Additionally, check the entries of the period array. This should have fully redundant entries. If this is not the case for at least one period for at least one component, the period and all respective entries of the arrays have to be deleted.
+    If 'nan' appears at any part for some period, the respective period must be 
+    deleted together with all respective entries of the Z_array and tipper_array.
+    Additionally, check the entries of the period array. This should have fully 
+    redundant entries. If this is not the case for at least one period for at 
+    least one component, the period and all respective entries of the arrays 
+    have to be deleted.
     """
     period_epsilon = 1E-7
     lo_periods = []
@@ -1969,6 +1983,9 @@ def _check_j_file_content( periods_array, Z_array, tipper_array):
     
 
 def convert2coh(stationname, birrp_output_directory):
+    """
+        Convert BIRRP output coherence files into just one *.coh file.
+    """
 
     directory = op.abspath(birrp_output_directory)
 
@@ -1981,13 +1998,13 @@ def convert2coh(stationname, birrp_output_directory):
                 os.listdir(directory), '*%s*.[123]r.2c2'%stationname.upper()) ] 
     
     if len(cohfilenames) < 1:
-        #raise MTex.MTpyError_file_handling('No coherence files for station %s found in: %s'%(stationname, directory))
         print 'No coherence files for station %s found in: %s'%(stationname, directory)
+        raise MTex.MTpyError_file_handling()#'No coherence files for station %s found in: %s'%(stationname, directory))
 
 
     if len(cohfilenames) > 3:
-        #raise MTex.MTpyError_file_handling('Too many coherence files for station %s found in: %s'%(stationname, directory))
         print 'Too many coherence files for station %s found in: %s'%(stationname, directory)
+        raise MTex.MTpyError_file_handling()#'Too many coherence files for station %s found in: %s'%(stationname, directory))
 
     try:
         period,freq,coh1,zcoh1 = MTfh.read_2c2_file(cohfilenames[0])
@@ -1997,8 +2014,8 @@ def convert2coh(stationname, birrp_output_directory):
 
             period,freq,coh3,zcoh3 = MTfh.read_2c2_file(cohfilenames[2])
     except:
-        #raise MTex.MTpyError_file_handling('Cannot read coherence files for station %s found in: %s'%(stationname, directory))
         print 'Cannot read coherence files for station %s found in: %s'%(stationname, directory)
+        raise MTex.MTpyError_file_handling()#'Cannot read coherence files for station %s found in: %s'%(stationname, directory))
 
     fn = '%s.coh'%(stationname)
     out_fn = op.abspath(op.join(directory,fn))

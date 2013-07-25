@@ -106,7 +106,7 @@ import numpy as np
 import os
 import os.path as op
 import math, cmath
-import time, calendar
+import time, calendar, datetime
 import copy
 #required for finding HMEAS and EMEAS at once:
 import re
@@ -2164,6 +2164,7 @@ def _generate_edifile_string(edidict):
                                               'section "HEAD" missing!')
             edistring += '>HEAD\n'
             head_dict = edidict['HEAD']
+            checkdate = 0
             for k in  sorted(head_dict.iterkeys()):
                 v = str(head_dict[k])
                 if len(v) == 0:
@@ -2176,6 +2177,12 @@ def _generate_edifile_string(edidict):
                     except:
                         pass
                     edistring += '\t%s=%s\n'%(k.upper(),v)
+                if k.lower == 'filedate':
+                    checkdate = 1
+            if checkdate == 0:
+                todaystring = datetime.datetime.now().strftime('%Y-%m-%d,%H:%M:%S')
+                edistring += '\tfiledate=%s\n'%(todaystring)
+
 
         if sectionhead == 'INFO':
             if not sectionhead in edidict:
@@ -2255,7 +2262,7 @@ def _generate_edifile_string(edidict):
                                               'section "FREQ" missing!')
             lo_freqs = edidict['FREQ']
 
-            edistring += '>!****FREQUENCIES****!\n'
+            #edistring += '>!****FREQUENCIES****!\n'
             edistring+= '>FREQ // {0}\n'.format(len(lo_freqs))
 
             for i,freq in enumerate(lo_freqs):
@@ -2270,7 +2277,7 @@ def _generate_edifile_string(edidict):
             except:
                 continue
 
-            edistring += '>!****IMPEDANCE ROTATION ANGLES****!\n'
+            #edistring += '>!****IMPEDANCE ROTATION ANGLES****!\n'
             edistring+= '>ZROT // {0}\n'.format(len(lo_rots))
 
             for i,angle in enumerate(lo_rots):
@@ -2291,7 +2298,7 @@ def _generate_edifile_string(edidict):
                 raise MTex.MTpyError_edi_file('Cannot write file - required'+\
                                               'section "Z" missing!')
 
-            edistring += '>!****IMPEDANCES****!\n'
+            #edistring += '>!****IMPEDANCES****!\n'
             for idx_comp,comp in enumerate(compstrings):
                 for idx_zentry,zentry in enumerate(Z_entries):
                     section = comp + zentry
@@ -2327,7 +2334,7 @@ def _generate_edifile_string(edidict):
             except:
                 continue
 
-            edistring += '>!****TIPPER PARAMETERS****!\n'
+            #edistring += '>!****TIPPER PARAMETERS****!\n'
             for idx_comp,comp in enumerate(compstrings):
                 for idx_tentry,tentry in enumerate(T_entries):
                     section = comp + tentry
