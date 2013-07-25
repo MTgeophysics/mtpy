@@ -32,7 +32,7 @@ import mtpy.utils.exceptions as MTex
 
 # reload(MTex)
 # reload(MTz)
-# reload(MTpt)
+reload(MTpt)
 
 
 #=================================================================

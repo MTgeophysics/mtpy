@@ -32,6 +32,7 @@ import mtpy.utils.exceptions as MTex
 import mtpy.utils.calculator as MTcc
 import copy
 
+reload(MTz)
 
 
 def rhophi2rhodepth(rho, phase, period):
@@ -54,9 +55,11 @@ def rhophi2rhodepth(rho, phase, period):
 	"""
 
 	depth = np.sqrt(rho*period/2/np.pi/MTcc.mu0)
-
 	# phase angle needed in rad
-	rho_nb = rho * (np.pi/2/np.deg2rad(phase) - 1)
+	rho_nb = rho * (np.pi/2/np.deg2rad(phase%90) - 1)
+	#print rho,period,depth,rho_nb
+	#print 'rho: {0:.1f} \t-\t rhoNB: {3:.1f}\t-\t period: {1:.1f} \t-\t depth: {2:.1f}'.format(
+	#												rho,period,depth,rho_nb)
 
 	return rho_nb, depth
 
@@ -67,7 +70,8 @@ def calculate_znb(z_object = None, z_array = None, periods = None):
 	from the 1D and 2D parts of an impedance tensor array Z.
 
 	input:
-	- Z
+	- Z (object or array)
+	- periods (mandatory, if Z is just array)
 
 	output:
 	- Z_nb
@@ -118,23 +122,129 @@ def calculate_znb(z_object = None, z_array = None, periods = None):
 
 	#at this point we assume that the two modes are the off-diagonal elements!!
 	#TE is element (1,2), TM at (2,1)
-	lo_nb_te = []
-	lo_nb_tm = []
+	lo_nb_max = []
+	lo_nb_min = []
 
 	app_res = MTz.z2resphi(z3,periods2)[0]
 	phase = MTz.z2resphi(z3,periods2)[1]
-	
+
+
 	for i,per in enumerate(periods):
 		
 		te_rho, te_depth = rhophi2rhodepth(app_res[i][0,1], phase[i][0,1], per)
 		tm_rho, tm_depth = rhophi2rhodepth(app_res[i][1,0], phase[i][1,0], per)
+		
+		if te_rho > tm_rho:
+			lo_nb_max.append([te_depth, te_rho])
+			lo_nb_min.append([tm_depth, tm_rho])
+		else:
+			lo_nb_min.append([te_depth, te_rho])
+			lo_nb_max.append([tm_depth, tm_rho])
 
-		lo_nb_te.append([te_depth, te_rho])
-		lo_nb_tm.append([tm_depth, tm_rho])
 
 
 
-	return np.array(lo_nb_te)[:,0], np.array(lo_nb_tm)[:,0]
+	return np.array(lo_nb_max), np.array(lo_nb_min)
+
+
+def calculate_rho_minmax(z_object = None, z_array = None, periods = None):
+	"""
+	Determine 2 arrays of Niblett-Bostick transformed aparent resistivities: 
+	minumum and maximum values for respective periods. 
+
+	Values are calculated from the 1D and 2D parts of an impedance tensor array Z.
+
+	input:
+	- Z (object or array)
+	- periods (mandatory, if Z is just array)
+
+	output:
+	- n x 3 array, depth/rho_nb/angle for rho_nb max
+	- n x 3 array, depth/rho_nb/angle for rho_nb min
+
+	The calculation is carried out by :
+	
+	1) Determine the dimensionality of the Z(T), discard all 3D parts
+	2) loop over periods 
+       * rotate Z and calculate app_res_NB for off-diagonal elements
+       * find maximum and minimum values
+       * write out respective depths and rho values  
+
+
+	Note:
+	No propagation of errors implemented yet!
+
+	"""
+
+	#deal with inputs
+	#if zobject:
+	#z = z_object.z
+	#periods = 1./z_object.freq
+	#else:
+	z = z_array 
+	periods = periods
+
+
+	dimensions = MTge.dimensionality(z)
+	angles = MTge.strike_angle(z)
+
+	#reduce actual Z by the 3D layers:
+	z2 = z[np.where(dimensions != 3)[0]]
+	angles2 = angles[np.where(dimensions != 3)[0]]
+	periods2 = periods[np.where(dimensions != 3)[0]]
+
+	lo_nb_max = []
+	lo_nb_min = []
+
+	rotsteps = 360
+	rotangles = np.arange(rotsteps)*180./rotsteps
+
+
+	for i,per in enumerate(periods2):
+		z_curr = z2[i]
+		temp_vals = np.zeros((rotsteps,4))
+
+		for j,d in enumerate(rotangles):
+			new_z = MTcc.rotatematrix_incl_errors(z_curr, d)[0]
+			#print i,per,j,d
+
+			res = MTz.z2resphi(new_z,per)[0]
+			phs = MTz.z2resphi(new_z,per)[1]
+
+			te_rho, te_depth = rhophi2rhodepth(res[0,1], phs[0,1], per)
+			tm_rho, tm_depth = rhophi2rhodepth(res[1,0], phs[1,0], per)
+
+			temp_vals[j,0] = te_depth
+			temp_vals[j,1] = te_rho
+			temp_vals[j,2] = tm_depth
+			temp_vals[j,3] = tm_rho
+		
+		column = (np.argmax([ np.max(temp_vals[:,1]),
+								np.max(temp_vals[:,3])]))*2 + 1
+
+		maxidx = np.argmax(temp_vals[:,column])
+		max_rho = temp_vals[maxidx,column]
+		max_depth = temp_vals[maxidx,column-1]
+		max_ang = rotangles[maxidx]
+		
+		#alternative 1
+		min_column = (np.argmin([ np.max(temp_vals[:,1]),
+								np.max(temp_vals[:,3])]))*2 + 1
+		if max_ang <= 90:
+			min_ang = max_ang + 90
+		else:
+			min_ang = max_ang - 90
+		minidx = np.argmin(np.abs(rotangles-min_ang))
+
+		min_rho = temp_vals[minidx,min_column]
+		min_depth = temp_vals[minidx,min_column-1]
+
+
+		lo_nb_max.append([max_depth, max_rho, max_ang])
+		lo_nb_min.append([min_depth, min_rho])
+		
+
+	return np.array(lo_nb_max), np.array(lo_nb_min)
 
 
 def interpolate_strike_angles(angles,in_periods):

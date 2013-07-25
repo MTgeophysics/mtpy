@@ -131,9 +131,20 @@ class Z(object):
         """    
 
         self._z = z_array
-        self._zerr = zerr_array  
-        self._freq = None
+        self._zerr = zerr_array
 
+        self._freq = None
+        if z_array is not None:
+            if len(z_array.shape) == 2 and z_array.shape == (2,2):
+                if z_array.dtype in ['complex', 'float','int']:
+                    self._z = np.zeros((1,2,2),'complex')
+                    self._z[0] = z_array            
+
+        if zerr_array is not None:
+            if len(zerr_array.shape) == 2 and zerr_array.shape == (2,2):
+                if zerr_array.dtype in ['complex', 'float','int']:
+                    self._zerr = np.zeros((1,2,2),'complex')
+                    self._zerr[0] = zerr_array            
 
         self.rotation_angle = 0.
         if self.z is not None:
@@ -150,11 +161,15 @@ class Z(object):
             No test for consistency!
         """
 
+        if not np.iterable(lo_freq):
+            lo_freq= np.array([lo_freq])
+
         if self.z is not None:
-            if len(lo_freq) is not len(self.z):
-                print 'length of freq list/array not correct (%i instead of %i)'\
-                ''%(len(lo_freq), len(self.z))
-                return
+            if len(self.z.shape) == 3:
+                if len(lo_freq) is not len(self.z):
+                    print 'length of freq list/array not correct (%i instead of %i)'\
+                    ''%(len(lo_freq), len(self.z))
+                    return
          
         self._freq = np.array(lo_freq)
 
@@ -333,8 +348,8 @@ class Z(object):
         
         if self.z is None:
             print 'Z array is None - cannot calculate Res/Phase'
-            return
-			
+            return            
+
         reserr = None
         phaseerr = None
         if self.zerr is not None:
@@ -1590,11 +1605,19 @@ def z2resphi(z_array, periods, zerr_array = None):
         - Resistivity uncertainties array
         - Phase uncertainties array
     """
-    
-    z_object = _read_z_array(z_array,zerr_array)
-    z_object.freq= 1./periods
 
-    return z_object.res_phase
+    z_object = _read_z_array(z_array,zerr_array)
+    z_object.freq= np.array(1./periods)
+
+    if len(np.shape(z_array)) == 3:
+        return z_object.res_phase
+    else:
+        try:
+            return z_object.res_phase[0][0],z_object.res_phase[1][0],\
+                z_object.res_phase[2][0],z_object.res_phase[3][0]
+        except:
+            return z_object.res_phase[0][0],z_object.res_phase[1][0],None,None
+                
 
 
 def rotate_tipper(tipper_array, alpha, tippererr_array = None):
