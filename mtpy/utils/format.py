@@ -108,9 +108,11 @@ def convert_dms_tuple2degrees(latlon_triple):
     Validity of the triple is assumed and has to be asserted in advanced.
     """
 
-
+     
+    sign = 1.
     try:
         latlon_list = [float(i) for i in latlon_triple]
+
     except:
         #if triple is given as string:
         latlon_raw = latlon_triple
@@ -123,11 +125,13 @@ def convert_dms_tuple2degrees(latlon_triple):
             latlon_list = [float(i) for  i in latlon_list]
         except:
             raise MTex.MTpyError_config_file('Config file error: lat/lon is in invalid format')
-
+    
+    if str(latlon_list[0])[0]=='-':
+        sign = -1.
     deg = latlon_list[0]
 
     #take out sign for easier conversion into degrees
-    sign = deg/np.abs(deg)
+    
     if deg < 0:
         deg *= -1
 
@@ -179,6 +183,7 @@ def convert_degmin_tuple2degrees(latlon_list):
     Validity of the triple is assumed and has to be asserted in advance.
     """
 
+    sign = 1.
 
     try:
         latlon_list = [float(i) for i in latlon_list]
@@ -189,7 +194,9 @@ def convert_degmin_tuple2degrees(latlon_list):
     minutes = latlon_list[1]
 
     #take out sign for easier conversion into degrees
-    sign = np.sign(deg)
+    if str(latlon_list[0])[0]=='-':
+        sign = -1.
+    
     if deg < 0:
         deg *= -1
 
