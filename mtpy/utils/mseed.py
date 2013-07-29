@@ -27,7 +27,7 @@ import os.path as op
 
 import mtpy.utils.exceptions as EX
 import mtpy.utils.filehandling as MTfh
-import mtpy.utils.format as FT
+import mtpy.utils.format as MTft
 reload(FT)
 reload(EX)
 #reload(FH)
@@ -215,7 +215,7 @@ def convertfile_miniseed2ts(infile, outfile, unit=None, lat = None, lon = None, 
 
         if lat is not None:
             try:
-                lat = FT._assert_position_format('lat', lat)
+                lat = MTfT._assert_position_format('lat', lat)
             except:
                 lat = None
 
@@ -225,7 +225,7 @@ def convertfile_miniseed2ts(infile, outfile, unit=None, lat = None, lon = None, 
 
         if lon is not None:
             try:
-                lon = FT._assert_position_format('lon', lon)
+                lon = MTfT._assert_position_format('lon', lon)
             except:
                 lon = None
 
@@ -235,7 +235,7 @@ def convertfile_miniseed2ts(infile, outfile, unit=None, lat = None, lon = None, 
 
         if elev is not None:
             try:
-                elev = FT._assert_position_format('elev', elev)
+                elev = MTfT._assert_position_format('elev', elev)
             except:
                 elev = None
 
