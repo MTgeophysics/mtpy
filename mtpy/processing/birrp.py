@@ -39,6 +39,7 @@ import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
 
 import mtpy.utils.misc as MTmc
+
 reload(MTcf)
 reload(MTft)
 reload(MTfh)
@@ -49,7 +50,7 @@ reload(MTfh)
 def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, 
                            coherence_threshold = 0.5, output_dir = None):
     """
-    Call BIRRP for 2 input and 2 output channels with the simplest setup. 
+    Call BIRRP for 2 input and 2 output channels with the simplemost setup. 
 
     Provide stationname and directory containing the data folders. Data must 
     be in 1-column ascii format, including one header line for identification 
@@ -415,6 +416,7 @@ def get_optimal_window_bisection(length, sampling_rate):
     number_of_bisections = int(np.ceil(np.log(16./longest_window) / np.log(0.5) ))
 
     return longest_window, number_of_bisections
+
 
 
 def write_script_file(processing_dict, save_path=None):
