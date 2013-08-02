@@ -627,11 +627,11 @@ class OccamPointPicker(object):
         
         **fignum** : figure numbers
         
-        **occamlines** : list of lines to write into the occam data file.
+        **occamlines** : list of lines to write into the occam2d data file.
         
     :Example: ::
         
-        >>> ocd = occam.Occam2DData()
+        >>> ocd = occam2d.Occam2DData()
         >>> ocd.data_fn = r"/home/Occam2D/Line1/Inv1/Data.dat"
         >>> ocd.plotMaskPoints()
     """    
@@ -695,7 +695,7 @@ class OccamPointPicker(object):
         #set the figure number
         self.fignum=self.line.figure.number
         
-        #make a list of occam lines to write later
+        #make a list of occam2d lines to write later
         self.occamlines=[]
     
         
@@ -906,10 +906,10 @@ class OccamPointPicker(object):
             
 class Occam2DData(object):
     """
-    Occam2DData covers all aspects of dealing with data for an Occam 2D
+    Occam2DData covers all aspects of dealing with data for an occam2d 2D
     inversion using the code of Constable et al. [1987] and deGroot-Hedlin and 
     Constable [1990] from Scripps avaliable at 
-    http://marineemlab.ucsd.edu/Projects/Occam/2DMT/index.html.
+    http://marineemlab.ucsd.edu/Projects/occam2d/2DMT/index.html.
     
     
     """    
@@ -1173,7 +1173,7 @@ class Occam2DData(object):
              
     def make2DdataFile(self, edipath, **kwargs):
         """
-        Make a data file that Occam can read.  At the moment the inversion line
+        Make a data file that occam2d can read.  At the moment the inversion line
         is the best fit line through all the stations used for the inversion.
         
         Arguments:
@@ -1282,8 +1282,8 @@ class Occam2DData(object):
             
         :Example: ::
             
-            >>> import mtpy.core.occamtools as occam
-            >>> ocd = occam.Occam2DData()
+            >>> import mtpy.core.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData()
             >>> #define a path to where the edifiles are
             >>> edipath = r"/home/EDIfiles"
             >>>
@@ -1483,7 +1483,7 @@ class Occam2DData(object):
                         dphaseyx_err = '{0:{1}}'.format((self.phaseyx_err/100.)*
                                                         57/2., sfmt)
                     
-                    #calculate log10 of resistivity as prescribed by OCCAM
+                    #calculate log10 of resistivity as prescribed by occam2d
                     lresyx = '{0:{1}}'.format(np.log10(resyx), sfmt)
                     lresxy = '{0:{1}}'.format(np.log10(resxy), sfmt)
                     
@@ -1580,7 +1580,7 @@ class Occam2DData(object):
             self.data_fn=os.path.join(edipath,'Data.dat')
             
         if self.title==None:
-            self.title='Occam Inversion'
+            self.title='occam2d Inversion'
             
         datfid=open(self.data_fn,'w')
         datfid.write('FORMAT:{0}OCCAM2MTDATA_1.0\n'.format(' '*11))
@@ -1625,7 +1625,7 @@ class Occam2DData(object):
         
     def read2DdataFile(self):
         """
-            read2DdataFile will read in data from a 2D occam data file.  
+            read2DdataFile will read in data from a 2D occam2d data file.  
             Only supports the first 6 data types of occam2D
         
         Arguments:
@@ -1669,8 +1669,8 @@ class Occam2DData(object):
                 
         :Example: ::
             
-            >>> import mtpy.modeling.occamtools as occam
-            >>> ocd = occam.Occam2DData()
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData()
             >>> ocd.data_fn = r"/home/Occam2D/Line1/Inv1/Data.dat"
             >>> ocd.read2DdataFile()
             
@@ -1803,8 +1803,8 @@ class Occam2DData(object):
         
         :Example: ::
             
-            >>> import mtpy.modeling.occamtools as occam
-            >>> ocd = occam.Occam2DData()
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData()
             >>> ocd.data_fn = r"/home/Occam2D/Line1/Inv1/Data.dat"
             >>>
             >>> #rotate by 10 degrees east of North, remove station MT03 and 
@@ -1969,7 +1969,7 @@ class Occam2DData(object):
                             dphaseyx_err = '{0:{1}}'.format(
                                     (self.phaseyx_err/100.)*57/2., sfmt)
                         
-                        #calculate log10 of resistivity as prescribed by OCCAM
+                        #calculate log10 of resistivity as prescribed by occam2d
                         lresyx = '{0:{1}}'.format(np.log10(resyx), sfmt)
                         lresxy = '{0:{1}}'.format(np.log10(resxy), sfmt)
                         
@@ -2214,12 +2214,12 @@ class Occam2DData(object):
         nstat = len(self.station_lst)
             
         if self.titlestr == None:
-            self.titlestr = 'Occam Inversion'
+            self.titlestr = 'occam2d Inversion'
             
         datfid = open(self.ndata_fn,'w')
         datfid.write('FORMAT:{0}OCCAM2MTDATA_1.0\n'.format(' '*11))
         if new_proj_angle != 0:
-            self.titlestr = 'Occam Inversion proj_angle={0:.1f}'.format(
+            self.titlestr = 'occam2d Inversion proj_angle={0:.1f}'.format(
                                                                new_proj_angle)
                                                                
         datfid.write('TITLE:{0}{1}\n'.format(' '*12,self.titlestr))
@@ -2272,9 +2272,9 @@ class Occam2DData(object):
         
     def makeModelFiles(self,niter=20,targetrms=1.0,nlayers=100,nlperdec=30,
               z1layer=50,bwidth=200,trigger=.75,save_path=None,rhostart=100,
-              occampath=r"c:\Peacock\PHD\OCCAM\MakeFiles"):
+              occampath=r"c:\Peacock\PHD\occam2d\MakeFiles"):
         """
-        makeModel will make an the input files for occam using Steve Constable's
+        makeModel will make an the input files for occam2d using Steve Constable's
         MakeModel2DMT.f code.
         
         Inputs:
@@ -2319,7 +2319,7 @@ class Occam2DData(object):
         #get current working directory
         cdir=os.getcwd() 
         
-        #change directory path to occam path
+        #change directory path to occam2d path
         os.chdir(occampath) 
         
         #---call MakeModel2DMT---
@@ -2434,8 +2434,8 @@ class Occam2DData(object):
         
         :Example: ::
 
-            >>> import mtpy.modeling.occamtools as occam
-            >>> ocd = occam.Occam2DData()
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData()
             >>> ocd.data_fn = r"/home/Occam2D/Line1/Inv1/Data.dat"
             >>> ocd.plotMaskPoints()                   
             
@@ -2622,8 +2622,8 @@ class Occam2DData(object):
             
         :Example: ::
 
-            >>> import mtpy.modeling.occamtools as occam
-            >>> ocd = occam.Occam2DData()
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData()
             >>> ocd.data_fn = r"/home/Occam2D/Line1/Inv1/Data.dat"
             >>> ocd.plotMaskPoints()
             >>>
@@ -2765,7 +2765,7 @@ class Occam2DData(object):
         
         #set title string
         if self.titlestr == None:
-            self.titlestr = 'Occam Inversion'
+            self.titlestr = 'occam2d Inversion'
             
         datfid = open(self.ndata_fn,'w')
         datfid.write('FORMAT:{0}OCCAM2MTDATA_1.0\n'.format(' '*11))
@@ -2859,8 +2859,8 @@ class Occam2DData(object):
             
         :Example: ::
             
-            >>> import mtpy.modeling.occamtools as occam
-            >>> ocd = occam.Occam2DData()
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData()
             >>> ocd.read2DRespFile(r"/home/Occam2D/Line1/Inv1/Test_15.resp")
         """
         #make the response file an attribute        
@@ -2959,8 +2959,8 @@ class Occam2DData(object):
                             
         :Example: ::
             
-            >>> import mtpy.modeling.occamtools as occam
-            >>> ocd = occam.Occam2DData()
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData()
             >>> rfile = r"/home/Occam2D/Line1/Inv1/Test_15.resp"
             >>> ocd.data_fn = r"/home/Occam2D/Line1/Inv1/DataRW.dat"
             >>>
@@ -2987,17 +2987,8 @@ class Occam2DData(object):
         ==================== ==================================================
         key words            description
         ==================== ==================================================
-        axmpte               matplotlib.axes instance for TE model phase
-        axmptm               matplotlib.axes instance for TM model phase
-        axmrte               matplotlib.axes instance for TE model app. res 
-        axmrtm               matplotlib.axes instance for TM model app. res 
-        axpte                matplotlib.axes instance for TE data phase 
-        axptm                matplotlib.axes instance for TM data phase
-        axrte                matplotlib.axes instance for TE data app. res.
-        axrtm                matplotlib.axes instance for TM data app. res.
         cb_pad               padding between colorbar and axes
         cb_shrink            percentage to shrink the colorbar to
-        fig                  matplotlib.figure instance
         fig_dpi              resolution of figure in dots per inch
         fig_num              number of figure instance
         fig_size             size of figure in inches (width, height)
@@ -3005,7 +2996,6 @@ class Occam2DData(object):
         label_lst            list to label plots
         ml                   factor to label stations if 2 every other station
                              is labeled on the x-axis
-        period               np.array of periods to plot
         phase_cmap           color map name of phase
         phase_limits_te      limits for te phase in degrees (min, max)
         phase_limits_tm      limits for tm phase in degrees (min, max)            
@@ -3014,9 +3004,7 @@ class Occam2DData(object):
         res_cmap             color map name for resistivity
         res_limits_te        limits for te resistivity in log scale (min, max)
         res_limits_tm        limits for tm resistivity in log scale (min, max)
-        rp_lst               list of dictionaries as made from read2Dresp
         station_id           index to get station name (min, max)
-        station_lst          station list got from rp_lst
         subplot_bottom       subplot spacing from bottom (relative coordinates) 
         subplot_hspace       vertical spacing between subplots
         subplot_left         subplot spacing from left  
@@ -3027,8 +3015,8 @@ class Occam2DData(object):
                             
        :Example: ::
             
-            >>> import mtpy.modeling.occamtools as occam
-            >>> ocd = occam.Occam2DData()
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData()
             >>> rfile = r"/home/Occam2D/Line1/Inv1/Test_15.resp"
             >>> ocd.data_fn = r"/home/Occam2D/Line1/Inv1/DataRW.dat"
             >>> ps1 = ocd.plot2PseudoSection(resp_fn=rfile) 
@@ -3047,23 +3035,50 @@ class Occam2DData(object):
     
     def plotAllResponses(self, station_lst=None, **kwargs):
         """
-        Plot all the responses of occam inversion from data file.  This assumes
+        Plot all the responses of occam2d inversion from data file.  This assumes
         the response curves are in the same folder as the datafile.
     
         Arguments:
         ----------
-            **station** : string
-                          station name to plot
+            **station_lst** : list of strings
+                              station names to plot
             
-            **fignum** : int
-                         plot number to put figure into
+        ==================== ==================================================
+        keywords             description
+        ==================== ==================================================
+        fig_dpi              resolution of figure in dots per inch
+        fig_num              number of figure instance
+        fig_size             size of figure in inches (width, height)
+        font_size            size of font in points
+        lw                   line width of lines in points
+        ms                   marker size in points
+        phase_limits         limits on phase plots in degrees (min, max)
+        plot_num             [ 1 | 2 ] 
+                             1 to plot both modes in a single plot
+                             2 to plot modes in separate plots (default)
+        plot_type            [ '1' | station_lst]
+                             '1' --> to plot all stations in different figures
+                             station_lst --> to plot a few stations, give names
+                             of stations ex. ['mt01', 'mt07']
+        plot_yn              [ 'y' | 'n']
+                             'y' --> to plot on instantiation
+                             'n' --> to not plot on instantiation
+        res_limits           limits on resistivity plot in log scale (min, max)
+        station_lst          station_lst list of stations in rp_lst
+        subplot_bottom       subplot spacing from bottom (relative coordinates) 
+        subplot_hspace       vertical spacing between subplots
+        subplot_left         subplot spacing from left  
+        subplot_right        subplot spacing from right
+        subplot_top          subplot spacing from top
+        subplot_wspace       horizontal spacing between subplots
+        ==================== ==================================================
                          
         :Example: ::
             
-            >>> import mtpy.modeling.occamtools as occam
-            >>> ocd = occam.Occam2DData()
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData()
             >>> ocd.data_fn = r"/home/Occam2D/Line1/Inv1/DataRW.dat"
-            >>> ocd.plotAllResponses('MT01')
+            >>> pa1 = ocd.plotAllResponses('MT01')
         
         """    
         dir_path = os.path.dirname(self.data_fn)
@@ -3081,7 +3096,7 @@ class Occam2DData(object):
         
 class Occam2DModel(Occam2DData):
     """
-    This class deals with the model side of Occam inversions, including 
+    This class deals with the model side of occam2d inversions, including 
     plotting the model, the L-curve, depth profiles.  It will also be able to 
     build a mesh and regularization grid at some point.  
     
@@ -3092,32 +3107,32 @@ class Occam2DModel(Occam2DData):
     
     """
     
-    def __init__(self,iterfn,meshfn=None,inmodelfn=None):
-        self.iterfn=iterfn
+    def __init__(self,iterfn, meshfn=None, inmodelfn=None):
+        self.iterfn = iterfn
     
-        self.invpath=os.path.dirname(self.iterfn)
+        self.invpath = os.path.dirname(self.iterfn)
         
         #get meshfile if none is provides assuming the mesh file is named
         #with mesh
-        if self.invpath!=None:
-            self.meshfn=os.path.join(self.invpath,'MESH')
-            if os.path.isfile(self.meshfn)==False:
+        if self.invpath != None:
+            self.meshfn = os.path.join(self.invpath,'MESH')
+            if os.path.isfile(self.meshfn) == False:
                 for ff in os.listdir(self.invpath):
                     if ff.lower().find('mesh')>=0:
-                        self.meshfn=os.path.join(self.invpath,ff)
-                if os.path.isfile(self.meshfn)==False:
+                        self.meshfn = os.path.join(self.invpath,ff)
+                if os.path.isfile(self.meshfn) == False:
                     raise NameError('Could not find a mesh file, '+\
                                     'input manually')
             
         #get inmodelfile if none is provides assuming the mesh file is 
         #named with inmodel
-        if inmodelfn==None:
-            self.inmodelfn=os.path.join(self.invpath,'INMODEL')
-            if os.path.isfile(self.inmodelfn)==False:
+        if inmodelfn == None:
+            self.inmodelfn = os.path.join(self.invpath,'INMODEL')
+            if os.path.isfile(self.inmodelfn) == False:
                 for ff in os.listdir(self.invpath):
                     if ff.lower().find('inmodel')>=0:
-                        self.inmodelfn=os.path.join(self.invpath,ff)
-                if os.path.isfile(self.inmodelfn)==False:
+                        self.inmodelfn = os.path.join(self.invpath,ff)
+                if os.path.isfile(self.inmodelfn) == False:
                     raise NameError('Could not find a model file, '+\
                                     'input manually')
         
@@ -3141,62 +3156,62 @@ class Occam2DModel(Occam2DData):
         
         :Example: ::
             
-            >>> import mtpy.modeling.occamtools as occam
+            >>> import mtpy.modeling.occam2d as occam2d
             >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
-            >>> ocm = occam.Occam2DModel(itfn)
+            >>> ocm = occam2d.Occam2DModel(itfn)
             >>> ocm.read2DIter()
             
         """
     
         #check to see if the file exists
-        if os.path.exists(self.iterfn)==False:
+        if os.path.exists(self.iterfn) == False:
             raise IOError('File: '+self.iterfn+' does not exist, check path')
     
         #open file, read lines, close file
-        ifid=file(self.iterfn,'r')
-        ilines=ifid.readlines()
+        ifid = file(self.iterfn, 'r')
+        ilines = ifid.readlines()
         ifid.close()
         
         #create dictionary to put things
-        self.idict={}
-        ii=0
+        self.idict = {}
+        ii = 0
         #put header info into dictionary with similar keys
-        while ilines[ii].lower().find('param')!=0:
-            iline=ilines[ii].strip().split(':')
-            self.idict[iline[0].lower()]=iline[1].strip()
-            ii+=1
+        while ilines[ii].lower().find('param') != 0:
+            iline = ilines[ii].strip().split(':')
+            self.idict[iline[0].lower()] = iline[1].strip()
+            ii += 1
         
         #get number of parameters
-        iline=ilines[ii].strip().split(':')
-        nparam=int(iline[1].strip())
-        self.idict[iline[0]]=nparam
-        self.idict['model']=np.zeros(nparam)
-        kk=int(ii+1)
+        iline = ilines[ii].strip().split(':')
+        nparam = int(iline[1].strip())
+        self.idict[iline[0]] = nparam
+        self.idict['model'] = np.zeros(nparam)
+        kk= int(ii+1)
         
-        jj=0
-        while jj<len(ilines)-kk:
-            iline=ilines[jj+kk].strip().split()
+        jj = 0
+        while jj < len(ilines)-kk:
+            iline = ilines[jj+kk].strip().split()
             for ll in range(4):
                 try:
-                    self.idict['model'][jj*4+ll]=float(iline[ll])
+                    self.idict['model'][jj*4+ll] = float(iline[ll])
                 except IndexError:
                     pass
-            jj+=1
+            jj += 1
         
         #get the data file name from the iteration header
-        self.data_fn=self.idict['data file']
-        if self.data_fn.find(os.sep)==-1:
-            self.data_fn=os.path.join(self.invpath,self.data_fn)
-        if os.path.isfile(self.data_fn)==False:
+        self.data_fn = self.idict['data file']
+        if self.data_fn.find(os.sep) == -1:
+            self.data_fn = os.path.join(self.invpath, self.data_fn)
+        if os.path.isfile(self.data_fn) == False:
             for ff in os.listdir(self.invpath):
-                if ff.lower().find('.dat')>=0:
-                    self.data_fn=os.path.join(self.invpath,ff)
-            if os.path.isfile(self.data_fn)==False:
+                if ff.lower().find('.dat') >= 0:
+                    self.data_fn = os.path.join(self.invpath,ff)
+            if os.path.isfile(self.data_fn) == False:
                 raise NameError('Could not find a data file, input manually')
     
     def read2DInmodel(self):
         """
-        read an INMODEL file for occam 2D
+        read an INMODEL file for occam2d 2D
               
         Arguments:
         ----------
@@ -3223,46 +3238,46 @@ class Occam2DModel(Occam2DData):
         
         :Example: ::
             
-            >>> import mtpy.modeling.occamtools as occam
+            >>> import mtpy.modeling.occam2d as occam2d
             >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
-            >>> ocm = occam.Occam2DModel(itfn)
+            >>> ocm = occam2d.Occam2DModel(itfn)
             >>> ocm.read2DInmodel()
         """
         
-        ifid=open(self.inmodelfn,'r')
+        ifid = open(self.inmodelfn, 'r')
         
-        headerdict={}
-        rows=[]
-        cols=[]    
-        ncols=[]
+        headerdict = {}
+        rows = []
+        cols = []    
+        ncols = []
         
-        ilines=ifid.readlines()
+        ilines = ifid.readlines()
         
-        for ii,iline in enumerate(ilines):
-            if iline.find(':')>0:
-                iline=iline.strip().split(':')
-                headerdict[iline[0].lower()]=iline[1]
+        for ii, iline in enumerate(ilines):
+            if iline.find(':') > 0:
+                iline = iline.strip().split(':')
+                headerdict[iline[0].lower()] = iline[1]
                 #append the last line
-                if iline[0].lower().find('exception')>0:
+                if iline[0].lower().find('exception') > 0:
                     cols.append(ncols)
             else:
-                iline=iline.strip().split()
-                iline=[int(jj) for jj in iline]
-                if len(iline)==2:
-                    if len(ncols)>0:
+                iline = iline.strip().split()
+                iline = [int(jj) for jj in iline]
+                if len(iline) == 2:
+                    if len(ncols) > 0:
                         cols.append(ncols)
                     rows.append(iline)
-                    ncols=[]
-                elif len(iline)>2:
-                    ncols=ncols+iline
+                    ncols = []
+                elif len(iline) > 2:
+                    ncols = ncols+iline
                     
-        self.rows=np.array(rows)
-        self.cols=cols
-        self.inmodel_headerdict=headerdict
+        self.rows = np.array(rows)
+        self.cols = cols
+        self.inmodel_headerdict = headerdict
         
     def read2DMesh(self):
         """
-        reads an Occam 2D mesh file
+        reads an occam2d 2D mesh file
         
         Arguments:
         ----------
@@ -3285,60 +3300,60 @@ class Occam2DModel(Occam2DData):
             
         :Example: ::
             
-            >>> import mtpy.modeling.occamtools as occam
+            >>> import mtpy.modeling.occam2d as occam2d
             >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
-            >>> ocm = occam.Occam2DModel(itfn)
+            >>> ocm = occam2d.Occam2DModel(itfn)
             >>> ocm.read2DMesh()
         """
         
-        mfid=file(self.meshfn,'r')
+        mfid = file(self.meshfn,'r')
         
-        mlines=mfid.readlines()
+        mlines = mfid.readlines()
         
-        nh=int(mlines[1].strip().split()[1])-1
-        nv=int(mlines[1].strip().split()[2])-1
+        nh = int(mlines[1].strip().split()[1])-1
+        nv = int(mlines[1].strip().split()[2])-1
         
-        hnodes=np.zeros(nh)
+        hnodes = np.zeros(nh)
         vnodes=np.zeros(nv)
-        mdata=np.zeros((nh,nv,4),dtype=str)    
+        mdata = np.zeros((nh, nv, 4), dtype=str)    
         
         #get horizontal nodes
-        jj=2
-        ii=0
-        while ii<nh:
-            hline=mlines[jj].strip().split()
+        jj = 2
+        ii = 0
+        while ii < nh:
+            hline = mlines[jj].strip().split()
             for mm in hline:
-                hnodes[ii]=float(mm)
-                ii+=1
-            jj+=1
+                hnodes[ii] = float(mm)
+                ii += 1
+            jj += 1
         
         #get vertical nodes
-        ii=0
-        while ii<nv:
-            vline=mlines[jj].strip().split()
+        ii = 0
+        while ii < nv:
+            vline = mlines[jj].strip().split()
             for mm in vline:
-                vnodes[ii]=float(mm)
-                ii+=1
-            jj+=1    
+                vnodes[ii] = float(mm)
+                ii += 1
+            jj += 1    
         
         #get free parameters        
-        for ii,mm in enumerate(mlines[jj+1:]):
-            kk=0
-            while kk<4:        
-                mline=mm.rstrip()
+        for ii ,mm in enumerate(mlines[jj+1:]):
+            kk = 0
+            while kk < 4:        
+                mline = mm.rstrip()
                 if mline.lower().find('exception')>0:
                     break
                 for jj in range(nh):
                     try:
-                        mdata[jj,ii,kk]=mline[jj]
+                        mdata[jj,ii,kk] = mline[jj]
                     except IndexError:
                         pass
-                kk+=1
+                kk += 1
         
         #make the node information an attributes of the occamodel_model class 
-        self.hnodes=hnodes
-        self.vnodes=vnodes
-        self.meshdata=mdata
+        self.hnodes = hnodes
+        self.vnodes = vnodes
+        self.meshdata = mdata
         
     def get2DData(self):
         """
@@ -3383,79 +3398,71 @@ class Occam2DModel(Occam2DData):
         self.read2DInmodel()
         #get the binding offset which is the right side of the furthest left
         #block, this helps locate the model in relative space
-        bndgoff=float(self.inmodel_headerdict['binding offset'])
+        bndgoff = float(self.inmodel_headerdict['binding offset'])
         
         #make sure that the number of rows and number of columns are the same
-        assert len(self.rows)==len(self.cols)
+        assert len(self.rows) == len(self.cols)
         
         #initiate the resistivity model to the shape of the FE mesh
-        resmodel=np.zeros((self.vnodes.shape[0],self.hnodes.shape[0]))
+        resmodel = np.zeros((self.vnodes.shape[0],self.hnodes.shape[0]))
         
         #read in the model and set the regularization block values to map onto
         #the FE mesh so that the model can be plotted as an image or regular 
         #mesh.
-        mm=0
+        mm = 0
         for ii in range(len(self.rows)):
             #get the number of layers to combine
             #this index will be the first index in the vertical direction
-            ny1=self.rows[:ii,0].sum()
+            ny1 = self.rows[:ii,0].sum()
             #the second index  in the vertical direction
-            ny2=ny1+self.rows[ii][0]
+            ny2 = ny1+self.rows[ii][0]
             #make the list of amalgamated columns an array for ease
-            lc=np.array(self.cols[ii])
+            lc = np.array(self.cols[ii])
             #loop over the number of amalgamated blocks
             for jj in range(len(self.cols[ii])):
                 #get first in index in the horizontal direction
-                nx1=lc[:jj].sum()
+                nx1 = lc[:jj].sum()
                 #get second index in horizontal direction
-                nx2=nx1+lc[jj]
+                nx2 = nx1+lc[jj]
                 #put the apporpriate resistivity value into all the amalgamated 
                 #model blocks of the regularization grid into the forward model
                 #grid
-                resmodel[ny1:ny2,nx1:nx2]=self.idict['model'][mm]
-                mm+=1
+                resmodel[ny1:ny2, nx1:nx2] = self.idict['model'][mm]
+                mm += 1
         
         #make some arrays for plotting the model
-        plotx=np.array([self.hnodes[:ii+1].sum() 
+        plotx = np.array([self.hnodes[:ii+1].sum() 
                         for ii in range(len(self.hnodes))])
-        ploty=np.array([self.vnodes[:ii+1].sum() 
+        ploty = np.array([self.vnodes[:ii+1].sum() 
                         for ii in range(len(self.vnodes))])
         
         #center the grid onto the station coordinates
-        x0=bndgoff-plotx[self.cols[0][0]]
-        plotx=plotx+x0
+        x0 = bndgoff-plotx[self.cols[0][0]]
+        plotx = plotx+x0
         
         #flip the arrays around for plotting purposes
-        #plotx=plotx[::-1] and make the first layer start at zero
-        ploty=ploty[::-1]-ploty[0]
+        #plotx = plotx[::-1] and make the first layer start at zero
+        ploty = ploty[::-1]-ploty[0]
         
         #make a mesh grid to plot in the model coordinates
-        self.meshx,self.meshy=np.meshgrid(plotx,ploty)
+        self.meshx,self.meshy = np.meshgrid(plotx, ploty)
         
         #flip the resmodel upside down so that the top is the stations
-        resmodel=np.flipud(resmodel)
+        resmodel = np.flipud(resmodel)
         
         #make attributes of the class
-        self.resmodel=resmodel
-        self.plotx=plotx
-        self.ploty=ploty
+        self.resmodel = resmodel
+        self.plotx = plotx
+        self.ploty = ploty
         
         #set the offsets of the stations and station list.
-        self.offsetlst=[]
+        self.offsetlst = []
         for rpdict in self.rp_lst:
             self.offsetlst.append(rpdict['offset'])
         
-    def plot2DModel(self,data_fn=None,
-                    xpad=1.0,ypad=1.0,spad=1.0,ms=10,stationid=None,
-                    fdict={'size':8,'rotation':60,'weight':'normal'},
-                    dpi=300,ylimits=None,xminorticks=5,yminorticks=1,
-                    climits=(0,4), cmap='jet_r',fs=8,femesh='off',
-                    regmesh='off',aspect='auto',title='on',meshnum='off',
-                    blocknum='off',blkfdict={'size':3},fignum=1,
-                    plotdimensions=(10,10),grid='off',yscale='km',
-                    xlimits=None):
+    def plot2DModel(self, data_fn=None, **kwargs):
         """
-        plotModel will plot the model output by occam in the iteration file.
+        plotModel will plot the model output by occam2d in the iteration file.
         
         Arguments:
         ----------
@@ -3463,333 +3470,86 @@ class Occam2DModel(Occam2DData):
             **data_fn** : string 
                         full path to data file.  If none is input it will use 
                         the data file found in the iteration file.
-            
-            **xpad** : float (units of km) 
-                       padding in the horizontal direction of model.
-            
-            **ypad** : float (units according to **yscale**)
-                       padding in the vertical direction of the top of the 
-                       model to fit the station names and markers.
-                       
-            **spad** : float (units according to **yscale**)
-                       padding of station names away from the top of the model,
-                       this is kind of awkward at the moment especially if you
-                       zoom into the model, it usually looks retarded and 
-                       doesn't fit
-                    
-            **ms** : float  
-                     marker size in ambiguous points
-            
-            **stationid** : tuple (min,max)
-                           index of station names to plot -> ex. pb01sdr would 
-                           be stationid=(0,4) to plot pb01
                         
-            **fdict** : font dictionary for the station names, can have keys:
-                
-                    *'size'* : font size
-                    
-                    *'rotation'* : angle of rotation (deg) of font
-                    
-                    *'weight'* : weight of font 
-                    
-                    *'color'* : color of font
-                    
-                    *'style'* : style of font ex. 'italics'
-                    
-            **plotdimensions** : tuple (x,y)
-                               x-y dimensions of the figure in inches
-                    
-            **dpi** : int 
-                      dot per inch of figure, should be 300 for publications
-            
-            **ylimits** : tuple (min,max)
-                          limits of depth scale (km). ex, ylimits=(0,30)
-                          
-            **xlimits** : tuple (min,max)
-                          limits of horizontal scale (km). ex, ylimits=(0,30)
-                          
-            
-            **xminorticks** : int or float
-                              location of minor tick marks for the horizontal 
-                              axis
-            
-            **yminorticks** : int or float
-                              location of minor tick marks for vertical axis
-            
-            **climits** : tuple (min,max)
-                          limits of log10(resistivity). ex. climits=(0,4)
-            
-            **cmap** : string
-                       color map to plot the model image
-                       see matplotlib.cm for all options
-            
-            **fs** : float
-                     font size of axis labels
-            
-            **femesh** : string ('on','off')
-                        'on' to plot finite element forward modeling mesh 
-                        (black)
-            
-            **regmesh** : string ('on','off')
-                         'on' to plot regularization mesh (blue)
-            
-            **aspect** : tuple (width,height)
-                        aspect ratio of the figure, depends on your line 
-                        length and the depth you want to investigate
-            
-            **title** : string ('on,'off',input,None)
-                        
-                        * 'on' to put the RMS and Roughness as the title
-                        * input a string that will be added to the RMS and
-                          roughness put 
-                        * None to not put a title on the plot and print out RMS
-                          and roughness
-            
-            **meshnum** : string ('on','off')
-                         'on' to plot FE mesh block numbers
-            
-            **fignum** : int
-                        figure number to plot to
-            
-            **blocknum** : tuple ('on','off')
-                          'on' to plot numbers on the regularization blocks
-            
-            **blkfdict** : font dictionary for the numbering of regularization 
-                           blocks with keys:
-                               
-                               *'size'* : float font size
-                               
-                               *'weight'* : font weight
-            
-            **grid** : string ('major','minor','both')
-                        * 'major' for major ticks grid
-                        * 'minor' for a grid of the minor ticks
-                        * 'both' for a grid with major and minor ticks
-            
-            **yscale** : string ('km','m')
-                        * 'km' for depth in km 
-                        * 'm' for depth in meters
-        
+        ======================= ===============================================
+        keywords                description
+        ======================= ===============================================
+        block_font_size         font size of block number is blocknum == 'on'
+        blocknum                [ 'on' | 'off' ] to plot regulariztion block 
+                                numbers.
+        cb_pad                  padding between axes edge and color bar 
+        cb_shrink               percentage to shrink the color bar
+        climits                 limits of the color scale for resistivity
+                                in log scale (min, max)
+        cmap                    name of color map for resistivity values
+        fig_aspect              aspect ratio between width and height of 
+                                resistivity image. 1 for equal axes
+        fig_dpi                 resolution of figure in dots-per-inch
+        fig_num                 number of figure instance
+        fig_size                size of figure in inches (width, height)
+        font_size               size of axes tick labels, axes labels is +2
+        grid                    [ 'both' | 'major' |'minor' | None ] string 
+                                to tell the program to make a grid on the 
+                                specified axes.
+        meshnum                 [ 'on' | 'off' ] 'on' will plot finite element
+                                mesh numbers
+        meshnum_font_size       font size of mesh numbers if meshnum == 'on'
+        ms                      size of station marker 
+        plot_yn                 [ 'y' | 'n']
+                                'y' --> to plot on instantiation
+                                'n' --> to not plot on instantiation
+        regmesh                 [ 'on' | 'off' ] plot the regularization mesh
+                                plots as blue lines
+        station_color           color of station marker
+        station_font_color      color station label
+        station_font_pad        padding between station label and marker
+        station_font_rotation   angle of station label in degrees 0 is 
+                                horizontal
+        station_font_size       font size of station label
+        station_font_weight     font weight of station label
+        station_id              index to take station label from station name
+        station_marker          station marker.  if inputing a LaTex marker
+                                be sure to input as r"LaTexMarker" otherwise
+                                might not plot properly
+        subplot_bottom          subplot spacing from bottom  
+        subplot_left            subplot spacing from left  
+        subplot_right           subplot spacing from right
+        subplot_top             subplot spacing from top
+        title                   title of plot.  If None then the name of the
+                                iteration file and containing folder will be
+                                the title with RMS and Roughness.
+        xlimits                 limits of plot in x-direction in (km) 
+        xminorticks             increment of minor ticks in x direction
+        xpad                    padding in x-direction in km
+        ylimits                 depth limits of plot positive down (km)
+        yminorticks             increment of minor ticks in y-direction
+        ypad                    padding in negative y-direction (km)
+        yscale                  [ 'km' | 'm' ] scale of plot, if 'm' everything
+                                will be scaled accordingly.
+        ======================= ===============================================
+
         :Example: ::
             
-            >>> import mtpy.modeling.occamtools as occam
+            >>> import mtpy.modeling.occam2d as occam2d
             >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
-            >>> ocm = occam.Occam2DModel(itfn)
-            >>> ocm.plot2DModel(ms=20,ylimits=(0,.350),yscale='m',spad=.10,
-            >>>                 ypad=.125,xpad=.025,climits=(0,2.5),
-            >>>                 aspect='equal')
+            >>> ocm = occam2d.Occam2DModel(itfn)
+            >>> pm1 = ocm.plot2DModel(ms=20,ylimits=(0,.350),yscale='m')
         """   
                     
-        #set the scale of the plot
-        if yscale=='km':
-            dfactor=1000.
-            pfactor=1.0
-        elif yscale=='m':
-            dfactor=1.
-            pfactor=1000.
-        else:
-            dfactor=1000.
-            pfactor=1.0
-        
-        #get the model
+        if data_fn is not None:
+            self.data_fn = data_fn
+            
         self.get2DModel()
+        self.get2DData()
         
-        #set some figure properties to use the maiximum space 
-        plt.rcParams['font.size']=int(dpi/40.)
-        plt.rcParams['figure.subplot.left']=.08
-        plt.rcParams['figure.subplot.right']=.99
-        plt.rcParams['figure.subplot.bottom']=.1
-        plt.rcParams['figure.subplot.top']=.92
-        plt.rcParams['figure.subplot.wspace']=.01
-#        plt.rcParams['text.usetex']=True
+        return PlotModel(self.meshx, self.meshy, self.resmodel, self.rp_lst,
+                         self.plotx, self.ploty, self.offsetlst, 
+                         self.iterfn, self.idict, self.rows, self.cols, 
+                         **kwargs)
         
-        #plot the model as a mesh
-        fig=plt.figure(fignum,plotdimensions,dpi=dpi)
-        plt.clf()
         
-        #add a subplot to the figure with the specified aspect ratio
-        ax=fig.add_subplot(1,1,1,aspect=aspect)
-        
-        #plot the model as a pcolormesh so the extents are constrained to 
-        #the model coordinates
-        ax.pcolormesh(self.meshx/dfactor,self.meshy/dfactor,self.resmodel,
-                      cmap=cmap,vmin=climits[0],vmax=climits[1])
-        
-        #make a colorbar for the resistivity
-        cbx=mcb.make_axes(ax,shrink=.8,pad=.01)
-        cb=mcb.ColorbarBase(cbx[0],cmap=cmap,norm=Normalize(vmin=climits[0],
-                        vmax=climits[1]))
-        cb.set_label('Resistivity ($\Omega \cdot$m)',
-                     fontdict={'size':fs,'weight':'bold'})
-        cb.set_ticks(np.arange(int(climits[0]),int(climits[1])+1))
-        cb.set_ticklabels(['10$^{0}$'.format(nn) for nn in 
-                            np.arange(int(climits[0]),int(climits[1])+1)])
-        
-        #set the offsets of the stations and plot the stations
-        #need to figure out a way to set the marker at the surface in all
-        #views.
-        for rpdict in self.rp_lst:
-            #plot the station marker
-            #plots a V for the station cause when you use scatter the spacing
-            #is variable if you change the limits of the y axis, this way it
-            #always plots at the surface.
-            ax.text(rpdict['offset']/dfactor,self.ploty.min(),'V',
-                    horizontalalignment='center',
-                    verticalalignment='baseline',
-                    fontdict={'size':ms,'weight':'bold','color':'black'})
-                    
-            #put station id onto station marker
-            #if there is a station id index
-            if stationid!=None:
-                ax.text(rpdict['offset']/dfactor,-spad*pfactor,
-                        rpdict['station'][stationid[0]:stationid[1]],
-                        horizontalalignment='center',
-                        verticalalignment='baseline',
-                        fontdict=fdict)
-            #otherwise put on the full station name found form data file
-            else:
-                ax.text(rpdict['offset']/dfactor,-spad*pfactor,
-                        rpdict['station'],
-                        horizontalalignment='center',
-                        verticalalignment='baseline',
-                        fontdict=fdict)
-        
-        #set the initial limits of the plot to be square about the profile line  
-        if ylimits==None:  
-            ax.set_ylim(abs(max(self.offsetlst)-min(self.offsetlst))/dfactor,
-                        -ypad*pfactor)
-        else:
-            ax.set_ylim(ylimits[1]*pfactor,(ylimits[0]-ypad)*pfactor)
-        ax.set_xlim(min(self.offsetlst)/dfactor-(xpad*pfactor),
-                     (max(self.offsetlst)/dfactor+(xpad*pfactor)))
-        #set the axis properties
-        ax.xaxis.set_minor_locator(MultipleLocator(xminorticks*pfactor))
-        ax.yaxis.set_minor_locator(MultipleLocator(yminorticks*pfactor))
-        if yscale=='km':
-            ax.set_xlabel('Horizontal Distance (km)',
-                          fontdict={'size':fs,'weight':'bold'})
-            ax.set_ylabel('Depth (km)',fontdict={'size':fs,'weight':'bold'})
-        elif yscale=='m':
-            ax.set_xlabel('Horizontal Distance (m)',
-                          fontdict={'size':fs,'weight':'bold'})
-            ax.set_ylabel('Depth (m)',fontdict={'size':fs,'weight':'bold'})
-        
-        #put a grid on if one is desired    
-        if grid=='major':
-            ax.grid(alpha=.3,which='major')
-        if grid=='minor':
-            ax.grid(alpha=.3,which='minor')
-        if grid=='both':
-            ax.grid(alpha=.3,which='both')
-        else:
-            pass
-        
-        #set title as rms and roughness
-        if type(title) is str:
-            if title=='on':
-                titlestr=os.path.join(os.path.basename(os.path.dirname(self.iterfn)),
-                                      os.path.basename(self.iterfn))
-                ax.set_title(titlestr+\
-                            ': RMS {0:.2f}, Roughness={1:.0f}'.format(
-                            float(self.idict['misfit value']),
-                            float(self.idict['roughness value'])),
-                            fontdict={'size':fs+1,'weight':'bold'})
-            else:
-                ax.set_title(title+'; RMS {0:.2f}, Roughness={1:.0f}'.format(
-                         float(self.idict['misfit value']),
-                         float(self.idict['roughness value'])),
-                         fontdict={'size':fs+1,'weight':'bold'})
-        else:
-            print 'RMS {0:.2f}, Roughness={1:.0f}'.format(
-                         float(self.idict['misfit value']),
-                         float(self.idict['roughness value'])) 
-        
-        #plot forward model mesh    
-        if femesh=='on':
-            for xx in self.plotx/dfactor:
-                ax.plot([xx,xx],[0,self.ploty[0]/dfactor],color='k',lw=.5)
-            for yy in self.ploty/dfactor:
-                ax.plot([self.plotx[0]/dfactor,self.plotx[-1]/dfactor],
-                        [yy,yy],color='k',lw=.5)
-        
-        #plot the regularization mesh
-        if regmesh=='on':
-            linelst=[]
-            for ii in range(len(self.rows)):
-                #get the number of layers to combine
-                #this index will be the first index in the vertical direction
-                ny1=self.rows[:ii,0].sum()
-                #the second index  in the vertical direction
-                ny2=ny1+self.rows[ii][0]
-                #make the list of amalgamated columns an array for ease
-                lc=np.array(self.cols[ii])
-                yline=ax.plot([self.plotx[0]/dfactor,self.plotx[-1]/dfactor],
-                              [self.ploty[-ny1]/dfactor,
-                               self.ploty[-ny1]/dfactor],
-                              color='b',lw=.5)
-                linelst.append(yline)
-                #loop over the number of amalgamated blocks
-                for jj in range(len(self.cols[ii])):
-                    #get first in index in the horizontal direction
-                    nx1=lc[:jj].sum()
-                    #get second index in horizontal direction
-                    nx2=nx1+lc[jj]
-                    try:
-                        if ny1==0:
-                            ny1=1
-                        xline=ax.plot([self.plotx[nx1]/dfactor,
-                                       self.plotx[nx1]/dfactor],
-                                      [self.ploty[-ny1]/dfactor,
-                                       self.ploty[-ny2]/dfactor],
-                                      color='b',lw=.5)
-                        linelst.append(xline)
-                    except IndexError:
-                        pass
-                    
-        ##plot the mesh block numbers
-        if meshnum=='on':
-            kk=1
-            for yy in self.ploty[::-1]/dfactor:
-                for xx in self.plotx/dfactor:
-                    ax.text(xx,yy,'{0}'.format(kk),fontdict={'size':3})
-                    kk+=1
-                    
-        ##plot regularization block numbers
-        if blocknum=='on':
-            kk=1
-            for ii in range(len(self.rows)):
-                #get the number of layers to combine
-                #this index will be the first index in the vertical direction
-                ny1=self.rows[:ii,0].sum()
-                #the second index  in the vertical direction
-                ny2=ny1+self.rows[ii][0]
-                #make the list of amalgamated columns an array for ease
-                lc=np.array(self.cols[ii])
-                #loop over the number of amalgamated blocks
-                for jj in range(len(self.cols[ii])):
-                    #get first in index in the horizontal direction
-                    nx1=lc[:jj].sum()
-                    #get second index in horizontal direction
-                    nx2=nx1+lc[jj]
-                    try:
-                        if ny1==0:
-                            ny1=1
-                        #get center points of the blocks
-                        yy=self.ploty[-ny1]-(self.ploty[-ny1]-
-                                                self.ploty[-ny2])/2
-                        xx=self.plotx[nx1]-(self.plotx[nx1]-self.plotx[nx2])/2
-                        #put the number
-                        ax.text(xx/dfactor,yy/dfactor,'{0}'.format(kk),
-                                fontdict=blkfdict,
-                                horizontalalignment='center',
-                                verticalalignment='center')
-                        kk+=1
-                    except IndexError:
-                        pass
-                    
-        plt.show()
     
-    def plotL2Curve(self,fnstem=None,fignum=1,dpi=300):
+    def plotL2Curve(self, fnstem=None, **kwargs):
         """
         PlotL2Curve will plot the RMS vs iteration number for the given 
         inversion folder and roughness vs iteration number
@@ -3801,252 +3561,243 @@ class Occam2DModel(Occam2DData):
                          were run in the same folder.  If none then searches 
                          for anything ending in .iter
             
-            **fignum** : int
-                         figure number
-
-            dpi** : int
-                    dots per inch resolution of the figure
-                    
+        ======================= ===============================================
+        Keywords/attributes     Description
+        ======================= ===============================================
+        fig_dpi                 resolution of figure in dots-per-inch
+        fig_num                 number of figure instance
+        fig_size                size of figure in inches (width, height)
+        font_size               size of axes tick labels, axes labels is +2
+        plot_yn                 [ 'y' | 'n']
+                                'y' --> to plot on instantiation
+                                'n' --> to not plot on instantiation
+        rms_arr                 structure np.array as described above
+        rms_color               color of rms marker and line
+        rms_lw                  line width of rms line
+        rms_marker              marker for rms values
+        rms_marker_size         size of marker for rms values
+        rms_mean_color          color of mean line
+        rms_median_color        color of median line
+        rough_color             color of roughness line and marker
+        rough_font_size         font size for iteration number inside roughness 
+                                marker
+        rough_lw                line width for roughness line 
+        rough_marker            marker for roughness
+        rough_marker_size       size of marker for roughness
+        subplot_bottom          subplot spacing from bottom  
+        subplot_left            subplot spacing from left  
+        subplot_right           subplot spacing from right
+        subplot_top             subplot spacing from top
+        ======================= ===============================================
         
         :Example: ::
             
-            >>> import mtpy.modeling.occamtools as occam
+            >>> import mtpy.modeling.occam2d as occam2d
             >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
-            >>> ocm = occam.Occam2DModel(itfn)
-            >>> ocm.plotL2Curve(fignum=2)
+            >>> ocm = occam2d.Occam2DModel(itfn)
+            >>> l1 = ocm.plotL2Curve(fignum=2)
         """ 
 
-        invpath=os.path.dirname(self.iterfn)        
+        invpath = os.path.dirname(self.iterfn)        
         
-        if fnstem==None:
-            iterlst=[os.path.join(invpath,itfile) 
-                    for itfile in os.listdir(invpath) if itfile.find('.iter')>0]
+        if fnstem == None:
+            iterlst = [os.path.join(invpath,itfile) 
+                       for itfile in os.listdir(invpath) 
+                       if itfile.find('.iter')>0]
         else:
-            iterlst=[os.path.join(invpath,itfile) 
-                    for itfile in os.listdir(invpath) if itfile.find('.iter')>0 and
-                    itfile.find(fnstem)>0]
+            iterlst = [os.path.join(invpath,itfile) 
+                       for itfile in os.listdir(invpath) 
+                       if itfile.find('.iter')>0 and
+                       itfile.find(fnstem)>0]
                     
-        nr=len(iterlst)
+        nr = len(iterlst)
+       
+        #create a structured array to put information inot
+        rmsarr = np.zeros(nr, dtype=np.dtype([('iteration', np.int),
+                                              ('rms', np.float),
+                                              ('roughness', np.float)]))
         
-        rmsarr=np.zeros((nr,2))
-        
-        for itfile in iterlst:
-            self.iterfn=itfile
+        for ii, itfile in enumerate(iterlst):
+            self.iterfn = itfile
             self.read2DIter()
-            ii=int(self.idict['iteration'])
-            rmsarr[ii,0]=float(self.idict['misfit value'])
-            rmsarr[ii,1]=float(self.idict['roughness value'])
+            rmsarr[ii]['iteration'] = int(self.idict['iteration'])
+            rmsarr[ii]['rms'] = float(self.idict['misfit value'])
+            rmsarr[ii]['roughness'] = float(self.idict['roughness value'])
         
-        #set the dimesions of the figure
-        plt.rcParams['font.size']=int(dpi/40.)
-        plt.rcParams['figure.subplot.left']=.08
-        plt.rcParams['figure.subplot.right']=.90
-        plt.rcParams['figure.subplot.bottom']=.1
-        plt.rcParams['figure.subplot.top']=.90
-        plt.rcParams['figure.subplot.wspace']=.01
+        #be sure to sort the array for ascending iteration value 
+        rmsarr = np.sort(rmsarr, order='iteration')
+            
+        return PlotL2(rmsarr, **kwargs)
         
-        #make figure instance
-        fig=plt.figure(fignum,[6,5],dpi=dpi)
-        plt.clf()
         
-        #make a subplot for RMS vs Iteration
-        ax1=fig.add_subplot(1,1,1)
-        
-        #plot the rms vs iteration
-        l1,=ax1.plot(np.arange(1,nr,1),rmsarr[1:,0],'-k',lw=1,marker='d',ms=5)
-        
-        #plot the median of the RMS
-        m1,=ax1.plot(np.arange(0,nr,1),np.repeat(np.median(rmsarr[1:,0]),nr),
-                     '--r',lw=.75)
-        
-        #plot the mean of the RMS
-        m2,=ax1.plot(np.arange(0,nr,1),np.repeat(np.mean(rmsarr[1:,0]),nr),
-                     ls='--',color='orange',lw=.75)
-    
-        #make subplot for RMS vs Roughness Plot
-        ax2=ax1.twiny()
-        
-        #plot the rms vs roughness 
-        l2,=ax2.plot(rmsarr[1:,1],rmsarr[1:,0],'--b',lw=.75,marker='o',ms=7,
-                     mfc='white')
-        for ii,rms in enumerate(rmsarr[1:,0],1):
-            ax2.text(rmsarr[ii,1],rms,'{0}'.format(ii),
-                     horizontalalignment='center',
-                     verticalalignment='center',
-                     fontdict={'size':6,'weight':'bold','color':'blue'})
-        
-        #make a legend
-        ax1.legend([l1,l2,m1,m2],['RMS','Roughness',
-                   'Median_RMS={0:.2f}'.format(np.median(rmsarr[1:,0])),
-                    'Mean_RMS={0:.2f}'.format(np.mean(rmsarr[1:,0]))],
-                    ncol=4,loc='upper center',columnspacing=.25,markerscale=.75,
-                    handletextpad=.15)
-                    
-        #set the axis properties for RMS vs iteration
-        ax1.yaxis.set_minor_locator(MultipleLocator(.1))
-        ax1.xaxis.set_minor_locator(MultipleLocator(1))
-        ax1.set_ylabel('RMS',fontdict={'size':8,'weight':'bold'})                                   
-        ax1.set_xlabel('Iteration',fontdict={'size':8,'weight':'bold'})
-        ax1.grid(alpha=.25,which='both')
-        ax2.set_xlabel('Roughness',fontdict={'size':8,'weight':'bold',
-                                             'color':'blue'})
-        for t2 in ax2.get_xticklabels():
-            t2.set_color('blue')          
-        
-        plt.show()
-                
-    def plotDepthModel(self,dpi=300,depthmm=(1,10000),plottype='1',
-                       yscale='log',plotdimensions=(3,6),plot_num=1,fignum=1):
+    def plotDepthModel(self, **kwargs):
         """
         Plots a depth section profile for a given set of stations.
         
-        Arguments:
-        ----------
-            
-            **dpi** : int
-                      dots-per-inch resolution of figure
-            
-            **depthmm** : tuple (min,max)
-                          minimum and maximum depth to plot in meters
-            
-            **plottype** : input as:
-                            * '1' to plot all stations found
-                            * [station list] to plot only a few stations
-            
-            **plot_num** : input as:
-                          * 1 to plot in different figures
-                          * 'all' to plot in all into one figure.
-            
-            **yscale** : 'log' for logarithmic or 'linear' for linear
-            
-            **plotdimensions** : tuple (width,height)
-                                 figure dimensions in inches
-            
-            **fignum** : int
-                         figure number
-                         
+        ========================= =============================================
+        keywords/attributes       description    
+        ========================= =============================================
+        depth_range               depth range to plot (min, max) in meters
+        fig_dpi                   figure resolution in dots-per-inch          
+        fig_num                   starting number of figure
+        fig_size                  size of figure in inches (width, height)
+        font_size                 size of axes ticklabel font in points
+        line_color                color of line indicating resistivity  vs 
+                                  depth  
+        lw                        line width
+        plot_num                  [ '1' | 'all' ] 
+                                  '1' --> to plot depth slice in individual figure
+                                  'all' --> to plot all in one figure
+        plot_type                 [ '1' | list of stations ] 
+                                  '1' --> to plot all stations
+                                  list of stations --> to plot a few stations
+        plot_yn                   [ 'y' | 'n']
+                                  'y' --> to plot on instantiation
+                                  'n' --> to not plot on instantiation
+        subplot_bottom            subplot spacing from bottom  
+        subplot_left              subplot spacing from left  
+        subplot_right             subplot spacing from right
+        subplot_top               subplot spacing from top
+        subplot_wspace            subplot spacing in horizontal direction
+        x_padding                 number of padding cells in MESH file usually
+                                  7
+        yscale                    [ 'linear' | 'log' ] scale of depth axes
+        yunits                    [ 'km' | 'm' ] units of depth axes
+        
+        ========================= =============================================
+                             
         :Example: ::
             
-            >>> import mtpy.modeling.occamtools as occam
+            >>> import mtpy.modeling.occam2d as occam2d
             >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
-            >>> ocm = occam.Occam2DModel(itfn)
+            >>> ocm = occam2d.Occam2DModel(itfn)
             >>> #plot just a few stations depth profile in one figure
-            >>> ocm.plotDepthModel(plottype=['MT01','MT05'],plot_num='all')
+            >>> d1 = ocm.plotDepthModel(plot_type=['MT01','MT05'],plot_num='all')
                          
             
         """
 
+    
         try:
             self.offsetlst
         except AttributeError:
             self.get2DModel()
-        #get stations to plot
-        if plottype=='1':
-            pstation_lst=np.arange(len(self.station_lst))
-        else:
-            pstation_lst=[]
-            if type(plottype) is not list:
-                plottype=[plottype]
-            for ps in plottype:
-                for ii,ss in enumerate(self.station_lst):
-                    if ss.find(ps)==0:
-                        pstation_lst.append(ii)
-                                  
-        #get the average x-spacing within the station region, occam pads by 
-        #7 cells by default        
-        xavg=np.floor(np.mean([abs(self.plotx[ii]-self.plotx[ii+1]) 
-                        for ii in range(7,len(self.plotx)-7)]))
-        
-        #get the station indices to extract from the model
-        slst=[]
-        for ff in pstation_lst:
-            offset=self.offsetlst[ff]
-            for ii,xx in enumerate(self.plotx):
-                if offset>=xx-xavg/2. and offset<=xx+xavg/2.:
-                    slst.append(ii)
-        
-        #get depth limits
-        if depthmm==None:
-            depthmm=(self.ploty.min(),self.ploty.max())
-        if depthmm[0]==0:
-            depthmm[0]=1
-        
-        #set the dimesions of the figure
-        plt.rcParams['font.size']=int(dpi/40.)
-        plt.rcParams['figure.subplot.left']=.15
-        plt.rcParams['figure.subplot.right']=.95
-        plt.rcParams['figure.subplot.bottom']=.15
-        plt.rcParams['figure.subplot.top']=.90
-        plt.rcParams['figure.subplot.wspace']=.05
-        
-        if plot_num=='all':
-            #set the dimesions of the figure
-            plt.rcParams['font.size']=int(dpi/60.)
-            plt.rcParams['figure.subplot.left']=.09
-            plt.rcParams['figure.subplot.right']=.95
-            plt.rcParams['figure.subplot.bottom']=.15
-            plt.rcParams['figure.subplot.top']=.90
-            plt.rcParams['figure.subplot.wspace']=.1
             
-            fig=plt.figure(fignum,plotdimensions,dpi=dpi)
-            plt.clf()
-            ns=len(slst)
-            #plot the depth section for each station        
-            for ii,ss in enumerate(slst):
-                ax=fig.add_subplot(1,ns,ii+1)
-                
-                #plot resistivity vs depth
-                if yscale=='linear':
-                    p1,=ax.semilogx(10**self.resmodel[:,ss],self.ploty,
-                                    ls='steps-')
-                elif yscale=='log':
-                    if self.ploty[-1]==0.0:
-                        self.ploty[-1]=1
-                    p1,=ax.loglog(10**self.resmodel[:,ss],self.ploty,
-                                  ls='steps-')
-                ax.set_ylim(depthmm[1],depthmm[0])
-                
-                ax.set_title(self.data.station_lst[pstation_lst[ii]],
-                             fontdict={'size':10,'weight':'bold'})
-                if ii==0:
-                    ax.set_ylabel('Depth (m)',
-                                  fontdict={'size':8,'weight':'bold'})
-                else:
-                    plt.setp(ax.yaxis.get_ticklabels(),visible=False)
-                if ii==np.round(ns/2.):
-                    ax.set_xlabel('Resistivity ($\Omega \cdot$m)',
-                                  fontdict={'size':8,'weight':'bold'})
-                ax.grid(True,alpha=.3,which='both')
-                ax.set_xlim(10**self.resmodel.min(),10**self.resmodel.max())
-        else:
-            #plot the depth section for each station        
-            for ii,ss in enumerate(slst):
-                fig=plt.figure(ii+1,plotdimensions,dpi=dpi)
-                plt.clf()
-                ax=fig.add_subplot(1,1,1)
-                
-                #plot resistivity vs depth
-                if yscale=='linear':
-                    p1,=ax.semilogx(10**self.resmodel[:,ss],self.ploty,
-                                    ls='steps-')
-                elif yscale=='log':
-                    if self.ploty[-1]==0.0:
-                        self.ploty[-1]=1
-                    p1,=ax.loglog(10**self.resmodel[:,ss],self.ploty,
-                                  ls='steps-')
-                ax.set_ylim(depthmm[1],depthmm[0])
-                
-                ax.set_title(self.station_lst[pstation_lst[ii]],
-                             fontdict={'size':10,'weight':'bold'})    
-                ax.set_ylabel('Depth (m)',fontdict={'size':8,'weight':'bold'})
-                ax.set_xlabel('Resistivity ($\Omega \cdot$m)',
-                              fontdict={'size':8,'weight':'bold'})
-                ax.grid(True,alpha=.3,which='both')       
-            
+        return PlotDepthSlice(self.resmodel, self.offsetlst, self.station_lst,
+                              self.plotx, self.ploty, **kwargs)
+        
+
+#==============================================================================
+# plot the MT and model responses            
+#==============================================================================
 class PlotOccam2DResponse():
     """
-    class to deal with plotting the occam response
+    Helper class to deal with plotting the MT response and occam2d model.
     
+    Arguments:
+    -------------
+        **rp_lst** : list of dictionaries for each station with keywords:
+                
+                * *station* : string
+                             station name
+                
+                * *offset* : float
+                             relative offset
+                
+                * *resxy* : np.array(nf,4)
+                            TE resistivity and error as row 0 and 1 respectively
+                
+                * *resyx* : np.array(fn,4)
+                            TM resistivity and error as row 0 and 1 respectively
+                
+                * *phasexy* : np.array(nf,4)
+                              TE phase and error as row 0 and 1 respectively
+                
+                * *phaseyx* : np.array(nf,4)
+                              Tm phase and error as row 0 and 1 respectively
+                
+                * *realtip* : np.array(nf,4)
+                              Real Tipper and error as row 0 and 1 respectively
+                
+                * *imagtip* : np.array(nf,4)
+                              Imaginary Tipper and error as row 0 and 1 
+                              respectively
+                
+                Note: that the resistivity will be in log10 space.  Also, there
+                are 2 extra rows in the data arrays, this is to put the 
+                response from the inversion.  
+        
+        **period** : np.array of periods to plot that correspond to the index
+                     values of each rp_lst entry ie. resxy.
+                     
+    ==================== ======================================================
+    Attributes/key words            description
+    ==================== ======================================================
+    color_mode           [ 'color' | 'bw' ] plot figures in color or 
+                         black and white ('bw')
+    cted                 color of Data TE marker and line
+    ctem                 color of Model TE marker and line
+    ctewl                color of Winglink Model TE marker and line
+    ctmd                 color of Data TM marker and line
+    ctmm                 color of Model TM marker and line
+    ctmwl                color of Winglink Model TM marker and line
+    e_capsize            size of error bar caps in points
+    e_capthick           line thickness of error bar caps in points 
+    fig_dpi              figure resolution in dots-per-inch 
+    fig_lst              list of dictionaries with key words
+                         station --> station name
+                         fig --> matplotlib.figure instance
+                         axrte --> matplotlib.axes instance for TE app.res
+                         axrtm --> matplotlib.axes instance for TM app.res
+                         axpte --> matplotlib.axes instance for TE phase
+                         axptm --> matplotlib.axes instance for TM phase
+             
+    fig_num              starting number of figure
+    fig_size             size of figure in inches (width, height)
+    font_size            size of axes ticklabel font in points
+    lw                   line width of lines in points
+    ms                   marker size in points
+    mted                 marker for Data TE mode
+    mtem                 marker for Model TE mode
+    mtewl                marker for Winglink Model TE
+    mtmd                 marker for Data TM mode
+    mtmm                 marker for Model TM mode
+    mtmwl                marker for Winglink TM mode
+    period               np.ndarray of periods to plot 
+    phase_limits         limits on phase plots in degrees (min, max)
+    plot_num             [ 1 | 2 ] 
+                         1 to plot both modes in a single plot
+                         2 to plot modes in separate plots (default)
+    plot_type            [ '1' | station_lst]
+                         '1' --> to plot all stations in different figures
+                         station_lst --> to plot a few stations, give names
+                         of stations ex. ['mt01', 'mt07']
+    plot_yn              [ 'y' | 'n']
+                         'y' --> to plot on instantiation
+                         'n' --> to not plot on instantiation
+    res_limits           limits on resistivity plot in log scale (min, max)
+    rp_lst               list of dictionaries from read2Ddata
+    station_lst          station_lst list of stations in rp_lst
+    subplot_bottom       subplot spacing from bottom (relative coordinates) 
+    subplot_hspace       vertical spacing between subplots
+    subplot_left         subplot spacing from left  
+    subplot_right        subplot spacing from right
+    subplot_top          subplot spacing from top
+    subplot_wspace       horizontal spacing between subplots
+    wl_fn                Winglink file name (full path)
+    ==================== ======================================================
+    
+    =================== =======================================================
+    Methods             Description
+    =================== =======================================================
+    plot                plots the apparent resistiviy and phase of data and
+                        model if given.  called on instantiation if plot_yn
+                        is 'y'.
+    redraw_plot         call redraw_plot to redraw the figures, 
+                        if one of the attributes has been changed
+    save_figures        save all the matplotlib.figure instances in fig_lst
+    =================== =======================================================
+
     """
     
     def __init__(self, rp_lst, period, **kwargs):
@@ -4069,7 +3820,7 @@ class PlotOccam2DResponse():
             self.mted = kwargs.pop('mted', 's')
             self.mtmd = kwargs.pop('mtmd', 'o')
             
-            #color for occam model
+            #color for occam2d model
             self.ctem = kwargs.pop('ctem', (0, .6, .3))
             self.ctmm = kwargs.pop('ctmm', (.9, 0, .8))
             self.mtem = kwargs.pop('mtem', '+')
@@ -4089,7 +3840,7 @@ class PlotOccam2DResponse():
             self.mted = kwargs.pop('mted', '*')
             self.mtmd = kwargs.pop('mtmd', 'v')
             
-            #color for occam model
+            #color for occam2d model
             self.ctem = kwargs.pop('ctem', (0.6, 0.6, 0.6))
             self.ctmm = kwargs.pop('ctmm', (0.6, 0.6, 0.6))
             self.mtem = kwargs.pop('mtem', '+')
@@ -4128,7 +3879,7 @@ class PlotOccam2DResponse():
         
     def plot(self):
         """
-        plot the data and model response if given in individual plots.
+        plot the data and model response, if given, in individual plots.
          
         """
         
@@ -4155,7 +3906,7 @@ class PlotOccam2DResponse():
                                           
         #---------------plot each respones in a different figure---------------
         if self.plot_type == '1':
-            pstation_lst = self.station_lst
+            pstation_lst = range(len(self.station_lst))
 
         else:
             if type(self.plot_type) is not list:
@@ -4164,7 +3915,7 @@ class PlotOccam2DResponse():
             pstation_lst = []
             for ii, station in enumerate(self.station_lst):
                 for pstation in self.plot_type:
-                    if station.find(pstation)>=0:
+                    if station.find(pstation) >= 0:
                         pstation_lst.append(ii)  
             
         #set the grid of subplots
@@ -4180,7 +3931,7 @@ class PlotOccam2DResponse():
         plt.rcParams['font.size'] = self.font_size
                                  
         #loop over each station to plot
-        for ii, station in enumerate(pstation_lst):
+        for ii, jj in enumerate(pstation_lst):
             
             #empty lists for legend marker and label
             rlstte = []
@@ -4189,10 +3940,10 @@ class PlotOccam2DResponse():
             llsttm = []
             
             #calculate rms's
-            rmslstte = np.hstack((rp_lst[ii]['resxy'][3],
-                                  rp_lst[ii]['phasexy'][3]))
-            rmslsttm = np.hstack((rp_lst[ii]['resyx'][3],
-                                  rp_lst[ii]['phaseyx'][3]))
+            rmslstte = np.hstack((rp_lst[jj]['resxy'][3],
+                                  rp_lst[jj]['phasexy'][3]))
+            rmslsttm = np.hstack((rp_lst[jj]['resyx'][3],
+                                  rp_lst[jj]['phaseyx'][3]))
             rmste = np.sqrt(np.sum([rms**2 for rms in rmslstte])/
                             len(rmslstte))
             rmstm = np.sqrt(np.sum([rms**2 for rms in rmslsttm])/
@@ -4220,17 +3971,17 @@ class PlotOccam2DResponse():
             #------------Plot Resistivity----------------------------------
             #cut out missing data points first
             #--> data
-            rxy = np.where(rp_lst[ii]['resxy'][0]!=0)[0]
-            ryx = np.where(rp_lst[ii]['resyx'][0]!=0)[0]
+            rxy = np.where(rp_lst[jj]['resxy'][0]!=0)[0]
+            ryx = np.where(rp_lst[jj]['resyx'][0]!=0)[0]
             
             #--> response
-            mrxy = np.where(rp_lst[ii]['resxy'][2]!=0)[0]
-            mryx = np.where(rp_lst[ii]['resyx'][2]!=0)[0]
+            mrxy = np.where(rp_lst[jj]['resxy'][2]!=0)[0]
+            mryx = np.where(rp_lst[jj]['resyx'][2]!=0)[0]
             
             #--> TE mode Data 
             if len(rxy) > 0:
                 rte = axrte.errorbar(period[rxy],
-                                     10**rp_lst[ii]['resxy'][0][rxy],
+                                     10**rp_lst[jj]['resxy'][0][rxy],
                                      ls=':',
                                      marker=self.mted,
                                      ms=self.ms,
@@ -4238,8 +3989,8 @@ class PlotOccam2DResponse():
                                      mec=self.cted,
                                      color=self.cted,
                                      yerr=np.log(10)*\
-                                         rp_lst[ii]['resxy'][1][rxy]*\
-                                         10**rp_lst[ii]['resxy'][0][rxy],
+                                         rp_lst[jj]['resxy'][1][rxy]*\
+                                         10**rp_lst[jj]['resxy'][0][rxy],
                                     ecolor=self.cted,
                                     picker=2,
                                     lw=self.lw,
@@ -4253,10 +4004,10 @@ class PlotOccam2DResponse():
             
             #--> TE mode Model Response
             if len(mrxy) > 0:
-                yerrxy = 10**(rp_lst[ii]['resxy'][3][mrxy]*\
-                         rp_lst[ii]['resxy'][2][mrxy]/np.log(10))
+                yerrxy = 10**(rp_lst[jj]['resxy'][3][mrxy]*\
+                         rp_lst[jj]['resxy'][2][mrxy]/np.log(10))
                 r3 = axrte.errorbar(period[mrxy],
-                                    10**rp_lst[ii]['resxy'][2][mrxy],
+                                    10**rp_lst[jj]['resxy'][2][mrxy],
                                     ls='--',
                                     marker=self.mtem,
                                     ms=self.ms,
@@ -4277,7 +4028,7 @@ class PlotOccam2DResponse():
             #--> TM mode data
             if len(ryx) > 0:
                 rtm = axrtm.errorbar(period[ryx],
-                                     10**rp_lst[ii]['resyx'][0][ryx],
+                                     10**rp_lst[jj]['resyx'][0][ryx],
                                      ls=':',
                                      marker=self.mtmd,
                                      ms=self.ms,
@@ -4285,8 +4036,8 @@ class PlotOccam2DResponse():
                                      mec=self.ctmd,
                                      color=self.ctmd,
                                      yerr=np.log(10)*\
-                                          rp_lst[ii]['resyx'][1][ryx]*\
-                                          10**rp_lst[ii]['resyx'][0][ryx],
+                                          rp_lst[jj]['resyx'][1][ryx]*\
+                                          10**rp_lst[jj]['resyx'][0][ryx],
                                      ecolor=self.ctmd,
                                      picker=2,
                                      lw=self.lw,
@@ -4300,10 +4051,10 @@ class PlotOccam2DResponse():
 
             #--> TM mode model response
             if len(mryx)>0:
-                yerryx = 10**(rp_lst[ii]['resyx'][3][mryx]*\
-                             rp_lst[ii]['resyx'][2][mryx]/np.log(10))
+                yerryx = 10**(rp_lst[jj]['resyx'][3][mryx]*\
+                             rp_lst[jj]['resyx'][2][mryx]/np.log(10))
                 r4 = axrtm.errorbar(period[mryx],
-                                    10**rp_lst[ii]['resyx'][2][mryx],
+                                    10**rp_lst[jj]['resyx'][2][mryx],
                                     ls='--',
                                     marker=self.mtmm,
                                     ms=self.ms,
@@ -4324,24 +4075,24 @@ class PlotOccam2DResponse():
             #--------------------plot phase--------------------------------
             #cut out missing data points first
             #--> data
-            pxy = np.where(rp_lst[ii]['phasexy'][0]!=0)[0]
-            pyx = np.where(rp_lst[ii]['phaseyx'][0]!=0)[0]
+            pxy = np.where(rp_lst[jj]['phasexy'][0]!=0)[0]
+            pyx = np.where(rp_lst[jj]['phaseyx'][0]!=0)[0]
             
             #--> reponse
-            mpxy = np.where(rp_lst[ii]['phasexy'][2]!=0)[0]
-            mpyx = np.where(rp_lst[ii]['phaseyx'][2]!=0)[0]
+            mpxy = np.where(rp_lst[jj]['phasexy'][2]!=0)[0]
+            mpyx = np.where(rp_lst[jj]['phaseyx'][2]!=0)[0]
             
             #--> TE mode data
             if len(pxy) > 0:
                 axpte.errorbar(period[pxy],
-                               rp_lst[ii]['phasexy'][0][pxy],
+                               rp_lst[jj]['phasexy'][0][pxy],
                                ls=':',
                                marker=self.mted,
                                ms=self.ms,
                                mfc=self.cted,
                                mec=self.cted,
                                color=self.cted,
-                               yerr=rp_lst[ii]['phasexy'][1][pxy],
+                               yerr=rp_lst[jj]['phasexy'][1][pxy],
                                ecolor=self.cted,
                                picker=1,
                                lw=self.lw,
@@ -4354,14 +4105,14 @@ class PlotOccam2DResponse():
             #--> TE mode response
             if len(mpxy) > 0:
                 axpte.errorbar(period[mpxy],
-                               rp_lst[ii]['phasexy'][2][mpxy],
+                               rp_lst[jj]['phasexy'][2][mpxy],
                                ls='--',
                                marker=self.mtem,
                                ms=self.ms,
                                mfc=self.ctem,
                                mec=self.ctem,
                                color=self.ctem,
-                               yerr=rp_lst[ii]['phasexy'][3][mpxy],
+                               yerr=rp_lst[jj]['phasexy'][3][mpxy],
                                ecolor=self.ctem,
                                lw=self.lw,
                                elinewidth=self.lw,
@@ -4373,14 +4124,14 @@ class PlotOccam2DResponse():
             #--> TM mode data
             if len(pyx)>0:
                 axptm.errorbar(period[pyx],
-                               rp_lst[ii]['phaseyx'][0][pyx],
+                               rp_lst[jj]['phaseyx'][0][pyx],
                                ls=':',
                                marker=self.mtmd,
                                ms=self.ms,
                                mfc=self.ctmd,
                                mec=self.ctmd,
                                color=self.ctmd,
-                               yerr=rp_lst[ii]['phaseyx'][1][pyx],
+                               yerr=rp_lst[jj]['phaseyx'][1][pyx],
                                ecolor=self.ctmd,
                                picker=1,
                                lw=self.lw,
@@ -4393,14 +4144,14 @@ class PlotOccam2DResponse():
             #--> TM mode response
             if len(mpyx) > 0:
                 axptm.errorbar(period[mpyx],
-                               rp_lst[ii]['phaseyx'][2][mpyx],
+                               rp_lst[jj]['phaseyx'][2][mpyx],
                                ls='--',
                                marker=self.mtmm,
                                ms=self.ms,
                                mfc=self.ctmm,
                                mec=self.ctmm,
                                color=self.ctmm,
-                               yerr=rp_lst[ii]['phaseyx'][3][mpyx],
+                               yerr=rp_lst[jj]['phaseyx'][3][mpyx],
                                ecolor=self.ctmm,
                                lw=self.lw,
                                elinewidth=self.lw,
@@ -4411,10 +4162,10 @@ class PlotOccam2DResponse():
             
             
             #--------------add in winglink responses------------------------
-            if addwl==1:
+            if addwl == 1:
                 try:
-                    wlrms=wld[sdict[station]]['rms']
-                    axrte.set_title(self.station_lst[ii]+
+                    wlrms = wld[sdict[station]]['rms']
+                    axrte.set_title(self.station_lst[jj]+
                                    '\n rms_occ_TE={0:.2f}'.format(rmste)+
                                    'rms_occ_TM={0:.2f}'.format(rmstm)+
                                    'rms_wl={0:.2f}'.format(wlrms),
@@ -4474,16 +4225,16 @@ class PlotOccam2DResponse():
                     print 'Station not present'
             else:
                 if self.plot_num == 1:
-                    axrte.set_title(self.station_lst[ii]+\
+                    axrte.set_title(self.station_lst[jj]+\
                     ' rms_TE={0:.2f}, rms_TM={1:.2f}'.format(rmste,rmstm),
                               fontdict={'size':self.font_size+2,
                                         'weight':'bold'})
                 elif self.plot_num == 2:
-                    axrte.set_title(self.station_lst[ii]+\
+                    axrte.set_title(self.station_lst[jj]+\
                                     ' rms_TE={0:.2f}'.format(rmste),
                                     fontdict={'size':self.font_size+2,
                                               'weight':'bold'})
-                    axrtm.set_title(self.station_lst[ii]+\
+                    axrtm.set_title(self.station_lst[jj]+\
                                     ' rms_TM={0:.2f}'.format(rmstm),
                                     fontdict={'size':self.font_size+2,
                                               'weight':'bold'})
@@ -4495,7 +4246,7 @@ class PlotOccam2DResponse():
                 axr.set_yscale('log')
                 
                 #put on a grid
-                axr.grid(True, alpha=.3, which='both')
+                axr.grid(True, alpha=.3, which='both', lw=.5*self.lw)
                 axr.yaxis.set_label_coords(-.12, .5)
                 
                 #set resistivity limits if desired
@@ -4550,7 +4301,7 @@ class PlotOccam2DResponse():
                 axp.set_ylim(self.phase_limits)
                 
                 #put a grid on the subplot
-                axp.grid(True,alpha=.3,which='both')
+                axp.grid(True, alpha=.3, which='both', lw=.5*self.lw)
                 
                 #set the tick locations
                 axp.yaxis.set_major_locator(MultipleLocator(10))
@@ -4569,8 +4320,9 @@ class PlotOccam2DResponse():
                                              'weight':'bold'})
             
             #make sure the axis and figure are accessible to the user
-            self.fig_lst.append({'station':station, 'fig':fig, 'axrte':axrte,
-                                 'axrtm':axrtm, 'axpte':axpte, 'axptm':axptm})
+            self.fig_lst.append({'station':self.station_lst[jj], 
+                                 'fig':fig, 'axrte':axrte, 'axrtm':axrtm, 
+                                 'axpte':axpte, 'axptm':axptm})
         
         #set the plot to be full screen well at least try
         plt.show()
@@ -4579,7 +4331,19 @@ class PlotOccam2DResponse():
         """
         redraw plot if parameters were changed
         
+        use this function if you updated some attributes and want to re-plot.
+        
+        :Example: ::
+            
+            >>> # change the color and marker of the xy components
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData(r"/home/occam2d/Data.dat")
+            >>> p1 = ocd.plot2DResponses()
+            >>> #change color of te markers to a gray-blue
+            >>> p1.cted = (.5, .5, .7)
+            >>> p1.redraw_plot()
         """
+        
         plt.close('all')
         self.plot()
         
@@ -4587,6 +4351,14 @@ class PlotOccam2DResponse():
                      close_fig='y'):
         """
         save all the figure that are in self.fig_lst
+        
+        :Example: ::
+            
+            >>> # change the color and marker of the xy components
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData(r"/home/occam2d/Data.dat")
+            >>> p1 = ocd.plot2DResponses()
+            >>> p1.save_figures(r"/home/occam2d/Figures", fig_fmt='jpg')
         """
         
         if not os.path.exists(save_path):
@@ -4598,10 +4370,113 @@ class PlotOccam2DResponse():
                                  dpi=self.fig_dpi)
             if close_fig == 'y':
                 plt.close(fdict['fig'])
-                
+            
+            print "saved figure to {0}".format(os.path.join(save_path, svfn)) 
+
+#==============================================================================
+# plot pseudo section of data and model response                
+#==============================================================================
 class PlotPseudoSection(object):
     """
     plot a pseudo section of the data and response if given
+    
+        
+    Arguments:
+    -------------
+        **rp_lst** : list of dictionaries for each station with keywords:
+                
+                * *station* : string
+                             station name
+                
+                * *offset* : float
+                             relative offset
+                
+                * *resxy* : np.array(nf,4)
+                            TE resistivity and error as row 0 and 1 respectively
+                
+                * *resyx* : np.array(fn,4)
+                            TM resistivity and error as row 0 and 1 respectively
+                
+                * *phasexy* : np.array(nf,4)
+                              TE phase and error as row 0 and 1 respectively
+                
+                * *phaseyx* : np.array(nf,4)
+                              Tm phase and error as row 0 and 1 respectively
+                
+                * *realtip* : np.array(nf,4)
+                              Real Tipper and error as row 0 and 1 respectively
+                
+                * *imagtip* : np.array(nf,4)
+                              Imaginary Tipper and error as row 0 and 1 
+                              respectively
+                
+                Note: that the resistivity will be in log10 space.  Also, there
+                are 2 extra rows in the data arrays, this is to put the 
+                response from the inversion.  
+        
+        **period** : np.array of periods to plot that correspond to the index
+                     values of each rp_lst entry ie. resxy.
+    
+    ==================== ==================================================
+    key words            description
+    ==================== ==================================================
+    axmpte               matplotlib.axes instance for TE model phase
+    axmptm               matplotlib.axes instance for TM model phase
+    axmrte               matplotlib.axes instance for TE model app. res 
+    axmrtm               matplotlib.axes instance for TM model app. res 
+    axpte                matplotlib.axes instance for TE data phase 
+    axptm                matplotlib.axes instance for TM data phase
+    axrte                matplotlib.axes instance for TE data app. res.
+    axrtm                matplotlib.axes instance for TM data app. res.
+    cb_pad               padding between colorbar and axes
+    cb_shrink            percentage to shrink the colorbar to
+    fig                  matplotlib.figure instance
+    fig_dpi              resolution of figure in dots per inch
+    fig_num              number of figure instance
+    fig_size             size of figure in inches (width, height)
+    font_size            size of font in points
+    label_lst            list to label plots
+    ml                   factor to label stations if 2 every other station
+                         is labeled on the x-axis
+    period               np.array of periods to plot
+    phase_cmap           color map name of phase
+    phase_limits_te      limits for te phase in degrees (min, max)
+    phase_limits_tm      limits for tm phase in degrees (min, max)            
+    plot_resp            [ 'y' | 'n' ] to plot response
+    plot_yn              [ 'y' | 'n' ] 'y' to plot on instantiation
+    res_cmap             color map name for resistivity
+    res_limits_te        limits for te resistivity in log scale (min, max)
+    res_limits_tm        limits for tm resistivity in log scale (min, max)
+    rp_lst               list of dictionaries as made from read2Dresp
+    station_id           index to get station name (min, max)
+    station_lst          station list got from rp_lst
+    subplot_bottom       subplot spacing from bottom (relative coordinates) 
+    subplot_hspace       vertical spacing between subplots
+    subplot_left         subplot spacing from left  
+    subplot_right        subplot spacing from right
+    subplot_top          subplot spacing from top
+    subplot_wspace       horizontal spacing between subplots
+    ==================== ==================================================
+    
+    =================== =======================================================
+    Methods             Description
+    =================== =======================================================
+    plot                plots a pseudo-section of apparent resistiviy and phase
+                        of data and model if given.  called on instantiation 
+                        if plot_yn is 'y'.
+    redraw_plot         call redraw_plot to redraw the figures, 
+                        if one of the attributes has been changed
+    save_figure         saves the matplotlib.figure instance to desired 
+                        location and format
+    =================== =======================================================
+                    
+   :Example: ::
+        
+        >>> import mtpy.modeling.occam2d as occam2d
+        >>> ocd = occam2d.Occam2DData()
+        >>> rfile = r"/home/Occam2D/Line1/Inv1/Test_15.resp"
+        >>> ocd.data_fn = r"/home/Occam2D/Line1/Inv1/DataRW.dat"
+        >>> ps1 = ocd.plot2PseudoSection(resp_fn=rfile) 
     
     """
     
@@ -4981,7 +4856,19 @@ class PlotPseudoSection(object):
             
     def redraw_plot(self):
         """
-        redraw plot if parameters change
+        redraw plot if parameters were changed
+        
+        use this function if you updated some attributes and want to re-plot.
+        
+        :Example: ::
+            
+            >>> # change the color and marker of the xy components
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData(r"/home/occam2d/Data.dat")
+            >>> p1 = ocd.plotPseudoSection()
+            >>> #change color of te markers to a gray-blue
+            >>> p1.res_cmap = 'seismic_r'
+            >>> p1.redraw_plot()
         """
         
         plt.close(self.fig)
@@ -5026,7 +4913,7 @@ class PlotPseudoSection(object):
             
             >>> # to save plot as jpg
             >>> import mtpy.modeling.occam2d as occam2d
-            >>> dfn = r"/home/occam/Inv1/data.dat"
+            >>> dfn = r"/home/occam2d/Inv1/data.dat"
             >>> ocd = occam2d.Occam2DData(dfn)
             >>> ps1 = ocd.plotPseudoSection()
             >>> ps1.save_plot(r'/home/MT/figures', file_format='jpg')
@@ -5039,13 +4926,13 @@ class PlotPseudoSection(object):
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation)
+                             orientation=orientation, bbox_inches='tight')
             
         else:
             save_fn = os.path.join(save_fn, 'OccamPseudoSection.'+
                                     file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                        orientation=orientation)
+                        orientation=orientation, bbox_inches='tight')
         
         if close_plot == 'y':
             plt.clf()
@@ -5068,7 +4955,7 @@ class PlotPseudoSection(object):
             
             >>> # to change the grid lines to only be on the major ticks
             >>> import mtpy.modeling.occam2d as occam2d
-            >>> dfn = r"/home/occam/Inv1/data.dat"
+            >>> dfn = r"/home/occam2d/Inv1/data.dat"
             >>> ocd = occam2d.Occam2DData(dfn)
             >>> ps1 = ocd.plotPseudoSection()
             >>> [ax.grid(True, which='major') for ax in [ps1.axrte,ps1.axtep]]
@@ -5094,7 +4981,100 @@ class PlotAllResponses(object):
     """
     plot all responses for all iterations
     
-    need to input a nested list
+    Arguments:
+    -----------
+        **rp_lst** : list of lists [rp_lst1, rp_lst2, ...]
+                     nested list where the first index corresponds to the 
+                     iteration.  This is a list of dictionaries with keys:
+                     
+                * *station* : string
+                             station name
+                
+                * *offset* : float
+                             relative offset
+                
+                * *resxy* : np.array(nf,4)
+                            TE resistivity and error as row 0 and 1 respectively
+                
+                * *resyx* : np.array(fn,4)
+                            TM resistivity and error as row 0 and 1 respectively
+                
+                * *phasexy* : np.array(nf,4)
+                              TE phase and error as row 0 and 1 respectively
+                
+                * *phaseyx* : np.array(nf,4)
+                              Tm phase and error as row 0 and 1 respectively
+                
+                * *realtip* : np.array(nf,4)
+                              Real Tipper and error as row 0 and 1 respectively
+                
+                * *imagtip* : np.array(nf,4)
+                              Imaginary Tipper and error as row 0 and 1 
+                              respectively
+                
+                Note: that the resistivity will be in log10 space.  Also, there
+                are 2 extra rows in the data arrays, this is to put the 
+                response from the inversion.
+                
+        **period** : np.array of periods to plot that correspond to the index
+                     values of each rp_lst entry ie. resxy.
+                     
+        **pstation_lst** : list of stations to plot, should be verbatim of
+                           what the station name is in the data file.
+    
+    ==================== ==================================================
+    keywords             description
+    ==================== ==================================================
+    axpte                matplotlib.axes instance for TE phase
+    axptm                matplotlib.axes instance for TM phase
+    axrte                matplotlib.axes instance for TE app. res.
+    axrtm                matplotlib.axes instance for TM app. res.
+    fig_dpi              resolution of figure in dots per inch
+    fig_lst              list of dictionaries with key words
+                         station --> station name
+                         fig --> matplotlib.figure instance
+                         axrte --> matplotlib.axes instance for TE app.res
+                         axrtm --> matplotlib.axes instance for TM app.res
+                         axpte --> matplotlib.axes instance for TE phase
+                         axptm --> matplotlib.axes instance for TM phase
+    fig_num              number of figure instance
+    fig_size             size of figure in inches (width, height)
+    font_size            size of font in points
+    lw                   line width of lines in points
+    ms                   marker size in points
+    period               np.ndarray of periods to plot 
+    phase_limits         limits on phase plots in degrees (min, max)
+    plot_num             [ 1 | 2 ] 
+                         1 to plot both modes in a single plot
+                         2 to plot modes in separate plots (default)
+    plot_type            [ '1' | station_lst]
+                         '1' --> to plot all stations in different figures
+                         station_lst --> to plot a few stations, give names
+                         of stations ex. ['mt01', 'mt07']
+    plot_yn              [ 'y' | 'n']
+                         'y' --> to plot on instantiation
+                         'n' --> to not plot on instantiation
+    res_limits           limits on resistivity plot in log scale (min, max)
+    rp_lst               list of dictionaries from read2Ddata
+    station_lst          station_lst list of stations in rp_lst
+    subplot_bottom       subplot spacing from bottom (relative coordinates) 
+    subplot_hspace       vertical spacing between subplots
+    subplot_left         subplot spacing from left  
+    subplot_right        subplot spacing from right
+    subplot_top          subplot spacing from top
+    subplot_wspace       horizontal spacing between subplots
+    ==================== ==================================================
+    
+    =================== =======================================================
+    Methods             Description
+    =================== =======================================================
+    plot                plots model responses for all iterations for given 
+                        stations.  
+    redraw_plot         call redraw_plot to redraw the figures, 
+                        if one of the attributes has been changed
+    save_figure         saves the matplotlib.figure instance to desired 
+                        location and format
+    =================== =======================================================    
     """
     
     def __init__(self, rp_lst, period, pstation_lst=None, **kwargs):
@@ -5275,7 +5255,7 @@ class PlotAllResponses(object):
             axrtm.set_title('TM rms={0:.2f}'.format(rmstmstr),
                             fontdict={'size':self.font_size+2,'weight':'bold'})
             
-            axpte.grid(True, alpha=.4)
+            axpte.grid(True, alpha=.25, which='both', lw=.5*self.lw)
             axpte.yaxis.set_major_locator(MultipleLocator(10))
             axpte.yaxis.set_minor_locator(MultipleLocator(1))
             
@@ -5313,7 +5293,19 @@ class PlotAllResponses(object):
             
     def redraw_plot(self):
         """
-        redraw plot if parameters change
+        redraw plot if parameters were changed
+        
+        use this function if you updated some attributes and want to re-plot.
+        
+        :Example: ::
+            
+            >>> # change the color and marker of the xy components
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData(r"/home/occam2d/Data.dat")
+            >>> p1 = ocd.plotAllResponses()
+            >>> #change line width
+            >>> p1.lw = 2
+            >>> p1.redraw_plot()
         """
         
         plt.close(self.fig)
@@ -5358,7 +5350,7 @@ class PlotAllResponses(object):
             
             >>> # to save plot as jpg
             >>> import mtpy.modeling.occam2d as occam2d
-            >>> dfn = r"/home/occam/Inv1/data.dat"
+            >>> dfn = r"/home/occam2d/Inv1/data.dat"
             >>> ocd = occam2d.Occam2DData(dfn)
             >>> ps1 = ocd.plotPseudoSection()
             >>> ps1.save_plot(r'/home/MT/figures', file_format='jpg')
@@ -5389,9 +5381,9 @@ class PlotAllResponses(object):
             
             >>> # to change the grid lines to only be on the major ticks
             >>> import mtpy.modeling.occam2d as occam2d
-            >>> dfn = r"/home/occam/Inv1/data.dat"
+            >>> dfn = r"/home/occam2d/Inv1/data.dat"
             >>> ocd = occam2d.Occam2DData(dfn)
-            >>> ps1 = ocd.plotPseudoSection()
+            >>> ps1 = ocd.plotAllResponses()
             >>> [ax.grid(True, which='major') for ax in [ps1.axrte,ps1.axtep]]
             >>> ps1.update_plot()
         
@@ -5404,4 +5396,1238 @@ class PlotAllResponses(object):
         rewrite the string builtin to give a useful message
         """
         
-        return ("Plots all the responses for all iterations in a given folder") 
+        return ("Plots all the responses for all iterations in a given folder")
+        
+#==============================================================================
+# plot model 
+#==============================================================================
+class PlotModel(object):
+    """
+    plot the 2D model
+    
+    Arguments:
+    ----------
+        **meshx** : np.array of mesh node locations in x direction
+        
+        **meshy** : np.array of mesh node locations in y direction
+        
+        **resmodel** : array of resistivity values for occam2d model
+        
+        **rp_lst** :  list of dictionaries with keys
+        
+                * *station* : string
+                             station name
+                
+                * *offset* : float
+                             relative offset
+                
+                * *resxy* : np.array(nf,4)
+                            TE resistivity and error as row 0 and 1 respectively
+                
+                * *resyx* : np.array(fn,4)
+                            TM resistivity and error as row 0 and 1 respectively
+                
+                * *phasexy* : np.array(nf,4)
+                              TE phase and error as row 0 and 1 respectively
+                
+                * *phaseyx* : np.array(nf,4)
+                              Tm phase and error as row 0 and 1 respectively
+                
+                * *realtip* : np.array(nf,4)
+                              Real Tipper and error as row 0 and 1 respectively
+                
+                * *imagtip* : np.array(nf,4)
+                              Imaginary Tipper and error as row 0 and 1 
+                              respectively
+                
+                Note: that the resistivity will be in log10 space.  Also, there
+                are 2 extra rows in the data arrays, this is to put the 
+                response from the inversion.
+                
+        **plotx** : array of nodes for mesh in x-direction
+        
+        **ploty** : array of nodes for mesh in y-direction
+        
+        **offset_lst** : list of station offsets from data file
+        
+        **iter_fn** : full path of iteration file
+        
+        **idict** : dictionary from the iteration file, verbatim keys
+        
+        **rows** : list of rows for regularization grid
+        
+        **cols** : list of columns for regularization grid
+    
+    ======================= ===============================================
+    keywords                description
+    ======================= ===============================================
+    block_font_size         font size of block number is blocknum == 'on'
+    blocknum                [ 'on' | 'off' ] to plot regulariztion block 
+                            numbers.
+    cb_pad                  padding between axes edge and color bar 
+    cb_shrink               percentage to shrink the color bar
+    climits                 limits of the color scale for resistivity
+                            in log scale (min, max)
+    cmap                    name of color map for resistivity values
+    fig_aspect              aspect ratio between width and height of 
+                            resistivity image. 1 for equal axes
+    fig_dpi                 resolution of figure in dots-per-inch
+    fig_num                 number of figure instance
+    fig_size                size of figure in inches (width, height)
+    font_size               size of axes tick labels, axes labels is +2
+    grid                    [ 'both' | 'major' |'minor' | None ] string 
+                            to tell the program to make a grid on the 
+                            specified axes.
+    meshnum                 [ 'on' | 'off' ] 'on' will plot finite element
+                            mesh numbers
+    meshnum_font_size       font size of mesh numbers if meshnum == 'on'
+    ms                      size of station marker 
+    plot_yn                 [ 'y' | 'n']
+                            'y' --> to plot on instantiation
+                            'n' --> to not plot on instantiation
+    regmesh                 [ 'on' | 'off' ] plot the regularization mesh
+                            plots as blue lines
+    station_color           color of station marker
+    station_font_color      color station label
+    station_font_pad        padding between station label and marker
+    station_font_rotation   angle of station label in degrees 0 is 
+                            horizontal
+    station_font_size       font size of station label
+    station_font_weight     font weight of station label
+    station_id              index to take station label from station name
+    station_marker          station marker.  if inputing a LaTex marker
+                            be sure to input as r"LaTexMarker" otherwise
+                            might not plot properly
+    subplot_bottom          subplot spacing from bottom  
+    subplot_left            subplot spacing from left  
+    subplot_right           subplot spacing from right
+    subplot_top             subplot spacing from top
+    title                   title of plot.  If None then the name of the
+                            iteration file and containing folder will be
+                            the title with RMS and Roughness.
+    xlimits                 limits of plot in x-direction in (km) 
+    xminorticks             increment of minor ticks in x direction
+    xpad                    padding in x-direction in km
+    ylimits                 depth limits of plot positive down (km)
+    yminorticks             increment of minor ticks in y-direction
+    ypad                    padding in negative y-direction (km)
+    yscale                  [ 'km' | 'm' ] scale of plot, if 'm' everything
+                            will be scaled accordingly.
+    ======================= ===============================================
+    
+    =================== =======================================================
+    Methods             Description
+    =================== =======================================================
+    plot                plots resistivity model.  
+    redraw_plot         call redraw_plot to redraw the figures, 
+                        if one of the attributes has been changed
+    save_figure         saves the matplotlib.figure instance to desired 
+                        location and format
+    =================== ======================================================
+    """
+
+    def __init__(self, meshx, meshy, resmodel, rp_lst, plotx, ploty, 
+                 offset_lst, iter_fn, idict, rows, cols, **kwargs):
+        
+        self.meshx = meshx
+        self.meshy = meshy
+        self.resmodel = resmodel
+        self.rp_lst = rp_lst
+        self.plotx = plotx
+        self.ploty = ploty
+        self.offset_lst = offset_lst
+        self.iter_fn = iter_fn
+        self.idict = idict
+        self.row = rows
+        self.cols = cols
+        
+        self.yscale = kwargs.pop('yscale', 'km')
+        
+        self.fig_num = kwargs.pop('fig_num', 1)
+        self.fig_size = kwargs.pop('fig_size', [6, 6])
+        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.fig_aspect = kwargs.pop('fig_aspect', 1)
+        self.title = kwargs.pop('title', 'on')
+        
+        self.xpad = kwargs.pop('xpad', 1.0)
+        self.ypad = kwargs.pop('ypad', 1.0)
+        
+        self.ms = kwargs.pop('ms', 10)
+        
+        self.station_id = kwargs.pop('station_id', None)
+        self.station_font_size = kwargs.pop('station_font_size', 8)
+        self.station_font_pad = kwargs.pop('station_font_pad', 1.0)
+        self.station_font_weight = kwargs.pop('station_font_weight', 'bold')
+        self.station_font_rotation = kwargs.pop('station_font_rotation', 60)
+        self.station_font_color = kwargs.pop('station_font_color', 'k')
+        self.station_marker = kwargs.pop('station_marker', 
+                                         r"$\blacktriangledown$")
+        self.station_color = kwargs.pop('station_color', 'k')
+        
+        self.ylimits = kwargs.pop('ylimits', None)
+        self.xlimits = kwargs.pop('xlimits', None)
+        
+        self.xminorticks = kwargs.pop('xminorticks', 5)
+        self.yminorticks = kwargs.pop('yminorticks', 1)
+    
+        self.climits = kwargs.pop('climits', (0,4))
+        self.cmap = kwargs.pop('cmap', 'jet_r')
+        self.font_size = kwargs.pop('font_size', 8)
+        
+        self.femesh = kwargs.pop('femesh', 'off')
+        self.meshnum = kwargs.pop('meshnum', 'off')
+        self.meshnum_font_size = kwargs.pop('meshnum_font_size', 3)
+        self.regmesh = kwargs.pop('regmesh', 'off')
+        self.blocknum = kwargs.pop('blocknum', 'off')
+        self.block_font_size = kwargs.pop('block_font_size', 3)
+        self.grid = kwargs.pop('grid', None)
+        
+        self.cb_shrink = kwargs.pop('cb_shrink', .8)
+        self.cb_pad = kwargs.pop('cb_pad', .01)
+        
+        self.subplot_right = .99
+        self.subplot_left = .085
+        self.subplot_top = .92
+        self.subplot_bottom = .1
+        
+        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        if self.plot_yn == 'y':
+            self.plot()
+
+    def plot(self):
+        """
+        plotModel will plot the model output by occam2d in the iteration file.
+        
+        
+        :Example: ::
+            
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> itfn = r"/home/Occam2D/Line1/Inv1/Test_15.iter"
+            >>> ocm = occam2d.Occam2DModel(itfn)
+            >>> ocm.plot2DModel(ms=20,ylimits=(0,.350),yscale='m',spad=.10,
+            >>>                 ypad=.125,xpad=.025,climits=(0,2.5),
+            >>>                 aspect='equal')
+        """   
+                    
+        #set the scale of the plot
+        if self.yscale == 'km':
+            dfactor = 1000.
+            pfactor = 1.0
+        elif self.yscale == 'm':
+            dfactor = 1.
+            pfactor = 1000.
+        else:
+            dfactor = 1000.
+            pfactor = 1.0
+        
+        #set some figure properties to use the maiximum space 
+        plt.rcParams['font.size'] = self.font_size
+        plt.rcParams['figure.subplot.left'] = self.subplot_left
+        plt.rcParams['figure.subplot.right'] = self.subplot_right
+        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
+        plt.rcParams['figure.subplot.top'] = self.subplot_top
+        
+        #station font dictionary
+        fdict = {'size':self.station_font_size,
+                 'weight':self.station_font_weight,
+                 'rotation':self.station_font_rotation,
+                 'color':self.station_font_color}
+                 
+        #plot the model as a mesh
+        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+        plt.clf()
+        
+        #add a subplot to the figure with the specified aspect ratio
+        ax = self.fig.add_subplot(1, 1, 1, aspect=self.fig_aspect)
+        
+        #plot the model as a pcolormesh so the extents are constrained to 
+        #the model coordinates
+        ax.pcolormesh(self.meshx/dfactor,
+                      self.meshy/dfactor,
+                      self.resmodel,
+                      cmap=self.cmap,
+                      vmin=self.climits[0],
+                      vmax=self.climits[1])
+        
+        #make a colorbar for the resistivity
+        cbx = mcb.make_axes(ax, shrink=self.cb_shrink, pad=self.cb_pad)
+        cb = mcb.ColorbarBase(cbx[0],
+                              cmap=self.cmap,
+                              norm=Normalize(vmin=self.climits[0],
+                                             vmax=self.climits[1]))
+                                           
+        cb.set_label('Resistivity ($\Omega \cdot$m)',
+                     fontdict={'size':self.font_size+1,'weight':'bold'})
+        cb.set_ticks(np.arange(int(self.climits[0]),int(self.climits[1])+1))
+        cb.set_ticklabels(['10$^{0}$'.format(nn) for nn in 
+                            np.arange(int(self.climits[0]), 
+                                      int(self.climits[1])+1)])
+        
+        #set the offsets of the stations and plot the stations
+        #need to figure out a way to set the marker at the surface in all
+        #views.
+        for rpdict in self.rp_lst:
+            #plot the station marker
+            #plots a V for the station cause when you use scatter the spacing
+            #is variable if you change the limits of the y axis, this way it
+            #always plots at the surface.
+            ax.text(rpdict['offset']/dfactor,
+                    self.ploty.min(),
+                    self.station_marker,
+                    horizontalalignment='center',
+                    verticalalignment='baseline',
+                    fontdict={'size':self.ms,'color':self.station_color})
+                    
+            #put station id onto station marker
+            #if there is a station id index
+            if self.station_id != None:
+                ax.text(rpdict['offset']/dfactor,
+                        -self.station_font_pad*pfactor,
+                        rpdict['station'][self.station_id[0]:self.station_id[1]],
+                        horizontalalignment='center',
+                        verticalalignment='baseline',
+                        fontdict=fdict)
+            #otherwise put on the full station name found form data file
+            else:
+                ax.text(rpdict['offset']/dfactor,
+                        -self.station_font_pad*pfactor,
+                        rpdict['station'],
+                        horizontalalignment='center',
+                        verticalalignment='baseline',
+                        fontdict=fdict)
+        
+        #set the initial limits of the plot to be square about the profile line  
+        if self.ylimits == None:  
+            ax.set_ylim(abs(max(self.offset_lst)-min(self.offset_lst))/dfactor,
+                        -self.ypad*pfactor)
+        else:
+            ax.set_ylim(self.ylimits[1]*pfactor,
+                        (self.ylimits[0]-self.ypad)*pfactor)
+        if self.xlimits == None:
+            ax.set_xlim(min(self.offset_lst)/dfactor-(self.xpad*pfactor),
+                         (max(self.offset_lst)/dfactor+(self.xpad*pfactor)))
+        else:
+            ax.set_xlim(self.xlimits[0]*pfactor, self.xlimits[1]*pfactor)
+            
+        #set the axis properties
+        ax.xaxis.set_minor_locator(MultipleLocator(self.xminorticks*pfactor))
+        ax.yaxis.set_minor_locator(MultipleLocator(self.yminorticks*pfactor))
+        
+        #set axes labels
+        ax.set_xlabel('Horizontal Distance ({0})'.format(self.yscale),
+                      fontdict={'size':self.font_size+2,'weight':'bold'})
+        ax.set_ylabel('Depth ({0})'.format(self.yscale),
+                      fontdict={'size':self.font_size+2,'weight':'bold'})
+
+        
+        #put a grid on if one is desired    
+        if self.grid is not None:
+            ax.grid(alpha=.3, which=self.grid, lw=.35)
+        
+        #set title as rms and roughness
+        if type(self.title) is str:
+            if self.title == 'on':
+                titlestr = os.path.join(os.path.basename(
+                                        os.path.dirname(self.iter_fn)),
+                                        os.path.basename(self.iter_fn))
+                ax.set_title(titlestr+\
+                            ': RMS {0:.2f}, Roughness={1:.0f}'.format(
+                            float(self.idict['misfit value']),
+                            float(self.idict['roughness value'])),
+                            fontdict={'size':self.font_size+1,
+                                      'weight':'bold'})
+            else:
+                ax.set_title(self.title+'; RMS {0:.2f}, Roughness={1:.0f}'.format(
+                         float(self.idict['misfit value']),
+                         float(self.idict['roughness value'])),
+                         fontdict={'size':self.font_size+1,
+                                   'weight':'bold'})
+        else:
+            print 'RMS {0:.2f}, Roughness={1:.0f}'.format(
+                         float(self.idict['misfit value']),
+                         float(self.idict['roughness value'])) 
+        
+        #plot forward model mesh    
+        if self.femesh == 'on':
+            for xx in self.plotx/dfactor:
+                ax.plot([xx, xx],
+                        [0, self.ploty[0]/dfactor],
+                        color='k',
+                        lw=.5)
+                        
+            for yy in self.ploty/dfactor:
+                ax.plot([self.plotx[0]/dfactor, self.plotx[-1]/dfactor],
+                        [yy, yy],
+                        color='k',
+                        lw=.5)
+        
+        #plot the regularization mesh
+        if self.regmesh == 'on':
+            linelst = []
+            for ii in range(len(self.rows)):
+                #get the number of layers to combine
+                #this index will be the first index in the vertical direction
+                ny1 = self.rows[:ii,0].sum()
+                
+                #the second index  in the vertical direction
+                ny2 = ny1+self.rows[ii][0]
+                
+                #make the list of amalgamated columns an array for ease
+                lc = np.array(self.cols[ii])
+                yline = ax.plot([self.plotx[0]/dfactor,self.plotx[-1]/dfactor],
+                                [self.ploty[-ny1]/dfactor,
+                                 self.ploty[-ny1]/dfactor],
+                                color='b',
+                                lw=.5)
+                                 
+                linelst.append(yline)
+
+                #loop over the number of amalgamated blocks
+                for jj in range(len(self.cols[ii])):
+                    #get first in index in the horizontal direction
+                    nx1 = lc[:jj].sum()
+                    
+                    #get second index in horizontal direction
+                    nx2 = nx1+lc[jj]
+                    try:
+                        if ny1 == 0:
+                            ny1 = 1
+                        xline = ax.plot([self.plotx[nx1]/dfactor,
+                                         self.plotx[nx1]/dfactor],
+                                        [self.ploty[-ny1]/dfactor,
+                                         self.ploty[-ny2]/dfactor],
+                                        color='b',
+                                        lw=.5)
+                        linelst.append(xline)
+                    except IndexError:
+                        pass
+                    
+        ##plot the mesh block numbers
+        if self.meshnum == 'on':
+            kk = 1
+            for yy in self.ploty[::-1]/dfactor:
+                for xx in self.plotx/dfactor:
+                    ax.text(xx, yy, '{0}'.format(kk),
+                            fontdict={'size':self.meshnum_font_size})
+                    kk+=1
+                    
+        ##plot regularization block numbers
+        if self.blocknum == 'on':
+            kk=1
+            for ii in range(len(self.rows)):
+                #get the number of layers to combine
+                #this index will be the first index in the vertical direction
+                ny1 = self.rows[:ii,0].sum()
+                
+                #the second index  in the vertical direction
+                ny2 = ny1+self.rows[ii][0]
+                #make the list of amalgamated columns an array for ease
+                lc = np.array(self.cols[ii])
+                #loop over the number of amalgamated blocks
+                for jj in range(len(self.cols[ii])):
+                    #get first in index in the horizontal direction
+                    nx1 = lc[:jj].sum()
+                    #get second index in horizontal direction
+                    nx2 = nx1+lc[jj]
+                    try:
+                        if ny1 == 0:
+                            ny1 = 1
+                        #get center points of the blocks
+                        yy = self.ploty[-ny1]-(self.ploty[-ny1]-
+                                                self.ploty[-ny2])/2
+                        xx = self.plotx[nx1]-\
+                             (self.plotx[nx1]-self.plotx[nx2])/2
+                        #put the number
+                        ax.text(xx/dfactor, yy/dfactor, '{0}'.format(kk),
+                                fontdict={'size':self.block_font_size},
+                                horizontalalignment='center',
+                                verticalalignment='center')
+                        kk+=1
+                    except IndexError:
+                        pass
+           
+        plt.show()
+        
+        #make attributes that can be manipulated
+        self.ax = ax
+        self.cbax = cb
+        
+    def redraw_plot(self):
+        """
+        redraw plot if parameters were changed
+        
+        use this function if you updated some attributes and want to re-plot.
+        
+        :Example: ::
+            
+            >>> # change the color and marker of the xy components
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData(r"/home/occam2d/Data.dat")
+            >>> p1 = ocd.plotAllResponses()
+            >>> #change line width
+            >>> p1.lw = 2
+            >>> p1.redraw_plot()
+        """
+        
+        plt.close(self.fig)
+        self.plot()
+        
+    def save_figure(self, save_fn, file_format='pdf', orientation='portrait', 
+                  fig_dpi=None, close_fig='y'):
+        """
+        save_plot will save the figure to save_fn.
+        
+        Arguments:
+        -----------
+        
+            **save_fn** : string
+                          full path to save figure to, can be input as
+                          * directory path -> the directory path to save to
+                            in which the file will be saved as 
+                            save_fn/station_name_PhaseTensor.file_format
+                            
+                          * full path -> file will be save to the given 
+                            path.  If you use this option then the format
+                            will be assumed to be provided by the path
+                            
+            **file_format** : [ pdf | eps | jpg | png | svg ]
+                              file type of saved figure pdf,svg,eps... 
+                              
+            **orientation** : [ landscape | portrait ]
+                              orientation in which the file will be saved
+                              *default* is portrait
+                              
+            **fig_dpi** : int
+                          The resolution in dots-per-inch the file will be
+                          saved.  If None then the dpi will be that at 
+                          which the figure was made.  I don't think that 
+                          it can be larger than dpi of the figure.
+                          
+            **close_plot** : [ y | n ]
+                             * 'y' will close the plot after saving.
+                             * 'n' will leave plot open
+                          
+        :Example: ::
+            
+            >>> # to save plot as jpg
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> dfn = r"/home/occam2d/Inv1/data.dat"
+            >>> ocd = occam2d.Occam2DData(dfn)
+            >>> ps1 = ocd.plotPseudoSection()
+            >>> ps1.save_plot(r'/home/MT/figures', file_format='jpg')
+            
+        """
+
+        if fig_dpi == None:
+            fig_dpi = self.fig_dpi
+            
+        if os.path.isdir(save_fn) == False:
+            file_format = save_fn[-3:]
+            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+                             orientation=orientation, bbox_inches='tight')
+            
+        else:
+            save_fn = os.path.join(save_fn, 'OccamModel.'+
+                                    file_format)
+            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+                        orientation=orientation, bbox_inches='tight')
+        
+        if close_fig == 'y':
+            plt.clf()
+            plt.close(self.fig)
+        
+        else:
+            pass
+        
+        self.fig_fn = save_fn
+        print 'Saved figure to: '+self.fig_fn
+        
+    def update_plot(self):
+        """
+        update any parameters that where changed using the built-in draw from
+        canvas.  
+        
+        Use this if you change an of the .fig or axes properties
+        
+        :Example: ::
+            
+            >>> # to change the grid lines to only be on the major ticks
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> dfn = r"/home/occam2d/Inv1/data.dat"
+            >>> ocd = occam2d.Occam2DData(dfn)
+            >>> ps1 = ocd.plotAllResponses()
+            >>> [ax.grid(True, which='major') for ax in [ps1.axrte,ps1.axtep]]
+            >>> ps1.update_plot()
+        
+        """
+
+        self.fig.canvas.draw()
+                          
+    def __str__(self):
+        """
+        rewrite the string builtin to give a useful message
+        """
+        
+        return ("Plots the resistivity found by Occam2D")
+    
+#==============================================================================
+# plot L2 curve of iteration vs rms
+#==============================================================================
+class PlotL2():
+    """
+    plot L2 curve of iteration vs rms and roughness
+    
+    Arguments:
+    ----------
+        **rms_arr** : structured array with keys:
+                      * 'iteration' --> for iteration number (int)
+                      * 'rms' --> for rms (float)
+                      * 'roughness' --> for roughness (float)
+                      
+    ======================= ===================================================
+    Keywords/attributes     Description
+    ======================= ===================================================
+    ax1                     matplotlib.axes instance for rms vs iteration
+    ax2                     matplotlib.axes instance for roughness vs rms
+    fig                     matplotlib.figure instance
+    fig_dpi                 resolution of figure in dots-per-inch
+    fig_num                 number of figure instance
+    fig_size                size of figure in inches (width, height)
+    font_size               size of axes tick labels, axes labels is +2
+    plot_yn                 [ 'y' | 'n']
+                            'y' --> to plot on instantiation
+                            'n' --> to not plot on instantiation
+    rms_arr                 structure np.array as described above
+    rms_color               color of rms marker and line
+    rms_lw                  line width of rms line
+    rms_marker              marker for rms values
+    rms_marker_size         size of marker for rms values
+    rms_mean_color          color of mean line
+    rms_median_color        color of median line
+    rough_color             color of roughness line and marker
+    rough_font_size         font size for iteration number inside roughness 
+                            marker
+    rough_lw                line width for roughness line 
+    rough_marker            marker for roughness
+    rough_marker_size       size of marker for roughness
+    subplot_bottom          subplot spacing from bottom  
+    subplot_left            subplot spacing from left  
+    subplot_right           subplot spacing from right
+    subplot_top             subplot spacing from top
+    ======================= ===================================================
+   
+    =================== =======================================================
+    Methods             Description
+    =================== =======================================================
+    plot                plots L2 curve.  
+    redraw_plot         call redraw_plot to redraw the figures, 
+                        if one of the attributes has been changed
+    save_figure         saves the matplotlib.figure instance to desired 
+                        location and format
+    =================== ======================================================
+     
+    """
+    
+    def __init__(self, rms_arr, **kwargs):
+        self.rms_arr = rms_arr
+        
+        
+        self.subplot_right = .98
+        self.subplot_left = .085
+        self.subplot_top = .91
+        self.subplot_bottom = .1
+        
+        self.fig_num = kwargs.pop('fig_num', 1)
+        self.fig_size = kwargs.pop('fig_size', [6, 6])
+        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.font_size = kwargs.pop('font_size', 8)
+        
+        self.rms_lw = kwargs.pop('rms_lw', 1)
+        self.rms_marker = kwargs.pop('rms_marker', 'd')
+        self.rms_color = kwargs.pop('rms_color', 'k')
+        self.rms_marker_size = kwargs.pop('rms_marker_size', 5)
+        self.rms_median_color = kwargs.pop('rms_median_color', 'red')
+        self.rms_mean_color = kwargs.pop('rms_mean_color', 'orange')
+        
+        self.rough_lw = kwargs.pop('rough_lw', .75)
+        self.rough_marker = kwargs.pop('rough_marker', 'o')
+        self.rough_color = kwargs.pop('rough_color', 'b')
+        self.rough_marker_size = kwargs.pop('rough_marker_size', 7)
+        self.rough_font_size = kwargs.pop('rough_font_size', 6)
+        
+        
+        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        if self.plot_yn == 'y':
+            self.plot()
+        
+    def plot(self):
+        """
+        plot L2 curve
+        """
+
+        nr = self.rms_arr.shape[0]
+        med_rms = np.median(self.rms_arr['rms'])
+        mean_rms = np.mean(self.rms_arr['rms'])
+        
+        #set the dimesions of the figure
+        plt.rcParams['font.size'] = self.font_size
+        plt.rcParams['figure.subplot.left'] = self.subplot_left
+        plt.rcParams['figure.subplot.right'] = self.subplot_right
+        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
+        plt.rcParams['figure.subplot.top'] = self.subplot_top
+        
+        #make figure instance
+        self.fig = plt.figure(self.fig_num,self.fig_size, dpi=self.fig_dpi)
+        plt.clf()
+        
+        #make a subplot for RMS vs Iteration
+        self.ax1 = self.fig.add_subplot(1, 1, 1)
+        
+        #plot the rms vs iteration
+        l1, = self.ax1.plot(self.rms_arr['iteration'],
+                            self.rms_arr['rms'],
+                            '-k', 
+                            lw=1,
+                            marker='d',
+                            ms=5)
+        
+        #plot the median of the RMS
+        m1, = self.ax1.plot(self.rms_arr['iteration'],
+                            np.repeat(med_rms, nr),
+                            ls='--',
+                            color=self.rms_median_color,
+                            lw=self.rms_lw*.75)
+        
+        #plot the mean of the RMS
+        m2, = self.ax1.plot(self.rms_arr['iteration'],
+                            np.repeat(mean_rms, nr),
+                            ls='--',
+                            color=self.rms_mean_color,
+                            lw=self.rms_lw*.75)
+    
+        #make subplot for RMS vs Roughness Plot
+        self.ax2 = self.ax1.twiny()
+        
+        #plot the rms vs roughness 
+        l2, = self.ax2.plot(self.rms_arr['roughness'],
+                            self.rms_arr['rms'],
+                            ls='--',
+                            color=self.rough_color,
+                            lw=self.rough_lw,
+                            marker=self.rough_marker,
+                            ms=self.rough_marker_size,
+                            mfc='white')
+                            
+        for rms, ii, rough in zip(self.rms_arr['rms'], self.rms_arr['iteration'], 
+                           self.rms_arr['roughness']):
+            self.ax2.text(rough,
+                          rms,
+                          '{0}'.format(ii),
+                          horizontalalignment='center',
+                          verticalalignment='center',
+                          fontdict={'size':self.rough_font_size,
+                                    'weight':'bold',
+                                    'color':self.rough_color})
+        
+        #make a legend
+        self.ax1.legend([l1, l2, m1, m2],
+                        ['RMS', 'Roughness',
+                         'Median_RMS={0:.2f}'.format(med_rms),
+                         'Mean_RMS={0:.2f}'.format(mean_rms)],
+                         ncol=1,
+                         loc='upper right',
+                         columnspacing=.25,
+                         markerscale=.75,
+                         handletextpad=.15)
+                    
+        #set the axis properties for RMS vs iteration
+        self.ax1.yaxis.set_minor_locator(MultipleLocator(.1))
+        self.ax1.xaxis.set_minor_locator(MultipleLocator(1))
+        self.ax1.set_ylabel('RMS', 
+                            fontdict={'size':self.font_size+2,
+                                      'weight':'bold'})                                   
+        self.ax1.set_xlabel('Iteration',
+                            fontdict={'size':self.font_size+2,
+                                      'weight':'bold'})
+        self.ax1.grid(alpha=.25, which='both', lw=self.rough_lw)
+        self.ax2.set_xlabel('Roughness',
+                            fontdict={'size':self.font_size+2,
+                                      'weight':'bold',
+                                      'color':self.rough_color})
+        for t2 in self.ax2.get_xticklabels():
+            t2.set_color(self.rough_color)
+            
+        plt.show()
+            
+    def redraw_plot(self):
+        """
+        redraw plot if parameters were changed
+        
+        use this function if you updated some attributes and want to re-plot.
+        
+        :Example: ::
+            
+            >>> # change the color and marker of the xy components
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData(r"/home/occam2d/Data.dat")
+            >>> p1 = ocd.plotAllResponses()
+            >>> #change line width
+            >>> p1.lw = 2
+            >>> p1.redraw_plot()
+        """
+        
+        plt.close(self.fig)
+        self.plot()
+        
+    def save_figure(self, save_fn, file_format='pdf', orientation='portrait', 
+                  fig_dpi=None, close_fig='y'):
+        """
+        save_plot will save the figure to save_fn.
+        
+        Arguments:
+        -----------
+        
+            **save_fn** : string
+                          full path to save figure to, can be input as
+                          * directory path -> the directory path to save to
+                            in which the file will be saved as 
+                            save_fn/station_name_PhaseTensor.file_format
+                            
+                          * full path -> file will be save to the given 
+                            path.  If you use this option then the format
+                            will be assumed to be provided by the path
+                            
+            **file_format** : [ pdf | eps | jpg | png | svg ]
+                              file type of saved figure pdf,svg,eps... 
+                              
+            **orientation** : [ landscape | portrait ]
+                              orientation in which the file will be saved
+                              *default* is portrait
+                              
+            **fig_dpi** : int
+                          The resolution in dots-per-inch the file will be
+                          saved.  If None then the dpi will be that at 
+                          which the figure was made.  I don't think that 
+                          it can be larger than dpi of the figure.
+                          
+            **close_plot** : [ y | n ]
+                             * 'y' will close the plot after saving.
+                             * 'n' will leave plot open
+                          
+        :Example: ::
+            
+            >>> # to save plot as jpg
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> dfn = r"/home/occam2d/Inv1/data.dat"
+            >>> ocd = occam2d.Occam2DData(dfn)
+            >>> ps1 = ocd.plotPseudoSection()
+            >>> ps1.save_plot(r'/home/MT/figures', file_format='jpg')
+            
+        """
+
+        if fig_dpi == None:
+            fig_dpi = self.fig_dpi
+            
+        if os.path.isdir(save_fn) == False:
+            file_format = save_fn[-3:]
+            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+                             orientation=orientation, bbox_inches='tight')
+            
+        else:
+            save_fn = os.path.join(save_fn, '_L2.'+
+                                    file_format)
+            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+                        orientation=orientation, bbox_inches='tight')
+        
+        if close_fig == 'y':
+            plt.clf()
+            plt.close(self.fig)
+        
+        else:
+            pass
+        
+        self.fig_fn = save_fn
+        print 'Saved figure to: '+self.fig_fn
+        
+    def update_plot(self):
+        """
+        update any parameters that where changed using the built-in draw from
+        canvas.  
+        
+        Use this if you change an of the .fig or axes properties
+        
+        :Example: ::
+            
+            >>> # to change the grid lines to only be on the major ticks
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> dfn = r"/home/occam2d/Inv1/data.dat"
+            >>> ocd = occam2d.Occam2DData(dfn)
+            >>> ps1 = ocd.plotAllResponses()
+            >>> [ax.grid(True, which='major') for ax in [ps1.axrte,ps1.axtep]]
+            >>> ps1.update_plot()
+        
+        """
+
+        self.fig.canvas.draw()
+                          
+    def __str__(self):
+        """
+        rewrite the string builtin to give a useful message
+        """
+        
+        return ("Plots RMS vs Iteration computed by Occam2D")
+        
+#==============================================================================
+# plot depth models for each station
+#==============================================================================
+class PlotDepthSlice():
+    """
+    plot depth slice under each station
+    
+    Arguments:
+    ----------
+        **resmodel** : array of resistivity values for occam2d model
+        
+        **offset_lst** : list of offsets of stations from data file
+        
+        **station_lst** : list of all stations from data file
+        
+        **plotx** : location of mesh nodes in x-direction
+        
+        **ploty** : location of mesh nodes in y-direction
+        
+        
+    ========================= =================================================
+    keywords/attributes       description    
+    ========================= =================================================
+    depth_range               depth range to plot (min, max) in meters
+    fig_dpi                   figure resolution in dots-per-inch 
+    fig_lst                   list of dictionaries with key words
+                              station --> station name
+                              fig --> matplotlib.figure instance
+                              ax -->  matplotlib.axes instance          
+    fig_num                   starting number of figure
+    fig_size                  size of figure in inches (width, height)
+    font_size                 size of axes ticklabel font in points
+    line_color                color of line indicating resistivity  vs depth  
+    lw                        line width
+    offset_lst                list of offsets for stations
+    plot_num                  [ '1' | 'all' ] 
+                              '1' --> to plot depth slice in individual figure
+                              'all' --> to plot all in one figure
+    plot_type                 [ '1' | list of stations ] 
+                              '1' --> to plot all stations
+                              list of stations --> to plot a few stations
+    plot_yn                   [ 'y' | 'n']
+                              'y' --> to plot on instantiation
+                              'n' --> to not plot on instantiation
+    plotx                     locations of mesh nodes in x-direction
+    ploty                     locations of mesh nodes in y-direction
+    resmodel                  array of resistivity values from model  
+    slst                      list of indicies from plotx corresponding to
+                              station location 
+    station_lst               list of all stations from data file
+    subplot_bottom            subplot spacing from bottom  
+    subplot_left              subplot spacing from left  
+    subplot_right             subplot spacing from right
+    subplot_top               subplot spacing from top
+    subplot_wspace            subplot spacing in horizontal direction
+    x_padding                 number of padding cells in MESH file usually 7
+    xavg                      average cell size in survey area
+    yscale                    [ 'linear' | 'log' ] scale of depth axes
+    yunits                    [ 'km' | 'm' ] units of depth axes
+    
+    ========================= =================================================
+    
+    =================== =======================================================
+    Methods             Description
+    =================== =======================================================
+    plot                plots depth slices.  
+    redraw_plot         call redraw_plot to redraw the figures, 
+                        if one of the attributes has been changed
+    save_figure         saves the matplotlib.figure instance to desired 
+                        location and format
+    =================== ======================================================
+    """
+    
+    def __init__(self, resmodel, offset_lst, station_lst, plotx, ploty, 
+                 **kwargs):
+        self.resmodel = resmodel
+        self.offset_lst = offset_lst
+        self.station_lst = station_lst
+        self.plotx = plotx
+        self.ploty = ploty
+        
+        self.plot_type = kwargs.pop('plot_type', '1')
+        self.plot_num = kwargs.pop('plot_num', 'all')
+        self.yscale = kwargs.pop('yscale', 'linear')
+        self.yunits = kwargs.pop('yunits', 'm')
+        self.x_padding = kwargs.pop('x_padding', 7)
+        self.depth_range = kwargs.pop('depth_range', (self.ploty.min(), 
+                                                      self.ploty.max()))
+                                                      
+        self.subplot_right = .99
+        self.subplot_left = .085
+        self.subplot_top = .92
+        self.subplot_bottom = .1
+        self.subplot_wspace = .1
+        
+        self.font_size = kwargs.pop('font_size', 8)
+        
+        self.fig_num = kwargs.pop('fig_num', 1)
+        self.fig_size = kwargs.pop('fig_size', [6, 6])
+        self.fig_dpi = kwargs.pop('dpi', 300)
+        self.fig_lst = []
+        
+        self.lw = kwargs.pop('lw', 1)
+        self.line_color = kwargs.pop('line_color', 'b')
+        
+        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        if self.plot_yn == 'y':
+            self.plot()
+        
+    def plot(self):
+        """
+        plot depth slice for each station or stations given
+        """
+        
+        #set the scale of the plot
+        if self.yunits == 'km':
+            dfactor = 1000.
+
+        elif self.yunits == 'm':
+            dfactor = 1.
+
+        #get stations to plot
+        if self.plot_type == '1':
+            pstation_lst = np.arange(len(self.station_lst))
+        else:
+            pstation_lst = []
+            if type(self.plot_type) is not list:
+                self.plot_type = [self.plot_type]
+            for ps in self.plot_type:
+                for ii, ss in enumerate(self.station_lst):
+                    if ss.find(ps) == 0:
+                        pstation_lst.append(ii)
+                                  
+        #get the average x-spacing within the station region, occam2d pads by 
+        #7 cells by default        
+        self.xavg = np.floor(np.mean([abs(self.plotx[ii]-self.plotx[ii+1]) 
+                                 for ii in range(self.x_padding,
+                                             len(self.plotx)-self.x_padding)]))
+        
+        #get the station indices to extract from the model
+        self.slst = []
+        for ff in pstation_lst:
+            offset = self.offset_lst[ff]
+            for ii, xx in enumerate(self.plotx):
+                if offset >= xx-self.xavg/2. and offset <= xx+self.xavg/2.:
+                   self.slst.append(ii)
+        
+        #set some figure properties to use the maiximum space 
+        plt.rcParams['font.size'] = self.font_size
+        plt.rcParams['figure.subplot.left'] = self.subplot_left
+        plt.rcParams['figure.subplot.right'] = self.subplot_right
+        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
+        plt.rcParams['figure.subplot.top'] = self.subplot_top
+        plt.rcParams['figure.subplot.wspace']=self.subplot_wspace
+        
+        if self.plot_num == 'all':
+            
+            fig = plt.figure(self.fig_num, self.fig_size, 
+                                  dpi=self.fig_dpi)
+            plt.clf()
+            
+            ns = len(self.slst)
+            #plot the depth section for each station        
+            for ii, ss in enumerate(self.slst):
+                ax = fig.add_subplot(1, ns, ii+1)
+                
+                #plot resistivity vs depth
+                if self.yscale == 'linear':
+                    p1, = ax.semilogx(10**self.resmodel[:,ss],
+                                      self.ploty/dfactor,
+                                      ls='steps-',
+                                      lw=self.lw,
+                                      color=self.line_color)
+                                      
+                elif self.yscale == 'log':
+                    if self.ploty[-1] == 0.0:
+                        self.ploty[-1] = 1
+                    p1, = ax.loglog(10**self.resmodel[:,ss],
+                                    self.ploty/dfactor,
+                                    ls='steps-',
+                                    lw=self.lw,
+                                    color=self.line_color)
+                                    
+                ax.set_ylim(self.depth_range[1]/dfactor, 
+                            self.depth_range[0]/dfactor)
+                
+                ax.set_title(self.station_lst[pstation_lst[ii]],
+                             fontdict={'size':self.font_size+2,
+                                       'weight':'bold'})
+                if ii == 0:
+                    ax.set_ylabel('Depth ({0})'.format(self.yunits),
+                                  fontdict={'size':self.font_size+2,
+                                            'weight':'bold'})
+                else:
+                    plt.setp(ax.yaxis.get_ticklabels(), visible=False)
+                if ii == np.round(ns/2.):
+                    ax.set_xlabel('Resistivity ($\Omega \cdot$m)',
+                                  fontdict={'size':self.font_size+2,
+                                            'weight':'bold'})
+                ax.grid(True, alpha=.3, which='both')
+                ax.set_xlim(10**self.resmodel.min(), 10**self.resmodel.max())
+                
+            plt.show()
+            self.fig_lst.append({'fig':fig, 
+                                 'ax':ax, 
+                                 'station':self.station_lst[pstation_lst[ii]]})
+        else:
+            #plot the depth section for each station        
+            for ii,ss in enumerate(self.slst):
+                fig = plt.figure(ii+1, self.fig_size, dpi=self.fig_dpi)
+                plt.clf()
+                ax = fig.add_subplot(1,1,1)
+                
+                #plot resistivity vs depth
+                if self.yscale == 'linear':
+                    p1, = ax.semilogx(10**self.resmodel[:,ss],
+                                      self.ploty/dfactor,
+                                      ls='steps-', 
+                                      lw=self.lw,
+                                      color=self.line_color)
+                elif self.yscale == 'log':
+                    if self.ploty[-1] == 0.0:
+                        self.ploty[-1] = 1
+                    p1, = ax.loglog(10**self.resmodel[:,ss],
+                                    self.ploty/dfactor,
+                                    ls='steps-', 
+                                    lw=self.lw,
+                                    color=self.line_color)
+                                    
+                ax.set_ylim(self.depth_range[1]/dfactor, 
+                            self.depth_range[0]/dfactor)
+                
+                ax.set_title(self.station_lst[pstation_lst[ii]],
+                             fontdict={'size':self.font_size+2,
+                                       'weight':'bold'})    
+                ax.set_ylabel('Depth ({0})'.format(self.yunits),
+                              fontdict={'size':self.font_size+2,
+                                        'weight':'bold'})
+                ax.set_xlabel('Resistivity ($\Omega \cdot$m)',
+                              fontdict={'size':self.font_size+2,
+                                        'weight':'bold'})
+                ax.grid(True, alpha=.3, which='both')
+                
+                plt.show()
+                self.fig_lst.append({'fig':fig, 
+                                     'ax':ax, 
+                                 'station':self.station_lst[pstation_lst[ii]]})
+                                 
+    def redraw_plot(self):
+        """
+        redraw plot if parameters were changed
+        
+        use this function if you updated some attributes and want to re-plot.
+        
+        :Example: ::
+            
+            >>> # change the color and marker of the xy components
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData(r"/home/occam2d/Data.dat")
+            >>> p1 = ocd.plotAllResponses()
+            >>> #change line width
+            >>> p1.lw = 2
+            >>> p1.redraw_plot()
+        """
+        
+        plt.close('all')
+        self.plot()
+        
+    def save_figure(self, save_path, fig_fmt='pdf', fig_dpi=None, 
+                     close_fig='y', orientation='portrait'):
+        """
+        save_plot will save the figure to save_fn.
+        
+        Arguments:
+        -----------
+        
+            **save_fn** : string
+                          full path to save figure to, can be input as
+                          * directory path -> the directory path to save to
+                            in which the file will be saved as 
+                            save_fn/station_name_PhaseTensor.file_format
+                            
+                          * full path -> file will be save to the given 
+                            path.  If you use this option then the format
+                            will be assumed to be provided by the path
+                            
+            **fig_fmt** : [ pdf | eps | jpg | png | svg ]
+                              file type of saved figure pdf,svg,eps... 
+                              
+            **orientation** : [ landscape | portrait ]
+                              orientation in which the file will be saved
+                              *default* is portrait
+                              
+            **fig_dpi** : int
+                          The resolution in dots-per-inch the file will be
+                          saved.  If None then the dpi will be that at 
+                          which the figure was made.  I don't think that 
+                          it can be larger than dpi of the figure.
+                          
+            **close_fig** : [ y | n ]
+                             * 'y' will close the plot after saving.
+                             * 'n' will leave plot open
+                          
+        :Example: ::
+            
+            >>> # to save plot as jpg
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> dfn = r"/home/occam2d/Inv1/data.dat"
+            >>> ocd = occam2d.Occam2DData(dfn)
+            >>> ps1 = ocd.plotPseudoSection()
+            >>> ps1.save_plot(r'/home/MT/figures', file_format='jpg')
+            
+        """
+
+        
+        if not os.path.exists(save_path):
+            os.mkdir(save_path)
+            
+        for fdict in self.fig_lst:
+            svfn = '{0}_DepthSlice.{1}'.format(fdict['station'], fig_fmt)
+            fdict['fig'].savefig(os.path.join(save_path, svfn), 
+                                 dpi=self.fig_dpi)
+            if close_fig == 'y':
+                plt.close(fdict['fig'])
+            
+            print "saved figure to {0}".format(os.path.join(save_path, svfn))
+        
+    def update_plot(self):
+        """
+        update any parameters that where changed using the built-in draw from
+        canvas.  
+        
+        Use this if you change an of the .fig or axes properties
+        
+        :Example: ::
+            
+            >>> # to change the grid lines to only be on the major ticks
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> dfn = r"/home/occam2d/Inv1/data.dat"
+            >>> ocd = occam2d.Occam2DData(dfn)
+            >>> ps1 = ocd.plotAllResponses()
+            >>> [ax.grid(True, which='major') for ax in [ps1.axrte,ps1.axtep]]
+            >>> ps1.update_plot()
+        
+        """
+
+        self.fig.canvas.draw()
+                          
+    def __str__(self):
+        """
+        rewrite the string builtin to give a useful message
+        """
+        
+        return ("Plots the resistivity found by Occam2D")
