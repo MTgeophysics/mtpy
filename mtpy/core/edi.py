@@ -171,7 +171,6 @@ class Edi(object):
             so the full impedance tensor is expected to be present. 
             Other possibilities are 'resphase' and 'spectra' - they exclude 
             the reading of a potentially present Z information.
-            TODO: 'spectra' - not implemented yet
 
 
         """
@@ -2306,6 +2305,9 @@ def _generate_edifile_string(edidict):
                         raise MTex.MTpyError_edi_file('Cannot write file - '+\
                           'required subsection "{0}" missing!'.format(section))
                     lo_vals = z_dict[section]
+                    #convert stddev into VAR:
+                    if zentry.lower()=='.var':
+                        lo_vals = [i**2 for i in lo_vals]
 
                     if ZROTflag == 1:
                         edistring += '>{0} ROT=ZROT // {1}\n'.format(section,
@@ -2343,6 +2345,9 @@ def _generate_edifile_string(edidict):
                         raise MTex.MTpyError_edi_file('Cannot write file -'+\
                           'required subsection "{0}" missing!'.format(section))
                     lo_vals = t_dict[section]
+                    #convert stddev into VAR:
+                    if tentry.lower()=='var':
+                        lo_vals = [i**2 for i in lo_vals]
 
                     if ZROTflag == 1:
                         edistring += '>{0} ROT=ZROT // {1}\n'.format(outsection,
