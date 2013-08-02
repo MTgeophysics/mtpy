@@ -3166,6 +3166,8 @@ class Occam2DModel(Occam2DData):
         #check to see if the file exists
         if os.path.exists(self.iterfn) == False:
             raise IOError('File: '+self.iterfn+' does not exist, check path')
+            
+        self.invpath = os.path.dirname(self.iterfn)
     
         #open file, read lines, close file
         ifid = file(self.iterfn, 'r')
@@ -3208,7 +3210,13 @@ class Occam2DModel(Occam2DData):
                     self.data_fn = os.path.join(self.invpath,ff)
             if os.path.isfile(self.data_fn) == False:
                 raise NameError('Could not find a data file, input manually')
-    
+        
+        #get the name of the inmodel file
+        self.inmodelfn = self.idict['model file']
+        if not os.path.isfile(self.inmodelfn):
+            self.inmodelfn = os.path.join(self.invpath, self.inmodelfn)
+            
+        
     def read2DInmodel(self):
         """
         read an INMODEL file for occam2d 2D
@@ -3254,12 +3262,15 @@ class Occam2DModel(Occam2DData):
         ilines = ifid.readlines()
         
         for ii, iline in enumerate(ilines):
+            #read header information
             if iline.find(':') > 0:
                 iline = iline.strip().split(':')
-                headerdict[iline[0].lower()] = iline[1]
+                headerdict[iline[0].lower()] = iline[1].strip()
                 #append the last line
                 if iline[0].lower().find('exception') > 0:
                     cols.append(ncols)
+            
+            #get mesh values
             else:
                 iline = iline.strip().split()
                 iline = [int(jj) for jj in iline]
@@ -3274,6 +3285,12 @@ class Occam2DModel(Occam2DData):
         self.rows = np.array(rows)
         self.cols = cols
         self.inmodel_headerdict = headerdict
+        
+        #set mesh file name
+        self.meshfn = self.inmodel_headerdict['mesh file']
+        if not os.path.isfile(self.meshfn):
+            self.meshfn = os.path.join(self.invpath, self.meshfn)
+            
         
     def read2DMesh(self):
         """
@@ -3389,13 +3406,15 @@ class Occam2DModel(Occam2DData):
         print 'Reading data from: ',self.data_fn
         self.get2DData()
         
+        #read in INMODEL
+        print 'Reading model from: ',self.inmodelfn
+        self.read2DInmodel()
+        
         #read in MESH file
         print 'Reading mesh from: ',self.meshfn
         self.read2DMesh()
         
-        #read in INMODEL
-        print 'Reading model from: ',self.inmodelfn
-        self.read2DInmodel()
+
         #get the binding offset which is the right side of the furthest left
         #block, this helps locate the model in relative space
         bndgoff = float(self.inmodel_headerdict['binding offset'])
@@ -5469,6 +5488,9 @@ class PlotModel(object):
     climits                 limits of the color scale for resistivity
                             in log scale (min, max)
     cmap                    name of color map for resistivity values
+    femesh                  plot the finite element mesh
+    femesh_triangles        plot the finite element mesh with each block
+                            divided into four triangles
     fig_aspect              aspect ratio between width and height of 
                             resistivity image. 1 for equal axes
     fig_dpi                 resolution of figure in dots-per-inch
@@ -5575,9 +5597,15 @@ class PlotModel(object):
         self.font_size = kwargs.pop('font_size', 8)
         
         self.femesh = kwargs.pop('femesh', 'off')
+        self.femesh_triangles = kwargs.pop('femesh_triangles', 'off')
+        self.femesh_lw = kwargs.pop('femesh_lw', .4)
+        self.femesh_color = kwargs.pop('femesh_color', 'k')
         self.meshnum = kwargs.pop('meshnum', 'off')
         self.meshnum_font_size = kwargs.pop('meshnum_font_size', 3)
+        
         self.regmesh = kwargs.pop('regmesh', 'off')
+        self.regmesh_lw = kwargs.pop('regmesh_lw', .4)
+        self.regmesh_color = kwargs.pop('regmesh_color', 'b')
         self.blocknum = kwargs.pop('blocknum', 'off')
         self.block_font_size = kwargs.pop('block_font_size', 3)
         self.grid = kwargs.pop('grid', None)
@@ -5747,19 +5775,88 @@ class PlotModel(object):
                          float(self.idict['misfit value']),
                          float(self.idict['roughness value'])) 
         
-        #plot forward model mesh    
+        #plot forward model mesh
+        #making an extended list seperated by None's speeds up the plotting
+        #by as much as 99 percent, handy
         if self.femesh == 'on':
+            row_line_xlst = []
+            row_line_ylst = []
             for xx in self.plotx/dfactor:
-                ax.plot([xx, xx],
-                        [0, self.ploty[0]/dfactor],
-                        color='k',
-                        lw=.5)
-                        
+                row_line_xlst.extend([xx,xx])
+                row_line_xlst.append(None)
+                row_line_ylst.extend([0, self.ploty[0]/dfactor])
+                row_line_ylst.append(None)
+            
+            #plot column lines (variables are a little bit of a misnomer)
+            ax.plot(row_line_xlst, 
+                    row_line_ylst, 
+                    color='k', 
+                    lw=.5)
+
+            col_line_xlst = []
+            col_line_ylst = []            
             for yy in self.ploty/dfactor:
-                ax.plot([self.plotx[0]/dfactor, self.plotx[-1]/dfactor],
-                        [yy, yy],
-                        color='k',
-                        lw=.5)
+                col_line_xlst.extend([self.plotx[0]/dfactor, 
+                                      self.plotx[-1]/dfactor])
+                col_line_xlst.append(None)
+                col_line_ylst.extend([yy, yy])
+                col_line_ylst.append(None)
+            
+            #plot row lines (variables are a little bit of a misnomer)
+            ax.plot(col_line_xlst, 
+                    col_line_ylst,
+                    color='k',
+                    lw=.5)
+                        
+        if self.femesh_triangles == 'on':
+            row_line_xlst = []
+            row_line_ylst = []
+            for xx in self.plotx/dfactor:
+                row_line_xlst.extend([xx,xx])
+                row_line_xlst.append(None)
+                row_line_ylst.extend([0, self.ploty[0]/dfactor])
+                row_line_ylst.append(None)
+                
+            #plot columns
+            ax.plot(row_line_xlst, 
+                    row_line_ylst, 
+                    color='k', 
+                    lw=.5)
+
+            col_line_xlst = []
+            col_line_ylst = []            
+            for yy in self.ploty/dfactor:
+                col_line_xlst.extend([self.plotx[0]/dfactor, 
+                                      self.plotx[-1]/dfactor])
+                col_line_xlst.append(None)
+                col_line_ylst.extend([yy, yy])
+                col_line_ylst.append(None)
+            
+            #plot rows
+            ax.plot(col_line_xlst, 
+                    col_line_ylst,
+                    color='k',
+                    lw=.5)
+
+            diag_line_xlst = []
+            diag_line_ylst = []
+            for xi, xx in enumerate(self.plotx[:-1]/dfactor):
+                for yi, yy in enumerate(self.ploty[:-1]/dfactor):
+                    diag_line_xlst.extend([xx, self.plotx[xi+1]/dfactor])
+                    diag_line_xlst.append(None)
+                    diag_line_xlst.extend([xx, self.plotx[xi+1]/dfactor])
+                    diag_line_xlst.append(None)
+                    
+                    diag_line_ylst.extend([yy, self.ploty[yi+1]/dfactor])
+                    diag_line_ylst.append(None)
+                    diag_line_ylst.extend([self.ploty[yi+1]/dfactor, yy])
+                    diag_line_ylst.append(None)
+            
+            #plot diagonal lines.
+            ax.plot(diag_line_xlst, 
+                    diag_line_ylst,
+                    color='k',
+                    lw=.5)
         
         #plot the regularization mesh
         if self.regmesh == 'on':
