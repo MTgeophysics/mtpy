@@ -1089,7 +1089,7 @@ class Occam2DData(object):
         if plot_yn == 'y':
             lfig = plt.figure(4, dpi=200)
             plt.clf()
-            lax = lself.fig.add_subplot(1, 1, 1,aspect='equal')
+            lax = self.fig.add_subplot(1, 1, 1,aspect='equal')
             
             #plot the line that stations have been projected onto
             ploty = sp.polyval(p, new_east_lst)
