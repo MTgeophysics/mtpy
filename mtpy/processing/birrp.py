@@ -428,8 +428,14 @@ def write_script_file(processing_dict, save_path=None):
     parameter          description
     ================== ======================================================== 
     station            station name
-    fn_lst             list of file names to be processed
-    rrfn_lst           list of remote reference file names
+    fn_lst             list of file names to be processed, this must be in 
+                       the correct order [EX, EY, HZ, HX, HY] and if multiple
+                       sections are to be processed at the same time then 
+                       must be input as a nested loop 
+                       [[EX1, EY1, HZ1, HX1, HY1], 
+                       [EX2, EY2, HZ2, HX2, HY2], ...]
+    rrfn_lst           list of remote reference file names, similar to the 
+                       fn_lst [[HX1, HY1], [HX2, HY2], ...]
     ilev               processing mode 0 for basic and 1 for advanced RR-2 
                        stage
     nout               Number of Output time series (2 or 3-> for BZ)
@@ -488,6 +494,11 @@ def write_script_file(processing_dict, save_path=None):
     hz_cal             full path to calibration file for hz 
     rrhx_cal           full path to calibration file for remote reference hx 
     rrhy_cal           full path to calibration file for remote reference hy 
+                       Note that BIRRP assumes the calibrations are the same
+                       as in the first segment, so the remote reference must
+                       be the same for all segments, or at least the same
+                       instruments have to be used so the calibration is 
+                       the same.
     ================== ========================================================              
     
     .. see also::                
@@ -851,7 +862,10 @@ def write_script_file(processing_dict, save_path=None):
     fid.write('{0:d} \n'.format(npcs))    
     fid.write('{0:d} \n'.format(nar))    
     fid.write('{0:d} \n'.format(imode))    
-    fid.write('{0:d} \n'.format(jmode))    
+    fid.write('{0:d} \n'.format(jmode)) 
+    
+    #!!!NEED TO SORT FILE NAMES SUCH THAT EX, EY, HZ, HX, HY or EX, EY, HX, HY
+    
     #write in filenames 
     if npcs != 1:
         if jmode == 0:
@@ -873,7 +887,7 @@ def write_script_file(processing_dict, save_path=None):
                     else:
                         fid.write(str(nfil)+'\n')
                 elif tt == 4:
-                    if hx_cal is not None:
+                    if hz_cal is not None:
                         fid.write('-2\n')
                         fid.write(hz_cal+'\n')
                     else:
@@ -931,7 +945,7 @@ def write_script_file(processing_dict, save_path=None):
                     else:
                         fid.write(str(nfil)+'\n')
                 elif tt == 4:
-                    if hx_cal is not None:
+                    if hz_cal is not None:
                         fid.write('-2\n')
                         fid.write(hz_cal+'\n')
                     else:
@@ -998,7 +1012,7 @@ def write_script_file(processing_dict, save_path=None):
                         else:
                             fid.write(str(nfil)+'\n')
                     elif tt == 4:
-                        if hx_cal is not None:
+                        if hz_cal is not None:
                             fid.write('-2\n')
                             fid.write(hz_cal+'\n')
                         else:
@@ -1061,7 +1075,7 @@ def write_script_file(processing_dict, save_path=None):
                         else:
                             fid.write(str(nfil)+'\n')
                     elif tt == 4:
-                        if hx_cal is not None:
+                        if hz_cal is not None:
                             fid.write('-2\n')
                             fid.write(hz_cal+'\n')
                         else:
@@ -1104,7 +1118,7 @@ def write_script_file(processing_dict, save_path=None):
                         else:
                             fid.write(str(nfil)+'\n')
                     elif tt == 4:
-                        if hx_cal is not None:
+                        if hz_cal is not None:
                             fid.write('-2\n')
                             fid.write(hz_cal+'\n')
                         else:
