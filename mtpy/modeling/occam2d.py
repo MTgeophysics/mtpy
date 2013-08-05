@@ -1087,32 +1087,33 @@ class Occam2DData(object):
         
         #plot stations on profile line
         if plot_yn == 'y':
-            lfig = plt.figure(4, dpi=200)
+            fig = plt.figure(4, dpi=200)
             plt.clf()
-            lax = self.fig.add_subplot(1, 1, 1,aspect='equal')
+            ax = fig.add_subplot(1, 1, 1,aspect='equal')
             
             #plot the line that stations have been projected onto
             ploty = sp.polyval(p, new_east_lst)
-            lax.plot(new_east_lst, ploty, '-b', lw=2)
+            ax.plot(new_east_lst, ploty, '-b', lw=2)
 
             #plot stations
-            lax.scatter(new_east_lst, new_north_lst, marker='v', s=50, 
+            ax.scatter(new_east_lst, new_north_lst, marker='v', s=50, 
                         color='k')
             for sdict in self.survey_lst:
-                lax.text(sdict['east_proj'], sdict['north_proj']+100,
+                ax.text(sdict['east_proj'], sdict['north_proj']+100,
                          sdict['station'], verticalalignment='baseline',
                         horizontalalignment='center', 
                         fontdict={'size':12, 'weight':'bold'})
                         
-            lax.set_title('Projected Stations')
-            lax.set_ylim(new_north_lst.min()-1000., 
+            ax.set_title('Projected Stations')
+            ax.set_ylim(new_north_lst.min()-1000., 
                          new_north_lst.max()+1000.)
-            lax.set_xlim(new_east_lst.min()-1000., 
+            ax.set_xlim(new_east_lst.min()-1000., 
                          new_east_lst.max()+1000.)
-            lax.set_xlabel('Easting (m)', 
+            ax.set_xlabel('Easting (m)', 
                            fontdict={'size':12, 'weight':'bold'})
-            lax.set_ylabel('Northing (m)',
+            ax.set_ylabel('Northing (m)',
                            fontdict={'size':12, 'weight':'bold'})
+            ax.grid(True, which='both', lw=.5)
             plt.show()
 
         
@@ -1248,7 +1249,7 @@ class Occam2DData(object):
             **ftol** : tolerance level (decimal %) to match frequencies to 
                        freq_step if input as a list.  *Default* is .05
             
-            **plotyn** : y or n to plot the stations that are pojected on to 
+            **plot_yn** : y or n to plot the stations that are pojected on to 
                          the best fitting line through the stations.
             
             **line_orientation** : predominant line orientation with respect to 
@@ -4262,7 +4263,11 @@ class PlotOccam2DResponse():
             for aa, axr in enumerate([axrte, axrtm]):
                 #set both axes to logarithmic scale
                 axr.set_xscale('log')
-                axr.set_yscale('log')
+                
+                try:
+                    axr.set_yscale('log')
+                except ValueError:
+                    pass
                 
                 #put on a grid
                 axr.grid(True, alpha=.3, which='both', lw=.5*self.lw)
