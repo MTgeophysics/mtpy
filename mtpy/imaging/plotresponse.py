@@ -119,6 +119,8 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         *fig_num*: int
                      figure number
                      *default* is 1
+        
+        *fig_size*: [width, height] in inches of actual figure size
                      
         *ffactor*: float
                       scaling factor for computing resistivity from 
@@ -195,6 +197,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
     -----------
         -fn              filename to be plotted (only supports .edi so far) 
         -fig_num         figure number for plotting
+        -fig_size        size of figure in inches [width, height]
         -plot_num        plot type, see arguments for details 
         -plot_title      title of the plot, *default* is station name
         -fig_dpi         Dots-per-inch resolution of plot, *default* is 300
@@ -383,6 +386,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         #set some of the properties as attributes much to Lars' discontent
         self.fn = fn
         self.fig_num = kwargs.pop('fig_num', 1)
+        self.fig_size = kwargs.pop('fig_size', None)
         self.plot_num = kwargs.pop('plot_num', 1)
         self.plot_title = kwargs.pop('plot_title', None)
         self.fig_dpi = kwargs.pop('fig_dpi', 300)
@@ -494,11 +498,12 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         """
         
         #set figure size according to what the plot will be.
-        if self.plot_num == 1 or self.plot_num == 3:
-            self.figsize = [5, 7]
-        
-        elif self.plot_num == 2:
-            self.figsize = [7, 7]
+        if self.fig_size is None:
+            if self.plot_num == 1 or self.plot_num == 3:
+                self.fig_size = [5, 7]
+            
+            elif self.plot_num == 2:
+                self.fig_size = [7, 7]
             
         #--> rotate the impedance tensor if desired
         if self.rot_z != 0:
@@ -563,7 +568,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         gs = gridspec.GridSpec(nrows, 2, height_ratios=hr,hspace=.05)
 
         #make figure instance
-        self.fig = plt.figure(self.fig_num, self.figsize, dpi=self.fig_dpi)
+        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         
         #--> make figure for xy,yx components
         if self.plot_num == 1 or self.plot_num == 3:
