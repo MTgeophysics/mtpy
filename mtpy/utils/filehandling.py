@@ -525,6 +525,7 @@ def validate_ts_file(tsfile):
         Return Boolean value True/False .
 
     """ 
+    tsfile = op.abspath(tsfile)
 
     try:
         header = read_ts_header(tsfile)
@@ -600,13 +601,14 @@ def read_ts_header(tsfile):
             header_dict[lo_headerelements[i]] = int(
                     (float(headerlist[i]) - float(headerlist[i-1])
                     )*float(headerlist[i-2]) )+1
-                    
-    header_dict['samplingrate'] = float(header_dict['samplingrate'])
-    header_dict['t_min'] = float(header_dict['t_min'])
-    header_dict['nsamples'] = int(header_dict['nsamples'])
-    header_dict['lat'] = float(header_dict['lat'])
-    header_dict['lon'] = float(header_dict['lon'])
-    header_dict['elev'] = float(header_dict['elev'])
+
+    headerlements = ['samplingrate','t_min','nsamples','lat','lon','elev']
+
+    for h in headerlements:                   
+        try: 
+            header_dict[h] = float(header_dict[h])
+        except:
+            pass
 
     return header_dict
 
