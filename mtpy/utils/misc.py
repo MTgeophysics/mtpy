@@ -109,8 +109,8 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
 
     #rounding limits of the time window to precision defined by the sampling rate
     precision = -int(np.log10(1./sampling_rate))
-    print 'return time window parameters:'
-    print (round(ta[start_idx], precision), round(ta[end_idx], precision), window_length, len(ta))
+    #print 'return time window parameters:'
+    #print (round(ta[start_idx], precision), round(ta[end_idx], precision), window_length, len(ta))
     return (round(ta[start_idx], precision), round(ta[end_idx], precision), window_length)
 
 

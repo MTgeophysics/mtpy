@@ -65,7 +65,7 @@ def convert_edi_coordinates_to_kml_file(edi_filelist, outfilename = None):
 
         kml = []
        
-        description = '??'
+        description = 'File: {0}'.format(e.filename)
     
         kml.append('  <Placemark>')
         kml.append('    <name>%s</name>' % station)
