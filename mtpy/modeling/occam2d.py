@@ -4098,7 +4098,7 @@ class PlotOccam2DResponse():
             pxy = np.where(rp_lst[jj]['phasexy'][0]!=0)[0]
             pyx = np.where(rp_lst[jj]['phaseyx'][0]!=0)[0]
             
-            #--> reponse
+            #--> response
             mpxy = np.where(rp_lst[jj]['phasexy'][2]!=0)[0]
             mpyx = np.where(rp_lst[jj]['phaseyx'][2]!=0)[0]
             

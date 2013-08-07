@@ -17,8 +17,9 @@ def main():
 
             - <symbolsize (int,24)> 
             - <mapstretchfactor (float,1.)> 
-            - <showlabel (bool,True)> 
             - <labelsize (int,14)> 
+            - <showlabel (bool,True)> 
+
 
         Output:
 
@@ -57,25 +58,25 @@ def main():
 
     try:
         mapstretchfactor = float(sys.argv[3])
-        print mapstretchfactor
     except:
         print 'cannot read mapstretchfactor value - using default'
         mapstretchfactor = 1
         
+
     try:
-        showlabel = sys.argv[4]
+        labelsize = int(float(sys.argv[4]))
+    except:
+        print 'cannot read labelsize value - using default'
+        labelsize = 14
+    
+
+    try:
+        showlabel = sys.argv[5]
         if not bool(showlabel):
             raise
     except:
         print 'cannot read showlabel value - using default (=True)'
         showlabel = True
-
-    try:
-        labelsize = int(float(sys.argv[5]))
-    except:
-        print 'cannot read labelsize value - using default'
-        labelsize = 14
-
 
 
     f1,f2 = makemap(edilist,mapstretchfactor,symbolsize,labelsize,showlabel)
@@ -134,10 +135,10 @@ def makemap(edilist,mapstretchfactor,symbolsize,labelsize,showlabel):
 
 
     stretch = float(mapstretchfactor)
-    total_latmin = min(lats)-stretch*latrange
-    total_lonmin = min(lons)-stretch*lonrange
-    total_latmax = max(lats)+stretch*latrange
-    total_lonmax = max(lons)+stretch*lonrange
+    total_latmin = max( (min(lats)-stretch*latrange ), -90)
+    total_lonmin = max( (min(lons)-stretch*lonrange ), -180)
+    total_latmax = min( (max(lats)+stretch*latrange ), 90)
+    total_lonmax = min( (max(lons)+stretch*lonrange ), 180)
 
     total_latrange = total_latmax - total_latmin
     total_lonrange = total_lonmax - total_lonmin
@@ -158,7 +159,7 @@ def makemap(edilist,mapstretchfactor,symbolsize,labelsize,showlabel):
         lonnum = int(maximumlabels/factor) + 1
         latnum = maximumlabels
 
-
+     
     m = Basemap(
         projection='merc',
         lon_0=c[1],lat_0=c[0],lat_ts=c[0],
@@ -204,8 +205,6 @@ def makemap(edilist,mapstretchfactor,symbolsize,labelsize,showlabel):
                     fontcolor='k', fillcolor1='r', fillcolor2='g',
                     ax=None, format='%d',
                     )
-
-
 
 
     for x,y,name in zip(xgrid[0,:], ygrid[:,0],names):

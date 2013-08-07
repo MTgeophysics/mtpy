@@ -37,7 +37,6 @@ import mtpy.utils.exceptions as MTex
 import mtpy.utils.format as MTft
 import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
-
 import mtpy.utils.misc as MTmc
 
 reload(MTcf)
@@ -45,10 +44,17 @@ reload(MTft)
 reload(MTfh)
 
 #=================================================================
+#for time stamp differences:
+epsilon = 1e-5
+#=================================================================
+
+
 
 
 def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, 
-                           coherence_threshold = 0.5, output_dir = None):
+                           coherence_threshold = 0.5, output_dir = None,
+                           starttime = None, endtime = None):
+
     """
     Call BIRRP for 2 input and 2 output channels with the simplemost setup. 
 
@@ -62,6 +68,10 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
     
     If no output directory is specified, output files are put into a subfolder 
     of the source directory, named 'birrp_processed'.
+
+    Optionally, starttime and endtime can be given (in epoch seconds). If that
+    yields an interval which is smaller than the provided data, only that 
+    section is used.
 
     Additionally, a configuration file is created. It contains information 
     about the processing paramters for the station. Keys are generic for the 
@@ -102,7 +112,8 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
 
     os.chdir(wd)
 
-    inputstring, birrp_stationdict, inputfilename = generate_birrp_inputstring_simple(stationname, ts_directory, coherence_threshold)
+    inputstring, birrp_stationdict, inputfilename = generate_birrp_inputstring_simple(
+                stationname, ts_directory, coherence_threshold,2, starttime, endtime)
 
     print "generated inputstring and configuration dictionary for station {0}".format(stationname)
     #print inputstring
@@ -152,14 +163,19 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
 
 
 
-def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_threshold, output_channels=2):
+def generate_birrp_inputstring_simple(stationname, ts_directory, 
+                                        coherence_threshold, output_channels=2,
+                                        starttime=None, endtime=None):
 
     if not output_channels in [2,3]:
         raise MTex.MTpyError_inputarguments( 'Output channels must be 2 or 3' )
 
 
     print 'setting basic input components,e.g. filenames, samplingrate,...'
-    input_filename, length, sampling_rate, birrp_stationdict = set_birrp_input_file_simple(stationname, ts_directory, output_channels, op.join(ts_directory,'birrp_wd'))
+    input_filename, length, sampling_rate, birrp_stationdict = set_birrp_input_file_simple(
+                                    stationname, ts_directory, output_channels, 
+                                    op.join(ts_directory,'birrp_wd'),
+                                    starttime, endtime)
 
     print 'calculate optimal time window bisection parameters'
     longest_section, number_of_bisections = get_optimal_window_bisection(length, sampling_rate)
@@ -197,15 +213,22 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
 
 
 
-def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_directory = '.'):
+def set_birrp_input_file_simple(stationname, ts_directory, output_channels, 
+                                w_directory = '.', starttime=None, endtime=None):
     """
-    File handling: collect longest possible input for BIRRP from different files for the given station name. Generate a new input file in the working directory and return the name of this file, as well as time series and processing properties in form of a dictionary. 
+    File handling: collect longest possible input for BIRRP from different files 
+    for the given station name. Generate a new input file in the working 
+    directory and return the name of this file, as well as time series and 
+    processing properties in form of a dictionary. 
 
-    Scan all files in the directory by their headers: if the stationname matches, add the data file to the list.
-    Additionally read out channels and start-/end times. Find longest consecutive time available on all channels.
-    Then generate nx4/5 array for n consecutive time steps. Array in order Ex, Ey, Bx, By (,Bz) saved into file 'birrp_input_data.txt'
+    Scan all files in the directory by their headers: if the stationname matches, 
+    add the data file to the list. Additionally read out channels and start-/end 
+    times. Find longest consecutive time available on all channels.
+    Then generate n x 4/5 array for n consecutive time steps. Array in order 
+    Ex, Ey, Bx, By (,Bz) saved into file 'birrp_input_data.txt'
 
-    Output_channels determine the number of output channels: 2 for Ex, Ey - 3 for additional Bz
+    Output_channels determine the number of output channels: 
+    2 for Ex, Ey - 3 for additional Bz
 
     Output:
     - filename for birrp input data_in
@@ -242,24 +265,25 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
 
         if not stationname_read == stationname.upper():
             continue
-        if not header['channel'] in channels:
+        if not header['channel'].lower() in channels:
             continue
 
         lo_files.append(fn)
 
                 
-        lo_channels.append(header['channel'])
+        lo_channels.append(header['channel'].lower())
         lo_sampling_rates.append(float(header['samplingrate']))
         lo_starttimes.append(float(header['t_min']))
         ta = np.arange(int(float(header['nsamples']))+1)/float(header['samplingrate']) + float(header['t_min'])
-        endtime = ta[-1]
-        lo_endtimes.append(endtime)
+        ta_endtime = ta[-1]
+        lo_endtimes.append(ta_endtime)
 
     if (len(lo_sampling_rates) == 0) or (len(lo_files) == 0):
         sys.exit( '\n\tERROR - no MTpy data files found in directory {0} !!\n'.format(ts_directory))
         
 
-    #take the most common sampling rate, if there are more than one:
+    #take the most common sampling rate, if there are more than one
+    #assuming typo in this case!!
     from collections import Counter
     tmp_dummy1 = lo_sampling_rates
     tmp_dummy2 = Counter(tmp_dummy1)
@@ -301,9 +325,85 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
 
         lo_time_windows.append(tmp_timewindows_list_per_channel)
 
-
     print 'find longest common time window for all channels...'
     longest_common_time_window = MTmc.find_longest_common_time_window_from_list(lo_time_windows, sampling_rate)
+    sampling_interval = (longest_common_time_window[1] - longest_common_time_window[0]) / longest_common_time_window[2]
+
+    try:
+        t_start_given = float(starttime)
+        if (t_start_given <  longest_common_time_window[0]) and np.abs(t_start_given - longest_common_time_window[0]) > epsilon:
+            print 'given start time is too small - using data start time'
+        if t_start_given >=  longest_common_time_window[1]  and np.abs(t_start_given - longest_common_time_window[1]) > epsilon:
+            print 'provided starttime {0} too large'\
+                ' - data set ends already at time {1}'.format(t_start_given,
+                                                longest_common_time_window[1])
+            raise
+        else:
+            t_start = max(longest_common_time_window[0],t_start_given)
+    except:
+        print 'given start time {0} could not be processed - '\
+                'using start time of data instead: {1} '.format(starttime,
+                                                longest_common_time_window[0])
+        t_start = longest_common_time_window[0]
+
+
+    try:
+        t_end_given = float(endtime)
+        if t_end_given >  longest_common_time_window[1] and np.abs(t_end_given - longest_common_time_window[1]) > epsilon:
+            print 'given end time is too large - using data end time' 
+        if t_end_given <=  longest_common_time_window[0] and np.abs(t_end_given - longest_common_time_window[0]) > epsilon:
+            print 'provided end time {0} too small'\
+                ' - data set does not start until {1}'.format(endtime,
+                                                longest_common_time_window[0])
+            raise
+        else:
+            t_end = min(longest_common_time_window[1],t_end_given)
+    except:
+        print 'given end time {0} could not be processed - '\
+                'using end time of data instead: {1} '.format(endtime,
+                                                longest_common_time_window[1])
+
+        t_end = longest_common_time_window[1]
+    
+
+    t_start  = np.round(t_start,5)
+    t_end    = np.round(t_end,5)
+
+
+    #define time axis for referencing time and position in the output array
+    #correct by rounding for internal floating point errors
+    #ta = np.array([ np.round( i , -int(np.log10(1./sampling_rate))) for i in  np.linspace(*longest_common_time_window)])
+    #alternative : no rounding
+    ta_full_dataset = np.linspace(*longest_common_time_window, endpoint=False)
+
+    print t_start - ta_full_dataset[0]
+    print t_end   - ta_full_dataset[0]
+
+  
+    idx_start = np.abs(ta_full_dataset-t_start).argmin()
+    if t_start > ta_full_dataset[idx_start]:
+        idx_start += 1
+
+    #careful to EXCLUDE last sample for t_end...time series ends before a sample!:
+    
+    #find index for value closest to end time on the time axis
+    #reduce by 1 for the sampling step (excluding last sample)  
+    idx_end = np.abs(ta_full_dataset - t_end).argmin() - 1  
+
+    #check, if index yields a time value, which is at least one sampling before the end time
+    if (t_end - sampling_interval) < ta_full_dataset[idx_end]:
+        #check, if variation is outside numerical uncertainty
+        if np.abs((t_end - sampling_interval) - ta_full_dataset[idx_end]) > epsilon:
+            #if so, reduce index one more to be safely inside the given interval
+            idx_end -= 1
+
+    #new time axis - potentially just a sub-section of the original,
+    #maximal the same size though
+    ta =  ta_full_dataset[idx_start: idx_end + 1]
+    
+
+    print ta[0]-ta_full_dataset[0], ta[-1]-ta_full_dataset[0], len(ta)
+    
 
 
     #data array to hold time series for longest possible time window for the files given 
@@ -311,16 +411,12 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
     totalmemory, freememory = MTmc.show_memory()
     print '\nTotal memory available: {0} MB - free: {1} MB'.format(totalmemory,freememory)
 
-    data = np.zeros((longest_common_time_window[2],output_channels+2))
+    data = np.zeros((len(ta),output_channels+2))
 
     print 'Size of data array: {0} MB\n'.format(np.round(data.nbytes/1024.**2,2))
-    #define time axis for referencing time and position in the output array
-    #correct by rounding for internal floating point errors
-    #ta = np.array([ np.round( i , -int(np.log10(1./sampling_rate))) for i in  np.linspace(*longest_common_time_window)])
-    #alternative : no rounding
-    ta = np.linspace(*longest_common_time_window, endpoint=False)
 
-    print 'data array ({0}) and time axis ({1}) initialised...start looping over channels...'.format(data.shape, len(ta))
+    print 'data array ({0}) and time axis ({1}) initialised...start looping'\
+            ' over channels...'.format(data.shape, len(ta))
 
     for idx_ch, ch in enumerate(channels):
         for st in starttime_sorting:
@@ -335,7 +431,7 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
             #read in data
             print 'reading data from file {0}'.format(lo_files[st])
             data_in = np.loadtxt(lo_files[st])
-            print len(data_in), sampling_rate , lo_starttimes[st]
+            #print len(data_in), sampling_rate , lo_starttimes[st]
             #define time axis for read in data
             ta_file = np.arange(len(data_in))/sampling_rate + lo_starttimes[st]
             #find overlap of overall time axis and the ta of current data set:
@@ -347,9 +443,9 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
                     break
             #include the last sample:
             max_idx = len(ta_file) + max_idx + 1
-            print min_idx,max_idx
+            #print min_idx,max_idx
             overlap = ta_file[min_idx:max_idx]
-            print ta_file[0],ta_file[-1], '   ', ta[0],ta[-1]
+            #print ta_file[0],ta_file[-1], '   ', ta[0],ta[-1]
 
             #find starting index of overlap for current data file time axis
             idx_ta_file = min_idx#np.argmin(np.abs(ta_file - overlap[0]))
@@ -359,9 +455,9 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
 
             #set data entries
             print 'fill data from file into temporary array'
-            print idx_overall_ta, len(overlap), idx_ch, idx_ta_file
-            print data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch].shape, data_in[idx_ta_file:idx_ta_file+len(overlap)].shape
-            data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch] = data_in[idx_ta_file:idx_ta_file+len(overlap)]
+            #print idx_overall_ta, len(overlap), idx_ch, idx_ta_file
+            #print data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch].shape, data_in[idx_ta_file:idx_ta_file+len(overlap)].shape
+            #data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch] = data_in[idx_ta_file:idx_ta_file+len(overlap)]
 
             gc.collect()
 
@@ -405,10 +501,12 @@ def get_optimal_window_bisection(length, sampling_rate):
 
     """
 
-    # longest time window cannot exceed 1/30 of the total length in order to obtain statistically sound results (maybe correcting this to 1/100 later); value given in samples
+    # longest time window cannot exceed 1/30 of the total length in order to obtain 
+    #statistically sound results (maybe correcting this to 1/100 later); value given in samples
     longest_window = int(length/30.)
 
-    #shortest_window cannot be smaller than 2^4=16 times the sampling interval in order to suit Nyquist and other criteria; value given in samples
+    #shortest_window cannot be smaller than 2^4=16 times the sampling interval 
+    #in order to suit Nyquist and other criteria; value given in samples
     shortest_window = 16 
 
 
