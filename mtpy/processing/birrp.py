@@ -37,7 +37,6 @@ import mtpy.utils.exceptions as MTex
 import mtpy.utils.format as MTft
 import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
-
 import mtpy.utils.misc as MTmc
 
 reload(MTcf)
