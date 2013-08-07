@@ -1903,8 +1903,7 @@ class ZenBIRRP():
                 raise IOError('Need to input rrpath, could not find it')
             
         self.get_survey_parameters()
-        
-                
+                    
                 
     def get_fn_lst(self, df=None, start_dt=None, end_dt=None, ncomps=5):
         """
@@ -2012,27 +2011,31 @@ class ZenBIRRP():
         """
         write a script file to guide birrp
         
-        """
+        """       
+        
         if df is not None:
             self.df = df
-            
+        
+        #--> get survey parameters
         if survey_config_fn is not None:
             self.survey_config_fn = survey_config_fn
             self.get_survey_parameters()
         elif self.survey_dict is None:
             self.get_survey_parameters()
             
+        #--> get processing dictionary 
         if processing_file is not None:
             self.processing_file = processing_file
-            
+        
+        self.processing_dict = self.get_birrp_parameters()
+        
         if processing_dict is not None:
             self.processing_dict = processing_dict
-        else: 
-            self.processing_dict = self.get_birrp_parameters()
             
         if self.processing_file is None and self.processing_dict is None:
             raise IOError('Need to input a processing file')
         
+        #--> set jmode (how files are read in) as points
         try:
             self.processing_dict['jmode']
         except KeyError:
@@ -2144,9 +2147,13 @@ class ZenBIRRP():
                                             self.calibration_dict['2284']
                 print 'Setting calibration coil number to 2284 as default.' 
         
-            
+        #set the save path to include the sampling rate
+        self.output_path = os.path.join(os.path.dirname(
+                                        self.processing_dict['fn_lst'][0][0]), 
+                                        'BF_{0}'.format(self.df))
         #write script file using mtpy.processing.birrp    
-        script_file, birrp_dict = birrp.write_script_file(self.processing_dict)
+        script_file, birrp_dict = birrp.write_script_file(dict(self.processing_dict),
+                                                    save_path=self.output_path)
         
         cfg_fn = mtfh.make_unique_filename('{0}_birrp_params.cfg'.format(
                                                              script_file[:-7]))
@@ -2157,7 +2164,6 @@ class ZenBIRRP():
         self.birrp_config_fn = cfg_fn
         self.script_file = script_file
         self.birrp_dict = birrp_dict
-        self.output_path = os.path.dirname(self.script_file)
         
     def run_birrp(self, script_file=None, birrp_exe=None):
         """

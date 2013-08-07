@@ -20,7 +20,6 @@ This module contains functions for handling BIRRP software.
 
 #=================================================================
 
-
 import gc
 import StringIO
 import numpy as np
@@ -532,7 +531,7 @@ def write_script_file(processing_dict, save_path=None):
     #compute how many timeseries and days there are 
     #ndf = # of files per day
     #nds = # of day
-    pdict = processing_dict
+    pdict = dict(processing_dict)
     
     try:
         fn_array = np.array(pdict['fn_lst'])
@@ -545,7 +544,7 @@ def write_script_file(processing_dict, save_path=None):
         ndf = fn_array.shape[0]
         nds = 0
     if save_path is None:
-        if nds == 0 or nds == 1:
+        if nds == 0:
             bfpath = os.path.join(os.path.dirname(pdict['fn_lst'][0]),
                                  'BF')
         else:
@@ -789,7 +788,7 @@ def write_script_file(processing_dict, save_path=None):
         fid.write(ofil+'\n')
         fid.write('{0:d} \n'.format(nlev))
         
-    elif ilev==1:
+    elif ilev == 1:
         print 'Writing Advanced mode'
         fid.write('{0:d} \n'.format(ilev))
         fid.write('{0:d} \n'.format(nout))
@@ -803,7 +802,7 @@ def write_script_file(processing_dict, save_path=None):
             fid.write('{0:d},{1:d} \n'.format(nr3,nr2))
         fid.write('{0:d} \n'.format(nrr))
         #if remote referencing
-        if int(nrr)==0:
+        if int(nrr) == 0:
             fid.write('{0:.3f} \n'.format(tbw))
             fid.write('{0:.3f} \n'.format(deltat))
             fid.write('{0:d},{1:.2g},{2:d} \n'.format(nfft,nsctinc,nsctmax))
@@ -813,27 +812,27 @@ def write_script_file(processing_dict, save_path=None):
             fid.write('{0:.5g},{1:.5g},{2:.5g} \n'.format(uin,ainlin,ainuin))
             fid.write('{0:.3f} \n'.format(c2threshe))
             #parameters for bz component if ninp=3
-            if nout==3:
-                if c2threshe!=0:
+            if nout == 3:
+                if c2threshe != 0:
                     fid.write('{0:d} \n'.format(nz))
                     fid.write('{0:.3f} \n'.format(c2threshe1))
                 else:
                     fid.write('{0:d} \n'.format(0))
                     fid.write('{0:.3f} \n'.format(c2threshe1))
-                if c2threshe1!=0.0 or c2threshe!=0.0:
+                if c2threshe1 != 0.0 or c2threshe != 0.0:
                     fid.write('{0:.6g},{1:.6g} \n'.format(perlo,perhi))
             else:
-                if c2threshe!=0.0:
+                if c2threshe != 0.0:
                     fid.write('{0:.6g},{1:.6g} \n'.format(perlo,perhi))
             fid.write(ofil+'\n')
             fid.write('{0:d} \n'.format(nlev))
             fid.write('{0:d} \n'.format(nprej))
             if nprej!=0:
                 if type(prej) is not list:
-                    prej=[prej]
+                    prej = [prej]
                 fid.writelines(['{0:.5g} \n'.format(nn) for nn in prej])
         #if 2 stage processing
-        elif int(nrr)==1:
+        elif int(nrr) == 1:
             fid.write('{0:.5g} \n'.format(tbw))
             fid.write('{0:.5g} \n'.format(deltat))
             fid.write('{0:d},{1:.2g},{2:d} \n'.format(nfft,nsctinc,nsctmax))        
@@ -843,21 +842,21 @@ def write_script_file(processing_dict, save_path=None):
             fid.write('{0:.5g},{1:.5g},{2:.5g} \n'.format(uin,ainlin,ainuin))
             fid.write('{0:.3f} \n'.format(c2threshb))        
             fid.write('{0:.3f} \n'.format(c2threshe))
-            if nout==3:
-                if c2threshb!=0 or c2threshe!=0:
+            if nout == 3:
+                if c2threshb != 0 or c2threshe != 0:
                     fid.write('{0:d} \n'.format(nz))
                     fid.write('{0:.3f} \n'.format(c2threshe1))
-                elif c2threshb==0 and c2threshe==0:
+                elif c2threshb == 0 and c2threshe == 0:
                     fid.write('{0:d} \n'.format(0))
                     fid.write('{0:.3f} \n'.format(0))
-            if c2threshb!=0.0 or c2threshe!=0.0:
+            if c2threshb != 0.0 or c2threshe != 0.0:
                 fid.write('{0:.6g},{1:.6g} \n'.format(perlo,perhi))
             fid.write(ofil+'\n')
             fid.write('{0:d} \n'.format(nlev))
             fid.write('{0:d} \n'.format(nprej))
             if nprej!=0:
                 if type(prej) is not list:
-                    prej=[prej]
+                    prej = [prej]
                 fid.writelines(['{0:.5g} \n'.format(nn) for nn in prej])
         
     fid.write('{0:d} \n'.format(npcs))    
