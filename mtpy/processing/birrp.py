@@ -1964,7 +1964,7 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
     
     set date to format YYYY-MM-DD,HH:MM:SS
     """
-    frmt = '%Y-%m-%d,%H:%M:%S'
+    frmt = '%Y/%m/%dT%H:%M:%S'
 
     headstring = ''
     headstring += '>HEAD\n\n'
@@ -1998,7 +1998,8 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
             dt_start = datetime.datetime.fromtimestamp(acq_starttime)
             acq_start = dt_start.combine(dt_start.date(),dt_start.time()).strftime(frmt+'.%f')
 
-            dt_end =  acq_starttime + 1./sampling_rate*(n_samples) 
+            dt_end_time =  acq_starttime + 1./sampling_rate*(n_samples) 
+            dt_end = datetime.datetime.fromtimestamp(dt_end_time)
             acq_end = dt_end.combine(dt_end.date(),dt_end.time()).strftime(frmt+'.%f')
             
             headstring +='\tacqdate=%s \n'%(acq_start)
