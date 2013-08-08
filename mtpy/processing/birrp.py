@@ -339,6 +339,9 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
 
         if not header['channel'].lower() in station_channels:
             continue
+        if not stationname_read == stationname.upper():
+            continue
+
 
         lo_station_files.append(fn)
                 
@@ -373,8 +376,9 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
     if not len(set(lo_station_channels)) in [4,5]:
         sys.exit( 'Error - Missing data files in directory {0} - not all channels found'.format(ts_directory))
     if not len(set(lo_rr_channels)) in [2]:
-        sys.exit( 'Error - Missing data files in directory {0} - not all remote channels'\
-                    ' found'.format(ts_directory))
+        if rr_station is not None:
+            sys.exit( 'Error - Missing data files in directory {0} - not all remote channels'\
+                        ' found'.format(ts_directory))
 
 
     #get a list with all existing time windows of consecutive data for all the channels
@@ -497,7 +501,7 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
     
     #find index for value closest to end time on the time axis
     #reduce by 1 for the sampling step (excluding last sample)  
-    idx_end = np.abs(ta_full_dataset - t_end).argmin() - 1  
+    idx_end = np.abs(ta_full_dataset - t_end).argmin()  
 
     #check, if index yields a time value, which is at least one sampling before the end time
     if (t_end - sampling_interval) < ta_full_dataset[idx_end]:
@@ -510,13 +514,12 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
     #maximal the same size though
     ta =  ta_full_dataset[idx_start: idx_end + 1]
     
-    print '\n\tTime section set to {0} - {1} ({2} samples)'.format(ta[0],ta[-1],
-                                                                        len(ta))
+
+    print '\n\tTime section set to {0} - {1} ({2} samples)'.format(ta[0],
+                                            ta[-1]+sampling_interval,len(ta))     
 
     #print ta[0]-ta_full_dataset[0], ta[-1]-ta_full_dataset[0], len(ta)
     
-
-
     #data array to hold time series for longest possible time window for the files given 
     #order Ex, Ey, Bx, By (,Bz)
     #if remote reference set: Ex, Ey, Bx, By (,Bz), remoteBx, remoteBy
