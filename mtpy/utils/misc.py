@@ -64,9 +64,9 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
     longest_window = 0 
 
     window_idx = 0
-    print 'total length:', totallength
+    print '\t\tMaximum time window covered by data files:', totalmax-totalmin 
 
-    print 'start while-loop until "totallength" is reached...'
+    print '\t\tCheck data availablility - while-loop until "maximum time window" is reached...'
     while t1 < totallength:
         if np.prod(d[t1,:]) == 0 :
             #check, if it's been a data window before
@@ -93,11 +93,11 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
             window_idx += 1
         t1 += 1
         if t1%(int(totallength/100.)) == 0:
-            sys.stdout.write('{0:3} %\r'.format(int(np.round(t1/float(totallength) *100))))
+            sys.stdout.write('\t\t{0:3} %\r'.format(int(np.round(t1/float(totallength) *100))))
             sys.stdout.flush()
 
     
-    print '\nloop finished - checking last sample'
+    print '\n\t\t...Done!'#' \n\t\tChecking for last sample (include/exclude)...'
     #after the loop, check, if last sample belogs to a data window:
     if ts_tmp != None:
         te_tmp = t1 -1
@@ -110,7 +110,10 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
     #rounding limits of the time window to precision defined by the sampling rate
     precision = -int(np.log10(1./sampling_rate))
     #print 'return time window parameters:'
-    #print (round(ta[start_idx], precision), round(ta[end_idx], precision), window_length, len(ta))
+    #print ta[start_idx],ta[end_idx] ,window_length, len(ta)
+    #print '\t\tStart time, end time, samples: ',round(ta[start_idx], precision),\
+    #                     round(ta[end_idx], precision), window_length#, len(ta))
+    
     return (round(ta[start_idx], precision), round(ta[end_idx], precision), window_length)
 
 

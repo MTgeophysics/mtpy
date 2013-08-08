@@ -43,7 +43,8 @@ def main():
         if not 0 < coherence_th <= 1: 
             raise
     except: 
-        print 'coherence value invalid (float from interval ]0,1]) - set to 0.5 instead'
+        print ' Warning - Coherence value invalid (float from interval ]0,1]) '\
+                '- set to 0.5 instead'
         coherence_th = 0.5
 
     try:
@@ -61,7 +62,7 @@ def main():
     birrp_exe = op.abspath(op.realpath(birrp_exe_raw))
 
     if not op.isfile(birrp_exe):
-        raise MTex.MTpyError_inputarguments('Birrp executable not existing: %s' % (birrp_exe))
+        print '\nError - Birrp executable not existing: {0}\n'.format(birrp_exe)
 
     stationname = sys.argv[2].upper()
     rr_stationname = sys.argv[3].upper()
@@ -71,13 +72,15 @@ def main():
 
 
     if not op.isdir(ts_dir):
-        raise MTex.MTpyError_inputarguments('Time series directory not existing: %s' % (ts_dir))
+        print '\nError - Time series directory not existing: {0}\n'.format(ts_dir)
+        return
 
     try:
         MTbp.runbirrp2in2out_simple(birrp_exe, stationname, ts_dir,coherence_th, 
                                     rr_stationname, None, starttime, endtime)
     except:
-        print 'ERROR - Could not process input data using BIRRP'
+        print '\nERROR - Could not process input data using BIRRP'
+        return
 
 
 if __name__=='__main__':
