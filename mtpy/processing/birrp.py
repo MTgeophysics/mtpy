@@ -48,9 +48,6 @@ reload(MTfh)
 epsilon = 1e-5
 #=================================================================
 
-
-
-
 def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, 
                            coherence_threshold = 0.5, rr_station = None, 
                            output_dir = None, starttime = None, endtime = None):
@@ -324,6 +321,7 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
             if stationname_read == rr_station.upper():
                 rr_station_flag = True
 
+
         if rr_station_flag is True:
             if header['channel'].lower() in rr_channels:
                 
@@ -338,9 +336,6 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
                 if stationname.upper() != rr_station.upper():
                     continue
             
-            else:
-                continue
-
 
         if not header['channel'].lower() in station_channels:
             continue
@@ -354,7 +349,7 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
         ta_station_endtime = ta_station[-1]
         lo_station_endtimes.append(ta_station_endtime)
 
-
+ 
     if (len(lo_sampling_rates) == 0) or (len(lo_station_files) == 0):
         print '\n\tERROR - no MTpy data files for station'\
             ' {1} found in directory {0} !!\n'.format(ts_directory,stationname)
