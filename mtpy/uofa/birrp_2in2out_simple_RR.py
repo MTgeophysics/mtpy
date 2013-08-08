@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 """
-This is a convenience script for running BIRRP. 
+Convenience script for running BIRRP with one remote reference. 
 
 arguments:
-birrp executable, stationname (uppercase), directory containing time series files, coherence threshold
+birrp executable, stationname, remote refernce station name, directory containing time series files
 
-A subfolder 'birrp_processed' for the output is generated within the time series directory 
+optional:
+coherence threshold, start time of processing, end time of processing
+
+A subfolder 'birrp_processed_rr' for the output is generated within the time series directory 
 
 """
 
@@ -21,22 +24,22 @@ import time
 
 
 import mtpy.utils.exceptions as MTex
-
 import mtpy.processing.birrp as MTbp
 reload(MTbp)
 
 
 def main():
 
-    if len(sys.argv) < 4:
-        print '\nNeed at least 3 arguments: <path to BIRRP executable> '\
-                        '<station name> <directory for time series>\n\n'\
+    if len(sys.argv) < 5:
+        print '\nNeed at least 4 arguments: <path to BIRRP executable> '\
+                        '<station name> <remote station name> <directory for'\
+                        ' time series>\n\n'\
                         'Optional arguments: \n [coherence threshold]\n'\
                         ' [start time] \n [end time]\n\n'
         return
 
     try:
-        coherence_th = float(sys.argv[4])
+        coherence_th = float(sys.argv[5])
         if not 0 < coherence_th <= 1: 
             raise
     except: 
@@ -44,12 +47,12 @@ def main():
         coherence_th = 0.5
 
     try:
-        starttime = float(sys.argv[5])
+        starttime = float(sys.argv[6])
     except:
         starttime = None
 
     try:
-        endtime = float(sys.argv[6])
+        endtime = float(sys.argv[7])
     except:
         endtime = None
     
@@ -61,20 +64,20 @@ def main():
         raise MTex.MTpyError_inputarguments('Birrp executable not existing: %s' % (birrp_exe))
 
     stationname = sys.argv[2].upper()
+    rr_stationname = sys.argv[3].upper()
 
-    ts_dir_raw = sys.argv[3]
+    ts_dir_raw = sys.argv[4]
     ts_dir = op.abspath(op.realpath(ts_dir_raw))
 
 
     if not op.isdir(ts_dir):
         raise MTex.MTpyError_inputarguments('Time series directory not existing: %s' % (ts_dir))
 
-    if 1:
-        MTbp.runbirrp2in2out_simple(birrp_exe, stationname, ts_dir, coherence_th,
-                                                    None, None, starttime, endtime)
-    # except:
-    #     print 'ERROR - Could not process input data using BIRRP'
-
+    try:
+        MTbp.runbirrp2in2out_simple(birrp_exe, stationname, ts_dir,coherence_th, 
+                                    rr_stationname, None, starttime, endtime)
+    except:
+        print 'ERROR - Could not process input data using BIRRP'
 
 
 if __name__=='__main__':

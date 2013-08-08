@@ -52,8 +52,8 @@ epsilon = 1e-5
 
 
 def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, 
-                           coherence_threshold = 0.5, output_dir = None,
-                           starttime = None, endtime = None):
+                           coherence_threshold = 0.5, rr_station = None, 
+                           output_dir = None, starttime = None, endtime = None):
 
     """
     Call BIRRP for 2 input and 2 output channels with the simplemost setup. 
@@ -90,6 +90,9 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
     current_dir = op.abspath(os.curdir)
 
     wd = op.abspath(op.realpath(op.join(ts_directory,'birrp_processed')))
+    if rr_station is not None:
+        wd = op.abspath(op.realpath(op.join(ts_directory,'birrp_processed_rr')))
+
     if output_dir != None:
         output_dir = op.abspath(output_dir)
         if not op.isdir(output_dir) :
@@ -108,14 +111,15 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
         except:
             raise MTex.MTpyError_file_handling('cannot create working directory:%s'%(wd))
     
-    print "Successfully generated output directory", wd
+    print "Found/generated output directory: {0}".format(wd)
 
     os.chdir(wd)
 
     inputstring, birrp_stationdict, inputfilename = generate_birrp_inputstring_simple(
-                stationname, ts_directory, coherence_threshold,2, starttime, endtime)
+                                            stationname, rr_station, ts_directory, 
+                                            coherence_threshold,2, starttime, endtime)
 
-    print "generated inputstring and configuration dictionary for station {0}".format(stationname)
+    print "Inputstring and configuration dictionary generated for station {0}".format(stationname)
     #print inputstring
     #sys.exit()
     #correct inputstring for potential errorneous line endings due to strange operating systems:
@@ -149,8 +153,8 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
 
     #generate a local configuration file, containing information about all BIRRP and station parameters
     #required for the header of the EDI file 
-    print out
-    print err
+    # print out
+    # print err
     print 'generating configuration file containing the applied processing parameters'
     station_config_file = '%s_birrpconfig.cfg'%(stationname)
     MTcf.write_dict_to_configfile(birrp_stationdict, station_config_file)
@@ -163,7 +167,7 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
 
 
 
-def generate_birrp_inputstring_simple(stationname, ts_directory, 
+def generate_birrp_inputstring_simple(stationname, rr_station, ts_directory, 
                                         coherence_threshold, output_channels=2,
                                         starttime=None, endtime=None):
 
@@ -173,7 +177,7 @@ def generate_birrp_inputstring_simple(stationname, ts_directory,
 
     print 'setting basic input components,e.g. filenames, samplingrate,...'
     input_filename, length, sampling_rate, birrp_stationdict = set_birrp_input_file_simple(
-                                    stationname, ts_directory, output_channels, 
+                                    stationname, rr_station, ts_directory, output_channels, 
                                     op.join(ts_directory,'birrp_wd'),
                                     starttime, endtime)
 
@@ -184,8 +188,11 @@ def generate_birrp_inputstring_simple(stationname, ts_directory,
     birrp_stationdict['n_bisections'] = number_of_bisections
     birrp_stationdict['coherence_threshold'] = coherence_threshold
 
-    #self referencing:
+    #for self referencing:
     birrp_stationdict['rr_station'] = birrp_stationdict['station']
+    #otherwise:
+    if rr_station is not None:
+        birrp_stationdict['rr_station'] = rr_station.upper()
 
     birrp_stationdict = MTmc.add_birrp_simple_parameters_to_dictionary(birrp_stationdict)
 
@@ -193,14 +200,38 @@ def generate_birrp_inputstring_simple(stationname, ts_directory,
     if output_channels == 2:
         birrp_stationdict['nout'] = 2
 
-        inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n%i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,input_filename)
+        inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n%s\n0\n1\n3\n2\n0'\
+                    '\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n%i\n4,3,4\n%s\n0'\
+                    '\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,longest_section,
+                        number_of_bisections,coherence_threshold,stationname,
+                        input_filename,length,input_filename)
+        if rr_station is not None:
+            inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n%s\n0\n1\n3\n'\
+                        '2\n0\n0\n0\n0\n0\n0\n0\n6,1,2,3,4\n%s\n0\n%i\n6,5,6\n%s'\
+                        '\n0\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,
+                            longest_section,number_of_bisections,
+                            coherence_threshold,stationname,input_filename,
+                            length,input_filename)
 
+    #TODO: check order of columns!!!
     elif output_channels == 3:
         birrp_stationdict['nout'] = 3
         birrp_stationdict['nz'] = 2
 
+        inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1\n3\n2'\
+                    '\n0\n0\n0\n0\n0\n0\n0\n5,1,2,5,3,4\n%s\n0\n\i\n5,3,4\n%s\n0'\
+                    '\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,longest_section,
+                        number_of_bisections,coherence_threshold,stationname,
+                        input_filename,length,stationname)
+        if rr_station is not None:
+            inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1'\
+                        '\n3\n2\n0\n0\n0\n0\n0\n0\n0\n7,1,2,5,3,4\n%s\n0\n\i\n'\
+                        '7,6,7\n%s\n0\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,
+                            longest_section,number_of_bisections,
+                            coherence_threshold,stationname,input_filename,
+                            length,stationname)
 
-        inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n\i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,stationname)
+
 
     string_file = op.join(ts_directory,'birrp_wd','birrp_input_string.txt')
     string_file = MTfh.make_unique_filename(string_file)
@@ -213,22 +244,28 @@ def generate_birrp_inputstring_simple(stationname, ts_directory,
 
 
 
-def set_birrp_input_file_simple(stationname, ts_directory, output_channels, 
-                                w_directory = '.', starttime=None, endtime=None):
+def set_birrp_input_file_simple(stationname, rr_station, ts_directory, 
+                                output_channels, w_directory = '.', 
+                                starttime=None, endtime=None):
     """
     File handling: collect longest possible input for BIRRP from different files 
-    for the given station name. Generate a new input file in the working 
-    directory and return the name of this file, as well as time series and 
-    processing properties in form of a dictionary. 
+    for the given station name. Cut out section, if start and/or end times are given.
+    Generate a new input file in the working directory and return the name of 
+    this file, as well as time series and processing properties in form of a 
+    dictionary. 
 
     Scan all files in the directory by their headers: if the stationname matches, 
     add the data file to the list. Additionally read out channels and start-/end 
     times. Find longest consecutive time available on all channels.
+    Include remote reference station data, if rr_station is given.
     Then generate n x 4/5 array for n consecutive time steps. Array in order 
     Ex, Ey, Bx, By (,Bz) saved into file 'birrp_input_data.txt'
 
+    If remote reference is include, generate n x 6/7 array in order 
+    Ex, Ey, Bx, By (,Bz), remoteBx, remoteBy
+
     Output_channels determine the number of output channels: 
-    2 for Ex, Ey - 3 for additional Bz
+    "2" for Ex, Ey - "3" for additional Bz
 
     Output:
     - filename for birrp input data_in
