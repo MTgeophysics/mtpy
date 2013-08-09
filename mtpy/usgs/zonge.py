@@ -104,6 +104,7 @@ class ZongeMTFT():
         self.Remote_Rotation = 0
         self.Remote_Path = ''
         self.cache_path = None
+        self.new_remote_path = ''
         
         #info dict
         self.ts_info_keys = ['File#', 'Setup', 'SkipWgt', 'LocalFile', 
@@ -281,6 +282,11 @@ class ZongeMTFT():
         if self.Remote_Path is None or self.Remote_Path == '':
             return 
             
+        self.new_remote_path = os.path.join(self.cache_path, 'RR')
+        if not os.path.exists(self.new_remote_path):
+            os.mkdir(self.new_remote_path)
+            
+            
         new_ts_info_lst = []  
         rrfnlst = [rrfn for rrfn in os.listdir(self.Remote_Path) 
                    if rrfn.find('.cac')>0]
@@ -333,7 +339,7 @@ class ZongeMTFT():
                 if local_start_date == remote_start_date and \
                    local_df == remote_df and \
                    local_start_time[0:2] == remote_start_time[0:2]:
-                    print rrfn
+                    print rrfn, remote_start_date, remote_start_time
                     if local_start_time == remote_start_time:
                         if local_npts == remote_npts:
                             ts_dict['RemoteFile'] = rrfn
@@ -344,153 +350,400 @@ class ZongeMTFT():
                                             self.num_comp+3):
                                 ts_dict['ChnGain{0}'.format(ii)] = '1'
                             new_ts_info_lst.append(ts_dict)
+                            
+                            #copy remote referenc data to local directory
+                            shutil.copy(os.path.join(self.Remote_Path, rrfn),
+                                        os.path.join(self.new_remote_path, 
+                                                     rrfn))
                             rrfind = True
                             break
                         
                         #if time series is longer than remote reference
                         elif remote_npts < local_npts:
-                            local_zc.read_cache(os.path.join(self.cache_path, 
-                                                        ts_dict['LocalFile']))
+                            print '{0} local_npts > remote_npts {0}'.format('*'*4)
+                            #read in cache file
+                            local_zc.read_cache(os.path.join(self.cache_path,
+                                                  ts_dict['LocalFile']))
+                            #resize local ts accordingly
                             local_zc.ts = np.resize(local_zc.ts, 
-                                               (remote_npts,
-                                                local_zc.ts.shape[1]))
-                            local_zc.meta_data['TS.NPNT'] = [remote_npts]
-                            local_zc.rewrite_cache_file()
+                                                    (remote_zc.ts.shape[0],
+                                                     local_zc.ts.shape[1]))
+
+                            #reset some meta data 
+                            local_zc.meta_data['TS.NPNT'] = \
+                                            [str(local_zc.ts.shape[0])]
                             
-                            print 'Resized TS in {0} to {1}'.format(
-                                    os.path.join(self.cache_path, 
-                                                 ts_dict['LocalFile']),
-                                    local_zc.ts.shape)
-                                    
+                            print 'Resized Local TS in {0} to {1}'.format(
+                               os.path.join(self.cache_path, 
+                                            ts_dict['LocalFile']),
+                               local_zc.ts.shape)
+                            #rewrite the cache file
+                            local_zc.rewrite_cache_file()
+
+                            #reset some of the important parameters
                             ts_dict['LocalFile'] = \
-                                        os.path.basename(local_zc.save_fn_rw)
+                                    os.path.basename(local_zc.save_fn_rw)
                             ts_dict['RemoteFile'] = rrfn
                             ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
                             ts_dict['RemoteByte'] = ts_dict['LocalByte']
                             ts_dict['NLocalPnt'] = local_zc.ts.shape[0]
-                            ts_dict['NRemotePnt'] = ts_dict['NLocalPnt']
+                            ts_dict['NRemotePnt'] = remote_zc.ts.shape[0]
                             for ii in range(self.num_comp+1,
                                             self.num_comp+3):
                                 ts_dict['ChnGain{0}'.format(ii)] = '1'
                             new_ts_info_lst.append(ts_dict)
-                            rrfind = True
+                            
+                            #copy remote referenc data to local directory
+                            shutil.copy(os.path.join(self.Remote_Path, rrfn),
+                                        os.path.join(self.new_remote_path, 
+                                                     rrfn))
                             break
                                                         
                         #if remote reference is longer than time series
                         elif remote_npts > local_npts:
+                            print '{0} local_npts < remote_npts {0}'.format('*'*4)
                             
                             remote_zc.read_cache(os.path.join(self.Remote_Path,
-                                                         rrfn))
-
+                                                              rrfn))
+                            #resize remote ts accordingly
                             remote_zc.ts = np.resize(remote_zc.ts, 
-                                                     (local_npts,2))
-                                                
-                            remote_zc.meta_data['TS.NPNT'] = [str(local_npts)]
-                            remote_zc.rewrite_cache_file()
+                                                      (local_npts,
+                                                       remote_zc.ts.shape[1]))
+                            #reset some meta data 
+                            remote_zc.meta_data['TS.NPNT'] = \
+                                            [str(remote_zc.ts.shape[0])]
                             
-                            print 'Resized RR_TS in {0} to {1}'.format(
-                                           os.path.join(self.Remote_Path,rrfn),
-                                           remote_zc.ts.shape)
+                            print 'Resized Remote TS in {0} to {1}'.format(
+                                    os.path.join(self.Remote_Path, rrfn),
+                                    remote_zc.ts.shape)
+                                    
+                            #rewrite the remote cache file 
+                            remote_zc.rewrite_cache_file()
+
+                            #reset some of the important parameters
                             ts_dict['RemoteFile'] = \
-                                        os.path.basename(remote_zc.save_fn_rw)
+                                    os.path.basename(remote_zc.save_fn_rw)
                             ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
                             ts_dict['RemoteByte'] = ts_dict['LocalByte']
-                            ts_dict['NRemotePnt'] = ts_dict['NLocalPnt']
+                            ts_dict['NLocalPnt'] = local_npts
+                            ts_dict['NRemotePnt'] = remote_zc.ts.shape[0]
                             for ii in range(self.num_comp+1,
                                             self.num_comp+3):
                                 ts_dict['ChnGain{0}'.format(ii)] = '1'
                             new_ts_info_lst.append(ts_dict)
+                            
+                            #copy remote referenc data to local directory
+                            shutil.copy(remote_zc.save_fn_rw,
+                                        os.path.join(self.new_remote_path, 
+                                     os.path.basename(remote_zc.save_fn_rw)))
+                            
                             rrfind = True
                             break
                             
                     #if the starting time is different
                     elif abs(int(local_start_time)-int(remote_start_time)) < \
                                                     int(tdiff):
-                        if local_npts != remote_npts:
-                            local_hour = int(local_start_time[0:2])
-                            local_minute = int(local_start_time[2:4])
-                            local_second = int(local_start_time[4:])
-                            
-                            rr_hour = int(remote_start_time[0:2])
-                            rr_minute = int(remote_start_time[2:4])
-                            rr_second = int(remote_start_time[4:])
-                            
-                            hour_diff = (rr_hour-local_hour)*3600
-                            minute_diff = (rr_minute-local_minute)*60
-                            second_diff = rr_second-local_second
-                            
-                            time_diff = abs(hour_diff+minute_diff+second_diff)
-                            skip_points = int(local_df)*time_diff
+                        
+                        local_hour = int(local_start_time[0:2])
+                        local_minute = int(local_start_time[2:4])
+                        local_second = int(local_start_time[4:])
+                        
+                        rr_hour = int(remote_start_time[0:2])
+                        rr_minute = int(remote_start_time[2:4])
+                        rr_second = int(remote_start_time[4:])
+                        
+                        hour_diff = (rr_hour-local_hour)*3600
+                        minute_diff = (rr_minute-local_minute)*60
+                        second_diff = rr_second-local_second
+                        
+                        time_diff = hour_diff+minute_diff+second_diff
+                        skip_points = int(local_df)*abs(time_diff)
+                        
+                        remote_zc.read_cache(os.path.join(self.Remote_Path,
+                                                          rrfn))
+                        
+                        #remote start time is later than local
+                        if time_diff > 0:
                             
                             print ('Time difference is {0} seconds'.format(
                                                                 time_diff))
                             print 'Skipping {0} points in {1}'.format(
                                                 skip_points,
+                                                os.path.join(self.cache_path, 
+                                                        ts_dict['LocalFile']))
+                                                
+                            local_zc.read_cache(os.path.join(self.cache_path, 
+                                                        ts_dict['LocalFile']))
+                            
+                            #resize local ts
+                            local_zc.ts = local_zc.ts[skip_points:, :]
+                            local_zc.meta_data['DATA.TIME0'] = \
+                                    ['{0}:{1}:{2}'.format(
+                                            local_hour+int(hour_diff/3600.),
+                                            local_minute+int(minute_diff/60.),
+                                            local_second+int(second_diff))]
+                            
+                            #if for some reason after reshaping the remote
+                            #the local time series is still larger, cull
+                            #the local to match the remote so mtft doesn't
+                            #get angry
+                            if remote_zc.ts.shape[0] < local_zc.ts.shape[0]:
+                                print '{0} local_npts > remote_npts {0}'.format('*'*4)
+                                #read in cache file
+                                local_zc.read_cache(os.path.join(self.cache_path,
+                                                      ts_dict['LocalFile']))
+                                #resize local ts accordingly
+                                local_zc.ts = np.resize(local_zc.ts, 
+                                                        (remote_zc.ts.shape[0],
+                                                         local_zc.ts.shape[1]))
+
+                                #reset some meta data 
+                                local_zc.meta_data['TS.NPNT'] = \
+                                                [str(local_zc.ts.shape[0])]
+                                
+                                
+                                print 'Resized Local TS in {0} to {1}'.format(
+                                   os.path.join(self.cache_path, 
+                                                ts_dict['LocalFile']),
+                                   local_zc.ts.shape)
+                                #rewrite the cache file
+                                local_zc.rewrite_cache_file()
+
+                                #reset some of the important parameters
+                                ts_dict['LocalFile'] = \
+                                        os.path.basename(local_zc.save_fn_rw)
+                                ts_dict['RemoteFile'] = rrfn
+                                ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
+                                ts_dict['RemoteByte'] = ts_dict['LocalByte']
+                                ts_dict['NLocalPnt'] = local_zc.ts.shape[0]
+                                ts_dict['NRemotePnt'] = remote_zc.ts.shape[0]
+                                for ii in range(self.num_comp+1,
+                                                self.num_comp+3):
+                                    ts_dict['ChnGain{0}'.format(ii)] = '1'
+                                new_ts_info_lst.append(ts_dict)
+                                
+                                #copy remote to local directory
+                                shutil.copy(os.path.join(self.Remote_Path, 
+                                                         rrfn),
+                                            os.path.join(self.new_remote_path, 
+                                                         rrfn))
+                                rrfind = True
+                                break
+                                
+                            #reshape local file if number of points is larger
+                            #than the remote reference.
+                            elif remote_zc.ts.shape[0] > local_npts:
+                                print '{0} local_npts < remote_npts {0}'.format('*'*4)
+                                #reset local meta data 
+                                local_zc.meta_data['TS.NPNT'] = \
+                                                [str(local_zc.ts.shape[0])]
+                                
+                                #rewrite the local cache file
+                                local_zc.rewrite_cache_file()
+                            
+                                #resize remote ts accordingly
+                                remote_zc.ts = np.resize(remote_zc.ts, 
+                                                          (local_zc.ts.shape[0],
+                                                           remote_zc.ts.shape[1]))
+                                #reset some meta data 
+                                remote_zc.meta_data['TS.NPNT'] = \
+                                                [str(remote_zc.ts.shape[0])]
+                                
+                                print 'Resized Remote TS in {0} to {1}'.format(
+                                        os.path.join(self.Remote_Path, rrfn),
+                                        remote_zc.ts.shape)
+                                        
+                                #rewrite the remote cache file 
+                                remote_zc.rewrite_cache_file()
+
+                                
+                                #reset some of the important parameters
+                                ts_dict['LocalFile'] = \
+                                        os.path.basename(local_zc.save_fn_rw)
+                                ts_dict['RemoteFile'] = \
+                                        os.path.basename(remote_zc.save_fn_rw)
+                                ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
+                                ts_dict['RemoteByte'] = ts_dict['LocalByte']
+                                ts_dict['NLocalPnt'] = local_zc.ts.shape[0]
+                                ts_dict['NRemotePnt'] = remote_zc.ts.shape[0]
+                                for ii in range(self.num_comp+1,
+                                                self.num_comp+3):
+                                    ts_dict['ChnGain{0}'.format(ii)] = '1'
+                                new_ts_info_lst.append(ts_dict)
+                                
+                                #copy remote referenc data to local directory
+                                shutil.copy(remote_zc.save_fn_rw,
+                                        os.path.join(self.new_remote_path, 
+                                       os.path.basename(remote_zc.save_fn_rw)))
+                                rrfind = True
+                                break
+                            
+                            elif remote_zc.ts.shape[0] == local_npts:
+                                #reset local meta data 
+                                local_zc.meta_data['TS.NPNT'] = \
+                                                [str(local_zc.ts.shape[0])]
+                                
+                                #rewrite the local cache file
+                                local_zc.rewrite_cache_file()
+                                
+                                #reset some of the important parameters
+                                ts_dict['LocalFile'] = \
+                                        os.path.basename(local_zc.save_fn_rw)
+                                ts_dict['RemoteFile'] = rrfn
+                                ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
+                                ts_dict['RemoteByte'] = ts_dict['LocalByte']
+                                ts_dict['NLocalPnt'] = local_zc.ts.shape[0]
+                                ts_dict['NRemotePnt'] = remote_zc.ts.shape[0]
+                                for ii in range(self.num_comp+1,
+                                                self.num_comp+3):
+                                    ts_dict['ChnGain{0}'.format(ii)] = '1'
+                                new_ts_info_lst.append(ts_dict)
+                                
+                                #copy remote reference to local directory
+                                shutil.copy(os.path.join(self.Remote_Path, 
+                                                         rrfn),
+                                            os.path.join(self.new_remote_path, 
+                                                         rrfn))
+                                rrfind = True
+                                break
+                    
+                        #local start time is later than remote start time                        
+                        elif time_diff < 0:
+                            
+                            print ('Time difference is {0} seconds'.format(
+                                                                    time_diff))
+                            print 'Skipping {0} points in {1}'.format(
+                                                skip_points,
                                                 os.path.join(self.Remote_Path,
                                                              rrfn))
                             
-                            remote_zc.read_cache(os.path.join(self.Remote_Path,
-                                                              rrfn))
                             #resize remote reference
-                            new_rr_ts = remote_zc.ts[skip_points:,:]
+                            new_rr_ts = remote_zc.ts[skip_points:, :]
                             
                             remote_zc.ts = new_rr_ts
+                            remote_zc.meta_data['DATA.TIME0'] = \
+                                    ['{0}:{1}:{2}'.format(
+                                            rr_hour-int(hour_diff/3600.),
+                                            rr_minute-int(minute_diff/60.),
+                                            rr_second-int(second_diff))]
                             
                             #if for some reason after reshaping the remote
                             #the local time series is still larger, cull
                             #the local to match the remote so mtft doesn't
                             #get angry
                             if remote_zc.ts.shape[0] < local_npts:
+                                print '{0} local_npts > remote_npts {0}'.format('*'*4)
+                                #reset remote meta data 
+                                remote_zc.meta_data['TS.NPNT'] = \
+                                                [str(remote_zc.ts.shape[0])]
+                                
+                                #rewrite the remote cache file 
+                                remote_zc.rewrite_cache_file()
+                                
+                                #read in cache file
                                 local_zc.read_cache(os.path.join(self.cache_path,
                                                       ts_dict['LocalFile']))
+                                #resize local ts accordingly
                                 local_zc.ts = np.resize(local_zc.ts, 
                                                         (remote_zc.ts.shape[0],
                                                          local_zc.ts.shape[1]))
+
+                                #reset some meta data 
                                 local_zc.meta_data['TS.NPNT'] = \
                                                 [str(local_zc.ts.shape[0])]
-                                print str(local_zc.ts.shape[0])
-                                local_zc.rewrite_cache_file()
-                                ts_dict['LocalFile'] = \
-                                        os.path.basename(local_zc.save_fn_rw)
-                                ts_dict['NLocalPnt'] = local_zc.ts.shape[0]
-                                print 'Resized TS in {0} to {1}'.format(
+                               
+                                print 'Resized Local TS in {0} to {1}'.format(
                                    os.path.join(self.cache_path, 
                                                 ts_dict['LocalFile']),
                                    local_zc.ts.shape)
-                            
-                            
-                            remote_zc.meta_data['TS.NPNT'] = \
-                                                [str(remote_zc.ts.shape[0])]
-                            
-                            remote_zc.rewrite_cache_file()
-                            
-                            print 'Resized RR_TS in {0} to {1}'.format(
-                                   os.path.join(self.Remote_Path, rrfn),
-                                   remote_zc.ts.shape)
                                    
-                            ts_dict['RemoteFile'] = \
+                                #rewrite the cache file
+                                local_zc.rewrite_cache_file()
+
+                                #reset some of the important parameters
+                                ts_dict['LocalFile'] = \
+                                        os.path.basename(local_zc.save_fn_rw)
+                                ts_dict['RemoteFile'] = \
                                         os.path.basename(remote_zc.save_fn_rw)
-                            ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
-                            ts_dict['RemoteByte'] = ts_dict['LocalByte']
-                            ts_dict['NRemotePnt'] = remote_zc.ts.shape[0]
-                            for ii in range(self.num_comp+1,
-                                            self.num_comp+3):
-                                ts_dict['ChnGain{0}'.format(ii)] = '1'
-                            new_ts_info_lst.append(ts_dict)
-                            rrfind = True
-                            break
-                        else:
-                            ts_dict['RemoteFile'] = \
-                                            os.path.basename(remote_zc.save_fn)
-                            ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
-                            ts_dict['RemoteByte'] = ts_dict['LocalByte']
-                            ts_dict['NRemotePnt'] = ts_dict['NLocalPnt']
-                            for ii in range(self.num_comp+1,
-                                            self.num_comp+3):
-                                ts_dict['ChnGain{0}'.format(ii)] = '1'
-                            new_ts_info_lst.append(ts_dict)
-                            rrfind = True
-                            break
+                                ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
+                                ts_dict['RemoteByte'] = ts_dict['LocalByte']
+                                ts_dict['NLocalPnt'] = local_zc.ts.shape[0]
+                                ts_dict['NRemotePnt'] = remote_zc.ts.shape[0]
+                                for ii in range(self.num_comp+1,
+                                                self.num_comp+3):
+                                    ts_dict['ChnGain{0}'.format(ii)] = '1'
+                                new_ts_info_lst.append(ts_dict)
+                                
+                                #copy remote referenc data to local directory
+                                shutil.copy(remote_zc.save_fn_rw,
+                                        os.path.join(self.new_remote_path, 
+                                       os.path.basename(remote_zc.save_fn_rw)))
+                                rrfind = True
+                                break
+                                
+                            #reshape local file if number of points is larger
+                            #than the remote reference.
+                            elif remote_zc.ts.shape[0] > local_npts:
+                                print '{0} local_npts < remote_npts {0}'.format('*'*4)
+                                #resize remote ts accordingly
+                                remote_zc.ts = np.resize(remote_zc.ts, 
+                                                          (local_npts,
+                                                           remote_zc.ts.shape[1]))
+                                #reset some meta data 
+                                remote_zc.meta_data['TS.NPNT'] = \
+                                                [str(remote_zc.ts.shape[0])]
+                                
+                                print 'Resized Remote TS in {0} to {1}'.format(
+                                        os.path.join(self.Remote_Path, rrfn),
+                                        remote_zc.ts.shape)
+                                        
+                                #rewrite the remote cache file 
+                                remote_zc.rewrite_cache_file()
+                                
+                                #reset some of the important parameters
+                                ts_dict['RemoteFile'] = \
+                                        os.path.basename(remote_zc.save_fn_rw)
+                                ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
+                                ts_dict['RemoteByte'] = ts_dict['LocalByte']
+                                ts_dict['NLocalPnt'] = local_npts
+                                ts_dict['NRemotePnt'] = remote_zc.ts.shape[0]
+                                for ii in range(self.num_comp+1,
+                                                self.num_comp+3):
+                                    ts_dict['ChnGain{0}'.format(ii)] = '1'
+                                new_ts_info_lst.append(ts_dict)
+                                #copy remote referenc data to local directory
+                                shutil.copy(remote_zc.save_fn_rw,
+                                        os.path.join(self.new_remote_path, 
+                                       os.path.basename(remote_zc.save_fn_rw)))
+                                rrfind = True
+                                break
+                            
+                            elif remote_zc.ts.shape[0] == local_npts:
+                                #reset local meta data 
+                                remote_zc.meta_data['TS.NPNT'] = \
+                                                [str(remote_zc.ts.shape[0])]
+                                
+                                #rewrite the local cache file
+                                remote_zc.rewrite_cache_file()
+                                
+                                #reset some of the important parameters
+                                ts_dict['RemoteFile'] = rrfn
+                                ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
+                                ts_dict['RemoteByte'] = ts_dict['LocalByte']
+                                ts_dict['NLocalPnt'] = remote_zc.ts.shape[0]
+                                ts_dict['NRemotePnt'] = remote_zc.ts.shape[0]
+                                for ii in range(self.num_comp+1,
+                                                self.num_comp+3):
+                                    ts_dict['ChnGain{0}'.format(ii)] = '1'
+                                new_ts_info_lst.append(ts_dict)
+                                
+                                #copy remote to local directory
+                                shutil.copy(os.path.join(self.Remote_Path, 
+                                                         rrfn),
+                                            os.path.join(self.new_remote_path, 
+                                                         rrfn))
+                                rrfind = True
+                                break
                         
             if rrfind == False:
                 print ('Did not find remote reference time series '
@@ -624,7 +877,7 @@ class ZongeMTFT():
             setup_dict['Rx.HPR'] = self.Rx_HPR
             setup_dict['Remote.Component'] = self.Remote_Component
             setup_dict['Remote.Rotation'] = self.Remote_Rotation
-            setup_dict['Remote.Path'] = self.Remote_Path+os.path.sep
+            setup_dict['Remote.Path'] = self.new_remote_path+os.path.sep
             setup_dict['chn_dict'] = dict([(chkey, [cid, cg, cl]) 
                                             for chkey, cid, cg, cl in 
                                             zip(setup_dict['Chn.Cmp'],
@@ -772,8 +1025,8 @@ class ZongeMTFT():
         self.get_survey_info(survey_file, station, rr_station_name=rrstation)
         
         #make a dictionary of all the values to write file
-        if self.Remote_Path is not '' or self.Remote_Path is not None:
-            self.Remote_Path += os.path.sep
+        if self.new_remote_path is not '' or self.new_remote_path is not None:
+            self.new_remote_path += os.path.sep
         
         #--> set a dictionary with all attributes
         self.make_value_dict()

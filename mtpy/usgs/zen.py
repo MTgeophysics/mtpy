@@ -7,6 +7,8 @@ ZenTools
     * Tools for reading and writing files for Zen and processing software
     * Tools for copying data from SD cards
     * Tools for copying schedules to SD cards
+	* Tools for reading and writing .cac files
+	* Tools for reading and writing .Z3D files
     
     
 Created on Tue Jun 11 10:53:23 2013
@@ -30,6 +32,8 @@ import mtpy.utils.filehandling as mtfh
 import mtpy.processing.birrp as birrp
 import mtpy.utils.exceptions as mtex
 import mtpy.utils.configfile as mtcf
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 
 try:
     import mtpy.utils.mseed as mtmseed
@@ -144,6 +148,8 @@ class Zen3D(object):
         self.sample_diff_lst = []
         self.counts_to_mv_conversion = 9.5367431640625e-10
         self.gps_week = 1740
+        self.time_series = None
+        self.date_time = None
         
     def read_header(self, header_string):
         """
@@ -864,18 +870,48 @@ class Zen3D(object):
                                                                self.time_series)
         return save_fn
                                                                
-    def plot_time_series(self):
+    def plot_time_series(self, fig_num=1):
         """
         plots the time series
         """                                                               
         
-        pass
+        fig = plt.figure(fig_num, dpi=300)
+        ax = fig.add_subplot(1,1,1)
+        ax.plot(self.time_series)
+        
+        ax.xaxis.set_minor_locator(MultipleLocator(self.df))
+        ax.xaxis.set_major_locator(MultipleLocator(self.df*15))
+        
+        ax.xaxis.set_ticklabels([self.date_time[ii] 
+                                for ii in range(0,len(self.date_time), 15)])
+        ax.set_xlabel('Time (s)')
+        ax.set_ylabel('Amplitude (mV)')
+        plt.show()
+        return fig, ax
+        
     
-    def plot_spectra(self):
+    def plot_spectra(self, fig_num=2):
         """
         plot the spectra of time series
         """
-        pass
+        if self.time_series is None:
+            self.read_3d()
+            
+        spect = np.fft.fft(mtfilt.zero_pad(self.time_series))
+        plot_freq = np.fft.fftfreq(spect.shape[0], 1./self.df)
+        
+        fig = plt.figure(fig_num, [4,4], dpi=200)
+        ax = fig.add_subplot(1,1,1)
+        ax.loglog(plot_freq, abs(spect)**2, lw=.5)
+        ax.grid(which='both', lw=.25)
+        
+        ax.set_xlabel('Frequency (Hz)')
+        #ax.set_xlim(1./plot_freq.max(), 1./plot_freq.min())
+        ax.set_ylabel('Amplitude')
+        
+        plt.show()
+        
+        return fig, ax
         
 
 class ZenCache(object):
@@ -1070,12 +1106,13 @@ class ZenCache(object):
         for ii, zt in enumerate(zt_lst):
             if skip_dict[ii] != 0:
                 skip_points = skip_dict[ii]*zt.df
-                print skip_points
+                print 'Skipping {0} points for {1}'.format(skip_points,
+                                                            zt.ch_cmp)
                 zt.time_series = zt.time_series[skip_points:]
                 zt.gps_diff = zt.gps_diff[skip_dict[ii]:]
                 zt.gps_lst = zt.gps_lst[skip_dict[ii]:]
                 zt.date_time = zt.date_time[skip_dict[ii]:]
-                zt.gps_time = zt.gps_time[skip_dict[ii:]]
+                zt.gps_time = zt.gps_time[skip_dict[ii]:]
             
         #test length of time series
         ts_len_lst = np.array([len(zt.time_series) for zt in zt_lst])

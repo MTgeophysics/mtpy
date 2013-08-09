@@ -2298,22 +2298,22 @@ class Occam2DData(object):
             startupfn = start up filepath, saved as startup
         """
         #get the base name of data file    
-        dfnb=os.path.basename(self.data_fn)
+        dfnb = os.path.basename(self.data_fn)
         
         #put data file into the same directory as MakeModel2DMT
-        if os.path.dirname(self.data_fn)!=occampath:
-            shutil.copy(self.data_fn,os.path.join(occampath,dfnb))
+        if os.path.dirname(self.data_fn) != occampath:
+            shutil.copy(self.data_fn, os.path.join(occampath, dfnb))
         
         #write input file for MakeModel2DMT
         mmfid=open(os.path.join(occampath,'inputMakeModel.txt'),'w')
-        mmfid.write(dfnb, '\n')
-        mmfid.write(str(niter), '\n')    
-        mmfid.write(str(targetrms), '\n')    
-        mmfid.write(str(nlayers), '\n')
-        mmfid.write(str(nlperdec), '\n')
-        mmfid.write(str(z1layer), '\n')
-        mmfid.write(str(bwidth), '\n')
-        mmfid.write(str(trigger), '\n')
+        mmfid.write(dfnb+'\n')
+        mmfid.write(str(niter)+'\n')    
+        mmfid.write(str(targetrms)+'\n')    
+        mmfid.write(str(nlayers)+'\n')
+        mmfid.write(str(nlperdec)+'\n')
+        mmfid.write(str(z1layer)+'\n')
+        mmfid.write(str(bwidth)+'\n')
+        mmfid.write(str(trigger)+'\n')
         mmfid.write('\n')
         mmfid.close()
         
@@ -2562,8 +2562,8 @@ class Occam2DData(object):
                         pass
                     
                     #if there are resistivity limits set those
-                    if self.res_limits!=None:
-                        xx.set_ylim(self.res_limits)
+                    if res_limits != None:
+                        xx.set_ylim(res_limits)
                     
                 #Set the title of the TE plot                 
                 if nn==0:
@@ -4098,7 +4098,7 @@ class PlotOccam2DResponse():
             pxy = np.where(rp_lst[jj]['phasexy'][0]!=0)[0]
             pyx = np.where(rp_lst[jj]['phaseyx'][0]!=0)[0]
             
-            #--> response
+            #--> reponse
             mpxy = np.where(rp_lst[jj]['phasexy'][2]!=0)[0]
             mpyx = np.where(rp_lst[jj]['phaseyx'][2]!=0)[0]
             

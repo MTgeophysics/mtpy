@@ -956,17 +956,23 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                 
             #--> set axes properties
             if self.strike_limits is None:
-                stmin = min(st_minlst)
+                try:
+                    stmin = min(st_minlst)
+                except ValueError:
+                    stmin = -89.99
                 if stmin-3 < -90:
                     stmin -= 3
                 else:
                     stmin = -89.99
-                    
-                stmax = max(st_maxlst)
-                if stmin+3 < 90:
-                    stmin += 3
+                
+                try:
+                    stmax = min(st_maxlst)
+                except ValueError:
+                    stmin = 89.99    
+                if stmax+3 < 90:
+                    stmax += 3
                 else:
-                    stmin = 89.99
+                    stmax = 89.99
                 self.strike_limits = (-max([abs(stmin), abs(stmax)]),
                                        max([abs(stmin), abs(stmax)]))
                                         
@@ -1109,8 +1115,8 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         
             #----set axes properties-----------------------------------------------
             #--> set tick labels and limits
-            self.axpt.set_xlim(np.floor(np.log10(self.xlimits[0])),
-                               np.ceil(np.log10(self.xlimits[1])))
+            self.axpt.set_xlim(np.log10(self.xlimits[0]),
+                               np.log10(self.xlimits[1]))
             
             tklabels = []
             xticks = []
@@ -1126,7 +1132,10 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             self.axpt.set_xlabel('Period (s)', fontdict=fontdict)
             self.axpt.set_ylim(ymin=-1.5*self.ellipse_size, 
                                ymax=1.5*self.ellipse_size)
-            
+            #need to reset the xlimits caouse they get reset when calling
+            #set_ticks for some reason
+            self.axpt.set_xlim(np.log10(self.xlimits[0]),
+                               np.log10(self.xlimits[1]))
             self.axpt.grid(True, 
                          alpha=.25, 
                          which='major', 
