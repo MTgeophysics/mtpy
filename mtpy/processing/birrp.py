@@ -618,7 +618,7 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
                 #print 'filling data from file into temporary array'
 
                 data[idx_overall_ta:idx_overall_ta+len(overlap), 
-                                            idx_ch+output_channels] = data_in[
+                                            idx_ch+2+output_channels] = data_in[
                                             idx_ta_file:idx_ta_file+len(overlap)]
 
                 gc.collect()
