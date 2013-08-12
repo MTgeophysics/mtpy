@@ -7,8 +7,6 @@ ZenTools
     * Tools for reading and writing files for Zen and processing software
     * Tools for copying data from SD cards
     * Tools for copying schedules to SD cards
-	* Tools for reading and writing .cac files
-	* Tools for reading and writing .Z3D files
     
     
 Created on Tue Jun 11 10:53:23 2013

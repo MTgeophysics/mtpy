@@ -366,7 +366,7 @@ class ZongeMTFT():
                                                   ts_dict['LocalFile']))
                             #resize local ts accordingly
                             local_zc.ts = np.resize(local_zc.ts, 
-                                                    (remote_zc.ts.shape[0],
+                                                    (remote_npts,
                                                      local_zc.ts.shape[1]))
 
                             #reset some meta data 
@@ -387,7 +387,7 @@ class ZongeMTFT():
                             ts_dict['RemoteBlock'] = ts_dict['LocalBlock']
                             ts_dict['RemoteByte'] = ts_dict['LocalByte']
                             ts_dict['NLocalPnt'] = local_zc.ts.shape[0]
-                            ts_dict['NRemotePnt'] = remote_zc.ts.shape[0]
+                            ts_dict['NRemotePnt'] = local_zc.ts.shape[0]
                             for ii in range(self.num_comp+1,
                                             self.num_comp+3):
                                 ts_dict['ChnGain{0}'.format(ii)] = '1'
@@ -433,7 +433,7 @@ class ZongeMTFT():
                             new_ts_info_lst.append(ts_dict)
                             
                             #copy remote referenc data to local directory
-                            shutil.copy(remote_zc.save_fn_rw,
+                            shutil.move(remote_zc.save_fn_rw,
                                         os.path.join(self.new_remote_path, 
                                      os.path.basename(remote_zc.save_fn_rw)))
                             
@@ -532,7 +532,7 @@ class ZongeMTFT():
                                 
                             #reshape local file if number of points is larger
                             #than the remote reference.
-                            elif remote_zc.ts.shape[0] > local_npts:
+                            elif remote_zc.ts.shape[0] > local_zc.ts.shape[0]:
                                 print '{0} local_npts < remote_npts {0}'.format('*'*4)
                                 #reset local meta data 
                                 local_zc.meta_data['TS.NPNT'] = \
@@ -572,7 +572,7 @@ class ZongeMTFT():
                                 new_ts_info_lst.append(ts_dict)
                                 
                                 #copy remote referenc data to local directory
-                                shutil.copy(remote_zc.save_fn_rw,
+                                shutil.move(remote_zc.save_fn_rw,
                                         os.path.join(self.new_remote_path, 
                                        os.path.basename(remote_zc.save_fn_rw)))
                                 rrfind = True
@@ -675,7 +675,7 @@ class ZongeMTFT():
                                 new_ts_info_lst.append(ts_dict)
                                 
                                 #copy remote referenc data to local directory
-                                shutil.copy(remote_zc.save_fn_rw,
+                                shutil.move(remote_zc.save_fn_rw,
                                         os.path.join(self.new_remote_path, 
                                        os.path.basename(remote_zc.save_fn_rw)))
                                 rrfind = True
@@ -712,7 +712,7 @@ class ZongeMTFT():
                                     ts_dict['ChnGain{0}'.format(ii)] = '1'
                                 new_ts_info_lst.append(ts_dict)
                                 #copy remote referenc data to local directory
-                                shutil.copy(remote_zc.save_fn_rw,
+                                shutil.move(remote_zc.save_fn_rw,
                                         os.path.join(self.new_remote_path, 
                                        os.path.basename(remote_zc.save_fn_rw)))
                                 rrfind = True
@@ -738,10 +738,9 @@ class ZongeMTFT():
                                 new_ts_info_lst.append(ts_dict)
                                 
                                 #copy remote to local directory
-                                shutil.copy(os.path.join(self.Remote_Path, 
-                                                         rrfn),
-                                            os.path.join(self.new_remote_path, 
-                                                         rrfn))
+                                shutil.move(remote_zc.save_fn_rw,
+                                        os.path.join(self.new_remote_path, 
+                                       os.path.basename(remote_zc.save_fn_rw)))
                                 rrfind = True
                                 break
                         
@@ -1407,6 +1406,7 @@ class ZongeMTAvg():
                             'Rx.Length':self.Rx_Length,
                             'Rx.HPR':self.Rx_HPR,
                             'Unit.Length':self.Unit_Length}
+                            
         self.info_keys = ['Skp', 'Freq', 'E.mag', 'B.mag', 'Z.mag', 'Z.phz',
                           'ARes.mag', 'ARes.%err', 'Z.perr', 'Coher', 
                           'FC.NUse', 'FC.NTry']
@@ -1446,10 +1446,11 @@ class ZongeMTAvg():
         alines = afid.readlines()
         self.comp_flag = {'zxx':False, 'zxy':False, 'zyx':False, 'zyy':False,
                           'tzx':False, 'tzy':False}
-                          
-        self.comp_dict = dict([(ckey, np.zeros(len(alines)/4, 
-                                               dtype=self.info_dtype))
-                                for ckey in self.comp_flag.keys()])
+        
+        if not self.comp_dict:                 
+            self.comp_dict = dict([(ckey, np.zeros(len(alines)/4, 
+                                                   dtype=self.info_dtype))
+                                    for ckey in self.comp_flag.keys()])
         self.comp_lst_z = []
         self.comp_lst_tip = []
         ii = 0                        
@@ -1485,12 +1486,12 @@ class ZongeMTAvg():
         imaginary parts, phase is in milliradians
         
         """
+        
         if type(zmag) is np.ndarray:
             assert len(zmag) == len(zphase)
-        
-        
-        zreal = zmag*np.cos(zphase/1000%np.pi)
-        zimag = zmag*np.sin(zphase/1000%np.pi)
+
+        zreal = zmag*np.cos((zphase/1000))
+        zimag = zmag*np.sin((zphase/1000))
         
         return zreal, zimag
         
@@ -1507,25 +1508,51 @@ class ZongeMTAvg():
 
         if self.nfreq:
             if nz > self.nfreq:
-                self.freq_dict = dict([('{0:.4g}'.format(ff), nn) for nn, ff
-                                       in enumerate(freq)])
+                print ('Previous {0} {1} > current {0} {2}'.format('Z length', 
+                       self.nfreq, nz) + ' \nfilling Z accordingly')
                 self.nfreq = nz
                 #reshape z
                 new_Z = mtz.Z()
                 new_Z.z = np.zeros((nz, 2, 2), dtype='complex')
                 new_Z.zerr = np.zeros((nz, 2, 2))
                 nzx, nzy, nzz = self.Z.z.shape
-                new_Z.z[0:nzx, 0:nzy, 0:nzz] = self.Z.z
-                new_Z.zerr[0:nzx, 0:nzy, 0:nzz] = self.Z.zerr
+                
+                old_fd = dict(self.freq_dict)
+                self.freq_dict = dict([('{0:.4g}'.format(ff), nn)
+                                        for nn, ff in enumerate(freq)])
+                                            
+                #need to fill the new array with the old values, but they
+                # need to be stored in the correct position
+                clst = ['zxx', 'zxy', 'zyx', 'zyy']
+                for cc in self.comp_lst_z:
+                    clst.remove(cc)
+                for ikey in clst:
+                    for kk, zz in enumerate(self.Z.z):
+                        ii, jj = self.comp_index[ikey]
+                        if zz[ii, jj].real != 0.0:
+                            #index for new Z array
+                            ll = self.freq_dict['{0:.4g}'.format(
+                                            self.comp_dict[ikey]['freq'][kk])]
+                            
+                            #index for old Z array
+                            mm = old_fd['{0:.4g}'.format(
+                                            self.comp_dict[ikey]['freq'][kk])]
+
+                            new_Z.z[ll] = self.Z.z[mm]
+                            new_Z.zerr[ll] = self.Z.zerr[mm]
+                    
                 new_Z.freq = freq
                 self.Z = new_Z
+                
+                self.freq_dict = dict([('{0:.4g}'.format(ff), nn)
+                                        for nn, ff in enumerate(freq)])
             
             #fill z with values from comp_dict
             for ikey in self.comp_lst_z:
                 ii, jj = self.comp_index[ikey]
 
-                zr, zi = self.convert2complex(self.comp_dict[ikey]['z.mag'][:nz],
-                                              self.comp_dict[ikey]['z.phz'][:nz])
+                zr, zi = self.convert2complex(self.comp_dict[ikey]['z.mag'][:nz].copy(),
+                                              self.comp_dict[ikey]['z.phz'][:nz].copy())
                 if nz != self.nfreq:
                     for kk, zzr, zzi in zip(range(len(zr)), zr, zi):
                         ll = self.freq_dict['{0:.4g}'.format(
@@ -1556,8 +1583,8 @@ class ZongeMTAvg():
             for ikey in self.comp_lst_z:
                 ii, jj = self.comp_index[ikey]
                     
-                zr, zi = self.convert2complex(self.comp_dict[ikey]['z.mag'][:nz],
-                                              self.comp_dict[ikey]['z.phz'][:nz])
+                zr, zi = self.convert2complex(self.comp_dict[ikey]['z.mag'][:nz].copy(),
+                                              self.comp_dict[ikey]['z.phz'][:nz].copy())
                 
                 if ikey.find('yx') > 0:
                     z[:, ii, jj] = -1*(zr+zi*1j)
@@ -1586,16 +1613,38 @@ class ZongeMTAvg():
         freq = freq[np.nonzero(freq)]
         if self.nfreq_tipper and self.Tipper.tipper is not None:
             if nz > self.nfreq_tipper:
-                self.freq_dict = dict([('{0:.4g}'.format(ff), nn) for nn, ff
-                                       in enumerate(freq)])
+                print ('Previous {0} {1} > current {0} {2}'.format(
+                        'Tipper length', self.nfreq_tipper, nz)+ 
+                        '\n filling Tipper accordingly')
+                
                 self.nfreq_tipper = nz
                 #reshape tipper
                 new_Tipper = mtz.Tipper()
                 new_Tipper.tipper = np.zeros((nz, 1, 2), dtype='complex')
                 new_Tipper.tipper_err = np.zeros((nz, 1, 2))
-                nzx, nzy, nzz = self.Tipper.tipper.shape
-                new_Tipper.tipper[0:nzx, :, 0:nzz] = self.Tipper.tipper
-                new_Tipper.tipper_err[0:nzx, :, 0:nzz] = self.Tipper.tipper_err
+                
+                old_fd = dict(self.freq_dict)
+                self.freq_dict = dict([('{0:.4g}'.format(ff), nn)
+                                        for nn, ff in enumerate(freq)])
+                                            
+                #need to fill the new array with the old values, but they
+                # need to be stored in the correct position
+                for ikey in ['tzx', 'tzy']:
+                    for kk, tt in enumerate(self.Tipper.tipper):
+                        ii, jj = self.comp_index[ikey]
+                        if tt[ii, jj].real != 0.0:
+                            #index for new tipper array
+                            ll = self.freq_dict['{0:.4g}'.format(
+                                            self.comp_dict[ikey]['freq'][kk])]
+                            
+                            #index for old tipper array
+                            mm = old_fd['{0:.4g}'.format(
+                                            self.comp_dict[ikey]['freq'][kk])]
+
+                            new_Tipper.tipper[ll] = self.Tipper.tipper[mm]
+                            new_Tipper.tipper_err[ll] = \
+                                                    self.Tipper.tipper_err[mm]
+
                 new_Tipper.freq = freq
                 self.Tipper = new_Tipper
            
@@ -1711,6 +1760,9 @@ class ZongeMTAvg():
                            self.avg_dict['ex']+avg_ext)
         if os.path.isfile(fnx) == True:
             self.read_avg_file(fnx)
+            self.edi.Z = self.Z
+            self.edi.Tipper = self.Tipper
+
         
         #read in ey file
         fny = os.path.join(avg_dirpath, 
@@ -1718,6 +1770,8 @@ class ZongeMTAvg():
                            self.avg_dict['ey']+avg_ext)
         if os.path.isfile(fny) == True:
             self.read_avg_file(fny)
+            self.edi.Z = self.Z
+            self.edi.Tipper = self.Tipper
  
         
         #read in survey file
