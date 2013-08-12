@@ -210,7 +210,7 @@ class Z(object):
 
         self._z = z_array
         
-        if self.rotation_angle is float:
+        if type(self.rotation_angle) is float:
             self.rotation_angle = np.array([self.rotation_angle 
                                              for ii in self._z])
 
