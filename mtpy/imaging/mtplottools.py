@@ -452,6 +452,9 @@ class ResPhase(object):
         self.phaseyx[np.where(self.phaseyx>120)] -= 180 
         self.phaseyx[np.where(self.phaseyx<-90)] += 180
         
+        self.phaseyy[np.where(self.phaseyy>120)] -= 180 
+        self.phaseyy[np.where(self.phaseyy<-90)] += 180
+        
         #calculate determinant values
         zdet = np.array([np.linalg.det(zz)**.5 for zz in self._Z.z])
         zdetvar = np.array([np.linalg.det(zzv)**.5 for zzv in self._Z.zerr])
