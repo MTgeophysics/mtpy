@@ -1431,6 +1431,7 @@ class ZongeMTAvg():
         self.nfreq_tipper = None
         self.freq_dict = None
         self.avg_dict = {'ex':'4', 'ey':'5'}
+        self.z_coordinate = 'up'
 
         
     def read_avg_file(self, avg_fn):
@@ -1489,9 +1490,13 @@ class ZongeMTAvg():
         
         if type(zmag) is np.ndarray:
             assert len(zmag) == len(zphase)
-
-        zreal = zmag*np.cos((zphase/1000))
-        zimag = zmag*np.sin((zphase/1000))
+        
+        if self.z_coordinate == 'up':
+            zreal = zmag*np.cos((zphase/1000)%np.pi)
+            zimag = zmag*np.sin((zphase/1000)%np.pi)
+        else:
+            zreal = zmag*np.cos((zphase/1000))
+            zimag = zmag*np.sin((zphase/1000))
         
         return zreal, zimag
         
@@ -1557,14 +1562,14 @@ class ZongeMTAvg():
                     for kk, zzr, zzi in zip(range(len(zr)), zr, zi):
                         ll = self.freq_dict['{0:.4g}'.format(
                                             self.comp_dict[ikey]['freq'][kk])]
-                        if ikey.find('yx') > 0:
+                        if ikey.find('yx') > 0 and self.z_coordinate == 'up':
                             self.Z.z[ll, ii, jj] = -1*(zzr+zzi*1j)
                         else:
                             self.Z.z[ll, ii, jj] = zzr+zzi*1j
                         self.Z.zerr[ll,ii, jj] = \
                                     self.comp_dict[ikey]['ares.%err'][kk]*.005
                 else:
-                    if ikey.find('yx') > 0:
+                    if ikey.find('yx') > 0 and self.z_coordinate == 'up':
                          self.Z.z[:, ii, jj] = -1*(zr+zi*1j)
                     else:
                         self.Z.z[:, ii, jj] = zr+zi*1j
@@ -1586,7 +1591,7 @@ class ZongeMTAvg():
                 zr, zi = self.convert2complex(self.comp_dict[ikey]['z.mag'][:nz].copy(),
                                               self.comp_dict[ikey]['z.phz'][:nz].copy())
                 
-                if ikey.find('yx') > 0:
+                if ikey.find('yx') > 0 and self.z_coordinate == 'up':
                     z[:, ii, jj] = -1*(zr+zi*1j)
                 else:
                     z[:, ii, jj] = zr+zi*1j
@@ -1658,12 +1663,19 @@ class ZongeMTAvg():
                     for kk, tzr, tzi in zip(range(len(tr)), tr, ti):
                         ll = self.freq_dict['{0:.4g}'.format(
                                             self.comp_dict[ikey]['freq'][kk])]
-                        self.Tipper.tipper[ll, ii, jj] += tzr+tzi*1j
+                        
+                        if self.z_coordinate == 'up':
+                            self.Tipper.tipper[ll, ii, jj] += -1*(tzr+tzi*1j)
+                        else:
+                            self.Tipper.tipper[ll, ii, jj] += tzr+tzi*1j
                         self.Tipper.tipper_err[ll,ii, jj] += \
                                     self.comp_dict[ikey]['ares.%err'][kk]*\
                                                     .05*np.sqrt(tzr**2+tzi**2)
                 else:
-                    self.Tipper.tipper[:, ii, jj] += tr+ti*1j
+                    if self.z_coordinate == 'up':
+                        self.Tipper.tipper[:, ii, jj] += -1*(tr+ti*1j)
+                    else:
+                        self.Tipper.tipper[:, ii, jj] += tr+ti*1j
                     self.Tipper.tipper_err[:, ii, jj] += \
                                      self.comp_dict[ikey]['ares.%err'][:nz]*\
                                                      .05*np.sqrt(tr**2+ti**2)
@@ -1683,13 +1695,15 @@ class ZongeMTAvg():
             for ikey in self.comp_lst_tip:
                 ii, jj = self.comp_index[ikey]
                     
-                tr, ti = self.convert2complex(self.comp_dict[ikey]['z.mag'][:nz],
+                tzr, tzi = self.convert2complex(self.comp_dict[ikey]['z.mag'][:nz],
                                               self.comp_dict[ikey]['z.phz'][:nz])
                 
-                tipper[:, ii, jj].real = tr
-                tipper[:, ii, jj].imag = ti
-                tippererr[:,ii, jj] = self.comp_dict[ikey]['ares.%err'][:nz]*\
-                                                     .05*np.sqrt(tr**2+ti**2)
+                if self.z_coordinate == 'up':
+                    tipper[:, ii, jj] += -1*(tzr+tzi*1j)
+                else:
+                    tipper[:, ii, jj] += tzr+tzi*1j
+                tippererr[:, ii, jj] = self.comp_dict[ikey]['ares.%err'][:nz]*\
+                                                     .05*np.sqrt(tzr**2+tzi**2)
                     
             self.Tipper.tipper = tipper
             self.Tipper.tipper_err = tippererr
@@ -1772,7 +1786,6 @@ class ZongeMTAvg():
             self.read_avg_file(fny)
             self.edi.Z = self.Z
             self.edi.Tipper = self.Tipper
- 
         
         #read in survey file
         if survey_cfg_file is not None:
