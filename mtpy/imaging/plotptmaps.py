@@ -591,9 +591,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         
         #--> plot the background image if desired-----------------------
         try:
-            im=plt.imread(self.image_file)
+            im = plt.imread(self.image_file)
             self.ax.imshow(im, origin='lower', extent=self.image_extent, 
-                      aspect='auto')
+                           aspect='auto')
         except AttributeError:
             pass
         
@@ -1103,7 +1103,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             save_fn = os.path.join(save_fn, 'PTmap_'+self.ellipse_colorby+sf+
                                     'Hz.'+file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                        orientation=orientation)
+                        orientation=orientation, bbox_inches='tight')
                         
         if close_plot == 'y':
             plt.clf()
