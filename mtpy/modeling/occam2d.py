@@ -2318,7 +2318,7 @@ class Occam2DData(object):
         mmfid.close()
         
         #get current working directory
-        cdir=os.getcwd() 
+        cdir = os.getcwd() 
         
         #change directory path to occam2d path
         os.chdir(occampath) 
@@ -2329,32 +2329,40 @@ class Occam2DData(object):
         #change back to original working directory    
         os.chdir(cdir)
         
-        if save_path==None:
-            save_path=os.path.dirname(self.data_fn)
+        if save_path == None:
+            save_path = os.path.dirname(self.data_fn)
         
         if not os.path.exists(save_path):
             os.mkdir(save_path)
         
-        meshfn=os.path.join(save_path,'MESH')    
-        inmodelfn=os.path.join(save_path,'INMODEL')    
-        startupfn=os.path.join(save_path,'startup')    
+        meshfn = os.path.join(save_path,'MESH')    
+        inmodelfn = os.path.join(save_path,'INMODEL')    
+        startupfn = os.path.join(save_path,'startup')    
         
         #copy ouput files to save_path
-        shutil.copy(os.path.join(occampath,'MESH'),meshfn)
-        shutil.copy(os.path.join(occampath,'INMODEL'),inmodelfn)
-        shutil.copy(os.path.join(occampath,'startup'),startupfn)
-        shutil.copy(os.path.join(occampath,'inputMakeModel.txt'),
-                    os.path.join(save_path,'inputMakeModel.txt'))
+        try:
+            shutil.copy(os.path.join(occampath,'MESH'), meshfn)
+            shutil.copy(os.path.join(occampath,'INMODEL'), inmodelfn)
+            shutil.copy(os.path.join(occampath,'startup'), startupfn)
+            shutil.copy(os.path.join(occampath, 'inputMakeModel.txt'),
+                        os.path.join(save_path, 'inputMakeModel.txt'))
+        except shutil.Error:
+            print 'Startup files are in {0}'.format(occampath)
+        
+        #copy data file if it isn't there already
         if not os.path.exists(os.path.join(save_path,dfnb)):
-            shutil.copy(self.data_fn,os.path.join(save_path,dfnb))
-        if os.path.getctime(os.path.join(save_path,dfnb))<\
+            try:
+                shutil.copy(self.data_fn, os.path.join(save_path,dfnb))
+            except shutil.Error:
+                pass
+        
+        if os.path.getctime(os.path.join(save_path, dfnb))<\
             os.path.getctime(self.data_fn):
-            shutil.copy(self.data_fn,os.path.join(save_path,dfnb))
-        
-        
-#        #rewrite mesh so it contains the right number of columns and rows
-#        rewriteMesh(meshfn)
-        
+            try:
+                shutil.copy(self.data_fn, os.path.join(save_path,dfnb))
+            except shutil.Error:
+                pass
+            
         #write startup file to have the starting desired starting rho value
         ifid=open(startupfn,'r')
         ilines=ifid.readlines()
@@ -2362,20 +2370,20 @@ class Occam2DData(object):
         
         if rhostart!=100:
             #make startup model a homogeneous half space of rhostart
-            rhostart=np.log10(rhostart)
-            ifid=open(startupfn,'w')
+            rhostart = np.log10(rhostart)
+            ifid = open(startupfn,'w')
             for line in ilines:
                 if line.find('2.000000')>=0:
-                    line=line.replace('2.000000','%.6f' % rhostart)
+                    line = line.replace('2.000000','%.6f' % rhostart)
                 ifid.write(line)
         ifid.close()
         
         print 'Be sure to check the INMODEL file for clumped numbers near the bottom.'
         print 'Also, check the MESH and startup files to make sure they are correct.'
         
-        self.meshfn=meshfn
-        self.inmodelfn=inmodelfn
-        self.startupfn=startupfn
+        self.meshfn = meshfn
+        self.inmodelfn = inmodelfn
+        self.startupfn = startupfn
     
     def plotMaskPoints(self,plottype=None,reserrinc=.20,phaseerrinc=.05,
                        marker='h',colormode='color',dpi=300,ms=2,
@@ -4184,7 +4192,7 @@ class PlotOccam2DResponse():
             #--------------add in winglink responses------------------------
             if addwl == 1:
                 try:
-                    wlrms = wld[sdict[station]]['rms']
+                    wlrms = wld[sdict[self.station_lst[jj]]]['rms']
                     axrte.set_title(self.station_lst[jj]+
                                    '\n rms_occ_TE={0:.2f}'.format(rmste)+
                                    'rms_occ_TM={0:.2f}'.format(rmstm)+
@@ -4192,9 +4200,9 @@ class PlotOccam2DResponse():
                                    fontdict={'size':self.font_size,
                                              'weight':'bold'})
                     for ww, wlstation in enumerate(wlslst):
-                        if wlstation.find(station)==0:
+                        if wlstation.find(self.station_lst[jj])==0:
                             print '{0} was Found {0} in winglink file'.format(
-                                                            station, wlstation)
+                                              self.station_lst[jj], wlstation)
                             wlrpdict = wlrp_lst[ww]
                     
                     zrxy = [np.where(wlrpdict['resxy'][0]!=0)[0]]
@@ -4241,7 +4249,7 @@ class PlotOccam2DResponse():
                     rlsttm.append(r6[0])
                     llstte.append('$WLMod_{TE}$')
                     llsttm.append('$WLMod_{TM}$')
-                except IndexError:
+                except (IndexError, KeyError):
                     print 'Station not present'
             else:
                 if self.plot_num == 1:
@@ -5692,7 +5700,7 @@ class PlotModel(object):
         cb.set_label('Resistivity ($\Omega \cdot$m)',
                      fontdict={'size':self.font_size+1,'weight':'bold'})
         cb.set_ticks(np.arange(int(self.climits[0]),int(self.climits[1])+1))
-        cb.set_ticklabels(['10$^{0}$'.format(nn) for nn in 
+        cb.set_ticklabels(['10$^{0}$'.format('{'+str(nn)+'}') for nn in 
                             np.arange(int(self.climits[0]), 
                                       int(self.climits[1])+1)])
         
@@ -6210,6 +6218,11 @@ class PlotL2():
         #make subplot for RMS vs Roughness Plot
         self.ax2 = self.ax1.twiny()
         
+        self.ax2.set_xlim(self.rms_arr['roughness'][1], 
+                          self.rms_arr['roughness'][-1])
+            
+        self.ax1.set_ylim(0, self.rms_arr['rms'][1])
+        
         #plot the rms vs roughness 
         l2, = self.ax2.plot(self.rms_arr['roughness'],
                             self.rms_arr['rms'],
@@ -6219,17 +6232,25 @@ class PlotL2():
                             marker=self.rough_marker,
                             ms=self.rough_marker_size,
                             mfc='white')
-                            
+       
+        #plot the iteration number inside the roughness marker                     
         for rms, ii, rough in zip(self.rms_arr['rms'], self.rms_arr['iteration'], 
                            self.rms_arr['roughness']):
-            self.ax2.text(rough,
-                          rms,
-                          '{0}'.format(ii),
-                          horizontalalignment='center',
-                          verticalalignment='center',
-                          fontdict={'size':self.rough_font_size,
-                                    'weight':'bold',
-                                    'color':self.rough_color})
+            #need this because if the roughness is larger than this number
+            #matplotlib puts the text out of bounds and a draw_text_image
+            #error is raised and file cannot be saved, also the other 
+            #numbers are not put in.
+            if rough > 1e8:
+                pass
+            else:
+                self.ax2.text(rough,
+                              rms,
+                              '{0}'.format(ii),
+                              horizontalalignment='center',
+                              verticalalignment='center',
+                              fontdict={'size':self.rough_font_size,
+                                        'weight':'bold',
+                                        'color':self.rough_color})
         
         #make a legend
         self.ax1.legend([l1, l2, m1, m2],
@@ -6256,6 +6277,9 @@ class PlotL2():
                             fontdict={'size':self.font_size+2,
                                       'weight':'bold',
                                       'color':self.rough_color})
+
+
+        
         for t2 in self.ax2.get_xticklabels():
             t2.set_color(self.rough_color)
             
