@@ -159,6 +159,7 @@ class Edi(object):
         self._zrot = None
         self.Z = MTz.Z()
         self.Tipper = MTz.Tipper()
+        self.station = None
 
     def readfile(self, fn, datatype = 'z'):
         """
@@ -342,7 +343,7 @@ class Edi(object):
             return
         self.freq = 1./np.array(period_lst)
 
-    _period = property(_get_period, _set_period, 
+    period = property(_get_period, _set_period, 
                         doc='List of periods (values in seconds)')    
 
     #----------------number of freq-------------------------------------
@@ -480,7 +481,13 @@ class Edi(object):
         if not head_dict.has_key('elev'):
             head_dict['elev'] = 0.
 
+        try:
+            self.station = head_dict['dataid']
+        except KeyError:
+            print 'Did not find station name under dataid in HEAD'
+
         self._head = head_dict
+        
 
     #--------------Read Info----------------------------------------------
     def _read_info(self, edistring):
