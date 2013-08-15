@@ -118,7 +118,7 @@ class Z(object):
 
     """
 
-    def __init__(self, z_array = None, zerr_array = None):
+    def __init__(self, z_array=None, zerr_array=None, freq=None):
         """
             Initialise an instance of the Z class.
 
@@ -133,7 +133,7 @@ class Z(object):
         self._z = z_array
         self._zerr = zerr_array
 
-        self._freq = None
+        self._freq = freq
         if z_array is not None:
             if len(z_array.shape) == 2 and z_array.shape == (2,2):
                 if z_array.dtype in ['complex', 'float','int']:
