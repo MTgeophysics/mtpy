@@ -712,7 +712,7 @@ class Z(object):
 
 
 
-    def no_distortion(self, distortion_tensor, distortion_err_tensor = None):
+    def no_distortion(self, distortion_tensor, distortion_err_tensor=None):
         """
             Remove distortion D form an observed impedance tensor Z to obtain
             the uperturbed "correct" Z0:
