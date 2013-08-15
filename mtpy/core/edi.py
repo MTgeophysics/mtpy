@@ -242,11 +242,11 @@ class Edi(object):
             print 'Could not read FREQ section: %s'%infile
 
         if datatype == 'z':
-#            try:
-            self._read_z(edistring)
-#            except:
-#                raise MTex.MTpyError_edi_file(
-#                    'Could not read Z section: %s'%infile)
+            try:
+                self._read_z(edistring)
+            except:
+                raise MTex.MTpyError_edi_file(
+                    'Could not read Z section: %s'%infile)
 
         elif datatype == 'resphase':
             try:
