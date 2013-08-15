@@ -242,11 +242,11 @@ class Edi(object):
             print 'Could not read FREQ section: %s'%infile
 
         if datatype == 'z':
-            try:
-                self._read_z(edistring)
-            except:
-                raise MTex.MTpyError_edi_file(
-                    'Could not read Z section: %s'%infile)
+#            try:
+            self._read_z(edistring)
+#            except:
+#                raise MTex.MTpyError_edi_file(
+#                    'Could not read Z section: %s'%infile)
 
         elif datatype == 'resphase':
             try:
@@ -677,8 +677,8 @@ class Edi(object):
         compstrings = ['ZXX','ZXY','ZYX','ZYY']
         Z_entries = ['R','I','.VAR']
 
-        z_array = np.zeros((self.n_freq(),2,2),dtype=np.complex)
-        zerr_array = np.zeros((self.n_freq(),2,2),dtype=np.float)
+        z_array = np.zeros((self.n_freq(), 2, 2), dtype=np.complex)
+        zerr_array = np.zeros((self.n_freq(), 2, 2), dtype=np.float)
         z_dict = {}
 
         for idx_comp,comp in enumerate(compstrings):
@@ -937,7 +937,7 @@ class Edi(object):
         try:
             temp_string = _cut_sectionstring(edistring,'RHOROT')
         except:
-            lo_angles = list( np.zeros((self.n_freq())) )
+            lo_angles = list( np.zeros((self.n_freq())))
             self.zrot = lo_angles
             self.Z.rotation_angle = self.zrot
             if self.Tipper.tipper is not None:
@@ -1142,7 +1142,7 @@ class Edi(object):
             Write out the edi object into an EDI file.
         """
 
-        if len(fn) == 0 :
+        if len(fn) == 0:
             fn = None
         else:
             #see, if it's iterable
