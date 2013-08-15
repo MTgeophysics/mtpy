@@ -78,6 +78,10 @@ def find_distortion(z_object, lo_dims = None):
             lo_dims = MTge.dimensionality(z_object = z_obj)
     except:
         pass
+    
+    #dictionary of values that should be no distortion in case distortion
+    #cannot be calculated for that component
+    dis_dict = {(0,0):1, (0,1):0, (1,0):0, (1,1):1}
 
     lo_dis = []
     lo_diserr = []
@@ -119,20 +123,32 @@ def find_distortion(z_object, lo_dims = None):
                 lo_diserr.append(np.ones((2, 2)))
 
         
-        dis = np.zeros((2, 2))
-        diserr = np.zeros((2, 2))
+        dis = np.identity(2)
+        diserr = np.identity(2)
         for i in range(2):
             for j in range(2):
-                dis[i,j], dummy = np.average(np.array([k[i, j] 
-                                                      for k in lo_dis]), 
-                                             weights=np.array([1./(k[i,j])**2 
-                                                      for k in lo_diserr]),
-                                             returned=True)
-                diserr[i,j] = np.sqrt(1./dummy)
+                try:
+                    dis[i,j], dummy = np.average(np.array([k[i, j] 
+                                                          for k in lo_dis]), 
+                                                 weights=np.array([1./(k[i,j])**2 
+                                                          for k in lo_diserr]),
+                                                 returned=True)
+                    diserr[i,j] = np.sqrt(1./dummy)
+                    
+                    #if the distortion came out as nan set it to an appropriate
+                    #value 
+                    if np.nan_to_num(dis[i,j]) == 0:
+                        dis[i, j] = dis_dict[i, j]
+                        diserr[i, j] = dis_dict[i, j]
+
+                except ZeroDivisionError:
+                    
+                    print ('Could not get distortion for dis[{0}, {1}]'.format(
+                           i, j)+' setting value to {0}'.format(dis_dict[i,j]))
+                    dis[i, j] = dis_dict[i, j]
+                    diserr[i, j] = dis_dict[i, j]*1e-6
     
         return dis, diserr
-
-
 
     if 2 in lo_dims:
         idx_2 = np.where(np.array(lo_dims) == 2)[0]
@@ -349,7 +365,7 @@ def remove_distortion(z_array=None, z_object=None):
     #2. remove distortion via method of z object
 
     dis, diserr = find_distortion(z_obj)
-    print dis
+
     try:
         distortion_tensor, zd, zd_err = z_obj.no_distortion(dis, 
                                                 distortion_err_tensor=diserr)
@@ -362,7 +378,7 @@ def remove_distortion(z_array=None, z_object=None):
     except MTex.MTpyError_Z:
         print 'Could not compute distortion tensor'
         
-        return np.zeros((2, 2)), z_obj
+        return np.identity(2), z_obj
                                     
 
 
