@@ -139,7 +139,7 @@ class Edi(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, filename=None):
 
         """
             Initialise an instance of the Edi class.
@@ -147,7 +147,7 @@ class Edi(object):
             Initialise the attributes with None/empty dictionary
         """
 
-        self.filename = None
+        self.filename = filename
         self.infile_string = None
         self._head = {}
         self._info_string = None
@@ -160,6 +160,9 @@ class Edi(object):
         self.Z = MTz.Z()
         self.Tipper = MTz.Tipper()
         self.station = None
+        
+        if filename is not None:
+            self.readfile(self.filename)
 
     def readfile(self, fn, datatype = 'z'):
         """
