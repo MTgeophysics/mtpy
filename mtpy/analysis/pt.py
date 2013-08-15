@@ -118,20 +118,7 @@ class PhaseTensor(object):
         #if a z object is input be sure to set the z and z_err so that the
         #pt will be calculated
         if isinstance(z_object, MTz.Z):
-            try:
-                self._set_z(z_object.z)
-                self._freq = z_object.freq
-            except:
-                self._z = None
-                self._z_err = None
-                print 'Can not calculate pt from z==None'
-                
-            try:
-                self._set_z_err(z_object.zerr)
-                if z_array.shape != zerr_array.shape:
-                    self._set_z_err(None)
-            except:
-                pass
+            self.set_z_object(z_object)
 
         elif z_array is not None:
 
@@ -323,6 +310,7 @@ class PhaseTensor(object):
         
         self._z = z_object.z
         self._z_err = z_object.zerr
+        self._freq = z_object.freq
         self._pt = np.zeros_like(self._z, dtype=np.float)
         self._pt_err = np.zeros_like(self._z, dtype=np.float)
  
@@ -352,7 +340,6 @@ class PhaseTensor(object):
                             print 'Computed singular matrix'
                             print '  --> pt[{0}]=np.zeros((2,2))'.format(idx_f)
 
-        self._freq = z_object.freq
         self.rotation_angle = z_object.rotation_angle
         
     # def _get_z_object(self):
