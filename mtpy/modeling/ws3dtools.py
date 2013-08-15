@@ -9,7 +9,6 @@ import os
 import numpy as np
 
 import matplotlib.pyplot as plt
-import matplotlib.pylab as pylab
 from matplotlib.ticker import MultipleLocator
 from matplotlib.patches import Ellipse
 from matplotlib.colors import LinearSegmentedColormap,Normalize
@@ -18,6 +17,9 @@ import matplotlib.gridspec as gridspec
 import mtpy.core.z as mtz
 import mtpy.core.edi as mtedi
 import mtpy.imaging.mtplottools as mtplottools
+import matplotlib.widgets as widgets
+import matplotlib.colors as colors
+import matplotlib.cm as cm
 
 import mtpy.utils.latlongutmconversion as ll2utm
 
@@ -246,28 +248,29 @@ def getPeriods(edilst,errthresh=10):
         else:
             z1 = mtedi.Edi()
             z1.readfile(edi)
-            periodlst.append(1./z1.freq)
+            periodlst.append(z1.period)
             zdet = np.array([np.sqrt(abs(np.linalg.det(zz))) 
                              for zz in z1.Z.z])
             error = np.array([np.sqrt(abs(np.linalg.det(zz))) 
                               for zz in z1.Z.zerr])
-            perror = (error/zdet)*100            
+            perror = (error/zdet)*100 
             errorlst.append(perror)
             #make a plot to pick frequencies from showing period and percent 
             #error
-            ax.scatter(1./z1.freq, 
+            ax.scatter(z1.period, 
                        perror, 
                        marker='x', 
                        picker=5)
             pfind = np.where(perror>errthresh)[0]
             if len(pfind)>0: 
-                print 'Error greater than {0:.3f} for '.format(errthresh)+z1.station
+                print 'Error greater than {0:.3f} for {1}'.format(errthresh,
+                                                                  z1.station)
                 for jj in pfind:
-                    ax.scatter(1./z1.freq[jj], 
+                    ax.scatter(z1.period[jj], 
                                perror[jj],
                                marker='x',
                                color='r')
-                    ax.text(1./z1.freq[jj],
+                    ax.text(z1.period[jj],
                             perror[jj]*1.05,
                             z1.station,
                             horizontalalignment='center',
@@ -276,8 +279,8 @@ def getPeriods(edilst,errthresh=10):
                     print jj, z1.period[jj]
                     
     ax.set_xscale('log')
-    ax.set_xlim(10**np.floor(np.log10(1./z1.freq[0])),
-                10**np.ceil(np.log10(1./z1.freq[-1])))
+    ax.set_xlim(10**np.floor(np.log10(z1.period.min())),
+                10**np.ceil(np.log10(z1.period.max())))
     ax.set_ylim(0, 3*errthresh)
     ax.set_yscale('log')
     ax.set_xlabel('Period (s)',fontdict={'size':12,'weight':'bold'})
@@ -289,7 +292,7 @@ def getPeriods(edilst,errthresh=10):
     
     plt.show()
         
-    return periodlst,errorlst,lp
+    return periodlst, errorlst, lp
     
 def make3DGrid(edilst, xspacing=500, yspacing=500, z1layer=10, xpad=5, ypad=5,
                zpad=5, xpadroot=5, ypadroot=5, zpadroot=2, zpadpow=(5,15),
@@ -435,52 +438,46 @@ def make3DGrid(edilst, xspacing=500, yspacing=500, z1layer=10, xpad=5, ypad=5,
     
     """
     ns = len(edilst)
-    locations = np.zeros((ns,2))
-    slst = []
+    slst = np.zeros(ns, dtype=[('station','|S10'), ('east', np.float),
+                               ('north', np.float), ('east_c', np.float),
+                               ('north_c', np.float)])
     for ii,edi in enumerate(edilst):
         zz = mtedi.Edi()
         zz.readfile(edi)
         zone, east, north = ll2utm.LLtoUTM(23, zz.lat, zz.lon)
-        locations[ii, 0] = east
-        locations[ii, 1] = north
-        slst.append({'station':zz.station, 'east':east, 'north':north})
+        slst[ii]['station'] = zz.station
+        slst[ii]['east'] = east
+        slst[ii]['north'] = north
     
     #estimate the mean distance to  get into relative coordinates
-    xmean = locations[:,0].mean()
-    ymean = locations[:,1].mean()
+    xmean = slst['east'].mean()
+    ymean = slst['north'].mean()
      
     #remove the average distance to get coordinates in a relative space
-    locations[:,0] -= xmean
-    locations[:,1] -= ymean
-    for sdict in slst:
-        sdict['east'] -= xmean
-        sdict['north'] -= ymean
-        
+    slst['east'] -= xmean
+    slst['north'] -= ymean
+ 
     #translate the stations so they are relative to 0,0
-    xcenter = (locations[:,0].max()-np.abs(locations[:,0].min()))/2
-    ycenter = (locations[:,1].max()-np.abs(locations[:,1].min()))/2
+    xcenter = (slst['east'].max()-np.abs(slst['east'].min()))/2
+    ycenter = (slst['north'].max()-np.abs(slst['north'].min()))/2
     
     #remove the average distance to get coordinates in a relative space
-    locations[:,0] -= xcenter
-    locations[:,1] -= ycenter
-    for sdict in slst:
-        sdict['east'] -= xcenter
-        sdict['north'] -= ycenter
-    
-    
+    slst['east'] -= xcenter
+    slst['north'] -= ycenter
+
     #pickout the furtherst south and west locations 
     #and put that station as the bottom left corner of the main grid
-    xleft = locations[:,0].min()-xspacing/2
-    xright = locations[:,0].max()+xspacing/2
-    ybottom = locations[:,1].min()-yspacing/2
-    ytop = locations[:,1].max()+yspacing/2
+    xleft = slst['east'].min()-xspacing/2
+    xright = slst['east'].max()+xspacing/2
+    ybottom = slst['north'].min()-yspacing/2
+    ytop = slst['north'].max()+yspacing/2
 
     #---make a grid around the stations from the parameters above---
     #make grid in east-west direction
     midxgrid = np.arange(start=xleft,stop=xright+xspacing,
-                       step=xspacing)
+                         step=xspacing)
     xpadleft = np.round(-xspacing*5**np.arange(start=.5,stop=3,step=3./xpad))+\
-                       xleft
+                          xleft
     xpadright = np.round(xspacing*5**np.arange(start=.5,stop=3,step=3./xpad))+\
                        xright
     xgridr = np.append(np.append(xpadleft[::-1],midxgrid),xpadright)
@@ -496,11 +493,12 @@ def make3DGrid(edilst, xspacing=500, yspacing=500, z1layer=10, xpad=5, ypad=5,
     
     
     #make depth grid
-    zgrid1 = z1layer*2**np.round(np.arange(0,zpadpow[0],zpadpow[0]/(nz-zpad)))
+    zgrid1 = z1layer*2**np.round(np.arange(0,zpadpow[0],
+                                           zpadpow[0]/(nz-float(zpad))))
     zgrid2 = z1layer*2**np.round(np.arange(zpadpow[0],zpadpow[1],
                                          (zpadpow[1]-zpadpow[0])/(zpad)))
     
-    zgrid = np.append(zgrid1,zgrid2)
+    zgrid = np.append(zgrid1, zgrid2)
     
     #--Need to make an array of the individual cell dimensions for the wsinv3d
     xnodes = xgridr.copy()    
@@ -533,26 +531,27 @@ def make3DGrid(edilst, xspacing=500, yspacing=500, z1layer=10, xpad=5, ypad=5,
                             
     #make sure that the stations are in the center of the cell as requested by
     #the code.
-    for sdict in slst:
+    for ii in range(ns):
         #look for the closest grid line
-        xx = [nn for nn,xf in enumerate(xgrid) if xf>(sdict['east']-xspacing) 
-            and xf<(sdict['east']+xspacing)]
+        xx = [nn for nn,xf in enumerate(xgrid) if xf>(slst[ii]['east']-xspacing) 
+            and xf<(slst[ii]['east']+xspacing)]
         
         #shift the station to the center in the east-west direction
-        if xgrid[xx[0]]<sdict['east']:
-            sdict['east_c'] = xgrid[xx[0]]+xspacing/2
-        elif xgrid[xx[0]]>sdict['east']:
-            sdict['east_c'] = xgrid[xx[0]]-xspacing/2
+        if xgrid[xx[0]] < slst[ii]['east']:
+            slst[ii]['east_c'] = xgrid[xx[0]]+xspacing/2
+        elif xgrid[xx[0]] > slst[ii]['east']:
+            slst[ii]['east_c'] = xgrid[xx[0]]-xspacing/2
         
         #look for closest grid line
-        yy = [mm for mm,yf in enumerate(ygrid) if yf>(sdict['north']-yspacing) 
-            and yf<(sdict['north']+yspacing)]
+        yy = [mm for mm,yf in enumerate(ygrid) 
+              if yf >(slst[ii]['north']-yspacing) 
+              and yf<(slst[ii]['north']+yspacing)]
         
         #shift station to center of cell in north-south direction
-        if ygrid[yy[0]]<sdict['north']:
-            sdict['north_c'] = ygrid[yy[0]]+yspacing/2
-        elif ygrid[yy[0]]>sdict['north']:
-            sdict['north_c'] = ygrid[yy[0]]-yspacing/2
+        if ygrid[yy[0]] < slst[ii]['north']:
+            slst[ii]['north_c'] = ygrid[yy[0]]+yspacing/2
+        elif ygrid[yy[0]] > slst[ii]['north']:
+            slst[ii]['north_c'] = ygrid[yy[0]]-yspacing/2
             
         
     #=Plot the data if desired=========================
@@ -562,10 +561,8 @@ def make3DGrid(edilst, xspacing=500, yspacing=500, z1layer=10, xpad=5, ypad=5,
         #---plot map view    
         ax1 = fig.add_subplot(1,2,1,aspect='equal')
         
-        for sdict in slst:
-            #make sure the station is in the center of the cell
-            
-            ax1.scatter(sdict['east_c'],sdict['north_c'],marker='v')
+        #make sure the station is in the center of the cell
+        ax1.scatter(slst['east_c'], slst['north_c'], marker='v')
                 
         for xp in xgrid:
             ax1.plot([xp,xp],[ygrid.min(),ygrid.max()],color='k')
@@ -574,14 +571,14 @@ def make3DGrid(edilst, xspacing=500, yspacing=500, z1layer=10, xpad=5, ypad=5,
             ax1.plot([xgrid.min(),xgrid.max()],[yp,yp],color='k')
         
         if plotxlimits == None:
-            ax1.set_xlim(locations[:,0].min()-10*xspacing,
-                         locations[:,0].max()+10*xspacing)
+            ax1.set_xlim(slst['east'].min()-10*xspacing,
+                         slst['east'].max()+10*xspacing)
         else:
             ax1.set_xlim(plotxlimits)
         
         if plotylimits == None:
-            ax1.set_ylim(locations[:,1].min()-50*yspacing,
-                         locations[:,1].max()+50*yspacing)
+            ax1.set_ylim(slst['north'].min()-50*yspacing,
+                         slst['north'].max()+50*yspacing)
         else:
             ax1.set_ylim(plotylimits)
             
@@ -594,8 +591,7 @@ def make3DGrid(edilst, xspacing=500, yspacing=500, z1layer=10, xpad=5, ypad=5,
         for xp in xgrid:
             ax2.plot([xp,xp],[-zgrid.sum(),0],color='k')
             
-        for sdict in slst:
-            ax2.scatter(sdict['east_c'],0,marker='v')
+        ax2.scatter(slst['east_c'], [0]*ns, marker='v')
             
         for zz,zp in enumerate(zgrid):
             ax2.plot([xgrid.min(),xgrid.max()],[-zgrid[0:zz].sum(),
@@ -607,13 +603,13 @@ def make3DGrid(edilst, xspacing=500, yspacing=500, z1layer=10, xpad=5, ypad=5,
             ax2.set_ylim(plotzlimits)
             
         if plotxlimits == None:
-            ax2.set_xlim(locations[:,0].min()-xspacing,
-                         locations[:,0].max()+xspacing)
+            ax2.set_xlim(slst['east'].min()-xspacing,
+                         slst['east'].max()+xspacing)
         else:
             ax2.set_xlim(plotxlimits)
             
-        ax2.set_ylabel('Depth (m)',fontdict={'size':10,'weight':'bold'})
-        ax2.set_xlabel('Easting (m)',fontdict={'size':10,'weight':'bold'})  
+        ax2.set_ylabel('Depth (m)', fontdict={'size':10, 'weight':'bold'})
+        ax2.set_xlabel('Easting (m)', fontdict={'size':10, 'weight':'bold'})  
         
         plt.show()
     
@@ -625,13 +621,15 @@ def make3DGrid(edilst, xspacing=500, yspacing=500, z1layer=10, xpad=5, ypad=5,
     print '   Dimensions: '
     print '      e-w = {0}'.format(xgrid.shape[0])
     print '      n-s = {0}'.format(ygrid.shape[0])
-    print '       z  = {0}'.format(zgrid.shape[0])
+    print '       z  = {0} (without 7 air layers)'.format(zgrid.shape[0])
     print '   Extensions: '
     print '      e-w = {0:.1f} (m)'.format(xgrid.__abs__().sum())
     print '      n-s = {0:.1f} (m)'.format(ygrid.__abs__().sum())
     print '      0-z = {0:.1f} (m)'.format(zgrid.__abs__().sum())
     print '-'*15
-    return ynodes,xnodes,zgrid,locations,slst            
+    
+    loc = np.reshape(np.array([slst['east_c'], slst['north_c']]), (ns, 2))
+    return ynodes, xnodes, zgrid, loc, slst            
     
     
 def writeWSDataFile(periodlst, edilst, sites_fn=None, out_fn=None,
@@ -754,12 +752,12 @@ def writeWSDataFile(periodlst, edilst, sites_fn=None, out_fn=None,
         for ff, f1 in enumerate(periodlst):
             for kk,f2 in enumerate(z1.period):
                 if f2 >= (1-ptol)*f1 and f2 <= (1+ptol)*f1:
-                    zderr = np.array([abs(z1.zvar[kk, nn, mm])/
-                                    abs(z1.z[kk, nn, mm])*100 
+                    zderr = np.array([abs(z1.Z.zerr[kk, nn, mm])/
+                                    abs(z1.Z.z[kk, nn, mm])*100 
                                     for nn in range(2) for mm in range(2)])
                     fspot['{0:.6g}'.format(f1)] = (kk, f2, zderr[0], zderr[1],
                                                   zderr[2], zderr[3])
-                    zarr[ss, ff, :]=z1.z[kk].reshape(4,)
+                    zarr[ss, ff, :] = z1.Z.z[kk].reshape(4,)
                     
         print z1.station, len(fspot)
         sdict['fspot'] = fspot
@@ -1433,8 +1431,9 @@ def readDataFile(data_fn, sites_fn=None, units='mv'):
         
     return period, zarr, zerr, nsarr, ewarr, sitelst
     
-def plotDataResPhase(data_fn, resp_fn=None, sites_fn=None, plottype='1',
-                     plotnum=1, dpi=150, units='mv', colormode='color'):
+def plotDataResPhase(data_fn, resp_fn=None, station_lst=None, sites_fn=None,
+                     plottype='1', plotnum=1, dpi=150, units='mv', 
+                     colormode='color'):
     """
     plot responses from the data file and if there is a response file
     
@@ -1572,19 +1571,39 @@ def plotDataResPhase(data_fn, resp_fn=None, sites_fn=None, plottype='1',
             ax2=fig.add_subplot(gs[1,:],sharex=ax)
             ax.yaxis.set_label_coords(-.055, 0.5)
             ax2.yaxis.set_label_coords(-.055, 0.5)
-        elif plotnum==2:
-            ax=fig.add_subplot(gs[0,0])
-            ax2=fig.add_subplot(gs[1,0],sharex=ax)
+        elif plotnum == 2:
+            ax = fig.add_subplot(gs[0,0])
+            ax2 = fig.add_subplot(gs[1,0],sharex=ax)
+            ax3 = plt.subplot(gs[0,1], sharex=ax)
+            ax4 = plt.subplot(gs[1,1], sharex=ax)
+            
+            ax3.yaxis.set_label_coords(-.1, 0.5)
+            ax4.yaxis.set_label_coords(-.1, 0.5)
             ax.yaxis.set_label_coords(-.075, 0.5)
             ax2.yaxis.set_label_coords(-.075, 0.5)
         
         fig.suptitle(str(slst[jj]),fontdict={'size':15,'weight':'bold'})
-        erxy=ax.errorbar(period[nzxy],rp.resxy[nzxy],marker=mted,ms=4,
-                         mfc='None',mec=cted,mew=1,ls=':',
-                         yerr=rp.resxyerr[nzxy],ecolor=cted,color=cted)
-        eryx=ax.errorbar(period[nzyx],rp.resyx[nzyx],marker=mtmd,ms=4,
-                         mfc='None',mec=ctmd,mew=1,ls=':',
-                         yerr=rp.resyxerr[nzyx],ecolor=ctmd,color=ctmd)
+        erxy=ax.errorbar(period[nzxy],
+                         rp.resxy[nzxy],
+                         marker=mted,ms=4,
+                         mfc='None',
+                         mec=cted,
+                         mew=1,ls=':',
+                         yerr=rp.resxy_err[nzxy], 
+                         ecolor=cted, 
+                         color=cted)
+                         
+        eryx=ax.errorbar(period[nzyx], 
+                         rp.resyx[nzyx],
+                         marker=mtmd,
+                         ms=4,
+                         mfc='None',
+                         mec=ctmd,
+                         mew=1,
+                         ls=':',
+                         yerr=rp.resyx_err[nzyx],
+                         ecolor=ctmd,
+                         color=ctmd)
         if plotr==True:
             for rr in range(nr):
                 if colormode=='color':   
@@ -1594,25 +1613,114 @@ def plotDataResPhase(data_fn, resp_fn=None, sites_fn=None, plottype='1',
                     cxy=(1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))                    
                     cyx=(1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))
                 
-                rpr=Z.ResPhase(rzlst[rr][jj],period,zvar=rzerrlst[rr][jj])
-                
-#                rms=np.sqrt(np.sum([abs(np.linalg.det(rp.z[ll])-
-#                                        np.linalg.det(rpr.z[ll]))**2 
-#                            for ll in range(len(rp.period))])/len(rp.period))
-                rms=np.sqrt(np.mean([(np.sqrt(abs(np.linalg.det(rp.z[ll])))-
-                                    np.sqrt(abs(np.linalg.det(rpr.z[ll]))))**2 
-                                    for ll in range(len(rp.period))]))
+                resp_z_object =  mtz.Z(z_array=dz[jj], zerr_array=dzerr[jj])
+                resp_z_object.freq = 1./period
+
+                rpr = mtplottools.ResPhase(resp_z_object)
+
+                rms=np.sqrt(np.mean([(np.sqrt(abs(np.linalg.det(z_object.z[ll])))-
+                                    np.sqrt(abs(np.linalg.det(resp_z_object.z[ll]))))**2 
+                                    for ll in range(len(z_object.period))]))
                 print 'RMS = {:.2f}'.format(rms)
-                erxyr=ax.errorbar(period[nzxy],rpr.resxy[nzxy],marker=mtem,
-                                  ms=8,mfc='None',mec=cxy,mew=1,ls='--',
-                                  yerr=rpr.resxyerr[nzxy],
-                                  ecolor=cxy,color=cxy)
-                eryxr=ax.errorbar(period[nzyx],rpr.resyx[nzyx],marker=mtmm,
-                                  ms=8,mfc='None',mec=cyx,mew=1,ls='--',
-                                  yerr=rpr.resyxerr[nzyx],
-                                  ecolor=cyx,color=cyx)
+                erxyr=ax.errorbar(period[nzxy],
+                                  rpr.resxy[nzxy],
+                                  marker=mtem,
+                                  ms=8,
+                                  mfc='None',
+                                  mec=cxy,
+                                  mew=1,
+                                  ls='--',
+                                  yerr=rpr.resxy_err[nzxy],
+                                  ecolor=cxy,
+                                  color=cxy)
+                                  
+                eryxr=ax.errorbar(period[nzyx],
+                                  rpr.resyx[nzyx],
+                                  marker=mtmm,
+                                  ms=8,
+                                  mfc='None',
+                                  mec=cyx,
+                                  mew=1,
+                                  ls='--',
+                                  yerr=rpr.resyx_err[nzyx],
+                                  ecolor=cyx,
+                                  color=cyx)
+                                  
+                #plot response phase            
+                ax2.errorbar(period[nzxy],
+                             rpr.phasexy[nzxy],
+                             marker=mtem,
+                             ms=8,
+                             mfc='None',
+                             mec=cxy,
+                             mew=1,
+                             ls='--',
+                             yerr=rp.phasexy_err[nzxy],
+                             ecolor=cxy,
+                             color=cxy)
+                ax2.errorbar(period[nzyx],
+                             np.array(rpr.phaseyx[nzyx]),
+                             marker=mtmm,
+                             ms=8,
+                             mfc='None',
+                             mec=cyx,
+                             mew=1,
+                             ls='--',
+                             yerr=rp.phaseyx_err[nzyx],
+                             ecolor=cyx,
+                             color=cyx)
+                             
+                if plotnum == 2:
+                    erxxr=ax3.errorbar(period[nzxx],
+                                       rpr.resxx[nzxx],
+                                       marker=mtem,
+                                       ms=8,
+                                       mfc='None',
+                                       mec=cxy,
+                                       mew=1,
+                                       ls='--',
+                                       yerr=rpr.resxx_err[nzxx],
+                                       ecolor=cxy,
+                                       color=cxy)
+                    eryyr=ax3.errorbar(period[nzyy],
+                                       rpr.resyy[nzyy],
+                                       marker=mtmm,
+                                       ms=8,
+                                       mfc='None',
+                                       mec=cyx,
+                                       mew=1,
+                                       ls='--',
+                                       yerr=rpr.resyy_err[nzyy],
+                                       ecolor=cyx,
+                                       color=cyx)
+                                       
+                    #plot response phase
+                    ax4.errorbar(period[nzxx],
+                                 rpr.phasexx[nzxx],
+                                 marker=mtem,
+                                 ms=8,
+                                 mfc='None',
+                                 mec=cxy,
+                                 mew=1,
+                                 ls='--',
+                                 yerr=rp.phasexx_err[nzxx],
+                                 ecolor=cxy,
+                                 color=cxy)
+                                 
+                    ax4.errorbar(period[nzyy],
+                                 np.array(rpr.phaseyy[nzyy]),
+                                 marker=mtmm,
+                                 ms=8,
+                                 mfc='None',
+                                 mec=cyx,
+                                 mew=1,
+                                 ls='--',
+                                 yerr=rp.phaseyy_err[nzyy], 
+                                 ecolor=cyx,
+                                 color=cyx)
+                                  
         #ax.set_xlabel('Period (s)',fontdict=fontdict)
-        pylab.setp( ax.get_xticklabels(), visible=False)
+        plt.setp( ax.get_xticklabels(), visible=False)
         ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
                    fontdict=fontdict)
         ax.set_yscale('log')
@@ -1624,92 +1732,95 @@ def plotDataResPhase(data_fn, resp_fn=None, sites_fn=None, plottype='1',
             ax.legend((erxy[0],eryx[0],erxyr[0],eryxr[0]),
                       ('Data $E_x/B_y$','Data $E_y/B_x$',
                       'Mod $E_x/B_y$','Mod $E_y/B_x$'),
-                      loc=0, markerscale=1,borderaxespad=.01,labelspacing=.07,
-                      handletextpad=.2,borderpad=.02)
+                      loc=0,
+                      markerscale=1,
+                      borderaxespad=.01,
+                      labelspacing=.07,
+                      handletextpad=.2,
+                      borderpad=.02)
         else:
-            ax.legend((erxy[0],eryx[0]),('$E_x/B_y$','$E_y/B_x$'),loc=0,
-                        markerscale=1,borderaxespad=.01,labelspacing=.07,
-                        handletextpad=.2,borderpad=.02)
+            ax.legend((erxy[0],eryx[0]),
+                      ('$E_x/B_y$','$E_y/B_x$'),
+                      loc=0,
+                      markerscale=1,
+                      borderaxespad=.01,
+                      labelspacing=.07,
+                      handletextpad=.2,
+                      borderpad=.02)
         
         #-----Plot the phase----------------------------------------------------
         
-        ax2.errorbar(period[nzxy],rp.phasexy[nzxy],marker=mted,ms=4,mfc='None',
-                     mec=cted,mew=1,ls=':',yerr=rp.phasexyerr[nzxy],ecolor=cted,
+        ax2.errorbar(period[nzxy], 
+                     rp.phasexy[nzxy],
+                     marker=mted,
+                     ms=4,
+                     mfc='None',
+                     mec=cted,
+                     mew=1,
+                     ls=':',
+                     yerr=rp.phasexy_err[nzxy],
+                     ecolor=cted,
                      color=cted)
-        ax2.errorbar(period[nzyx],np.array(rp.phaseyx[nzyx])+180,marker=mtmd,
-                     ms=4,mfc='None',mec=ctmd,mew=1,ls=':',
-                     yerr=rp.phaseyxerr[nzyx],
-                     ecolor=ctmd,color=ctmd)
-        if plotr==True:
-            for rr in range(nr):
-                if colormode=='color':   
-                    cxy=(0,.4+float(rr)/(3*nr),0)
-                    cyx=(.7+float(rr)/(4*nr),.13,.63-float(rr)/(4*nr))
-                elif colormode=='bw':
-                    cxy=(1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))                    
-                    cyx=(1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))
-                rpr=Z.ResPhase(rzlst[rr][jj],period,zvar=rzerrlst[rr][jj])
-                ax2.errorbar(period[nzxy],rpr.phasexy[nzxy],marker=mtem,ms=8,
-                             mfc='None',mec=cxy,mew=1,ls='--',
-                             yerr=rp.phasexyerr[nzxy],
-                             ecolor=cxy,color=cxy)
-                ax2.errorbar(period[nzyx],np.array(rpr.phaseyx[nzyx])+180,
-                             marker=mtmm,ms=8,mfc='None',mec=cyx,mew=1,ls='--',
-                             yerr=rp.phaseyxerr[nzyx],ecolor=cyx,color=cyx)
+                     
+        ax2.errorbar(period[nzyx],
+                     np.array(rp.phaseyx[nzyx]),
+                     marker=mtmd,
+                     ms=4,
+                     mfc='None',
+                     mec=ctmd,
+                     mew=1,
+                     ls=':',
+                     yerr=rp.phaseyx_err[nzyx],
+                     ecolor=ctmd,
+                     color=ctmd)
+                
         ax2.set_xlabel('Period (s)',fontdict)
         ax2.set_ylabel('Phase (deg)',fontdict)
         ax2.set_xscale('log')
-        #ax2.set_xlim(xmin=10**(np.floor(np.log10(period[0]))),
-        #         xmax=10**(np.ceil(np.log10(period[-1]))))
         #check the phase to see if any point are outside of [0:90]    
-        if min(rp.phasexy)<0 or min(rp.phaseyx+180)<0:
-            pymin=min([min(rp.phasexy),min(rp.phaseyx+180)])
-            if pymin>0:
-                pymin=0
+        if min(rp.phasexy) < 0 or min(rp.phaseyx+180) < 0:
+            pymin = min([min(rp.phasexy), min(rp.phaseyx)])
+            if pymin > 0:
+                pymin = 0
         else:
-            pymin=0
+            pymin = 0
         
-        if max(rp.phasexy)>90 or max(rp.phaseyx+180)>90:
-            pymax=min([max(rp.phasexy),max(rp.phaseyx+180)])
-            if pymax<91:
-                pymax=90
+        if max(rp.phasexy) > 90 or max(rp.phaseyx) > 90:
+            pymax=min([max(rp.phasexy), max(rp.phaseyx)])
+            if pymax < 91:
+                pymax = 90
         else:
-            pymax=90
+            pymax = 90
         
-        ax2.set_ylim(ymin=pymin,ymax=pymax)        
+        ax2.set_ylim(ymin=pymin, ymax=pymax)        
         ax2.yaxis.set_major_locator(MultipleLocator(30))
         ax2.yaxis.set_minor_locator(MultipleLocator(1))
         ax2.grid(True,alpha=.25)
         
-        if plotnum==2:
-            #---------plot the apparent resistivity-----------------------------------
-            ax3=plt.subplot(gs[0,1])
-            ax3.yaxis.set_label_coords(-.1, 0.5)
-            erxx=ax3.errorbar(period[nzxx],rp.resxx[nzxx],marker=mted,ms=4,
-                              mfc='None',mec=cted,mew=1,ls=':',
-                              yerr=rp.resxxerr[nzxx],
-                              ecolor=cted,color=cted)
-            eryy=ax3.errorbar(period[nzyy],rp.resyy[nzyy],marker=mtmd,ms=4,
-                              mfc='None',mec=ctmd,mew=1,ls=':',
-                              yerr=rp.resyyerr[nzyy],
-                              ecolor=ctmd,color=ctmd)
-            if plotr==True:
-                for rr in range(nr):
-                    if colormode=='color':   
-                        cxy=(0,.4+float(rr)/(3*nr),0)
-                        cyx=(.7+float(rr)/(4*nr),.13,.63-float(rr)/(4*nr))
-                    elif colormode=='bw':
-                        cxy=(1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))                    
-                        cyx=(1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))
-                    rpr=Z.ResPhase(rzlst[rr][jj],period,zvar=rzerrlst[rr][jj])
-                    erxxr=ax3.errorbar(period[nzxx],rpr.resxx[nzxx],
-                                       marker=mtem,ms=8,mfc='None',mec=cxy,
-                                       mew=1,ls='--',yerr=rpr.resxxerr[nzxx],
-                                       ecolor=cxy,color=cxy)
-                    eryyr=ax3.errorbar(period[nzyy],rpr.resyy[nzyy],
-                                       marker=mtmm,ms=8,mfc='None',mec=cyx,
-                                       mew=1,ls='--',yerr=rpr.resyyerr[nzyy],
-                                       ecolor=cyx,color=cyx)
+        if plotnum == 2:
+            #---------plot the apparent resistivity----------------------------
+            erxx=ax3.errorbar(period[nzxx],
+                              rp.resxx[nzxx],
+                              marker=mted,
+                              ms=4,
+                              mfc='None',
+                              mec=cted,
+                              mew=1,
+                              ls=':',
+                              yerr=rp.resxx_err[nzxx],
+                              ecolor=cted,
+                              color=cted)
+            eryy=ax3.errorbar(period[nzyy],
+                              rp.resyy[nzyy],
+                              marker=mtmd,
+                              ms=4,
+                              mfc='None',
+                              mec=ctmd,
+                              mew=1,
+                              ls=':',
+                              yerr=rp.resyy_err[nzyy],
+                              ecolor=ctmd,
+                              color=ctmd)
 
             ax3.set_yscale('log')
             ax3.set_xscale('log')
@@ -1728,39 +1839,33 @@ def plotDataResPhase(data_fn, resp_fn=None, sites_fn=None, plottype='1',
                             markerscale=1,borderaxespad=.01,labelspacing=.07,
                             handletextpad=.2,borderpad=.02)
             
-            #-----Plot the phase----------------------------------------------------
-            ax4=plt.subplot(gs[1,1],sharex=ax3)
-            
-            ax4.yaxis.set_label_coords(-.1, 0.5)
-            ax4.errorbar(period[nzxx],rp.phasexx[nzxx],marker=mted,ms=4,
-                         mfc='None',mec=cted,mew=1,ls=':',
-                         yerr=rp.phasexxerr[nzxx],ecolor=cted,color=cted)
-            ax4.errorbar(period[nzyy],np.array(rp.phaseyy[nzyy]),marker=mtmd,
-                         ms=4,mfc='None',mec=ctmd,mew=1,ls=':',
-                         yerr=rp.phaseyyerr[nzyy],
-                         ecolor=ctmd,color=ctmd)
-            if plotr==True:
-                for rr in range(nr):
-                    if colormode=='color':   
-                        cxy=(0,.4+float(rr)/(3*nr),0)
-                        cyx=(.7+float(rr)/(4*nr),.13,.63-float(rr)/(4*nr))
-                    elif colormode=='bw':
-                        cxy=(1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))                    
-                        cyx=(1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))
-                    rpr=Z.ResPhase(rzlst[rr][jj],period,zvar=rzerrlst[rr][jj])
-                    ax4.errorbar(period[nzxx],rpr.phasexx[nzxx],marker=mtem,
-                                 ms=8,mfc='None',mec=cxy,mew=1,ls='--',
-                                 yerr=rp.phasexxerr[nzxx],
-                                 ecolor=cxy,color=cxy)
-                    ax4.errorbar(period[nzyy],np.array(rpr.phaseyy[nzyy]),
-                                 marker=mtmm,ms=8,mfc='None',mec=cyx,mew=1,
-                                 ls='--',yerr=rp.phaseyyerr[nzyy], 
-                                 ecolor=cyx,color=cyx)
+            #-----Plot the phase-----------------------------------------------
+            ax4.errorbar(period[nzxx],
+                         rp.phasexx[nzxx],
+                         marker=mted,
+                         ms=4,
+                         mfc='None',
+                         mec=cted,
+                         mew=1,
+                         ls=':',
+                         yerr=rp.phasexx_err[nzxx],
+                         ecolor=cted,
+                         color=cted)
+                         
+            ax4.errorbar(period[nzyy],
+                         np.array(rp.phaseyy[nzyy]),
+                         marker=mtmd,
+                         ms=4,
+                         mfc='None',
+                         mec=ctmd,
+                         mew=1,
+                         ls=':',
+                         yerr=rp.phaseyy_err[nzyy],
+                         ecolor=ctmd,
+                         color=ctmd)
+ 
             ax4.set_xlabel('Period (s)',fontdict)
-            #ax4.set_ylabel('Imepdance Phase (deg)',fontdict)
             ax4.set_xscale('log')
-            #ax2.set_xlim(xmin=10**(np.floor(np.log10(period[0]))),
-            #         xmax=10**(np.ceil(np.log10(period[-1]))))
             ax4.set_ylim(ymin=-180,ymax=180)        
             ax4.yaxis.set_major_locator(MultipleLocator(30))
             ax4.yaxis.set_minor_locator(MultipleLocator(5))
@@ -2404,6 +2509,629 @@ def computeMemoryUsage(nx, ny, nz, n_stations, n_zelements, n_period):
                    8*(nx*ny*nz*n_stations*n_period*n_zelements))
     return mem_req*1E-9
                         
+class WS3DModelManipulator(object):
+    """
+    will plot a model from wsinv3d or init file so the user can manipulate the 
+    resistivity values relatively easily.  At the moment only plotted
+    in map view.
+    
+    
+    """
+
+    def __init__(self, model_fn=None, init_fn=None, data_fn=None,
+                 res_lst=None, mapscale='km', plot_yn='y', xlimits=None, 
+                 ylimits=None, cbdict={}):
+        
+        self.model_fn = model_fn
+        self.init_fn = init_fn
+        self.data_fn = data_fn
+        
+        #station locations in relative coordinates read from data file
+        self.station_x = None
+        self.station_y = None
+        
+        #make a default resistivity list to change values
+        if res_lst is None:
+            self.res_lst = np.array([.3, 1, 10, 50, 100, 500, 1000, 5000],
+                                   dtype=np.float)
+        
+        else:
+            self.res_lst = res_lst        
+        
+        self.read_file()
+   
+        #make a dictionary of values to write to file.
+        self.res_dict = dict([(res, ii) 
+                              for ii,res in enumerate(self.res_lst,1)])
+        
+        #--> set map scale
+        self.mapscale = mapscale
+        self.res_value = self.res_lst[0]
+        
+        #--> set map limits
+        self.xlimits = xlimits
+        self.ylimits = ylimits
+        
+        self.cb_dict = cbdict
+
+        self.font_size = 7
+        self.dpi = 300
+        self.fignum = 1
+        self.figsize = [6,6]
+        self.cmap = cm.jet_r
+        self.depth_index = 0
+        
+        self.fdict = {'size':self.font_size+2, 'weight':'bold'}
+    
+        self.cblabeldict = {-5:'$10^{-5}$',
+                            -4:'$10^{-4}$',
+                           -3:'$10^{-3}$',
+                           -2:'$10^{-2}$',
+                           -1:'$10^{-1}$',
+                            0:'$10^{0}$',
+                            1:'$10^{1}$',
+                            2:'$10^{2}$',
+                            3:'$10^{3}$',
+                            4:'$10^{4}$',
+                            5:'$10^{5}$',
+                            6:'$10^{6}$',
+                            7:'$10^{7}$',
+                            8:'$10^{8}$'}
+        
+
+        
+        #plot on initialization
+        self.plot_yn = plot_yn
+        if self.plot_yn=='y':
+            self.plot()
+    
+    #---read files-------------------------------------------------------------    
+    def read_file(self):
+        """
+        reads in initial file or model file and set attributes:
+            -resmodel
+            -northrid
+            -eastrid
+            -zgrid
+            -res_lst if initial file
+            
+        """
+
+        if self.model_fn is not None and self.init_fn is None:
+            mtuple = readModelFile(self.model_fn)
+            self.north = mtuple[0]
+            self.east = mtuple[1]
+            self.zg = mtuple[2]
+            self.res = mtuple[3]
+            self.north_nodes = mtuple[5]
+            self.east_nodes = mtuple[6]
+            self.z_nodes = mtuple[7]
+            
+            self.convert_res_to_model()
+            
+        elif self.init_fn is not None and self.model_fn is None:
+            mtuple = readInit3D(self.init_fn)
+            self.north = mtuple[0]
+            self.east = mtuple[1]
+            self.zg = mtuple[2]
+            self.res = mtuple[5]
+            self.res_lst = mtuple[3]
+            self.north_nodes = mtuple[6]
+            self.east_nodes = mtuple[7]
+            self.z_nodes = mtuple[8]
+            
+            #need to convert index values to resistivity values
+            rdict = dict([(ii,res) for ii,res in enumerate(self.res_lst,1)])
+            
+            for ii in range(len(self.res_lst)):
+                self.res[np.where(self.res==ii+1)] = rdict[ii+1]
+                
+        elif self.init_fn is None and self.model_fn is None:
+            print 'Need to input either an initial file or model file to plot'
+        else:
+            print 'Input just initial file or model file not both.'
+            
+        if self.data_fn is not None:
+            dtuple = readDataFile(self.data_fn)
+            self.station_x = dtuple[3]
+            self.station_y = dtuple[4]
+            
+        #make a copy of original in case there are unwanted changes
+        self.res_copy = self.res.copy()
+            
+            
+            
+    #---plot model-------------------------------------------------------------    
+    def plot(self):
+        """
+        plots the model with:
+            -a radio dial for depth slice 
+            -radio dial for resistivity value
+            
+        """
+        
+        self.cmin = np.floor(np.log10(min(self.res_lst)))
+        self.cmax = np.ceil(np.log10(max(self.res_lst)))
+        
+        #-->Plot properties
+        plt.rcParams['font.size'] = self.font_size
+    
+
+        #--> scale the map coordinates
+        if self.mapscale=='km':
+            dscale = 1000.
+        if self.mapscale=='m':
+            dscale = 1.
+            
+        self.dscale = dscale
+
+        
+        #make a mesh grid for plotting
+        self.northgrid, self.eastgrid = np.meshgrid(self.north/dscale, 
+                                                    self.east/dscale)
+        
+        self.fig = plt.figure(self.fignum, figsize=self.figsize, dpi=self.dpi)
+        self.ax1 = self.fig.add_subplot(1, 1, 1, aspect='equal')
+        
+        plot_res = np.log10(np.rot90(self.res[:,:,self.depth_index],3))
+        
+        self.mesh_plot = self.ax1.pcolormesh(self.eastgrid, self.northgrid, 
+                                             plot_res,
+                                             cmap=self.cmap,
+                                             vmin=self.cmin,
+                                             vmax=self.cmax)
+                                             
+        #on plus or minus change depth slice
+        self.cid_depth = \
+                    self.mesh_plot.figure.canvas.mpl_connect('key_press_event',
+                                                        self._on_key_callback)
+                                    
+                       
+        #plot the stations
+        if self.station_x is not None:
+            for ee,nn in zip(self.station_x, self.station_y):
+                self.ax1.text(ee/dscale, nn/dscale,
+                              '*',
+                              verticalalignment='center',
+                              horizontalalignment='center',
+                              fontdict={'size':self.font_size-2,
+                                        'weight':'bold'})
+
+        #set axis properties
+        if self.xlimits is not None:
+            self.ax1.set_xlim(self.xlimits)
+        else:
+            self.ax1.set_xlim(xmin=self.north.min()/dscale, 
+                              xmax=self.north.max()/dscale)
+        
+        if self.ylimits is not None:
+            self.ax1.set_ylim(self.ylimits)
+        else:
+            self.ax1.set_ylim(ymin=self.east.min()/dscale,
+                              ymax=self.east.max()/dscale)
+            
+        self.ax1.xaxis.set_minor_locator(MultipleLocator(100*1./dscale))
+        self.ax1.yaxis.set_minor_locator(MultipleLocator(100*1./dscale))
+        
+        self.ax1.set_ylabel('Northing ('+self.mapscale+')',
+                            fontdict=self.fdict)
+        self.ax1.set_xlabel('Easting ('+self.mapscale+')',
+                            fontdict=self.fdict)
+        
+        depth_title = self.zg[self.depth_index]/self.dscale
+                                                        
+        self.ax1.set_title('Depth = {:.3f} '.format(depth_title)+\
+                           '('+self.mapscale+')',
+                           fontdict=self.fdict)
+        
+        #plot the grid if desired              
+        for xx in self.east:
+            self.ax1.plot([self.north.min()/dscale, self.north.max()/dscale],
+                           [xx/dscale, xx/dscale],
+                           lw=.25,
+                           color='k')
+
+        for yy in self.north:
+            self.ax1.plot([yy/dscale, yy/dscale], 
+                          [self.east.min()/dscale, self.east.max()/dscale],
+                           lw=.25,
+                           color='k')
+        
+        #plot the colorbar
+        self.ax2 = mcb.make_axes(self.ax1, orientation='vertical', shrink=.5)
+        seg_cmap = cmap_discretize(self.cmap, len(self.res_lst))
+        self.cb = mcb.ColorbarBase(self.ax2[0],cmap=seg_cmap,
+                                   norm=colors.Normalize(vmin=self.cmin,
+                                                         vmax=self.cmax))
+                                                         
+                            
+        self.cb.set_label('Resistivity ($\Omega \cdot$m)',
+                     fontdict={'size':self.font_size})
+        self.cb.set_ticks(np.arange(self.cmin, self.cmax+1))
+        self.cb.set_ticklabels([self.cblabeldict[cc] 
+                            for cc in np.arange(self.cmin, self.cmax+1)])
+                            
+        #make a resistivity radio button
+        resrb = self.fig.add_axes([.85,.1,.1,.15])
+        reslabels = ['{0:.4g}'.format(res) for res in self.res_lst]
+        self.radio_res = widgets.RadioButtons(resrb, reslabels,active=0)
+        
+        #make a rectangular selector
+        self.rect_selector = widgets.RectangleSelector(self.ax1, 
+                                                       self.rect_onselect,
+                                                       drawtype='box',
+                                                       useblit=True)
+
+        
+        plt.show()
+        
+        #needs to go after show()
+        self.radio_res.on_clicked(self.set_res_value)
+
+
+    def redraw_plot(self):
+        """
+            redraws the plot
+        """
+        
+        self.ax1.cla()
+        
+        plot_res = np.log10(np.rot90(self.res[:,:,self.depth_index],3))
+        
+        self.mesh_plot = self.ax1.pcolormesh(self.eastgrid, self.northgrid, 
+                                             plot_res,
+                                             cmap=self.cmap,
+                                             vmin=self.cmin,
+                                             vmax=self.cmax)
+                                             
+         #plot the stations
+        if self.station_x is not None:
+            for ee,nn in zip(self.station_x, self.station_y):
+                self.ax1.text(ee/self.dscale, nn/self.dscale,
+                              '*',
+                              verticalalignment='center',
+                              horizontalalignment='center',
+                              fontdict={'size':self.font_size-2,
+                                        'weight':'bold'})
+
+        #set axis properties
+        if self.xlimits is not None:
+            self.ax1.set_xlim(self.xlimits)
+        else:
+            self.ax1.set_xlim(xmin=self.north.min()/self.dscale, 
+                              xmax=self.north.max()/self.dscale)
+        
+        if self.ylimits is not None:
+            self.ax1.set_ylim(self.ylimits)
+        else:
+            self.ax1.set_ylim(ymin=self.east.min()/self.dscale,
+                              ymax=self.east.max()/self.dscale)
+            
+        self.ax1.xaxis.set_minor_locator(MultipleLocator(100*1./self.dscale))
+        self.ax1.yaxis.set_minor_locator(MultipleLocator(100*1./self.dscale))
+        
+        self.ax1.set_ylabel('Northing ('+self.mapscale+')',
+                            fontdict=self.fdict)
+        self.ax1.set_xlabel('Easting ('+self.mapscale+')',
+                            fontdict=self.fdict)
+        
+        depth_title = self.zg[self.depth_index]/self.dscale
+                                                        
+        self.ax1.set_title('Depth = {:.3f} '.format(depth_title)+\
+                           '('+self.mapscale+')',
+                           fontdict=self.fdict)
+                     
+        #plot the grid if desired              
+        for xx in self.east:
+            self.ax1.plot([self.north.min()/self.dscale, 
+                           self.north.max()/self.dscale],
+                           [xx/self.dscale, xx/self.dscale],
+                           lw=.25,
+                           color='k')
+
+        for yy in self.north:
+            self.ax1.plot([yy/self.dscale, yy/self.dscale], 
+                          [self.east.min()/self.dscale, 
+                           self.east.max()/self.dscale],
+                           lw=.25,
+                           color='k')
+        
+        #be sure to redraw the canvas                  
+        self.fig.canvas.draw()
+        
+    def set_res_value(self, label):
+        self.res_value = float(label)
+        print 'set resistivity to ', label
+        print self.res_value
+        
+        
+    def _on_key_callback(self,event):
+        """
+        on pressing a key do something
+        
+        """
+        
+        self.event_change_depth = event
+
+        if self.event_change_depth.key=='=':
+            self.depth_index += 1
+            
+            if self.depth_index>len(self.zg)-1:
+                self.depth_index = len(self.zg)-1
+                print 'already at deepest depth'
+                
+            print 'Plotting Depth {0:.3f}'.format(self.zg[self.depth_index]/\
+                    self.dscale)+'('+self.mapscale+')'
+            
+            self.redraw_plot()
+
+        elif self.event_change_depth.key=='-':
+            self.depth_index -= 1
+            
+            if self.depth_index<0:
+                self.depth_index = 0
+                
+            print 'Plotting Depth {0:.3f} '.format(self.zg[self.depth_index]/\
+                    self.dscale)+'('+self.mapscale+')'
+            
+            self.redraw_plot()
+
+        elif self.event_change_depth.key == 'q':
+            self.event_change_depth.canvas.mpl_disconnect(self.cid_depth)
+            plt.close(self.event_change_depth.canvas.figure)
+            
+        #copy the layer above
+        elif self.event_change_depth.key == 'a':
+            try:
+                if self.depth_index == 0:
+                    print 'No layers above'
+                else:
+                    self.res[:,:,self.depth_index] = \
+                                              self.res[:,:,self.depth_index-1]
+            except IndexError:
+                print 'No layers above'
+                
+            self.redraw_plot()
+        
+        #copy the layer below
+        elif self.event_change_depth.key == 'b':
+            try:
+                self.res[:,:,self.depth_index] = \
+                                              self.res[:,:,self.depth_index+1]
+            except IndexError:
+                print 'No more layers below'
+                
+            self.redraw_plot() 
+            
+        #undo
+        elif self.event_change_depth.key == 'u':
+            self.res[self.ni0:self.ni1, self.ei0:self.ei1, self.depth_index] =\
+            self.res_copy[self.ni0:self.ni1,self.ei0:self.ei1,self.depth_index]
+            
+            self.redraw_plot()
+            
+           
+    def rect_onselect(self, eclick, erelease):
+        """
+        on selecting a rectangle change the colors to the resistivity values
+        """
+        x1, y1 = eclick.xdata, eclick.ydata
+        x2, y2 = erelease.xdata, erelease.ydata
+        
+        
+        ei0, ei1 = self._get_east_index(x1, x2)
+        ni0, ni1 = self._get_north_index(y1, y2)
+        
+        #reset values of resistivity
+        
+        self.res[ni0:ni1, ei0:ei1, self.depth_index] = self.res_value
+        
+        self.redraw_plot()
+        
+        self.ei0 = ei0
+        self.ei1 = ei1
+        self.ni0 = ni0
+        self.ni1 = ni1
+            
+        
+        
+    def _get_east_index(self, x1, x2):
+        """
+        get the index value of the points to be changed
+        
+        """
+        
+        x1 *= 1.
+        x2 *= 1.
+        
+        if x1 < x2:
+            p1 = 0
+        elif x2 < x1:
+            p1 = 0
+        elif x1 == x2:
+            p1 = 0
+        
+        nx = len(self.east)
+        xreturn=[]
+        for xx in [x1, x2]:
+            for ii in range(nx-1):
+                if xx == self.east[ii]/self.dscale:
+                    xreturn.append(ii)
+                    break
+                
+                elif xx >= self.east[ii]/self.dscale and \
+                        xx <= self.east[ii+1]/self.dscale:
+                    xreturn.append(ii+p1)
+                    break
+                
+                elif xx > self.east[-1]/self.dscale:
+                    xreturn.append(nx-1)
+                    break
+                
+                elif xx<self.east[0]/self.dscale:
+                    xreturn.append(0)
+                    break
+                
+        if xreturn[0] > xreturn[1]:
+            return xreturn[1], xreturn[0]
+            
+        elif xreturn[0] < xreturn[1]:
+            return xreturn[0], xreturn[1]
+            
+        elif xreturn[0]==xreturn[1]:
+            return xreturn[0], xreturn[0]+1
+                
+    def _get_north_index(self, y1, y2):
+        """
+        get the index value of the points to be changed in north direction
+        
+        need to flip the index because the plot is flipped
+        
+        """
+        
+        y1 *= -1
+        y2 *= -1
+        
+        if y1 < y2:
+            p1 = 1
+        elif y2 < y1:
+            p1 = 1
+        elif y1 == y2:
+            p1 = 1
+            
+        ny = len(self.north)
+        yreturn=[]
+        for yy in [y1, y2]:
+            for ii in range(ny-1):
+                if yy==self.north[ii]/self.dscale:
+                    yreturn.append(ii)
+                    break
+                
+                elif yy>=self.north[ii]/self.dscale and \
+                        yy<=self.north[ii+1]/self.dscale:
+                    yreturn.append(ii+p1)
+                    break
+                
+                elif yy>self.north[-1]/self.dscale:
+                    yreturn.append(ny-1)
+                    break
+                
+                elif yy<self.north[0]/self.dscale:
+                    yreturn.append(0)
+                    break
+                    
+        if yreturn[0] > yreturn[1]:
+            return yreturn[1], yreturn[0]
+        
+        elif yreturn[0] < yreturn[1]:
+            return yreturn[0], yreturn[1]
+            
+        elif yreturn[0]==yreturn[1]:
+            return yreturn[0], yreturn[0]+1
+            
+    def convert_model_to_int(self):
+        """
+        convert the resistivity model that is in ohm-m to integer values
+        corresponding to res_lst
+        
+        """
+ 
+        self.res_model = np.ones_like(self.res)
+        
+        for key in self.res_dict.keys():
+            self.res_model[np.where(self.res==key)] = self.res_dict[key]
+            
+    def convert_res_to_model(self):
+        """
+        converts an output model into an array of segmented valued according
+        to res_lst.        
+        
+        """
+        
+        #make values in model resistivity array a value in res_lst
+        resm = np.ones_like(self.res)
+        resm[np.where(self.res<self.res_lst[0])] = \
+                                            self.res_dict[self.res_lst[0]]
+        resm[np.where(self.res)>self.res_lst[-1]] = \
+                                            self.res_dict[self.res_lst[-1]]
+        
+        for zz in range(self.res.shape[2]):
+            for yy in range(self.res.shape[1]):
+                for xx in range(self.res.shape[0]):
+                    for rr in range(len(self.res_lst)-1):
+                        if self.res[xx,yy,zz]>=self.res_lst[rr] and \
+                            self.res[xx,yy,zz]<=self.res_lst[rr+1]:
+                            resm[xx,yy,zz] = self.res_dict[self.res_lst[rr]]
+                            break
+                        elif self.res[xx,yy,zz]<=self.res_lst[0]:
+                            resm[xx,yy,zz] = self.res_dict[self.res_lst[0]]
+                            break
+                        elif self.res[xx,yy,zz]>=self.res_lst[-1]:
+                            resm[xx,yy,zz] = self.res_dict[self.res_lst[-1]]
+                            break
+    
+        self.res = resm
+            
+        
+    def write_init_file(self, savepath, north_nodes=None, east_nodes=None,
+                        z_nodes=None, title='Initial Model for wsinv3d'):
+        """
+        write an initial file for wsinv3d from the model created.
+        """
+        
+        self.convert_model_to_int()
+        
+        try:
+            init_new = writeInit3DFile(self.north_nodes, 
+                                          self.east_nodes,
+                                          self.z_nodes, 
+                                          savepath, 
+                                          reslst=self.res_lst,
+                                          title=title,
+                                          resmodel=self.res_model)
+            return init_new
+            
+        except AttributeError:
+            if north_nodes is not None:
+                init_new = writeInit3DFile(north_nodes, 
+                                              east_nodes,
+                                              z_nodes, 
+                                              savepath, 
+                                              reslst=self.res_lst,
+                                              title=title,
+                                              resmodel=self.res_model)
+                return init_new
+            else:
+                print 'Need to input the starting grid'
+                                              
+                
+
+def cmap_discretize(cmap, N):
+    """Return a discrete colormap from the continuous colormap cmap.
+      
+         cmap: colormap instance, eg. cm.jet. 
+         N: number of colors.
+     
+     Example
+         x = resize(arange(100), (5,100))
+         djet = cmap_discretize(cm.jet, 5)
+         imshow(x, cmap=djet)
+    """
+
+    colors_i = np.concatenate((np.linspace(0, 1., N), (0.,0.,0.,0.)))
+    colors_rgba = cmap(colors_i)
+    indices = np.linspace(0, 1., N+1)
+    cdict = {}
+    for ki,key in enumerate(('red','green','blue')):
+        cdict[key] = [ (indices[i], colors_rgba[i-1,ki], colors_rgba[i,ki]) for i in xrange(N+1) ]
+    # Return colormap object.
+    return colors.LinearSegmentedColormap(cmap.name + "_%d"%N, cdict, 1024)
+
+        
+        
+            
+        
+
         
         
         
