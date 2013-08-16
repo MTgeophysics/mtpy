@@ -106,6 +106,9 @@ class ZongeMTFT():
         self.cache_path = None
         self.new_remote_path = ''
         
+        self.verbose = True
+        self.log_lines = []
+        
         #info dict
         self.ts_info_keys = ['File#', 'Setup', 'SkipWgt', 'LocalFile', 
                              'RemoteFile', 'LocalBlock', 'RemoteBlock', 
@@ -315,6 +318,9 @@ class ZongeMTFT():
             
             print '='*60
             print ts_dict['LocalFile'], local_start_date, local_start_time
+            self.log_lines.append('='*60+'\n')
+            self.log_lines.append('{0} {1} {2} \n'.format(ts_dict['LocalFile'],
+                                  local_start_date, local_start_time)) 
             
             rrfind = False
             #look backwards because if a new file was already created it will
@@ -340,6 +346,10 @@ class ZongeMTFT():
                    local_df == remote_df and \
                    local_start_time[0:2] == remote_start_time[0:2]:
                     print rrfn, remote_start_date, remote_start_time
+                    self.log_lines.append('{0} {1} {2}\n'.format(rrfn, 
+                                          remote_start_date, 
+                                          remote_start_time))
+                                          
                     if local_start_time == remote_start_time:
                         if local_npts == remote_npts:
                             ts_dict['RemoteFile'] = rrfn
@@ -361,6 +371,7 @@ class ZongeMTFT():
                         #if time series is longer than remote reference
                         elif remote_npts < local_npts:
                             print '{0} local_npts > remote_npts {0}'.format('*'*4)
+                            self.log_lines.append('{0} local_npts > remote_npts {0}\n'.format('*'*4))
                             #read in cache file
                             local_zc.read_cache(os.path.join(self.cache_path,
                                                   ts_dict['LocalFile']))
@@ -377,6 +388,10 @@ class ZongeMTFT():
                                os.path.join(self.cache_path, 
                                             ts_dict['LocalFile']),
                                local_zc.ts.shape)
+                            self.log_lines.append('Resized Local TS in {0} to {1}\n'.format(
+                               os.path.join(self.cache_path, 
+                                            ts_dict['LocalFile']),
+                               local_zc.ts.shape))
                             #rewrite the cache file
                             local_zc.rewrite_cache_file()
 
@@ -402,6 +417,7 @@ class ZongeMTFT():
                         #if remote reference is longer than time series
                         elif remote_npts > local_npts:
                             print '{0} local_npts < remote_npts {0}'.format('*'*4)
+                            self.log_lines.append('{0} local_npts < remote_npts {0}\n'.format('*'*4))
                             
                             remote_zc.read_cache(os.path.join(self.Remote_Path,
                                                               rrfn))
@@ -416,6 +432,9 @@ class ZongeMTFT():
                             print 'Resized Remote TS in {0} to {1}'.format(
                                     os.path.join(self.Remote_Path, rrfn),
                                     remote_zc.ts.shape)
+                            self.log_lines.append('Resized Remote TS in {0} to {1}\n'.format(
+                                    os.path.join(self.Remote_Path, rrfn),
+                                    remote_zc.ts.shape))
                                     
                             #rewrite the remote cache file 
                             remote_zc.rewrite_cache_file()
@@ -467,10 +486,16 @@ class ZongeMTFT():
                             
                             print ('Time difference is {0} seconds'.format(
                                                                 time_diff))
+                            self.log_lines.append('Time difference is {0} seconds\n'.format(
+                                                                time_diff))
                             print 'Skipping {0} points in {1}'.format(
                                                 skip_points,
                                                 os.path.join(self.cache_path, 
                                                         ts_dict['LocalFile']))
+                            self.log_lines.append('Skipping {0} points in {1}\n'.format(
+                                                skip_points,
+                                                os.path.join(self.cache_path, 
+                                                        ts_dict['LocalFile'])))
                                                 
                             local_zc.read_cache(os.path.join(self.cache_path, 
                                                         ts_dict['LocalFile']))
@@ -489,6 +514,7 @@ class ZongeMTFT():
                             #get angry
                             if remote_zc.ts.shape[0] < local_zc.ts.shape[0]:
                                 print '{0} local_npts > remote_npts {0}'.format('*'*4)
+                                self.log_lines.append('{0} local_npts > remote_npts {0}\n'.format('*'*4))                                
                                 #read in cache file
                                 local_zc.read_cache(os.path.join(self.cache_path,
                                                       ts_dict['LocalFile']))
@@ -506,6 +532,10 @@ class ZongeMTFT():
                                    os.path.join(self.cache_path, 
                                                 ts_dict['LocalFile']),
                                    local_zc.ts.shape)
+                                self.log_lines.append('Resized Local TS in {0} to {1}\n'.format(
+                                   os.path.join(self.cache_path, 
+                                                ts_dict['LocalFile']),
+                                   local_zc.ts.shape))
                                 #rewrite the cache file
                                 local_zc.rewrite_cache_file()
 
@@ -534,6 +564,7 @@ class ZongeMTFT():
                             #than the remote reference.
                             elif remote_zc.ts.shape[0] > local_zc.ts.shape[0]:
                                 print '{0} local_npts < remote_npts {0}'.format('*'*4)
+                                self.log_lines.append('{0} local_npts < remote_npts {0}\n'.format('*'*4))                                
                                 #reset local meta data 
                                 local_zc.meta_data['TS.NPNT'] = \
                                                 [str(local_zc.ts.shape[0])]
@@ -552,6 +583,9 @@ class ZongeMTFT():
                                 print 'Resized Remote TS in {0} to {1}'.format(
                                         os.path.join(self.Remote_Path, rrfn),
                                         remote_zc.ts.shape)
+                                self.log_lines.append('Resized Remote TS in {0} to {1}\n'.format(
+                                        os.path.join(self.Remote_Path, rrfn),
+                                        remote_zc.ts.shape))
                                         
                                 #rewrite the remote cache file 
                                 remote_zc.rewrite_cache_file()
@@ -612,10 +646,17 @@ class ZongeMTFT():
                             
                             print ('Time difference is {0} seconds'.format(
                                                                     time_diff))
+                            self.log_lines.append('Time difference is {0} seconds\n'.format(
+                                                                    time_diff))
                             print 'Skipping {0} points in {1}'.format(
                                                 skip_points,
                                                 os.path.join(self.Remote_Path,
                                                              rrfn))
+                            self.log_lines.append('Skipping {0} points in {1}\n'.format(
+                                                skip_points,
+                                                os.path.join(self.Remote_Path,
+                                                             rrfn)))
+                                
                             
                             #resize remote reference
                             new_rr_ts = remote_zc.ts[skip_points:, :]
@@ -633,6 +674,7 @@ class ZongeMTFT():
                             #get angry
                             if remote_zc.ts.shape[0] < local_npts:
                                 print '{0} local_npts > remote_npts {0}'.format('*'*4)
+                                self.log_lines.append('{0} local_npts > remote_npts {0}\n'.format('*'*4))                                
                                 #reset remote meta data 
                                 remote_zc.meta_data['TS.NPNT'] = \
                                                 [str(remote_zc.ts.shape[0])]
@@ -656,6 +698,10 @@ class ZongeMTFT():
                                    os.path.join(self.cache_path, 
                                                 ts_dict['LocalFile']),
                                    local_zc.ts.shape)
+                                self.log_lines.append('Resized Local TS in {0} to {1}\n'.format(
+                                   os.path.join(self.cache_path, 
+                                                ts_dict['LocalFile']),
+                                   local_zc.ts.shape))
                                    
                                 #rewrite the cache file
                                 local_zc.rewrite_cache_file()
@@ -685,6 +731,7 @@ class ZongeMTFT():
                             #than the remote reference.
                             elif remote_zc.ts.shape[0] > local_npts:
                                 print '{0} local_npts < remote_npts {0}'.format('*'*4)
+                                self.log_lines.append('{0} local_npts < remote_npts {0}\n'.format('*'*4))                                
                                 #resize remote ts accordingly
                                 remote_zc.ts = np.resize(remote_zc.ts, 
                                                           (local_npts,
@@ -696,6 +743,9 @@ class ZongeMTFT():
                                 print 'Resized Remote TS in {0} to {1}'.format(
                                         os.path.join(self.Remote_Path, rrfn),
                                         remote_zc.ts.shape)
+                                self.log_lines.append('Resized Remote TS in {0} to {1}\n'.format(
+                                        os.path.join(self.Remote_Path, rrfn),
+                                        remote_zc.ts.shape))
                                         
                                 #rewrite the remote cache file 
                                 remote_zc.rewrite_cache_file()
@@ -747,6 +797,8 @@ class ZongeMTFT():
             if rrfind == False:
                 print ('Did not find remote reference time series '
                        'for {0}'.format(ts_dict['LocalFile']))
+                self.log_lines.append('Did not find remote reference time series '
+                       'for {0}\n'.format(ts_dict['LocalFile']))
                        
                 new_ts_info_lst.append(ts_dict)
                         
@@ -920,10 +972,12 @@ class ZongeMTFT():
                     setup_dict['chn_dict']['Hx'][0] = survey_dict['hx']
                 except KeyError:
                     print 'No hx data'
+                    self.log_lines.append('No hx data from survey file.\n')
                 try:
                     setup_dict['chn_dict']['Hy'][0] = survey_dict['hy']
                 except KeyError:
                     print 'No hy data'
+                    self.log_lines.append('No hy data from survey file.\n')
                 
                 try:
                     if survey_dict['hz'].find('*') >= 0:
@@ -932,21 +986,26 @@ class ZongeMTFT():
                         setup_dict['chn_dict']['Hz'][0] = survey_dict['hz']
                 except KeyError:
                     print 'No hz data'
+                    self.log_lines.append('No hz data from survey file.\n')
                 
                 try:
                     setup_dict['chn_dict']['Ex'][2] = \
                                                  survey_dict['e_xaxis_length']
                 except KeyError:
                     print 'No ex data'
+                    self.log_lines.append('No ex data from survey file.\n')
                 try:
                     setup_dict['chn_dict']['Ey'][2] = \
                                                  survey_dict['e_yaxis_length']
                 except KeyError:
                     print 'No ey data'
+                    self.log_lines.append('No ey data from survey file.\n')
                     
             except KeyError:
                 print ('Could not find survey information from ' 
                        '{0} for {1}'.format(survey_file, station_name))
+                self.log_lines.append('Could not find survey information from ' 
+                       '{0} for {1}\n'.format(survey_file, station_name))
             
             if rr_station_name is not None:
                 try:
@@ -955,14 +1014,19 @@ class ZongeMTFT():
                         setup_dict['chn_dict']['Hxr'][0] = survey_dict['hx']
                     except KeyError:
                         print 'No hxr data'
+                        self.log_lines.append('No hxr data from survey file.\n')
+                        
                     try:
                         setup_dict['chn_dict']['Hyr'][0] = survey_dict['hy']
                     except KeyError:
                         print 'No hyr data'
+                        self.log_lines.append('No hyr data from survey file.\n')
                
                 except KeyError:
                     print ('Could not find survey information from ' 
                            '{0} for {1}'.format(survey_file, rr_station_name))
+                    self.log_lines.append('Could not find survey information from ' 
+                           '{0} for {1}\n'.format(survey_file, rr_station_name))
                            
     def write_mtft_cfg(self, cache_path, station, rrstation=None,
                        remote_path=None, survey_file=None, save_path=None):
@@ -1083,6 +1147,12 @@ class ZongeMTFT():
         
         cfid.close()
         print 'Wrote config file to {0}'.format(save_path)
+        self.log_lines.append('Wrote config file to {0}\n'.format(save_path))
+        
+        #write log file
+        lfid = file(os.path.join(os.path.dirname(save_path), 'MTFTcfg.log'),'w')
+        lfid.writelines(self.log_lines)
+        lfid.close()
         
     def read_cfg(self, cfg_fn):
         """

@@ -613,7 +613,7 @@ class Zen3D(object):
         except ValueError:
             print 'Ran into end of file, gps stamp not complete.'+\
                   ' Only {0} points.'.format(len(self._raw_data[gps_index:]))
-            return None, gps_index
+            return None, gps_index, 0
             
     def get_gps_time(self, gps_int, gps_week=0):
         """
@@ -979,6 +979,7 @@ class ZenCache(object):
                            '1024':'576',
                            '4096':'1792'}
         self._flag = -1
+        self._ts_dtype = np.int32
         
         self._type_dict = {'nav' : 4,
                           'meta' :  514,
@@ -1270,6 +1271,11 @@ class ZenCache(object):
         
         ts_block_len = int(ts_len)*n_fn*4+2
         
+        #--> Need to scale the time series into counts cause that is apparently
+        #    what MTFT24 expects
+        self.ts /= float(self._ch_factor)
+        self.ts = self.ts.astype(np.int32)
+        
         #--> make sure none of the data is above the allowed level
         self.ts[np.where(self.ts>2.14e9)] = 2.14e9
         self.ts[np.where(self.ts<-2.14e9)] = -2.14e9
@@ -1278,8 +1284,10 @@ class ZenCache(object):
         cfid.write(struct.pack('<i', ts_block_len))
         cfid.write(struct.pack('<i', self._flag))
         cfid.write(struct.pack('<h', self._type_dict['ts']))
+        
+        #--> need to pack the data as signed integers
         for zz in range(ts_len):
-            cfid.write(struct.pack('<'+'f'*n_fn, *self.ts[zz]))
+            cfid.write(struct.pack('<'+'i'*n_fn, *self.ts[zz]))
                                 
         cfid.write(struct.pack('<i', ts_block_len))
          
@@ -1296,6 +1304,8 @@ class ZenCache(object):
     def rewrite_cache_file(self):
         """
         rewrite a cache file if parameters changed
+        
+        assuming data that was read in is in counts.
         
         """
         self.save_fn_rw = mtfh.make_unique_filename(self.save_fn)
@@ -1352,7 +1362,7 @@ class ZenCache(object):
         cfid.write(struct.pack('<i', self._flag))
         cfid.write(struct.pack('<h', self._type_dict['ts']))
         for zz in range(self.ts.shape[0]):
-            cfid.write(struct.pack('<'+'f'*n_fn, *self.ts[zz]))
+            cfid.write(struct.pack('<'+'i'*n_fn, *self.ts[zz]))
                                 
         cfid.write(struct.pack('<i', ts_block_len))
                  
@@ -1504,10 +1514,12 @@ class ZenCache(object):
         #get time series data
         ii = int(jj)
         jj = ii+ts_block['len']-2
-        self.ts = np.fromstring(cdata[ii:jj], dtype = np.float32)
+        self.ts = np.fromstring(cdata[ii:jj], dtype=self._ts_dtype)
         #resize time series to be length of each channel
         num_chn = len(self.meta_data['ch.cmp'.upper()])
-        self.ts = self.ts.reshape(self.ts.shape[0]/num_chn, num_chn)
+        if self.ts.shape[0]%num_chn != 0:
+            print 'Trimming TS by {0} points'.format(self.ts.shape[0]%num_chn)
+        self.ts = np.resize(self.ts, (int(self.ts.shape[0]/num_chn), num_chn))
         
         ii = int(jj)
         jj = ii+4
