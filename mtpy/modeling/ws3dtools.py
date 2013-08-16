@@ -1613,14 +1613,16 @@ def plotDataResPhase(data_fn, resp_fn=None, station_lst=None, sites_fn=None,
                     cxy=(1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))                    
                     cyx=(1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))
                 
-                resp_z_object =  mtz.Z(z_array=dz[jj], zerr_array=dzerr[jj])
-                resp_z_object.freq = 1./period
+                resp_z_object =  mtz.Z(z_array=rzlst[rr][jj], 
+                                       zerr_array=rzerrlst[rr][jj], 
+                                       freq=1./period)
 
                 rpr = mtplottools.ResPhase(resp_z_object)
 
-                rms=np.sqrt(np.mean([(np.sqrt(abs(np.linalg.det(z_object.z[ll])))-
-                                    np.sqrt(abs(np.linalg.det(resp_z_object.z[ll]))))**2 
-                                    for ll in range(len(z_object.period))]))
+                rms=np.sqrt(np.mean(
+                                [(np.sqrt(abs(np.linalg.det(z_object.z[ll])))-
+                                np.sqrt(abs(np.linalg.det(resp_z_object.z[ll]))))**2 
+                                for ll in range(len(z_object.freq))]))
                 print 'RMS = {:.2f}'.format(rms)
                 erxyr=ax.errorbar(period[nzxy],
                                   rpr.resxy[nzxy],
@@ -1824,7 +1826,7 @@ def plotDataResPhase(data_fn, resp_fn=None, station_lst=None, sites_fn=None,
 
             ax3.set_yscale('log')
             ax3.set_xscale('log')
-            pylab.setp( ax3.get_xticklabels(), visible=False)
+            plt.setp( ax3.get_xticklabels(), visible=False)
             ax3.set_xlim(xmin=10**(np.floor(np.log10(period[0]))),
                      xmax=10**(np.ceil(np.log10(period[-1]))))
             ax3.grid(True,alpha=.25)
@@ -2109,11 +2111,11 @@ def plotTensorMaps(data_fn,resp_fn=None,sites_fn=None,periodlst=None,
                 ax.set_ylim(nsarr.min()-xpad,nsarr.max()+xpad)
                 ax.grid('on')
                 if aa<3:
-                    pylab.setp(ax.get_xticklabels(),visible=False)
+                    plt.setp(ax.get_xticklabels(),visible=False)
                 if aa==0 or aa==3:
                     pass
                 else:
-                    pylab.setp(ax.get_yticklabels(),visible=False)
+                    plt.setp(ax.get_yticklabels(),visible=False)
                 
                 cbax=mcb.make_axes(ax,shrink=.9,pad=.05,orientation='vertical')
                 if aa==0 or aa==1:
@@ -2222,7 +2224,7 @@ def plotTensorMaps(data_fn,resp_fn=None,sites_fn=None,periodlst=None,
                               'weight':'bold'})
 
                 if aa==1:
-                    pylab.setp(ax.get_yticklabels(),visible=False)
+                    plt.setp(ax.get_yticklabels(),visible=False)
                 else:
                     ax.set_ylabel('northing (km)',fontdict={'size':10,
                               'weight':'bold'})
