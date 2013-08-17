@@ -1501,7 +1501,7 @@ class ZongeMTAvg():
         self.nfreq_tipper = None
         self.freq_dict = None
         self.avg_dict = {'ex':'4', 'ey':'5'}
-        self.z_coordinate = 'up'
+        self.z_coordinate = 'down'
 
         
     def read_avg_file(self, avg_fn):
