@@ -1036,7 +1036,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         plt.show()
     
         
-    def save_plot(self, save_fn, file_format='pdf', 
+    def save_figure(self, save_fn, file_format='pdf', 
                   orientation='portrait', fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.
