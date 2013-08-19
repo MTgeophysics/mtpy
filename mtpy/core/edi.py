@@ -2189,7 +2189,7 @@ def _generate_edifile_string(edidict):
                 if k.lower == 'filedate':
                     checkdate = 1
             if checkdate == 0:
-                todaystring = datetime.datetime.now().strftime('%Y-%m-%d,%H:%M:%S')
+                todaystring = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
                 edistring += '\tfiledate=%s\n'%(todaystring)
 
 
