@@ -3,6 +3,30 @@
 Created on Tue Aug 23 11:54:38 2011
 
 @author: a1185872
+
+
+Classes:
+    - OccamPointPicker
+    - Occam2DData
+    - Occam2DModel
+    - PlotOccam2DResponse
+    - PlotPseudoSection
+    - PlotAllResponses
+    - PlotModel
+    - PlotL2
+    - PlotDepthSlice
+
+Functions:
+    - getdatetime
+    - makestartfiles
+    - writemeshfile
+    - writemodelfile
+    - writestartupfile
+    - read_datafile
+    - get_model_setup
+    - blocks_elements_setup
+
+
 """
 #==============================================================================
 import numpy as np
@@ -17,10 +41,12 @@ import matplotlib.colorbar as mcb
 from matplotlib.colors import Normalize
 from matplotlib.ticker import MultipleLocator
 import matplotlib.gridspec as gridspec
-import mtpy.core.edi as mtedi
-import mtpy.modeling.winglinktools as wlt
 import matplotlib.pyplot as plt
-import mtpy.utils.latlongutmconversion as utm2ll
+
+import mtpy.core.edi as MTedi
+import mtpy.modeling.winglinktools as MTwl
+import mtpy.utils.conversions as MTcv
+
 #==============================================================================
 
 occamdict = {'1':'resxy','2':'phasexy','3':'realtip','4':'imagtip','5':'resyx',
@@ -584,13 +610,13 @@ class OccamPointPicker(object):
     
     Arguments:
     ----------
-        **axlst** : list of the resistivity and phase axis that have been 
+        **axlist** : list of the resistivity and phase axis that have been 
                     plotted as [axr_te,axr_tm,axp_te,axp_tm]
         
-        **linelst** : list of lines used to plot the responses, not the error 
+        **linelist** : list of lines used to plot the responses, not the error 
                       bars as [res_te,res_tm,phase_te,phase_tm]
         
-        **errlst** : list of the errorcaps and errorbar lines as 
+        **errlist** : list of the errorcaps and errorbar lines as 
                    [[cap1,cap2,bar],...]
                  
         **reserrinc** : increment to increase the errorbars for resistivity.
@@ -605,11 +631,11 @@ class OccamPointPicker(object):
     Attributes:
     -----------
     
-        **axlst** : axes list used to plot the data
+        **axlist** : axes list used to plot the data
         
-        **linelst** : line list used to plot the data
+        **linelist** : line list used to plot the data
         
-        **errlst** : error list used to plot the data
+        **errlist** : error list used to plot the data
         
         **data** : list of data points that were not masked for each plot.
         
@@ -617,7 +643,7 @@ class OccamPointPicker(object):
         
         **fndict** : dictionary of figure numbers to corresponed with data.
         
-        **cidlst** : list of event ids.
+        **cidlist** : list of event ids.
         
         **reserrinc** : increment to increase resistivity error bars
         
@@ -636,29 +662,29 @@ class OccamPointPicker(object):
         >>> ocd.plotMaskPoints()
     """    
     
-    def __init__(self,axlst,linelst,errlst,reserrinc=.05,phaseerrinc=.02,
+    def __init__(self,axlist,linelist,errlist,reserrinc=.05,phaseerrinc=.02,
                  marker='h'):
           
         #give the class some attributes
-        self.axlst=axlst
-        self.linelst=linelst
-        self.errlst=errlst
+        self.axlist=axlist
+        self.linelist=linelist
+        self.errlist=errlist
         self.data=[]
         self.error=[]
         self.fdict=[]
         self.fndict={}
         #see if just one figure is plotted or multiple figures are plotted
-        self.ax=axlst[0][0]
-        self.line=linelst[0][0]
-        self.cidlst=[]
-        for nn in range(len(axlst)):
+        self.ax=axlist[0][0]
+        self.line=linelist[0][0]
+        self.cidlist=[]
+        for nn in range(len(axlist)):
             self.data.append([])
             self.error.append([])
             self.fdict.append([])
         
             #get data from lines and make a dictionary of frequency points for 
             #easy indexing
-            for ii,line in enumerate(linelst[nn]):
+            for ii,line in enumerate(linelist[nn]):
                 self.data[nn].append(line.get_data()[1])
                 self.fdict[nn].append(dict([('{0:.5g}'.format(kk),ff) for ff,kk in 
                                         enumerate(line.get_data()[0])]))
@@ -673,11 +699,11 @@ class OccamPointPicker(object):
                                                         self.on_close)
                     cid4=line.figure.canvas.mpl_connect('figure_enter_event',
                                                         self.inFigure)
-                    self.cidlst.append([cid1,cid2,cid3,cid4])
+                    self.cidlist.append([cid1,cid2,cid3,cid4])
         
             #read in the error in a useful way so that it can be translated to 
             #the data file.  Make the error into an array
-            for ee,err in enumerate(errlst[nn]):
+            for ee,err in enumerate(errlist[nn]):
                 errpath=err[2].get_paths()
                 errarr=np.zeros(len(self.fdict[nn][ee].keys()))
                 for ff,epath in enumerate(errpath):
@@ -769,7 +795,7 @@ class OccamPointPicker(object):
                 self.data[self.fignum][self.kk][ll]=0
                 
                 #make that data point a gray x
-                self.axlst[self.fignum][self.kk].plot(xd,yd2,ls='None',
+                self.axlist[self.fignum][self.kk].plot(xd,yd2,ls='None',
                                         color=(.7,.7,.7),marker=self.marker,
                                         ms=4)
             except KeyError:
@@ -786,11 +812,11 @@ class OccamPointPicker(object):
             ll=self.fdict[self.fignum][self.jj]['{0:.5g}'.format(xd[0])]
             
             #make error bar array
-            eb=self.errlst[self.fignum][self.jj][2].get_paths()[ll].vertices
+            eb=self.errlist[self.fignum][self.jj][2].get_paths()[ll].vertices
             
             #make ecap array
-            ecapl=self.errlst[self.fignum][self.jj][0].get_data()[1][ll]
-            ecapu=self.errlst[self.fignum][self.jj][1].get_data()[1][ll]
+            ecapl=self.errlist[self.fignum][self.jj][0].get_data()[1][ll]
+            ecapu=self.errlist[self.fignum][self.jj][1].get_data()[1][ll]
             
             #change apparent resistivity error
             if self.jj==0 or self.jj==1:
@@ -815,15 +841,15 @@ class OccamPointPicker(object):
             eb[1,1]=nebl
             
             #reset the error bars and caps
-            ncapl=self.errlst[self.fignum][self.jj][0].get_data()
-            ncapu=self.errlst[self.fignum][self.jj][1].get_data()
+            ncapl=self.errlist[self.fignum][self.jj][0].get_data()
+            ncapu=self.errlist[self.fignum][self.jj][1].get_data()
             ncapl[1][ll]=ecapl
             ncapu[1][ll]=ecapu
             
             #set the values 
-            self.errlst[self.fignum][self.jj][0].set_data(ncapl)
-            self.errlst[self.fignum][self.jj][1].set_data(ncapu)
-            self.errlst[self.fignum][self.jj][2].get_paths()[ll].vertices=eb
+            self.errlist[self.fignum][self.jj][0].set_data(ncapl)
+            self.errlist[self.fignum][self.jj][1].set_data(ncapu)
+            self.errlist[self.fignum][self.jj][2].get_paths()[ll].vertices=eb
             
         #redraw the canvas
         self.ax.figure.canvas.draw()
@@ -840,15 +866,15 @@ class OccamPointPicker(object):
         Returns:
         --------
         
-            **OccamPointPicker.jj** : index of resistivity axes for axlst
+            **OccamPointPicker.jj** : index of resistivity axes for axlist
             
-            **OccamPointPicker.kk** : index of phase axes for axlst
+            **OccamPointPicker.kk** : index of phase axes for axlist
         
         """
         
         self.event2=event
         self.ax=event.inaxes
-        for jj,axj in enumerate(self.axlst):
+        for jj,axj in enumerate(self.axlist):
             for ll,axl in enumerate(axj):
                 if self.ax==axl:
                     self.jj=ll
@@ -875,13 +901,13 @@ class OccamPointPicker(object):
         Returns:
         --------
             **OccamPointPicker.fignum** : figure number that corresponds to the
-                                          index in the axlst, datalst, errorlst
-                                          and linelst.
+                                          index in the axlist, datalist, errorlist
+                                          and linelist.
                         
         """
         self.event3=event
         self.fignum=self.fndict['{0}'.format(event.canvas.figure.number)]
-        self.line=self.linelst[self.fignum][0]
+        self.line=self.linelist[self.fignum][0]
     
     #type the q key to quit the figure and disconnect event handling            
     def on_close(self,event):
@@ -898,7 +924,7 @@ class OccamPointPicker(object):
         """
         self.event3=event
         if self.event3.key=='q':
-            for cid in self.cidlst[self.fignum]:
+            for cid in self.cidlist[self.fignum]:
                event.canvas.mpl_disconnect(cid)
             plt.close(event.canvas.figure)
             print 'Closed figure ',self.fignum  
@@ -916,11 +942,11 @@ class Occam2DData(object):
     
     def __init__(self,data_fn=None):
         self.data_fn = data_fn
-        self.survey_lst = None
-        self.freq_lst = None
+        self.survey_list = None
+        self.freq_list = None
         self.thetar = 0
         self.edipath = None
-        self.station_lst = None
+        self.station_list = None
         self.proj_angle = None
         self.line_orientation = 'ew'
         
@@ -942,7 +968,7 @@ class Occam2DData(object):
         self._string_fmt = ' 2.6f'
 
 
-    def _get_station_data(self, edipath, station_lst=None, thetar=0):
+    def _get_station_data(self, edipath, station_list=None, thetar=0):
         """
         get the important information from the edifiles to invert for
         
@@ -953,19 +979,19 @@ class Occam2DData(object):
             self.thetar = self.thetar*(np.pi/180)
             
         #create a list to put all the station dictionaries into
-        self.survey_lst = []
-        self.pstation_lst = []
-        self.freq_lst = []
+        self.survey_list = []
+        self.pstation_list = []
+        self.freq_list = []
         
         self.edipath = edipath
-        self.station_lst = station_lst
+        self.station_list = station_list
         
-        #get edi files for all stations in edipath if station_lst is None
-        if station_lst == None:
-            self.station_lst = [edifile[:-4] 
+        #get edi files for all stations in edipath if station_list is None
+        if station_list == None:
+            self.station_list = [edifile[:-4] 
                 for edifile in os.listdir(edipath) if edifile.find('.edi')]
         
-        for kk, station in enumerate(self.station_lst):
+        for kk, station in enumerate(self.station_list):
             #search for filenames in the given directory and match to station 
             #name
             for filename in os.listdir(edipath):
@@ -977,7 +1003,7 @@ class Occam2DData(object):
                     edifile = os.path.join(edipath,filename) 
                     
                     #read in edi file
-                    z1 = mtedi.Edi()
+                    z1 = MTedi.Edi()
                     z1.readfile(edifile)
                     freq = z1.freq
                     
@@ -1009,7 +1035,7 @@ class Occam2DData(object):
                             tipvar = z1.Tipper.tipper_err
                             
                     #get eastings and northings so everything is in meters
-                    zone, east, north = utm2ll.LLtoUTM(23, z1.lat, z1.lon)
+                    zone, east, north = MTcv.LLtoUTM(23, z1.lat, z1.lon)
                     
                     #put things into a dictionary to sort out order of stations
                     surveydict['station'] = station
@@ -1035,9 +1061,9 @@ class Occam2DData(object):
                     surveydict['lat'] = z1.lat
                     surveydict['lon'] = z1.lon
                     
-                    self.freq_lst.append(freq)
-                    self.pstation_lst.append(station)
-                    self.survey_lst.append(surveydict)
+                    self.freq_list.append(freq)
+                    self.pstation_list.append(station)
+                    self.survey_list.append(surveydict)
         
     def _project_stations(self, proj_angle=None, plot_yn='y'):
         """
@@ -1045,12 +1071,12 @@ class Occam2DData(object):
         
         """
         
-        #get information from suvey_lst
-        east_lst = np.array([sdict['east'] for sdict in self.survey_lst])
-        north_lst = np.array([sdict['north'] for sdict in self.survey_lst])
+        #get information from suvey_list
+        east_list = np.array([sdict['east'] for sdict in self.survey_list])
+        north_list = np.array([sdict['north'] for sdict in self.survey_list])
         
         #get bestfitting line
-        p = sp.polyfit(east_lst, north_lst, 1)
+        p = sp.polyfit(east_list, north_list, 1)
         
         #proj_slope needs to be orthogonal to the projection angle and inverse
         #need to subtract 90 because measured from 0, which is assumed to be
@@ -1067,23 +1093,23 @@ class Occam2DData(object):
             self.proj_angle = np.rad2deg(np.arctan(p[0]))
             self.proj_slope = -1/p[0]
         
-        new_east_lst = np.zeros_like(east_lst)
-        new_north_lst = np.zeros_like(north_lst)
+        new_east_list = np.zeros_like(east_list)
+        new_north_list = np.zeros_like(north_list)
         
         #point is projected by calculating the orthogonal line and matching
         #the two at a common point
         # y1 = m1 x +b1; y2 = m2 x + b2 --> m2 = -1/m1 
         #calculate b2 and match y1 == y2
-        for east, north, ii in zip(east_lst, north_lst, 
-                                   range(new_east_lst.shape[0])):
+        for east, north, ii in zip(east_list, north_list, 
+                                   range(new_east_list.shape[0])):
                 
             new_b = north-self.proj_slope*east
             new_east = (new_b-p[1])/(p[0]-self.proj_slope)
             new_north = p[0]*new_east+p[1]
-            new_east_lst[ii] = new_east
-            new_north_lst[ii] = new_north
-            self.survey_lst[ii]['east_proj'] = new_east
-            self.survey_lst[ii]['north_proj'] = new_north
+            new_east_list[ii] = new_east
+            new_north_list[ii] = new_north
+            self.survey_list[ii]['east_proj'] = new_east
+            self.survey_list[ii]['north_proj'] = new_north
         
         #plot stations on profile line
         if plot_yn == 'y':
@@ -1092,23 +1118,23 @@ class Occam2DData(object):
             ax = fig.add_subplot(1, 1, 1,aspect='equal')
             
             #plot the line that stations have been projected onto
-            ploty = sp.polyval(p, new_east_lst)
-            ax.plot(new_east_lst, ploty, '-b', lw=2)
+            ploty = sp.polyval(p, new_east_list)
+            ax.plot(new_east_list, ploty, '-b', lw=2)
 
             #plot stations
-            ax.scatter(new_east_lst, new_north_lst, marker='v', s=50, 
+            ax.scatter(new_east_list, new_north_list, marker='v', s=50, 
                         color='k')
-            for sdict in self.survey_lst:
+            for sdict in self.survey_list:
                 ax.text(sdict['east_proj'], sdict['north_proj']+100,
                          sdict['station'], verticalalignment='baseline',
                         horizontalalignment='center', 
                         fontdict={'size':12, 'weight':'bold'})
                         
             ax.set_title('Projected Stations')
-            ax.set_ylim(new_north_lst.min()-1000., 
-                         new_north_lst.max()+1000.)
-            ax.set_xlim(new_east_lst.min()-1000., 
-                         new_east_lst.max()+1000.)
+            ax.set_ylim(new_north_list.min()-1000., 
+                         new_north_list.max()+1000.)
+            ax.set_xlim(new_east_list.min()-1000., 
+                         new_east_list.max()+1000.)
             ax.set_xlabel('Easting (m)', 
                            fontdict={'size':12, 'weight':'bold'})
             ax.set_ylabel('Northing (m)',
@@ -1126,51 +1152,51 @@ class Occam2DData(object):
         """
         
         self.line_orientation = line_orientation
-        for ii in range(len(self.survey_lst)):
-            if self.survey_lst[ii]['zone'] != self.survey_lst[0]['zone']:
+        for ii in range(len(self.survey_list)):
+            if self.survey_list[ii]['zone'] != self.survey_list[0]['zone']:
                 print 'Different zone for {0}'.format(
-                                            self.survey_lst[ii]['station'])
+                                            self.survey_list[ii]['station'])
             
             #need to figure out a way to account for zone changes
             
             if self.line_orientation == 'ew': 
-                if self.survey_lst[0]['east_proj'] < \
-                   self.survey_lst[ii]['east_proj']:
-                    self.survey_lst[ii]['offset'] = \
-                                    np.sqrt((self.survey_lst[0]['east_proj']-
-                                    self.survey_lst[ii]['east_proj'])**2+
-                                    (self.survey_lst[0]['north_proj']-
-                                    self.survey_lst[ii]['north_proj'])**2)
-                elif self.survey_lst[0]['east_proj'] > \
-                     self.survey_lst[ii]['east_proj']:
-                    self.survey_lst[ii]['offset'] = \
-                                  -1*np.sqrt((self.survey_lst[0]['east_proj']-
-                                  self.survey_lst[ii]['east_proj'])**2+
-                                  (self.survey_lst[0]['north_proj']-
-                                  self.survey_lst[ii]['north_proj'])**2)
+                if self.survey_list[0]['east_proj'] < \
+                   self.survey_list[ii]['east_proj']:
+                    self.survey_list[ii]['offset'] = \
+                                    np.sqrt((self.survey_list[0]['east_proj']-
+                                    self.survey_list[ii]['east_proj'])**2+
+                                    (self.survey_list[0]['north_proj']-
+                                    self.survey_list[ii]['north_proj'])**2)
+                elif self.survey_list[0]['east_proj'] > \
+                     self.survey_list[ii]['east_proj']:
+                    self.survey_list[ii]['offset'] = \
+                                  -1*np.sqrt((self.survey_list[0]['east_proj']-
+                                  self.survey_list[ii]['east_proj'])**2+
+                                  (self.survey_list[0]['north_proj']-
+                                  self.survey_list[ii]['north_proj'])**2)
                 else:
-                    self.survey_lst[ii]['offset'] = 0
+                    self.survey_list[ii]['offset'] = 0
                     
             elif self.line_orientation == 'ns': 
-                if self.survey_lst[0]['north_proj'] < \
-                   self.survey_lst[ii]['north_proj']:
-                    self.survey_lst[ii]['offset'] = \
-                                    np.sqrt((self.survey_lst[0]['east_proj']-
-                                    self.survey_lst[ii]['east_proj'])**2+
-                                    (self.survey_lst[0]['north_proj']-
-                                    self.survey_lst[ii]['north_proj'])**2)
-                elif self.survey_lst[0]['north_proj'] > \
-                     self.survey_lst[ii]['north_proj']:
-                    self.survey_lst[ii]['offset'] = \
-                                -1*np.sqrt((self.survey_lst[0]['east_proj']-
-                                self.survey_lst[ii]['east_proj'])**2+
-                                (self.survey_lst[0]['north_proj']-
-                                self.survey_lst[ii]['north_proj'])**2)
+                if self.survey_list[0]['north_proj'] < \
+                   self.survey_list[ii]['north_proj']:
+                    self.survey_list[ii]['offset'] = \
+                                    np.sqrt((self.survey_list[0]['east_proj']-
+                                    self.survey_list[ii]['east_proj'])**2+
+                                    (self.survey_list[0]['north_proj']-
+                                    self.survey_list[ii]['north_proj'])**2)
+                elif self.survey_list[0]['north_proj'] > \
+                     self.survey_list[ii]['north_proj']:
+                    self.survey_list[ii]['offset'] = \
+                                -1*np.sqrt((self.survey_list[0]['east_proj']-
+                                self.survey_list[ii]['east_proj'])**2+
+                                (self.survey_list[0]['north_proj']-
+                                self.survey_list[ii]['north_proj'])**2)
                 else:
-                    self.survey_lst[ii]['offset'] = 0
+                    self.survey_list[ii]['offset'] = 0
                     
         #sort by ascending order of distance from first station
-        self.survey_lst = sorted(self.survey_lst,key=itemgetter('offset'))
+        self.survey_list = sorted(self.survey_list,key=itemgetter('offset'))
              
     def make2DdataFile(self, edipath, **kwargs):
         """
@@ -1191,9 +1217,9 @@ class Occam2DData(object):
                            named: save_path/Data.dat or edipath/Data.dat if 
                            save_path=None
                            
-            **station_lst** : list of stations to put in the data file, doesn't 
+            **station_list** : list of stations to put in the data file, doesn't 
                              need to be in order, the relative distance will be
-                             calculated internally.  If station_lst:None, it
+                             calculated internally.  If station_list:None, it
                              will be assumed all the files in edipath will be 
                              input into the data file
                              
@@ -1292,11 +1318,11 @@ class Occam2DData(object):
             >>> svpath = r"/home/Occam2D/Line1/Inv1"
             >>>
             >>> #create a station list of stations to use in inversion
-            >>> slst = ['MT0{0}'.format(ii) for ii in range(1,10)]
+            >>> slist = ['MT0{0}'.format(ii) for ii in range(1,10)]
             >>> 
             >>> #write data file that is rotated 50 degrees east of north and
             >>> #projected on to the strike direction 50 degrees east of north
-            >>> ocd.make2DdataFile(edipath,station_lst=slst,save_path=svpath,
+            >>> ocd.make2DdataFile(edipath,station_list=slist,save_path=svpath,
             >>> ...                thetar=50,proj_strike='yes',
             >>> ...                line_orientation='ew')
             >>>                       
@@ -1306,7 +1332,7 @@ class Occam2DData(object):
         """
         # --> get information from key word arguments
         self.model_mode = kwargs.pop('model_mode', self.model_mode)
-        self.station_lst = kwargs.pop('station_lst', self.station_lst)
+        self.station_list = kwargs.pop('station_list', self.station_list)
         self.title = kwargs.pop('title', self.title)
         self.thetar = kwargs.pop('thetar', self.thetar)
         self.resxy_err = kwargs.pop('resxy_err', self.resxy_err)
@@ -1329,7 +1355,7 @@ class Occam2DData(object):
 
         
         #--> get important information from the edi files and rotate data
-        self._get_station_data(edipath, station_lst=self.station_lst, 
+        self._get_station_data(edipath, station_list=self.station_list, 
                                thetar=self.thetar)
         
         #-----------------------------------------------------------------            
@@ -1342,7 +1368,7 @@ class Occam2DData(object):
         self._get_station_offsets(line_orientation=self.line_orientation)
 
         #number of stations read    
-        nstat=len(self.survey_lst)    
+        nstat=len(self.survey_list)    
         
         #--------------------------Match Frequencies---------------------------
         #a dictionary is created with the frequency as the key and the value is
@@ -1356,10 +1382,10 @@ class Occam2DData(object):
         if type(self.freq_step) is list or type(self.freq_step) is not int:
             if type(self.freq_step[0]) is int:
                 #find the median frequency list
-                maxflen = max([len(ff) for ff in self.freq_lst])
+                maxflen = max([len(ff) for ff in self.freq_list])
                 farray = np.zeros((nstat,maxflen))
                 for ii in range(nstat):
-                    farray[ii,0:len(self.freq_lst[ii])] = self.freq_lst[ii]
+                    farray[ii,0:len(self.freq_list[ii])] = self.freq_list[ii]
             
                 mfreq = np.median(farray,axis=0)
                 self.freq_dict = dict([('%.6g' % mfreq[ff],ii) 
@@ -1370,10 +1396,10 @@ class Occam2DData(object):
                             for ii,ff in enumerate(self.freq_step,1)])
         else:
             #find the median frequency list
-            maxflen=max([len(ff) for ff in self.freq_lst])
+            maxflen=max([len(ff) for ff in self.freq_list])
             farray=np.zeros((nstat,maxflen))
             for ii in range(nstat):
-                farray[ii,0:len(self.freq_lst[ii])]=self.freq_lst[ii]
+                farray[ii,0:len(self.freq_list[ii])]=self.freq_list[ii]
             
             mfreq=np.median(farray,axis=0)
         
@@ -1384,35 +1410,35 @@ class Occam2DData(object):
     
         #print the frequencies to look for to make sure its what the user wants
         #make a list of keys that is sorted in descending order
-        klst=[float(dd) for dd in self.freq_dict.keys()]
-        klst.sort(reverse=True)
-        klst=['%.6g' % dd for dd in klst]    
+        klist=[float(dd) for dd in self.freq_dict.keys()]
+        klist.sort(reverse=True)
+        klist=['%.6g' % dd for dd in klist]    
         
         print 'Frequencies to look for are: (# freq(Hz) Period(s)) '
-        for key in klst:
+        for key in klist:
             print self.freq_dict[key],key, 1./float(key)
         
         #make lists of parameters to write to file    
-        reslst = []
-        offsetlst = []
-        station_lstsort = []
+        reslist = []
+        offsetlist = []
+        station_listsort = []
         for kk in range(nstat):
             #--> set local variable with shorter names
-            sresxy = self.survey_lst[kk]['resxy']
-            sresxy_err = self.survey_lst[kk]['resxy_err']
-            sresyx = self.survey_lst[kk]['resyx']
-            sresyx_err = self.survey_lst[kk]['resyx_err']
+            sresxy = self.survey_list[kk]['resxy']
+            sresxy_err = self.survey_list[kk]['resxy_err']
+            sresyx = self.survey_list[kk]['resyx']
+            sresyx_err = self.survey_list[kk]['resyx_err']
             
-            sphasexy = self.survey_lst[kk]['phasexy']
-            sphasexy_err = self.survey_lst[kk]['phasexy_err']
-            sphaseyx = self.survey_lst[kk]['phaseyx']+180
-            sphaseyx_err = self.survey_lst[kk]['phaseyx_err']
+            sphasexy = self.survey_list[kk]['phasexy']
+            sphasexy_err = self.survey_list[kk]['phasexy_err']
+            sphaseyx = self.survey_list[kk]['phaseyx']+180
+            sphaseyx_err = self.survey_list[kk]['phaseyx_err']
             
-            freq = self.survey_lst[kk]['freq']
-            offsetlst.append(self.survey_lst[kk]['offset'])  
-            station_lstsort.append(self.survey_lst[kk]['station'])
+            freq = self.survey_list[kk]['freq']
+            offsetlist.append(self.survey_list[kk]['offset'])  
+            station_listsort.append(self.survey_list[kk]['station'])
             try:
-                tip = self.survey_lst[kk]['tipper']
+                tip = self.survey_list[kk]['tipper']
             except KeyError:
                 pass
             
@@ -1449,7 +1475,7 @@ class Occam2DData(object):
                         phaseyx = '{0:{1}}'.format(float(phaseyx)-360, sfmt)
                     if float(phaseyx) < 0:
                         print ('Negative Phase at {0}'.format(
-                               self.survey_lst[kk]['station'])+
+                               self.survey_list[kk]['station'])+
                                'f={0:.4g}Hz, phi_tm={1: .2f}'.format(ff, 
                                                                float(phaseyx)))    
                     
@@ -1523,44 +1549,44 @@ class Occam2DData(object):
                         
                     #make a list of lines to write to the data file
                     if self.model_mode == 'both':
-                        reslst.append(ss.join([str(kk+1), str(nn), '1',
+                        reslist.append(ss.join([str(kk+1), str(nn), '1',
                                                lresxy, lresxy_err, '\n']))
-                        reslst.append(ss.join([str(kk+1), str(nn), '2',
+                        reslist.append(ss.join([str(kk+1), str(nn), '2',
                                                phasexy, dphasexy_err, '\n']))
 
-                        reslst.append(ss.join([str(kk+1), str(nn), '5',
+                        reslist.append(ss.join([str(kk+1), str(nn), '5',
                                                lresyx, lresyx_err, '\n']))
-                        reslst.append(ss.join([str(kk+1),str(nn),'6',
+                        reslist.append(ss.join([str(kk+1),str(nn),'6',
                                                phaseyx, dphaseyx_err, '\n']))
                         if self.tipper_err != None and tipyn == 'y':
-                            reslst.append(ss.join([str(kk+1),str(nn),'3',
+                            reslist.append(ss.join([str(kk+1),str(nn),'3',
                                                    projtipr, projtiperr, 
                                                    '\n']))
-                            reslst.append(ss.join([str(kk+1),str(nn),'4',
+                            reslist.append(ss.join([str(kk+1),str(nn),'4',
                                                    projtipi, projtiperr, 
                                                    '\n']))
                     elif self.model_mode == 'TM':
-                        reslst.append(ss.join([str(kk+1),str(nn),'5',
+                        reslist.append(ss.join([str(kk+1),str(nn),'5',
                                                lresyx, lresyx_err, '\n']))
-                        reslst.append(ss.join([str(kk+1),str(nn),'6',
+                        reslist.append(ss.join([str(kk+1),str(nn),'6',
                                                phaseyx, dphaseyx_err, '\n']))
                         if self.tipper_err != None and tipyn == 'y':
-                            reslst.append(ss.join([str(kk+1),str(nn),'3',
+                            reslist.append(ss.join([str(kk+1),str(nn),'3',
                                                    projtipr, projtiperr, 
                                                    '\n']))
-                            reslst.append(ss.join([str(kk+1),str(nn),'4',
+                            reslist.append(ss.join([str(kk+1),str(nn),'4',
                                                    projtipi, projtiperr, 
                                                    '\n']))
                     elif self.model_mode == 'TE':
-                        reslst.append(ss.join([str(kk+1),str(nn),'1',
+                        reslist.append(ss.join([str(kk+1),str(nn),'1',
                                                lresxy, lresxy_err, '\n']))
-                        reslst.append(ss.join([str(kk+1),str(nn),'2',
+                        reslist.append(ss.join([str(kk+1),str(nn),'2',
                                                phasexy, dphasexy_err, '\n']))
                         if self.tipper_err != None and tipyn == 'y':
-                            reslst.append(ss.join([str(kk+1),str(nn),'3',
+                            reslist.append(ss.join([str(kk+1),str(nn),'3',
                                                    projtipr, projtiperr,
                                                    '\n']))
-                            reslst.append(ss.join([str(kk+1),str(nn),'4',
+                            reslist.append(ss.join([str(kk+1),str(nn),'4',
                                                    projtipi, projtiperr, 
                                                    '\n']))
                     else:
@@ -1576,9 +1602,9 @@ class Occam2DData(object):
             else:
                 if not os.path.exists(self.save_path):
                     os.mkdir(self.save_path)
-                self.data_fn=os.path.join(self.save_path,'Data.dat')
+                self.data_fn=os.path.join(self.save_path,'OccamDataFile.dat')
         else:
-            self.data_fn=os.path.join(edipath,'Data.dat')
+            self.data_fn=os.path.join(edipath,'OccamDataFile.dat')
             
         if self.title==None:
             self.title='occam2d Inversion'
@@ -1591,23 +1617,23 @@ class Occam2DData(object):
         
         #write station sites
         datfid.write('SITES:{0}{1}\n'.format(' '*12, nstat))
-        for station in station_lstsort:
+        for station in station_listsort:
             datfid.write('{0}{1}\n'.format(ss, station))
         
         #write offsets
         datfid.write('OFFSETS (M):\n')
-        for offset in offsetlst:
+        for offset in offsetlist:
             datfid.write('{0}{1: .2f}\n'.format(ss, offset))
         
         #write frequencies
-        datfid.write('FREQUENCIES:{0}{1}\n'.format(' '*8, len(klst)))
-        for fkey in klst:
+        datfid.write('FREQUENCIES:{0}{1}\n'.format(' '*8, len(klist)))
+        for fkey in klist:
             datfid.write('{0}{1:.5f}\n'.format(ss, float(fkey)))
         
         #write data block
-        datfid.write('DATA BLOCKS:{0}{1}\n'.format(' '*10, len(reslst)))
+        datfid.write('DATA BLOCKS:{0}{1}\n'.format(' '*10, len(reslist)))
         datfid.write(ss.join(['SITE', 'FREQ', 'TYPE', 'DATUM', 'ERROR', '\n']))
-        for ll, datline in enumerate(reslst):
+        for ll, datline in enumerate(reslist):
             if datline.find('#IND') >= 0:
                 print 'Found #IND on line ',ll
                 ndline = datline.replace('#IND','00')
@@ -1636,7 +1662,7 @@ class Occam2DData(object):
         
         Returns:
         --------
-            **rp_lst** : list of dictionaries for each station 
+            **rp_list** : list of dictionaries for each station 
                                          with keywords:
                 
                 *'station'* : string
@@ -1698,7 +1724,7 @@ class Occam2DData(object):
         nsites = int(dlines[2].strip().split(':')[1].strip())
         
         #get station names
-        self.station_lst = [dlines[ii].strip() for ii in range(3,nsites+3)]
+        self.station_list = [dlines[ii].strip() for ii in range(3,nsites+3)]
         
         #get offsets in meters
         offsets = [float(dlines[ii].strip()) 
@@ -1718,14 +1744,14 @@ class Occam2DData(object):
         #set zero array size the first row will be the data and second the error
         asize = (4, nfreq)
         #make a list of dictionaries for each station.
-        self.rp_lst=[{'station':station,'offset':offsets[ii],
+        self.rp_list=[{'station':station,'offset':offsets[ii],
                       'resxy':np.zeros(asize),
                       'resyx':np.zeros(asize),
                       'phasexy':np.zeros(asize),
                       'phaseyx':np.zeros(asize),
                       'realtip':np.zeros(asize),
                       'imagtip':np.zeros(asize)}
-                      for ii,station in enumerate(self.station_lst)]
+                      for ii,station in enumerate(self.station_list)]
         for line in dlines[7+2*nsites+nfreq:]:
             ls = line.split()
             #station index
@@ -1736,9 +1762,9 @@ class Occam2DData(object):
             ff = int(float(ls[1]))-1
             #put into array
             #input data
-            self.rp_lst[ss][occamdict[comp]][0,ff] = float(ls[3]) 
+            self.rp_list[ss][occamdict[comp]][0,ff] = float(ls[3]) 
             #error       
-            self.rp_lst[ss][occamdict[comp]][1,ff] = float(ls[4])
+            self.rp_list[ss][occamdict[comp]][1,ff] = float(ls[4])
             
     def rewrite2DdataFile(self, **kwargs):
         """
@@ -1782,7 +1808,7 @@ class Occam2DData(object):
                             * 'TE' for TE
                             * 'TM' for TM
                      
-            **new_freq_lst** : list or np.array
+            **new_freq_list** : list or np.array
                        frequency list in Hz to rewrite, needs to be similar to
                        the datafile, cannot add frequencies
                     
@@ -1829,7 +1855,7 @@ class Occam2DData(object):
         self.phaseyx_err = kwargs.pop('phaseyx_err','prev')
         self.tipper_err = kwargs.pop('tipper_err', None)
         self.model_mode = kwargs.pop('model_mode', 'both')
-        new_freq_lst = kwargs.pop('new_freq_lst', None)
+        new_freq_list = kwargs.pop('new_freq_list', None)
         remove_station = kwargs.pop('remove_station', None)
         self.save_path = kwargs.pop('save_path', None)
         new_proj_angle = kwargs.pop('new_proj_angle', 0)
@@ -1842,14 +1868,14 @@ class Occam2DData(object):
         
         #copy the information into local lists in case you want to keep the 
         #original data
-        rp_lst = list(self.rp_lst)
-        station_lst = list(self.station_lst)
+        rp_list = list(self.rp_list)
+        station_list = list(self.station_list)
         
-        #make a dictionary of rp_lst for easier extraction of data
-        rpdict = dict([(station, rp_lst[ii]) for ii,station in 
-                                                    enumerate(station_lst)])
+        #make a dictionary of rp_list for easier extraction of data
+        rpdict = dict([(station, rp_list[ii]) for ii,station in 
+                                                    enumerate(station_list)])
     
-        #remove stations from rp_lst and station_lst if desired
+        #remove stations from rp_list and station_list if desired
         if remove_station!=None:
             #if remove_station is not a list make it one
             if type(remove_station) is not list:
@@ -1858,14 +1884,14 @@ class Occam2DData(object):
             #remove station from station list           
             for rstation in remove_station:        
                 try:
-                    station_lst.remove(rstation)
+                    station_list.remove(rstation)
                 except ValueError:
                     print 'Did not find {0}'.format(rstation)
-        self.station_lst = station_lst
+        self.station_list = station_list
         
-        #if flst is not the same as freq make freq=flst
-        if new_freq_lst != None:
-            self.freq = new_freq_lst
+        #if flist is not the same as freq make freq=flist
+        if new_freq_list != None:
+            self.freq = new_freq_list
         
         #if the rotation angle is not 0 than need to read the original data in
         if self.thetar != 0:
@@ -1877,11 +1903,11 @@ class Occam2DData(object):
                                ' to get rotations correct')
             
             #get list of edifiles already in data file
-            edilst = [os.path.join(self.edipath,edi) for stat in self.station_lst 
+            edilist = [os.path.join(self.edipath,edi) for stat in self.station_list 
                       for edi in os.listdir(self.edipath) if edi[0:len(stat)]==stat]
-            reslst = []
-            for kk, edifn in enumerate(edilst,1):
-                z1 = mtedi.Edi()
+            reslist = []
+            for kk, edifn in enumerate(edilist,1):
+                z1 = MTedi.Edi()
                 z1.readfile(edifn)
                 z1.Z.rotate(self.thetar)
                 
@@ -1893,7 +1919,7 @@ class Occam2DData(object):
                     z1.Tipper.rotate(self.thetar)
                     tip = z1.Tipper.tipper
 
-                station = self.station_lst[kk-1]
+                station = self.station_list[kk-1]
                 freq_dict = dict([('{0:.6g}'.format(fr),ii) for ii,fr in 
                                                     enumerate(z1.freq)])
                                                     
@@ -2008,48 +2034,48 @@ class Occam2DData(object):
                         
                         #make a list of lines to write to the data file
                         if self.model_mode == 'both':
-                            reslst.append(ss.join([str(kk+1), str(nn), '1',
+                            reslist.append(ss.join([str(kk+1), str(nn), '1',
                                                    lresxy, lresxy_err, '\n']))
-                            reslst.append(ss.join([str(kk+1), str(nn), '2',
+                            reslist.append(ss.join([str(kk+1), str(nn), '2',
                                                    phasexy, dphasexy_err, 
                                                    '\n']))
     
-                            reslst.append(ss.join([str(kk+1), str(nn), '5',
+                            reslist.append(ss.join([str(kk+1), str(nn), '5',
                                                    lresyx, lresyx_err, '\n']))
-                            reslst.append(ss.join([str(kk+1),str(nn),'6',
+                            reslist.append(ss.join([str(kk+1),str(nn),'6',
                                                    phaseyx, dphaseyx_err, 
                                                    '\n']))
                             if self.tipper_err != None and tipyn == 'y':
-                                reslst.append(ss.join([str(kk+1),str(nn),'3',
+                                reslist.append(ss.join([str(kk+1),str(nn),'3',
                                                        projtipr, projtiperr, 
                                                        '\n']))
-                                reslst.append(ss.join([str(kk+1),str(nn),'4',
+                                reslist.append(ss.join([str(kk+1),str(nn),'4',
                                                        projtipi, projtiperr, 
                                                        '\n']))
                         elif self.model_mode == 'TM':
-                            reslst.append(ss.join([str(kk+1),str(nn),'5',
+                            reslist.append(ss.join([str(kk+1),str(nn),'5',
                                                    lresyx, lresyx_err, '\n']))
-                            reslst.append(ss.join([str(kk+1),str(nn),'6',
+                            reslist.append(ss.join([str(kk+1),str(nn),'6',
                                                    phaseyx, dphaseyx_err,
                                                    '\n']))
                             if self.tipper_err != None and tipyn == 'y':
-                                reslst.append(ss.join([str(kk+1),str(nn),'3',
+                                reslist.append(ss.join([str(kk+1),str(nn),'3',
                                                        projtipr, projtiperr, 
                                                        '\n']))
-                                reslst.append(ss.join([str(kk+1),str(nn),'4',
+                                reslist.append(ss.join([str(kk+1),str(nn),'4',
                                                        projtipi, projtiperr, 
                                                        '\n']))
                         elif self.model_mode == 'TE':
-                            reslst.append(ss.join([str(kk+1),str(nn),'1',
+                            reslist.append(ss.join([str(kk+1),str(nn),'1',
                                                    lresxy, lresxy_err, '\n']))
-                            reslst.append(ss.join([str(kk+1),str(nn),'2',
+                            reslist.append(ss.join([str(kk+1),str(nn),'2',
                                                    phasexy, dphasexy_err, 
                                                    '\n']))
                             if self.tipper_err != None and tipyn == 'y':
-                                reslst.append(ss.join([str(kk+1),str(nn),'3',
+                                reslist.append(ss.join([str(kk+1),str(nn),'3',
                                                        projtipr, projtiperr,
                                                        '\n']))
-                                reslst.append(ss.join([str(kk+1),str(nn),'4',
+                                reslist.append(ss.join([str(kk+1),str(nn),'4',
                                                        projtipi, projtiperr, 
                                                        '\n']))
                         else:
@@ -2060,8 +2086,8 @@ class Occam2DData(object):
         
         #If no rotation is desired but error bars are than...
         else:
-            reslst = []
-            for kk, station in enumerate(self.station_lst,1):
+            reslist = []
+            for kk, station in enumerate(self.station_list,1):
                 srp = rpdict[station]
                 nr = srp['resxy'].shape[1]
                 #calculate errors and rewrite
@@ -2111,79 +2137,79 @@ class Occam2DData(object):
                     #make a list of lines to write to the data file
                     if self.model_mode == 'both':
                         if srp['resxy'][0,jj-1] != 0.0:
-                            reslst.append(ss.join([str(kk), str(jj), '1',
+                            reslist.append(ss.join([str(kk), str(jj), '1',
                                   '{0:{1}}'.format(srp['resxy'][0,jj-1], sfmt),
                                   '{0:{1}}'.format(srp['resxy'][1,jj-1], sfmt),
                                   '\n']))
                         if srp['phasexy'][0,jj-1] != 0.0:
-                            reslst.append(ss.join([str(kk), str(jj), '2',
+                            reslist.append(ss.join([str(kk), str(jj), '2',
                                  '{0:{1}}'.format(srp['phasexy'][0,jj-1],sfmt),
                                  '{0:{1}}'.format(srp['phasexy'][1,jj-1],sfmt),
                                  '\n']))
                         if srp['resyx'][0,jj-1]!=0.0:
-                            reslst.append(ss.join([str(kk), str(jj), '5',
+                            reslist.append(ss.join([str(kk), str(jj), '5',
                                   '{0:{1}}'.format(srp['resyx'][0,jj-1],sfmt),
                                   '{0:{1}}'.format(srp['resyx'][1,jj-1],sfmt),
                                   '\n']))
                         if srp['phaseyx'][0,jj-1] != 0.0:
-                            reslst.append(ss.join([str(kk), str(jj), '6',
+                            reslist.append(ss.join([str(kk), str(jj), '6',
                                  '{0:{1}}'.format(srp['phaseyx'][0,jj-1],sfmt),
                                  '{0:{1}}'.format(srp['phaseyx'][1,jj-1],sfmt),
                                  '\n']))
                         if self.tipper_err != None:
                             if srp['realtip'][0,jj-1] != 0.0:
-                                reslst.append(ss.join([str(kk), str(jj), '3',
+                                reslist.append(ss.join([str(kk), str(jj), '3',
                                 '{0:{1}}'.format(srp['realtip'][0,jj-1], sfmt),
                                 '{0:{1}}'.format(srp['realtip'][1,jj-1], sfmt),
                                 '\n']))
                             if srp['imagtip'][0,jj-1] != 0.0:
-                                reslst.append(ss.join([str(kk), str(jj),'4',
+                                reslist.append(ss.join([str(kk), str(jj),'4',
                                  '{0:{1}}'.format(srp['imagtip'][0,jj-1],sfmt),
                                  '{0:{1}}'.format(srp['imagtip'][1,jj-1],sfmt),
                                  '\n']))
                                  
                     elif self.model_mode=='TM':
                         if srp['resyx'][0,jj-1]!=0.0:
-                            reslst.append(ss.join([str(kk), str(jj), '5',
+                            reslist.append(ss.join([str(kk), str(jj), '5',
                                   '{0:{1}}'.format(srp['resyx'][0,jj-1],sfmt),
                                   '{0:{1}}'.format(srp['resyx'][1,jj-1],sfmt),
                                   '\n']))
                         if srp['phaseyx'][0,jj-1] != 0.0:
-                            reslst.append(ss.join([str(kk), str(jj), '6',
+                            reslist.append(ss.join([str(kk), str(jj), '6',
                                  '{0:{1}}'.format(srp['phaseyx'][0,jj-1],sfmt),
                                  '{0:{1}}'.format(srp['phaseyx'][1,jj-1],sfmt),
                                  '\n']))
                         if self.tipper_err != None:
                             if srp['realtip'][0,jj-1] != 0.0:
-                                reslst.append(ss.join([str(kk), str(jj), '3',
+                                reslist.append(ss.join([str(kk), str(jj), '3',
                                 '{0:{1}}'.format(srp['realtip'][0,jj-1], sfmt),
                                 '{0:{1}}'.format(srp['realtip'][1,jj-1], sfmt),
                                 '\n']))
                             if srp['imagtip'][0,jj-1] != 0.0:
-                                reslst.append(ss.join([str(kk), str(jj),'4',
+                                reslist.append(ss.join([str(kk), str(jj),'4',
                                  '{0:{1}}'.format(srp['imagtip'][0,jj-1],sfmt),
                                  '{0:{1}}'.format(srp['imagtip'][1,jj-1],sfmt),
                                  '\n']))
                                  
                     elif self.model_mode=='TE':
                         if srp['resxy'][0,jj-1] != 0.0:
-                            reslst.append(ss.join([str(kk), str(jj), '1',
+                            reslist.append(ss.join([str(kk), str(jj), '1',
                                   '{0:{1}}'.format(srp['resxy'][0,jj-1], sfmt),
                                   '{0:{1}}'.format(srp['resxy'][1,jj-1], sfmt),
                                   '\n']))
                         if srp['phasexy'][0,jj-1] != 0.0:
-                            reslst.append(ss.join([str(kk), str(jj), '2',
+                            reslist.append(ss.join([str(kk), str(jj), '2',
                                  '{0:{1}}'.format(srp['phasexy'][0,jj-1],sfmt),
                                  '{0:{1}}'.format(srp['phasexy'][1,jj-1],sfmt),
                                  '\n']))
                         if self.tipper_err != None:
                             if srp['realtip'][0,jj-1] != 0.0:
-                                reslst.append(ss.join([str(kk), str(jj), '3',
+                                reslist.append(ss.join([str(kk), str(jj), '3',
                                 '{0:{1}}'.format(srp['realtip'][0,jj-1], sfmt),
                                 '{0:{1}}'.format(srp['realtip'][1,jj-1], sfmt),
                                 '\n']))
                             if srp['imagtip'][0,jj-1] != 0.0:
-                                reslst.append(ss.join([str(kk), str(jj),'4',
+                                reslist.append(ss.join([str(kk), str(jj),'4',
                                  '{0:{1}}'.format(srp['imagtip'][0,jj-1],sfmt),
                                  '{0:{1}}'.format(srp['imagtip'][1,jj-1],sfmt),
                                  '\n']))
@@ -2212,7 +2238,7 @@ class Occam2DData(object):
             elif self.save_path.find('.dat') > 0:
                 self.ndata_fn = self.save_path
             
-        nstat = len(self.station_lst)
+        nstat = len(self.station_list)
             
         if self.titlestr == None:
             self.titlestr = 'occam2d Inversion'
@@ -2227,12 +2253,12 @@ class Occam2DData(object):
         
         #write station sites
         datfid.write('SITES:{0}{1}\n'.format(' '*12, nstat))
-        for station in self.station_lst:
+        for station in self.station_list:
             datfid.write('{0}{1}\n'.format(ss, station))
         
         #write offsets
         datfid.write('OFFSETS (M): \n')
-        for station in self.station_lst:
+        for station in self.station_list:
             if new_proj_angle != 0:
                 new_offset = rpdict[station]['offset']/\
                              np.cos(np.deg2rad(self.proj_angle-new_proj_angle))
@@ -2248,9 +2274,9 @@ class Occam2DData(object):
             datfid.write('{0}{1:.5f}\n'.format(ss, ff))
         
         #write data block
-        datfid.write('DATA BLOCKS:{0}{1}\n'.format(' '*10, len(reslst)))
+        datfid.write('DATA BLOCKS:{0}{1}\n'.format(' '*10, len(reslist)))
         datfid.write(ss.join(['SITE', 'FREQ', 'TYPE', 'DATUM', 'ERROR', '\n']))
-        for ll, datline in enumerate(reslst):
+        for ll, datline in enumerate(reslist):
             if datline.find('#IND') >= 0:
                 print 'Found #IND on line {0}'.format(ll)
                 ndline = datline.replace('#IND','00')
@@ -2275,7 +2301,7 @@ class Occam2DData(object):
               z1layer=50,bwidth=200,trigger=.75,save_path=None,rhostart=100,
               occampath=r"c:\Peacock\PHD\occam2d\MakeFiles"):
         """
-        makeModel will make an the input files for occam2d using Steve Constable's
+        makeModel will make the input files for occam2d using Steve Constable's
         MakeModel2DMT.f code.
         
         Inputs:
@@ -2466,33 +2492,33 @@ class Occam2DData(object):
             
         #read in data file    
         self.read2DdataFile()
-        rp_lst=list(self.rp_lst)
+        rp_list=list(self.rp_list)
         
         #get periods
         period=self.period
      
         #define some empty lists to put things into
-        pstation_lst=[]
-        axlst=[]
-        linelst=[]
-        errlst=[]
+        pstation_list=[]
+        axlist=[]
+        linelist=[]
+        errlist=[]
         
         #get the stations to plot
         #if none plot all of them
         if plottype==None:
-            pstation_lst=range(len(self.station_lst))
+            pstation_list=range(len(self.station_list))
             
         #otherwise pick out the stations to plot along with their index number
         elif type(plottype) is not list:
             plottype=[plottype]
-            for ii,station in enumerate(self.station_lst):
+            for ii,station in enumerate(self.station_list):
                 for pstation in plottype:
                     if station.find(pstation)>=0:
-                        pstation_lst.append(ii) 
+                        pstation_list.append(ii) 
         
         #set the subplot grid
         gs=gridspec.GridSpec(6,2,wspace=.1,left=.1,top=.93,bottom=.07)
-        for jj,ii in enumerate(pstation_lst):
+        for jj,ii in enumerate(pstation_list):
             fig=plt.figure(ii+1,dpi=dpi)
             plt.clf()
             
@@ -2505,56 +2531,56 @@ class Occam2DData(object):
             
             #plot resistivity TE Mode
             #cut out missing data points first
-            rxy=np.where(rp_lst[ii]['resxy'][0]!=0)[0]
-            rte=axrte.errorbar(period[rxy],10**rp_lst[ii]['resxy'][0][rxy],
+            rxy=np.where(rp_list[ii]['resxy'][0]!=0)[0]
+            rte=axrte.errorbar(period[rxy],10**rp_list[ii]['resxy'][0][rxy],
                             ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
                             color=cted,
-                            yerr=np.log(10)*rp_lst[ii]['resxy'][1][rxy]*\
-                                10**rp_lst[ii]['resxy'][0][rxy],
+                            yerr=np.log(10)*rp_list[ii]['resxy'][1][rxy]*\
+                                10**rp_list[ii]['resxy'][0][rxy],
                             ecolor=cted,picker=2)
                             
             #plot Phase TE Mode
             #cut out missing data points first
-            pxy=[np.where(rp_lst[ii]['phasexy'][0]!=0)[0]]
-            pte=axpte.errorbar(period[pxy],rp_lst[ii]['phasexy'][0][pxy],
+            pxy=[np.where(rp_list[ii]['phasexy'][0]!=0)[0]]
+            pte=axpte.errorbar(period[pxy],rp_list[ii]['phasexy'][0][pxy],
                                ls=':',marker=mted,ms=ms,mfc=cted,mec=cted,
-                               color=cted,yerr=rp_lst[ii]['phasexy'][1][pxy],
+                               color=cted,yerr=rp_list[ii]['phasexy'][1][pxy],
                                ecolor=cted,picker=1) 
             
                            
             #plot resistivity TM Mode
             #cut out missing data points first                
-            ryx=np.where(rp_lst[ii]['resyx'][0]!=0)[0]
-            rtm=axrtm.errorbar(period[ryx],10**rp_lst[ii]['resyx'][0][ryx],
+            ryx=np.where(rp_list[ii]['resyx'][0]!=0)[0]
+            rtm=axrtm.errorbar(period[ryx],10**rp_list[ii]['resyx'][0][ryx],
                             ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
                             color=ctmd,
-                            yerr=np.log(10)*rp_lst[ii]['resyx'][1][ryx]*\
-                                10**rp_lst[ii]['resyx'][0][ryx],
+                            yerr=np.log(10)*rp_list[ii]['resyx'][1][ryx]*\
+                                10**rp_list[ii]['resyx'][0][ryx],
                             ecolor=ctmd,picker=2)
             #plot Phase TM Mode
             #cut out missing data points first
-            pyx=[np.where(rp_lst[ii]['phaseyx'][0]!=0)[0]]
-            ptm=axptm.errorbar(period[pyx],rp_lst[ii]['phaseyx'][0][pyx],
+            pyx=[np.where(rp_list[ii]['phaseyx'][0]!=0)[0]]
+            ptm=axptm.errorbar(period[pyx],rp_list[ii]['phaseyx'][0][pyx],
                             ls=':',marker=mtmd,ms=ms,mfc=ctmd,mec=ctmd,
-                            color=ctmd,yerr=rp_lst[ii]['phaseyx'][1][pyx],
+                            color=ctmd,yerr=rp_list[ii]['phaseyx'][1][pyx],
                             ecolor=ctmd,picker=1)
         
         
             #make the axis presentable
             #set the apparent resistivity scales to log and x-axis to log
-            axplst=[axrte,axrtm,axpte,axptm]
-            llst=[rte[0],rtm[0],pte[0],ptm[0]]
-            elst=[[rte[1][0],rte[1][1],rte[2][0]],
+            axplist=[axrte,axrtm,axpte,axptm]
+            llist=[rte[0],rtm[0],pte[0],ptm[0]]
+            elist=[[rte[1][0],rte[1][1],rte[2][0]],
                   [rtm[1][0],rtm[1][1],rtm[2][0]],
                   [pte[1][0],pte[1][1],pte[2][0]],
                   [ptm[1][0],ptm[1][1],ptm[2][0]]]
                 
-            axlst.append(axplst)
-            linelst.append(llst)
-            errlst.append(elst)
+            axlist.append(axplist)
+            linelist.append(llist)
+            errlist.append(elist)
             
             #set the axes properties for each subplot
-            for nn,xx in enumerate(axplst):
+            for nn,xx in enumerate(axplist):
                 #set xscale to logarithmic in period
                 xx.set_xscale('log')
                 
@@ -2575,14 +2601,14 @@ class Occam2DData(object):
                     
                 #Set the title of the TE plot                 
                 if nn==0:
-                    xx.set_title(self.station_lst[ii]+' Obs$_{xy}$ (TE-Mode)',
+                    xx.set_title(self.station_list[ii]+' Obs$_{xy}$ (TE-Mode)',
                                  fontdict={'size':9,'weight':'bold'})
                     xx.yaxis.set_label_coords(-.075,.5)
                     xx.set_ylabel('App. Res. ($\Omega \cdot m$)',
                                   fontdict={'size':9,'weight':'bold'})
                 #set the title of the TM plot
                 if nn==1:
-                    xx.set_title(self.station_lst[ii]+' Obs$_{yx}$ (TM-Mode)',
+                    xx.set_title(self.station_list[ii]+' Obs$_{yx}$ (TM-Mode)',
                                  fontdict={'size':9,'weight':'bold'})
                 
                 #set the phase axes properties
@@ -2608,7 +2634,7 @@ class Occam2DData(object):
                 xx.grid(True,alpha=.4,which='both') 
         
         #make points an attribute of self which is a data type OccamPointPicker       
-        self.points=OccamPointPicker(axlst,linelst,errlst,reserrinc=reserrinc,
+        self.points=OccamPointPicker(axlist,linelist,errlist,reserrinc=reserrinc,
                                      phaseerrinc=phaseerrinc,marker=marker)
         
         #be sure to show the plot
@@ -2645,7 +2671,7 @@ class Occam2DData(object):
         
         self.read2DdataFile()
         
-        rp_lst = list(self.rp_lst)
+        rp_list = list(self.rp_list)
         #rewrite the data file
         #make a reverse dictionary for locating the masked points in the data 
         #file
@@ -2670,12 +2696,12 @@ class Occam2DData(object):
                         #CHANGE APPARENT RESISTIVITY
                         if ss == 0 or ss == 1:
                             #change the apparent resistivity value
-                            if rp_lst[rploc[str(dd)]][skey][0][ff] != \
+                            if rp_list[rploc[str(dd)]][skey][0][ff] != \
                                                       np.log10(dat[ss][floc]):
                                 if dat[ss][floc] == 0:
-                                    rp_lst[rploc[str(dd)]][skey][0][ff] = 0.0
+                                    rp_list[rploc[str(dd)]][skey][0][ff] = 0.0
                                 else:
-                                    rp_lst[rploc[str(dd)]][skey][0][ff] = \
+                                    rp_list[rploc[str(dd)]][skey][0][ff] = \
                                             np.log10(dat[ss][floc])
                                 
                             #change the apparent resistivity error value
@@ -2683,18 +2709,18 @@ class Occam2DData(object):
                                 rerr = 0.0
                             else:
                                 rerr = derror[ss][floc]/dat[ss][floc]/np.log(10)
-                            if rp_lst[rploc[str(dd)]][skey][1][ff] != rerr:
-                                rp_lst[rploc[str(dd)]][skey][1][ff] = rerr
+                            if rp_list[rploc[str(dd)]][skey][1][ff] != rerr:
+                                rp_list[rploc[str(dd)]][skey][1][ff] = rerr
                         
                         #DHANGE PHASE
                         elif ss == 2 or ss == 3:
                             #change the phase value
-                            if rp_lst[rploc[str(dd)]][skey][0][ff] != \
+                            if rp_list[rploc[str(dd)]][skey][0][ff] != \
                                                                  dat[ss][floc]:
                                 if dat[ss][floc] == 0:
-                                    rp_lst[rploc[str(dd)]][skey][0][ff] = 0.0
+                                    rp_list[rploc[str(dd)]][skey][0][ff] = 0.0
                                 else:
-                                    rp_lst[rploc[str(dd)]][skey][0][ff] = \
+                                    rp_list[rploc[str(dd)]][skey][0][ff] = \
                                                                   dat[ss][floc]
                                 
                             #change the apparent resistivity error value
@@ -2702,8 +2728,8 @@ class Occam2DData(object):
                                 rerr = 0.0
                             else:
                                 rerr = derror[ss][floc]
-                            if rp_lst[rploc[str(dd)]][skey][1][ff] != rerr:
-                                rp_lst[rploc[str(dd)]][skey][1][ff] = rerr
+                            if rp_list[rploc[str(dd)]][skey][1][ff] != rerr:
+                                rp_list[rploc[str(dd)]][skey][1][ff] = rerr
                     except KeyError:
                         pass
             
@@ -2711,51 +2737,51 @@ class Occam2DData(object):
         #rewrite the data file 
         ss = self._ss
         sfmt = self._string_fmt
-        reslst = []
+        reslist = []
         
-        #make a dictionary of rp_lst for easier extraction of data
-        rpdict = dict([(station, rp_lst[ii]) 
-                    for ii, station in enumerate(self.station_lst)])
+        #make a dictionary of rp_list for easier extraction of data
+        rpdict = dict([(station, rp_list[ii]) 
+                    for ii, station in enumerate(self.station_list)])
         
         #loop over stations in the data file
-        for kk, station in enumerate(self.station_lst,1):
+        for kk, station in enumerate(self.station_list,1):
             srp = rpdict[station]
             
             #loop over frequencies
             for jj, ff in enumerate(self.freq, 1):
                 #make a list of lines to write to the data file
                 if srp['resxy'][0,jj-1] != 0.0:
-                    reslst.append(ss.join([str(kk), str(jj), '1',
+                    reslist.append(ss.join([str(kk), str(jj), '1',
                                   '{0:{1}}'.format(srp['resxy'][0,jj-1], sfmt),
                                   '{0:{1}}'.format(srp['resxy'][1,jj-1], sfmt),
                                   '\n']))
                                   
                 if srp['phasexy'][0,jj-1] != 0.0:
-                    reslst.append(ss.join([str(kk), str(jj), '2',
+                    reslist.append(ss.join([str(kk), str(jj), '2',
                                  '{0:{1}}'.format(srp['phasexy'][0,jj-1],sfmt),
                                  '{0:{1}}'.format(srp['phasexy'][1,jj-1],sfmt),
                                  '\n']))
                                  
                 if srp['resyx'][0,jj-1] != 0.0:
-                    reslst.append(ss.join([str(kk), str(jj), '5',
+                    reslist.append(ss.join([str(kk), str(jj), '5',
                                   '{0:{1}}'.format(srp['resyx'][0,jj-1],sfmt),
                                   '{0:{1}}'.format(srp['resyx'][1,jj-1],sfmt),
                                   '\n']))
                                   
                 if srp['phaseyx'][0,jj-1] != 0.0:
-                    reslst.append(ss.join([str(kk), str(jj), '6',
+                    reslist.append(ss.join([str(kk), str(jj), '6',
                                  '{0:{1}}'.format(srp['phaseyx'][0,jj-1],sfmt),
                                  '{0:{1}}'.format(srp['phaseyx'][1,jj-1],sfmt),
                                  '\n']))
                                  
                 if srp['realtip'][0,jj-1] != 0.0:
-                    reslst.append(ss.join([str(kk), str(jj), '3',
+                    reslist.append(ss.join([str(kk), str(jj), '3',
                                 '{0:{1}}'.format(srp['realtip'][0,jj-1], sfmt),
                                 '{0:{1}}'.format(srp['realtip'][1,jj-1], sfmt),
                                 '\n']))
                                 
                 if srp['imagtip'][0,jj-1] != 0.0:
-                    reslst.append(ss.join([str(kk), str(jj),'4',
+                    reslist.append(ss.join([str(kk), str(jj),'4',
                                  '{0:{1}}'.format(srp['imagtip'][0,jj-1],sfmt),
                                  '{0:{1}}'.format(srp['imagtip'][1,jj-1],sfmt),
                                  '\n']))
@@ -2770,7 +2796,7 @@ class Occam2DData(object):
             self.ndata_fn = self.data_fn[:-4]+'RW.dat'
         
         #get number of stations
-        nstat = len(self.station_lst)
+        nstat = len(self.station_list)
         
         #set title string
         if self.titlestr == None:
@@ -2782,12 +2808,12 @@ class Occam2DData(object):
         
         #write station sites
         datfid.write('SITES:{0}{1}\n'.format(' '*12, nstat))
-        for station in self.station_lst:
+        for station in self.station_list:
             datfid.write('{0}{1}\n'.format(ss, station))
         
         #write offsets
         datfid.write('OFFSETS (M): \n')
-        for station in self.station_lst:
+        for station in self.station_list:
             datfid.write('{0}{1: .2f}\n'.format(ss,
                                              rpdict[station]['offset']))
         
@@ -2797,9 +2823,9 @@ class Occam2DData(object):
             datfid.write('{0}{1:.5f}\n'.format(ss, ff))
         
         #write data block
-        datfid.write('DATA BLOCKS:{0}{1}\n'.format(' '*10, len(reslst)))
+        datfid.write('DATA BLOCKS:{0}{1}\n'.format(' '*10, len(reslist)))
         datfid.write(ss.join(['SITE', 'FREQ', 'TYPE', 'DATUM', 'ERROR', '\n']))
-        for ll, datline in enumerate(reslst):
+        for ll, datline in enumerate(reslist):
             if datline.find('#IND') >= 0:
                 print 'Found #IND on line {0}'.format(ll)
                 ndline = datline.replace('#IND','00')
@@ -2835,7 +2861,7 @@ class Occam2DData(object):
                 - 2 -> model output
                 - 3 -> relative error (data-model)/(input error)
                 
-            **rp_lst** : list of dictionaries for each station with keywords:
+            **rp_list** : list of dictionaries for each station with keywords:
                 
                 *station* : string
                             station name
@@ -2894,9 +2920,9 @@ class Occam2DData(object):
             ff = int(float(ls[1]))-1
             #put into array
             #model response
-            self.rp_lst[ss][occamdict[comp]][2,ff] = float(ls[5]) 
+            self.rp_list[ss][occamdict[comp]][2,ff] = float(ls[5]) 
             #relative error        
-            self.rp_lst[ss][occamdict[comp]][3,ff] = float(ls[6])
+            self.rp_list[ss][occamdict[comp]][3,ff] = float(ls[6])
             
     def plot2DResponses(self, resp_fn=None, **kwargs):
         """
@@ -2923,7 +2949,7 @@ class Occam2DData(object):
         e_capsize            size of error bar caps in points
         e_capthick           line thickness of error bar caps in points 
         fig_dpi              figure resolution in dots-per-inch 
-        fig_lst              list of dictionaries with key words
+        fig_list              list of dictionaries with key words
                              station --> station name
                              fig --> matplotlib.figure instance
                              axrte --> matplotlib.axes instance for TE app.res
@@ -2947,16 +2973,16 @@ class Occam2DData(object):
         plot_num             [ 1 | 2 ] 
                              1 to plot both modes in a single plot
                              2 to plot modes in separate plots (default)
-        plot_type            [ '1' | station_lst]
+        plot_type            [ '1' | station_list]
                              '1' --> to plot all stations in different figures
-                             station_lst --> to plot a few stations, give names
+                             station_list --> to plot a few stations, give names
                              of stations ex. ['mt01', 'mt07']
         plot_yn              [ 'y' | 'n']
                              'y' --> to plot on instantiation
                              'n' --> to not plot on instantiation
         res_limits           limits on resistivity plot in log scale (min, max)
-        rp_lst               list of dictionaries from read2Ddata
-        station_lst          station_lst list of stations in rp_lst
+        rp_list               list of dictionaries from read2Ddata
+        station_list          station_list list of stations in rp_list
         subplot_bottom       subplot spacing from bottom (relative coordinates) 
         subplot_hspace       vertical spacing between subplots
         subplot_left         subplot spacing from left  
@@ -2981,7 +3007,7 @@ class Occam2DData(object):
 
         self.read2DRespFile(resp_fn)
             
-        return PlotOccam2DResponse(self.rp_lst, self.period, **kwargs)
+        return PlotOccam2DResponse(self.rp_list, self.period, **kwargs)
     
     
     def plotPseudoSection(self, resp_fn=None, **kwargs):
@@ -3002,7 +3028,7 @@ class Occam2DData(object):
         fig_num              number of figure instance
         fig_size             size of figure in inches (width, height)
         font_size            size of font in points
-        label_lst            list to label plots
+        label_list            list to label plots
         ml                   factor to label stations if 2 every other station
                              is labeled on the x-axis
         phase_cmap           color map name of phase
@@ -3039,17 +3065,17 @@ class Occam2DData(object):
         else:
             plot_resp = 'n'
             
-        return PlotPseudoSection(self.rp_lst, self.period, 
+        return PlotPseudoSection(self.rp_list, self.period, 
                                  plot_resp=plot_resp, **kwargs)
     
-    def plotAllResponses(self, station_lst=None, **kwargs):
+    def plotAllResponses(self, station_list=None, **kwargs):
         """
         Plot all the responses of occam2d inversion from data file.  This assumes
         the response curves are in the same folder as the datafile.
     
         Arguments:
         ----------
-            **station_lst** : list of strings
+            **station_list** : list of strings
                               station names to plot
             
         ==================== ==================================================
@@ -3065,15 +3091,15 @@ class Occam2DData(object):
         plot_num             [ 1 | 2 ] 
                              1 to plot both modes in a single plot
                              2 to plot modes in separate plots (default)
-        plot_type            [ '1' | station_lst]
+        plot_type            [ '1' | station_list]
                              '1' --> to plot all stations in different figures
-                             station_lst --> to plot a few stations, give names
+                             station_list --> to plot a few stations, give names
                              of stations ex. ['mt01', 'mt07']
         plot_yn              [ 'y' | 'n']
                              'y' --> to plot on instantiation
                              'n' --> to not plot on instantiation
         res_limits           limits on resistivity plot in log scale (min, max)
-        station_lst          station_lst list of stations in rp_lst
+        station_list          station_list list of stations in rp_list
         subplot_bottom       subplot spacing from bottom (relative coordinates) 
         subplot_hspace       vertical spacing between subplots
         subplot_left         subplot spacing from left  
@@ -3091,16 +3117,16 @@ class Occam2DData(object):
         
         """    
         dir_path = os.path.dirname(self.data_fn)
-        resp_fn_lst = [os.path.join(dir_path, rfn) 
+        resp_fn_list = [os.path.join(dir_path, rfn) 
                        for rfn in os.listdir(dir_path)
                        if rfn.find('.resp')>0]
-        plot_rp_lst = []
-        for rfn in resp_fn_lst:
+        plot_rp_list = []
+        for rfn in resp_fn_list:
             self.read2DRespFile(rfn)
-            plot_rp_lst.append(self.rp_lst)
+            plot_rp_list.append(self.rp_list)
         
-        return PlotAllResponses(plot_rp_lst, self.period, 
-                                pstation_lst=station_lst,
+        return PlotAllResponses(plot_rp_list, self.period, 
+                                pstation_list=station_list,
                                 **kwargs)
         
 class Occam2DModel(Occam2DData):
@@ -3484,9 +3510,9 @@ class Occam2DModel(Occam2DData):
         self.ploty = ploty
         
         #set the offsets of the stations and station list.
-        self.offsetlst = []
-        for rpdict in self.rp_lst:
-            self.offsetlst.append(rpdict['offset'])
+        self.offsetlist = []
+        for rpdict in self.rp_list:
+            self.offsetlist.append(rpdict['offset'])
         
     def plot2DModel(self, data_fn=None, **kwargs):
         """
@@ -3570,8 +3596,8 @@ class Occam2DModel(Occam2DData):
         self.get2DModel()
         self.get2DData()
         
-        return PlotModel(self.meshx, self.meshy, self.resmodel, self.rp_lst,
-                         self.plotx, self.ploty, self.offsetlst, 
+        return PlotModel(self.meshx, self.meshy, self.resmodel, self.rp_list,
+                         self.plotx, self.ploty, self.offsetlist, 
                          self.iterfn, self.idict, self.rows, self.cols, 
                          **kwargs)
         
@@ -3629,23 +3655,23 @@ class Occam2DModel(Occam2DData):
         invpath = os.path.dirname(self.iterfn)        
         
         if fnstem == None:
-            iterlst = [os.path.join(invpath,itfile) 
+            iterlist = [os.path.join(invpath,itfile) 
                        for itfile in os.listdir(invpath) 
                        if itfile.find('.iter')>0]
         else:
-            iterlst = [os.path.join(invpath,itfile) 
+            iterlist = [os.path.join(invpath,itfile) 
                        for itfile in os.listdir(invpath) 
                        if itfile.find('.iter')>0 and
                        itfile.find(fnstem)>0]
                     
-        nr = len(iterlst)
+        nr = len(iterlist)
        
         #create a structured array to put information inot
         rmsarr = np.zeros(nr, dtype=np.dtype([('iteration', np.int),
                                               ('rms', np.float),
                                               ('roughness', np.float)]))
         
-        for ii, itfile in enumerate(iterlst):
+        for ii, itfile in enumerate(iterlist):
             self.iterfn = itfile
             self.read2DIter()
             rmsarr[ii]['iteration'] = int(self.idict['iteration'])
@@ -3707,11 +3733,11 @@ class Occam2DModel(Occam2DData):
 
     
         try:
-            self.offsetlst
+            self.offsetlist
         except AttributeError:
             self.get2DModel()
             
-        return PlotDepthSlice(self.resmodel, self.offsetlst, self.station_lst,
+        return PlotDepthSlice(self.resmodel, self.offsetlist, self.station_list,
                               self.plotx, self.ploty, **kwargs)
         
 
@@ -3724,7 +3750,7 @@ class PlotOccam2DResponse():
     
     Arguments:
     -------------
-        **rp_lst** : list of dictionaries for each station with keywords:
+        **rp_list** : list of dictionaries for each station with keywords:
                 
                 * *station* : string
                              station name
@@ -3756,7 +3782,7 @@ class PlotOccam2DResponse():
                 response from the inversion.  
         
         **period** : np.array of periods to plot that correspond to the index
-                     values of each rp_lst entry ie. resxy.
+                     values of each rp_list entry ie. resxy.
                      
     ==================== ======================================================
     Attributes/key words            description
@@ -3772,7 +3798,7 @@ class PlotOccam2DResponse():
     e_capsize            size of error bar caps in points
     e_capthick           line thickness of error bar caps in points 
     fig_dpi              figure resolution in dots-per-inch 
-    fig_lst              list of dictionaries with key words
+    fig_list              list of dictionaries with key words
                          station --> station name
                          fig --> matplotlib.figure instance
                          axrte --> matplotlib.axes instance for TE app.res
@@ -3796,16 +3822,16 @@ class PlotOccam2DResponse():
     plot_num             [ 1 | 2 ] 
                          1 to plot both modes in a single plot
                          2 to plot modes in separate plots (default)
-    plot_type            [ '1' | station_lst]
+    plot_type            [ '1' | station_list]
                          '1' --> to plot all stations in different figures
-                         station_lst --> to plot a few stations, give names
+                         station_list --> to plot a few stations, give names
                          of stations ex. ['mt01', 'mt07']
     plot_yn              [ 'y' | 'n']
                          'y' --> to plot on instantiation
                          'n' --> to not plot on instantiation
     res_limits           limits on resistivity plot in log scale (min, max)
-    rp_lst               list of dictionaries from read2Ddata
-    station_lst          station_lst list of stations in rp_lst
+    rp_list               list of dictionaries from read2Ddata
+    station_list          station_list list of stations in rp_list
     subplot_bottom       subplot spacing from bottom (relative coordinates) 
     subplot_hspace       vertical spacing between subplots
     subplot_left         subplot spacing from left  
@@ -3823,13 +3849,13 @@ class PlotOccam2DResponse():
                         is 'y'.
     redraw_plot         call redraw_plot to redraw the figures, 
                         if one of the attributes has been changed
-    save_figures        save all the matplotlib.figure instances in fig_lst
+    save_figures        save all the matplotlib.figure instances in fig_list
     =================== =======================================================
 
     """
     
-    def __init__(self, rp_lst, period, **kwargs):
-        self.rp_lst = rp_lst
+    def __init__(self, rp_list, period, **kwargs):
+        self.rp_list = rp_list
         self.period = period
         self.wl_fn = kwargs.pop('wl_fn', None)
 
@@ -3900,7 +3926,7 @@ class PlotOccam2DResponse():
         self.plot_num = kwargs.pop('plot_num', 2)
         self.plot_yn = kwargs.pop('plot_yn', 'y')
         
-        self.fig_lst = []
+        self.fig_list = []
         
         if self.plot_yn == 'y':
             self.plot()
@@ -3911,11 +3937,11 @@ class PlotOccam2DResponse():
          
         """
         
-        #make a local copy of the rp_lst    
-        rp_lst = list(self.rp_lst)
+        #make a local copy of the rp_list    
+        rp_list = list(self.rp_list)
         
-        #create station lst
-        self.station_lst = [rp['station'] for rp in rp_lst]
+        #create station list
+        self.station_list = [rp['station'] for rp in rp_list]
         
         #boolean for adding winglink output to the plots 0 for no, 1 for yes
         addwl = 0
@@ -3923,28 +3949,28 @@ class PlotOccam2DResponse():
         if self.wl_fn != None:
             addwl = 1
             self.subplot_hspace+.1
-            wld, wlrp_lst, wlplst, wlslst, wltlst = wlt.readOutputFile(
+            wld, wlrp_list, wlplist, wlslist, wltlist = MTwl.readOutputFile(
                                                                    self.wl_fn)
-            sdict = dict([(ostation, wlstation) for wlstation in wlslst 
-                          for ostation in self.station_lst 
-                          if wlstation.find(ostation)>=0])
+            sdict = dict([(ostation, wlistation) for wlistation in wlslist 
+                          for ostation in self.station_list 
+                          if wlistation.find(ostation)>=0])
         
         #set a local parameter period for less typing
         period = self.period
                                           
         #---------------plot each respones in a different figure---------------
         if self.plot_type == '1':
-            pstation_lst = range(len(self.station_lst))
+            pstation_list = range(len(self.station_list))
 
         else:
             if type(self.plot_type) is not list:
                 self.plot_type = [self.plot_type]
             
-            pstation_lst = []
-            for ii, station in enumerate(self.station_lst):
+            pstation_list = []
+            for ii, station in enumerate(self.station_list):
                 for pstation in self.plot_type:
                     if station.find(pstation) >= 0:
-                        pstation_lst.append(ii)  
+                        pstation_list.append(ii)  
             
         #set the grid of subplots
         gs = gridspec.GridSpec(6, 2,
@@ -3959,23 +3985,23 @@ class PlotOccam2DResponse():
         plt.rcParams['font.size'] = self.font_size
                                  
         #loop over each station to plot
-        for ii, jj in enumerate(pstation_lst):
+        for ii, jj in enumerate(pstation_list):
             
             #empty lists for legend marker and label
-            rlstte = []
-            llstte = []
-            rlsttm = []
-            llsttm = []
+            rlistte = []
+            llistte = []
+            rlisttm = []
+            llisttm = []
             
             #calculate rms's
-            rmslstte = np.hstack((rp_lst[jj]['resxy'][3],
-                                  rp_lst[jj]['phasexy'][3]))
-            rmslsttm = np.hstack((rp_lst[jj]['resyx'][3],
-                                  rp_lst[jj]['phaseyx'][3]))
-            rmste = np.sqrt(np.sum([rms**2 for rms in rmslstte])/
-                            len(rmslstte))
-            rmstm = np.sqrt(np.sum([rms**2 for rms in rmslsttm])/
-                            len(rmslsttm))
+            rmslistte = np.hstack((rp_list[jj]['resxy'][3],
+                                  rp_list[jj]['phasexy'][3]))
+            rmslisttm = np.hstack((rp_list[jj]['resyx'][3],
+                                  rp_list[jj]['phaseyx'][3]))
+            rmste = np.sqrt(np.sum([rms**2 for rms in rmslistte])/
+                            len(rmslistte))
+            rmstm = np.sqrt(np.sum([rms**2 for rms in rmslisttm])/
+                            len(rmslisttm))
             
             fig = plt.figure(ii+1, self.fig_size, dpi=self.fig_dpi)
             plt.clf()
@@ -3999,17 +4025,17 @@ class PlotOccam2DResponse():
             #------------Plot Resistivity----------------------------------
             #cut out missing data points first
             #--> data
-            rxy = np.where(rp_lst[jj]['resxy'][0]!=0)[0]
-            ryx = np.where(rp_lst[jj]['resyx'][0]!=0)[0]
+            rxy = np.where(rp_list[jj]['resxy'][0]!=0)[0]
+            ryx = np.where(rp_list[jj]['resyx'][0]!=0)[0]
             
             #--> response
-            mrxy = np.where(rp_lst[jj]['resxy'][2]!=0)[0]
-            mryx = np.where(rp_lst[jj]['resyx'][2]!=0)[0]
+            mrxy = np.where(rp_list[jj]['resxy'][2]!=0)[0]
+            mryx = np.where(rp_list[jj]['resyx'][2]!=0)[0]
             
             #--> TE mode Data 
             if len(rxy) > 0:
                 rte = axrte.errorbar(period[rxy],
-                                     10**rp_lst[jj]['resxy'][0][rxy],
+                                     10**rp_list[jj]['resxy'][0][rxy],
                                      ls=':',
                                      marker=self.mted,
                                      ms=self.ms,
@@ -4017,25 +4043,25 @@ class PlotOccam2DResponse():
                                      mec=self.cted,
                                      color=self.cted,
                                      yerr=np.log(10)*\
-                                         rp_lst[jj]['resxy'][1][rxy]*\
-                                         10**rp_lst[jj]['resxy'][0][rxy],
+                                         rp_list[jj]['resxy'][1][rxy]*\
+                                         10**rp_list[jj]['resxy'][0][rxy],
                                     ecolor=self.cted,
                                     picker=2,
                                     lw=self.lw,
                                     elinewidth=self.lw,
                                     capsize=self.e_capsize,
                                     capthick=self.e_capthick)
-                rlstte.append(rte[0])
-                llstte.append('$Obs_{TE}$')
+                rlistte.append(rte[0])
+                llistte.append('$Obs_{TE}$')
             else:
                 pass
             
             #--> TE mode Model Response
             if len(mrxy) > 0:
-                yerrxy = 10**(rp_lst[jj]['resxy'][3][mrxy]*\
-                         rp_lst[jj]['resxy'][2][mrxy]/np.log(10))
+                yerrxy = 10**(rp_list[jj]['resxy'][3][mrxy]*\
+                         rp_list[jj]['resxy'][2][mrxy]/np.log(10))
                 r3 = axrte.errorbar(period[mrxy],
-                                    10**rp_lst[jj]['resxy'][2][mrxy],
+                                    10**rp_list[jj]['resxy'][2][mrxy],
                                     ls='--',
                                     marker=self.mtem,
                                     ms=self.ms,
@@ -4048,15 +4074,15 @@ class PlotOccam2DResponse():
                                     elinewidth=self.lw,
                                     capsize=self.e_capsize,
                                     capthick=self.e_capthick)
-                rlstte.append(r3[0])
-                llstte.append('$Mod_{TE}$')
+                rlistte.append(r3[0])
+                llistte.append('$Mod_{TE}$')
             else:
                 pass
             
             #--> TM mode data
             if len(ryx) > 0:
                 rtm = axrtm.errorbar(period[ryx],
-                                     10**rp_lst[jj]['resyx'][0][ryx],
+                                     10**rp_list[jj]['resyx'][0][ryx],
                                      ls=':',
                                      marker=self.mtmd,
                                      ms=self.ms,
@@ -4064,25 +4090,25 @@ class PlotOccam2DResponse():
                                      mec=self.ctmd,
                                      color=self.ctmd,
                                      yerr=np.log(10)*\
-                                          rp_lst[jj]['resyx'][1][ryx]*\
-                                          10**rp_lst[jj]['resyx'][0][ryx],
+                                          rp_list[jj]['resyx'][1][ryx]*\
+                                          10**rp_list[jj]['resyx'][0][ryx],
                                      ecolor=self.ctmd,
                                      picker=2,
                                      lw=self.lw,
                                      elinewidth=self.lw,
                                      capsize=self.e_capsize,
                                      capthick=self.e_capthick)
-                rlsttm.append(rtm[0])
-                llsttm.append('$Obs_{TM}$')
+                rlisttm.append(rtm[0])
+                llisttm.append('$Obs_{TM}$')
             else:
                 pass 
 
             #--> TM mode model response
             if len(mryx)>0:
-                yerryx = 10**(rp_lst[jj]['resyx'][3][mryx]*\
-                             rp_lst[jj]['resyx'][2][mryx]/np.log(10))
+                yerryx = 10**(rp_list[jj]['resyx'][3][mryx]*\
+                             rp_list[jj]['resyx'][2][mryx]/np.log(10))
                 r4 = axrtm.errorbar(period[mryx],
-                                    10**rp_lst[jj]['resyx'][2][mryx],
+                                    10**rp_list[jj]['resyx'][2][mryx],
                                     ls='--',
                                     marker=self.mtmm,
                                     ms=self.ms,
@@ -4095,32 +4121,32 @@ class PlotOccam2DResponse():
                                     elinewidth=self.lw,
                                     capsize=self.e_capsize,
                                     capthick=self.e_capthick)
-                rlsttm.append(r4[0])
-                llsttm.append('$Mod_{TM}$')
+                rlisttm.append(r4[0])
+                llisttm.append('$Mod_{TM}$')
             else:
                 pass
 
             #--------------------plot phase--------------------------------
             #cut out missing data points first
             #--> data
-            pxy = np.where(rp_lst[jj]['phasexy'][0]!=0)[0]
-            pyx = np.where(rp_lst[jj]['phaseyx'][0]!=0)[0]
+            pxy = np.where(rp_list[jj]['phasexy'][0]!=0)[0]
+            pyx = np.where(rp_list[jj]['phaseyx'][0]!=0)[0]
             
             #--> reponse
-            mpxy = np.where(rp_lst[jj]['phasexy'][2]!=0)[0]
-            mpyx = np.where(rp_lst[jj]['phaseyx'][2]!=0)[0]
+            mpxy = np.where(rp_list[jj]['phasexy'][2]!=0)[0]
+            mpyx = np.where(rp_list[jj]['phaseyx'][2]!=0)[0]
             
             #--> TE mode data
             if len(pxy) > 0:
                 axpte.errorbar(period[pxy],
-                               rp_lst[jj]['phasexy'][0][pxy],
+                               rp_list[jj]['phasexy'][0][pxy],
                                ls=':',
                                marker=self.mted,
                                ms=self.ms,
                                mfc=self.cted,
                                mec=self.cted,
                                color=self.cted,
-                               yerr=rp_lst[jj]['phasexy'][1][pxy],
+                               yerr=rp_list[jj]['phasexy'][1][pxy],
                                ecolor=self.cted,
                                picker=1,
                                lw=self.lw,
@@ -4133,14 +4159,14 @@ class PlotOccam2DResponse():
             #--> TE mode response
             if len(mpxy) > 0:
                 axpte.errorbar(period[mpxy],
-                               rp_lst[jj]['phasexy'][2][mpxy],
+                               rp_list[jj]['phasexy'][2][mpxy],
                                ls='--',
                                marker=self.mtem,
                                ms=self.ms,
                                mfc=self.ctem,
                                mec=self.ctem,
                                color=self.ctem,
-                               yerr=rp_lst[jj]['phasexy'][3][mpxy],
+                               yerr=rp_list[jj]['phasexy'][3][mpxy],
                                ecolor=self.ctem,
                                lw=self.lw,
                                elinewidth=self.lw,
@@ -4152,14 +4178,14 @@ class PlotOccam2DResponse():
             #--> TM mode data
             if len(pyx)>0:
                 axptm.errorbar(period[pyx],
-                               rp_lst[jj]['phaseyx'][0][pyx],
+                               rp_list[jj]['phaseyx'][0][pyx],
                                ls=':',
                                marker=self.mtmd,
                                ms=self.ms,
                                mfc=self.ctmd,
                                mec=self.ctmd,
                                color=self.ctmd,
-                               yerr=rp_lst[jj]['phaseyx'][1][pyx],
+                               yerr=rp_list[jj]['phaseyx'][1][pyx],
                                ecolor=self.ctmd,
                                picker=1,
                                lw=self.lw,
@@ -4172,14 +4198,14 @@ class PlotOccam2DResponse():
             #--> TM mode response
             if len(mpyx) > 0:
                 axptm.errorbar(period[mpyx],
-                               rp_lst[jj]['phaseyx'][2][mpyx],
+                               rp_list[jj]['phaseyx'][2][mpyx],
                                ls='--',
                                marker=self.mtmm,
                                ms=self.ms,
                                mfc=self.ctmm,
                                mec=self.ctmm,
                                color=self.ctmm,
-                               yerr=rp_lst[jj]['phaseyx'][3][mpyx],
+                               yerr=rp_list[jj]['phaseyx'][3][mpyx],
                                ecolor=self.ctmm,
                                lw=self.lw,
                                elinewidth=self.lw,
@@ -4192,24 +4218,24 @@ class PlotOccam2DResponse():
             #--------------add in winglink responses------------------------
             if addwl == 1:
                 try:
-                    wlrms = wld[sdict[self.station_lst[jj]]]['rms']
-                    axrte.set_title(self.station_lst[jj]+
+                    wlrms = wld[sdict[self.station_list[jj]]]['rms']
+                    axrte.set_title(self.station_list[jj]+
                                    '\n rms_occ_TE={0:.2f}'.format(rmste)+
                                    'rms_occ_TM={0:.2f}'.format(rmstm)+
                                    'rms_wl={0:.2f}'.format(wlrms),
                                    fontdict={'size':self.font_size,
                                              'weight':'bold'})
-                    for ww, wlstation in enumerate(wlslst):
-                        if wlstation.find(self.station_lst[jj])==0:
+                    for ww, wlistation in enumerate(wlslist):
+                        if wlistation.find(self.station_list[jj])==0:
                             print '{0} was Found {0} in winglink file'.format(
-                                              self.station_lst[jj], wlstation)
-                            wlrpdict = wlrp_lst[ww]
+                                              self.station_list[jj], wlistation)
+                            wlrpdict = wlrp_list[ww]
                     
                     zrxy = [np.where(wlrpdict['resxy'][0]!=0)[0]]
                     zryx = [np.where(wlrpdict['resyx'][0]!=0)[0]]
                     
                      #plot winglink resistivity
-                    r5 = axrte.loglog(wlplst[zrxy],
+                    r5 = axrte.loglog(wlplist[zrxy],
                                       wlrpdict['resxy'][1][zrxy],
                                       ls='-.',
                                       marker=self.mtewl,
@@ -4217,7 +4243,7 @@ class PlotOccam2DResponse():
                                       color=self.ctewl,
                                       mfc=self.ctewl,
                                       lw=self.lw)
-                    r6 = axrtm.loglog(wlplst[zryx],
+                    r6 = axrtm.loglog(wlplist[zryx],
                                       wlrpdict['resyx'][1][zryx],
                                       ls='-.',
                                       marker=self.mtmwl,
@@ -4227,7 +4253,7 @@ class PlotOccam2DResponse():
                                       lw=self.lw)
                     
                     #plot winglink phase
-                    axpte.semilogx(wlplst[zrxy],
+                    axpte.semilogx(wlplist[zrxy],
                                    wlrpdict['phasexy'][1][zrxy],
                                    ls='-.',
                                    marker=self.mtewl,
@@ -4236,7 +4262,7 @@ class PlotOccam2DResponse():
                                    mfc=self.ctewl,
                                    lw=self.lw)
                                    
-                    axptm.semilogx(wlplst[zryx],
+                    axptm.semilogx(wlplist[zryx],
                                    wlrpdict['phaseyx'][1][zryx],
                                    ls='-.',
                                    marker=self.mtmwl,
@@ -4245,24 +4271,24 @@ class PlotOccam2DResponse():
                                    mfc=self.ctmwl,
                                    lw=self.lw)
                     
-                    rlstte.append(r5[0])
-                    rlsttm.append(r6[0])
-                    llstte.append('$WLMod_{TE}$')
-                    llsttm.append('$WLMod_{TM}$')
+                    rlistte.append(r5[0])
+                    rlisttm.append(r6[0])
+                    llistte.append('$WLMod_{TE}$')
+                    llisttm.append('$WLMod_{TM}$')
                 except (IndexError, KeyError):
                     print 'Station not present'
             else:
                 if self.plot_num == 1:
-                    axrte.set_title(self.station_lst[jj]+\
+                    axrte.set_title(self.station_list[jj]+\
                     ' rms_TE={0:.2f}, rms_TM={1:.2f}'.format(rmste,rmstm),
                               fontdict={'size':self.font_size+2,
                                         'weight':'bold'})
                 elif self.plot_num == 2:
-                    axrte.set_title(self.station_lst[jj]+\
+                    axrte.set_title(self.station_list[jj]+\
                                     ' rms_TE={0:.2f}'.format(rmste),
                                     fontdict={'size':self.font_size+2,
                                               'weight':'bold'})
-                    axrtm.set_title(self.station_lst[jj]+\
+                    axrtm.set_title(self.station_list[jj]+\
                                     ' rms_TM={0:.2f}'.format(rmstm),
                                     fontdict={'size':self.font_size+2,
                                               'weight':'bold'})
@@ -4296,7 +4322,7 @@ class PlotOccam2DResponse():
                 #set legend based on the plot type
                 if self.plot_num == 1:
                     if aa == 0:
-                        axr.legend(rlstte+rlsttm,llstte+llsttm,
+                        axr.legend(rlistte+rlisttm,llistte+llisttm,
                                    loc=2,markerscale=1,
                                    borderaxespad=.05,
                                    labelspacing=.08,
@@ -4305,8 +4331,8 @@ class PlotOccam2DResponse():
                                    prop={'size':self.font_size+1})
                 elif self.plot_num == 2:
                     if aa == 0:
-                        axr.legend(rlstte,
-                                   llstte,
+                        axr.legend(rlistte,
+                                   llistte,
                                    loc=2,markerscale=1,
                                    borderaxespad=.05,
                                    labelspacing=.08,
@@ -4315,8 +4341,8 @@ class PlotOccam2DResponse():
                                    prop={'size':self.font_size+1}) 
                                            
                     if aa==1:
-                        axr.legend(rlsttm,
-                                   llsttm,
+                        axr.legend(rlisttm,
+                                   llisttm,
                                    loc=2,markerscale=1,
                                    borderaxespad=.05,
                                    labelspacing=.08,
@@ -4352,7 +4378,7 @@ class PlotOccam2DResponse():
                                              'weight':'bold'})
             
             #make sure the axis and figure are accessible to the user
-            self.fig_lst.append({'station':self.station_lst[jj], 
+            self.fig_list.append({'station':self.station_list[jj], 
                                  'fig':fig, 'axrte':axrte, 'axrtm':axrtm, 
                                  'axpte':axpte, 'axptm':axptm})
         
@@ -4382,7 +4408,7 @@ class PlotOccam2DResponse():
     def save_figures(self, save_path, fig_fmt='pdf', fig_dpi=None, 
                      close_fig='y'):
         """
-        save all the figure that are in self.fig_lst
+        save all the figure that are in self.fig_list
         
         :Example: ::
             
@@ -4396,7 +4422,7 @@ class PlotOccam2DResponse():
         if not os.path.exists(save_path):
             os.mkdir(save_path)
             
-        for fdict in self.fig_lst:
+        for fdict in self.fig_list:
             svfn = '{0}_resp.{1}'.format(fdict['station'], fig_fmt)
             fdict['fig'].savefig(os.path.join(save_path, svfn), 
                                  dpi=self.fig_dpi)
@@ -4415,7 +4441,7 @@ class PlotPseudoSection(object):
         
     Arguments:
     -------------
-        **rp_lst** : list of dictionaries for each station with keywords:
+        **rp_list** : list of dictionaries for each station with keywords:
                 
                 * *station* : string
                              station name
@@ -4447,7 +4473,7 @@ class PlotPseudoSection(object):
                 response from the inversion.  
         
         **period** : np.array of periods to plot that correspond to the index
-                     values of each rp_lst entry ie. resxy.
+                     values of each rp_list entry ie. resxy.
     
     ==================== ==================================================
     key words            description
@@ -4467,7 +4493,7 @@ class PlotPseudoSection(object):
     fig_num              number of figure instance
     fig_size             size of figure in inches (width, height)
     font_size            size of font in points
-    label_lst            list to label plots
+    label_list            list to label plots
     ml                   factor to label stations if 2 every other station
                          is labeled on the x-axis
     period               np.array of periods to plot
@@ -4479,9 +4505,9 @@ class PlotPseudoSection(object):
     res_cmap             color map name for resistivity
     res_limits_te        limits for te resistivity in log scale (min, max)
     res_limits_tm        limits for tm resistivity in log scale (min, max)
-    rp_lst               list of dictionaries as made from read2Dresp
+    rp_list               list of dictionaries as made from read2Dresp
     station_id           index to get station name (min, max)
-    station_lst          station list got from rp_lst
+    station_list          station list got from rp_list
     subplot_bottom       subplot spacing from bottom (relative coordinates) 
     subplot_hspace       vertical spacing between subplots
     subplot_left         subplot spacing from left  
@@ -4512,15 +4538,15 @@ class PlotPseudoSection(object):
     
     """
     
-    def __init__(self, rp_lst, period, **kwargs):
+    def __init__(self, rp_list, period, **kwargs):
         
-        self.rp_lst = rp_lst
+        self.rp_list = rp_list
         self.period = period
-        self.station_lst = [rp['station'] for rp in self.rp_lst]
+        self.station_list = [rp['station'] for rp in self.rp_list]
 
         self.plot_resp = kwargs.pop('plot_resp', 'y')
         
-        self.label_lst = ['$r_{TE-Data}$','$r_{TE-Model}$',
+        self.label_list = ['$r_{TE-Data}$','$r_{TE-Model}$',
                           '$r_{TM-Data}$','$r_{TM-Model}$',
                           '$\phi_{TE-Data}$','$\phi_{TE-Model}$',
                           '$\phi_{TM-Data}$','$\phi_{TM-Model}$']
@@ -4580,20 +4606,20 @@ class PlotPseudoSection(object):
         else:
             nr = 1
             
-        ns = len(self.station_lst)
+        ns = len(self.station_list)
         nf = len(self.period)
         ylimits = (self.period.max(), self.period.min())
         
         #make a grid for pcolormesh so you can have a log scale
         #get things into arrays for plotting
-        offset_lst = np.zeros(ns)
+        offset_list = np.zeros(ns)
         resxy_arr = np.zeros((nf, ns, nr))    
         resyx_arr = np.zeros((nf, ns, nr))    
         phasexy_arr = np.zeros((nf, ns, nr))    
         phaseyx_arr = np.zeros((nf, ns, nr))
     
-        for ii, rpdict in enumerate(self.rp_lst):
-            offset_lst[ii] = rpdict['offset']     
+        for ii, rpdict in enumerate(self.rp_list):
+            offset_list[ii] = rpdict['offset']     
             resxy_arr[:, ii, 0] = rpdict['resxy'][0]
             resyx_arr[:, ii, 0] = rpdict['resyx'][0]
             phasexy_arr[:, ii, 0] = rpdict['phasexy'][0]
@@ -4607,13 +4633,13 @@ class PlotPseudoSection(object):
                 
         #make a meshgrid for plotting
         #flip frequency so bottom corner is long period
-        dgrid, fgrid = np.meshgrid(offset_lst, self.period[::-1])
+        dgrid, fgrid = np.meshgrid(offset_list, self.period[::-1])
     
         #make list for station labels
-        slabel = [self.station_lst[ss][self.station_id[0]:self.station_id[1]] 
+        slabel = [self.station_list[ss][self.station_id[0]:self.station_id[1]] 
                     for ss in range(0, ns, self.ml)]
 
-        xloc = offset_lst[0]+abs(offset_lst[0]-offset_lst[1])/5
+        xloc = offset_list[0]+abs(offset_list[0]-offset_list[1])/5
         yloc = 1.10*self.period[1]
         
         
@@ -4721,17 +4747,17 @@ class PlotPseudoSection(object):
                                    vmin=self.phase_limits_tm[0],
                                    vmax=self.phase_limits_tm[1])
             
-            axlst=[self.axrte, self.axmrte, self.axrtm, self.axmrtm, 
+            axlist=[self.axrte, self.axmrte, self.axrtm, self.axmrtm, 
                    self.axpte, self.axmpte, self.axptm, self.axmptm]
             
             #make everthing look tidy
-            for xx, ax in enumerate(axlst):
+            for xx, ax in enumerate(axlist):
                 ax.semilogy()
                 ax.set_ylim(ylimits)
-                ax.xaxis.set_ticks(offset_lst[np.arange(0, ns, self.ml)])
-                ax.xaxis.set_ticks(offset_lst, minor=True)
+                ax.xaxis.set_ticks(offset_list[np.arange(0, ns, self.ml)])
+                ax.xaxis.set_ticks(offset_list, minor=True)
                 ax.xaxis.set_ticklabels(slabel)
-                ax.set_xlim(offset_lst.min(),offset_lst.max())
+                ax.set_xlim(offset_list.min(),offset_list.max())
                 if np.remainder(xx, 2.0) == 1:
                     plt.setp(ax.yaxis.get_ticklabels(), visible=False)
                     cbx = mcb.make_axes(ax, 
@@ -4763,7 +4789,7 @@ class PlotPseudoSection(object):
                         cb.set_label('Phase (deg)', 
                                      fontdict={'size':self.font_size+1,
                                                'weight':'bold'})
-                ax.text(xloc, yloc, self.label_lst[xx],
+                ax.text(xloc, yloc, self.label_list[xx],
                         fontdict={'size':self.font_size+1},
                         bbox={'facecolor':'white'},
                         horizontalalignment='left',
@@ -4823,17 +4849,17 @@ class PlotPseudoSection(object):
                                   vmax=self.phase_limits_tm[1])
             
             
-            axlst=[self.axrte, self.axrtm, self.axpte, self.axptm]
+            axlist=[self.axrte, self.axrtm, self.axpte, self.axptm]
             
             #make everything look tidy
-            for xx,ax in enumerate(axlst):
+            for xx,ax in enumerate(axlist):
                 ax.semilogy()
                 ax.set_ylim(ylimits)
-                ax.xaxis.set_ticks(offset_lst[np.arange(0, ns, self.ml)])
-                ax.xaxis.set_ticks(offset_lst, minor=True)
+                ax.xaxis.set_ticks(offset_list[np.arange(0, ns, self.ml)])
+                ax.xaxis.set_ticks(offset_list, minor=True)
                 ax.xaxis.set_ticklabels(slabel)
                 ax.grid(True, alpha=.25)
-                ax.set_xlim(offset_lst.min(),offset_lst.max())
+                ax.set_xlim(offset_list.min(),offset_list.max())
                 cbx = mcb.make_axes(ax, 
                                     shrink=self.cb_shrink, 
                                     pad=self.cb_pad)
@@ -4870,7 +4896,7 @@ class PlotPseudoSection(object):
                                            'weight':'bold'})
                     cb.set_ticks(np.arange(self.phase_limits_te[0], 
                                            self.phase_limits_te[1]+1, 15))
-                ax.text(xloc, yloc, self.label_lst[xx],
+                ax.text(xloc, yloc, self.label_list[xx],
                         fontdict={'size':self.font_size+1},
                         bbox={'facecolor':'white'},
                         horizontalalignment='left',
@@ -5015,7 +5041,7 @@ class PlotAllResponses(object):
     
     Arguments:
     -----------
-        **rp_lst** : list of lists [rp_lst1, rp_lst2, ...]
+        **rp_list** : list of lists [rp_list1, rp_list2, ...]
                      nested list where the first index corresponds to the 
                      iteration.  This is a list of dictionaries with keys:
                      
@@ -5049,9 +5075,9 @@ class PlotAllResponses(object):
                 response from the inversion.
                 
         **period** : np.array of periods to plot that correspond to the index
-                     values of each rp_lst entry ie. resxy.
+                     values of each rp_list entry ie. resxy.
                      
-        **pstation_lst** : list of stations to plot, should be verbatim of
+        **pstation_list** : list of stations to plot, should be verbatim of
                            what the station name is in the data file.
     
     ==================== ==================================================
@@ -5062,7 +5088,7 @@ class PlotAllResponses(object):
     axrte                matplotlib.axes instance for TE app. res.
     axrtm                matplotlib.axes instance for TM app. res.
     fig_dpi              resolution of figure in dots per inch
-    fig_lst              list of dictionaries with key words
+    fig_list              list of dictionaries with key words
                          station --> station name
                          fig --> matplotlib.figure instance
                          axrte --> matplotlib.axes instance for TE app.res
@@ -5079,16 +5105,16 @@ class PlotAllResponses(object):
     plot_num             [ 1 | 2 ] 
                          1 to plot both modes in a single plot
                          2 to plot modes in separate plots (default)
-    plot_type            [ '1' | station_lst]
+    plot_type            [ '1' | station_list]
                          '1' --> to plot all stations in different figures
-                         station_lst --> to plot a few stations, give names
+                         station_list --> to plot a few stations, give names
                          of stations ex. ['mt01', 'mt07']
     plot_yn              [ 'y' | 'n']
                          'y' --> to plot on instantiation
                          'n' --> to not plot on instantiation
     res_limits           limits on resistivity plot in log scale (min, max)
-    rp_lst               list of dictionaries from read2Ddata
-    station_lst          station_lst list of stations in rp_lst
+    rp_list               list of dictionaries from read2Ddata
+    station_list          station_list list of stations in rp_list
     subplot_bottom       subplot spacing from bottom (relative coordinates) 
     subplot_hspace       vertical spacing between subplots
     subplot_left         subplot spacing from left  
@@ -5109,16 +5135,16 @@ class PlotAllResponses(object):
     =================== =======================================================    
     """
     
-    def __init__(self, rp_lst, period, pstation_lst=None, **kwargs):
-        self.rp_lst = rp_lst
+    def __init__(self, rp_list, period, pstation_list=None, **kwargs):
+        self.rp_list = rp_list
         self.period = period
         
-        if pstation_lst == None:
-            self.pstation_lst = [rp['station'] for rp in self.rp_lst[0]]
+        if pstation_list == None:
+            self.pstation_list = [rp['station'] for rp in self.rp_list[0]]
         else:
-            self.pstation_lst = pstation_lst
+            self.pstation_list = pstation_list
             
-        self.station_lst = [rp['station'] for rp in self.rp_lst[0]]
+        self.station_list = [rp['station'] for rp in self.rp_list[0]]
         self.ms = kwargs.pop('ms', 1.5)
         self.lw = kwargs.pop('lw', .5)
         self.e_capthick = kwargs.pop('e_capthick', .5)
@@ -5149,7 +5175,7 @@ class PlotAllResponses(object):
         self.plot_num = kwargs.pop('plot_num', 2)
         self.plot_yn = kwargs.pop('plot_yn', 'y')
         
-        self.fig_lst = []
+        self.fig_list = []
         
         if self.plot_yn == 'y':
             self.plot()
@@ -5170,12 +5196,12 @@ class PlotAllResponses(object):
         plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
         plt.rcParams['figure.subplot.top'] = self.subplot_top
         
-        nresp = len(self.rp_lst)
+        nresp = len(self.rp_list)
         
         #--> make a list of colors to fade for each iteration
-        color_lst = [(cc, 0, 1-cc) for cc in np.arange(0,1,1./nresp)]
+        color_list = [(cc, 0, 1-cc) for cc in np.arange(0,1,1./nresp)]
         
-        for ss, station in enumerate(self.pstation_lst, 1):
+        for ss, station in enumerate(self.pstation_list, 1):
             fig = plt.figure(self.fig_num+ss, self.fig_size, dpi=self.fig_dpi)
             plt.clf()
             
@@ -5184,23 +5210,23 @@ class PlotAllResponses(object):
             axpte = fig.add_subplot(gs[-2:, 0], sharex=axrte)
             axptm = fig.add_subplot(gs[-2:, 1], sharex=axrtm)
             
-            rmstelst = []
-            rmstmlst = []
+            rmstelist = []
+            rmstmlist = []
             rmstestr = []
             rmstmstr = []
             #read responses
-            for jj, rp in enumerate(self.rp_lst):
+            for jj, rp in enumerate(self.rp_list):
                 
-                ii = np.where(np.array(self.station_lst)==station)[0][0]
+                ii = np.where(np.array(self.station_list)==station)[0][0]
                 
-                rmslstte=np.hstack((rp[ii]['resxy'][3],
+                rmslistte=np.hstack((rp[ii]['resxy'][3],
                                     rp[ii]['phasexy'][3]))
-                rmslsttm=np.hstack((rp[ii]['resyx'][3],
+                rmslisttm=np.hstack((rp[ii]['resyx'][3],
                                     rp[ii]['phaseyx'][3]))
-                rmste=np.sqrt(np.sum(ms**2 for ms in rmslstte)/len(rmslstte))
-                rmstm=np.sqrt(np.sum(ms**2 for ms in rmslsttm)/len(rmslsttm))
-                rmstelst.append('{0} rms={1:.3f}'.format(jj, rmste))
-                rmstmlst.append('{0} rms={1:.3f}'.format(jj, rmstm))
+                rmste=np.sqrt(np.sum(ms**2 for ms in rmslistte)/len(rmslistte))
+                rmstm=np.sqrt(np.sum(ms**2 for ms in rmslisttm)/len(rmslisttm))
+                rmstelist.append('{0} rms={1:.3f}'.format(jj, rmste))
+                rmstmlist.append('{0} rms={1:.3f}'.format(jj, rmstm))
                 rmstestr.append(rmste)
                 rmstmstr.append(rmstm)
                 #plot resistivity
@@ -5224,22 +5250,22 @@ class PlotAllResponses(object):
                                      ms=self.ms,
                                      color='k',
                                      mfc='k')
-                    rlstte = [r1]
-                    rlsttm = [r2]
+                    rlistte = [r1]
+                    rlisttm = [r2]
             
                 mrxy = [np.where(rp[ii]['resxy'][2]!=0)[0]]
                 mryx = [np.where(rp[ii]['resyx'][2]!=0)[0]]
                 r3, = axrte.loglog(self.period[mrxy],
                                    10**rp[ii]['resxy'][2][mrxy],
                                    ls='-',
-                                   color=color_lst[jj])
+                                   color=color_list[jj])
                 r4, = axrtm.loglog(self.period[mryx],
                                    10**rp[ii]['resyx'][2][mryx],
                                     ls='-',
-                                    color=color_lst[jj])
+                                    color=color_list[jj])
             
-                rlstte.append(r3)
-                rlsttm.append(r4)
+                rlistte.append(r3)
+                rlisttm.append(r4)
                                     
                 #plot phase
                 #cut out missing data points first
@@ -5267,11 +5293,11 @@ class PlotAllResponses(object):
                 mpyx = [np.where(rp[ii]['phaseyx'][2]!=0)[0]]
                 axpte.semilogx(self.period[mpxy],
                                rp[ii]['phasexy'][2][mpxy],
-                             ls='-',color=color_lst[jj])
+                             ls='-',color=color_list[jj])
                 axptm.semilogx(self.period[mpyx],
                                rp[ii]['phaseyx'][2][mpyx],
                                  ls='-',
-                                 color=color_lst[jj])
+                                 color=color_list[jj])
                            
             axrte.grid(True, alpha=.4)
             axrtm.grid(True, alpha=.4)
@@ -5320,7 +5346,7 @@ class PlotAllResponses(object):
             plt.suptitle(station,fontsize=self.font_size+2,fontweight='bold')
             plt.show()
             
-        self.fig_lst.append({'station':station, 'fig':fig, 'axrte':axrte,
+        self.fig_list.append({'station':station, 'fig':fig, 'axrte':axrte,
                              'axrtm':axrtm, 'axpte':axpte, 'axptm':axptm})
             
     def redraw_plot(self):
@@ -5395,7 +5421,7 @@ class PlotAllResponses(object):
         if not os.path.exists(save_path):
             os.mkdir(save_path)
             
-        for fdict in self.fig_lst:
+        for fdict in self.fig_list:
             svfn = '{0}_responses.{1}'.format(fdict['station'], file_format)
             fdict['fig'].savefig(os.path.join(save_path, svfn), 
                                  dpi=self.fig_dpi, orientation=orientation)
@@ -5445,7 +5471,7 @@ class PlotModel(object):
         
         **resmodel** : array of resistivity values for occam2d model
         
-        **rp_lst** :  list of dictionaries with keys
+        **rp_list** :  list of dictionaries with keys
         
                 * *station* : string
                              station name
@@ -5480,7 +5506,7 @@ class PlotModel(object):
         
         **ploty** : array of nodes for mesh in y-direction
         
-        **offset_lst** : list of station offsets from data file
+        **offset_list** : list of station offsets from data file
         
         **iter_fn** : full path of iteration file
         
@@ -5561,16 +5587,16 @@ class PlotModel(object):
     =================== ======================================================
     """
 
-    def __init__(self, meshx, meshy, resmodel, rp_lst, plotx, ploty, 
-                 offset_lst, iter_fn, idict, rows, cols, **kwargs):
+    def __init__(self, meshx, meshy, resmodel, rp_list, plotx, ploty, 
+                 offset_list, iter_fn, idict, rows, cols, **kwargs):
         
         self.meshx = meshx
         self.meshy = meshy
         self.resmodel = resmodel
-        self.rp_lst = rp_lst
+        self.rp_list = rp_list
         self.plotx = plotx
         self.ploty = ploty
-        self.offset_lst = offset_lst
+        self.offset_list = offset_list
         self.iter_fn = iter_fn
         self.idict = idict
         self.row = rows
@@ -5707,7 +5733,7 @@ class PlotModel(object):
         #set the offsets of the stations and plot the stations
         #need to figure out a way to set the marker at the surface in all
         #views.
-        for rpdict in self.rp_lst:
+        for rpdict in self.rp_list:
             #plot the station marker
             #plots a V for the station cause when you use scatter the spacing
             #is variable if you change the limits of the y axis, this way it
@@ -5739,14 +5765,14 @@ class PlotModel(object):
         
         #set the initial limits of the plot to be square about the profile line  
         if self.ylimits == None:  
-            ax.set_ylim(abs(max(self.offset_lst)-min(self.offset_lst))/dfactor,
+            ax.set_ylim(abs(max(self.offset_list)-min(self.offset_list))/dfactor,
                         -self.ypad*pfactor)
         else:
             ax.set_ylim(self.ylimits[1]*pfactor,
                         (self.ylimits[0]-self.ypad)*pfactor)
         if self.xlimits == None:
-            ax.set_xlim(min(self.offset_lst)/dfactor-(self.xpad*pfactor),
-                         (max(self.offset_lst)/dfactor+(self.xpad*pfactor)))
+            ax.set_xlim(min(self.offset_list)/dfactor-(self.xpad*pfactor),
+                         (max(self.offset_list)/dfactor+(self.xpad*pfactor)))
         else:
             ax.set_xlim(self.xlimits[0]*pfactor, self.xlimits[1]*pfactor)
             
@@ -5792,88 +5818,88 @@ class PlotModel(object):
         #making an extended list seperated by None's speeds up the plotting
         #by as much as 99 percent, handy
         if self.femesh == 'on':
-            row_line_xlst = []
-            row_line_ylst = []
+            row_line_xlist = []
+            row_line_ylist = []
             for xx in self.plotx/dfactor:
-                row_line_xlst.extend([xx,xx])
-                row_line_xlst.append(None)
-                row_line_ylst.extend([0, self.ploty[0]/dfactor])
-                row_line_ylst.append(None)
+                row_line_xlist.extend([xx,xx])
+                row_line_xlist.append(None)
+                row_line_ylist.extend([0, self.ploty[0]/dfactor])
+                row_line_ylist.append(None)
             
             #plot column lines (variables are a little bit of a misnomer)
-            ax.plot(row_line_xlst, 
-                    row_line_ylst, 
+            ax.plot(row_line_xlist, 
+                    row_line_ylist, 
                     color='k', 
                     lw=.5)
 
-            col_line_xlst = []
-            col_line_ylst = []            
+            col_line_xlist = []
+            col_line_ylist = []            
             for yy in self.ploty/dfactor:
-                col_line_xlst.extend([self.plotx[0]/dfactor, 
+                col_line_xlist.extend([self.plotx[0]/dfactor, 
                                       self.plotx[-1]/dfactor])
-                col_line_xlst.append(None)
-                col_line_ylst.extend([yy, yy])
-                col_line_ylst.append(None)
+                col_line_xlist.append(None)
+                col_line_ylist.extend([yy, yy])
+                col_line_ylist.append(None)
             
             #plot row lines (variables are a little bit of a misnomer)
-            ax.plot(col_line_xlst, 
-                    col_line_ylst,
+            ax.plot(col_line_xlist, 
+                    col_line_ylist,
                     color='k',
                     lw=.5)
                         
         if self.femesh_triangles == 'on':
-            row_line_xlst = []
-            row_line_ylst = []
+            row_line_xlist = []
+            row_line_ylist = []
             for xx in self.plotx/dfactor:
-                row_line_xlst.extend([xx,xx])
-                row_line_xlst.append(None)
-                row_line_ylst.extend([0, self.ploty[0]/dfactor])
-                row_line_ylst.append(None)
+                row_line_xlist.extend([xx,xx])
+                row_line_xlist.append(None)
+                row_line_ylist.extend([0, self.ploty[0]/dfactor])
+                row_line_ylist.append(None)
                 
             #plot columns
-            ax.plot(row_line_xlst, 
-                    row_line_ylst, 
+            ax.plot(row_line_xlist, 
+                    row_line_ylist, 
                     color='k', 
                     lw=.5)
 
-            col_line_xlst = []
-            col_line_ylst = []            
+            col_line_xlist = []
+            col_line_ylist = []            
             for yy in self.ploty/dfactor:
-                col_line_xlst.extend([self.plotx[0]/dfactor, 
+                col_line_xlist.extend([self.plotx[0]/dfactor, 
                                       self.plotx[-1]/dfactor])
-                col_line_xlst.append(None)
-                col_line_ylst.extend([yy, yy])
-                col_line_ylst.append(None)
+                col_line_xlist.append(None)
+                col_line_ylist.extend([yy, yy])
+                col_line_ylist.append(None)
             
             #plot rows
-            ax.plot(col_line_xlst, 
-                    col_line_ylst,
+            ax.plot(col_line_xlist, 
+                    col_line_ylist,
                     color='k',
                     lw=.5)
 
-            diag_line_xlst = []
-            diag_line_ylst = []
+            diag_line_xlist = []
+            diag_line_ylist = []
             for xi, xx in enumerate(self.plotx[:-1]/dfactor):
                 for yi, yy in enumerate(self.ploty[:-1]/dfactor):
-                    diag_line_xlst.extend([xx, self.plotx[xi+1]/dfactor])
-                    diag_line_xlst.append(None)
-                    diag_line_xlst.extend([xx, self.plotx[xi+1]/dfactor])
-                    diag_line_xlst.append(None)
+                    diag_line_xlist.extend([xx, self.plotx[xi+1]/dfactor])
+                    diag_line_xlist.append(None)
+                    diag_line_xlist.extend([xx, self.plotx[xi+1]/dfactor])
+                    diag_line_xlist.append(None)
                     
-                    diag_line_ylst.extend([yy, self.ploty[yi+1]/dfactor])
-                    diag_line_ylst.append(None)
-                    diag_line_ylst.extend([self.ploty[yi+1]/dfactor, yy])
-                    diag_line_ylst.append(None)
+                    diag_line_ylist.extend([yy, self.ploty[yi+1]/dfactor])
+                    diag_line_ylist.append(None)
+                    diag_line_ylist.extend([self.ploty[yi+1]/dfactor, yy])
+                    diag_line_ylist.append(None)
             
             #plot diagonal lines.
-            ax.plot(diag_line_xlst, 
-                    diag_line_ylst,
+            ax.plot(diag_line_xlist, 
+                    diag_line_ylist,
                     color='k',
                     lw=.5)
         
         #plot the regularization mesh
         if self.regmesh == 'on':
-            linelst = []
+            linelist = []
             for ii in range(len(self.rows)):
                 #get the number of layers to combine
                 #this index will be the first index in the vertical direction
@@ -5890,7 +5916,7 @@ class PlotModel(object):
                                 color='b',
                                 lw=.5)
                                  
-                linelst.append(yline)
+                linelist.append(yline)
 
                 #loop over the number of amalgamated blocks
                 for jj in range(len(self.cols[ii])):
@@ -5908,7 +5934,7 @@ class PlotModel(object):
                                          self.ploty[-ny2]/dfactor],
                                         color='b',
                                         lw=.5)
-                        linelst.append(xline)
+                        linelist.append(xline)
                     except IndexError:
                         pass
                     
@@ -6079,6 +6105,7 @@ class PlotModel(object):
         """
         
         return ("Plots the resistivity found by Occam2D")
+
     
 #==============================================================================
 # plot L2 curve of iteration vs rms
@@ -6414,9 +6441,9 @@ class PlotDepthSlice():
     ----------
         **resmodel** : array of resistivity values for occam2d model
         
-        **offset_lst** : list of offsets of stations from data file
+        **offset_list** : list of offsets of stations from data file
         
-        **station_lst** : list of all stations from data file
+        **station_list** : list of all stations from data file
         
         **plotx** : location of mesh nodes in x-direction
         
@@ -6428,7 +6455,7 @@ class PlotDepthSlice():
     ========================= =================================================
     depth_range               depth range to plot (min, max) in meters
     fig_dpi                   figure resolution in dots-per-inch 
-    fig_lst                   list of dictionaries with key words
+    fig_list                   list of dictionaries with key words
                               station --> station name
                               fig --> matplotlib.figure instance
                               ax -->  matplotlib.axes instance          
@@ -6437,7 +6464,7 @@ class PlotDepthSlice():
     font_size                 size of axes ticklabel font in points
     line_color                color of line indicating resistivity  vs depth  
     lw                        line width
-    offset_lst                list of offsets for stations
+    offset_list                list of offsets for stations
     plot_num                  [ '1' | 'all' ] 
                               '1' --> to plot depth slice in individual figure
                               'all' --> to plot all in one figure
@@ -6450,9 +6477,9 @@ class PlotDepthSlice():
     plotx                     locations of mesh nodes in x-direction
     ploty                     locations of mesh nodes in y-direction
     resmodel                  array of resistivity values from model  
-    slst                      list of indicies from plotx corresponding to
+    slist                      list of indicies from plotx corresponding to
                               station location 
-    station_lst               list of all stations from data file
+    station_list               list of all stations from data file
     subplot_bottom            subplot spacing from bottom  
     subplot_left              subplot spacing from left  
     subplot_right             subplot spacing from right
@@ -6476,11 +6503,11 @@ class PlotDepthSlice():
     =================== ======================================================
     """
     
-    def __init__(self, resmodel, offset_lst, station_lst, plotx, ploty, 
+    def __init__(self, resmodel, offset_list, station_list, plotx, ploty, 
                  **kwargs):
         self.resmodel = resmodel
-        self.offset_lst = offset_lst
-        self.station_lst = station_lst
+        self.offset_list = offset_list
+        self.station_list = station_list
         self.plotx = plotx
         self.ploty = ploty
         
@@ -6503,7 +6530,7 @@ class PlotDepthSlice():
         self.fig_num = kwargs.pop('fig_num', 1)
         self.fig_size = kwargs.pop('fig_size', [6, 6])
         self.fig_dpi = kwargs.pop('dpi', 300)
-        self.fig_lst = []
+        self.fig_list = []
         
         self.lw = kwargs.pop('lw', 1)
         self.line_color = kwargs.pop('line_color', 'b')
@@ -6526,15 +6553,15 @@ class PlotDepthSlice():
 
         #get stations to plot
         if self.plot_type == '1':
-            pstation_lst = np.arange(len(self.station_lst))
+            pstation_list = np.arange(len(self.station_list))
         else:
-            pstation_lst = []
+            pstation_list = []
             if type(self.plot_type) is not list:
                 self.plot_type = [self.plot_type]
             for ps in self.plot_type:
-                for ii, ss in enumerate(self.station_lst):
+                for ii, ss in enumerate(self.station_list):
                     if ss.find(ps) == 0:
-                        pstation_lst.append(ii)
+                        pstation_list.append(ii)
                                   
         #get the average x-spacing within the station region, occam2d pads by 
         #7 cells by default        
@@ -6543,12 +6570,12 @@ class PlotDepthSlice():
                                              len(self.plotx)-self.x_padding)]))
         
         #get the station indices to extract from the model
-        self.slst = []
-        for ff in pstation_lst:
-            offset = self.offset_lst[ff]
+        self.slist = []
+        for ff in pstation_list:
+            offset = self.offset_list[ff]
             for ii, xx in enumerate(self.plotx):
                 if offset >= xx-self.xavg/2. and offset <= xx+self.xavg/2.:
-                   self.slst.append(ii)
+                   self.slist.append(ii)
         
         #set some figure properties to use the maiximum space 
         plt.rcParams['font.size'] = self.font_size
@@ -6564,9 +6591,9 @@ class PlotDepthSlice():
                                   dpi=self.fig_dpi)
             plt.clf()
             
-            ns = len(self.slst)
+            ns = len(self.slist)
             #plot the depth section for each station        
-            for ii, ss in enumerate(self.slst):
+            for ii, ss in enumerate(self.slist):
                 ax = fig.add_subplot(1, ns, ii+1)
                 
                 #plot resistivity vs depth
@@ -6589,7 +6616,7 @@ class PlotDepthSlice():
                 ax.set_ylim(self.depth_range[1]/dfactor, 
                             self.depth_range[0]/dfactor)
                 
-                ax.set_title(self.station_lst[pstation_lst[ii]],
+                ax.set_title(self.station_list[pstation_list[ii]],
                              fontdict={'size':self.font_size+2,
                                        'weight':'bold'})
                 if ii == 0:
@@ -6606,12 +6633,12 @@ class PlotDepthSlice():
                 ax.set_xlim(10**self.resmodel.min(), 10**self.resmodel.max())
                 
             plt.show()
-            self.fig_lst.append({'fig':fig, 
+            self.fig_list.append({'fig':fig, 
                                  'ax':ax, 
-                                 'station':self.station_lst[pstation_lst[ii]]})
+                                 'station':self.station_list[pstation_list[ii]]})
         else:
             #plot the depth section for each station        
-            for ii,ss in enumerate(self.slst):
+            for ii,ss in enumerate(self.slist):
                 fig = plt.figure(ii+1, self.fig_size, dpi=self.fig_dpi)
                 plt.clf()
                 ax = fig.add_subplot(1,1,1)
@@ -6635,7 +6662,7 @@ class PlotDepthSlice():
                 ax.set_ylim(self.depth_range[1]/dfactor, 
                             self.depth_range[0]/dfactor)
                 
-                ax.set_title(self.station_lst[pstation_lst[ii]],
+                ax.set_title(self.station_list[pstation_list[ii]],
                              fontdict={'size':self.font_size+2,
                                        'weight':'bold'})    
                 ax.set_ylabel('Depth ({0})'.format(self.yunits),
@@ -6647,9 +6674,9 @@ class PlotDepthSlice():
                 ax.grid(True, alpha=.3, which='both')
                 
                 plt.show()
-                self.fig_lst.append({'fig':fig, 
+                self.fig_list.append({'fig':fig, 
                                      'ax':ax, 
-                                 'station':self.station_lst[pstation_lst[ii]]})
+                                 'station':self.station_list[pstation_list[ii]]})
                                  
     def redraw_plot(self):
         """
@@ -6721,7 +6748,7 @@ class PlotDepthSlice():
         if not os.path.exists(save_path):
             os.mkdir(save_path)
             
-        for fdict in self.fig_lst:
+        for fdict in self.fig_list:
             svfn = '{0}_DepthSlice.{1}'.format(fdict['station'], fig_fmt)
             fdict['fig'].savefig(os.path.join(save_path, svfn), 
                                  dpi=self.fig_dpi)
