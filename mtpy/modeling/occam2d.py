@@ -1,14 +1,26 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Aug 23 11:54:38 2011
+Spin-off from 'occamtools'
+(Created August 2011, re-written August 2013)
 
-@author: a1185872
+Tools for Occam2D
+
+authors: JP/LK
 
 
 Classes:
-    - OccamPointPicker
-    - Occam2DData
-    - Occam2DModel
+    - Data
+    - Model
+    - Setup
+    - Run
+    - Plot
+    - Mask
+
+
+
+
+    - PointPicker
+
     - PlotOccam2DResponse
     - PlotPseudoSection
     - PlotAllResponses
@@ -52,51 +64,143 @@ import mtpy.utils.conversions as MTcv
 occamdict = {'1':'resxy','2':'phasexy','3':'realtip','4':'imagtip','5':'resyx',
              '6':'phaseyx'}
 
+
+class Setup():
+    """
+    Dealing with the setup  for an Occam2D run. Generate Startup, Imodel, Mesh files.
+    Calling Data() for generating a suitable input data file.
+
+    Setting up those files within one (pre-determined) folder, so Occam can be 
+    started within it straight away
+
+    """
+
+class Data():
+    """
+    Handling input data.
+    Generation of suitable Occam data file(s).
+    Reading data files.
+    Allow merging of data files and masking of data points (connect with 'Plot()'
+    for this)
+    """
+
+
+class Model():
+    """
+    Handling of Occam output files.
+    Reading, writing, renaming of 'ITER' and 'RESP' files. 
+    """
+
+
+class Plot():
+    """
+    Graphical representations of in- and output data.
+    Provide gui for masking points.
+    Represent output models
+    """
+
+class Run():
+    """
+    Run Occam2D by system call.
+    Future plan: implement Occam in Python and call it from here directly.
+    """
+
+
+class Mask():
+    """
+    Allow masking of points from data file (effectively commenting them out, 
+    so the process is reversable)
+    """
+
+
+
+
+
 def getdatetime():
 
     return time.asctime(time.gmtime())
 
 
-def makestartfiles(parameter_dict):
+def makestartfiles(edipath, output_directory=None, parameters=None):
     """
-    create a startup file from a parameter dictionary with keys:
+    Create start files for an Occam2D run:
+
+    input:
+    - path to EDI files
+
+    optional:
+    - output_directory
+    [same as edi path, if not given]
+    - parameters
+    [Default values are taken, if not given]
+
+
+    output:
+    - "STARTUP"
+    - "MESH"
+    - "INMODEL"
+
+
+    The "parameters" argument is a dictionary with keys:
     
     ======================= ===================================================
     keys                      description
     ======================= ===================================================
-    n_sideblockelements     number of padding cells in the horizontal direction
-    n_bottomlayerelements   number of padding cells in the vertical direction
-    itform                  iteration form
-    description             desctription of inversion
-    datetime                date and time of inversion run
-    iruf                    roughness type
-    idebug                  debug level
-    nit                     first iteration number
-    pmu                     first mu value
-    rlast                   initial roughness value
-    tobt                    starting misfit value
-    ifftol                  misfit reached
+    n_sideblockelements     number of padding cells in the horizontal direction [7]
+    n_bottomlayerelements   number of padding cells in the vertical direction [4]
+    iter_format             iteration file format descriptor ["OCCAMITER"]
+    description             description of inversion ["generic MTpy setup"]
+    datetime_string         date and time of inversion run [system time]
+    roughness_type          roughness type [1]
+    debug_level             debug level [1]
+    no_iteration            number of first iteration [0]
+    mu_start                first mu value [5]
+    roughness_start         initial roughness value [1e7]
+    misfit_start            starting misfit value [???]
+    reached_misfit          flag for reached misfit [0]
+
+    mode                    modes to invert for (TE/TM/[BOTH])
+    data_title              Title for data file [path of EDI files]
+    strike                  Strike angle (data are rotated)  [0]
+    res_error               Uncertainty of resistivity in per cent [10]
+    phase_error             Uncertainty of phase in per cent [5] 
+
     ================ ==========================================================
     """
 
-    read_datafile(parameter_dict)
+    parameter_dict = {}
 
     parameter_dict['n_sideblockelements'] = 7
     parameter_dict['n_bottomlayerelements'] = 4
 
-    parameter_dict['itform'] = 'not specified'
-    parameter_dict['description'] = 'N/A'
+    parameter_dict['iter_format'] = 'OCCAM_ITER'
+    parameter_dict['description'] = 'generic MTpy setup'
 
-    parameter_dict['datetime'] = getdatetime()
+    parameter_dict['datetime_string'] = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
     
 
-    parameter_dict['iruf'] = 1
-    parameter_dict['idebug'] = 1
-    parameter_dict['nit'] = 0
-    parameter_dict['pmu'] = 5.0
-    parameter_dict['rlast'] = 1.0E+07
-    parameter_dict['tobt'] = 100.
-    parameter_dict['ifftol'] = 0
+    parameter_dict['roughness_type'] = 1
+    parameter_dict['debug_level'] = 1
+    parameter_dict['no_iteration'] = 0
+    parameter_dict['mu_start'] = 5.0
+    parameter_dict['roughness_start'] = 1.0E+07
+    parameter_dict['misfit_start'] = 100.
+    parameter_dict['reached_misfit'] = 0
+
+    if parameters is not None:
+        for key in parameter_dict.keys():
+            if key in parameters:
+                parameter_dict[key] = parameters[key]
+
+
+    datafn = make2DdataFile(parameter_dict)
+
+
+
+
+
+    read_datafile(parameter_dict)
+
     
     blocks_elements_setup(parameter_dict)
     
@@ -930,9 +1034,9 @@ class OccamPointPicker(object):
             print 'Closed figure ',self.fignum  
 
             
-class Occam2DData(object):
+class Data():
     """
-    Occam2DData covers all aspects of dealing with data for an occam2d 2D
+    occam2d.Data covers all aspects of dealing with data for an occam2d 2D
     inversion using the code of Constable et al. [1987] and deGroot-Hedlin and 
     Constable [1990] from Scripps avaliable at 
     http://marineemlab.ucsd.edu/Projects/occam2d/2DMT/index.html.
