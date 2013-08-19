@@ -27,7 +27,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
     Arguments:
     ----------
     
-        **filenamelst** : list of strings
+        **fn_lst** : list of strings
                           full paths to .edi files to plot
                           
         **z_object** : class mtpy.core.z.Z
@@ -99,9 +99,9 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                       * 'ew' -> East-West line
                       *Default* is 'ns'
         
-        **stationid** : tuple or list 
+        **station_id** : tuple or list 
                         start and stop of station name indicies.  
-                        ex: for MT01dr stationid=(0,4) will be MT01
+                        ex: for MT01dr station_id=(0,4) will be MT01
         
         **rotz** : float or np.ndarray
                    angle in degrees to rotate the data clockwise positive.
@@ -293,7 +293,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         -rot_z                rotates the data by this angle assuming North is
                               0 and angle measures clockwise
                               
-        -stationid            index [min, max] to reaad station name
+        -station_id            index [min, max] to reaad station name
         -stationlst           list of stations plotted
         -title                title of figure
         -tscale               temporal scale of y-axis ('frequency' | 'period')
@@ -369,7 +369,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         self.fig_size = kwargs.pop('fig_size', [6, 6])
         self.linedir = kwargs.pop('linedir', 'ew')
         self.font_size = kwargs.pop('font_size', 7)
-        self.stationid = kwargs.pop('stationid', [0,4])
+        self.station_id = kwargs.pop('station_id', [0,4])
         self.ystep = kwargs.pop('ystep', 4)
         self.xstep = kwargs.pop('xstep', 1)
         self.xlimits = kwargs.pop('xlimits', None)
@@ -471,7 +471,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         #plot phase tensor ellipses
         for ii, mt in enumerate(self.mt_lst):
             self.stationlst.append(
-                              mt.station[self.stationid[0]:self.stationid[1]])
+                              mt.station[self.station_id[0]:self.station_id[1]])
             
             #set the an arbitrary origin to compare distance to all other 
             #stations.
@@ -926,8 +926,8 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                 tlst = mt.frequency
  
             try:
-                stationstr = '{0:^8}'.format(mt.station[self.stationid[0]:\
-                                                    self.stationid[1]])
+                stationstr = '{0:^8}'.format(mt.station[self.station_id[0]:\
+                                                    self.station_id[1]])
             except AttributeError:
                 stationstr = '{0:^8}'.format(mt.station)
             
@@ -1238,13 +1238,13 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation)
+                             orientation=orientation, bbox_inches='tight')
             
         else:
             save_fn = os.path.join(save_fn, '_PTPseudoSection.'+
                                    file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation)
+                             orientation=orientation, bbox_inches='tight')
         
         if close_plot == 'y':
             plt.clf()

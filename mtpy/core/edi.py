@@ -139,7 +139,7 @@ class Edi(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, filename=None):
 
         """
             Initialise an instance of the Edi class.
@@ -147,7 +147,7 @@ class Edi(object):
             Initialise the attributes with None/empty dictionary
         """
 
-        self.filename = None
+        self.filename = filename
         self.infile_string = None
         self._head = {}
         self._info_string = None
@@ -159,6 +159,10 @@ class Edi(object):
         self._zrot = None
         self.Z = MTz.Z()
         self.Tipper = MTz.Tipper()
+        self.station = None
+        
+        if filename is not None:
+            self.readfile(self.filename)
 
     def readfile(self, fn, datatype = 'z'):
         """
@@ -171,7 +175,6 @@ class Edi(object):
             so the full impedance tensor is expected to be present. 
             Other possibilities are 'resphase' and 'spectra' - they exclude 
             the reading of a potentially present Z information.
-            TODO: 'spectra' - not implemented yet
 
 
         """
@@ -343,7 +346,7 @@ class Edi(object):
             return
         self.freq = 1./np.array(period_lst)
 
-    _period = property(_get_period, _set_period, 
+    period = property(_get_period, _set_period, 
                         doc='List of periods (values in seconds)')    
 
     #----------------number of freq-------------------------------------
@@ -481,7 +484,13 @@ class Edi(object):
         if not head_dict.has_key('elev'):
             head_dict['elev'] = 0.
 
+        try:
+            self.station = head_dict['dataid']
+        except KeyError:
+            print 'Did not find station name under dataid in HEAD'
+
         self._head = head_dict
+        
 
     #--------------Read Info----------------------------------------------
     def _read_info(self, edistring):
@@ -668,8 +677,8 @@ class Edi(object):
         compstrings = ['ZXX','ZXY','ZYX','ZYY']
         Z_entries = ['R','I','.VAR']
 
-        z_array = np.zeros((self.n_freq(),2,2),dtype=np.complex)
-        zerr_array = np.zeros((self.n_freq(),2,2),dtype=np.float)
+        z_array = np.zeros((self.n_freq(), 2, 2), dtype=np.complex)
+        zerr_array = np.zeros((self.n_freq(), 2, 2), dtype=np.float)
         z_dict = {}
 
         for idx_comp,comp in enumerate(compstrings):
@@ -928,7 +937,7 @@ class Edi(object):
         try:
             temp_string = _cut_sectionstring(edistring,'RHOROT')
         except:
-            lo_angles = list( np.zeros((self.n_freq())) )
+            lo_angles = list( np.zeros((self.n_freq())))
             self.zrot = lo_angles
             self.Z.rotation_angle = self.zrot
             if self.Tipper.tipper is not None:
@@ -1133,7 +1142,7 @@ class Edi(object):
             Write out the edi object into an EDI file.
         """
 
-        if len(fn) == 0 :
+        if len(fn) == 0:
             fn = None
         else:
             #see, if it's iterable
@@ -2306,6 +2315,9 @@ def _generate_edifile_string(edidict):
                         raise MTex.MTpyError_edi_file('Cannot write file - '+\
                           'required subsection "{0}" missing!'.format(section))
                     lo_vals = z_dict[section]
+                    #convert stddev into VAR:
+                    if zentry.lower()=='.var':
+                        lo_vals = [i**2 for i in lo_vals]
 
                     if ZROTflag == 1:
                         edistring += '>{0} ROT=ZROT // {1}\n'.format(section,
@@ -2343,6 +2355,9 @@ def _generate_edifile_string(edidict):
                         raise MTex.MTpyError_edi_file('Cannot write file -'+\
                           'required subsection "{0}" missing!'.format(section))
                     lo_vals = t_dict[section]
+                    #convert stddev into VAR:
+                    if tentry.lower()=='var':
+                        lo_vals = [i**2 for i in lo_vals]
 
                     if ZROTflag == 1:
                         edistring += '>{0} ROT=ZROT // {1}\n'.format(outsection,

@@ -25,12 +25,12 @@ import os.path as op
 
 #import pyrocko as pmseed
 
-import mtpy.utils.exceptions as EX
+import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
-import mtpy.utils.format as FT
-reload(FT)
-reload(EX)
-#reload(FH)
+import mtpy.utils.format as MTft
+reload(MTft)
+reload(MTex)
+reload(MTfh)
 
 #=================================================================
 
@@ -59,7 +59,7 @@ def convertfile_ts2miniseed(infile, outfile,channel=None, station = None, locati
         try:
             outfilename = writefile_pyrocko_singletrace(outfilename,station,channel,network,location, delta_t, t0, data)
         except:
-            raise EX.MTpyError_inputarguments('ERROR - could not write minSeed file : {0}'.format(outfilename))
+            raise MTeX.MTpyError_inputarguments('ERROR - could not write minSeed file : {0}'.format(outfilename))
 
     return outfilename
 
@@ -215,7 +215,7 @@ def convertfile_miniseed2ts(infile, outfile, unit=None, lat = None, lon = None, 
 
         if lat is not None:
             try:
-                lat = FT._assert_position_format('lat', lat)
+                lat = MTfT._assert_position_format('lat', lat)
             except:
                 lat = None
 
@@ -225,7 +225,7 @@ def convertfile_miniseed2ts(infile, outfile, unit=None, lat = None, lon = None, 
 
         if lon is not None:
             try:
-                lon = FT._assert_position_format('lon', lon)
+                lon = MTfT._assert_position_format('lon', lon)
             except:
                 lon = None
 
@@ -235,7 +235,7 @@ def convertfile_miniseed2ts(infile, outfile, unit=None, lat = None, lon = None, 
 
         if elev is not None:
             try:
-                elev = FT._assert_position_format('elev', elev)
+                elev = MTfT._assert_position_format('elev', elev)
             except:
                 elev = None
 
@@ -264,12 +264,12 @@ def readfile_obspy(infilename, trace = 0):
     
     infile = op.abspath(infilename)
     if not op.isfile(infile):
-        raise EX.MTpyError_inputarguments('ERROR - miniSeed file not existing: {0}'.format(infile))
+        raise MTeX.MTpyError_inputarguments('ERROR - miniSeed file not existing: {0}'.format(infile))
 
     try:
         ms_stream = read(infile)
     except:
-        raise EX.MTpyError_inputarguments('ERROR - File is not a valid miniSed file: {0}'.format(infile))
+        raise MTeX.MTpyError_inputarguments('ERROR - File is not a valid miniSed file: {0}'.format(infile))
 
 
     trace = ms_stream[trace]
@@ -302,10 +302,9 @@ def writefile_obspy_singletrace(outfilename,station,channel,network,location,
              'starttime' : t0}
     #define stream
     st = Stream([Trace(data=data, header=stats)])
-    return st
     if not outfilename.lower().endswith('.mseed'):
         outfilename += '.mseed'
-    print outfilename
+    
     
 
     #save to file

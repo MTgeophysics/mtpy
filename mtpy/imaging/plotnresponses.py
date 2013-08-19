@@ -58,6 +58,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         **fig_num** : int
                      figure number
                      *default* is 1
+        **fig_size** : [width, height] of figure size in inches
         
         **rot_z** : float or np.ndarray
                    rotation angle of impedance tensor (deg or radians), 
@@ -146,6 +147,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
     -----------
         -mt_lst         list of mtplot.MTplot objects made from inputs 
         -fignum         figure number for plotting
+        -fig_size       figure size in inches [width, height]
         -plotnum        plot type, see arguments for details 
         -title          title of the plot, *default* is station name
         -dpi            Dots-per-inch resolution of plot, *default* is 300
@@ -295,6 +297,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         self.plot_style = kwargs.pop('plot_style', '1')
         self.plot_title = kwargs.pop('plot_title', None)
         self.fig_dpi = kwargs.pop('fig_dpi', 300)
+        self.fig_size = kwargs.pop('fig_size', None)
         
         #if rotation angle is an int or float make an array the length of 
         #mt_lst for plotting purposes
@@ -536,9 +539,12 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             
             #--> plot from edi's if given, don't need to rotate because
             #    data has already been rotated by the funcion _set_rot_z
+            if self.fig_size is None:
+                self.fig_size = [6, 6]
             for ii, mt in enumerate(self.mt_lst, 1):
                 p1 = plotresponse(mt_object=mt, 
-                                  fig_num=ii, 
+                                  fig_num=ii,
+                                  fig_size=self.fig_size,
                                   plot_num=self.plot_num, 
                                   fig_dpi=self.fig_dpi,  
                                   plot_yn='n',
@@ -626,11 +632,12 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             fontdict = {'size':self.font_size+2, 'weight':'bold'}
             
             #set figure size according to what the plot will be.
-            if self.plot_num == 1 or self.plot_num == 3:
-                self.fig_size = [ns*4, 6]
-                
-            elif self.plot_num == 2:
-                self.fig_size = [ns*8, 6]
+            if self.fig_size is None:
+                if self.plot_num == 1 or self.plot_num == 3:
+                    self.fig_size = [ns*4, 6]
+                    
+                elif self.plot_num == 2:
+                    self.fig_size = [ns*8, 6]
                 
             #make a figure instance
             self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
@@ -1539,12 +1546,13 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             fontdict = {'size':self.font_size+1, 'weight':'bold'}
             
             #set figure size according to what the plot will be.
-            if self.plot_num == 1 or self.plot_num == 3:
-                self.fig_size = [5, 7]
-                
-            elif self.plot_num == 2:
-                self.fig_size = [6, 6]
-                nrows += 1
+            if self.fig_size is None:
+                if self.plot_num == 1 or self.plot_num == 3:
+                    self.fig_size = [5, 7]
+                    
+                elif self.plot_num == 2:
+                    self.fig_size = [6, 6]
+                    nrows += 1
                 
             #make a figure instance
             self.fig = plt.figure(self.fig_num, self.fig_size, 

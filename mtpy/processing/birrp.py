@@ -37,19 +37,23 @@ import mtpy.utils.exceptions as MTex
 import mtpy.utils.format as MTft
 import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
-
 import mtpy.utils.misc as MTmc
+
 reload(MTcf)
 reload(MTft)
 reload(MTfh)
 
 #=================================================================
-
+#for time stamp differences:
+epsilon = 1e-5
+#=================================================================
 
 def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, 
-                           coherence_threshold = 0.5, output_dir = None):
+                           coherence_threshold = 0.5, rr_station = None, 
+                           output_dir = None, starttime = None, endtime = None):
+
     """
-    Call BIRRP for 2 input and 2 output channels with the simplest setup. 
+    Call BIRRP for 2 input and 2 output channels with the simplemost setup. 
 
     Provide stationname and directory containing the data folders. Data must 
     be in 1-column ascii format, including one header line for identification 
@@ -62,6 +66,10 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
     If no output directory is specified, output files are put into a subfolder 
     of the source directory, named 'birrp_processed'.
 
+    Optionally, starttime and endtime can be given (in epoch seconds). If that
+    yields an interval which is smaller than the provided data, only that 
+    section is used.
+
     Additionally, a configuration file is created. It contains information 
     about the processing paramters for the station. Keys are generic for the 
     common parameters and named after BIRRP input keywords for the processing 
@@ -70,15 +78,19 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
     """
 
     if not op.isfile(birrp_exe):
-        raise MTex.MTpyError_inputarguments('birrp executable not found:'+\
-                                                       '{0}'.format(birrp_exe))
+        print '\n Error - Birrp executable not found: {0}'.format(birrp_exe)
+        raise MTex.MTpyError_inputarguments()
+
     if not op.isdir(ts_directory):
-        raise MTex.MTpyError_inputarguments('time series files directory not'+\
-                                            'existing: {0}'.format(ts_directory))
+        print '\n Error - time series files directory not existing: {0}'.format(ts_directory)
+        raise MTex.MTpyError_inputarguments()
 
     current_dir = op.abspath(os.curdir)
 
     wd = op.abspath(op.realpath(op.join(ts_directory,'birrp_processed')))
+    if rr_station is not None:
+        wd = op.abspath(op.realpath(op.join(ts_directory,'birrp_processed_rr')))
+
     if output_dir != None:
         output_dir = op.abspath(output_dir)
         if not op.isdir(output_dir) :
@@ -86,7 +98,7 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
                 os.makedirs(output_dir)
                 wd = output_dir
             except:
-                print 'Could not find or generate specified output '+\
+                print '\nWarning - Could not find or generate specified output '+\
                       'directory {0} - using default instead!'.format(output_dir)
         else:
             wd = output_dir 
@@ -95,15 +107,18 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
         try:
             os.makedirs(wd) 
         except:
-            raise MTex.MTpyError_file_handling('cannot create working directory:%s'%(wd))
+            print '\nError - cannot create working directory: {0}'.format(wd)
+            raise MTex.MTpyError_file_handling()
     
-    print "Successfully generated output directory", wd
+    print "\nFound/generated output directory: {0}".format(wd)
 
     os.chdir(wd)
 
-    inputstring, birrp_stationdict, inputfilename = generate_birrp_inputstring_simple(stationname, ts_directory, coherence_threshold)
+    inputstring, birrp_stationdict, inputfilename = generate_birrp_inputstring_simple(
+                                            stationname, rr_station, ts_directory, 
+                                            coherence_threshold,2, starttime, endtime)
 
-    print "generated inputstring and configuration dictionary for station {0}".format(stationname)
+    print "Inputstring and configuration dictionary generated for station {0}\n".format(stationname)
     #print inputstring
     #sys.exit()
     #correct inputstring for potential errorneous line endings due to strange operating systems:
@@ -120,7 +135,7 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
     # sys.stdout = logfile
     # sys.stderr =  logfile
 
-    print 'starting Birrp processing...'
+    print 'Start Birrp processing...'
     #os.system("{0} < {1}".format(birrp_exe,inputfilename))
 
     birrpprocess = subprocess.Popen(birrp_exe, stdin=subprocess.PIPE, stdout=logfile,stderr=logfile)
@@ -133,42 +148,52 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
     #sys.stderr = dummy2
     logfile.close()
 
-    print 'logfile closed: {0}'.format(logfile.name)
+    print '...Done!\nLogfile closed: {0}\n'.format(op.abspath(logfile.name))
 
     #generate a local configuration file, containing information about all BIRRP and station parameters
     #required for the header of the EDI file 
-    print out
-    print err
-    print 'generating configuration file containing the applied processing parameters'
-    station_config_file = '%s_birrpconfig.cfg'%(stationname)
+    # print out
+    # print err
+    print 'Generating configuration file containing the applied processing parameters...'
+    station_config_file = '{0}_birrpconfig.cfg'.format(stationname)
     MTcf.write_dict_to_configfile(birrp_stationdict, station_config_file)
+    print '...Done!'
     print 'Wrote BIRRP and time series configurations to file: {0}'.format(op.abspath(station_config_file))
 
     #go back to initial directory
     os.chdir(current_dir)
 
-    print '\n \t\tDONE !!!\n\n'
+    print '\n \t\tDONE !!!\n'
 
 
 
-def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_threshold, output_channels=2):
+def generate_birrp_inputstring_simple(stationname, rr_station, ts_directory, 
+                                        coherence_threshold, output_channels=2,
+                                        starttime=None, endtime=None):
 
     if not output_channels in [2,3]:
         raise MTex.MTpyError_inputarguments( 'Output channels must be 2 or 3' )
 
 
-    print 'setting basic input components,e.g. filenames, samplingrate,...'
-    input_filename, length, sampling_rate, birrp_stationdict = set_birrp_input_file_simple(stationname, ts_directory, output_channels, op.join(ts_directory,'birrp_wd'))
+    print '\nSetting basic input components,e.g. filenames, samplingrate,...\n'
+    input_filename, length, sampling_rate, birrp_stationdict = set_birrp_input_file_simple(
+                                    stationname, rr_station, ts_directory, output_channels, 
+                                    op.join(ts_directory,'birrp_wd'),
+                                    starttime, endtime)
 
-    print 'calculate optimal time window bisection parameters'
+    print '...Done!\n\nCalculating optimal time window bisection parameters...'
     longest_section, number_of_bisections = get_optimal_window_bisection(length, sampling_rate)
+    print '...Done!\n'
 
     birrp_stationdict['max_window_length'] = longest_section
     birrp_stationdict['n_bisections'] = number_of_bisections
     birrp_stationdict['coherence_threshold'] = coherence_threshold
 
-    #self referencing:
+    #for self referencing:
     birrp_stationdict['rr_station'] = birrp_stationdict['station']
+    #otherwise:
+    if rr_station is not None:
+        birrp_stationdict['rr_station'] = rr_station.upper()
 
     birrp_stationdict = MTmc.add_birrp_simple_parameters_to_dictionary(birrp_stationdict)
 
@@ -176,14 +201,38 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
     if output_channels == 2:
         birrp_stationdict['nout'] = 2
 
-        inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n%i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,input_filename)
+        inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n%s\n0\n1\n3\n2\n0'\
+                    '\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n%i\n4,3,4\n%s\n0'\
+                    '\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,longest_section,
+                        number_of_bisections,coherence_threshold,stationname,
+                        input_filename,length,input_filename)
+        if rr_station is not None:
+            inputstring = '0\n2\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n%s\n0\n1\n3\n'\
+                        '2\n0\n0\n0\n0\n0\n0\n0\n6,1,2,3,4\n%s\n0\n%i\n6,5,6\n%s'\
+                        '\n0\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,
+                            longest_section,number_of_bisections,
+                            coherence_threshold,stationname,input_filename,
+                            length,input_filename)
 
+    #TODO: check order of columns!!!
     elif output_channels == 3:
         birrp_stationdict['nout'] = 3
         birrp_stationdict['nz'] = 2
 
+        inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1\n3\n2'\
+                    '\n0\n0\n0\n0\n0\n0\n0\n5,1,2,5,3,4\n%s\n0\n\i\n5,3,4\n%s\n0'\
+                    '\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,longest_section,
+                        number_of_bisections,coherence_threshold,stationname,
+                        input_filename,length,stationname)
+        if rr_station is not None:
+            inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1'\
+                        '\n3\n2\n0\n0\n0\n0\n0\n0\n0\n7,1,2,5,3,4\n%s\n0\n\i\n'\
+                        '7,6,7\n%s\n0\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,
+                            longest_section,number_of_bisections,
+                            coherence_threshold,stationname,input_filename,
+                            length,stationname)
 
-        inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1\n3\n2\n0\n0\n0\n0\n0\n0\n0\n4,1,2,3,4\n%s\n0\n\i\n4,3,4\n%s\n0\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,longest_section,number_of_bisections,coherence_threshold,stationname,input_filename,length,stationname)
+
 
     string_file = op.join(ts_directory,'birrp_wd','birrp_input_string.txt')
     string_file = MTfh.make_unique_filename(string_file)
@@ -196,15 +245,28 @@ def generate_birrp_inputstring_simple(stationname, ts_directory, coherence_thres
 
 
 
-def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_directory = '.'):
+def set_birrp_input_file_simple(stationname, rr_station, ts_directory, 
+                                output_channels = 2, w_directory = '.', 
+                                starttime=None, endtime=None):
     """
-    File handling: collect longest possible input for BIRRP from different files for the given station name. Generate a new input file in the working directory and return the name of this file, as well as time series and processing properties in form of a dictionary. 
+    File handling: collect longest possible input for BIRRP from different files 
+    for the given station name. Cut out section, if start and/or end times are given.
+    Generate a new input file in the working directory and return the name of 
+    this file, as well as time series and processing properties in form of a 
+    dictionary. 
 
-    Scan all files in the directory by their headers: if the stationname matches, add the data file to the list.
-    Additionally read out channels and start-/end times. Find longest consecutive time available on all channels.
-    Then generate nx4/5 array for n consecutive time steps. Array in order Ex, Ey, Bx, By (,Bz) saved into file 'birrp_input_data.txt'
+    Scan all files in the directory by their headers: if the stationname matches, 
+    add the data file to the list. Additionally read out channels and start-/end 
+    times. Find longest consecutive time available on all channels.
+    Include remote reference station data, if rr_station is given.
+    Then generate n x 4/5 array for n consecutive time steps. Array in order 
+    Ex, Ey, Bx, By (,Bz) saved into file 'birrp_input_data.txt'
 
-    Output_channels determine the number of output channels: 2 for Ex, Ey - 3 for additional Bz
+    If remote reference is include, generate n x 6/7 array in order 
+    Ex, Ey, Bx, By (,Bz), remoteBx, remoteBy
+
+    Output_channels determine the number of output channels: 
+    "2" for Ex, Ey - "3" for additional Bz
 
     Output:
     - filename for birrp input data_in
@@ -215,128 +277,281 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
     """
 
 
-    lo_files = []
-    lo_channels = []
-    lo_starttimes = []
-    lo_endtimes = []
+    lo_station_files = []
+    lo_station_channels = []
+    lo_station_starttimes = []
+    lo_station_endtimes = []
+    
     lo_sampling_rates = []
 
+    lo_rr_files = []
+    lo_rr_channels = []
+    lo_rr_starttimes = []
+    lo_rr_endtimes = []
+   
 
-    channels =  ['ex', 'ey', 'bx', 'by']
+    #check for data from (primary) station:
+
+    station_channels =  ['ex', 'ey', 'bx', 'by']
+    rr_channels = ['bx', 'by']
+
     if output_channels == 3:
-        channels.append('bz')
+        station_channels.append('bz')
 
     for entry in os.listdir(ts_directory):
         fn = op.join(ts_directory,entry)
+        rr_station_flag = False 
+        
         if not op.isfile(fn):
             continue
-
-
         try:
             header = MTfh.read_ts_header(fn)
         except:
             continue
-
-        stationname_read = header['station']
+        stationname_read = header['station'].upper()
 
         if not stationname_read == stationname.upper():
-            continue
-        if not header['channel'] in channels:
-            continue
+            if rr_station is None:
+                continue
+            else:
+                if not stationname_read == rr_station.upper():
+                    continue
 
-        lo_files.append(fn)
+        if rr_station is not None:
+            if stationname_read == rr_station.upper():
+                rr_station_flag = True
 
+
+        if rr_station_flag is True:
+            if header['channel'].lower() in rr_channels:
                 
-        lo_channels.append(header['channel'])
+                lo_rr_channels.append(header['channel'].lower())
+                lo_rr_starttimes.append(float(header['t_min']))
+                ta_rr = np.arange(int(float(header['nsamples']))+1)/float(
+                                    header['samplingrate']) + float(header['t_min'])
+                ta_rr_endtime = ta_rr[-1]
+                lo_rr_endtimes.append(ta_rr_endtime)
+                lo_rr_files.append(fn)
+                
+                if stationname.upper() != rr_station.upper():
+                    continue
+            
+
+        if not header['channel'].lower() in station_channels:
+            continue
+        if not stationname_read == stationname.upper():
+            continue
+
+
+        lo_station_files.append(fn)
+                
+        lo_station_channels.append(header['channel'].lower())
         lo_sampling_rates.append(float(header['samplingrate']))
-        lo_starttimes.append(float(header['t_min']))
-        ta = np.arange(int(float(header['nsamples']))+1)/float(header['samplingrate']) + float(header['t_min'])
-        endtime = ta[-1]
-        lo_endtimes.append(endtime)
+        lo_station_starttimes.append(float(header['t_min']))
+        ta_station = np.arange(int(float(header['nsamples']))+1)/float(header['samplingrate']) + float(header['t_min'])
+        ta_station_endtime = ta_station[-1]
+        lo_station_endtimes.append(ta_station_endtime)
 
-    if (len(lo_sampling_rates) == 0) or (len(lo_files) == 0):
-        sys.exit( '\n\tERROR - no MTpy data files found in directory {0} !!\n'.format(ts_directory))
-        
+ 
+    if (len(lo_sampling_rates) == 0) or (len(lo_station_files) == 0):
+        print '\n\tERROR - no MTpy data files for station'\
+            ' {1} found in directory {0} !!\n'.format(ts_directory,stationname)
+        raise MTex.MTpyError_ts_data()
+    
+    if rr_station is not None:
+        if len(lo_rr_files) == 0:
+            print '\n\tERROR - no MTpy data files for '\
+                        'remote reference station {1} found in directory {0} '\
+                                        '!!\n'.format(ts_directory,rr_station)
+            raise MTex.MTpyError_ts_data()
 
-    #take the most common sampling rate, if there are more than one:
+    #take the most common sampling rate, if there are more than one
+    #assuming typo in this case!!
     from collections import Counter
     tmp_dummy1 = lo_sampling_rates
     tmp_dummy2 = Counter(tmp_dummy1)
     sampling_rate = tmp_dummy2.most_common(1)[0][0]
+    del Counter
 
+    if not len(set(lo_station_channels)) in [4,5]:
+        sys.exit( 'Error - Missing data files in directory {0} - not all channels found'.format(ts_directory))
+    if not len(set(lo_rr_channels)) in [2]:
+        if rr_station is not None:
+            sys.exit( 'Error - Missing data files in directory {0} - not all remote channels'\
+                        ' found'.format(ts_directory))
 
-    if not len(set(lo_channels)) in [4,5]:
-        sys.exit( 'Missing data files in directory {0} - not all channels found'.format(ts_directory))
 
     #get a list with all existing time windows of consecutive data for all the channels
     lo_time_windows = []
-    #find sorting of the files by their start time:
-    starttime_sorting = np.argsort(lo_starttimes)
 
-    print 'start loop over all components...'
+    #find sorting of the files by their start time:
+    station_starttime_sorting = np.argsort(lo_station_starttimes)
+    rr_starttime_sorting = np.argsort(lo_rr_starttimes)
+
+    print '\tlooping over all components to find time windows with data...'
     #loop over the components:
-    for ch in channels:
+    for ch in station_channels:
         tmp_starttime = None
         tmp_endtime = None
 
         tmp_timewindows_list_per_channel = []
         
-        for st in starttime_sorting:
-            ch_read = lo_channels[st]
+        for sst in station_starttime_sorting:
+            ch_read = lo_station_channels[sst]
             if not ch == ch_read:
                 continue
 
             if tmp_starttime != None:
-                if (tmp_endtime != None) and (np.abs(lo_starttimes[st] - tmp_endtime) > 0.5*1./sampling_rate):
+                if (tmp_endtime != None) and (np.abs(lo_station_starttimes[sst] - tmp_endtime) > 0.5*1./sampling_rate):
                     tmp_timewindows_list_per_channel.append((tmp_starttime, tmp_endtime))
-                    tmp_starttime = lo_starttimes[st] 
+                    tmp_starttime = lo_station_starttimes[sst] 
             
             else:
-                tmp_starttime = lo_starttimes[st] 
-            tmp_endtime = lo_endtimes[st]
+                tmp_starttime = lo_station_starttimes[sst] 
+            tmp_endtime = lo_station_endtimes[sst]
         if tmp_starttime != None:
             tmp_timewindows_list_per_channel.append((tmp_starttime, tmp_endtime))
 
-
         lo_time_windows.append(tmp_timewindows_list_per_channel)
 
+    if rr_station is not None:
+        #loop over the remote reference time windows as well 
+        for ch in rr_channels:
+            tmp_starttime = None
+            tmp_endtime = None
 
-    print 'find longest common time window for all channels...'
+            tmp_timewindows_list_per_channel = []
+            
+            for rst in rr_starttime_sorting:
+                ch_read = lo_rr_channels[rst]
+                if not ch == ch_read:
+                    continue
+
+                if tmp_starttime != None:
+                    if (tmp_endtime != None) and (np.abs(lo_rr_starttimes[rst] - tmp_endtime) > 0.5*1./sampling_rate):
+                        tmp_timewindows_list_per_channel.append((tmp_starttime, tmp_endtime))
+                        tmp_starttime = lo_rr_starttimes[rst] 
+                
+                else:
+                    tmp_starttime = lo_rr_starttimes[rst] 
+                tmp_endtime = lo_rr_endtimes[rst]
+            if tmp_starttime != None:
+                tmp_timewindows_list_per_channel.append((tmp_starttime, tmp_endtime))
+
+            lo_time_windows.append(tmp_timewindows_list_per_channel)
+
+    print '\t...Done!\n\tFind longest common time window for all channels...'
     longest_common_time_window = MTmc.find_longest_common_time_window_from_list(lo_time_windows, sampling_rate)
+    print '\t...Done:{0}'.format(longest_common_time_window)
+
+    sampling_interval = (longest_common_time_window[1] - longest_common_time_window[0]) / longest_common_time_window[2]
+
+    try:
+        t_start_given = float(starttime)
+        if (t_start_given <  longest_common_time_window[0]) and np.abs(t_start_given - longest_common_time_window[0]) > epsilon:
+            print 'Warning - given start time is too small - using data start time'
+        if t_start_given >=  longest_common_time_window[1]  and np.abs(t_start_given - longest_common_time_window[1]) > epsilon:
+            print 'Warning - provided starttime {0} too large'\
+                ' - data set ends already at time {1}'.format(t_start_given,
+                                                longest_common_time_window[1])
+            raise
+        else:
+            t_start = max(longest_common_time_window[0],t_start_given)
+    except:
+        print 'Warning - given start time {0} could not be processed - '\
+                'using start time of data instead: {1} '.format(starttime,
+                                                longest_common_time_window[0])
+        t_start = longest_common_time_window[0]
 
 
-    #data array to hold time series for longest possible time window for the files given 
-    #order Ex, Ey, Bx, By (,Bz)
-    totalmemory, freememory = MTmc.show_memory()
-    print '\nTotal memory available: {0} MB - free: {1} MB'.format(totalmemory,freememory)
+    try:
+        t_end_given = float(endtime)
+        if t_end_given >  longest_common_time_window[1] and np.abs(t_end_given - longest_common_time_window[1]) > epsilon:
+            print 'Warning - given end time is too large - using data end time' 
+        if t_end_given <=  longest_common_time_window[0] and np.abs(t_end_given - longest_common_time_window[0]) > epsilon:
+            print 'Warning - provided end time {0} too small'\
+                ' - data set does not start until {1}'.format(endtime,
+                                                longest_common_time_window[0])
+            raise
+        else:
+            t_end = min(longest_common_time_window[1],t_end_given)
+    except:
+        print 'Warning - given end time {0} could not be processed - '\
+                'using end time of data instead: {1} '.format(endtime,
+                                                longest_common_time_window[1])
 
-    data = np.zeros((longest_common_time_window[2],output_channels+2))
+        t_end = longest_common_time_window[1]
+    
 
-    print 'Size of data array: {0} MB\n'.format(np.round(data.nbytes/1024.**2,2))
+    t_start  = np.round(t_start,5)
+    t_end    = np.round(t_end,5)
+
+
     #define time axis for referencing time and position in the output array
     #correct by rounding for internal floating point errors
     #ta = np.array([ np.round( i , -int(np.log10(1./sampling_rate))) for i in  np.linspace(*longest_common_time_window)])
     #alternative : no rounding
-    ta = np.linspace(*longest_common_time_window, endpoint=False)
+    ta_full_dataset = np.linspace(*longest_common_time_window, endpoint=False)
+ 
+    idx_start = np.abs(ta_full_dataset-t_start).argmin()
+    if t_start > ta_full_dataset[idx_start]:
+        idx_start += 1
 
-    print 'data array ({0}) and time axis ({1}) initialised...start looping over channels...'.format(data.shape, len(ta))
+    #careful to EXCLUDE last sample for t_end...time series ends before a sample!:
+    
+    #find index for value closest to end time on the time axis
+    #reduce by 1 for the sampling step (excluding last sample)  
+    idx_end = np.abs(ta_full_dataset - t_end).argmin()  
 
-    for idx_ch, ch in enumerate(channels):
-        for st in starttime_sorting:
-            ch_read = lo_channels[st]
+    #check, if index yields a time value, which is at least one sampling before the end time
+    if (t_end - sampling_interval) < ta_full_dataset[idx_end]:
+        #check, if variation is outside numerical uncertainty
+        if np.abs((t_end - sampling_interval) - ta_full_dataset[idx_end]) > epsilon:
+            #if so, reduce index one more to be safely inside the given interval
+            idx_end -= 1
+
+    #new time axis - potentially just a sub-section of the original,
+    #maximal the same size though
+    ta =  ta_full_dataset[idx_start: idx_end + 1]
+    
+
+    print '\n\tTime section set to {0} - {1} ({2} samples)'.format(ta[0],
+                                            ta[-1]+sampling_interval,len(ta))     
+
+    #print ta[0]-ta_full_dataset[0], ta[-1]-ta_full_dataset[0], len(ta)
+    
+    #data array to hold time series for longest possible time window for the files given 
+    #order Ex, Ey, Bx, By (,Bz)
+    #if remote reference set: Ex, Ey, Bx, By (,Bz), remoteBx, remoteBy
+    totalmemory, freememory = MTmc.show_memory()
+    print '\n\tTotal memory available: {0} MB - free: {1} MB'.format(totalmemory,freememory)
+
+    data = np.zeros((len(ta),output_channels+2))
+    if rr_station is not None:
+        data = np.zeros((len(ta),output_channels+4))
+
+    print '\tSize of data array: {0} MB\n'.format(np.round(data.nbytes/1024.**2,2))
+
+    print '\tData array (size: {0}) and time axis (length: {1}) initialised - '\
+            'looping over channels to read in data...\n'.format(data.shape, len(ta))
+
+    for idx_ch, ch in enumerate(station_channels):
+        for st in station_starttime_sorting:
+            ch_read = lo_station_channels[st]
             if not ch == ch_read:
                 continue
 
-            sampling_rate_read = lo_sampling_rates[st]
-            if not sampling_rate_read == sampling_rate:
-                continue
+            #sampling_rate_read = lo_sampling_rates[st]
+            #if not sampling_rate_read == sampling_rate:
+            #    continue
 
             #read in data
-            print 'reading data from file {0}'.format(lo_files[st])
-            data_in = np.loadtxt(lo_files[st])
-            print len(data_in), sampling_rate , lo_starttimes[st]
+            print '\t...reading station data from file {0}'.format(lo_station_files[st])
+            data_in = np.loadtxt(lo_station_files[st])
+            #print len(data_in), sampling_rate , lo_starttimes[st]
+            
             #define time axis for read in data
-            ta_file = np.arange(len(data_in))/sampling_rate + lo_starttimes[st]
+            ta_file = np.arange(len(data_in))/sampling_rate + lo_station_starttimes[st]
             #find overlap of overall time axis and the ta of current data set:
             for min_idx,dummy in enumerate(ta_file):
                 if ta[0]<= dummy <= ta[-1]:
@@ -344,11 +559,12 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
             for max_idx in range(-1,-(len(ta_file)+1), -1):
                 if ta[0]<=ta_file[max_idx] <= ta[-1]:
                     break
+
             #include the last sample:
             max_idx = len(ta_file) + max_idx + 1
-            print min_idx,max_idx
+            #print min_idx,max_idx
             overlap = ta_file[min_idx:max_idx]
-            print ta_file[0],ta_file[-1], '   ', ta[0],ta[-1]
+            #print ta_file[0],ta_file[-1], '   ', ta[0],ta[-1]
 
             #find starting index of overlap for current data file time axis
             idx_ta_file = min_idx#np.argmin(np.abs(ta_file - overlap[0]))
@@ -357,38 +573,84 @@ def set_birrp_input_file_simple(stationname, ts_directory, output_channels, w_di
             idx_overall_ta = np.argmin(np.abs(ta - overlap[0])) 
 
             #set data entries
-            print 'fill data from file into temporary array'
-            print idx_overall_ta, len(overlap), idx_ch, idx_ta_file
-            print data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch].shape, data_in[idx_ta_file:idx_ta_file+len(overlap)].shape
+            #print 'filling data from file into temporary array'
+            #print idx_overall_ta, len(overlap), idx_ch, idx_ta_file
+            #print data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch].shape, data_in[idx_ta_file:idx_ta_file+len(overlap)].shape
             data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch] = data_in[idx_ta_file:idx_ta_file+len(overlap)]
 
             gc.collect()
+
+    if rr_station is not None:
+        #same as before, just with the remote reference data files 
+        for idx_ch, ch in enumerate(rr_channels):
+            for st in rr_starttime_sorting:
+                ch_read = lo_rr_channels[st]
+                if not ch == ch_read:
+                    continue
+
+                print '\t...reading remote data from file {0}'.format(lo_rr_files[st])
+                data_in = np.loadtxt(lo_rr_files[st])
+                
+                #define time axis for read in data
+                ta_file = np.arange(len(data_in))/sampling_rate + lo_rr_starttimes[st]
+                #find overlap of overall time axis and the ta of current data set
+                #by this define minimum and maximum indices:
+                for min_idx,dummy in enumerate(ta_file):
+                    if ta[0]<= dummy <= ta[-1]:
+                        break
+                for max_idx in range(-1,-(len(ta_file)+1), -1):
+                    if ta[0]<=ta_file[max_idx] <= ta[-1]:
+                        break
+
+                #include the last sample:
+                max_idx = len(ta_file) + max_idx + 1
+                #print min_idx,max_idx
+                overlap = ta_file[min_idx:max_idx]
+                #print ta_file[0],ta_file[-1], '   ', ta[0],ta[-1]
+
+                #find starting index of overlap for current data file time axis
+                idx_ta_file = min_idx#np.argmin(np.abs(ta_file - overlap[0]))
+
+                #find starting index of overlap for overall time axis
+                idx_overall_ta = np.argmin(np.abs(ta - overlap[0])) 
+
+                #set data entries
+                #print 'filling data from file into temporary array'
+
+                data[idx_overall_ta:idx_overall_ta+len(overlap), 
+                                            idx_ch+2+output_channels] = data_in[
+                                            idx_ta_file:idx_ta_file+len(overlap)]
+
+                gc.collect()
+  
 
     #define output file for storing the output data array to:
     w_directory = op.abspath(op.join(os.curdir, w_directory))
     if not op.isdir(w_directory):
         os.makedirs(w_directory)
-        print 'created directory: {0}'.format(w_directory)
+        print '\t(Vreated temporary working directory: {0})'.format(w_directory)
 
-    print 'size of usable data arry: ',data.shape
+    #print '\tSize of usable data arry: ',data.shape
 
     try:
         outfn = op.join(w_directory, 'birrp_input_data.txt') 
         outfn = MTfh.make_unique_filename(outfn)
-        print 'save input data array to file: {0}'.format(outfn)
+        print '\n\tSave input data array to file: {0}...'.format(outfn)
         np.savetxt(outfn, data)
     except:
         raise MTex.MTpyError_file_handling('Error - cannot write data to file:{0}'.format(outfn))
 
-    print 'Done...'
+    print '\t...Done!\n'
 
     birrp_stationdict = {}
     birrp_stationdict['station'] =  stationname.upper()
     birrp_stationdict['n_output_channels'] = output_channels
     birrp_stationdict['sampling_rate'] = sampling_rate
     birrp_stationdict['n_samples'] =  len(data)
-    birrp_stationdict['processing_window_start'] = longest_common_time_window[0]
-    birrp_stationdict['recording_start'] =  lo_starttimes[0]
+    birrp_stationdict['processing_window_start'] = ta[0]
+    birrp_stationdict['processing_window_end'] = ta[-1] + sampling_interval
+    birrp_stationdict['processing_window'] = ta[-1] + sampling_interval - ta[0]
+    birrp_stationdict['recording_starttime'] =  lo_station_starttimes[0]
 
     gc.collect()
 
@@ -404,10 +666,12 @@ def get_optimal_window_bisection(length, sampling_rate):
 
     """
 
-    # longest time window cannot exceed 1/30 of the total length in order to obtain statistically sound results (maybe correcting this to 1/100 later); value given in samples
+    # longest time window cannot exceed 1/30 of the total length in order to obtain 
+    #statistically sound results (maybe correcting this to 1/100 later); value given in samples
     longest_window = int(length/30.)
 
-    #shortest_window cannot be smaller than 2^4=16 times the sampling interval in order to suit Nyquist and other criteria; value given in samples
+    #shortest_window cannot be smaller than 2^4=16 times the sampling interval 
+    #in order to suit Nyquist and other criteria; value given in samples
     shortest_window = 16 
 
 
@@ -415,6 +679,7 @@ def get_optimal_window_bisection(length, sampling_rate):
     number_of_bisections = int(np.ceil(np.log(16./longest_window) / np.log(0.5) ))
 
     return longest_window, number_of_bisections
+
 
 
 def write_script_file(processing_dict, save_path=None):
@@ -426,8 +691,14 @@ def write_script_file(processing_dict, save_path=None):
     parameter          description
     ================== ======================================================== 
     station            station name
-    fn_lst             list of file names to be processed
-    rrfn_lst           list of remote reference file names
+    fn_lst             list of file names to be processed, this must be in 
+                       the correct order [EX, EY, HZ, HX, HY] and if multiple
+                       sections are to be processed at the same time then 
+                       must be input as a nested loop 
+                       [[EX1, EY1, HZ1, HX1, HY1], 
+                       [EX2, EY2, HZ2, HX2, HY2], ...]
+    rrfn_lst           list of remote reference file names, similar to the 
+                       fn_lst [[HX1, HY1], [HX2, HY2], ...]
     ilev               processing mode 0 for basic and 1 for advanced RR-2 
                        stage
     nout               Number of Output time series (2 or 3-> for BZ)
@@ -486,6 +757,11 @@ def write_script_file(processing_dict, save_path=None):
     hz_cal             full path to calibration file for hz 
     rrhx_cal           full path to calibration file for remote reference hx 
     rrhy_cal           full path to calibration file for remote reference hy 
+                       Note that BIRRP assumes the calibrations are the same
+                       as in the first segment, so the remote reference must
+                       be the same for all segments, or at least the same
+                       instruments have to be used so the calibration is 
+                       the same.
     ================== ========================================================              
     
     .. see also::                
@@ -518,7 +794,7 @@ def write_script_file(processing_dict, save_path=None):
     #compute how many timeseries and days there are 
     #ndf = # of files per day
     #nds = # of day
-    pdict = processing_dict
+    pdict = dict(processing_dict)
     
     try:
         fn_array = np.array(pdict['fn_lst'])
@@ -531,7 +807,7 @@ def write_script_file(processing_dict, save_path=None):
         ndf = fn_array.shape[0]
         nds = 0
     if save_path is None:
-        if nds == 0 or nds == 1:
+        if nds == 0:
             bfpath = os.path.join(os.path.dirname(pdict['fn_lst'][0]),
                                  'BF')
         else:
@@ -775,7 +1051,7 @@ def write_script_file(processing_dict, save_path=None):
         fid.write(ofil+'\n')
         fid.write('{0:d} \n'.format(nlev))
         
-    elif ilev==1:
+    elif ilev == 1:
         print 'Writing Advanced mode'
         fid.write('{0:d} \n'.format(ilev))
         fid.write('{0:d} \n'.format(nout))
@@ -789,7 +1065,7 @@ def write_script_file(processing_dict, save_path=None):
             fid.write('{0:d},{1:d} \n'.format(nr3,nr2))
         fid.write('{0:d} \n'.format(nrr))
         #if remote referencing
-        if int(nrr)==0:
+        if int(nrr) == 0:
             fid.write('{0:.3f} \n'.format(tbw))
             fid.write('{0:.3f} \n'.format(deltat))
             fid.write('{0:d},{1:.2g},{2:d} \n'.format(nfft,nsctinc,nsctmax))
@@ -799,27 +1075,27 @@ def write_script_file(processing_dict, save_path=None):
             fid.write('{0:.5g},{1:.5g},{2:.5g} \n'.format(uin,ainlin,ainuin))
             fid.write('{0:.3f} \n'.format(c2threshe))
             #parameters for bz component if ninp=3
-            if nout==3:
-                if c2threshe!=0:
+            if nout == 3:
+                if c2threshe != 0:
                     fid.write('{0:d} \n'.format(nz))
                     fid.write('{0:.3f} \n'.format(c2threshe1))
                 else:
                     fid.write('{0:d} \n'.format(0))
                     fid.write('{0:.3f} \n'.format(c2threshe1))
-                if c2threshe1!=0.0 or c2threshe!=0.0:
+                if c2threshe1 != 0.0 or c2threshe != 0.0:
                     fid.write('{0:.6g},{1:.6g} \n'.format(perlo,perhi))
             else:
-                if c2threshe!=0.0:
+                if c2threshe != 0.0:
                     fid.write('{0:.6g},{1:.6g} \n'.format(perlo,perhi))
             fid.write(ofil+'\n')
             fid.write('{0:d} \n'.format(nlev))
             fid.write('{0:d} \n'.format(nprej))
             if nprej!=0:
                 if type(prej) is not list:
-                    prej=[prej]
+                    prej = [prej]
                 fid.writelines(['{0:.5g} \n'.format(nn) for nn in prej])
         #if 2 stage processing
-        elif int(nrr)==1:
+        elif int(nrr) == 1:
             fid.write('{0:.5g} \n'.format(tbw))
             fid.write('{0:.5g} \n'.format(deltat))
             fid.write('{0:d},{1:.2g},{2:d} \n'.format(nfft,nsctinc,nsctmax))        
@@ -829,27 +1105,30 @@ def write_script_file(processing_dict, save_path=None):
             fid.write('{0:.5g},{1:.5g},{2:.5g} \n'.format(uin,ainlin,ainuin))
             fid.write('{0:.3f} \n'.format(c2threshb))        
             fid.write('{0:.3f} \n'.format(c2threshe))
-            if nout==3:
-                if c2threshb!=0 or c2threshe!=0:
+            if nout == 3:
+                if c2threshb != 0 or c2threshe != 0:
                     fid.write('{0:d} \n'.format(nz))
                     fid.write('{0:.3f} \n'.format(c2threshe1))
-                elif c2threshb==0 and c2threshe==0:
+                elif c2threshb == 0 and c2threshe == 0:
                     fid.write('{0:d} \n'.format(0))
                     fid.write('{0:.3f} \n'.format(0))
-            if c2threshb!=0.0 or c2threshe!=0.0:
+            if c2threshb != 0.0 or c2threshe != 0.0:
                 fid.write('{0:.6g},{1:.6g} \n'.format(perlo,perhi))
             fid.write(ofil+'\n')
             fid.write('{0:d} \n'.format(nlev))
             fid.write('{0:d} \n'.format(nprej))
             if nprej!=0:
                 if type(prej) is not list:
-                    prej=[prej]
+                    prej = [prej]
                 fid.writelines(['{0:.5g} \n'.format(nn) for nn in prej])
         
     fid.write('{0:d} \n'.format(npcs))    
     fid.write('{0:d} \n'.format(nar))    
     fid.write('{0:d} \n'.format(imode))    
-    fid.write('{0:d} \n'.format(jmode))    
+    fid.write('{0:d} \n'.format(jmode)) 
+    
+    #!!!NEED TO SORT FILE NAMES SUCH THAT EX, EY, HZ, HX, HY or EX, EY, HX, HY
+    
     #write in filenames 
     if npcs != 1:
         if jmode == 0:
@@ -871,7 +1150,7 @@ def write_script_file(processing_dict, save_path=None):
                     else:
                         fid.write(str(nfil)+'\n')
                 elif tt == 4:
-                    if hx_cal is not None:
+                    if hz_cal is not None:
                         fid.write('-2\n')
                         fid.write(hz_cal+'\n')
                     else:
@@ -929,7 +1208,7 @@ def write_script_file(processing_dict, save_path=None):
                     else:
                         fid.write(str(nfil)+'\n')
                 elif tt == 4:
-                    if hx_cal is not None:
+                    if hz_cal is not None:
                         fid.write('-2\n')
                         fid.write(hz_cal+'\n')
                     else:
@@ -996,7 +1275,7 @@ def write_script_file(processing_dict, save_path=None):
                         else:
                             fid.write(str(nfil)+'\n')
                     elif tt == 4:
-                        if hx_cal is not None:
+                        if hz_cal is not None:
                             fid.write('-2\n')
                             fid.write(hz_cal+'\n')
                         else:
@@ -1059,7 +1338,7 @@ def write_script_file(processing_dict, save_path=None):
                         else:
                             fid.write(str(nfil)+'\n')
                     elif tt == 4:
-                        if hx_cal is not None:
+                        if hz_cal is not None:
                             fid.write('-2\n')
                             fid.write(hz_cal+'\n')
                         else:
@@ -1102,7 +1381,7 @@ def write_script_file(processing_dict, save_path=None):
                         else:
                             fid.write(str(nfil)+'\n')
                     elif tt == 4:
-                        if hx_cal is not None:
+                        if hz_cal is not None:
                             fid.write('-2\n')
                             fid.write(hz_cal+'\n')
                         else:
@@ -1688,7 +1967,7 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
     
     set date to format YYYY-MM-DD,HH:MM:SS
     """
-    frmt = '%Y-%m-%d,%H:%M:%S'
+    frmt = '%Y/%m/%dT%H:%M:%S'
 
     headstring = ''
     headstring += '>HEAD\n\n'
@@ -1722,7 +2001,8 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
             dt_start = datetime.datetime.fromtimestamp(acq_starttime)
             acq_start = dt_start.combine(dt_start.date(),dt_start.time()).strftime(frmt+'.%f')
 
-            dt_end =  acq_starttime + 1./sampling_rate*(n_samples) 
+            dt_end_time =  acq_starttime + 1./sampling_rate*(n_samples) 
+            dt_end = datetime.datetime.fromtimestamp(dt_end_time)
             acq_end = dt_end.combine(dt_end.date(),dt_end.time()).strftime(frmt+'.%f')
             
             headstring +='\tacqdate=%s \n'%(acq_start)

@@ -29,7 +29,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
     Arguments:
     ----------
     
-        **filenamelst** : list of strings
+        **fn_lst** : list of strings
                           full paths to .edi files to plot
                           
         **z_object** : class mtpy.core.z.Z
@@ -591,9 +591,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         
         #--> plot the background image if desired-----------------------
         try:
-            im=plt.imread(self.image_file)
+            im = plt.imread(self.image_file)
             self.ax.imshow(im, origin='lower', extent=self.image_extent, 
-                      aspect='auto')
+                           aspect='auto')
         except AttributeError:
             pass
         
@@ -1036,7 +1036,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         plt.show()
     
         
-    def save_plot(self, save_fn, file_format='pdf', 
+    def save_figure(self, save_fn, file_format='pdf', 
                   orientation='portrait', fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.
@@ -1103,7 +1103,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             save_fn = os.path.join(save_fn, 'PTmap_'+self.ellipse_colorby+sf+
                                     'Hz.'+file_format)
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                        orientation=orientation)
+                        orientation=orientation, bbox_inches='tight')
                         
         if close_plot == 'y':
             plt.clf()

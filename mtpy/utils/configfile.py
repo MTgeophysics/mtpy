@@ -38,6 +38,60 @@ reload(MTex)
 
 #=================================================================
 
+list_of_required_keywords = ['latitude',
+                            'longitude',
+                            'elevation',
+                            'sampling_interval',
+                            'station_type'
+                            ]
+
+list_of_keyword_defaults_general = [0.,
+                                    0.,
+                                    0.,
+                                    1.,
+                                    'mt'
+                                    ]
+
+
+list_of_efield_keywords = [ 'E_logger_type',
+                            'E_logger_gain',
+                            'E_instrument_type',
+                            'E_instrument_amplification',
+                            'E_Xaxis_azimuth',
+                            'E_Xaxis_length',
+                            'E_Yaxis_azimuth',
+                            'E_Yaxis_length'
+                            ]
+
+list_of_keyword_defaults_efield = ['edl',
+                                    1,
+                                    'electrodes',
+                                    1.,
+                                    0.,
+                                    50.,
+                                    90.,
+                                    50.
+                                    ]
+
+list_of_bfield_keywords = [ 'B_logger_type',
+                            'B_logger_gain',
+                            'B_instrument_type',
+                            'B_instrument_amplification',
+                            'B_Xaxis_azimuth',
+                            'B_Yaxis_azimuth'
+                          ]
+
+
+list_of_keyword_defaults_bfield = ['edl',
+                                    1,
+                                    'coil',
+                                    1.,
+                                    0.,
+                                    90.
+                                    ]
+
+#=================================================================
+
 def read_configfile(filename):
     """
         Read a general config file and return the content as dictionary.
@@ -123,30 +177,6 @@ def read_survey_configfile(filename):
 
     """
 
-    list_of_required_keywords = ['latitude',
-                                'longitude',
-                                'elevation',
-                                'sampling_interval',
-                                'station_type'
-                                ]
-
-    list_of_efield_keywords = [ 'E_logger_type',
-                                'E_logger_gain',
-                                'E_instrument_type',
-                                'E_instrument_amplification',
-                                'E_Xaxis_azimuth',
-                                'E_Xaxis_length',
-                                'E_Yaxis_azimuth',
-                                'E_Yaxis_length'
-                                ]
-
-    list_of_bfield_keywords = [ 'B_logger_type',
-                                'B_logger_gain',
-                                'B_instrument_type',
-                                'B_instrument_amplification',
-                                'B_Xaxis_azimuth',
-                                'B_Yaxis_azimuth'
-                              ]
 
 
     dict_of_allowed_values_efield = {'E_logger_type':['edl','elogger', 'zen'] ,

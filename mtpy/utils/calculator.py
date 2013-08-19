@@ -3,7 +3,7 @@
 """
 mtpy/utils/calculator.py
 
-Helper functions for standard calculations. 
+Helper functions for standard calculations, e.g. error propagation
 
 
 @UofA, 2013

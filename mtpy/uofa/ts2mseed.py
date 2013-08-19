@@ -117,8 +117,8 @@ def main():
         for idx_fn, fn in enumerate(lo_infiles):
 
             if MTfh.validate_ts_file(fn) is False:
-                print 'Warning - file {0} is not valid FALSE!!!'.format(fn)
-                continue
+                print 'Warning - MT ts data file {0} is not valid (check header)!!!'.format(fn)
+                #continue
             print 'reading file {0}'.format(fn)
             outfn = MTms.convertfile_ts2miniseed(fn, lo_outfiles[idx_fn], location=location, network = network)
             print 'wrote file {0}'.format(outfn)

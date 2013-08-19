@@ -118,7 +118,7 @@ class Z(object):
 
     """
 
-    def __init__(self, z_array = None, zerr_array = None):
+    def __init__(self, z_array=None, zerr_array=None, freq=None):
         """
             Initialise an instance of the Z class.
 
@@ -133,7 +133,7 @@ class Z(object):
         self._z = z_array
         self._zerr = zerr_array
 
-        self._freq = None
+        self._freq = freq
         if z_array is not None:
             if len(z_array.shape) == 2 and z_array.shape == (2,2):
                 if z_array.dtype in ['complex', 'float','int']:
@@ -210,7 +210,7 @@ class Z(object):
 
         self._z = z_array
         
-        if self.rotation_angle is float:
+        if type(self.rotation_angle) is float:
             self.rotation_angle = np.array([self.rotation_angle 
                                              for ii in self._z])
 
@@ -625,9 +625,28 @@ class Z(object):
         Assume the original observed tensor Z is built by a static shift S 
         and an unperturbated "correct" Z0 :
             Z = S * Z0
+            
+        therefore the correct Z will be :
+            Z0 = S^(-1) * Z
+            
+        Arguments:
+        ----------
+            **reduce_res_factor_x** : float or iterable list or array
+                                      static shift factor to be applied to x
+                                      components (ie z[:, 0, 1]).  This is 
+                                      assumed to be in resistivity scale
+            
+            **reduce_res_factor_y** : float or iterable list or array
+                                      static shift factor to be applied to y
+                                      components (ie z[:, 1, 0]).  This is 
+                                      assumed to be in resistivity scale
 
-        returns:
-            S, Z0   (over all freq)
+        Returns:
+        ----------
+            **S** : np.ndarray ((2, 2))
+                    static shift matrix, 
+            
+            **Z0**: corrected Z   (over all freq)
 
         Note:
         The factors are on the resistivity scale, so the entries of the 
@@ -697,22 +716,24 @@ class Z(object):
   
 
         z_corrected = copy.copy(self.z)
-        z_corrected_err = copy.copy(self.zerr)
         static_shift = np.zeros((len(self.z),2,2))
 
         for idx_f in range(len(self.z)):
-            z_corrected[idx_f,0,:] = self.z[idx_f,0,:]*\
-                                     np.sqrt(lo_x_factors[idx_f])
-            z_corrected_err[idx_f,1,:] = self.zerr[idx_f,1,:]*\
+            #correct for x-direction
+            z_corrected[idx_f, 0, :] = self.z[idx_f, 0, :]/\
+                                         np.sqrt(lo_x_factors[idx_f])
+            #correct for y-direction
+            z_corrected[idx_f, 1, :] = self.z[idx_f, 1, :]/\
                                          np.sqrt(lo_y_factors[idx_f])
-            static_shift[idx_f,0,0] = np.sqrt(lo_x_factors[idx_f])
-            static_shift[idx_f,1,1] = np.sqrt(lo_y_factors[idx_f])
+            #make static shift array
+            static_shift[idx_f, 0, 0] = np.sqrt(lo_x_factors[idx_f])
+            static_shift[idx_f, 1, 1] = np.sqrt(lo_y_factors[idx_f])
 
-        return  static_shift, z_corrected,  z_corrected_err
+        return  static_shift, z_corrected
 
 
 
-    def no_distortion(self, distortion_tensor, distortion_err_tensor = None):
+    def no_distortion(self, distortion_tensor, distortion_err_tensor=None):
         """
             Remove distortion D form an observed impedance tensor Z to obtain
             the uperturbed "correct" Z0:

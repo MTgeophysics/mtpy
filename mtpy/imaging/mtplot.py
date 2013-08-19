@@ -85,7 +85,7 @@ section and strike angle.
 """
 #==============================================================================
 
-import mtpy.imaging.plotnreponses as plotnresponses
+import mtpy.imaging.plotnresponses as plotnresponses
 import mtpy.imaging.plotpseudosection as plotrpps
 import mtpy.imaging.plotpt as plotpt
 import mtpy.imaging.plotptpseudosection as plotptps

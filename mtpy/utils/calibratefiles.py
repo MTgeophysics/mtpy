@@ -37,6 +37,7 @@ reload(MTfh)
 reload(MTcb)
 reload(MTcf)
 
+# accuracy to which angles are determined
 angleaccuracy = 1.
 
 
