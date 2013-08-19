@@ -47,6 +47,7 @@ import os
 import subprocess
 import shutil
 import fnmatch
+import datetime
 from operator import itemgetter
 import time
 import matplotlib.colorbar as mcb
@@ -58,50 +59,523 @@ import matplotlib.pyplot as plt
 import mtpy.core.edi as MTedi
 import mtpy.modeling.winglinktools as MTwl
 import mtpy.utils.conversions as MTcv
+import mtpy.utils.filehandling as MTfh
+
 
 #==============================================================================
 
 occamdict = {'1':'resxy','2':'phasexy','3':'realtip','4':'imagtip','5':'resyx',
              '6':'phaseyx'}
 
+#------------------------------------------------------------------------------
 
 class Setup():
     """
-    Dealing with the setup  for an Occam2D run. Generate Startup, Imodel, Mesh files.
-    Calling Data() for generating a suitable input data file.
+    Dealing with the setup  for an Occam2D run. Generate 'startup', 'inmodel', 
+    'mesh' files. Calling Data() for generating a suitable input data file.
 
     Setting up those files within one (pre-determined) folder, so Occam can be 
-    started within it straight away
+    run there straight away.
 
     """
+
+
+    def __init__(self, **input_parameters):
+
+        self.parameters_startup = {}
+        self.parameters_inmodel = {}
+        self.parameters_data = {}
+        self.parameters_mesh = {}
+
+        #correct for upper case keys
+        input_parameters_nocase = {}
+        for key in input_parameters.keys():
+            input_parameters_nocase[key.lower()] = input_parameters[key]
+
+        self.parameters_startup['description'] = 'generic MTpy setup'
+
+        self.parameters_startup['iter_format'] = 'OCCAM_ITER'
+        self.parameters_startup['datetime_string'] = datetime.datetime.now().strftime(
+                                                             '%Y/%m/%d %H:%M:%S')
+
+        self.parameters_startup['no_iteration'] = 0
+        self.parameters_startup['roughness_start'] = 1.0E+07
+        self.parameters_startup['misfit_start'] = 100.
+        self.parameters_startup['reached_misfit'] = 0        
+        self.parameters_startup['roughness_type'] = 1
+        self.parameters_startup['debug_level'] = 1
+        self.parameters_startup['mu_start'] = 5.0
+
+        self.parameters_inmodel['no_sideblockelements'] = 7
+        self.parameters_inmodel['no_bottomlayerelements'] = 4
+        self.parameters_inmodel['max_blockwidth'] = 500
+        self.parameters_inmodel['firstlayer_thickness'] = 250
+        self.parameters_inmodel['no_layersperdecade'] = 5
+
+        self.parameters_inmodel['model_name'] = 'Modelfile generated with MTpy'
+        self.parameters_inmodel['block_merge_threshold'] = 0.75
+
+        self.parameters_data['title'] = 'A generic MTpy title'
+        self.parameters_data['datafile_format'] = 'OCCAM2MTDATA_1.0'
+
+        self.parameters_mesh['mesh_title'] = 'Mesh file generated with MTpy'
+
+        for dictionary in [self.parameters_startup, self.parameters_inmodel, 
+                                    self.parameters_mesh, self.parameters_data]:
+            for key in dictionary.keys():
+                if key in input_parameters_nocase:
+                    dictionary[key] = input_parameters_nocase[key]
+
+        self.mesh = None
+        self.meshlocations_x = None
+        self.meshlocations_z = None
+        self.meshblockwidths_x = None
+        self.meshblockdepths_z = None
+
+        self.lo_modelblockstrings = []
+        self.lo_columnnumbers = []
+
+        self.inmodel = None
+        self.inmodel_bindingoffset = 0.
+ 
+        self.data = None
+        self.no_layers = None
+        self.no_parameters = None
+
+        self.stationnames = []
+        self.stationlocations = []
+
+        self.halfspace_resistivity = 100.
+
+        self.edifiles = []
+
+        self.datafile = 'occaminputdata.dat'
+        self.meshfile = 'mesh'
+        self.inmodelfile = 'inmodel'
+        self.startupfile = 'startup'
+        self.staticsfile = None
+        self.prejudicefile = None
+
+        #working directory
+        self.wd = '.'
+
+
+
+    def read_edifiles(self, directory = None):
+
+        pass
+        return
+
+
+    def remove_edifiles(self, edilist):
+        pass
+        return
+
+
+    def make_datafile(self):
+
+        data_object = Data(edilist = self.edifiles, wd = self.wd, **self.parameters_data)
+        datafilename = data_object.filename
+        return datafilename
+
+    def generate_profile(self):
+        """
+            Generate linear profile by linear regression of station locations.
+
+            Stations are projected orthogonally onto the profile. Calculate 
+            orientation of profile (azimuth) and position of stations on the 
+            profile.
+
+            (self.stationlocations, self.azimuth, self.stations)
+
+        """
+        pass
+
+
+    def setup_mesh_and_model(self):
+        """
+        Build the mesh and inmodel blocks from given data and parameters.
+
+        Attributes required: 
+
+        - self.no_layers
+        - self.sitelocations
+        - self.parameters_inmodel
+
+
+        """
+
+        lo_sites = self.sitelocations
+        n_sites  = len(lo_sites)
+        maxwidth = self.parameters_inmodel['max_blockwidth']
+
+        nbot     = int(float(self.parameters_inmodel['no_bottomlayerelements']))
+        nside    = int(float(self.parameters_inmodel['no_sideblockelements']))
+
+        # j: index for finite elements
+        # k: index for regularisation bricks
+        # Python style: start with 0 instead of 1
+
+        sitlok      = []
+        sides       = []
+        width       = []
+        dly         = []
+        nfe         = []
+        thickness   = []
+        nfev        = []
+        dlz         = []
+        bot         = []
+
+        
+        j = 0
+        sitlok.append(lo_sites[0])
+
+        for idx in range(1,n_sites-1):
+            
+            spacing           = lo_sites[idx] - lo_sites[idx-1]
+            n_localextrasites = int(spacing/maxwidth) + 1
+
+            for idx2 in range(n_localextrasites):
+                sitlok.append(lo_sites[idx-1] + (idx2+1.)/float(n_localextrasites)*spacing )
+                j += 1
+
+        # nrk: number of total dummy stations
+        nrk = j
+        print "{0} dummy stations defined".format(nrk)
+
+        
+        spacing1 = (sitlok[1]-sitlok[0])/2.
+        sides.append(3*spacing1)
+
+
+        for idx in range(1,nside):
+            curr_side = 3*sides[idx-1]
+            if curr_side > 1000000.:
+                curr_side = 1000000.
+            sides.append(curr_side)
+            
+        #-------------------------------------------
+
+        j = 0
+        k = 0
+
+        firstblockwidth = 0.
+        
+        for idx in range(nside-1,-1,-1):
+            firstblockwidth += sides[idx]
+            dly.append(sides[idx])
+            j += 1
+            
+        width.append(firstblockwidth)
+        nfe.append(nside)
+        
+        dly.append(spacing1)
+        dly.append(spacing1)
+        j += 2
+        nfe.append(2)
+        width.append(2*spacing1)
+
+        block_offset = width[1]
+
+        k += 1
+
+        dly.append(spacing1)
+        dly.append(spacing1)
+        j += 2
+        nfe.append(2)
+        width.append(2*spacing1)
+        
+        block_offset += spacing1
+
+        k += 1
+
+        #------------------------
+        
+        for idx in range(1,nrk-1):
+            spacing2 = (sitlok[idx+1]-sitlok[idx])/2.
+            dly.append(spacing1)
+            dly.append(spacing2)
+            j += 2
+            nfe.append(2)
+            width.append(spacing1+spacing2)
+            k += 1
+            spacing1 = spacing2
+
+        dly.append(spacing2)
+        dly.append(spacing2)
+
+        j += 2
+        nfe.append(2)
+        width.append(2*spacing2)
+        k += 1
+
+        dly.append(spacing2)
+        dly.append(spacing2)
+        
+        j += 2
+        nfe.append(2)
+        width.append(2*spacing2)
+        k += 1
+
+        width[-1] = 0.
+        sides[0] = 3*spacing2
+
+        #------------------------------
+        
+        for idx in range(1,nside):
+            curr_side = 3*sides[idx-1]
+            if curr_side > 1000000.:
+                curr_side = 1000000.
+            sides[idx] = curr_side
+
+
+        lastblockwidth= 0.
+        for idx in range(nside):
+            j += 1
+            lastblockwidth += sides[idx]
+            dly.append(sides[idx])
+
+        width[-1] = lastblockwidth
+
+        #---------------------------------
+
+        k+= 1
+        nfe.append(nside)
+
+        nodey = j+1
+        ncol0 = k
+
+        block_offset = sitlok[0] - block_offset
+
+        #----------------------------------
+
+        layers_per_decade     = float(self.parameters_inmodel['no_layersperdecade'])
+        first_layer_thickness = float(self.parameters_inmodel['firstlayer_thickness'])
+
+        t          = 10.**(1./layers_per_decade)
+        t1         = first_layer_thickness
+        thickness.append(t1)
+        
+        d1 = t1
+        
+        n_layers = int(float(self.no_layers))
+
+        for idx in range(1,n_layers-1):
+            d2 = d1*t
+            curr_thickness = d2 - d1
+            if curr_thickness < t1:
+                curr_thickness = t1
+            thickness.append(curr_thickness)
+            d1 += curr_thickness
+        
+        
+        bot.append(3*thickness[n_layers-2])
+
+        for idx in range(1,nbot):
+            bot.append(bot[idx-1]*3)
+
+        #--------------------------------------------------
+
+        k = 0
+        
+        dlz.append(thickness[0]/2.)
+        dlz.append(thickness[0]/2.)
+        nfev.append(2)
+
+        k += 2
+
+        dlz.append(thickness[1]/2.)
+        dlz.append(thickness[1]/2.)
+        nfev.append(2)
+
+        k += 2
+
+        for idx in range(2,n_layers-1):
+            k += 1
+            nfev.append(1.)
+            dlz.append(thickness[idx])
+
+        for idx in range(nbot):
+            k += 1
+            dlz.append(bot[idx])
+
+        nfev.append(nbot)
+
+        nodez = k+1
+        
+        self.inmodel_bindingoffset                   = block_offset
+        self.parameter_inmodel['max_number_columns'] = ncol0
+        self.parameter_inmodel['lo_merged_lines']    = nfe
+        self.parameter_inmodel['lo_merged_columns']  = nfev  
+        self.meshblockwidths_x                       = width
+        self.meshblockdepths_z                       = thickness
+         
+        self.meshlocations_z                         = dlz
+        self.meshlocations_x                         = dly
+        self.parameter_inmodel['no_nodes_hor']       = nodey
+        self.parameter_inmodel['no_nodes_vert']      = nodez
+
+        #mesh DONE
+        #-----------------------------------------------------
+        #defining the actual blocks:
+
+        trigger    = self.parameters_inmodel['block_merge_threshold']
+
+        modelblockstrings = []
+        lo_colnumbers     = []
+        ncol     = ncol0
+        num_params = 0
+       
+        for layer_idx in range(n_layers):
+            block_idx = 1
+        
+            while block_idx+2 < ncol-1 :
+
+                #PROBLEM : 'thickness' has only "n_layer'-1 entries!!
+                if not dlz[layer_idx] > (trigger*(width[block_idx]+width[block_idx+1])):
+                    block_idx += 1
+                    continue
+
+                else:
+                    width[block_idx] += width[block_idx+1]
+                    nfe[block_idx]   += nfe[block_idx+1]
+
+                    for m in range(block_idx+2,ncol):
+                        width[m-1] = width[m]
+                        nfe[m-1]   = nfe[m]
+
+                    ncol -=1
+
+            lo_colnumbers.append(ncol)
+
+            tempstring = ""
+            for j in range(ncol):
+                tempstring += "%i "%(nfe[j])
+            tempstring += "\n"
+            modelblockstrings.append(tempstring)
+
+            num_params += ncol
+
+            #completely unnecessary!!! :
+            if layer_idx == 0:
+                mcol = ncol
+
+        self.lo_modelblockstrings = modelblockstrings
+        self.lo_columnnumbers     = lo_colnumbers
+        self.no_parameters        = num_params
+
+
+
+    def make_meshfile(self):
+
+        """
+        Create the mesh file
+
+        Attributes required:
+
+        - self.meshlocations_x
+        - self.meshlocations_z
+        - self.meshnodes_x
+        - self.meshnodes_z
+        - self.meshfile
+        - self.wd
+
+        """
+        mesh_positions_vert = self.meshlocations_z
+        mesh_positions_hor  = self.meshlocations_x
+        n_nodes_hor         = self.meshnodes_x
+        n_nodes_vert        = self.meshnodes_z
+        
+
+        mesh_outstring =''
+
+        temptext = '{0}\n'.format(self.parameters_mesh['mesh_title'])
+        mesh_outstring += temptext
+
+        temptext = "{0} {1} {2} {0} {0} {3}\n".format(0,n_nodes_hor,n_nodes_vert,2)
+        mesh_outstring += temptext
+
+        temptext = ""
+        for i in range(n_nodes_hor-1):
+            temptext += "%.1f "%(mesh_positions_hor[i])
+        temptext +="\n"
+        mesh_outstring += temptext
+
+        temptext = ""
+        for i in range(n_nodes_vert-1):
+            temptext += "%.1f "%(mesh_positions_vert[i])
+        temptext +="\n"
+        mesh_outstring += temptext
+
+        mesh_outstring +="%i\n"%(0)
+
+        for j in range(4*(n_nodes_vert-1)):
+            tempstring=''
+            tempstring += (n_nodes_hor-1)*"?"
+            tempstring += '\n'
+            mesh_outstring += tempstring
+
+
+        self.meshfile = MTfh.unique_filename(op.join(self.wd,self.meshfile))         
+        F_mesh = file(self.meshfile,'w')
+        F_mesh.write(mesh_outstring)
+        F_mesh.close()
+
+
+    def make_inmodelfile(self):
+        pass
+
+    def make_startupfile(self):
+        pass
+
+    def make_files(self, edi_dir):
+
+        self.read_edifiles(edi_dir)
+        self.make_datafile()
+        self.setup_mesh_and_model()
+        self.make_meshfile()
+        self.make_inmodelfile()
+        self.make_startupfile()
+
+        print '\nInput files in directory {0}\n'.format(self.wd)
+        print '\n\t DONE !\n\n'
+
+#------------------------------------------------------------------------------
+
 
 class Data():
     """
     Handling input data.
+
     Generation of suitable Occam data file(s).
     Reading data files.
-    Allow merging of data files and masking of data points (connect with 'Plot()'
-    for this)
+    Allow merging of data files (connect with 'Plot()' for this)
     """
+    def __init__(self, edi_directory = None):
+        pass
+
 
 
 class Model():
     """
     Handling of Occam output files.
-    Reading, writing, renaming of 'ITER' and 'RESP' files. 
+
+    Reading, writing, renaming,... of 'ITER' and 'RESP' files. 
     """
 
 
 class Plot():
     """
     Graphical representations of in- and output data.
+
     Provide gui for masking points.
-    Represent output models
+    Represent output models.
     """
 
 class Run():
     """
     Run Occam2D by system call.
+
     Future plan: implement Occam in Python and call it from here directly.
     """
 
@@ -114,11 +588,6 @@ class Mask():
 
 
 
-
-
-def getdatetime():
-
-    return time.asctime(time.gmtime())
 
 
 def makestartfiles(edipath, output_directory=None, parameters=None):
@@ -216,53 +685,6 @@ def makestartfiles(edipath, output_directory=None, parameters=None):
     
     return (MeshF,ModF,SF)
 
-def writemeshfile(parameter_dict):
-    """
-    create a startup file from a parameter dictionary with keys:
-    
-    ======================= ===================================================
-    keys                      description
-    ======================= ===================================================
-    mesh_positions_vert     
-    ================ ==========================================================
-    """
-    mesh_positions_vert = parameter_dict['mesh_positions_vert']
-    mesh_positions_hor  = parameter_dict['mesh_positions_hor']
-    n_nodes_hor         = parameter_dict['n_nodes_hor']
-    n_nodes_vert        = parameter_dict['n_nodes_vert']
-    
-    fh_mesh = file(parameter_dict['meshfn'],'w')
-    mesh_outstring =''
-
-    temptext = "MESH FILE FROM MTpy\n"
-    mesh_outstring += temptext
-
-    temptext = "%i %i %i %i %i %i\n"%(0,n_nodes_hor,n_nodes_vert,0,0,2)
-    mesh_outstring += temptext
-
-    temptext = ""
-    for i in range(n_nodes_hor-1):
-        temptext += "%.1f "%(mesh_positions_hor[i])
-    temptext +="\n"
-    mesh_outstring += temptext
-
-    temptext = ""
-    for i in range(n_nodes_vert-1):
-        temptext += "%.1f "%(mesh_positions_vert[i])
-    temptext +="\n"
-    mesh_outstring += temptext
-
-    mesh_outstring +="%i\n"%(0)
-
-    for j in range(4*(n_nodes_vert-1)):
-        tempstring=''
-        tempstring += (n_nodes_hor-1)*"?"
-        tempstring += '\n'
-        mesh_outstring += tempstring
-    
-
-    fh_mesh.write(mesh_outstring)
-    fh_mesh.close()
 
 
 
@@ -421,7 +843,7 @@ def get_model_setup(parameter_dict):
     nfe        = parameter_dict['nfe']
     thickness  = parameter_dict['thickness']
     width      = parameter_dict['width']
-    trigger    =  float(parameter_dict['trigger'])
+    trigger    = self.parameters_inmodel['block_merge_threshold']
     dlz = parameter_dict['dlz']
 
     modelblockstrings = []
@@ -691,6 +1113,10 @@ def blocks_elements_setup(parameter_dict):
     parameter_dict['mesh_positions_hor']  = dly
     parameter_dict['n_nodes_hor']         = nodey
     parameter_dict['n_nodes_vert']        = nodez
+
+
+
+
 
 class OccamPointPicker(object):
     """
