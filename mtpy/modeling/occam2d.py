@@ -224,6 +224,7 @@ class Setup():
 
         return counter 
 
+
     def validate_attributes(self, **attributes_dictionary):
         
         valid = True
@@ -231,23 +232,101 @@ class Setup():
         return valid
 
 
-    def read_edifiles(self, directory = None):
+    def add_edifiles_directory(self, directory = None):
 
-        pass
-        return
+        if directory is None:
+            print 'Error - provide directory name'
+            return
+
+        if op.isdir(directory) is False:
+            print 'Warning - not a valid directory - cannot browse for EDI files: {0}'.format(directory)
+            return
+
+        edilist_raw = fnmatch.filter(os.listdir(directory),'*.[Ee][Dd][Ii]')
+        edilist_full = [op.abspath(op.join(edi_dir,i)) for i in edilist_raw]
+        
+        counter = 0
+        for edi in edilist_full:
+            try:
+                e = MTedi.Edi()
+                e.readfile(edi)
+                self.edifiles.append(edi)
+                counter += 1
+            except:
+                continue
+        
+        print 'Added {0} Edi files'.format(counter)
+
+
+    def add_edifiles(self, edilist):
+        
+        if not np.iterable(edilist):
+            print 'Error - provide valid file list'
+            return
+
+        counter = 0
+        for edi in edilist:
+            try:
+                fn = op.abspath(op.join(os.curdir,edi))
+                e = MTedi.Edi()
+                e.readfile(fn)
+                self.edifiles.append(fn)
+                counter += 1                
+            except:
+                continue
+
+        print 'Added {0} Edi files'.format(counter)
 
 
     def remove_edifiles(self, edilist):
-        pass
-        return
+        if not np.iterable(edilist):
+            print 'Error - provide valid file list'
+            return
+
+        counter = 0
+        for edi in edilist:
+            try:
+                fn = op.abspath(op.join(os.curdir,edi))
+                if fn in self.edifiles:
+                    self.edifiles.remove(fn)
+                counter += 1                
+            except:
+                continue
+
+        print 'Removed {0} Edi files'.format(counter)
 
 
-    def make_datafile(self):
+    def read_edifiles(self, edi_dir = None):
+        
+        if self.edi_directory is None:
+            self.edi_directory = '.'
+
+        if (edi_dir is not None)
+            if (op.isdir(edi_dir)):
+                self.edi_directory = edi_dir
+            else:
+                print 'Warning - given directory not found: {0} \n\t-'\
+                    ' using current directory instead:{1}'.format(edi_dir,os.curdir)
+
+        edilist_raw = fnmatch.filter(os.listdir(edi_dir),'*.[Ee][Dd][Ii]')
+        edilist_full = [op.abspath(op.join(edi_dir,i)) for i in edilist_raw]
+        edilist = []
+        for edi in edilist_full:
+            try:
+                e = MTedi.Edi()
+                e.readfile(edi)
+                edilist.append(edi)
+            except:
+                continue
+
+        self.edifiles = edifiles
+       
+
+    def write_datafile(self):
 
         data_object = Data(edilist = self.edifiles, wd = self.wd, **self.parameters_data)
         datafilename = data_object.filename
-        return datafilename
-
+        self.datafile = datafilename
 
 
     def setup_mesh_and_model(self):
@@ -580,7 +659,7 @@ class Setup():
         F_mesh.close()
 
 
-    def make_inmodelfile(self):
+    def write_inmodelfile(self):
         """
         Generate inmodel file.
 
@@ -641,7 +720,7 @@ class Setup():
 
 
 
-    def make_startupfile(self):
+    def write_startupfile(self):
         """
         Generate startup file
 
@@ -714,20 +793,21 @@ class Setup():
 
 
 
-    def make_files(self, edi_dir):
+    def generate_inputfiles(self, edi_dir):
 
         self.read_edifiles(edi_dir)
-        self.make_datafile()
+        self.write_datafile()
         self.setup_mesh_and_model()
-        self.make_meshfile()
-        self.make_inmodelfile()
-        self.make_startupfile()
+        self.write_meshfile()
+        self.write_inmodelfile()
+        self.write_startupfile()
 
         print '\nInput files in working directory {0}:\n'.format(self.wd)
         print '{0}'.format(op.basename(self.datafile))
         print '{0}'.format(op.basename(self.meshfile))
         print '{0}'.format(op.basename(self.inmodelfile))
-        print '{0}'.format(op.basename(self.startupfile))
+        print '{0}'.format((self.startupfile))
+
         print '\n\t\t DONE !\n\n'
 
 #------------------------------------------------------------------------------
@@ -737,13 +817,56 @@ class Data():
     """
     Handling input data.
 
-    Generation of suitable Occam data file(s).
-    Reading data files.
-    Allow merging of data files (connect with 'Plot()' for this)
+    Generation of suitable Occam data file(s) from Edi files/directories.
+    Reading and writing data files.
+    Allow merging of data files.
     """
-    def __init__(self, edi_directory = None, wd = None):
+    def __init__(self, edilist = None, wd = None, **data_parameters):
+
+        self.wd = os.curdir
+        self.filename = 'OccamDataFile.dat'
+        self.edilist = []
+
+        if edilist is not None:
+            if np.iterable(edilist):
+                self.edilist = edilist
+        
+        if wd is not None:
+            if op.isdir(wd):
+                self.wd = wd
+
+
+        self.azimuth = 0.
+        self.profile = None
+        self.stations = []
+        self.stationlocations = []
+        self.rotation_angle = 0.
+        self.masked = []
+        self.data = []
+        self.mode = 'both'
+        self.profile_offset = 0.
+
+        self.generate_profile()
+        self._write_datafile(op.join(self.wd,self.filename))
+        
+
+    def readfile(fn):
+        if not op.isfile(fn):
+            print 'Error - not a valid file: {0}'.fn
+
+        self.filename = op.basename(fn)
+        self.wd = op.split(fn)[0]
+
+        F_in = file(fn,'r')
+        data_raw = F_in.readlines()
+        F_in.close()
+
+
+
+    def rotate(angle):
 
         pass
+
 
     def generate_profile(self):
         """
@@ -756,6 +879,15 @@ class Data():
             (self.stationlocations, self.azimuth, self.stations)
 
         """
+
+        self.azimuth = 0.
+        self.stationlocations =[]
+        self.stations = []
+        self.profile_offset = 0.
+        pass
+
+
+    def _write_datafile(filename):
         pass
 
 
@@ -783,10 +915,10 @@ class Run():
     """
 
 
-class Mask():
+class Mask(Data):
     """
     Allow masking of points from data file (effectively commenting them out, 
-    so the process is reversable)
+    so the process is reversable). Inheriting from Data class.
     """
 
 
@@ -834,8 +966,8 @@ def makestartfiles(edipath, output_directory=None, parameters=None):
     mode                    modes to invert for (TE/TM/[BOTH])
     data_title              Title for data file [path of EDI files]
     strike                  Strike angle (data are rotated)  [0]
-    res_error               Uncertainty of resistivity in per cent [10]
-    phase_error             Uncertainty of phase in per cent [5] 
+    res_error               Uncertainty minimum of resistivity in per cent [10]
+    phase_error             Uncertainty minimum of phase in per cent [5] 
 
     ================ ==========================================================
     """
