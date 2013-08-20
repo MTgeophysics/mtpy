@@ -32,6 +32,7 @@ import mtpy.utils.exceptions as mtex
 import mtpy.utils.configfile as mtcf
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
+import mtpy.processing.tf as tf
 
 try:
     import mtpy.utils.mseed as mtmseed
@@ -429,9 +430,6 @@ class Zen3D(object):
         #actually an exact 0 in the data, but rarely happens 
         self.time_series = data_array[np.nonzero(data_array)]
         
-        #convert data counts into millivolts
-        self.time_series *= self.counts_to_mv_conversion
-        
         #need to cut all the data arrays to have the same length and corresponding 
         #data points
         for key in gps_dict.keys():
@@ -467,6 +465,21 @@ class Zen3D(object):
             self.start_date = None
             self.start_time = None
         
+    def convert_counts(self):
+        """
+        convert the time series from counts to millivolts
+
+        """
+        
+        self.time_series *= self.counts_to_mv_conversion
+        
+    def convert_mV(self):
+        """
+        convert millivolts to counts assuming no other scaling has been applied
+        
+        """
+        
+        self.time_series /= self.counts_to_mv_conversion
         
     def compute_schedule_start(self, start_date, start_time, 
                                leap_seconds=None):
@@ -873,6 +886,7 @@ class Zen3D(object):
         plots the time series
         """                                                               
         
+        self.convert_counts()
         fig = plt.figure(fig_num, dpi=300)
         ax = fig.add_subplot(1,1,1)
         ax.plot(self.time_series)
@@ -885,7 +899,26 @@ class Zen3D(object):
         ax.set_xlabel('Time (s)')
         ax.set_ylabel('Amplitude (mV)')
         plt.show()
+        
+        self.convert_mV()
         return fig, ax
+        
+    def plot_spectrogram(self, time_window=2**8, time_step=2**6, s_window=11,
+                         frequency_window=1, n_freq_bins=2**9, sigma_L=None):
+        """
+        plot the spectrogram of the data using the S-method
+        """
+        
+        self.convert_counts()
+        tfarray, tlst, flst, pxx = tf.smethod(self.time_series, 
+                                              nh=time_window,
+                                              tstep=time_step, 
+                                              ng=frequency_window, 
+                                              df=self.df, 
+                                              nfbins=n_freq_bins, 
+                                              sigmaL=sigma_L)
+        
+        tf.plottf(tfarray, tlst, flst)
         
     
     def plot_spectra(self, fig_num=2):
