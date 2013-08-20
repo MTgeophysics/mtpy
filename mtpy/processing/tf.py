@@ -408,7 +408,7 @@ def stft(fx, nh=2**8, tstep=2**7, ng=1, df=1.0, nfbins=2**10):
         
     return tfarray, tlst, flst
     
-def reassignedstft(fx, nh=2**6-1, tstep=2**5, nfbins=2**10, df=1.0, alpha=4,
+def reassigned_stft(fx, nh=2**6-1, tstep=2**5, nfbins=2**10, df=1.0, alpha=4,
                    threshold=None):
     """ 
     Computes the reassigned spectrogram by estimating the center of gravity of 
@@ -488,6 +488,7 @@ def reassignedstft(fx, nh=2**6-1, tstep=2**5, nfbins=2**10, df=1.0, alpha=4,
     
     #make a frequency list
     flst = np.fft.fftfreq(nfbins, 1./df)[nfbins/2:]
+    return_flst = np.fft.fftfreq(nfbins, 1./df)[0:nfbins/2]
     
     #initialize some time-frequency arrays
     tfr = np.zeros((nfbins, nt), dtype='complex')
@@ -550,7 +551,7 @@ def reassignedstft(fx, nh=2**6-1, tstep=2**5, nfbins=2**10, df=1.0, alpha=4,
                 spect[kk,nn] = np.inf*(1+1j)
                 rtfarray[kk, nn] = rtfarray[kk, nn]+spec[kk, nn]
         
-    return rtfarray, tlst, flst, spec
+    return rtfarray, tlst, return_flst, spec
     
     
 def wvd(fx, nh=2**8-1, tstep=2**5, nfbins=2**10, df=1.0):
@@ -818,8 +819,8 @@ def spwvd(fx, tstep=2**5, nfbins=2**10, df=1.0, nh=None, ng=None, sigmat=None,
     
     return tfarray, tlst, flst
     
-def robustwvd(fx, nh=2**7-1, ng=2**4-1, tstep=2**4, nfbins=2**8, df=1.0,
-              sigmanh=None, sigmang=None):
+def robust_wvd(fx, nh=2**7-1, ng=2**4-1, tstep=2**4, nfbins=2**8, df=1.0,
+              sigmat=None, sigmaf=None):
     """
     Calculate the robust Wigner-Ville distribution for an array 
     fx. Smoothed with Gaussians windows to get best localization. 
@@ -914,15 +915,15 @@ def robustwvd(fx, nh=2**7-1, ng=2**4-1, tstep=2**4, nfbins=2**8, df=1.0,
     nfx = len(fa)
     
     #make frequency smoothing window
-    if sigmanh == None:
-        sigmanh = nh/(5*np.sqrt(2*np.log(2)))
-    h = sps.gaussian(nh, sigmanh)
+    if sigmat == None:
+        sigmat = nh/(5*np.sqrt(2*np.log(2)))
+    h = sps.gaussian(nh, sigmat)
     h /= sum(h)
     
     #make a time smoothing window
-    if sigmang == None:
-        sigmang = ng/(5*np.sqrt(2*np.log(2)))
-    g = sps.gaussian(ng, sigmang)
+    if sigmaf == None:
+        sigmaf = ng/(5*np.sqrt(2*np.log(2)))
+    g = sps.gaussian(ng, sigmaf)
     g /= sum(g)
     
     mlst = np.arange(start=-nh/2+1, stop=nh/2+1, step=1, dtype='int')
@@ -1116,7 +1117,7 @@ def modifiedb(fx, tstep=2**5, nfbins=2**10, df=1.0, nh=2**8-1, beta=.2):
         
     return tfarray, tlst, flst
 
-def robuststftMedian(fx, nh=2**8, tstep=2**5, df=1.0, nfbins=2**10):
+def robust_stft_median(fx, nh=2**8, tstep=2**5, df=1.0, nfbins=2**10):
     """
     Calculates the robust spectrogram using the vector median simplification.
      
@@ -1200,7 +1201,7 @@ def robuststftMedian(fx, nh=2**8, tstep=2**5, df=1.0, nfbins=2**10):
         
     return tfarray, tlst, flstp
 
-def robuststftL(fx, alpha=.325, nh=2**8, tstep=2**5, df=1.0, nfbins=2**10):
+def robust_stft_L(fx, alpha=.325, nh=2**8, tstep=2**5, df=1.0, nfbins=2**10):
     """
     Calculates the robust spectrogram by estimating the vector median and 
     summing terms estimated by alpha coefficients.
@@ -1407,8 +1408,8 @@ def smethod(fx, L=11, nh=2**8, tstep=2**7, ng=1, df=1.0, nfbins=2**10,
     
     return tfarray, tlst, flst, pxx
     
-def robustSmethod(fx,L=5,nh=2**7,tstep=2**5,nfbins=2**10,df=1.0,
-                  robusttype='median',sigmal=None,alpha=.325):
+def robust_smethod(fx, L=5, nh=2**7, tstep=2**5, nfbins=2**10, df=1.0,
+                   robusttype='median', sigmaL=None, alpha=.325):
     """
     Computes the robust Smethod via the robust spectrogram.
     
@@ -1442,7 +1443,7 @@ def robustSmethod(fx,L=5,nh=2**7,tstep=2**5,nfbins=2**10,df=1.0,
         **robusttype** : [ 'median' | 'L' ]
                          type of robust STFT to compute. *default* is 'median'
                          
-        **simgal** : float
+        **simgaL** : float
                     full-width half max of gaussian window applied in frequency
     
     Returns:
@@ -1476,14 +1477,14 @@ def robustSmethod(fx,L=5,nh=2**7,tstep=2**5,nfbins=2**10,df=1.0,
         fa = fx[0].reshape(fn)
         fb = fx[1].reshape(fn)
         if robusttype == 'median':
-            pxa, tlst, flst = robuststftMedian(fa, nh=nh, tstep=tstep, df=df,
+            pxa, tlst, flst = robust_stft_median(fa, nh=nh, tstep=tstep, df=df,
                                                nfbins=nfbins)
-            pxb, tlst, flst = robuststftMedian(fb, nh=nh, tstep=tstep, df=df,
+            pxb, tlst, flst = robust_stft_median(fb, nh=nh, tstep=tstep, df=df,
                                                nfbins=nfbins)
         elif robusttype == 'L':
-            pxa, tlst, flst = robuststftL(fa, nh=nh, tstep=tstep, df=df,
+            pxa, tlst, flst = robust_stft_L(fa, nh=nh, tstep=tstep, df=df,
                                           nfbins=nfbins, alpha=alpha)
-            pxb, tlst, flst = robuststftL(fb, nh=nh, tstep=tstep, df=df,
+            pxb, tlst, flst = robust_stft_L(fb, nh=nh, tstep=tstep, df=df,
                                           nfbins=nfbins, alpha=alpha)
         else:
             raise NameError('robusttype {0} undefined'.format(robusttype))
@@ -1491,10 +1492,10 @@ def robustSmethod(fx,L=5,nh=2**7,tstep=2**5,nfbins=2**10,df=1.0,
     else:
         fa = fx.reshape(fn)
         if robusttype == 'median':
-            pxx, tlst, flst = robuststftMedian(fa, nh=nh, tstep=tstep, df=df,
+            pxx, tlst, flst = robust_stft_median(fa, nh=nh, tstep=tstep, df=df,
                                                nfbins=nfbins)
         elif robusttype == 'L':
-            pxx, tlst, flst = robuststftL(fa, nh=nh, tstep=tstep, df=df,
+            pxx, tlst, flst = robust_stft_L(fa, nh=nh, tstep=tstep, df=df,
                                           nfbins=nfbins, alpha=alpha)
         else:
             raise NameError('robusttype {0} undefined'.format(robusttype))
@@ -1505,7 +1506,7 @@ def robustSmethod(fx,L=5,nh=2**7,tstep=2**5,nfbins=2**10,df=1.0,
     #compute the frequency window of length L
     if sigmal == None:    
         sigmal = L/3*(np.sqrt(2*np.log(2)))        
-    lwin = gausswin(L,sigmal)
+    lwin = gausswin(L,sigmaL)
     lwin /= sum(lwin)
     pm = np.zeros((L, len(tlst)))
     for kk in range(len(tlst)):
@@ -1522,9 +1523,9 @@ def robustSmethod(fx,L=5,nh=2**7,tstep=2**5,nfbins=2**10,df=1.0,
     
     return smarray, tlst, flst, pxx
     
-def reassignedSmethod(fx, nh=2**7-1, tstep=2**4, nfbins=2**9, df=1.0, alpha=4,
-                      thresh=.01, L=5):
-    """
+def reassigned_smethod(fx, nh=2**7-1, tstep=2**4, nfbins=2**9, df=1.0, alpha=4,
+                       thresh=.01, L=5):
+    """ 
     Calulates the reassigned S-method as described by Djurovic[1999] by 
     using the spectrogram to estimate the reassignment.
     
@@ -1707,474 +1708,7 @@ def reassignedSmethod(fx, nh=2**7-1, tstep=2**4, nfbins=2**9, df=1.0, alpha=4,
     rtfarray = abs(rtfarray)
     
     return rtfarray, tlst, flst, sm
-    
-class PlotTF(object):
-    """
-    class to plot Time-Frequency
-    """ 
-    
-    def __init__(self, tf_array, time_list, freq_list, **kwargs):
         
-        self.tf_array = tf_array
-        self.time_list = time_list
-        self.freq_list = freq_list
-        
-        self.fig_num = kwargs.pop('fig_num', 1)
-        self.fig_dpi = kwargs.pop('fig_dpi', 300)
-        self.fig_size = kwargs.pop('fig_size', [6,6])
-        
-        self.font_size = kwargs.pop('font_size', 7)
-        
-        self.dt = kwargs.pop('dt', 1.0)
-        
-        self.start_time = kwargs.pop('start_time', 0)
-        self.time_units = kwargs.pop('time_units', 'hrs')
-
-        self.tf_scale = kwargs.pop('tf_scale', 'log')
-        
-        self.freq_scale = kwargs.pop('freq_scale', 'log')
-        self.freq_units = kwargs.pop('freq_units', 'hz')
-        
-        self.cmap = kwargs.pop('cmap', 'jet')
-        self.climits = kwargs.pop('climits', None)
-        
-        self.plot_title = kwargs.pop('title', None)
-        self.plot_interpolation = kwargs.pop('plot_interpolation', 'gaussian')
-        self.plot_aspect_ratio = kwargs.pop('plot_aspect_ratio', 'auto')
-        self.plot_type = kwargs.pop('plot_type', 'tf')
-        self.plot_normalize = kwargs.pop('plot_normalize', 'n')
-        
-        self.cb_orientation = kwargs.pop('cb_orientation', 'vertical')
-        self.cb_shrink = kwargs.pop('cb_shrink', .8)
-        self.cb_aspect_ratio = kwargs.pop('cb_aspect_ratio', 20)
-        self.cb_pad = kwargs.pop('cb_pad', .05)
-        
-        self.cb = None
-        self.fig = None
-        self.axtf = None
-        self.axts = None
-        self.axps = None
-        
-    def plot(self):
-        #time increment
-        if self.time_units == 'hrs':
-            tinc = 3600/self.dt
-            x_major_tick = 1
-            x_minor_tick = .15
-        elif self.time_units == 'min':
-            tinc = 60/self.dt
-            x_major_tick = 60
-            x_minor_tick = 15
-        elif self.time_units == 'sec':
-            tinc = 1/self.dt
-            x_major_tick = 3600
-            x_major_tick = 900
-        else:
-            raise ValueError('{0} is not defined'.format(self.time_units))
-        
-
-        #scale time-frequency 
-        if self.tf_scale == 'log':
-            self.tf_array[np.where(abs(self.tf_array)==0)] = 1.0
-            if self.plot_normalize == 'y':
-                plottfarray = 10*np.log10(abs(self.tf_array/
-                                                np.max(abs(self.tf_array))))
-            else:
-                plottfarray = 10*np.log10(abs(self.tf_array))
-        elif self.tf_scale == 'linear':
-            if self.plot_normalize == 'y':
-                plottfarray = abs(self.tf_array/np.max(abs(self.tf_array)))
-            else:
-                plottfarray = abs(self.tf_array)
-    
-        #period or frequency
-        if self.freq_units == 'y':
-            self.freq_list[1:] = 1./self.freq_list[1:]
-            self.freq_list[0] = 2*self.freq_list[1]
-        elif self.freq_units == 'n':
-            pass
-        
-        #set properties for the plot         
-        plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.left'] = .12
-        plt.rcParams['figure.subplot.right'] = .99
-        plt.rcParams['figure.subplot.bottom'] = .12
-        plt.rcParams['figure.subplot.top'] = .96
-        plt.rcParams['figure.subplot.wspace'] = .25
-        plt.rcParams['figure.subplot.hspace'] = .20
-        
-        #set the font dictionary
-        fdict={'size':self.font_size+2, 'weight':'bold'}    
-        
-        #make a meshgrid if yscale is logarithmic    
-        if self.freq_scale == 'log':
-            logt, logf = np.meshgrid(self.time_list, self.freq_list)
-        
-        #make figure    
-        self.fig = plt.figure(self.fig_num,self.fig_size, dpi=self.fig_dpi)
-        self.axtf = self.fig.add_subplot(1, 1, 1, aspect=self.plot_aspect_ratio)
-        
-#        if self.plot_type == 'all':
-#            self.axps = self.fig.add_axes([.05, .25, .1, .7])
-#            self.axts = self.fig.add_axes([.25, .05, .60, .1])
-#            self.axtf = self.fig.add_axes([.25, .05, .60, .1])
-#            
-#            t = np.arange(len(fx))*dt+starttime*dt
-#            FX=np.fft.fft(padzeros(fx))
-#            FXfreq=np.fft.fftfreq(len(FX),dt)
-#            #plot power spectra
-#            self.axps.semilogx(abs(FX[0:len(FX)/2]/max(abs(FX))),FXfreq[0:len(FX)/2],'-k')
-#            plt.axis('tight')
-#            plt.ylim(0,FXfreq[len(FX)/2-1])
-            
-        if self.climits != None:
-            vmin = self.climits[0]
-            vmax = self.climits[1]
-        else:
-            vmin = plottfarray.min()
-            vmax = plottfarray.max()
-            
-        #add in log yscale
-        if self.freq_scale == 'log':
-            #need to flip the matrix so that origin is bottom right
-            cbp = self.axtf.pcolormesh(logt,
-                                     logf,
-                                     np.flipud(plottfarray),
-                                     cmap=self.cmap,
-                                     vmin=vmin,
-                                     vmax=vmax)
-            self.axtf.semilogy()
-            self.axtf.set_ylim(self.freq_list[1], self.freq_list[-1])
-            self.axtf.set_xlim(self.time_list[0],self.time_list[-1])
-            self.cb = plt.colorbar(cbp,
-                                   orientation=self.cb_orientation,
-                                   shrink=self.cb_shrink,
-                                   pad=self.cb_pad,
-                                   aspect=self.cb_aspect_ratio)
-        else:    
-            cbp = self.axtf.imshow(plottfarray,
-                                 extent=(self.time_list[0]/tinc+self.start_time,
-                                         self.time_list[-1]/tinc+self.start_time,
-                                         self.freq_list[1],self.freq_list[-1]),
-                                aspect=self.plot_aspect_ratio,
-                                vmin=vmin,
-                                vmax=vmax,
-                                cmap=self.cmap,
-                                interpolation=self.plot_interpolation)
-            
-            self.cb = plt.colorbar(orientation=self.cb_orientation,
-                                   shrink=self.cb_shrink,
-                                   pad=self.cb_pad,
-                                   aspect=self.cb_aspect_ratio)
-
-        self.axtf.set_xlabel('time({0})'.format(self.time_units),
-                           fontdict=fdict)
-        self.axtf.xaxis.set_major_locator(MultipleLocator(x_major_tick))
-        self.axtf.xaxis.set_minor_locator(MultipleLocator(x_minor_tick))
-        
-        if self.freq_units == 's':
-            self.axtf.set_ylabel('period (s)', fontdict=fdict)
-        else:
-            self.axtf.set_ylabel('frequency (Hz)', fontdict=fdict)
-        if self.plot_title != None:
-            self.axtf.set_title(self.plot_title, fontdict=fdict)
-        
-        plt.show()
-        
-        
-def plottf(tfarray,tlst,flst,fignum=1,starttime=0,timeinc='hrs',
-           dt=1.0,title=None,vmm=None,cmap=None,aspect=None,interpolation=None,
-           cbori=None,cbshrink=None,cbaspect=None,cbpad=None,powscale='log',
-           normalize='n',yscale='log',period='n'):
-    """plottf(tfarray,tlst,flst,fignum=1) will plot a calculated tfarray with 
-    limits corresponding to tlst and flst. 
-   
-    Arguments
-    
-        starttime = starttime measured in timeincrement 
-        tinc = 'hrs','min' or 'sec' 
-        vmm = [vmin,vmax] a list for min and max 
-        title = title string 
-        cmap = colormap scheme default is jet, type help on matplotlib.cm 
-        aspect = aspect of plot, default is auto, can be 'equal' or a scalar 
-        interpolation = type of color interpolation, type help on 
-            matplotlib.pyplot.imshow 
-        cbori = colorbar orientation 'horizontal' or 'vertical' 
-        cbshrink = percentage of 1 for shrinking colorbar 
-        cbaspect = aspect ratio of long to short dimensions 
-        cbpad = pad between colorbar and axis
-        powscale = linear or log for power
-        normalize = y or n, yes for normalization, n for no
-        yscale = linear or log plot yscale
-        period = 'y' or 'n' to plot in period instead of frequency
-    Returns:
-        plot
-     """
-    
-    #time increment
-    if timeinc=='hrs':
-        tinc=3600/dt
-    elif timeinc=='min':
-        tinc=60/dt
-    elif timeinc=='sec':
-        tinc=1/dt
-    else:
-        raise ValueError(timeinc+'is not defined')
-    #colormap
-    if cmap==None:
-        cmap='jet'
-    else:
-        cmap=cmap
-    #aspect ratio
-    if aspect==None:
-        aspect='auto'
-    else:
-        aspect=aspect
-    #interpolation
-    if interpolation==None:
-        interpolation='gaussian'
-    else:
-        interpolation=interpolation
-    #colorbar orientation
-    if cbori==None:
-        cbori='vertical'
-    else:
-        cbori=cbori
-    #colorbar shinkage
-    if cbshrink==None:
-        cbshrink=.8
-    else:
-        cbshrink=cbshrink
-    #colorbar aspect
-    if cbaspect==None:
-        cbaspect=20
-    else:
-        cbaspect=cbaspect
-    #colorbar pad
-    if cbpad==None:
-        cbpad=.05
-    else:
-        cbpad=cbpad
-    #scale
-    if powscale=='log':
-        zerofind=np.where(abs(tfarray)==0)
-        tfarray[zerofind]=1.0
-        if normalize=='y':
-            plottfarray=10*np.log10(abs(tfarray/np.max(abs(tfarray))))
-        else:
-            plottfarray=10*np.log10(abs(tfarray))
-    elif powscale=='linear':
-        if normalize=='y':
-            plottfarray=abs(tfarray/np.max(abs(tfarray)))
-        else:
-            plottfarray=abs(tfarray)
-
-    #period or frequency
-    if period=='y':
-        flst[1:]=1./flst[1:]
-        flst[0]=2*flst[1]
-    elif period=='n':
-        pass
-    
-    #set properties for the plot         
-    plt.rcParams['font.size']=9
-    plt.rcParams['figure.subplot.left']=.12
-    plt.rcParams['figure.subplot.right']=.99
-    plt.rcParams['figure.subplot.bottom']=.12
-    plt.rcParams['figure.subplot.top']=.96
-    plt.rcParams['figure.subplot.wspace']=.25
-    plt.rcParams['figure.subplot.hspace']=.20
-    
-    #set the font dictionary
-    fdict={'size':10,'weight':'bold'}    
-    
-    #make a meshgrid if yscale is logarithmic    
-    if yscale=='log':
-        logt,logf=np.meshgrid(tlst,flst)
-    
-    #make figure    
-    fig1=plt.figure(fignum,[10,10],dpi=300)
-    ax=fig1.add_subplot(1,1,1)
-    if vmm!=None:
-        vmin=vmm[0]
-        vmax=vmm[1]
-        #add in log yscale
-        if yscale=='log':
-            #need to flip the matrix so that origin is bottom right
-            cbp=ax.pcolormesh(logt,logf,np.flipud(plottfarray),
-                          cmap=cmap,vmin=vmin,vmax=vmax)
-            ax.semilogy()
-            ax.set_ylim(flst[1],flst[-1])
-            ax.set_xlim(tlst[0],tlst[-1])
-            cb=plt.colorbar(cbp,orientation=cbori,shrink=cbshrink,pad=cbpad,
-                            aspect=cbaspect)
-        else:    
-            plt.imshow(plottfarray,extent=(tlst[0]/tinc+starttime,
-                       tlst[-1]/tinc+starttime,flst[1],flst[-1]),aspect=aspect,
-                       vmin=vmin,vmax=vmax,cmap=cmap,
-                       interpolation=interpolation)
-            cb=plt.colorbar(orientation=cbori,shrink=cbshrink,pad=cbpad,
-                            aspect=cbaspect)
-    else:
-        if yscale=='log':
-            cbp=ax.pcolormesh(logt,logf,np.flipud(plottfarray),
-                          cmap=cmap)
-            ax.semilogy()
-            ax.set_ylim(flst[1],flst[-1])
-            ax.set_xlim(tlst[0],tlst[-1])
-            cb=plt.colorbar(cbp,orientation=cbori,shrink=cbshrink,pad=cbpad,
-                            aspect=cbaspect)
-        else:
-            
-            plt.imshow(plottfarray,extent=(tlst[0]/tinc+starttime,
-                       tlst[-1]/tinc+starttime,flst[1],flst[-1]),aspect=aspect,
-                       cmap=cmap,interpolation=interpolation)
-            cb=plt.colorbar(orientation=cbori,shrink=cbshrink,pad=cbpad,
-                            aspect=cbaspect)
-    ax.set_xlabel('time('+timeinc+')',fontdict=fdict)
-    if period=='y':
-        ax.set_ylabel('period (s)',fontdict=fdict)
-    else:
-        ax.set_ylabel('frequency (Hz)',fontdict=fdict)
-    if title!=None:
-        ax.set_title(title,fontdict=fdict)
-    
-    plt.show()
-    
-    
-def plotAll(fx,tfarray,tlst,flst,fignum=1,starttime=0,timeinc='hrs',
-           dt=1.0,title=None,vmm=None,cmap=None,aspect=None,interpolation=None,
-           cbori=None,cbshrink=None,cbaspect=None,cbpad=None,normalize='n',
-           scale='log'):
-    """plottf(tfarray,tlst,flst,fignum=1) will plot a calculated tfarray with 
-    limits corresponding to tlst and flst. Can have: 
-    
-    Arguments
-        starttime = starttime measured in timeincrement 
-        timeincrement = 'hrs','min' or 'sec' 
-        vmm = [vmin,vmax] a list for min and max 
-        title = title string 
-        cmap = colormap scheme default is jet, type help on matplotlib.cm 
-        aspect = aspect of plot, default is auto, can be 'equal' or a scalar 
-        interpolation = type of color interpolation, type help on 
-                     matplotlib.pyplot.imshow 
-        cbori = colorbar orientation 'horizontal' or 'vertical' 
-        cbshrink = percentage of 1 for shrinking colorbar 
-        cbaspect = aspect ratio of long to short dimensions 
-        cbpad = pad between colorbar and axis
-        normalization = y or n, y for normalization n for none
-    
-    Returns:
-        plot
-    """
-    
-    #time increment
-    if timeinc=='hrs':
-        tinc=3600/dt
-    elif timeinc=='min':
-        tinc=60/dt
-    elif timeinc=='sec':
-        tinc=1/dt
-    else:
-        raise ValueError(timeinc+'is not defined')
-    #colormap
-    if cmap==None:
-        cmap='jet'
-    else:
-        cmap=cmap
-    #aspect ratio
-    if aspect==None:
-        aspect='auto'
-    else:
-        aspect=aspect
-    #interpolation
-    if interpolation==None:
-        interpolation='gaussian'
-    else:
-        interpolation=interpolation
-    #colorbar orientation
-    if cbori==None:
-        cbori='vertical'
-    else:
-        cbori=cbori
-    #colorbar shinkage
-    if cbshrink==None:
-        cbshrink=.99
-    else:
-        cbshrink=cbshrink
-    #colorbar aspect
-    if cbaspect==None:
-        cbaspect=20
-    else:
-        cbaspect=cbaspect
-    #colorbar pad
-    if cbpad==None:
-        cbpad=.1
-    else:
-        cbpad=cbpad
-        
-    #scale
-    if scale=='log':
-        zerofind=np.where(abs(tfarray)==0)
-        tfarray[zerofind]=1.0
-        if normalize=='y':
-            plottfarray=20*np.log10(abs(tfarray/np.max(abs(tfarray))))
-        else:
-            plottfarray=20*np.log10(abs(tfarray))
-    elif scale=='linear':
-        if normalize=='y':
-            plottfarray=abs(plottfarray/np.max(abs(plottfarray)))**2
-        else:
-            plottfarray=abs(tfarray)**2
-        
-    t=np.arange(len(fx))*dt+starttime*dt
-    FX=np.fft.fft(padzeros(fx))
-    FXfreq=np.fft.fftfreq(len(FX),dt)
-        
-    #set some plot parameters
-    plt.rcParams['font.size']=10
-    plt.rcParams['figure.subplot.left']=.13
-    plt.rcParams['figure.subplot.right']=.98
-    plt.rcParams['figure.subplot.bottom']=.07
-    plt.rcParams['figure.subplot.top']=.96
-    plt.rcParams['figure.subplot.wspace']=.25
-    plt.rcParams['figure.subplot.hspace']=.20
-    #plt.rcParams['font.family']='helvetica'
-    
-    fig=plt.figure(fignum)
-    plt.clf()
-    
-    #plot FFT of fx
-    fax=fig.add_axes([.05,.25,.1,.7])
-    plt.semilogx(abs(FX[0:len(FX)/2]/max(abs(FX))),FXfreq[0:len(FX)/2],'-k')
-    plt.axis('tight')
-    plt.ylim(0,FXfreq[len(FX)/2-1])
-#    fax.xaxis.set_major_locator(MultipleLocator(.5))
-    
-    #plot TFD
-    pax=fig.add_axes([.25,.25,.75,.7])
-    if vmm!=None:
-        vmin=vmm[0]
-        vmax=vmm[1]
-        plt.imshow(plottfarray,extent=(tlst[0]/tinc,tlst[-1]/tinc,
-               flst[0],flst[-1]),aspect=aspect,vmin=vmin,vmax=vmax,cmap=cmap,
-               interpolation=interpolation)
-    else:
-        plt.imshow(plottfarray,extent=(tlst[0]/tinc,tlst[-1]/tinc,
-               flst[0],flst[-1]),aspect=aspect,cmap=cmap,
-               interpolation=interpolation)
-    plt.xlabel('Time('+timeinc+')',fontsize=12,fontweight='bold')
-    plt.ylabel('Frequency (Hz)',fontsize=12,fontweight='bold')
-    if title!=None:
-        plt.title(title,fontsize=14,fontweight='bold')
-    plt.colorbar(orientation=cbori,shrink=cbshrink,pad=cbpad,aspect=cbaspect)
-    
-    #plot timeseries
-    tax=fig.add_axes([.25,.05,.60,.1])
-    plt.plot(t,fx,'-k')
-    plt.axis('tight')
-    plt.show()
-    
 
 def stfbss(X,nsources=5,ng=2**5-1,nh=2**9-1,tstep=2**6-1,df=1.0,nfbins=2**10,
           tftol=1.E-8,L=7,normalize=True,tftype='spwvd',alpha=.38):
@@ -2307,13 +1841,13 @@ def stfbss(X,nsources=5,ng=2**5-1,nh=2**9-1,tstep=2**6-1,df=1.0,nfbins=2**10,
         stfd=np.zeros((n,n,nfbins,ntbins),dtype='complex128')
         #compute auto terms
         for ii in range(n):
-            psm,tsm,fsm,pst=robustSmethod(Za[ii].reshape(maxn),**tfkwargs)
+            psm,tsm,fsm,pst=robust_smethod(Za[ii].reshape(maxn),**tfkwargs)
             stfd[ii,ii,:,:psm.shape[1]]=psm
         
         #compute cross terms
         for jj in range(n):
             for kk in range(jj,n):
-                psm,tsm,fsm,pst=robustSmethod([Za[jj].reshape(maxn),
+                psm,tsm,fsm,pst=robust_smethod([Za[jj].reshape(maxn),
                                                Za[kk].reshape(maxn)],
                                                 **tfkwargs)
                 stfd[jj,kk,:,:psm.shape[1]]=psm
