@@ -81,41 +81,79 @@ def _assert_position_format(coordinate, value):
 
     return value
 
+def assert_decimal_coordinates(coordinate_string):
+    """
+    Assert that coordinate component is given in decimal degrees. Converts into it otherwise.
 
-def assert_decimal_coordinates(coord):
+    input:
+    - string containing coordinte component (degrees or dms triple)
+      * separation symbol for dms triple can be :
+        - blank space
+        - :
+        - , 
 
+    output:
+    - input value expressed in decimal degrees
+
+    """
+    
+
+    cs = coordinate_string.strip()
+    lo_cardinals = re.findall('[neswNESW]', cs)
+    if len(lo_cardinals)>0:
+        #remove cardinal symbol 
+        cs = cs.replace(lo_cardinals[0],'')
+        if lo_cardinals[0] in ['s','S','e','E']:
+            if cs.startswith('-'):
+                cs = cs[1:]
+            else:
+                cs = '-'+cs
+
+    #try to split by the pre-determined separators
+    latlon_list = re.split('[ :,]',cs)
     try:
-        #if it's in decimal degrees already:
-        dec_coord = float(coord)
-        return dec_coord
-
+        latlon_list = [float(i) for i in latlon_list]
     except:
-        #see, if it's tuple
+        print 'coordinate value format invalid - non numerical values: {0}'.format(cs)
 
-        dms_list = re.split('[ :,]', coord)
-        if len(dms_list) == 3:
-            dec_coord = convert_dms_tuple2degrees(dms_list)
-        elif len(dms_list) == 2:
-            dec_coord = convert_degmin_tuple2degrees(dms_list)
+    if len(latlon_list) == 1:
+        #only degrees
+        try:
+            value = float(cs)
+            return value
+        except:
+            print 'coordinate value format invalid - not float: {0}'.format(cs)
+            return str(cs)
 
-    return dec_coord
+    elif len(latlon_list) > 3 :
+        print 'coordinate value format invalid - too many components: {0}'.format(cs)
+        return str(cs)
+
+    if len(latlon_list) == 3:
+        return convert_dms_tuple2degrees(latlon_list)
+    else:
+        return convert_degmin_tuple2degrees(latlon_list)
 
 
-def convert_dms_tuple2degrees(latlon_triple):
+
+def convert_dms_tuple2degrees(latlon_list):
+
     """
     Convert a triple (list, tuple, array) of degrees, minuts, seconds into degrees.
 
     Validity of the triple is assumed and has to be asserted in advanced.
     """
 
-     
     sign = 1.
     try:
-        latlon_list = [float(i) for i in latlon_triple]
+            latlon_list = [float(i) for i in latlon_list]
+            if str(latlon_list[0]).startswith('-'):
+                sign = -1.
 
     except:
+
         #if triple is given as string:
-        latlon_raw = latlon_triple
+        latlon_raw = latlon_list
         #allow separation by :,. or space for (deg min sec) format
         try:
             latlon_list = re.split('[ :,]', latlon_raw)
@@ -129,14 +167,17 @@ def convert_dms_tuple2degrees(latlon_triple):
     if str(latlon_list[0])[0]=='-':
         sign = -1.
     deg = latlon_list[0]
+    minutes = latlon_list[1]
+    seconds = latlon_list[2]
+    if not (0<=minutes<60 and 0<=seconds<60):
+        raise MTex.MTpyError_inputarguments('Minutes or seconds value invalid')
 
     #take out sign for easier conversion into degrees
-    
+
     if deg < 0:
         deg *= -1
 
-    degrees = deg + 1/60. * latlon_list[1] + 1/3600.* latlon_list[2]
-
+    degrees = deg + 1/60. * minutes + 1/3600.* seconds
 
     return degrees * sign
 
@@ -178,7 +219,7 @@ def convert_degrees2dms_tuple(degrees):
 def convert_degmin_tuple2degrees(latlon_list):
 
     """
-    Convert a 2-tuple (list, tuple, array) of form "(degrees,minutes)" into degrees.
+    Convert a 2tuple (list, tuple, array) of form "(degrees, minutes)" into degrees.
 
     Validity of the triple is assumed and has to be asserted in advance.
     """
@@ -187,18 +228,20 @@ def convert_degmin_tuple2degrees(latlon_list):
 
     try:
         latlon_list = [float(i) for i in latlon_list]
+        if str(latlon_list[0]).startswith('-'):
+            sign = -1.
     except:
         raise
 
     deg = latlon_list[0]
     minutes = latlon_list[1]
-
+    if not (0<=minutes<60):
+        raise MTex.MTpyError_inputarguments('Minutes value invalid')
     #take out sign for easier conversion into degrees
-    if str(latlon_list[0])[0]=='-':
-        sign = -1.
-    
+
     if deg < 0:
-        deg *= -1
+        deg *= -1.
+
 
     degrees = deg + 1/60. * minutes
 
