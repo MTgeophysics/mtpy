@@ -44,6 +44,7 @@ Functions:
 import numpy as np
 import scipy as sp
 import os
+import os.path as op
 import subprocess
 import shutil
 import fnmatch
@@ -60,6 +61,7 @@ import mtpy.core.edi as MTedi
 import mtpy.modeling.winglinktools as MTwl
 import mtpy.utils.conversions as MTcv
 import mtpy.utils.filehandling as MTfh
+import mtpy.utils.configfile as MTcf
 
 
 #==============================================================================
@@ -105,6 +107,8 @@ class Setup():
         self.parameters_startup['roughness_type'] = 1
         self.parameters_startup['debug_level'] = 1
         self.parameters_startup['mu_start'] = 5.0
+        self.parameters_startup['max_no_iterations'] = 30
+        self.parameters_startup['target_rms'] = 1.5
 
         self.parameters_inmodel['no_sideblockelements'] = 7
         self.parameters_inmodel['no_bottomlayerelements'] = 4
@@ -156,9 +160,75 @@ class Setup():
         self.staticsfile = None
         self.prejudicefile = None
 
+        self.edi_directory = None
         #working directory
         self.wd = '.'
 
+
+    def read_configfile(self, configfile):
+
+        cf = op.abspath(configfile)
+        if not op.isfile(cf):
+            print 'Warning - config file not found {0}'.format(cf)
+            return
+
+        config_dictionary = MTcf.read_configfile(cf)
+
+        no_p = self.update_parameters(config_dictionary)
+        no_a = self.update_attributes(config_dictionary)
+        print '{0} parameters and attributes updated'.format(no_a + no_p)
+
+
+    def update_parameters(self, **parameters_dictionary):
+
+        input_parameters_nocase = {}
+        for key in parameters_dictionary.keys():
+            input_parameters_nocase[key.lower()] = parameters_dictionary[key]
+
+        if self.validate_parameters(input_parameters_nocase) is False:
+            print 'Error - parameters invalid \n'
+            return
+
+        counter = 0
+        for dictionary in [self.parameters_startup, self.parameters_inmodel, 
+                                    self.parameters_mesh, self.parameters_data]:
+            for key in dictionary.keys():
+                if key in input_parameters_nocase:
+                    dictionary[key] = input_parameters_nocase[key]
+                    counter += 1
+
+        return counter
+
+
+
+    def validate_parameters(self, **parameters_dictionary):
+        
+        valid = True
+
+        return valid
+
+
+    def update_attributes(self, **attributes_dictionary):
+        input_attributes_nocase = {}
+        for key in attributes_dictionary.keys():
+            input_attributes_nocase[key.lower()] = attributes_dictionary[key]
+
+        if self.validate_attributes(input_attributes_nocase) is False:
+            print 'Error - attributes invalid \n'
+            return
+        counter = 0
+        for attr in dir(self):
+            if attr in input_attributes_nocase:
+                self.setattr(attr,input_attributes_nocase[attr])
+                counter += 1
+
+        return counter 
+
+    def validate_attributes(self, **attributes_dictionary):
+        
+        valid = True
+
+        return valid
 
 
     def read_edifiles(self, directory = None):
@@ -178,18 +248,6 @@ class Setup():
         datafilename = data_object.filename
         return datafilename
 
-    def generate_profile(self):
-        """
-            Generate linear profile by linear regression of station locations.
-
-            Stations are projected orthogonally onto the profile. Calculate 
-            orientation of profile (azimuth) and position of stations on the 
-            profile.
-
-            (self.stationlocations, self.azimuth, self.stations)
-
-        """
-        pass
 
 
     def setup_mesh_and_model(self):
@@ -403,7 +461,7 @@ class Setup():
 
         nodez = k+1
         
-        self.inmodel_bindingoffset                   = block_offset
+        self.parameter_inmodel['bindingoffset']      = block_offset
         self.parameter_inmodel['max_number_columns'] = ncol0
         self.parameter_inmodel['lo_merged_lines']    = nfe
         self.parameter_inmodel['lo_merged_columns']  = nfev  
@@ -460,8 +518,8 @@ class Setup():
             if layer_idx == 0:
                 mcol = ncol
 
-        self.lo_modelblockstrings = modelblockstrings
-        self.lo_columnnumbers     = lo_colnumbers
+        self.parameter_inmodel['lo_modelblockstrings'] = modelblockstrings
+        self.parameter_inmodel['lo_columnnumbers']     = lo_colnumbers
         self.no_parameters        = num_params
 
 
@@ -523,10 +581,138 @@ class Setup():
 
 
     def make_inmodelfile(self):
-        pass
+        """
+        Generate inmodel file.
+
+        Require attributes:
+        - self.parameter_inmodel['lo_modelblockstrings']
+        - self.parameter_inmodel['lo_columnnumbers']
+        - self.parameter_inmodel['lo_merged_columns']
+        - self.parameter_inmodel['bindingoffset']
+        - self.no_layers
+        """
+
+        modelblockstrings = self.parameter_inmodel['lo_modelblockstrings']
+        lo_colnumbers     = self.parameter_inmodel['lo_columnnumbers']
+        nfev              = self.parameter_inmodel['lo_merged_columns']
+        boffset           = self.parameter_inmodel['bindingoffset']
+        n_layers          = self.no_layers
+        
+        model_outstring =''
+
+        temptext = "Format:           {0}\n".format("OCCAM2MTMOD_1.0")
+        model_outstring += temptext
+        temptext = "Model Name:       {0}\n".format(self.parameters_inmodel['model_name'])
+        model_outstring += temptext
+        temptext = "Description:      {0}\n".format("Random Text")
+        model_outstring += temptext
+        temptext = "Mesh File:        {0}\n".format(op.abspath(self.meshfile))
+        model_outstring += temptext
+        temptext = "Mesh Type:        {0}\n".format("PW2D")
+        model_outstring += temptext
+        temptext = "Statics File:     {0}\n".format(self.staticsfile)
+        model_outstring += temptext
+        temptext = "Prejudice File:   {0}\n".format(self.prejudicefile)
+        model_outstring += temptext
+        temptext = "Binding Offset:   {0:.1f}\n".format(boffset)
+        model_outstring += temptext
+        temptext = "Num Layers:       {0}\n".format(n_layers)
+        model_outstring += temptext
+
+        for k in range(n_layers):
+            n_meshlayers  = nfev[k]
+            n_meshcolumns = lo_colnumbers[k]
+            temptext="{0} {1}\n".format(n_meshlayers, n_meshcolumns)
+            model_outstring += temptext
+
+            temptext = modelblockstrings[k]
+            model_outstring += temptext
+            #model_outstring += "\n"
+            
+
+        temptext = "Number Exceptions:{0}\n".format(0)
+        model_outstring += temptext
+        
+
+        self.modelfile = MTfh.unique_filename(op.join(self.wd,self.modelfile))         
+        F_model = file(self.modelfile,'w')
+        F_model.write(model_outstring)
+        F_model.close()
+
+
 
     def make_startupfile(self):
-        pass
+        """
+        Generate startup file
+
+        Require attributes:
+
+        -
+
+
+        """
+
+        startup_outstring =''
+
+        temptext = "Format:           {0}\n".format(self.parameters_startup['iter_format'])
+        startup_outstring += temptext
+
+        temptext = "Description:      {0}\n".format(self.parameters_startup['description'])
+        startup_outstring += temptext
+
+        temptext = "Model File:       {0}\n".format(self.inmodelfile)
+        startup_outstring += temptext
+
+        temptext = "Data File:        {0}\n".format(self.datafile)
+        startup_outstring += temptext
+
+        temptext = "Date/Time:        {0}\n".format(self.parameters_startup['datetime_string'])
+        startup_outstring += temptext
+
+        temptext = "Max Iter:         {0}\n".format(int(float(self.parameters_startup['max_no_iterations'])))
+        startup_outstring += temptext
+
+        temptext = "Req Tol:          {0:.1g}\n".format(float(self.parameters_startup['target_rms']))
+        startup_outstring += temptext
+
+        temptext = "IRUF:             {0}\n".format(self.parameters_startup['roughness_type'])
+        startup_outstring += temptext
+    
+        temptext = "Debug Level:      {0}\n".format(self.parameters_startup['debug_level'])
+        startup_outstring += temptext
+
+        temptext = "Iteration:        {0}\n".format(int(self.parameters_startup['no_iteration']))
+        startup_outstring += temptext
+    
+        temptext = "PMU:              {0}\n".format(self.parameters_startup['mu_start'])
+        startup_outstring += temptext
+        
+        #????????????
+        temptext = "Rlast:            {0}\n".format(parameter_dict['rlast'])
+        startup_outstring += temptext
+        #??????????????
+        temptext = "Tlast:            {0}\n".format(parameter_dict['tobt'])
+        startup_outstring += temptext
+        
+        temptext = "IffTol:           {0}\n".format(self.parameters_startup['reached_misfit'])
+        startup_outstring += temptext
+        
+        temptext = "No. Parms:        {0}\n".format(int(self.no_parameters))
+        startup_outstring += temptext
+        
+        temptext = ""
+        for l in range(int(float(parameter_dict['n_parameters']))):
+            temptext += "{0:.1g}  ".format(2.0)
+        temptext += "\n"
+        startup_outstring += temptext
+     
+
+        self.startupfile =  MTfh.unique_filename(op.join(self.wd,self.startupfile))  
+        F_startup = file(self.startupfile,'w')
+        F_startup.write(startup_outstring)
+        F_startup.close()
+
+
 
     def make_files(self, edi_dir):
 
@@ -537,8 +723,12 @@ class Setup():
         self.make_inmodelfile()
         self.make_startupfile()
 
-        print '\nInput files in directory {0}\n'.format(self.wd)
-        print '\n\t DONE !\n\n'
+        print '\nInput files in working directory {0}:\n'.format(self.wd)
+        print '{0}'.format(op.basename(self.datafile))
+        print '{0}'.format(op.basename(self.meshfile))
+        print '{0}'.format(op.basename(self.inmodelfile))
+        print '{0}'.format(op.basename(self.startupfile))
+        print '\n\t\t DONE !\n\n'
 
 #------------------------------------------------------------------------------
 
@@ -551,9 +741,22 @@ class Data():
     Reading data files.
     Allow merging of data files (connect with 'Plot()' for this)
     """
-    def __init__(self, edi_directory = None):
+    def __init__(self, edi_directory = None, wd = None):
+
         pass
 
+    def generate_profile(self):
+        """
+            Generate linear profile by linear regression of station locations.
+
+            Stations are projected orthogonally onto the profile. Calculate 
+            orientation of profile (azimuth) and position of stations on the 
+            profile.
+
+            (self.stationlocations, self.azimuth, self.stations)
+
+        """
+        pass
 
 
 class Model():
@@ -697,33 +900,31 @@ def writemodelfile(parameter_dict):
     boffset           = float(parameter_dict['binding_offset'])
     n_layers          = int(float(parameter_dict['n_layers']))
 
-    
-    fh_model = file(parameter_dict['inmodelfn'],'w')
     model_outstring =''
 
-    temptext = "Format:           %s\n"%("OCCAM2MTMOD_1.0")
+    temptext = "Format:           {0}\n".format("OCCAM2MTMOD_1.0")
     model_outstring += temptext
-    temptext = "Model Name:       %s\n"%(parameter_dict['modelname'])
+    temptext = "Model Name:       {0}\n".format(self.parameters_inmodel['model_name'])
     model_outstring += temptext
-    temptext = "Description:      %s\n"%("Random Text")
+    temptext = "Description:      {0}\n".format("Random Text")
     model_outstring += temptext
-    temptext = "Mesh File:        %s\n"%(os.path.basename(parameter_dict['meshfn']))
+    temptext = "Mesh File:        {0}\n".format(op.basename(self.meshfile))
     model_outstring += temptext
-    temptext = "Mesh Type:        %s\n"%("PW2D")
+    temptext = "Mesh Type:        {0}\n".format("PW2D")
     model_outstring += temptext
-    temptext = "Statics File:     %s\n"%("none")
+    temptext = "Statics File:     {0}\n".format(self.staticsfile)
     model_outstring += temptext
-    temptext = "Prejudice File:   %s\n"%("none")
+    temptext = "Prejudice File:   {0}\n".format(self.prejudicefile)
     model_outstring += temptext
-    temptext = "Binding Offset:   %.1f\n"%(boffset)
+    temptext = "Binding Offset:   {0:.1f}\n".format(boffset)
     model_outstring += temptext
-    temptext = "Num Layers:       %i\n"%(n_layers)
+    temptext = "Num Layers:       {0}\n".format(n_layers)
     model_outstring += temptext
 
     for k in range(n_layers):
         n_meshlayers  = nfev[k]
         n_meshcolumns = lo_colnumbers[k]
-        temptext="%i %i\n"%(n_meshlayers, n_meshcolumns)
+        temptext="{0} {1}\n".format(n_meshlayers, n_meshcolumns)
         model_outstring += temptext
 
         temptext = modelblockstrings[k]
@@ -731,7 +932,7 @@ def writemodelfile(parameter_dict):
         #model_outstring += "\n"
         
 
-    temptext = "Number Exceptions:%i\n"%(0)
+    temptext = "Number Exceptions:{0}\n".format(0)
     model_outstring += temptext
     
 
@@ -3659,7 +3860,7 @@ class Data():
                                 pstation_list=station_list,
                                 **kwargs)
         
-class Occam2DModel(Occam2DData):
+class Occam2DModel(Data):
     """
     This class deals with the model side of occam2d inversions, including 
     plotting the model, the L-curve, depth profiles.  It will also be able to 

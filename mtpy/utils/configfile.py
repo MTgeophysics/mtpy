@@ -103,7 +103,7 @@ def read_configfile(filename):
         -> return nested dictionary (main level keys are section heads)
         
         Config files with sections as well as section-less entries 
-        -> return nested dictionary, which includes a 'DEFAULT' key
+        -> return nested dictionary, which includes a top level 'DEFAULT' key
     """
 
     #generate config parser instance
@@ -184,7 +184,9 @@ def read_survey_configfile(filename):
                                                       0.4, 1, 10, 11, 2, 4, 
                                                       8, 16, 32, 64],
                                     'E_instrument_type':['electrodes', 
-                                                         'cu-cuso4 electrodes'],
+                                                         'cu-cuso4 electrodes',
+                                                         'cuso4_electrodes',
+                                                         'pbcl2_electrodes'],
                                     'E_instrument_amplification':[1,10]
                                     }
     
