@@ -197,18 +197,14 @@ class Z(object):
                 if z_array.dtype in ['complex', 'float', 'int']:
                     self._z = z_array
         except:
-            pass
+            try:
+                if len(z_array.shape) == 2 and z_array.shape == (2,2):
+                    if z_array.dtype in ['complex', 'float','int']:
+                        self._z = np.zeros((1,2,2),'complex')
+                        self._z[0] = z_array            
+            except:
+                print 'provided Z array does not have correct dimensions - Z unchanged'
 
-        try:
-            if len(z_array.shape) == 2 and z_array.shape == (2,2):
-                if z_array.dtype in ['complex', 'float','int']:
-                    self._z = np.zeros((1,2,2),'complex')
-                    self._z[0] = z_array            
-        except:
-            pass
-
-
-        self._z = z_array
         
         if type(self.rotation_angle) is float:
             self.rotation_angle = np.array([self.rotation_angle 

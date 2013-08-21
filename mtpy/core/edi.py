@@ -1136,6 +1136,20 @@ class Edi(object):
         if self.Tipper.tipper is not None:
             self.Tipper.rotation_angle = self.zrot
 
+
+    #--------------Write out file---------------------------------------------
+    def set_Z(self, z_object):
+        """
+            Set the Z object attribute.
+        """
+        if not isinstance(z_object, MTz.Z):
+            raise MTex.MTpyError_Z('Input argument is not an instance of '+\
+                                                                 'the Z class')
+
+        self.Z = z_object
+        self.freq = z_object.freq
+
+
     #--------------Write out file---------------------------------------------
     def writefile(self, *fn):
         """
