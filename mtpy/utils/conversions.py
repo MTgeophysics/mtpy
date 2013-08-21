@@ -77,7 +77,7 @@ _ellipsoid = [
 #def LLtoUTM(int ReferenceEllipsoid, const double Lat, const double Long, 
 #            double &UTMNorthing, double &UTMEasting, char* UTMZone)
 
-def LLtoUTM(ReferenceEllipsoid, Lat, Long):
+def LLtoUTM(ReferenceEllipsoid, Lat, Long, zonenumber = None):
     """
     converts lat/long to UTM coords.  Equations from USGS Bulletin 1532 
     East Longitudes are positive, West longitudes are negative. 
@@ -97,8 +97,15 @@ def LLtoUTM(ReferenceEllipsoid, Lat, Long):
 
     LatRad = Lat*_deg2rad
     LongRad = LongTemp*_deg2rad
-
-    ZoneNumber = int((LongTemp + 180)/6) + 1
+    
+    if zonenumber is not None:
+        try:
+            ZoneNumber = int(float(zonenumber))
+        except:
+            ZoneNumber = int((LongTemp + 180)/6) + 1
+            
+    else:
+        ZoneNumber = int((LongTemp + 180)/6) + 1
   
     if Lat >= 56.0 and Lat < 64.0 and LongTemp >= 3.0 and LongTemp < 12.0:
         ZoneNumber = 32

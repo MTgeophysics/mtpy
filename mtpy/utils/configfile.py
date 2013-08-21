@@ -26,7 +26,7 @@ import ConfigParser
 import fnmatch
 import shutil
 import copy
-
+import StringIO
 import mtpy.utils.calculator as MTcc
 import mtpy.processing.general as MTgn
 import mtpy.utils.exceptions as MTex
@@ -114,18 +114,22 @@ def read_configfile(filename):
         raise MTex.MTpyError_inputarguments( 'File does not exist: {0}'.format(filename))
 
     # try to parse file - exit, if not a config file
-    try:
+    try :
         configobject.read(filename)
+
     except:
-        raise MTex.MTpyError_inputarguments( 'File is not a proper '
-                        'configuration file: {0}'.format(filename) )
+        try:
+            dummy_String = '[DEFAULT]\n' + open(filename, 'r').read()
+            FH = StringIO.StringIO(dummy_String)
+            configobject.read(FH)
+        except:
+            raise MTex.MTpyError_inputarguments( 'File is not a proper '
+                                    'configuration file: {0}'.format(filename) )
 
 
-    #if 0:#len(configobject.sections()) != 0:
-    config_dict = configobject._sections
-        
+    config_dict = configobject._sections      
+
     if len (config_dict.keys()) != 0:
-
         config_dict['DEFAULT'] = configobject.defaults()
     else:
         config_dict = configobject.defaults()

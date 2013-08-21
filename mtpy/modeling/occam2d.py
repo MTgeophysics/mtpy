@@ -17,17 +17,6 @@ Classes:
     - Mask
 
 
-
-
-    - PointPicker
-
-    - PlotOccam2DResponse
-    - PlotPseudoSection
-    - PlotAllResponses
-    - PlotModel
-    - PlotL2
-    - PlotDepthSlice
-
 Functions:
     - getdatetime
     - makestartfiles
@@ -43,6 +32,8 @@ Functions:
 #==============================================================================
 import numpy as np
 import scipy as sp
+from scipy.stats import mode
+import sys
 import os
 import os.path as op
 import subprocess
@@ -63,6 +54,8 @@ import mtpy.utils.conversions as MTcv
 import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
 
+reload(MTcv)
+reload(MTcf)
 
 #==============================================================================
 
@@ -82,17 +75,15 @@ class Setup():
     """
 
 
-    def __init__(self, **input_parameters):
+    def __init__(self, configfile = None, **input_parameters):
+
+
 
         self.parameters_startup = {}
         self.parameters_inmodel = {}
         self.parameters_data = {}
         self.parameters_mesh = {}
 
-        #correct for upper case keys
-        input_parameters_nocase = {}
-        for key in input_parameters.keys():
-            input_parameters_nocase[key.lower()] = input_parameters[key]
 
         self.parameters_startup['description'] = 'generic MTpy setup'
 
@@ -102,7 +93,6 @@ class Setup():
 
         self.parameters_startup['no_iteration'] = 0
         self.parameters_startup['roughness_start'] = 1.0E+07
-        self.parameters_startup['misfit_start'] = 100.
         self.parameters_startup['reached_misfit'] = 0        
         self.parameters_startup['roughness_type'] = 1
         self.parameters_startup['debug_level'] = 1
@@ -114,7 +104,8 @@ class Setup():
         self.parameters_inmodel['no_bottomlayerelements'] = 4
         self.parameters_inmodel['max_blockwidth'] = 500
         self.parameters_inmodel['firstlayer_thickness'] = 250
-        self.parameters_inmodel['no_layersperdecade'] = 5
+        self.parameters_inmodel['no_layersperdecade'] = 10
+        self.parameters_inmodel['no_layers'] = 50
 
         self.parameters_inmodel['model_name'] = 'Modelfile generated with MTpy'
         self.parameters_inmodel['block_merge_threshold'] = 0.75
@@ -124,12 +115,7 @@ class Setup():
 
         self.parameters_mesh['mesh_title'] = 'Mesh file generated with MTpy'
 
-        for dictionary in [self.parameters_startup, self.parameters_inmodel, 
-                                    self.parameters_mesh, self.parameters_data]:
-            for key in dictionary.keys():
-                if key in input_parameters_nocase:
-                    dictionary[key] = input_parameters_nocase[key]
-
+ 
         self.mesh = None
         self.meshlocations_x = None
         self.meshlocations_z = None
@@ -140,10 +126,8 @@ class Setup():
         self.lo_columnnumbers = []
 
         self.inmodel = None
-        self.inmodel_bindingoffset = 0.
  
         self.data = None
-        self.no_layers = None
         self.no_parameters = None
 
         self.stationnames = []
@@ -163,6 +147,51 @@ class Setup():
         self.edi_directory = None
         #working directory
         self.wd = '.'
+
+        update_dict = {}
+
+        if configfile is not None:
+            if op.isfile(configfile):
+                if 1:
+                    config_dict = MTcf.read_configfile(configfile)
+                    temp_dict = {}
+                    for key in config_dict:
+                        temp_dict = config_dict[key]
+                        update_dict.update(temp_dict)
+                # except:
+                #     print 'Warning - could not read config file {0}'.format(op.abspath(configfile))
+                #     pass
+
+        #correcting dictionary for upper case keys
+        input_parameters_nocase = {}
+        for key in input_parameters.keys():
+            input_parameters_nocase[key.lower()] = input_parameters[key]
+
+        update_dict.update(input_parameters_nocase)
+
+        for dictionary in [self.parameters_startup, self.parameters_inmodel, 
+                                    self.parameters_mesh, self.parameters_data]:
+            for key in dictionary.keys():
+                if key in update_dict:
+                    if len(update_dict[key]) > 0 :
+                        try:
+                            value = float(update_dict[key])
+                            dictionary[key] = value
+                        except:
+                            dictionary[key] = update_dict[key]
+
+        for key in update_dict:
+            try:
+                value = getattr(self,key)
+                if len(update_dict[key]) > 0:
+                    try:
+                        value = float(update_dict[key])
+                        setattr(self,key,value)
+                    except:
+                        setattr(self,key,update_dict[key])
+            except:
+                continue 
+
 
 
     def read_configfile(self, configfile):
@@ -301,31 +330,34 @@ class Setup():
         if self.edi_directory is None:
             self.edi_directory = '.'
 
-        if (edi_dir is not None)
+        if (edi_dir is not None):
             if (op.isdir(edi_dir)):
                 self.edi_directory = edi_dir
             else:
                 print 'Warning - given directory not found: {0} \n\t-'\
                     ' using current directory instead:{1}'.format(edi_dir,os.curdir)
 
-        edilist_raw = fnmatch.filter(os.listdir(edi_dir),'*.[Ee][Dd][Ii]')
-        edilist_full = [op.abspath(op.join(edi_dir,i)) for i in edilist_raw]
+
+        edilist_raw = fnmatch.filter(os.listdir(self.edi_directory),'*.[Ee][Dd][Ii]')
+        edilist_full = [op.abspath(op.join(self.edi_directory,i)) for i in edilist_raw]
         edilist = []
         for edi in edilist_full:
-            try:
+            try :
                 e = MTedi.Edi()
                 e.readfile(edi)
                 edilist.append(edi)
             except:
                 continue
 
-        self.edifiles = edifiles
+        self.edifiles = edilist
        
 
     def write_datafile(self):
 
         data_object = Data(edilist = self.edifiles, wd = self.wd, **self.parameters_data)
+        self.sitelocations = data_object.stationlocations
         data_object.writefile()
+
         self.datafile = data_object.filename
         
 
@@ -344,13 +376,13 @@ class Setup():
 
         lo_sites = self.sitelocations
         n_sites  = len(lo_sites)
-        maxwidth = self.parameters_inmodel['max_blockwidth']
+        maxwidth = float(self.parameters_inmodel['max_blockwidth'])
 
         nbot     = int(float(self.parameters_inmodel['no_bottomlayerelements']))
         nside    = int(float(self.parameters_inmodel['no_sideblockelements']))
 
-        # j: index for finite elements
-        # k: index for regularisation bricks
+        # j: index for finite elements (mesh)
+        # k: index for regularisation bricks (model)
         # Python style: start with 0 instead of 1
 
         sitlok      = []
@@ -495,7 +527,7 @@ class Setup():
         
         d1 = t1
         
-        n_layers = int(float(self.no_layers))
+        n_layers = int(float(self.parameters_inmodel['no_layers']))
 
         for idx in range(1,n_layers-1):
             d2 = d1*t
@@ -529,7 +561,7 @@ class Setup():
 
         for idx in range(2,n_layers-1):
             k += 1
-            nfev.append(1.)
+            nfev.append(1)
             dlz.append(thickness[idx])
 
         for idx in range(nbot):
@@ -540,17 +572,17 @@ class Setup():
 
         nodez = k+1
         
-        self.parameter_inmodel['bindingoffset']      = block_offset
-        self.parameter_inmodel['max_number_columns'] = ncol0
-        self.parameter_inmodel['lo_merged_lines']    = nfe
-        self.parameter_inmodel['lo_merged_columns']  = nfev  
+        self.parameters_inmodel['bindingoffset']      = block_offset
+        self.parameters_inmodel['max_number_columns'] = ncol0
+        self.parameters_inmodel['lo_merged_lines']    = nfe
+        self.parameters_inmodel['lo_merged_columns']  = nfev  
         self.meshblockwidths_x                       = width
         self.meshblockdepths_z                       = thickness
          
         self.meshlocations_z                         = dlz
         self.meshlocations_x                         = dly
-        self.parameter_inmodel['no_nodes_hor']       = nodey
-        self.parameter_inmodel['no_nodes_vert']      = nodez
+        self.parameters_mesh['no_nodes_hor']       = nodey
+        self.parameters_mesh['no_nodes_vert']      = nodez
 
         #mesh DONE
         #-----------------------------------------------------
@@ -596,14 +628,15 @@ class Setup():
             #completely unnecessary!!! :
             if layer_idx == 0:
                 mcol = ncol
-
-        self.parameter_inmodel['lo_modelblockstrings'] = modelblockstrings
-        self.parameter_inmodel['lo_columnnumbers']     = lo_colnumbers
+        
+        
+        self.parameters_inmodel['lo_modelblockstrings'] = modelblockstrings
+        self.parameters_inmodel['lo_columnnumbers']     = lo_colnumbers
         self.no_parameters        = num_params
 
 
 
-    def make_meshfile(self):
+    def write_meshfile(self):
 
         """
         Create the mesh file
@@ -620,8 +653,8 @@ class Setup():
         """
         mesh_positions_vert = self.meshlocations_z
         mesh_positions_hor  = self.meshlocations_x
-        n_nodes_hor         = self.meshnodes_x
-        n_nodes_vert        = self.meshnodes_z
+        n_nodes_hor         = self.parameters_mesh['no_nodes_hor'] 
+        n_nodes_vert        = self.parameters_mesh['no_nodes_vert']
         
 
         mesh_outstring =''
@@ -633,19 +666,29 @@ class Setup():
         mesh_outstring += temptext
 
         temptext = ""
+        counter = 0 
         for i in range(n_nodes_hor-1):
             temptext += "%.1f "%(mesh_positions_hor[i])
+            counter +=1 
+            if counter == 10:
+                temptext += '\n'
+                counter = 0
         temptext +="\n"
         mesh_outstring += temptext
 
         temptext = ""
+        counter = 0 
         for i in range(n_nodes_vert-1):
             temptext += "%.1f "%(mesh_positions_vert[i])
+            counter +=1 
+            if counter == 10:
+                temptext += '\n'
+                counter = 0
         temptext +="\n"
         mesh_outstring += temptext
 
         mesh_outstring +="%i\n"%(0)
-
+        
         for j in range(4*(n_nodes_vert-1)):
             tempstring=''
             tempstring += (n_nodes_hor-1)*"?"
@@ -653,8 +696,8 @@ class Setup():
             mesh_outstring += tempstring
 
 
-        self.meshfile = MTfh.unique_filename(op.join(self.wd,self.meshfile))         
-        F_mesh = file(self.meshfile,'w')
+        fn = op.join(self.wd,self.meshfile)       
+        F_mesh = open(fn,'w')
         F_mesh.write(mesh_outstring)
         F_mesh.close()
 
@@ -664,19 +707,19 @@ class Setup():
         Generate inmodel file.
 
         Require attributes:
-        - self.parameter_inmodel['lo_modelblockstrings']
-        - self.parameter_inmodel['lo_columnnumbers']
-        - self.parameter_inmodel['lo_merged_columns']
-        - self.parameter_inmodel['bindingoffset']
+        - self.parameters_inmodel['lo_modelblockstrings']
+        - self.parameters_inmodel['lo_columnnumbers']
+        - self.parameters_inmodel['lo_merged_columns']
+        - self.parameters_inmodel['bindingoffset']
         - self.no_layers
         """
 
-        modelblockstrings = self.parameter_inmodel['lo_modelblockstrings']
-        lo_colnumbers     = self.parameter_inmodel['lo_columnnumbers']
-        nfev              = self.parameter_inmodel['lo_merged_columns']
-        boffset           = self.parameter_inmodel['bindingoffset']
-        n_layers          = self.no_layers
-        
+        modelblockstrings = self.parameters_inmodel['lo_modelblockstrings']
+        lo_colnumbers     = self.parameters_inmodel['lo_columnnumbers']
+        nfev              = self.parameters_inmodel['lo_merged_columns']
+        boffset           = self.parameters_inmodel['bindingoffset']
+        n_layers          = int(self.parameters_inmodel['no_layers'])
+
         model_outstring =''
 
         temptext = "Format:           {0}\n".format("OCCAM2MTMOD_1.0")
@@ -689,9 +732,15 @@ class Setup():
         model_outstring += temptext
         temptext = "Mesh Type:        {0}\n".format("PW2D")
         model_outstring += temptext
-        temptext = "Statics File:     {0}\n".format(self.staticsfile)
+        if self.staticsfile is not None:
+            temptext = "Statics File:     {0}\n".format(self.staticsfile)
+        else:
+            temptext = "Statics File:     none\n"
         model_outstring += temptext
-        temptext = "Prejudice File:   {0}\n".format(self.prejudicefile)
+        if self.prejudicefile is not None:
+            temptext = "Prejudice File:   {0}\n".format(self.prejudicefile)
+        else:
+            temptext = "Prejudice File:   none\n"
         model_outstring += temptext
         temptext = "Binding Offset:   {0:.1f}\n".format(boffset)
         model_outstring += temptext
@@ -713,8 +762,8 @@ class Setup():
         model_outstring += temptext
         
 
-        self.modelfile = MTfh.unique_filename(op.join(self.wd,self.modelfile))         
-        F_model = file(self.modelfile,'w')
+        fn = op.join(self.wd,self.inmodelfile)        
+        F_model = open(fn,'w')
         F_model.write(model_outstring)
         F_model.close()
 
@@ -751,7 +800,7 @@ class Setup():
         temptext = "Max Iter:         {0}\n".format(int(float(self.parameters_startup['max_no_iterations'])))
         startup_outstring += temptext
 
-        temptext = "Req Tol:          {0:.1g}\n".format(float(self.parameters_startup['target_rms']))
+        temptext = "Req Tol:          {0:.1f}\n".format(float(self.parameters_startup['target_rms']))
         startup_outstring += temptext
 
         temptext = "IRUF:             {0}\n".format(self.parameters_startup['roughness_type'])
@@ -766,34 +815,42 @@ class Setup():
         temptext = "PMU:              {0}\n".format(self.parameters_startup['mu_start'])
         startup_outstring += temptext
         
-        #????????????
-        temptext = "Rlast:            {0}\n".format(parameter_dict['rlast'])
-        startup_outstring += temptext
-        #??????????????
-        temptext = "Tlast:            {0}\n".format(parameter_dict['tobt'])
-        startup_outstring += temptext
+        # #????????????
+        # temptext = "Rlast:            {0}\n".format(parameter_dict['rlast'])
+        # startup_outstring += temptext
+        # #??????????????
+        # temptext = "Tlast:            {0}\n".format(parameter_dict['tobt'])
+        # startup_outstring += temptext
         
         temptext = "IffTol:           {0}\n".format(self.parameters_startup['reached_misfit'])
         startup_outstring += temptext
         
-        temptext = "No. Parms:        {0}\n".format(int(self.no_parameters))
+        temptext = "No. Parms:        {0}\n".format(self.no_parameters)
         startup_outstring += temptext
         
         temptext = ""
-        for l in range(int(float(parameter_dict['n_parameters']))):
-            temptext += "{0:.1g}  ".format(2.0)
+        counter = 0 
+        for l in range(self.no_parameters):
+            temptext += "{0:.1g}  ".format(np.log10(float(self.halfspace_resistivity)))
+            counter += 1
+            if counter == 20:
+                temptext += '\n'
+                counter = 0
         temptext += "\n"
         startup_outstring += temptext
      
 
-        self.startupfile =  MTfh.unique_filename(op.join(self.wd,self.startupfile))  
-        F_startup = file(self.startupfile,'w')
+        fn =  op.join(self.wd,self.startupfile)
+        F_startup = open(fn,'w')
         F_startup.write(startup_outstring)
         F_startup.close()
 
 
 
     def generate_inputfiles(self, edi_dir):
+
+        if not op.isdir(self.wd):
+            os.makedirs(self.wd)
 
         self.read_edifiles(edi_dir)
         self.write_datafile()
@@ -802,7 +859,7 @@ class Setup():
         self.write_inmodelfile()
         self.write_startupfile()
 
-        print '\nInput files in working directory {0}:\n'.format(self.wd)
+        print '\nInput files in working directory {0}: \n'.format(op.abspath(self.wd))
         print '{0}'.format(op.basename(self.datafile))
         print '{0}'.format(op.basename(self.meshfile))
         print '{0}'.format(op.basename(self.inmodelfile))
@@ -838,18 +895,23 @@ class Data():
 
         self.azimuth = 0.
         self.profile = None
-        self.freq = np.array([])
+        self.frequencies = None
         self.stations = []
         self.stationlocations = []
         self.rotation_angle = 0.
-        self.masked = []
         self.data = []
         self.mode = 'both'
         self.profile_offset = 0.
-        self.title = 'Occam2D Data file - profile azimuth {0}'.format(self.azimuth)
+        self.format = 'OCCAM2MTDATA_1.0'
+        self.title = 'Occam2D Data file'
+        self.phase_errorfloor = 10.
+        self.res_errorfloor = 10.
 
         self.generate_profile()
-        self._write_datafile(op.join(self.wd,self.filename))
+        self.build_data()
+
+        #self.group_frequencies()
+        #self._write_datafile(op.join(self.wd,self.filename))#
         
 
     def readfile(self,fn):
@@ -863,13 +925,15 @@ class Data():
         datafile_raw = F_in.read()
         F_in.close()
 
+        #string is reduced each step, i.e. cut off the sections, 
+        #which are read in already
         reduced_string = self._read_format(datafile_raw)
         reduced_string = self._read_title(datafile_raw)
         reduced_string = self._read_sites(datafile_raw)
         reduced_string = self._read_offsets(datafile_raw)
         reduced_string = self._read_frequencies(datafile_raw)
         
-        self._read_data(datafile_raw)
+        self._read_data(reduced_string)
 
     def _find_string(key,datastring):
         
@@ -962,7 +1026,7 @@ class Data():
         row_idx = 2
         while idx < no_data:
             row = data_list[row_idx].strip().split()
-            if row[0][0] == '#'
+            if row[0][0] == '#':
                 row_idx += 1
                 continue
             rowlist = [float(i) for i in row]
@@ -973,29 +1037,200 @@ class Data():
 
 
     def rotate(angle):
+        """
+        Rotate input data for geoelectric strike.
 
+
+        Best done on the edi files before being read input_parameters
+        TODO
+
+        """
         pass
+
+
+    def build_data(self):
+        
+        lo_modes = []
+        modes = self.mode.lower().strip()
+        if modes == 'both':
+            lo_modes = [1,2,5,6]
+        elif modes == 'te':
+            lo_modes = [1,2]
+        elif modes == 'tm':
+            lo_modes = [5,6]
+
+
+        lo_all_freqs = []
+        for lo_f in self.station_frequencies:
+            lo_all_freqs.extend(list(lo_f))
+        lo_all_freqs = sorted(list(set(lo_all_freqs)),reverse=True)
+        self.frequencies = np.array(lo_all_freqs)
+
+        self.data = []
+
+        for idx_s, station in enumerate(self.stations):
+            station_number = idx_s + 1
+            Z = self.Z[idx_s]
+            rho_phi = Z.res_phase 
+            for idx_f,freq in enumerate(self.station_frequencies[idx_s]):
+                frequency_number = np.abs(self.frequencies-freq).argmin() + 1
+                for mode in lo_modes:
+                    if mode == 1 :
+                        raw_value = rho_phi[0][idx_f][0,1]
+                        value = np.log10(raw_value)
+                        absolute_error = rho_phi[2][idx_f][0,1]
+                        relative_error = absolute_error/raw_value
+                        if self.res_errorfloor is not None:
+                            if self.res_errorfloor/100. > relative_error:
+                                relative_error = self.res_errorfloor/100.
+                        error = relative_error/np.log(10.)
+                    elif mode == 2 :
+                        value = rho_phi[1][idx_f][0,1]
+                        absolute_error = rho_phi[2][idx_f][0,1]
+                        relative_error = absolute_error/value
+                        if self.phase_errorfloor is not None:
+                            if self.phase_errorfloor/100. > relative_error:
+                                relative_error = self.phase_errorfloor/100.
+                        error = relative_error*100.*0.285
+                    elif mode == 5 :
+                        raw_value = rho_phi[0][idx_f][1,0]
+                        value = np.log10(raw_value)
+                        absolute_error = rho_phi[2][idx_f][1,0]
+                        relative_error = absolute_error/raw_value
+                        if self.res_errorfloor is not None:
+                            if self.res_errorfloor/100. > relative_error:
+                                relative_error = self.res_errorfloor/100.
+                        error = relative_error/np.log(10.)
+                    elif mode == 6 :
+                        value = (rho_phi[1][idx_f][1,0])%90
+                        absolute_error = rho_phi[2][idx_f][1,0]
+                        relative_error = absolute_error/value
+                        if self.phase_errorfloor is not None:
+                            if self.phase_errorfloor/100. > relative_error:
+                                relative_error = self.phase_errorfloor/100.
+                        error = relative_error*100.*0.285
+                    self.data.append([station_number, frequency_number,mode,value,error])
 
 
     def generate_profile(self):
         """
-            Generate linear profile by linear regression of station locations.
+            Generate linear profile by regression of station locations.
 
             Stations are projected orthogonally onto the profile. Calculate 
             orientation of profile (azimuth) and position of stations on the 
             profile.
 
+            Orientation of the profile is ALWAYS West->East.
+            (In unlikely/synthetic case of azimuth=0, it's North->South)
+
+
             (self.stationlocations, self.azimuth, self.stations)
 
         """
 
-        self.azimuth = 0.
-        self.stationlocations =[]
+        self.station_coords = []
         self.stations = []
-        self.profile_offset = 0.
+        self.station_frequencies = []
+        
+        self.Z = []
+
+        lo_easts = []
+        lo_norths = []
+        utmzones = []
+
+        for edifile in self.edilist:
+            edi = MTedi.Edi()
+            edi.readfile(edifile)
+            self.station_coords.append([edi.lat,edi.lon,edi.elev])
+            self.stations.append(edi.station)
+            self.station_frequencies.append(np.around(edi.freq,5))
+            self.Z.append(edi.Z)
+            utm = MTcv.LLtoUTM(23,edi.lat,edi.lon)
+            lo_easts.append(utm[1])
+            lo_norths.append(utm[2])
+            utmzones.append(int(utm[0][:-1]))
+
+        main_utmzone = mode(utmzones)[0][0]
+
+        for idx, zone in enumerate(utmzones):
+            if zone == main_utmzone:
+                continue
+            utm = MTcv.LLtoUTM(23,edi.lat,edi.lon,main_utmzone)
+
+            lo_easts[idx] = utm[1]
+            lo_norths[idx] = utm[2]
+        
+
+        profile_line = sp.polyfit(lo_easts, lo_norths, 1) 
+        self.azimuth = np.arctan(profile_line[0])*180/np.pi
+        lo_easts = np.array(lo_easts)
+        lo_norths = np.array(lo_norths)
+
+        projected_stations = []
+        lo_offsets = []
+        profile_vector = np.array([1,profile_line[0]])
+        profile_vector /= np.linalg.norm(profile_vector)
+
+        for idx,sta in enumerate(self.stations):
+            station_vector = np.array([lo_easts[idx],lo_norths[idx]-profile_line[1]])
+            position = np.dot(profile_vector,station_vector) * profile_vector 
+            lo_offsets.append(np.linalg.norm(np.array(position[0]-min(lo_easts),position[1]-min(lo_norths))))
+            projected_stations.append([position[0],position[1]+profile_line[1]])
+
+        #Sort from West to East:
+        profile_idxs = np.argsort(lo_offsets)
+        if self.azimuth == 0:
+            #Exception: sort from North to South
+            profile_idxs = np.argsort(lo_norths)
 
 
-    def writefile(filename = None):
+        #sorting along the profile
+        projected_stations = [projected_stations[i] for i in profile_idxs]
+        projected_stations =  np.array(projected_stations)
+        lo_offsets = np.array([lo_offsets[i] for i in profile_idxs])
+        lo_offsets -= min(lo_offsets)
+
+        self.station_coords = [self.station_coords[i] for i in profile_idxs]
+        self.stations = [self.stations[i] for i in profile_idxs]
+        self.station_frequencies = [self.station_frequencies[i] for i in profile_idxs]
+        self.Z = [self.Z[i] for i in profile_idxs]
+        lo_easts = np.array([lo_easts[i] for i in profile_idxs])
+        lo_norths = np.array([lo_norths[i] for i in profile_idxs])
+              
+
+        self.profile = profile_line
+        self.stationlocations = lo_offsets
+        self.easts = lo_easts
+        self.norths = lo_norths
+
+
+        if 0:
+            plt.close('all')
+            lfig = plt.figure(4, dpi=200, figsize=(2,2))
+            plt.clf()
+            ploty = sp.polyval(profile_line, lo_easts)
+            lax = lfig.add_subplot(1, 1, 1,aspect='equal')
+            lax.plot(lo_easts, ploty, '-k', lw=1)
+            lax.scatter(lo_easts,lo_norths,color='b',marker='+')
+            lax.scatter(projected_stations[:,0], projected_stations[:,1],color='r',marker='x')
+            lax.set_title('Original/Projected Stations')
+            lax.set_ylim(ploty.min()-1000., ploty.max()+1000.)
+            lax.set_xlim(lo_easts.min()-1000, lo_easts.max()+1000.)
+            lax.set_xlabel('Easting (m)', 
+                           fontdict={'size':8, 'weight':'bold'})
+            lax.set_ylabel('Northing (m)',
+                           fontdict={'size':8, 'weight':'bold'})
+            plt.show()
+
+
+    # def group_frequencies(self):
+    #     """
+    #     collect frequencies of different stations, if they just vary by a 
+    #     tolerance - set to 5% 
+    #     """
+    #     pass
+
+    def writefile(self, filename = None):
         if filename is not None:
             try:
                 fn = op.abspath(op.join(self.wd,filename))
@@ -1007,17 +1242,17 @@ class Data():
         outstring = ''
 
         outstring += 'FORMAT:'+11*' '+self.format+'\n'
-        outstring += 'TITLE:'+12*' '+self.title+'\n'
+        outstring += 'TITLE:'+12*' '+'{0} - profile azimuth {1:.1f} degrees\n'.format(self.title,self.azimuth)
         outstring += 'SITES:'+12*' '+'{0}\n'.format(len(self.stations))
         for s in self.stations:
             outstring += '    {0}\n'.format(s)
         outstring += 'OFFSETS (M):\n'
         for l in self.stationlocations:
-            outstring += '    {0}\n'.format(l)
-        outstring += 'FREQUENCIES:     {0}\n'.format(len(self.frequencies))
+            outstring += '    {0}\n'.format(l + self.profile_offset)
+        outstring += 'FREQUENCIES:      {0}\n'.format(len(self.frequencies))
         for f in self.frequencies:
             outstring += '    {0}\n'.format(f)
-        outstring += 'DATA BLOCKS:     {0}\n'.format(len(self.data))
+        outstring += 'DATA BLOCKS:      {0}\n'.format(len(self.data))
 
         outstring += 'SITE    FREQ    TYPE    DATUM    ERROR\n'
         for d in self.data:
@@ -1025,7 +1260,7 @@ class Data():
 
         outfn = op.abspath(op.join(self.wd,self.filename))
         
-        F = open(outfn)
+        F = open(outfn,'w')
         F.write(outstring)
         F.close()
 
