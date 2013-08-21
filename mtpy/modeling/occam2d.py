@@ -325,9 +325,9 @@ class Setup():
     def write_datafile(self):
 
         data_object = Data(edilist = self.edifiles, wd = self.wd, **self.parameters_data)
-        datafilename = data_object.filename
-        self.datafile = datafilename
-
+        data_object.writefile()
+        self.datafile = data_object.filename
+        
 
     def setup_mesh_and_model(self):
         """
@@ -993,11 +993,42 @@ class Data():
         self.stationlocations =[]
         self.stations = []
         self.profile_offset = 0.
-        pass
 
 
-    def _write_datafile(filename):
-        pass
+    def writefile(filename = None):
+        if filename is not None:
+            try:
+                fn = op.abspath(op.join(self.wd,filename))
+                self.filename = op.abspath(op.split(fn)[1])
+                self.wd = op.abspath(op.split(fn)[0])
+            except:
+                self.filename = 'OccamDataFile.dat' 
+
+        outstring = ''
+
+        outstring += 'FORMAT:'+11*' '+self.format+'\n'
+        outstring += 'TITLE:'+12*' '+self.title+'\n'
+        outstring += 'SITES:'+12*' '+'{0}\n'.format(len(self.stations))
+        for s in self.stations:
+            outstring += '    {0}\n'.format(s)
+        outstring += 'OFFSETS (M):\n'
+        for l in self.stationlocations:
+            outstring += '    {0}\n'.format(l)
+        outstring += 'FREQUENCIES:     {0}\n'.format(len(self.frequencies))
+        for f in self.frequencies:
+            outstring += '    {0}\n'.format(f)
+        outstring += 'DATA BLOCKS:     {0}\n'.format(len(self.data))
+
+        outstring += 'SITE    FREQ    TYPE    DATUM    ERROR\n'
+        for d in self.data:
+            outstring += '{0}    {1}    {2}    {3}    {4}\n'.format(*d)
+
+        outfn = op.abspath(op.join(self.wd,self.filename))
+        
+        F = open(outfn)
+        F.write(outstring)
+        F.close()
+
 
 
 class Model():
