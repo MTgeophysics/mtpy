@@ -302,8 +302,9 @@ class Edi(object):
         edi_dict['MTSECT'] = self.mtsect
         edi_dict['FREQ'] = self.freq
         edi_dict['Z'] = _make_z_dict(self.Z)
-        if self.Tipper.tipper is not None:
-            edi_dict['TIPPER'] = _make_tipper_dict(self.Tipper)
+        if self.Tipper is not None:
+            if self.Tipper.tipper is not None:
+                edi_dict['TIPPER'] = _make_tipper_dict(self.Tipper)
         edi_dict['ZROT'] = self.zrot
 
 
@@ -1223,22 +1224,27 @@ class Edi(object):
         else:
             try:
                 if type(angle) is str:
-                    raise
-                if len(angle) != len(self.zrot):
+                    try:
+                        angle = float(angle)
+                        angle = [float(angle)%360 for i in range(len(self.zrot))]
+                    except:
+                        raise
+                elif len(angle) != len(self.zrot):
                     raise
                 angle = [float(i)%360 for i in angle]
             except:
                 raise MTex.MTpyError_inputarguments('ERROR - "angle" must'+\
-                                                    'be a single numerical'+\
-                                                    'value or a list of '+\
+                                                    ' be a single numerical'+\
+                                                    ' value or a list of '+\
                                                     'values. In the latter'+\
                                                     ' case, its length must'+\
                                                     'be {0}'.format(
                                                             len(self.zrot)))
 
         self.Z.rotate(angle)
-        self.zrot = [(ang0+angle[i])%360 for i,ang0 in enumerate(self.zrot)]
-        self.Z.rotation_angle = self.zrot
+        self.zrot = self.Z.rotation_angle
+        # self.zrot = [(ang0+angle[i])%360 for i,ang0 in enumerate(self.zrot)]
+        # self.Z.rotation_angle = self.zrot
 
         if self.Tipper.tipper is not None:
             self.Tipper.rotate(angle)
