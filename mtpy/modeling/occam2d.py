@@ -99,6 +99,7 @@ class Setup():
         self.parameters_startup['mu_start'] = 5.0
         self.parameters_startup['max_no_iterations'] = 30
         self.parameters_startup['target_rms'] = 1.5
+        self.parameters_startup['rms_start'] = 1000
 
         self.parameters_inmodel['no_sideblockelements'] = 7
         self.parameters_inmodel['no_bottomlayerelements'] = 4
@@ -110,8 +111,14 @@ class Setup():
         self.parameters_inmodel['model_name'] = 'Modelfile generated with MTpy'
         self.parameters_inmodel['block_merge_threshold'] = 0.75
 
-        self.parameters_data['title'] = 'A generic MTpy title'
-        self.parameters_data['datafile_format'] = 'OCCAM2MTDATA_1.0'
+        self.parameters_data['phase_errorfloor'] = 10
+        self.parameters_data['res_errorfloor'] = 10
+        self.parameters_data['mode'] = 'both'
+        
+        self.parameters_data['minimum_frequency'] = None
+        self.parameters_data['maximum_frequency'] = None
+        self.parameters_data['max_no_frequencies'] = None
+
 
         self.parameters_mesh['mesh_title'] = 'Mesh file generated with MTpy'
 
@@ -800,10 +807,10 @@ class Setup():
         temptext = "Max Iter:         {0}\n".format(int(float(self.parameters_startup['max_no_iterations'])))
         startup_outstring += temptext
 
-        temptext = "Req Tol:          {0:.1f}\n".format(float(self.parameters_startup['target_rms']))
+        temptext = "Target Misfit:    {0:.1f}\n".format(float(self.parameters_startup['target_rms']))
         startup_outstring += temptext
 
-        temptext = "IRUF:             {0}\n".format(self.parameters_startup['roughness_type'])
+        temptext = "Roughness Type:   {0}\n".format(self.parameters_startup['roughness_type'])
         startup_outstring += temptext
     
         temptext = "Debug Level:      {0}\n".format(self.parameters_startup['debug_level'])
@@ -812,20 +819,19 @@ class Setup():
         temptext = "Iteration:        {0}\n".format(int(self.parameters_startup['no_iteration']))
         startup_outstring += temptext
     
-        temptext = "PMU:              {0}\n".format(self.parameters_startup['mu_start'])
+        temptext = "Lagrange Value:   {0}\n".format(self.parameters_startup['mu_start'])
         startup_outstring += temptext
         
-        # #????????????
-        # temptext = "Rlast:            {0}\n".format(parameter_dict['rlast'])
-        # startup_outstring += temptext
-        # #??????????????
-        # temptext = "Tlast:            {0}\n".format(parameter_dict['tobt'])
-        # startup_outstring += temptext
-        
-        temptext = "IffTol:           {0}\n".format(self.parameters_startup['reached_misfit'])
+        temptext = "Roughness Value   {0}\n".format(self.parameters_startup['roughness_start'])
         startup_outstring += temptext
         
-        temptext = "No. Parms:        {0}\n".format(self.no_parameters)
+        temptext = "Misfit Value:     {0}\n".format(float(self.parameters_startup['rms_start']))
+        startup_outstring += temptext
+        
+        temptext = "Misfit Reached:   {0}\n".format(self.parameters_startup['reached_misfit'])
+        startup_outstring += temptext
+        
+        temptext = "Param Count:      {0}\n".format(self.no_parameters)
         startup_outstring += temptext
         
         temptext = ""
@@ -903,9 +909,11 @@ class Data():
         self.mode = 'both'
         self.profile_offset = 0.
         self.format = 'OCCAM2MTDATA_1.0'
-        self.title = 'Occam2D Data file'
-        self.phase_errorfloor = 10.
-        self.res_errorfloor = 10.
+        self.title = 'MTpy Occam-Datafile'
+
+
+        for key in data_parameters:
+            setattr(self,key,data_parameters[key])
 
         self.generate_profile()
         self.build_data()
