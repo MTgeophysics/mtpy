@@ -56,6 +56,7 @@ import mtpy.utils.configfile as MTcf
 
 reload(MTcv)
 reload(MTcf)
+reload(MTedi)
 
 #==============================================================================
 
@@ -349,7 +350,7 @@ class Setup():
         edilist_full = [op.abspath(op.join(self.edi_directory,i)) for i in edilist_raw]
         edilist = []
         for edi in edilist_full:
-            try :
+            try:
                 e = MTedi.Edi()
                 e.readfile(edi)
                 edilist.append(edi)
@@ -380,216 +381,207 @@ class Setup():
 
 
         """
-
+        #given as offset on the profile line
         lo_sites = self.sitelocations
         n_sites  = len(lo_sites)
-        maxwidth = float(self.parameters_inmodel['max_blockwidth'])
 
-        nbot     = int(float(self.parameters_inmodel['no_bottomlayerelements']))
-        nside    = int(float(self.parameters_inmodel['no_sideblockelements']))
+        #maximum width of MODEL block - implicitely defines finiteness of the mesh
+        maxblockwidth = float(self.parameters_inmodel['max_blockwidth'])
 
-        # j: index for finite elements (mesh)
-        # k: index for regularisation bricks (model)
-        # Python style: start with 0 instead of 1
-
-        sitlok      = []
-        sides       = []
-        width       = []
-        dly         = []
-        nfe         = []
-        thickness   = []
-        nfev        = []
-        dlz         = []
-        bot         = []
-
-        
-        j = 0
-        sitlok.append(lo_sites[0])
-
-        for idx in range(1,n_sites-1):
-            
-            spacing           = lo_sites[idx] - lo_sites[idx-1]
-            n_localextrasites = int(spacing/maxwidth) + 1
-
-            for idx2 in range(n_localextrasites):
-                sitlok.append(lo_sites[idx-1] + (idx2+1.)/float(n_localextrasites)*spacing )
-                j += 1
-
-        # nrk: number of total dummy stations
-        nrk = j
-        print "{0} dummy stations defined".format(nrk)
-
-        
-        spacing1 = (sitlok[1]-sitlok[0])/2.
-        sides.append(3*spacing1)
-
-
-        for idx in range(1,nside):
-            curr_side = 3*sides[idx-1]
-            if curr_side > 1000000.:
-                curr_side = 1000000.
-            sides.append(curr_side)
-            
-        #-------------------------------------------
-
-        j = 0
-        k = 0
-
-        firstblockwidth = 0.
-        
-        for idx in range(nside-1,-1,-1):
-            firstblockwidth += sides[idx]
-            dly.append(sides[idx])
-            j += 1
-            
-        width.append(firstblockwidth)
-        nfe.append(nside)
-        
-        dly.append(spacing1)
-        dly.append(spacing1)
-        j += 2
-        nfe.append(2)
-        width.append(2*spacing1)
-
-        block_offset = width[1]
-
-        k += 1
-
-        dly.append(spacing1)
-        dly.append(spacing1)
-        j += 2
-        nfe.append(2)
-        width.append(2*spacing1)
-        
-        block_offset += spacing1
-
-        k += 1
-
-        #------------------------
-        
-        for idx in range(1,nrk-1):
-            spacing2 = (sitlok[idx+1]-sitlok[idx])/2.
-            dly.append(spacing1)
-            dly.append(spacing2)
-            j += 2
-            nfe.append(2)
-            width.append(spacing1+spacing2)
-            k += 1
-            spacing1 = spacing2
-
-        dly.append(spacing2)
-        dly.append(spacing2)
-
-        j += 2
-        nfe.append(2)
-        width.append(2*spacing2)
-        k += 1
-
-        dly.append(spacing2)
-        dly.append(spacing2)
-        
-        j += 2
-        nfe.append(2)
-        width.append(2*spacing2)
-        k += 1
-
-        width[-1] = 0.
-        sides[0] = 3*spacing2
-
-        #------------------------------
-        
-        for idx in range(1,nside):
-            curr_side = 3*sides[idx-1]
-            if curr_side > 1000000.:
-                curr_side = 1000000.
-            sides[idx] = curr_side
-
-
-        lastblockwidth= 0.
-        for idx in range(nside):
-            j += 1
-            lastblockwidth += sides[idx]
-            dly.append(sides[idx])
-
-        width[-1] = lastblockwidth
-
-        #---------------------------------
-
-        k+= 1
-        nfe.append(nside)
-
-        nodey = j+1
-        ncol0 = k
-
-        block_offset = sitlok[0] - block_offset
-
-        #----------------------------------
-
+        #define vertical setup
+        #number of layers per depth meters decade
         layers_per_decade     = float(self.parameters_inmodel['no_layersperdecade'])
+        #depth of first layer
         first_layer_thickness = float(self.parameters_inmodel['firstlayer_thickness'])
+        #so "layers_per_decade" layers between "first_layer_thickness" and 10* "first_layer_thickness"
+        #then the same number between 10* "first_layer_thickness" and 100* "first_layer_thickness"
 
-        t          = 10.**(1./layers_per_decade)
-        t1         = first_layer_thickness
-        thickness.append(t1)
-        
-        d1 = t1
-        
+        #altogether stop at number of maximum layers:
         n_layers = int(float(self.parameters_inmodel['no_layers']))
 
-        for idx in range(1,n_layers-1):
-            d2 = d1*t
-            curr_thickness = d2 - d1
-            if curr_thickness < t1:
-                curr_thickness = t1
-            thickness.append(curr_thickness)
-            d1 += curr_thickness
+        #number of padding mesh layers at the bottom 
+        n_bottompadding = int(float(self.parameters_inmodel['no_bottomlayerelements']))
+
+        #number of padding mesh columns to the sides
+        n_sidepadding    = int(float(self.parameters_inmodel['no_sideblockelements']))
+
+        #1. check, if inter-station spacing is smaller than the allowed max block size
+        #if not, add dummy station locations
+
+        lo_allsites = []
+        lo_distances = []
+        no_dummys = 0
+
+        for idx_site in range(len(lo_sites)-1):
+            location = lo_sites[idx_site] 
+            lo_allsites.append(location)
+
+            distance = np.abs(lo_sites[idx_site] - location)
+            if distance >= maxblockwidth:
+                dummys = int(distance/maxblockwidth) 
+                smallblockwidth = distance/float(dummys+1)
+                no_dummys += dummys
+                for d in range(dummys):
+                    lo_allsites.append(location + (d+1)* smallblockwidth)
+                
+                lo_distances.append(smallblockwidth)
+            
+            else:
+                lo_distances.append(distance)
+
+        #2. determine padding coulumn widths:
+        paddingwidth = 0.5 * np.max(lo_distances)
+        meshnodelocations = []
+        #add extra column on the left
+        leftedge = lo_allsites[0] - lo_distances[0]/2.
+        meshnodelocations.insert(0,leftedge)
+        leftedge -= paddingwidth
+        meshnodelocations.insert(0,leftedge)
+        leftedge -= paddingwidth
+        meshnodelocations.insert(0,leftedge)
+
+        padding_right = []
+        rightedge = lo_allsites[-1] + lo_distances[-1]/2.
+        padding_right.append(rightedge)
+        rightedge += paddingwidth
+        padding_right.append(rightedge)
+        rightedge += paddingwidth
+        padding_right.append(rightedge)
+
+        padding_absolute = []
+        for p in range(n_sidepadding):
+            current_padding = 3**(p+1)*paddingwidth
+            if current_padding > 1000000:
+                current_padding = 1000000
+
+            padding_absolute+=current_padding
+            
+            rightedge += current_padding
+            padding_right.append(current_padding)
+            leftedge -= current_padding
+            meshnodelocations.insert(0,leftedge) 
+
+            
+        #3. split the inner station gaps into 2 mesh blocks each and add the padding:
+        for idx,station in enumerate(lo_allsites):
+            meshnodelocations.append(station)
+            if idx == len(lo_allsites)-1:
+                break
+            meshnodelocations.append(station+(lo_allsites[idx+1]-station)/2.)
+        meshnodelocations.extend(padding_right)
+
+
+        #4.determine the overall width of mesh blocks
+        lo_meshblockwidths = []
+        for loc in range(len(meshnodelocations)-1):            
+            lo_meshblockwidths.append(meshnodelocations[loc+1] - meshnodelocations[loc])
+
+        #5. build top layer modelblocks by merging paddings and then 2 blocks each:
+        lo_columns_to_merge = []
+        lo_modelblockwidths = [] 
+        current_meshblock_index = 0
+        lo_columns_to_merge.append(n_sidepadding)
+        lo_modelblockwidths.append(np.sum(padding_absolute))
+        current_meshblock_index += n_sidepadding
+        #merge the extra column at the left:
+        lo_columns_to_merge.append(2)
+        lo_modelblockwidths.append( lo_meshblockwidths[current_meshblock_index] 
+                                + lo_meshblockwidths[current_meshblock_index+1] )
+        current_meshblock_index += 2
+
+        for idx,location in enumerate(lo_allsites):
+            if idx == len(lo_allsites)-1:
+                break
+            lo_columns_to_merge.append(2)
+            lo_modelblockwidths.append(lo_allsites[idx+1] - location)
+            current_meshblock_index += 2
+        
+        #merge right extra column
+        lo_columns_to_merge.append(2)
+        lo_modelblockwidths.append( lo_meshblockwidths[current_meshblock_index] 
+                                + lo_meshblockwidths[current_meshblock_index+1] )
+        current_meshblock_index += 2
+
+        lo_columns_to_merge.append(n_sidepadding)
+        lo_modelblockwidths.append(np.sum(padding_absolute))
+        current_meshblock_index += n_sidepadding
+
+
+        #6.right side of left most model block - effectively the edge of the padding
+        binding_offset = meshnodelocations[n_sidepadding]
+
+        #should be identical!
+        no_horizontal_nodes = current_meshblock_index + 1
+        nodey = len(lo_meshblockwidths) + 1 #vertical nodes
+
+        ncol0 = len(lo_columns_to_merge) # number of blocks in the first layer
+
+        #7. now turn to depths - set up the z axis for the mesh:
+
+        no_decades = int(n_layers/layers_per_decade)+1
+        no_depthpoints_max = layers_per_decade * no_decades
+        depthscale = 10**np.linspace(0,no_decades,no_depthpoints_max + 1) 
+        
+        lo_model_depths = list((depthscale[:n_layers-1] * first_layer_thickness))
         
         
-        bot.append(3*thickness[n_layers-2])
+        lo_mesh_depths = []
+        lo_rows_to_merge = []
 
-        for idx in range(1,nbot):
-            bot.append(bot[idx-1]*3)
+        for idx, depth in enumerate(lo_model_depths):
+            lo_mesh_depths.append(depth)
+            lo_rows_to_merge.append(2)
+            if idx == len(lo_model_depths) - 1 :
+                break
+            lo_mesh_depths.append(lo_model_depths[idx+1] - depth)
 
-        #--------------------------------------------------
+        lo_mesh_thicknesses = []
+        for idx,depth in enumerate(lo_mesh_depths):
+            if idx == 0:
+                thickness = depth
+            else:
+                thickness = depth - lo_mesh_depths[idx-1]
+            lo_mesh_thicknesses.append(thickness)
 
-        k = 0
+        max_thickness = np.max(lo_mesh_thicknesses)
+        maxdepth = lo_mesh_depths[-1]
+
+        for i in range(n_bottompadding):
+            lo_mesh_thicknesses.append(max_thickness)
+            lo_mesh_depths.append(maxdepth+max_thickness)
+            maxdepth += max_thickness
         
-        dlz.append(thickness[0]/2.)
-        dlz.append(thickness[0]/2.)
-        nfev.append(2)
-
-        k += 2
-
-        dlz.append(thickness[1]/2.)
-        dlz.append(thickness[1]/2.)
-        nfev.append(2)
-
-        k += 2
-
-        for idx in range(2,n_layers-1):
-            k += 1
-            nfev.append(1)
-            dlz.append(thickness[idx])
-
-        for idx in range(nbot):
-            k += 1
-            dlz.append(bot[idx])
-
-        nfev.append(nbot)
-
-        nodez = k+1
+        lo_model_depths.append(lo_model_depths[-1]+n_bottompadding*max_thickness)
         
-        self.parameters_inmodel['bindingoffset']      = block_offset
+        #just to be safe!
+        self.parameters_inmodel['no_layers'] = len(lo_model_depths)
+
+        lo_model_thicknesses = []
+        for idx,depth in enumerate(lo_model_depths):
+            if idx == 0:
+                thickness = depth
+            else:
+                thickness = depth - lo_model_depths[idx-1] 
+            lo_model_thicknesses.append(thickness)
+
+
+        lo_rows_to_merge.append(n_bottompadding)
+        no_vertical_nodes = len(lo_mesh_depths) +1
+        
+
+
+        
+        self.parameters_inmodel['bindingoffset']      = binding_offset
         self.parameters_inmodel['max_number_columns'] = ncol0
-        self.parameters_inmodel['lo_merged_lines']    = nfe
-        self.parameters_inmodel['lo_merged_columns']  = nfev  
-        self.meshblockwidths_x                       = width
-        self.meshblockdepths_z                       = thickness
+        self.parameters_inmodel['lo_merged_lines']    = lo_rows_to_merge
+        self.parameters_inmodel['lo_merged_columns']  = lo_columns_to_merge  
+        self.meshblockwidths_x                        = lo_meshblockwidths
+        self.meshblockdepths_z                        = lo_mesh_thicknesses
          
-        self.meshlocations_z                         = dlz
-        self.meshlocations_x                         = dly
-        self.parameters_mesh['no_nodes_hor']       = nodey
-        self.parameters_mesh['no_nodes_vert']      = nodez
+        self.meshlocations_z                          = lo_mesh_depths
+        self.meshlocations_x                          = meshnodelocations
+        self.parameters_mesh['no_nodes_hor']          = no_horizontal_nodes
+        self.parameters_mesh['no_nodes_vert']         = no_vertical_nodes
 
         #mesh DONE
         #-----------------------------------------------------
@@ -598,48 +590,49 @@ class Setup():
         trigger    = self.parameters_inmodel['block_merge_threshold']
 
         modelblockstrings = []
-        lo_colnumbers     = []
-        ncol     = ncol0
+        lo_column_numbers = []
         num_params = 0
-       
-        for layer_idx in range(n_layers):
+        
+
+        ncol = ncol0
+        #loop over all model layers
+        for layer_idx in range(len(lo_model_depths)):
             block_idx = 1
         
-            while block_idx+2 < ncol-1 :
+            #sweep columns
+            while block_idx+1 < ncol-1 :
 
-                #PROBLEM : 'thickness' has only "n_layer'-1 entries!!
-                if not dlz[layer_idx] > (trigger*(width[block_idx]+width[block_idx+1])):
+                if lo_model_depths[layer_idx] < (trigger*(lo_modelblockwidths[block_idx]+
+                                                            lo_modelblockwidths[block_idx+1])):
                     block_idx += 1
                     continue
 
                 else:
-                    width[block_idx] += width[block_idx+1]
-                    nfe[block_idx]   += nfe[block_idx+1]
+                    #concatenate/merge blocks
 
-                    for m in range(block_idx+2,ncol):
-                        width[m-1] = width[m]
-                        nfe[m-1]   = nfe[m]
+                    lo_modelblockwidths[block_idx] += lo_modelblockwidths[block_idx+1]
+                    lo_columns_to_merge[block_idx]   += lo_columns_to_merge[block_idx+1]
+                    lo_modelblockwidths.pop(block_idx+1)
+                    lo_columns_to_merge.pop(block_idx+1)
 
                     ncol -=1
 
-            lo_colnumbers.append(ncol)
+            lo_column_numbers.append(ncol)
 
             tempstring = ""
             for j in range(ncol):
-                tempstring += "%i "%(nfe[j])
+                tempstring += "%i "%(lo_columns_to_merge[j])
             tempstring += "\n"
             modelblockstrings.append(tempstring)
 
             num_params += ncol
 
-            #completely unnecessary!!! :
-            if layer_idx == 0:
-                mcol = ncol
-        
-        
+
+        self.no_parameters = num_params
         self.parameters_inmodel['lo_modelblockstrings'] = modelblockstrings
-        self.parameters_inmodel['lo_columnnumbers']     = lo_colnumbers
-        self.no_parameters        = num_params
+        self.parameters_inmodel['lo_column_numbers']    = lo_column_numbers
+        self.parameters_inmodel['lo_merged_columns']    = lo_columns_to_merge
+
 
 
 
@@ -722,10 +715,11 @@ class Setup():
         """
 
         modelblockstrings = self.parameters_inmodel['lo_modelblockstrings']
-        lo_colnumbers     = self.parameters_inmodel['lo_columnnumbers']
-        nfev              = self.parameters_inmodel['lo_merged_columns']
+        lo_merged_columns = self.parameters_inmodel['lo_merged_columns']
+        lo_merged_lines   = self.parameters_inmodel['lo_merged_lines']
+        lo_column_numbers = self.parameters_inmodel['lo_column_numbers']
         boffset           = self.parameters_inmodel['bindingoffset']
-        n_layers          = int(self.parameters_inmodel['no_layers'])
+        n_layers          = self.parameters_inmodel['no_layers']
 
         model_outstring =''
 
@@ -755,8 +749,8 @@ class Setup():
         model_outstring += temptext
 
         for k in range(n_layers):
-            n_meshlayers  = nfev[k]
-            n_meshcolumns = lo_colnumbers[k]
+            n_meshlayers  = lo_merged_lines[k]
+            n_meshcolumns = lo_column_numbers[k]
             temptext="{0} {1}\n".format(n_meshlayers, n_meshcolumns)
             model_outstring += temptext
 
@@ -1210,6 +1204,7 @@ class Data():
         self.stationlocations = lo_offsets
         self.easts = lo_easts
         self.norths = lo_norths
+        print self.stationlocations
 
 
         if 0:
