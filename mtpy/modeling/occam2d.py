@@ -405,13 +405,16 @@ class Setup():
 
         lo_allsites = []
         lo_distances = []
+        lo_real_station_distances = []
         no_dummys = 0
 
         for idx_site,location in enumerate(lo_sites):
             lo_allsites.append(location)
             if idx_site == len(lo_sites)-1:
                 break
+
             distance = np.abs(lo_sites[idx_site+1] - location)
+            lo_real_station_distances.append(distance)
             if distance >= maxblockwidth:
                 dummys = int(distance/maxblockwidth) 
                 smallblockwidth = distance/float(dummys+1)
@@ -432,7 +435,7 @@ class Setup():
                                     totalstations,totalmeshblocknumber, totalmodelblocknumber)
 
         #2. determine padding column widths:
-        paddingwidth = 0.5 * np.max(lo_distances)
+        paddingwidth = 0.5 * np.max(lo_real_station_distances)
         meshnodelocations = []
         #add left half of block under first station 
         leftedge = lo_allsites[0] - lo_distances[0]/2.
@@ -444,6 +447,7 @@ class Setup():
         meshnodelocations.insert(0,leftedge)
         leftedge -= paddingwidth
         meshnodelocations.insert(0,leftedge)
+
 
             
         #3. split the inner station gaps into 2 mesh blocks each 
