@@ -111,6 +111,8 @@ class Setup():
 
         self.parameters_data['phase_errorfloor'] = 10
         self.parameters_data['res_errorfloor'] = 10
+        self.parameters_data['tipper_errorfloor'] = 10
+
         self.parameters_data['mode'] = 'both'
         
         self.parameters_data['minimum_frequency'] = None
@@ -1077,21 +1079,28 @@ class Data():
 
     def build_data(self):
         
+
+        #set data modes
         lo_modes = []
         modes = self.mode.lower().strip()
+        
+        if 'both' in modes :
+            lo_modes.extend([1,2,5,6])  
+        if 'te' in modes:
+            lo_modes.extend([1,2])
+        if 'tm' in modes:
+            lo_modes.extend([5,6])
+        if ('tipper' in modes): 
+            lo_modes.extend([3,4])
+        if 'all' in modes :
+            lo_modes.extend([1,2,3,4,5,6])  
 
-        if modes == 'both':
-            lo_modes = [1,2,5,6]
-        elif modes == 'te':
-            lo_modes = [1,2]
-        elif modes == 'tm':
-            lo_modes = [5,6]
-        elif modes == 'all':
-            lo_modes = [1,2,3,4,5,6]
+        lo_modes = sorted(list(set(lo_modes))) 
 
-            min_freq = self.minimum_frequency
-            max_freq = self.maximum_frequency
-            no_freqs_max = self.max_no_frequencies
+        #set data frequencies
+        min_freq = self.minimum_frequency
+        max_freq = self.maximum_frequency
+        no_freqs_max = self.max_no_frequencies
 
         lo_all_freqs = []
         for lo_f in self.station_frequencies:
@@ -1114,7 +1123,7 @@ class Data():
             print 'No frequencies in user-defined interval [{0},{1}]'.format(min_freq, max_freq)
             sys.exit()
 
-
+        #check, if frequency list is longer than given max value
         if no_freqs_max is not None:
             no_freqs_max = int(float(no_freqs_max))
             if no_freqs_max < len(lo_all_freqs_tmp):
@@ -1145,12 +1154,19 @@ class Data():
 
         self.frequencies = np.array(lo_all_freqs_tmp)
 
-
+        #collect data 
         self.data = []
 
         for idx_s, station in enumerate(self.stations):
             station_number = idx_s + 1
             Z = self.Z[idx_s]
+            try:
+                T = self.Tipper
+                if T.tipper is None:
+                    raise
+            except:
+                T = None
+
             rho_phi = Z.res_phase 
             for idx_f,freq in enumerate(self.station_frequencies[idx_s]):
                 frequency_number = np.abs(self.frequencies-freq).argmin() + 1
@@ -1173,11 +1189,39 @@ class Data():
                                 relative_error = self.phase_errorfloor/100.
                         error = relative_error*100.*0.285
                     
-                    elif mode == 3 :
-                        pass
+                    elif mode in [3,4] :
+                        if T is None:
+                            print 'no Tipper data for station {0}'.format(station_number) 
+                            continue
+                            
+                        tipper = T.tipper[idx_f]
+                        try: 
+                            tippererr = T.tippererr[idx_f]
+                        except:
+                            print 'no Tipper error for station {0}/frequency {1}'.format(station_number,frequency_number)
+                            tippererr = None
 
-                    elif mode == 4:
-                        pass
+                        if mode == 3 :
+                            value = np.real(tipper[0,1])
+                            if tippererr is None:
+                                error = self.tipper_errorfloor/100.*value
+                            else:
+                                rel_error = tippererr/value
+                                if self.tipper_errorfloor/100. > rel_error:
+                                    error = self.tipper_errorfloor/100.*value
+                                else:
+                                    error = tippererr
+                        if mode == 4 :
+                            value = np.imag(tipper[0,1])
+                            if tippererr is None:
+                                error = self.tipper_errorfloor/100.*value
+                            else:
+                                rel_error = tippererr/value
+                                if self.tipper_errorfloor/100. > rel_error:
+                                    error = self.tipper_errorfloor/100.*value
+                                else:
+                                    error = tippererr
+
 
                     elif mode == 5 :
                         raw_value = rho_phi[0][idx_f][1,0]
