@@ -102,9 +102,9 @@ class Setup():
         self.parameters_inmodel['no_sideblockelements'] = 7
         self.parameters_inmodel['no_bottomlayerelements'] = 4
         self.parameters_inmodel['max_blockwidth'] = 500
-        self.parameters_inmodel['firstlayer_thickness'] = 250
+        self.parameters_inmodel['firstlayer_thickness'] = 50
         self.parameters_inmodel['no_layersperdecade'] = 10
-        self.parameters_inmodel['no_layers'] = 50
+        self.parameters_inmodel['no_layers'] = 40
 
         self.parameters_inmodel['model_name'] = 'Modelfile generated with MTpy'
         self.parameters_inmodel['block_merge_threshold'] = 0.75
@@ -408,6 +408,7 @@ class Setup():
         lo_real_station_distances = []
         no_dummys = 0
 
+        print '\nlength of station profile: {0:.1f} km '.format((lo_sites[-1]-lo_sites[0])/1000.)
         for idx_site,location in enumerate(lo_sites):
             lo_allsites.append(location)
             if idx_site == len(lo_sites)-1:
@@ -427,7 +428,7 @@ class Setup():
             else:
                 lo_distances.append(distance)
 
-        print 'added {0} dummy stations'.format(no_dummys)
+        print '\nadded {0} dummy stations'.format(no_dummys)
         totalstations = no_dummys+len(lo_sites)
         totalmeshblocknumber = 2*n_sidepadding+4+2*(totalstations)
         totalmodelblocknumber = 4+totalstations
@@ -473,7 +474,7 @@ class Setup():
         #add 2 side padding blocks with expon. increasing width of N mesh cells
         padding_absolute = 0 
         for p in range(n_sidepadding):
-            current_padding = 3**(p+1)*paddingwidth
+            current_padding = 2**(p+1)*paddingwidth
             if current_padding > 1000000:
                 current_padding = 1000000
 
@@ -485,6 +486,9 @@ class Setup():
             leftedge -= current_padding
             meshnodelocations.insert(0,leftedge) 
         
+        print '\nlength of model profile: {0:.1f} km (from {1:.1f} to {2:.1f})'.format(
+                                        (meshnodelocations[-1]-meshnodelocations[0])/1000.,
+                                        meshnodelocations[0]/1000., meshnodelocations[-1]/1000.)
 
         #4.determine the overall width of mesh blocks
         lo_meshblockwidths = []
@@ -652,8 +656,8 @@ class Setup():
             modelblockstrings.append(tempstring)
 
             num_params += ncol
-
-        print 'number of mesh layers: {0} (2*{1} model layers + {2} padding)'.format(len(lo_mesh_thicknesses),n_layers-1,n_bottompadding)
+        print 'depth of model: {0:.1f} km'.format(lo_model_depths[-1]/1000.)
+        print '\nnumber of mesh layers: {0} (2*{1} model layers + {2} padding)'.format(len(lo_mesh_thicknesses),n_layers-1,n_bottompadding)
         print 'number of model blocks: {0}'.format(num_params)
         self.no_parameters = num_params
         self.parameters_inmodel['lo_modelblockstrings'] = modelblockstrings
@@ -940,7 +944,6 @@ class Data():
 
 
         for key in data_parameters:
-            print key,data_parameters[key]
             setattr(self,key,data_parameters[key])
 
         self.generate_profile()
