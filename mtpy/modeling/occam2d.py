@@ -762,7 +762,7 @@ class Setup():
         model_outstring += temptext
         temptext = "Description:      {0}\n".format("Random Text")
         model_outstring += temptext
-        temptext = "Mesh File:        {0}\n".format(op.abspath(self.meshfile))
+        temptext = "Mesh File:        {0}\n".format(self.meshfile)
         model_outstring += temptext
         temptext = "Mesh Type:        {0}\n".format("PW2D")
         model_outstring += temptext
@@ -1315,8 +1315,11 @@ class Data():
         for idx,sta in enumerate(self.stations):
             station_vector = np.array([lo_easts[idx],lo_norths[idx]-profile_line[1]])
             position = np.dot(profile_vector,station_vector) * profile_vector 
-            lo_offsets.append(np.linalg.norm(np.array(position[0]-min(lo_easts),position[1]-min(lo_norths))))
+            lo_offsets.append(np.linalg.norm(position))
             projected_stations.append([position[0],position[1]+profile_line[1]])
+
+        lo_offsets -= min(lo_offsets)
+
 
         #Sort from West to East:
         profile_idxs = np.argsort(lo_offsets)
