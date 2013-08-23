@@ -534,10 +534,11 @@ class Setup():
         #6.right side of left most model block - effectively the edge of the padding
         #given with resspect to location of the first station
         #idx of station 1 is n_sidepadding + 2(extra column) + 1 (half the block under the station)
-        binding_offset =  meshnodelocations[n_sidepadding+3] - meshnodelocations[n_sidepadding]
+        #binding_offset =  meshnodelocations[n_sidepadding+3] - meshnodelocations[n_sidepadding]
+        binding_offset =  meshnodelocations[n_sidepadding]
 
         #should be identical!
-        no_horizontal_nodes = current_meshblock_index + 1
+        no_x_nodes = current_meshblock_index + 1
         nodey = len(lo_meshblockwidths) + 1 #vertical nodes
 
         ncol0 = len(lo_columns_to_merge) # number of blocks in the first layer
@@ -547,29 +548,34 @@ class Setup():
         no_decades = int(n_layers/layers_per_decade)+1
         no_depthpoints_max = layers_per_decade * no_decades
         depthscale = 10**np.linspace(0,no_decades,no_depthpoints_max + 1) 
-        
+
         lo_model_depths = list((depthscale[:n_layers-1] * first_layer_thickness))
-        
+
         
         lo_mesh_depths = []
         lo_rows_to_merge = []
 
+        
         for idx, depth in enumerate(lo_model_depths):
-            lo_mesh_depths.append(depth)
-            lo_rows_to_merge.append(2)
             if idx == 0:
-                lo_mesh_depths.append(depth)
+                newdepth = depth/2.
             else:
-                lo_mesh_depths.append(depth - lo_model_depths[idx-1])
+                newdepth = depth - (depth -  lo_model_depths[idx-1])/2.
+            lo_mesh_depths.append(newdepth)
+            lo_mesh_depths.append(depth)
+
+            lo_rows_to_merge.append(2)
         
 
         lo_mesh_thicknesses = []
+
         for idx,depth in enumerate(lo_mesh_depths):
             if idx == 0:
                 thickness = depth
             else:
                 thickness = depth - lo_mesh_depths[idx-1]
             lo_mesh_thicknesses.append(thickness)
+
 
         max_thickness = np.max(lo_mesh_thicknesses)
         maxdepth = lo_mesh_depths[-1]
@@ -595,22 +601,19 @@ class Setup():
 
 
         lo_rows_to_merge.append(n_bottompadding)
-        no_vertical_nodes = len(lo_mesh_depths) +1
-
-
+        no_z_nodes = len(lo_mesh_depths) +1
 
         
         self.parameters_inmodel['bindingoffset']      = binding_offset
         self.parameters_inmodel['max_number_columns'] = ncol0
         self.parameters_inmodel['lo_merged_lines']    = lo_rows_to_merge
-        self.parameters_inmodel['lo_merged_columns']  = lo_columns_to_merge  
         self.meshblockwidths_x                        = lo_meshblockwidths
         self.meshblockdepths_z                        = lo_mesh_thicknesses
          
         self.meshlocations_z                          = lo_mesh_depths
         self.meshlocations_x                          = meshnodelocations
-        self.parameters_mesh['no_nodes_hor']          = no_horizontal_nodes
-        self.parameters_mesh['no_nodes_vert']         = no_vertical_nodes
+        self.parameters_mesh['no_nodes_x']            = no_x_nodes
+        self.parameters_mesh['no_nodes_z']            = no_z_nodes
 
         #mesh DONE
         #-----------------------------------------------------
@@ -662,7 +665,7 @@ class Setup():
         self.parameters_inmodel['lo_modelblockstrings'] = modelblockstrings
         self.parameters_inmodel['lo_column_numbers']    = lo_column_numbers
         self.parameters_inmodel['lo_merged_columns']    = lo_columns_to_merge
-
+        self.parameters_inmodel['lo_model_thicknesses'] = lo_model_thicknesses
 
 
 
@@ -683,22 +686,24 @@ class Setup():
         """
         mesh_positions_vert = self.meshlocations_z
         mesh_positions_hor  = self.meshlocations_x
-        n_nodes_hor         = self.parameters_mesh['no_nodes_hor'] 
-        n_nodes_vert        = self.parameters_mesh['no_nodes_vert']
-        
+        mesh_widths         = self.meshblockwidths_x
+        mesh_depths         = self.meshblockdepths_z
+
+        n_nodes_x           = self.parameters_mesh['no_nodes_x'] 
+        n_nodes_z           = self.parameters_mesh['no_nodes_z']
 
         mesh_outstring =''
 
         temptext = '{0}\n'.format(self.parameters_mesh['mesh_title'])
         mesh_outstring += temptext
 
-        temptext = "{0} {1} {2} {0} {0} {3}\n".format(0,n_nodes_hor,n_nodes_vert,2)
+        temptext = "{0} {1} {2} {0} {0} {3}\n".format(0,n_nodes_x,n_nodes_z,2)
         mesh_outstring += temptext
 
         temptext = ""
         counter = 0 
-        for i in range(n_nodes_hor-1):
-            temptext += "%.1f "%(mesh_positions_hor[i])
+        for i in range(n_nodes_x-1):
+            temptext += "%.1f "%(mesh_widths[i])
             counter +=1 
             if counter == 10:
                 #temptext += '\n'
@@ -708,8 +713,8 @@ class Setup():
 
         temptext = ""
         counter = 0 
-        for i in range(n_nodes_vert-1):
-            temptext += "%.1f "%(mesh_positions_vert[i])
+        for i in range(n_nodes_z-1):
+            temptext += "%.1f "%(mesh_depths[i])
             counter +=1 
             if counter == 10:
                 #temptext += '\n'
@@ -719,9 +724,9 @@ class Setup():
 
         mesh_outstring +="%i\n"%(0)
         
-        for j in range(4*(n_nodes_vert-1)):
+        for j in range(4*(n_nodes_z-1)):
             tempstring=''
-            tempstring += (n_nodes_hor-1)*"?"
+            tempstring += (n_nodes_x-1)*"?"
             tempstring += '\n'
             mesh_outstring += tempstring
 
