@@ -78,13 +78,10 @@ class Setup():
 
     def __init__(self, configfile = None, **input_parameters):
 
-
-
         self.parameters_startup = {}
         self.parameters_inmodel = {}
         self.parameters_data = {}
         self.parameters_mesh = {}
-
 
         self.parameters_startup['description'] = 'generic MTpy setup'
 
@@ -285,10 +282,9 @@ class Setup():
         counter = 0
         for edi in edilist_full:
             try:
-                e = MTedi.Edi()
-                e.readfile(edi)
-                self.edifiles.append(edi)
-                counter += 1
+                if op.isfile(edi):
+                    self.edifiles.append(edi)
+                    counter += 1
             except:
                 continue
         
@@ -305,10 +301,9 @@ class Setup():
         for edi in edilist:
             try:
                 fn = op.abspath(op.join(os.curdir,edi))
-                e = MTedi.Edi()
-                e.readfile(fn)
-                self.edifiles.append(fn)
-                counter += 1                
+                if op.isfile(fn):
+                    self.edifiles.append(fn)
+                    counter += 1                
             except:
                 continue
 
@@ -354,13 +349,6 @@ class Setup():
                 edilist.append(edi)
             else: 
                 continue
-
-            # try:
-            #     e = MTedi.Edi()
-            #     e.readfile(edi)
-            #     edilist.append(edi)
-            # except:
-            #     continue
 
         self.edifiles = edilist
        
@@ -940,6 +928,10 @@ class Data():
         self.format = 'OCCAM2MTDATA_1.0'
         self.title = 'MTpy Occam-Datafile'
 
+        self.minimum_frequency = None
+        self.maximum_frequency = None
+        self.max_no_frequencies = None
+
 
         for key in data_parameters:
             setattr(self,key,data_parameters[key])
@@ -947,9 +939,7 @@ class Data():
         self.generate_profile()
         self.build_data()
 
-        #self.group_frequencies()
-        #self._write_datafile(op.join(self.wd,self.filename))#
-        
+       
 
     def readfile(self,fn):
         if not op.isfile(fn):
@@ -963,7 +953,7 @@ class Data():
         F_in.close()
 
         #string is reduced each step, i.e. cut off the sections, 
-        #which are read in already
+        #which are already read in
         reduced_string = self._read_format(datafile_raw)
         reduced_string = self._read_title(datafile_raw)
         reduced_string = self._read_sites(datafile_raw)
@@ -1089,19 +1079,72 @@ class Data():
         
         lo_modes = []
         modes = self.mode.lower().strip()
+
         if modes == 'both':
             lo_modes = [1,2,5,6]
         elif modes == 'te':
             lo_modes = [1,2]
         elif modes == 'tm':
             lo_modes = [5,6]
+        elif modes == 'all':
+            lo_modes = [1,2,3,4,5,6]
 
+            min_freq = self.minimum_frequency
+            max_freq = self.maximum_frequency
+            no_freqs_max = self.max_no_frequencies
 
         lo_all_freqs = []
         for lo_f in self.station_frequencies:
             lo_all_freqs.extend(list(lo_f))
         lo_all_freqs = sorted(list(set(lo_all_freqs)),reverse=True)
-        self.frequencies = np.array(lo_all_freqs)
+
+        if (min_freq is None) or (min_freq < min(lo_all_freqs) ) or (min_freq > max(lo_all_freqs) ) :
+            min_freq = min(lo_all_freqs)
+        if (max_freq is None) or (max_freq > max(lo_all_freqs) ) or (max_freq < min(lo_all_freqs) ) :
+            max_freq = max(lo_all_freqs)
+        
+        lo_all_freqs_tmp = []
+        for f in  lo_all_freqs:
+            if min_freq < f < max_freq :
+                lo_all_freqs_tmp.append(f)
+            else:
+                continue
+
+        if len(lo_all_freqs_tmp) == 0 :
+            print 'No frequencies in user-defined interval [{0},{1}]'.format(min_freq, max_freq)
+            sys.exit()
+
+
+        if no_freqs_max is not None:
+            no_freqs_max = int(float(no_freqs_max))
+            if no_freqs_max < len(lo_all_freqs_tmp):
+                lo_all_freqs_tmp2 = []
+                excess = len(lo_all_freqs_tmp)/no_freqs_max
+                if excess < 2:
+                    #skip as many freqs as there are too many
+                    #alternating from top and bottom and of list
+                    lo_all_freqs_tmp2 = lo_all_freqs_tmp
+                    too_many = len(lo_all_freqs_tmp) - no_freqs_max
+                    i = 0 
+                    while i < too_many:
+                        idx = i%2
+                        if idx == 0: 
+                            lo_all_freqs_tmp2.pop(0)
+                        else:
+                            lo_all_freqs_tmp2.pop(-1)
+                        i+=1
+
+                else:
+                    stepsize = int(excess)
+                    for i in range(lo_all_freqs_tmp):
+                        if (i+1)%stepsize == 0:
+                            lo_all_freqs_tmp2.append(lo_all_freqs_tmp[i])
+
+
+                lo_all_freqs_tmp = lo_all_freqs_tmp2
+
+        self.frequencies = np.array(lo_all_freqs_tmp)
+
 
         self.data = []
 
@@ -1129,6 +1172,13 @@ class Data():
                             if self.phase_errorfloor/100. > relative_error:
                                 relative_error = self.phase_errorfloor/100.
                         error = relative_error*100.*0.285
+                    
+                    elif mode == 3 :
+                        pass
+
+                    elif mode == 4:
+                        pass
+
                     elif mode == 5 :
                         raw_value = rho_phi[0][idx_f][1,0]
                         value = np.log10(raw_value)
@@ -1146,6 +1196,8 @@ class Data():
                             if self.phase_errorfloor/100. > relative_error:
                                 relative_error = self.phase_errorfloor/100.
                         error = relative_error*100.*0.285
+
+
                     self.data.append([station_number, frequency_number,mode,value,error])
 
 
