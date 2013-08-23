@@ -697,7 +697,7 @@ class Setup():
             temptext += "%.1f "%(mesh_positions_hor[i])
             counter +=1 
             if counter == 10:
-                temptext += '\n'
+                #temptext += '\n'
                 counter = 0
         temptext +="\n"
         mesh_outstring += temptext
@@ -708,7 +708,7 @@ class Setup():
             temptext += "%.1f "%(mesh_positions_vert[i])
             counter +=1 
             if counter == 10:
-                temptext += '\n'
+                #temptext += '\n'
                 counter = 0
         temptext +="\n"
         mesh_outstring += temptext
@@ -860,7 +860,7 @@ class Setup():
             temptext += "{0:.1g}  ".format(np.log10(float(self.halfspace_resistivity)))
             counter += 1
             if counter == 20:
-                temptext += '\n'
+                #temptext += '\n'
                 counter = 0
         temptext += "\n"
         startup_outstring += temptext
