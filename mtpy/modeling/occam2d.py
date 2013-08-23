@@ -557,9 +557,11 @@ class Setup():
         for idx, depth in enumerate(lo_model_depths):
             lo_mesh_depths.append(depth)
             lo_rows_to_merge.append(2)
-            if idx == len(lo_model_depths) - 1 :
-                break
-            lo_mesh_depths.append(lo_model_depths[idx+1] - depth)
+            if idx == 0:
+                lo_mesh_depths.append(depth)
+            else:
+                lo_mesh_depths.append(depth - lo_model_depths[idx-1])
+        
 
         lo_mesh_thicknesses = []
         for idx,depth in enumerate(lo_mesh_depths):
@@ -571,6 +573,7 @@ class Setup():
 
         max_thickness = np.max(lo_mesh_thicknesses)
         maxdepth = lo_mesh_depths[-1]
+
 
         for i in range(n_bottompadding):
             lo_mesh_thicknesses.append(max_thickness)
@@ -593,7 +596,7 @@ class Setup():
 
         lo_rows_to_merge.append(n_bottompadding)
         no_vertical_nodes = len(lo_mesh_depths) +1
-        
+
 
 
         
@@ -653,6 +656,7 @@ class Setup():
 
             num_params += ncol
 
+        print 'number of mesh layers: {0} (2*{1} model layers + {2} padding)'.format(len(lo_mesh_thicknesses),n_layers-1,n_bottompadding)
         print 'number of model blocks: {0}'.format(num_params)
         self.no_parameters = num_params
         self.parameters_inmodel['lo_modelblockstrings'] = modelblockstrings
@@ -830,10 +834,10 @@ class Setup():
         temptext = "Target Misfit:    {0:.1f}\n".format(float(self.parameters_startup['target_rms']))
         startup_outstring += temptext
 
-        temptext = "Roughness Type:   {0}\n".format(self.parameters_startup['roughness_type'])
+        temptext = "Roughness Type:   {0}\n".format(int(self.parameters_startup['roughness_type']))
         startup_outstring += temptext
     
-        temptext = "Debug Level:      {0}\n".format(self.parameters_startup['debug_level'])
+        temptext = "Debug Level:      {0}\n".format(int(self.parameters_startup['debug_level']))
         startup_outstring += temptext
 
         temptext = "Iteration:        {0}\n".format(int(self.parameters_startup['no_iteration']))
@@ -848,10 +852,10 @@ class Setup():
         temptext = "Misfit Value:     {0}\n".format(float(self.parameters_startup['rms_start']))
         startup_outstring += temptext
         
-        temptext = "Misfit Reached:   {0}\n".format(self.parameters_startup['reached_misfit'])
+        temptext = "Misfit Reached:   {0}\n".format(int(self.parameters_startup['reached_misfit']))
         startup_outstring += temptext
         
-        temptext = "Param Count:      {0}\n".format(self.no_parameters)
+        temptext = "Param Count:      {0}\n".format(int(self.no_parameters))
         startup_outstring += temptext
         
         temptext = ""
