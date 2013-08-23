@@ -350,12 +350,17 @@ class Setup():
         edilist_full = [op.abspath(op.join(self.edi_directory,i)) for i in edilist_raw]
         edilist = []
         for edi in edilist_full:
-            try:
-                e = MTedi.Edi()
-                e.readfile(edi)
+            if op.isfile(edi):
                 edilist.append(edi)
-            except:
+            else: 
                 continue
+
+            # try:
+            #     e = MTedi.Edi()
+            #     e.readfile(edi)
+            #     edilist.append(edi)
+            # except:
+            #     continue
 
         self.edifiles = edilist
        
@@ -412,11 +417,11 @@ class Setup():
         lo_distances = []
         no_dummys = 0
 
-        for idx_site in range(len(lo_sites)-1):
-            location = lo_sites[idx_site] 
+        for idx_site,location in enumerate(lo_sites):
             lo_allsites.append(location)
-
-            distance = np.abs(lo_sites[idx_site] - location)
+            if idx_site == len(lo_sites)-1:
+                break
+            distance = np.abs(lo_sites[idx_site+1] - location)
             if distance >= maxblockwidth:
                 dummys = int(distance/maxblockwidth) 
                 smallblockwidth = distance/float(dummys+1)
@@ -424,31 +429,55 @@ class Setup():
                 for d in range(dummys):
                     lo_allsites.append(location + (d+1)* smallblockwidth)
                 
-                lo_distances.append(smallblockwidth)
+                    lo_distances.append(smallblockwidth)
             
             else:
                 lo_distances.append(distance)
 
-        #2. determine padding coulumn widths:
+        print 'added {0} dummy stations'.format(no_dummys)
+        totalstations = no_dummys+len(lo_sites)
+        totalmeshblocknumber = 2*n_sidepadding+4+2*(totalstations)
+        totalmodelblocknumber = 4+totalstations
+        print '{0} stations in total => \n\t{1} meshblocks and {2} modelblocks expected in top layer'.format(
+                                    totalstations,totalmeshblocknumber, totalmodelblocknumber)
+
+        #2. determine padding column widths:
         paddingwidth = 0.5 * np.max(lo_distances)
         meshnodelocations = []
-        #add extra column on the left
+        #add left half of block under first station 
         leftedge = lo_allsites[0] - lo_distances[0]/2.
         meshnodelocations.insert(0,leftedge)
+
+        #add extra block column on the left of first station
+        #consists of two mesh cells
         leftedge -= paddingwidth
         meshnodelocations.insert(0,leftedge)
         leftedge -= paddingwidth
         meshnodelocations.insert(0,leftedge)
 
-        padding_right = []
+            
+        #3. split the inner station gaps into 2 mesh blocks each 
+        for idx,station in enumerate(lo_allsites):
+            meshnodelocations.append(station)
+            if idx == len(lo_allsites)-1:
+                break
+            #include point in the middle between here and next station
+            meshnodelocations.append(station+(lo_allsites[idx+1]-station)/2.)
+
+        #add right half of block under last station 
         rightedge = lo_allsites[-1] + lo_distances[-1]/2.
-        padding_right.append(rightedge)
-        rightedge += paddingwidth
-        padding_right.append(rightedge)
-        rightedge += paddingwidth
-        padding_right.append(rightedge)
+        meshnodelocations.append(rightedge)
 
-        padding_absolute = []
+        #add extra block column on the right of last station
+        #consists of two mesh cells
+        rightedge += paddingwidth
+        meshnodelocations.append(rightedge)
+        rightedge += paddingwidth
+        meshnodelocations.append(rightedge)
+
+
+        #add 2 side padding blocks with expon. increasing width of N mesh cells
+        padding_absolute = 0 
         for p in range(n_sidepadding):
             current_padding = 3**(p+1)*paddingwidth
             if current_padding > 1000000:
@@ -457,32 +486,26 @@ class Setup():
             padding_absolute+=current_padding
             
             rightedge += current_padding
-            padding_right.append(current_padding)
+            meshnodelocations.append(rightedge)
+
             leftedge -= current_padding
             meshnodelocations.insert(0,leftedge) 
-
-            
-        #3. split the inner station gaps into 2 mesh blocks each and add the padding:
-        for idx,station in enumerate(lo_allsites):
-            meshnodelocations.append(station)
-            if idx == len(lo_allsites)-1:
-                break
-            meshnodelocations.append(station+(lo_allsites[idx+1]-station)/2.)
-        meshnodelocations.extend(padding_right)
-
+        
 
         #4.determine the overall width of mesh blocks
         lo_meshblockwidths = []
         for loc in range(len(meshnodelocations)-1):            
-            lo_meshblockwidths.append(meshnodelocations[loc+1] - meshnodelocations[loc])
+            lo_meshblockwidths.append( meshnodelocations[loc+1] - meshnodelocations[loc] )
 
         #5. build top layer modelblocks by merging paddings and then 2 blocks each:
         lo_columns_to_merge = []
         lo_modelblockwidths = [] 
         current_meshblock_index = 0
+
         lo_columns_to_merge.append(n_sidepadding)
-        lo_modelblockwidths.append(np.sum(padding_absolute))
+        lo_modelblockwidths.append(padding_absolute)
         current_meshblock_index += n_sidepadding
+
         #merge the extra column at the left:
         lo_columns_to_merge.append(2)
         lo_modelblockwidths.append( lo_meshblockwidths[current_meshblock_index] 
@@ -490,10 +513,10 @@ class Setup():
         current_meshblock_index += 2
 
         for idx,location in enumerate(lo_allsites):
-            if idx == len(lo_allsites)-1:
-                break
+            #each sit is on top of a block, consisting of 2 mesh cells each
             lo_columns_to_merge.append(2)
-            lo_modelblockwidths.append(lo_allsites[idx+1] - location)
+            lo_modelblockwidths.append(lo_meshblockwidths[current_meshblock_index] 
+                                + lo_meshblockwidths[current_meshblock_index+1] )
             current_meshblock_index += 2
         
         #merge right extra column
@@ -502,13 +525,16 @@ class Setup():
                                 + lo_meshblockwidths[current_meshblock_index+1] )
         current_meshblock_index += 2
 
+        #merge the side padding columns on the right
         lo_columns_to_merge.append(n_sidepadding)
         lo_modelblockwidths.append(np.sum(padding_absolute))
         current_meshblock_index += n_sidepadding
 
 
         #6.right side of left most model block - effectively the edge of the padding
-        binding_offset = meshnodelocations[n_sidepadding]
+        #given with resspect to location of the first station
+        #idx of station 1 is n_sidepadding + 2(extra column) + 1 (half the block under the station)
+        binding_offset =  meshnodelocations[n_sidepadding+3] - meshnodelocations[n_sidepadding]
 
         #should be identical!
         no_horizontal_nodes = current_meshblock_index + 1
@@ -627,7 +653,7 @@ class Setup():
 
             num_params += ncol
 
-
+        print 'number of model blocks: {0}'.format(num_params)
         self.no_parameters = num_params
         self.parameters_inmodel['lo_modelblockstrings'] = modelblockstrings
         self.parameters_inmodel['lo_column_numbers']    = lo_column_numbers
@@ -1204,25 +1230,34 @@ class Data():
         self.stationlocations = lo_offsets
         self.easts = lo_easts
         self.norths = lo_norths
-        print self.stationlocations
+        #print self.stationlocations
 
 
         if 0:
+            lo_all_easts = list(lo_easts)
+            lo_all_easts.extend(list(projected_stations[:,0]))
+            print sorted(lo_all_easts)
+            lo_all_norths = list(lo_norths)
+            lo_all_norths.extend(list(projected_stations[:,1]))
+            x_extent = max(lo_all_easts) - min(lo_all_easts)
+            y_extent = max(lo_all_norths) - min(lo_all_norths)
             plt.close('all')
             lfig = plt.figure(4, dpi=200, figsize=(2,2))
             plt.clf()
-            ploty = sp.polyval(profile_line, lo_easts)
+            ploty = sp.polyval(profile_line, sorted(lo_all_easts))
             lax = lfig.add_subplot(1, 1, 1,aspect='equal')
-            lax.plot(lo_easts, ploty, '-k', lw=1)
+            lax.plot(sorted(lo_all_easts), ploty, '-k', lw=1)
             lax.scatter(lo_easts,lo_norths,color='b',marker='+')
             lax.scatter(projected_stations[:,0], projected_stations[:,1],color='r',marker='x')
             lax.set_title('Original/Projected Stations')
-            lax.set_ylim(ploty.min()-1000., ploty.max()+1000.)
-            lax.set_xlim(lo_easts.min()-1000, lo_easts.max()+1000.)
+            lax.set_ylim(np.min([lo_norths.min(),projected_stations[:,1].min()])-0.2*y_extent, 
+                                            np.max([lo_norths.max(),projected_stations[:,1].max()])+0.2*y_extent)
+            lax.set_xlim(np.min([lo_easts.min(),projected_stations[:,0].min()])-0.2*x_extent, 
+                                            np.max([lo_easts.max(),projected_stations[:,0].max()])+0.2*x_extent)
             lax.set_xlabel('Easting (m)', 
-                           fontdict={'size':8, 'weight':'bold'})
+                           fontdict={'size':4, 'weight':'bold'})
             lax.set_ylabel('Northing (m)',
-                           fontdict={'size':8, 'weight':'bold'})
+                           fontdict={'size':4, 'weight':'bold'})
             plt.show()
 
 
