@@ -113,7 +113,7 @@ class Setup():
         self.parameters_data['res_errorfloor'] = 10
         self.parameters_data['tipper_errorfloor'] = 10
 
-        self.parameters_data['mode'] = 'both'
+        self.parameters_data['mode'] = 'tetm'
         
         self.parameters_data['minimum_frequency'] = None
         self.parameters_data['maximum_frequency'] = None
@@ -925,7 +925,7 @@ class Data():
         self.stationlocations = []
         self.rotation_angle = 0.
         self.data = []
-        self.mode = 'both'
+        self.mode = 'tetm'
         self.profile_offset = 0.
         self.format = 'OCCAM2MTDATA_1.0'
         self.title = 'MTpy Occam-Datafile'
@@ -936,6 +936,7 @@ class Data():
 
 
         for key in data_parameters:
+            print key,data_parameters[key]
             setattr(self,key,data_parameters[key])
 
         self.generate_profile()
@@ -1193,7 +1194,7 @@ class Data():
                         if T is None:
                             print 'no Tipper data for station {0}'.format(station_number) 
                             continue
-                            
+
                         tipper = T.tipper[idx_f]
                         try: 
                             tippererr = T.tippererr[idx_f]
@@ -1366,12 +1367,7 @@ class Data():
             plt.show()
 
 
-    # def group_frequencies(self):
-    #     """
-    #     collect frequencies of different stations, if they just vary by a 
-    #     tolerance - set to 5% 
-    #     """
-    #     pass
+
 
     def writefile(self, filename = None):
         if filename is not None:
