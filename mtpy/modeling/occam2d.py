@@ -842,7 +842,7 @@ class Setup():
         temptext = "Lagrange Value:   {0}\n".format(self.parameters_startup['mu_start'])
         startup_outstring += temptext
         
-        temptext = "Roughness Value   {0}\n".format(self.parameters_startup['roughness_start'])
+        temptext = "Roughness Value:  {0}\n".format(self.parameters_startup['roughness_start'])
         startup_outstring += temptext
         
         temptext = "Misfit Value:     {0}\n".format(float(self.parameters_startup['rms_start']))
