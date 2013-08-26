@@ -159,15 +159,15 @@ class Setup():
 
         if configfile is not None:
             if op.isfile(configfile):
-                if 1:
+                try:
                     config_dict = MTcf.read_configfile(configfile)
                     temp_dict = {}
                     for key in config_dict:
                         temp_dict = config_dict[key]
                         update_dict.update(temp_dict)
-                # except:
-                #     print 'Warning - could not read config file {0}'.format(op.abspath(configfile))
-                #     pass
+                except:
+                    print 'Warning - could not read config file {0}'.format(op.abspath(configfile))
+                    pass
 
         #correcting dictionary for upper case keys
         input_parameters_nocase = {}
@@ -180,7 +180,8 @@ class Setup():
                                     self.parameters_mesh, self.parameters_data]:
             for key in dictionary.keys():
                 if key in update_dict:
-                    if len(update_dict[key]) > 0 :
+                    #check if entry exists:
+                    if update_dict[key]:
                         try:
                             value = float(update_dict[key])
                             dictionary[key] = value
@@ -358,7 +359,7 @@ class Setup():
     def write_datafile(self):
 
         data_object = Data(edilist = self.edifiles, wd = self.wd, **self.parameters_data)
-        self.sitelocations = data_object.stationlocations
+        self.stationlocations = data_object.stationlocations
         data_object.writefile()
 
         self.datafile = data_object.filename
@@ -371,13 +372,13 @@ class Setup():
         Attributes required: 
 
         - self.no_layers
-        - self.sitelocations
+        - self.stationlocations
         - self.parameters_inmodel
 
 
         """
         #given as offset on the profile line
-        lo_sites = self.sitelocations
+        lo_sites = self.stationlocations
         n_sites  = len(lo_sites)
 
         #maximum width of MODEL block - implicitely defines finiteness of the mesh

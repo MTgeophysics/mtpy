@@ -57,7 +57,7 @@ class OccamGui(QtGui.QMainWindow):
         QtCore.QObject.connect(self.ui.pushButton_loadstartupfile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_startupfile))       
         QtCore.QObject.connect(self.ui.pushButton_loaddatafile, QtCore.SIGNAL("clicked()"),self.set_data_filename)
         QtCore.QObject.connect(self.ui.pushButton_checkparameter, QtCore.SIGNAL("clicked()"),  self.check_input)
-        QtCore.QObject.connect(self.ui.pushButton_checkparameter, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
+        #QtCore.QObject.connect(self.ui.pushButton_checkparameter, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
         QtCore.QObject.connect(self.ui.pushButton_generateinputfile, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
         QtCore.QObject.connect(self.ui.pushButton_runoccam, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
         QtCore.QObject.connect(self.ui.pushButton_generateinputfile, QtCore.SIGNAL("clicked()"),  self.check_input)
@@ -218,6 +218,10 @@ class OccamGui(QtGui.QMainWindow):
             
         #define/how message box
         QtGui.QMessageBox.about(self, "Parameter check", messagetext)
+        if invalid_flag > 0:
+            return 1
+        else:
+            return 0
         
 
     def setup_parameter_dict(self):
@@ -229,7 +233,7 @@ class OccamGui(QtGui.QMainWindow):
         
         D = {}
         D['wdir']             = op.abspath( op.realpath( str( self.ui.lineEdit_browse_wd.text() ) ) )
-        D['edis_dir']         = op.abspath( op.realpath( str( self.ui.lineEdit_browse_edis.text()) ) )
+        D['edi_dir']         = op.abspath( op.realpath( str( self.ui.lineEdit_browse_edis.text()) ) )
         D['occam_exe']        = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_occam.text()) ) ) )
         D['startupfn']        = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_startupfile.text()) ) ) )
         D['stationlist_file'] = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_stations.text()) ) ) )
@@ -287,23 +291,24 @@ class OccamGui(QtGui.QMainWindow):
 
 
         #Try to load old data file, if box is checked
-        if D['check_usedatafile']:
-            checkfilename = D['olddatafile']
-            if op.isfile(checkfilename):
-                messagetext = "<P><b><FONT COLOR='#008080'>Existing data file loaded successfully:</FONT></b></P><br>%s"%checkfilename
-                D['datafilename'] = D['olddatafile']
-                D['datafile']     = D['olddatafile']
-            else:
-                messagetext = "<P><b><FONT COLOR='#800000'>Error: %i No old data file found!  </FONT></b></P> "
+        # if D['check_usedatafile']:
+        #     checkfilename = D['olddatafile']
+        #     if op.isfile(checkfilename):
+        #         messagetext = "<P><b><FONT COLOR='#008080'>Existing data file loaded successfully:</FONT></b></P><br>%s"%checkfilename
+        #         D['datafilename'] = D['olddatafile']
+        #         D['datafile']     = D['olddatafile']
+        #     else:
+        #         messagetext = "<P><b><FONT COLOR='#800000'>Error:  No old data file found!  </FONT></b></P> "
                     
-            QtGui.QMessageBox.about(self, "Data file", messagetext )
+        #     QtGui.QMessageBox.about(self, "Data file", messagetext )
                     
-            return
+        #     return
 
-        #Otherwise set up new data filename
+        # #Otherwise set up new data filename
         
         outfilename = D['datafilename']
-        edidirectory= D['edis_dir']
+        edidirectory= D['edi_dir']
+
 
         def make_stationlist(listfilename):
             """
@@ -366,40 +371,59 @@ class OccamGui(QtGui.QMainWindow):
         lineorientation = _oridict[str(D['orientation'])]
         
         #make data file  -------------------------------------------
+        returnvalue = 0 
+        messagetext = ''
+        if not D['check_usedatafile']:
+            try:
+                setup_object = MTo2.Setup(**D)
+                edi_dir = D['edi_dir']
+                setup_object.read_edifiles(edi_dir)
+                setup_object.datafile = D['datafilename']
+                setup_object.write_datafile()
+                datafilename = setup_object.datafile
+                self.parameters['stationlocations']  = setup_object.stationlocations
+                messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
+                "data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
+            except:
+                messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+                "write data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
+                returnvalue = 1
 
-        try:
-        
-            #use MTPy core module for generating the new data file
-            import MTpy.core.OCCAMTools as OCCAMTools
-            
-            checkfilename = OCCAMTools.make2DdataFile(edidirectory,\
-                                        savepath=outfilename,\
-                                        mmode= mode4modelling,\
-                                        stationlst=stationlist,\
-                                        title=None,\
-                                        thetar=float(D['strike']),\
-                                        resxyerr=resxy,\
-                                        resyxerr=resyx,\
-                                        phasexyerr=phasexy,\
-                                        phaseyxerr=phaseyx,\
-                                        ss=3*' ',\
-                                        fmt='%2.6f',\
-                                        freqstep=int(float(D['freqsteps'])),\
-                                        plotyn='n',\
-                                        lineori=lineorientation,\
-                                        tippererr=tippererror  \
-                                        )
+        else:
+            try:
+                data_object = MTo2.Data()
+                data_object.readfile(D['datafilename'])
+                self.parameters['stationlocations']  = setup_object.stationlocations
+                messagetext = "<P><b><FONT COLOR='#008080'>Read old data file:</FONT></b></P><br>{0}".format(D['datafilename'])
+            except:
+                messagetext = "<P><b><FONT COLOR='#800000'>Error: Cannot read old data file: {0}  </FONT></b></P> ".format(D['datafilename'])
+                returnvalue = 1
+
+                
+        QtGui.QMessageBox.about(self, "Data file generation", messagetext )
+
+        return returnvalue
+
+
+            # checkfilename = OCCAMTools.make2DdataFile(edidirectory,\
+            #                             savepath=outfilename,\
+            #                             mmode= mode4modelling,\
+            #                             stationlst=stationlist,\
+            #                             title=None,\
+            #                             thetar=float(D['strike']),\
+            #                             resxyerr=resxy,\
+            #                             resyxerr=resyx,\
+            #                             phasexyerr=phasexy,\
+            #                             phaseyxerr=phaseyx,\
+            #                             ss=3*' ',\
+            #                             fmt='%2.6f',\
+            #                             freqstep=int(float(D['freqsteps'])),\
+            #                             plotyn='n',\
+            #                             lineori=lineorientation,\
+            #                             tippererr=tippererror  \
+            #                             )
 
             #check, if generation was successfull and show message box
-            if op.isfile(checkfilename):
-                messagetext = "<P><b><FONT COLOR='#008080'>Data file generation successful:</FONT></b></P><br>%s"%checkfilename
-                D['datafile'] = checkfilename
-            else:
-                messagetext = "<P><b><FONT COLOR='#800000'>Error:  No data file generated!  </FONT></b></P> "
-        except:
-                messagetext = "<P><b><FONT COLOR='#800000'>Error:  No data file generated!  </FONT></b></P> "
-
-        QtGui.QMessageBox.about(self, "Data file", messagetext )
 
 
 
@@ -416,72 +440,141 @@ class OccamGui(QtGui.QMainWindow):
         
  
 
-    def build_startupfiles(self):
+    def build_inputfiles(self):
         """
-        Set up collection of required stratup files for OCCAM.
+        Set up collection of required input files files for OCCAM.
 
         - startup
         - model
+        - mesh
         """
-        
-        #use MTPy core tool for building start files
-        import MTpy.modeling.occam2d as MTo2
-        reload(MTo2)
-
+        returnvalue = 0
         D=self.parameters
-        
+                        
         #datafile = D['datafile'] 
-        messagetext = ' '
+        messagetext = ''
+        # try:
+        #     #1. make startup file 
+        #     self._setup_startupfile()
+        # except:
+        #     messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not generate startup file!  </FONT></b></P> \n"
+
         try:
-            #1. make startup file 
-            self._setup_startupfile()
+            setup_object = MTo2.Setup(**D)
         except:
-            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not generate startup file!  </FONT></b></P> \n"
+            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+            "generate setup object - check input parameters!  </FONT></b></P> \n"
+            QtGui.QMessageBox.about(self, "Input files generation", messagetext )
 
+            return 1
 
-        try:
-            #2. make model file
-            m_fn,i_fn,s_fn = OCCAMTools.makeModel(datafile,\
-                                                    niter=int(float(D['n_iterations'])),\
-                                                    targetrms=float(D['target_rms']),\
-                                                    nlayers=int(float(D['n_layers'])),\
-                                                    nlperdec=int(float(D['decade_layers'])),\
-                                                    z1layer=int(float(D['thickness1'])),\
-                                                    bwidth=int(float(D['max_blockwidth'])),\
-                                                    trigger=float(D['mergethreshold']),\
-                                                    #savepath=self.ui.wd,\
-                                                    rhostart=float(D['rho0']),\
-                                                    #occampath=D['makemodel_exe']\
-                                                    cwd=self.ui.wd,\
-                                                    #makemodelexe=D['makemodel_exe'],
-                                                    modelname=D['modelname'],
-                                                    use_existing_startup=D['check_usestartupfile'],\
-                                                    existing_startup_file=D['startupfn']\
-                                                    )
-        except:
-            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not generate model/mesh!  </FONT></b></P> \n"
-
-        if op.isfile(m_fn) and op.isfile(i_fn) and op.isfile(s_fn):
-            if D['check_usestartupfile']:
-                messagetext = "<P><b><FONT COLOR='#008080'>Old startup  read in:</FONT></b></P><br>%s"%(s_fn)
-                QtGui.QMessageBox.about(self, "Startup file", messagetext )
-                messagetext = "<P><b><FONT COLOR='#008080'>Input files generated:</FONT></b></P><br>%s<br>%s"%(m_fn,i_fn)
-                D['startupfile'] = existing_startup_file
+        # edi_dir = D['edi_dir']
+        # if not D['check_usedatafile']:
+        #     try:
+        #         setup_object.read_edifiles(edi_dir)
+        #         setup_object.datafile = D['datafilename']
+        #         setup_object.write_datafile()
+        #         messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
+        #         "data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
+        #     except:
+        #         messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+        #         "write data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
             
-            else:
-                messagetext += "<P><b><FONT COLOR='#008080'>Input files generated:</FONT></b></P><br>%s<br>%s<br>%s"%(m_fn,i_fn,s_fn)
-        else:
-            messagetext += "<P><b><FONT COLOR='#800000'>Error:  No input files generated!  </FONT></b></P> "
-        
-        QtGui.QMessageBox.about(self, "Startup files generation", messagetext )
+        #     QtGui.QMessageBox.about(self, "Data file generation", messagetext )
 
-        return
+        try:
+            setup_object.setup_mesh_and_model()
+        except:
+            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+            "set up mesh and model!  </FONT></b></P> \n"
+            returnvalue = 1
+
+        try:
+            setup_object.write_meshfile()
+            messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
+            "mesh file: {0}  </FONT></b></P> \n".format(setup_object.meshfile)
+        except:
+            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+            "write mesh file: {0}  </FONT></b></P> \n".format(setup_object.meshfile)
+            returnvalue = 1
+
+        try:
+            setup_object.write_inmodelfile()
+            messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
+            " inmodel file: {0}  </FONT></b></P> \n".format(setup_object.inmodelfile)
+        except:
+            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+            "write inmodel file: {0}  </FONT></b></P> \n".format(setup_object.inmodelfile)
+            returnvalue = 1
+
+        if D['check_usestartupfile']:
+            try:
+                setup_object.startupfile = D['startupfile']
+                messagetext += "<P><b><FONT COLOR='#008080'>Using old "\
+                "startup file: {0}  </FONT></b></P> \n".format(setup_object.startupfile)
+            except:
+                messagetext += "<P><b><FONT COLOR='#800000'>Error: Could not "\
+                "find old startup file: {0}  </FONT></b></P> \n".format(setup_object.startupfile)
+                returnvalue = 1
+
+        else:
+            try:
+                setup_object.write_startupfile()
+                messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
+                " startup file: {0}  </FONT></b></P> \n".format(setup_object.startupfile)
+
+            except:
+                messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+                "write startup file: {0}  </FONT></b></P> \n".format(setup_object.startupfile)
+                returnvalue = 1
+
+
+
+            # #2. make model file
+            # m_fn,i_fn,s_fn = OCCAMTools.makeModel(datafile,\
+            #                                         niter=int(float(D['n_iterations'])),\
+            #                                         targetrms=float(D['target_rms']),\
+            #                                         nlayers=int(float(D['n_layers'])),\
+            #                                         nlperdec=int(float(D['decade_layers'])),\
+            #                                         z1layer=int(float(D['thickness1'])),\
+            #                                         bwidth=int(float(D['max_blockwidth'])),\
+            #                                         trigger=float(D['mergethreshold']),\
+            #                                         #savepath=self.ui.wd,\
+            #                                         rhostart=float(D['rho0']),\
+            #                                         #occampath=D['makemodel_exe']\
+            #                                         cwd=self.ui.wd,\
+            #                                         #makemodelexe=D['makemodel_exe'],
+            #                                         modelname=D['modelname'],
+            #                                         use_existing_startup=D['check_usestartupfile'],\
+            #                                         existing_startup_file=D['startupfn']\
+            #                                         )
+        # except:
+        #     messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not generate model/mesh!  </FONT></b></P> \n"
+
+        # if D['check_usestartupfile']:
+        #     messagetext = "<P><b><FONT COLOR='#008080'>Old startup  read in:</FONT></b></P><br>%s"%(s_fn)
+        #         QtGui.QMessageBox.about(self, "Startup file", messagetext )
+                
+        #         messagetext = "<P><b><FONT COLOR='#008080'>Input files generated:</FONT></b></P><br>%s<br>%s"%(m_fn,i_fn)
+        #         D['startupfile'] = existing_startup_file
+            
+        #     else:
+        #         messagetext += "<P><b><FONT COLOR='#008080'>Input files generated:</FONT></b></P><br>%s<br>%s<br>%s"%(m_fn,i_fn,s_fn)
+        # else:
+        #     messagetext += "<P><b><FONT COLOR='#800000'>Error:  No input files generated!  </FONT></b></P> "
+        
+        QtGui.QMessageBox.about(self, "Input files generation", messagetext )
+
+        return returnvalue
 
 
     def generate_inputfiles(self):
-        self.build_datafile()
+        if self.build_datafile() == 1 :
+            return
+
         #print'datafile done'
-        self.build_startupfiles()
+        if self.build_inputfiles() ==1 :
+            return 
         #print 'startupfiles done'
     
 
