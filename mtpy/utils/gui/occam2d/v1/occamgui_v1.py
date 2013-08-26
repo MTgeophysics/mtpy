@@ -49,7 +49,7 @@ class OccamGui(QtGui.QMainWindow):
 
         #Connections
         QtCore.QObject.connect(self.ui.button_browse_wd, QtCore.SIGNAL("clicked()"),  lambda: self.set_path_in_browsefield(self.ui.lineEdit_browse_wd))
-        QtCore.QObject.connect(self.ui.button_browse_edis, QtCore.SIGNAL("clicked()"),  lambda: self.set_path_in_browsefield(self.ui.lineEdit_browse_edis))
+        QtCore.QObject.connect(self.ui.button_browse_edis, QtCore.SIGNAL("clicked()"),  lambda: self.set_path_in_browsefield(self.ui.lineEdit_browse_edi))
         QtCore.QObject.connect(self.ui.pushButton_loadstations, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_stations))
         QtCore.QObject.connect(self.ui.button_browse_occam, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_occam))
         #QtCore.QObject.connect(self.ui.button_browse_makemodel, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_makemodel))
@@ -67,7 +67,6 @@ class OccamGui(QtGui.QMainWindow):
         QtCore.QObject.connect(self.ui.pushButton_runoccam, QtCore.SIGNAL("clicked()"),  self.run_occam)
         QtCore.QObject.connect(self.ui.pushButton_quit, QtCore.SIGNAL("clicked()"), QtCore.QCoreApplication.instance().quit)
 
-    
         
     #when loading old datafile, copy its name to the filename field:
     def set_data_filename(self):
@@ -113,8 +112,8 @@ class OccamGui(QtGui.QMainWindow):
         #EDI files folder
         edis_mess = ''
         edis_text = ''
-        if str(self.ui.lineEdit_browse_edis.text()):
-            edis_text = str(self.ui.lineEdit_browse_edis.text())
+        if str(self.ui.lineEdit_browse_edi.text()):
+            edis_text = str(self.ui.lineEdit_browse_edi.text())
         if (edis_text.strip() == '') or (not op.isdir(op.abspath(op.realpath(edis_text)))):
             edis_mess += 'EDI files directory not existing <br>'
             invalid_flag +=1
@@ -140,8 +139,8 @@ class OccamGui(QtGui.QMainWindow):
         #stations list file
         stations_mess = ''
         stations_text = ''
-        if str(self.ui.lineEdit_browse_stations.text()):
-            stations_text = str(self.ui.lineEdit_browse_stations.text())
+        if str(self.ui.lineEdit_browse_stationfile .text()):
+            stations_text = str(self.ui.lineEdit_browse_stationfile.text())
         if (stations_text.strip() == '') or (not op.isfile(op.abspath(op.realpath(op.join(self.ui.wd,stations_text))))):
             if self.ui.checkBox_usestationlist.checkState():
                 stations_mess += 'Stations file not existing <br>'
@@ -233,7 +232,7 @@ class OccamGui(QtGui.QMainWindow):
         
         D = {}
         D['wdir']             = op.abspath( op.realpath( str( self.ui.lineEdit_browse_wd.text() ) ) )
-        D['edi_dir']         = op.abspath( op.realpath( str( self.ui.lineEdit_browse_edis.text()) ) )
+        D['edi_dir']          = op.abspath( op.realpath( str( self.ui.lineEdit_browse_edis.text()) ) )
         D['occam_exe']        = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_occam.text()) ) ) )
         D['startupfn']        = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_startupfile.text()) ) ) )
         D['stationlist_file'] = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_stations.text()) ) ) )
@@ -242,9 +241,9 @@ class OccamGui(QtGui.QMainWindow):
 
         D['modelname']        = str(self.ui.lineEdit_modelname.text())
         
-        D['check_usestations']= self.ui.checkBox_usestationlist.checkState()
-        D['check_usedatafile']= self.ui.checkBox_usedatafile.checkState()
-        D['check_usestartupfile']= self.ui.checkBox_usestartupfile.checkState()
+        D['check_usestations'] = self.ui.checkBox_usestationlist.checkState()
+        D['check_usedatafile'] = self.ui.checkBox_usedatafile.checkState()
+        D['check_usestartupfile'] = self.ui.checkBox_usestartupfile.checkState()
         
 
         D['mode']             = self.ui.comboBox_mode.currentIndex()
@@ -272,13 +271,14 @@ class OccamGui(QtGui.QMainWindow):
         D['check_includeTipper']  = self.ui.checkBox_usetipper.checkState()
         D['Error_Tipper']         = self.ui.doubleSpinBox_errorvalue_tipper.value()
         
-
+        print D
+        return
         self.parameters = D
 
 
     def build_datafile(self):
         """
-        Build OCCAM data file, or use existing one (if field is checked in GUI) 
+            Build OCCAM data file, or use existing one (if field is checked in GUI) 
         """
 
         D = self.parameters
@@ -376,6 +376,13 @@ class OccamGui(QtGui.QMainWindow):
         if not D['check_usedatafile']:
             try:
                 setup_object = MTo2.Setup(**D)
+            except:
+                messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+                "generate setup object - check input parameters!  </FONT></b></P> \n"
+                QtGui.QMessageBox.about(self, "Input files generation", messagetext )
+                return 1
+
+            try:
                 edi_dir = D['edi_dir']
                 setup_object.read_edifiles(edi_dir)
                 setup_object.datafile = D['datafilename']
