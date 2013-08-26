@@ -109,8 +109,8 @@ class Setup():
         self.parameters_inmodel['model_name'] = 'Modelfile generated with MTpy'
         self.parameters_inmodel['block_merge_threshold'] = 0.75
 
-        self.parameters_data['phase_errorfloor'] = 10
-        self.parameters_data['res_errorfloor'] = 10
+        self.parameters_data['te_errorfloor'] = 10
+        self.parameters_data['tm_errorfloor'] = 10
         self.parameters_data['tipper_errorfloor'] = 10
 
         self.parameters_data['mode'] = 'tetm'
@@ -1086,6 +1086,16 @@ class Data():
 
 
     def build_data(self):
+        """Data file Generation
+
+        Read all Edi files. Exytact frequencies. Extract off-diagonal data from Z.
+        Extract Tipper y-component.
+
+        Collect all information sorted according to occam specifications.
+
+        Data of Z given in muV/m/nT = km/s
+        Error is 1 stddev.
+        """ 
         
 
         #set data modes
@@ -1093,15 +1103,15 @@ class Data():
         modes = self.mode.lower().strip()
         
         if 'both' in modes :
-            lo_modes.extend([1,2,5,6])  
+            lo_modes.extend([13,14,15,16])  
         if 'te' in modes:
-            lo_modes.extend([1,2])
+            lo_modes.extend([13,14])
         if 'tm' in modes:
-            lo_modes.extend([5,6])
+            lo_modes.extend([15,16])
         if ('tipper' in modes): 
             lo_modes.extend([3,4])
         if 'all' in modes :
-            lo_modes.extend([1,2,3,4,5,6])  
+            lo_modes.extend([13,14,15,16,3,4])  
 
         lo_modes = sorted(list(set(lo_modes))) 
 
@@ -1122,7 +1132,7 @@ class Data():
         
         lo_all_freqs_tmp = []
         for f in  lo_all_freqs:
-            if min_freq < f < max_freq :
+            if min_freq <= f <= max_freq :
                 lo_all_freqs_tmp.append(f)
             else:
                 continue
@@ -1176,26 +1186,45 @@ class Data():
                 T = None
 
             rho_phi = Z.res_phase 
+            z_array = Z.z
+            zerr_array = Z.zerr
             for idx_f,freq in enumerate(self.station_frequencies[idx_s]):
                 frequency_number = np.abs(self.frequencies-freq).argmin() + 1
                 for mode in lo_modes:
-                    if mode == 1 :
-                        raw_value = rho_phi[0][idx_f][0,1]
-                        value = np.log10(raw_value)
-                        absolute_error = rho_phi[2][idx_f][0,1]
-                        relative_error = absolute_error/raw_value
-                        if self.res_errorfloor is not None:
-                            if self.res_errorfloor/100. > relative_error:
-                                relative_error = self.res_errorfloor/100.
-                        error = relative_error/np.log(10.)
-                    elif mode == 2 :
-                        value = rho_phi[1][idx_f][0,1]
-                        absolute_error = rho_phi[2][idx_f][0,1]
-                        relative_error = absolute_error/value
-                        if self.phase_errorfloor is not None:
-                            if self.phase_errorfloor/100. > relative_error:
-                                relative_error = self.phase_errorfloor/100.
-                        error = relative_error*100.*0.285
+                    if mode == 13 :
+                        raw_value = np.real(z_array[idx_f][0,1]) #rho_phi[0][idx_f][0,1]
+                        value = raw_value#np.log10(raw_value)
+                        absolute_error = np.sqrt(zerr_array[idx_f][0,1])#rho_phi[2][idx_f][0,1]
+                        relative_error = np.abs(absolute_error/raw_value)
+                        if self.te_errorfloor is not None:
+                            if self.te_errorfloor/100. > relative_error:
+                                relative_error = self.te_errorfloor/100.
+                        error = np.abs(relative_error * raw_value)   #relative_error/np.log(10.)
+                    elif mode == 14 :
+                        value = np.imag(z_array[idx_f][0,1])#rho_phi[1][idx_f][0,1]
+                        absolute_error = np.sqrt(zerr_array[idx_f][0,1])#rho_phi[2][idx_f][0,1]
+                        relative_error = np.abs(absolute_error/value)
+                        if self.te_errorfloor is not None:
+                            if self.te_errorfloor/100. > relative_error:
+                                relative_error = self.te_errorfloor/100.
+                        error = np.abs(relative_error * raw_value)#relative_error*100.*0.285
+                    if mode == 15 :
+                        raw_value = np.real(z_array[idx_f][1,0]) #rho_phi[0][idx_f][0,1]
+                        value = raw_value#np.log10(raw_value)
+                        absolute_error = np.sqrt(zerr_array[idx_f][1,0])#rho_phi[2][idx_f][0,1]
+                        relative_error = np.abs(absolute_error/raw_value)
+                        if self.tm_errorfloor is not None:
+                            if self.tm_errorfloor/100. > relative_error:
+                                relative_error = self.tm_errorfloor/100.
+                        error = np.abs(relative_error * raw_value)   #relative_error/np.log(10.)
+                    elif mode == 16 :
+                        value = np.imag(z_array[idx_f][1,0])#rho_phi[1][idx_f][0,1]
+                        absolute_error = np.sqrt(zerr_array[idx_f][1,0])#rho_phi[2][idx_f][0,1]
+                        relative_error = np.abs(absolute_error/value)
+                        if self.tm_errorfloor is not None:
+                            if self.tm_errorfloor/100. > relative_error:
+                                relative_error = self.tm_errorfloor/100.
+                        error = np.abs(relative_error * raw_value)#relative_error*100.*0.285
                     
                     elif mode in [3,4] :
                         if T is None:
@@ -1231,23 +1260,23 @@ class Data():
                                     error = tippererr
 
 
-                    elif mode == 5 :
-                        raw_value = rho_phi[0][idx_f][1,0]
-                        value = np.log10(raw_value)
-                        absolute_error = rho_phi[2][idx_f][1,0]
-                        relative_error = absolute_error/raw_value
-                        if self.res_errorfloor is not None:
-                            if self.res_errorfloor/100. > relative_error:
-                                relative_error = self.res_errorfloor/100.
-                        error = relative_error/np.log(10.)
-                    elif mode == 6 :
-                        value = (rho_phi[1][idx_f][1,0])%90
-                        absolute_error = rho_phi[2][idx_f][1,0]
-                        relative_error = absolute_error/value
-                        if self.phase_errorfloor is not None:
-                            if self.phase_errorfloor/100. > relative_error:
-                                relative_error = self.phase_errorfloor/100.
-                        error = relative_error*100.*0.285
+                    # elif mode == 15 :
+                    #     raw_value = rho_phi[0][idx_f][1,0]
+                    #     value = np.log10(raw_value)
+                    #     absolute_error = rho_phi[2][idx_f][1,0]
+                    #     relative_error = absolute_error/raw_value
+                    #     if self.res_errorfloor is not None:
+                    #         if self.res_errorfloor/100. > relative_error:
+                    #             relative_error = self.res_errorfloor/100.
+                    #     error = relative_error/np.log(10.)
+                    # elif mode == 16 :
+                    #     value = (rho_phi[1][idx_f][1,0])%90
+                    #     absolute_error = rho_phi[2][idx_f][1,0]
+                    #     relative_error = absolute_error/value
+                    #     if self.phase_errorfloor is not None:
+                    #         if self.phase_errorfloor/100. > relative_error:
+                    #             relative_error = self.phase_errorfloor/100.
+                    #     error = relative_error*100.*0.285
 
 
                     self.data.append([station_number, frequency_number,mode,value,error])
