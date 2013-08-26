@@ -9,9 +9,10 @@ reload(gui4)
 
 from gui4 import Ui_occamgui2D as Occam_UI_form
 
-
 import os.path as op
 
+import mtpy.core.edi as MTedi
+import mtpy.modeling.occam2d as MTo2
 
 
 
@@ -365,35 +366,39 @@ class OccamGui(QtGui.QMainWindow):
         lineorientation = _oridict[str(D['orientation'])]
         
         #make data file  -------------------------------------------
-        
-        #use MTPy core module for generating the new data file
-        import MTpy.core.OCCAMTools as OCCAMTools
-        
-        checkfilename = OCCAMTools.make2DdataFile(edidirectory,\
-                                    savepath=outfilename,\
-                                    mmode= mode4modelling,\
-                                    stationlst=stationlist,\
-                                    title=None,\
-                                    thetar=float(D['strike']),\
-                                    resxyerr=resxy,\
-                                    resyxerr=resyx,\
-                                    phasexyerr=phasexy,\
-                                    phaseyxerr=phaseyx,\
-                                    ss=3*' ',\
-                                    fmt='%2.6f',\
-                                    freqstep=int(float(D['freqsteps'])),\
-                                    plotyn='n',\
-                                    lineori=lineorientation,\
-                                    tippererr=tippererror  \
-                                    )
 
-        #check, if generation was successfull and show message box
-        if op.isfile(checkfilename):
-            messagetext = "<P><b><FONT COLOR='#008080'>Data file generation successful:</FONT></b></P><br>%s"%checkfilename
-            D['datafile'] = checkfilename
-        else:
-            messagetext = "<P><b><FONT COLOR='#800000'>Error: %i No data file generated!  </FONT></b></P> "
+        try:
+        
+            #use MTPy core module for generating the new data file
+            import MTpy.core.OCCAMTools as OCCAMTools
             
+            checkfilename = OCCAMTools.make2DdataFile(edidirectory,\
+                                        savepath=outfilename,\
+                                        mmode= mode4modelling,\
+                                        stationlst=stationlist,\
+                                        title=None,\
+                                        thetar=float(D['strike']),\
+                                        resxyerr=resxy,\
+                                        resyxerr=resyx,\
+                                        phasexyerr=phasexy,\
+                                        phaseyxerr=phaseyx,\
+                                        ss=3*' ',\
+                                        fmt='%2.6f',\
+                                        freqstep=int(float(D['freqsteps'])),\
+                                        plotyn='n',\
+                                        lineori=lineorientation,\
+                                        tippererr=tippererror  \
+                                        )
+
+            #check, if generation was successfull and show message box
+            if op.isfile(checkfilename):
+                messagetext = "<P><b><FONT COLOR='#008080'>Data file generation successful:</FONT></b></P><br>%s"%checkfilename
+                D['datafile'] = checkfilename
+            else:
+                messagetext = "<P><b><FONT COLOR='#800000'>Error:  No data file generated!  </FONT></b></P> "
+        except:
+                messagetext = "<P><b><FONT COLOR='#800000'>Error:  No data file generated!  </FONT></b></P> "
+
         QtGui.QMessageBox.about(self, "Data file", messagetext )
 
 
@@ -420,35 +425,41 @@ class OccamGui(QtGui.QMainWindow):
         """
         
         #use MTPy core tool for building start files
-        import MTpy.core.OCCAMTools as OCCAMTools
-        reload(OCCAMTools)
+        import MTpy.modeling.occam2d as MTo2
+        reload(MTo2)
 
         D=self.parameters
         
-        datafile = D['datafile'] 
+        #datafile = D['datafile'] 
+        messagetext = ' '
+        try:
+            #1. make startup file 
+            self._setup_startupfile()
+        except:
+            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not generate startup file!  </FONT></b></P> \n"
 
-        #1. make startup file 
-        self._setup_startupfile()
 
-
-        #2. make model file
-        m_fn,i_fn,s_fn = OCCAMTools.makeModel(datafile,\
-                                                niter=int(float(D['n_iterations'])),\
-                                                targetrms=float(D['target_rms']),\
-                                                nlayers=int(float(D['n_layers'])),\
-                                                nlperdec=int(float(D['decade_layers'])),\
-                                                z1layer=int(float(D['thickness1'])),\
-                                                bwidth=int(float(D['max_blockwidth'])),\
-                                                trigger=float(D['mergethreshold']),\
-                                                #savepath=self.ui.wd,\
-                                                rhostart=float(D['rho0']),\
-                                                #occampath=D['makemodel_exe']\
-                                                cwd=self.ui.wd,\
-                                                #makemodelexe=D['makemodel_exe'],
-                                                modelname=D['modelname'],
-                                                use_existing_startup=D['check_usestartupfile'],\
-                                                existing_startup_file=D['startupfn']\
-                                                )
+        try:
+            #2. make model file
+            m_fn,i_fn,s_fn = OCCAMTools.makeModel(datafile,\
+                                                    niter=int(float(D['n_iterations'])),\
+                                                    targetrms=float(D['target_rms']),\
+                                                    nlayers=int(float(D['n_layers'])),\
+                                                    nlperdec=int(float(D['decade_layers'])),\
+                                                    z1layer=int(float(D['thickness1'])),\
+                                                    bwidth=int(float(D['max_blockwidth'])),\
+                                                    trigger=float(D['mergethreshold']),\
+                                                    #savepath=self.ui.wd,\
+                                                    rhostart=float(D['rho0']),\
+                                                    #occampath=D['makemodel_exe']\
+                                                    cwd=self.ui.wd,\
+                                                    #makemodelexe=D['makemodel_exe'],
+                                                    modelname=D['modelname'],
+                                                    use_existing_startup=D['check_usestartupfile'],\
+                                                    existing_startup_file=D['startupfn']\
+                                                    )
+        except:
+            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not generate model/mesh!  </FONT></b></P> \n"
 
         if op.isfile(m_fn) and op.isfile(i_fn) and op.isfile(s_fn):
             if D['check_usestartupfile']:
@@ -458,9 +469,9 @@ class OccamGui(QtGui.QMainWindow):
                 D['startupfile'] = existing_startup_file
             
             else:
-                messagetext = "<P><b><FONT COLOR='#008080'>Input files generated:</FONT></b></P><br>%s<br>%s<br>%s"%(m_fn,i_fn,s_fn)
+                messagetext += "<P><b><FONT COLOR='#008080'>Input files generated:</FONT></b></P><br>%s<br>%s<br>%s"%(m_fn,i_fn,s_fn)
         else:
-            messagetext = "<P><b><FONT COLOR='#800000'>Error: %i No startup files generated!  </FONT></b></P> "
+            messagetext += "<P><b><FONT COLOR='#800000'>Error:  No input files generated!  </FONT></b></P> "
         
         QtGui.QMessageBox.about(self, "Startup files generation", messagetext )
 
@@ -494,7 +505,7 @@ class OccamGui(QtGui.QMainWindow):
 
         """
 
-        #import necesary modules
+        #import necessary modules
         import threading
         import subprocess
         import Queue

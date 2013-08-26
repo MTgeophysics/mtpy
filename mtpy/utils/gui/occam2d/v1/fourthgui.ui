@@ -578,6 +578,16 @@
             <string>TE</string>
            </property>
           </item>
+          <item>
+           <property name="text">
+            <string>All</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Tipper</string>
+           </property>
+          </item>
          </widget>
         </item>
        </layout>
@@ -1766,7 +1776,7 @@
          </size>
         </property>
         <property name="text">
-         <string>/data/software/occam/bin/Occam2D</string>
+         <string>Occam2D</string>
         </property>
        </widget>
       </item>
@@ -1857,7 +1867,7 @@
          </size>
         </property>
         <property name="text">
-         <string>bsp</string>
+         <string>edi</string>
         </property>
        </widget>
       </item>
@@ -2105,7 +2115,7 @@
          </size>
         </property>
         <property name="text">
-         <string>test.dat</string>
+         <string>OccamInputData.dat</string>
         </property>
        </widget>
       </item>
