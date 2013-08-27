@@ -2934,6 +2934,8 @@ class Occam2DData(object):
         
             **resp_fn** : string
                          full path to response file
+                         Can be a list of response files to plot multiple 
+                         model responses in one plot.
              
         ==================== ==================================================
         key words            description
@@ -3004,10 +3006,15 @@ class Occam2DData(object):
             >>> rp = ocd.plot2DResponses(resp_fn=rfile)
                       
         """
-
-        self.read2DRespFile(resp_fn)
+        plot_rp_list = []
+        if type(resp_fn) is str:
+            resp_fn = [resp_fn]
             
-        return PlotOccam2DResponse(self.rp_list, self.period, **kwargs)
+        for rfn in resp_fn:
+            self.read2DRespFile(rfn)
+            plot_rp_list.append(self.rp_list)
+            
+        return PlotOccam2DResponse(plot_rp_list, self.period, **kwargs)
     
     
     def plotPseudoSection(self, resp_fn=None, **kwargs):
@@ -3940,8 +3947,13 @@ class PlotOccam2DResponse():
         #make a local copy of the rp_list    
         rp_list = list(self.rp_list)
         
+        if type(rp_list[0]) is dict:
+            rp_list = [rp_list]
+            
+        nr = len(rp_list)
+        
         #create station list
-        self.station_list = [rp['station'] for rp in rp_list]
+        self.station_list = [rp['station'] for rp in rp_list[0]]
         
         #boolean for adding winglink output to the plots 0 for no, 1 for yes
         addwl = 0
@@ -3986,26 +3998,8 @@ class PlotOccam2DResponse():
                                  
         #loop over each station to plot
         for ii, jj in enumerate(pstation_list):
-            
-            #empty lists for legend marker and label
-            rlistte = []
-            llistte = []
-            rlisttm = []
-            llisttm = []
-            
-            #calculate rms's
-            rmslistte = np.hstack((rp_list[jj]['resxy'][3],
-                                  rp_list[jj]['phasexy'][3]))
-            rmslisttm = np.hstack((rp_list[jj]['resyx'][3],
-                                  rp_list[jj]['phaseyx'][3]))
-            rmste = np.sqrt(np.sum([rms**2 for rms in rmslistte])/
-                            len(rmslistte))
-            rmstm = np.sqrt(np.sum([rms**2 for rms in rmslisttm])/
-                            len(rmslisttm))
-            
             fig = plt.figure(ii+1, self.fig_size, dpi=self.fig_dpi)
             plt.clf()
-            
             
             #--> set subplot instances
             #---plot both TE and TM in same subplot---
@@ -4021,21 +4015,23 @@ class PlotOccam2DResponse():
                 axrtm = fig.add_subplot(gs[:4,1])
                 axpte = fig.add_subplot(gs[-2:,0], sharex=axrte)
                 axptm = fig.add_subplot(gs[-2:,1], sharex=axrtm)
-            
+                
+            #plot the data, it should be the same for all response files
+            #empty lists for legend marker and label
+            rlistte = []
+            llistte = []
+            rlisttm = []
+            llisttm = []
             #------------Plot Resistivity----------------------------------
             #cut out missing data points first
             #--> data
-            rxy = np.where(rp_list[jj]['resxy'][0]!=0)[0]
-            ryx = np.where(rp_list[jj]['resyx'][0]!=0)[0]
-            
-            #--> response
-            mrxy = np.where(rp_list[jj]['resxy'][2]!=0)[0]
-            mryx = np.where(rp_list[jj]['resyx'][2]!=0)[0]
+            rxy = np.where(rp_list[0][jj]['resxy'][0]!=0)[0]
+            ryx = np.where(rp_list[0][jj]['resyx'][0]!=0)[0]
             
             #--> TE mode Data 
             if len(rxy) > 0:
                 rte = axrte.errorbar(period[rxy],
-                                     10**rp_list[jj]['resxy'][0][rxy],
+                                     10**rp_list[0][jj]['resxy'][0][rxy],
                                      ls=':',
                                      marker=self.mted,
                                      ms=self.ms,
@@ -4043,8 +4039,8 @@ class PlotOccam2DResponse():
                                      mec=self.cted,
                                      color=self.cted,
                                      yerr=np.log(10)*\
-                                         rp_list[jj]['resxy'][1][rxy]*\
-                                         10**rp_list[jj]['resxy'][0][rxy],
+                                         rp_list[0][jj]['resxy'][1][rxy]*\
+                                         10**rp_list[0][jj]['resxy'][0][rxy],
                                     ecolor=self.cted,
                                     picker=2,
                                     lw=self.lw,
@@ -4056,33 +4052,10 @@ class PlotOccam2DResponse():
             else:
                 pass
             
-            #--> TE mode Model Response
-            if len(mrxy) > 0:
-                yerrxy = 10**(rp_list[jj]['resxy'][3][mrxy]*\
-                         rp_list[jj]['resxy'][2][mrxy]/np.log(10))
-                r3 = axrte.errorbar(period[mrxy],
-                                    10**rp_list[jj]['resxy'][2][mrxy],
-                                    ls='--',
-                                    marker=self.mtem,
-                                    ms=self.ms,
-                                    mfc=self.ctem,
-                                    mec=self.ctem,
-                                    color=self.ctem,
-                                    yerr=yerrxy,
-                                    ecolor=self.ctem,
-                                    lw=self.lw,
-                                    elinewidth=self.lw,
-                                    capsize=self.e_capsize,
-                                    capthick=self.e_capthick)
-                rlistte.append(r3[0])
-                llistte.append('$Mod_{TE}$')
-            else:
-                pass
-            
-            #--> TM mode data
+             #--> TM mode data
             if len(ryx) > 0:
                 rtm = axrtm.errorbar(period[ryx],
-                                     10**rp_list[jj]['resyx'][0][ryx],
+                                     10**rp_list[0][jj]['resyx'][0][ryx],
                                      ls=':',
                                      marker=self.mtmd,
                                      ms=self.ms,
@@ -4090,8 +4063,8 @@ class PlotOccam2DResponse():
                                      mec=self.ctmd,
                                      color=self.ctmd,
                                      yerr=np.log(10)*\
-                                          rp_list[jj]['resyx'][1][ryx]*\
-                                          10**rp_list[jj]['resyx'][0][ryx],
+                                          rp_list[0][jj]['resyx'][1][ryx]*\
+                                          10**rp_list[0][jj]['resyx'][0][ryx],
                                      ecolor=self.ctmd,
                                      picker=2,
                                      lw=self.lw,
@@ -4102,72 +4075,26 @@ class PlotOccam2DResponse():
                 llisttm.append('$Obs_{TM}$')
             else:
                 pass 
-
-            #--> TM mode model response
-            if len(mryx)>0:
-                yerryx = 10**(rp_list[jj]['resyx'][3][mryx]*\
-                             rp_list[jj]['resyx'][2][mryx]/np.log(10))
-                r4 = axrtm.errorbar(period[mryx],
-                                    10**rp_list[jj]['resyx'][2][mryx],
-                                    ls='--',
-                                    marker=self.mtmm,
-                                    ms=self.ms,
-                                    mfc=self.ctmm,
-                                    mec=self.ctmm,
-                                    color=self.ctmm,
-                                    yerr=yerryx,
-                                    ecolor=self.ctmm,
-                                    lw=self.lw,
-                                    elinewidth=self.lw,
-                                    capsize=self.e_capsize,
-                                    capthick=self.e_capthick)
-                rlisttm.append(r4[0])
-                llisttm.append('$Mod_{TM}$')
-            else:
-                pass
-
+            
             #--------------------plot phase--------------------------------
             #cut out missing data points first
             #--> data
-            pxy = np.where(rp_list[jj]['phasexy'][0]!=0)[0]
-            pyx = np.where(rp_list[jj]['phaseyx'][0]!=0)[0]
-            
-            #--> reponse
-            mpxy = np.where(rp_list[jj]['phasexy'][2]!=0)[0]
-            mpyx = np.where(rp_list[jj]['phaseyx'][2]!=0)[0]
+            pxy = np.where(rp_list[0][jj]['phasexy'][0]!=0)[0]
+            pyx = np.where(rp_list[0][jj]['phaseyx'][0]!=0)[0]
             
             #--> TE mode data
             if len(pxy) > 0:
                 axpte.errorbar(period[pxy],
-                               rp_list[jj]['phasexy'][0][pxy],
+                               rp_list[0][jj]['phasexy'][0][pxy],
                                ls=':',
                                marker=self.mted,
                                ms=self.ms,
                                mfc=self.cted,
                                mec=self.cted,
                                color=self.cted,
-                               yerr=rp_list[jj]['phasexy'][1][pxy],
+                               yerr=rp_list[0][jj]['phasexy'][1][pxy],
                                ecolor=self.cted,
                                picker=1,
-                               lw=self.lw,
-                               elinewidth=self.lw,
-                               capsize=self.e_capsize,
-                               capthick=self.e_capthick)
-            else:
-                pass
-            
-            #--> TE mode response
-            if len(mpxy) > 0:
-                axpte.errorbar(period[mpxy],
-                               rp_list[jj]['phasexy'][2][mpxy],
-                               ls='--',
-                               marker=self.mtem,
-                               ms=self.ms,
-                               mfc=self.ctem,
-                               mec=self.ctem,
-                               color=self.ctem,
-                               yerr=rp_list[jj]['phasexy'][3][mpxy],
-                               ecolor=self.ctem,
                                lw=self.lw,
                                elinewidth=self.lw,
                                capsize=self.e_capsize,
@@ -4178,14 +4105,14 @@ class PlotOccam2DResponse():
             #--> TM mode data
             if len(pyx)>0:
                 axptm.errorbar(period[pyx],
-                               rp_list[jj]['phaseyx'][0][pyx],
+                               rp_list[0][jj]['phaseyx'][0][pyx],
                                ls=':',
                                marker=self.mtmd,
                                ms=self.ms,
                                mfc=self.ctmd,
                                mec=self.ctmd,
                                color=self.ctmd,
-                               yerr=rp_list[jj]['phaseyx'][1][pyx],
+                               yerr=rp_list[0][jj]['phaseyx'][1][pyx],
                                ecolor=self.ctmd,
                                picker=1,
                                lw=self.lw,
@@ -4194,26 +4121,123 @@ class PlotOccam2DResponse():
                                capthick=self.e_capthick)
             else:
                 pass
-            
-            #--> TM mode response
-            if len(mpyx) > 0:
-                axptm.errorbar(period[mpyx],
-                               rp_list[jj]['phaseyx'][2][mpyx],
-                               ls='--',
-                               marker=self.mtmm,
-                               ms=self.ms,
-                               mfc=self.ctmm,
-                               mec=self.ctmm,
-                               color=self.ctmm,
-                               yerr=rp_list[jj]['phaseyx'][3][mpyx],
-                               ecolor=self.ctmm,
-                               lw=self.lw,
-                               elinewidth=self.lw,
-                               capsize=self.e_capsize,
-                               capthick=self.e_capthick)
-            else:
-                pass
-            
+           
+            for rr, rp in enumerate(rp_list):
+                # create colors for different responses
+                if self.color_mode == 'color':   
+                    cxy = (0, .4+float(rr)/(3*nr), 0)
+                    cyx = (.7+float(rr)/(4*nr), .13, .63-float(rr)/(4*nr))
+                elif self.color_mode == 'bw':
+                    cxy = (1-1.25/(rr+2.), 1-1.25/(rr+2.), 1-1.25/(rr+2.))                    
+                    cyx = (1-1.25/(rr+2.), 1-1.25/(rr+2.), 1-1.25/(rr+2.))
+                
+                #calculate rms's
+                rmslistte = np.hstack((rp[jj]['resxy'][3],
+                                      rp[jj]['phasexy'][3]))
+                rmslisttm = np.hstack((rp[jj]['resyx'][3],
+                                      rp[jj]['phaseyx'][3]))
+                rmste = np.sqrt(np.sum([rms**2 for rms in rmslistte])/
+                                len(rmslistte))
+                rmstm = np.sqrt(np.sum([rms**2 for rms in rmslisttm])/
+                                len(rmslisttm))
+
+                #------------Plot Resistivity----------------------------------
+                #cut out missing data points first
+                #--> response
+                mrxy = np.where(rp[jj]['resxy'][2]!=0)[0]
+                mryx = np.where(rp[jj]['resyx'][2]!=0)[0]
+
+                #--> TE mode Model Response
+                if len(mrxy) > 0:
+                    yerrxy = 10**(rp[jj]['resxy'][3][mrxy]*\
+                             rp[jj]['resxy'][2][mrxy]/np.log(10))
+                    r3 = axrte.errorbar(period[mrxy],
+                                        10**rp[jj]['resxy'][2][mrxy],
+                                        ls='--',
+                                        marker=self.mtem,
+                                        ms=self.ms,
+                                        mfc=cxy,
+                                        mec=cxy,
+                                        color=cxy,
+                                        yerr=yerrxy,
+                                        ecolor=cxy,
+                                        lw=self.lw,
+                                        elinewidth=self.lw,
+                                        capsize=self.e_capsize,
+                                        capthick=self.e_capthick)
+                    rlistte.append(r3[0])
+                    llistte.append('$Mod_{TE}$ '+'{0:.2f}'.format(rmste))
+                else:
+                    pass
+                
+               
+    
+                #--> TM mode model response
+                if len(mryx)>0:
+                    yerryx = 10**(rp[jj]['resyx'][3][mryx]*\
+                                 rp[jj]['resyx'][2][mryx]/np.log(10))
+                    r4 = axrtm.errorbar(period[mryx],
+                                        10**rp[jj]['resyx'][2][mryx],
+                                        ls='--',
+                                        marker=self.mtmm,
+                                        ms=self.ms,
+                                        mfc=cyx,
+                                        mec=cyx,
+                                        color=cyx,
+                                        yerr=yerryx,
+                                        ecolor=cyx,
+                                        lw=self.lw,
+                                        elinewidth=self.lw,
+                                        capsize=self.e_capsize,
+                                        capthick=self.e_capthick)
+                    rlisttm.append(r4[0])
+                    llisttm.append('$Mod_{TM}$ '+'{0:.2f}'.format(rmstm))
+                else:
+                    pass
+    
+                #--------------------plot phase--------------------------------
+                #cut out missing data points first
+                #--> reponse
+                mpxy = np.where(rp[jj]['phasexy'][2]!=0)[0]
+                mpyx = np.where(rp[jj]['phaseyx'][2]!=0)[0]
+                
+                #--> TE mode response
+                if len(mpxy) > 0:
+                    axpte.errorbar(period[mpxy],
+                                   rp[jj]['phasexy'][2][mpxy],
+                                   ls='--',
+                                    ms=self.ms,
+                                   mfc=cxy,
+                                   mec=cxy,
+                                   color=cxy,
+                                   yerr=rp[jj]['phasexy'][3][mpxy],
+                                   ecolor=cxy,
+                                   lw=self.lw,
+                                   elinewidth=self.lw,
+                                   capsize=self.e_capsize,
+                                   capthick=self.e_capthick)
+                else:
+                    pass
+
+                #--> TM mode response
+                if len(mpyx) > 0:
+                    axptm.errorbar(period[mpyx],
+                                   rp[jj]['phaseyx'][2][mpyx],
+                                   ls='--',
+                                   marker=self.mtmm,
+                                   ms=self.ms,
+                                   mfc=cyx,
+                                   mec=cyx,
+                                   color=cyx,
+                                   yerr=rp[jj]['phaseyx'][3][mpyx],
+                                   ecolor=cyx,
+                                   lw=self.lw,
+                                   elinewidth=self.lw,
+                                   capsize=self.e_capsize,
+                                   capthick=self.e_capthick)
+                else:
+                    pass
+                
             
             #--------------add in winglink responses------------------------
             if addwl == 1:
@@ -4273,26 +4297,32 @@ class PlotOccam2DResponse():
                     
                     rlistte.append(r5[0])
                     rlisttm.append(r6[0])
-                    llistte.append('$WLMod_{TE}$')
-                    llisttm.append('$WLMod_{TM}$')
+                    llistte.append('$WLMod_{TE}$ '+'{0:.2f}'.format(wlrms))
+                    llisttm.append('$WLMod_{TM}$ '+'{0:.2f}'.format(wlrms))
                 except (IndexError, KeyError):
                     print 'Station not present'
             else:
                 if self.plot_num == 1:
-                    axrte.set_title(self.station_list[jj]+\
-                    ' rms_TE={0:.2f}, rms_TM={1:.2f}'.format(rmste,rmstm),
-                              fontdict={'size':self.font_size+2,
-                                        'weight':'bold'})
+                    axrte.set_title(self.station_list[jj], 
+                                    fontdict={'size':self.font_size+2,
+                                              'weight':'bold'})
+#                    axrte.set_title(self.station_list[jj]+\
+#                    ' rms_TE={0:.2f}, rms_TM={1:.2f}'.format(rmste,rmstm),
+#                              fontdict={'size':self.font_size+2,
+#                                        'weight':'bold'})
                 elif self.plot_num == 2:
-                    axrte.set_title(self.station_list[jj]+\
-                                    ' rms_TE={0:.2f}'.format(rmste),
+                    fig.suptitle(self.station_list[jj], 
                                     fontdict={'size':self.font_size+2,
                                               'weight':'bold'})
-                    axrtm.set_title(self.station_list[jj]+\
-                                    ' rms_TM={0:.2f}'.format(rmstm),
-                                    fontdict={'size':self.font_size+2,
-                                              'weight':'bold'})
-            
+#                    axrte.set_title(self.station_list[jj]+\
+#                                    ' rms_TE={0:.2f}'.format(rmste),
+#                                    fontdict={'size':self.font_size+2,
+#                                              'weight':'bold'})
+#                    axrtm.set_title(self.station_list[jj]+\
+#                                    ' rms_TM={0:.2f}'.format(rmstm),
+#                                    fontdict={'size':self.font_size+2,
+#                                              'weight':'bold'})
+                
             #set the axis properties
             for aa, axr in enumerate([axrte, axrtm]):
                 #set both axes to logarithmic scale
@@ -4502,6 +4532,7 @@ class PlotPseudoSection(object):
     phase_limits_tm      limits for tm phase in degrees (min, max)            
     plot_resp            [ 'y' | 'n' ] to plot response
     plot_yn              [ 'y' | 'n' ] 'y' to plot on instantiation
+
     res_cmap             color map name for resistivity
     res_limits_te        limits for te resistivity in log scale (min, max)
     res_limits_tm        limits for tm resistivity in log scale (min, max)
@@ -4546,8 +4577,8 @@ class PlotPseudoSection(object):
 
         self.plot_resp = kwargs.pop('plot_resp', 'y')
         
-        self.label_list = ['$r_{TE-Data}$','$r_{TE-Model}$',
-                          '$r_{TM-Data}$','$r_{TM-Model}$',
+        self.label_list = [r'$\rho_{TE-Data}$',r'$\rho_{TE-Model}$',
+                          r'$\rho_{TM-Data}$',r'$\rho_{TM-Model}$',
                           '$\phi_{TE-Data}$','$\phi_{TE-Model}$',
                           '$\phi_{TM-Data}$','$\phi_{TM-Model}$']
         
@@ -4566,7 +4597,7 @@ class PlotPseudoSection(object):
         self.fig_size = kwargs.pop('fig_size', [6, 6])
         self.fig_dpi = kwargs.pop('dpi', 300)
         
-        self.subplot_wspace = .05
+        self.subplot_wspace = .025
         self.subplot_hspace = .0
         self.subplot_right = .95
         self.subplot_left = .085
@@ -4612,7 +4643,7 @@ class PlotPseudoSection(object):
         
         #make a grid for pcolormesh so you can have a log scale
         #get things into arrays for plotting
-        offset_list = np.zeros(ns)
+        offset_list = np.zeros(ns+1)
         resxy_arr = np.zeros((nf, ns, nr))    
         resyx_arr = np.zeros((nf, ns, nr))    
         phasexy_arr = np.zeros((nf, ns, nr))    
@@ -4630,7 +4661,7 @@ class PlotPseudoSection(object):
                 phasexy_arr[:,ii,1]=rpdict['phasexy'][2]
                 phaseyx_arr[:,ii,1]=rpdict['phaseyx'][2]
                 
-                
+        offset_list[-1] = offset_list[-2]*1.15       
         #make a meshgrid for plotting
         #flip frequency so bottom corner is long period
         dgrid, fgrid = np.meshgrid(offset_list, self.period[::-1])
@@ -4655,7 +4686,7 @@ class PlotPseudoSection(object):
             gs1 = gridspec.GridSpec(1, 2,
                                     left=self.subplot_left,
                                     right=self.subplot_right,
-                                    wspace=.125)
+                                    wspace=.15)
         
             gs2 = gridspec.GridSpecFromSubplotSpec(2, 2,
                                                    hspace=self.subplot_hspace,
@@ -4770,6 +4801,12 @@ class PlotPseudoSection(object):
                         cb = mcb.ColorbarBase(cbx[0],cmap=self.res_cmap,
                                 norm=Normalize(vmin=self.res_limits_te[0],
                                                vmax=self.res_limits_te[1]))
+                        cb.set_ticks(np.arange(int(self.res_limits_te[0]),
+                                               int(self.res_limits_te[1])+1))
+                        cb.set_ticklabels(['10$^{0}$'.format('{'+str(nn)+'}')
+                                            for nn in 
+                                            np.arange(int(self.res_limits_te[0]), 
+                                                      int(self.res_limits_te[1])+1)])
                     if xx == 3:
                         cb = mcb.ColorbarBase(cbx[0],cmap=self.res_cmap,
                                 norm=Normalize(vmin=self.res_limits_tm[0],
@@ -4777,11 +4814,21 @@ class PlotPseudoSection(object):
                         cb.set_label('App. Res. ($\Omega \cdot$m)',
                                      fontdict={'size':self.font_size+1,
                                                'weight':'bold'})
+                        cb.set_label('Resistivity ($\Omega \cdot$m)',
+                                     fontdict={'size':self.font_size+1,
+                                               'weight':'bold'})
+                        cb.set_ticks(np.arange(int(self.res_limits_tm[0]),
+                                               int(self.res_limits_tm[1])+1))
+                        cb.set_ticklabels(['10$^{0}$'.format('{'+str(nn)+'}')
+                                            for nn in 
+                                            np.arange(int(self.res_limits_tm[0]), 
+                                                      int(self.res_limits_tm[1])+1)])
                 else:
                     if xx == 5:
                         cb = mcb.ColorbarBase(cbx[0],cmap=self.phase_cmap,
                                 norm=Normalize(vmin=self.phase_limits_te[0],
                                                vmax=self.phase_limits_te[1]))
+
                     if xx == 7:
                         cb = mcb.ColorbarBase(cbx[0],cmap=self.phase_cmap,
                                 norm=Normalize(vmin=self.phase_limits_tm[0],
@@ -4870,6 +4917,10 @@ class PlotPseudoSection(object):
                                                    vmax=self.res_limits_te[1]))
                     cb.set_ticks(np.arange(self.res_limits_te[0], 
                                            self.res_limits_te[1]+1))
+                    cb.set_ticklabels(['10$^{0}$'.format('{'+str(nn)+'}')
+                                        for nn in 
+                                        np.arange(int(self.res_limits_te[0]), 
+                                                  int(self.res_limits_te[1])+1)])
                 elif xx == 1:
                     plt.setp(ax.xaxis.get_ticklabels(), visible=False)
                     
@@ -4881,6 +4932,10 @@ class PlotPseudoSection(object):
                                            'weight':'bold'})
                     cb.set_ticks(np.arange(self.res_limits_tm[0], 
                                            self.res_limits_tm[1]+1))
+                    cb.set_ticklabels(['10$^{0}$'.format('{'+str(nn)+'}')
+                                        for nn in 
+                                        np.arange(int(self.res_limits_tm[0]), 
+                                                  int(self.res_limits_tm[1])+1)])
                 elif xx == 2:
                     cb = mcb.ColorbarBase(cbx[0],cmap=self.phase_cmap,
                                     norm=Normalize(vmin=self.phase_limits_te[0],
@@ -5031,6 +5086,430 @@ class PlotPseudoSection(object):
         return ("Plots a pseudo section of TE and TM modes for data and "
                 "response if given.") 
 
+#==============================================================================
+# plot misfits as a pseudo-section
+#==============================================================================
+class PlotMisfitPseudoSection(object):
+    """
+    plot a pseudo section of the data and response if given
+    
+        
+    Arguments:
+    -------------
+        **rp_list** : list of dictionaries for each station with keywords:
+                
+                * *station* : string
+                             station name
+                
+                * *offset* : float
+                             relative offset
+                
+                * *resxy* : np.array(nf,4)
+                            TE resistivity and error as row 0 and 1 respectively
+                
+                * *resyx* : np.array(fn,4)
+                            TM resistivity and error as row 0 and 1 respectively
+                
+                * *phasexy* : np.array(nf,4)
+                              TE phase and error as row 0 and 1 respectively
+                
+                * *phaseyx* : np.array(nf,4)
+                              Tm phase and error as row 0 and 1 respectively
+                
+                * *realtip* : np.array(nf,4)
+                              Real Tipper and error as row 0 and 1 respectively
+                
+                * *imagtip* : np.array(nf,4)
+                              Imaginary Tipper and error as row 0 and 1 
+                              respectively
+                
+                Note: that the resistivity will be in log10 space.  Also, there
+                are 2 extra rows in the data arrays, this is to put the 
+                response from the inversion.  
+        
+        **period** : np.array of periods to plot that correspond to the index
+                     values of each rp_list entry ie. resxy.
+    
+    ==================== ==================================================
+    key words            description
+    ==================== ==================================================
+    axmpte               matplotlib.axes instance for TE model phase
+    axmptm               matplotlib.axes instance for TM model phase
+    axmrte               matplotlib.axes instance for TE model app. res 
+    axmrtm               matplotlib.axes instance for TM model app. res 
+    axpte                matplotlib.axes instance for TE data phase 
+    axptm                matplotlib.axes instance for TM data phase
+    axrte                matplotlib.axes instance for TE data app. res.
+    axrtm                matplotlib.axes instance for TM data app. res.
+    cb_pad               padding between colorbar and axes
+    cb_shrink            percentage to shrink the colorbar to
+    fig                  matplotlib.figure instance
+    fig_dpi              resolution of figure in dots per inch
+    fig_num              number of figure instance
+    fig_size             size of figure in inches (width, height)
+    font_size            size of font in points
+    label_list            list to label plots
+    ml                   factor to label stations if 2 every other station
+                         is labeled on the x-axis
+    period               np.array of periods to plot
+    phase_cmap           color map name of phase
+    phase_limits_te      limits for te phase in degrees (min, max)
+    phase_limits_tm      limits for tm phase in degrees (min, max)            
+    plot_resp            [ 'y' | 'n' ] to plot response
+    plot_yn              [ 'y' | 'n' ] 'y' to plot on instantiation
+
+    res_cmap             color map name for resistivity
+    res_limits_te        limits for te resistivity in log scale (min, max)
+    res_limits_tm        limits for tm resistivity in log scale (min, max)
+    rp_list               list of dictionaries as made from read2Dresp
+    station_id           index to get station name (min, max)
+    station_list          station list got from rp_list
+    subplot_bottom       subplot spacing from bottom (relative coordinates) 
+    subplot_hspace       vertical spacing between subplots
+    subplot_left         subplot spacing from left  
+    subplot_right        subplot spacing from right
+    subplot_top          subplot spacing from top
+    subplot_wspace       horizontal spacing between subplots
+    ==================== ==================================================
+    
+    =================== =======================================================
+    Methods             Description
+    =================== =======================================================
+    plot                plots a pseudo-section of apparent resistiviy and phase
+                        of data and model if given.  called on instantiation 
+                        if plot_yn is 'y'.
+    redraw_plot         call redraw_plot to redraw the figures, 
+                        if one of the attributes has been changed
+    save_figure         saves the matplotlib.figure instance to desired 
+                        location and format
+    =================== =======================================================
+                    
+   :Example: ::
+        
+        >>> import mtpy.modeling.occam2d as occam2d
+        >>> ocd = occam2d.Occam2DData()
+        >>> rfile = r"/home/Occam2D/Line1/Inv1/Test_15.resp"
+        >>> ocd.data_fn = r"/home/Occam2D/Line1/Inv1/DataRW.dat"
+        >>> ps1 = ocd.plot2PseudoSection(resp_fn=rfile) 
+    
+    """
+    
+    def __init__(self, rp_list, period, **kwargs):
+        
+        self.rp_list = rp_list
+        self.period = period
+        self.station_list = [rp['station'] for rp in self.rp_list]
+        
+        self.label_list = [r'$\rho_{TE}$', r'$\rho_{TM}$',
+                           '$\phi_{TE}$', '$\phi_{TM}$']
+        
+        self.phase_limits_te = kwargs.pop('phase_limits_te', (-10, 10))
+        self.phase_limits_tm = kwargs.pop('phase_limits_tm', (-10, 10))
+        self.res_limits_te = kwargs.pop('res_limits_te', (-2, 2))
+        self.res_limits_tm = kwargs.pop('res_limits_tm', (-2, 2))
+        
+        self.phase_cmap = kwargs.pop('phase_cmap', 'BrBG')
+        self.res_cmap = kwargs.pop('res_cmap', 'BrBG_r')
+        
+        self.ml = kwargs.pop('ml', 2)
+        self.station_id = kwargs.pop('station_id', [0,4])
+
+        self.fig_num = kwargs.pop('fig_num', 1)
+        self.fig_size = kwargs.pop('fig_size', [6, 6])
+        self.fig_dpi = kwargs.pop('dpi', 300)
+        
+        self.subplot_wspace = .0025
+        self.subplot_hspace = .0
+        self.subplot_right = .95
+        self.subplot_left = .085
+        self.subplot_top = .97
+        self.subplot_bottom = .1
+
+        self.font_size = kwargs.pop('font_size', 6)
+        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        
+        self.cb_shrink = .7
+        self.cb_pad = .015
+        
+        self.axrte = None
+        self.axrtm = None
+        self.axpte = None
+        self.axptm = None
+
+        self.fig = None
+        
+        if self.plot_yn == 'y':
+            self.plot()
+            
+    def get_misfit(self):
+        """
+        compute misfit of MT response found from the model and the data.
+        
+        Need to normalize correctly
+        """
+
+        n_stations = len(self.rp_list)
+        n_periods = len(self.period)
+        
+        self.misfit_te_res = np.zeros((n_periods, n_stations))        
+        self.misfit_te_phase = np.zeros((n_periods, n_stations))        
+        self.misfit_tm_res = np.zeros((n_periods, n_stations))        
+        self.misfit_tm_phase = np.zeros((n_periods, n_stations)) 
+        
+        for rr, rp in enumerate(self.rp_list):
+            self.misfit_te_res[:, rr] = rp['resxy'][3]
+            self.misfit_tm_res[:, rr] = rp['resyx'][3]
+            self.misfit_te_phase[:, rr] = rp['phasexy'][3]             
+            self.misfit_tm_phase[:, rr] = rp['phaseyx'][3] 
+                                          
+        self.misfit_te_res = np.nan_to_num(self.misfit_te_res)
+        self.misfit_te_phase = np.nan_to_num(self.misfit_te_phase)
+        self.misfit_tm_res = np.nan_to_num(self.misfit_tm_res)
+        self.misfit_tm_phase = np.nan_to_num(self.misfit_tm_phase)
+                        
+    def plot(self):
+        """
+        plot pseudo section of data and response if given
+        
+        """
+         
+        self.get_misfit()
+        
+        ylimits = (self.period.max(), self.period.min())
+        
+        offset_list = np.array([rp['offset'] for rp in self.rp_list]+
+                                [self.rp_list[-1]['offset']*1.15])
+        
+        #make a meshgrid for plotting
+        #flip frequency so bottom corner is long period
+        dgrid, fgrid = np.meshgrid(offset_list, self.period[::-1])
+    
+        #make list for station labels
+        ns = len(self.station_list)
+        slabel = [self.station_list[ss][self.station_id[0]:self.station_id[1]] 
+                    for ss in range(0, ns, self.ml)]
+
+        xloc = offset_list[0]+abs(offset_list[0]-offset_list[1])/5
+        yloc = 1.10*self.period[1]
+        
+        plt.rcParams['font.size'] = self.font_size
+        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
+        plt.rcParams['figure.subplot.top'] = self.subplot_top
+        plt.rcParams['figure.subplot.hspace'] = self.subplot_hspace
+        plt.rcParams['figure.subplot.wspace'] = self.subplot_wspace        
+        
+        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+        plt.clf()
+        
+        self.axrte = self.fig.add_subplot(2, 2, 1)
+        self.axrtm = self.fig.add_subplot(2, 2, 2, sharex=self.axrte)
+        self.axpte = self.fig.add_subplot(2, 2, 3, sharex=self.axrte)
+        self.axptm = self.fig.add_subplot(2, 2, 4, sharex=self.axrte)
+        
+        #--> TE Resistivity
+        self.axrte.pcolormesh(dgrid, 
+                              fgrid, 
+                              np.flipud(self.misfit_te_res),
+                              cmap=self.res_cmap,
+                              vmin=self.res_limits_te[0],
+                              vmax=self.res_limits_te[1])
+        #--> TM Resistivity
+        self.axrtm.pcolormesh(dgrid, 
+                              fgrid, 
+                              np.flipud(self.misfit_tm_res),
+                              cmap=self.res_cmap,
+                              vmin=self.res_limits_tm[0],
+                              vmax=self.res_limits_tm[1])
+        #--> TE Phase
+        self.axpte.pcolormesh(dgrid, 
+                              fgrid, 
+                              np.flipud(self.misfit_te_phase),
+                              cmap=self.phase_cmap,
+                              vmin=self.phase_limits_te[0],
+                              vmax=self.phase_limits_te[1])
+        #--> TM Phase
+        self.axptm.pcolormesh(dgrid, 
+                              fgrid, 
+                              np.flipud(self.misfit_tm_phase),
+                              cmap=self.phase_cmap,
+                              vmin=self.phase_limits_tm[0],
+                              vmax=self.phase_limits_tm[1])
+           
+            
+        axlist = [self.axrte, self.axrtm, self.axpte, self.axptm]
+        
+        #make everthing look tidy
+        for xx, ax in enumerate(axlist):
+            ax.semilogy()
+            ax.set_ylim(ylimits)
+            ax.xaxis.set_ticks(offset_list[np.arange(0, ns, self.ml)])
+            ax.xaxis.set_ticks(offset_list, minor=True)
+            ax.xaxis.set_ticklabels(slabel)
+            ax.set_xlim(offset_list.min(),offset_list.max())
+            if np.remainder(xx, 2.0) == 1:
+                plt.setp(ax.yaxis.get_ticklabels(), visible=False)
+            cbx = mcb.make_axes(ax, 
+                                shrink=self.cb_shrink, 
+                                pad=self.cb_pad)
+                                    
+            if xx == 0:
+                plt.setp(ax.xaxis.get_ticklabels(), visible=False)
+                cb = mcb.ColorbarBase(cbx[0],cmap=self.res_cmap,
+                        norm=Normalize(vmin=self.res_limits_te[0],
+                                       vmax=self.res_limits_te[1]))
+            elif xx == 1:
+                plt.setp(ax.xaxis.get_ticklabels(), visible=False)
+                cb = mcb.ColorbarBase(cbx[0],cmap=self.res_cmap,
+                        norm=Normalize(vmin=self.res_limits_tm[0],
+                                       vmax=self.res_limits_tm[1]))
+                cb.set_label('Log$_{10}$ App. Res. ($\Omega \cdot$m)',
+                             fontdict={'size':self.font_size+1,
+                                       'weight':'bold'})
+            elif xx == 2:
+                cb = mcb.ColorbarBase(cbx[0],cmap=self.phase_cmap,
+                        norm=Normalize(vmin=self.phase_limits_te[0],
+                                       vmax=self.phase_limits_te[1]))
+            elif xx == 3:
+                cb = mcb.ColorbarBase(cbx[0],cmap=self.phase_cmap,
+                        norm=Normalize(vmin=self.phase_limits_tm[0],
+                                       vmax=self.phase_limits_tm[1]))
+                cb.set_label('Phase (deg)', 
+                             fontdict={'size':self.font_size+1,
+                                       'weight':'bold'})
+            ax.text(xloc, yloc, self.label_list[xx],
+                    fontdict={'size':self.font_size+2},
+                    bbox={'facecolor':'white'},
+                    horizontalalignment='left',
+                    verticalalignment='top')
+            if xx == 0 or xx == 2:
+                ax.set_ylabel('Period (s)',
+                              fontdict={'size':self.font_size+2, 
+                              'weight':'bold'})
+            if xx > 1:
+                ax.set_xlabel('Station',fontdict={'size':self.font_size+2,
+                                                  'weight':'bold'})
+            
+                
+        plt.show()
+            
+    def redraw_plot(self):
+        """
+        redraw plot if parameters were changed
+        
+        use this function if you updated some attributes and want to re-plot.
+        
+        :Example: ::
+            
+            >>> # change the color and marker of the xy components
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> ocd = occam2d.Occam2DData(r"/home/occam2d/Data.dat")
+            >>> p1 = ocd.plotPseudoSection()
+            >>> #change color of te markers to a gray-blue
+            >>> p1.res_cmap = 'seismic_r'
+            >>> p1.redraw_plot()
+        """
+        
+        plt.close(self.fig)
+        self.plot()
+        
+    def save_figure(self, save_fn, file_format='pdf', orientation='portrait', 
+                  fig_dpi=None, close_plot='y'):
+        """
+        save_plot will save the figure to save_fn.
+        
+        Arguments:
+        -----------
+        
+            **save_fn** : string
+                          full path to save figure to, can be input as
+                          * directory path -> the directory path to save to
+                            in which the file will be saved as 
+                            save_fn/station_name_PhaseTensor.file_format
+                            
+                          * full path -> file will be save to the given 
+                            path.  If you use this option then the format
+                            will be assumed to be provided by the path
+                            
+            **file_format** : [ pdf | eps | jpg | png | svg ]
+                              file type of saved figure pdf,svg,eps... 
+                              
+            **orientation** : [ landscape | portrait ]
+                              orientation in which the file will be saved
+                              *default* is portrait
+                              
+            **fig_dpi** : int
+                          The resolution in dots-per-inch the file will be
+                          saved.  If None then the dpi will be that at 
+                          which the figure was made.  I don't think that 
+                          it can be larger than dpi of the figure.
+                          
+            **close_plot** : [ y | n ]
+                             * 'y' will close the plot after saving.
+                             * 'n' will leave plot open
+                          
+        :Example: ::
+            
+            >>> # to save plot as jpg
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> dfn = r"/home/occam2d/Inv1/data.dat"
+            >>> ocd = occam2d.Occam2DData(dfn)
+            >>> ps1 = ocd.plotPseudoSection()
+            >>> ps1.save_plot(r'/home/MT/figures', file_format='jpg')
+            
+        """
+
+        if fig_dpi == None:
+            fig_dpi = self.fig_dpi
+            
+        if os.path.isdir(save_fn) == False:
+            file_format = save_fn[-3:]
+            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+                             orientation=orientation, bbox_inches='tight')
+            
+        else:
+            save_fn = os.path.join(save_fn, 'OccamMisfitPseudoSection.'+
+                                    file_format)
+            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+                        orientation=orientation, bbox_inches='tight')
+        
+        if close_plot == 'y':
+            plt.clf()
+            plt.close(self.fig)
+        
+        else:
+            pass
+        
+        self.fig_fn = save_fn
+        print 'Saved figure to: '+self.fig_fn
+        
+    def update_plot(self):
+        """
+        update any parameters that where changed using the built-in draw from
+        canvas.  
+        
+        Use this if you change an of the .fig or axes properties
+        
+        :Example: ::
+            
+            >>> # to change the grid lines to only be on the major ticks
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> dfn = r"/home/occam2d/Inv1/data.dat"
+            >>> ocd = occam2d.Occam2DData(dfn)
+            >>> ps1 = ocd.plotPseudoSection()
+            >>> [ax.grid(True, which='major') for ax in [ps1.axrte,ps1.axtep]]
+            >>> ps1.update_plot()
+        
+        """
+
+        self.fig.canvas.draw()
+                          
+    def __str__(self):
+        """
+        rewrite the string builtin to give a useful message
+        """
+        
+        return ("Plots a pseudo section of TE and TM modes for data and "
+                "response if given.") 
 #==============================================================================
 # plot all response from a given folder                             
 #==============================================================================
