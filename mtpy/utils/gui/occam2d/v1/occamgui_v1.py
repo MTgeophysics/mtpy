@@ -149,13 +149,18 @@ class OccamGui(QtGui.QMainWindow):
                 invalid_flag +=1
 
         #OCCAM startup file 
-        iteration_mess=''
-        iteration_text=''
-        if str(self.ui.lineEdit_browse_iterationfile.text()):
-            iteration_text = str(self.ui.lineEdit_browse_iterationfile.text())
-        if (iteration_text.strip() == '') or  (not op.isfile(op.realpath(op.join(self.ui.wd,iteration_text)))):
-            if self.ui.checkBox_useiterationfile.checkState():
-                iteration_mess += 'iteration file not existing <br>'
+        startup_mess=''
+        
+        startup_text=''
+        if self.ui.checkBox_useiterationfile.checkState():
+
+            if str(self.ui.lineEdit_browse_iterationfile.text()):
+                startup_text = str(self.ui.lineEdit_browse_iterationfile.text())
+            else:
+                startup_text = None
+            if (startup_text.strip() == '') or  (startup_text is None) or \
+                    (not op.isfile(op.realpath(op.join(self.ui.wd,startup_text)))):
+                startup_mess += 'startup file not existing <br>'
                 invalid_flag += 1
         
         #OCCAM data file (existing file)
