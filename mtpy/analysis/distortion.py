@@ -66,7 +66,7 @@ def find_distortion(z_object, lo_dims = None):
     find optimal distortion tensor from z object
 
     automatically determine the dimensionality over all frequencies, then find
-    the appropriate distortion tensors D
+    the appropriate distortion tensor D
     """
 
     z_obj = z_object
@@ -79,21 +79,17 @@ def find_distortion(z_object, lo_dims = None):
     except:
         pass
     
-    lo_strikes = MTge.strike_angle(z_object = z_obj)
-
     #dictionary of values that should be no distortion in case distortion
     #cannot be calculated for that component
     dis_dict = {(0,0):1, (0,1):0, (1,0):0, (1,1):1}
 
-    distortion = np.zeros((len(lo_dims),2,2))
-    distortion_error = np.zeros_like(distortion)
-    
-    for idx,dim in enumerate(lo_dims):
+    lo_dis = []
+    lo_diserr = []
 
-        lo_dis = []
-        lo_diserr = []
-    
-        if dim == 1:
+    if 1 in lo_dims:
+        idx_1 = np.where(np.array(lo_dims) == 1)[0]
+
+        for idx in idx_1:
 
             realz = np.real(z_obj.z[idx])
             imagz = np.imag(z_obj.z[idx])
@@ -127,54 +123,53 @@ def find_distortion(z_object, lo_dims = None):
                 lo_diserr.append(np.ones((2, 2)))
 
         
-            dis = np.identity(2)
-            diserr = np.identity(2)
-            for i in range(2):
-                for j in range(2):
-                    try:
-                        dis[i,j], dummy = np.average(np.array([k[i, j] 
-                                                              for k in lo_dis]), 
-                                                     weights=np.array([1./(k[i,j])**2 
-                                                              for k in lo_diserr]),
-                                                     returned=True)
-                        diserr[i,j] = np.sqrt(1./dummy)
-                        
-                        #if the distortion came out as nan set it to an appropriate
-                        #value 
-                        if np.nan_to_num(dis[i,j]) == 0:
-                            dis[i, j] = dis_dict[i, j]
-                            diserr[i, j] = dis_dict[i, j]
-
-                    except ZeroDivisionError:
-                        
-                        print ('Could not get distortion for dis[{0}, {1}]'.format(
-                               i, j)+' setting value to {0}'.format(dis_dict[i,j]))
+        dis = np.identity(2)
+        diserr = np.identity(2)
+        for i in range(2):
+            for j in range(2):
+                try:
+                    dis[i,j], dummy = np.average(np.array([k[i, j] 
+                                                          for k in lo_dis]), 
+                                                 weights=np.array([1./(k[i,j])**2 
+                                                          for k in lo_diserr]),
+                                                 returned=True)
+                    diserr[i,j] = np.sqrt(1./dummy)
+                    
+                    #if the distortion came out as nan set it to an appropriate
+                    #value 
+                    if np.nan_to_num(dis[i,j]) == 0:
                         dis[i, j] = dis_dict[i, j]
-                        diserr[i, j] = dis_dict[i, j]*1e-6
-        
-            distortion[idx] = dis
-            distortion_error[idx] = diserr
+                        diserr[i, j] = dis_dict[i, j]
 
-        if dim == 2:
+                except ZeroDivisionError:
+                    
+                    print ('Could not get distortion for dis[{0}, {1}]'.format(
+                           i, j)+' setting value to {0}'.format(dis_dict[i,j]))
+                    dis[i, j] = dis_dict[i, j]
+                    diserr[i, j] = dis_dict[i, j]*1e-6
+    
+        return dis, diserr
 
-            #follow bibby et al. 2005 first alternative: P = 1
-            P = 1
+    if 2 in lo_dims:
+        idx_2 = np.where(np.array(lo_dims) == 2)[0]
+        #follow bibby et al. 2005 first alternative: P = 1
+        P = 1
 
-            lo_tetms = []
-            lo_t = []
-            lo_tetm_errs =[]
+        lo_strikes = MTge.strike_angle(z_object = z_obj)
+        lo_tetms = []
+        lo_t = []
+        lo_tetm_errs =[]
+
+        for idx in idx_2:
 
             mat = z_obj.z[idx]
-            
-            try:
-                ang = -float(lo_strikes[idx])[0]
-            except:
+            ang = -lo_strikes[idx][0]
+            if np.isnan(ang):
                 ang = 0.
 
             errmat = None
             if z_obj.zerr is not None:
                 errmat = z_obj.zerr[idx]
-
             tetm_mat, tetm_err = MTcc.rotatematrix_incl_errors(mat, 
                                                                ang, 
                                                                inmatrix_err=errmat)
@@ -188,119 +183,113 @@ def find_distortion(z_object, lo_dims = None):
             lo_t.append(-4*P*realz[0,1]*realz[1,0]/np.linalg.det(realz) )
             lo_t.append(-4*P*imagz[0,1]*imagz[1,0]/np.linalg.det(imagz) )
 
-            #since there is no 'wrong' solution by a different value of T, no 
-            #error is given/calculated for T !
-            try:
-                #just add 0.1% for avoiding numerical issues in the squareroots
-                #later on
-                T = np.sqrt(max(lo_t))+0.001
-            except:
-                T = 2
+        #since there is no 'wrong' solution by a different value of T, no 
+        #error is given/calculated for T !
+        try:
+            #just add 0.1% for avoiding numerical issues in the squareroots
+            #later on
+            T = np.sqrt(max(lo_t))+0.001
+        except:
+            T = 2
 
 
-            for tetm_idx in range(len(lo_tetms)):
+        for idx in range(len(lo_tetms)):
 
-                realz = np.real(lo_tetms[tetm_idx])
-                imagz = np.imag(lo_tetms[tetm_idx])
-                errmat = lo_tetm_errs[tetm_idx]
-                
-                sr = np.sqrt(T**2+4*P*realz[0, 1]*realz[1, 0]/np.linalg.det(realz))
-                si = np.sqrt(T**2+4*P*imagz[0, 1]*imagz[1, 0]/np.linalg.det(imagz))
+            realz = np.real(lo_tetms[idx])
+            imagz = np.imag(lo_tetms[idx])
+            errmat = lo_tetm_errs[idx]
+            
+            sr = np.sqrt(T**2+4*P*realz[0, 1]*realz[1, 0]/np.linalg.det(realz))
+            si = np.sqrt(T**2+4*P*imagz[0, 1]*imagz[1, 0]/np.linalg.det(imagz))
 
-                par_r = 2*realz[0, 1]/(T-sr)
-                orth_r = 2*realz[1, 0]/(T+sr)
-                par_i = 2*imagz[0, 1]/(T-si)
-                orth_i = 2*imagz[1, 0]/(T+si)
+            par_r = 2*realz[0, 1]/(T-sr)
+            orth_r = 2*realz[1, 0]/(T+sr)
+            par_i = 2*imagz[0, 1]/(T-si)
+            orth_i = 2*imagz[1, 0]/(T+si)
 
-                mat2_r = np.matrix([[0, 1./orth_r], [1./par_r, 0]])
-                mat2_i = np.matrix([[0, 1./orth_i], [1./par_i ,0]])
+            mat2_r = np.matrix([[0, 1./orth_r], [1./par_r, 0]])
+            mat2_i = np.matrix([[0, 1./orth_i], [1./par_i ,0]])
 
-                lo_dis.append(np.dot(realz,mat2_r))
-                lo_dis.append(np.dot(imagz,mat2_i))
+            lo_dis.append(np.dot(realz,mat2_r))
+            lo_dis.append(np.dot(imagz,mat2_i))
 
-                if z_obj.zerr is not None:
-                    #find errors of entries for calculating weights
-                    sigma_sr = np.sqrt((-(2*P*realz[0,1]*realz[1,0]*\
-                                          realz[1,1]*errmat[0,0])/\
-                                          (np.linalg.det(realz)**2*sr))**2+\
-                                        ((2*P*realz[0,0]*realz[1,0]*\
-                                         realz[1,1]*errmat[0,1])/\
-                                        (np.linalg.det(realz)**2*sr))**2+\
-                                        ((2*P*realz[0,0]* realz[0,1]*\
-                                          realz[1,1]*errmat[1,0])/\
-                                          (np.linalg.det(realz)**2*sr))**2 +\
-                                        (-(2*P*realz[0,1]* realz[1,0]*\
-                                         realz[0,0]*errmat[1,1])/\
-                                         (np.linalg.det(realz)**2*sr))**2)
+            if z_obj.zerr is not None:
+                #find errors of entries for calculating weights
+                sigma_sr = np.sqrt((-(2*P*realz[0,1]*realz[1,0]*\
+                                      realz[1,1]*errmat[0,0])/\
+                                      (np.linalg.det(realz)**2*sr))**2+\
+                                    ((2*P*realz[0,0]*realz[1,0]*\
+                                     realz[1,1]*errmat[0,1])/\
+                                    (np.linalg.det(realz)**2*sr))**2+\
+                                    ((2*P*realz[0,0]* realz[0,1]*\
+                                      realz[1,1]*errmat[1,0])/\
+                                      (np.linalg.det(realz)**2*sr))**2 +\
+                                    (-(2*P*realz[0,1]* realz[1,0]*\
+                                     realz[0,0]*errmat[1,1])/\
+                                     (np.linalg.det(realz)**2*sr))**2)
 
-                    sigma_dr_11 = 0.5*sigma_sr
-                    sigma_dr_22 = 0.5*sigma_sr
+                sigma_dr_11 = 0.5*sigma_sr
+                sigma_dr_22 = 0.5*sigma_sr
 
-                    sigma_dr_12 = np.sqrt((mat2_r[0,1]/realz[0,0]*errmat[0,0])**2+\
-                                          (mat2_r[0,1]/realz[1,0]*errmat[1,0])**2+\
-                                          (0.5*realz[0,0]/realz[1,0]*sigma_sr)**2)
-                    sigma_dr_21 = np.sqrt((mat2_r[1,0]/realz[1,1]*errmat[1,1])**2+\
-                                          (mat2_r[1,0]/realz[0,1]*errmat[0,1])**2+\
-                                          (0.5*realz[1,1]/realz[0,1]*sigma_sr)**2)
+                sigma_dr_12 = np.sqrt((mat2_r[0,1]/realz[0,0]*errmat[0,0])**2+\
+                                      (mat2_r[0,1]/realz[1,0]*errmat[1,0])**2+\
+                                      (0.5*realz[0,0]/realz[1,0]*sigma_sr)**2)
+                sigma_dr_21 = np.sqrt((mat2_r[1,0]/realz[1,1]*errmat[1,1])**2+\
+                                      (mat2_r[1,0]/realz[0,1]*errmat[0,1])**2+\
+                                      (0.5*realz[1,1]/realz[0,1]*sigma_sr)**2)
 
-                    lo_diserr.append(np.array([[sigma_dr_11, sigma_dr_12],
-                                               [sigma_dr_21, sigma_dr_22]]))
+                lo_diserr.append(np.array([[sigma_dr_11, sigma_dr_12],
+                                           [sigma_dr_21, sigma_dr_22]]))
 
-                    sigma_si = np.sqrt((-(2*P*imagz[0,1]*imagz[1,0]*\
-                                          imagz[1,1]*errmat[0,0])/\
-                                          (np.linalg.det(imagz)**2*sr))**2+\
-                                         ((2*P*imagz[0,0]*imagz[1,0]*\
-                                          imagz[1,1]*errmat[0,1])/\
-                                          (np.linalg.det(imagz)**2*sr))**2+\
-                                         ((2*P*imagz[0,0]*imagz[0,1]*\
-                                          imagz[1,1]*errmat[1,0])/\
-                                          (np.linalg.det(imagz)**2*sr))**2+\
-                                         (-(2*P*imagz[0,1]*imagz[1,0]*\
-                                          imagz[0,0]*errmat[1,1])/\
-                                          (np.linalg.det(imagz)**2*sr))**2)
+                sigma_si = np.sqrt((-(2*P*imagz[0,1]*imagz[1,0]*\
+                                      imagz[1,1]*errmat[0,0])/\
+                                      (np.linalg.det(imagz)**2*sr))**2+\
+                                     ((2*P*imagz[0,0]*imagz[1,0]*\
+                                      imagz[1,1]*errmat[0,1])/\
+                                      (np.linalg.det(imagz)**2*sr))**2+\
+                                     ((2*P*imagz[0,0]*imagz[0,1]*\
+                                      imagz[1,1]*errmat[1,0])/\
+                                      (np.linalg.det(imagz)**2*sr))**2+\
+                                     (-(2*P*imagz[0,1]*imagz[1,0]*\
+                                      imagz[0,0]*errmat[1,1])/\
+                                      (np.linalg.det(imagz)**2*sr))**2)
 
-                    sigma_di_11 = 0.5*sigma_si
-                    sigma_di_22 = 0.5*sigma_si
-                    sigma_di_12 = np.sqrt((mat2_i[0,1]/imagz[0,0]*errmat[0,0])**2+\
-                                          (mat2_i[0,1]/imagz[1,0]*errmat[1,0])**2+\
-                                          (0.5*imagz[0,0]/imagz[1,0]*sigma_si)**2)
-                    sigma_di_21 = np.sqrt((mat2_i[1,0]/imagz[1,1]*errmat[1,1])**2+\
-                                          (mat2_i[1,0]/imagz[0,1]*errmat[0,1])**2+\
-                                          (0.5*imagz[1,1]/imagz[0,1]*sigma_si)**2)
+                sigma_di_11 = 0.5*sigma_si
+                sigma_di_22 = 0.5*sigma_si
+                sigma_di_12 = np.sqrt((mat2_i[0,1]/imagz[0,0]*errmat[0,0])**2+\
+                                      (mat2_i[0,1]/imagz[1,0]*errmat[1,0])**2+\
+                                      (0.5*imagz[0,0]/imagz[1,0]*sigma_si)**2)
+                sigma_di_21 = np.sqrt((mat2_i[1,0]/imagz[1,1]*errmat[1,1])**2+\
+                                      (mat2_i[1,0]/imagz[0,1]*errmat[0,1])**2+\
+                                      (0.5*imagz[1,1]/imagz[0,1]*sigma_si)**2)
 
-                    lo_diserr.append(np.array([[sigma_di_11, sigma_di_12],
-                                               [sigma_di_21, sigma_di_22]]))
+                lo_diserr.append(np.array([[sigma_di_11, sigma_di_12],
+                                           [sigma_di_21, sigma_di_22]]))
 
-                else:
-                    #otherwise go for evenly weighted average
-                    lo_diserr.append(np.ones((2, 2)))
-                    lo_diserr.append(np.ones((2, 2)))
-
-
-            dis = np.zeros((2, 2))
-            diserr = np.zeros((2, 2))
-            for i in range(2):
-                for j in range(2):
-
-                    dis[i, j], dummy = np.average(np.array([k[i, j] 
-                                                           for k in lo_dis]), 
-                                                  weights=np.array([1./(k[i,j])**2
-                                                           for k in lo_diserr]),
-                                                  returned=True )
-                    diserr[i, j] = np.sqrt(1./dummy)
-
-            distortion[idx] = dis
-            distortion_error[idx] = diserr
-        
-        else:
-            #no specific distortion solution for 3 D case
-            dis = np.identity(2)
-            diserr = np.zeros((2, 2))
-            distortion[idx] = dis
-            distortion_error[idx] = diserr
+            else:
+                #otherwise go for evenly weighted average
+                lo_diserr.append(np.ones((2, 2)))
+                lo_diserr.append(np.ones((2, 2)))
 
 
-    return distortion, distortion_error
+        dis = np.zeros((2, 2))
+        diserr = np.zeros((2, 2))
+        for i in range(2):
+            for j in range(2):
+
+                dis[i, j], dummy = np.average(np.array([k[i, j] 
+                                                       for k in lo_dis]), 
+                                              weights=np.array([1./(k[i,j])**2
+                                                       for k in lo_diserr]),
+                                              returned=True )
+                diserr[i, j] = np.sqrt(1./dummy)
+
+        return dis, diserr
+
+    #if only 3D, use identity matrix - no distortion calculated
+    dis = np.identity(2)
+    diserr = diserr = np.zeros((2, 2))
+    return dis, diserr
 
 
 
@@ -329,6 +318,7 @@ def find_1d_distortion(z_object, include_non1d = False):
         raise MTex.MTpyError_inputarguments('Z object does not have '
                                   'frequencies with spatial 1D characteristic')
 
+    print lo_dims
 
     return  find_distortion(z_obj, lo_dims = lo_dims)
 
