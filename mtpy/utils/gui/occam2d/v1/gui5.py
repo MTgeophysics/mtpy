@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'fourthgui.ui'
+# Form implementation generated from reading ui file 'fifthgui.ui'
 #
-# Created: Tue Aug 27 11:29:55 2013
+# Created: Tue Aug 27 11:30:56 2013
 #      by: PyQt4 UI code generator 4.9.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -254,9 +254,9 @@ class Ui_occamgui2D(object):
         self.formLayout_9.setLayout(5, QtGui.QFormLayout.FieldRole, self.horizontalLayout_6)
         self.horizontalLayout_14 = QtGui.QHBoxLayout()
         self.horizontalLayout_14.setObjectName(_fromUtf8("horizontalLayout_14"))
-        self.checkBox_usestartupfile = QtGui.QCheckBox(self.layoutWidget)
-        self.checkBox_usestartupfile.setObjectName(_fromUtf8("checkBox_usestartupfile"))
-        self.horizontalLayout_14.addWidget(self.checkBox_usestartupfile)
+        self.checkBox_useiterationfile = QtGui.QCheckBox(self.layoutWidget)
+        self.checkBox_useiterationfile.setObjectName(_fromUtf8("checkBox_useiterationfile"))
+        self.horizontalLayout_14.addWidget(self.checkBox_useiterationfile)
         spacerItem12 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_14.addItem(spacerItem12)
         self.formLayout_9.setLayout(6, QtGui.QFormLayout.LabelRole, self.horizontalLayout_14)
@@ -275,16 +275,16 @@ class Ui_occamgui2D(object):
         self.pushButton_loadstartupfile.setAutoDefault(True)
         self.pushButton_loadstartupfile.setObjectName(_fromUtf8("pushButton_loadstartupfile"))
         self.horizontalLayout_7.addWidget(self.pushButton_loadstartupfile)
-        self.lineEdit_browse_startupfile = QtGui.QLineEdit(self.layoutWidget)
+        self.lineEdit_browse_iterationfile = QtGui.QLineEdit(self.layoutWidget)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.lineEdit_browse_startupfile.sizePolicy().hasHeightForWidth())
-        self.lineEdit_browse_startupfile.setSizePolicy(sizePolicy)
-        self.lineEdit_browse_startupfile.setMinimumSize(QtCore.QSize(300, 30))
-        self.lineEdit_browse_startupfile.setMaximumSize(QtCore.QSize(500, 30))
-        self.lineEdit_browse_startupfile.setObjectName(_fromUtf8("lineEdit_browse_startupfile"))
-        self.horizontalLayout_7.addWidget(self.lineEdit_browse_startupfile)
+        sizePolicy.setHeightForWidth(self.lineEdit_browse_iterationfile.sizePolicy().hasHeightForWidth())
+        self.lineEdit_browse_iterationfile.setSizePolicy(sizePolicy)
+        self.lineEdit_browse_iterationfile.setMinimumSize(QtCore.QSize(300, 30))
+        self.lineEdit_browse_iterationfile.setMaximumSize(QtCore.QSize(500, 30))
+        self.lineEdit_browse_iterationfile.setObjectName(_fromUtf8("lineEdit_browse_iterationfile"))
+        self.horizontalLayout_7.addWidget(self.lineEdit_browse_iterationfile)
         self.formLayout_9.setLayout(6, QtGui.QFormLayout.FieldRole, self.horizontalLayout_7)
         self.layoutWidget1 = QtGui.QWidget(occamgui2D)
         self.layoutWidget1.setGeometry(QtCore.QRect(143, 479, 656, 34))
@@ -891,7 +891,7 @@ class Ui_occamgui2D(object):
         self.pushButton_loaddatafile.setText(QtGui.QApplication.translate("occamgui2D", "Load data file", None, QtGui.QApplication.UnicodeUTF8))
         self.label_3.setText(QtGui.QApplication.translate("occamgui2D", "Choose a data file name", None, QtGui.QApplication.UnicodeUTF8))
         self.lineEdit_datafilename.setText(QtGui.QApplication.translate("occamgui2D", "OccamInputData.dat", None, QtGui.QApplication.UnicodeUTF8))
-        self.checkBox_usestartupfile.setText(QtGui.QApplication.translate("occamgui2D", "use old iteration as startup file", None, QtGui.QApplication.UnicodeUTF8))
+        self.checkBox_useiterationfile.setText(QtGui.QApplication.translate("occamgui2D", "use old iteration as startup file", None, QtGui.QApplication.UnicodeUTF8))
         self.pushButton_loadstartupfile.setText(QtGui.QApplication.translate("occamgui2D", "Load iteration file", None, QtGui.QApplication.UnicodeUTF8))
         self.label_18.setText(QtGui.QApplication.translate("occamgui2D", "Number of model layers", None, QtGui.QApplication.UnicodeUTF8))
         self.label_19.setText(QtGui.QApplication.translate("occamgui2D", "Layers per decade", None, QtGui.QApplication.UnicodeUTF8))

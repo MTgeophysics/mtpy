@@ -4,10 +4,10 @@
 
 import sys,os
 from PyQt4 import QtCore, QtGui
-import gui4
-reload(gui4)
+import gui5
+reload(gui5)
 
-from gui4 import Ui_occamgui2D as Occam_UI_form
+from gui5 import Ui_occamgui2D as Occam_UI_form
 
 import os.path as op
 
@@ -56,16 +56,18 @@ class OccamGui(QtGui.QMainWindow):
         QtCore.QObject.connect(self.ui.pushButton_loaddatafile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_datafile))
         QtCore.QObject.connect(self.ui.pushButton_loadstartupfile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_startupfile))       
         QtCore.QObject.connect(self.ui.pushButton_loaddatafile, QtCore.SIGNAL("clicked()"),self.set_data_filename)
+        
         QtCore.QObject.connect(self.ui.pushButton_checkparameter, QtCore.SIGNAL("clicked()"),  self.check_input)
         #QtCore.QObject.connect(self.ui.pushButton_checkparameter, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
-        QtCore.QObject.connect(self.ui.pushButton_generateinputfile, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
-        QtCore.QObject.connect(self.ui.pushButton_runoccam, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
-        QtCore.QObject.connect(self.ui.pushButton_generateinputfile, QtCore.SIGNAL("clicked()"),  self.check_input)
-        QtCore.QObject.connect(self.ui.pushButton_runoccam, QtCore.SIGNAL("clicked()"),  self.check_input)
+        #QtCore.QObject.connect(self.ui.pushButton_runoccam, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
+        #QtCore.QObject.connect(self.ui.pushButton_generateinputfile, QtCore.SIGNAL("clicked()"),  self.check_input)
+        #QtCore.QObject.connect(self.ui.pushButton_runoccam, QtCore.SIGNAL("clicked()"),  self.check_input)
+        
         QtCore.QObject.connect(self.ui.pushButton_generateinputfile, QtCore.SIGNAL("clicked()"),  self.generate_inputfiles)
         #QtCore.QObject.connect(self.ui.pushButton_loadold_meshinmodel, QtCore.SIGNAL("clicked()"),  self.loadold_meshinmodel)
         QtCore.QObject.connect(self.ui.pushButton_runoccam, QtCore.SIGNAL("clicked()"),  self.run_occam)
         QtCore.QObject.connect(self.ui.pushButton_quit, QtCore.SIGNAL("clicked()"), QtCore.QCoreApplication.instance().quit)
+        #QtCore.QObject.connect(self.ui.pushButton_generateinputfile, QtCore.SIGNAL("clicked()"),  self.setup_parameter_dict)
 
         
     #when loading old datafile, copy its name to the filename field:
@@ -147,13 +149,13 @@ class OccamGui(QtGui.QMainWindow):
                 invalid_flag +=1
 
         #OCCAM startup file 
-        startup_mess=''
-        startup_text=''
-        if str(self.ui.lineEdit_browse_startupfile.text()):
-            startup_text = str(self.ui.lineEdit_browse_startupfile.text())
-        if (startup_text.strip() == '') or  (not op.isfile(op.realpath(op.join(self.ui.wd,startup_text)))):
-            if self.ui.checkBox_usestartupfile.checkState():
-                startup_mess += 'Startup file not existing <br>'
+        iteration_mess=''
+        iteration_text=''
+        if str(self.ui.lineEdit_browse_iterationfile.text()):
+            iteration_text = str(self.ui.lineEdit_browse_iterationfile.text())
+        if (iteration_text.strip() == '') or  (not op.isfile(op.realpath(op.join(self.ui.wd,iteration_text)))):
+            if self.ui.checkBox_useiterationfile.checkState():
+                iteration_mess += 'iteration file not existing <br>'
                 invalid_flag += 1
         
         #OCCAM data file (existing file)
@@ -231,50 +233,83 @@ class OccamGui(QtGui.QMainWindow):
 
         
         D = {}
-        D['wdir']             = op.abspath( op.realpath( str( self.ui.lineEdit_browse_wd.text() ) ) )
-        D['edi_dir']          = op.abspath( op.realpath( str( self.ui.lineEdit_browse_edis.text()) ) )
+        D['wd']             = op.abspath( op.realpath( str( self.ui.lineEdit_browse_wd.text() ) ) )
+        D['edi_dir']          = op.abspath( op.realpath( str( self.ui.lineEdit_browse_edi.text()) ) )
         D['occam_exe']        = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_occam.text()) ) ) )
-        D['startupfn']        = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_startupfile.text()) ) ) )
-        D['stationlist_file'] = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_stations.text()) ) ) )
-        D['olddatafile']      = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_datafile.text()) ) ) )
-        D['datafilename']     = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_datafilename.text()) ) ) )
+        
+        D['use_iterationfile'] = self.ui.checkBox_useiterationfile.checkState()
+        if D['use_iterationfile']:
+            D['iterationfile']  = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_iterationfile.text()) ) ) )
+        else:
+            D['iterationfile']  = None
+
+        D['use_stationfile'] = self.ui.checkBox_usestationlist.checkState()
+        if D['use_stationfile']:
+            D['stationlistfile'] = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_stationfile.text()) ) ) )
+        else:
+            D['stationlistfile'] = None
+
+        D['use_olddatafile'] = self.ui.checkBox_usedatafile.checkState()
+        if D['use_olddatafile']:
+            D['olddatafile']      = op.abspath( op.realpath( op.join(self.ui.wd, str(self.ui.lineEdit_browse_datafile.text()) ) ) )
+        else:
+            D['olddatafile'] = None
+
+        D['datafile']     = str(self.ui.lineEdit_datafilename.text())
 
         D['modelname']        = str(self.ui.lineEdit_modelname.text())
-        
-        D['check_usestations'] = self.ui.checkBox_usestationlist.checkState()
-        D['check_usedatafile'] = self.ui.checkBox_usedatafile.checkState()
-        D['check_usestartupfile'] = self.ui.checkBox_usestartupfile.checkState()
+        D['no_iteration']     = self.ui.spinBox_iterationstep.value()
+        D['mu_start']         = self.ui.doubleSpinBox_lagrange.value()
+        D['debug_level']      = int(float(self.ui.comboBox_debuglevel.currentText()))
+
+        D['set_max_no_frequencies'] = self.ui.checkBox_max_no_frequencies.checkState()
+        D['max_no_frequencies'] = self.ui.doubleSpinBox_max_no_frequencies.value()
+        D['set_min_frequency'] = self.ui.checkBox_min_frequency.checkState()
+        D['min_frequency'] = self.ui.doubleSpinBox_min_frequency.value()
+        D['set_max_frequency'] = self.ui.checkBox_max_frequency.checkState()
+        D['max_frequency'] = self.ui.doubleSpinBox_max_frequency.value() 
+
+
+        D['check_usestationfile'] = self.ui.checkBox_usestationlist.checkState()
+        D['check_useolddatafile'] = self.ui.checkBox_usedatafile.checkState()
+        D['check_useiterationfile'] = self.ui.checkBox_useiterationfile.checkState()
         
 
-        D['mode']             = self.ui.comboBox_mode.currentIndex()
-        D['freqsteps']        = self.ui.spinBox_freq_steps.value()
+        D['mode']             = str(self.ui.comboBox_mode.currentText())
+        #D['freqsteps']        = self.ui.spinBox_freq_steps.value()
         D['strike']           = self.ui.doubleSpinBox_strike.value()
-        D['orientation']      = self.ui.comboBox_alignment.currentIndex()
+        #D['orientation']      = self.ui.comboBox_alignment.currentIndex()
         D['mergethreshold']   = self.ui.doubleSpinBox_mergethreshold.value()
-        D['n_iterations']     = self.ui.spinBox_iterations.value()
+        D['max_no_iterations']     = self.ui.spinBox_max_no_iterations.value()
         D['target_rms']       = self.ui.doubleSpinBox_rms.value()
-        D['n_layers']         = self.ui.spinBox_layers.value()
-        D['thickness1']       = self.ui.spinBox_firstlayer.value()
+        D['no_layers']         = self.ui.spinBox_no_layers.value()
+        D['firstlayer_thickness']       = self.ui.spinBox_firstlayer.value()
         D['max_blockwidth']   = self.ui.spinBox_maxblockwidth.value()
-        D['decade_layers']    = self.ui.spinBox_layersperdecade.value()
-        D['rho0']             = self.ui.doubleSpinBox_rhostart.value()
+        D['no_layersperdecade']    = self.ui.spinBox_layersperdecade.value()
+        D['halfspace_resistivity']  = self.ui.doubleSpinBox_rhostart.value()
 
-        D['useDataError_ResXY']   = self.ui.checkBox_usedataerror_resXY.checkState()
-        D['Error_ResXY']          = self.ui.doubleSpinBox_errorvalue_resXY.value()
-        D['useDataError_ResYX']   = self.ui.checkBox_usedataerror_resYX.checkState()
-        D['Error_ResYX']          = self.ui.doubleSpinBox_errorvalue_resYX.value()
-        D['useDataError_PhaseXY'] = self.ui.checkBox_usedataerror_phaseXY.checkState()
-        D['Error_PhaseXY']        = self.ui.doubleSpinBox_errorvalue_phaseXY.value()
-        D['useDataError_PhaseYX'] = self.ui.checkBox_usedataerror_phaseYX.checkState()
-        D['Error_PhaseYX']        = self.ui.doubleSpinBox_errorvalue_phaseYX.value()
+        D['set_te_error']   = self.ui.checkBox_te_error.checkState()
+        if D['set_te_error']:
+            D['te_error']          = self.ui.doubleSpinBox_te_error.value()
+        else:
+            D['te_error'] = None
 
-        D['check_includeTipper']  = self.ui.checkBox_usetipper.checkState()
-        D['Error_Tipper']         = self.ui.doubleSpinBox_errorvalue_tipper.value()
+        D['set_tm_error']   = self.ui.checkBox_tm_error.checkState()
+        if  D['set_tm_error']: 
+            D['tm_error']          = self.ui.doubleSpinBox_tm_error.value()
+        else:
+            D['tm_error']          = None
+
+        D['set_tipper_error'] = self.ui.checkBox_tipper_error.checkState()
+        if D['set_tipper_error'] :
+            D['tipper_error']        = self.ui.doubleSpinBox_tipper_error.value()
+        else:
+            D['tipper_error']        = None
         
-        print D
-        return
         self.parameters = D
 
+        # for k in sorted(D.keys()):
+        #     print k,D[k]
 
     def build_datafile(self):
         """
@@ -285,28 +320,28 @@ class OccamGui(QtGui.QMainWindow):
 
         #print D['check_usedatafile']
         #print D['olddatafile']
-
-        checkfilename = D['olddatafile']
-        #print op.isfile(checkfilename)
-
-
-        #Try to load old data file, if box is checked
-        # if D['check_usedatafile']:
-        #     checkfilename = D['olddatafile']
-        #     if op.isfile(checkfilename):
-        #         messagetext = "<P><b><FONT COLOR='#008080'>Existing data file loaded successfully:</FONT></b></P><br>%s"%checkfilename
-        #         D['datafilename'] = D['olddatafile']
-        #         D['datafile']     = D['olddatafile']
-        #     else:
-        #         messagetext = "<P><b><FONT COLOR='#800000'>Error:  No old data file found!  </FONT></b></P> "
-                    
-        #     QtGui.QMessageBox.about(self, "Data file", messagetext )
-                    
-        #     return
-
-        # #Otherwise set up new data filename
         
-        outfilename = D['datafilename']
+        olddatafile = D['olddatafile']
+        if olddatafile is not None:
+            datafile = op.abspath(op.join(D['wd'],olddatafile))
+            messagetext = ''
+            returnvalue = 0 
+            try:
+                data_object = MTo2.Data()
+                data_object.readfile(datafile)
+                self.parameters['stationlocations']  = data_object.stationlocations
+                messagetext = "<P><b><FONT COLOR='#008080'>Read old data file:</FONT></b></P><br>{0}".format(datafile)
+            except:
+                messagetext = "<P><b><FONT COLOR='#800000'>Error: Cannot read old data file: {0}  </FONT></b></P> ".format(datafile)
+                returnvalue = 1
+
+                
+            QtGui.QMessageBox.about(self, "Data file generation", messagetext )
+
+            return returnvalue
+
+        
+        outfilename = D['datafile']
         edidirectory= D['edi_dir']
 
 
@@ -329,108 +364,43 @@ class OccamGui(QtGui.QMainWindow):
             return raw_list2
 
         #define internal station list 
-        stationlist=None
-        if D['check_usestations']:
-            stationlist = make_stationlist(D['stationlist_file'])
+        stationlist  = None
+        if D['use_stationfile']:
+            stationlist = make_stationlist(D['stationlistfile'])
 
-        #read in error floors-----------------------------------------
-        if int(float(D['useDataError_ResXY'])): 
-            resxy='data'
-        else:
-            resxy=float(D['Error_ResXY'] )    
-
-
-        if int(float(D['useDataError_ResYX'])):
-            resyx='data'
-        else:
-            resyx=float(D['Error_ResYX'] )
-    
-
-        if int(float(D['useDataError_PhaseXY'])):
-            phasexy='data'
-        else:
-            phasexy=float(D['Error_PhaseXY'])
-
-        if int(float(D['useDataError_PhaseYX'])):
-            phaseyx='data'
-        else:
-            phaseyx=float(D['Error_PhaseYX'])
-
-
-        #TIPPER--------------------------------------------------
-        tippererror=None
-        if D['check_includeTipper']:
-            tippererror = float(D['Error_Tipper'])
-
-        #define modes used ------------------------------------------
-        _modedict = {'0':'both' , '1':'TM', '2':'TE' }
-        mode4modelling = _modedict[str(D['mode'])]
-       
-        #define orientation -----------------------------------------
-        _oridict = {'0':'ns' , '1':'ew' }
-        lineorientation = _oridict[str(D['orientation'])]
+        D['stationlist'] = stationlist
         
         #make data file  -------------------------------------------
         returnvalue = 0 
         messagetext = ''
-        if not D['check_usedatafile']:
-            try:
-                setup_object = MTo2.Setup(**D)
-            except:
-                messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
-                "generate setup object - check input parameters!  </FONT></b></P> \n"
-                QtGui.QMessageBox.about(self, "Input files generation", messagetext )
-                return 1
+        try:
+            setup_object = MTo2.Setup(**D)
+        except:
+            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+            "generate setup object - check input parameters!  </FONT></b></P> \n"
+            QtGui.QMessageBox.about(self, "Input files generation", messagetext )
+            return 1
 
-            try:
-                edi_dir = D['edi_dir']
-                setup_object.read_edifiles(edi_dir)
-                setup_object.datafile = D['datafilename']
-                setup_object.write_datafile()
-                datafilename = setup_object.datafile
-                self.parameters['stationlocations']  = setup_object.stationlocations
-                messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
-                "data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
-            except:
-                messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
-                "write data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
-                returnvalue = 1
-
-        else:
-            try:
-                data_object = MTo2.Data()
-                data_object.readfile(D['datafilename'])
-                self.parameters['stationlocations']  = setup_object.stationlocations
-                messagetext = "<P><b><FONT COLOR='#008080'>Read old data file:</FONT></b></P><br>{0}".format(D['datafilename'])
-            except:
-                messagetext = "<P><b><FONT COLOR='#800000'>Error: Cannot read old data file: {0}  </FONT></b></P> ".format(D['datafilename'])
-                returnvalue = 1
+        try:
+            edi_dir = D['edi_dir']
+            setup_object.read_edifiles(edi_dir)
+            datafile = op.abspath(op.join(D['wd'],D['datafile']))
+            setup_object.datafile = datafile
+            setup_object.write_datafile()
+            datafilename = setup_object.datafile
+            self.parameters['stationlocations']  = setup_object.stationlocations
+            messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
+            "data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
+        except:
+            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+            "write data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
+            returnvalue = 1
 
                 
         QtGui.QMessageBox.about(self, "Data file generation", messagetext )
 
         return returnvalue
 
-
-            # checkfilename = OCCAMTools.make2DdataFile(edidirectory,\
-            #                             savepath=outfilename,\
-            #                             mmode= mode4modelling,\
-            #                             stationlst=stationlist,\
-            #                             title=None,\
-            #                             thetar=float(D['strike']),\
-            #                             resxyerr=resxy,\
-            #                             resyxerr=resyx,\
-            #                             phasexyerr=phasexy,\
-            #                             phaseyxerr=phaseyx,\
-            #                             ss=3*' ',\
-            #                             fmt='%2.6f',\
-            #                             freqstep=int(float(D['freqsteps'])),\
-            #                             plotyn='n',\
-            #                             lineori=lineorientation,\
-            #                             tippererr=tippererror  \
-            #                             )
-
-            #check, if generation was successfull and show message box
 
 
 
@@ -514,68 +484,40 @@ class OccamGui(QtGui.QMainWindow):
             "write inmodel file: {0}  </FONT></b></P> \n".format(setup_object.inmodelfile)
             returnvalue = 1
 
-        if D['check_usestartupfile']:
+        if D['check_useiterationfile']:
             try:
-                setup_object.startupfile = D['startupfile']
+                setup_object.startupfile = D['iterationfile']
                 messagetext += "<P><b><FONT COLOR='#008080'>Using old "\
-                "startup file: {0}  </FONT></b></P> \n".format(setup_object.startupfile)
+                "iteration file: {0}  </FONT></b></P> \n".format(setup_object.startupfile)
+                D['startupfile'] =  D['iterationfile']
             except:
                 messagetext += "<P><b><FONT COLOR='#800000'>Error: Could not "\
-                "find old startup file: {0}  </FONT></b></P> \n".format(setup_object.startupfile)
+                "find old iteration file: {0}  </FONT></b></P> \nUsing default 'startup' instead ".format(D['iterationfile'])
+                D['startupfile'] ='startup'
                 returnvalue = 1
+
 
         else:
             try:
                 setup_object.write_startupfile()
                 messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
                 " startup file: {0}  </FONT></b></P> \n".format(setup_object.startupfile)
+                D['startupfile'] = setup_object.startupfile
 
             except:
                 messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
                 "write startup file: {0}  </FONT></b></P> \n".format(setup_object.startupfile)
+                D['startupfile'] ='startup'
                 returnvalue = 1
 
-
-
-            # #2. make model file
-            # m_fn,i_fn,s_fn = OCCAMTools.makeModel(datafile,\
-            #                                         niter=int(float(D['n_iterations'])),\
-            #                                         targetrms=float(D['target_rms']),\
-            #                                         nlayers=int(float(D['n_layers'])),\
-            #                                         nlperdec=int(float(D['decade_layers'])),\
-            #                                         z1layer=int(float(D['thickness1'])),\
-            #                                         bwidth=int(float(D['max_blockwidth'])),\
-            #                                         trigger=float(D['mergethreshold']),\
-            #                                         #savepath=self.ui.wd,\
-            #                                         rhostart=float(D['rho0']),\
-            #                                         #occampath=D['makemodel_exe']\
-            #                                         cwd=self.ui.wd,\
-            #                                         #makemodelexe=D['makemodel_exe'],
-            #                                         modelname=D['modelname'],
-            #                                         use_existing_startup=D['check_usestartupfile'],\
-            #                                         existing_startup_file=D['startupfn']\
-            #                                         )
-        # except:
-        #     messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not generate model/mesh!  </FONT></b></P> \n"
-
-        # if D['check_usestartupfile']:
-        #     messagetext = "<P><b><FONT COLOR='#008080'>Old startup  read in:</FONT></b></P><br>%s"%(s_fn)
-        #         QtGui.QMessageBox.about(self, "Startup file", messagetext )
-                
-        #         messagetext = "<P><b><FONT COLOR='#008080'>Input files generated:</FONT></b></P><br>%s<br>%s"%(m_fn,i_fn)
-        #         D['startupfile'] = existing_startup_file
-            
-        #     else:
-        #         messagetext += "<P><b><FONT COLOR='#008080'>Input files generated:</FONT></b></P><br>%s<br>%s<br>%s"%(m_fn,i_fn,s_fn)
-        # else:
-        #     messagetext += "<P><b><FONT COLOR='#800000'>Error:  No input files generated!  </FONT></b></P> "
-        
         QtGui.QMessageBox.about(self, "Input files generation", messagetext )
 
         return returnvalue
 
 
     def generate_inputfiles(self):
+        self.check_input()
+        self.setup_parameter_dict()
         if self.build_datafile() == 1 :
             return
 
@@ -612,7 +554,7 @@ class OccamGui(QtGui.QMainWindow):
 
 
         #check input values and set up startup file
-        self._setup_startupfile()
+        #self._setup_startupfile()
         
         #deactivate start button to avoid multiple calls
         # re- activation does not work - WHY ??????? - has to stay commented
@@ -731,7 +673,7 @@ class OccamGui(QtGui.QMainWindow):
                         
         #starting the worker thread
         ot = OccamThread(exec_file, exec_args,outfile,errfile)
-        ot.setDaemon(True)
+        ot.daemon = True
         try:
             ot.start()
         except (KeyboardInterrupt, SystemExit):
@@ -835,12 +777,6 @@ class OccamGui(QtGui.QMainWindow):
 #===============================================================================
 # problem end
 #===============================================================================
-
-
-
-    def loadold_meshinmodel(self):
-        pass
-
 
 
     def add_entry(self):
