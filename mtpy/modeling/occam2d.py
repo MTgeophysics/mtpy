@@ -1193,34 +1193,35 @@ class Data():
                 frequency_number = np.abs(self.frequencies-freq).argmin() + 1
                 for mode in lo_modes:
                     if mode == 13 :
-                        raw_value = np.real(z_array[idx_f][0,1]) #rho_phi[0][idx_f][0,1]
-                        value = raw_value#np.log10(raw_value)
-                        absolute_error = np.sqrt(zerr_array[idx_f][0,1])#rho_phi[2][idx_f][0,1]
+                        raw_value = np.real(z_array[idx_f][0,1]* MTcc.mu0 / 1000.) #rho_phi[0][idx_f][0,1]
+                        #trying unit Ohm here:
+                        value = raw_value #np.log10(raw_value)
+                        absolute_error = np.sqrt(zerr_array[idx_f][0,1]* MTcc.mu0 / 1000.)#rho_phi[2][idx_f][0,1]
                         relative_error = np.abs(absolute_error/raw_value)
                         if self.te_errorfloor is not None:
                             if self.te_errorfloor/100. > relative_error:
                                 relative_error = self.te_errorfloor/100.
                         error = np.abs(relative_error * raw_value)   #relative_error/np.log(10.)
                     elif mode == 14 :
-                        value = np.imag(z_array[idx_f][0,1])#rho_phi[1][idx_f][0,1]
-                        absolute_error = np.sqrt(zerr_array[idx_f][0,1])#rho_phi[2][idx_f][0,1]
+                        value = np.imag(z_array[idx_f][0,1])* MTcc.mu0 / 1000.#rho_phi[1][idx_f][0,1]
+                        absolute_error = np.sqrt(zerr_array[idx_f][0,1]* MTcc.mu0 / 1000.)#rho_phi[2][idx_f][0,1]
                         relative_error = np.abs(absolute_error/value)
                         if self.te_errorfloor is not None:
                             if self.te_errorfloor/100. > relative_error:
                                 relative_error = self.te_errorfloor/100.
                         error = np.abs(relative_error * raw_value)#relative_error*100.*0.285
                     if mode == 15 :
-                        raw_value = np.real(z_array[idx_f][1,0]) #rho_phi[0][idx_f][0,1]
+                        raw_value = np.real(z_array[idx_f][1,0]* MTcc.mu0 / 1000.) #rho_phi[0][idx_f][0,1]
                         value = raw_value#np.log10(raw_value)
-                        absolute_error = np.sqrt(zerr_array[idx_f][1,0])#rho_phi[2][idx_f][0,1]
+                        absolute_error = np.sqrt(zerr_array[idx_f][1,0]* MTcc.mu0 / 1000.)#rho_phi[2][idx_f][0,1]
                         relative_error = np.abs(absolute_error/raw_value)
                         if self.tm_errorfloor is not None:
                             if self.tm_errorfloor/100. > relative_error:
                                 relative_error = self.tm_errorfloor/100.
                         error = np.abs(relative_error * raw_value)   #relative_error/np.log(10.)
                     elif mode == 16 :
-                        value = np.imag(z_array[idx_f][1,0])#rho_phi[1][idx_f][0,1]
-                        absolute_error = np.sqrt(zerr_array[idx_f][1,0])#rho_phi[2][idx_f][0,1]
+                        value = np.imag(z_array[idx_f][1,0]* MTcc.mu0 / 1000.)#rho_phi[1][idx_f][0,1]
+                        absolute_error = np.sqrt(zerr_array[idx_f][1,0]* MTcc.mu0 / 1000.)#rho_phi[2][idx_f][0,1]
                         relative_error = np.abs(absolute_error/value)
                         if self.tm_errorfloor is not None:
                             if self.tm_errorfloor/100. > relative_error:
