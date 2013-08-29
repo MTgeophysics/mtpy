@@ -109,9 +109,10 @@ class Setup():
         self.parameters_inmodel['model_name'] = 'Modelfile generated with MTpy'
         self.parameters_inmodel['block_merge_threshold'] = 0.75
 
-        self.parameters_data['te_errorfloor'] = 10
-        self.parameters_data['tm_errorfloor'] = 10
-        self.parameters_data['tipper_errorfloor'] = 10
+        self.parameters_data['rho_error'] = None
+        self.parameters_data['phase_error'] = None
+        self.parameters_data['tipper_error'] = None
+        self.parameters_data['azimuth'] = 0
 
         self.parameters_data['mode'] = 'tetm'
         
@@ -360,9 +361,9 @@ class Setup():
 
         data_object = Data(edilist = self.edifiles, wd = self.wd, **self.parameters_data)
         self.stationlocations = data_object.stationlocations
-        data_object.writefile()
+        data_object.writefile(self.datafile)
 
-        self.datafile = data_object.filename
+        self.datafile = data_object.datafile
         
 
     def setup_mesh_and_model(self):
@@ -915,7 +916,7 @@ class Data():
     def __init__(self, edilist = None, wd = None, **data_parameters):
 
         self.wd = os.curdir
-        self.filename = 'OccamDataFile.dat'
+        self.datafile = 'OccamDataFile.dat'
         self.edilist = []
 
         if edilist is not None:
@@ -1089,13 +1090,13 @@ class Data():
     def build_data(self):
         """Data file Generation
 
-        Read all Edi files. Exytact frequencies. Extract off-diagonal data from Z.
-        Extract Tipper y-component.
+        Read all Edi files. Extract frequencies. Rotate Z and Tipper onto profile.
+        Extract off-diagonal data from Z. Extract Tipper x-component (along profile).
 
         Collect all information sorted according to occam specifications.
 
         Data of Z given in muV/m/nT = km/s
-        Error is 1 stddev.
+        Error is assumed to be 1 stddev.
         """ 
         
 
@@ -1104,15 +1105,15 @@ class Data():
         modes = self.mode.lower().strip()
         
         if 'both' in modes :
-            lo_modes.extend([13,14,15,16])  
+            lo_modes.extend([9,10,2,6])  
         if 'te' in modes:
-            lo_modes.extend([13,14])
+            lo_modes.extend([9,2])
         if 'tm' in modes:
-            lo_modes.extend([15,16])
+            lo_modes.extend([10,6])
         if ('tipper' in modes): 
             lo_modes.extend([3,4])
         if 'all' in modes :
-            lo_modes.extend([13,14,15,16,3,4])  
+            lo_modes.extend([9,10,2,6,3,4])  
 
         lo_modes = sorted(list(set(lo_modes))) 
 
@@ -1147,27 +1148,20 @@ class Data():
             no_freqs_max = int(float(no_freqs_max))
             if no_freqs_max < len(lo_all_freqs_tmp):
                 lo_all_freqs_tmp2 = []
-                excess = len(lo_all_freqs_tmp)/no_freqs_max
+                excess = len(lo_all_freqs_tmp)/float(no_freqs_max)
                 if excess < 2:
-                    #skip as many freqs as there are too many
-                    #alternating from top and bottom and of list
-                    lo_all_freqs_tmp2 = lo_all_freqs_tmp
-                    too_many = len(lo_all_freqs_tmp) - no_freqs_max
-                    i = 0 
-                    while i < too_many:
-                        idx = i%2
-                        if idx == 0: 
-                            lo_all_freqs_tmp2.pop(0)
-                        else:
-                            lo_all_freqs_tmp2.pop(-1)
-                        i+=1
+                    offset = 0
 
                 else:
-                    stepsize = int(excess)
-                    for i in range(lo_all_freqs_tmp):
-                        if (i+1)%stepsize == 0:
-                            lo_all_freqs_tmp2.append(lo_all_freqs_tmp[i])
-
+                    stepsize = (len(lo_all_freqs_tmp)-1)/no_freqs_max
+                    offset = stepsize/2.
+                indices = np.array(np.around(np.linspace(offset,len(lo_all_freqs_tmp)-1-offset,no_freqs_max),0))
+                if indices[0]>(len(lo_all_freqs_tmp)-1-indices[-1]):
+                    indices -= 1
+                for idx in indices:
+                    index = int(np.round(idx,0))+1
+                    lo_all_freqs_tmp2.insert(0,lo_all_freqs_tmp[-index])
+                
 
                 lo_all_freqs_tmp = lo_all_freqs_tmp2
 
@@ -1189,45 +1183,54 @@ class Data():
             rho_phi = Z.res_phase 
             z_array = Z.z
             zerr_array = Z.zerr
+
             for idx_f,freq in enumerate(self.station_frequencies[idx_s]):
                 frequency_number = np.abs(self.frequencies-freq).argmin() + 1
                 for mode in lo_modes:
-                    if mode == 13 :
-                        raw_value = np.real(z_array[idx_f][0,1]* MTcc.mu0 / 1000.) #rho_phi[0][idx_f][0,1]
-                        #trying unit Ohm here:
-                        value = raw_value #np.log10(raw_value)
-                        absolute_error = np.sqrt(zerr_array[idx_f][0,1]* MTcc.mu0 / 1000.)#rho_phi[2][idx_f][0,1]
-                        relative_error = np.abs(absolute_error/raw_value)
-                        if self.te_errorfloor is not None:
-                            if self.te_errorfloor/100. > relative_error:
-                                relative_error = self.te_errorfloor/100.
-                        error = np.abs(relative_error * raw_value)   #relative_error/np.log(10.)
-                    elif mode == 14 :
-                        value = np.imag(z_array[idx_f][0,1])* MTcc.mu0 / 1000.#rho_phi[1][idx_f][0,1]
-                        absolute_error = np.sqrt(zerr_array[idx_f][0,1]* MTcc.mu0 / 1000.)#rho_phi[2][idx_f][0,1]
-                        relative_error = np.abs(absolute_error/value)
-                        if self.te_errorfloor is not None:
-                            if self.te_errorfloor/100. > relative_error:
-                                relative_error = self.te_errorfloor/100.
-                        error = np.abs(relative_error * raw_value)#relative_error*100.*0.285
-                    if mode == 15 :
-                        raw_value = np.real(z_array[idx_f][1,0]* MTcc.mu0 / 1000.) #rho_phi[0][idx_f][0,1]
-                        value = raw_value#np.log10(raw_value)
-                        absolute_error = np.sqrt(zerr_array[idx_f][1,0]* MTcc.mu0 / 1000.)#rho_phi[2][idx_f][0,1]
-                        relative_error = np.abs(absolute_error/raw_value)
-                        if self.tm_errorfloor is not None:
-                            if self.tm_errorfloor/100. > relative_error:
-                                relative_error = self.tm_errorfloor/100.
-                        error = np.abs(relative_error * raw_value)   #relative_error/np.log(10.)
-                    elif mode == 16 :
-                        value = np.imag(z_array[idx_f][1,0]* MTcc.mu0 / 1000.)#rho_phi[1][idx_f][0,1]
-                        absolute_error = np.sqrt(zerr_array[idx_f][1,0]* MTcc.mu0 / 1000.)#rho_phi[2][idx_f][0,1]
-                        relative_error = np.abs(absolute_error/value)
-                        if self.tm_errorfloor is not None:
-                            if self.tm_errorfloor/100. > relative_error:
-                                relative_error = self.tm_errorfloor/100.
-                        error = np.abs(relative_error * raw_value)#relative_error*100.*0.285
+                    if mode in [9,2] :
+                        raw_rho_value = rho_phi[0][idx_f][0,1]
+                        value = raw_rho_value
+                        absolute_rho_error = rho_phi[2][idx_f][0,1]
+                        relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
+                        if mode == 9 :
+                            if self.rho_error is not None:
+                                if self.rho_error/100. > relative_rho_error:
+                                    relative_rho_error = self.rho_error/100.
+                            error = np.abs(relative_rho_error * raw_rho_value)   #relative_error/np.log(10.)
+
+                        elif mode == 2 :
+                            raw_phi_value = rho_phi[1][idx_f][0,1]
+                            value = raw_phi_value
+                            if self.phase_error is not None:
+                                if self.phase_error/100. > relative_rho_error:
+                                    relative_rho_error = self.phase_error/100.
+                            if relative_rho_error >= 1.:
+                                error = 180.
+                            else:
+                                error = np.degrees(np.arcsin(0.5*relative_rho_error))#relative_error*100.*0.285
                     
+                    if mode in [10,6] :
+                        raw_rho_value = rho_phi[0][idx_f][1,0]
+                        value = raw_rho_value
+                        absolute_rho_error = rho_phi[2][idx_f][1,0]
+                        relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
+                        if mode == 9 :
+                            if self.rho_error is not None:
+                                if self.rho_error/100. > relative_rho_error:
+                                    relative_rho_error = self.rho_error/100.
+                            error = np.abs(relative_rho_error * raw_rho_value)   #relative_error/np.log(10.)
+
+                        elif mode == 2 :
+                            raw_phi_value = rho_phi[1][idx_f][1,0]
+                            value = raw_phi_value
+                            if self.phase_error is not None:
+                                if self.phase_error/100. > relative_rho_error:
+                                    relative_rho_error = self.phase_error/100.
+                            if relative_rho_error >= 1.:
+                                error = 180.
+                            else:
+                                error = np.degrees(np.arcsin(0.5*relative_rho_error))#relative_error*100.*0.285
+                 
                     elif mode in [3,4] :
                         if T is None:
                             print 'no Tipper data for station {0}'.format(station_number) 
@@ -1241,47 +1244,28 @@ class Data():
                             tippererr = None
 
                         if mode == 3 :
-                            value = np.real(tipper[0,1])
+                            value = np.real(tipper[0,0])
                             if tippererr is None:
-                                error = self.tipper_errorfloor/100.*value
+                                error = self.tipper_error/100.*value
                             else:
                                 rel_error = tippererr/value
-                                if self.tipper_errorfloor/100. > rel_error:
-                                    error = self.tipper_errorfloor/100.*value
+                                if self.tipper_error/100. > rel_error:
+                                    error = self.tipper_error/100.*value
                                 else:
                                     error = tippererr
                         if mode == 4 :
-                            value = np.imag(tipper[0,1])
+                            value = np.imag(tipper[0,0])
                             if tippererr is None:
-                                error = self.tipper_errorfloor/100.*value
+                                error = self.tipper_error/100.*value
                             else:
                                 rel_error = tippererr/value
-                                if self.tipper_errorfloor/100. > rel_error:
-                                    error = self.tipper_errorfloor/100.*value
+                                if self.tipper_error/100. > rel_error:
+                                    error = self.tipper_error/100.*value
                                 else:
                                     error = tippererr
 
 
-                    # elif mode == 15 :
-                    #     raw_value = rho_phi[0][idx_f][1,0]
-                    #     value = np.log10(raw_value)
-                    #     absolute_error = rho_phi[2][idx_f][1,0]
-                    #     relative_error = absolute_error/raw_value
-                    #     if self.res_errorfloor is not None:
-                    #         if self.res_errorfloor/100. > relative_error:
-                    #             relative_error = self.res_errorfloor/100.
-                    #     error = relative_error/np.log(10.)
-                    # elif mode == 16 :
-                    #     value = (rho_phi[1][idx_f][1,0])%90
-                    #     absolute_error = rho_phi[2][idx_f][1,0]
-                    #     relative_error = absolute_error/value
-                    #     if self.phase_errorfloor is not None:
-                    #         if self.phase_errorfloor/100. > relative_error:
-                    #             relative_error = self.phase_errorfloor/100.
-                    #     error = relative_error*100.*0.285
-
-
-                    self.data.append([station_number, frequency_number,mode,value,error])
+                    self.data.append([station_number,frequency_number,mode,value,error])
 
 
     def generate_profile(self):
@@ -1305,6 +1289,7 @@ class Data():
         self.station_frequencies = []
         
         self.Z = []
+        self.Tipper = []
 
         lo_easts = []
         lo_norths = []
@@ -1316,6 +1301,10 @@ class Data():
             self.station_coords.append([edi.lat,edi.lon,edi.elev])
             self.stations.append(edi.station)
             self.station_frequencies.append(np.around(edi.freq,5))
+            try:
+                self.Tipper.append(edi.Tipper)
+            except:
+                pass
             self.Z.append(edi.Z)
             utm = MTcv.LLtoUTM(23,edi.lat,edi.lon)
             lo_easts.append(utm[1])
@@ -1323,6 +1312,7 @@ class Data():
             utmzones.append(int(utm[0][:-1]))
 
         main_utmzone = mode(utmzones)[0][0]
+
 
         for idx, zone in enumerate(utmzones):
             if zone == main_utmzone:
@@ -1335,6 +1325,19 @@ class Data():
 
         profile_line = sp.polyfit(lo_easts, lo_norths, 1) 
         self.azimuth = np.arctan(profile_line[0])*180/np.pi
+        
+        #rotate Z along the profile - always oriented west->east:
+        rotation_angle = self.azimuth%180
+
+        for old_z in self.Z:
+            old_z.rotate(rotation_angle)
+        
+        for old_tipper in self.Tipper:
+            try:
+                old_tipper.rotate(rotation_angle)
+            except:
+                pass
+
         lo_easts = np.array(lo_easts)
         lo_norths = np.array(lo_norths)
 
@@ -1379,7 +1382,7 @@ class Data():
         self.norths = lo_norths
         #print self.stationlocations
 
-
+        #plot profile and stations:
         if 0:
             lo_all_easts = list(lo_easts)
             lo_all_easts.extend(list(projected_stations[:,0]))
@@ -1414,10 +1417,10 @@ class Data():
         if filename is not None:
             try:
                 fn = op.abspath(op.join(self.wd,filename))
-                self.filename = op.abspath(op.split(fn)[1])
-                self.wd = op.abspath(op.split(fn)[0])
+                self.datafile = op.split(fn)[1]
+                #self.wd = op.abspath(op.split(fn)[0])
             except:
-                self.filename = 'OccamDataFile.dat' 
+                self.datafile = op.abspath(op.join(self.wd,'OccamDataFile.dat')) 
 
         outstring = ''
 
@@ -1438,8 +1441,8 @@ class Data():
         for d in self.data:
             outstring += '{0}    {1}    {2}    {3}    {4}\n'.format(*d)
 
-        outfn = op.abspath(op.join(self.wd,self.filename))
-        
+        outfn = op.abspath(op.join(self.wd,self.datafile))
+
         F = open(outfn,'w')
         F.write(outstring)
         F.close()
