@@ -262,11 +262,11 @@ class Edi(object):
                 print 'Could not read Rhorot section: %s'%infile
 
         elif datatype == 'spectra':
-            if 1:
+            try:
                 self._read_spectra(edistring)
-            # except:
-            #     raise MTex.MTpyError_edi_file(
-            #         'Could not read Spectra section: %s'%infile)
+            except:
+                raise MTex.MTpyError_edi_file(
+                    'Could not read Spectra section: %s'%infile)
 
 
         #Tipper is optional
@@ -2654,7 +2654,7 @@ def _validate_edifile_string(edistring):
         lo_valuelines = firstspectrum.split('\n')[1:]
         dummy6 = ''
         for i in lo_valuelines:
-            dummy6 += i
+            dummy6 += (' '+i)
 
         if not len(dummy6.split()) == no_values:
             found *= 0
@@ -2666,7 +2666,7 @@ def _validate_edifile_string(edistring):
             spectra_found = 1
  
     if z_found == 0 and rhophi_found == 0 and spectra_found == 0 :
-        print 'ERROR - no data found in terms of "Z" or "RHO/PHS" or'+\
+        print 'ERROR - no data found in terms of "Z" or "RHO/PHS" or '+\
               '"SPECTRA" - reading of multiple stations is not supported (yet)!'
         found *= 0
 
