@@ -457,7 +457,10 @@ class ResPhase(object):
         
         #calculate determinant values
         zdet = np.array([np.linalg.det(zz)**.5 for zz in self._Z.z])
-        zdetvar = np.array([np.linalg.det(zzv)**.5 for zzv in self._Z.zerr])
+        if self._Z.zerr is not None:
+            zdetvar = np.array([np.linalg.det(zzv)**.5 for zzv in self._Z.zerr])
+        else:
+            zdetvar = np.ones_like(zdet)
         
         #apparent resistivity
         self.resdet = 0.2*(1./self._Z.freq)*abs(zdet)**2
