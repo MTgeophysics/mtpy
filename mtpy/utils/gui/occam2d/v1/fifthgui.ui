@@ -1262,9 +1262,13 @@
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
+<<<<<<< HEAD
      <x>10</x>
+=======
+     <x>30</x>
+>>>>>>> 66cc7b9921917a2283fdb60a6c96cf2fc3e13cde
      <y>569</y>
-     <width>876</width>
+     <width>888</width>
      <height>34</height>
     </rect>
    </property>
@@ -1272,9 +1276,9 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_20">
       <item>
-       <widget class="QCheckBox" name="checkBox_te_error">
+       <widget class="QCheckBox" name="checkBox_rho_error">
         <property name="text">
-         <string>Set TE  minimum error (%):</string>
+         <string>Set Resistivity minimum error (%):</string>
         </property>
        </widget>
       </item>
@@ -1292,7 +1296,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_te_error">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_rho_error">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -1316,6 +1320,9 @@
         </property>
         <property name="singleStep">
          <double>1.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>10.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -1370,9 +1377,9 @@
        </spacer>
       </item>
       <item>
-       <widget class="QCheckBox" name="checkBox_tm_error">
+       <widget class="QCheckBox" name="checkBox_phase_error">
         <property name="text">
-         <string>Set TM  minimum error (%):</string>
+         <string>Set Phase minimum error (%):</string>
         </property>
        </widget>
       </item>
@@ -1390,7 +1397,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="QDoubleSpinBox" name="doubleSpinBox_tm_error">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_phase_error">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -1414,6 +1421,9 @@
         </property>
         <property name="singleStep">
          <double>1.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>10.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -1525,6 +1535,9 @@
         </property>
         <property name="singleStep">
          <double>1.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>10.000000000000000</double>
         </property>
        </widget>
       </item>

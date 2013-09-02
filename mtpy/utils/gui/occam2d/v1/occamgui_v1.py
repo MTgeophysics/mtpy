@@ -149,13 +149,18 @@ class OccamGui(QtGui.QMainWindow):
                 invalid_flag +=1
 
         #OCCAM startup file 
-        iteration_mess=''
-        iteration_text=''
-        if str(self.ui.lineEdit_browse_iterationfile.text()):
-            iteration_text = str(self.ui.lineEdit_browse_iterationfile.text())
-        if (iteration_text.strip() == '') or  (not op.isfile(op.realpath(op.join(self.ui.wd,iteration_text)))):
-            if self.ui.checkBox_useiterationfile.checkState():
-                iteration_mess += 'iteration file not existing <br>'
+        startup_mess=''
+        
+        startup_text=''
+        if self.ui.checkBox_useiterationfile.checkState():
+
+            if str(self.ui.lineEdit_browse_iterationfile.text()):
+                startup_text = str(self.ui.lineEdit_browse_iterationfile.text())
+            else:
+                startup_text = None
+            if (startup_text.strip() == '') or  (startup_text is None) or \
+                    (not op.isfile(op.realpath(op.join(self.ui.wd,startup_text)))):
+                startup_mess += 'startup file not existing <br>'
                 invalid_flag += 1
         
         #OCCAM data file (existing file)
@@ -294,17 +299,17 @@ class OccamGui(QtGui.QMainWindow):
         D['no_layersperdecade']    = self.ui.spinBox_layersperdecade.value()
         D['halfspace_resistivity']  = self.ui.doubleSpinBox_rhostart.value()
 
-        D['set_te_error']   = self.ui.checkBox_te_error.checkState()
-        if D['set_te_error']:
-            D['te_error']          = self.ui.doubleSpinBox_te_error.value()
+        D['set_rho_error']   = self.ui.checkBox_rho_error.checkState()
+        if D['set_rho_error']:
+            D['rho_error']          = self.ui.doubleSpinBox_rho_error.value()
         else:
-            D['te_error'] = None
+            D['rho_error'] = None
 
-        D['set_tm_error']   = self.ui.checkBox_tm_error.checkState()
-        if  D['set_tm_error']: 
-            D['tm_error']          = self.ui.doubleSpinBox_tm_error.value()
+        D['set_phase_error']   = self.ui.checkBox_phase_error.checkState()
+        if  D['set_phase_error']: 
+            D['phase_error']          = self.ui.doubleSpinBox_phase_error.value()
         else:
-            D['tm_error']          = None
+            D['phase_error']          = None
 
         D['set_tipper_error'] = self.ui.checkBox_tipper_error.checkState()
         if D['set_tipper_error'] :
@@ -326,16 +331,20 @@ class OccamGui(QtGui.QMainWindow):
 
         #print D['check_usedatafile']
         #print D['olddatafile']
-        
+
         olddatafile = D['olddatafile']
         if olddatafile is not None:
             datafile = op.abspath(op.join(D['wd'],olddatafile))
-            messagetext = ''
+            messagetext = ''        
+
             returnvalue = 0 
             try:
                 data_object = MTo2.Data()
                 data_object.readfile(datafile)
                 self.parameters['stationlocations']  = data_object.stationlocations
+                messagetext += "<P><FONT COLOR='#000000'>Working directory: "\
+                    "{0}  </FONT></P> \n".format(data_object.wd)
+
                 messagetext = "<P><b><FONT COLOR='#008080'>Read old data file:</FONT></b></P><br>{0}".format(datafile)
             except:
                 messagetext = "<P><b><FONT COLOR='#800000'>Error: Cannot read old data file: {0}  </FONT></b></P> ".format(datafile)
@@ -395,6 +404,9 @@ class OccamGui(QtGui.QMainWindow):
             setup_object.write_datafile()
             datafilename = setup_object.datafile
             self.parameters['stationlocations']  = setup_object.stationlocations
+            messagetext += "<P><FONT COLOR='#000000'>Working directory: "\
+                    "{0}  </FONT></P> \n".format(setup_object.wd)
+
             messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
             "data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
         except:
@@ -471,7 +483,8 @@ class OccamGui(QtGui.QMainWindow):
             messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
             "set up mesh and model!  </FONT></b></P> \n"
             returnvalue = 1
-
+        messagetext += "<P><FONT COLOR='#000000'>Working directory: "\
+            "{0}  </FONT></P> \n".format(setup_object.wd)
         try:
             setup_object.write_meshfile()
             messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
