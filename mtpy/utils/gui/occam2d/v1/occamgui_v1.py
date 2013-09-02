@@ -284,11 +284,12 @@ class OccamGui(QtGui.QMainWindow):
         #D['freqsteps']        = self.ui.spinBox_freq_steps.value()
         
         D['strikeisknown']    = self.ui.checkBox_strike.checkState()
+
         if D['strikeisknown'] :
             D['strike']           = float(self.ui.doubleSpinBox_strike.value())
         else:
             D['strike']           = None
-        
+
         
         D['mergethreshold']   = self.ui.doubleSpinBox_mergethreshold.value()
         D['max_no_iterations']     = self.ui.spinBox_max_no_iterations.value()
@@ -396,7 +397,7 @@ class OccamGui(QtGui.QMainWindow):
             QtGui.QMessageBox.about(self, "Input files generation", messagetext )
             return 1
 
-        try:
+        if 1:
             edi_dir = D['edi_dir']
             setup_object.read_edifiles(edi_dir)
             datafile = op.abspath(op.join(D['wd'],D['datafile']))
@@ -409,10 +410,10 @@ class OccamGui(QtGui.QMainWindow):
 
             messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
             "data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
-        except:
-            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
-            "write data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
-            returnvalue = 1
+        # except:
+        #     messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+        #     "write data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
+        #     returnvalue = 1
 
                 
         QtGui.QMessageBox.about(self, "Data file generation", messagetext )

@@ -2,11 +2,7 @@
 
 # Form implementation generated from reading ui file 'fifthgui.ui'
 #
-<<<<<<< HEAD
-# Created: Mon Sep  2 10:25:36 2013
-=======
-# Created: Thu Aug 29 17:01:46 2013
->>>>>>> 66cc7b9921917a2283fdb60a6c96cf2fc3e13cde
+# Created: Mon Sep  2 11:27:30 2013
 #      by: PyQt4 UI code generator 4.9.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -472,11 +468,7 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_18.addWidget(self.label_32)
         self.horizontalLayout_19.addLayout(self.horizontalLayout_18)
         self.layoutWidget3 = QtGui.QWidget(occamgui2D)
-<<<<<<< HEAD
-        self.layoutWidget3.setGeometry(QtCore.QRect(10, 569, 876, 34))
-=======
-        self.layoutWidget3.setGeometry(QtCore.QRect(30, 569, 888, 34))
->>>>>>> 66cc7b9921917a2283fdb60a6c96cf2fc3e13cde
+        self.layoutWidget3.setGeometry(QtCore.QRect(10, 569, 936, 34))
         self.layoutWidget3.setObjectName(_fromUtf8("layoutWidget3"))
         self.horizontalLayout_25 = QtGui.QHBoxLayout(self.layoutWidget3)
         self.horizontalLayout_25.setMargin(0)
@@ -495,7 +487,6 @@ class Ui_occamgui2D(object):
         self.doubleSpinBox_rho_error.setMinimum(0.0)
         self.doubleSpinBox_rho_error.setMaximum(100.0)
         self.doubleSpinBox_rho_error.setSingleStep(1.0)
-        self.doubleSpinBox_rho_error.setProperty("value", 10.0)
         self.doubleSpinBox_rho_error.setObjectName(_fromUtf8("doubleSpinBox_rho_error"))
         self.horizontalLayout_20.addWidget(self.doubleSpinBox_rho_error)
         spacerItem23 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
@@ -524,7 +515,6 @@ class Ui_occamgui2D(object):
         self.doubleSpinBox_phase_error.setMinimum(0.0)
         self.doubleSpinBox_phase_error.setMaximum(100.0)
         self.doubleSpinBox_phase_error.setSingleStep(1.0)
-        self.doubleSpinBox_phase_error.setProperty("value", 10.0)
         self.doubleSpinBox_phase_error.setObjectName(_fromUtf8("doubleSpinBox_phase_error"))
         self.horizontalLayout_22.addWidget(self.doubleSpinBox_phase_error)
         spacerItem27 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
@@ -555,7 +545,6 @@ class Ui_occamgui2D(object):
         self.doubleSpinBox_tipper_error.setMinimum(0.0)
         self.doubleSpinBox_tipper_error.setMaximum(100.0)
         self.doubleSpinBox_tipper_error.setSingleStep(1.0)
-        self.doubleSpinBox_tipper_error.setProperty("value", 10.0)
         self.doubleSpinBox_tipper_error.setObjectName(_fromUtf8("doubleSpinBox_tipper_error"))
         self.horizontalLayout_24.addWidget(self.doubleSpinBox_tipper_error)
         spacerItem32 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
@@ -772,18 +761,18 @@ class Ui_occamgui2D(object):
         self.comboBox_debuglevel.addItem(_fromUtf8(""))
         self.horizontalLayout_39.addWidget(self.comboBox_debuglevel)
         self.horizontalLayout_41.addLayout(self.horizontalLayout_39)
-        self.widget = QtGui.QWidget(occamgui2D)
-        self.widget.setGeometry(QtCore.QRect(130, 340, 679, 34))
-        self.widget.setObjectName(_fromUtf8("widget"))
-        self.horizontalLayout_29 = QtGui.QHBoxLayout(self.widget)
+        self.layoutWidget7 = QtGui.QWidget(occamgui2D)
+        self.layoutWidget7.setGeometry(QtCore.QRect(130, 340, 679, 34))
+        self.layoutWidget7.setObjectName(_fromUtf8("layoutWidget7"))
+        self.horizontalLayout_29 = QtGui.QHBoxLayout(self.layoutWidget7)
         self.horizontalLayout_29.setMargin(0)
         self.horizontalLayout_29.setObjectName(_fromUtf8("horizontalLayout_29"))
         self.horizontalLayout_17 = QtGui.QHBoxLayout()
         self.horizontalLayout_17.setObjectName(_fromUtf8("horizontalLayout_17"))
-        self.label_7 = QtGui.QLabel(self.widget)
+        self.label_7 = QtGui.QLabel(self.layoutWidget7)
         self.label_7.setObjectName(_fromUtf8("label_7"))
         self.horizontalLayout_17.addWidget(self.label_7)
-        self.lineEdit_modelname = QtGui.QLineEdit(self.widget)
+        self.lineEdit_modelname = QtGui.QLineEdit(self.layoutWidget7)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -794,7 +783,7 @@ class Ui_occamgui2D(object):
         spacerItem45 = QtGui.QSpacerItem(13, 27, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_17.addItem(spacerItem45)
         self.horizontalLayout_29.addLayout(self.horizontalLayout_17)
-        self.line_10 = QtGui.QFrame(self.widget)
+        self.line_10 = QtGui.QFrame(self.layoutWidget7)
         self.line_10.setFrameShape(QtGui.QFrame.VLine)
         self.line_10.setFrameShadow(QtGui.QFrame.Sunken)
         self.line_10.setObjectName(_fromUtf8("line_10"))
@@ -803,7 +792,7 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_21.setObjectName(_fromUtf8("horizontalLayout_21"))
         spacerItem46 = QtGui.QSpacerItem(13, 27, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_21.addItem(spacerItem46)
-        self.label_8 = QtGui.QLabel(self.widget)
+        self.label_8 = QtGui.QLabel(self.layoutWidget7)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -813,7 +802,7 @@ class Ui_occamgui2D(object):
         self.label_8.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.label_8.setObjectName(_fromUtf8("label_8"))
         self.horizontalLayout_21.addWidget(self.label_8)
-        self.comboBox_mode = QtGui.QComboBox(self.widget)
+        self.comboBox_mode = QtGui.QComboBox(self.layoutWidget7)
         self.comboBox_mode.setEnabled(True)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.MinimumExpanding)
         sizePolicy.setHorizontalStretch(0)
@@ -833,7 +822,7 @@ class Ui_occamgui2D(object):
         spacerItem47 = QtGui.QSpacerItem(13, 27, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_21.addItem(spacerItem47)
         self.horizontalLayout_29.addLayout(self.horizontalLayout_21)
-        self.line_11 = QtGui.QFrame(self.widget)
+        self.line_11 = QtGui.QFrame(self.layoutWidget7)
         self.line_11.setFrameShape(QtGui.QFrame.VLine)
         self.line_11.setFrameShadow(QtGui.QFrame.Sunken)
         self.line_11.setObjectName(_fromUtf8("line_11"))
@@ -842,10 +831,10 @@ class Ui_occamgui2D(object):
         self.horizontalLayout_28.setObjectName(_fromUtf8("horizontalLayout_28"))
         spacerItem48 = QtGui.QSpacerItem(13, 27, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_28.addItem(spacerItem48)
-        self.checkBox = QtGui.QCheckBox(self.widget)
-        self.checkBox.setObjectName(_fromUtf8("checkBox"))
-        self.horizontalLayout_28.addWidget(self.checkBox)
-        self.doubleSpinBox_strike = QtGui.QDoubleSpinBox(self.widget)
+        self.checkBox_strike = QtGui.QCheckBox(self.layoutWidget7)
+        self.checkBox_strike.setObjectName(_fromUtf8("checkBox_strike"))
+        self.horizontalLayout_28.addWidget(self.checkBox_strike)
+        self.doubleSpinBox_strike = QtGui.QDoubleSpinBox(self.layoutWidget7)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -910,7 +899,7 @@ class Ui_occamgui2D(object):
         self.checkBox_max_frequency.setText(QtGui.QApplication.translate("occamgui2D", "Define max frequency", None, QtGui.QApplication.UnicodeUTF8))
         self.label_32.setText(QtGui.QApplication.translate("occamgui2D", "Hz", None, QtGui.QApplication.UnicodeUTF8))
         self.checkBox_rho_error.setText(QtGui.QApplication.translate("occamgui2D", "Set Resistivity minimum error (%):", None, QtGui.QApplication.UnicodeUTF8))
-        self.checkBox_phase_error.setText(QtGui.QApplication.translate("occamgui2D", "Set Phase minimum error (%):", None, QtGui.QApplication.UnicodeUTF8))
+        self.checkBox_phase_error.setText(QtGui.QApplication.translate("occamgui2D", "Set phase minimum error (%):", None, QtGui.QApplication.UnicodeUTF8))
         self.checkBox_tipper_error.setText(QtGui.QApplication.translate("occamgui2D", "Set Tipper minimum error (%):", None, QtGui.QApplication.UnicodeUTF8))
         self.label_17.setText(QtGui.QApplication.translate("occamgui2D", "Target RMS", None, QtGui.QApplication.UnicodeUTF8))
         self.label_16.setText(QtGui.QApplication.translate("occamgui2D", "Maximum # iterations", None, QtGui.QApplication.UnicodeUTF8))
@@ -933,5 +922,5 @@ class Ui_occamgui2D(object):
         self.comboBox_mode.setItemText(2, QtGui.QApplication.translate("occamgui2D", "TE", None, QtGui.QApplication.UnicodeUTF8))
         self.comboBox_mode.setItemText(3, QtGui.QApplication.translate("occamgui2D", "Tipper", None, QtGui.QApplication.UnicodeUTF8))
         self.comboBox_mode.setItemText(4, QtGui.QApplication.translate("occamgui2D", "All", None, QtGui.QApplication.UnicodeUTF8))
-        self.checkBox.setText(QtGui.QApplication.translate("occamgui2D", "Strike angle", None, QtGui.QApplication.UnicodeUTF8))
+        self.checkBox_strike.setText(QtGui.QApplication.translate("occamgui2D", "Strike angle", None, QtGui.QApplication.UnicodeUTF8))
 

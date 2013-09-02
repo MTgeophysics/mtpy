@@ -53,6 +53,7 @@ import mtpy.modeling.winglinktools as MTwl
 import mtpy.utils.conversions as MTcv
 import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
+import mtpy.analysis.geometry as MTgy
 
 reload(MTcv)
 reload(MTcf)
@@ -176,8 +177,10 @@ class Setup():
         input_parameters_nocase = {}
         for key in input_parameters.keys():
             input_parameters_nocase[key.lower()] = input_parameters[key]
+            print key,input_parameters[key]
 
         update_dict.update(input_parameters_nocase)
+        print sorted(update_dict)
 
         for dictionary in [self.parameters_startup, self.parameters_inmodel, 
                                     self.parameters_mesh, self.parameters_data]:
@@ -190,6 +193,7 @@ class Setup():
                             dictionary[key] = value
                         except:
                             dictionary[key] = update_dict[key]
+                        print key,update_dict[key]
 
         for key in update_dict:
             try:
@@ -203,7 +207,7 @@ class Setup():
             except:
                 continue 
 
-
+        print self.parameters_data
 
     def read_configfile(self, configfile):
 
@@ -364,6 +368,10 @@ class Setup():
         data_object = Data(edilist = self.edifiles, wd = self.wd, **self.parameters_data)
         self.stationlocations = data_object.stationlocations
         data_object.writefile(self.datafile)
+        self.strike = data_object.strike
+        self.azimuth=data_object.azimuth
+        print self.strike
+        print self.azimuth
 
         self.datafile = data_object.datafile
         
@@ -413,6 +421,12 @@ class Setup():
         no_dummys = 0
 
         print '\nlength of station profile: {0:.1f} km '.format((lo_sites[-1]-lo_sites[0])/1000.)
+        print 'Azimuth of profile: {0:.1f} degrees'.format(self.azimuth)
+        if self.strike is not None:
+            print 'Assumed strike: {0:.1f} degrees'.format(self.strike)
+        else:
+            print 'Strike orientation unknown'
+
         for idx_site,location in enumerate(lo_sites):
             lo_allsites.append(location)
             if idx_site == len(lo_sites)-1:
@@ -1289,6 +1303,8 @@ class Data():
             (self.stationlocations, self.azimuth, self.stations)
 
         """
+        print self.strike
+        sys.exit()
 
         self.station_coords = []
         self.stations = []
@@ -1307,7 +1323,7 @@ class Data():
             edi = MTedi.Edi()
             edi.readfile(edifile)
             if self.strike is None:
-                lo_strike_angles.append(list(MTgy.strike_angle(edi.Z.z[np.where(MTgy.dimensionality(edi.Z.z)!=1)])[:,0]%90))
+                lo_strike_angles.extend(list(MTgy.strike_angle(edi.Z.z[np.where(MTgy.dimensionality(edi.Z.z)!=1)])[:,0]%90))
             self.station_coords.append([edi.lat,edi.lon,edi.elev])
             self.stations.append(edi.station)
             self.station_frequencies.append(np.around(edi.freq,5))

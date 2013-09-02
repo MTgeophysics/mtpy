@@ -1262,13 +1262,9 @@
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-<<<<<<< HEAD
      <x>10</x>
-=======
-     <x>30</x>
->>>>>>> 66cc7b9921917a2283fdb60a6c96cf2fc3e13cde
      <y>569</y>
-     <width>888</width>
+     <width>936</width>
      <height>34</height>
     </rect>
    </property>
@@ -1320,9 +1316,6 @@
         </property>
         <property name="singleStep">
          <double>1.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>10.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -1379,7 +1372,7 @@
       <item>
        <widget class="QCheckBox" name="checkBox_phase_error">
         <property name="text">
-         <string>Set Phase minimum error (%):</string>
+         <string>Set phase minimum error (%):</string>
         </property>
        </widget>
       </item>
@@ -1421,9 +1414,6 @@
         </property>
         <property name="singleStep">
          <double>1.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>10.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -1535,9 +1525,6 @@
         </property>
         <property name="singleStep">
          <double>1.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>10.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -2107,7 +2094,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>130</x>
@@ -2289,7 +2276,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="QCheckBox" name="checkBox">
+       <widget class="QCheckBox" name="checkBox_strike">
         <property name="text">
          <string>Strike angle</string>
         </property>
@@ -2363,9 +2350,6 @@
   <zorder>pushButton_checkparameter</zorder>
   <zorder>pushButton_runoccam</zorder>
   <zorder>label_29</zorder>
-  <zorder>checkBox</zorder>
-  <zorder>horizontalSpacer_57</zorder>
-  <zorder>horizontalSpacer_58</zorder>
  </widget>
  <resources/>
  <connections/>
