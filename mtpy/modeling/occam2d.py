@@ -112,7 +112,8 @@ class Setup():
         self.parameters_data['te_errorfloor'] = 10
         self.parameters_data['tm_errorfloor'] = 10
         self.parameters_data['tipper_errorfloor'] = 10
-
+        
+        self.parameters_data['strike'] = None
         self.parameters_data['mode'] = 'tetm'
         
         self.parameters_data['minimum_frequency'] = None

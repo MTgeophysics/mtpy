@@ -213,7 +213,7 @@ class OccamGui(QtGui.QMainWindow):
 
         #set up error message, if problems occurred
         if invalid_flag != 0 :
-            conc_mess = wd_mess+occ_exe_mess+startup_mess+edis_mess+stations_mess+datafile_mess+datafilename_mess+modelname_mess
+            conc_mess = wd_mess+occ_exe_mess+iteration_mess+edis_mess+stations_mess+datafile_mess+datafilename_mess+modelname_mess
             messagetext = "<P><b><FONT COLOR='#800000'>Error: %i parameters are invalid !  </FONT></b></P><br> %s"%(invalid_flag,conc_mess)
 
             
@@ -277,8 +277,14 @@ class OccamGui(QtGui.QMainWindow):
 
         D['mode']             = str(self.ui.comboBox_mode.currentText())
         #D['freqsteps']        = self.ui.spinBox_freq_steps.value()
-        D['strike']           = self.ui.doubleSpinBox_strike.value()
-        #D['orientation']      = self.ui.comboBox_alignment.currentIndex()
+        
+        D['strikeisknown']    = self.ui.checkBox_strike.checkState()
+        if D['strikeisknown'] :
+            D['strike']           = float(self.ui.doubleSpinBox_strike.value())
+        else:
+            D['strike']           = None
+        
+        
         D['mergethreshold']   = self.ui.doubleSpinBox_mergethreshold.value()
         D['max_no_iterations']     = self.ui.spinBox_max_no_iterations.value()
         D['target_rms']       = self.ui.doubleSpinBox_rms.value()
