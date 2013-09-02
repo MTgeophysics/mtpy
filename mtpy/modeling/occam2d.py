@@ -1092,7 +1092,11 @@ class Data():
     def build_data(self):
         """Data file Generation
 
-        Read all Edi files. Extract frequencies. Rotate Z and Tipper onto profile.
+        Read all Edi files. 
+        Extract frequencies. 
+        Read in strike. If strike = None: find average strike over all stations and frequencies. 
+        90 degree strike ambiguity leads to choice of strike: Larger angle with profile line is chosen.
+        Rotate Z and Tipper: X components are along strike, Y orthogonal.  
         Extract off-diagonal data from Z. Extract Tipper x-component (along profile).
 
         Collect all information sorted according to occam specifications.
@@ -1278,7 +1282,7 @@ class Data():
             orientation of profile (azimuth) and position of stations on the 
             profile.
 
-            Orientation of the profile is ALWAYS West->East.
+            Sorting along the profile is always West->East.
             (In unlikely/synthetic case of azimuth=0, it's North->South)
 
 
@@ -1293,6 +1297,8 @@ class Data():
         self.Z = []
         self.Tipper = []
 
+        lo_strike_angles = []
+
         lo_easts = []
         lo_norths = []
         utmzones = []
@@ -1300,6 +1306,8 @@ class Data():
         for edifile in self.edilist:
             edi = MTedi.Edi()
             edi.readfile(edifile)
+            if self.strike is None:
+                lo_strike_angles.append(list(MTgy.strike_angle(edi.Z.z[np.where(MTgy.dimensionality(edi.Z.z)!=1)])[:,0]%90))
             self.station_coords.append([edi.lat,edi.lon,edi.elev])
             self.stations.append(edi.station)
             self.station_frequencies.append(np.around(edi.freq,5))
@@ -1312,6 +1320,9 @@ class Data():
             lo_easts.append(utm[1])
             lo_norths.append(utm[2])
             utmzones.append(int(utm[0][:-1]))
+
+        if self.strike is None:
+            self.strike = np.mean(lo_strike_angles)
 
         main_utmzone = mode(utmzones)[0][0]
 
@@ -1326,11 +1337,26 @@ class Data():
         
 
         profile_line = sp.polyfit(lo_easts, lo_norths, 1) 
-        self.azimuth = np.arctan(profile_line[0])*180/np.pi
+        self.azimuth = (np.arctan(profile_line[0])*180/np.pi)%180
         
-        #rotate Z along the profile - always oriented west->east:
-        rotation_angle = self.azimuth%180
+        #rotate Z according to strike angle
+        #have 90 degree ambiguity in strike determination
+        #choose strike which offers larger angle with profile
+        #if profile azimuth is in [0,90]:
+        if 0 <= self.azimuth < 90:
+            if np.abs(self.azimuth - self.strike) < 45:
+                self.strike += 90
+        elif 90 <= self.azimuth < 135:
+            if self.azimuth - self.strike < 45:
+                self.strike -= 90
+        else:
+            if self.azimuth - self.strike >= 135:
+                self.strike += 90
 
+        self.strike = self.strike%180
+
+        rotation_angle = self.strike
+        
         for old_z in self.Z:
             old_z.rotate(rotation_angle)
         
