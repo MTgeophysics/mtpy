@@ -596,6 +596,9 @@ class OccamGui(QtGui.QMainWindow):
         #self.ui.pushButton_runoccam.setEnabled(False)
 
         #define executable and argument(s)
+        
+        self.generate_inputfiles()
+        
         exename    = self.parameters['occam_exe']
         modname    = self.parameters['modelname']
         startfile  = self.parameters['startupfile']
