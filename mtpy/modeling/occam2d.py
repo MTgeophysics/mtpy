@@ -118,7 +118,8 @@ class Setup():
         self.parameters_data['azimuth'] = 0
 
         self.parameters_data['mode'] = 'tetm'
-        
+        self.parameters_data['edi_type'] = 'z'
+
         self.parameters_data['minimum_frequency'] = None
         self.parameters_data['maximum_frequency'] = None
         self.parameters_data['max_no_frequencies'] = None
@@ -177,23 +178,19 @@ class Setup():
         input_parameters_nocase = {}
         for key in input_parameters.keys():
             input_parameters_nocase[key.lower()] = input_parameters[key]
-            print key,input_parameters[key]
 
         update_dict.update(input_parameters_nocase)
-        print sorted(update_dict)
 
         for dictionary in [self.parameters_startup, self.parameters_inmodel, 
                                     self.parameters_mesh, self.parameters_data]:
             for key in dictionary.keys():
                 if key in update_dict:
                     #check if entry exists:
-                    if update_dict[key]:
-                        try:
-                            value = float(update_dict[key])
-                            dictionary[key] = value
-                        except:
-                            dictionary[key] = update_dict[key]
-                        print key,update_dict[key]
+                    try:
+                        value = float(update_dict[key])
+                        dictionary[key] = value
+                    except:
+                        dictionary[key] = update_dict[key]
 
         for key in update_dict:
             try:
@@ -207,7 +204,6 @@ class Setup():
             except:
                 continue 
 
-        print self.parameters_data
 
     def read_configfile(self, configfile):
 
@@ -365,13 +361,16 @@ class Setup():
 
     def write_datafile(self):
 
-        data_object = Data(edilist = self.edifiles, wd = self.wd, **self.parameters_data)
+        try:
+            data_object = Data(edilist = self.edifiles, wd = self.wd, **self.parameters_data)
+        except:
+            print 'cannot write data file'
+            raise
+
         self.stationlocations = data_object.stationlocations
         data_object.writefile(self.datafile)
         self.strike = data_object.strike
-        self.azimuth=data_object.azimuth
-        print self.strike
-        print self.azimuth
+        self.azimuth= data_object.azimuth
 
         self.datafile = data_object.datafile
         
@@ -419,6 +418,7 @@ class Setup():
         lo_distances = []
         lo_real_station_distances = []
         no_dummys = 0
+
 
         print '\nlength of station profile: {0:.1f} km '.format((lo_sites[-1]-lo_sites[0])/1000.)
         print 'Azimuth of profile: {0:.1f} degrees'.format(self.azimuth)
@@ -529,7 +529,7 @@ class Setup():
         current_meshblock_index += 2
 
         for idx,location in enumerate(lo_allsites):
-            #each sit is on top of a block, consisting of 2 mesh cells each
+            #each site is on top of a block, consisting of 2 mesh cells each
             lo_columns_to_merge.append(2)
             lo_modelblockwidths.append(lo_meshblockwidths[current_meshblock_index] 
                                 + lo_meshblockwidths[current_meshblock_index+1] )
@@ -558,7 +558,8 @@ class Setup():
         nodey = len(lo_meshblockwidths) + 1 #vertical nodes
 
         ncol0 = len(lo_columns_to_merge) # number of blocks in the first layer
-
+        
+        #------
         #7. now turn to depths - set up the z axis for the mesh:
 
         no_decades = int(n_layers/layers_per_decade)+1
@@ -571,17 +572,17 @@ class Setup():
         lo_mesh_depths = []
         lo_rows_to_merge = []
 
-        
+        #2 mesh-blocks for a model layer only in the topmost layer
         for idx, depth in enumerate(lo_model_depths):
             if idx == 0:
                 newdepth = depth/2.
-            else:
-                newdepth = depth - (depth -  lo_model_depths[idx-1])/2.
-            lo_mesh_depths.append(newdepth)
+            #else:
+            #    newdepth = depth - (depth -  lo_model_depths[idx-1])/2.
+                lo_mesh_depths.append(newdepth)
+                lo_rows_to_merge.append(2)
             lo_mesh_depths.append(depth)
-
-            lo_rows_to_merge.append(2)
-        
+            lo_rows_to_merge.append(1)
+       
 
         lo_mesh_thicknesses = []
 
@@ -649,9 +650,9 @@ class Setup():
         
             #sweep columns
             while block_idx+1 < ncol-1 :
-
-                if lo_model_depths[layer_idx] < (trigger*(lo_modelblockwidths[block_idx]+
-                                                            lo_modelblockwidths[block_idx+1])):
+                if lo_model_depths[layer_idx] < (trigger*(
+                                                lo_modelblockwidths[block_idx]+
+                                                lo_modelblockwidths[block_idx+1])):
                     block_idx += 1
                     continue
 
@@ -675,8 +676,10 @@ class Setup():
 
             num_params += ncol
         print 'depth of model: {0:.1f} km'.format(lo_model_depths[-1]/1000.)
-        print '\nnumber of mesh layers: {0} (2*{1} model layers + {2} padding)'.format(len(lo_mesh_thicknesses),n_layers-1,n_bottompadding)
-        print 'number of model blocks: {0}'.format(num_params)
+        print '\nnumber of mesh layers: {0} ({1} model layers + 1 split top layer'\
+                        ' + {2} bottom-padding)'.format(len(lo_mesh_thicknesses),
+                                                    n_layers-1,n_bottompadding)
+        print 'number of model blocks: {0}\n'.format(num_params)
         self.no_parameters = num_params
         self.parameters_inmodel['lo_modelblockstrings'] = modelblockstrings
         self.parameters_inmodel['lo_column_numbers']    = lo_column_numbers
@@ -904,7 +907,10 @@ class Setup():
             os.makedirs(self.wd)
 
         self.read_edifiles(edi_dir)
-        self.write_datafile()
+        try:
+            self.write_datafile()
+        except:
+            raise
         self.setup_mesh_and_model()
         self.write_meshfile()
         self.write_inmodelfile()
@@ -964,8 +970,17 @@ class Data():
         for key in data_parameters:
             setattr(self,key,data_parameters[key])
 
-        self.generate_profile()
-        self.build_data()
+        try:
+            self.generate_profile()
+        except:
+            print 'cannot generate profile'
+            raise
+
+        try:
+            self.build_data()
+        except:
+            print 'cannot build data file'
+            raise
 
        
 
@@ -1303,8 +1318,7 @@ class Data():
             (self.stationlocations, self.azimuth, self.stations)
 
         """
-        print self.strike
-        sys.exit()
+
 
         self.station_coords = []
         self.stations = []
@@ -1319,9 +1333,16 @@ class Data():
         lo_norths = []
         utmzones = []
 
+        lo_wrong_edifiles = []
+
         for edifile in self.edilist:
             edi = MTedi.Edi()
-            edi.readfile(edifile)
+            try:
+                edi.readfile(edifile,datatype=self.edi_type)
+            except:
+                lo_wrong_edifiles.append(edifile)
+                continue
+
             if self.strike is None:
                 lo_strike_angles.extend(list(MTgy.strike_angle(edi.Z.z[np.where(MTgy.dimensionality(edi.Z.z)!=1)])[:,0]%90))
             self.station_coords.append([edi.lat,edi.lon,edi.elev])
@@ -1336,6 +1357,12 @@ class Data():
             lo_easts.append(utm[1])
             lo_norths.append(utm[2])
             utmzones.append(int(utm[0][:-1]))
+        
+        for i in lo_wrong_edifiles:
+            self.edilist.remove(i)
+
+        if len(self.edilist) == 0:
+            raise
 
         if self.strike is None:
             self.strike = np.mean(lo_strike_angles)
@@ -1430,7 +1457,6 @@ class Data():
         if 0:
             lo_all_easts = list(lo_easts)
             lo_all_easts.extend(list(projected_stations[:,0]))
-            print sorted(lo_all_easts)
             lo_all_norths = list(lo_norths)
             lo_all_norths.extend(list(projected_stations[:,1]))
             x_extent = max(lo_all_easts) - min(lo_all_easts)
@@ -1453,6 +1479,7 @@ class Data():
             lax.set_ylabel('Northing (m)',
                            fontdict={'size':4, 'weight':'bold'})
             plt.show()
+            raw_input()
 
 
 

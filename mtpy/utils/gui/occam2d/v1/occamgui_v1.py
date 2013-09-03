@@ -268,11 +268,21 @@ class OccamGui(QtGui.QMainWindow):
         D['debug_level']      = int(float(self.ui.comboBox_debuglevel.currentText()))
 
         D['set_max_no_frequencies'] = self.ui.checkBox_max_no_frequencies.checkState()
-        D['max_no_frequencies'] = self.ui.doubleSpinBox_max_no_frequencies.value()
+        if D['set_max_no_frequencies']:
+            D['max_no_frequencies'] = self.ui.doubleSpinBox_max_no_frequencies.value()
+        else:
+            D['max_no_frequencies'] = None
+
         D['set_min_frequency'] = self.ui.checkBox_min_frequency.checkState()
-        D['min_frequency'] = self.ui.doubleSpinBox_min_frequency.value()
+        if D['set_min_frequency']:
+            D['min_frequency'] = self.ui.doubleSpinBox_min_frequency.value()
+        else:
+            D['min_frequency'] = None
         D['set_max_frequency'] = self.ui.checkBox_max_frequency.checkState()
-        D['max_frequency'] = self.ui.doubleSpinBox_max_frequency.value() 
+        if D['set_max_frequency'] :
+            D['max_frequency'] = self.ui.doubleSpinBox_max_frequency.value() 
+        else:
+            D['max_frequency'] = None
 
 
         D['check_usestationfile'] = self.ui.checkBox_usestationlist.checkState()
@@ -281,6 +291,9 @@ class OccamGui(QtGui.QMainWindow):
         
 
         D['mode']             = str(self.ui.comboBox_mode.currentText())
+        D['edi_type']         = str(self.ui.comboBox_edi_type.currentText()).lower()
+        if D['edi_type'].startswith('rho'):
+            D['edi_type'] = 'resphase'
         #D['freqsteps']        = self.ui.spinBox_freq_steps.value()
         
         D['strikeisknown']    = self.ui.checkBox_strike.checkState()
@@ -291,7 +304,7 @@ class OccamGui(QtGui.QMainWindow):
             D['strike']           = None
 
         
-        D['mergethreshold']   = self.ui.doubleSpinBox_mergethreshold.value()
+        D['block_merge_threshold']   = self.ui.doubleSpinBox_mergethreshold.value()
         D['max_no_iterations']     = self.ui.spinBox_max_no_iterations.value()
         D['target_rms']       = self.ui.doubleSpinBox_rms.value()
         D['no_layers']         = self.ui.spinBox_no_layers.value()
@@ -320,107 +333,6 @@ class OccamGui(QtGui.QMainWindow):
         
         self.parameters = D
 
-        # for k in sorted(D.keys()):
-        #     print k,D[k]
-
-    def build_datafile(self):
-        """
-            Build OCCAM data file, or use existing one (if field is checked in GUI) 
-        """
-
-        D = self.parameters
-
-        #print D['check_usedatafile']
-        #print D['olddatafile']
-
-        olddatafile = D['olddatafile']
-        if olddatafile is not None:
-            datafile = op.abspath(op.join(D['wd'],olddatafile))
-            messagetext = ''        
-
-            returnvalue = 0 
-            try:
-                data_object = MTo2.Data()
-                data_object.readfile(datafile)
-                self.parameters['stationlocations']  = data_object.stationlocations
-                messagetext += "<P><FONT COLOR='#000000'>Working directory: "\
-                    "{0}  </FONT></P> \n".format(data_object.wd)
-
-                messagetext = "<P><b><FONT COLOR='#008080'>Read old data file:</FONT></b></P><br>{0}".format(datafile)
-            except:
-                messagetext = "<P><b><FONT COLOR='#800000'>Error: Cannot read old data file: {0}  </FONT></b></P> ".format(datafile)
-                returnvalue = 1
-
-                
-            QtGui.QMessageBox.about(self, "Data file generation", messagetext )
-
-            return returnvalue
-
-        
-        outfilename = D['datafile']
-        edidirectory= D['edi_dir']
-
-
-        def make_stationlist(listfilename):
-            """
-            Read in stations from file.
-
-            """
-            FH=file(listfilename,'r')
-            raw_string=FH.read()
-            FH.close()
-            raw_list1 = raw_string.strip().split()
-            raw_list2 = []
-            for i in raw_list1:
-                if len(i.split(','))==1:
-                    raw_list2.append(i)
-                else:
-                    for j in i.split(','):
-                        raw_list2.append(j)
-            return raw_list2
-
-        #define internal station list 
-        stationlist  = None
-        if D['use_stationfile']:
-            stationlist = make_stationlist(D['stationlistfile'])
-
-        D['stationlist'] = stationlist
-        
-        #make data file  -------------------------------------------
-        returnvalue = 0 
-        messagetext = ''
-        try:
-            setup_object = MTo2.Setup(**D)
-        except:
-            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
-            "generate setup object - check input parameters!  </FONT></b></P> \n"
-            QtGui.QMessageBox.about(self, "Input files generation", messagetext )
-            return 1
-
-        if 1:
-            edi_dir = D['edi_dir']
-            setup_object.read_edifiles(edi_dir)
-            datafile = op.abspath(op.join(D['wd'],D['datafile']))
-            setup_object.datafile = datafile
-            setup_object.write_datafile()
-            datafilename = setup_object.datafile
-            self.parameters['stationlocations']  = setup_object.stationlocations
-            messagetext += "<P><FONT COLOR='#000000'>Working directory: "\
-                    "{0}  </FONT></P> \n".format(setup_object.wd)
-
-            messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
-            "data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
-        # except:
-        #     messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
-        #     "write data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
-        #     returnvalue = 1
-
-                
-        QtGui.QMessageBox.about(self, "Data file generation", messagetext )
-
-        return returnvalue
-
-
 
 
     def _setup_startupfile(self):
@@ -439,12 +351,117 @@ class OccamGui(QtGui.QMainWindow):
     def build_inputfiles(self):
         """
         Set up collection of required input files files for OCCAM.
-
+        
+        - data
         - startup
         - model
         - mesh
         """
         returnvalue = 0
+
+        #1. Build OCCAM data file, or use existing one (if field is checked in GUI) 
+        
+
+        D = self.parameters
+
+        #print D['check_usedatafile']
+        #print D['olddatafile']
+
+        olddatafile = D['olddatafile']
+
+        if olddatafile is not None:
+            datafile = op.abspath(op.join(D['wd'],olddatafile))
+            messagetext = ''        
+
+            returnvalue = 0 
+            try:
+                data_object = MTo2.Data()
+                data_object.readfile(datafile)
+
+                D['strike'] = data_object.strike
+                D['azimuth'] = data_object.azimuth
+                D['stationlocations']  = data_object.stationlocations
+                
+                messagetext += "<P><FONT COLOR='#000000'>Working directory: "\
+                    "{0}  </FONT></P> \n".format(data_object.wd)
+
+                messagetext = "<P><b><FONT COLOR='#008080'>Read old data file:</FONT></b></P><br>{0}".format(datafile)
+            except:
+                messagetext = "<P><b><FONT COLOR='#800000'>Error: Cannot read old data file: {0}  </FONT></b></P> ".format(datafile)
+                returnvalue = 1
+
+                
+            QtGui.QMessageBox.about(self, "Data file generation", messagetext )
+
+        else:
+        
+            outfilename = D['datafile']
+            edidirectory= D['edi_dir']
+
+
+            def make_stationlist(listfilename):
+                """
+                Read in stations from file.
+
+                """
+                FH = file(listfilename,'r')
+                raw_string = FH.read()
+                FH.close()
+                raw_list1 = raw_string.strip().split()
+                raw_list2 = []
+                for i in raw_list1:
+                    if len(i.split(',')) == 1:
+                        raw_list2.append(i)
+                    else:
+                        for j in i.split(','):
+                            raw_list2.append(j)
+                return raw_list2
+
+            #define internal station list 
+            stationlist  = None
+            if D['use_stationfile']:
+                stationlist = make_stationlist(D['stationlistfile'])
+
+            D['stationlist'] = stationlist
+            
+            #make data file  -------------------------------------------
+            returnvalue = 0 
+            messagetext = ''
+            try:
+                setup_object = MTo2.Setup(**D)
+            except:
+                messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+                "generate setup object - check input parameters!  </FONT></b></P> \n"
+                QtGui.QMessageBox.about(self, "Input files generation", messagetext )
+                return 1
+
+            try:
+                edi_dir = D['edi_dir']
+                setup_object.read_edifiles(edi_dir)
+                datafile = op.abspath(op.join(D['wd'],D['datafile']))
+                setup_object.datafile = datafile
+                try:
+                    setup_object.write_datafile()
+                except:
+                    raise
+                datafilename = setup_object.datafile
+                self.parameters['stationlocations']  = setup_object.stationlocations
+                messagetext += "<P><FONT COLOR='#000000'>Working directory: "\
+                        "{0}  </FONT></P> \n".format(setup_object.wd)
+
+                messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
+                "data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
+            except:
+                messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+                "write data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
+                returnvalue = 1
+
+                    
+            QtGui.QMessageBox.about(self, "Data file generation", messagetext )
+
+        #---------------
+        #2. other input files:
+
         D=self.parameters
                         
         #datafile = D['datafile'] 
@@ -455,14 +472,15 @@ class OccamGui(QtGui.QMainWindow):
         # except:
         #     messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not generate startup file!  </FONT></b></P> \n"
 
-        try:
-            setup_object = MTo2.Setup(**D)
-        except:
-            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
-            "generate setup object - check input parameters!  </FONT></b></P> \n"
-            QtGui.QMessageBox.about(self, "Input files generation", messagetext )
+        if olddatafile is not None:       
+            try:
+                setup_object = MTo2.Setup(**D)
+            except:
+                messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+                "generate setup object - check input parameters!  </FONT></b></P> \n"
+                QtGui.QMessageBox.about(self, "Input files generation", messagetext )
 
-            return 1
+                return 1
 
         # edi_dir = D['edi_dir']
         # if not D['check_usedatafile']:
@@ -538,10 +556,7 @@ class OccamGui(QtGui.QMainWindow):
     def generate_inputfiles(self):
         self.check_input()
         self.setup_parameter_dict()
-        if self.build_datafile() == 1 :
-            return
 
-        #print'datafile done'
         if self.build_inputfiles() ==1 :
             return 
         #print 'startupfiles done'
