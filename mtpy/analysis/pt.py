@@ -919,7 +919,7 @@ class ResidualPhaseTensor():#PhaseTensor):
     """
         PhaseTensor class - generates a Phase Tensor (PT) object DeltaPhi
 
-        DeltaPhi = 1 - (Phi2.I*Phi1 + Phi*Phi2.I)/2
+        DeltaPhi = 1 - Phi1^-1*Phi2
 
     """
 
@@ -934,8 +934,9 @@ class ResidualPhaseTensor():#PhaseTensor):
             Initialise the attributes with None
         """
 
+        self.resitual_pt = None
         self.rpt = None
-        self.rpterr = None
+        self.rpt_err = None
         self._pt1 = None  
         self._pt2 = None  
         self._pt1err = None  
@@ -945,10 +946,10 @@ class ResidualPhaseTensor():#PhaseTensor):
             if not (( isinstance(pt_object1,PhaseTensor) and isinstance(pt_object2,PhaseTensor))):
                 raise MTex.MTpyError_PT('ERROR - arguments must be instances of the PhaseTensor class')
             
-        self.read_pt_objects(pt_object1, pt_object2)
+        self.compute_residual_pt(pt_object1, pt_object2)
 
 
-    def read_pt_objects(self, pt_o1, pt_o2):
+    def compute_residual_pt(self, pt_o1, pt_o2):
         """
             Read in two instance of the MTpy PhaseTensor class.
 
@@ -963,7 +964,7 @@ class ResidualPhaseTensor():#PhaseTensor):
         pt1 = pt_o1.pt
         pt2 = pt_o2.pt
 
-
+        #--> compute residual phase tensor
         if pt1 is not None and pt2 is not None:
             try:
                 if pt1.dtype not in [float,int]:
@@ -972,25 +973,23 @@ class ResidualPhaseTensor():#PhaseTensor):
                     raise
                 if not pt1.shape == pt2.shape:
                     raise
-                if (not len(pt1.shape) in [2,3] ) :
+                if (not len(pt1.shape) in [2,3]) :
                     raise
 
                 if len(pt1.shape) == 3:
                     self.rpt = np.zeros((len(pt1),2,2))
 
                     for idx in range(len(pt1)):
-                        self.rpt[idx] = np.eye(2) - 0.5 * np.array(
-                             np.dot( np.matrix(pt2[idx]).I, np.matrix(pt1[idx]) ) 
-                         + np.dot( np.matrix(pt1[idx]), np.matrix(pt2[idx]).I ) ) 
+                        self.rpt[idx] = np.eye(2)-np.dot(np.matrix(pt1[idx]).I,
+                                                         np.matrix(pt2[idx]))
                  
                     self._pt1 = pt1  
                     self._pt2 = pt2  
 
                 else:
-                    self.rpt = np.zeros((1,2,2))
-                    self.rpt[0] = np.eye(2) - 0.5 * np.array(
-                                     np.dot( np.matrix(pt2).I, np.matrix(pt1) ) 
-                                 + np.dot( np.matrix(pt1), np.matrix(pt2).I ) ) 
+                    self.rpt = np.zeros((1,2,2)) 
+                    self.rpt[0] = np.eye(2)-np.dot(np.matrix(pt1).I, 
+                                                   np.matrix(pt2))
                     
                     self._pt1 =  np.zeros((1,2,2))  
                     self._pt1[0] = pt1 
@@ -1004,14 +1003,16 @@ class ResidualPhaseTensor():#PhaseTensor):
         else:
             print  'Could not determine ResPT - both PhaseTensor objects must contain PT arrays of the same shape'
 
-
+        
+        #--> compute residual error
         pt1err = pt_o1.pt_err
         pt2err = pt_o2.pt_err
 
         if pt1err is not None and pt2err is not None:
             self.rpterr = np.zeros(self.rpt.shape)
             try:
-                if (pt1err.dtype not in [float,int]) or (pt2err.dtype not in [float,int]):
+                if (pt1err.dtype not in [float,int]) or \
+                    (pt2err.dtype not in [float,int]):
                     raise
                 if not pt1err.shape == pt2err.shape:
                     raise
@@ -1039,7 +1040,7 @@ class ResidualPhaseTensor():#PhaseTensor):
                                             inmatrix1_err = matrix1err,
                                             inmatrix2_err =  matrix2err)
 
-                        self.rpterr[idx] = np.sqrt( 0.25 * err1**2 + 0.25 * err2**2 )
+                        self.rpterr[idx] = np.sqrt(0.25*err1**2 +0.25*err2**2)
 
                     self._pterr1 = pt1err  
                     self._pterr2 = pt2err  
@@ -1061,7 +1062,11 @@ class ResidualPhaseTensor():#PhaseTensor):
         else:
             print  'Could not determine ResPT uncertainties - both PhaseTensor objects must contain PT-error arrays of the same shape'
  
-
+        #--> make a pt object that is the residual phase tensor
+        self.residual_pt = PhaseTensor(pt_array=self.rpt, 
+                                       pterr_array=self.rpt_err,
+                                       freq=pt_o1.freq)
+                                       
     def read_pts(self, pt1, pt2, pt1err = None, pt2err = None):
         """
             Read two PT arrays and calculate the ResPT array (incl. uncertainties).
@@ -1087,7 +1092,7 @@ class ResidualPhaseTensor():#PhaseTensor):
         pt_o1 = PhaseTensor(pt_array = pt1, pterr_array = pt1err)
         pt_o2 = PhaseTensor(pt_array = pt2, pterr_array = pt2err)
 
-        self.read_pt_objects(pt_o1,pt_o2)
+        self.compute_residual_pt(pt_o1,pt_o2)
         
 
     def set_rpt(self, rpt_array):
