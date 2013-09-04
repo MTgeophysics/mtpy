@@ -1249,7 +1249,7 @@ class Data():
                             if self.phase_errorfloor is not None:
                                 if self.phase_errorfloor/100. > relative_rho_error:
                                     relative_rho_error = self.phase_errorfloor/100.
-                            if relative_rho_error >= 1.:
+                            if relative_rho_error >= 2.:
                                 error = 180.
                             else:
                                 error = np.degrees(np.arcsin(0.5*relative_rho_error))#relative_error*100.*0.285
@@ -1271,7 +1271,7 @@ class Data():
                             if self.phase_errorfloor is not None:
                                 if self.phase_errorfloor/100. > relative_rho_error:
                                     relative_rho_error = self.phase_errorfloor/100.
-                            if relative_rho_error >= 1.:
+                            if relative_rho_error >= 2.:
                                 error = 180.
                             else:
                                 error = np.degrees(np.arcsin(0.5*relative_rho_error))#relative_error*100.*0.285
