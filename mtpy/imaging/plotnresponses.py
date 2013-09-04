@@ -391,6 +391,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':.25})
         self._read_ellipse_dict()
         self.ellipse_spacing = kwargs.pop('ellipse_spacing', 1)
+        if self.ellipse_size == 2 and self.ellipse_spacing == 1:
+            self.ellipse_size = 0.25
         
         #skew properties
         self.skew_color = kwargs.pop('skew_color', (.85, .35, 0))
