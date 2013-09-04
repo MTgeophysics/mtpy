@@ -112,9 +112,9 @@ class Setup():
        
         self.parameters_data['strike'] = None
 
-        self.parameters_data['rho_error'] = None
-        self.parameters_data['phase_error'] = None
-        self.parameters_data['tipper_error'] = None
+        self.parameters_data['rho_errorfloor'] = None
+        self.parameters_data['phase_errorfloor'] = None
+        self.parameters_data['tipper_errorfloor'] = None
         self.parameters_data['azimuth'] = 0
 
         self.parameters_data['mode'] = 'tetm'
@@ -161,18 +161,18 @@ class Setup():
         self.wd = '.'
 
         update_dict = {}
-
         if configfile is not None:
             if op.isfile(configfile):
-                try:
-                    config_dict = MTcf.read_configfile(configfile)
-                    temp_dict = {}
-                    for key in config_dict:
-                        temp_dict = config_dict[key]
+                if 1:
+                    update_dict = {}
+                    raw_configfile_content = MTcf.read_configfile(configfile)
+                    for k in raw_configfile_content.keys():
+
+                        temp_dict = raw_configfile_content[k]
                         update_dict.update(temp_dict)
-                except:
-                    print 'Warning - could not read config file {0}'.format(op.abspath(configfile))
-                    pass
+                # except:
+                #     print 'Warning - could not read config file {0}'.format(op.abspath(configfile))
+                #     pass
 
         #correcting dictionary for upper case keys
         input_parameters_nocase = {}
@@ -191,6 +191,7 @@ class Setup():
                         dictionary[key] = value
                     except:
                         dictionary[key] = update_dict[key]
+
 
         for key in update_dict:
             try:
@@ -402,7 +403,7 @@ class Setup():
         #so "layers_per_decade" layers between "first_layer_thickness" and 10* "first_layer_thickness"
         #then the same number between 10* "first_layer_thickness" and 100* "first_layer_thickness"
 
-        #altogether stop at number of maximum layers:
+        #altogether stop at number of maximum model layers:
         n_layers = int(float(self.parameters_inmodel['no_layers']))
 
         #number of padding mesh layers at the bottom 
@@ -580,9 +581,11 @@ class Setup():
             #    newdepth = depth - (depth -  lo_model_depths[idx-1])/2.
                 lo_mesh_depths.append(newdepth)
                 lo_rows_to_merge.append(2)
+                lo_mesh_depths.append(depth)
+                continue
             lo_mesh_depths.append(depth)
             lo_rows_to_merge.append(1)
-       
+      
 
         lo_mesh_thicknesses = []
 
@@ -604,9 +607,9 @@ class Setup():
             maxdepth += max_thickness
         
         lo_model_depths.append(lo_model_depths[-1]+n_bottompadding*max_thickness)
-        
+
         #just to be safe!
-        self.parameters_inmodel['no_layers'] = len(lo_model_depths)
+        #self.parameters_inmodel['no_layers'] = len(lo_model_depths)
 
         lo_model_thicknesses = []
         for idx,depth in enumerate(lo_model_depths):
@@ -618,6 +621,8 @@ class Setup():
 
 
         lo_rows_to_merge.append(n_bottompadding)
+
+
         no_z_nodes = len(lo_mesh_depths) +1
 
         
@@ -773,7 +778,7 @@ class Setup():
         lo_merged_lines   = self.parameters_inmodel['lo_merged_lines']
         lo_column_numbers = self.parameters_inmodel['lo_column_numbers']
         boffset           = self.parameters_inmodel['bindingoffset']
-        n_layers          = self.parameters_inmodel['no_layers']
+        n_layers          = int(self.parameters_inmodel['no_layers'])
 
         model_outstring =''
 
@@ -807,7 +812,6 @@ class Setup():
             n_meshcolumns = lo_column_numbers[k]
             temptext="{0} {1}\n".format(n_meshlayers, n_meshcolumns)
             model_outstring += temptext
-
             temptext = modelblockstrings[k]
             model_outstring += temptext
             #model_outstring += "\n"
@@ -901,12 +905,18 @@ class Setup():
 
 
 
-    def generate_inputfiles(self, edi_dir):
+    def generate_inputfiles(self, edi_dir=None):
+
+        edi_directory = self.edi_directory
+        print self.edi_directory
+        if edi_dir is not None:
+            if op.isdir(edi_dir):
+                edi_directory = edi_dir 
 
         if not op.isdir(self.wd):
             os.makedirs(self.wd)
 
-        self.read_edifiles(edi_dir)
+        self.read_edifiles(edi_directory)
         try:
             self.write_datafile()
         except:
@@ -1228,17 +1238,17 @@ class Data():
                         absolute_rho_error = rho_phi[2][idx_f][0,1]
                         relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
                         if mode == 9 :
-                            if self.rho_error is not None:
-                                if self.rho_error/100. > relative_rho_error:
-                                    relative_rho_error = self.rho_error/100.
+                            if self.rho_errorfloor is not None:
+                                if self.rho_errorfloor/100. > relative_rho_error:
+                                    relative_rho_error = self.rho_errorfloor/100.
                             error = np.abs(relative_rho_error * raw_rho_value)   #relative_error/np.log(10.)
 
                         elif mode == 2 :
                             raw_phi_value = rho_phi[1][idx_f][0,1]
                             value = raw_phi_value
-                            if self.phase_error is not None:
-                                if self.phase_error/100. > relative_rho_error:
-                                    relative_rho_error = self.phase_error/100.
+                            if self.phase_errorfloor is not None:
+                                if self.phase_errorfloor/100. > relative_rho_error:
+                                    relative_rho_error = self.phase_errorfloor/100.
                             if relative_rho_error >= 1.:
                                 error = 180.
                             else:
@@ -1249,18 +1259,18 @@ class Data():
                         value = raw_rho_value
                         absolute_rho_error = rho_phi[2][idx_f][1,0]
                         relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
-                        if mode == 9 :
-                            if self.rho_error is not None:
-                                if self.rho_error/100. > relative_rho_error:
-                                    relative_rho_error = self.rho_error/100.
+                        if mode == 10 :
+                            if self.rho_errorfloor is not None:
+                                if self.rho_errorfloor/100. > relative_rho_error:
+                                    relative_rho_error = self.rho_errorfloor/100.
                             error = np.abs(relative_rho_error * raw_rho_value)   #relative_error/np.log(10.)
 
                         elif mode == 2 :
                             raw_phi_value = rho_phi[1][idx_f][1,0]
                             value = raw_phi_value
-                            if self.phase_error is not None:
-                                if self.phase_error/100. > relative_rho_error:
-                                    relative_rho_error = self.phase_error/100.
+                            if self.phase_errorfloor is not None:
+                                if self.phase_errorfloor/100. > relative_rho_error:
+                                    relative_rho_error = self.phase_errorfloor/100.
                             if relative_rho_error >= 1.:
                                 error = 180.
                             else:
