@@ -747,6 +747,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         #set th xaxis tick labels to invisible
         if pdict['phase'] != nrows-1:
             plt.setp(self.axp.xaxis.get_ticklabels(), visible=False)
+            self.axp.set_xlabel('')
             
         #-----plot tipper----------------------------------------------------              
         if self._plot_tipper.find('y') == 0:
