@@ -535,10 +535,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         plt.rcParams['figure.subplot.bottom'] = .1
         plt.rcParams['figure.subplot.top'] = .93
         plt.rcParams['figure.subplot.left'] = .80
-        if self.plot_skew == 'y':
-            plt.rcParams['figure.subplot.right'] = .90
-        else:
-            plt.rcParams['figure.subplot.right'] = .98
+        plt.rcParams['figure.subplot.right'] = .98
         
         #set the font properties for the axis labels
         fontdict = {'size':self.font_size+2, 'weight':'bold'}
@@ -1024,14 +1021,14 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                                     ecolor=self.skew_color,
                                     capsize=self.marker_size,
                                     elinewidth=self.marker_lw)
-            stlst.append(ps4[0])
-            stlabel.append('Skew')
+                                    
             if self.skew_limits is None:
                 self.skew_limits = (-9, 9)
             
             self.axsk.set_ylim(self.skew_limits)
             self.axsk.yaxis.set_major_locator(MultipleLocator(3))
             self.axsk.yaxis.set_minor_locator(MultipleLocator(1))
+            self.axsk.grid(True, alpha=.25, color=(.25, .25, .25))
             self.axsk.set_ylabel('Skew', fontdict)
             self.axsk.set_xlabel('Period (s)', fontdict)
             self.axsk.set_xscale('log')
