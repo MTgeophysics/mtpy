@@ -36,7 +36,7 @@ class PlotStrike(object):
     
     Arguments:
     ----------
-        **filenamelst** : list of strings
+        **fn_lst** : list of strings
                           full paths to .edi files to plot
                           
         **z_object** : class mtpy.core.z.Z
