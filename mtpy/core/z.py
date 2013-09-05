@@ -352,7 +352,7 @@ class Z(object):
             reserr = np.zeros(self.zerr.shape)
             phaseerr = np.zeros(self.zerr.shape)
 
-        res= np.zeros(self.z.shape)
+        res = np.zeros(self.z.shape)
         phase = np.zeros(self.z.shape)
 
 
@@ -367,16 +367,24 @@ class Z(object):
                 
                     if self.zerr is not None:
 
-                        r_err, phi_err = MTcc.propagate_error_rect2polar(
+                        # r_err, phi_err = MTcc.propagate_error_rect2polar(
+                        #                          np.real(self.z[idx_f,i,j]), 
+                        #                          self.zerr[idx_f,i,j], 
+                        #                          np.imag(self.z[idx_f,i,j]), 
+                        #                          self.zerr[idx_f,i,j])
+                        
+                        r_err, phi_err = MTcc.zerror2r_phi_error(
                                                  np.real(self.z[idx_f,i,j]), 
                                                  self.zerr[idx_f,i,j], 
                                                  np.imag(self.z[idx_f,i,j]), 
                                                  self.zerr[idx_f,i,j])
 
+                        
+
                         reserr[idx_f,i,j] = 0.4 * np.abs(self.z[idx_f,i,j])/\
                                                       self.freq[idx_f] * r_err
                         phaseerr[idx_f,i,j] = phi_err
-
+                        
         return res, phase, reserr, phaseerr
 
 

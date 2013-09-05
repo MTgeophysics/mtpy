@@ -651,9 +651,13 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             gs0.update(hspace=.025, wspace=.025, left=.085)
             
             labelcoords = (-0.145, 0.5) 
-     
+            
             for ii, mt in enumerate(self.mt_lst):
                 #get the reistivity and phase object
+                import sys
+                print mt
+                print dict(mt)
+                sys.exit()
                 rp = mt.get_ResPhase()
                 
                 #set x-axis limits from short period to long period
