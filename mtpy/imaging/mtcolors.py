@@ -77,6 +77,17 @@ ptcmapdict3 = {'red':((0.0, 1.0, 1.0),
                        (1.0, 1.0, 1.0))}
 mt_wh2bl = colors.LinearSegmentedColormap('mt_wh2bl', ptcmapdict3, 256)
 
+#white to orange
+cmapdict_wh2or = {'red':((0.0, 1.0, 1.0),
+                         (1.0, .95, 0.0)),
+
+                  'green':((0.0, 1.0, 1.0),
+                           (1.0, .45, .95)),
+
+                  'blue':((0.0, 1.0, 1.0),
+                          (1.0, 0, 0))}
+mt_wh2or = colors.LinearSegmentedColormap('mt_wh2or', cmapdict_wh2or, 256)
+
 #red to blue
 rtcmapdict = {'red':((0.0, 0.0, 1.0),
                      (1.0, 0.0, 1.0)),
@@ -146,28 +157,32 @@ def get_color(cvar,cmap):
     gets the color to plot for the given color map
     
     """
-    if cmap=='mt_yl2rd':
+    if cmap == 'mt_yl2rd':
         plot_color = get_mt_yl2rd(cvar)
         return plot_color
         
-    elif cmap=='mt_wh2bl':
+    elif cmap == 'mt_wh2bl':
         plot_color = get_mt_wh2bl(cvar)
         return plot_color
         
-    elif cmap=='mt_bl2wh2rd' or cmap=='mt_seg_bl2wh2rd':
+    elif cmap == 'mt_bl2wh2rd' or cmap=='mt_seg_bl2wh2rd':
         plot_color = get_mt_bl2wh2rd(cvar)
         return plot_color
         
-    elif cmap=='mt_bl2yl2rd':
+    elif cmap == 'mt_bl2yl2rd':
         plot_color = get_mt_bl2yl2rd(cvar)
         return plot_color
         
-    elif cmap=='mt_bl2gr2rd':
+    elif cmap == 'mt_bl2gr2rd':
         plot_color = get_mt_bl2gr2rd(cvar)
         return plot_color
         
-    elif cmap=='mt_rd2gr2bl':
+    elif cmap == 'mt_rd2gr2bl':
         plot_color = get_mt_rd2gr2bl(cvar)
+        return plot_color
+    
+    elif cmap == 'mt_wh2or':
+        plot_color = get_mt_wh2or(cvar)
         return plot_color
         
     else:
@@ -181,9 +196,9 @@ def get_mt_yl2rd(cvar):
     
     """
     
-    if cvar>=1:
+    if cvar >= 1:
         plot_color = (1, 0, 0)
-    elif cvar<=0:
+    elif cvar <= 0:
         plot_color = (1, 1, 0)
     else:
         plot_color = (1, 1-abs(cvar), 0.1)
@@ -196,12 +211,27 @@ def get_mt_wh2bl(cvar):
     
     """
     
-    if cvar>=1:
+    if cvar >= 1:
         plot_color = (0, 0, 1)
-    elif cvar<=0:
+    elif cvar <= 0:
         plot_color = (1, 1, 1)
     else:
         plot_color = (1-abs(cvar), 1-abs(cvar), 1)
+        
+    return plot_color
+    
+def get_mt_wh2or(cvar):
+    """
+    gets color for the color map that goes from white to orange
+    
+    """
+    
+    if cvar >= 1:
+        plot_color = (1, .5, 0)
+    elif cvar <= 0:
+        plot_color = (1, 1, 1)
+    else:
+        plot_color = (1, abs(cvar)*.5+.5, abs(cvar))
         
     return plot_color
     
@@ -211,13 +241,13 @@ def get_mt_bl2wh2rd(cvar):
     
     """
     
-    if cvar<0 and cvar>-1:
+    if cvar < 0 and cvar > -1:
         plot_color = (1+cvar, 1+cvar, 1)
-    elif cvar<=-1:
+    elif cvar <= -1:
         plot_color = (0, 0, 1)
-    elif cvar>=0 and cvar<1:
+    elif cvar >= 0 and cvar < 1:
         plot_color = (1, 1-cvar, 1-cvar)
-    elif cvar>=1:
+    elif cvar >= 1:
         plot_color = (1, 0, 0)
         
     return plot_color
@@ -228,13 +258,13 @@ def get_mt_bl2yl2rd(cvar):
     
     """
     
-    if cvar<0 and cvar>-1:
+    if cvar < 0 and cvar > -1:
         plot_color = (1+cvar, 1+cvar, -cvar)
-    elif cvar<=-1:
+    elif cvar <= -1:
         plot_color = (0, 0, 1)
-    elif cvar>=0 and cvar<1:
+    elif cvar >= 0 and cvar < 1:
         plot_color = (1, 1-cvar, .01)
-    elif cvar>=1:
+    elif cvar >= 1:
         plot_color = (1, 0, 0)
         
     return plot_color
@@ -245,13 +275,13 @@ def get_mt_bl2gr2rd(cvar):
     
     """
     
-    if cvar<0 and cvar>-1:
+    if cvar < 0 and cvar > -1:
         plot_color = (1+cvar, 1+cvar/2, 1)
-    elif cvar<=-1:
+    elif cvar <= -1:
         plot_color = (0, 0, 1)
-    elif cvar>=0 and cvar<1:
+    elif cvar >= 0 and cvar < 1:
         plot_color = (1, 1-cvar/2, 1-cvar)
-    elif cvar>=1:
+    elif cvar >= 1:
         plot_color = (1, 0, 0)
         
     return plot_color
@@ -262,13 +292,13 @@ def get_mt_rd2gr2bl(cvar):
     
     """
     
-    if cvar<0 and cvar>-1:
+    if cvar < 0 and cvar > -1:
         plot_color = (1, 1+cvar/2, 1+cvar)
-    elif cvar<=-1:
+    elif cvar <= -1:
         plot_color = (1, 0, 0)
-    elif cvar>=0 and cvar<1:
+    elif cvar >= 0 and cvar < 1:
         plot_color = (1-cvar, 1-cvar/2, 1)
-    elif cvar>=1:
+    elif cvar >= 1:
         plot_color = (0, 0, 1)
         
     return plot_color
@@ -280,39 +310,40 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
     
     
     #get face color info
-    if comp=='phimin' or comp=='phimax' or comp=='phidet' or comp=='ellipticity':
+    if comp == 'phimin' or comp == 'phimax' or comp == 'phidet' or \
+       comp == 'ellipticity':
         if ckmin is None or ckmax is None:
             raise IOError('Need to input min and max values for plotting')
         
         cvar = (colorx-ckmin)/(ckmax-ckmin)
-        if cmap=='mt_bl2wh2rd' or cmap=='mt_bl2yl2rd' or \
-           cmap=='mt_bl2gr2rd' or cmap=='mt_rd2gr2bl':
+        if cmap == 'mt_bl2wh2rd' or cmap == 'mt_bl2yl2rd' or \
+           cmap == 'mt_bl2gr2rd' or cmap == 'mt_rd2gr2bl':
             cvar = 2*cvar-1
             
         return get_color(cvar, cmap)
 
-    elif comp=='skew':
+    elif comp == 'skew':
         cvar = 2*colorx/(ckmax-ckmin) 
         
         return get_color(cvar, cmap)
             
         
-    elif comp=='skew_seg':
+    elif comp == 'skew_seg':
         if bounds is None:
             raise IOError('Need to input bounds for segmented colormap')
         
         for bb in range(bounds.shape[0]):
-            if colorx>=bounds[bb] and colorx<bounds[bb+1]:
+            if colorx >= bounds[bb] and colorx < bounds[bb+1]:
                 cvar = float(bounds[bb])/bounds.max()
                 return get_color(cvar, cmap)
             
             #if the skew is extremely negative make it blue
-            elif colorx<bounds[0]:
+            elif colorx < bounds[0]:
                 cvar = -1.0
                 return get_color(cvar, cmap)
             
             #if skew is extremely positive make it red
-            elif colorx>bounds[-1]:
+            elif colorx > bounds[-1]:
                 cvar = 1.0
                 return get_color(cvar, cmap)
         
