@@ -1411,11 +1411,13 @@ class Data():
         rotation_angle = self.strike
         
         for old_z in self.Z:
-            old_z.rotate(rotation_angle)
+            original_rotation_angle = old_z.rotation_angle
+            effective_rot_angle = rotation_angle - original_rotation_angle
+            old_z.rotate(effective_rot_angle)
         
         for old_tipper in self.Tipper:
             try:
-                old_tipper.rotate(rotation_angle)
+                old_tipper.rotate(effective_rot_angle)
             except:
                 pass
 

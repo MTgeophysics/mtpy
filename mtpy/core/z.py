@@ -581,8 +581,8 @@ class Z(object):
                     print '"Angles" must be valid numbers (in degrees)'
                     return
             
-        self.rotation_angle = [(oldangle + lo_angles[i])%360 
-					  for i,oldangle in enumerate(self.rotation_angle)]
+        self.rotation_angle = np.array([(oldangle + lo_angles[i])%360 
+					  for i,oldangle in enumerate(self.rotation_angle)])
 
         if len(lo_angles) != len(self.z):
             print 'Wrong number Number of "angles" - I need %i '%(len(self.z))
@@ -1485,8 +1485,8 @@ class Tipper(object):
                     print '"Angles" must be valid numbers (in degrees)'
                     return
            
-        self.rotation_angle = [(oldangle + lo_angles[i])%360 
-                              for i,oldangle in enumerate(self.rotation_angle)] 
+        self.rotation_angle = np.array([(oldangle + lo_angles[i])%360 
+                              for i,oldangle in enumerate(self.rotation_angle)] )
 
         if len(lo_angles) != len(self.tipper):
             print 'Wrong number Number of "angles" - need %i '%(len(self.tipper))
