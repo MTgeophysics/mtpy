@@ -654,10 +654,6 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             
             for ii, mt in enumerate(self.mt_lst):
                 #get the reistivity and phase object
-                import sys
-                print mt
-                print dict(mt)
-                sys.exit()
                 rp = mt.get_ResPhase()
                 
                 #set x-axis limits from short period to long period
