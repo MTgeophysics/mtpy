@@ -17,6 +17,7 @@ import matplotlib.gridspec as gridspec
 import mtpy.imaging.mtplottools as mtpl
 import mtpy.imaging.mtcolors as mtcl
 from mtpy.imaging.plotresponse import PlotResponse as plotresponse
+reload(mtpl)
 
 #============================================================================
 
@@ -285,6 +286,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         res_object_lst = kwargs.pop('res_object_lst', None)
         
         #--> get the inputs into a list of mt objects
+        print fn_lst,mt_object_lst
         self.mt_lst = mtpl.get_mtlst(fn_lst=fn_lst, 
                                      res_object_lst=res_object_lst,
                                      z_object_lst=z_object_lst, 
