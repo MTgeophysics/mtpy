@@ -959,7 +959,7 @@ class Data():
             if op.isdir(wd):
                 self.wd = wd
 
-
+        self.strike = None
         self.azimuth = 0.
         self.profile = None
         self.frequencies = None
@@ -971,6 +971,11 @@ class Data():
         self.profile_offset = 0.
         self.format = 'OCCAM2MTDATA_1.0'
         self.title = 'MTpy Occam-Datafile'
+        self.edi_type = 'z'
+
+        self.phase_errorfloor = 5
+        self.rho_errorfloor = 5
+        self.tipper_errorfloor = 5
 
         self.minimum_frequency = None
         self.maximum_frequency = None
@@ -980,11 +985,11 @@ class Data():
         for key in data_parameters:
             setattr(self,key,data_parameters[key])
 
-        try:
+        if 1:
             self.generate_profile()
-        except:
-            print 'cannot generate profile'
-            raise
+        # except:
+        #     print 'cannot generate profile'
+        #     raise
 
         try:
             self.build_data()
@@ -1367,7 +1372,8 @@ class Data():
             lo_easts.append(utm[1])
             lo_norths.append(utm[2])
             utmzones.append(int(utm[0][:-1]))
-        
+       
+
         for i in lo_wrong_edifiles:
             self.edilist.remove(i)
 
