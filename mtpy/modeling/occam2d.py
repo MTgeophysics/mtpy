@@ -965,7 +965,6 @@ class Data():
         self.frequencies = None
         self.stations = []
         self.stationlocations = []
-        self.rotation_angle = 0.
         self.data = []
         self.mode = 'tetm'
         self.profile_offset = 0.
@@ -985,11 +984,11 @@ class Data():
         for key in data_parameters:
             setattr(self,key,data_parameters[key])
 
-        if 1:
+        try:
             self.generate_profile()
-        # except:
-        #     print 'cannot generate profile'
-        #     raise
+        except:
+            print 'cannot generate profile'
+            raise
 
         try:
             self.build_data()
@@ -1118,19 +1117,6 @@ class Data():
             lo_data.append(rowlist)
             row_idx += 1
             idx += 1
-
-
-
-    def rotate(angle):
-        """
-        Rotate input data for geoelectric strike.
-
-
-        Best done on the edi files before being read input_parameters
-        TODO
-
-        """
-        pass
 
 
     def build_data(self):
@@ -1394,9 +1380,23 @@ class Data():
             lo_easts[idx] = utm[1]
             lo_norths[idx] = utm[2]
         
+        lo_easts = np.array(lo_easts)
+        lo_norths = np.array(lo_norths)
 
-        profile_line = sp.polyfit(lo_easts, lo_norths, 1) 
-        self.azimuth = (np.arctan(profile_line[0])*180/np.pi)%180
+        # check regression for 2 profile orientations:
+        # horizontal (N=N(E)) or vertical(E=E(N))
+        # use the one with the lower standard deviation
+        profile1 = sp.stats.linregress(lo_easts, lo_norths)
+        profile2 = sp.stats.linregress(lo_norths, lo_easts)
+        profile_line = profile1[:2]
+        #if the profile is rather E=E(N), the parameters have to converted 
+        # into N=N(E) form:
+        if profile2[4]<profile1[4]:
+            profile_line = (1./profile2[0], -profile2[1]/profile2[0])
+
+        #profile_line = sp.polyfit(lo_easts, lo_norths, 1) 
+        self.azimuth = (90-(np.arctan(profile_line[0])*180/np.pi))%180
+
         
         #rotate Z according to strike angle
         #have 90 degree ambiguity in strike determination
@@ -1427,8 +1427,6 @@ class Data():
             except:
                 pass
 
-        lo_easts = np.array(lo_easts)
-        lo_norths = np.array(lo_norths)
 
         projected_stations = []
         lo_offsets = []
@@ -1480,7 +1478,7 @@ class Data():
             x_extent = max(lo_all_easts) - min(lo_all_easts)
             y_extent = max(lo_all_norths) - min(lo_all_norths)
             plt.close('all')
-            lfig = plt.figure(4, dpi=200, figsize=(2,2))
+            lfig = plt.figure(4, dpi=200)#, figsize=(2,2))
             plt.clf()
             ploty = sp.polyval(profile_line, sorted(lo_all_easts))
             lax = lfig.add_subplot(1, 1, 1,aspect='equal')
@@ -1497,7 +1495,7 @@ class Data():
             lax.set_ylabel('Northing (m)',
                            fontdict={'size':4, 'weight':'bold'})
             plt.show()
-            raw_input()
+            #raw_input()
 
 
 
