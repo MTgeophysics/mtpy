@@ -134,21 +134,16 @@ class Setup():
         self.meshblockwidths_x = None
         self.meshblockdepths_z = None
 
-        self.lo_modelblockstrings = []
-        self.lo_columnnumbers = []
 
         self.inmodel = None
  
-        self.data = None
         self.no_parameters = None
-
-        self.stationnames = []
-        self.stationlocations = []
 
         self.halfspace_resistivity = 100.
 
         self.edifiles = []
 
+        self.Data = None
         self.datafile = 'occaminputdata.dat'
         self.meshfile = 'mesh'
         self.inmodelfile = 'inmodel'
@@ -163,16 +158,16 @@ class Setup():
         update_dict = {}
         if configfile is not None:
             if op.isfile(configfile):
-                if 1:
+                try:
                     update_dict = {}
                     raw_configfile_content = MTcf.read_configfile(configfile)
                     for k in raw_configfile_content.keys():
 
                         temp_dict = raw_configfile_content[k]
                         update_dict.update(temp_dict)
-                # except:
-                #     print 'Warning - could not read config file {0}'.format(op.abspath(configfile))
-                #     pass
+                except:
+                    print 'Warning - could not read config file {0}'.format(op.abspath(configfile))
+                    pass
 
         #correcting dictionary for upper case keys
         input_parameters_nocase = {}
@@ -190,7 +185,11 @@ class Setup():
                         value = float(update_dict[key])
                         dictionary[key] = value
                     except:
-                        dictionary[key] = update_dict[key]
+                        value = update_dict[key]
+                        dictionary[key] = value
+                        if type(value) in [str]:
+                            if value.strip().lower()=='none':
+                                 dictionary[key] = None
 
 
         for key in update_dict:
@@ -201,9 +200,14 @@ class Setup():
                         value = float(update_dict[key])
                         setattr(self,key,value)
                     except:
-                        setattr(self,key,update_dict[key])
+                        value = update_dict[key]
+                        setattr(self,key,value)
+                        if type(value) in [str]:
+                            if value.strip().lower()=='none':
+                                setattr(self,key,None)
             except:
                 continue 
+
 
 
     def read_configfile(self, configfile):
@@ -338,10 +342,11 @@ class Setup():
     def read_edifiles(self, edi_dir = None):
         
         if self.edi_directory is None:
-            self.edi_directory = '.'
+            self.edi_directory = op.abspath(os.curdir)
 
         if (edi_dir is not None):
-            if (op.isdir(edi_dir)):
+            edi_dir = op.abspath(op.join(os.curdir,edi_dir))
+            if (edi_dir):
                 self.edi_directory = edi_dir
             else:
                 print 'Warning - given directory not found: {0} \n\t-'\
@@ -367,13 +372,12 @@ class Setup():
         except:
             print 'cannot write data file'
             raise
-
-        self.stationlocations = data_object.stationlocations
+        #        self.stationlocations = data_object.stationlocations
         data_object.writefile(self.datafile)
-        self.strike = data_object.strike
-        self.azimuth= data_object.azimuth
 
-        self.datafile = data_object.datafile
+
+        #self.datafile = data_object.datafile
+        self.Data = data_object
         
 
     def setup_mesh_and_model(self):
@@ -389,7 +393,7 @@ class Setup():
 
         """
         #given as offset on the profile line
-        lo_sites = self.stationlocations
+        lo_sites = self.Data.stationlocations
         n_sites  = len(lo_sites)
 
         #maximum width of MODEL block - implicitely defines finiteness of the mesh
@@ -422,9 +426,9 @@ class Setup():
 
 
         print '\nlength of station profile: {0:.1f} km '.format((lo_sites[-1]-lo_sites[0])/1000.)
-        print 'Azimuth of profile: {0:.1f} degrees'.format(self.azimuth)
-        if self.strike is not None:
-            print 'Assumed strike: {0:.1f} degrees'.format(self.strike)
+        print 'Azimuth of profile: {0:.1f} degrees'.format(self.Data.azimuth)
+        if self.Data.strike is not None:
+            print 'Assumed strike: {0:.1f} degrees'.format(self.Data.strike)
         else:
             print 'Strike orientation unknown'
 
@@ -754,6 +758,7 @@ class Setup():
             tempstring += '\n'
             mesh_outstring += tempstring
 
+        self.mesh = mesh_outstring
 
         fn = op.join(self.wd,self.meshfile)       
         F_mesh = open(fn,'w')
@@ -820,7 +825,7 @@ class Setup():
         temptext = "Number Exceptions:{0}\n".format(0)
         model_outstring += temptext
         
-
+        self.inmodel = model_outstring
         fn = op.join(self.wd,self.inmodelfile)        
         F_model = open(fn,'w')
         F_model.write(model_outstring)
@@ -925,14 +930,62 @@ class Setup():
         self.write_meshfile()
         self.write_inmodelfile()
         self.write_startupfile()
+        self.write_configfile()
 
         print '\nInput files in working directory {0}: \n'.format(op.abspath(self.wd))
         print '{0}'.format(op.basename(self.datafile))
         print '{0}'.format(op.basename(self.meshfile))
         print '{0}'.format(op.basename(self.inmodelfile))
         print '{0}'.format((self.startupfile))
+        print '{0}'.format(op.basename(self.configfile))
+
 
         print '\n\t\t DONE !\n\n'
+
+
+
+    def write_configfile(self):
+        wd = op.abspath(self.wd)
+        fn = 'occam2d_configuration.cfg'
+
+        self.configfile = op.join(wd,fn)
+
+        all_configs_dict = {}
+        for dictionary in [self.parameters_startup, self.parameters_inmodel, 
+                                    self.parameters_mesh, self.parameters_data]:
+
+            for key,value in dictionary.items():
+                if type(value) in [str,float,int]:
+                    all_configs_dict[key] = value 
+
+        for key,value in vars(self).items():
+            if value is None:
+                all_configs_dict[key] = value
+                continue
+            if type(value) in [float,int]:
+                all_configs_dict[key] = value
+                continue
+            if type(value) in [str]:
+                if len(value.split())>3:
+                    continue
+                all_configs_dict[key] = value
+
+        for key, value in  vars(vars(self)['Data']).items():
+            if value is None:
+                all_configs_dict[key] = value
+                continue
+            if type(value) in [str,float,int]:
+                all_configs_dict[key] = value
+                continue
+
+        occam_run_dict = {}
+        occam_run_dict['OCCAM_run'] = all_configs_dict
+        # print all_configs_dict
+        # sys.exit()
+        MTcf.write_dict_to_configfile(occam_run_dict,self.configfile)
+
+        return 
+
 
 #------------------------------------------------------------------------------
 
@@ -947,7 +1000,7 @@ class Data():
     """
     def __init__(self, edilist = None, wd = None, **data_parameters):
 
-        self.wd = os.curdir
+        self.wd = op.abspath(os.curdir)
         self.datafile = 'OccamDataFile.dat'
         self.edilist = []
 
@@ -957,7 +1010,7 @@ class Data():
         
         if wd is not None:
             if op.isdir(wd):
-                self.wd = wd
+                self.wd = op.abspath(wd)
 
         self.strike = None
         self.azimuth = 0.
@@ -969,7 +1022,7 @@ class Data():
         self.mode = 'tetm'
         self.profile_offset = 0.
         self.format = 'OCCAM2MTDATA_1.0'
-        self.title = 'MTpy Occam-Datafile'
+        self.title = 'MTpy-OccamDatafile'
         self.edi_type = 'z'
 
         self.phase_errorfloor = 5
@@ -1397,6 +1450,7 @@ class Data():
         #profile_line = sp.polyfit(lo_easts, lo_norths, 1) 
         self.azimuth = (90-(np.arctan(profile_line[0])*180/np.pi))%180
 
+
         
         #rotate Z according to strike angle
         #have 90 degree ambiguity in strike determination
@@ -1512,7 +1566,9 @@ class Data():
         outstring = ''
 
         outstring += 'FORMAT:'+11*' '+self.format+'\n'
-        outstring += 'TITLE:'+12*' '+'{0} - profile azimuth {1:.1f} degrees\n'.format(self.title,self.azimuth)
+        outstring += 'TITLE:'+12*' '+'{0} - profile azimuth {1:.1f} deg -'\
+                    ' strike {2:.1f} deg\n'.format(self.title,self.azimuth,
+                                                                 self.strike)
         outstring += 'SITES:'+12*' '+'{0}\n'.format(len(self.stations))
         for s in self.stations:
             outstring += '    {0}\n'.format(s)

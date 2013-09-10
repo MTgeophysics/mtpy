@@ -435,26 +435,26 @@ class OccamGui(QtGui.QMainWindow):
                 QtGui.QMessageBox.about(self, "Input files generation", messagetext )
                 return 1
 
-            try:
+            if 1:
                 edi_dir = D['edi_dir']
                 setup_object.read_edifiles(edi_dir)
-                datafile = op.abspath(op.join(D['wd'],D['datafile']))
+                datafile = D['datafile']
                 setup_object.datafile = datafile
                 try:
                     setup_object.write_datafile()
                 except:
                     raise
                 datafilename = setup_object.datafile
-                self.parameters['stationlocations']  = setup_object.stationlocations
+                self.parameters['stationlocations']  = setup_object.Data.stationlocations
                 messagetext += "<P><FONT COLOR='#000000'>Working directory: "\
                         "{0}  </FONT></P> \n".format(setup_object.wd)
 
                 messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
-                "data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
-            except:
-                messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
-                "write data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
-                returnvalue = 1
+                "data file: {0}  </FONT></b></P> \n".format(op.split(setup_object.datafile)[1])
+            # except:
+            #     messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+            #     "write data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
+            #     returnvalue = 1
 
                     
             QtGui.QMessageBox.about(self, "Data file generation", messagetext )
@@ -547,6 +547,16 @@ class OccamGui(QtGui.QMainWindow):
                 "write startup file: {0}  </FONT></b></P> \n".format(setup_object.startupfile)
                 D['startupfile'] ='startup'
                 returnvalue = 1
+
+        try:
+            setup_object.write_configfile()
+            messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
+            "config file: {0}  </FONT></b></P> \n".format(op.split(setup_object.configfile)[1])
+        except:
+            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+            "write config file: {0}  </FONT></b></P> \n".format(op.split(setup_object.configfile)[1])
+            returnvalue = 1
+
 
         QtGui.QMessageBox.about(self, "Input files generation", messagetext )
 
