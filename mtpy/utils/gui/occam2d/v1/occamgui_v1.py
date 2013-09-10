@@ -435,7 +435,7 @@ class OccamGui(QtGui.QMainWindow):
                 QtGui.QMessageBox.about(self, "Input files generation", messagetext )
                 return 1
 
-            if 1:
+            try:
                 edi_dir = D['edi_dir']
                 setup_object.read_edifiles(edi_dir)
                 datafile = D['datafile']
@@ -451,10 +451,10 @@ class OccamGui(QtGui.QMainWindow):
 
                 messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
                 "data file: {0}  </FONT></b></P> \n".format(op.split(setup_object.datafile)[1])
-            # except:
-            #     messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
-            #     "write data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
-            #     returnvalue = 1
+            except:
+                messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
+                "write data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
+                returnvalue = 1
 
                     
             QtGui.QMessageBox.about(self, "Data file generation", messagetext )

@@ -99,6 +99,8 @@ class Setup():
         self.parameters_startup['max_no_iterations'] = 30
         self.parameters_startup['target_rms'] = 1.5
         self.parameters_startup['rms_start'] = 1000
+        self.parameters_startup['halfspace_resistivity'] = 100.
+
 
         self.parameters_inmodel['no_sideblockelements'] = 7
         self.parameters_inmodel['no_bottomlayerelements'] = 4
@@ -109,6 +111,7 @@ class Setup():
 
         self.parameters_inmodel['model_name'] = 'Modelfile generated with MTpy'
         self.parameters_inmodel['block_merge_threshold'] = 0.75
+
        
         self.parameters_data['strike'] = None
 
@@ -132,14 +135,13 @@ class Setup():
         self.meshlocations_x = None
         self.meshlocations_z = None
         self.meshblockwidths_x = None
-        self.meshblockdepths_z = None
+        self.meshblockthicknesses_z = None
 
 
         self.inmodel = None
  
         self.no_parameters = None
 
-        self.halfspace_resistivity = 100.
 
         self.edifiles = []
 
@@ -634,7 +636,7 @@ class Setup():
         self.parameters_inmodel['max_number_columns'] = ncol0
         self.parameters_inmodel['lo_merged_lines']    = lo_rows_to_merge
         self.meshblockwidths_x                        = lo_meshblockwidths
-        self.meshblockdepths_z                        = lo_mesh_thicknesses
+        self.meshblockthicknesses_z                   = lo_mesh_thicknesses
          
         self.meshlocations_z                          = lo_mesh_depths
         self.meshlocations_x                          = meshnodelocations
@@ -654,17 +656,22 @@ class Setup():
 
         ncol = ncol0
         #loop over all model layers
-        for layer_idx in range(len(lo_model_depths)):
+        #lo_modelblockwidths include the generaic merging of side padding mesh cells
+        #as well as the merging of each 2 neighbouring cells
+        #
+        for layer_idx, thickness in enumerate(lo_model_thicknesses):
+            #start with second column, because side paddings are never merged
             block_idx = 1
-        
             #sweep columns
             while block_idx+1 < ncol-1 :
-                if lo_model_depths[layer_idx] < (trigger*(
-                                                lo_modelblockwidths[block_idx]+
-                                                lo_modelblockwidths[block_idx+1])):
+                #if two neighbouring blocks are wider than the thickness of the 
+                #layer (times a factor), nothing happens
+                if thickness < (trigger*(lo_modelblockwidths[block_idx]+
+                                        lo_modelblockwidths[block_idx+1])):
                     block_idx += 1
                     continue
-
+                #otherwise: avoid the vertical over-exaggeration by merging 2 
+                #neighboring blocks:
                 else:
                     #concatenate/merge blocks
 
@@ -715,7 +722,7 @@ class Setup():
         mesh_positions_vert = self.meshlocations_z
         mesh_positions_hor  = self.meshlocations_x
         mesh_widths         = self.meshblockwidths_x
-        mesh_depths         = self.meshblockdepths_z
+        mesh_depths         = self.meshblockthicknesses_z
 
         n_nodes_x           = self.parameters_mesh['no_nodes_x'] 
         n_nodes_z           = self.parameters_mesh['no_nodes_z']
@@ -894,7 +901,7 @@ class Setup():
         temptext = ""
         counter = 0 
         for l in range(self.no_parameters):
-            temptext += "{0:.1g}  ".format(np.log10(float(self.halfspace_resistivity)))
+            temptext += "{0:.1g}  ".format(np.log10(float(self.parameters_startup['halfspace_resistivity'])))
             counter += 1
             if counter == 20:
                 #temptext += '\n'
