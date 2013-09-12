@@ -12,6 +12,7 @@ from gui5 import Ui_occamgui2D as Occam_UI_form
 import os.path as op
 
 import mtpy.core.edi as MTedi
+import mtpy.utils.configfile as MTcf
 import mtpy.modeling.occam2d as MTo2
 
 
@@ -54,7 +55,11 @@ class OccamGui(QtGui.QMainWindow):
         QtCore.QObject.connect(self.ui.button_browse_occam, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_occam))
         #QtCore.QObject.connect(self.ui.button_browse_makemodel, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_makemodel))
         QtCore.QObject.connect(self.ui.pushButton_loaddatafile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_datafile))
-        QtCore.QObject.connect(self.ui.pushButton_loadstartupfile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_startupfile))       
+        QtCore.QObject.connect(self.ui.pushButton_loadstartupfile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_startupfile))
+        
+        QtCore.QObject.connect(self.ui.button_browse_configfile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_configfile))
+        QtCore.QObject.connect(self.ui.button_load_configfile, QtCore.SIGNAL("clicked()"),self.load_old_configfile)
+
         QtCore.QObject.connect(self.ui.pushButton_loaddatafile, QtCore.SIGNAL("clicked()"),self.set_data_filename)
         
         QtCore.QObject.connect(self.ui.pushButton_checkparameter, QtCore.SIGNAL("clicked()"),  self.check_input)
@@ -85,6 +90,60 @@ class OccamGui(QtGui.QMainWindow):
     def set_filename_in_browsefield(self, browsefield):
         filename = QtGui.QFileDialog.getOpenFileName(self, 'Locate File', '.')
         browsefield.setText(filename)
+
+
+    def load_old_configfile(self):
+        old_cfg_filename =  self.ui.lineEdit_browse_configfile.text()
+        #if not a proper file: do nothing
+        try:
+            if not op.isfile(old_cfg_filename):
+                raise
+        except:
+            messagetext = ''
+            messagetext += "<P><FONT COLOR='#000000'>File name: "\
+                    "{0}  </FONT></P> \n".format(old_cfg_filename)
+            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Not a valid "\
+                "configuration file  </FONT></b></P> \n"
+
+            QtGui.QMessageBox.about(self, "Reading old config file", messagetext)
+            return
+
+
+        #try to read config file into dictionary:
+        parameters = {}
+        if 1:
+            print 'oldfile:{0}'.format(old_cfg_filename)
+            temp_dict_outer = MTcf.read_configfile(old_cfg_filename)
+            print temp_dict_outer
+            for k,v in temp_dict_outer.items():
+                print k,v
+                temp_dict_inner = v
+                parameters.update(temp_dict_inner)
+        else:
+            messagetext = ''
+            messagetext += "<P><FONT COLOR='#000000'>File name: "\
+                    "{0}  </FONT></P> \n".format(old_cfg_filename)
+            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Not a valid "\
+                "configuration file  </FONT></b></P> \n"
+
+            QtGui.QMessageBox.about(self, "Reading old config file", messagetext)
+            return
+
+        #now go through all parameters and see if they are contained in the config file
+        #if yes, update the values in the fields
+        print parameters
+        sys.exit()
+        
+        if 'block_merge_threshold' in parameters:
+            print float(parameters['block_merge_threshold'])
+            try:
+                value = float(parameters['block_merge_threshold'])
+                self.ui.doubleSpinBox_mergethreshold.setValue(value)
+            except:
+                pass
+        
+
+
 
     #check input values for consistency/existence
     def check_input(self):
@@ -385,9 +444,9 @@ class OccamGui(QtGui.QMainWindow):
                 messagetext += "<P><FONT COLOR='#000000'>Working directory: "\
                     "{0}  </FONT></P> \n".format(data_object.wd)
 
-                messagetext = "<P><b><FONT COLOR='#008080'>Read old data file:</FONT></b></P><br>{0}".format(datafile)
+                messagetext += "<P><b><FONT COLOR='#008080'>Read old data file:</FONT></b></P><br>{0}".format(datafile)
             except:
-                messagetext = "<P><b><FONT COLOR='#800000'>Error: Cannot read old data file: {0}  </FONT></b></P> ".format(datafile)
+                messagetext += "<P><b><FONT COLOR='#800000'>Error: Cannot read old data file: {0}  </FONT></b></P> ".format(datafile)
                 returnvalue = 1
 
                 

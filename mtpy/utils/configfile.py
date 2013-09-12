@@ -35,7 +35,7 @@ import mtpy.utils.format as MTft
 reload(MTgn)
 reload(MTcc)
 reload(MTex)
-
+reload(ConfigParser)
 #=================================================================
 
 list_of_required_keywords = ['latitude',
@@ -106,34 +106,35 @@ def read_configfile(filename):
         -> return nested dictionary, which includes a top level 'DEFAULT' key
     """
 
-    #generate config parser instance
-    configobject = ConfigParser.ConfigParser()
     
     #check, if file is present
     if not op.isfile(filename):
         raise MTex.MTpyError_inputarguments( 'File does not exist: {0}'.format(filename))
 
     # try to parse file - exit, if not a config file
-    try :
+    try:
+        #generate config parser instance
+        configobject = ConfigParser.SafeConfigParser()
         configobject.read(filename)
-
     except:
         try:
             dummy_String = '[DEFAULT]\n' + open(filename, 'r').read()
             FH = StringIO.StringIO(dummy_String)
-            configobject.read(FH)
+            #generate config parser instance
+            configobject = ConfigParser.SafeConfigParser()
+            configobject.readfp(FH)
         except:
             raise MTex.MTpyError_inputarguments( 'File is not a proper '
                                     'configuration file: {0}'.format(filename) )
 
-
     config_dict = configobject._sections      
 
     if len (config_dict.keys()) != 0:
-        config_dict['DEFAULT'] = configobject.defaults()
+        defaults = configobject.defaults()
+        if len(defaults.keys()) != 0:
+            config_dict['DEFAULT'] = configobject.defaults()
     else:
         config_dict = configobject.defaults()
-
 
     return config_dict
 
