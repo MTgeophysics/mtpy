@@ -111,29 +111,33 @@ class OccamGui(QtGui.QMainWindow):
 
         #try to read config file into dictionary:
         parameters = {}
-        if 1:
-            print 'oldfile:{0}'.format(old_cfg_filename)
+        try:
+            #to test, if file is readable:
+            with open(old_cfg_filename) as F:
+                data = F.read()
+            
             temp_dict_outer = MTcf.read_configfile(old_cfg_filename)
-            print temp_dict_outer
+            if len(temp_dict_outer) == 0:
+                raise 
+            
             for k,v in temp_dict_outer.items():
                 print k,v
                 temp_dict_inner = v
                 parameters.update(temp_dict_inner)
-        else:
+        except:
             messagetext = ''
             messagetext += "<P><FONT COLOR='#000000'>File name: "\
                     "{0}  </FONT></P> \n".format(old_cfg_filename)
-            messagetext += "<P><b><FONT COLOR='#800000'>Error:  Not a valid "\
-                "configuration file  </FONT></b></P> \n"
+            messagetext += "<P><b><FONT COLOR='#800000'>Error: File not valid or "\
+                "not readable  </FONT></b></P> \n"
 
             QtGui.QMessageBox.about(self, "Reading old config file", messagetext)
             return
 
         #now go through all parameters and see if they are contained in the config file
         #if yes, update the values in the fields
-        print parameters
-        sys.exit()
-        
+
+
         if 'block_merge_threshold' in parameters:
             print float(parameters['block_merge_threshold'])
             try:
