@@ -10,6 +10,7 @@ reload(gui5)
 from gui5 import Ui_occamgui2D as Occam_UI_form
 
 import os.path as op
+import shutil
 
 import mtpy.core.edi as MTedi
 import mtpy.utils.configfile as MTcf
@@ -55,7 +56,7 @@ class OccamGui(QtGui.QMainWindow):
         QtCore.QObject.connect(self.ui.button_browse_occam, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_occam))
         #QtCore.QObject.connect(self.ui.button_browse_makemodel, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_makemodel))
         QtCore.QObject.connect(self.ui.pushButton_loaddatafile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_datafile))
-        QtCore.QObject.connect(self.ui.pushButton_loadstartupfile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_startupfile))
+        QtCore.QObject.connect(self.ui.pushButton_loaditerationfile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_iterationfile))
         
         QtCore.QObject.connect(self.ui.button_browse_configfile, QtCore.SIGNAL("clicked()"),  lambda: self.set_filename_in_browsefield(self.ui.lineEdit_browse_configfile))
         QtCore.QObject.connect(self.ui.button_load_configfile, QtCore.SIGNAL("clicked()"),self.load_old_configfile)
@@ -105,7 +106,7 @@ class OccamGui(QtGui.QMainWindow):
             messagetext += "<P><b><FONT COLOR='#800000'>Error:  Not a valid "\
                 "configuration file  </FONT></b></P> \n"
 
-            QtGui.QMessageBox.about(self, "Reading old config file", messagetext)
+            QtGui.QMessageBox.about(self, "Reading configuration file", messagetext)
             return
 
 
@@ -115,13 +116,12 @@ class OccamGui(QtGui.QMainWindow):
             #to test, if file is readable:
             with open(old_cfg_filename) as F:
                 data = F.read()
-            
+
             temp_dict_outer = MTcf.read_configfile(old_cfg_filename)
             if len(temp_dict_outer) == 0:
                 raise 
             
             for k,v in temp_dict_outer.items():
-                print k,v
                 temp_dict_inner = v
                 parameters.update(temp_dict_inner)
         except:
@@ -131,23 +131,268 @@ class OccamGui(QtGui.QMainWindow):
             messagetext += "<P><b><FONT COLOR='#800000'>Error: File not valid or "\
                 "not readable  </FONT></b></P> \n"
 
-            QtGui.QMessageBox.about(self, "Reading old config file", messagetext)
+            QtGui.QMessageBox.about(self, "Reading configuration file", messagetext)
             return
 
         #now go through all parameters and see if they are contained in the config file
         #if yes, update the values in the fields
 
+        update_counter = 0
 
         if 'block_merge_threshold' in parameters:
-            print float(parameters['block_merge_threshold'])
             try:
                 value = float(parameters['block_merge_threshold'])
                 self.ui.doubleSpinBox_mergethreshold.setValue(value)
+                update_counter += 1
+            except:
+                pass
+
+        if 'datafile' in parameters:
+            try:
+                value = str(parameters['datafile'])
+                self.ui.lineEdit_browse_datafile.setText(value)
+                update_counter += 1
+            except:
+                pass
+        if 'debug_level' in parameters:
+            d = {'0':0,'1':1,'2':2 }
+            try:
+                value = str(int(float((parameters['debug_level'])))).lower()
+                self.ui.comboBox_debuglevel.setCurrentIndex(int(d[value]))
+                update_counter += 1
+            except:
+                pass
+        if 'edi_directory' in parameters:
+            try:
+                value = str(parameters['edi_directory'])
+                self.ui.lineEdit_browse_edi.setText(value)
+                update_counter += 1
+            except:
+                pass
+        if 'edi_type' in parameters:
+            d = {'z':0,'resphase':1,'spectra':2 }
+            try:
+                value = str(parameters['edi_type']).lower()
+                self.ui.comboBox_edi_type.setCurrentIndex(int(d[value]))
+                update_counter += 1
+            except:
+                pass
+        if 'firstlayer_thickness' in parameters:
+            try:
+                value = float(parameters['firstlayer_thickness'])
+                self.ui.spinBox_firstlayer.setValue(value)
+                update_counter += 1
+            except:
+                pass
+        if 'halfspace_resistivity' in parameters:
+            try:
+                value = float(parameters['halfspace_resistivity'])
+                self.ui.doubleSpinBox_rhostart.setValue(value)
+                update_counter += 1
+            except:
+                pass
+        if 'max_blockwidth' in parameters:
+            try:
+                value = float(parameters['max_blockwidth'])
+                self.ui.spinBox_maxblockwidth.setValue(value)
+                update_counter += 1
+            except:
+                pass
+        if 'max_no_frequencies' in parameters:
+            try:
+                value = str(parameters['max_no_frequencies'])
+                if len(value) == 0 or value.lower().strip() == 'none':
+                    self.ui.checkBox_max_no_frequencies.setCheckState(0)
+                    self.ui.spinBox_max_no_frequencies.setValue(0)
+                else:
+                    value = int(float(value))
+                    self.ui.checkBox_max_no_frequencies.setCheckState(2)
+                    self.ui.spinBox_max_no_frequencies.setValue(value)
+                update_counter += 1
+            except:
+                self.ui.checkBox_max_no_frequencies.setCheckState(0)
+        if 'maximum_frequency' in parameters:
+            try:
+                value = str(parameters['maximum_frequency'])
+                if len(value) == 0 or value.lower().strip() == 'none':
+                    self.ui.checkBox_max_frequency.setCheckState(0)
+                    self.ui.doubleSpinBox_max_frequency.setValue(0)
+                else:
+                    value = int(float(value))
+                    self.ui.checkBox_max_frequency.setCheckState(2)
+                    self.ui.doubleSpinBox_max_frequency.setValue(value)
+                update_counter += 1
+            except:
+                self.ui.checkBox_max_frequency.setCheckState(0)
+        if 'minimum_frequency' in parameters:
+            try:
+                value = str(parameters['minimum_frequency'])
+                if len(value) == 0 or value.lower().strip() == 'none':
+                    self.ui.checkBox_min_frequency.setCheckState(0)
+                    self.ui.doubleSpinBox_min_frequency.setValue(0)
+                else:
+                    value = int(float(value))
+                    self.ui.checkBox_min_frequency.setCheckState(2)
+                    self.ui.doubleSpinBox_min_frequency.setValue(value)
+                update_counter += 1
+            except:
+                self.ui.checkBox_min_frequency.setCheckState(0)
+
+        if 'max_no_iterations' in parameters:
+            try:
+                value = int(float(parameters['max_no_iterations']))
+                self.ui.spinBox_max_no_iterations.setValue(value)
+                update_counter += 1
+            except:
+                pass
+
+        if 'mode' in parameters:
+            d = {'both':0,'tm':1,'te':2, 'tipper':3, 'all':4 }
+            try:
+                value = None
+                raw_value = str(parameters['mode']).lower()
+                if 'te' in raw_value: 
+                    value = 'te'
+                    if 'tm' in raw_value:
+                        value = 'both'
+                elif 'tm' in raw_value:
+                    value = 'tm'
+                if 'both' in raw_value:
+                    value = 'both'
+                elif 'tipper' in raw_value:
+                    value = 'tipper'
+                if 'all' in raw_value:
+                    value = 'all'
+                self.ui.comboBox_mode.setCurrentIndex(int(d[value]))
+                update_counter += 1
+            except:
+                pass
+
+        if 'model_name' in parameters:
+            try:
+                value = str(parameters['model_name'])
+                self.ui.lineEdit_modelname.setText(value)
+                update_counter += 1
+            except:
+                pass
+        if 'mu_start' in parameters:
+            try:
+                value = float(parameters['mu_start'])
+                self.ui.doubleSpinBox_lagrange.setValue(value)
+                update_counter += 1
+            except:
+                pass
+        if 'no_iteration' in parameters:
+            try:
+                value = int(float(parameters['no_iteration']))
+                self.ui.spinBox_iterationstep.setValue(value)
+                update_counter += 1
+            except:
+                pass
+        if 'no_layers' in parameters:
+            try:
+                value = int(float(parameters['no_layers']))
+                self.ui.spinBox_no_layers.setValue(value)
+                update_counter += 1
+            except:
+                pass
+        if 'no_layersperdecade' in parameters:
+            try:
+                value = int(float(parameters['no_layersperdecade']))
+                self.ui.spinBox_layersperdecade.setValue(value)
+                update_counter += 1
+            except:
+                pass
+        if 'phase_errorfloor' in parameters:
+            try:
+                value = (parameters['phase_errorfloor'])
+                if len(value) == 0 or value.lower().strip() == 'none':
+                    self.ui.checkBox_phase_error.setCheckState(0)
+                    self.ui.doubleSpinBox_phase_error.setValue(15)
+                else:
+                    value = float(value)
+                    self.ui.checkBox_phase_error.setCheckState(2)
+                    self.ui.doubleSpinBox_phase_error.setValue(value)
+                update_counter += 1
+            except:
+                self.ui.checkBox_phase_error.setCheckState(0)
+        if 'reached_misfit' in parameters:
+            try:
+                value = int(float(parameters['reached_misfit']))
+                if value == 0:
+                    self.ui.checkBox_misfitreached.setCheckState(0)
+                else:
+                    self.ui.checkBox_misfitreached.setCheckState(2)
+                update_counter += 1
+            except:
+                self.ui.checkBox_misfitreached.setCheckState(0)
+                
+        if 'rho_errorfloor' in parameters:
+            try:
+                value = (parameters['rho_errorfloor'])
+                if len(value) == 0 or value.lower().strip() == 'none':
+                    self.ui.checkBox_rho_error.setCheckState(0)
+                    self.ui.doubleSpinBox_rho_error.setValue(10)
+                else:
+                    value = float(value)
+                    self.ui.checkBox_rho_error.setCheckState(2)
+                    self.ui.doubleSpinBox_rho_error.setValue(value)
+                update_counter += 1
+            except:
+                self.ui.checkBox_rho_error.setCheckState(0)
+        if 'tipper_errorfloor' in parameters:
+            try:
+                value = (parameters['tipper_errorfloor'])
+                if len(value) == 0 or value.lower().strip() == 'none':
+                    self.ui.checkBox_tipper_error.setCheckState(0)
+                    self.ui.doubleSpinBox_tipper_error.setValue(10)
+                else:
+                    value = float(value)
+                    self.ui.checkBox_tipper_error.setCheckState(2)
+                    self.ui.doubleSpinBox_tipper_error.setValue(value)
+                update_counter += 1
+            except:
+                self.ui.checkBox_tipper_error.setCheckState(0)
+        if 'strike' in parameters:
+            try:
+                value = (parameters['strike'])
+                if len(value) == 0 or value.lower().strip() == 'none':
+                    self.ui.checkBox_strike.setCheckState(0)
+                    self.ui.doubleSpinBox_strike.setValue(0)
+                else:
+                    value = float(value)
+                    self.ui.checkBox_strike.setCheckState(2)
+                    self.ui.doubleSpinBox_strike.setValue(value)
+                update_counter += 1
+            except:
+                self.ui.checkBox_strike.setCheckState(2)
+                self.ui.doubleSpinBox_strike.setValue(0)
+        
+        if 'target_rms' in parameters:
+            try:
+                value = float(parameters['target_rms'])
+                self.ui.doubleSpinBox_rms.setValue(value)
+                update_counter += 1
+            except:
+                pass        
+        if 'wd' in parameters:
+            try:
+                value = str(parameters['wd'])
+                self.ui.lineEdit_browse_wd.setText(value)
+                update_counter += 1
             except:
                 pass
         
+        messagetext = ''
+        messagetext += "<P><FONT COLOR='#000000'>Configuration file: "\
+                    "{0}  </FONT></P> \n".format(old_cfg_filename)
+        messagetext += "<P><b><FONT COLOR='#008080'>Read in {0} parameters"\
+                                "</FONT></b></P>".format(update_counter)
+
+        QtGui.QMessageBox.about(self, "Update parameters from file", messagetext )
 
 
+        
 
     #check input values for consistency/existence
     def check_input(self):
@@ -212,7 +457,7 @@ class OccamGui(QtGui.QMainWindow):
                 invalid_flag +=1
 
         #OCCAM startup file 
-        startup_mess=''
+        iteration_mess=''
         
         startup_text=''
         if self.ui.checkBox_useiterationfile.checkState():
@@ -223,7 +468,7 @@ class OccamGui(QtGui.QMainWindow):
                 startup_text = None
             if (startup_text.strip() == '') or  (startup_text is None) or \
                     (not op.isfile(op.realpath(op.join(self.ui.wd,startup_text)))):
-                startup_mess += 'startup file not existing <br>'
+                iteration_mess += 'startup file not existing <br>'
                 invalid_flag += 1
         
         #OCCAM data file (existing file)
@@ -267,9 +512,9 @@ class OccamGui(QtGui.QMainWindow):
         if not modelname_text_raw:
             modelname_mess += 'No model name given <br>'
             invalid_flag +=1
-        elif len(modelname_text_raw.split()) != 1 :
-            modelname_mess += 'White space found in model name <br>'
-            invalid_flag +=1
+        # elif len(modelname_text_raw.split()) != 1 :
+        #     modelname_mess += 'White space found in model name <br>'
+        #     invalid_flag +=1
         else:
             #check model name for other strange characters:
             import re
@@ -329,10 +574,15 @@ class OccamGui(QtGui.QMainWindow):
         D['no_iteration']     = self.ui.spinBox_iterationstep.value()
         D['mu_start']         = self.ui.doubleSpinBox_lagrange.value()
         D['debug_level']      = int(float(self.ui.comboBox_debuglevel.currentText()))
+        D['check_misfit_reached']   = self.ui.checkBox_misfitreached.checkState()
+        if D['check_misfit_reached'] :
+            D['misfit_reached'] = 1
+        else:
+            D['misfit_reached'] = 0
 
         D['set_max_no_frequencies'] = self.ui.checkBox_max_no_frequencies.checkState()
         if D['set_max_no_frequencies']:
-            D['max_no_frequencies'] = self.ui.doubleSpinBox_max_no_frequencies.value()
+            D['max_no_frequencies'] = self.ui.spinBox_max_no_frequencies.value()
         else:
             D['max_no_frequencies'] = None
 
@@ -349,11 +599,14 @@ class OccamGui(QtGui.QMainWindow):
 
 
         D['check_usestationfile'] = self.ui.checkBox_usestationlist.checkState()
+
         D['check_useolddatafile'] = self.ui.checkBox_usedatafile.checkState()
+        
         D['check_useiterationfile'] = self.ui.checkBox_useiterationfile.checkState()
         
 
-        D['mode']             = str(self.ui.comboBox_mode.currentText())
+        D['mode']             = str(self.ui.comboBox_mode.currentText()).lower()
+
         D['edi_type']         = str(self.ui.comboBox_edi_type.currentText()).lower()
         if D['edi_type'].startswith('rho'):
             D['edi_type'] = 'resphase'
@@ -455,6 +708,8 @@ class OccamGui(QtGui.QMainWindow):
 
                 
             QtGui.QMessageBox.about(self, "Data file generation", messagetext )
+            if returnvalue == 1:
+                return
 
         else:
         
@@ -512,8 +767,8 @@ class OccamGui(QtGui.QMainWindow):
                 messagetext += "<P><FONT COLOR='#000000'>Working directory: "\
                         "{0}  </FONT></P> \n".format(setup_object.wd)
 
-                messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
-                "data file: {0}  </FONT></b></P> \n".format(op.split(setup_object.datafile)[1])
+                messagetext += "<P><b><FONT COLOR='#008080'>"\
+                "Data file: {0}  </FONT></b></P> \n".format(op.split(setup_object.datafile)[1])
             except:
                 messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
                 "write data file: {0}  </FONT></b></P> \n".format(setup_object.datafile)
@@ -569,8 +824,8 @@ class OccamGui(QtGui.QMainWindow):
             "{0}  </FONT></P> \n".format(setup_object.wd)
         try:
             setup_object.write_meshfile()
-            messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
-            "mesh file: {0}  </FONT></b></P> \n".format(setup_object.meshfile)
+            messagetext += "<P><b><FONT COLOR='#008080'>"\
+            "Mesh file: {0}  </FONT></b></P> \n".format(setup_object.meshfile)
         except:
             messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
             "write mesh file: {0}  </FONT></b></P> \n".format(setup_object.meshfile)
@@ -578,8 +833,8 @@ class OccamGui(QtGui.QMainWindow):
 
         try:
             setup_object.write_inmodelfile()
-            messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
-            " inmodel file: {0}  </FONT></b></P> \n".format(setup_object.inmodelfile)
+            messagetext += "<P><b><FONT COLOR='#008080'>"\
+            "Inmodel file: {0}  </FONT></b></P> \n".format(setup_object.inmodelfile)
         except:
             messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
             "write inmodel file: {0}  </FONT></b></P> \n".format(setup_object.inmodelfile)
@@ -588,8 +843,13 @@ class OccamGui(QtGui.QMainWindow):
         if D['check_useiterationfile']:
             try:
                 setup_object.startupfile = D['iterationfile']
+                base,short_fn = op.split(setup_object.startupfile)
+                if base != setup_object.wd:
+                    new_startupfile = op.abspath(op.join(setup_object.wd,short_fn))
+                    shutil.copy(setup_object.startupfile,new_startupfile )
+                setup_object.startupfile = short_fn
                 messagetext += "<P><b><FONT COLOR='#008080'>Using old "\
-                "iteration file: {0}  </FONT></b></P> \n".format(setup_object.startupfile)
+                "iteration file for startup: {0}  </FONT></b></P> \n".format(setup_object.startupfile)
                 D['startupfile'] =  D['iterationfile']
             except:
                 messagetext += "<P><b><FONT COLOR='#800000'>Error: Could not "\
@@ -601,8 +861,8 @@ class OccamGui(QtGui.QMainWindow):
         else:
             try:
                 setup_object.write_startupfile()
-                messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
-                " startup file: {0}  </FONT></b></P> \n".format(setup_object.startupfile)
+                messagetext += "<P><b><FONT COLOR='#008080'>"\
+                "Startup file: {0}  </FONT></b></P> \n".format(setup_object.startupfile)
                 D['startupfile'] = setup_object.startupfile
 
             except:
@@ -613,11 +873,11 @@ class OccamGui(QtGui.QMainWindow):
 
         try:
             setup_object.write_configfile()
-            messagetext += "<P><b><FONT COLOR='#008080'>Wrote "\
-            "config file: {0}  </FONT></b></P> \n".format(op.split(setup_object.configfile)[1])
+            messagetext += "<P><b><FONT COLOR='#008080'>"\
+            "Configuration file: {0}  </FONT></b></P> \n".format(op.split(setup_object.configfile)[1])
         except:
             messagetext += "<P><b><FONT COLOR='#800000'>Error:  Could not "\
-            "write config file: {0}  </FONT></b></P> \n".format(op.split(setup_object.configfile)[1])
+            "write configuration file: {0}  </FONT></b></P> \n".format(op.split(setup_object.configfile)[1])
             returnvalue = 1
 
 
@@ -627,7 +887,9 @@ class OccamGui(QtGui.QMainWindow):
 
 
     def generate_inputfiles(self):
-        self.check_input()
+        
+        if self.check_input() == 1:
+            return
         self.setup_parameter_dict()
 
         if self.build_inputfiles() ==1 :
