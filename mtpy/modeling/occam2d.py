@@ -54,6 +54,8 @@ import mtpy.utils.conversions as MTcv
 import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
 import mtpy.analysis.geometry as MTgy
+import mtpy.utils.exceptions as MTex
+
 
 reload(MTcv)
 reload(MTcf)
@@ -159,17 +161,23 @@ class Setup():
 
         update_dict = {}
         if configfile is not None:
-            if op.isfile(configfile):
-                try:
-                    update_dict = {}
-                    raw_configfile_content = MTcf.read_configfile(configfile)
-                    for k in raw_configfile_content.keys():
+            try:
+                configfile = op.join(os.curdir,configfile)
+                if not op.isfile(configfile):
+                    raise
+            except:
+                raise MTex.MTpyError_inputarguments('Error - Configuration '\
+                    'file {0} does not exist!'.format(configfile))
+            try:
+                update_dict = {}
+                raw_configfile_content = MTcf.read_configfile(configfile)
+                for k in raw_configfile_content.keys():
 
-                        temp_dict = raw_configfile_content[k]
-                        update_dict.update(temp_dict)
-                except:
-                    print 'Warning - could not read config file {0}'.format(op.abspath(configfile))
-                    pass
+                    temp_dict = raw_configfile_content[k]
+                    update_dict.update(temp_dict)
+            except:
+                raise MTex.MTpyError_inputarguments('Error - Configuration '\
+                    'file {0} cannot be read!'.format(configfile))
 
         #correcting dictionary for upper case keys
         input_parameters_nocase = {}
@@ -1316,7 +1324,7 @@ class Data():
                                     relative_rho_error = self.rho_errorfloor/100.
                             error = np.abs(relative_rho_error * raw_rho_value)   #relative_error/np.log(10.)
 
-                        elif mode == 2 :
+                        elif mode == 6 :
                             raw_phi_value = rho_phi[1][idx_f][1,0]
                             value = raw_phi_value
                             if self.phase_errorfloor is not None:

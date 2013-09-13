@@ -356,7 +356,7 @@ class Z(object):
             reserr = np.zeros(self.zerr.shape)
             phaseerr = np.zeros(self.zerr.shape)
 
-        res= np.zeros(self.z.shape)
+        res = np.zeros(self.z.shape)
         phase = np.zeros(self.z.shape)
 
 
