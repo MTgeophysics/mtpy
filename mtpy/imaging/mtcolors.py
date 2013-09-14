@@ -147,7 +147,8 @@ cmapdict = {'mt_yl2rd' : mt_yl2rd,
             'mt_bl2wh2rd' : mt_bl2wh2rd,
             'mt_seg_bl2wh2rd' : mt_seg_bl2wh2rd,
             'mt_bl2gr2rd' : mt_bl2gr2rd,
-            'mt_rd2gr2bl' : mt_rd2gr2bl}
+            'mt_rd2gr2bl' : mt_rd2gr2bl,
+            'mt_wh2or' : mt_wh2or}
             
 #make functions for getting the color from each map according to the variable
 #cvar
