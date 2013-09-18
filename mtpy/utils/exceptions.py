@@ -40,3 +40,7 @@ class MTpyError_Z( Exception ):
     
 class MTpyError_PT( Exception ):
     pass
+
+class MTpyError_occam( Exception ):
+    pass
+

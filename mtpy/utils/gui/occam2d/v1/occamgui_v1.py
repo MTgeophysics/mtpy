@@ -296,13 +296,7 @@ class OccamGui(QtGui.QMainWindow):
                 update_counter += 1
             except:
                 pass
-        if 'no_layersperdecade' in parameters:
-            try:
-                value = int(float(parameters['no_layersperdecade']))
-                self.ui.spinBox_layersperdecade.setValue(value)
-                update_counter += 1
-            except:
-                pass
+
         if 'phase_errorfloor' in parameters:
             try:
                 value = (parameters['phase_errorfloor'])
@@ -372,6 +366,13 @@ class OccamGui(QtGui.QMainWindow):
             try:
                 value = float(parameters['target_rms'])
                 self.ui.doubleSpinBox_rms.setValue(value)
+                update_counter += 1
+            except:
+                pass        
+        if 'model_depth' in parameters:
+            try:
+                value = float(parameters['model_depth'])
+                self.ui.doubleSpinBox_model_depth.setValue(value)
                 update_counter += 1
             except:
                 pass        
@@ -626,8 +627,8 @@ class OccamGui(QtGui.QMainWindow):
         D['no_layers']         = self.ui.spinBox_no_layers.value()
         D['firstlayer_thickness']       = self.ui.spinBox_firstlayer.value()
         D['max_blockwidth']   = self.ui.spinBox_maxblockwidth.value()
-        D['no_layersperdecade']    = self.ui.spinBox_layersperdecade.value()
         D['halfspace_resistivity']  = self.ui.doubleSpinBox_rhostart.value()
+        D['model_depth']  = self.ui.doubleSpinBox_model_depth.value()
 
         D['set_rho_error']   = self.ui.checkBox_rho_error.checkState()
         if D['set_rho_error']:

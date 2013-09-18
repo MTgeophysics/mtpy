@@ -60,6 +60,7 @@ import mtpy.utils.exceptions as MTex
 reload(MTcv)
 reload(MTcf)
 reload(MTedi)
+reload(MTex)
 
 #==============================================================================
 
@@ -104,14 +105,14 @@ class Setup():
         self.parameters_startup['halfspace_resistivity'] = 100.
 
 
-        self.parameters_inmodel['no_sideblockelements'] = 7
+        self.parameters_inmodel['no_sideblockelements'] = 5
         self.parameters_inmodel['no_bottomlayerelements'] = 4
-        self.parameters_inmodel['max_blockwidth'] = 500
-        self.parameters_inmodel['firstlayer_thickness'] = 50
-        self.parameters_inmodel['model_depth'] = 50000
-       
-        self.parameters_inmodel['no_layersperdecade'] = 10
-        self.parameters_inmodel['no_layers'] = 30
+        self.parameters_inmodel['firstlayer_thickness'] = 100
+        
+        #model depth is in km!
+        self.parameters_inmodel['model_depth'] = 100
+        self.parameters_inmodel['no_layers'] = 25
+        self.parameters_inmodel['max_blockwidth'] = 1000
 
         self.parameters_inmodel['model_name'] = 'Modelfile generated with MTpy'
         self.parameters_inmodel['block_merge_threshold'] = 0.75
@@ -414,7 +415,7 @@ class Setup():
         #number of layers per depth meters decade
         #layers_per_decade     = float(self.parameters_inmodel['no_layersperdecade'])
         #new:
-        model_depth           = float(self.parameters_inmodel['model_depth'])
+        model_depth_m         = float(self.parameters_inmodel['model_depth'])*1000.
         #depth of first layer
         first_layer_thickness = float(self.parameters_inmodel['firstlayer_thickness'])
         #so "layers_per_decade" layers between "first_layer_thickness" and 10* "first_layer_thickness"
@@ -525,6 +526,9 @@ class Setup():
         print '\nlength of model profile: {0:.1f} km (from {1:.1f} to {2:.1f})'.format(
                                         (meshnodelocations[-1]-meshnodelocations[0])/1000.,
                                         meshnodelocations[0]/1000., meshnodelocations[-1]/1000.)
+        if len(meshnodelocations) > 1000:
+            raise MTex.MTpyError_occam('Error - Occam cannot handle more than 1000'\
+                    ' lateral mesh blocks - increase size of "max_blockwidth" !')        
 
         #4.determine the overall width of mesh blocks
         lo_meshblockwidths = []
@@ -584,7 +588,7 @@ class Setup():
         # of the first layer
 
         #part to be scaled logarithmically:
-        log_part_thickness = model_depth - (n_layers-1) * first_layer_thickness
+        log_part_thickness = model_depth_m - (n_layers-1) * first_layer_thickness
         depths = np.logspace(np.log10(first_layer_thickness),
                                 np.log10(log_part_thickness), 
                                 n_layers) + np.arange(n_layers) * first_layer_thickness
@@ -778,12 +782,32 @@ class Setup():
         mesh_outstring += temptext
 
         mesh_outstring +="%i\n"%(0)
-        
-        for j in range(4*(n_nodes_z-1)):
-            tempstring=''
-            tempstring += (n_nodes_x-1)*"?"
-            tempstring += '\n'
-            mesh_outstring += tempstring
+
+        #occam source code has hard coded limit for reading not more than 1000
+        #characters per line:
+        if n_nodes_x < 1000:
+            # -1 since the surface is counted as uppermost node
+            for j in range(4*(n_nodes_z-1)):
+                tempstring=''
+                tempstring += (n_nodes_x-1)*"?"
+                tempstring += '\n'
+                mesh_outstring += tempstring
+        else:
+            #hope that occam fortran code can handle line breaks:
+            #most likely not....!!!
+            for j in range(4*(n_nodes_z-1)):
+                tempstring=''
+                counter = 0
+                for k in range(n_nodes_x-1):
+                    tempstring += "?"
+                    counter += 1
+                    if counter == 1000:
+                        tempstring += '\n'
+                        counter = 0
+                if counter != 0 :
+                    tempstring += '\n'
+                mesh_outstring += tempstring
+
 
         self.mesh = mesh_outstring
 

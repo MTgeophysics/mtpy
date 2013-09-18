@@ -818,9 +818,9 @@
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>143</x>
-     <y>519</y>
-     <width>653</width>
+     <x>120</x>
+     <y>517</y>
+     <width>672</width>
      <height>34</height>
     </rect>
    </property>
@@ -886,39 +886,26 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_26">
       <item>
-       <spacer name="horizontalSpacer_31">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>13</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
        <widget class="QLabel" name="label_19">
         <property name="text">
-         <string>Layers per decade</string>
+         <string>Model depth</string>
         </property>
         <property name="buddy">
-         <cstring>spinBox_layersperdecade</cstring>
+         <cstring>doubleSpinBox_model_depth</cstring>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="spinBox_layersperdecade">
+       <widget class="QDoubleSpinBox" name="doubleSpinBox_model_depth">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
         <property name="minimumSize">
          <size>
-          <width>0</width>
+          <width>63</width>
           <height>30</height>
          </size>
         </property>
@@ -928,29 +915,29 @@
           <height>30</height>
          </size>
         </property>
-        <property name="minimum">
+        <property name="decimals">
          <number>1</number>
         </property>
+        <property name="minimum">
+         <double>0.100000000000000</double>
+        </property>
         <property name="maximum">
-         <number>100</number>
+         <double>9999.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>5.000000000000000</double>
         </property>
         <property name="value">
-         <number>8</number>
+         <double>100.000000000000000</double>
         </property>
        </widget>
       </item>
       <item>
-       <spacer name="horizontalSpacer_37">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+       <widget class="QLabel" name="label_33">
+        <property name="text">
+         <string>km</string>
         </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>13</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
+       </widget>
       </item>
      </layout>
     </item>
@@ -973,9 +960,6 @@
        <widget class="QLabel" name="label_25">
         <property name="text">
          <string>Thickness of first layer</string>
-        </property>
-        <property name="buddy">
-         <cstring>spinBox_layersperdecade</cstring>
         </property>
        </widget>
       </item>
@@ -1706,7 +1690,7 @@
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>103</x>
+     <x>140</x>
      <y>471</y>
      <width>628</width>
      <height>34</height>
