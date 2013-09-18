@@ -108,8 +108,10 @@ class Setup():
         self.parameters_inmodel['no_bottomlayerelements'] = 4
         self.parameters_inmodel['max_blockwidth'] = 500
         self.parameters_inmodel['firstlayer_thickness'] = 50
+        self.parameters_inmodel['model_depth'] = 50000
+       
         self.parameters_inmodel['no_layersperdecade'] = 10
-        self.parameters_inmodel['no_layers'] = 40
+        self.parameters_inmodel['no_layers'] = 30
 
         self.parameters_inmodel['model_name'] = 'Modelfile generated with MTpy'
         self.parameters_inmodel['block_merge_threshold'] = 0.75
@@ -396,10 +398,8 @@ class Setup():
 
         Attributes required: 
 
-        - self.no_layers
         - self.stationlocations
         - self.parameters_inmodel
-
 
         """
         #given as offset on the profile line
@@ -410,14 +410,17 @@ class Setup():
         maxblockwidth = float(self.parameters_inmodel['max_blockwidth'])
 
         #define vertical setup
+        #old version:
         #number of layers per depth meters decade
-        layers_per_decade     = float(self.parameters_inmodel['no_layersperdecade'])
+        #layers_per_decade     = float(self.parameters_inmodel['no_layersperdecade'])
+        #new:
+        model_depth           = float(self.parameters_inmodel['model_depth'])
         #depth of first layer
         first_layer_thickness = float(self.parameters_inmodel['firstlayer_thickness'])
         #so "layers_per_decade" layers between "first_layer_thickness" and 10* "first_layer_thickness"
         #then the same number between 10* "first_layer_thickness" and 100* "first_layer_thickness"
 
-        #altogether stop at number of maximum model layers:
+        #padding layer does NOT count in here
         n_layers = int(float(self.parameters_inmodel['no_layers']))
 
         #number of padding mesh layers at the bottom 
@@ -576,13 +579,22 @@ class Setup():
         
         #------
         #7. now turn to depths - set up the z axis for the mesh:
+        # the model layers increas in thickness with depth
+        # the increase is in decadic logarithm, starting with the given depth 
+        # of the first layer
 
-        no_decades = int(n_layers/layers_per_decade)+1
-        no_depthpoints_max = layers_per_decade * no_decades
-        depthscale = 10**np.linspace(0,no_decades,no_depthpoints_max + 1) 
+        #part to be scaled logarithmically:
+        log_part_thickness = model_depth - (n_layers-1) * first_layer_thickness
+        depths = np.logspace(np.log10(first_layer_thickness),
+                                np.log10(log_part_thickness), 
+                                n_layers) + np.arange(n_layers) * first_layer_thickness
+        
+        #no_decades = int(n_layers/layers_per_decade)+1
+        #no_depthpoints_max = layers_per_decade * no_decades
+        #depthscale = 10**np.linspace(0,no_decades,no_depthpoints_max + 1) 
 
-        lo_model_depths = list((depthscale[:n_layers-1] * first_layer_thickness))
-
+        #lo_model_depths = list((depthscale[:n_layers-1] * first_layer_thickness))
+        lo_model_depths = list(depths)
         
         lo_mesh_depths = []
         lo_rows_to_merge = []
@@ -702,7 +714,7 @@ class Setup():
         print 'depth of model: {0:.1f} km'.format(lo_model_depths[-1]/1000.)
         print '\nnumber of mesh layers: {0} ({1} model layers + 1 split top layer'\
                         ' + {2} bottom-padding)'.format(len(lo_mesh_thicknesses),
-                                                    n_layers-1,n_bottompadding)
+                                                    n_layers,n_bottompadding)
         print 'number of model blocks: {0}\n'.format(num_params)
         self.no_parameters = num_params
         self.parameters_inmodel['lo_modelblockstrings'] = modelblockstrings
@@ -824,10 +836,10 @@ class Setup():
         model_outstring += temptext
         temptext = "Binding Offset:   {0:.1f}\n".format(boffset)
         model_outstring += temptext
-        temptext = "Num Layers:       {0}\n".format(n_layers)
+        temptext = "Num Layers:       {0}\n".format(n_layers + 1 )
         model_outstring += temptext
 
-        for k in range(n_layers):
+        for k in range(n_layers+1):
             n_meshlayers  = lo_merged_lines[k]
             n_meshcolumns = lo_column_numbers[k]
             temptext="{0} {1}\n".format(n_meshlayers, n_meshcolumns)
