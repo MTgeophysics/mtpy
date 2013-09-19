@@ -103,6 +103,8 @@ class Zen3D(object):
                         stamp
     time_series         np.ndarray of time series data in counts
     tx_id               name of transmitter if used
+    units               [ 'counts' | 'mv' ] units of time series *default* is
+                        counts. Plotting will convert to mV. 
     verbose             [ True | False ] for printing information to the  
                         interpreter
                          
@@ -150,6 +152,7 @@ class Zen3D(object):
         self._skip_sample_tolerance = 5
         self.sample_diff_lst = []
         self.counts_to_mv_conversion = 9.5367431640625e-10
+        self.units = 'counts'
         self.gps_week = 1740
         self.time_series = None
         self.date_time = None
@@ -292,13 +295,19 @@ class Zen3D(object):
         read header and meta data
         """
         
-        #read in as a binary file.
-        raw_data = open(self.fn, 'rb').read()
-        self._raw_data = raw_data
-        
         #beginning index of data blocks
         ds = self._header_len+self._meta_len
         
+        #read in as a binary file.
+        rfid = open(self.fn, 'rb')
+        raw_data = rfid.read(ds+4)
+        self._raw_data = raw_data
+        rfid.close()
+        
+        if len(raw_data) < ds:
+            print 'Data file is not complete cannot read header information'
+            return
+
         try:
             self.log_lines[0] != '-'*72+'\n'
         except IndexError:
@@ -312,6 +321,8 @@ class Zen3D(object):
         #---read in meta raw_data----------------------------------------------
         meta_string = raw_data[self._header_len-1:ds]
         self.read_metadata(meta_string)
+        
+        
         
     
     def read_3d(self):
@@ -541,6 +552,9 @@ class Zen3D(object):
             self.start_dt = None
             self.start_date = None
             self.start_time = None
+            
+        if self.units == 'mv':
+            self.time_series = self.convert_counts()
         
     def convert_counts(self):
         """
@@ -548,7 +562,7 @@ class Zen3D(object):
 
         """
         
-        self.time_series *= self.counts_to_mv_conversion
+        return self.time_series*self.counts_to_mv_conversion
         
     def convert_mV(self):
         """
@@ -556,7 +570,7 @@ class Zen3D(object):
         
         """
         
-        self.time_series /= self.counts_to_mv_conversion
+        return self.time_series/self.counts_to_mv_conversion
         
     def compute_schedule_start(self, start_date, start_time, 
                                leap_seconds=None):
@@ -860,6 +874,7 @@ class Zen3D(object):
         except AttributeError:
             self.read_3d()
             
+        time_series = self.convert_counts()
         if save_fn is None:
             svfn_directory = os.path.join(os.path.dirname(self.fn), 'TS')
             if not os.path.exists(svfn_directory):
@@ -876,9 +891,9 @@ class Zen3D(object):
                                                    self.ch_cmp.upper()))
         #calibrate electric channels 
         if self.ch_cmp == 'ex':
-            self.time_series /= ex
+            time_series /= ex
         elif self.ch_cmp == 'ey':
-            self.time_series /= ey
+            time_series /= ey
 
         #apply notch filter if desired
         if notch_dict is not None:
@@ -893,12 +908,12 @@ class Zen3D(object):
                         self.df,
                         time.mktime(time.strptime(self.start_dt,
                                                   datetime_fmt )), 
-                        self.time_series.shape[0], 
+                        time_series.shape[0], 
                         'mV', 
                         np.median(self.lat), 
                         np.median(self.lon), 
                         0.0, 
-                        self.time_series)
+                        time_series)
                         
         self.fn_mt_ascii = mtfh.write_ts_file_from_tuple(save_fn, header_tuple,
                                                          fmt=fmt)
@@ -934,6 +949,8 @@ class Zen3D(object):
             self.start_date
         except AttributeError:
             self.read_3d()
+            
+        time_series = self.convert_counts()
         
         svfn_date = ''.join(self.start_date.split('-'))
         svfn_time = ''.join(self.start_time.split(':'))
@@ -957,7 +974,7 @@ class Zen3D(object):
                                                                location,
                                                                delta_t,
                                                                t0,
-                                                               self.time_series)
+                                                               time_series)
         return save_fn
                                                                
     def plot_time_series(self, fig_num=1):
@@ -965,16 +982,16 @@ class Zen3D(object):
         plots the time series
         """                                                               
         
-        self.convert_counts()
+        time_series = self.convert_counts()
         fig = plt.figure(fig_num, dpi=300)
         ax = fig.add_subplot(1,1,1)
-        ax.plot(self.time_series)
+        ax.plot(time_series)
         
-        ax.xaxis.set_minor_locator(MultipleLocator(self.df))
-        ax.xaxis.set_major_locator(MultipleLocator(self.df*15))
+        #ax.xaxis.set_minor_locator(MultipleLocator(self.df))
+        #ax.xaxis.set_major_locator(MultipleLocator(self.df*15))
+        #ax.xaxis.set_ticklabels([self.date_time[ii] 
+        #                        for ii in range(0,len(self.date_time), 15)])
         
-        ax.xaxis.set_ticklabels([self.date_time[ii] 
-                                for ii in range(0,len(self.date_time), 15)])
         ax.set_xlabel('Time (s)')
         ax.set_ylabel('Amplitude (mV)')
         plt.show()
@@ -1018,12 +1035,12 @@ class Zen3D(object):
             
         """
         
-        self.convert_counts()
+        time_series = self.convert_counts()
         
         kwargs = {'nh':time_window, 'tstep':time_step, 'L':s_window, 
                   'ng':frequency_window, 'df':self.df, 'nfbins':n_freq_bins,
                   'sigmaL': sigma_L}
-        ptf = plotspectrogram.PlotTF(self.time_series, **kwargs)
+        ptf = plotspectrogram.PlotTF(time_series, **kwargs)
         
         return ptf
         
@@ -1035,7 +1052,9 @@ class Zen3D(object):
         if self.time_series is None:
             self.read_3d()
             
-        spect = np.fft.fft(mtfilt.zero_pad(self.time_series))
+        time_series = self.convert_counts()
+            
+        spect = np.fft.fft(mtfilt.zero_pad(time_series))
         plot_freq = np.fft.fftfreq(spect.shape[0], 1./self.df)
         
         fig = plt.figure(fig_num, [4,4], dpi=200)
@@ -1410,7 +1429,6 @@ class ZenCache(object):
         
         #--> Need to scale the time series into counts cause that is apparently
         #    what MTFT24 expects
-        self.ts /= float(self._ch_factor)
         self.ts = self.ts.astype(np.int32)
         
         #--> make sure none of the data is above the allowed level
@@ -1680,6 +1698,37 @@ class ZenSchedule(object):
         >>> import myp.usgs.zen as zen
         >>> zs = zen.ZenSchedule()
         >>> zs.write_schedule('MT01', dt_offset='2013-06-23,04:00:00')
+        
+    ====================== ====================================================
+    Attributes              Description    
+    ====================== ====================================================
+    ch_cmp_dict            dictionary for channel components with keys being
+                           the channel number and values being the channel
+                           label
+    ch_num_dict            dictionary for channel components whith keys 
+                           being channel label and values being channel number
+    df_lst                 sequential list of sampling rates to repeat in 
+                           schedule
+    df_time_lst            sequential list of time intervals to measure for
+                           each corresponding sampling rate
+    dt_format              date and time format. *default* is 
+                           YYY-MM-DD,hh:mm:ss
+    dt_offset              start date and time of schedule in dt_format
+    gain_dict              dictionary of gain values for channel number 
+    initial_dt             initial date, or dummy zero date for scheduling
+    light_dict             dictionary of light color values for schedule
+    master_schedule        the schedule that all data loggers should schedule
+                           at.  Will taylor the schedule to match the master
+                           schedule according to dt_offset
+    meta_dict              dictionary for meta data
+    meta_keys              keys for meta data dictionary
+    sa_keys                keys for schedule actions
+    sa_lst                 list of schedule actions including time and df
+    sr_dict                dictionary of sampling rate values
+    verbose                [ True | False ] True to print information to 
+                           console 
+    ====================== ====================================================
+
     
     """
     
@@ -1710,10 +1759,11 @@ class ZenSchedule(object):
         self.initial_dt = '2000-01-01,00:00:00'
         self.dt_offset = time.strftime(datetime_fmt ,time.gmtime())
         self.df_lst = (4096, 1024, 256)
-        self.df_time_lst = ('00:05:00','00:15:00','08:00:00')
+        self.df_time_lst = ('00:05:00','00:15:00','07:40:00')
         self.master_schedule = self.make_schedule(self.df_lst, 
                                                   self.df_time_lst,
                                                   repeat=21)
+                                                  
 
     def read_schedule(self, fn):
         """
@@ -1911,7 +1961,7 @@ class ZenSchedule(object):
             **dt_offset** : YYYY-MM-DD,hh:mm:ss
                             date and time off offset to start the scheduling.
                             if this is none then current time on computer is
-                            used.
+                            used. **In UTC Time**
                             
                             **Note**: this will shift the starting point to 
                                       match the master schedule, so that all
