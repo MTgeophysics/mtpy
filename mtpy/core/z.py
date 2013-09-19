@@ -66,6 +66,8 @@ import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.format as MTft
 
+reload(MTcc)
+
 #=================================================================
 
 
@@ -1474,7 +1476,7 @@ class Tipper(object):
             #make an n long list of identical angles
             lo_angles = [degreeangle for i in self.tipper]
         else:
-            if len(lo_angles) == 1:
+            if len(alpha) == 1:
                 try:
                     degreeangle = float(alpha%360)
                 except:

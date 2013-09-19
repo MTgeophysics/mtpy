@@ -1220,7 +1220,6 @@ class Edi(object):
             Updates the attributes "z, zrot, tipper".
 
         """
-
         if type(angle) in [float,int]:
             angle = [float(angle)%360 for i in range(len(self.zrot))]
         else:

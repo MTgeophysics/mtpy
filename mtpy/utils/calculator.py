@@ -294,7 +294,7 @@ def rotatematrix_incl_errors(inmatrix, angle, inmatrix_err = None) :
     cphi = np.cos(phi)
     sphi = np.sin(phi)
 
-    rotmat = np.matrix([[ cphi,-sphi],[sphi,cphi] ])
+    rotmat = np.matrix([[ cphi,sphi],[-sphi,cphi] ])
     rotated_matrix = np.dot(np.dot( rotmat, inmatrix ),rotmat.I  ) 
     #print rotmat
 
@@ -344,7 +344,7 @@ def rotatevector_incl_errors(invector, angle, invector_err = None):
     cphi = np.cos(phi)
     sphi = np.sin(phi)
 
-    rotmat = np.matrix([[ cphi,-sphi],[sphi,cphi] ])
+    rotmat = np.matrix([[ cphi,sphi],[-sphi,cphi] ])
 
     if invector.shape == (1,2):
         rotated_vector = np.dot( invector, rotmat.I )
