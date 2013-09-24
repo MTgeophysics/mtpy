@@ -630,23 +630,23 @@ class OccamGui(QtGui.QMainWindow):
         D['halfspace_resistivity']  = self.ui.doubleSpinBox_rhostart.value()
         D['model_depth']  = self.ui.doubleSpinBox_model_depth.value()
 
-        D['set_rho_error']   = self.ui.checkBox_rho_error.checkState()
-        if D['set_rho_error']:
-            D['rho_error']          = self.ui.doubleSpinBox_rho_error.value()
+        D['set_rho_errorfloor']   = self.ui.checkBox_rho_error.checkState()
+        if D['set_rho_errorfloor']:
+            D['rho_errorfloor']          = self.ui.doubleSpinBox_rho_error.value()
         else:
-            D['rho_error'] = None
+            D['rho_errorfloor'] = None
 
-        D['set_phase_error']   = self.ui.checkBox_phase_error.checkState()
-        if  D['set_phase_error']: 
-            D['phase_error']          = self.ui.doubleSpinBox_phase_error.value()
+        D['set_phase_errorfloor']   = self.ui.checkBox_phase_error.checkState()
+        if  D['set_phase_errorfloor']: 
+            D['phase_errorfloor']          = self.ui.doubleSpinBox_phase_error.value()
         else:
-            D['phase_error']          = None
+            D['phase_errorfloor']          = None
 
-        D['set_tipper_error'] = self.ui.checkBox_tipper_error.checkState()
-        if D['set_tipper_error'] :
-            D['tipper_error']        = self.ui.doubleSpinBox_tipper_error.value()
+        D['set_tipper_errorfloor'] = self.ui.checkBox_tipper_error.checkState()
+        if D['set_tipper_errorfloor'] :
+            D['tipper_errorfloor']        = self.ui.doubleSpinBox_tipper_error.value()
         else:
-            D['tipper_error']        = None
+            D['tipper_errorfloor']        = None
         
         self.parameters = D
 

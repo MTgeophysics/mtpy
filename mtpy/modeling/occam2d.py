@@ -1063,6 +1063,7 @@ class Data():
             if op.isdir(wd):
                 self.wd = op.abspath(wd)
 
+        self._strike_set = False
         self.strike = None
         self.azimuth = 0.
         self.profile = None
@@ -1087,6 +1088,9 @@ class Data():
 
         for key in data_parameters:
             setattr(self,key,data_parameters[key])
+        
+        if 'strike' in data_parameters:
+            self._strike_set = True
 
         try:
             self.generate_profile()
@@ -1330,6 +1334,7 @@ class Data():
                     if mode in [9,2] :
                         raw_rho_value = rho_phi[0][idx_f][0,1]
                         value = raw_rho_value
+                        #value = np.log10(raw_rho_value)
                         absolute_rho_error = rho_phi[2][idx_f][0,1]
                         relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
                         if mode == 9 :
@@ -1337,6 +1342,7 @@ class Data():
                                 if self.rho_errorfloor/100. > relative_rho_error:
                                     relative_rho_error = self.rho_errorfloor/100.
                             error = np.abs(relative_rho_error * raw_rho_value)   #relative_error/np.log(10.)
+                            #error = np.abs(relative_rho_error/np.log(10.))
 
                         elif mode == 2 :
                             raw_phi_value = rho_phi[1][idx_f][0,1]
@@ -1348,10 +1354,11 @@ class Data():
                                 error = 180.
                             else:
                                 error = np.degrees(np.arcsin(0.5*relative_rho_error))#relative_error*100.*0.285
-                    
+
                     if mode in [10,6] :
                         raw_rho_value = rho_phi[0][idx_f][1,0]
                         value = raw_rho_value
+                        #value = np.log10(raw_rho_value)
                         absolute_rho_error = rho_phi[2][idx_f][1,0]
                         relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
                         if mode == 10 :
@@ -1359,6 +1366,7 @@ class Data():
                                 if self.rho_errorfloor/100. > relative_rho_error:
                                     relative_rho_error = self.rho_errorfloor/100.
                             error = np.abs(relative_rho_error * raw_rho_value)   #relative_error/np.log(10.)
+                            #error = np.abs(relative_rho_error /np.log(10.))
 
                         elif mode == 6 :
                             raw_phi_value = rho_phi[1][idx_f][1,0]
@@ -1406,7 +1414,6 @@ class Data():
 
 
                     self.data.append([station_number,frequency_number,mode,value,error])
-
 
     def generate_profile(self):
         """
@@ -1503,19 +1510,22 @@ class Data():
 
 
         
-        #rotate Z according to strike angle
+        #rotate Z according to strike angle, 
         #have 90 degree ambiguity in strike determination
         #choose strike which offers larger angle with profile
-        #if profile azimuth is in [0,90]:
-        if 0 <= self.azimuth < 90:
-            if np.abs(self.azimuth - self.strike) < 45:
-                self.strike += 90
-        elif 90 <= self.azimuth < 135:
-            if self.azimuth - self.strike < 45:
-                self.strike -= 90
-        else:
-            if self.azimuth - self.strike >= 135:
-                self.strike += 90
+        #if profile azimuth is in [0,90].
+        #if strike was explicitely given, use that value!
+        if self._strike_set is False:
+            if 0 <= self.azimuth < 90:
+                if np.abs(self.azimuth - self.strike) < 45:
+                    self.strike += 90
+            elif 90 <= self.azimuth < 135:
+                if self.azimuth - self.strike < 45:
+                    self.strike -= 90
+            else:
+                if self.azimuth - self.strike >= 135:
+                    self.strike += 90
+         
 
         self.strike = self.strike%180
 
