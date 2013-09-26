@@ -127,7 +127,7 @@ def compute_spatial_median_ss(edi_file, ss_tol=0.2, freq_tol=0.15,
             
         delta_d = np.sqrt((edi1.lat-edi2.lat)**2+(edi1.lon-edi2.lon)**2)
         if delta_d <= dm_deg:
-            print 'Station {0} is within dm'.format(edi1.station)
+            print 'Station {0} is within dm'.format(edi2.station)
             res2, phase2, reserr2, phaseerr2 = edi2.Z.res_phase
             for jj, ff in enumerate(edi2.freq[0:n_freq]):
                 try:
@@ -136,8 +136,7 @@ def compute_spatial_median_ss(edi_file, ss_tol=0.2, freq_tol=0.15,
                 except KeyError:
                     freq_find = False
                     for fkey in freq_dict.keys():
-                        if float(fkey)*(1-freq_tol) < ff and \
-                                                ff > float(fkey)*(1+freq_tol):
+                        if float(fkey)*(1-freq_tol) < ff < float(fkey)*(1+freq_tol):
                             ii = freq_dict[fkey]
                             res_array[kk, ii, :, :] = res2[jj, :, :]
                             freq_find = True
@@ -152,27 +151,32 @@ def compute_spatial_median_ss(edi_file, ss_tol=0.2, freq_tol=0.15,
     if kk == 0:
         print '**** No stations with in {0} m'.format(distance_radius)
         return 1.0, 1.0, None
-        
+
+    #convert the res array into a masked array for averaging
+    res_array = np.ma.masked_equal(res_array,0)
+    
     #compute the static shift of x-components
-    static_shift_x = res1[0:n_freq, 0, 1]/np.median(res_array[:, :, 0, 1], 
-                                                    axis=0)
+    
+    static_shift_x = res1[0:n_freq, 0, 1]/np.ma.extras.median(res_array[:, :, 0, 1], 
+                                                    axis=0)                                
     static_shift_x = np.median(static_shift_x[np.where(static_shift_x!=np.inf)])
     
     #check to see if the estimated static shift is within given tolerance
-    if 1-ss_tol > static_shift_x or static_shift_x < 1+ss_tol:
+    if 1.0-ss_tol < static_shift_x < 1.0+ss_tol:
         static_shift_x = 1.0
     
     #compute the static shift of y-components
-    static_shift_y = res1[0:n_freq, 1, 0]/np.median(res_array[:, :, 1, 0], 
+    static_shift_y = res1[0:n_freq, 1, 0]/np.ma.extras.median(res_array[:, :, 1, 0], 
                                                     axis=0)
     static_shift_y = np.median(static_shift_y[np.where(static_shift_y!=np.inf)])
-    
+  
     #check to see if the estimated static shift is within given tolerance
-    if 1-ss_tol > static_shift_y or static_shift_y < 1+ss_tol:
+    if 1.0-ss_tol < static_shift_y < 1.0+ss_tol:
         static_shift_y = 1.0
     
-    print 'Static shift in x-direcion = {0:.2f}'.format(static_shift_x)
-    print 'Static shift in y-direcion = {0:.2f}'.format(static_shift_y)
+    print 'Static shift in x-direction = {0:.2f}'.format(static_shift_x)
+    print 'Static shift in y-direction = {0:.2f}'.format(static_shift_y)
+    
     #write new edi file if there is a static shift correction
     if write_new_edi == 'y':
         svpath = os.path.join(edi_path, 'SS')
@@ -186,7 +190,7 @@ def compute_spatial_median_ss(edi_file, ss_tol=0.2, freq_tol=0.15,
                                            static_shift_y)
         
         edi1.Z.z = new_z
-        
+
         edi1.writefile(new_edi_fn)
         
         return static_shift_x, static_shift_y, new_edi_fn
