@@ -1000,7 +1000,10 @@ class Edi(object):
         dummy4 = specset_string.upper().find('NCHAN')
         n_chan = int(float(
                     specset_string[dummy4:].strip().split('=')[1].split()[0]))
-        id_list = specset_string.split('//')[1].split('\n')[1].strip().split()
+        try:
+            id_list = specset_string.split('//')[1].strip().split()[1:n_chan+1]
+        except:
+            raise MTex.MTpyError_EDI("ERROR - check number of channels in >=spectrasect")
 
         dummy5 = specset_string.upper().find('NFREQ')
         n_freq = int(float(
@@ -1052,7 +1055,9 @@ class Edi(object):
         lo_rots = []
 
         id_channel_dict = _build_id_channel_dict(self.hmeas_emeas)
+
         channellist = [id_channel_dict[i] for i in id_list]
+
         for j in ['HX', 'HY', 'EX', 'EY'] :
             if j not in channellist:
                 raise MTex.MTpyError_edi_file('Mandatory data for channel'+\
@@ -2685,7 +2690,6 @@ def _build_id_channel_dict(lo_hmeas_emeas):
 
         channel = _find_key_value('CHTYPE','=',' '.join(line),valuelength=2)
         ID = _find_key_value('ID','=',' '.join(line))
-
         id_dict[ID] = channel
 
     return id_dict
