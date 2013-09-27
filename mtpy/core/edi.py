@@ -302,9 +302,8 @@ class Edi(object):
         edi_dict['MTSECT'] = self.mtsect
         edi_dict['FREQ'] = self.freq
         edi_dict['Z'] = _make_z_dict(self.Z)
-        if self.Tipper is not None:
-            if self.Tipper.tipper is not None:
-                edi_dict['TIPPER'] = _make_tipper_dict(self.Tipper)
+        if self.Tipper.tipper is not None:
+            edi_dict['TIPPER'] = _make_tipper_dict(self.Tipper)
         edi_dict['ZROT'] = self.zrot
 
 
@@ -823,7 +822,7 @@ class Edi(object):
         
         self.Tipper.tipper = tipper_array
         #errors are stddev, not VAR :
-        self.Tipper.tipper_err = np.sqrt(tippererr_array)
+        self.Tipper.tippererr = np.sqrt(tippererr_array)
         self.Tipper.freq = self.freq
 
     #--------------Read Resistivity and Phase---------------------------------
@@ -1168,12 +1167,12 @@ class Edi(object):
 
         self.info_dict['edifile_generated_with'] = 'MTpy'
 
-        if 1:
+        try:
             outstring, stationname = _generate_edifile_string(self.edi_dict())
-        # except:
-        #     print 'ERROR - could not generate valid EDI file \n-> check, if'\
-        #            ' method "edi_dict" returns sufficient information '
-        #     return
+        except:
+            print 'ERROR - could not generate valid EDI file \n-> check, if'\
+                   ' method "edi_dict" returns sufficient information '
+            return
 
         if not _validate_edifile_string(outstring):
             #return outstring
