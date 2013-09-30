@@ -6302,6 +6302,7 @@ class Occam2DModel(Occam2DData):
                     except IndexError:
                         pass
         self.model_axes=ax
+        #return ax
         plt.show()
     
     def plotL2Curve(self,fnstem=None,fignum=1,dpi=300):

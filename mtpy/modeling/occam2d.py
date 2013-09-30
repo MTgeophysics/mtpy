@@ -1346,6 +1346,8 @@ class Data():
 
                         elif mode == 2 :
                             raw_phi_value = rho_phi[1][idx_f][0,1]
+                            if raw_phi_value >=180:
+                                raw_phi_value -= 180
                             value = raw_phi_value
                             if self.phase_errorfloor is not None:
                                 if self.phase_errorfloor/100. > relative_rho_error:
@@ -1370,6 +1372,8 @@ class Data():
 
                         elif mode == 6 :
                             raw_phi_value = rho_phi[1][idx_f][1,0]
+                            if raw_phi_value >=180:
+                                raw_phi_value -= 180
                             value = raw_phi_value
                             if self.phase_errorfloor is not None:
                                 if self.phase_errorfloor/100. > relative_rho_error:
