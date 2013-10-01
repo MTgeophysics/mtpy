@@ -468,6 +468,8 @@ class Edi(object):
             k = j.split('=')
             key = str(k[0]).lower().strip()
             value = k[1].replace('"','')
+            if key == 'dataid':
+                value = value.replace(' ','_')
             if key in ['lat','long','lon','latitude','longitude','ele','elev',
                        'elevation']:
                 value = MTft._assert_position_format(key,value)
@@ -483,9 +485,9 @@ class Edi(object):
 
         if not head_dict.has_key('elev'):
             head_dict['elev'] = 0.
-
+        
         try:
-            self.station = head_dict['dataid']
+            self.station = head_dict['dataid'].replace(' ','_')
         except KeyError:
             print 'Did not find station name under dataid in HEAD'
 
@@ -820,7 +822,7 @@ class Edi(object):
         
         self.Tipper.tipper = tipper_array
         #errors are stddev, not VAR :
-        self.Tipper.tipper_err = np.sqrt(tippererr_array)
+        self.Tipper.tippererr = np.sqrt(tippererr_array)
         self.Tipper.freq = self.freq
 
     #--------------Read Resistivity and Phase---------------------------------
@@ -998,7 +1000,10 @@ class Edi(object):
         dummy4 = specset_string.upper().find('NCHAN')
         n_chan = int(float(
                     specset_string[dummy4:].strip().split('=')[1].split()[0]))
-        id_list = specset_string.split('//')[1].split('\n')[1].strip().split()
+        try:
+            id_list = specset_string.split('//')[1].strip().split()[1:n_chan+1]
+        except:
+            raise MTex.MTpyError_EDI("ERROR - check number of channels in >=spectrasect")
 
         dummy5 = specset_string.upper().find('NFREQ')
         n_freq = int(float(
@@ -1050,7 +1055,9 @@ class Edi(object):
         lo_rots = []
 
         id_channel_dict = _build_id_channel_dict(self.hmeas_emeas)
+
         channellist = [id_channel_dict[i] for i in id_list]
+
         for j in ['HX', 'HY', 'EX', 'EY'] :
             if j not in channellist:
                 raise MTex.MTpyError_edi_file('Mandatory data for channel'+\
@@ -1136,6 +1143,20 @@ class Edi(object):
         if self.Tipper.tipper is not None:
             self.Tipper.rotation_angle = self.zrot
 
+
+    #--------------Write out file---------------------------------------------
+    def set_Z(self, z_object):
+        """
+            Set the Z object attribute.
+        """
+        if not isinstance(z_object, MTz.Z):
+            raise MTex.MTpyError_Z('Input argument is not an instance of '+\
+                                                                 'the Z class')
+
+        self.Z = z_object
+        self.freq = z_object.freq
+
+
     #--------------Write out file---------------------------------------------
     def writefile(self, *fn):
         """
@@ -1203,28 +1224,32 @@ class Edi(object):
             Updates the attributes "z, zrot, tipper".
 
         """
-
         if type(angle) in [float,int]:
             angle = [float(angle)%360 for i in range(len(self.zrot))]
         else:
             try:
                 if type(angle) is str:
-                    raise
-                if len(angle) != len(self.zrot):
+                    try:
+                        angle = float(angle)
+                        angle = [float(angle)%360 for i in range(len(self.zrot))]
+                    except:
+                        raise
+                elif len(angle) != len(self.zrot):
                     raise
                 angle = [float(i)%360 for i in angle]
             except:
                 raise MTex.MTpyError_inputarguments('ERROR - "angle" must'+\
-                                                    'be a single numerical'+\
-                                                    'value or a list of '+\
+                                                    ' be a single numerical'+\
+                                                    ' value or a list of '+\
                                                     'values. In the latter'+\
                                                     ' case, its length must'+\
                                                     'be {0}'.format(
                                                             len(self.zrot)))
 
         self.Z.rotate(angle)
-        self.zrot = [(ang0+angle[i])%360 for i,ang0 in enumerate(self.zrot)]
-        self.Z.rotation_angle = self.zrot
+        self.zrot = self.Z.rotation_angle
+        # self.zrot = [(ang0+angle[i])%360 for i,ang0 in enumerate(self.zrot)]
+        # self.Z.rotation_angle = self.zrot
 
         if self.Tipper.tipper is not None:
             self.Tipper.rotate(angle)
@@ -2176,6 +2201,7 @@ def _generate_edifile_string(edidict):
             checkdate = 0
             for k in  sorted(head_dict.iterkeys()):
                 v = str(head_dict[k])
+
                 if len(v) == 0:
                     edistring += '\t%s=""\n'%(k.upper())
                 elif len(v.split()) > 1:
@@ -2189,7 +2215,9 @@ def _generate_edifile_string(edidict):
                 if k.lower == 'filedate':
                     checkdate = 1
             if checkdate == 0:
-                todaystring = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+
+                todaystring = datetime.datetime.utcnow().strftime(
+                                                        '%Y/%m/%d %H:%M:%S UTC')
                 edistring += '\tfiledate=%s\n'%(todaystring)
 
 
@@ -2630,7 +2658,7 @@ def _validate_edifile_string(edistring):
         lo_valuelines = firstspectrum.split('\n')[1:]
         dummy6 = ''
         for i in lo_valuelines:
-            dummy6 += i
+            dummy6 += (' '+i)
 
         if not len(dummy6.split()) == no_values:
             found *= 0
@@ -2642,7 +2670,7 @@ def _validate_edifile_string(edistring):
             spectra_found = 1
  
     if z_found == 0 and rhophi_found == 0 and spectra_found == 0 :
-        print 'ERROR - no data found in terms of "Z" or "RHO/PHS" or'+\
+        print 'ERROR - no data found in terms of "Z" or "RHO/PHS" or '+\
               '"SPECTRA" - reading of multiple stations is not supported (yet)!'
         found *= 0
 
@@ -2663,7 +2691,6 @@ def _build_id_channel_dict(lo_hmeas_emeas):
 
         channel = _find_key_value('CHTYPE','=',' '.join(line),valuelength=2)
         ID = _find_key_value('ID','=',' '.join(line))
-
         id_dict[ID] = channel
 
     return id_dict
@@ -2837,7 +2864,7 @@ def _make_tipper_dict(Tipper_object):
                 else:
                     data = np.imag(data)
             else: 
-                data = Tipper_object.tipper_err[:,idx_comp/2, idx_comp%2]
+                data = Tipper_object.tippererr[:,idx_comp/2, idx_comp%2]
  
             tipper_dict[section] = data
 

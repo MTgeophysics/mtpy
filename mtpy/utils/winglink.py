@@ -132,7 +132,7 @@ def get_station_locations(sites_fn, out_fn, ncol=5):
                 
     """
     
-    slst, station_list = read_sites_file(sites_fn)
+    slst, sitelst = read_sites_file(sites_fn)
     
     dx, dy, dz = read_out_file(out_fn, ncol=ncol)
     
@@ -153,7 +153,6 @@ def get_station_locations(sites_fn, out_fn, ncol=5):
         if yy < nyh:
             yarr[ii] = -1*(dy[yy:nyh].sum()-dy[yy]/2)
         else:
-            yarr[ii] = -1*(dy[nyh:yy].sum()+dy[yy]/2)
-            
+            yarr[ii] = -1*(dy[nyh:yy].sum()+dy[yy]/2)   
 
-    return xarr, yarr, station_list  
+    return xarr, yarr  

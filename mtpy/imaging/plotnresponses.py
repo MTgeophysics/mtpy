@@ -17,6 +17,7 @@ import matplotlib.gridspec as gridspec
 import mtpy.imaging.mtplottools as mtpl
 import mtpy.imaging.mtcolors as mtcl
 from mtpy.imaging.plotresponse import PlotResponse as plotresponse
+reload(mtpl)
 
 #============================================================================
 
@@ -285,6 +286,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         res_object_lst = kwargs.pop('res_object_lst', None)
         
         #--> get the inputs into a list of mt objects
+        print fn_lst,mt_object_lst
         self.mt_lst = mtpl.get_mtlst(fn_lst=fn_lst, 
                                      res_object_lst=res_object_lst,
                                      z_object_lst=z_object_lst, 
@@ -391,6 +393,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':.25})
         self._read_ellipse_dict()
         self.ellipse_spacing = kwargs.pop('ellipse_spacing', 1)
+        if self.ellipse_size == 2 and self.ellipse_spacing == 1:
+            self.ellipse_size = 0.25
         
         #skew properties
         self.skew_color = kwargs.pop('skew_color', (.85, .35, 0))
@@ -649,7 +653,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             gs0.update(hspace=.025, wspace=.025, left=.085)
             
             labelcoords = (-0.145, 0.5) 
-     
+            
             for ii, mt in enumerate(self.mt_lst):
                 #get the reistivity and phase object
                 rp = mt.get_ResPhase()

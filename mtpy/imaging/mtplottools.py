@@ -26,14 +26,14 @@ import matplotlib.mlab as mlab
 
 
 #define text formating for plotting
-ckdict = {'phiminang' : '$\Phi_{min}$ (deg)',
-          'phimin' : '$\Phi_{min}$ (deg)',
-          'phimaxang' : '$\Phi_{max}$ (deg)',
-          'phimax' : '$\Phi_{max}$ (deg)',
-          'phidet' : 'Det{$\Phi$} (deg)',
-          'skew' : 'Skew (deg)',
-          'ellipticity' : 'Ellipticity',
-          'skew_seg' : 'Skew (deg)'}
+ckdict = {'phiminang' : r'$\Phi_{min}$ (deg)',
+          'phimin' : r'$\Phi_{min}$ (deg)',
+          'phimaxang' : r'$\Phi_{max}$ (deg)',
+          'phimax' : r'$\Phi_{max}$ (deg)',
+          'phidet' : r'Det{$\Phi$} (deg)',
+          'skew' : r'Skew (deg)',
+          'ellipticity' : r'Ellipticity',
+          'skew_seg' : r'Skew (deg)'}
           
 
             
@@ -457,7 +457,10 @@ class ResPhase(object):
         
         #calculate determinant values
         zdet = np.array([np.linalg.det(zz)**.5 for zz in self._Z.z])
-        zdetvar = np.array([np.linalg.det(zzv)**.5 for zzv in self._Z.zerr])
+        if self._Z.zerr is not None:
+            zdetvar = np.array([np.linalg.det(zzv)**.5 for zzv in self._Z.zerr])
+        else:
+            zdetvar = np.ones_like(zdet)
         
         #apparent resistivity
         self.resdet = 0.2*(1./self._Z.freq)*abs(zdet)**2
@@ -505,7 +508,7 @@ class Tipper(object):
     
         **tipper_array** : np.ndarray((nf, 1, 2))
                            array of the complex tipper as [tx, ty]
-        **tipper_err_array** : np.ndarray((nf, 1, 2))
+        **tippererr_array** : np.ndarray((nf, 1, 2))
                                array of the tipper error as [tx, ty]
    
    Attributes:
@@ -527,13 +530,13 @@ class Tipper(object):
     """
     
     def __init__(self, tipper_object=None, tipper_array=None, 
-                 tipper_err_array=None, rot_t=0, freq=None):
+                 tippererr_array=None, rot_t=0, freq=None):
         
         if tipper_object is not None:
             self._Tipper = tipper_object
         else:
             self._Tipper = mtz.Tipper(tipper_array=tipper_array, 
-                                      tipper_err_array=tipper_err_array,
+                                      tippererr_array=tippererr_array,
                                       freq=freq)
                                       
         self.freq = freq
@@ -616,7 +619,7 @@ class MTplot(object):
         **tipper_array** : np.array((nf, 1, 2), dtype='complex')
                            array of tipper values for tx, ty. *default* is None
                            
-        **tipper_err_array** : np.array((nf, 1, 2))
+        **tippererr_array** : np.array((nf, 1, 2))
                                array of tipper error estimates, same shape as
                                tipper_array. *default* is None
         
@@ -661,7 +664,7 @@ class MTplot(object):
         
         -tipper        tipper elements in an np.array((nf, 1, 2))
         
-        -tipper_err    estimates of tipper error, same shape as tipper
+        -tippererr    estimates of tipper error, same shape as tipper
         
         -station       station name
         
@@ -721,7 +724,7 @@ class MTplot(object):
     
     def __init__(self, fn=None, z=None, z_err=None, res_array=None,
                  phase_array=None, res_err_array=None, phase_err_array=None,
-                 tipper=None, tipper_err=None, station=None, period=None, 
+                 tipper=None, tippererr=None, station=None, period=None, 
                  lat=None, lon=None, elev=None, rot_z=0, z_object=None, 
                  tipper_object=None, freq=None):
                      
@@ -758,7 +761,7 @@ class MTplot(object):
             self._Tipper = tipper_object
         else:
             self._Tipper = mtz.Tipper(tipper_array=tipper, 
-                                      tipper_err_array=tipper_err,
+                                      tippererr_array=tippererr,
                                       freq=freq)
         
         #--> read in the edi file if its given
@@ -810,7 +813,7 @@ class MTplot(object):
         if edi1.Tipper.tipper == None:
             self._set_tipper(np.zeros((self._Z.z.shape[0], 1, 2),
                                      dtype='complex'))
-            self._set_tipper_err(np.zeros((self._Z.z.shape[0], 1, 2)))
+            self._set_tippererr(np.zeros((self._Z.z.shape[0], 1, 2)))
             self._Tipper.rotation_angle=np.zeros(self._Z.z.shape[0])
             self._Tipper.freq = edi1.freq
             
@@ -840,7 +843,7 @@ class MTplot(object):
             self.z = self._Z.z[::-1]
             self.zerr = self._Z.zerr[::-1]
             self.tipper = self._Tipper.tipper[::-1]
-            self.tipper_err = self._Tipper.tipper_err[::-1]
+            self.tippererr = self._Tipper.tippererr[::-1]
             self.period = self.period[::-1]
             
         
@@ -859,8 +862,8 @@ class MTplot(object):
         self._Tipper.tipper = tipper
         self._plot_tipper = 'y'
         
-    def _set_tipper_err(self, tipper_err):
-        self._Tipper.tipper_err = tipper_err
+    def _set_tippererr(self, tippererr):
+        self._Tipper.tippererr = tippererr
         
     def _set_station(self, station):
         self._station = station
@@ -873,7 +876,7 @@ class MTplot(object):
             self._period = self._period[::-1]
             if self._Tipper.tipper is not None:
                 self._Tipper.tipper = self._Tipper.tipper[::-1]
-                self._Tipper.tipper_err = self._Tipper.tipper_err[::-1]
+                self._Tipper.tippererr = self._Tipper.tippererr[::-1]
             
         self._Z.freq = 1./self._period
         self._freq = 1./self._period
@@ -924,7 +927,7 @@ class MTplot(object):
             self._period = self._period[::-1]
             if self._Tipper.tipper is not None:
                 self._Tipper.tipper = self._Tipper.tipper[::-1]
-                self._Tipper.tipper_err = self._Tipper.tipper_err[::-1]
+                self._Tipper.tippererr = self._Tipper.tippererr[::-1]
             
         self._Z.freq = self._freq
         self._freq = self._freq
@@ -944,8 +947,8 @@ class MTplot(object):
     def _get_tipper(self):
         return self._Tipper.tipper
         
-    def _get_tipper_err(self):
-        return self._Tipper.tipper_err
+    def _get_tippererr(self):
+        return self._Tipper.tippererr
         
     def _get_station(self):
         return self._station
@@ -986,7 +989,7 @@ class MTplot(object):
                       doc="Tipper array in the shape (nz, 2) complex "+\
                           "numpy.array")
                        
-    tipper_err = property(_get_tipper_err, _set_tipper_err, 
+    tippererr = property(_get_tippererr, _set_tippererr, 
                           doc="Tipper error array same shape as MT.tipper"+\
                               "real numpy.array")
                           
@@ -1349,9 +1352,11 @@ def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None,
     """
     
     #first need to find something to loop over
+    print fn_lst
     try:
         ns = len(fn_lst)
         mt_lst = [MTplot(fn=fn) for fn in fn_lst]
+        print mt_lst
         print 'Reading {0} stations'.format(ns)
         return mt_lst
     except TypeError:

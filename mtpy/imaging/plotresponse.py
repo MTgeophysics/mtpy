@@ -96,7 +96,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         **tipper_array**: np.ndarray((nf, 1, 2), dtype='complex')
                            array of tipper values for tx, ty. *default* is None
                            
-        **tipper_err_array**: np.ndarray((nf, 1, 2))
+        **tippererr_array**: np.ndarray((nf, 1, 2))
                                array of tipper error estimates, same shape as
                                tipper_array. *default* is None
                                
@@ -349,7 +349,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         res_array = kwargs.pop('res_array', None)
         res_err_array = kwargs.pop('res__err_array', None)
         tipper_array = kwargs.pop('tipper_array', None)
-        tipper_err_array = kwargs.pop('tipper_err_array', None)
+        tippererr_array = kwargs.pop('tippererr_array', None)
         tipper_object = kwargs.pop('tipper_object', None)
         mt_object = kwargs.pop('mt_object', None)
         period = kwargs.pop('period', None)
@@ -367,7 +367,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                                    phase_err_array=phase_err_array,
                                    res_err_array=res_err_array,
                                    tipper=tipper_array, 
-                                   tipper_err=tipper_err_array,
+                                   tippererr=tippererr_array,
                                    tipper_object=tipper_object,
                                    period=period)
                               
@@ -470,6 +470,8 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':.25})
         self._read_ellipse_dict()
         self.ellipse_spacing = kwargs.pop('ellipse_spacing', 1)
+        if self.ellipse_size == 2 and self.ellipse_spacing == 1:
+            self.ellipse_size = 0.25
         
         #skew properties
         self.skew_color = kwargs.pop('skew_color', (.85, .35, 0))
@@ -535,10 +537,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         plt.rcParams['figure.subplot.bottom'] = .1
         plt.rcParams['figure.subplot.top'] = .93
         plt.rcParams['figure.subplot.left'] = .80
-        if self.plot_skew == 'y':
-            plt.rcParams['figure.subplot.right'] = .90
-        else:
-            plt.rcParams['figure.subplot.right'] = .98
+        plt.rcParams['figure.subplot.right'] = .98
         
         #set the font properties for the axis labels
         fontdict = {'size':self.font_size+2, 'weight':'bold'}
@@ -748,6 +747,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         #set th xaxis tick labels to invisible
         if pdict['phase'] != nrows-1:
             plt.setp(self.axp.xaxis.get_ticklabels(), visible=False)
+            self.axp.set_xlabel('')
             
         #-----plot tipper----------------------------------------------------              
         if self._plot_tipper.find('y') == 0:
@@ -1024,14 +1024,14 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                                     ecolor=self.skew_color,
                                     capsize=self.marker_size,
                                     elinewidth=self.marker_lw)
-            stlst.append(ps4[0])
-            stlabel.append('Skew')
+                                    
             if self.skew_limits is None:
                 self.skew_limits = (-9, 9)
             
             self.axsk.set_ylim(self.skew_limits)
             self.axsk.yaxis.set_major_locator(MultipleLocator(3))
             self.axsk.yaxis.set_minor_locator(MultipleLocator(1))
+            self.axsk.grid(True, alpha=.25, color=(.25, .25, .25))
             self.axsk.set_ylabel('Skew', fontdict)
             self.axsk.set_xlabel('Period (s)', fontdict)
             self.axsk.set_xscale('log')

@@ -60,7 +60,7 @@ def main():
             VTKresist = os.path.abspath(os.path.realpath('VTKResistivityGrid'))
 
         try:
-            VTKstations = os.path.abspath(os.path.realpath(arguments[3]))
+            VTKstations = os.path.abspath(os.path.realpath(arguments[4]))
         except:
             VTKstations = os.path.abspath(os.path.realpath('VTKStationGrid'))
 

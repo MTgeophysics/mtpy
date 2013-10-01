@@ -32,6 +32,7 @@ import mtpy.utils.exceptions as mtex
 import mtpy.utils.configfile as mtcf
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
+import mtpy.imaging.plotspectrogram as plotspectrogram
 
 try:
     import mtpy.utils.mseed as mtmseed
@@ -56,64 +57,70 @@ class Zen3D(object):
                 full path to .Z3D file to be manipulated
                 
                 
-    Methods:
-    ---------
-        **read_3d** : read 3D file making sure all the time stamps are 
-                     correctly spaced.  The returned time series starts at 
-                     the first stamp which has the correct amount of data
-                     points between it and the next time stamp.  Note that
-                     there are usually a few seconds at the end and maybe 
-                     beginning that aren't correct because the internal 
-                     computer is busy switchin sampling rate.
+    ====================== ====================================================
+    Methods                 Description
+    ====================== ====================================================
+    read_3d                read 3D file making sure all the time stamps are 
+                           correctly spaced.  Returned time series starts at 
+                           the first stamp which has the correct amount of data
+                           points between it and the next time stamp.  Note
+                           there are usually a few seconds at the end and maybe 
+                           beginning that aren't correct because the internal 
+                           computer is busy switchin sampling rate.
                      
-        **get_gps_stamp_location** : locates the gps stamp location
+    get_gps_stamp_location locates the gps stamp location
         
-        **get_gps_time** : converts the gps counts to seconds
-        
-        **get_date_time** : converts gps seconds into the actual date and time
+    get_gps_time           converts the gps counts to relative epoch seconds
+                           according to gps week.      
+    get_date_time          converts gps seconds into the actual date and time
+                           in UTC.  Note this is different than GPS time which
+                           is how the zen is scheduled, so the time will be 
+                           off by the current amount of leap seconds.
+    ====================== ====================================================
         
     =================== =======================================================
     Attributes           Description
     =================== =======================================================
-        ch_adcard_sn     serial number of a/d card in channel
-        ch_cmp           MT component of channel
-        ch_length        distance between electrodes for channel, 
-                         doesn't matter for magnetic channels
-        ch_number        number of channel
-        date_time        np.ndarray of date,time of gps stamps
-        df               sampling rate 
-        fn               full path to file name read in
-        gps_diff         difference between gps time stamps
-        gps_lst          list of gps stamps
-        gps_time         np.ndarray of gps times from time stamps
-        gps_week         gps week
-        header_dict      dictionary of header parameters
-        log_lines        list of information to write into a log file later
-        meta_dict        dictionary of meta data parameters
-        rx_stn           name of station
-        start_time       starting time and date of first time stamp with 
+    ch_adcard_sn        serial number of a/d card in channel
+    ch_cmp              MT component of channel
+    ch_length           distance between electrodes for channel, 
+                        doesn't matter for magnetic channels
+    ch_number           number of channel
+    date_time           np.ndarray of date,time of gps stamps
+    df                  sampling rate 
+    fn                  full path to file name read in
+    gps_diff            difference between gps time stamps
+    gps_lst             list of gps stamps
+    gps_time            np.ndarray of gps times from time stamps
+    gps_week            gps week
+    header_dict         dictionary of header parameters
+    log_lines           list of information to write into a log file later
+    meta_dict           dictionary of meta data parameters
+    rx_stn              name of station
+    start_time          starting time and date of first time stamp with 
                          correct number of samples
-        temperature      np.ndarray of temperature measurements at each time 
-                         stamp
-        time_series      np.ndarray of time series data in counts
-        tx_id            name of transmitter if used
-        verbose          [ True | False ] for printing information in 
-                         interpreter
+    temperature         np.ndarray of temperature measurements at each time 
+                        stamp
+    time_series         np.ndarray of time series data in counts
+    tx_id               name of transmitter if used
+    units               [ 'counts' | 'mv' ] units of time series *default* is
+                        counts. Plotting will convert to mV. 
+    verbose             [ True | False ] for printing information to the  
+                        interpreter
                          
-        _data_type       np.dtype to convert binary formatted string
-        _data_types      list of data types in binary formatted string
-        _gps_epoch       gps_epoch in time.gmtime format. 
-        _gps_stamp       string of gps_stamp 
-        _header_len      length of header string in bytes. (512)
-        _meta_len        length of meta data in bytes. (512)
-        _raw_data        data in binary format
-        _seconds_diff    difference in seconds from start time to look for 
+    _data_type          np.dtype to convert binary formatted string
+    _data_types         list of data types in binary formatted string
+    _gps_epoch          gps_epoch in time.gmtime format. 
+    _gps_stamp          string of gps_stamp 
+    _header_len         length of header string in bytes. (512)
+    _meta_len           length of meta data in bytes. (512)
+    _raw_data           data in binary format
+    _seconds_diff       difference in seconds from start time to look for 
                          gps stamp. *default* is 5
-        _stamp_len       length of gps time stamp in bits
-        _stamp_lst       list of gps time stamp variables
-        _week_len        length of a gps week in seconds
+    _stamp_len          length of gps time stamp in bits
+    _stamp_lst          list of gps time stamp variables
+    _week_len           length of a gps week in seconds
     =================== =======================================================
-    
     """
     
     def __init__(self, fn=None, **kwargs):
@@ -145,13 +152,51 @@ class Zen3D(object):
         self._skip_sample_tolerance = 5
         self.sample_diff_lst = []
         self.counts_to_mv_conversion = 9.5367431640625e-10
+        self.units = 'counts'
         self.gps_week = 1740
         self.time_series = None
         self.date_time = None
         
+        self.header_dict = None
+        self.df = None
+        self.gain = None
+        self.gps_week = None
+        self.schedule_date = None
+        self.schedule_time = None
+        self.start_dt = None
+        self.start_time = None
+        self.start_date = None
+        self.ch_adcard_sn = None
+        
+        self.meta_dict = None  
+        self.ch_number = None
+        self.ch_cmp = None
+        self.ch_length = None
+        self.rx_stn = None
+        self.tx_id = None
+        
+        self.gps_diff = None
+        self.gps_time = None
+        self.gps_lst = None
+        self.temperature = None
+        self.lat = None
+        self.lon = None
+        
     def read_header(self, header_string):
         """
-        read header information
+        read header information and fill attribute:
+        
+            * header_dict   --> dictionary of head information
+            * df            --> sampling frequency in Hz
+            * gain          --> gain from within Zen box for that channel
+            * gps_week      --> current gps week
+            * schedule_time --> schedule start time
+            * schedule_date --> schedule start date
+            * start_dt      --> schedule start date and time
+            * ch_adcard_sn  --> a/d card serial number
+            
+        **Note:** there are different versions of the header keywords from 
+                  different generations of the Zen firmware.
         """
         
         #----read in header information----------------------------------------
@@ -219,6 +264,16 @@ class Zen3D(object):
     def read_metadata(self, meta_data_string):
         """
         read in meta data and make important information attributes
+        
+        Fills attributes:
+        
+            * meta_dict      --> dictionary of metadata 
+            * ch_number      --> channel number
+            * ch_cmp         --> channel component
+            * ch_length      --> length of dipole
+            * rx_stn         --> station name (can only be an integer)
+            * tx.id          --> name of transmitter if used
+            
         """
         meta_lst = meta_data_string.replace('\n','|').split('|') 
         meta_dict = {}
@@ -234,6 +289,41 @@ class Zen3D(object):
         self.ch_length = meta_dict['ch.varasp']
         self.rx_stn = meta_dict['rx.stn']
         self.tx_id = meta_dict['tx.id']
+        
+    def get_info(self):
+        """
+        read header and meta data
+        """
+        
+        #beginning index of data blocks
+        ds = self._header_len+self._meta_len
+        
+        #read in as a binary file.
+        rfid = open(self.fn, 'rb')
+        raw_data = rfid.read(ds+4)
+        self._raw_data = raw_data
+        rfid.close()
+        
+        if len(raw_data) < ds:
+            print 'Data file is not complete cannot read header information'
+            return
+
+        try:
+            self.log_lines[0] != '-'*72+'\n'
+        except IndexError:
+            self.log_lines.append('-'*72+'\n')
+            self.log_lines.append('--> Reading File: {0}\n'.format(self.fn))
+        
+        #----read in header information----------------------------------------
+        header_string = raw_data[0:self._header_len]
+        self.read_header(header_string)
+        
+        #---read in meta raw_data----------------------------------------------
+        meta_string = raw_data[self._header_len-1:ds]
+        self.read_metadata(meta_string)
+        
+        
+        
     
     def read_3d(self):
         """
@@ -241,7 +331,7 @@ class Zen3D(object):
         
         Makes sure that the number of samples between each time stamp is
         the sampling rate.  If it is not an error is raised if the difference
-        is more than 5 samples.  
+        is more than _skip_sample_tolerance.  
         
         Creates a time series that starts at the time where the first gps
         time stamp has the correct number of points, and stops where the first
@@ -287,7 +377,6 @@ class Zen3D(object):
         
         #get position of gps stamps
         gps_lst = np.zeros(num_blocks, dtype=np.int)
-        #gps_times = np.zeros(num_blocks)
         
         gps_dict = dict([(key, np.zeros(num_blocks, dtype=dtp)) 
                           for key, dtp in zip(self._stamp_lst, 
@@ -429,9 +518,6 @@ class Zen3D(object):
         #actually an exact 0 in the data, but rarely happens 
         self.time_series = data_array[np.nonzero(data_array)]
         
-        #convert data counts into millivolts
-        self.time_series *= self.counts_to_mv_conversion
-        
         #need to cut all the data arrays to have the same length and corresponding 
         #data points
         for key in gps_dict.keys():
@@ -466,7 +552,25 @@ class Zen3D(object):
             self.start_dt = None
             self.start_date = None
             self.start_time = None
+            
+        if self.units == 'mv':
+            self.time_series = self.convert_counts()
         
+    def convert_counts(self):
+        """
+        convert the time series from counts to millivolts
+
+        """
+        
+        return self.time_series*self.counts_to_mv_conversion
+        
+    def convert_mV(self):
+        """
+        convert millivolts to counts assuming no other scaling has been applied
+        
+        """
+        
+        return self.time_series/self.counts_to_mv_conversion
         
     def compute_schedule_start(self, start_date, start_time, 
                                leap_seconds=None):
@@ -520,6 +624,8 @@ class Zen3D(object):
                     if new_day <= 0:
                         new_day = (int(day)-1)%30
                         new_month = int(month)-1
+                        if new_month <= 0:
+                            new_month = (12-new_month)
                         new_day = month_dict[new_month]-int(day)+1
                         print 'need to check date, have not implemented '+\
                               'leap years yet'
@@ -768,6 +874,7 @@ class Zen3D(object):
         except AttributeError:
             self.read_3d()
             
+        time_series = self.convert_counts()
         if save_fn is None:
             svfn_directory = os.path.join(os.path.dirname(self.fn), 'TS')
             if not os.path.exists(svfn_directory):
@@ -784,9 +891,9 @@ class Zen3D(object):
                                                    self.ch_cmp.upper()))
         #calibrate electric channels 
         if self.ch_cmp == 'ex':
-            self.time_series /= ex
+            time_series /= ex
         elif self.ch_cmp == 'ey':
-            self.time_series /= ey
+            time_series /= ey
 
         #apply notch filter if desired
         if notch_dict is not None:
@@ -801,12 +908,12 @@ class Zen3D(object):
                         self.df,
                         time.mktime(time.strptime(self.start_dt,
                                                   datetime_fmt )), 
-                        self.time_series.shape[0], 
+                        time_series.shape[0], 
                         'mV', 
                         np.median(self.lat), 
                         np.median(self.lon), 
                         0.0, 
-                        self.time_series)
+                        time_series)
                         
         self.fn_mt_ascii = mtfh.write_ts_file_from_tuple(save_fn, header_tuple,
                                                          fmt=fmt)
@@ -842,6 +949,8 @@ class Zen3D(object):
             self.start_date
         except AttributeError:
             self.read_3d()
+            
+        time_series = self.convert_counts()
         
         svfn_date = ''.join(self.start_date.split('-'))
         svfn_time = ''.join(self.start_time.split(':'))
@@ -865,7 +974,7 @@ class Zen3D(object):
                                                                location,
                                                                delta_t,
                                                                t0,
-                                                               self.time_series)
+                                                               time_series)
         return save_fn
                                                                
     def plot_time_series(self, fig_num=1):
@@ -873,19 +982,67 @@ class Zen3D(object):
         plots the time series
         """                                                               
         
+        time_series = self.convert_counts()
         fig = plt.figure(fig_num, dpi=300)
         ax = fig.add_subplot(1,1,1)
-        ax.plot(self.time_series)
+        ax.plot(time_series)
         
-        ax.xaxis.set_minor_locator(MultipleLocator(self.df))
-        ax.xaxis.set_major_locator(MultipleLocator(self.df*15))
+        #ax.xaxis.set_minor_locator(MultipleLocator(self.df))
+        #ax.xaxis.set_major_locator(MultipleLocator(self.df*15))
+        #ax.xaxis.set_ticklabels([self.date_time[ii] 
+        #                        for ii in range(0,len(self.date_time), 15)])
         
-        ax.xaxis.set_ticklabels([self.date_time[ii] 
-                                for ii in range(0,len(self.date_time), 15)])
         ax.set_xlabel('Time (s)')
         ax.set_ylabel('Amplitude (mV)')
         plt.show()
+        
+        self.convert_mV()
         return fig, ax
+        
+    def plot_spectrogram(self, time_window=2**8, time_step=2**6, s_window=11,
+                         frequency_window=1, n_freq_bins=2**9, sigma_L=None):
+        """
+        plot the spectrogram of the data using the S-method
+        
+        Arguments:
+        -----------
+            **s_window** : int (should be odd)
+                    length of window for S-method calculation, higher numbers tend 
+                    toward WVD
+                    
+            **time_window** : int (should be power of 2)
+                     window length for each time step
+                     *default* is 2**8 = 256
+                     
+            **frequency_window** : int (should be odd)
+                     length of smoothing window along frequency plane
+            
+            **time_step** : int 
+                        number of sample between short windows
+                        *default* is 2**7 = 128
+                     
+            **sigmaL** : float
+                     full width half max of gaussian window for L
+            
+            
+            **n_freq_bins** : int 
+                            (should be power of 2 and equal or larger than nh)
+                            number of frequency bins
+                            
+        Returns:
+        ---------
+            **ptf** : mtpy.imaging.plotspectrogram.PlotTF object
+            
+        """
+        
+        time_series = self.convert_counts()
+        
+        kwargs = {'nh':time_window, 'tstep':time_step, 'L':s_window, 
+                  'ng':frequency_window, 'df':self.df, 'nfbins':n_freq_bins,
+                  'sigmaL': sigma_L}
+        ptf = plotspectrogram.PlotTF(time_series, **kwargs)
+        
+        return ptf
         
     
     def plot_spectra(self, fig_num=2):
@@ -895,7 +1052,9 @@ class Zen3D(object):
         if self.time_series is None:
             self.read_3d()
             
-        spect = np.fft.fft(mtfilt.zero_pad(self.time_series))
+        time_series = self.convert_counts()
+            
+        spect = np.fft.fft(mtfilt.zero_pad(time_series))
         plot_freq = np.fft.fftfreq(spect.shape[0], 1./self.df)
         
         fig = plt.figure(fig_num, [4,4], dpi=200)
@@ -1086,7 +1245,6 @@ class ZenCache(object):
         """
         check to make sure timeseries line up with eachother.
         
-        
         """
         
         n_fn = len(zt_lst)
@@ -1156,8 +1314,6 @@ class ZenCache(object):
         
         return ts_array, ts_min
         
-        
-    
     def write_cache_file(self, fn_lst, save_fn, station='ZEN', decimate=1):
         """
         write a cache file from given filenames
@@ -1273,7 +1429,6 @@ class ZenCache(object):
         
         #--> Need to scale the time series into counts cause that is apparently
         #    what MTFT24 expects
-        self.ts /= float(self._ch_factor)
         self.ts = self.ts.astype(np.int32)
         
         #--> make sure none of the data is above the allowed level
@@ -1337,9 +1492,9 @@ class ZenCache(object):
         
         #--> write calibrations
         cal_data1 = 'HEADER.TYPE,Calibrate\nCAL.VER,019\nCAL.SYS,0000,'+\
-                   ''.join([' 0.000000: '+'0.000000      0.000000,'*3]*27)
+                   ''.join([' 0.000000: '+'0.000000      0.000000,'*3]*1)
         cal_data2 = '\nCAL.SYS,0000,'+\
-                    ''.join([' 0.000000: '+'0.000000      0.000000,'*3]*27)
+                    ''.join([' 0.000000: '+'0.000000      0.000000,'*3]*1)
                     
         cal_data = cal_data1+(cal_data2*(self.ts.shape[1]-1))
         cal_len = len(cal_data)
@@ -1538,6 +1693,43 @@ class ZenSchedule(object):
     """
     deals with reading, writing and copying schedule
     
+    :Example: ::
+    
+        >>> import myp.usgs.zen as zen
+        >>> zs = zen.ZenSchedule()
+        >>> zs.write_schedule('MT01', dt_offset='2013-06-23,04:00:00')
+        
+    ====================== ====================================================
+    Attributes              Description    
+    ====================== ====================================================
+    ch_cmp_dict            dictionary for channel components with keys being
+                           the channel number and values being the channel
+                           label
+    ch_num_dict            dictionary for channel components whith keys 
+                           being channel label and values being channel number
+    df_lst                 sequential list of sampling rates to repeat in 
+                           schedule
+    df_time_lst            sequential list of time intervals to measure for
+                           each corresponding sampling rate
+    dt_format              date and time format. *default* is 
+                           YYY-MM-DD,hh:mm:ss
+    dt_offset              start date and time of schedule in dt_format
+    gain_dict              dictionary of gain values for channel number 
+    initial_dt             initial date, or dummy zero date for scheduling
+    light_dict             dictionary of light color values for schedule
+    master_schedule        the schedule that all data loggers should schedule
+                           at.  Will taylor the schedule to match the master
+                           schedule according to dt_offset
+    meta_dict              dictionary for meta data
+    meta_keys              keys for meta data dictionary
+    sa_keys                keys for schedule actions
+    sa_lst                 list of schedule actions including time and df
+    sr_dict                dictionary of sampling rate values
+    verbose                [ True | False ] True to print information to 
+                           console 
+    ====================== ====================================================
+
+    
     """
     
     def __init__(self):
@@ -1567,10 +1759,11 @@ class ZenSchedule(object):
         self.initial_dt = '2000-01-01,00:00:00'
         self.dt_offset = time.strftime(datetime_fmt ,time.gmtime())
         self.df_lst = (4096, 1024, 256)
-        self.df_time_lst = ('00:05:00','00:15:00','05:40:00')
+        self.df_time_lst = ('00:05:00','00:15:00','07:40:00')
         self.master_schedule = self.make_schedule(self.df_lst, 
                                                   self.df_time_lst,
                                                   repeat=21)
+                                                  
 
     def read_schedule(self, fn):
         """
@@ -1736,8 +1929,8 @@ class ZenSchedule(object):
     def write_schedule(self, station, clear_schedule=True, 
                        clear_metadata=True, varaspace=100, 
                        savename=0, dt_offset=None, 
-                       df_lst=(4096, 1024, 256), 
-                       df_time_lst=('00:05:00','00:15:00','05:40:00'), 
+                       df_lst=None, 
+                       df_time_lst=None, 
                        repeat=8, gain=0):
         """
         write a zen schedule file
@@ -1768,7 +1961,7 @@ class ZenSchedule(object):
             **dt_offset** : YYYY-MM-DD,hh:mm:ss
                             date and time off offset to start the scheduling.
                             if this is none then current time on computer is
-                            used.
+                            used. **In UTC Time**
                             
                             **Note**: this will shift the starting point to 
                                       match the master schedule, so that all
@@ -1798,8 +1991,10 @@ class ZenSchedule(object):
         s1_dict = self.get_schedule_offset(self.dt_offset.split(',')[1],
                                            self.master_schedule)
 
-        self.df_lst = df_lst
-        self.df_time_lst = df_time_lst
+        if df_lst is not None:
+            self.df_lst = df_lst
+        if df_time_lst is not None:
+            self.df_time_lst = df_time_lst
         
         self.master_schedule =  self.make_schedule(self.df_lst, 
                                                   self.df_time_lst,
@@ -2475,7 +2670,7 @@ def get_drive_names():
 #==============================================================================
 def copy_from_sd(station, savepath=r"d:\Peacock\MTData", 
                  channel_dict={'1':'HX', '2':'HY', '3':'HZ',
-                                   '4':'EX', '5':'EY', '6':'HZ'},
+                               '4':'EX', '5':'EY', '6':'HZ'},
                  copy_date=None, copy_type='all'):
     """
     copy files from sd cards into a common folder
@@ -2520,6 +2715,8 @@ def copy_from_sd(station, savepath=r"d:\Peacock\MTData",
         os.mkdir(save_path)
     log_fid = file(os.path.join(save_path,'Log_file.log'),'w')
     
+    
+    st_test = time.ctime()
     fn_lst = []
     for key in drive_names.keys():
         dr = r"{0}:\\".format(key)
@@ -2532,35 +2729,18 @@ def copy_from_sd(station, savepath=r"d:\Peacock\MTData",
                     
             try:
                 file_size = os.stat(full_path_fn)[6]
-                if file_size >= 1600L and fn.find('zenini') != 0:
+                if file_size >= 1600L and fn.find('.cfg') == -1:
                     zt = Zen3D(fn=full_path_fn)
-                    try:
-                        zt.read_3d()
-                        log_fid.writelines(zt.log_lines)
-                    except IOError:
-                        try:
-                            zt._seconds_diff = 59
-                            zt.read_3d()
-                            log_fid.writelines(zt.log_lines)
-                        except IOError:
-                            print full_path_fn+' is more than 1 minute off'+\
-                                  'start time, Did not copy, check the file'
-                            log_fid.writelines(' '*4+full_path_fn+
-                                               ' is more than 1 minute off'+\
-                                               'start time, Did not copy \n')
-                            break
+                    zt.get_info()
                     
-                    if zt.start_dt is not None:
+                    if zt.schedule_date is not None:
                         fn_find = True
                         if copy_date is not None:
                             cp_date = int(''.join(copy_date.split('-')))
                             
                             fn_find = False
                             
-                            zt_date = int(time.strftime('%Y%m%d',
-                                                    time.localtime(
-                                                    os.stat(full_path_fn)[-1])))
-                            print zt_date, cp_date
+                            zt_date = int(''.join(zt.schedule_date.split('-')))
                             if copy_type == 'before':
                                 if zt_date <= cp_date:
                                     fn_find = True
@@ -2573,8 +2753,8 @@ def copy_from_sd(station, savepath=r"d:\Peacock\MTData",
                                                                 
                         if fn_find:
                             channel = channel_dict[drive_names[key][-1]]
-                            st = zt.start_dt.split(',')[1].replace(':','')
-                            sd = zt.start_dt.split(',')[0].replace('-','')
+                            st = zt.schedule_time.replace(':','')
+                            sd = zt.schedule_date.replace('-','')
                             sv_fn = '{0}_{1}_{2}_{3}_{4}.Z3D'.format(station, 
                                                                      sd, 
                                                                      st,
@@ -2588,24 +2768,32 @@ def copy_from_sd(station, savepath=r"d:\Peacock\MTData",
                             print 'copied {0} to {1}\n'.format(full_path_fn, 
                                                              full_path_sv)
                                                              
+                            log_fid.writelines(zt.log_lines)
+                                                             
                             log_fid.write('copied {0} to \n'.format(full_path_fn)+\
                                           '       {0}\n'.format(full_path_sv))
                         else:
-                            print '+++ SKIPPED {0}+++\n'.format(zt.fn)
-                            log_fid.write(' '*4+\
-                                          '+++ SKIPPED {0}+++\n'.format(zt.fn))
+                            pass
+#                            print '+++ SKIPPED {0}+++\n'.format(zt.fn)
+#                            log_fid.write(' '*4+\
+#                                          '+++ SKIPPED {0}+++\n'.format(zt.fn))
                         
                     else:
-                        print '{0} '.format(full_path_fn)+\
-                               'not copied due to bad data.'
-                               
-                        log_fid.write(' '*4+'***{0} '.format(full_path_fn)+\
-                                      'not copied due to bad data.\n\n')
+                        pass
+#                        print '{0} '.format(full_path_fn)+\
+#                               'not copied due to bad data.'
+#                               
+#                        log_fid.write(' '*4+'***{0} '.format(full_path_fn)+\
+#                                      'not copied due to bad data.\n\n')
             except WindowsError:
                 print 'Faulty file at {0}'.format(full_path_fn)
                 log_fid.write('---Faulty file at {0}\n\n'.format(full_path_fn))
     log_fid.close()
     
+    et_test = time.ctime()
+    
+    print 'Started at: {0}'.format(st_test)
+    print 'Ended at: {0}'.format(et_test)
     return fn_lst
  
 #==============================================================================
@@ -2767,6 +2955,8 @@ def delete_files_from_sd(delete_date=None, delete_type=None,
         for fn in os.listdir(dr):
             if fn[-4:].lower() == '.Z3D'.lower():
                 full_path_fn = os.path.normpath(os.path.join(dr, fn))
+                zt = Zen3D(full_path_fn)
+                zt.get_info()
                 if delete_type == 'all' or delete_date is None:
                     if delete_folder is None:
                         os.remove(full_path_fn)
@@ -2780,9 +2970,7 @@ def delete_files_from_sd(delete_date=None, delete_type=None,
                         log_lines.append('Moved {0} '.format(full_path_fn)+
                                          'to {0}'.format(delete_folder))
                 else:
-                    zt_date = int(time.strftime('%Y%m%d',
-                                            time.localtime(
-                                            os.stat(full_path_fn)[-1])))
+                    zt_date = int(zt.schedule_date.replace('-',''))
                    
                     if delete_type == 'before':
                         if zt_date <= delete_date:

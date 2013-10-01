@@ -189,6 +189,72 @@ def propagate_error_rect2polar(x,x_error,y, y_error):
 
 
 
+
+def zerror2r_phi_error(x,x_error,y, y_error):
+    """
+        Error estimation from rect to polar, but with small variation needed for 
+        MT: the so called 'relative phase error' is NOT the relative phase error,
+        but the ABSOLUTE uncertainty in the angle that corresponds to the relative
+        error in the amplitude. 
+
+        So, here we calculate the transformation from rect to polar coordinates, 
+        esp. the absolute/length of the value. Then we find the uncertainty in 
+        this length and calculate the relative error of this. The relative error of
+        the resistivity will be double this value, because it's calculated by taking 
+        the square of this length.
+        
+        The relative uncertainty in length defines a circle around (x,y) 
+        (APPROXIMATION!). The uncertainty in phi is now the absolute of the 
+        angle beween the vector to (x,y) and the origin-vector tangential to the
+        circle.
+        BUT....since the phase angle uncertainty is interpreted with regard to 
+        the resistivity and not the Z-amplitude, we have to look at the square of
+        the length, i.e. the relative error in question has to be halfed to get
+        the correct relationship between resistivity and phase errors!!.
+
+    """
+
+    # x_error, y_error define a  rectangular uncertainty box  
+    
+    # rho error is the difference between the closest and furthest point of the box (w.r.t. the origin)
+    # approximation: just take corners and midpoint of edges 
+    lo_points = [ (x + x_error, y), (x - x_error, y), (x, y - y_error ), 
+                    (x, y + y_error ), (x - x_error, y - y_error) ,
+                    (x + x_error, y - y_error) ,(x + x_error, y + y_error) ,
+                    (x - x_error, y + y_error) ]
+
+
+    #check, if origin is within the box:
+    origin_in_box = False
+    if x_error >= np.abs(x) and y_error >= np.abs(y):
+        origin_in_box = True
+
+    lo_polar_points = [ cmath.polar(np.complex(*i)) for i in lo_points ]
+
+    lo_rho = [i[0] for i in lo_polar_points ]
+    lo_phi = [math.degrees(i[1])%360 for i in lo_polar_points ]
+
+    #uncertainty in amplitude is defined by half the diameter of the box around x,y
+    rho_err = 0.5*(max(lo_rho) - min(lo_rho) )
+
+    rho = cmath.polar(np.complex(x,y))[0] 
+    rel_error_rho = rho_err/rho
+
+    #if the relative error of the amplitude is >=50% that means that the relative 
+    #error of the resistivity is 100% - that is then equivalent to an uncertainty 
+    #in the phase angle of 90 degrees:
+    if rel_error_rho > 0.5:
+        phi_err = 90
+    else:
+        phi_err = np.degrees(np.arcsin( rel_error_rho))
+
+
+    return rho_err, phi_err
+
+
+
+
+
 #rotation:
 #1. rotation positive in clockwise direction
 #2. orientation of new X-axis X' given by rotation angle

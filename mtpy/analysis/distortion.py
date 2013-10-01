@@ -286,8 +286,10 @@ def find_distortion(z_object, lo_dims = None):
 
         return dis, diserr
 
-
-    return None, None
+    #if only 3D, use identity matrix - no distortion calculated
+    dis = np.identity(2)
+    diserr = diserr = np.zeros((2, 2))
+    return dis, diserr
 
 
 
