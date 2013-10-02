@@ -1543,7 +1543,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             plt.rcParams['font.size'] = self.font_size
             plt.rcParams['figure.subplot.bottom'] = .1
             plt.rcParams['figure.subplot.top'] = .97
-            plt.rcParams['figure.subplot.left'] = .80
+            plt.rcParams['figure.subplot.left'] = .08
             plt.rcParams['figure.subplot.right'] = .98
             
             #set the font properties for the axis labels

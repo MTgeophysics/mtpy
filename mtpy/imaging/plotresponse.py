@@ -23,6 +23,7 @@ import matplotlib.gridspec as gridspec
 import mtpy.utils.exceptions as mtex
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
+reload(mtpl)
 
 #==============================================================================
 

@@ -94,6 +94,7 @@ import mtpy.imaging.plotresponse as plotresponse
 import mtpy.imaging.plotstrike as plotstrike
 import mtpy.imaging.plotstations as plotstations
 reload(plotnresponses)
+reload(plotresponse)
 
 #==============================================================================
 
