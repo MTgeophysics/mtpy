@@ -34,7 +34,8 @@ def _assert_position_format(coordinate, value):
         try:
             elev = float(value)
         except: 
-            raise MTex.MTpyError_config_file('Config file error: elevation value is not a number')
+            print 'WARNING - elevation value is not a number - set to 0 (zero)'
+            elev = 0.
         
         value = elev
 
@@ -67,14 +68,14 @@ def _assert_position_format(coordinate, value):
                     latlon = convert_degmin_tuple2degrees(latlon_list)
                 
             except:
-                raise MTpyError_config_file('Config file error: lat/lon is in invalid format')
+                raise MTex.MTpyError_value('Config file error: lat/lon is in invalid format')
 
 
         if coordinate in ['latitude','lat'] and ( not -90 <= latlon <= 90):
-            raise MTex.MTpyError_config_file('Error - Latitude out of range')
+            raise MTex.MTpyError_value('Error - Latitude out of range')
 
         if coordinate in ['longitude','lon','long'] and ( not -180 <= latlon <= 180):
-            raise MTex.MTpyError_config_file('Error - Longitude out of range')
+            raise MTex.MTpyError_value('Error - Longitude out of range')
 
         value = latlon
 
