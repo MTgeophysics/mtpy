@@ -5923,7 +5923,7 @@ class Occam2DModel(Occam2DData):
                         for ii in range(len(self.vnodes))])
         
         #center the grid onto the station coordinates
-        x0=bndgoff-plotx[self.cols[0][0]]
+        x0=bndgoff-plotx[self.cols[0][0]-1]
         plotx=plotx+x0
         
         #flip the arrays around for plotting purposes
