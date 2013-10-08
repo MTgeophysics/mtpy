@@ -141,6 +141,8 @@ class Setup():
         self.meshlocations_z = None
         self.meshblockwidths_x = None
         self.meshblockthicknesses_z = None
+        self.profile_easts = None
+        self.profile_norths = None
 
 
         self.inmodel = None
@@ -1036,6 +1038,28 @@ class Setup():
         MTcf.write_dict_to_configfile(occam_run_dict,self.configfile)
 
         return 
+
+
+    def get_profile_loc(self):
+        
+        #calculate profile start      
+        x,y = self.Data.easts,self.Data.norths
+        x1,y1 = x[0],y[0]
+        [m,c1] = self.Data.profile
+        x0 = (y1+(1.0/m)*x1-c1)/(m+(1.0/m))
+        y0 = m*x0+c1   
+        
+        #calculate points along profile and store
+        tol = 0.1
+        az = 90-self.Data.azimuth
+        az = np.deg2rad(az)
+        mlx = np.array(self.meshlocations_x)          
+        crit = (mlx<=np.array(self.Data.stationlocations)[-1]+tol)&(mlx>=np.array(self.Data.stationlocations[0]-tol))
+        plotx = mlx[crit]
+        xp = x0 + np.array(plotx)*np.cos(az)
+        yp = y0 + np.array(plotx)*np.sin(az)
+        self.profile_easts = xp
+        self.profile_norths = yp
 
 
 #------------------------------------------------------------------------------
