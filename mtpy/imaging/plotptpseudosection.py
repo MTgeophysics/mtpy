@@ -599,10 +599,10 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                     
                     #--> plot real tipper
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yr':
-                        txr = tmr[jj]*np.cos(tar[jj]*np.pi/180+\
+                        txr = tmr[jj]*np.sin(tar[jj]*np.pi/180+\
                                              np.pi*self.arrow_direction)*\
                                              self.arrow_size
-                        tyr = tmr[jj]*np.sin(tar[jj]*np.pi/180+\
+                        tyr = tmr[jj]*np.cos(tar[jj]*np.pi/180+\
                                              np.pi*self.arrow_direction)*\
                                              self.arrow_size
                         
@@ -625,10 +625,10 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                                       
                     #--> plot imaginary tipper
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yi':
-                        txi = tmi[jj]*np.cos(tai[jj]*np.pi/180+\
+                        txi = tmi[jj]*np.sin(tai[jj]*np.pi/180+\
                                              np.pi*self.arrow_direction)*\
                                              self.arrow_size
-                        tyi = tmi[jj]*np.sin(tai[jj]*np.pi/180+\
+                        tyi = tmi[jj]*np.cos(tai[jj]*np.pi/180+\
                                              np.pi*self.arrow_direction)*\
                                              self.arrow_size
                         

@@ -1089,7 +1089,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation)
+                             orientation=orientation,  bbox_inches='tight')
             plt.clf()
             plt.close(self.fig)
             
