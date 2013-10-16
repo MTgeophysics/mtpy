@@ -99,7 +99,7 @@ class ZongeMTFT():
         self.num_comp = len(self.Chn_Cmp)
         self.Ant_FrqMin = 7.31E-4
         self.Ant_FrqMax = 10240
-        self.Rx_HPR = [90, 0, 0]
+        self.Rx_HPR = [0, 0, 180]
         self.Remote_Component = 'Hx,Hy'
         self.Remote_Rotation = 0
         self.Remote_Path = ''
@@ -1500,6 +1500,8 @@ class ZongeMTAvg():
         self.nfreq = None
         self.nfreq_tipper = None
         self.freq_dict = None
+        self.freq_dict_x = None
+        self.freq_dict_y = None
         self.avg_dict = {'ex':'4', 'ey':'5'}
         self.z_coordinate = 'down'
 
@@ -1518,10 +1520,15 @@ class ZongeMTAvg():
         self.comp_flag = {'zxx':False, 'zxy':False, 'zyx':False, 'zyy':False,
                           'tzx':False, 'tzy':False}
         
-        if not self.comp_dict:                 
-            self.comp_dict = dict([(ckey, np.zeros(len(alines)/4, 
-                                                   dtype=self.info_dtype))
-                                    for ckey in self.comp_flag.keys()])
+        if not self.comp_dict:  
+            if len(alines) > 140:  
+                self.comp_dict = dict([(ckey, np.zeros(len(alines)/4, 
+                                                       dtype=self.info_dtype))
+                                        for ckey in self.comp_flag.keys()])
+            else:
+                self.comp_dict = dict([(ckey, np.zeros(len(alines)/2, 
+                                                       dtype=self.info_dtype))
+                                        for ckey in self.comp_flag.keys()])
         self.comp_lst_z = []
         self.comp_lst_tip = []
         ii = 0                        
@@ -1540,6 +1547,7 @@ class ZongeMTAvg():
                     self.header_dict[alst[0][1:]] = alst[1]
             elif aline[0] == 'S':
                 pass
+            # read the data line.
             elif len(aline) > 2:
                 alst = [aa.strip() for aa in aline.strip().split(',')]
                 for cc, ckey in enumerate(self.info_keys):
@@ -1570,6 +1578,21 @@ class ZongeMTAvg():
         
         return zreal, zimag
         
+    def _match_freq(self, freq_list1, freq_list2):
+        """
+        fill the frequency dictionary where keys are freqeuency and 
+        values are index of where that frequency should be in the array of z
+        and tipper
+        """
+#        
+#        if set(freq_list1).issubset(freq_list2) == True:
+#            return dict([(freq, ff) for ff, freq in enumerate(freq_list1)])
+#        else:
+        comb_freq_list = list(set(freq_list1).intersection(freq_list2))+\
+                      list(set(freq_list1).symmetric_difference(freq_list2))
+        comb_freq_list.sort()
+        return dict([(freq, ff) for ff, freq in enumerate(comb_freq_list)])
+        
     def fill_Z(self):
         """
         create Z array with data
@@ -1582,78 +1605,66 @@ class ZongeMTAvg():
         freq = freq[np.nonzero(freq)]
 
         if self.nfreq:
-            if nz > self.nfreq:
-                print ('Previous {0} {1} > current {0} {2}'.format('Z length', 
-                       self.nfreq, nz) + ' \nfilling Z accordingly')
-                self.nfreq = nz
-                #reshape z
-                new_Z = mtz.Z()
-                new_Z.z = np.zeros((nz, 2, 2), dtype='complex')
-                new_Z.zerr = np.zeros((nz, 2, 2))
-                nzx, nzy, nzz = self.Z.z.shape
-                
-                old_fd = dict(self.freq_dict)
-                self.freq_dict = dict([('{0:.4g}'.format(ff), nn)
-                                        for nn, ff in enumerate(freq)])
-                                            
-                #need to fill the new array with the old values, but they
-                # need to be stored in the correct position
-                clst = ['zxx', 'zxy', 'zyx', 'zyy']
-                for cc in self.comp_lst_z:
-                    clst.remove(cc)
-                for ikey in clst:
-                    for kk, zz in enumerate(self.Z.z):
-                        ii, jj = self.comp_index[ikey]
-                        if zz[ii, jj].real != 0.0:
-                            #index for new Z array
-                            ll = self.freq_dict['{0:.4g}'.format(
-                                            self.comp_dict[ikey]['freq'][kk])]
-                            
-                            #index for old Z array
-                            mm = old_fd['{0:.4g}'.format(
-                                            self.comp_dict[ikey]['freq'][kk])]
+            self.freq_dict_y = dict([(ff, nn) for nn, ff in enumerate(freq)])
+            #get new frequency dictionary to match index values
+            new_freq_dict = self._match_freq(sorted(self.freq_dict_x.keys()), 
+                                             freq)
+            
+            new_nz = len(new_freq_dict.keys())
+            #fill z according to index values
+            new_Z = mtz.Z()
+            new_Z.z = np.zeros((new_nz, 2, 2), dtype='complex')
+            new_Z.zerr = np.ones((new_nz, 2, 2))
+            nzx, nzy, nzz = self.Z.z.shape
+            
+            self.freq_dict = new_freq_dict
+            
+            #need to fill the new array with the old values, but they
+            # need to be stored in the correct position
+            clst = ['zxx', 'zxy', 'zyx', 'zyy']
+            for cc in self.comp_lst_z:
+                clst.remove(cc)
+            for ikey in clst:
+                for kk, zz in enumerate(self.Z.z):
+                    ii, jj = self.comp_index[ikey]
+                    if zz[ii, jj].real != 0.0:
+                        #index for new Z array
+                        ll = self.freq_dict[self.comp_dict[ikey]['freq'][kk]]
+                        
+                        #index for old Z array
+                        try:
+                            mm = self.freq_dict_x[self.comp_dict[ikey]['freq'][kk]]
 
                             new_Z.z[ll] = self.Z.z[mm]
                             new_Z.zerr[ll] = self.Z.zerr[mm]
-                    
-                new_Z.freq = freq
-                self.Z = new_Z
-                
-                self.freq_dict = dict([('{0:.4g}'.format(ff), nn)
-                                        for nn, ff in enumerate(freq)])
-            
+                        except KeyError:
+                            pass
+                        
             #fill z with values from comp_dict
             for ikey in self.comp_lst_z:
                 ii, jj = self.comp_index[ikey]
 
                 zr, zi = self.convert2complex(self.comp_dict[ikey]['z.mag'][:nz].copy(),
                                               self.comp_dict[ikey]['z.phz'][:nz].copy())
-                if nz != self.nfreq:
-                    for kk, zzr, zzi in zip(range(len(zr)), zr, zi):
-                        ll = self.freq_dict['{0:.4g}'.format(
-                                            self.comp_dict[ikey]['freq'][kk])]
-                        if ikey.find('yx') > 0 and self.z_coordinate == 'up':
-                            self.Z.z[ll, ii, jj] = -1*(zzr+zzi*1j)
-                        else:
-                            self.Z.z[ll, ii, jj] = zzr+zzi*1j
-                        self.Z.zerr[ll,ii, jj] = \
-                                    self.comp_dict[ikey]['ares.%err'][kk]*.005
-                else:
+                for kk, zzr, zzi in zip(range(len(zr)), zr, zi):
+                    ll = self.freq_dict[self.comp_dict[ikey]['freq'][kk]]
                     if ikey.find('yx') > 0 and self.z_coordinate == 'up':
-                         self.Z.z[:, ii, jj] = -1*(zr+zi*1j)
+                        new_Z.z[ll, ii, jj] = -1*(zzr+zzi*1j)
                     else:
-                        self.Z.z[:, ii, jj] = zr+zi*1j
-
-                    self.Z.zerr[:,ii, jj] = \
-                                     self.comp_dict[ikey]['ares.%err'][:nz]*.005
-           
+                        new_Z.z[ll, ii, jj] = zzr+zzi*1j
+                    new_Z.zerr[ll,ii, jj] = \
+                                self.comp_dict[ikey]['ares.%err'][kk]*.005
+                
+            new_Z.freq = sorted(self.freq_dict.keys())
+            self.Z = new_Z
+        
+        #fill for the first time
         else:
             self.nfreq = nz
-            self.freq_dict = dict([('{0:.4g}'.format(ff), nn) for nn, ff
-                                       in enumerate(freq)])
+            self.freq_dict_x = dict([(ff, nn) for nn, ff in enumerate(freq)])
             #fill z with values
             z = np.zeros((nz, 2, 2), dtype='complex')
-            zerr = np.zeros((nz, 2, 2))
+            zerr = np.ones((nz, 2, 2))
             
             for ikey in self.comp_lst_z:
                 ii, jj = self.comp_index[ikey]
@@ -1681,86 +1692,78 @@ class ZongeMTAvg():
         fill tipper values
         """
         
+        if self.comp_flag['tzy'] == False and self.comp_flag['tzx'] == False:
+            print 'No Tipper found'
+            return
+            
         flst = np.array([len(np.nonzero(self.comp_dict[comp]['freq'])[0])
                          for comp in self.comp_lst_tip])
         nz = flst.max()
         freq = self.comp_dict[self.comp_lst_tip[np.where(flst==nz)[0][0]]]['freq']
         freq = freq[np.nonzero(freq)]
         if self.nfreq_tipper and self.Tipper.tipper is not None:
-            if nz > self.nfreq_tipper:
-                print ('Previous {0} {1} > current {0} {2}'.format(
-                        'Tipper length', self.nfreq_tipper, nz)+ 
-                        '\n filling Tipper accordingly')
-                
-                self.nfreq_tipper = nz
-                #reshape tipper
-                new_Tipper = mtz.Tipper()
-                new_Tipper.tipper = np.zeros((nz, 1, 2), dtype='complex')
-                new_Tipper.tipper_err = np.zeros((nz, 1, 2))
-                
-                old_fd = dict(self.freq_dict)
-                self.freq_dict = dict([('{0:.4g}'.format(ff), nn)
-                                        for nn, ff in enumerate(freq)])
-                                            
-                #need to fill the new array with the old values, but they
-                # need to be stored in the correct position
-                for ikey in ['tzx', 'tzy']:
-                    for kk, tt in enumerate(self.Tipper.tipper):
-                        ii, jj = self.comp_index[ikey]
-                        if tt[ii, jj].real != 0.0:
-                            #index for new tipper array
-                            ll = self.freq_dict['{0:.4g}'.format(
-                                            self.comp_dict[ikey]['freq'][kk])]
-                            
-                            #index for old tipper array
-                            mm = old_fd['{0:.4g}'.format(
-                                            self.comp_dict[ikey]['freq'][kk])]
+            #get new frequency dictionary to match index values
+            new_freq_dict = self._match_freq(sorted(self.freq_dict.keys()), 
+                                             freq)
+            
+            new_nz = len(new_freq_dict.keys())
+            #fill z according to index values
+            new_Tipper = mtz.Tipper()
+            new_Tipper.tipper = np.zeros((new_nz, 1, 2), dtype='complex')
+            new_Tipper.tippererr = np.ones((new_nz, 1, 2))
+            
+            self.freq_dict = new_freq_dict
+            
+            #need to fill the new array with the old values, but they
+            # need to be stored in the correct position
+            for ikey in ['tzx', 'tzy']:
+                for kk, tt in enumerate(self.Tipper.tipper):
+                    ii, jj = self.comp_index[ikey]
+                    if tt[ii, jj].real != 0.0:
+                        #index for new tipper array
+                        ll = self.freq_dict[self.comp_dict[ikey]['freq'][kk]]
+                        
+                        #index for old tipper array
+                        try:
+                            mm = self.freq_dict_x[self.comp_dict[ikey]['freq'][kk]]
 
                             new_Tipper.tipper[ll] = self.Tipper.tipper[mm]
-                            new_Tipper.tipper_err[ll] = \
-                                                    self.Tipper.tipper_err[mm]
+                            new_Tipper.tippererr[ll] = self.Tipper.tippererr[mm]
+                        except KeyError:
+                            pass
 
-                new_Tipper.freq = freq
-                self.Tipper = new_Tipper
-           
+                        
             #fill z with values from comp_dict
             for ikey in self.comp_lst_tip:
                 ii, jj = self.comp_index[ikey]
 
                 tr, ti = self.convert2complex(self.comp_dict[ikey]['z.mag'][:nz],
                                               self.comp_dict[ikey]['z.phz'][:nz])
-                if nz != self.nfreq_tipper:
-                    for kk, tzr, tzi in zip(range(len(tr)), tr, ti):
-                        ll = self.freq_dict['{0:.4g}'.format(
-                                            self.comp_dict[ikey]['freq'][kk])]
-                        
-                        if self.z_coordinate == 'up':
-                            self.Tipper.tipper[ll, ii, jj] += -1*(tzr+tzi*1j)
-                        else:
-                            self.Tipper.tipper[ll, ii, jj] += tzr+tzi*1j
-                        self.Tipper.tipper_err[ll,ii, jj] += \
-                                    self.comp_dict[ikey]['ares.%err'][kk]*\
-                                                    .05*np.sqrt(tzr**2+tzi**2)
-                else:
+                for kk, tzr, tzi in zip(range(len(tr)), tr, ti):
+                    ll = self.freq_dict[self.comp_dict[ikey]['freq'][kk]]
+                    
                     if self.z_coordinate == 'up':
-                        self.Tipper.tipper[:, ii, jj] += -1*(tr+ti*1j)
+                        new_Tipper.tipper[ll, ii, jj] += -1*(tzr+tzi*1j)
                     else:
-                        self.Tipper.tipper[:, ii, jj] += tr+ti*1j
-                    self.Tipper.tipper_err[:, ii, jj] += \
-                                     self.comp_dict[ikey]['ares.%err'][:nz]*\
-                                                     .05*np.sqrt(tr**2+ti**2)
+                        new_Tipper.tipper[ll, ii, jj] += tzr+tzi*1j
+                    #error estimation
+                    new_Tipper.tippererr[ll,ii, jj] += \
+                                self.comp_dict[ikey]['ares.%err'][kk]*\
+                                                .05*np.sqrt(tzr**2+tzi**2)
+                
+            new_Tipper.freq = sorted(self.freq_dict.keys())
+            self.Tipper = new_Tipper
             
             #apparently need to average the outputs from the two .avg files                                         
             self.Tipper.tipper /= 2.
-            self.Tipper.tipper_err / 2.
+            self.Tipper.tippererr / 2.
            
         else:
             self.nfreq_tipper = nz
-            self.freq_dict = dict([('{0:.4g}'.format(ff), nn) for nn, ff
-                                       in enumerate(freq)])
+            self.freq_dict_x = dict([(ff, nn) for nn, ff in enumerate(freq)])
             #fill z with values
             tipper = np.zeros((nz, 1, 2), dtype='complex')
-            tippererr = np.zeros((nz, 1, 2))
+            tippererr = np.ones((nz, 1, 2))
             
             for ikey in self.comp_lst_tip:
                 ii, jj = self.comp_index[ikey]
@@ -1776,11 +1779,11 @@ class ZongeMTAvg():
                                                      .05*np.sqrt(tzr**2+tzi**2)
                     
             self.Tipper.tipper = tipper
-            self.Tipper.tipper_err = tippererr
-            self.Tipper.freq = freq
+            self.Tipper.tippererr = tippererr
+            self.Tipper.freq = sorted(self.freq_dict_x.keys())
             
         self.Tipper.tipper = np.nan_to_num(self.Tipper.tipper)
-        self.Tipper.tipper_err = np.nan_to_num(self.Tipper.tipper_err)
+        self.Tipper.tippererr = np.nan_to_num(self.Tipper.tippererr)
         
     def write_edi(self, avg_dirpath, station, survey_dict=None, 
                   survey_cfg_file=None,  mtft_cfg_file=None, 
@@ -1830,7 +1833,6 @@ class ZongeMTAvg():
         if save_path is None:
             save_dir = os.path.dirname(avg_dirpath)
             save_path = os.path.join(save_dir, station+'.edi')
-        print save_path
         
         #create an mtedi instance
         self.edi = mtedi.Edi()
@@ -1881,10 +1883,10 @@ class ZongeMTAvg():
                 survey_dict['rr_station_elevation'] = rrsurvey_dict['elevation']
                 survey_dict['rr_station_latitude'] = \
                                         MTft._assert_position_format('lat',
-                                               rrsurvey_dict.pop('lat',0.0))
+                                               rrsurvey_dict.pop('latitude',0.0))
                 survey_dict['rr_station_longitude'] = \
                                         MTft._assert_position_format('lon',
-                                               rrsurvey_dict.pop('lon',0.0))
+                                               rrsurvey_dict.pop('longitude',0.0))
             except KeyError:
                 print 'Could not find station information for remote reference'
         else:
@@ -1929,21 +1931,19 @@ class ZongeMTAvg():
         head_dict['fileby'] = survey_dict.pop('network','')
         
         #--> acquired date
-        head_dict['acqdate'] = survey_dict.pop('date', '')
-        
-        #--> file date
-        head_dict['acqdate'] = time.strftime('%Y-%m-%d',time.localtime())
+        head_dict['acqdate'] = survey_dict.pop('date', 
+                                    time.strftime('%Y-%m-%d',time.localtime()))
         
         #--> prospect
         head_dict['loc'] = survey_dict.pop('location', '')
         
         #--> latitude
         head_dict['lat'] = MTft._assert_position_format('lat',
-                                                   survey_dict.pop('lat',0.0))
+                                        survey_dict.pop('latitude',0.0))
         
         #--> longitude
         head_dict['long'] = MTft._assert_position_format('lon',
-                                                   survey_dict.pop('lon',0.0))
+                                         survey_dict.pop('longitude',0.0))
         
         #--> elevation
         head_dict['elev'] = survey_dict.pop('elevation', 0)

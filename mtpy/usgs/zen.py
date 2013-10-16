@@ -437,12 +437,11 @@ class Zen3D(object):
             #make sure it isn't the same time stamp as before
             if sfind != gps_lst[ii-1] and sfind != -1:
                 gps_info, gps_index, gps_week = self.get_gps_stamp(sfind)
+                gps_lst[ii] = gps_index
+                
                 if gps_info is not None:
-                    gps_lst[ii] = gps_index
                     for jj, key in enumerate(self._stamp_lst):
                         gps_dict[key][ii] = gps_info[0][jj]
-                else:
-                    gps_lst[ii] = gps_index
         
         #get only the values that are non zero
         gps_dict['time'] = gps_dict['time'][np.nonzero(gps_dict['time'])] 
@@ -503,9 +502,8 @@ class Zen3D(object):
                 data_array[ll*df:(ll+1)*df+pdiff] = np.fromstring(dblock, 
                                                                 dtype=np.int32)
             except ValueError:
-                print ll, kk, pdiff
-                gfail, gfind, gweek = self.get_gps_stamp(kk)
-                print gfail, kk, gfind
+                print 'samples between time step {0} is off by {1} samples'.format(ll,
+                                                                   abs(pdiff))
                           
         if sum(self.sample_diff_lst) != 0:
             if self.verbose:
@@ -684,28 +682,33 @@ class Zen3D(object):
                                      dtype=self._data_type)
             while gps_info['time'] < 0:
                 gps_index = self.get_gps_stamp_location(start_index=gps_index+7)
+                print 'time', gps_index
                 gps_info = np.fromstring(self._raw_data[gps_index:gps_index+self._stamp_len], 
                                          dtype=self._data_type)
             
             while gps_info['status'] < 0:
                 gps_index = self.get_gps_stamp_location(start_index=gps_index+7)
+                print 'status', gps_index                
                 gps_info = np.fromstring(self._raw_data[gps_index:gps_index+self._stamp_len], 
                                          dtype=self._data_type)
             
             while abs(gps_info['temperature']) > 80:
                 gps_index = self.get_gps_stamp_location(start_index=gps_index+7)
+                print 'temperature', gps_index    
                 gps_info = np.fromstring(self._raw_data[gps_index:gps_index+self._stamp_len], 
                                          dtype=self._data_type)
                 
             while abs(gps_info['lat']) > np.pi:
                 gps_index = self.get_gps_stamp_location(start_index=gps_index+7)
+                print 'lat', gps_index
                 gps_info = np.fromstring(self._raw_data[gps_index:gps_index+self._stamp_len], 
                                          dtype=self._data_type)
                 
-            while np.log10(abs(gps_info['lat'])) < -3:
-                gps_index = self.get_gps_stamp_location(start_index=gps_index+7)
-                gps_info = np.fromstring(self._raw_data[gps_index:gps_index+self._stamp_len], 
-                                         dtype=self._data_type)
+#            while np.log10(abs(gps_info['lat'])) < -3:
+#                gps_index = self.get_gps_stamp_location(start_index=gps_index+7)
+#                print 'lat_log', gps_index    
+#                gps_info = np.fromstring(self._raw_data[gps_index:gps_index+self._stamp_len], 
+#                                         dtype=self._data_type)
 
             
             #convert lat and lon into decimal degrees
@@ -714,6 +717,15 @@ class Zen3D(object):
             gps_info['time'] = gps_info['time'].astype(np.float32)
             gps_info['time'], gps_week = self.get_gps_time(gps_info['time'])
             
+            if gps_info == []:
+                print gps_index
+                raise ZenGPSError('Something is fucked')
+            if gps_index == -1:
+                print gps_info
+                raise ZenGPSError('Something is fucked')
+#            if gps_info:
+#                return -1, -1, -1
+                
             return gps_info, gps_index, gps_week 
             
         except ValueError:
@@ -1759,7 +1771,7 @@ class ZenSchedule(object):
         self.initial_dt = '2000-01-01,00:00:00'
         self.dt_offset = time.strftime(datetime_fmt ,time.gmtime())
         self.df_lst = (4096, 1024, 256)
-        self.df_time_lst = ('00:05:00','00:15:00','07:40:00')
+        self.df_time_lst = ('00:05:00','00:15:00','05:40:00')
         self.master_schedule = self.make_schedule(self.df_lst, 
                                                   self.df_time_lst,
                                                   repeat=21)
@@ -2800,7 +2812,7 @@ def copy_from_sd(station, savepath=r"d:\Peacock\MTData",
 # merge files into cache files for each sample block   
 #==============================================================================
 def merge_3d_files(fn_lst, savepath=None, verbose=False, 
-                   calibration_fn=r"d:\Peacock\MTData\Ant_calibrations\amtant.cal"):
+                   calibration_fn=r"c:\MT\amtant.cal"):
     """
     merge .Z3D files into cache files.  Looks through the file list and 
     Combines files with the same start time and sampling rate into a 
