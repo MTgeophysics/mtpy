@@ -4697,7 +4697,7 @@ def estimate_skin_depth(res_model, grid_z, period, dscale=1000):
     if dscale == 1:
         ms = 'm'
     #find the apparent resisitivity of each depth slice within the station area
-    apparent_res_xy = np.array([res_model[6:-6, 6:-6, ii].mean() 
+    apparent_res_xy = np.array([res_model[6:-6, 6:-6, 0:ii+1].mean() 
                                         for ii in range(grid_z.shape[0])])
     
     #calculate the period for each skin depth
@@ -4705,8 +4705,11 @@ def estimate_skin_depth(res_model, grid_z, period, dscale=1000):
                                 for zz, rho_a in zip(grid_z, apparent_res_xy)])
                                       
     #match the period
-    period_index = np.where(skin_depth_period >= period)[0][0]
-    
+    try:
+        period_index = np.where(skin_depth_period >= period)[0][0]
+    except IndexError:
+        period_index = len(skin_depth_period)-1
+        
     #get the depth slice
     depth = grid_z[period_index]
     
@@ -4715,7 +4718,7 @@ def estimate_skin_depth(res_model, grid_z, period, dscale=1000):
     print ' estimated skin depth period    {0:.6g} (s)'.format(
                                                skin_depth_period[period_index])
     print ' estimate apparent resisitivity {0:.0f} (Ohm-m)'.format(
-           apparent_res_xy[0:period_index].mean())
+           apparent_res_xy[period_index].mean())
     print ' estimated depth                {0:.6g} ({1})'.format(depth, ms)
     print '-'*60
 
