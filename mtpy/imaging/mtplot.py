@@ -32,7 +32,11 @@ plot_strike                   plots strike angle estimated from the
                               invariants of the impedance tensor defined
                               by Weaver et al. [2000,2003], strike angle
                               from the phase tensor and option to plot
-                              strike estimated from the induction arrows.
+                              strike estimated from the induction arrows.                              
+plot_residual_pt_maps         plots the residual phase tensor between two 
+                              surveys in map view.
+plot_residual_pt_ps           plots the residual phase tensor between two 
+                              surveys as a pseudo section.
 ============================= =================================================
 
 All plot function return plot classes where the important properties are made
@@ -93,8 +97,8 @@ import mtpy.imaging.plotptmaps as plotptmaps
 import mtpy.imaging.plotresponse as plotresponse
 import mtpy.imaging.plotstrike as plotstrike
 import mtpy.imaging.plotstations as plotstations
-reload(plotnresponses)
-reload(plotresponse)
+import mtpy.imaging.plotresidualptmaps as plotresidualptmaps
+import mtpy.imaging.plotresidualptps as plotresidualptps
 
 #==============================================================================
 
@@ -164,6 +168,23 @@ def plot_station_locations(**kwargs):
     """
     
     return plotstations.PlotStations(**kwargs)
+    
+def plot_residual_pt_maps(fn_list1, fn_list2, **kwargs):
+    """
+    plot residual pt between two measurements in map view
+    
+    """
+    
+    return plotresidualptmaps.PlotResidualPTMaps(fn_list1, fn_list2, **kwargs)
+    
+def plot_residual_pt_ps(fn_list1, fn_list2, **kwargs):
+    """
+    plot residual ps between two measurements as a pseudo section
+    
+    """
+    
+    return plotresidualptps.PlotResidualPTps(fn_list1, fn_list2, **kwargs)
+    
 
 #reset the doc strings of these helper functions to that of the class
 #there is probably a more elegant way to do this, but for now, this
@@ -178,3 +199,5 @@ plot_strike.__doc__ = plotstrike.PlotStrike.__doc__
 plot_resphase_pseudosection.__doc__ = \
                                     plotrpps.PlotResPhasePseudoSection.__doc__
 plot_station_locations.__doc__ = plotstations.PlotStations.__doc__
+plot_residual_pt_maps.__doc__ = plotresidualptmaps.PlotResidualPTMaps.__doc__
+plot_residual_pt_ps.__doc__ = plotresidualptps.PlotResidualPTps.__doc__

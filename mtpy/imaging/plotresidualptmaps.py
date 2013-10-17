@@ -112,32 +112,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                     - dx -> width of the color bar [0,1]
                                     
                                     - dy -> height of the color bar [0,1]
-                                    
-        **arrow_dict** : dictionary for arrow properties
-                        * 'size' : float
-                                  multiplier to scale the arrow. *default* is 5
-                        * 'head_length' : float
-                                         length of the arrow head *default* is 
-                                         1.5
-                        * 'head_width' : float
-                                        width of the arrow head *default* is 
-                                        1.5
-                        * 'lw' : float
-                                line width of the arrow *default* is .5
-                                
-                        * 'color' : tuple (real, imaginary)
-                                   color of the arrows for real and imaginary
-                                   
-                        * 'threshold': float
-                                      threshold of which any arrow larger than
-                                      this number will not be plotted, helps 
-                                      clean up if the data is not good. 
-                                      *default* is 1, note this is before 
-                                      scaling by 'size'
-                                      
-                        * 'direction : [ 0 | 1 ]
-                                     - 0 for arrows to point toward a conductor
-                                     - 1 for arrow to point away from conductor
         
         **xpad** : float
                    padding in the east-west direction of plot boundaries.  Note
@@ -214,21 +188,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                     
         **dpi** : int 
                   dots per inch of the resolution. *default* is 300
-        
-        **plot_tipper** : [ 'yri' | 'yr' | 'yi' | 'n' ]
-                        * 'yri' to plot induction both real and imaginary 
-                           induction arrows 
-                           
-                        * 'yr' to plot just the real induction arrows
-                        
-                        * 'yi' to plot the imaginary induction arrows
-                        
-                        * 'n' to not plot them
-                        
-                        * *Default* is 'n' 
-                        
-                        **Note: convention is to point towards a conductor but
-                        can be changed in arrow_dict['direction']**
                          
 
         **font_size** : float
@@ -242,18 +201,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                * 'size'   -> for font size
                                * 'weight' -> for font weight
                                * 'color'  -> for color of font
-
-        **arrow_legend_dict** : dictionary of properties for legend with keys:
-                               * 'position' -> placement of arrow legend can be:
-                                   - 'upper right'
-                                   - 'lower right'
-                                   - 'upper left'
-                                   - 'lower left'
-                               * 'xborderpad'-> padding from x axis
-                               * 'yborderpad'-> padding from y axis
-                               *'fontpad'   -> padding between arrow and 
-                                               legend text
-                               * 'fontdict'  -> dictionary of font properties
         
 
         
@@ -266,24 +213,17 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         
         >>> import mtpy.imaging.mtplottools as mtplot
         >>> import os
-        >>> edipath = r"/home/EDIfiles"
-        >>> edilst = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
+        >>> edipath1 = r"/home/EDIfiles1"
+        >>> edilst1 = [os.path.join(edipath1,edi) for edi in os.listdir(edipath1)
         >>> ...       if edi.find('.edi')>0]
-        >>> # color by phimin with a range of 20-70 deg
-        >>> ptmap = mtplot.PlotPhaseTensorMaps(edilst,freqspot=10,
-        >>> ...                                ellipse_dict={'size':1,
-        >>> ...                                              'range':(20,70)})
+        >>> edipath2 = r"/home/EDIfiles2"
+        >>> edilst2 = [os.path.join(edipath2,edi) for edi in os.listdir(edipath2)
+        >>> ...       if edi.find('.edi')>0]
+        >>> # color by phimin with a range of 0-5 deg
+        >>> ptmap = mtplot.plot_residual_pt_maps(edilst1, edilst2, freqspot=10,
+        >>> ...                                  ellipse_dict={'size':1,
+        >>> ...                                              'range':(0,5)})
         >>> 
-        >>> #----add real induction arrows----
-        >>> ptmap.indarrows = 'yr'
-        >>> ptmap.redraw_plot()
-        >>> #
-        >>> #---change the arrow properties---
-        >>> ptmap.arrow_size = 1
-        >>> ptmap.arrow_head_width = 0.25
-        >>> ptmap.arrow_head_length = 0.25
-        >>> ptmap.arrow_lw = .5
-        >>> ptmap.redraw_plot()
         >>> #
         >>> #---add an image---
         >>> ptmap.image_file = r"/home/Maps/Basemap.jpg"
@@ -349,7 +289,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         -plot_freq       freq in Hz to plot
         -plot_reference_point  reference point of map, everything will be 
                                measured relative to this point
-        -plot_tipper           string to indicate to plot induction arrows
         
         -plot_xarr            array of x-coordinates for stations 
         -plot_yarr            array of y-coordinates for stations
@@ -376,8 +315,6 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         -writeTextFiles       writes parameters of the phase tensor and tipper
                               to text files.
                               
-    """
-    
     """
     
     def __init__(self, fn_list1, fn_list2, **kwargs):
@@ -584,28 +521,28 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                     rpt in self.residual_pt_list])
             filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
             for ss in range(filt_array.shape[0]):
-                self.residual_pt_list[ss].residual_pt.phimin = filt_array[ss]
+                self.residual_pt_list[ss].residual_pt.phimin[0] = filt_array[ss]
         
         elif self.ellipse_colorby == 'phimax':
             color_array = np.array([rpt.residual_pt.phimax[0] for 
                                     rpt in self.residual_pt_list])
             filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
             for ss in range(filt_array.shape[0]):
-                self.residual_pt_list[ss].residual_pt.phimax = filt_array[ss]
+                self.residual_pt_list[ss].residual_pt.phimax[0] = filt_array[ss]
                 
         elif self.ellipse_colorby == 'skew':
             color_array = np.array([rpt.residual_pt.beta[0] for 
                                     rpt in self.residual_pt_list])
             filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
             for ss in range(filt_array.shape[0]):
-                self.residual_pt_list[ss].residual_pt.beta = filt_array[ss]
+                self.residual_pt_list[ss].residual_pt.beta[0] = filt_array[ss]
         
         #--> need to do azimuth for all
         color_array = np.array([rpt.residual_pt.azimuth[0] for 
                                 rpt in self.residual_pt_list])
         filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
         for ss in range(filt_array.shape[0]):
-            self.residual_pt_list[ss].residual_pt.azimuth = filt_array[ss] 
+            self.residual_pt_list[ss].residual_pt.azimuth[0] = filt_array[ss] 
             
     def _get_ellipse_size_max(self, freq_spot):
         """

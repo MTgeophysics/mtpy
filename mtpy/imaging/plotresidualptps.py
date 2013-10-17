@@ -126,47 +126,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
         **fignum** : int
                      figure number.  *Default* is 1
         
-        **plot_tipper** : [ 'yri' | 'yr' | 'yi' | 'n' ]
-                        * 'yri' to plot induction both real and imaginary 
-                           induction arrows 
-                           
-                        * 'yr' to plot just the real induction arrows
-                        
-                        * 'yi' to plot the imaginary induction arrows
-                        
-                        * 'n' to not plot them
-                        
-                        *Default* is 'n' 
-                        
-                        **Note: convention is to point towards a conductor but
-                        can be changed in arrow_dict['direction']**
                          
-        **arrow_dict** : dictionary for arrow properties
-                        * 'size' : float
-                                  multiplier to scale the arrow. *default* is 5
-                        * 'head_length' : float
-                                         length of the arrow head *default* is 
-                                         1.5
-                        * 'head_width' : float
-                                        width of the arrow head *default* is 
-                                        1.5
-                        * 'lw' : float
-                                line width of the arrow *default* is .5
-                                
-                        * 'color' : tuple (real, imaginary)
-                                   color of the arrows for real and imaginary
-                                   
-                        * 'threshold': float
-                                      threshold of which any arrow larger than
-                                      this number will not be plotted, helps 
-                                      clean up if the data is not good. 
-                                      *default* is 1, note this is before 
-                                      scaling by 'size'
-                                      
-                        * 'direction : [ 0 | 1 ]
-                                     -0 for arrows to point toward a conductor
-                                     -1 for arrow to point away from conductor
-    
         **tscale** : [ 'period' | 'frequency' ]
         
                      * 'period'    -> plot vertical scale in period
@@ -480,28 +440,28 @@ class PlotResidualPTps(mtpl.MTEllipse):
                                     rpt in self.residual_pt_list])
             filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
             for ss in range(filt_array.shape[0]):
-                self.residual_pt_list[ss].residual_pt.phimin = filt_array[ss]
+                self.residual_pt_list[ss].residual_pt.phimin[0] = filt_array[ss]
         
         elif self.ellipse_colorby == 'phimax':
             color_array = np.array([rpt.residual_pt.phimax[0] for 
                                     rpt in self.residual_pt_list])
             filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
             for ss in range(filt_array.shape[0]):
-                self.residual_pt_list[ss].residual_pt.phimax = filt_array[ss]
+                self.residual_pt_list[ss].residual_pt.phimax[0] = filt_array[ss]
                 
         elif self.ellipse_colorby == 'skew':
             color_array = np.array([rpt.residual_pt.beta[0] for 
                                     rpt in self.residual_pt_list])
             filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
             for ss in range(filt_array.shape[0]):
-                self.residual_pt_list[ss].residual_pt.beta = filt_array[ss]
+                self.residual_pt_list[ss].residual_pt.beta[0] = filt_array[ss]
         
         #--> need to do azimuth for all
         color_array = np.array([rpt.residual_pt.azimuth[0] for 
                                 rpt in self.residual_pt_list])
         filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
         for ss in range(filt_array.shape[0]):
-            self.residual_pt_list[ss].residual_pt.azimuth = filt_array[ss] 
+            self.residual_pt_list[ss].residual_pt.azimuth[0] = filt_array[ss] 
             
     def _get_ellipse_size_max(self):
         """
