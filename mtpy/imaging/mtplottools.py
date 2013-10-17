@@ -1352,11 +1352,9 @@ def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None,
     """
     
     #first need to find something to loop over
-    print fn_lst
     try:
         ns = len(fn_lst)
         mt_lst = [MTplot(fn=fn) for fn in fn_lst]
-        print mt_lst
         print 'Reading {0} stations'.format(ns)
         return mt_lst
     except TypeError:
