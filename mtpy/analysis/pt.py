@@ -493,7 +493,7 @@ class PhaseTensor(object):
             tr_err[:] = self.pt_err[:,0,0] + self.pt_err[:,1,1]
 
 
-        return tr, tr_err
+        return [tr, tr_err]
 
     trace = property(_get_trace, doc= "")
 
@@ -526,7 +526,7 @@ class PhaseTensor(object):
             alphaerr[:] = 0.5 / ( x**2 + y**2) * np.sqrt(y**2 * xerr**2 + \
                                                          x**2 * yerr**2 )
 
-        return alpha, alphaerr
+        return [alpha, alphaerr]
         
     alpha = property(_get_alpha, doc = "")
 
@@ -559,7 +559,7 @@ class PhaseTensor(object):
             betaerr[:] = 0.5 / ( x**2 + y**2) * np.sqrt( y**2 * xerr**2 +\
                                                          x**2 * yerr**2 )
 
-        return beta, betaerr
+        return [beta, betaerr]
 
     beta = property(_get_beta, doc="")
 
@@ -583,7 +583,7 @@ class PhaseTensor(object):
             skewerr = np.zeros_like(skew)
             skewerr[:] = self.pt_err[:,0,1] + self.pt_err[:,1,0]
 
-        return skew, skewerr
+        return [skew, skewerr]
 
     skew = property(_get_skew, doc="Skew angle in degrees")
 
@@ -614,7 +614,7 @@ class PhaseTensor(object):
         else:
             az_err = None
             
-        return az, az_err
+        return [az, az_err]
         
     azimuth = property(_get_azimuth, 
                        doc="Azimuth angle (deg) related to geoelectric strike")
@@ -646,7 +646,7 @@ class PhaseTensor(object):
         else:
             ellip_err = None
             
-        return ellip, ellip_err
+        return [ellip, ellip_err]
         
     ellipticity = property(_get_ellipticity,
                            doc="Ellipticity of phase tensor related to "+\
@@ -674,7 +674,7 @@ class PhaseTensor(object):
                              np.abs(self.pt[:,0,1] * self.pt_err[:,1,0]) +\
                              np.abs(self.pt[:,1,0] * self.pt_err[:,0,1])
 
-        return det_phi, det_phi_err
+        return [det_phi, det_phi_err]
 
     det = property(_get_det, doc = "")
 
@@ -756,7 +756,7 @@ class PhaseTensor(object):
         if self.pt_err is not None:
             phiminerr = np.sqrt(self._pi2()[1]**2+self._pi1()[1]**2)
  
-        return np.degrees(np.arctan(phimin)), np.degrees(np.arctan(phiminerr))
+        return [np.degrees(np.arctan(phimin)), np.degrees(np.arctan(phiminerr))]
 
     phimin = property(_get_phimin, doc =" Minimum phase in degrees")
 
@@ -783,7 +783,7 @@ class PhaseTensor(object):
         if self.pt_err is not None:
             phimaxerr = np.sqrt(self._pi2()[1]**2+self._pi1()[1]**2)
  
-        return np.degrees(np.arctan(phimax)), np.degrees(np.arctan(phimaxerr))
+        return [np.degrees(np.arctan(phimax)), np.degrees(np.arctan(phimaxerr))]
 
     phimax = property(_get_phimax, doc = "Maximum phase in degrees")
 
@@ -934,7 +934,7 @@ class ResidualPhaseTensor():
             Initialise the attributes with None
         """
 
-        self.resitual_pt = None
+        self.residual_pt = None
         self.rpt = None
         self.rpt_err = None
         self._pt1 = None  
