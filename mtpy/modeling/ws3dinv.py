@@ -676,23 +676,23 @@ class WSStation(object):
                 self.elev = np.zeros_like(self.north)
         if save_path is not None:
             self.save_path = save_path
-            if os.path.isdir(save_path):
-                self.station_fn = os.path.join(save_path, 
+            if os.path.isdir(self.save_path):
+                self.station_fn = os.path.join(self.save_path, 
                                                'WS_Station_Locations.txt')
             else:
                 self.station_fn = save_path
         else:
             self.save_path = os.getcwd()
-            self.station_fn = os.path.join(save_path, 
+            self.station_fn = os.path.join(self.save_path, 
                                            'WS_Station_Locations.txt')
         
         sfid = file(self.station_fn, 'w')
         sfid.write('{0:<14}{1:^14}{2:^14}{3:^14}\n'.format('station', 'east', 
                                                     'north', 'elev'))
-        for ee, nn, zz, ss in zip(self.east, self.north, self.elev, self.names):
+        for ee, nn, zz, ss in zip(self.east, self.north, self.elev, self.names):            
             ee = '{0:+.4e}'.format(ee)
             nn = '{0:+.4e}'.format(nn)
-            zz = '{0:+.4e}'.format(nn)
+            zz = '{0:+.4e}'.format(zz)
             sfid.write('{0:<14}{1:^14}{2:^14}{3:^14}\n'.format(ss, ee, nn, zz))
         sfid.close()
         
