@@ -80,7 +80,7 @@ import mtpy.imaging.mtplottools as mtplottools
 import matplotlib.widgets as widgets
 import matplotlib.colors as colors
 import matplotlib.cm as cm
-import mtpy.utils.winglink as wl
+import mtpy.modeling.winglink as wl
 import mtpy.utils.exceptions as mtex
 import mtpy.analysis.pt as mtpt
 import mtpy.imaging.mtcolors as mtcl
@@ -590,7 +590,10 @@ class WSData(object):
         self.station_north = self.data['north']
         self.station_names = self.data['station']
         self.z_data = self.data['z_data']
-        self.z_data_err = self.data['z_data_err']*self.data['z_err_map']
+        #need to be careful when multiplying complex numbers
+        self.z_data_err = \
+                self.data['z_data_err'].real*self.data['z_err_map'].real+1j*\
+                self.data['z_data_err'].imag*self.data['z_err_map'].imag
         
 #==============================================================================
 # stations
@@ -674,6 +677,7 @@ class WSStation(object):
         else:
             if self.north is not None:
                 self.elev = np.zeros_like(self.north)
+                
         if save_path is not None:
             self.save_path = save_path
             if os.path.isdir(self.save_path):
@@ -681,8 +685,11 @@ class WSStation(object):
                                                'WS_Station_Locations.txt')
             else:
                 self.station_fn = save_path
-        else:
+        elif self.save_path is None:
             self.save_path = os.getcwd()
+            self.station_fn = os.path.join(self.save_path, 
+                                           'WS_Station_Locations.txt')
+        elif os.path.isdir(self.save_path):
             self.station_fn = os.path.join(self.save_path, 
                                            'WS_Station_Locations.txt')
         
@@ -748,6 +755,33 @@ class WSStation(object):
                   cellData={'value':np.ones_like(self.north)})     
                   
         return save_fn
+        
+    def from_wl_write_station_file(self, sites_file, out_file, ncol=5):
+        """
+        write a ws station file from the outputs of winglink
+        
+        Arguments:
+        -----------
+            **sites_fn** : string
+                           full path to sites file output from winglink
+            
+            **out_fn** : string
+                         full path to .out file output from winglink
+            
+            **ncol** : int
+                       number of columns the data is in
+                       *default* is 5
+                       
+            
+        """
+        
+        wl_east, wl_north, wl_station_list = wl.get_station_locations(
+                                                                    sites_file, 
+                                                                    out_file,
+                                                                    ncol=ncol)
+        self.write_station_file(east=wl_east, north=wl_north,
+                                station_list=wl_station_list)
+        
 #==============================================================================
 # mesh class
 #==============================================================================
@@ -3169,7 +3203,7 @@ class PlotResponse(object):
                         cyx = (1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))
                     
                     resp_z = self.resp_object[rr].z_resp[jj]
-                    resp_z_err = (data_z-resp_z)/data_z_err
+                    resp_z_err = (data_z-resp_z)/(np.sqrt(data_z_err)/data_z*100)
                     resp_z_object =  mtz.Z(z_array=resp_z, 
                                            zerr_array=resp_z_err, 
                                            freq=1./period)

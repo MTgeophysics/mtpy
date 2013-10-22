@@ -143,7 +143,7 @@ def get_station_locations(sites_fn, out_fn, ncol=5):
     yarr = np.zeros(ns)
     
     
-    for ii,sdict in enumerate(slst):
+    for ii, sdict in enumerate(slst):
         xx = sdict['dx']
         yy = sdict['dy']
         if xx < nxh:
