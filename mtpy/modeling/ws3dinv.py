@@ -717,7 +717,7 @@ class WSStation(object):
             **elev** : np.ndarray(n_stations)
                        relative station locations in vertical direction
                        
-            **station_list** : list or np.ndarray(n_stations)
+            **names** : list or np.ndarray(n_stations)
                                name of stations
         
         """
@@ -726,16 +726,49 @@ class WSStation(object):
             
         self.save_path = os.path.dirname(self.station_fn)
         
-        station_locations = np.loadtxt(self.station_fn, skiprows=1, 
-                                       dtype=[('station', '|S10'),
-                                              ('east_c', np.float),
-                                              ('north_c', np.float),
-                                              ('elev', np.float)])
-                                              
-        self.east = station_locations['east_c']
-        self.north = station_locations['north_c']
-        self.names = station_locations['station']
-        self.elev = station_locations['elev']
+        #there is no need to skip a row
+        #restriction to 10 characters renders it useless for many files
+
+        # station_locations = np.loadtxt(self.station_fn, skiprows=1, 
+        #                                dtype=[('station', '|S10'),
+        #                                       ('east_c', np.float),
+        #                                       ('north_c', np.float),
+        #                                       ('elev', np.float)])
+
+        #new version
+        F = open(station_fn)
+        data = F.readlines()
+        F.close()
+        self.east = []
+        self.north = []
+        self.elev = []
+        self.names = []
+
+        for row in data:
+            if 1:
+                row_list = row.strip().split()
+                #skip incomplete entries
+                if len(row_list) < 6 :
+                    continue
+                #skip commented entries
+                if row_list[0][0] == '#':
+                    continue
+                #otherwise assume it's a valid entry
+                #parse for station name
+                #assume that station name is everything preceeding a 
+                #potential suffix .edi - no suffix is ok as well
+                raw_stationname = row_list[0].lower()
+                self.names.append(os.path.splitext(raw_stationname)[0].upper())
+                self.east.append(int(float(row_list[1])))
+                self.north.append(int(float(row_list[2])))
+                self.elev.append(int(float(row_list[3])))
+            # except:
+            #     continue
+        self.east = np.array(self.east)
+        self.north = np.array(self.north)
+        self.elev = np.array(self.elev)
+
+
         
     def write_vtk_file(self, save_fn):
         if os.path.isdir(save_fn) == True:
