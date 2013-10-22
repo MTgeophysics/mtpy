@@ -736,7 +736,7 @@ class WSStation(object):
         #                                       ('elev', np.float)])
 
         #new version
-        F = open(station_fn)
+        F = open(self.station_fn)
         data = F.readlines()
         F.close()
         self.east = []
