@@ -8,7 +8,9 @@ ws3dinv
         Siripunvaraporn, W.; Egbert, G.; Lenbury, Y. & Uyeshima, M. 
         Three-dimensional magnetotelluric inversion: data-space method
         Physics of The Earth and Planetary Interiors, 2005, 150, 3-14
-        
+	* Dependencies: matplotlib 1.3.x, numpy 1.7.x, scipy 0.13               
+                    and evtk if vtk files want to be written.
+					
 The intended use or workflow is something like this for getting started:
 
 :Making input files: ::
@@ -724,7 +726,7 @@ class WSStation(object):
             **elev** : np.ndarray(n_stations)
                        relative station locations in vertical direction
                        
-            **names** : list or np.ndarray(n_stations)
+            **station_list** : list or np.ndarray(n_stations)
                                name of stations
         
         """
@@ -733,49 +735,16 @@ class WSStation(object):
             
         self.save_path = os.path.dirname(self.station_fn)
         
-        #there is no need to skip a row
-        #restriction to 10 characters renders it useless for many files
-
-        # station_locations = np.loadtxt(self.station_fn, skiprows=1, 
-        #                                dtype=[('station', '|S10'),
-        #                                       ('east_c', np.float),
-        #                                       ('north_c', np.float),
-        #                                       ('elev', np.float)])
-
-        #new version
-        F = open(self.station_fn)
-        data = F.readlines()
-        F.close()
-        self.east = []
-        self.north = []
-        self.elev = []
-        self.names = []
-
-        for row in data:
-            if 1:
-                row_list = row.strip().split()
-                #skip incomplete entries
-                if len(row_list) < 6 :
-                    continue
-                #skip commented entries
-                if row_list[0][0] == '#':
-                    continue
-                #otherwise assume it's a valid entry
-                #parse for station name
-                #assume that station name is everything preceeding a 
-                #potential suffix .edi - no suffix is ok as well
-                raw_stationname = row_list[0].lower()
-                self.names.append(os.path.splitext(raw_stationname)[0].upper())
-                self.east.append(int(float(row_list[1])))
-                self.north.append(int(float(row_list[2])))
-                self.elev.append(int(float(row_list[3])))
-            # except:
-            #     continue
-        self.east = np.array(self.east)
-        self.north = np.array(self.north)
-        self.elev = np.array(self.elev)
-
-
+        station_locations = np.loadtxt(self.station_fn, skiprows=1, 
+                                       dtype=[('station', '|S10'),
+                                              ('east_c', np.float),
+                                              ('north_c', np.float),
+                                              ('elev', np.float)])
+                                              
+        self.east = station_locations['east_c']
+        self.north = station_locations['north_c']
+        self.names = station_locations['station']
+        self.elev = station_locations['elev']
         
     def write_vtk_file(self, save_fn):
         if os.path.isdir(save_fn) == True:
@@ -784,8 +753,11 @@ class WSStation(object):
         if self.elev is None:
             self.elev = np.zeros_like(self.north)
             
-        pointsToVTK(save_fn, self.north, self.east, self.elev, 
-                  cellData={'value':np.ones_like(self.north)})     
+        pointsToVTK(save_fn, 
+		            self.north, 
+					self.east, 
+					np.zeros_like(self.north), 
+                    data={'value':np.ones_like(self.north)})     
                   
         return save_fn
         
@@ -3236,7 +3208,7 @@ class PlotResponse(object):
                         cyx = (1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))
                     
                     resp_z = self.resp_object[rr].z_resp[jj]
-                    resp_z_err = (data_z-resp_z)/(np.sqrt(data_z_err)/data_z*100)
+                    resp_z_err = (data_z-resp_z)/(data_z_err)
                     resp_z_object =  mtz.Z(z_array=resp_z, 
                                            zerr_array=resp_z_err, 
                                            freq=1./period)
