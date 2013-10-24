@@ -155,7 +155,7 @@ def main():
     while i < nstations:
         respdata_nextlines = f.readline().split()
         for j in respdata_nextlines:
-            N[i] = -float(j)/1000.0
+            N[i] = float(j)/1000.0
             i += 1
     print N
 
