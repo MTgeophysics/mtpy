@@ -658,7 +658,7 @@ def read_survey_txt_file(survey_file, delimiter=None):
                 if sdict[key].lower() in ['electrode','electrodes']: 
                     sdict['E_instrument_type'] = 'electrodes'
                 if (sdict[key].lower().find('lead') >= 0) or (sdict[key].lower().find('pb') >= 0): 
-                    sdict['B_instrument_type'] = 'pbcl_electrodes'
+                    sdict['E_instrument_type'] = 'pbcl_electrodes'
                 sdict.pop(key)
 
             if key.lower() in ['declination','decl']:
