@@ -533,11 +533,11 @@ def read_survey_txt_file(survey_file, delimiter=None):
         skeys = skeys.split()
 
     skeys = [i.strip().replace(' ','_') for i in skeys]
-    print skeys
        
     survey_dict = {}
     
     for ss, sline in enumerate(slines[1:]):
+
         sstr = sline.strip()
         if sstr[0]=='#':
             continue
@@ -549,23 +549,16 @@ def read_survey_txt_file(survey_file, delimiter=None):
         
         #get rid of quotations
         sstr = [i.replace('"','') for i in sstr]  
-        
+        #get rid of spaces
+        sstr = [i.replace(' ','_') for i in sstr]  
+       
         if len(sstr) != len(skeys):
             print 'cannot read line {0} - wrong number of entries - need {2}\
                                                     '.format(ss+2,len(skeys))
             continue
 
-        if len(sstr)>1:
-            sdict={}
-            for kk, skey in enumerate(skeys):
-                #get rid of quotations
-                skey.replace('"','')
-                #get rid of blank spaces in keys
-                skey.replace(' ','_')
-
-                #sstr[kk] = sstr[kk].replace('"','')
-                sdict[skey.lower()] = sstr[kk]
         
+        sdict={}
         #set default values for mandatory entries:
         sdict['E_Xaxis_azimuth'] = 0
         sdict['E_Yaxis_azimuth'] = 90
@@ -584,39 +577,95 @@ def read_survey_txt_file(survey_file, delimiter=None):
         sdict['B_logger_type'] = 'edl'
 
 
+        #fill dictionary with given values
+        for kk, skey in enumerate(skeys):
+            #get rid of quotations
+            skey.replace('"','')
+            #get rid of blank spaces in keys
+            skey.replace(' ','_')
 
+            #do not include empty entries
+            if len(sstr[kk])>0:
+                #sstr[kk] = sstr[kk].replace('"','')
+                sdict[skey.lower()] = sstr[kk]
+        
+        #print sorted(sdict)
+        # print sdict['sampling_interval']
+        #sys.exit()
+        #assigne values to the standard keys
         for key in sdict.keys():
 
-            if key.lower() == 'ex':
-                sdict['E_Xaxis_length'] = sdict[key]
+            if key.lower() in ['ex','e_xaxis_length'] :
+                val = copy.copy(sdict[key])
                 sdict.pop(key)
-
-            if key.lower() == 'ey':
-                sdict['E_Yaxis_length'] = sdict[key]
+                sdict['E_Xaxis_length'] = val
+            if key.lower() in ['ey','e_yaxis_length'] :
+                val = copy.copy(sdict[key])
                 sdict.pop(key)
+                sdict['E_Yaxis_length'] = val
 
             if key.lower() == 'station':
                 sdict[key] = sdict[key].upper()
 
-            if key.lower() == 'df':
-                sdict['sampling_interval'] = 1./float(sdict[key])
+            if key.lower() in ['df', 'sampling_rate','sampling']:
+                val = copy.copy(sdict[key])
                 sdict.pop(key)
+                sdict['sampling_interval'] = 1./float(val)
+
+            if key.lower() in ['dt', 'sampling_interval']:
+                val = copy.copy(sdict[key])
+                sdict.pop(key)
+                sdict['sampling_interval'] = float(val)
 
             if key.lower() == 'dlgain':
+                val = copy.copy(sdict[key])
+                sdict.pop(key)
+                sdict['B_logger_gain'] = val
+                sdict['E_logger_gain'] = val
+                
+
+            if key.lower() in ['b_logger_gain']:
                 sdict['B_logger_gain'] = sdict[key]
+
+            if key.lower() in ['e_logger_gain']:
                 sdict['E_logger_gain'] = sdict[key]
-                sdict.pop(key)
 
-            if key.lower() == 'egain':
-                sdict['E_instrument_amplification'] = sdict[key]
-                sdict.pop(key)
+            if key.lower() in ['e_logger_type']:
+                sdict['E_logger_type'] = sdict[key]
+            if key.lower() in ['b_logger_type']:
+                sdict['B_logger_type'] = sdict[key]
 
-            if key.lower() == 'magtype':
+
+            if key.lower() in ['egain', 'e_instrument_amplification']:
+                val = copy.copy(sdict[key])
+                sdict.pop(key)
+                sdict['E_instrument_amplification'] = val
+            
+            if key.lower() in ['bgain', 'b_instrument_amplification']:
+                val = copy.copy(sdict[key])
+                sdict.pop(key)
+                sdict['B_instrument_amplification'] = val
+
+
+            if key.lower() in ['magtype','b_instrument_type']:
                 if sdict[key].lower() in ['bb','coil','coils']: 
                     sdict['B_instrument_type'] = 'coil'
                 if sdict[key].lower() in ['lp','fluxgate','fg']: 
                     sdict['B_instrument_type'] = 'fluxgate'
                 sdict.pop(key)
+
+            if key.lower() in ['e_instrument_type']:
+                if sdict[key].lower() in ['electrode','electrodes']: 
+                    sdict['E_instrument_type'] = 'electrodes'
+                if (sdict[key].lower().find('lead') >= 0) or (sdict[key].lower().find('pb') >= 0): 
+                    sdict['B_instrument_type'] = 'pbcl_electrodes'
+                sdict.pop(key)
+
+            if key.lower() in ['declination','decl']:
+                val = copy.copy(sdict[key])
+                sdict.pop(key)
+                sdict['declination'] = val
+
 
             if key.lower() in ['lat','latitude']:
                 val = copy.copy(sdict[key])
@@ -641,7 +690,7 @@ def read_survey_txt_file(survey_file, delimiter=None):
                 survey_dict[sdict['station_name']] = sdict
             except KeyError:
                 survey_dict['MT{0:03}'.format(ss)] = sdict
-    
+
     return survey_dict
     
 #==============================================================================
