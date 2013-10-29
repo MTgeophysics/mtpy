@@ -361,6 +361,10 @@ class OccamGui(QtGui.QMainWindow):
             except:
                 self.ui.checkBox_strike.setCheckState(2)
                 self.ui.doubleSpinBox_strike.setValue(0)
+        else:
+            self.ui.checkBox_strike.setCheckState(0)
+            self.ui.doubleSpinBox_strike.setValue(0)
+
         
         if 'target_rms' in parameters:
             try:
@@ -383,6 +387,8 @@ class OccamGui(QtGui.QMainWindow):
                 update_counter += 1
             except:
                 pass
+
+
         
         messagetext = ''
         messagetext += "<P><FONT COLOR='#000000'>Configuration file: "\

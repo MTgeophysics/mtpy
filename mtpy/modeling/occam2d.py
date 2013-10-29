@@ -387,7 +387,7 @@ class Setup():
         except:
             print 'cannot write data file'
             raise
-        #        self.stationlocations = data_object.stationlocations
+        self.stationlocations = data_object.stationlocations
         data_object.writefile(self.datafile)
 
 
@@ -966,7 +966,6 @@ class Setup():
     def generate_inputfiles(self, edi_dir=None):
 
         edi_directory = self.edi_directory
-        print self.edi_directory
         if edi_dir is not None:
             if op.isdir(edi_dir):
                 edi_directory = edi_dir 
@@ -979,6 +978,8 @@ class Setup():
             self.write_datafile()
         except:
             raise
+
+
         self.setup_mesh_and_model()
         self.write_meshfile()
         self.write_inmodelfile()
@@ -1093,7 +1094,7 @@ class Data():
         for key in data_parameters:
             setattr(self,key,data_parameters[key])
         
-        if 'strike' in data_parameters:
+        if ('strike' in data_parameters) and (data_parameters['strike'] is not None):
             self._strike_set = True
 
         try:
@@ -1340,7 +1341,13 @@ class Data():
                         value = raw_rho_value
                         #value = np.log10(raw_rho_value)
                         absolute_rho_error = rho_phi[2][idx_f][0,1]
-                        relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
+                        try:
+                            relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
+                            if raw_rho_value == 0:
+                                raise
+                        except:
+                            relative_rho_error = 0.
+
                         if mode == 9 :
                             if self.rho_errorfloor is not None:
                                 if self.rho_errorfloor/100. > relative_rho_error:
@@ -1366,7 +1373,12 @@ class Data():
                         value = raw_rho_value
                         #value = np.log10(raw_rho_value)
                         absolute_rho_error = rho_phi[2][idx_f][1,0]
-                        relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
+                        try:
+                            relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
+                            if raw_rho_value == 0:
+                                raise
+                        except:
+                            relative_rho_error = 0.
                         if mode == 10 :
                             if self.rho_errorfloor is not None:
                                 if self.rho_errorfloor/100. > relative_rho_error:
@@ -1389,7 +1401,7 @@ class Data():
                  
                     elif mode in [3,4] :
                         if T is None:
-                            print 'no Tipper data for station {0}'.format(station_number) 
+                            print 'no Tipper data for {0} Hz at station {1}'.format(freq, station_number) 
                             continue
 
                         tipper = T.tipper[idx_f]
@@ -1464,7 +1476,10 @@ class Data():
                 continue
 
             if self.strike is None:
-                lo_strike_angles.extend(list(MTgy.strike_angle(edi.Z.z[np.where(MTgy.dimensionality(edi.Z.z)!=1)])[:,0]%90))
+                try:
+                    lo_strike_angles.extend(list(MTgy.strike_angle(edi.Z.z[np.where(MTgy.dimensionality(edi.Z.z)!=1)])[:,0]%90))
+                except:
+                    pass
             self.station_coords.append([edi.lat,edi.lon,edi.elev])
             self.stations.append(edi.station)
             self.station_frequencies.append(np.around(edi.freq,5))
@@ -1486,7 +1501,12 @@ class Data():
             raise
 
         if self.strike is None:
-            self.strike = np.mean(lo_strike_angles)
+            try:
+                self.strike = np.mean(lo_strike_angles)
+            except:
+                #empty list or so....
+                #can happen, if everyhing is just 1D
+                self.strike = 0.
 
         main_utmzone = mode(utmzones)[0][0]
 
@@ -1523,6 +1543,7 @@ class Data():
         #choose strike which offers larger angle with profile
         #if profile azimuth is in [0,90].
         #if strike was explicitely given, use that value!
+
         if self._strike_set is False:
             if 0 <= self.azimuth < 90:
                 if np.abs(self.azimuth - self.strike) < 45:

@@ -238,7 +238,10 @@ def zerror2r_phi_error(x,x_error,y, y_error):
     rho_err = 0.5*(max(lo_rho) - min(lo_rho) )
 
     rho = cmath.polar(np.complex(x,y))[0] 
-    rel_error_rho = rho_err/rho
+    try:
+        rel_error_rho = rho_err/rho
+    except:
+        rel_error_rho = 0.
 
     #if the relative error of the amplitude is >=50% that means that the relative 
     #error of the resistivity is 100% - that is then equivalent to an uncertainty 
