@@ -1319,6 +1319,7 @@ class Data():
 
         self.frequencies = np.array(lo_all_freqs_tmp)
 
+
         #collect data 
         self.data = []
 
@@ -1331,8 +1332,13 @@ class Data():
             z_array = Z.z
             zerr_array = Z.zerr
 
-            for idx_f,freq in enumerate(self.station_frequencies[idx_s]):
+            for idx_f,freq in enumerate(self.frequencies):
+
                 frequency_number = np.abs(self.frequencies-freq).argmin() + 1
+
+                station_freqs = self.station_frequencies[idx_s]
+                idx_f = np.abs(station_freqs-freq).argmin()
+
                 for mode in lo_modes:
                     if mode in [9,2] :
                         raw_rho_value = rho_phi[0][idx_f][0,1]
@@ -1648,6 +1654,7 @@ class Data():
 
 
     def writefile(self, filename = None):
+
         if filename is not None:
             try:
                 fn = op.abspath(op.join(self.wd,filename))
