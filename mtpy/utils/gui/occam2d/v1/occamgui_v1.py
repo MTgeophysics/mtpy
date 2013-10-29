@@ -211,9 +211,9 @@ class OccamGui(QtGui.QMainWindow):
                 update_counter += 1
             except:
                 self.ui.checkBox_max_no_frequencies.setCheckState(0)
-        if 'maximum_frequency' in parameters:
+        if 'max_frequency' in parameters:
             try:
-                value = str(parameters['maximum_frequency'])
+                value = str(parameters['max_frequency'])
                 if len(value) == 0 or value.lower().strip() == 'none':
                     self.ui.checkBox_max_frequency.setCheckState(0)
                     self.ui.doubleSpinBox_max_frequency.setValue(0)
@@ -224,9 +224,9 @@ class OccamGui(QtGui.QMainWindow):
                 update_counter += 1
             except:
                 self.ui.checkBox_max_frequency.setCheckState(0)
-        if 'minimum_frequency' in parameters:
+        if 'min_frequency' in parameters:
             try:
-                value = str(parameters['minimum_frequency'])
+                value = str(parameters['min_frequency'])
                 if len(value) == 0 or value.lower().strip() == 'none':
                     self.ui.checkBox_min_frequency.setCheckState(0)
                     self.ui.doubleSpinBox_min_frequency.setValue(0)
@@ -598,12 +598,13 @@ class OccamGui(QtGui.QMainWindow):
             D['min_frequency'] = self.ui.doubleSpinBox_min_frequency.value()
         else:
             D['min_frequency'] = None
+
         D['set_max_frequency'] = self.ui.checkBox_max_frequency.checkState()
         if D['set_max_frequency'] :
             D['max_frequency'] = self.ui.doubleSpinBox_max_frequency.value() 
         else:
             D['max_frequency'] = None
-
+        
 
         D['check_usestationfile'] = self.ui.checkBox_usestationlist.checkState()
 

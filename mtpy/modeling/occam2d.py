@@ -82,6 +82,7 @@ class Setup():
 
     def __init__(self, configfile = None, **input_parameters):
 
+
         self.parameters_startup = {}
         self.parameters_inmodel = {}
         self.parameters_data = {}
@@ -128,8 +129,8 @@ class Setup():
         self.parameters_data['mode'] = 'tetm'
         self.parameters_data['edi_type'] = 'z'
 
-        self.parameters_data['minimum_frequency'] = None
-        self.parameters_data['maximum_frequency'] = None
+        self.parameters_data['min_frequency'] = None
+        self.parameters_data['max_frequency'] = None
         self.parameters_data['max_no_frequencies'] = None
 
 
@@ -1086,8 +1087,8 @@ class Data():
         self.rho_errorfloor = 5
         self.tipper_errorfloor = 5
 
-        self.minimum_frequency = None
-        self.maximum_frequency = None
+        self.min_frequency = None
+        self.max_frequency = None
         self.max_no_frequencies = None
 
 
@@ -1267,9 +1268,10 @@ class Data():
         lo_modes = sorted(list(set(lo_modes))) 
 
         #set data frequencies
-        min_freq = self.minimum_frequency
-        max_freq = self.maximum_frequency
+        min_freq = self.min_frequency
+        max_freq = self.max_frequency
         no_freqs_max = self.max_no_frequencies
+ 
 
         lo_all_freqs = []
         for lo_f in self.station_frequencies:
@@ -1291,6 +1293,7 @@ class Data():
         if len(lo_all_freqs_tmp) == 0 :
             print 'No frequencies in user-defined interval [{0},{1}]'.format(min_freq, max_freq)
             sys.exit()
+
 
         #check, if frequency list is longer than given max value
         if no_freqs_max is not None:
