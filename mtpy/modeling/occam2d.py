@@ -120,9 +120,9 @@ class Setup():
        
         self.parameters_data['strike'] = None
 
-        self.parameters_data['rho_errorfloor'] = None
-        self.parameters_data['phase_errorfloor'] = None
-        self.parameters_data['tipper_errorfloor'] = None
+        self.parameters_data['rho_errorfloor'] = 0.
+        self.parameters_data['phase_errorfloor'] = 0.
+        self.parameters_data['tipper_errorfloor'] = 0.
         self.parameters_data['azimuth'] = 0
 
         self.parameters_data['mode'] = 'tetm'
@@ -1322,12 +1322,7 @@ class Data():
         for idx_s, station in enumerate(self.stations):
             station_number = idx_s + 1
             Z = self.Z[idx_s]
-            try:
-                T = self.Tipper
-                if T.tipper is None:
-                    raise
-            except:
-                T = None
+            T = self.Tipper[idx_s]
 
             rho_phi = Z.res_phase 
             z_array = Z.z
@@ -1400,35 +1395,38 @@ class Data():
                                 error = np.degrees(np.arcsin(0.5*relative_rho_error))#relative_error*100.*0.285
                  
                     elif mode in [3,4] :
-                        if T is None:
-                            print 'no Tipper data for {0} Hz at station {1}'.format(freq, station_number) 
+                        if T.tipper is None:
+                            #print 'no Tipper data for {0} Hz at station {1}'.format(freq, station_number) 
                             continue
 
                         tipper = T.tipper[idx_f]
                         try: 
                             tippererr = T.tippererr[idx_f]
                         except:
-                            print 'no Tipper error for station {0}/frequency {1}'.format(station_number,frequency_number)
+                            #print 'no Tipper error for station {0}/frequency {1}'.format(station_number,frequency_number)
                             tippererr = None
+
 
                         if mode == 3 :
                             value = np.real(tipper[0,0])
                             if tippererr is None:
-                                error = self.tipper_error/100.*value
+                                error = self.tipper_errorfloor/100.*value
                             else:
+                                tippererr = tippererr[0,0]
                                 rel_error = tippererr/value
-                                if self.tipper_error/100. > rel_error:
-                                    error = self.tipper_error/100.*value
+                                if self.tipper_errorfloor/100. > rel_error:
+                                    error = self.tipper_errorfloor/100.*value
                                 else:
                                     error = tippererr
                         if mode == 4 :
                             value = np.imag(tipper[0,0])
                             if tippererr is None:
-                                error = self.tipper_error/100.*value
+                                error = self.tipper_errorfloor/100.*value
                             else:
+                                tippererr = tippererr[0,1]
                                 rel_error = tippererr/value
-                                if self.tipper_error/100. > rel_error:
-                                    error = self.tipper_error/100.*value
+                                if self.tipper_errorfloor/100. > rel_error:
+                                    error = self.tipper_errorfloor/100.*value
                                 else:
                                     error = tippererr
 
@@ -1486,7 +1484,8 @@ class Data():
             try:
                 self.Tipper.append(edi.Tipper)
             except:
-                pass
+                self.Tipper.append(None)
+                
             self.Z.append(edi.Z)
             utm = MTcv.LLtoUTM(23,edi.lat,edi.lon)
             lo_easts.append(utm[1])
@@ -1603,6 +1602,7 @@ class Data():
         self.stations = [self.stations[i] for i in profile_idxs]
         self.station_frequencies = [self.station_frequencies[i] for i in profile_idxs]
         self.Z = [self.Z[i] for i in profile_idxs]
+        self.Tipper = [self.Tipper[i] for i in profile_idxs]
         lo_easts = np.array([lo_easts[i] for i in profile_idxs])
         lo_norths = np.array([lo_norths[i] for i in profile_idxs])
               
