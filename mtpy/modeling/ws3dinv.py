@@ -1570,6 +1570,8 @@ class WSMesh(object):
                 if len(iline) == 2:
                     l1 = int(iline[0])-1
                     l2 = int(iline[1])
+                    if l1 == l2:
+                        l2 += 1
                     line_index += 1
                     count_n = 0
                 elif len(iline) == 0:
@@ -1577,7 +1579,7 @@ class WSMesh(object):
                 else:
                     count_e = 0
                     while count_e < n_east:
-                        self.res_model[count_e, count_n, l1:l2] =\
+                        self.res_model[count_n, count_e, l1:l2] =\
                                                             int(iline[count_e])
                         count_e += 1
                     count_n += 1
@@ -2451,7 +2453,8 @@ class WSModelManipulator(object):
                     value = getattr(self, name)
                     setattr(wsmesh, name, value)            
         
-        wsmesh.write_initial_file(save_path=self.new_initial_fn)
+        wsmesh.write_initial_file(save_path=self.new_initial_fn, 
+                                  res_model=self.res_model_int)
                                               
             
 def cmap_discretize(cmap, N):

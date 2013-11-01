@@ -138,14 +138,16 @@ class Data(object):
         self.phase_tm = None
         self.resp_fn = None
         
-    def write_data_file(self, edi_file, save_path=None, mode='TE', 
-                        res_err='data', phase_err='data', thetar=0):
+    def write_data_file(self, rp_tuple=None, edi_file=None, save_path=None,
+                        mode='TE', res_err='data', phase_err='data', thetar=0):
         """
         make1Ddatafile will write a data file for Occam1D
     
         Arguments:
         ---------    
-            
+            **rp_tuple** : np.ndarray (freq, res, res_err, phase, phase_err) 
+                            with res, phase having shape (num_freq, 2, 2).
+                           
             **edi_file** : string
                           full path to edi file to be modeled.
                       
@@ -189,33 +191,51 @@ class Data(object):
             >>> ...                save_path=r"/home/occam1d/mt01/TE") 
         """    
         self.mode = mode
-        #raise an error if can't find the edifile        
-        if os.path.isfile(edi_file) == False:
-            raise IOError('No edi file {0} exists, check path'.format(edi_file))
+        
+        if edi_file is None and rp_tuple is None:
+            raise IOError('Need to input either an edi file or rp_array')
+
+        if edi_file is not None:
+            #raise an error if can't find the edifile        
+            if os.path.isfile(edi_file) == False:
+                raise IOError('No edi file {0} exists, check path'.format(edi_file))
     
-        #read in edifile
-        e1 = mtedi.Edi(edi_file)    
-        impz = e1.Z
+            #read in edifile
+            e1 = mtedi.Edi(edi_file)    
+            impz = e1.Z
+            
+            #rotate if necessary
+            if thetar != 0:
+                impz.rotate(thetar)
+            
+            #get resistivity and phase
+            rho, phi, rho_err, phi_err = impz.res_phase
+            
+            freq = impz.freq
+            nf = len(freq)
         
-        #rotate if necessary
-        if thetar != 0:
-            impz.rotate(thetar)
-        
+        if rp_tuple is not None:
+            if len(rp_tuple) != 5:
+                raise IOError('Be sure rp_array is correctly formated\n'
+                              'should be freq, res, res_err, phase, phase_err')
+            freq, rho, rho_err, phi, phi_err = rp_tuple
+            nf = len(freq)
+            
         #make sure the savepath exists, if not create it
-        self.save_path = save_path
+        if save_path is not None:
+            self.save_path = save_path
         if self.save_path == None:
-            self.save_path = os.path.dirname(edi_file)
+            try:
+                self.save_path = os.path.dirname(edi_file)
+            except TypeError:
+                pass
         elif os.path.basename(self.save_path).find('.') > 0:
             self.save_path = os.path.dirname(self.save_path)
             self._data_fn = os.path.basename(self.save_path)
         if not os.path.exists(self.save_path):
             os.mkdir(self.save_path)
         
-        #get resistivity and phase
-        rho, phi, rho_err, phi_err = impz.res_phase
         
-        freq = impz.freq
-        nf = len(freq)
         
         #get determinant resistivity and phase
         if mode.lower() == 'det':
