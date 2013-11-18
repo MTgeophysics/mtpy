@@ -144,6 +144,9 @@ class Setup():
         self.meshblockthicknesses_z = None
         self.profile_easts = None
         self.profile_norths = None
+        self.modelblocklocations_x = None
+        self.modelblocklocations_z = None
+        self.blocknums = None
 
 
         self.inmodel = None
@@ -947,14 +950,21 @@ class Setup():
         
         temptext = ""
         counter = 0 
-        for l in range(self.no_parameters):
-            temptext += "{0:.1g}  ".format(np.log10(float(self.parameters_startup['halfspace_resistivity'])))
-            counter += 1
-            if counter == 20:
-                #temptext += '\n'
-                counter = 0
+
+        if type(self.parameters_startup['halfspace_resistivity']) != list:
+            for l in range(self.no_parameters):
+                temptext += "{0:.1g}  ".format(np.log10(float(self.parameters_startup['halfspace_resistivity'])))
+                counter += 1
+                if counter == 20:
+                    #temptext += '\n'
+                    counter = 0
+        else:
+            temptext +='  '.join([str(res) for res in self.parameters_startup['halfspace_resistivity']])
+
         temptext += "\n"
         startup_outstring += temptext
+        
+        
      
 
         fn =  op.join(self.wd,self.startupfile)
@@ -1041,6 +1051,31 @@ class Setup():
 
         return 
 
+    def get_modelblock_info(self):
+        blockmerges_x = [[int(val) for val in line.strip('\n').split()] for line in self.parameters_inmodel['lo_modelblockstrings']]
+        blockmerges_z = self.parameters_inmodel['lo_merged_lines']
+        meshlocations_z = self.meshlocations_z
+        meshlocations_z.insert(0,0)
+        num=1
+        block_nums,block_x,block_z = [],[],[]
+        iz = 0
+        for j,z in enumerate(blockmerges_z):
+            ix = 0
+            block_z.append(np.median(np.array(meshlocations_z[iz:iz+z+1])))
+            iz += z
+            tmp_lst = []
+            tmp_lst_pos = []
+            for i,x in enumerate(blockmerges_x[j]):
+                xpos = np.median(np.array(self.meshlocations_x[ix:ix+x+1]))
+                tmp_lst.append(num)
+                tmp_lst_pos.append(xpos)
+                ix += x
+                num += 1
+            block_nums.append(np.array(tmp_lst))
+            block_x.append(np.array(tmp_lst_pos))
+        self.modelblocklocations_x = np.array(block_x)
+        self.modelblocklocations_z = np.array(block_z)
+        self.block_nums = np.array(block_nums)
 
 
 #------------------------------------------------------------------------------
