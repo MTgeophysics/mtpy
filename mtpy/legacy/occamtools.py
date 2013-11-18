@@ -5784,7 +5784,10 @@ class Occam2DModel(Occam2DData):
         
         hnodes=np.zeros(nh)
         vnodes=np.zeros(nv)
-        mdata=np.zeros((nh,nv,4),dtype=str)    
+        mdata=np.zeros((nh,nv,4),dtype=str) 
+        
+        if int(mlines[jj-1].strip().split()[3])>0:
+            jj += 1
         
         #get horizontal nodes
         ii=0
@@ -6332,7 +6335,7 @@ class Occam2DModel(Occam2DData):
             >>> ocm.plotL2Curve(fignum=2)
         """ 
 
-        invpath=os.path.dirname(self.iterfn)        
+        invpath=os.path.dirname(self.iterfn)
         
         if fnstem==None:
             iterlst=[os.path.join(invpath,itfile) 
@@ -6412,7 +6415,8 @@ class Occam2DModel(Occam2DData):
         plt.show()
                 
     def plotDepthModel(self,dpi=300,depthmm=(1,10000),plottype='1',
-                       yscale='log',plotdimensions=(3,6),plotnum=1,fignum=1):
+                       yscale='log',plotdimensions=(3,6),plotnum=1,fignum=1,
+                       fig=None):
         """
         Plots a depth section profile for a given set of stations.
         
@@ -6504,7 +6508,8 @@ class Occam2DModel(Occam2DData):
             plt.rcParams['figure.subplot.top']=.90
             plt.rcParams['figure.subplot.wspace']=.1
             
-            fig=plt.figure(fignum,plotdimensions,dpi=dpi)
+            if fig is None:
+                fig=plt.figure(fignum,plotdimensions,dpi=dpi)
             plt.clf()
             ns=len(slst)
             #plot the depth section for each station        
