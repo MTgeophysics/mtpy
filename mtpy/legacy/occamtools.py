@@ -5807,16 +5807,17 @@ class Occam2DModel(Occam2DData):
                 ii+=1
             jj+=1    
         
-        #get free parameters        
-        for ii,mm in enumerate(mlines[jj+1:]):
+        #get free parameters           
+        for ii in range(jj+1,len(mlines[jj+1:]),4):            
             kk=0
-            while kk<4:        
+            while kk<4:
+                mm = mlines[ii+kk]
                 mline=mm.rstrip()
                 if mline.lower().find('exception')>0:
                     break
-                for jj in range(nh):
+                for jjj in range(nh):
                     try:
-                        mdata[jj,ii,kk]=mline[jj]
+                        mdata[jjj,ii/4,kk]=mline[jjj]
                     except IndexError:
                         pass
                 kk+=1
