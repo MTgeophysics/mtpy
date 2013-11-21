@@ -721,7 +721,7 @@ class Setup():
             modelblockstrings.append(tempstring)
 
             num_params += ncol
-        print 'depth of model: {0:.1f} km'.format(lo_model_depths[-1]/1000.)
+        print 'depth of model (incl.padding): {0:.1f} km'.format(lo_model_depths[-1]/1000.)
         print '\nnumber of mesh layers: {0} ({1} model layers + 1 split top layer'\
                         ' + {2} bottom-padding)'.format(len(lo_mesh_thicknesses),
                                                     n_layers,n_bottompadding)
@@ -1367,11 +1367,17 @@ class Data():
             z_array = Z.z
             zerr_array = Z.zerr
 
-            for idx_f,freq in enumerate(self.frequencies):
+            for freq_num,freq in enumerate(self.frequencies):
 
-                frequency_number = np.abs(self.frequencies-freq).argmin() + 1
+                frequency_number = freq_num + 1 #OCCAM indices start with 1 
 
+                #extract the freqs available for the respective station
                 station_freqs = self.station_frequencies[idx_s]
+                #skip, if the listed frequency is not available for the station
+                if not (freq in station_freqs):
+                    continue
+
+                #find the respective frequency index for the station     
                 idx_f = np.abs(station_freqs-freq).argmin()
 
                 for mode in lo_modes:
@@ -1381,9 +1387,9 @@ class Data():
                         #value = np.log10(raw_rho_value)
                         absolute_rho_error = rho_phi[2][idx_f][0,1]
                         try:
-                            relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
                             if raw_rho_value == 0:
                                 raise
+                            relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
                         except:
                             relative_rho_error = 0.
 
@@ -1413,9 +1419,9 @@ class Data():
                         #value = np.log10(raw_rho_value)
                         absolute_rho_error = rho_phi[2][idx_f][1,0]
                         try:
-                            relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
                             if raw_rho_value == 0:
                                 raise
+                            relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
                         except:
                             relative_rho_error = 0.
                         if mode == 10 :
@@ -1446,34 +1452,36 @@ class Data():
                         tipper = T.tipper[idx_f]
                         try: 
                             tippererr = T.tippererr[idx_f]
+                            print station,mode,tippererr
                         except:
                             #print 'no Tipper error for station {0}/frequency {1}'.format(station_number,frequency_number)
                             tippererr = None
 
 
                         if mode == 3 :
-                            value = np.real(tipper[0,0])
-                            if tippererr is None:
-                                error = self.tipper_errorfloor/100.*value
-                            else:
-                                tippererr = tippererr[0,0]
-                                rel_error = tippererr/value
-                                if self.tipper_errorfloor/100. > rel_error:
-                                    error = self.tipper_errorfloor/100.*value
-                                else:
-                                    error = tippererr
-                        if mode == 4 :
-                            value = np.imag(tipper[0,0])
-                            if tippererr is None:
-                                error = self.tipper_errorfloor/100.*value
-                            else:
-                                tippererr = tippererr[0,1]
-                                rel_error = tippererr/value
-                                if self.tipper_errorfloor/100. > rel_error:
-                                    error = self.tipper_errorfloor/100.*value
-                                else:
-                                    error = tippererr
+                            value = np.real(tipper[0,1])
 
+                        if mode == 4 :
+                            value = np.imag(tipper[0,1])
+
+
+                        if tippererr is None:
+                            raw_error = 0
+                            if self.tipper_errorfloor is not None:
+                                raw_error = self.tipper_errorfloor/100.*value
+                        else:
+                            raw_error = tippererr[0,1] 
+                            
+                        if value == 0 :
+                            rel_error = 0 
+                        else:
+                            rel_error = raw_error/value
+
+                        error = raw_error
+                        if self.tipper_errorfloor is not None:                                
+                            if self.tipper_errorfloor/100. > rel_error:
+                                error = self.tipper_errorfloor/100.*value
+                            
 
                     self.data.append([station_number,frequency_number,mode,value,error])
 
@@ -1582,10 +1590,13 @@ class Data():
 
         
         #rotate Z according to strike angle, 
+
+        #if strike was explicitely given, use that value!
+
+        #otherwise:
         #have 90 degree ambiguity in strike determination
         #choose strike which offers larger angle with profile
         #if profile azimuth is in [0,90].
-        #if strike was explicitely given, use that value!
 
         if self._strike_set is False:
             if 0 <= self.azimuth < 90:
@@ -1604,12 +1615,14 @@ class Data():
         rotation_angle = self.strike
         
         for old_z in self.Z:
-            original_rotation_angle = old_z.rotation_angle
+            original_rotation_angle = np.array(old_z.rotation_angle)
             effective_rot_angle = rotation_angle - original_rotation_angle
             old_z.rotate(effective_rot_angle)
         
         for old_tipper in self.Tipper:
             try:
+                original_rotation_angle = np.array(old_tipper.rotation_angle)
+                effective_rot_angle = rotation_angle - original_rotation_angle
                 old_tipper.rotate(effective_rot_angle)
             except:
                 pass

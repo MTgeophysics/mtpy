@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'fifthgui.ui'
 #
-# Created: Tue Oct 29 19:39:50 2013
+# Created: Thu Nov 21 11:26:41 2013
 #      by: PyQt4 UI code generator 4.9.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -831,8 +831,8 @@ class Ui_occamgui2D(object):
         self.doubleSpinBox_strike.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
         self.doubleSpinBox_strike.setDecimals(1)
         self.doubleSpinBox_strike.setMinimum(0.0)
-        self.doubleSpinBox_strike.setMaximum(179.9)
-        self.doubleSpinBox_strike.setSingleStep(0.1)
+        self.doubleSpinBox_strike.setMaximum(180.0)
+        self.doubleSpinBox_strike.setSingleStep(1.0)
         self.doubleSpinBox_strike.setObjectName(_fromUtf8("doubleSpinBox_strike"))
         self.horizontalLayout_28.addWidget(self.doubleSpinBox_strike)
         self.layoutWidget10 = QtGui.QWidget(occamgui2D)

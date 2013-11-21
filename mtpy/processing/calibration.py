@@ -155,9 +155,9 @@ def EDL_b_field(data, edl_gain, instrument , instrument_amplification):
     """
 
     #setting the calibration factor for converting voltage into electric field strength:
-    nanotesla_per_volt = dict_of_calibration_factors_volt2nanotesla[instrument]
+    #nanotesla_per_volt = dict_of_calibration_factors_volt2nanotesla[instrument]
 
-    nanotesla_per_microvolt = nanotesla_per_volt / (10 ** 6)
+    #nanotesla_per_microvolt = nanotesla_per_volt / (10 ** 6)
 
     b_field = calibrate(data, 'b', instrument, 'edl', dipole_length = 1., 
                         calibration_factor = 1. , 
