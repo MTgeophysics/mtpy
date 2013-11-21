@@ -771,7 +771,7 @@ class Setup():
             temptext += "%.1f "%(mesh_widths[i])
             counter +=1 
             if counter == 10:
-                #temptext += '\n'
+                temptext += '\n'
                 counter = 0
         temptext +="\n"
         mesh_outstring += temptext
@@ -782,7 +782,7 @@ class Setup():
             temptext += "%.1f "%(mesh_depths[i])
             counter +=1 
             if counter == 10:
-                #temptext += '\n'
+                temptext += '\n'
                 counter = 0
         temptext +="\n"
         mesh_outstring += temptext
@@ -808,7 +808,7 @@ class Setup():
                     tempstring += "?"
                     counter += 1
                     if counter == 1000:
-                        tempstring += '\n'
+                        #tempstring += '\n'
                         counter = 0
                 if counter != 0 :
                     tempstring += '\n'
@@ -956,7 +956,7 @@ class Setup():
                 temptext += "{0:.1g}  ".format(np.log10(float(self.parameters_startup['halfspace_resistivity'])))
                 counter += 1
                 if counter == 20:
-                    #temptext += '\n'
+                    temptext += '\n'
                     counter = 0
         else:
             temptext +='  '.join([str(res) for res in self.parameters_startup['halfspace_resistivity']])
