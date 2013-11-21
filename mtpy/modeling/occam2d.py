@@ -1452,7 +1452,6 @@ class Data():
                         tipper = T.tipper[idx_f]
                         try: 
                             tippererr = T.tippererr[idx_f]
-                            print station,mode,tippererr
                         except:
                             #print 'no Tipper error for station {0}/frequency {1}'.format(station_number,frequency_number)
                             tippererr = None
