@@ -1335,9 +1335,6 @@ class Edi(object):
         except:
             phaseerr_array = None
 
-        print res_array
-        print phase_array
-        
         if self.Z is not None:
             z_new = copy.copy(self.Z.z)
             zerr_new = np.zeros_like(self.Z.zerr)
