@@ -420,7 +420,13 @@ class Zen3D(object):
        #----Raise an error if the first gps stamp is more than allowed time
         #    difference.
         if time_stop >= self._seconds_diff:
-            raise ZenGPSError('GPS start time is more than '+\
+#            raise ZenGPSError('GPS start time is more than '+\
+#                           '{0} '.format(self._seconds_diff)+\
+#                           'seconds different than scheduled start time of '+\
+#                           '{0}. \n '.format(self.start_dt)+\
+#                           'Estimated start time is {0} +/- {1} sec'.format(
+#                           start_test, self._seconds_diff))
+            print ('GPS start time is more than '+\
                            '{0} '.format(self._seconds_diff)+\
                            'seconds different than scheduled start time of '+\
                            '{0}. \n '.format(self.start_dt)+\
@@ -1262,17 +1268,31 @@ class ZenCache(object):
         n_fn = len(zt_lst)
         
         #test start time
-        st_lst = np.array([int(zt.date_time[0][-2:]) for zt in zt_lst])
-        time_max = np.where(st_lst==st_lst.max())[0]
+        #st_lst = np.array([int(zt.date_time[0][-2:]) for zt in zt_lst])
+        st_lst = np.array([int(zt.gps_time[0]) for zt in zt_lst])
+        time_max = max(st_lst)
+        #time_max = np.where(st_lst==st_lst.max())[0]
         
         #get the number of seconds each time series is off by
-        skip_dict = dict([(ii,0) for ii in range(n_fn)])
-        if len(time_max) != n_fn:
-            for ii in range(n_fn):
-                skip_dict[ii] = st_lst.max()-st_lst[ii]
+        skip_dict = {}
+        for ii, zt in enumerate(list(zt_lst)):
+            try:
+                skip_dict[ii] = np.where(zt.gps_time==time_max)[0][0]
+            except IndexError:
+                zt_lst.remove(zt_lst[ii])
+                print '***SKIPPING {0} '.format(zt.fn)
+                print '   because it does not contain correct gps time'
+                print '   {0} --> {1}'.format(time_max, 
+                                             zt.get_date_time(zt.gps_week, 
+                                                             time_max))
+#        skip_dict = dict([(ii, np.where(zt.gps_time==time_max)[0][0]) 
+#                          for ii, zt in enumerate(zt_lst)])
+#        if len(time_max) != n_fn:
+#            for ii in range(n_fn):
+#                skip_dict[ii] = st_lst.max()-st_lst[ii]       
         
         #change data by amount needed        
-        for ii, zt in enumerate(zt_lst):
+        for ii, zt in zip(skip_dict.keys(), zt_lst):
             if skip_dict[ii] != 0:
                 skip_points = skip_dict[ii]*zt.df
                 print 'Skipping {0} points for {1}'.format(skip_points,
@@ -1312,6 +1332,7 @@ class ZenCache(object):
                 print 'TS length for channel {0} '.format(zt.ch_number)+\
                       '({0}) '.format(zt.ch_cmp)+\
                       '= {0}'.format(len(ts_trim))
+                print '    T0 = {0}\n'.format(zt.date_time[0])
             self.log_lines.append(' '*4+\
                                   'TS length for channel {0} '.format(zt.ch_number)+\
                                   '({0}) '.format(zt.ch_cmp)+\
@@ -1963,9 +1984,10 @@ class ZenSchedule(object):
                                  
             **varaspace** : electrode spacing in meters, can be changed later
             
-            **savename** : [ 0 | 1 | string]
+            **savename** : [ 0 | 1 | 2 | string]
                            * 0 --> saves as zenini.cfg
                            * 1 --> saves as Zeus2Ini.cfg
+                           * 2 --> saves as ZEN.cfg
                            * string --> saves as the string, note the zen
                                         boxes look for either 0 or 1, so this
                                         option is useless
@@ -2024,6 +2046,61 @@ class ZenSchedule(object):
             save_name = 'zenini.cfg'
         elif savename == 1:
             save_name = 'Zeus3Ini.cfg'
+        elif savename == 2:
+            save_name = 'ZEN.cfg'
+            sfid = file(os.path.normpath(os.path.join('c:\\MT', save_name)),
+                        'w')
+            for sa_dict in self.sa_lst:
+                new_time = self.add_time(self.dt_offset,
+                                         add_hours=int(sa_dict['time'][0:2]),
+                                         add_minutes=int(sa_dict['time'][3:5]),
+                                         add_seconds=int(sa_dict['time'][6:]))
+                sa_line = ','.join([new_time.strftime(self.dt_format),
+                                    sa_dict['resync_yn'], 
+                                    sa_dict['log_yn'],
+                                    '2047',
+                                    '1999999999',
+                                    sa_dict['sr'],
+                                    '0','0','0','y','n','n','n'])
+                sfid.write('scheduleaction '.upper()+sa_line[:-1]+'\n')
+            meta_line = ''.join(['{0},{1}|'.format(key,self.meta_dict[key]) 
+                                 for key in self.meta_keys])
+            sfid.write('METADATA '+meta_line+'\n')
+            for lkey in self.light_dict.keys():
+                sfid.write('{0} {1}\n'.format(lkey, self.light_dict[lkey]))
+            sfid.close()
+            #print 'Wrote {0}:\{1} to {2} as {3}'.format(dd, save_name, dname,
+            #                                       self.ch_cmp_dict[dname[-1]])
+            
+            for dd in drive_names.keys():
+                dname = drive_names[dd]
+                sfid = file(os.path.normpath(os.path.join(dd+':\\', save_name)),
+                            'w')
+                for sa_dict in self.sa_lst:
+                    new_time = self.add_time(self.dt_offset,
+                                             add_hours=int(sa_dict['time'][0:2]),
+                                             add_minutes=int(sa_dict['time'][3:5]),
+                                             add_seconds=int(sa_dict['time'][6:]))
+                    sa_line = ','.join([new_time.strftime(self.dt_format),
+                                        sa_dict['resync_yn'], 
+                                        sa_dict['log_yn'],
+                                        '2047',
+                                        '1999999999',
+                                        sa_dict['sr'],
+                                        '0','0','0','y','n','n','n'])
+                    sfid.write('scheduleaction '.upper()+sa_line[:-1]+'\n')
+                
+                self.meta_dict['Ch.Cmp'] = self.ch_cmp_dict[dname[-1]]
+                self.meta_dict['Ch.Number'] = dname[-1]
+                meta_line = ''.join(['{0},{1}|'.format(key,self.meta_dict[key]) 
+                                     for key in self.meta_keys])
+                sfid.write('METADATA '+meta_line+'\n')
+                for lkey in self.light_dict.keys():
+                    sfid.write('{0} {1}\n'.format(lkey, self.light_dict[lkey]))
+                sfid.close()
+                print 'Wrote {0}:\{1} to {2} as {3}'.format(dd, save_name, dname,
+                                                   self.ch_cmp_dict[dname[-1]])
+            return
         else:
             save_name = savename
          
