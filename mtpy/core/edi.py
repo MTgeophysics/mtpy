@@ -1305,8 +1305,9 @@ class Edi(object):
 
 
     #--------------Set the Resistivity and Phase------------------------------
-    def _set_res_phase(self, res_array, phase_array, reserr_array = None, 
-                       phaseerr_array = None):
+    def _set_res_phase(self, resphase_tuple):
+        #_array, phase_array, reserr_array = None, 
+        #               phaseerr_array = None):
         """
             Set values for resistivity (res - in Ohm m) and phase 
             (phase - in degrees).
@@ -1314,7 +1315,29 @@ class Edi(object):
             Updates the attributes "z".
 
         """
+        if type(resphase_tuple) not in [tuple]:
+            print 'ERROR - res_phase must be tuple'
+            return 
 
+        if len(resphase_tuple) < 2:
+            print 'resphase_tuple must contain at least two entries: resistivity'\
+            '_array and phase_array'
+            return
+        res_array = resphase_tuple[0]
+        phase_array = resphase_tuple[1]%360
+
+        try:
+            reserr_array =  resphase_tuple[2]
+        except:
+            reserr_array = None
+        try:
+            phaseerr_array =  resphase_tuple[3]
+        except:
+            phaseerr_array = None
+
+        print res_array
+        print phase_array
+        
         if self.Z is not None:
             z_new = copy.copy(self.Z.z)
             zerr_new = np.zeros_like(self.Z.zerr)
