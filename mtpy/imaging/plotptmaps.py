@@ -506,6 +506,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             except KeyError:
                 raise NameError('Need to include the extent of the image as '+\
                                 '(left, right, bottom, top)')
+        self.image_origin = image_dict.pop('origin', 'lower')
                                 
         #--> set a central reference point
         self.plot_reference_point = kwargs.pop('reference_point', (0, 0))
@@ -592,8 +593,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         #--> plot the background image if desired-----------------------
         try:
             im = plt.imread(self.image_file)
-            self.ax.imshow(im, origin='lower', extent=self.image_extent, 
-                           aspect='auto')
+            self.ax.imshow(im, origin=self.image_origin, 
+                           extent=self.image_extent, 
+                           aspect='equal')
         except AttributeError:
             pass
         
@@ -800,7 +802,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                     
                     #plot real tipper
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yr':
-                        if tip.mag_real[jj]<=1.0:
+                        if tip.mag_real[jj] <= self.arrow_threshold:
                             txr = tip.mag_real[jj]*ascale*\
                                   np.sin((tip.ang_real[jj])*np.pi/180+adir)
                             tyr=tip.mag_real[jj]*ascale*\
@@ -821,10 +823,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                         
                     #plot imaginary tipper
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yi':
-                        if tip.mag_imag[jj]<=1.0:
+                        if tip.mag_imag[jj] <= self.arrow_threshold:
                             txi = tip.mag_imag[jj]*ascale*\
                                  np.sin((tip.ang_imag[jj])*np.pi/180+adir)
-                            tyi = tip.magimag[jj]*ascale*\
+                            tyi = tip.mag_imag[jj]*ascale*\
                                  np.cos((tip.ang_imag[jj])*np.pi/180+adir)
         
                             self.ax.arrow(plotx,

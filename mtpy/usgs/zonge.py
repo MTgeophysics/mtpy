@@ -2000,61 +2000,94 @@ class ZongeMTAvg():
             chn_lst = mtft_dict['setup_lst'][0]['Chn.Cmp'].split(',')
             chn_id = mtft_dict['setup_lst'][0]['Chn.ID'].split(',')
             chn_len_lst = mtft_dict['setup_lst'][0]['Chn.Length'].split(',')
+            
         else:
             chn_lst = ['hx', 'hy', 'hz', 'ex', 'ey']
             chn_id = [1, 2, 3, 4, 5]
             chn_len_lst = [100]*5
+            
+        chn_id_dict = dict([(comp.lower(), (comp.lower(), cid, clen)) 
+                            for comp, cid, clen in zip(chn_lst, chn_id, 
+                                                       chn_len_lst)])
         
         #--> hx component                
         try:
             hxazm = survey_dict['b_xaxis_azimuth']
         except KeyError:
             hxazm = 0
-        hemeas_lst.append(['HMEAS', 
-                           'ID={0}'.format(chn_id[0]), 
-                           'CHTYPE={0}'.format(chn_lst[0].upper()), 
-                           'X=0', 
-                           'Y=0', 
-                           'AZM={0}'.format(hxazm),
-                           ''])
+        try:
+            hemeas_lst.append(['HMEAS', 
+                               'ID={0}'.format(chn_id_dict['hx'][1]), 
+                               'CHTYPE={0}'.format(chn_id_dict['hx'][0].upper()), 
+                               'X=0', 
+                               'Y=0', 
+                               'AZM={0}'.format(hxazm),
+                               ''])
+        except KeyError:
+            hemeas_lst.append(['HMEAS', 
+                               'ID={0}'.format(1), 
+                               'CHTYPE={0}'.format('HX'), 
+                               'X=0', 
+                               'Y=0', 
+                               'AZM={0}'.format(hxazm),
+                               ''])
+            
         #--> hy component
         try:
             hyazm = survey_dict['b_yaxis_azimuth']
         except KeyError:
             hyazm = 90
-        hemeas_lst.append(['HMEAS', 
-                           'ID={0}'.format(chn_id[1]), 
-                           'CHTYPE={0}'.format(chn_lst[1].upper()), 
-                           'X=0', 
-                           'Y=0', 
-                           'AZM={0}'.format(hyazm),
-                           ''])
-
-        #--> hz component
-        hemeas_lst.append(['HMEAS', 
-                           'ID={0}'.format(chn_id[2]), 
-                           'CHTYPE={0}'.format(chn_lst[2].upper()), 
-                           'X=0', 
-                           'Y=0', 
-                           'AZM={0}'.format(0),
-                           ''])
+        try:
+            hemeas_lst.append(['HMEAS', 
+                               'ID={0}'.format(chn_id_dict['hy'][1]), 
+                               'CHTYPE={0}'.format(chn_id_dict['hy'][0].upper()), 
+                               'X=0', 
+                               'Y=0', 
+                               'AZM={0}'.format(hxazm),
+                               ''])
+        except KeyError:
+            hemeas_lst.append(['HMEAS', 
+                               'ID={0}'.format(1), 
+                               'CHTYPE={0}'.format('HY'), 
+                               'X=0', 
+                               'Y=0', 
+                               'AZM={0}'.format(hxazm),
+                               ''])
         #--> ex component
-        hemeas_lst.append(['EMEAS', 
-                           'ID={0}'.format(chn_id[3]), 
-                           'CHTYPE={0}'.format(chn_lst[3].upper()), 
-                           'X=0', 
-                           'Y=0', 
-                           'X2={0}'.format(chn_len_lst[3]),
-                           'Y2=0'])
+        try:
+            hemeas_lst.append(['EMEAS', 
+                               'ID={0}'.format(chn_id_dict['ex'][1]), 
+                               'CHTYPE={0}'.format(chn_id_dict['ex'][0].upper()), 
+                               'X=0', 
+                               'Y=0', 
+                               'X2={0}'.format(chn_id_dict['ex'][2]),
+                               'Y2=0'])
+        except KeyError:
+            hemeas_lst.append(['EMEAS', 
+                               'ID={0}'.format(1), 
+                               'CHTYPE={0}'.format('EX'), 
+                               'X=0', 
+                               'Y=0', 
+                               'X2={0}'.format(100),
+                               'Y2=0'])
                            
         #--> ey component
-        hemeas_lst.append(['EMEAS', 
-                           'ID={0}'.format(chn_id[4]), 
-                           'CHTYPE={0}'.format(chn_lst[4].upper()), 
-                           'X=0', 
-                           'Y=0', 
-                           'X2=0',
-                           'Y2={0}'.format(chn_len_lst[4])])
+        try:
+            hemeas_lst.append(['EMEAS', 
+                               'ID={0}'.format(chn_id_dict['ey'][1]), 
+                               'CHTYPE={0}'.format(chn_id_dict['ey'][0].upper()), 
+                               'X=0', 
+                               'Y=0', 
+                               'X2=0',
+                               'Y2={0}'.format(chn_id_dict['ey'][2])])
+        except KeyError:
+            hemeas_lst.append(['EMEAS', 
+                               'ID={0}'.format(1), 
+                               'CHTYPE={0}'.format('EY'), 
+                               'X=0', 
+                               'Y=0', 
+                               'X2=0',
+                               'Y2={0}'.format(100)])
                            
         #--> remote reference 
         if rrsurvey_dict:
