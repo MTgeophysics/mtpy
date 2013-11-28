@@ -2,9 +2,15 @@
 # -*- coding: utf-8 -*-
 ######################################################################
 #
-# Create vtk format file from WSMT output model file
+# Create vtk format file from WS3dinv output model file
 #   - changes units from meters to kilometers
 #
+
+# LK & JP UofA
+# Geophysics
+# 2013
+
+# adapted from
 # 15.05.2012
 # Institute of Earth Science and Engineering
 # J Rugis
@@ -157,7 +163,6 @@ def main():
         for j in respdata_nextlines:
             N[i] = float(j)/1000.0
             i += 1
-    print N
 
     # read East locations
     f.readline() #skip line
@@ -168,8 +173,8 @@ def main():
         for j in respdata_morelines:
             E[i] = float(j)/1000.0
             i += 1
+    f.close()
 
-    print E
 
     # set Depths -- all stations at the surface!!
     D = np.zeros(nstations)
@@ -179,13 +184,14 @@ def main():
     #for j in range(nstations):
     #    dummy[j] = 1.0
 
-    pointsToVTK(VTKstations, N, E, D, data = {"value" : dummy})
+    print np.shape(dummy),np.shape(N),np.shape(E),np.shape(D)
 
-    f.close()
+    pointsToVTK(VTKstations, N, E, D, data = {"dummyvalue" : dummy})
 
 
-    print 'Created Resistivity File: ',VTKresist
-    print 'Created Station File: ',VTKstations
+
+    print 'Created Resistivity File: {0}.vtr '.format(VTKresist)
+    print 'Created Station File: {0}.vtu '.format(VTKstations)
 
 
 if __name__ == '__main__':
