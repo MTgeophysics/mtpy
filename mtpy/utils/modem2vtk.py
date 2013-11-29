@@ -45,7 +45,8 @@ def main():
     arguments = sys.argv
 
     if len(arguments) < 2:
-        sys.exit('ERROR - provide at least 1 file name: <modeldata file>')
+        sys.exit('\nERROR - provide at least 1 file name: <model file> [<data>]'\
+            ' [out:rho] [out:stations]\n')
 
     try:
         Mmodel = os.path.abspath(os.path.realpath(arguments[1]))

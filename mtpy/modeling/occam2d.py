@@ -636,13 +636,33 @@ class Setup():
         max_thickness = np.max(lo_mesh_thicknesses)
         maxdepth = lo_mesh_depths[-1]
 
-
+        padding_thickness = 0
+        lo_bottom_padding_layers = []
         for i in range(n_bottompadding):
-            lo_mesh_thicknesses.append(max_thickness)
-            lo_mesh_depths.append(maxdepth+max_thickness)
-            maxdepth += max_thickness
+            #increase bottom padding mesh thickness with each layer
+            layer_thickness = 1.3**(i)*max_thickness
+            lo_bottom_padding_layers.append(layer_thickness)
+                    
+        padding_thickness = np.sum(lo_bottom_padding_layers)
+        padding_to_model_ratio = padding_thickness/maxdepth
+
+        padding_threshold = 2
+
+        if padding_to_model_ratio < padding_threshold:
+            # if padding is smaller than 'threshold' * model_depth, stretch the 
+            # padding to this extent
+            lo_bottom_padding_layers = list(padding_threshold/padding_to_model_ratio * 
+                                        np.array(lo_bottom_padding_layers))
+            padding_thickness = np.sum(lo_bottom_padding_layers)
+            
+
+        for pad in lo_bottom_padding_layers:
+            lo_mesh_thicknesses.append(pad)
+            lo_mesh_depths.append(lo_mesh_depths[-1]+pad)
         
-        lo_model_depths.append(lo_model_depths[-1]+n_bottompadding*max_thickness)
+        #all the bottim padding is making one single model layer:
+        lo_model_depths.append(lo_model_depths[-1] + padding_thickness)
+
 
         #just to be safe!
         #self.parameters_inmodel['no_layers'] = len(lo_model_depths)

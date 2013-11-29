@@ -2564,7 +2564,7 @@ def _validate_edifile_string(edistring):
             continue
 
     if n_numbers == 0:
-        print  MTex.MTpyError_edi_file('Problem in FREQ block: no freq'+\
+        print  MTex.MTpyError_edi_file('Problem in FREQ block: no freq '+\
                                        'found...checking for spectra instead')
         #found *= 0
     #Check for data entry following priority:
@@ -2758,7 +2758,7 @@ def _find_key_value(key, separator, instring, valuelength=None):
 
 def spectra2z(data, channellist=None):
     """
-        Convert data from spectral form into Z - for one fixed freq.
+        Convert data from spectral form into Z (and TIpper) - for a single freq.
 
         Input:
         spectral data array, real-valued, n x n sized 
@@ -2799,7 +2799,7 @@ def spectra2z(data, channellist=None):
     #idx contains the indices/positions of the components within the data 
     #matrix. The entries are in the order 
     # HX, HY, HZ, EX, EY, HXrem, HYrem
-    # if HY is not present, the list entry is a NONE
+    # if HZ is not present, the list entry is a NONE
 
     #build upper right triangular matrix with compex valued entries
     for i in range(data.shape[0]-1):
@@ -2833,6 +2833,7 @@ def spectra2z(data, channellist=None):
                             S[idx[2],idx[6]] * S[idx[1],idx[5]] 
         tipper_array[0,1] = S[idx[2],idx[6]] * S[idx[0],idx[5]] - \
                             S[idx[2],idx[5]] * S[idx[0],idx[6]] 
+        print tipper_array
 
     return z_array, tipper_array
 
