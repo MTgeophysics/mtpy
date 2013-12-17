@@ -5,7 +5,7 @@ REM Command file for Sphinx documentation
 if "%SPHINXBUILD%" == "" (
 	set SPHINXBUILD=sphinx-build
 )
-set BUILDDIR=.build
+set BUILDDIR=_build
 set ALLSPHINXOPTS=-d %BUILDDIR%/doctrees %SPHINXOPTS% .
 set I18NSPHINXOPTS=%SPHINXOPTS% .
 if NOT "%PAPER%" == "" (
@@ -185,18 +185,6 @@ if "%1" == "doctest" (
 	echo.Testing of doctests in the sources finished, look at the ^
 results in %BUILDDIR%/doctest/output.txt.
 	goto end
-)
-
-if "%1" == "gh-pages" (
-    rm -r ../../MTpy-pages/*
-	echo Automatic build of documentation > ../.commitmsg
-	git log -1 --pretty=short --abbrev-commit >> ../.commitmsg
-	%SPHINXBUILD% -b html . ../../MTpy-pages
-	cd ../../MTpy-pages
-    touch .nojekyll
-	git add -A
-	git commit -F ../MTpy/.commitmsg && git push origin gh-pages
-	cd ../MTpy/doc
 )
 
 :end

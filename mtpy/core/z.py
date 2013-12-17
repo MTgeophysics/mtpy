@@ -1,60 +1,16 @@
 #!/usr/bin/env python
 
 """
-mtpy/mtpy/core/z.py
+=============
+z
+=============
 
-Contains classes and functions for handling impedance tensors (Z). 
- 
-    Class:
-    "Z" contains information about an impedance tensor Z. 
-
-    Methods:
-    --------
-        -det                  calculates determinant of z with errors
-        -invariants           calculates the invariants of z
-        -inverse              calculates the inverse of z
-        -no_distortion        removes distortion given a distortion matrix
-        -no_ss                removes static shift by assumin Z = S * Z_0 
-        -no_ss_no_distortion  not implemented yet
-        -norm                 calculates the norm of Z
+Classes
+---------
+    * **Z** deals with impedance tesnsor.
+    * **Tipper** deals with Tipper matrix.
         
-        -only1d               zeros diagonal components and computes 
-                              the absolute valued mean of the off-diagonal 
-                              components.
-        
-        -only2d               zeros diagonal components 
-        -res_phase            computes resistivity and phase 
-        -rotate               rotates z positive clockwise, angle assumes
-                              North is 0.
-        -set_res_phase        recalculates z and zerr, needs attribute freq
-        -skew                 calculates the invariant skew (off diagonal trace)
-        -trace                calculates the trace of z
-
-
-    Class:
-    "Tipper" contains information about the (complex valued) Tipper vector. 
-
-        Methods:
-
-        - set_tipper
-        - set_tippererr
-        - set_r_phi
-        - rotate
-
-    Functions:
-
-     - rotate_z
-     - remove_distortion
-     - remove_ss
-     - remove_ss_and_distortion
-     - z2rhophi
-     - rotate_tipper
-     - _read_z_array
-     - _read_tipper_array
-
-@UofA, 2013
-(LK)
-
+LK, JP 2013
 """
 
 #=================================================================
@@ -74,48 +30,70 @@ reload(MTcc)
 #------------------------
 class Z(object):
     """
-        Z class - generates an impedance tensor (Z-) object.
+    Z class - generates an impedance tensor (Z-) object.
 
-        Methods  include rotations/combinations of Z instances, as well as 
-        calculation of invariants, inverse, amplitude/phase,...
-        Calculation of invariants, inverse, amplitude/phase,...
+    Methods  include rotations/combinations of Z instances, as well as 
+    calculation of invariants, inverse, amplitude/phase,...
+    Calculation of invariants, inverse, amplitude/phase,...
 
-        
-        Z is a complex array of the form (n_freq, 2, 2), 
-        with indices in the following order: 
-            Zxx: (0,0) - Zxy: (0,1) - Zyx: (1,0) - Zyy: (1,1)   
-
-        All errors are given as standard deviations (sqrt(VAR))
-        
-    Attributes:
-    -----------
     
-        -freq             array of frequencies corresponding to elements of z 
-        -rotation_angle   angle of which data is rotated by
-        -z                impedance tensor
-        -zerr             estimated errors of impedance tensor
+    Z is a complex array of the form (n_freq, 2, 2), 
+    with indices in the following order: 
+        Zxx: (0,0) - Zxy: (0,1) - Zyx: (1,0) - Zyy: (1,1)   
+
+    All errors are given as standard deviations (sqrt(VAR))
+    
+    Arguments:
+    -----------
+        **z_array** : numpy.ndarray(n_freq, 2, 2)
+                      array containing complex impedance values
         
-    Methods:
-    --------
-        -det                  calculates determinant of z with errors
-        -invariants           calculates the invariants of z
-        -inverse              calculates the inverse of z
-        -no_distortion        removes distortion given a distortion matrix
-        -no_ss                removes static shift by assumin Z = S * Z_0 
-        -no_ss_no_distortion  not implemented yet
-        -norm                 calculates the norm of Z
+        **zerr_array: numpy.ndarray(n_freq, 2, 2)
+                      array containing error values (standard deviation) 
+                      of impedance tensor elements 
+        **freq** : np.ndarray(n_freq)
+                   array of frequency values corresponding to impedance tensor
+                   elements.
         
-        -only1d               zeros diagonal components and computes 
-                              the absolute valued mean of the off-diagonal 
-                              components.
+    =============== ===========================================================
+    **Attributes**  Description
+    =============== ===========================================================
+    freq             array of frequencies corresponding to elements of z 
+    rotation_angle   angle of which data is rotated by
+    z                impedance tensor
+    zerr             estimated errors of impedance tensor
+    =============== ===========================================================
         
-        -only2d               zeros diagonal components 
-        -res_phase            computes resistivity and phase 
-        -rotate               rotates z positive clockwise, angle assumes
-                              North is 0.
-        -set_res_phase        recalculates z and zerr, needs attribute freq
-        -skew                 calculates the invariant skew (off diagonal trace)
-        -trace                calculates the trace of z
+    =================== =======================================================
+    **Methods**          Description
+    =================== =======================================================
+    det                  calculates determinant of z with errors
+    invariants           calculates the invariants of z
+    inverse              calculates the inverse of z
+    no_distortion        removes distortion given a distortion matrix
+    no_ss                removes static shift by assumin Z = S * Z_0 
+    no_ss_no_distortion  not implemented yet
+    norm                 calculates the norm of Z
+    only1d               zeros diagonal components and computes 
+                         the absolute valued mean of the off-diagonal 
+                         components.
+    only2d               zeros diagonal components 
+    res_phase            computes resistivity and phase 
+    rotate               rotates z positive clockwise, angle assumes
+                         North is 0.
+    set_res_phase        recalculates z and zerr, needs attribute freq
+    skew                 calculates the invariant skew (off diagonal trace)
+    trace                calculates the trace of z
+    =================== =======================================================
+    
+    :Example:: 
+    
+        >>> import mtpy.core.z as mtz
+        >>> import numpy as np
+        >>> z_test = np.array([[0+0j, 1+1j], [-1-1j, 0+0j]])
+        >>> z_object = mtz.Z(z_array=z_test, freq=[1])
+        >>> z_object.rotate(45)
+        >>> z_object.res_phase
 
 
     """
@@ -1014,10 +992,10 @@ class Z(object):
 
 class Tipper(object):
     """
-        Tipper class - generates a Tipper-object.
+    Tipper class - generates a Tipper-object.
 
 
-        Errors are given as standard deviations (sqrt(VAR))
+    Errors are given as standard deviations (sqrt(VAR))
         
     Arguments:
     ----------
@@ -1036,21 +1014,24 @@ class Tipper(object):
                    Must be same length as tipper_array.
                    *default* is None
                    
-    Attributes:
-    -----------
-        -freq            array of frequencies corresponding to tipper elements  
-        -rotation_angle  angle to rotate the data by.  
+    =============== ===========================================================
+    **Attributes**  Description
+    =============== ===========================================================
+    freq            array of frequencies corresponding to elements of z 
+    rotation_angle  angle of which data is rotated by
         
-        -tipper          tipper array
-        -tippererr      tipper error array
+    tipper          tipper array
+    tippererr       tipper error array
+    =============== ===========================================================
         
-        
-    Methods:
-    --------
-        -mag_direction   computes magnitude and direction of real and imaginary
-                         induction arrows.
-        -amp_phase       computes amplitude and phase of Tx and Ty.
-        -rotate          rotates the data by the given angle
+    =============== ===========================================================
+    **Methods**     Description
+    =============== ===========================================================
+    mag_direction   computes magnitude and direction of real and imaginary
+                    induction arrows.
+    amp_phase       computes amplitude and phase of Tx and Ty.
+    rotate          rotates the data by the given angle
+    =============== ===========================================================
                            
         
 
