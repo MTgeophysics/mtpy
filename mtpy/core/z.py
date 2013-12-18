@@ -7,8 +7,9 @@ z
 
 Classes
 ---------
-    * **Z** deals with impedance tesnsor.
-    * **Tipper** deals with Tipper matrix.
+* **Z** deals with impedance tesnsor.
+* **Tipper** deals with Tipper matrix.
+    
         
 LK, JP 2013
 """

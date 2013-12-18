@@ -1,18 +1,18 @@
 Core: includes **Z** and **Tipper**
 --------------------------------------
+
 .. automodule:: mtpy.core.z
 
+------------------------------
+
+**Class Z**
+------------
 .. autoclass:: mtpy.core.z.Z
-   :members:
-   :show-inheritance: 
-   :private-members:
-   :special-members:
-   :undoc-members:
+    :members:
 
+----------------------------------
+
+**Class Tipper**
+-----------------
 .. autoclass:: mtpy.core.z.Tipper
-   :members:
-   :show-inheritance: 
-   :private-members:
-   :special-members:
-   :undoc-members:
-
+    :members:
