@@ -21,7 +21,7 @@ import sys
 # second component is positve from West to East, third component is positive Downwards#
 
 #Important note:
-# The output of wsinv3D is not sorted straight forward!
+# The output of ModEM is not sorted straight forward!
 # The x-components (North) of the model have to be read in opposite order.
 
 # This holds for the model as well as the station locations.
@@ -32,6 +32,9 @@ import sys
 def main():
     """
     Convert ModEM output files (model) into 3D VTK resistivity grid
+    
+    (distance is given in kilometers)
+
 
     Input:
     - ModEM model file 
@@ -77,7 +80,7 @@ def main():
     # skip first line in file
     f.readline()
 
-    # read N,E,D mesh dimensions
+    # read X,Y,Z mesh dimensions
     dims = []
     modeldata_firstline = f.readline().split()
 
@@ -102,8 +105,8 @@ def main():
             for j in modeldata_nextlines:
                 spacing.append(float(j)/1000.0)
                 i += 1
-     
-    # read mt data
+
+    # read model values
     #  (depends on line break only after final value)
     mt = np.zeros(size)
     i=0
@@ -119,46 +122,111 @@ def main():
             elif function in ['log','log10']:
                 mt[i] = 10**(float(j))
             i += 1
+    #reading the mesh blocks and calculate coordinates.
+    #Coords are taken at the center points of the blocks
+
+    #read the lines following the model:
+    appendix = f.readlines()
+    
+    # the second last non empty line contains a triple that defines the 
+    # lower left corner coordinates of the model 
+    x0 = None
+    for line in appendix[::-1]:
+        line = line.strip().split()
+        if len(line) != 3:
+            continue
+        else:
+            try:
+                x0 = float(line[0])/1000.
+                y0 = float(line[1])/1000.
+                z0 = float(line[2])/1000.
+                break
+            except:
+                continue
+    if x0 is None:
+        x0 = 0
+        y0 = 0
+        z0 = 0 
+        print 'Warning - no reference point found - lower left corner of model'\
+        ' set to 0,0,0'
+
+    Xspacing = spacing[:dims[0]]
 
     # calc North coordinates of vtk mesh
-    Ndist = 0 # calculate total North distance
+    Xdist = 0 # calculate total North distance by summing all blocks
     for i in range(dims[0]):
-        Ndist += spacing[i]
-    N = np.zeros(dims[0]+1)
-    N[0] = -0.5 * Ndist # zero center of model
-    for i in range(dims[0]):
-        N[i+1] = N[i] + spacing[i]
+        Xdist += Xspacing[i]
 
-    # calc East coordinates of vtk mesh
-    Edist = 0 # calculate total y distance
-    for i in range(dims[1]):
-        Edist += spacing[dims[0] + i]
-    E = np.zeros(dims[1]+1)
-    E[0] = -0.5 * Edist # zero center of model
-    for i in range(dims[1]):
-        E[i+1] = E[i] + spacing[dims[0] + i]
+    X = np.zeros(dims[0])
+    #X[0] = -0.5 * Xdist + 0.5*(Xspacing[0])# define zero at the center of the model
+    X[0] = 0.5*(Xspacing[0])# define zero at the lower left corner of the model
+    for i in range(dims[0]-1):
+        local_spacing = 0.5*(Xspacing[i]+Xspacing[i+1])
+        X[i+1] = X[i] + local_spacing
+    
+    #add reference point coordinate
+    X += x0
 
+    Yspacing = spacing[dims[0]:dims[0]+dims[1]]
+    # calc Yast coordinates of vtk mesh
+    Ydist = 0 # calculate total Yast distance by summing all blocks
+    for i in range(dims[1]):
+        Ydist += Yspacing[i]
+
+    Y = np.zeros(dims[1])
+    #Y[0] = -0.5 * Ydist + 0.5*(Yspacing[0])# define zero at the center of the model
+    Y[0] = 0.5*(Yspacing[0])# define zero at the lower left corner of the model
+    for i in range(dims[1]-1):
+        local_spacing = 0.5*(Yspacing[i]+Yspacing[i+1])
+        Y[i+1] = Y[i] + local_spacing
+    
+    #add reference point coordinate
+    Y += y0
+
+    Dspacing=spacing[dims[0]+dims[1]:]
     # calc Down coordinates of vtk mesh
-    D = np.zeros(dims[2]+1)
-    D[0] = 0.0
-    for i in range(dims[2]):
-        D[i+1] = D[i] + spacing[dims[0] + dims[1] + i]
+    D = np.zeros(dims[2])
+    D[0] = 0.5*Dspacing[0]
+    for i in range(dims[2]-1):
+        local_spacing = 0.5*(Dspacing[i]+Dspacing[i+1])
+        D[i+1] = D[i] + local_spacing
+
+    
+    #add reference point coordinate
+    D+= z0
 
     # output to vtk format
     # first components read in reverse order!!
-    mtNS = np.zeros((dims[0],dims[1],dims[2])) # North-to-South conversion
+    mtNS = np.zeros((dims[0],dims[1],dims[2])) 
 
     n=0
+
+    #define array for alternative output as csv file, which
+    #can be read by paraview directly 
+    arr = np.zeros((len(X)*len(Y)*len(D),4))
+    
     for idx_D in range(dims[2]):
-        for idx_E in range(dims[1]):
-            for idx_S in range(dims[0]):
-                mtNS[(dims[0]-1)-idx_S,idx_E,idx_D] = mt[n]
+        for idx_Y in range(dims[1]):
+            for idx_X in range(dims[0]):
+                #switch North/South by convention
+                mtNS[-(idx_X+1),idx_Y,idx_D] = mt[n]
+                arr[n,0] = X[idx_X]
+                arr[n,1] = Y[idx_Y]
+                arr[n,2] = D[idx_D]
+                arr[n,3] = mt[n]
                 n += 1
-    gridToVTK(VTKresist, N, E, D, cellData = {'resistivity' : mtNS})
+    gridToVTK(VTKresist, X, Y, D, pointData = {'resistivity' : mtNS})
 
     f.close()
 
-    print 'Created Resistivity File: {0}.vtr'.format(VTKresist)
+    fn2 = VTKresist+'.csv'
+    F = open(fn2,'w')
+    F.write('X , Y , Down , Rho \n')
+    np.savetxt(F,arr,delimiter=',')
+    F.close()
+
+    print 'Created Resistivity Array: {0}.csv'.format(VTKresist)
+    print 'Created Resistivity VTK File: {0}.vtr'.format(VTKresist)
 
     try:
         f = open(Mdata, 'r')
@@ -199,7 +267,7 @@ def main():
 
 
 
-        print 'Created Station File: {0}.vtu'.format(VTKstations)
+        print 'Created Station VTK File: {0}.vtu'.format(VTKstations)
     except:
         print 'Could not create Station File '
 
