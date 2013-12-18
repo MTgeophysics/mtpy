@@ -1,5 +1,5 @@
-Core: includes **Z** and **Tipper**
---------------------------------------
+Core: includes **Z**,  **Tipper** and **Edi**
+----------------------------------------------
 
 .. automodule:: mtpy.core.z
 
@@ -15,4 +15,15 @@ Core: includes **Z** and **Tipper**
 **Class Tipper**
 -----------------
 .. autoclass:: mtpy.core.z.Tipper
+    :members:
+	
+-----------------------------------
+
+.. automodule:: mtpy.core.edi
+
+------------------------------
+
+**Class Edi**
+--------------
+.. autoclass:: mtpy.core.edi.Edi
     :members:
