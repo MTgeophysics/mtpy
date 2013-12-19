@@ -21,7 +21,6 @@ import copy
 
 import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
-import mtpy.utils.format as MTft
 
 reload(MTcc)
 
@@ -178,6 +177,13 @@ class Z(object):
                     return
          
         self._freq = np.array(lo_freq)
+        
+        #for consistency recalculate resistivity and phase
+        if self._z is not None:
+            try:
+                self._compute_res_phase()
+            except IndexError:
+                print 'Need to input frequency array'
 
     def _get_freq(self): 
 		return np.array(self._freq)
@@ -220,7 +226,11 @@ class Z(object):
                                              for ii in self._z])
                                                  
         #for consistency recalculate resistivity and phase
-        self._compute_res_phase()
+        if self._z is not None:
+            try:
+                self._compute_res_phase()
+            except IndexError:
+                print 'Need to input frequency array'
 
         
     def _get_z(self):
@@ -248,7 +258,11 @@ class Z(object):
         self._zerr = zerr_array
         
         #for consistency recalculate resistivity and phase
-        self._compute_res_phase()
+        if self._zerr is not None and self._z is not None:
+            try:
+                self._compute_res_phase()
+            except IndexError:
+                print 'Need to input frequency array'
         
     def _get_zerr(self):
         return self._zerr
@@ -367,7 +381,10 @@ class Z(object):
         values for resistivity are in in Ohm m and phase in degrees.
 
         """ 
-        
+        if self.freq is None:
+            print 'Need to input frequency list'
+            return
+            
         if self.z is None:
             print 'Z array is None - cannot calculate Res/Phase'
             return            
@@ -650,10 +667,11 @@ class Z(object):
 
         Assume the original observed tensor Z is built by a static shift S 
         and an unperturbated "correct" Z0 :
-             Z = S * Z0
+             
+             * Z = S * Z0
             
         therefore the correct Z will be :
-            Z0 = S^(-1) * Z
+            * Z0 = S^(-1) * Z
             
         **Arguments:**
         
@@ -674,7 +692,7 @@ class Z(object):
             
             **Z0**: corrected Z   (over all freq)
 
-        .. note:: The factors are in resistivity scale | |^2, so the
+        .. note:: The factors are in resistivity scale, so the
                   entries of  the matrix "S" need to be given by their
                   square-roots! 
 
@@ -1152,6 +1170,9 @@ class Tipper(object):
             return
 
         self._freq = np.array(lo_freq)
+        
+        #for consistency recalculate amplitude and phase
+        self._compute_amp_phase() 
 
     def _get_freq(self): 
         if self._freq is not None:

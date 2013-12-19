@@ -2,31 +2,27 @@
 
 """
 =============
-Edi
+edi module
 =============
 
-mtpy/mtpy/core/edi.py
+Classes
+--------
+    * **Edi** reads and writes .edi files
 
-Contains classes and functions for handling EDI files.
-
-    .. class:: Edi
-    Contains all information from or for an EDI file. 
-    Sections of EDI files are given as respective attributes, 
-    section-keys and values are stored in dictionaries.
-
-    **Functions:**
+Functions
+----------
     
-        - read_edifile
-        - write_edifile
-        - combine_edifiles
-        - validate_edifile
-        - rotate_edifile
-        - _generate_edifile_string
-        - _cut_sectionstring
-        - _validate_edifile_string    
+    - read_edifile
+    - write_edifile
+    - combine_edifiles
+    - validate_edifile
+    - rotate_edifile
+    - _generate_edifile_string
+    - _cut_sectionstring
+    - _validate_edifile_string 
 
-@UofA, 2013
-(LK, JP)
+
+LK, JP 2013
 
 """
 
@@ -34,7 +30,6 @@ Contains classes and functions for handling EDI files.
 import numpy as np
 import os
 import os.path as op
-import math, cmath
 import time, calendar, datetime
 import copy
 #required for finding HMEAS and EMEAS at once:
@@ -45,7 +40,6 @@ import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
 import mtpy.core.z as MTz
-import mtpy.utils.filehandling as MTfh
 
 reload(MTex)
 reload(MTft)
@@ -102,13 +96,12 @@ class Edi(object):
     writefile              write edi file
     ====================== ====================================================
     
-    :Read file, rotate and rewrite: ::
+    :Example: ::
     
         >>> import mtpy.core.edi as mtedi
         >>> e1 = mtedi.Edi(r"/home/MT/mt01.edi")
         >>> e1.rotate(30)
         >>> e1.writefile(r"/home/MT/Rotated/mt01.edi")
-        
     
         
     """
@@ -382,6 +375,10 @@ class Edi(object):
                 print 'Could not find Latitude'
         
     def _set_lat(self, value):
+        """
+        set latitude value, converts to decimal degrees
+        """
+        
         try:
             self.head['lat'] = MTft._assert_position_format('lat',value)
         except KeyError:
@@ -413,7 +410,10 @@ class Edi(object):
                     except KeyError:
                         print 'Could not find Longitude'
         
-    def _set_lon(self, value): 
+    def _set_lon(self, value):
+        """
+        set longitude value, converts to decimal degrees
+        """
         try:
             self.head['long'] = MTft._assert_position_format('lon',value)
         except KeyError:
@@ -1242,12 +1242,12 @@ class Edi(object):
     #--------------get/set header -------------------------------
     def _set_head(self, head_dict):
         """
-            Set the attribute 'head'.
+        Set the attribute 'head'.
 
-            Input:
-            HEAD section dictionary
+        Input:
+        HEAD section dictionary
 
-            No test for consistency!
+        No test for consistency!
 
         """
 
@@ -1262,12 +1262,12 @@ class Edi(object):
     #--------------get/set info dict -------------------------------
     def _set_info_dict(self,info_dict):
         """
-            Set the attribute 'info_dict'.
+        Set the attribute 'info_dict'.
 
-            Input:
-            INFO section dictionary
+        Input:
+        INFO section dictionary
 
-            No test for consistency!
+        No test for consistency!
 
         """
 
@@ -1282,12 +1282,12 @@ class Edi(object):
     #--------------get/set info header -------------------------------
     def _set_info_string(self,info_string):
         """
-            Set the attribute 'info_string'.
+        Set the attribute 'info_string'.
 
-            Input:
-            INFO section string
+        Input:
+        INFO section string
 
-            No test for consistency!
+        No test for consistency!
 
         """
 
@@ -1302,12 +1302,12 @@ class Edi(object):
     #--------------get/set definemeas -------------------------------
     def _set_definemeas(self,definemeas_dict):
         """
-            Set the attribute 'definemeas'.
+        Set the attribute 'definemeas'.
 
-            Input:
-            DEFINEMEAS section dictionary
+        Input:
+        DEFINEMEAS section dictionary
 
-            No test for consistency!
+        No test for consistency!
 
         """
         self._definemeas = definemeas_dict
@@ -1320,12 +1320,12 @@ class Edi(object):
     #--------------get/set h and e measurements ------------------------------
     def _set_hmeas_emeas(self,hmeas_emeas_list):
         """
-            Set the attribute 'hmeas_emeas'.
+        Set the attribute 'hmeas_emeas'.
 
-            Input:
-            hmeas_emeas section list of 7-tuples
+        Input:
+        hmeas_emeas section list of 7-tuples
 
-            No test for consistency!
+        No test for consistency!
 
         """
         self._hmeas_emeas = hmeas_emeas_list
@@ -1339,12 +1339,12 @@ class Edi(object):
     #--------------get/set mtsect -------------------------------
     def _set_mtsect(self, mtsect_dict):
         """
-            Set the attribute 'mtsect'.
+        Set the attribute 'mtsect'.
 
-            Input:
-            MTSECT section dictionary
+        Input:
+        MTSECT section dictionary
 
-            No test for consistency!
+        No test for consistency!
 
         """
 
@@ -1360,10 +1360,10 @@ class Edi(object):
     #--------------get/set single component -------------------------------
     def _get_datacomponent(self, componentname):
         """
-            Return a specific data component.
+        Return a specific data component.
 
-            Input:
-            specification of the data component (Z or Tipper components)
+        Input:
+        specification of the data component (Z or Tipper components)
         """
 
         data_dict = self.data_dict()
@@ -1393,25 +1393,25 @@ class Edi(object):
 
     def _set_datacomponent(self, componentname, value):
         """
-            Set a specific data component.
+        Set a specific data component.
 
-            Input:
-            specification of the data component (Z or Tipper components)
-            new value
+        Input:
+        specification of the data component (Z or Tipper components)
+        new value
 
-            No test for consistency!
+        No test for consistency!
         """
         pass
 
     #--------------get/set freq -------------------------------
     def _set_freq(self, lo_freq):
         """
-            Set the array of freq.
+        Set the array of freq.
 
-            Input:
-            list/array of freq
+        Input:
+        list/array of freq
 
-            No test for consistency!
+        No test for consistency!
         """
 
         if len(lo_freq) is not len(self.Z.z):
@@ -1436,12 +1436,12 @@ class Edi(object):
     #--------------get/set impedance rotation -------------------------------
     def _set_zrot(self, angle):
         """
-            Set the list of rotation angles.
+        Set the list of rotation angles.
 
-            Input:
-            single angle or list of angles (in degrees)
+        Input:
+        single angle or list of angles (in degrees)
 
-            No test for consistency!
+        No test for consistency!
         """
         
 
@@ -1485,9 +1485,9 @@ class Edi(object):
 
 def read_edifile(fn):
     """
-        Read in an EDI file.
+    Read in an EDI file.
 
-        Return an instance of the Edi class.
+    Return an instance of the Edi class.
     """
 
     edi_object = Edi()
@@ -1500,10 +1500,10 @@ def read_edifile(fn):
 
 def write_edifile(edi_object, out_fn = None):
     """
-        Write an EDI file from an instance of the Edi class.
+    Write an EDI file from an instance of the Edi class.
 
-        optional input:
-        EDI file name
+    optional input:
+    EDI file name
     """
 
     if not isinstance(edi_object, Edi):
@@ -1534,22 +1534,22 @@ def write_edifile(edi_object, out_fn = None):
 def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None, 
                      allow_gaps = True):
     """
-        Combine two EDI files.
+    Combine two EDI files.
 
-        Inputs:
-        - name of EDI file 1
-        - name of EDI file 2
+    Inputs:
+    - name of EDI file 1
+    - name of EDI file 2
 
-        optional input:
-        - merge_freq : freq in Hz, on which to merge the files -
-        default is the middle of the overlap
-        - out_fn : output EDI file name
-        - allow_gaps : allow merging EDI files whose freq ranges does 
-        not overlap
+    optional input:
+    - merge_freq : freq in Hz, on which to merge the files -
+    default is the middle of the overlap
+    - out_fn : output EDI file name
+    - allow_gaps : allow merging EDI files whose freq ranges does 
+    not overlap
 
-        Outputs:
-        - instance of Edi class, containing merged information
-        - full path of the output EDI file
+    Outputs:
+    - instance of Edi class, containing merged information
+    - full path of the output EDI file
     """
 
     #edi objects:
@@ -1958,9 +1958,9 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
 
 def validate_edifile(fn):
     """
-        Validate an EDI file following MTpy standard.
+    Validate an EDI file following MTpy standard.
 
-        Return boolean result.
+    Return boolean result.
     """
 
     edi_object = Edi()
@@ -1974,19 +1974,19 @@ def validate_edifile(fn):
 
 def rotate_edifile(fn, angle, out_fn = None):
     """
-        Rotate data contents (Z and Tipper) of an EDI file and write it to a 
-        new EDI file.
-        (Use a script with consecutive renaming of the file for in place 
-        rotation. MTpy does not overwrite.)
+    Rotate data contents (Z and Tipper) of an EDI file and write it to a 
+    new EDI file.
+    (Use a script with consecutive renaming of the file for in place 
+    rotation. MTpy does not overwrite.)
 
-        Input:
-        - angle/list of angles for the rotation
+    Input:
+    - angle/list of angles for the rotation
 
-        optional input:
-        - name of output EDI file
+    optional input:
+    - name of output EDI file
 
-        Output:
-        - full path to the new (rotated) EDI file
+    Output:
+    - full path to the new (rotated) EDI file
     """
 
     ediobject = Edi()
@@ -2264,14 +2264,14 @@ def _generate_edifile_string(edidict):
 
 def _cut_sectionstring(edistring,sectionhead):
     """
-        Cut an edi-string for the specified section.
+    Cut an edi-string for the specified section.
 
-        Input:
-        - name of the section
+    Input:
+    - name of the section
 
-        Output:
-        - string : part of the raw edi-string containing starting at the head
-                   of the section and ends at beginnig of the next section.
+    Output:
+    - string : part of the raw edi-string containing starting at the head
+               of the section and ends at beginnig of the next section.
     """
 
     #in this case, several blocks have to be handled together, therefore, a 
@@ -2320,21 +2320,21 @@ def _cut_sectionstring(edistring,sectionhead):
 
 def _validate_edifile_string(edistring):
     """
-        Read the file as string and check, if blocks 'HEAD,  =DEFINEMEAS,
-        =MTSECT, FREQ, (Z,) END' are present. If 'Z' is missing, check for 
-        'spectra' or 'rho'/'phs'!
+    Read the file as string and check, if blocks 'HEAD,  =DEFINEMEAS,
+    =MTSECT, FREQ, (Z,) END' are present. If 'Z' is missing, check for 
+    'spectra' or 'rho'/'phs'!
 
-        Within the blocks look for mandatory entries:
-        HEAD: 'DATAID'
-        DEFINEMEAS: subblocks 'HMEAS, EMEAS'
-                    ('REFLAT, REFLONG, REFELEV' have to be present for 
-                    measured data though)
-        MTSECT: 'NFREQ'
-        FREQ: non empty list
+    Within the blocks look for mandatory entries:
+    HEAD: 'DATAID'
+    DEFINEMEAS: subblocks 'HMEAS, EMEAS'
+                ('REFLAT, REFLONG, REFELEV' have to be present for 
+                measured data though)
+    MTSECT: 'NFREQ'
+    FREQ: non empty list
 
-        Z: at least one component xx, yy, xy, yx ; real, imag and var ; 
-        containing a non-empty list
-        Otherwise check for presence of 'RHO'/'PHS' OR 'spectra'
+    Z: at least one component xx, yy, xy, yx ; real, imag and var ; 
+    containing a non-empty list
+    Otherwise check for presence of 'RHO'/'PHS' OR 'spectra'
 
 
     """
@@ -2530,6 +2530,9 @@ def _validate_edifile_string(edistring):
 
 
 def _build_id_channel_dict(lo_hmeas_emeas):
+    """
+    build a dictionary for emeas and hmeas
+    """
 
     id_dict = {}
 
@@ -2545,6 +2548,9 @@ def _build_id_channel_dict(lo_hmeas_emeas):
     return id_dict
 
 def _find_key_value(key, separator, instring, valuelength=None):
+    """
+    find a key value in a given string
+    """
 
     line = instring.strip().split()
     value = None
@@ -2588,18 +2594,18 @@ def _find_key_value(key, separator, instring, valuelength=None):
 
 def spectra2z(data, channellist=None):
     """
-        Convert data from spectral form into Z - for one fixed freq.
+    Convert data from spectral form into Z - for one fixed freq.
 
-        Input:
-        spectral data array, real-valued, n x n sized 
+    Input:
+    spectral data array, real-valued, n x n sized 
 
-        Output:
-        Z array, complex valued, 2x2 sized
-        (Tipper array, complex valued, 2 x 1 sized) <- if HZ is present
+    Output:
+    Z array, complex valued, 2x2 sized
+    (Tipper array, complex valued, 2 x 1 sized) <- if HZ is present
 
-        note: if n>5, remote reference is assumed, so the last 2 channels 
-        are interpreted as 'HX/HY-remote' 
-            otherwise, self-referencing is applied
+    note: if n>5, remote reference is assumed, so the last 2 channels 
+    are interpreted as 'HX/HY-remote' 
+        otherwise, self-referencing is applied
     """
 
     z_array = np.zeros((2,2), 'complex')
@@ -2668,6 +2674,9 @@ def spectra2z(data, channellist=None):
 
 
 def _make_z_dict(Z_object):
+    """
+    make a z dictionary from a z-object
+    """
 
     z_dict = {}
     if Z_object.z is None:
@@ -2695,6 +2704,9 @@ def _make_z_dict(Z_object):
 
 
 def _make_tipper_dict(Tipper_object):
+    """ 
+    make a dictionary from tipper object.
+    """
 
     if Tipper_object.tipper is None:
         return None

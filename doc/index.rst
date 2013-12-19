@@ -13,7 +13,6 @@ Contents:
 
    core
 
-
 	
 Indices and tables
 ==================
