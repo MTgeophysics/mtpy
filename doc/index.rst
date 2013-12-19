@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 2
 
    core
+   analysis
 
 	
 Indices and tables

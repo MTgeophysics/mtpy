@@ -1,0 +1,11 @@
+Analysis:
+----------------------------------------------
+
+.. automodule:: mtpy.analysis.pt
+
+------------------------------
+
+**Class PhaseTensor**
+-----------------------
+.. autoclass:: mtpy.analysis.pt.PhaseTensor
+    :members:
