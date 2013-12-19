@@ -1,92 +1,17 @@
 #!/usr/bin/env python
 
 """
-mtpy/mtpy/core/edi.py
+=============
+edi module
+=============
 
-Contains classes and functions for handling EDI files.
+Classes
+--------
+    * **Edi** reads and writes .edi files
 
-    Class:
-    "Edi" contains all information from or for an EDI file. 
-    Sections of EDI files are given as respective attributes, 
-    section-keys and values are stored in dictionaries.
-
-    Methods:
-    --------
-
-        _definemeas
-        _freq
-        _get_datacomponent
-        _get_definemeas
-        _get_elev
-        _get_freq
-        _get_head
-        _get_hmeas_emeas
-        _get_info_dict
-        _get_info_string
-        _get_lat
-        _get_lon
-        _get_mtsect
-        _get_period
-        _get_res_phase
-        _get_zrot
-        _head
-        _hmeas_emeas
-        _info_dict
-        _info_string
-        _mtsect
-        period
-        _read_definemeas
-        _read_freq
-        _read_head
-        _read_hmeas_emeas
-        _read_info
-        _read_mtsect
-        _read_res_phase
-        _read_rhorot
-        _read_spectra
-        _read_tipper
-        _read_z
-        _read_zrot
-        _set_datacomponent
-        _set_definemeas
-        _set_elev
-        _set_freq
-        _set_head
-        _set_hmeas_emeas
-        _set_info_dict
-        _set_info_string
-        _set_lat
-        _set_lon
-        _set_mtsect
-        _set_period
-        _set_res_phase
-        _set_zrot
-        _zrot
-        data_dict
-        definemeas
-        edi_dict
-        elev
-        filename
-        freq
-        freq
-        head
-        hmeas_emeas
-        infile_string
-        info_dict
-        info_string
-        lat
-        lon
-        mtsect
-        n_freq
-        readfile
-        res_phase
-        rotate
-        writefile
-        zrot
-
-
-    Functions:
-
+Functions
+----------
+    
     - read_edifile
     - write_edifile
     - combine_edifiles
@@ -94,10 +19,10 @@ Contains classes and functions for handling EDI files.
     - rotate_edifile
     - _generate_edifile_string
     - _cut_sectionstring
-    - _validate_edifile_string
+    - _validate_edifile_string 
 
-@UofA, 2013
-(LK)
+
+LK, JP 2013
 
 """
 
@@ -105,7 +30,6 @@ Contains classes and functions for handling EDI files.
 import numpy as np
 import os
 import os.path as op
-import math, cmath
 import time, calendar, datetime
 import copy
 #required for finding HMEAS and EMEAS at once:
@@ -116,7 +40,6 @@ import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
 import mtpy.core.z as MTz
-import mtpy.utils.filehandling as MTfh
 
 reload(MTex)
 reload(MTft)
@@ -128,23 +51,72 @@ reload(MTz)
 
 class Edi(object):
     """
-        Edi class - generates an edi-object.
+    Edi class - generates an edi-object.
 
-        Methods  include reading and writing from and to edi-files, 
-        rotations/combinations of edi-files, as well as 'get' and 
-        'set' for all edi file sections
+    Methods  include reading and writing from and to edi-files, 
+    rotations/combinations of edi-files, as well as 'get' and 
+    'set' for all edi file sections
 
-        Errors are given as standard deviations (sqrt(VAR))
+    Errors are given as standard deviations (sqrt(VAR))
+    
+    **Agruments:**
+        
+        **filename** : string
+                       full path to file name
 
+    ====================== ====================================================
+    **Attributes**            Description
+    ====================== ====================================================
+    period                 periods extracted from edi file
+    data_dict              dictionary of data information
+    definemeas             definemeas block
+    edi_dict               dictionary of edi blocks
+    elev                   elevation of station
+    filename               name of edi file
+    freq                   frequencies extracted from edi file 
+    head                   header information
+    hmeas_emeas            hmeas and emeas block
+    infile_string          full string of edi file
+    info_dict              ditionary of information block
+    info_string            full string of information block
+    lat                    latitude in decimal degrees
+    lon                    longitude in decimal degrees
+    mtsect                 mtsect block
+    n_freq                 number of frequencies
+    Tipper                 mtpy.core.z.Tipper object
+    zrot                   rotation angle in degrees
+    Z                      mtpy.core.z.Z object
+    ====================== ====================================================
 
+    ====================== ====================================================
+    **Methods**            Description
+    ====================== ====================================================
+    readfile               read edi file   
+    rotate                 rotate Z and Tipper
+    writefile              write edi file
+    ====================== ====================================================
+    
+    :Example: ::
+    
+        >>> import mtpy.core.edi as mtedi
+        >>> e1 = mtedi.Edi(r"/home/MT/mt01.edi")
+        >>> e1.rotate(30)
+        >>> e1.writefile(r"/home/MT/Rotated/mt01.edi")
+    
+        
     """
 
     def __init__(self, filename=None):
 
         """
-            Initialise an instance of the Edi class.
+        Initialise an instance of the Edi class.
 
-            Initialise the attributes with None/empty dictionary
+        Initialise the attributes with None/empty dictionary
+        
+        **Agruments:**
+        
+            **filename** : string
+                           full path to file name
         """
 
         self.filename = filename
@@ -166,17 +138,21 @@ class Edi(object):
 
     def readfile(self, fn, datatype = 'z'):
         """
-            Read in an EDI file.
+        Read in an EDI file.
 
-            Returns an exception, if the file is invalid 
-            (following MTpy standards).
-
-            'datatype' determines the way data are provided. Default is 'z', 
-            so the full impedance tensor is expected to be present. 
-            Other possibilities are 'resphase' and 'spectra' - they exclude 
-            the reading of a potentially present Z information.
-
-
+        Returns an exception, if the file is invalid 
+        (following MTpy standards).
+        
+        **Agruments:**
+        
+            **fn** : string
+                     full path to .edi file name
+            
+            **daytatype** : | 'z' | 'resphase' | 'spectra' | 
+                            * 'z' for impedance data *default*
+                            * 'resphase' for resistivity and phase data
+                            * 'spectra' for spectra data
+            
         """
 
         self.__init__()
@@ -289,7 +265,7 @@ class Edi(object):
 
     def edi_dict(self):
         """
-            Collect sections of the EDI file and return them as a dictionary.
+        Collect sections of the EDI file and return them as a dictionary.
 
         """
 
@@ -312,8 +288,8 @@ class Edi(object):
 
     def data_dict(self):
         """
-            Return collected raw data information in one dictionary:
-            Z, Tipper, Zrot, freq
+        Return collected raw data information in one dictionary:
+        Z, Tipper, Zrot, freq
 
         """
         data_dict = {}
@@ -330,14 +306,14 @@ class Edi(object):
     #----------------Periods----------------------------------------------
     def _get_period(self):
         """
-            Return an array of periods (output values in seconds).
+        Return an array of periods (output values in seconds).
         """
 
         return 1./np.array(self.freq)
     
     def _set_period(self, period_lst):
         """
-            Set freq by a list of periods (values in seconds).
+        Set freq by a list of periods (values in seconds).
         """
         if len(period_lst) is not len(self.Z.z):
             print 'length of periods list not correct'+\
@@ -352,7 +328,7 @@ class Edi(object):
     #----------------number of freq-------------------------------------
     def n_freq(self):
         """
-            Return the number of freq/length of the Z data array .
+        Return the number of freq/length of the Z data array .
         """
         if self.freq is not None:
             return len(self.freq)
@@ -399,6 +375,10 @@ class Edi(object):
                 print 'Could not find Latitude'
         
     def _set_lat(self, value):
+        """
+        set latitude value, converts to decimal degrees
+        """
+        
         try:
             self.head['lat'] = MTft._assert_position_format('lat',value)
         except KeyError:
@@ -430,7 +410,10 @@ class Edi(object):
                     except KeyError:
                         print 'Could not find Longitude'
         
-    def _set_lon(self, value): 
+    def _set_lon(self, value):
+        """
+        set longitude value, converts to decimal degrees
+        """
         try:
             self.head['long'] = MTft._assert_position_format('lon',value)
         except KeyError:
@@ -453,7 +436,7 @@ class Edi(object):
     #--------------Read Header----------------------------------------------
     def _read_head(self, edistring):
         """
-            Read in the HEAD  section from the raw edi-string.
+        Read in the HEAD  section from the raw edi-string.
         """
 
         try:
@@ -497,7 +480,7 @@ class Edi(object):
     #--------------Read Info----------------------------------------------
     def _read_info(self, edistring):
         """
-            Read in the INFO  section from the raw edi-string.
+        Read in the INFO  section from the raw edi-string.
         """
 
         try:
@@ -551,7 +534,7 @@ class Edi(object):
     #--------------Read Definemeas--------------------------------------------
     def _read_definemeas(self, edistring):
         """
-            Read in the DEFINEMEAS  section from the raw edi-string.
+        Read in the DEFINEMEAS  section from the raw edi-string.
         """
 
         try:
@@ -586,7 +569,7 @@ class Edi(object):
     #--------------Read h and e measure---------------------------------------
     def _read_hmeas_emeas(self, edistring):
         """
-            Read in the HMEAS/EMEAS  section from the raw edi-string.
+        Read in the HMEAS/EMEAS  section from the raw edi-string.
         """
         try:
             temp_string = _cut_sectionstring(edistring,'HMEAS_EMEAS')
@@ -611,7 +594,7 @@ class Edi(object):
     #--------------Read mt sect--------------------------------------------
     def _read_mtsect(self, edistring):
         """
-            Read in the MTSECT  section from the raw edi-string.
+        Read in the MTSECT  section from the raw edi-string.
         """
 
         try:
@@ -639,7 +622,7 @@ class Edi(object):
     #--------------Read freq--------------------------------------------
     def _read_freq(self, edistring):
         """
-            Read in the FREQ  section from the raw edi-string.
+        Read in the FREQ  section from the raw edi-string.
         """
 
         try:
@@ -828,9 +811,9 @@ class Edi(object):
     #--------------Read Resistivity and Phase---------------------------------
     def _read_res_phase(self, edistring):
         """
-            Read in ResPhase-(RhoPhi-)information from a raw EDI-string.
-            Convert the information into Z and Zerr.
-            Store this as attribute (complex array).
+        Read in ResPhase-(RhoPhi-)information from a raw EDI-string.
+        Convert the information into Z and Zerr.
+        Store this as attribute (complex array).
 
         """
         # using the loop over all  components. For each component check, 
@@ -931,9 +914,9 @@ class Edi(object):
     #--------------Read Rho rotations------------------------------------------
     def _read_rhorot(self, edistring):
         """
-            Read in the (optional) RhoRot  section from the raw edi-string for
-            data file containing data in  ResPhase style. Angles are stored in
-            the ZROT attribute. 
+        Read in the (optional) RhoRot  section from the raw edi-string for
+        data file containing data in  ResPhase style. Angles are stored in
+        the ZROT attribute. 
         """
 
         try:
@@ -972,8 +955,8 @@ class Edi(object):
     #--------------Read Spectra----------------------------------------------
     def _read_spectra(self,edistring):
         """
-            Read in Spectra information from a raw EDI-string.
-            Convert the information into Z and Tipper.
+        Read in Spectra information from a raw EDI-string.
+        Convert the information into Z and Tipper.
 
         """
 
@@ -1111,7 +1094,7 @@ class Edi(object):
     #--------------Read impedance rotation angles-----------------------------
     def _read_zrot(self, edistring):
         """
-            Read in the (optional) Zrot  section from the raw edi-string.
+        Read in the (optional) Zrot  section from the raw edi-string.
         """
 
         try:
@@ -1147,7 +1130,7 @@ class Edi(object):
     #--------------Write out file---------------------------------------------
     def set_Z(self, z_object):
         """
-            Set the Z object attribute.
+        Set the Z object attribute.
         """
         if not isinstance(z_object, MTz.Z):
             raise MTex.MTpyError_Z('Input argument is not an instance of '+\
@@ -1212,16 +1195,16 @@ class Edi(object):
     #--------------Rotate data----------------------------------------------
     def rotate(self,angle):
         """
-            Rotate the Z and tipper information in the Edi object. Change the 
-            rotation angles in Zrot respectively.
+        Rotate the Z and tipper information in the Edi object. Change the 
+        rotation angles in Zrot respectively.
 
-            Rotation angle must be given in degrees. All angles are referenced
-            to geographic North, positive in clockwise direction. 
-            (Mathematically negative!)
+        Rotation angle must be given in degrees. All angles are referenced
+        to geographic North, positive in clockwise direction. 
+        (Mathematically negative!)
 
-            In non-rotated state, X refs to North and Y to East direction.
+        In non-rotated state, X refs to North and Y to East direction.
 
-            Updates the attributes "z, zrot, tipper".
+        Updates the attributes "z, zrot, tipper".
 
         """
         if type(angle) in [float,int]:
@@ -1255,169 +1238,16 @@ class Edi(object):
             self.Tipper.rotate(angle)
             self.Tipper.rotation_angle = self.zrot
 
-    #--------------Get Resistivity and Phase----------------------------------
-    def _get_res_phase(self):
-        """
-            Return values for resistivity (rho - in Ohm m) and phase 
-            (phi - in degrees).
-
-            Output is a 4-tuple of arrays:
-            (Rho, Phi, RhoError, PhiError)
-        """
-
-        if self.Z is None:
-            print 'Z is "None" - cannot calculate Resistivity/Phase'
-            return None
-        if self.Z.z is None:
-            print 'Z array is "None" - cannot calculate Resistivity/Phase'
-            return None
-
-        reserr = None
-        phierr = None
-        if self.Z.zerr is not None:
-            reserr = np.zeros(self.Z.zerr.shape)
-            phierr = np.zeros(self.Z.zerr.shape)
-
-        res = np.zeros(self.Z.z.shape)
-        phi = np.zeros(self.Z.z.shape)
-
-
-        for idx_f in range(len(self.Z.z)):
-            for i in range(2):
-                for j in range(2):
-
-                    res[idx_f,i,j] = np.abs(self.Z.z[idx_f,i,j])**2 /\
-                                            self.freq[idx_f] *0.2
-                    phi[idx_f,i,j] = math.degrees(cmath.phase(
-                                                          self.Z.z[idx_f,i,j]))
-
-                    if self.Z.zerr is not None:
-                        r_err, phi_err = MTcc.propagate_error_rect2polar( 
-                                                  np.real(self.Z.z[idx_f,i,j]), 
-                    					    self.Z.zerr[idx_f,i,j],
-                                                  np.imag(self.Z.z[idx_f,i,j]),
-                                                  self.Z.zerr[idx_f,i,j])
-                        reserr[idx_f,i,j] = 0.4 * np.abs(self.Z.z[idx_f,i,j])/\
-                                                      self.freq[idx_f] * r_err
-                        phierr[idx_f,i,j] = phi_err
-
-        return res, phi, reserr, phierr
-
-
-    #--------------Set the Resistivity and Phase------------------------------
-    def _set_res_phase(self, resphase_tuple):
-        #_array, phase_array, reserr_array = None, 
-        #               phaseerr_array = None):
-        """
-            Set values for resistivity (res - in Ohm m) and phase 
-            (phase - in degrees).
-
-            Updates the attributes "z".
-
-        """
-        if type(resphase_tuple) not in [tuple]:
-            print 'ERROR - res_phase must be tuple'
-            return 
-
-        if len(resphase_tuple) < 2:
-            print 'resphase_tuple must contain at least two entries: resistivity'\
-            '_array and phase_array'
-            return
-        res_array = resphase_tuple[0]
-        phase_array = resphase_tuple[1]%360
-
-        try:
-            reserr_array =  resphase_tuple[2]
-        except:
-            reserr_array = None
-        try:
-            phaseerr_array =  resphase_tuple[3]
-        except:
-            phaseerr_array = None
-
-        if self.Z is not None:
-            z_new = copy.copy(self.Z.z)
-            zerr_new = np.zeros_like(self.Z.zerr)
-           
-
-            if self.Z.z.shape != res_array.shape:
-                print 'Error - shape of "res" array does not match shape'+\
-                      'of Z array: {0} ; {1}'.format(res_array.shape,
-                                                     self.Z.z.shape)
-                return
-
-            if self.Z.z.shape != phase_array.shape:
-                print 'Error - shape of "phase" array does not match shape'+\
-                      'of Z array: {0} ; {1}'.format(phase_array.shape,
-                                                     self.Z.z.shape)
-                return
-        else:
-            z_new = np.zeros(res_array.shape,'complex')
-            if res_array.shape != phase_array.shape:
-                print 'Error - shape of "phase" array does not match shape'+\
-                      'of "res" array: {0} ; {1}'.format(phase_array.shape,
-                                                         res_array.shape)
-                return
-
-        if (self.freq is None) or (len(self.freq) != len(res_array)) :
-            raise MTex.MTpyError_EDI('ERROR - cannot set res without proper'+\
-                                     'freq information - proper "freq"'+\
-                                     'attribute must be defined ')
-
-        #assert real array:
-        if np.linalg.norm(np.imag(res_array )) != 0 :
-            print 'Error - array "res" is not real valued !'
-            return
-        if np.linalg.norm(np.imag(phase_array )) != 0 :
-            print 'Error - array "phase" is not real valued !'
-            return
-
-        for idx_f in range(len(z_new)):
-            freq =  self.freq[idx_f]
-            z_new[idx_f] = MTcc.rhophi2z(res_array[idx_f],
-                                         phase_array[idx_f], 
-                                         freq)
-
-        self.Z.z = z_new
-
-
-        if reserr_array is not None and phaseerr_array is not None:
-            for idx_f in range(len(z_new)):
-
-                for i in range(2):
-                    for j in range(2):
-                        abs_z = np.sqrt(5 * self.freq[idx_f] * \
-                                        res_array[idx_f,i,j])
-                        newerror = max(MTcc.propagate_error_polar2rect(
-                                                    abs_z, 
-                                                    reserr_array[idx_f,i,j],
-                                                    phase_array[idx_f,i,j], 
-                                                    phaseerr_array[idx_f,i,j]))
-                        zerr_new[idx_f,i,j] = newerror
-            
-            self.Z.zerr = zerr_new
-
-        else:
-            print 'Warning - no errors given for phase and rsistivity - '+\
-                  'could not calculate errors for Z !!'
- 
-            self.Z.zerr = np.zeros_like(self.Z.zerr)
-
-
-    res_phase = property(_get_res_phase,_set_res_phase,
-                         doc='Values for resistivity (rho - in Ohm m) and'+\
-                             'phase (phi - in degrees). Updates the '+\
-                             'attributes "z, zerr"')
 
     #--------------get/set header -------------------------------
     def _set_head(self, head_dict):
         """
-            Set the attribute 'head'.
+        Set the attribute 'head'.
 
-            Input:
-            HEAD section dictionary
+        Input:
+        HEAD section dictionary
 
-            No test for consistency!
+        No test for consistency!
 
         """
 
@@ -1432,12 +1262,12 @@ class Edi(object):
     #--------------get/set info dict -------------------------------
     def _set_info_dict(self,info_dict):
         """
-            Set the attribute 'info_dict'.
+        Set the attribute 'info_dict'.
 
-            Input:
-            INFO section dictionary
+        Input:
+        INFO section dictionary
 
-            No test for consistency!
+        No test for consistency!
 
         """
 
@@ -1452,12 +1282,12 @@ class Edi(object):
     #--------------get/set info header -------------------------------
     def _set_info_string(self,info_string):
         """
-            Set the attribute 'info_string'.
+        Set the attribute 'info_string'.
 
-            Input:
-            INFO section string
+        Input:
+        INFO section string
 
-            No test for consistency!
+        No test for consistency!
 
         """
 
@@ -1472,12 +1302,12 @@ class Edi(object):
     #--------------get/set definemeas -------------------------------
     def _set_definemeas(self,definemeas_dict):
         """
-            Set the attribute 'definemeas'.
+        Set the attribute 'definemeas'.
 
-            Input:
-            DEFINEMEAS section dictionary
+        Input:
+        DEFINEMEAS section dictionary
 
-            No test for consistency!
+        No test for consistency!
 
         """
         self._definemeas = definemeas_dict
@@ -1490,12 +1320,12 @@ class Edi(object):
     #--------------get/set h and e measurements ------------------------------
     def _set_hmeas_emeas(self,hmeas_emeas_list):
         """
-            Set the attribute 'hmeas_emeas'.
+        Set the attribute 'hmeas_emeas'.
 
-            Input:
-            hmeas_emeas section list of 7-tuples
+        Input:
+        hmeas_emeas section list of 7-tuples
 
-            No test for consistency!
+        No test for consistency!
 
         """
         self._hmeas_emeas = hmeas_emeas_list
@@ -1509,12 +1339,12 @@ class Edi(object):
     #--------------get/set mtsect -------------------------------
     def _set_mtsect(self, mtsect_dict):
         """
-            Set the attribute 'mtsect'.
+        Set the attribute 'mtsect'.
 
-            Input:
-            MTSECT section dictionary
+        Input:
+        MTSECT section dictionary
 
-            No test for consistency!
+        No test for consistency!
 
         """
 
@@ -1530,10 +1360,10 @@ class Edi(object):
     #--------------get/set single component -------------------------------
     def _get_datacomponent(self, componentname):
         """
-            Return a specific data component.
+        Return a specific data component.
 
-            Input:
-            specification of the data component (Z or Tipper components)
+        Input:
+        specification of the data component (Z or Tipper components)
         """
 
         data_dict = self.data_dict()
@@ -1563,25 +1393,25 @@ class Edi(object):
 
     def _set_datacomponent(self, componentname, value):
         """
-            Set a specific data component.
+        Set a specific data component.
 
-            Input:
-            specification of the data component (Z or Tipper components)
-            new value
+        Input:
+        specification of the data component (Z or Tipper components)
+        new value
 
-            No test for consistency!
+        No test for consistency!
         """
         pass
 
     #--------------get/set freq -------------------------------
     def _set_freq(self, lo_freq):
         """
-            Set the array of freq.
+        Set the array of freq.
 
-            Input:
-            list/array of freq
+        Input:
+        list/array of freq
 
-            No test for consistency!
+        No test for consistency!
         """
 
         if len(lo_freq) is not len(self.Z.z):
@@ -1606,12 +1436,12 @@ class Edi(object):
     #--------------get/set impedance rotation -------------------------------
     def _set_zrot(self, angle):
         """
-            Set the list of rotation angles.
+        Set the list of rotation angles.
 
-            Input:
-            single angle or list of angles (in degrees)
+        Input:
+        single angle or list of angles (in degrees)
 
-            No test for consistency!
+        No test for consistency!
         """
         
 
@@ -1655,9 +1485,9 @@ class Edi(object):
 
 def read_edifile(fn):
     """
-        Read in an EDI file.
+    Read in an EDI file.
 
-        Return an instance of the Edi class.
+    Return an instance of the Edi class.
     """
 
     edi_object = Edi()
@@ -1670,10 +1500,10 @@ def read_edifile(fn):
 
 def write_edifile(edi_object, out_fn = None):
     """
-        Write an EDI file from an instance of the Edi class.
+    Write an EDI file from an instance of the Edi class.
 
-        optional input:
-        EDI file name
+    optional input:
+    EDI file name
     """
 
     if not isinstance(edi_object, Edi):
@@ -1704,22 +1534,22 @@ def write_edifile(edi_object, out_fn = None):
 def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None, 
                      allow_gaps = True):
     """
-        Combine two EDI files.
+    Combine two EDI files.
 
-        Inputs:
-        - name of EDI file 1
-        - name of EDI file 2
+    Inputs:
+    - name of EDI file 1
+    - name of EDI file 2
 
-        optional input:
-        - merge_freq : freq in Hz, on which to merge the files -
-        default is the middle of the overlap
-        - out_fn : output EDI file name
-        - allow_gaps : allow merging EDI files whose freq ranges does 
-        not overlap
+    optional input:
+    - merge_freq : freq in Hz, on which to merge the files -
+    default is the middle of the overlap
+    - out_fn : output EDI file name
+    - allow_gaps : allow merging EDI files whose freq ranges does 
+    not overlap
 
-        Outputs:
-        - instance of Edi class, containing merged information
-        - full path of the output EDI file
+    Outputs:
+    - instance of Edi class, containing merged information
+    - full path of the output EDI file
     """
 
     #edi objects:
@@ -2128,9 +1958,9 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
 
 def validate_edifile(fn):
     """
-        Validate an EDI file following MTpy standard.
+    Validate an EDI file following MTpy standard.
 
-        Return boolean result.
+    Return boolean result.
     """
 
     edi_object = Edi()
@@ -2144,19 +1974,19 @@ def validate_edifile(fn):
 
 def rotate_edifile(fn, angle, out_fn = None):
     """
-        Rotate data contents (Z and Tipper) of an EDI file and write it to a 
-        new EDI file.
-        (Use a script with consecutive renaming of the file for in place 
-        rotation. MTpy does not overwrite.)
+    Rotate data contents (Z and Tipper) of an EDI file and write it to a 
+    new EDI file.
+    (Use a script with consecutive renaming of the file for in place 
+    rotation. MTpy does not overwrite.)
 
-        Input:
-        - angle/list of angles for the rotation
+    Input:
+    - angle/list of angles for the rotation
 
-        optional input:
-        - name of output EDI file
+    optional input:
+    - name of output EDI file
 
-        Output:
-        - full path to the new (rotated) EDI file
+    Output:
+    - full path to the new (rotated) EDI file
     """
 
     ediobject = Edi()
@@ -2434,14 +2264,14 @@ def _generate_edifile_string(edidict):
 
 def _cut_sectionstring(edistring,sectionhead):
     """
-        Cut an edi-string for the specified section.
+    Cut an edi-string for the specified section.
 
-        Input:
-        - name of the section
+    Input:
+    - name of the section
 
-        Output:
-        - string : part of the raw edi-string containing starting at the head
-                   of the section and ends at beginnig of the next section.
+    Output:
+    - string : part of the raw edi-string containing starting at the head
+               of the section and ends at beginnig of the next section.
     """
 
     #in this case, several blocks have to be handled together, therefore, a 
@@ -2490,21 +2320,21 @@ def _cut_sectionstring(edistring,sectionhead):
 
 def _validate_edifile_string(edistring):
     """
-        Read the file as string and check, if blocks 'HEAD,  =DEFINEMEAS,
-        =MTSECT, FREQ, (Z,) END' are present. If 'Z' is missing, check for 
-        'spectra' or 'rho'/'phs'!
+    Read the file as string and check, if blocks 'HEAD,  =DEFINEMEAS,
+    =MTSECT, FREQ, (Z,) END' are present. If 'Z' is missing, check for 
+    'spectra' or 'rho'/'phs'!
 
-        Within the blocks look for mandatory entries:
-        HEAD: 'DATAID'
-        DEFINEMEAS: subblocks 'HMEAS, EMEAS'
-                    ('REFLAT, REFLONG, REFELEV' have to be present for 
-                    measured data though)
-        MTSECT: 'NFREQ'
-        FREQ: non empty list
+    Within the blocks look for mandatory entries:
+    HEAD: 'DATAID'
+    DEFINEMEAS: subblocks 'HMEAS, EMEAS'
+                ('REFLAT, REFLONG, REFELEV' have to be present for 
+                measured data though)
+    MTSECT: 'NFREQ'
+    FREQ: non empty list
 
-        Z: at least one component xx, yy, xy, yx ; real, imag and var ; 
-        containing a non-empty list
-        Otherwise check for presence of 'RHO'/'PHS' OR 'spectra'
+    Z: at least one component xx, yy, xy, yx ; real, imag and var ; 
+    containing a non-empty list
+    Otherwise check for presence of 'RHO'/'PHS' OR 'spectra'
 
 
     """
@@ -2564,7 +2394,7 @@ def _validate_edifile_string(edistring):
             continue
 
     if n_numbers == 0:
-        print  MTex.MTpyError_edi_file('Problem in FREQ block: no freq '+\
+        print  MTex.MTpyError_edi_file('Problem in FREQ block: no freq'+\
                                        'found...checking for spectra instead')
         #found *= 0
     #Check for data entry following priority:
@@ -2700,6 +2530,9 @@ def _validate_edifile_string(edistring):
 
 
 def _build_id_channel_dict(lo_hmeas_emeas):
+    """
+    build a dictionary for emeas and hmeas
+    """
 
     id_dict = {}
 
@@ -2715,6 +2548,9 @@ def _build_id_channel_dict(lo_hmeas_emeas):
     return id_dict
 
 def _find_key_value(key, separator, instring, valuelength=None):
+    """
+    find a key value in a given string
+    """
 
     line = instring.strip().split()
     value = None
@@ -2758,18 +2594,18 @@ def _find_key_value(key, separator, instring, valuelength=None):
 
 def spectra2z(data, channellist=None):
     """
-        Convert data from spectral form into Z (and TIpper) - for a single freq.
+    Convert data from spectral form into Z - for one fixed freq.
 
-        Input:
-        spectral data array, real-valued, n x n sized 
+    Input:
+    spectral data array, real-valued, n x n sized 
 
-        Output:
-        Z array, complex valued, 2x2 sized
-        (Tipper array, complex valued, 2 x 1 sized) <- if HZ is present
+    Output:
+    Z array, complex valued, 2x2 sized
+    (Tipper array, complex valued, 2 x 1 sized) <- if HZ is present
 
-        note: if n>5, remote reference is assumed, so the last 2 channels 
-        are interpreted as 'HX/HY-remote' 
-            otherwise, self-referencing is applied
+    note: if n>5, remote reference is assumed, so the last 2 channels 
+    are interpreted as 'HX/HY-remote' 
+        otherwise, self-referencing is applied
     """
 
     z_array = np.zeros((2,2), 'complex')
@@ -2799,7 +2635,7 @@ def spectra2z(data, channellist=None):
     #idx contains the indices/positions of the components within the data 
     #matrix. The entries are in the order 
     # HX, HY, HZ, EX, EY, HXrem, HYrem
-    # if HZ is not present, the list entry is a NONE
+    # if HY is not present, the list entry is a NONE
 
     #build upper right triangular matrix with compex valued entries
     for i in range(data.shape[0]-1):
@@ -2833,12 +2669,14 @@ def spectra2z(data, channellist=None):
                             S[idx[2],idx[6]] * S[idx[1],idx[5]] 
         tipper_array[0,1] = S[idx[2],idx[6]] * S[idx[0],idx[5]] - \
                             S[idx[2],idx[5]] * S[idx[0],idx[6]] 
-        print tipper_array
 
     return z_array, tipper_array
 
 
 def _make_z_dict(Z_object):
+    """
+    make a z dictionary from a z-object
+    """
 
     z_dict = {}
     if Z_object.z is None:
@@ -2866,6 +2704,9 @@ def _make_z_dict(Z_object):
 
 
 def _make_tipper_dict(Tipper_object):
+    """ 
+    make a dictionary from tipper object.
+    """
 
     if Tipper_object.tipper is None:
         return None
