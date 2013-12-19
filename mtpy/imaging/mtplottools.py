@@ -281,7 +281,7 @@ class MTEllipse(object):
 #==============================================================================
 class ResPhase(object):
     """
-    HJelper class to create a data type for just the resistivity and phase
+    Helper class to create a data type for just the resistivity and phase
     
     Arguments:
     ----------
@@ -404,8 +404,10 @@ class ResPhase(object):
         """
         
         if self._Z is not None:
-            self.res,  self.phase, self.res_err, self.phase_err = \
-                                                       self._Z._get_res_phase()
+            self.res = self._Z.resistivity
+            self.phase = self._Z.phase
+            self.res_err = self._Z.resistivity_err
+            self.phase_err = self._Z.phase_err
                                                        
         #check to see if a res_err_array was input if not set to zeros
         if self.res_err is None:
@@ -555,8 +557,10 @@ class Tipper(object):
             self.ang_real = np.zeros_like(self.freq)
             self.ang_imag = np.zeros_like(self.freq)
         else:
-            self.mag_real, self.ang_real, self.mag_imag, self.ang_imag = \
-                                                   self._Tipper.mag_direction 
+            self.mag_real = self._Tipper.mag_real
+            self.ang_real = self._Tipper.angle_real
+            self.mag_imag = self._Tipper.mag_imag
+            self.ang_imag = self._Tipper.angle_imag
 
         
     def rotate(self, rot_t):
@@ -802,8 +806,7 @@ class MTplot(object):
         read in an .edi file using mtpy.core.edi
         """
         
-        edi1 = mtedi.Edi()
-        edi1.readfile(self._fn)
+        edi1 = mtedi.Edi(self._fn)
         
         #--> set the attributes accordingly
         # impedance tensor and error
@@ -828,24 +831,12 @@ class MTplot(object):
             self.station = 'MT01'
             
         # period
-        self.period = 1./edi1.freq
-        self.freq = edi1.freq
+        self.freq = edi1.freq.copy()
         
         # lat, lon and elevation
-        self.lat=edi1.lat
+        self.lat = edi1.lat
         self.lon = edi1.lon
         self.elev = edi1.elev
-        
-        # put arrays into descending period order, so that the first index
-        # is the shortest period.
-        
-        if self.period[0] > self.period[-1]:
-            self.z = self._Z.z[::-1]
-            self.zerr = self._Z.zerr[::-1]
-            self.tipper = self._Tipper.tipper[::-1]
-            self.tippererr = self._Tipper.tippererr[::-1]
-            self.period = self.period[::-1]
-            
         
         
     # don't really like this way of programming but I'll do it anyway
@@ -869,19 +860,7 @@ class MTplot(object):
         self._station = station
         
     def _set_period(self, period):
-        self._period = period
-        if self._period[0] > self._period[-1]:
-            self._Z.z = self._Z.z[::-1]
-            self._Z.zerr = self._Z.zerr[::-1]
-            self._period = self._period[::-1]
-            if self._Tipper.tipper is not None:
-                self._Tipper.tipper = self._Tipper.tipper[::-1]
-                self._Tipper.tippererr = self._Tipper.tippererr[::-1]
-            
-        self._Z.freq = 1./self._period
-        self._freq = 1./self._period
-        if self._Tipper.tipper is not None:
-            self._Tipper.freq = 1./self._period
+        self._set_freq(1./period)
         
     def _set_lat(self, lat):
         self._lat = lat
@@ -920,20 +899,24 @@ class MTplot(object):
     def _set_freq(self, freq):
         self._freq = freq
         
-        #make sure things are in order from highest freq first
-        if self._freq[0]<self._freq[-1]:
-            self._Z.z = self._Z.z[::-1]
-            self._Z.zerr = self._Z.zerr[::-1]
-            self._period = self._period[::-1]
-            if self._Tipper.tipper is not None:
-                self._Tipper.tipper = self._Tipper.tipper[::-1]
-                self._Tipper.tippererr = self._Tipper.tippererr[::-1]
+        self._check_freq_order()
             
-        self._Z.freq = self._freq
-        self._freq = self._freq
-        if self._Tipper.tipper is not None:
-            self._Tipper.freq = self._freq
-        
+    def _check_freq_order(self):
+        #make sure things are in order from highest freq first
+        if self._freq[0] < self._freq[1]:
+            print 'Flipping arrays to be ordered from short period to long'
+            self._freq = self._freq.copy()[::-1]
+            self._period = 1./self._freq.copy()
+            
+            self._Z.z = self._Z.z.copy()[::-1]
+            self._Z.zerr = self._Z.zerr.copy()[::-1]
+            self._Z.freq = self._freq.copy()
+            
+            if self._Tipper.tipper is not None:
+                self._Tipper.tipper = self._Tipper.tipper.copy()[::-1]
+                self._Tipper.tippererr = self._Tipper.tippererr.copy()[::-1]
+                self._Tipper.freq = self._freq.copy()
+
         
     #==========================================================================
     # make get methods for each attribute
