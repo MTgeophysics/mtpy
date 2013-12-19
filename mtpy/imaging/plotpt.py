@@ -16,7 +16,7 @@ import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
-
+reload(mtpl)
 #==============================================================================
 
 class PlotPhaseTensor(mtpl.MTEllipse):
@@ -300,6 +300,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
      
         #-------------plotPhaseTensor-----------------------------------
         self.ax1 = self.fig.add_subplot(3, 1, 1, aspect='equal')
+        self._mt.period = 1./self.pt.freq
         for ii, ff in enumerate(self._mt.period):
             #make sure the ellipses will be visable
             eheight = self.pt.phimin[0][ii]/self.pt.phimax[0][ii]*\
@@ -665,9 +666,13 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                             fontdict=font_dict)
         self.ax5.set_title('Ellipticity',fontdict=font_dictt)
         
-        self.fig.suptitle('Phase Tensor Elements for: '+self._mt.station,
+        try:
+          self.fig.suptitle('Phase Tensor Elements for: '+self._mt.station,
                           fontdict={'size':self.font_size+3, 'weight':'bold'})
-                          
+        except:
+          self.fig.suptitle('Phase Tensor Elements for Station "unknown"',
+                fontdict={'size':self.font_size+3, 'weight':'bold'})
+                  
     
     def save_plot(self, save_fn, file_format='pdf', orientation='portrait', 
                   fig_dpi=None, close_plot='y'):

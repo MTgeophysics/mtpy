@@ -737,7 +737,9 @@ class MTplot(object):
         self._elev = elev
         self._fn = fn
         self._rot_z = rot_z
-        
+        self._Z= mtz.Z()
+        self._Tipper = mtz.Tipper()
+
         #if a z_object is input make it the attribute _Z
         if z_object is not None:
             self._Z = z_object
