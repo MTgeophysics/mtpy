@@ -741,9 +741,7 @@ class MTplot(object):
         self._elev = elev
         self._fn = fn
         self._rot_z = rot_z
-        self._Z= mtz.Z()
-        self._Tipper = mtz.Tipper()
-
+        
         #if a z_object is input make it the attribute _Z
         if z_object is not None:
             self._Z = z_object
@@ -1052,26 +1050,26 @@ class MTplot(object):
 #==============================================================================
 # define a class object that contains list of mt_objects
 #==============================================================================
-class MTplot_lst(object):
+class MTplot_list(object):
     """
     manipulates a list of MTplot objects
     
     """
 
-    def __init__(self, fn_lst=None, res_object_lst=None, z_object_lst=None, 
-               tipper_object_lst=None, mt_object_lst=None):
+    def __init__(self, fn_list=None, res_object_list=None, z_object_list=None, 
+               tipper_object_list=None, mt_object_list=None):
         
-        self._fn_lst = fn_lst
-        self._res_object_lst = res_object_lst
-        self._z_object_lst = z_object_lst
-        self._tipper_object_lst = tipper_object_lst
-        self.mt_lst = mt_object_lst
+        self._fn_list = fn_list
+        self._res_object_list = res_object_list
+        self._z_object_list = z_object_list
+        self._tipper_object_list = tipper_object_list
+        self.mt_list = mt_object_list
         
-        if self.mt_lst is None:
-            self.mt_lst = get_mtlst(fn_lst=self._fn_lst, 
-                                    res_object_lst=self._res_object_lst, 
-                                    z_object_lst=self._z_object_lst, 
-                                    tipper_object_lst=self._tipper_object_lst)
+        if self.mt_list is None:
+            self.mt_list = get_mtlist(fn_list=self._fn_list, 
+                                    res_object_list=self._res_object_list, 
+                                    z_object_list=self._z_object_list, 
+                                    tipper_object_list=self._tipper_object_list)
                                     
                                     
     def sort_by_offsets_profile(self, line_direction='ew'):
@@ -1080,11 +1078,11 @@ class MTplot_lst(object):
         
         """
         
-        mm = sort_by_offsets(self.mt_lst, line_direction=line_direction)
+        mm = sort_by_offsets(self.mt_list, line_direction=line_direction)
         
-        self.mt_lst_sort = mm[0]
-        self.station_lst = mm[1]
-        self.offset_lst = mm[2]
+        self.mt_list_sort = mm[0]
+        self.station_list = mm[1]
+        self.offset_list = mm[2]
                                      
         
     def get_station_locations(self, map_scale='latlon', ref_point=(0,0)):
@@ -1117,7 +1115,7 @@ class MTplot_lst(object):
                           north-south values to of station to plot.  
         """
         
-        mm = get_station_locations(self.mt_lst,map_scale=map_scale,
+        mm = get_station_locations(self.mt_list,map_scale=map_scale,
                                    ref_point=ref_point)
         
         self.map_dict = mm[0]
@@ -1147,7 +1145,7 @@ class MTplot_lst(object):
                            needs to be in map coordinates
                            
             **ftol**: float
-                      tolerance to match periods in mt_lst with plot_period
+                      tolerance to match periods in mt_list with plot_period
                       
             **plot_period**: np.ndarray(nt)
                              array of periods in seconds to get data for.
@@ -1184,7 +1182,7 @@ class MTplot_lst(object):
         
         """         
         
-        mm = get_rp_arrays(self.mt_lst, sort_by=sort_by, 
+        mm = get_rp_arrays(self.mt_list, sort_by=sort_by, 
                            line_direction=line_direction, 
                            map_scale=map_scale, 
                            ref_point=ref_point, 
@@ -1202,8 +1200,8 @@ class MTplot_lst(object):
             self.phaseyx_ps = mm[6]
             self.phaseyy_ps = mm[7]
             
-            self.station_lst = mm[8]
-            self.offset_lst = mm[9]
+            self.station_list = mm[8]
+            self.offset_list = mm[9]
         
         if sort_by == 'map':
             self.resxx_map = mm[0]
@@ -1243,7 +1241,7 @@ class MTplot_lst(object):
                            to be in map coordinates
                            
             **ftol**: float
-                      tolerance to match periods in mt_lst with plot_period
+                      tolerance to match periods in mt_list with plot_period
                       
             **plot_period**: np.ndarray(nt)
                              array of periods in seconds to get data for.
@@ -1277,7 +1275,7 @@ class MTplot_lst(object):
         
         """ 
     
-        mm = get_pt_arrays(self.mt_lst, 
+        mm = get_pt_arrays(self.mt_list, 
                            sort_by=sort_by,
                            line_direction=line_direction,
                            map_scale=map_scale,
@@ -1292,8 +1290,8 @@ class MTplot_lst(object):
             self.azimuth_ps = mm[3]
             self.ellipticity_ps = mm[4]
             
-            self.station_lst = mm[5]
-            self.offset_lst = mm[6]
+            self.station_list = mm[5]
+            self.offset_list = mm[6]
             
         elif sort_by == 'map':
             self.phimin_map = mm[0]
@@ -1308,114 +1306,114 @@ class MTplot_lst(object):
 #==============================================================================
 # get list of mt objects     
 #==============================================================================
-def get_mtlst(fn_lst=None, res_object_lst=None, z_object_lst=None, 
-               tipper_object_lst=None, mt_object_lst=None):
+def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None, 
+               tipper_object_list=None, mt_object_list=None):
                  
     """
     gets a list of mt objects from the inputs  
 
     Arguments:     
     -----------
-        **fn_lst** : list of strings
+        **fn_list** : list of strings
                           full paths to .edi files to plot
                           
-        **res_object_lst** : list of mtplot.ResPhase objects
+        **res_object_list** : list of mtplot.ResPhase objects
                              *default* is none
                           
-        **z_object_lst** : list of class mtpy.core.z.Z
+        **z_object_list** : list of class mtpy.core.z.Z
                            object of mtpy.core.z.  If this is input be sure the
                            attribute z.freq is filled.  *default* is None
                       
-        **mt_object_lst** : list of class mtpy.imaging.mtplot.MTplot
+        **mt_object_list** : list of class mtpy.imaging.mtplot.MTplot
                             object of mtpy.imaging.mtplot.MTplot
                             *default* is None
                             
     Returns:
     ---------
     
-        **mt_lst** : list of MTplot instances
+        **mt_list** : list of MTplot instances
     """
     
     #first need to find something to loop over
     try:
-        ns = len(fn_lst)
-        mt_lst = [MTplot(fn=fn) for fn in fn_lst]
+        ns = len(fn_list)
+        mt_list = [MTplot(fn=fn) for fn in fn_list]
         print 'Reading {0} stations'.format(ns)
-        return mt_lst
+        return mt_list
     except TypeError:
         try:
-            ns = len(res_object_lst)
-            mt_lst = [MTplot(res_phase_object=res_obj) 
-                        for res_obj in res_object_lst]
+            ns = len(res_object_list)
+            mt_list = [MTplot(res_phase_object=res_obj) 
+                        for res_obj in res_object_list]
             try:
-                nt = len(tipper_object_lst)
+                nt = len(tipper_object_list)
                 if nt != ns:
                     raise mtex.MTpyError_inputarguments('length '+\
-                          ' of z_lst is not equal to tip_lst'+\
+                          ' of z_list is not equal to tip_list'+\
                           '; nz={0}, nt={1}'.format(ns, nt))
-                for mt,tip_obj in zip(mt_lst,tipper_object_lst):
+                for mt,tip_obj in zip(mt_list,tipper_object_list):
                     mt._Tipper = tip_obj 
             except TypeError:
                 pass
             print 'Reading {0} stations'.format(ns)
-            return mt_lst
+            return mt_list
         except TypeError:
             try: 
-                ns = len(z_object_lst)
-                mt_lst = [MTplot(z_object=z_obj) for z_obj in z_object_lst]
+                ns = len(z_object_list)
+                mt_list = [MTplot(z_object=z_obj) for z_obj in z_object_list]
                 try:
-                    nt = len(tipper_object_lst)
+                    nt = len(tipper_object_list)
                     if nt != ns:
                         raise mtex.MTpyError_inputarguments('length '+\
-                              ' of z_lst is not equal to tip_lst'+\
+                              ' of z_list is not equal to tip_list'+\
                               '; nz={0}, nt={1}'.format(ns, nt))
-                    for mt,tip_obj in zip(mt_lst,tipper_object_lst):
+                    for mt,tip_obj in zip(mt_list,tipper_object_list):
                         mt._Tipper = tip_obj 
                 except TypeError:
                     pass
                 print 'Reading {0} stations'.format(ns)
-                return mt_lst
+                return mt_list
                 
             except TypeError:
                 try:
-                    ns = len(mt_object_lst)
+                    ns = len(mt_object_list)
                     print 'Reading {0} stations'.format(ns)
-                    return mt_lst
+                    return mt_list
                 except TypeError:
                     raise IOError('Need to input an iteratable list')
 
 #==============================================================================
-# sort an mt_lst by offset values in a particular direction                  
+# sort an mt_list by offset values in a particular direction                  
 #==============================================================================
-def sort_by_offsets(mt_lst, line_direction='ew'):
+def sort_by_offsets(mt_list, line_direction='ew'):
     """
     get list of offsets for the given line_direction.
     
     Arguments:
     ----------
-        **mt_lst**: list
+        **mt_list**: list
                     list of MTplot objects
         
         **line_direction**: [ 'ew' | 'ns' ]
         
     Returns:
     --------
-        **sort_mt_lst**: list
+        **sort_mt_list**: list
                          list of MTplot objects sorted by offset in the
                          line_direction
                          
-        **station_lst**: list
+        **station_list**: list
                          list of stations sorted by offset
         
-        **offset_lst**: np.ndarray(num_stations)
+        **offset_list**: np.ndarray(num_stations)
                         array of sorted offset values corresponding to station
-                        in station_lst
+                        in station_list
     """
     
     dtype = [('station', 'S10'), ('offset', float), ('spot', int)]
-    slst = []
+    slist = []
     #get offsets
-    for ii, mt in enumerate(mt_lst):
+    for ii, mt in enumerate(mt_list):
         #get offsets between stations
         if ii == 0:
             east0 = mt.lon
@@ -1441,32 +1439,32 @@ def sort_by_offsets(mt_lst, line_direction='ew'):
                 else:
                     offset=0
         #append values to list for sorting            
-        slst.append((mt.station, offset, ii))
+        slist.append((mt.station, offset, ii))
     
     #create a structured array according to the data type and values
-    v_array = np.array(slst, dtype=dtype)
+    v_array = np.array(slist, dtype=dtype)
     
     #sort the structured array by offsets
     sorted_array = np.sort(v_array, order=['offset'])
     
     #create an offset list as an attribute
-    offset_lst = np.array([ss[1] for ss in sorted_array])
+    offset_list = np.array([ss[1] for ss in sorted_array])
     
-    #create a station lst as an attribute
-    station_lst = np.array([ss[0] for ss in sorted_array])
+    #create a station list as an attribute
+    station_list = np.array([ss[0] for ss in sorted_array])
     
     #create an index list of the sorted index values 
-    index_lst = [ss[2] for ss in sorted_array]
+    index_list = [ss[2] for ss in sorted_array]
     
-    #create a new mt_lst according to the offsets from the new index_lst
-    sort_mt_lst = [mt_lst[ii] for ii in index_lst]
+    #create a new mt_list according to the offsets from the new index_list
+    sort_mt_list = [mt_list[ii] for ii in index_list]
     
-    return sort_mt_lst, station_lst, offset_lst
+    return sort_mt_list, station_list, offset_list
 
 #==============================================================================
 # get map values
 #==============================================================================
-def get_station_locations(mt_lst, map_scale='latlon', ref_point=(0,0)):
+def get_station_locations(mt_list, map_scale='latlon', ref_point=(0,0)):
     """
     creates a dictionary where the keys are the stations and the values
     are the index in the plot_mesh grid for the station location.
@@ -1496,21 +1494,21 @@ def get_station_locations(mt_lst, map_scale='latlon', ref_point=(0,0)):
     """
     
     #make some empty arrays
-    latlst = np.zeros(len(mt_lst))
-    lonlst = np.zeros(len(mt_lst))
-    xarr = np.zeros(len(mt_lst))
-    yarr = np.zeros(len(mt_lst))
+    latlist = np.zeros(len(mt_list))
+    lonlist = np.zeros(len(mt_list))
+    xarr = np.zeros(len(mt_list))
+    yarr = np.zeros(len(mt_list))
     
     if map_scale == 'eastnorth':
         dscale = 1.
-    elif map_scale == 'eastnorth':
+    elif map_scale == 'eastnorthkm':
         dscale = 1000.
     
     map_station_dict = {}
     #need to sort by station
-    for ii,mt in enumerate(mt_lst):
-        latlst[ii] = mt.lat
-        lonlst[ii] = mt.lon
+    for ii,mt in enumerate(mt_list):
+        latlist[ii] = mt.lat
+        lonlist[ii] = mt.lon
         
         #if map scale is lat lon set parameters                
         if map_scale == 'latlon':
@@ -1619,7 +1617,7 @@ def grid_data(data_array, x, y, nx=None, ny=None):
 #==============================================================================
 # get resistivity and phase arrays for plotting
 #==============================================================================
-def get_rp_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew', 
+def get_rp_arrays(mt_list, plot_period, sort_by='line', line_direction='ew', 
                   map_scale='latlon', ref_point=(0, 0), ftol=.1):
     """
     get resistivity and phase values in the correct order according to 
@@ -1642,7 +1640,7 @@ def get_rp_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew',
                        to be in map coordinates
                        
         **ftol**: float
-                  tolerance to match periods in mt_lst with plot_period
+                  tolerance to match periods in mt_list with plot_period
                   
         **plot_period**: np.ndarray(nt)
                          array of periods in seconds to get data for.
@@ -1682,7 +1680,7 @@ def get_rp_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew',
             raise mtex.MTpyError_inputarguments('Need to input an array of '+\
                                                 'periods')
                                                 
-    ns = len(mt_lst)
+    ns = len(mt_list)
     nt = len(plot_period)
     
     #make a dictionary of the periods to plot for a reference
@@ -1692,7 +1690,7 @@ def get_rp_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew',
     #get arrays in pseudosection format
     if sort_by == 'line':
         #sort the data by offset
-        mt_lst_sort, station_lst, offset_lst = sort_by_offsets(mt_lst, 
+        mt_list_sort, station_list, offset_list = sort_by_offsets(mt_list, 
                                                   line_direction=line_direction)
                                                   
         #create empty arrays to put data into 
@@ -1706,7 +1704,7 @@ def get_rp_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew',
         phaseyx = np.zeros((nt, ns))
         phaseyy = np.zeros((nt, ns))
                              
-        for ii, mt in enumerate(mt_lst_sort):
+        for ii, mt in enumerate(mt_list_sort):
             #get resisitivity and phase in a dictionary and append to a list
             rp = mt.get_ResPhase()
             
@@ -1748,10 +1746,10 @@ def get_rp_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew',
                     print 'did not find period {0:.6g} (s) for {1}'.format(
                                rper, mt.station)
         return resxx, resxy, resyx, resyy, phasexx, phasexy, phaseyx, phaseyy,\
-               station_lst, offset_lst
+               station_list, offset_list
         
     elif sort_by == 'map':
-        map_dict, x, y = get_station_locations(mt_lst, 
+        map_dict, x, y = get_station_locations(mt_list, 
                                                map_scale=map_scale, 
                                                ref_point=ref_point)
                                             
@@ -1766,7 +1764,7 @@ def get_rp_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew',
         phaseyy = np.zeros((nt, ns))
         
         
-        for ii, mt in enumerate(mt_lst):
+        for ii, mt in enumerate(mt_list):
             #get resisitivity and phase in a dictionary and append to a list
             rp = mt.get_ResPhase()
             
@@ -1815,7 +1813,7 @@ def get_rp_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew',
 #==============================================================================
 # get phase tensor arrays for plotting
 #==============================================================================
-def get_pt_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew', 
+def get_pt_arrays(mt_list, plot_period, sort_by='line', line_direction='ew', 
                   map_scale='latlon', ref_point=(0, 0), ftol=.1):
     """
     get resistivity and phase values in the correct order according to 
@@ -1838,7 +1836,7 @@ def get_pt_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew',
                        to be in map coordinates
                        
         **ftol**: float
-                  tolerance to match periods in mt_lst with plot_period
+                  tolerance to match periods in mt_list with plot_period
                   
         **plot_period**: np.ndarray(nt)
                          array of periods in seconds to get data for.
@@ -1875,7 +1873,7 @@ def get_pt_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew',
             raise mtex.MTpyError_inputarguments('Need to input an array of '+\
                                                 'periods')
                                                 
-    ns = len(mt_lst)
+    ns = len(mt_list)
     nt = len(plot_period)
     
     #make a dictionary of the periods to plot for a reference
@@ -1885,7 +1883,7 @@ def get_pt_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew',
     #get arrays in pseudosection format
     if sort_by == 'line':
         
-        mt_lst_sort, slst, olst = sort_by_offsets(mt_lst, 
+        mt_list_sort, slist, olist = sort_by_offsets(mt_list, 
                                                   line_direction=line_direction)
                                                   
         #create empty arrays to put data into need to reset to zero in case 
@@ -1898,7 +1896,7 @@ def get_pt_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew',
         azimuth = np.zeros((nt, ns))
         ellipticity = np.zeros((nt, ns))
                              
-        for ii, mt in enumerate(mt_lst_sort):
+        for ii, mt in enumerate(mt_list_sort):
             #get resisitivity and phase in a dictionary and append to a list
             pt = mt.get_PhaseTensor()
             
@@ -1931,10 +1929,10 @@ def get_pt_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew',
                 if jj is None:
                     print 'did not find period {0:.6g} (s) for {1}'.format(
                                rper, mt.station)
-        return phimin, phimax, skew, azimuth, ellipticity, slst, olst
+        return phimin, phimax, skew, azimuth, ellipticity, slist, olist
         
     elif sort_by == 'map':
-        map_dict, x, y = get_station_locations(mt_lst, 
+        map_dict, x, y = get_station_locations(mt_list, 
                                                map_scale=map_scale, 
                                                ref_point=ref_point)
                                             
@@ -1945,7 +1943,7 @@ def get_pt_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew',
         ellipticity = np.zeros((nt, ns))
         
         
-        for ii, mt in enumerate(mt_lst):
+        for ii, mt in enumerate(mt_list):
             #get resisitivity and phase in a dictionary and append to a list
             pt = mt.get_PhaseTensor()
             
@@ -1987,18 +1985,18 @@ def get_pt_arrays(mt_lst, plot_period, sort_by='line', line_direction='ew',
 #==============================================================================
 # function for writing values to file
 #==============================================================================
-def _make_value_str(value, value_lst=None, spacing='{0:^8}', 
+def _make_value_str(value, value_list=None, spacing='{0:^8}', 
                     value_format='{0: .2f}', append=False, add=False):
     """
     helper function for writing values to a file, takes in a value and either
-    appends or adds value to value_lst according to the spacing and format of 
+    appends or adds value to value_list according to the spacing and format of 
     the string.
     
     Arguments:
     ----------
         **value** : float
         
-        **value_lst** : list of values converted to strings
+        **value_list** : list of values converted to strings
         
         **spacing** : spacing of the string that the value will be converted
                       to.
@@ -2011,11 +2009,11 @@ def _make_value_str(value, value_lst=None, spacing='{0:^8}',
         
         **add** : [ True | False ]
                   if True adds value string to the other value strings in
-                  value_lst
+                  value_list
     
     Returns:
     --------
-        **value_lst** : the input value_lst with the new value either 
+        **value_list** : the input value_list with the new value either 
                         added or appended.
         or
         
@@ -2025,13 +2023,13 @@ def _make_value_str(value, value_lst=None, spacing='{0:^8}',
     value_str = spacing.format(value_format.format(value))
     
     if append is True:
-        value_lst.append(value_str)
-        return value_lst
+        value_list.append(value_str)
+        return value_list
     if add is True:
-        value_lst += value_str
-        return value_lst
+        value_list += value_str
+        return value_list
         
     if append == False and add == False:
         return value_str
         
-    return value_lst
+    return value_list

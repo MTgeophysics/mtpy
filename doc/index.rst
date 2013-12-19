@@ -9,10 +9,8 @@ Welcome to MTpy's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
 
-   core
-   analysis
+	core
 
 	
 Indices and tables
