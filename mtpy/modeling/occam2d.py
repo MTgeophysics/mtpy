@@ -55,6 +55,7 @@ import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
 import mtpy.analysis.geometry as MTgy
 import mtpy.utils.exceptions as MTex
+import scipy.interpolate as si
 
 
 reload(MTcv)
@@ -117,6 +118,11 @@ class Setup():
 
         self.parameters_inmodel['model_name'] = 'Modelfile generated with MTpy'
         self.parameters_inmodel['block_merge_threshold'] = 0.75
+        self.parameters_inmodel['roughness_exceptions'] = None
+        self.parameters_inmodel['interfaces'] = False
+        self.parameters_inmodel['interface_dir'] = None
+        self.parameters_inmodel['interface_filelist'] = None
+        self.parameters_inmodel['elevation_filename'] = None
 
        
         self.parameters_data['strike'] = None
@@ -146,8 +152,8 @@ class Setup():
         self.profile_norths = None
         self.modelblocklocations_x = None
         self.modelblocklocations_z = None
-        self.blocknums = None
-
+        self.block_nums = None
+        self.interfaces = []
 
         self.inmodel = None
  
@@ -636,33 +642,13 @@ class Setup():
         max_thickness = np.max(lo_mesh_thicknesses)
         maxdepth = lo_mesh_depths[-1]
 
-        padding_thickness = 0
-        lo_bottom_padding_layers = []
+
         for i in range(n_bottompadding):
-            #increase bottom padding mesh thickness with each layer
-            layer_thickness = 1.3**(i)*max_thickness
-            lo_bottom_padding_layers.append(layer_thickness)
-                    
-        padding_thickness = np.sum(lo_bottom_padding_layers)
-        padding_to_model_ratio = padding_thickness/maxdepth
-
-        padding_threshold = 2
-
-        if padding_to_model_ratio < padding_threshold:
-            # if padding is smaller than 'threshold' * model_depth, stretch the 
-            # padding to this extent
-            lo_bottom_padding_layers = list(padding_threshold/padding_to_model_ratio * 
-                                        np.array(lo_bottom_padding_layers))
-            padding_thickness = np.sum(lo_bottom_padding_layers)
-            
-
-        for pad in lo_bottom_padding_layers:
-            lo_mesh_thicknesses.append(pad)
-            lo_mesh_depths.append(lo_mesh_depths[-1]+pad)
+            lo_mesh_thicknesses.append(max_thickness)
+            lo_mesh_depths.append(maxdepth+max_thickness)
+            maxdepth += max_thickness
         
-        #all the bottim padding is making one single model layer:
-        lo_model_depths.append(lo_model_depths[-1] + padding_thickness)
-
+        lo_model_depths.append(lo_model_depths[-1]+n_bottompadding*max_thickness)
 
         #just to be safe!
         #self.parameters_inmodel['no_layers'] = len(lo_model_depths)
@@ -899,7 +885,19 @@ class Setup():
             #model_outstring += "\n"
             
 
-        temptext = "Number Exceptions:{0}\n".format(0)
+        if self.parameters_inmodel['interfaces'] == True:
+            idir = self.parameters_inmodel['interface_dir']
+            for interface in self.parameters_inmodel['interface_filelist']:
+                self.project_interface(idir,interface)
+            if self.parameters_inmodel['elevation_filename'] is not None:
+                self.subtract_elevation(idir,self.parameters_inmodel['elevation_filename'])
+            self.build_roughness_exceptions()
+            re = self.parameters_inmodel['roughness_exceptions']
+            temptext = "Number Exceptions:{0}\n".format(-len(re))
+            temptext += '\n'.join([' '.join([str(rr) for rr in r]+['0']) for r in re])
+        else:
+            temptext = "Number Exceptions:{0}\n".format(0)
+
         model_outstring += temptext
         
         self.inmodel = model_outstring
@@ -941,7 +939,7 @@ class Setup():
         temptext = "Max Iter:         {0}\n".format(int(float(self.parameters_startup['max_no_iterations'])))
         startup_outstring += temptext
 
-        temptext = "Target Misfit:    {0:.1f}\n".format(float(self.parameters_startup['target_rms']))
+        temptext = "Target Misfit:    {0:.2f}\n".format(float(self.parameters_startup['target_rms']))
         startup_outstring += temptext
 
         temptext = "Roughness Type:   {0}\n".format(int(self.parameters_startup['roughness_type']))
@@ -1072,16 +1070,22 @@ class Setup():
         return 
 
     def get_modelblock_info(self):
+        """
+        get model block locations and model block numbers and store them in the
+        setup object.        
+        
+        Author: Alison Kirkby (2013)
+        """
         blockmerges_x = [[int(val) for val in line.strip('\n').split()] for line in self.parameters_inmodel['lo_modelblockstrings']]
         blockmerges_z = self.parameters_inmodel['lo_merged_lines']
-        meshlocations_z = self.meshlocations_z
-        meshlocations_z.insert(0,0)
+        meshlocations_z = np.array([0]+self.meshlocations_z)
+#        meshlocations_z.insert(0,0)
         num=1
         block_nums,block_x,block_z = [],[],[]
         iz = 0
         for j,z in enumerate(blockmerges_z):
             ix = 0
-            block_z.append(np.median(np.array(meshlocations_z[iz:iz+z+1])))
+            block_z.append(np.median(meshlocations_z[iz:iz+z+1]))
             iz += z
             tmp_lst = []
             tmp_lst_pos = []
@@ -1098,6 +1102,134 @@ class Setup():
         self.block_nums = np.array(block_nums)
 
 
+    def project_interface(self,intdir,fn,skiprows=1,threshold=1000):
+        """
+        project an interface (from an xyz text file) onto the profile.
+        adds a numpy array of z locations (corresponding to x model block locations)
+        to the variable interfaces
+
+        intdir = directory where interface text files are held
+        fn = filename of interface text file
+        skiprows = number of header rows to skip when reading file             
+        threshold = threshold value for reasonable cell to cell variation
+        in elevation.
+        
+        Author: Alison Kirkby (2013)
+        """
+        
+        self.Data.get_profile_origin()
+        self.get_modelblock_info()
+            
+        az = np.deg2rad(90-self.Data.azimuth)
+                
+        xp = self.Data.profile_origin[0]+self.modelblocklocations_x[0]*np.cos(az)
+        yp = self.Data.profile_origin[1]+self.modelblocklocations_x[0]*np.sin(az)
+        
+        data = np.loadtxt(os.path.join(intdir,fn),skiprows=skiprows)
+        f = si.CloughTocher2DInterpolator(data[:,0:2],data[:,2])   
+
+        zp = np.array([f(xp[i],yp[i]) for i in range(len(xp))])
+        
+        # check for any null values
+        for i,z in enumerate(zp):
+            if np.isnan(z):
+                ii = 0
+                while np.isnan(zp[i+ii]):
+                    if i < len(zp)/2:
+                        ii += 1
+                    else:
+                        ii -= 1
+                zp[i] = zp[i+ii]
+                
+        self.interfaces.append(zp)
+        
+    def subtract_elevation(self,intdir,elevfn):
+        """
+        subtract elevation from all interfaces
+        
+        Author: Alison Kirkby (2013)
+        """
+        self.project_interface(intdir,elevfn)
+        
+        for i in self.interfaces[:-1]:
+            i -= self.interfaces[-1]
+        
+        self.interfaces = self.interfaces[:-1]
+    
+    def build_roughness_exceptions(self):
+        """
+        generate a list of model block pairs between which to build a roughness
+        exception and add these to the inmodel file
+        
+        Author: Alison Kirkby (2013)
+        """
+        
+        
+        
+        if len(self.interfaces) == 0:
+            print "need to build interfaces first"
+            return
+        else:
+            block_z = self.modelblocklocations_z
+            block_x = self.modelblocklocations_x
+            x_vals = block_x[0]
+            block_nums = self.block_nums
+
+            blockmerges_x = [[int(val) for val in line.strip('\n').split()] for line in self.parameters_inmodel['lo_modelblockstrings']]
+            
+            values = []          
+            cell_x = []
+            
+            for interface in self.interfaces:
+                z_msl = -interface
+                values_tmp = []
+                cell_x_tmp = []
+                values_tmp_v = []
+                
+                for i in range(len(interface)):
+                    z = block_z[block_z-z_msl[i]<0][-1] # get out first block for which z_msl value is greater than z location of block
+                    print "z = ",z
+                    j = list(block_z).index(z) # get the index j for the z value
+                    
+                    crit = abs(block_x[j]-x_vals[i])==min(abs(block_x[j]-x_vals[i])) #  define criteria to find closest x block
+                    bn1 = block_nums[j][crit][0]
+                    ii = list(block_nums[j]).index(bn1)
+                    iii = 0
+                    while sum(blockmerges_x[j+1][:iii]) <= sum(blockmerges_x[j][:ii]):
+                        iii += 1
+                    iii -= 1
+                    bn2 = block_nums[j+1][iii]
+                    if not [block_x[j][ii],block_x[j+1][iii]] in cell_x_tmp:
+                        values_tmp.append([bn1,bn2])
+                        cell_x_tmp.append([block_x[j][ii],block_x[j+1][iii]])
+                    if i != 0:
+                        bmin1 = np.min(values_tmp[-1][0])
+                        bmin2 = np.min(values_tmp[-2][0])
+                        bmax1 = np.max(values_tmp[-1][0])
+                        bmax2 = np.max(values_tmp[-2][0])
+                        if bmin1 - bmin2 != 1:
+                            if bmin1 > bmin2:                                                                 
+                                bn3 = [bmin1-1,bmin1]
+                                bn4 = [bmax2,bmax2+1]
+                            else: 
+                                bn3 = [bmin2,bmin2+1] 
+                                bn4 = [bmax1-1,bmax1]
+                            for bval in [bn3,bn4]:
+                                if not bn3 in values_tmp_v:
+                                    values_tmp_v.append(bval)
+                                
+                
+                values += values_tmp+values_tmp_v
+                cell_x.append(cell_x_tmp)
+                
+            if self.parameters_inmodel['roughness_exceptions'] is None:
+                self.parameters_inmodel['roughness_exceptions'] = []  
+
+            self.parameters_inmodel['roughness_exceptions'] += values
+
+        
+        
+        
 #------------------------------------------------------------------------------
 
 
@@ -1471,7 +1603,7 @@ class Data():
 
                         tipper = T.tipper[idx_f]
                         try: 
-                            tippererr = abs(T.tippererr[idx_f])
+                            tippererr = T.tippererr[idx_f]
                         except:
                             #print 'no Tipper error for station {0}/frequency {1}'.format(station_number,frequency_number)
                             tippererr = None
@@ -1487,22 +1619,22 @@ class Data():
                         if tippererr is None:
                             raw_error = 0
                             if self.tipper_errorfloor is not None:
-                                raw_error = self.tipper_errorfloor/100.*value
+                                raw_error = (self.tipper_errorfloor/100.)*value
                         else:
                             raw_error = tippererr[0,1] 
                             
                         if value == 0 :
                             rel_error = 0 
                         else:
-                            rel_error = raw_error/value
+                            rel_error = raw_error
 
-                        error = raw_error
+                        error = raw_error/value
                         if self.tipper_errorfloor is not None:                                
                             if self.tipper_errorfloor/100. > rel_error:
-                                error = self.tipper_errorfloor/100.*value
+                                error = (self.tipper_errorfloor/100.)#*value
                             
 
-                    self.data.append([station_number,frequency_number,mode,value,error])
+                    self.data.append([station_number,frequency_number,mode,value,np.abs(error)])
 
     def generate_profile(self):
         """
@@ -1631,12 +1763,18 @@ class Data():
 
         self.strike = self.strike%180
 
+
         rotation_angle = self.strike
         
         for old_z in self.Z:
             original_rotation_angle = np.array(old_z.rotation_angle)
             effective_rot_angle = rotation_angle - original_rotation_angle
             old_z.rotate(effective_rot_angle)
+        
+        # rotate tipper to profile azimuth, not strike. Need angle to be between
+
+        rotation_angle = (self.azimuth - 90) % 180
+            
         
         for old_tipper in self.Tipper:
             try:
@@ -1758,6 +1896,11 @@ class Data():
         F.close()
 
     def get_profile_origin(self):
+        """
+        get the origin of the profile in real world coordinates
+        
+        Author: Alison Kirkby (2013)
+        """
 
         x,y = self.easts,self.norths
         x1,y1 = x[0],y[0]
@@ -1765,7 +1908,7 @@ class Data():
         x0 = (y1+(1.0/m)*x1-c1)/(m+(1.0/m))
         y0 = m*x0+c1 
         self.profile_origin = [x0,y0]
-        
+    
 
 
 class Model():
