@@ -1290,7 +1290,7 @@ class Data():
         except:
             print 'cannot generate profile'
             raise
-
+        
         try:
             self.build_data()
         except:
@@ -1515,7 +1515,10 @@ class Data():
             Z = self.Z[idx_s]
             T = self.Tipper[idx_s]
 
-            rho_phi = Z.res_phase 
+            rho = Z.resistivity
+            phi = Z.phase
+            rho_err = Z.resistivity_err
+            phi_err = Z.phase_err
             z_array = Z.z
             zerr_array = Z.zerr
 
@@ -1534,10 +1537,10 @@ class Data():
 
                 for mode in lo_modes:
                     if mode in [9,2] :
-                        raw_rho_value = rho_phi[0][idx_f][0,1]
+                        raw_rho_value = rho[idx_f][0,1]
                         value = raw_rho_value
                         #value = np.log10(raw_rho_value)
-                        absolute_rho_error = rho_phi[2][idx_f][0,1]
+                        absolute_rho_error = rho_err[idx_f][0,1]
                         try:
                             if raw_rho_value == 0:
                                 raise
@@ -1553,7 +1556,7 @@ class Data():
                             #error = np.abs(relative_rho_error/np.log(10.))
 
                         elif mode == 2 :
-                            raw_phi_value = rho_phi[1][idx_f][0,1]
+                            raw_phi_value = phi[idx_f][0,1]
                             if raw_phi_value >=180:
                                 raw_phi_value -= 180
                             value = raw_phi_value
@@ -1566,10 +1569,10 @@ class Data():
                                 error = np.degrees(np.arcsin(0.5*relative_rho_error))#relative_error*100.*0.285
 
                     if mode in [10,6] :
-                        raw_rho_value = rho_phi[0][idx_f][1,0]
+                        raw_rho_value = rho[idx_f][1,0]
                         value = raw_rho_value
                         #value = np.log10(raw_rho_value)
-                        absolute_rho_error = rho_phi[2][idx_f][1,0]
+                        absolute_rho_error = rho_err[idx_f][1,0]
                         try:
                             if raw_rho_value == 0:
                                 raise
@@ -1584,7 +1587,7 @@ class Data():
                             #error = np.abs(relative_rho_error /np.log(10.))
 
                         elif mode == 6 :
-                            raw_phi_value = rho_phi[1][idx_f][1,0]
+                            raw_phi_value = phi[idx_f][1,0]
                             if raw_phi_value >=180:
                                 raw_phi_value -= 180
                             value = raw_phi_value
