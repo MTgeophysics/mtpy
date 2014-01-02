@@ -860,6 +860,7 @@ class MTplot(object):
         self._station = station
         
     def _set_period(self, period):
+        print period
         self._set_freq(1./period)
         
     def _set_lat(self, lat):

@@ -300,7 +300,8 @@ class PlotPhaseTensor(mtpl.MTEllipse):
      
         #-------------plotPhaseTensor-----------------------------------
         self.ax1 = self.fig.add_subplot(3, 1, 1, aspect='equal')
-        self._mt.period = 1./self.pt.freq
+        self._mt._period = 1./self._mt.freq
+        
         for ii, ff in enumerate(self._mt.period):
             #make sure the ellipses will be visable
             eheight = self.pt.phimin[0][ii]/self.pt.phimax[0][ii]*\

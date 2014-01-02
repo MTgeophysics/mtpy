@@ -756,7 +756,9 @@ class PhaseTensor(object):
         if self.pterr is not None:
             phiminerr = np.sqrt(self._pi2()[1]**2+self._pi1()[1]**2)
  
-        return [np.degrees(np.arctan(phimin)), np.degrees(np.arctan(phiminerr))]
+            return [np.degrees(np.arctan(phimin)), np.degrees(np.arctan(phiminerr))]
+        else:
+            return np.degrees(np.arctan(phimin))
 
     phimin = property(_get_phimin, doc =" Minimum phase in degrees")
 
@@ -783,7 +785,9 @@ class PhaseTensor(object):
         if self.pterr is not None:
             phimaxerr = np.sqrt(self._pi2()[1]**2+self._pi1()[1]**2)
  
-        return [np.degrees(np.arctan(phimax)), np.degrees(np.arctan(phimaxerr))]
+            return [np.degrees(np.arctan(phimax)), np.degrees(np.arctan(phimaxerr))]
+        else:
+            return np.degrees(np.arctan(phimax))
 
     phimax = property(_get_phimax, doc = "Maximum phase in degrees")
 
