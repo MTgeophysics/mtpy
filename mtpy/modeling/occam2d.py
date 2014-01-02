@@ -88,6 +88,7 @@ class Setup():
         self.parameters_inmodel = {}
         self.parameters_data = {}
         self.parameters_mesh = {}
+        self.parameters_prejudice = {}
 
         self.parameters_startup['description'] = 'generic MTpy setup'
 
@@ -139,9 +140,8 @@ class Setup():
         self.parameters_data['max_frequency'] = None
         self.parameters_data['max_no_frequencies'] = None
 
-
         self.parameters_mesh['mesh_title'] = 'Mesh file generated with MTpy'
-
+        self.prejudice_weight = 1.
  
         self.mesh = None
         self.meshlocations_x = None
@@ -152,13 +152,13 @@ class Setup():
         self.profile_norths = None
         self.modelblocklocations_x = None
         self.modelblocklocations_z = None
-        self.block_nums = None
-        self.interfaces = []
 
         self.inmodel = None
  
         self.no_parameters = None
 
+        self.welldata = None
+        self.well_xy = None
 
         self.edifiles = []
 
@@ -1014,6 +1014,8 @@ class Setup():
         self.write_inmodelfile()
         self.write_startupfile()
         self.write_configfile()
+        if self.prejudicefile is not None:
+            self.write_prejudicefile()
 
         print '\nInput files in working directory {0}: \n'.format(op.abspath(self.wd))
         print '{0}'.format(op.basename(self.datafile))
@@ -1069,6 +1071,23 @@ class Setup():
 
         return 
 
+    def make_savepath(self,basename='inv',start=0,suffix=''):
+        """
+        make a directory name in which to save results
+        ensures that each new inversion is saved in a separate directory
+        
+        Author: Alison Kirkby
+        """
+        
+        
+        while os.path.exists(os.path.join(self.wd,basename + '%03i'%start + suffix)):
+            start += 1
+        
+        svpath = basename + '%03i'%start +suffix
+        
+        return svpath
+        
+
     def get_modelblock_info(self):
         """
         get model block locations and model block numbers and store them in the
@@ -1102,7 +1121,7 @@ class Setup():
         self.block_nums = np.array(block_nums)
 
 
-    def project_interface(self,intdir,fn,skiprows=1,threshold=1000):
+    def project_interface(self,intdir,fn,skiprows=1):
         """
         project an interface (from an xyz text file) onto the profile.
         adds a numpy array of z locations (corresponding to x model block locations)
@@ -1111,8 +1130,6 @@ class Setup():
         intdir = directory where interface text files are held
         fn = filename of interface text file
         skiprows = number of header rows to skip when reading file             
-        threshold = threshold value for reasonable cell to cell variation
-        in elevation.
         
         Author: Alison Kirkby (2013)
         """
@@ -1140,21 +1157,28 @@ class Setup():
                     else:
                         ii -= 1
                 zp[i] = zp[i+ii]
-                
+
+        if not hasattr(self,'interfaces'):
+            self.interfaces = []
         self.interfaces.append(zp)
+            
         
     def subtract_elevation(self,intdir,elevfn):
         """
-        subtract elevation from all interfaces
+        subtract elevation from all projected interfaces in interface variable
         
         Author: Alison Kirkby (2013)
         """
-        self.project_interface(intdir,elevfn)
-        
-        for i in self.interfaces[:-1]:
-            i -= self.interfaces[-1]
-        
-        self.interfaces = self.interfaces[:-1]
+        if hasattr(self,'interfaces'):    
+            self.project_interface(intdir,elevfn) 
+            
+            for i in self.interfaces[:-1]:
+                i -= self.interfaces[-1]
+                
+            self.interfaces = self.interfaces[:-1]
+        else:
+            print "nothing to subtract; please use project_interface to define interfaces first"
+            return
     
     def build_roughness_exceptions(self):
         """
@@ -1164,10 +1188,8 @@ class Setup():
         Author: Alison Kirkby (2013)
         """
         
-        
-        
-        if len(self.interfaces) == 0:
-            print "need to build interfaces first"
+        if not hasattr(self,'interfaces'):
+            print "nothing to build roughness exceptions from; please use project_interface to define interfaces first"
             return
         else:
             block_z = self.modelblocklocations_z
@@ -1188,7 +1210,6 @@ class Setup():
                 
                 for i in range(len(interface)):
                     z = block_z[block_z-z_msl[i]<0][-1] # get out first block for which z_msl value is greater than z location of block
-                    print "z = ",z
                     j = list(block_z).index(z) # get the index j for the z value
                     
                     crit = abs(block_x[j]-x_vals[i])==min(abs(block_x[j]-x_vals[i])) #  define criteria to find closest x block
@@ -1228,7 +1249,141 @@ class Setup():
             self.parameters_inmodel['roughness_exceptions'] += values
 
         
+    def project_well_loc(self):
+        """
+        project a well location onto the profile.
+        stores the result in the setup variable well_locations.
+        x,y = x,y locations of well
         
+        Author: Alison Kirkby
+        """
+        distances = []
+
+        for well_xy in self.well_xy:
+        
+            [xp,yp] = well_xy       
+            
+            # get profile origin
+            self.Data.get_profile_origin()
+            
+            # project drillhole location onto profile and get distance along profile
+            [m,c1] = self.Data.profile
+            [x0,y0] = self.Data.profile_origin
+            x = (yp+(1.0/m)*xp-c1)/(m+(1.0/m))
+            y = m*x+c1
+            x -= x0
+            y -= y0
+            distances.append((x**2.+y**2.)**(0.5))
+        self.well_locations = distances
+        
+        
+    def prejudice_subsample_welldata(self):
+        """
+        subsample a resistivity array by averaging
+        input: 1-D array or list of 1-D arrays containing resistivity and depth data
+        result: resitivity values and block indices stored in variables 
+        prejudice_resitivity and prejudice_indices_z
+        
+        Author: Alison Kirkby
+        """
+        
+        blockmerges_z = self.parameters_inmodel['lo_merged_lines']
+        blockedges_z = [0]+[self.meshlocations_z[i-1] for i in [int(sum(blockmerges_z[:ii])) for ii in range(1,len(blockmerges_z)+1)]]
+
+        
+        if not hasattr(self,'prejudice_resisitivity'):
+            self.prejudice_resistivity = []
+        
+        if not hasattr(self,'prejudice_indices_z'):
+            self.prejudice_indices_z = []
+            
+    
+        for w in range(len(self.welldata)):
+            self.prejudice_resistivity.append([])
+            self.prejudice_indices_z.append([])
+                        
+            for i in range(1,len(blockedges_z)):
+                temp_res = []
+                for j in range(len(self.welldata[w])):
+                    if blockedges_z[i-1]<self.welldata[w][j,1]<blockedges_z[i]:
+                        temp_res.append(self.welldata[w][j,0])
+                if len(temp_res)>0:
+                    self.prejudice_resistivity[-1].append(np.around(np.median(temp_res),1))
+                    self.prejudice_indices_z[-1].append(i)                
+ 
+       
+    def prejudice_get_blocknums(self):
+        """
+        get block numbers for prejudice file
+        requires prejudice_resistivity and prejudice_indices_z to be defined
+        
+        prejudice_weights = weighting (range 0.0 to 1.0) for each prejudice
+        value (see occam documentation for definition)
+        
+        Author: Alison Kirkby        
+        """
+
+        
+        res_values = self.prejudice_resistivity
+        num_values = sum([len(l) for l in res_values])        
+        
+        if not hasattr(self,'prejudice_blocknums'):
+            self.prejudice_blocknums = []
+        if not hasattr(self,'prejudice_fstrings'):
+            self.prejudice_fstrings = ["FORMAT:           OCCAM2MTPREJ_2.0\n",
+                                       "NO. PARAMS:       "+str(num_values)+'\n']
+     
+        i = 0
+        
+        for w in range(len(res_values)):
+            self.prejudice_blocknums.append([])
+            distance = self.well_locations[w]
+
+            for i in range(len(res_values[w])):
+                row = self.prejudice_indices_z[w][i]
+                # define model block locations for given row
+                modc = self.modelblocklocations_x[row]
+                # find index of closest model block to x location of drillhole:
+                col = list(abs(modc - distance)).index(np.min(abs(modc - distance)))
+                # append block nums
+                blocknum = self.block_nums[row][col]
+                self.prejudice_blocknums[w].append(blocknum)
+                self.prejudice_fstrings.append(' '.join(['%01i'%blocknum,
+                                                         '%.03f'%np.log10(self.prejudice_resistivity[w][i]),
+                                                         '%.01f'%self.prejudice_weight])+'\n')
+
+    def write_prejudicefile(self):
+        """
+        build model prejudices from well data and write to a file.
+        
+        first need to define:
+        self.well_xy = list of lists containing xy coordinates
+        self.welldata = list of 2-D arrays containing res, depth 
+        (shape = (num_wells,num_datapoints,2)) for each well_xy
+
+        
+        Author: Alison Kirkby        
+        """    
+        if self.well_xy is None:
+            print "please first define well xy location"
+            return
+            
+        if self.welldata is None:
+            print "please first define well data"
+            return
+
+        if not hasattr(self,'block_nums'):
+            self.get_modelblock_info() 
+        
+        self.project_well_loc()
+        self.prejudice_subsample_welldata()
+        self.prejudice_get_blocknums()
+        
+        
+        pf = open(os.path.join(self.wd,self.prejudicefile),'wb')
+        pf.writelines(self.prejudice_fstrings)
+        pf.close()
+
         
 #------------------------------------------------------------------------------
 
