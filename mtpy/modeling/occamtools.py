@@ -5981,7 +5981,7 @@ class Occam2DModel(Occam2DData):
                         for ii in range(len(self.vnodes))])
         
         #center the grid onto the station coordinates
-        x0=bndgoff-plotx[self.cols[0][0]]
+        x0=bndgoff-plotx[self.cols[0][0]-1]
         plotx=plotx+x0
         
         #flip the arrays around for plotting purposes
@@ -6171,8 +6171,9 @@ class Occam2DModel(Occam2DData):
         
         #plot the model as a pcolormesh so the extents are constrained to 
         #the model coordinates
-        ax.pcolormesh(self.meshx/dfactor,self.meshy/dfactor,self.resmodel,
-                      cmap=cmap,vmin=climits[0],vmax=climits[1])
+        self.mesh_plot=ax.pcolormesh(self.meshx/dfactor,self.meshy/dfactor,
+                                     self.resmodel,cmap=cmap,vmin=climits[0],
+                                     vmax=climits[1])
         
         #make a colorbar for the resistivity
         cbx=mcb.make_axes(ax,shrink=.8,pad=.01)
@@ -6342,10 +6343,10 @@ class Occam2DModel(Occam2DData):
                                 fontdict=blkfdict,
                                 horizontalalignment='center',
                                 verticalalignment='center')
-                        kk+=1
                     except IndexError:
                         pass
-                    
+                    kk+=1
+        self.model_axes=ax            
         plt.show()
     
     def plotL2Curve(self,fnstem=None,fignum=1,dpi=300):
