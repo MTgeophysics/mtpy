@@ -304,10 +304,26 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         
         for ii, ff in enumerate(self._mt.period):
             #make sure the ellipses will be visable
-            eheight = self.pt.phimin[0][ii]/self.pt.phimax[0][ii]*\
+            if self.pt.phimax[0][ii] != 0:
+              eheight = self.pt.phimin[0][ii]/self.pt.phimax[0][ii]*\
                                                               self.ellipse_size
-            ewidth = self.pt.phimax[0][ii]/self.pt.phimax[0][ii]*\
-                                                              self.ellipse_size
+
+              ewidth =  self.ellipse_size
+
+            else:
+              #tiny instead of nothing
+              eheight = 0.01*self.ellipse_size
+              ewidth = 0.01*self.ellipse_size 
+
+            #ewidth = self.pt.phimax[0][ii]/self.pt.phimax[0][ii]*\
+            #                                                  self.ellipse_size
+
+            #alternative scaling
+            # eheight = self.pt.phimin[0][ii]/max(np.abs(self.pt.phimax[0]))*\
+            #                                                   self.ellipse_size
+            # ewidth = self.pt.phimax[0][ii]/max(np.abs(self.pt.phimax[0]))*\
+            #                                                   self.ellipse_size
+
         
             #create an ellipse scaled by phimin and phimax and oriented along
             #the azimuth which is calculated as clockwise but needs to 
