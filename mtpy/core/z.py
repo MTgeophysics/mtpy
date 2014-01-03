@@ -147,11 +147,11 @@ class Z(object):
             self.rotation_angle = np.zeros((len(self._z)))
         
         #make attributes for resistivity and phase
-        self.resistivity= None
-        self.resistivity_err = None
+        self._resistivity= None
+        self._resistivity_err = None
         
-        self.phase = None
-        self.phase_err = None
+        self._phase = None
+        self._phase_err = None
 
     #---frequency-------------------------------------------------------------
     def _set_freq(self, lo_freq):
@@ -389,22 +389,22 @@ class Z(object):
             print 'Z array is None - cannot calculate Res/Phase'
             return            
 
-        self.resistivity_err = None
-        self.phase_err = None
+        self._resistivity_err = None
+        self._phase_err = None
         if self.zerr is not None:
-            self.resistivity_err = np.zeros_like(self.zerr)
-            self.phase_err = np.zeros_like(self.zerr)
+            self._resistivity_err = np.zeros_like(self.zerr)
+            self._phase_err = np.zeros_like(self.zerr)
 
-        self.resistivity = np.zeros_like(self.z, dtype='float')
-        self.phase = np.zeros_like(self.z, dtype='float')
+        self._resistivity = np.zeros_like(self.z, dtype='float')
+        self._phase = np.zeros_like(self.z, dtype='float')
 
         #calculate resistivity and phase
         for idx_f in range(len(self.z)): 
             for i in range(2):                        
                 for j in range(2):
-                    self.resistivity[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2/\
+                    self._resistivity[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2/\
                                                   self.freq[idx_f]*0.2
-                    self.phase[idx_f,i,j] = math.degrees(cmath.phase(
+                    self._phase[idx_f,i,j] = math.degrees(cmath.phase(
                                                     self.z[idx_f,i,j]))%360
                 
                     if self.zerr is not None:
@@ -417,11 +417,30 @@ class Z(object):
 
                         
 
-                        self.resistivity_err[idx_f,i,j] = \
+                        self._resistivity_err[idx_f,i,j] = \
                                                0.4*np.abs(self.z[idx_f,i,j])/\
                                                self.freq[idx_f]*r_err
-                        self.phase_err[idx_f,i,j] = phi_err
-                        
+                        self._phase_err[idx_f,i,j] = phi_err
+
+    
+    def _get_resistivity(self): return self._resistivity
+    def _get_resistivity_err(self): return self._resistivity_err
+    def _get_phase(self): return self._phase
+    def _get_phase_err(self): return self._phase_err
+    def _set_resistivity(self, *kwargs): print "cannot be set individually - use method 'set_res_phase' !"
+    def _set_resistivity_err(self, *kwargs): print "cannot be set individually - use method 'set_res_phase' !"
+    def _set_phase(self, *kwargs): print "cannot be set individually - use method 'set_res_phase' !"
+    def _set_phase_err(self, *kwargs): print "cannot be set individually - use method 'set_res_phase' !"
+
+
+
+    resistivity = property(_get_resistivity, _set_resistivity, doc='Resistivity array')
+    resistivity_err = property(_get_resistivity_err,_set_resistivity_err, doc='Resistivity error array')
+
+    phase = property(_get_phase,_set_phase, doc='Phase array')
+    phase_err = property(_get_phase_err,_set_phase_err, doc='Phase error array')
+
+
                         
 
     def set_res_phase(self, res_array, phase_array, reserr_array = None, 
@@ -545,6 +564,8 @@ class Z(object):
         
         #for consistency recalculate resistivity and phase
         self._compute_res_phase()
+
+
 
 
     def _get_inverse(self):
@@ -1140,8 +1161,8 @@ class Tipper(object):
             
         self.amplitude = None
         self.amplitude_err = None
-        self.phase = None
-        self.phase_err = None
+        self._phase = None
+        self._phase_err = None
         
         self.mag_real = None
         self.mag_imag = None
@@ -1405,19 +1426,19 @@ class Tipper(object):
             return None
 
         self.amplitude_err = None
-        self.phase_err = None
+        self._phase_err = None
         if self.tippererr is not None:
             self.amplitude_err = np.zeros(self.tippererr.shape)
-            self.phase_err = np.zeros(self.tippererr.shape)
+            self._phase_err = np.zeros(self.tippererr.shape)
 
         self.amplitude = np.zeros(self.tipper.shape)
-        self.phase = np.zeros(self.tipper.shape)
+        self._phase = np.zeros(self.tipper.shape)
 
 
         for idx_f in range(len(self.tipper)):                         
             for j in range(2):
                 self.amplitude[idx_f,0,j] = np.abs(self.tipper[idx_f,0,j])
-                self.phase[idx_f,0,j] = math.degrees(cmath.phase(
+                self._phase[idx_f,0,j] = math.degrees(cmath.phase(
                                                       self.tipper[idx_f,0,j]))
                 
                 if self.tippererr is not None:
@@ -1428,7 +1449,7 @@ class Tipper(object):
                                             self.tippererr[idx_f,0,j])
                                             
                     self.amplitude_err[idx_f,0,j] = r_err
-                    self.phase_err[idx_f,0,j] = phi_err
+                    self._phase_err[idx_f,0,j] = phi_err
 
     def set_amp_phase(self, r_array, phi_array):
         """
