@@ -1013,10 +1013,25 @@ class Z(object):
 
         """
 
-        znorm = np.array( [np.linalg.norm(i) for i in self.z ])
-        znormerr = np.zeros_like(znorm)
+        znorm = np.array( [np.linalg.norm(i) for i in self.z ])            
+        znormerr = None
+
+        if self.zerr is not None:
+            znormerr = np.zeros_like(znorm)
+            for idx,z_tmp in enumerate(self.z):
+                value = znorm[idx]
+                error_matrix = self.zerr[idx]
+                radicand = 0.
+                for i in range(2):
+                    for j in range(2):
+                        radicand += (error_matrix[i,j]*np.real(z_tmp[i,j]))**2
+                        radicand += (error_matrix[i,j]*np.imag(z_tmp[i,j]))**2
+                       
+                znormerr[idx] = 1./value*np.sqrt(radicand)
+
 
         return znorm, znormerr
+
     norm = property(_get_norm, doc='Norm of Z, incl. error')
 
     def _get_invariants(self):
