@@ -152,6 +152,8 @@ class Z(object):
         
         self._phase = None
         self._phase_err = None
+        
+        self._compute_res_phase()
 
     #---frequency-------------------------------------------------------------
     def _set_freq(self, lo_freq):
