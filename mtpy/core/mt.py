@@ -45,13 +45,30 @@ class MT(object):
     utm_zone              zone of UTM coordinates assuming WGS-84
     ===================== =====================================================
         
-    .. note:: can change the utm grid by changing _utm_ellipsoid.  See 
-              mtpy.utils.latlongutmconversion for details on reference 
-              ellipsoids
+    .. note:: 
+        * can change the utm grid by changing _utm_ellipsoid.  See 
+          mtpy.utils.latlongutmconversion for details on reference 
+          ellipsoids
+        
+        * currently the information is assumed to come from an edi file
+          but can be extended later to .j files or something else or can
+          be input by hand
               
-    .. note:: currently the information is assumed to come from an edi file
-              but can be extended later to .j files or something else or can
-              be input by hand
+        * if you set the coordinates east, north or utm_zone, be sure to 
+          run _get_ll() to recalculate the latitude and longitude.
+          
+        * can input the following key words to fill values in Z and Tipper:
+            - z_object        --> mtpy.core.z.Z object
+            - z_array         --> np.ndarray(n_freq, 2, 2, dtype='complex')
+            - zerr_array      --> np.ndarray(n_freq, 2, 2)
+            - freq            --> np.ndarray(n_freq)
+            - resistivity     --> np.ndarray(n_freq, 2, 2) (linear scale)
+            - resistivity_err --> np.ndarray(n_freq, 2, 2) 
+            - phase           --> np.ndarray(n_freq, 2, 2)           
+            - phase_err       --> np.ndarray(n_freq, 2, 2) 
+            - tipper_object   --> mtpy.core.z.Tipper object
+            - tipper          --> np.ndarray(n_freq, 1, 2, dtype='complex') 
+            - tippererr       --> np.ndarray(n_freq, 1, 2)
         
     ===================== =====================================================
     **methods**           Description
@@ -60,7 +77,9 @@ class MT(object):
     remove_distortion     remove distortion from the data following 
                           Bibby et al. [2005]
     ===================== =====================================================
+    
         
+    
     """
     
     def __init__(self, fn=None, **kwargs):
@@ -76,12 +95,46 @@ class MT(object):
         self._east = kwargs.pop('east', None)
         self._north = kwargs.pop('north', None)
         self._rotation_angle = kwargs.pop('rotation_angle', 0)
-
+        
+        #provide key words to fill values if an edi file does not exist
+        if 'z_object' in kwargs:
+            self._Z = kwargs['z_object']
+            
+        if 'z_array' in kwargs:
+            self._Z.z = kwargs['z_array']
+        
+        if 'zerr_array' in kwargs:
+            self._Z.zerr = kwargs['zerr_array']
+        
+        if 'freq' in kwargs:
+            self._Z.freq = kwargs['freq']
+            self.Tipper.freq = kwargs['freq']
+            
+        if 'tipper_object' in kwargs:
+            self.Tipper = kwargs['tipper_object']
+            
+        if 'tipper' in kwargs:
+            self.Tipper.tipper = kwargs['tipper']
+        
+        if 'tippererr' in kwargs:
+            self.Tipper.tippererr = kwargs['tippererr']
+            
+        if 'resisitivity' in kwargs:
+            self._Z.resistivity = kwargs['resistivity']
+        
+        if 'resisitivity_err' in kwargs:
+            self._Z.resistivity_err = kwargs['resistivity_err']
+        
+        if 'phase' in kwargs:
+            self._Z.phase = kwargs['phase']
+            
+        if 'phase_err' in kwargs:
+            self._Z.phase = kwargs['phase_err']
         
         
         self.edi_object = MTedi.Edi()
-        self.pt = MTpt.PhaseTensor()
-        self.zinv = MTinv.Zinvariants()
+        self.pt = None
+        self.zinv = None
         self._utm_ellipsoid = 23
 
         #--> read in the edi file if its given
@@ -105,7 +158,8 @@ class MT(object):
         
         self._lat = MTformat._assert_position_format('lat', latitude)
         
-        self._get_utm()
+        if self._lon is not None and self._lat is not None:
+            self._get_utm()
         
     def _set_lon(self, longitude):
         """
@@ -116,7 +170,8 @@ class MT(object):
         
         self._lon = MTformat._assert_position_format('lon', longitude)
         
-        self._get_utm()
+        if self._lon is not None and self._lat is not None:
+            self._get_utm()
         
     def _set_east(self, easting):
         """
@@ -127,8 +182,6 @@ class MT(object):
         
         self._east = easting
         
-        self._get_ll()
-        
     def _set_north(self, northing):
         """
         set northing in meters
@@ -137,8 +190,7 @@ class MT(object):
         """
         
         self._north = northing
-        
-        self._get_ll()
+    
         
     def _set_utm_zone(self, utm_zone):
         """
@@ -148,8 +200,6 @@ class MT(object):
         """
         
         self._utm_zone = utm_zone
-        
-        self._get_ll()
         
     def _set_fn(self, filename):
         """
@@ -255,8 +305,8 @@ class MT(object):
         get utm coordinates from lat and lon
         """
         
-        self.zone, self.east, self.north = MTutm.LLtoUTM(self._utm_ellipsoid,
-                                                         self.lat, self.lon)
+        self.utm_zone, self.east, self.north = MTutm.LLtoUTM(self._utm_ellipsoid,
+                                                             self.lat, self.lon)
                                                          
     def _get_ll(self):
         """
@@ -275,7 +325,7 @@ class MT(object):
         
         """
         
-        self.edi_object = MTedi.Edi(self.edi_fn)
+        self.edi_object = MTedi.Edi(self.fn)
         self.lat = self.edi_object.lat
         self.lon = self.edi_object.lon
         self.elev = self.edi_object.elev
@@ -332,7 +382,7 @@ class MT(object):
             self.Z.zerr = self.Z.zerr.copy()[::-1]
             self.Z.freq = self.Z.freq.copy()[::-1]
             
-        if self._Tipper.tipper is not None:
+        if self.Tipper.tipper is not None:
             if self.Tipper.freq[0] < self.Tipper.freq[1]:
                 self.Tipper.tipper = self.Tipper.tipper.copy()[::-1]
                 self.Tipper.tippererr = self.Tipper.tippererr.copy()[::-1]
