@@ -10,10 +10,12 @@ import sys
 
 n_xpadding = 5
 n_ypadding = 6
-#factor with which the padding stretches outside the central rectangle grid
-padding_stretch = 2
 
-n_layers = 20
+#number of vertical padding layers is set to 3 !
+#factor with which the padding stretches outside the central rectangle grid
+padding_stretch = 1.5
+
+n_layers = 15
 
 #determine minimum block sizes
 #used in the inner rectangle - constant widths
@@ -187,7 +189,7 @@ for idy_pad in range(n_ypadding):
 xmin_padded = grid_x_points[0]
 ymin_padded = grid_y_points[0]
 
-#now transfer the block coordinates into block widths
+# transfer the block coordinates into block widths
 xblocks = []
 for idx_x in range(len(grid_x_points)-1):
 	xblocks.append(grid_x_points[idx_x+1] - grid_x_points[idx_x])
@@ -196,18 +198,20 @@ for idy_y in range(len(grid_y_points)-1):
 	yblocks.append(grid_y_points[idy_y+1] - grid_y_points[idy_y])
 
 #---------------------------------------------------------------------
+n_zpadding = 3
 
 #build block depths:
 
-n_layers_eff = n_layers - 2
-#one padding and one splitted uppermost layer
+n_layers_eff = n_layers - 1
+#splitted uppermost layer
 
 log_part_thickness = model_depth - (n_layers_eff-1) * z0
 depths = np.logspace( np.log10(z0), np.log10(log_part_thickness), n_layers_eff ) + \
 					 np.arange(n_layers_eff) * z0
 
+
 depths = list(depths)
-depths.append(3*max(depths))
+
 thicknesses = [z0/2.]
 for i, layer in enumerate(depths):
 	if i == 0 :
@@ -215,11 +219,34 @@ for i, layer in enumerate(depths):
 	else:
 		t = layer - depths[i-1]
 	thicknesses.append(t)
-thicknesses.append(3*max(thicknesses))
+print thicknesses
 
+padding = [thicknesses[-1]*padding_stretch]
+for idx_pad in range(n_zpadding-1):
+	padding.append(padding[-1]*padding_stretch)
+total_padding = np.sum(padding)
+pad_ratio = total_padding/model_depth
+
+if pad_ratio < 1:
+	padding = list(np.array(padding)/pad_ratio)
+if pad_ratio >2 :
+	padding = list(np.array(padding)/pad_ratio*2)
+print pad_ratio ,total_padding,model_depth
+print padding, np.sum(padding)
+
+
+thicknesses.extend(padding)
+
+
+grid_z_points = [0]
+for t in thicknesses:
+	grid_z_points.append(grid_z_points[-1]+t)
+
+
+#some information for the user:
 print '\n\t Model set up - dimensions: {0:.1f}x{1:.1f}x{2:.1f} km^3 ({3}x{4}x{5} cells)\n'.format(
 	(grid_x_points[-1]-grid_x_points[0])/1000.,(grid_y_points[-1]-grid_y_points[0])/1000.,
-	depths[-1]/1000.,len(grid_x_points),len(grid_y_points),len(depths))
+	depths[-1]/1000.,len(grid_x_points)-1,len(grid_y_points)-1,len(grid_z_points)-1)
 
 
 outstring += '{0}    {1}    {2}    {3}    {4}\n'.format(len(xblocks),len(yblocks),
@@ -274,27 +301,50 @@ Fout.write(outstring)
 Fout.close()
 
 
-def plotgrid(stations,grid_x,grid_y):
+def plotgrid(stations,grid_x,grid_y,grid_z=None, n_xpadding = None, n_y_padding=None, n_zpadding_layers = None):
 	from pylab import *
+	ion()
 	close('all')
+	
+
+	grid_x = [i/1000. for i in grid_x]
+	grid_y = [i/1000. for i in grid_y]
 
 	# Note: X and Y are swapped - mathematical definition used in the plotting functions!!!
+	#fig = figure(1)
+	#ax = fig.gca()
+	fig = figure(figsize=(8, 6))
+	if 	grid_z is not None:
+		ax = subplot2grid((1, 3), (0, 0), colspan=2,aspect='equal')
+	else:
+		ax = subplot2grid((1, 3), (0, 0), colspan=3,aspect='equal')
+	
 
-	fig,ax = subplots()#(1,1,1)
-	scatter(stations[:,1],stations[:,0],c='r')
-	scatter([ymin_padded],[xmin_padded],c='b',marker='x',s=30)
+	#ax = subplot(1,2,1)
+	ax.scatter(stations[:,1]/1000.,stations[:,0]/1000.,c='r')
+	ax.scatter([ymin_padded/1000.],[xmin_padded/1000.],c='b',marker='x',s=40)
 	outline_x = [min(grid_x),min(grid_x),max(grid_x),max(grid_x),min(grid_x)]
 	outline_y = [min(grid_y),max(grid_y),max(grid_y),min(grid_y),min(grid_y)]
-	plot(outline_y,outline_x)
+	ax.plot(outline_y,outline_x,c='r')
+	
+
+	if n_xpadding is not None and n_ypadding is not None: 
+		regular_x = [grid_x[n_xpadding],grid_x[n_xpadding],
+					grid_x[-n_xpadding],grid_x[-n_xpadding],grid_x[n_xpadding]]
+		regular_y = [grid_y[n_ypadding],grid_y[-n_ypadding],
+					grid_y[-n_ypadding],grid_y[n_ypadding],grid_y[n_ypadding]]
+		ax.plot(regular_y,regular_x,c='b')
+
+
 
 	extension_factor = 0.1
 	x_extent = max(grid_x) - min(grid_x)
 	x_extension = extension_factor * x_extent
+	ax.set_ylim([min(grid_x) - x_extension,max(grid_x) + x_extension])
 	
-	ylim([min(grid_x) - x_extension,max(grid_x) + x_extension])
 	y_extent = max(grid_y) - min(grid_y)
 	y_extension = extension_factor * y_extent
-	xlim([min(grid_y) - y_extension,max(grid_y) + y_extension])
+	ax.set_xlim([min(grid_y) - y_extension,max(grid_y) + y_extension])
 	
 
 	ax.set_yticks(grid_x, minor=True)
@@ -303,12 +353,50 @@ def plotgrid(stations,grid_x,grid_y):
 	ax.set_xticks(grid_y, minor=True)
 	ax.xaxis.grid(False, which='major')
 	ax.xaxis.grid(True, which='minor',c='g')
-	xlabel('Easting (Y-coordionate) in m')
-	ylabel('Northing (X-coordionate) in m')
-	title('Model geometry (origin at {0:.1f},{1:.1f})'.format(xmin_padded,ymin_padded))
-
+	ax.set_xlabel('Easting (Y-coordinate) in km')
+	ax.set_ylabel('Northing (X-coordinate) in km')
+	ax.set_title('Model geometry (origin at {0:.1f},{1:.1f})'.format(xmin_padded,ymin_padded))
+	ax.set_aspect('equal',adjustable='box')
 	draw()
+
+	if grid_z is not None:
+
+		grid_z = [-i/1000. for i in grid_z]
+		bottom_index = len(grid_z) - n_zpadding_layers -1
+		
+		ax2 = subplot2grid((1, 3), (0, 2),aspect='equal')
+		#fig2 = figure(2)
+		#ax2 = fig2.gca()
+		#ax2 = subplot(1,2,2)
+		outline_z = [min(grid_z),min(grid_z),max(grid_z),max(grid_z),min(grid_z)]
+		outline_y = [min(grid_y),max(grid_y),max(grid_y),min(grid_y),min(grid_y)]
+		plot(outline_y,outline_z,c='r')
+
+		plot([min(grid_y),max(grid_y)],[grid_z[bottom_index],grid_z[bottom_index]],c='b')
+
+		ax2.axhline(linewidth=2, color='k')
+
+		extension_factor = 0.1
+
+		z_extent = max(grid_z) - min(grid_z)
+		z_extension = extension_factor * z_extent
+		ax2.set_ylim([min(grid_z) - z_extension,max(grid_z) + z_extension])
+		
+		y_extent = max(grid_y) - min(grid_y)
+		y_extension = extension_factor * y_extent
+		ax2.set_xlim([min(grid_y) - y_extension,max(grid_y) + y_extension])
+		#ax2.set_aspect('equal','datalim')
+		ax2.set_yticks(grid_z, minor=True)
+		ax2.yaxis.grid(False, which='major')
+		ax2.yaxis.grid(True, which='minor',c='k')
+		ax2.set_xlabel('Easting (Y-coordinate) in km')
+		ax2.set_ylabel('Depth in km')
+		ax2.set_title('Model layers')
+
+		ax2.set_aspect('equal',adjustable='box')
+
+	#tight_layout()
 	show()
 	raw_input()
 
-plotgrid(coords,grid_x_points,grid_y_points)
+plotgrid(coords,grid_x_points,grid_y_points,grid_z_points,n_xpadding,n_ypadding, n_zpadding)
