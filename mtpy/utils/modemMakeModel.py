@@ -3,7 +3,7 @@
 #build ModEM input Model from ModEM data file
 
 import numpy as np
-
+import sys
 #==============================================================================
 
 # paramters:
@@ -11,22 +11,25 @@ import numpy as np
 n_xpadding = 5
 n_ypadding = 6
 #factor with which the padding stretches outside the central rectangle grid
-padding_stretch = 1.4
+padding_stretch = 2
 
-n_layers = 11
+n_layers = 20
 
 #determine minimum block sizes
 #used in the inner rectangle - constant widths
-dx = 500
-dy = 400
+dx = 470
+dy = 500
 #region around stations discretised with these sizes
 #outside, the grid steps will be extended exponentially
 #the size of padding is determined by  the numbers of cells as defined above
 
-#depth of first layer
-z0 = 1000
+#number of trys to shift the grid for getting own cells for each station
+n_maximum_gridshifts = 70
 
-#total model depth
+#depth of first layer
+z0 = 500
+
+#total model depth in meters
 model_depth = 100000
 
 #stretching factor for the whole model extension
@@ -36,7 +39,7 @@ model_extension_factor = 1.
 rho0 = 100.
 
 #name of datafile (to be handled as argument later on)
-datafile = 'de.dat'
+datafile = 'Modular_NLCG_002.data'
 
 #name of output model file
 modelfile = 'THE_modelfile.rho'
@@ -53,19 +56,19 @@ data = Fin.readlines()
 Fin.close()
 
 coords = []
-line_8 = data[7].strip().split()
+#line_8 = data[7].strip().split()
 
 
-n_datapoints = float(line_8[1]) * float(line_8[2]) * 4
+#n_datapoints = int(float(line_8[1]) * float(line_8[2]) * 4)
 
 #read station coordinates
 #start in line after header info, determined by starting character '>'
 for dataline in data:
-	if dataline.strip()[0] in ['#','>']:
+	line = dataline.strip().split()
+	if (len(line) == 0) or line[0].strip()[0] in ['#','>']:
 		continue
 	try:
-		line = data[int(l)]
-		line = line.strip().split()
+		line = dataline.strip().split()
 		co = (float(line[4]),float(line[5]),float(line[6]))
 		coords.append(co)
 	except:
@@ -74,6 +77,7 @@ for dataline in data:
 # local, Cartesian coordinates:
 coords = np.array(list(set(coords)))
 
+#reduce grid to 2D - assuming all stations are at the surface
 xmin = min(coords[:,0])
 xmax = max(coords[:,0])
 ymin = min(coords[:,1])
@@ -82,61 +86,121 @@ ymax = max(coords[:,1])
 x_range = xmax - xmin
 y_range = ymax - ymin
 
-n_center_xblocks = int(x_range/dx) + 1
-n_center_yblocks = int(y_range/dy) + 1
+n_center_xblocks = int(x_range/dx) + 3
+n_center_yblocks = int(y_range/dy) + 3
 
-...
+center_widthX = n_center_xblocks * dx
+center_widthY = n_center_yblocks * dy
 
-x0 = np.mean(coords[:,0])
-y0 = np.mean(coords[:,1])
+surplusX = center_widthX - x_range
+surplusY = center_widthY - y_range
 
-xmin_eff = xmin - x_range
-xmax_eff = xmax + x_range
-ymin_eff = ymin - y_range
-ymax_eff = ymax + y_range
+all_points_in_single_cell = False
+n_shifts = 0 
+x_shifts = 0 
+y_shifts = 0 
 
-#--------------------------------------------
-# calculate size of x blocks:
-# at the moment just use even numbers of blocks:
-half_n_xblocks = int(n_xblocks/2) - 1
-#leave one block out for side padding
-length2cover_x =  (xmax_eff - xmin_eff )/2.
-minblock = 2*length2cover_x/(half_n_xblocks * (half_n_xblocks+1))
 
-blockwidths_x = list(minblock * (np.arange(half_n_xblocks)+1))
+while all_points_in_single_cell is False:
+	if n_shifts > n_maximum_gridshifts:
+		break
 
-#add the padding cell:
-blockwidths_x.append(3*max(blockwidths_x))
+	shifting_fraction = np.sqrt(n_maximum_gridshifts) + 1
 
-xmin_padded = xmin_eff - blockwidths_x[-1]
+	offset_x = x_shifts * dx/shifting_fraction
+	offset_y = y_shifts * dy/shifting_fraction
 
-xblocks = blockwidths_x[::-1]
-xblocks.extend(blockwidths_x)
+	if n_shifts >0:
+		print '{0} shift(s): x-offset {1} m - y-offset {2} m'.format(n_shifts,offset_x,offset_y)
 
-#--------------------------------------------
-# calculate size of y blocks:
-# at the moment just use even numbers of blocks:
-half_n_yblocks = int(n_yblocks/2) - 1
-#leave one block out for side padding
-length2cover_y =  (ymax_eff - ymin_eff )/2.
-minblock = 2*length2cover_y/(half_n_yblocks * (half_n_yblocks+1))
 
-blockwidths_y = list(minblock * (np.arange(half_n_yblocks)+1))
+	center_x0 = xmin - surplusX/2. + offset_x
+	center_y0 = ymin - surplusY/2. + offset_y
 
-#add the padding cell:
-blockwidths_y.append(3*max(blockwidths_y))
+	grid_x_points = (np.arange(n_center_xblocks+1) * dx) + center_x0
+	grid_y_points = (np.arange(n_center_yblocks+1) * dy) + center_y0
 
-ymin_padded = ymin_eff - blockwidths_y[-1]
 
-yblocks = blockwidths_y[::-1]
-yblocks.extend(blockwidths_y)
+	station_cells = []
 
-#--------------------------------------------
+	for idx_sta,co in enumerate(coords):
+		idx_x = np.argmin(np.abs(grid_x_points-co[0]))
+		if (grid_x_points-co[0])[idx_x] == 0:
+			# coordinate lies on a node line => need to shift
+			print 'station coordinates lie on cell nodes'
+			break
+		#otherwise, shift the index to correspond with the row of blocks, if necessary:
+		if grid_x_points[idx_x] > co[0] : 
+			idx_x -= 1
+		idx_y = np.argmin(np.abs(grid_y_points-co[1]))
+		if (grid_y_points-co[1])[idx_y] == 0:
+			# coordinate lies on a node line => need to shift
+			break
+		#otherwise, shift the index to correspond with the row of blocks, if necessary:
+		if grid_y_points[idx_y] > co[1] : 
+			idx_y -= 1
+
+		#cells enumerated West->East first, then northwards
+		cell_index = idx_x * n_center_xblocks + idx_y
+		station_cells.append(cell_index)
+
+	if len(set(station_cells)) == len(coords):
+		all_points_in_single_cell = True
+
+
+	#shift the grid 
+	x_shifts += 1
+	if x_shifts >= (shifting_fraction - 1):
+		x_shifts = 0
+		y_shifts += 1
+
+	n_shifts += 1
+	
+
+
+if all_points_in_single_cell < 1:
+	print 'ERROR - cannot build grid having each station in a single cell!\n'\
+	'change the values for dx,dy or remove stations'
+	sys.exit()
+
+
+#Now the inner grid is  well distributed over the stations
+#add padding to the sides:
+
+grid_x_points = list(grid_x_points)
+x_padding_widths = [dx]
+for idx_pad in range(n_xpadding):
+	pad = x_padding_widths[-1] * padding_stretch
+	grid_x_points.insert(0,grid_x_points[0]-pad)
+	grid_x_points.append(grid_x_points[-1]+pad)
+	x_padding_widths.append(pad)
+
+grid_y_points = list(grid_y_points)
+y_padding_widths = [dy]
+for idy_pad in range(n_ypadding):
+	pad = y_padding_widths[-1] * padding_stretch
+	grid_y_points.insert(0,grid_y_points[0]-pad)
+	grid_y_points.append(grid_y_points[-1]+pad)
+	y_padding_widths.append(pad)
+
+
+xmin_padded = grid_x_points[0]
+ymin_padded = grid_y_points[0]
+
+#now transfer the block coordinates into block widths
+xblocks = []
+for idx_x in range(len(grid_x_points)-1):
+	xblocks.append(grid_x_points[idx_x+1] - grid_x_points[idx_x])
+yblocks = []
+for idy_y in range(len(grid_y_points)-1):
+	yblocks.append(grid_y_points[idy_y+1] - grid_y_points[idy_y])
+
+#---------------------------------------------------------------------
 
 #build block depths:
 
 n_layers_eff = n_layers - 2
-one padding and one spilt uppermost layer
+#one padding and one splitted uppermost layer
 
 log_part_thickness = model_depth - (n_layers_eff-1) * z0
 depths = np.logspace( np.log10(z0), np.log10(log_part_thickness), n_layers_eff ) + \
@@ -152,6 +216,10 @@ for i, layer in enumerate(depths):
 		t = layer - depths[i-1]
 	thicknesses.append(t)
 thicknesses.append(3*max(thicknesses))
+
+print '\n\t Model set up - dimensions: {0:.1f}x{1:.1f}x{2:.1f} km^3 ({3}x{4}x{5} cells)\n'.format(
+	(grid_x_points[-1]-grid_x_points[0])/1000.,(grid_y_points[-1]-grid_y_points[0])/1000.,
+	depths[-1]/1000.,len(grid_x_points),len(grid_y_points),len(depths))
 
 
 outstring += '{0}    {1}    {2}    {3}    {4}\n'.format(len(xblocks),len(yblocks),
@@ -206,4 +274,41 @@ Fout.write(outstring)
 Fout.close()
 
 
+def plotgrid(stations,grid_x,grid_y):
+	from pylab import *
+	close('all')
 
+	# Note: X and Y are swapped - mathematical definition used in the plotting functions!!!
+
+	fig,ax = subplots()#(1,1,1)
+	scatter(stations[:,1],stations[:,0],c='r')
+	scatter([ymin_padded],[xmin_padded],c='b',marker='x',s=30)
+	outline_x = [min(grid_x),min(grid_x),max(grid_x),max(grid_x),min(grid_x)]
+	outline_y = [min(grid_y),max(grid_y),max(grid_y),min(grid_y),min(grid_y)]
+	plot(outline_y,outline_x)
+
+	extension_factor = 0.1
+	x_extent = max(grid_x) - min(grid_x)
+	x_extension = extension_factor * x_extent
+	
+	ylim([min(grid_x) - x_extension,max(grid_x) + x_extension])
+	y_extent = max(grid_y) - min(grid_y)
+	y_extension = extension_factor * y_extent
+	xlim([min(grid_y) - y_extension,max(grid_y) + y_extension])
+	
+
+	ax.set_yticks(grid_x, minor=True)
+	ax.yaxis.grid(False, which='major')
+	ax.yaxis.grid(True, which='minor',c='g')
+	ax.set_xticks(grid_y, minor=True)
+	ax.xaxis.grid(False, which='major')
+	ax.xaxis.grid(True, which='minor',c='g')
+	xlabel('Easting (Y-coordionate) in m')
+	ylabel('Northing (X-coordionate) in m')
+	title('Model geometry (origin at {0:.1f},{1:.1f})'.format(xmin_padded,ymin_padded))
+
+	draw()
+	show()
+	raw_input()
+
+plotgrid(coords,grid_x_points,grid_y_points)
