@@ -6,7 +6,7 @@ import numpy as np
 import sys
 #==============================================================================
 
-# paramters:
+# parameters:
 
 n_xpadding = 5
 n_ypadding = 6
@@ -19,14 +19,14 @@ n_layers = 15
 
 #determine minimum block sizes
 #used in the inner rectangle - constant widths
-dx = 470
-dy = 500
+dx = 300
+dy = 200
 #region around stations discretised with these sizes
 #outside, the grid steps will be extended exponentially
 #the size of padding is determined by  the numbers of cells as defined above
 
 #number of trys to shift the grid for getting own cells for each station
-n_maximum_gridshifts = 70
+n_maximum_gridshifts = 100
 
 #depth of first layer
 z0 = 500
@@ -39,6 +39,16 @@ model_extension_factor = 1.
 
 #starting resistivity value for homog. halfspace setup
 rho0 = 100.
+#==============================================================================
+#allow rotation of the grid along a known geo electrical strike angle
+# X,Y will be rotated to X',Y' with X' along strike
+#rotation center is the midpoint of the station loactions
+strike = 0.
+#NOTE: if strike is set to a value !=0, the locations of the stations have to 
+#be adapted in the data file in the same way!!!
+#==============================================================================
+
+
 
 #name of datafile (to be handled as argument later on)
 datafile = 'Modular_NLCG_002.data'
@@ -46,6 +56,7 @@ datafile = 'Modular_NLCG_002.data'
 #name of output model file
 modelfile = 'THE_modelfile.rho'
 
+#==============================================================================
 #==============================================================================
 #==============================================================================
 
@@ -78,6 +89,32 @@ for dataline in data:
 
 # local, Cartesian coordinates:
 coords = np.array(list(set(coords)))
+strike=12
+if strike != 0:
+	original_coords = coords.copy()
+	cosphi = np.cos(strike/180.*np.pi)
+	sinphi = np.sin(strike/180.*np.pi)
+	RotMat = np.matrix(np.array([cosphi,sinphi,-sinphi,cosphi]).reshape(2,2))
+
+	center = (np.mean(coords[:,0]),np.mean(coords[:,1]))
+
+	rel_coords = coords[:,:2]
+	rel_coords[:,0] = coords[:,0] - center[0]
+	rel_coords[:,1] = coords[:,1] - center[1]
+
+	rotated_coords = np.dot(RotMat,np.matrix(rel_coords).T).T
+	rotated_coords[:,0] = rotated_coords[:,0] + center[0]
+	rotated_coords[:,1] = rotated_coords[:,1] + center[1]
+
+	coords[:,:2] =  rotated_coords
+
+	print center
+	print original_coords[:5]
+	print rel_coords[:5]
+	print rotated_coords[:5]
+	#sys.exit()
+
+
 
 #reduce grid to 2D - assuming all stations are at the surface
 xmin = min(coords[:,0])
@@ -219,7 +256,6 @@ for i, layer in enumerate(depths):
 	else:
 		t = layer - depths[i-1]
 	thicknesses.append(t)
-print thicknesses
 
 padding = [thicknesses[-1]*padding_stretch]
 for idx_pad in range(n_zpadding-1):
@@ -231,8 +267,7 @@ if pad_ratio < 1:
 	padding = list(np.array(padding)/pad_ratio)
 if pad_ratio >2 :
 	padding = list(np.array(padding)/pad_ratio*2)
-print pad_ratio ,total_padding,model_depth
-print padding, np.sum(padding)
+
 
 
 thicknesses.extend(padding)
@@ -397,6 +432,6 @@ def plotgrid(stations,grid_x,grid_y,grid_z=None, n_xpadding = None, n_y_padding=
 
 	#tight_layout()
 	show()
-	raw_input()
+	#raw_input()
 
 plotgrid(coords,grid_x_points,grid_y_points,grid_z_points,n_xpadding,n_ypadding, n_zpadding)
