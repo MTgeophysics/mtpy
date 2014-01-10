@@ -3,13 +3,13 @@
 #build ModEM input Model from ModEM data file
 
 import numpy as np
-import sys
+import sys,os
 #==============================================================================
 
 # parameters:
 
-n_xpadding = 5
-n_ypadding = 6
+n_xpadding = 6
+n_ypadding = 5
 
 #number of vertical padding layers is set to 3 !
 #factor with which the padding stretches outside the central rectangle grid
@@ -19,14 +19,14 @@ n_layers = 15
 
 #determine minimum block sizes
 #used in the inner rectangle - constant widths
-dx = 300
-dy = 200
+dx = 12000
+dy = 5000
 #region around stations discretised with these sizes
 #outside, the grid steps will be extended exponentially
 #the size of padding is determined by  the numbers of cells as defined above
 
 #number of trys to shift the grid for getting own cells for each station
-n_maximum_gridshifts = 100
+n_maximum_gridshifts = 130
 
 #depth of first layer
 z0 = 500
@@ -51,7 +51,7 @@ strike = 0.
 
 
 #name of datafile (to be handled as argument later on)
-datafile = 'Modular_NLCG_002.data'
+datafile = 'ModEMdata.dat'
 
 #name of output model file
 modelfile = 'THE_modelfile.rho'
@@ -108,10 +108,6 @@ if strike != 0:
 
 	coords[:,:2] =  rotated_coords
 
-	print center
-	print original_coords[:5]
-	print rel_coords[:5]
-	print rotated_coords[:5]
 	#sys.exit()
 
 
@@ -431,7 +427,16 @@ def plotgrid(stations,grid_x,grid_y,grid_z=None, n_xpadding = None, n_y_padding=
 		ax2.set_aspect('equal',adjustable='box')
 
 	#tight_layout()
-	show()
+	show(block=True)
 	#raw_input()
+
+#generate an interactive plot window, which remains open after this script has finshed: 
+proc_num = os.fork()
+
+if proc_num != 0:
+    #This is the parent process, that should quit immediately to return to the
+    #shell.
+    print "You can kill the plot window with the command \"kill %d\"." % proc_num
+    sys.exit()
 
 plotgrid(coords,grid_x_points,grid_y_points,grid_z_points,n_xpadding,n_ypadding, n_zpadding)
