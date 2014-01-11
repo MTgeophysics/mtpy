@@ -6,10 +6,12 @@ import numpy as np
 import sys,os
 #==============================================================================
 
+plot = True
+
 # parameters:
 
 n_xpadding = 6
-n_ypadding = 5
+n_ypadding = 6
 
 #number of vertical padding layers is set to 3 !
 #factor with which the padding stretches outside the central rectangle grid
@@ -19,23 +21,23 @@ n_layers = 15
 
 #determine minimum block sizes
 #used in the inner rectangle - constant widths
-dx = 12000
-dy = 5000
+dx = 430
+dy = 550
 #region around stations discretised with these sizes
 #outside, the grid steps will be extended exponentially
 #the size of padding is determined by  the numbers of cells as defined above
 
 #number of trys to shift the grid for getting own cells for each station
-n_maximum_gridshifts = 130
+n_maximum_gridshifts = 123
 
 #depth of first layer
 z0 = 500
 
 #total model depth in meters
-model_depth = 100000
+model_depth = 60000
 
 #stretching factor for the whole model extension
-model_extension_factor = 1.
+model_extension_factor = 3
 
 #starting resistivity value for homog. halfspace setup
 rho0 = 100.
@@ -89,7 +91,7 @@ for dataline in data:
 
 # local, Cartesian coordinates:
 coords = np.array(list(set(coords)))
-strike=12
+
 if strike != 0:
 	original_coords = coords.copy()
 	cosphi = np.cos(strike/180.*np.pi)
@@ -191,6 +193,8 @@ while all_points_in_single_cell is False:
 
 	n_shifts += 1
 	
+x_range = np.max(grid_x_points) - np.min(grid_x_points)
+y_range = np.max(grid_y_points) - np.min(grid_y_points)
 
 
 if all_points_in_single_cell < 1:
@@ -206,17 +210,34 @@ grid_x_points = list(grid_x_points)
 x_padding_widths = [dx]
 for idx_pad in range(n_xpadding):
 	pad = x_padding_widths[-1] * padding_stretch
-	grid_x_points.insert(0,grid_x_points[0]-pad)
-	grid_x_points.append(grid_x_points[-1]+pad)
 	x_padding_widths.append(pad)
+x_padding_widths.pop(0)
+#extend the padding to at least the extent of the regular grid:
+
+pad_ratio = np.sum(x_padding_widths)/(x_range * model_extension_factor)
+if pad_ratio < 1:
+	x_padding_widths = np.array(x_padding_widths)/pad_ratio
+
+#add the padding to the grid
+for idx_pad in range(n_xpadding):
+	grid_x_points.insert(0,grid_x_points[0]-x_padding_widths[idx_pad])
+	grid_x_points.append(grid_x_points[-1]+x_padding_widths[idx_pad])
 
 grid_y_points = list(grid_y_points)
 y_padding_widths = [dy]
 for idy_pad in range(n_ypadding):
 	pad = y_padding_widths[-1] * padding_stretch
-	grid_y_points.insert(0,grid_y_points[0]-pad)
-	grid_y_points.append(grid_y_points[-1]+pad)
 	y_padding_widths.append(pad)
+y_padding_widths.pop(0)
+#extend the padding to at least the extent of the regular grid:
+
+pad_ratio = np.sum(y_padding_widths)/(y_range * model_extension_factor)
+if pad_ratio < 1:
+	y_padding_widths = np.array(y_padding_widths)/pad_ratio
+#add the padding to the grid
+for idy_pad in range(n_ypadding):
+	grid_y_points.insert(0,grid_y_points[0]-y_padding_widths[idy_pad])
+	grid_y_points.append(grid_y_points[-1]+y_padding_widths[idy_pad])
 
 
 xmin_padded = grid_x_points[0]
@@ -321,7 +342,7 @@ for idx_z in range(len(thicknesses)):
 	outstring += z_string
 
 
-co_reference = '{0}  {1}  {2} \n'.format(xmin_padded,ymin_padded,0)
+co_reference = '{0}  {1}  {2} \n'.format(np.min(grid_x_points),np.min(grid_y_points),0)
 
 outstring += co_reference
 
@@ -333,7 +354,6 @@ Fout.close()
 
 
 def plotgrid(stations,grid_x,grid_y,grid_z=None, n_xpadding = None, n_y_padding=None, n_zpadding_layers = None):
-	from pylab import *
 	ion()
 	close('all')
 	
@@ -346,9 +366,9 @@ def plotgrid(stations,grid_x,grid_y,grid_z=None, n_xpadding = None, n_y_padding=
 	#ax = fig.gca()
 	fig = figure(figsize=(8, 6))
 	if 	grid_z is not None:
-		ax = subplot2grid((1, 3), (0, 0), colspan=2,aspect='equal')
+		ax = subplot2grid((1, 4), (0, 0), colspan=3,aspect='equal')
 	else:
-		ax = subplot2grid((1, 3), (0, 0), colspan=3,aspect='equal')
+		ax = subplot2grid((1, 4), (0, 0), colspan=4,aspect='equal')
 	
 
 	#ax = subplot(1,2,1)
@@ -361,9 +381,9 @@ def plotgrid(stations,grid_x,grid_y,grid_z=None, n_xpadding = None, n_y_padding=
 
 	if n_xpadding is not None and n_ypadding is not None: 
 		regular_x = [grid_x[n_xpadding],grid_x[n_xpadding],
-					grid_x[-n_xpadding],grid_x[-n_xpadding],grid_x[n_xpadding]]
-		regular_y = [grid_y[n_ypadding],grid_y[-n_ypadding],
-					grid_y[-n_ypadding],grid_y[n_ypadding],grid_y[n_ypadding]]
+					grid_x[-n_xpadding-1],grid_x[-n_xpadding-1],grid_x[n_xpadding]]
+		regular_y = [grid_y[n_ypadding],grid_y[-n_ypadding-1],
+					grid_y[-n_ypadding-1],grid_y[n_ypadding],grid_y[n_ypadding]]
 		ax.plot(regular_y,regular_x,c='b')
 
 
@@ -395,7 +415,7 @@ def plotgrid(stations,grid_x,grid_y,grid_z=None, n_xpadding = None, n_y_padding=
 		grid_z = [-i/1000. for i in grid_z]
 		bottom_index = len(grid_z) - n_zpadding_layers -1
 		
-		ax2 = subplot2grid((1, 3), (0, 2),aspect='equal')
+		ax2 = subplot2grid((1, 4), (0, 3),aspect='equal')
 		#fig2 = figure(2)
 		#ax2 = fig2.gca()
 		#ax2 = subplot(1,2,2)
@@ -426,17 +446,20 @@ def plotgrid(stations,grid_x,grid_y,grid_z=None, n_xpadding = None, n_y_padding=
 
 		ax2.set_aspect('equal',adjustable='box')
 
-	#tight_layout()
+	tight_layout()
 	show(block=True)
 	#raw_input()
 
-#generate an interactive plot window, which remains open after this script has finshed: 
-proc_num = os.fork()
 
-if proc_num != 0:
-    #This is the parent process, that should quit immediately to return to the
-    #shell.
-    print "You can kill the plot window with the command \"kill %d\"." % proc_num
-    sys.exit()
+if plot == True:
+	#generate an interactive plot window, which remains open after this script has finshed: 
+	proc_num = os.fork()
 
-plotgrid(coords,grid_x_points,grid_y_points,grid_z_points,n_xpadding,n_ypadding, n_zpadding)
+	if proc_num != 0:
+	    #This is the parent process, that should quit immediately to return to the
+	    #shell.
+	    print "You can kill the plot window with the command \"kill %d\"." % proc_num
+	    sys.exit()
+
+	from pylab import *
+	plotgrid(coords,grid_x_points,grid_y_points,grid_z_points,n_xpadding,n_ypadding, n_zpadding)

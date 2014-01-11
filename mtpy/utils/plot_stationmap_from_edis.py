@@ -165,7 +165,7 @@ def makemap(edilist,mapstretchfactor,symbolsize,labelsize,showlabel):
         lon_0=c[1],lat_0=c[0],lat_ts=c[0],
         llcrnrlat=total_latmin, urcrnrlat=total_latmax,
         llcrnrlon=total_lonmin, urcrnrlon=total_lonmax,
-        rsphere=6371200.,resolution='h',ax=ax)
+        rsphere=6371200.,resolution='h')#,ax=ax)
 
     lons.append(total_lonmin)
     lons.append(total_lonmax)

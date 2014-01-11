@@ -12,7 +12,7 @@ import mtpy.utils.conversions as conv
 import re
 
 
-edip = 'edis'
+edip = 'edis2'
 edipath = edip
 
 
@@ -23,9 +23,8 @@ errorfloor = 5
 
 
 
-header_string = """#Data file 
-\n# Period(s) Code GG_Lat GG_Lon X(m) Y(m) Z(m) Component Real Imag Error
-> Full_Impedance \n> exp(-i\omega t)\n> [V/m]/[T]
+header_string = """#Data file \n# Period(s) Code GG_Lat GG_Lon X(m) Y(m) Z(m) Component Real Imag Error
+> Full_Impedance \n> exp(-i\omega t)\n> [mV/km]/[nT]
 > 0.00
 """
 latlist=[]
@@ -39,8 +38,12 @@ coord_list = []
 periodlistlen=[]
 periodlistlen2=[]
 latlon=''
-for edi in os.listdir(edipath):
-	if edi.endswith('.edi'):
+
+
+edilist = [ edifile for edifile in os.listdir(edipath) if edifile.endswith('.edi')]		
+#print stationlst
+
+for edi in edilist:
 		fullepath=os.path.join(edipath,edi)
 		fedilist.append(fullepath)
 		
@@ -74,8 +77,7 @@ maxperno2=str(maxperno)
 UTMElist=[]
 UTMNlist=[]
 
-for edi in os.listdir(edipath):
-	if edi.endswith('.edi'):
+for edi in edilist:
 		fullepath=os.path.join(edipath,edi)
 		fedilist.append(fullepath)
 		
@@ -110,8 +112,7 @@ aveE=np.mean(UTMElist3)
 
 
 
-for edi in os.listdir(edipath):
-	if edi.endswith('.edi'):
+for edi in edilist:
 		fullepath=os.path.join(edipath,edi)
 		fedilist.append(fullepath)
 		
@@ -135,18 +136,15 @@ header_string += '> {0}  {1}\n'.format(aveN,aveE)
 #find Edi files
 
 
-edilist = [ edifile for edifile in os.listdir(edipath) if edifile.endswith('.edi')]		
-#print stationlst
-
 nstat=len(edilist)
 #print nstat
 edino=str(nstat)
 #print number of edi files
-header_string += '> {0} {1}\n'.format(maxperno2,edino)
 
 fedilist = []
 
 impstring = ''
+periods = []
 
 for edi in edilist:
 	fullepath=os.path.join(edipath,edi)
@@ -173,6 +171,8 @@ for edi in edilist:
 
 	nperiod=len(freq2)
 	periodlist=1/freq2
+
+	periods.extend(list(periodlist))
 
 	periodno=str(nperiod)
 
@@ -204,7 +204,7 @@ for edi in edilist:
 					Zerr[i,j] = errorfloor/100. * np.abs(Z[i,j])
 
 			comp = components[2*i+j]
-			period_impstring += '{0:.5E}  {1}  '.format(period,e.station)
+			period_impstring += '{0:f}  {1}  '.format(period,e.station)
 			period_impstring += '{0:.3f}  {1:.3f}  '.format(e.lat,e.lon)
 			period_impstring += '{0:.3f}  {1:.3f}  {2}  '.format(northing, easting,0.)
 			period_impstring += 'Z{0}  {1:E}  {2:.5E}  {3:.5E}  '.format(comp,float(np.real(Z[i,j])),
@@ -212,6 +212,13 @@ for edi in edilist:
 			period_impstring += '\n'
 
 		impstring += period_impstring
+
+
+n_periods = len(set(periods))
+
+print sorted(set(periods))
+
+header_string += '> {0} {1}\n'.format(n_periods,edino)
 
 #print outstring
 data=open(r'ModEMdata.dat', 'w')
