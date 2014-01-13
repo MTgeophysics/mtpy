@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 
 import os
 #I know, it's not nice, but I am lazy:

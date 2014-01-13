@@ -13,13 +13,15 @@ import re
 import glob
 
 
-edipath = 'edi2'
+
+edipath = 'edis_selected'
 
 if not os.path.isdir(edipath):
     print '\n\tERROR - data path does not exist'
     sys.exit()
 
 
+use_tipper = False
 
 errorfloor = 5
 
@@ -83,7 +85,6 @@ for idx_edi, edi in enumerate(lo_ediobjs):
 
     freq2 = edi.freq
     periods=1/freq2
-    periodlist.extend(list(periods))
 
     zerr=edi.Z.zerr
     zval=edi.Z.z
@@ -96,6 +97,8 @@ for idx_edi, edi in enumerate(lo_ediobjs):
     for i in range(len(periods)):
 
         period = periods[i]
+        period = np.round(period,5)
+        periodlist.append(period)
         Z = zval[i]
         Zerr = zerr[i]
 
@@ -111,10 +114,10 @@ for idx_edi, edi in enumerate(lo_ediobjs):
                     Zerr[i,j] = errorfloor/100. * np.abs(Z[i,j])
 
                 comp = components[2*i+j]
-                period_impstring += '{0:f}  {1}  '.format(period,edi.station)
+                period_impstring += '{0:.5f}  {1}  '.format(period,edi.station)
                 period_impstring += '{0:.3f}  {1:.3f}  '.format(edi.lat,edi.lon)
                 period_impstring += '{0:.3f}  {1:.3f}  {2}  '.format(northing, easting,0.)
-                period_impstring += 'Z{0}  {1:E}  {2:.5E}  {3:.5E}  '.format(comp,float(np.real(Z[i,j])),
+                period_impstring += 'Z{0}  {1:.5E}  {2:.5E}  {3:.5E}  '.format(comp,float(np.real(Z[i,j])),
                                                 float(np.imag(Z[i,j])), Zerr[i,j] )
                 period_impstring += '\n'
 
@@ -123,7 +126,8 @@ for idx_edi, edi in enumerate(lo_ediobjs):
 
 n_periods = len(set(periodlist))
 
-print 'Z periods: ',n_periods
+
+print 'Z periods: ',n_periods ,  'files:', len(lo_ediobjs)
 
 header_string += '> {0} {1}\n'.format(n_periods,len(lo_ediobjs))
 
@@ -152,11 +156,13 @@ periodlist = []
 n_periods = 0
 components = ['X','Y']
 
+stationlist = []
+
+
 for idx_edi, edi in enumerate(lo_ediobjs):
 
     freq2 = edi.freq
     periods=1/freq2
-    periodlist.extend(list(periods))
 
     tippererr=edi.Tipper.tippererr
     tipperval=edi.Tipper.tipper
@@ -168,12 +174,26 @@ for idx_edi, edi in enumerate(lo_ediobjs):
     for i in range(len(periods)):
 
         period = periods[i]
-        T = tipperval[i][0]
-        Terr = tippererr[i][0]
+        period = np.round(period,5)
+        try:
+            T = tipperval[i][0]
+        except:
+            continue
+        try:
+            Terr = tippererr[i][0]
+        except:
+            Terr = np.zeros_like(T,'float')
+
         if np.sum(np.abs(T)) == 0:
             continue
 
+        stationlist.append(e.station)
+
+        periodlist.append(period)
+
+
         period_tipperstring = ''
+
 
         for i in range(2):
         
@@ -185,10 +205,10 @@ for idx_edi, edi in enumerate(lo_ediobjs):
                 Terr[i] = errorfloor/100. * np.abs(T[i])
 
             comp = components[i]
-            period_tipperstring += '{0:f}  {1}  '.format(period,edi.station)
+            period_tipperstring += '{0:.5f}  {1}  '.format(period,edi.station)
             period_tipperstring += '{0:.3f}  {1:.3f}  '.format(edi.lat,edi.lon)
             period_tipperstring += '{0:.3f}  {1:.3f}  {2}  '.format(northing, easting,0.)
-            period_tipperstring += 'Z{0}  {1:E}  {2:.5E}  {3:.5E}  '.format(comp,float(np.real(T[i])),
+            period_tipperstring += 'T{0}  {1:.5E}  {2:.5E}  {3:.5E}  '.format(comp,float(np.real(T[i])),
                                             float(np.imag(T[i])), Terr[i] )
             period_tipperstring += '\n'
 
@@ -196,15 +216,18 @@ for idx_edi, edi in enumerate(lo_ediobjs):
 
 
 n_periods = len(set(periodlist))
-
-print 'Tipper periods: ',n_periods
+n_stations = len(set(stationlist))
+if use_tipper is True:
+    print 'Tipper periods: ',n_periods, 'stations:', n_stations
+else:
+    print 'no Tipper information in data file'
 
 header_string += '> {0} {1}\n'.format(n_periods,len(lo_ediobjs))
 
 
 
 
-if len(tipperstring)>0:
+if (len(tipperstring)>0 ) and (use_tipper is True):
     data = open(r'ModEMdata.dat', 'a')
     data.write(header_string)
     data.write(tipperstring.expandtabs(4))
