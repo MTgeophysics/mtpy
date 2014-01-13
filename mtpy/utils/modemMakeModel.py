@@ -71,10 +71,7 @@ data = Fin.readlines()
 Fin.close()
 
 coords = []
-#line_8 = data[7].strip().split()
 
-
-#n_datapoints = int(float(line_8[1]) * float(line_8[2]) * 4)
 
 #read station coordinates
 #start in line after header info, determined by starting character '>'
@@ -109,9 +106,6 @@ if strike != 0:
 	rotated_coords[:,1] = rotated_coords[:,1] + center[1]
 
 	coords[:,:2] =  rotated_coords
-
-	#sys.exit()
-
 
 
 #reduce grid to 2D - assuming all stations are at the surface
@@ -448,18 +442,20 @@ def plotgrid(stations,grid_x,grid_y,grid_z=None, n_xpadding = None, n_y_padding=
 
 	tight_layout()
 	show(block=True)
-	#raw_input()
 
 
 if plot == True:
 	#generate an interactive plot window, which remains open after this script has finshed: 
-	proc_num = os.fork()
+	try:
+		proc_num = os.fork()
 
-	if proc_num != 0:
-	    #This is the parent process, that should quit immediately to return to the
-	    #shell.
-	    print "You can kill the plot window with the command \"kill %d\"." % proc_num
-	    sys.exit()
+		if proc_num != 0:
+		    #This is the parent process, that should quit immediately to return to the
+		    #shell.
+		    print "You can kill the plot window with the command \"kill %d\"." % proc_num
+		    sys.exit()
+    except:
+    	pass
 
 	from pylab import *
 	plotgrid(coords,grid_x_points,grid_y_points,grid_z_points,n_xpadding,n_ypadding, n_zpadding)
