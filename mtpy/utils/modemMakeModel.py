@@ -6,6 +6,7 @@ import numpy as np
 import sys,os
 #==============================================================================
 
+#plot model geometry
 plot = True
 
 

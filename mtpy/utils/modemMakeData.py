@@ -9,6 +9,7 @@ import mtpy.core.edi as E
 import numpy as np
 from math import cos, sin, asin, sqrt, radians
 import mtpy.utils.conversions as conv
+import mtpy.utils.merge_periods as mp
 import re
 import glob
 
@@ -19,6 +20,14 @@ edipath = 'edis_selected'
 if not os.path.isdir(edipath):
     print '\n\tERROR - data path does not exist'
     sys.exit()
+
+
+#flag for merging closely neighbouring periods: 
+merge_periods = False
+
+#merge periods, which do not differ more than this threshold (in percent)
+merge_threshold = 5
+
 
 
 use_tipper = False
@@ -72,7 +81,7 @@ rel_coords = np.zeros_like(coords)
 rel_coords[:,0] = coords[:,0] - East0
 rel_coords[:,1] = coords[:,1] - North0
 
-#start Im pedance tensor part ---------------------------------------------
+#start Impedance tensor part ---------------------------------------------
 
 header_string += '> {0}  {1}\n'.format(lat0,lon0)
 
@@ -80,6 +89,31 @@ impstring = ''
 periodlist = []
 
 components = ['XX','XY','YX','YY']
+
+#loop for reading in periods
+# in case merging is requested, updating period
+period_dict = {}
+
+for idx_edi, edi in enumerate(lo_ediobjs):
+    freq2 = edi.freq
+    periods=1/freq2
+    periods = [np.round(i,5) for i in periods]
+    periodlist.extend(periods)
+
+periodlist = sorted(list(set(periodlist)),reverse=False)
+    
+if merge_periods == True:
+    #mp.plot_merging(periodlist,merge_threshold)
+    new_periods = mp.merge_periods(periodlist,merge_threshold)
+else:
+    new_periods = periodlist[:]
+#setting up a dictionary for old and new period
+for idx,per in enumerate(periodlist):
+    period_dict[str(per)] = new_periods[idx]
+
+
+periodlist = []
+
 
 for idx_edi, edi in enumerate(lo_ediobjs):
 
@@ -96,9 +130,11 @@ for idx_edi, edi in enumerate(lo_ediobjs):
     #Generate Impedance Array
     for i in range(len(periods)):
 
-        period = periods[i]
-        period = np.round(period,5)
+        raw_period = periods[i]
+        raw_period = np.round(raw_period,5)
+        period = float(period_dict[str(raw_period)])
         periodlist.append(period)
+
         Z = zval[i]
         Zerr = zerr[i]
 

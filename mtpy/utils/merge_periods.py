@@ -8,9 +8,12 @@ from pylab import *
 
 
 def merge_periods(periods,merge_threshold):
+    """
+    assume periods in increasing order
+    merge_threshold given in percent
 
-
-    old_periods = list(periods)
+    """
+    old_periods = sorted(list(periods),reverse=False)
 
     in_values = [(x) for x in old_periods]
 
@@ -78,7 +81,8 @@ def merge_periods(periods,merge_threshold):
 
 
     new_period_list = out_values
-    print '\n\tDone -- merged {0} points into {1} clusters'.format(len(in_values),cluster_counter)
+    if len(in_values) != cluster_counter:
+        print '\n\tDone -- merged {0} periods into {1} period-clusters\n'.format(len(in_values),cluster_counter)
     return new_period_list
 
 
@@ -107,8 +111,8 @@ def plot_merging(periods,merge_threshold):
 
 
     ax = subplot2grid((1, 1), (0, 0), colspan=1)
-    orig = ax.scatter(periods,zeros(N),label='original periods')
-    ax.set_xlim([10**(-rng),10**(rng)])
+    orig = ax.scatter(periods,zeros(len(periods)),label='original periods')
+    #ax.set_xlim([10**(-rng),10**(rng)])
     ax.set_xscale('log')
 
     hold(True)
@@ -134,7 +138,8 @@ def plot_merging(periods,merge_threshold):
     
     #tight_layout()
     show()#block=True)
-    return
+    raw_input()
+
 
 
 if __name__ == '__main__':
