@@ -152,6 +152,8 @@ class Z(object):
         
         self._phase = None
         self._phase_err = None
+        
+        self._compute_res_phase()
 
     #---frequency-------------------------------------------------------------
     def _set_freq(self, lo_freq):
@@ -185,8 +187,11 @@ class Z(object):
             except IndexError:
                 print 'Need to input frequency array'
 
-    def _get_freq(self): 
-		return np.array(self._freq)
+    def _get_freq(self):
+            if self._freq is None:
+                return None
+            else:
+                return np.array(self._freq)
 		
     freq = property(_get_freq, _set_freq, doc='array of frequencies in Hz')
     
@@ -387,7 +392,9 @@ class Z(object):
             
         if self.z is None:
             print 'Z array is None - cannot calculate Res/Phase'
-            return            
+            return 
+        
+        
 
         self._resistivity_err = None
         self._phase_err = None

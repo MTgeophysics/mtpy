@@ -2908,9 +2908,9 @@ class PlotResponse(object):
                                                                 1.0+1.0j
             
             #convert to apparent resistivity and phase
-            z_object =  mtz.Z(z_array=data_z, zerr_array=data_z_err)
-            z_object.freq = 1./period
-    
+            z_object =  mtz.Z(z_array=data_z, zerr_array=data_z_err, 
+                              freq=1./period)
+                              
             rp = mtplottools.ResPhase(z_object)
             
             #find locations where points have been masked
