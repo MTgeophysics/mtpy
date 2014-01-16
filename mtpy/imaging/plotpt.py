@@ -384,11 +384,11 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         self.cbax = self.fig.add_axes(self.cb_position)
         if cmap == 'mt_seg_bl2wh2rd':
             #make a color list
-            clst = [(cc, cc, 1) for cc in np.arange(0,1+1./(nseg),1./(nseg))]+\
+            clist = [(cc, cc, 1) for cc in np.arange(0,1+1./(nseg),1./(nseg))]+\
                    [(1, cc, cc) for cc in np.arange(1,-1./(nseg),-1./(nseg))]
             
             #make segmented colormap
-            mt_seg_bl2wh2rd = colors.ListedColormap(clst)
+            mt_seg_bl2wh2rd = colors.ListedColormap(clist)
 
             #make bounds so that the middle is white
             bounds = np.arange(ckmin-ckstep, ckmax+2*ckstep, ckstep)
@@ -427,7 +427,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         az[np.where(az > 90)] -= 180
         az[np.where(az < -90)] += 180
         
-        stlst = []
+        stlist = []
         stlabel = []
         
         #plot phase tensor strike
@@ -444,7 +444,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                                 capsize=self.marker_size,
                                 elinewidth=self.marker_lw)
                                 
-        stlst.append(ps2[0])
+        stlist.append(ps2[0])
         stlabel.append('PT')
         try:
             strike = self.zinv.strike
@@ -467,7 +467,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                                     capsize=self.marker_size,
                                     elinewidth=self.marker_lw)
                               
-            stlst.append(erxy[0])
+            stlist.append(erxy[0])
             stlabel.append('Z_inv')
         except AttributeError:
             print 'Could not get z_invariants from pt, input z if desired.'
@@ -495,18 +495,18 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                                     capsize=self.marker_size,
                                     elinewidth=self.marker_lw)
                                     
-            stlst.append(ps3[0])
+            stlist.append(ps3[0])
             stlabel.append('Tipper')
         
              
-        self.ax2.legend(stlst,
+        self.ax2.legend(stlist,
                         stlabel,
                         loc='lower left',
                         markerscale=.5*self.marker_size,
                         borderaxespad=.01,
                         labelspacing=.1,
                         handletextpad=.2,
-                        ncol=len(stlst),
+                        ncol=len(stlist),
                         borderpad=.1,
                         columnspacing=.1)
                    

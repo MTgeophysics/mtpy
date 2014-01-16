@@ -27,7 +27,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
     Arguments:
     ----------
     
-        **fn_lst** : list of strings
+        **fn_list** : list of strings
                           full paths to .edi files to plot
                           
         **z_object** : class mtpy.core.z.Z
@@ -214,7 +214,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         >>> import mtpy.imaging.mtplottools as mtplot
         >>> import os
         >>> edipath = r"/home/EDIfiles"
-        >>> edilst = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
+        >>> edilist = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
         >>> ...       if edi.find('.edi')>0]
     
     * If you want to plot minimum phase colored from blue to red in a range of
@@ -224,12 +224,12 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
     :Example: ::
         
         >>> edict = {'range':(20,70), 'cmap':'mt_bl2gr2rd','colorby':'phimin'}
-        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilst,ellipse_dict=edict)
+        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilist,ellipse_dict=edict)
      
     2)
     :Example: ::
         
-        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilst, plot_yn='n')
+        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilist, plot_yn='n')
         >>> pt1.ellipse_colorby = 'phimin'
         >>> pt1.ellipse_cmap = 'mt_bl2gr2rd'
         >>> pt1.ellipse_range = (20,70)
@@ -283,9 +283,9 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         
         -linedir              prominent direction of profile being plotted 
              
-        -mt_lst               list of mtplot.MTplot instances containing all
+        -mt_list               list of mtplot.MTplot instances containing all
                               the important information for each station
-        -offsetlst            array of relative offsets of each station
+        -offsetlist            array of relative offsets of each station
         
         -plot_tipper          string to inform program to plot induction arrows
         -plot_yn              plot the pseudo section on instance creation
@@ -294,7 +294,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                               0 and angle measures clockwise
                               
         -station_id            index [min, max] to reaad station name
-        -stationlst           list of stations plotted
+        -stationlist           list of stations plotted
         -title                title of figure
         -tscale               temporal scale of y-axis ('frequency' | 'period')
         
@@ -320,18 +320,18 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
     
     def __init__(self, **kwargs):
         
-        fn_lst = kwargs.pop('fn_lst', None)
-        z_object_lst = kwargs.pop('z_object_lst', None)
-        tipper_object_lst = kwargs.pop('tipper_object_lst', None)
-        mt_object_lst = kwargs.pop('mt_object_lst', None)
-        res_object_lst = kwargs.pop('res_object_lst', None)
+        fn_list = kwargs.pop('fn_list', None)
+        z_object_list = kwargs.pop('z_object_list', None)
+        tipper_object_list = kwargs.pop('tipper_object_list', None)
+        mt_object_list = kwargs.pop('mt_object_list', None)
+        res_object_list = kwargs.pop('res_object_list', None)
         
         #----set attributes for the class-------------------------
-        self.mt_lst = mtpl.get_mtlst(fn_lst=fn_lst, 
-                                res_object_lst=res_object_lst,
-                                z_object_lst=z_object_lst, 
-                                tipper_object_lst=tipper_object_lst, 
-                                mt_object_lst=mt_object_lst)
+        self.mt_list = mtpl.get_mtlist(fn_list=fn_list, 
+                                res_object_list=res_object_list,
+                                z_object_list=z_object_list, 
+                                tipper_object_list=tipper_object_list, 
+                                mt_object_list=mt_object_list)
         
         #--> set the ellipse properties
         self._ellipse_dict = kwargs.pop('ellipse_dict', {})
@@ -377,13 +377,13 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         
         self._rot_z = kwargs.pop('rot_z', 0)
         if type(self._rot_z) is float or type(self._rot_z) is int:
-            self._rot_z = np.array([self._rot_z]*len(self.mt_lst))
+            self._rot_z = np.array([self._rot_z]*len(self.mt_list))
         
         #if the rotation angle is an array for rotation of different 
-        #freq than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_list)
         elif type(self._rot_z) is np.ndarray:
-            if self._rot_z.shape[0]  !=  len(self.mt_lst):
-                self._rot_z = np.repeat(self._rot_z, len(self.mt_lst))
+            if self._rot_z.shape[0]  !=  len(self.mt_list):
+                self._rot_z = np.repeat(self._rot_z, len(self.mt_list))
                 
         else:
             pass
@@ -407,20 +407,20 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         """
         
         #if rotation angle is an int or float make an array the length of 
-        #mt_lst for plotting purposes
+        #mt_list for plotting purposes
         if type(rot_z) is float or type(rot_z) is int:
-            self._rot_z = np.array([rot_z]*len(self.mt_lst))
+            self._rot_z = np.array([rot_z]*len(self.mt_list))
         
         #if the rotation angle is an array for rotation of different 
-        #freq than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_list)
         elif type(rot_z) is np.ndarray:
-            if rot_z.shape[0]!=len(self.mt_lst):
-                self._rot_z = np.repeat(rot_z, len(self.mt_lst))
+            if rot_z.shape[0]!=len(self.mt_list):
+                self._rot_z = np.repeat(rot_z, len(self.mt_list))
                 
         else:
             pass
             
-        for ii,mt in enumerate(self.mt_lst):
+        for ii,mt in enumerate(self.mt_list):
             mt.rot_z = self._rot_z[ii]
     def _get_rot_z(self):
         return self._rot_z
@@ -447,11 +447,11 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         self.ax = self.fig.add_subplot(1, 1, 1, aspect='equal')
         
         #create empty lists to put things into
-        self.stationlst = []
-        self.offsetlst = []
-        minlst = []
-        maxlst = []
-        plot_periodlst = None
+        self.stationlist = []
+        self.offsetlist = []
+        minlist = []
+        maxlist = []
+        plot_periodlist = None
         
         #set local parameters with shorter names
         es = self.ellipse_size
@@ -469,8 +469,8 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         if cmap == 'mt_seg_bl2wh2rd':
             bounds = np.arange(ckmin, ckmax+ckstep, ckstep)
         #plot phase tensor ellipses
-        for ii, mt in enumerate(self.mt_lst):
-            self.stationlst.append(
+        for ii, mt in enumerate(self.mt_list):
+            self.stationlist.append(
                               mt.station[self.station_id[0]:self.station_id[1]])
             
             #set the an arbitrary origin to compare distance to all other 
@@ -497,13 +497,13 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                     else:
                         offset = 0
                         
-            self.offsetlst.append(offset)
+            self.offsetlist.append(offset)
             
             #get phase tensor elements and flip so the top is small 
             #periods/high frequency
             pt = mt.get_PhaseTensor()
             
-            periodlst = mt.period[::-1]
+            periodlist = mt.period[::-1]
             phimax = pt.phimax[0][::-1]
             phimin = pt.phimin[0][::-1]
             azimuth = pt.azimuth[0][::-1]
@@ -547,20 +547,20 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                 raise NameError(self.ellipse_colorby+' is not supported')
             
             #get the number of periods
-            n = len(periodlst)
+            n = len(periodlist)
             
             if ii == 0:
-                plot_periodlst = periodlst
+                plot_periodlist = periodlist
             
             else:
-                if n > len(plot_periodlst):
-                    plot_periodlst = periodlst
+                if n > len(plot_periodlist):
+                    plot_periodlist = periodlist
             
             #get min and max of the color array for scaling later
-            minlst.append(min(colorarray))
-            maxlst.append(max(colorarray))
+            minlist.append(min(colorarray))
+            maxlist.append(max(colorarray))
 
-            for jj, ff in enumerate(periodlst):
+            for jj, ff in enumerate(periodlist):
                 
                 #make sure the ellipses will be visable
                 eheight = phimin[jj]/phimax[jj]*es
@@ -649,41 +649,41 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                                           head_length=aheight)
         
         #--> Set plot parameters 
-        self._plot_periodlst = plot_periodlst
-        n = len(plot_periodlst)
+        self._plot_periodlist = plot_periodlist
+        n = len(plot_periodlist)
         
         
         #calculate minimum period and maximum period with a stretch factor
-        pmin = np.log10(plot_periodlst.min())*self.ystretch
-        pmax = np.log10(plot_periodlst.max())*self.ystretch
+        pmin = np.log10(plot_periodlist.min())*self.ystretch
+        pmax = np.log10(plot_periodlist.max())*self.ystretch
         
         #need to sort the offsets and station labels so they plot correctly
         sdtype = [('offset', np.float), ('station','|S10')]
-        slst = np.array([(oo, ss) for oo, ss in zip(self.offsetlst, 
-                         self.stationlst)], dtype=sdtype)
-        offset_sort = np.sort(slst, order='offset')
+        slist = np.array([(oo, ss) for oo, ss in zip(self.offsetlist, 
+                         self.stationlist)], dtype=sdtype)
+        offset_sort = np.sort(slist, order='offset')
      
-        self.offsetlst = offset_sort['offset']
-        self.stationlst = offset_sort['station']
-#        if self.offsetlst[0] > 0:
+        self.offsetlist = offset_sort['offset']
+        self.stationlist = offset_sort['station']
+#        if self.offsetlist[0] > 0:
 #            print 'rotating'
-#            print self.stationlst
-#            self.stationlst = self.stationlst[::-1]
+#            print self.stationlist
+#            self.stationlist = self.stationlist[::-1]
         
         #set y-ticklabels
         if self.tscale == 'period':
-            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(plot_periodlst[ll])) 
+            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(plot_periodlist[ll])) 
                             for ll in np.arange(0, n, self.ystep)]+\
-                        ['{0:>4}'.format('{0: .1e}'.format(plot_periodlst[-1]))]
+                        ['{0:>4}'.format('{0: .1e}'.format(plot_periodlist[-1]))]
             
             self.ax.set_ylabel('Period (s)',
                                fontsize=self.font_size+2,
                                fontweight='bold')
                                
         elif self.tscale == 'frequency':
-            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlst[ll])) 
+            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlist[ll])) 
                             for ll in np.arange(0, n, self.ystep)]+\
-                            ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlst[-1]))]
+                            ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlist[-1]))]
             
             self.ax.set_ylabel('Frequency (Hz)',
                                fontsize=self.font_size+2,
@@ -695,31 +695,31 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
          
         #--> set tick locations and labels
         #set y-axis major ticks
-        self.ax.yaxis.set_ticks([np.log10(plot_periodlst[ll])*self.ystretch 
+        self.ax.yaxis.set_ticks([np.log10(plot_periodlist[ll])*self.ystretch 
                              for ll in np.arange(0, n, self.ystep)])
         
         #set y-axis minor ticks                     
-        self.ax.yaxis.set_ticks([np.log10(plot_periodlst[ll])*self.ystretch 
+        self.ax.yaxis.set_ticks([np.log10(plot_periodlist[ll])*self.ystretch 
                              for ll in np.arange(0, n, 1)],minor=True)
         #set y-axis tick labels
         self.ax.set_yticklabels(yticklabels)
         
         #set x-axis ticks
-        self.ax.set_xticks(self.offsetlst*self.xstretch)
+        self.ax.set_xticks(self.offsetlist*self.xstretch)
         
         #set x-axis tick labels as station names
-        xticklabels = self.stationlst
+        xticklabels = self.stationlist
         if self.xstep != 1:
-            xticklabels = np.zeros(len(self.stationlst), 
-                                   dtype=self.stationlst.dtype)
-            for xx in range(0,len(self.stationlst),self.xstep):
-                xticklabels[xx] = self.stationlst[xx]
+            xticklabels = np.zeros(len(self.stationlist), 
+                                   dtype=self.stationlist.dtype)
+            for xx in range(0,len(self.stationlist),self.xstep):
+                xticklabels[xx] = self.stationlist[xx]
         self.ax.set_xticklabels(xticklabels)
         
         #--> set x-limits
         if self.xlimits == None:
-            self.ax.set_xlim(self.offsetlst.min()*self.xstretch-es*2,
-                             self.offsetlst.max()*self.xstretch+es*2)
+            self.ax.set_xlim(self.offsetlist.min()*self.xstretch-es*2,
+                             self.offsetlist.max()*self.xstretch+es*2)
         else:
             self.ax.set_xlim(self.xlimits)
             
@@ -786,8 +786,8 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         
         #print out the min an max of the parameter plotted
         print '-'*25
-        print ck+' min = {0:.2f}'.format(min(minlst))
-        print ck+' max = {0:.2f}'.format(max(maxlst))
+        print ck+' min = {0:.2f}'.format(min(minlist))
+        print ck+' max = {0:.2f}'.format(max(maxlist))
         print '-'*25
 
         #==> make a colorbar with appropriate colors
@@ -800,13 +800,13 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         
         if cmap == 'mt_seg_bl2wh2rd':
             #make a color list
-            self.clst = [(cc, cc, 1) 
+            self.clist = [(cc, cc, 1) 
                          for cc in np.arange(0, 1+1./(nseg), 1./(nseg))]+\
                         [(1, cc, cc) 
                          for cc in np.arange(1, -1./(nseg), -1./(nseg))]
             
             #make segmented colormap
-            mt_seg_bl2wh2rd = colors.ListedColormap(self.clst)
+            mt_seg_bl2wh2rd = colors.ListedColormap(self.clist)
 
             #make bounds so that the middle is white
             bounds = np.arange(ckmin-ckstep, ckmax+2*ckstep, ckstep)
@@ -852,7 +852,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         
         if save_path == None:
             try:
-                svpath = os.path.dirname(self.mt_lst[0].fn)
+                svpath = os.path.dirname(self.mt_list[0].fn)
             except TypeError:
                 raise IOError('Need to input save_path, could not find a path')
         else:
@@ -860,70 +860,70 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         
         #check to see if plot has been run if not run it
         try:
-            plst = self._plot_periodlst
+            plist = self._plot_periodlist
 
         except AttributeError:
             self.plot()
-            plst = self._plot_periodlst
+            plist = self._plot_periodlist
         
-        if plst[0] > plst[-1]:
-            plst = plst[::-1] 
+        if plist[0] > plist[-1]:
+            plist = plist[::-1] 
             
         if self.tscale == 'frequency':
-            plst = 1./plst
+            plist = 1./plist
         
         #match station list with mt list
-        slst = [mt for ss in self.stationlst for mt in self.mt_lst 
+        slist = [mt for ss in self.stationlist for mt in self.mt_list 
                  if os.path.basename(mt.fn).find(ss)>=0]
            
-        ns = len(slst)+1
-        nt = len(plst)+1
+        ns = len(slist)+1
+        nt = len(plist)+1
         
         #set some empty lists to put things into
-        sklst = np.zeros((nt, ns), dtype='|S8')
-        phiminlst = np.zeros((nt, ns), dtype='|S8')
-        phimaxlst = np.zeros((nt, ns), dtype='|S8')
-        elliplst = np.zeros((nt, ns), dtype='|S8')
-        azimlst = np.zeros((nt, ns), dtype='|S8')
-        tiplstr = np.zeros((nt, ns), dtype='|S8')
-        tiplsti = np.zeros((nt, ns), dtype='|S8')
-        tiplstraz = np.zeros((nt, ns), dtype='|S8')
-        tiplstiaz = np.zeros((nt, ns), dtype='|S8')
+        sklist = np.zeros((nt, ns), dtype='|S8')
+        phiminlist = np.zeros((nt, ns), dtype='|S8')
+        phimaxlist = np.zeros((nt, ns), dtype='|S8')
+        elliplist = np.zeros((nt, ns), dtype='|S8')
+        azimlist = np.zeros((nt, ns), dtype='|S8')
+        tiplistr = np.zeros((nt, ns), dtype='|S8')
+        tiplisti = np.zeros((nt, ns), dtype='|S8')
+        tiplistraz = np.zeros((nt, ns), dtype='|S8')
+        tiplistiaz = np.zeros((nt, ns), dtype='|S8')
         
          
-        sklst[0, 0] = '{0:>8} '.format(self.tscale)
-        phiminlst[0, 0] = '{0:>8} '.format(self.tscale)
-        phimaxlst[0, 0] = '{0:>8} '.format(self.tscale)
-        elliplst[0, 0] = '{0:>8} '.format(self.tscale)
-        azimlst[0, 0] = '{0:>8} '.format(self.tscale)
-        tiplstr[0, 0] = '{0:>8} '.format(self.tscale)
-        tiplstraz[0, 0] = '{0:>8} '.format(self.tscale)
-        tiplsti[0, 0] = '{0:>8} '.format(self.tscale)
-        tiplstiaz[0, 0] = '{0:>8} '.format(self.tscale)           
+        sklist[0, 0] = '{0:>8} '.format(self.tscale)
+        phiminlist[0, 0] = '{0:>8} '.format(self.tscale)
+        phimaxlist[0, 0] = '{0:>8} '.format(self.tscale)
+        elliplist[0, 0] = '{0:>8} '.format(self.tscale)
+        azimlist[0, 0] = '{0:>8} '.format(self.tscale)
+        tiplistr[0, 0] = '{0:>8} '.format(self.tscale)
+        tiplistraz[0, 0] = '{0:>8} '.format(self.tscale)
+        tiplisti[0, 0] = '{0:>8} '.format(self.tscale)
+        tiplistiaz[0, 0] = '{0:>8} '.format(self.tscale)           
         
         #get the period as the first column
-        for tt, t1 in enumerate(plst, 1):
-            sklst[tt, 0] = t1
-            phiminlst[tt, 0] = t1
-            phimaxlst[tt, 0] = t1
-            elliplst[tt, 0] = t1
-            azimlst[tt, 0] = t1
-            tiplstr[tt, 0] = t1
-            tiplstraz[tt, 0] = t1
-            tiplsti[tt, 0] = t1
-            tiplstiaz[tt, 0] = t1
+        for tt, t1 in enumerate(plist, 1):
+            sklist[tt, 0] = t1
+            phiminlist[tt, 0] = t1
+            phimaxlist[tt, 0] = t1
+            elliplist[tt, 0] = t1
+            azimlist[tt, 0] = t1
+            tiplistr[tt, 0] = t1
+            tiplistraz[tt, 0] = t1
+            tiplisti[tt, 0] = t1
+            tiplistiaz[tt, 0] = t1
             
         #fill out the rest of the values
-        for kk, mt in enumerate(slst, 1):
+        for kk, mt in enumerate(slist, 1):
             
             pt = mt.get_PhaseTensor()
             tip = mt.get_Tipper()
                 
             if self.tscale == 'period':
-                tlst = mt.period
+                tlist = mt.period
                     
             elif self.tscale == 'frequency':
-                tlst = mt.frequency
+                tlist = mt.frequency
  
             try:
                 stationstr = '{0:^8}'.format(mt.station[self.station_id[0]:\
@@ -932,74 +932,74 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                 stationstr = '{0:^8}'.format(mt.station)
             
             #-->  get station name as header in each file                                     
-            sklst[0, kk] = stationstr
-            phiminlst[0, kk] = stationstr
-            phimaxlst[0, kk] = stationstr
-            elliplst[0, kk] = stationstr
-            azimlst[0, kk] = stationstr
-            tiplstr[0, kk] = stationstr
-            tiplstraz[0, kk] = stationstr
-            tiplsti[0, kk] = stationstr
-            tiplstiaz[0, kk] = stationstr
+            sklist[0, kk] = stationstr
+            phiminlist[0, kk] = stationstr
+            phimaxlist[0, kk] = stationstr
+            elliplist[0, kk] = stationstr
+            azimlist[0, kk] = stationstr
+            tiplistr[0, kk] = stationstr
+            tiplistraz[0, kk] = stationstr
+            tiplisti[0, kk] = stationstr
+            tiplistiaz[0, kk] = stationstr
                                                 
             # If the all periods match for the station and the plotting period         
-            if tlst.all() == plst.all():
+            if tlist.all() == plist.all():
                 if pt.pt is not None:
-                    sklst[1:, kk] = pt.beta[0]
-                    phiminlst[1:, kk] = pt.phimin[0]
-                    phimaxlst[1:, kk] = pt.phimax[0]
-                    elliplst[1:, kk] = pt.ellipticity[0]
-                    azimlst[1:, kk] = pt.azimuth[0]
+                    sklist[1:, kk] = pt.beta[0]
+                    phiminlist[1:, kk] = pt.phimin[0]
+                    phimaxlist[1:, kk] = pt.phimax[0]
+                    elliplist[1:, kk] = pt.ellipticity[0]
+                    azimlist[1:, kk] = pt.azimuth[0]
                 if tip.mag_real is not None:
-                    tiplstr[1:, kk] = tip.mag_real
-                    tiplstraz[1:, kk] = tip.ang_real
-                    tiplsti[1:, kk] = tip.mag_imag
-                    tiplstiaz[1:, kk] = tip.ang_imag
+                    tiplistr[1:, kk] = tip.mag_real
+                    tiplistraz[1:, kk] = tip.ang_real
+                    tiplisti[1:, kk] = tip.mag_imag
+                    tiplistiaz[1:, kk] = tip.ang_imag
                     
             # otherwise search the period list to find a cooresponding period
             else:   
-                for mm, t1 in enumerate(plst):
+                for mm, t1 in enumerate(plist):
                     #check to see if the periods match or are at least close in
                     #case there are frequency missing
                     t1_yn = False
-                    if t1 == tlst[mm]:
+                    if t1 == tlist[mm]:
                         t1_yn = True
-                    elif tlst[mm] > t1*(1-ptol) and tlst[mm] < t1*(1+ptol):
+                    elif tlist[mm] > t1*(1-ptol) and tlist[mm] < t1*(1+ptol):
                         t1_yn = True
                     
                     if t1_yn == True:
                         #add on the value to the present row
                         if pt.beta[0] is not None:
-                            sklst[mm+1, kk] = pt.beta[0][mm]
-                            phiminlst[mm+1, kk] = pt.phimin[0][mm]
-                            phimaxlst[mm+1, kk] = pt.phimax[0][mm]
-                            elliplst[mm+1, kk] = pt.ellipticity[0][mm]
-                            azimlst[mm+1, kk] = pt.azimuth[0][mm]
+                            sklist[mm+1, kk] = pt.beta[0][mm]
+                            phiminlist[mm+1, kk] = pt.phimin[0][mm]
+                            phimaxlist[mm+1, kk] = pt.phimax[0][mm]
+                            elliplist[mm+1, kk] = pt.ellipticity[0][mm]
+                            azimlist[mm+1, kk] = pt.azimuth[0][mm]
                         
                         #add on the value to the present row
                         if tip.mag_real is not None:
-                            tiplstr[mm+1, kk] = tip.mag_real[mm]
-                            tiplstraz[mm+1, kk] = tip.ang_real[mm]
-                            tiplsti[mm+1, kk] = tip.mag_imag[mm]
-                            tiplstiaz[mm+1, kk] = tip.ang_imag[mm]
+                            tiplistr[mm+1, kk] = tip.mag_real[mm]
+                            tiplistraz[mm+1, kk] = tip.ang_real[mm]
+                            tiplisti[mm+1, kk] = tip.mag_imag[mm]
+                            tiplistiaz[mm+1, kk] = tip.ang_imag[mm]
                     
                     elif t1_yn == False:
-                        for ff, t2 in enumerate(tlst):
+                        for ff, t2 in enumerate(tlist):
                             if t2 > t1*(1-ptol) and t2 < t1*(1+ptol):
                                 #add on the value to the present row
                                 if pt.beta[0] is not None:
-                                    sklst[mm+1, kk] = pt.beta[0][ff]
-                                    phiminlst[mm+1, kk] = pt.phimin[0][ff]
-                                    phimaxlst[mm+1, kk] = pt.phimax[0][ff]
-                                    elliplst[mm+1, kk] = pt.ellipticity[0][ff]
-                                    azimlst[mm+1, kk] = pt.azimuth[0][ff]
+                                    sklist[mm+1, kk] = pt.beta[0][ff]
+                                    phiminlist[mm+1, kk] = pt.phimin[0][ff]
+                                    phimaxlist[mm+1, kk] = pt.phimax[0][ff]
+                                    elliplist[mm+1, kk] = pt.ellipticity[0][ff]
+                                    azimlist[mm+1, kk] = pt.azimuth[0][ff]
                                 
                                 #add on the value to the present row
                                 if tip.mag_real is not None:
-                                    tiplstr[mm+1, kk] = tip.mag_real[ff]
-                                    tiplstraz[mm+1, kk] = tip.ang_real[ff]
-                                    tiplsti[mm+1, kk] = tip.mag_imag[ff]
-                                    tiplstiaz[mm+1, kk] = tip.ang_imag[ff]
+                                    tiplistr[mm+1, kk] = tip.mag_real[ff]
+                                    tiplistraz[mm+1, kk] = tip.ang_real[ff]
+                                    tiplisti[mm+1, kk] = tip.mag_imag[ff]
+                                    tiplistiaz[mm+1, kk] = tip.ang_imag[ff]
                                 t1_yn = True
                                 break
                             else:
@@ -1022,77 +1022,77 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         tpiazlines = []
         
         #if there are any blank strings set them as 0
-        sklst[np.where(sklst=='')] = '0.0'
-        phiminlst[np.where(phiminlst=='')] = '0.0'
-        phimaxlst[np.where(phimaxlst=='')] = '0.0'
-        elliplst[np.where(elliplst=='')] = '0.0'
-        azimlst[np.where(azimlst=='')] = '0.0'
-        tiplstr[np.where(tiplstr=='')] = '0.0'
-        tiplstraz[np.where(tiplstraz=='')] = '0.0'
-        tiplsti[np.where(tiplsti=='')] = '0.0'
-        tiplstiaz[np.where(tiplstiaz=='')] = '0.0'
+        sklist[np.where(sklist=='')] = '0.0'
+        phiminlist[np.where(phiminlist=='')] = '0.0'
+        phimaxlist[np.where(phimaxlist=='')] = '0.0'
+        elliplist[np.where(elliplist=='')] = '0.0'
+        azimlist[np.where(azimlist=='')] = '0.0'
+        tiplistr[np.where(tiplistr=='')] = '0.0'
+        tiplistraz[np.where(tiplistraz=='')] = '0.0'
+        tiplisti[np.where(tiplisti=='')] = '0.0'
+        tiplistiaz[np.where(tiplistiaz=='')] = '0.0'
         
         for tt in range(nt):
             if tt == 0:
-                skline = sklst[tt, 0]+' '
-                pminline = phiminlst[tt, 0]+' '
-                pmaxline = phimaxlst[tt, 0]+' '
-                elliline = elliplst[tt, 0]+' '
-                azline = azimlst[tt, 0]+' '
-                tprline = tiplstr[tt, 0]+' '
-                tprazline = tiplstraz[tt, 0]+' '
-                tpiline = tiplsti[tt, 0]+' '
-                tpiazline = tiplstiaz[tt, 0]+' '
+                skline = sklist[tt, 0]+' '
+                pminline = phiminlist[tt, 0]+' '
+                pmaxline = phimaxlist[tt, 0]+' '
+                elliline = elliplist[tt, 0]+' '
+                azline = azimlist[tt, 0]+' '
+                tprline = tiplistr[tt, 0]+' '
+                tprazline = tiplistraz[tt, 0]+' '
+                tpiline = tiplisti[tt, 0]+' '
+                tpiazline = tiplistiaz[tt, 0]+' '
                 for ss in range(1, ns):
-                    skline += sklst[tt, ss]
-                    pminline += phiminlst[tt, ss]
-                    pmaxline += phimaxlst[tt, ss]
-                    elliline += elliplst[tt, ss]
-                    azline += azimlst[tt, ss]
-                    tprline += tiplstr[tt, ss]
-                    tprazline += tiplstraz[tt, ss]
-                    tpiline += tiplsti[tt, ss]
-                    tpiazline += tiplstiaz[tt, ss]
+                    skline += sklist[tt, ss]
+                    pminline += phiminlist[tt, ss]
+                    pmaxline += phimaxlist[tt, ss]
+                    elliline += elliplist[tt, ss]
+                    azline += azimlist[tt, ss]
+                    tprline += tiplistr[tt, ss]
+                    tprazline += tiplistraz[tt, ss]
+                    tpiline += tiplisti[tt, ss]
+                    tpiazline += tiplistiaz[tt, ss]
             else:
                 #get period or frequency
-                skline = mtpl._make_value_str(float(sklst[tt, 0]), 
+                skline = mtpl._make_value_str(float(sklist[tt, 0]), 
                                                    **t1_kwargs)
-                pminline = mtpl._make_value_str(float(phiminlst[tt, 0]), 
+                pminline = mtpl._make_value_str(float(phiminlist[tt, 0]), 
                                                 **t1_kwargs)
-                pmaxline = mtpl._make_value_str(float(phimaxlst[tt, 0]),
+                pmaxline = mtpl._make_value_str(float(phimaxlist[tt, 0]),
                                                 **t1_kwargs)
-                elliline = mtpl._make_value_str(float(elliplst[tt, 0]), 
+                elliline = mtpl._make_value_str(float(elliplist[tt, 0]), 
                                                 **t1_kwargs)
-                azline = mtpl._make_value_str(float(azimlst[tt, 0]), 
+                azline = mtpl._make_value_str(float(azimlist[tt, 0]), 
                                               **t1_kwargs)
-                tprline = mtpl._make_value_str(float(tiplstr[tt, 0]), 
+                tprline = mtpl._make_value_str(float(tiplistr[tt, 0]), 
                                                **t1_kwargs)
-                tprazline = mtpl._make_value_str(float(tiplstraz[tt, 0]), 
+                tprazline = mtpl._make_value_str(float(tiplistraz[tt, 0]), 
                                             **t1_kwargs)
-                tpiline = mtpl._make_value_str(float(tiplsti[tt, 0]), 
+                tpiline = mtpl._make_value_str(float(tiplisti[tt, 0]), 
                                                **t1_kwargs)
-                tpiazline = mtpl._make_value_str(float(tiplstiaz[tt, 0]), 
+                tpiazline = mtpl._make_value_str(float(tiplistiaz[tt, 0]), 
                                                  **t1_kwargs)
                 
                 #get parameter values
                 for ss in range(1, ns):
-                    skline += mtpl._make_value_str(float(sklst[tt, ss]), 
+                    skline += mtpl._make_value_str(float(sklist[tt, ss]), 
                                                    **t2_kwargs)
-                    pminline += mtpl._make_value_str(float(phiminlst[tt, ss]),
+                    pminline += mtpl._make_value_str(float(phiminlist[tt, ss]),
                                                 **t2_kwargs)
-                    pmaxline += mtpl._make_value_str(float(phimaxlst[tt, ss]),
+                    pmaxline += mtpl._make_value_str(float(phimaxlist[tt, ss]),
                                                 **t2_kwargs)
-                    elliline += mtpl._make_value_str(float(elliplst[tt, ss]),
+                    elliline += mtpl._make_value_str(float(elliplist[tt, ss]),
                                                 **t2_kwargs)
-                    azline += mtpl._make_value_str(float(azimlst[tt, ss]),
+                    azline += mtpl._make_value_str(float(azimlist[tt, ss]),
                                               **t2_kwargs)
-                    tprline += mtpl._make_value_str(float(tiplstr[tt, ss]),
+                    tprline += mtpl._make_value_str(float(tiplistr[tt, ss]),
                                                **t2_kwargs)
-                    tprazline += mtpl._make_value_str(float(tiplstraz[tt, ss]),
+                    tprazline += mtpl._make_value_str(float(tiplistraz[tt, ss]),
                                                  **t2_kwargs)
-                    tpiline += mtpl._make_value_str(float(tiplsti[tt, ss]),
+                    tpiline += mtpl._make_value_str(float(tiplisti[tt, ss]),
                                                **t2_kwargs)
-                    tpiazline += mtpl._make_value_str(float(tiplstiaz[tt, ss]),
+                    tpiazline += mtpl._make_value_str(float(tiplistiaz[tt, ss]),
                                                  **t2_kwargs)
             
             # be sure to end the line after each period

@@ -30,7 +30,7 @@ class PlotStations(object):
     
     Arguments:
     ----------
-        **fn_lst** : list of strings
+        **fn_list** : list of strings
                      full paths to .edi files to plot. *default* is None
         
         **mt_object** : class mtpy.imaging.mtplot.MTplot
@@ -169,10 +169,10 @@ class PlotStations(object):
         >>> import mtpy.imaging.plotstations as plotstations
         >>> import os
         >>> edipath = '/home/MT/edifiles'
-        >>> edilst = [os.path.join(edipath, edi) 
+        >>> edilist = [os.path.join(edipath, edi) 
         >>> ...       for edi in os.listdir(edipath)
         >>> ...       if edi.find('.edi')>0]
-        >>> ps1 = plotstations.PlotStations(fn_lst=edilst)
+        >>> ps1 = plotstations.PlotStations(fn_list=edilist)
         >>> # change station label padding and properties
         >>> ps1.text_pad = .001
         >>> ps1.text_angle = 60
@@ -197,7 +197,7 @@ class PlotStations(object):
         marker          station marker, see above for options 
         marker_color    color of marker
         marker_size     size of marker in points
-        mt_lst          list of mtpy.imaging.mtplottools.MTplot instances
+        mt_list          list of mtpy.imaging.mtplottools.MTplot instances
         plot_names      [ True | False ] plot station names next to markers
         plot_title      title of plot
         plot_yn         [ 'y' | 'n' ] plot on initializing PlotStations
@@ -227,12 +227,12 @@ class PlotStations(object):
     
     def __init__(self, **kwargs):
         
-        fn_lst = kwargs.pop('fn_lst', None)
-        mt_object_lst = kwargs.pop('mt_object_lst', None)
+        fn_list = kwargs.pop('fn_list', None)
+        mt_object_list = kwargs.pop('mt_object_list', None)
         
         #----set attributes for the class-------------------------
-        self.mt_lst = mtpt.MTplot_lst(fn_lst=fn_lst,  
-                                      mt_object_lst=mt_object_lst)
+        self.mt_list = mtpt.MTplot_list(fn_list=fn_list,  
+                                      mt_object_list=mt_object_list)
         
             
             
@@ -287,7 +287,7 @@ class PlotStations(object):
         plt.rcParams['figure.subplot.top'] = .98
         
         #get station locations
-        self.mt_lst.get_station_locations(map_scale=self.map_scale,
+        self.mt_list.get_station_locations(map_scale=self.map_scale,
                                           ref_point=self.ref_point)
         
         text_dict = {'size':self.text_size,
@@ -298,20 +298,20 @@ class PlotStations(object):
         font_dict = {'size':self.font_size+2, 'weight':'bold'}
                      
         if self.xlimits is None:
-            if np.sign(self.mt_lst.map_xarr.min()) == -1:
-                self.xlimits = (self.mt_lst.map_xarr.min()*1.002, 
-                                self.mt_lst.map_xarr.max()*.998)
+            if np.sign(self.mt_list.map_xarr.min()) == -1:
+                self.xlimits = (self.mt_list.map_xarr.min()*1.002, 
+                                self.mt_list.map_xarr.max()*.998)
             else:   
-                self.xlimits = (self.mt_lst.map_xarr.min()*.998, 
-                                self.mt_lst.map_xarr.max()*1.002)
+                self.xlimits = (self.mt_list.map_xarr.min()*.998, 
+                                self.mt_list.map_xarr.max()*1.002)
                             
         if self.ylimits is None:
-            if np.sign(self.mt_lst.map_yarr.min()) == -1:
-                self.ylimits = (self.mt_lst.map_yarr.min()*1.002, 
-                                self.mt_lst.map_yarr.max()*.998)
+            if np.sign(self.mt_list.map_yarr.min()) == -1:
+                self.ylimits = (self.mt_list.map_yarr.min()*1.002, 
+                                self.mt_list.map_yarr.max()*.998)
             else:   
-                self.ylimits = (self.mt_lst.map_yarr.min()*.998, 
-                                self.mt_lst.map_yarr.max()*1.002)
+                self.ylimits = (self.mt_list.map_yarr.min()*.998, 
+                                self.mt_list.map_yarr.max()*1.002)
                             
         if self.map_scale == 'latlon':
             xlabel = 'Longitude (deg)'
@@ -338,20 +338,20 @@ class PlotStations(object):
                       aspect='auto')
         
         
-        for key in self.mt_lst.map_dict.keys():
-            self.ax.scatter(self.mt_lst.map_dict[key][0],
-                            self.mt_lst.map_dict[key][1],
+        for key in self.mt_list.map_dict.keys():
+            self.ax.scatter(self.mt_list.map_dict[key][0],
+                            self.mt_list.map_dict[key][1],
                             marker=self.marker,
                             c=self.marker_color,
                             s=self.marker_size)
                             
             if self.plot_names == True:
                 if self.text_pad is None:
-                    self.text_pad = .0009*self.mt_lst.map_dict[key][1]
+                    self.text_pad = .0009*self.mt_list.map_dict[key][1]
                     
-                self.ax.text(self.mt_lst.map_dict[key][0],
-                             self.mt_lst.map_dict[key][1]+self.text_pad*\
-                                 np.sign(self.mt_lst.map_dict[key][1]),
+                self.ax.text(self.mt_list.map_dict[key][0],
+                             self.mt_list.map_dict[key][1]+self.text_pad*\
+                                 np.sign(self.mt_list.map_dict[key][1]),
                              key[self.stationid[0]:self.stationid[1]], 
                              verticalalignment=self.text_va,
                              horizontalalignment=self.text_ha,
@@ -388,7 +388,7 @@ class PlotStations(object):
         
         if save_path == None:
             try:
-                svpath = os.path.dirname(self.mt_lst.mt_lst[0].fn)
+                svpath = os.path.dirname(self.mt_list.mt_list[0].fn)
             except TypeError:
                 raise IOError('Need to input save_path, could not find a path')
         else:
@@ -396,30 +396,30 @@ class PlotStations(object):
 
         if self.map_scale == 'latlon':
             sfmt = '{0: .3f}'
-            hdr_lst = ['Station', 'Longitude(deg)', 'Latitude(deg)']
+            hdr_list = ['Station', 'Longitude(deg)', 'Latitude(deg)']
         elif self.map_scale == 'eastnorth':
             sfmt = '{0: .0f}'
-            hdr_lst = ['Station', 'Longitude(m)', 'Latitude(m)']
+            hdr_list = ['Station', 'Longitude(m)', 'Latitude(m)']
         elif self.map_scale == 'eastnorthkm':
             sfmt = '{0: .0f}'
-            hdr_lst = ['Station', 'Longitude(km)', 'Latitude(km)']
+            hdr_list = ['Station', 'Longitude(km)', 'Latitude(km)']
             
         try:
-            self.mt_lst.map_xarr
+            self.mt_list.map_xarr
         except AttributeError:
-            self.mt_lst.get_station_locations(map_scale=self.map_scale,
+            self.mt_list.get_station_locations(map_scale=self.map_scale,
                                               ref_point=self.ref_point)
                              
         fn_svpath = os.path.join(svpath, 'StationLocations.txt')
         tfid = file(fn_svpath, 'w')
         
-        hdr_str = ['{0:15}'.format(hh) for hh in hdr_lst]+['\n']
+        hdr_str = ['{0:15}'.format(hh) for hh in hdr_list]+['\n']
         
         tfid.write(''.join(hdr_str))
-        for ss in self.mt_lst.map_dict.keys():
+        for ss in self.mt_list.map_dict.keys():
             tfid.write('{0:15}'.format(ss))
-            x = self.mt_lst.map_dict[ss][0]
-            y = self.mt_lst.map_dict[ss][1]
+            x = self.mt_list.map_dict[ss][0]
+            y = self.mt_list.map_dict[ss][1]
             tfid.write('{0:15}'.format(mtpt._make_value_str(x, 
                                        value_format=sfmt, spacing='{0:^15}')))
             tfid.write('{0:15}'.format(mtpt._make_value_str(y, 
@@ -472,7 +472,7 @@ class PlotStations(object):
             
             >>> # to save plot as jpg
             >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotPhaseTensorMaps(edilst,freqspot=10)
+            >>> p1 = mtplot.PlotPhaseTensorMaps(edilist,freqspot=10)
             >>> p1.save_plot(r'/home/MT', file_format='jpg')
             'Figure saved to /home/MT/PTMaps/PTmap_phimin_10Hz.jpg'
             

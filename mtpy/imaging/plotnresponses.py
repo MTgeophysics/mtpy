@@ -28,32 +28,32 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
     component.
     
     expecting only one type of input --> can be:
-        **fn_lst** : list of filenames to plot
+        **fn_list** : list of filenames to plot
            
-         **z_object_lst** : list of mtpy.core.z.Z objects
+         **z_object_list** : list of mtpy.core.z.Z objects
          
-         **res_object_lst** : list of mtpy.imaging.mtplot.ResPhase objects
+         **res_object_list** : list of mtpy.imaging.mtplot.ResPhase objects
          
-         **tipper_object_lst** : list of mtpy.imaging.mtplot.Tipper objects
+         **tipper_object_list** : list of mtpy.imaging.mtplot.Tipper objects
          
-         **mt_object_lst** : list of mtpy.imaging.mtplot.MTplot objects
+         **mt_object_list** : list of mtpy.imaging.mtplot.MTplot objects
          
         
     Arguments:
     ----------
-        **fn_lst** : list of filenames to plot
+        **fn_list** : list of filenames to plot
                      ie. [fn_1, fn_2, ...], *default* is None
            
-         **z_object_lst** : list of mtpy.core.z.Z objects
+         **z_object_list** : list of mtpy.core.z.Z objects
                             *default* is None
          
-         **res_object_lst** : list of mtpy.imaging.mtplot.ResPhase objects
+         **res_object_list** : list of mtpy.imaging.mtplot.ResPhase objects
                               *default* is None
          
-         **tipper_object_lst** : list of mtpy.imaging.mtplot.Tipper objects
+         **tipper_object_list** : list of mtpy.imaging.mtplot.Tipper objects
                                  *default* is None
          
-         **mt_object_lst** : list of mtpy.imaging.mtplot.MTplot objects
+         **mt_object_list** : list of mtpy.imaging.mtplot.MTplot objects
                              *default* is None
                       
         **fig_num** : int
@@ -135,18 +135,18 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             >>> import mtpy.imaging.mtplottools as mtplot
             >>> import os
             >>> edipath = r"/home/Edifiles"
-            >>> edilst = [os.path.join(edipath,edi) 
+            >>> edilist = [os.path.join(edipath,edi) 
             >>> ...       for edi in os.listdir(edipath)
             >>> ...       if edi.find('.edi')>0]
             >>> plot each station in a subplot all in one figure with tipper
-            >>> rp1 = mtplot.PlotMultipleResPhase(edilst, plotnum=1, 
+            >>> rp1 = mtplot.PlotMultipleResPhase(edilist, plotnum=1, 
             >>> ...                                plot_tipper='yr,
             >>> ...                                plot_style='all')
 
             
     Attributes:
     -----------
-        -mt_lst         list of mtplot.MTplot objects made from inputs 
+        -mt_list         list of mtplot.MTplot objects made from inputs 
         -fignum         figure number for plotting
         -fig_size       figure size in inches [width, height]
         -plotnum        plot type, see arguments for details 
@@ -279,19 +279,19 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         """
         Initialize parameters
         """
-        fn_lst = kwargs.pop('fn_lst', None)
-        z_object_lst = kwargs.pop('z_object_lst', None)
-        tipper_object_lst = kwargs.pop('tipper_object_lst', None)
-        mt_object_lst = kwargs.pop('mt_object_lst', None)
-        res_object_lst = kwargs.pop('res_object_lst', None)
+        fn_list = kwargs.pop('fn_list', None)
+        z_object_list = kwargs.pop('z_object_list', None)
+        tipper_object_list = kwargs.pop('tipper_object_list', None)
+        mt_object_list = kwargs.pop('mt_object_list', None)
+        res_object_list = kwargs.pop('res_object_list', None)
         
         #--> get the inputs into a list of mt objects
-        print fn_lst,mt_object_lst
-        self.mt_lst = mtpl.get_mtlst(fn_lst=fn_lst, 
-                                     res_object_lst=res_object_lst,
-                                     z_object_lst=z_object_lst, 
-                                     tipper_object_lst=tipper_object_lst, 
-                                     mt_object_lst=mt_object_lst)
+        print fn_list,mt_object_list
+        self.mt_list = mtpl.get_mtlist(fn_list=fn_list, 
+                                     res_object_list=res_object_list,
+                                     z_object_list=z_object_list, 
+                                     tipper_object_list=tipper_object_list, 
+                                     mt_object_list=mt_object_list)
         
         #set some of the properties as attributes much to Lars' discontent
         self.fig_num = kwargs.pop('fig_num', 1)
@@ -302,16 +302,16 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         self.fig_size = kwargs.pop('fig_size', None)
         
         #if rotation angle is an int or float make an array the length of 
-        #mt_lst for plotting purposes
+        #mt_list for plotting purposes
         self._rot_z = kwargs.pop('rot_z', 0)
         if type(self._rot_z) is float or type(self._rot_z) is int:
-            self._rot_z = np.array([self._rot_z]*len(self.mt_lst))
+            self._rot_z = np.array([self._rot_z]*len(self.mt_list))
         
         #if the rotation angle is an array for rotation of different 
-        #freq than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_list)
         elif type(self._rot_z) is np.ndarray:
-            if self._rot_z.shape[0]  !=  len(self.mt_lst):
-                self._rot_z = np.repeat(self._rot_z, len(self.mt_lst))
+            if self._rot_z.shape[0]  !=  len(self.mt_list):
+                self._rot_z = np.repeat(self._rot_z, len(self.mt_list))
                 
         else:
             pass
@@ -430,20 +430,20 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         """
         
         #if rotation angle is an int or float make an array the length of 
-        #mt_lst for plotting purposes
+        #mt_list for plotting purposes
         if type(rot_z) is float or type(rot_z) is int:
-            self._rot_z += np.array([rot_z]*len(self.mt_lst))
+            self._rot_z += np.array([rot_z]*len(self.mt_list))
         
         #if the rotation angle is an array for rotation of different 
-        #freq than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_list)
         elif type(rot_z) is np.ndarray:
-            if rot_z.shape[0]  !=  len(self.mt_lst):
-                self._rot_z += np.repeat(rot_z, len(self.mt_lst))
+            if rot_z.shape[0]  !=  len(self.mt_list):
+                self._rot_z += np.repeat(rot_z, len(self.mt_list))
                 
         else:
             pass
             
-        for ii, mt in enumerate(self.mt_lst):
+        for ii, mt in enumerate(self.mt_list):
             mt.rot_z = self._rot_z[ii]
             
     def _get_rot_z(self):
@@ -539,13 +539,13 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         hr = [2, 1.5]+[1]*(len(pdict.keys())-2)
         
         if self.plot_style == '1':
-            self.plotlst = []
+            self.plotlist = []
             
             #--> plot from edi's if given, don't need to rotate because
             #    data has already been rotated by the funcion _set_rot_z
             if self.fig_size is None:
                 self.fig_size = [6, 6]
-            for ii, mt in enumerate(self.mt_lst, 1):
+            for ii, mt in enumerate(self.mt_list, 1):
                 p1 = plotresponse(mt_object=mt, 
                                   fig_num=ii,
                                   fig_size=self.fig_size,
@@ -613,7 +613,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 p1.strike_tip_color = self.strike_tip_color
                 
                 #--> plot the apparent resistivity and phase
-                self.plotlst.append(p1)
+                self.plotlist.append(p1)
                 
                 p1.plot()
                     
@@ -621,7 +621,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         #-----Plot All in one figure with each plot as a subfigure------------        
         if self.plot_style == 'all':
 
-            ns = len(self.mt_lst)
+            ns = len(self.mt_list)
 
             #set some parameters of the figure and subplot spacing
             plt.rcParams['font.size'] = self.font_size
@@ -654,7 +654,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             
             labelcoords = (-0.145, 0.5) 
             
-            for ii, mt in enumerate(self.mt_lst):
+            for ii, mt in enumerate(self.mt_list):
                 #get the reistivity and phase object
                 rp = mt.get_ResPhase()
                 
@@ -890,7 +890,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     
                     nt = len(txr)
                     
-                    tiplst = []
+                    tiplist = []
                     tiplabel = []
                     
                     for aa in range(nt):
@@ -928,7 +928,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                             
                             if aa == 0:
                                 line1 = axt.plot(0, 0, self.arrow_color_real)
-                                tiplst.append(line1[0])
+                                tiplist.append(line1[0])
                                 tiplabel.append('real')
                                            
                         #--> plot imaginary arrows
@@ -943,7 +943,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                       length_includes_head=False)
                             if aa == 0:              
                                 line2 = axt.plot(0, 0, self.arrow_color_imag)
-                                tiplst.append(line2[0])
+                                tiplist.append(line2[0])
                                 tiplabel.append('imag')
                         
                     #make a line at 0 for reference
@@ -951,7 +951,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 
                   
                     if ii == 0:
-                        axt.legend(tiplst, tiplabel,
+                        axt.legend(tiplist, tiplabel,
                                     loc='upper left',
                                     markerscale=1,
                                     borderaxespad=.01,
@@ -1001,10 +1001,10 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 #------plot strike angles----------------------------------------------
                 if self._plot_strike.find('y') == 0:
                     
-                    stlst = []
+                    stlist = []
                     stlabel = []
-                    st_maxlst = []
-                    st_minlst = []
+                    st_maxlist = []
+                    st_minlist = []
                     
                     if self._plot_strike.find('i') > 0:
                         #strike from invariants
@@ -1029,10 +1029,10 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                             capsize=self.marker_size,
                                             elinewidth=self.marker_lw)
                                                 
-                        stlst.append(ps1[0])
+                        stlist.append(ps1[0])
                         stlabel.append('Z_inv')
-                        st_maxlst.append(s1.max())
-                        st_minlst.append(s1.min())
+                        st_maxlist.append(s1.max())
+                        st_minlist.append(s1.min())
                                                 
                     if self._plot_strike.find('p') > 0:
                         
@@ -1058,10 +1058,10 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                             capsize=self.marker_size,
                                             elinewidth=self.marker_lw)
                                                 
-                        stlst.append(ps2[0])
+                        stlist.append(ps2[0])
                         stlabel.append('PT')
-                        st_maxlst.append(s2.max())
-                        st_minlst.append(s2.min())
+                        st_maxlist.append(s2.max())
+                        st_minlist.append(s2.min())
                     
                     if self._plot_strike.find('t') > 0:
                         #strike from tipper
@@ -1086,20 +1086,20 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                             capsize=self.marker_size,
                                             elinewidth=self.marker_lw)
                                                 
-                        stlst.append(ps3[0])
+                        stlist.append(ps3[0])
                         stlabel.append('Tip')
-                        st_maxlst.append(s3.max())
-                        st_minlst.append(s3.min())
+                        st_maxlist.append(s3.max())
+                        st_minlist.append(s3.min())
                         
                     #--> set axes properties
                     if self.strike_limits is None:
-                        stmin = min(st_minlst)
+                        stmin = min(st_minlist)
                         if stmin-3 < -90:
                             stmin -= 3
                         else:
                             stmin = -89.99
                             
-                        stmax = max(st_maxlst)
+                        stmax = max(st_maxlist)
                         if stmin+3 < 90:
                             stmin += 3
                         else:
@@ -1123,7 +1123,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                               lw=.25)
                     if ii == 0:
                         try:
-                            axst.legend(stlst, 
+                            axst.legend(stlist, 
                                         stlabel,
                                         loc=3, 
                                         markerscale=1, 
@@ -1157,7 +1157,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                         ecolor=self.skew_color,
                                         capsize=self.marker_size,
                                         elinewidth=self.marker_lw)
-                    stlst.append(ps4[0])
+                    stlist.append(ps4[0])
                     stlabel.append('Skew')
                     if self.skew_limits is None:
                         self.skew_limits = (-9, 9)
@@ -1290,7 +1290,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                         cbax = self.fig.add_axes(cb_position)
                         if cmap == 'mt_seg_bl2wh2rd':
                             #make a color list
-                            clst = [(cc, cc, 1) 
+                            clist = [(cc, cc, 1) 
                                     for cc in np.arange(0,
                                                         1+1./(nseg),
                                                         1./(nseg))]+\
@@ -1300,7 +1300,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                                         -1./(nseg))]
                             
                             #make segmented colormap
-                            mt_seg_bl2wh2rd = colors.ListedColormap(clst)
+                            mt_seg_bl2wh2rd = colors.ListedColormap(clist)
                 
                             #make bounds so that the middle is white
                             bounds = np.arange(ckmin-ckstep, ckmax+2*ckstep, 
@@ -1518,7 +1518,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         
         #===Plot all responses into one plot to compare changes ==
         if self.plot_style == 'compare':
-            ns = len(self.mt_lst)
+            ns = len(self.mt_list)
             
             #make color lists for the plots going light to dark
             cxy = [(0, 0+float(cc)/ns, 1-float(cc)/ns) for cc in range(ns)]
@@ -1532,12 +1532,12 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             mxy = ['s', 'D', 'x', '+', '*', '1', '3', '4']*5
             myx = ['o', 'h', '8', 'p', 'H', 7, 4, 6]*5
             
-            legendlstxy = []
-            legendlstyx = []
-            stationlst = []
-            tiplst = []
-            stlst = []
-            sklst = []
+            legendlistxy = []
+            legendlistyx = []
+            stationlist = []
+            tiplist = []
+            stlist = []
+            sklist = []
 
             #set some parameters of the figure and subplot spacing
             plt.rcParams['font.size'] = self.font_size
@@ -1639,7 +1639,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             except KeyError:
                 pass
     
-            for ii,mt in enumerate(self.mt_lst): 
+            for ii,mt in enumerate(self.mt_list): 
                 #get the reistivity and phase object
                 rp = mt.get_ResPhase()
                 
@@ -1650,7 +1650,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 if self.phase_limits == None:
                     self.phase_limits = (0, 89.9)
                 
-                stationlst.append(mt.station)
+                stationlist.append(mt.station)
                 
                 # ==  ==  ==  == =Plot Z_xy and Z_yx ==
                 if self.plot_num == 1 or self.plot_num == 2:
@@ -1716,8 +1716,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                         elinewidth=self.marker_lw)
             
 
-                    legendlstxy.append(ebxyr)             
-                    legendlstyx.append(ebyxr)             
+                    legendlistxy.append(ebxyr)             
+                    legendlistyx.append(ebyxr)             
                     
                     # ==== Plot the Z_xx, Z_yy components if desired ==               
                     if self.plot_num == 2:
@@ -1826,7 +1826,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                               capsize=self.marker_size,
                                               elinewidth=self.marker_lw)
                     
-                    legendlstxy.append(ebdetr)
+                    legendlistxy.append(ebdetr)
                     
                 #-----plot tipper----------------------------------------------              
                 if self._plot_tipper.find('y') == 0:
@@ -1888,7 +1888,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                            length_includes_head=False)
                         
                     lt = self.axt.plot(0, 0, lw=1, color=ctipr[ii])
-                    tiplst.append(lt[0])
+                    tiplist.append(lt[0])
                                 
                             
             
@@ -1918,7 +1918,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                                 capsize=self.marker_size,
                                                 elinewidth=self.marker_lw)
                                                 
-                        stlst.append(ps1[0])
+                        stlist.append(ps1[0])
                                                 
                     if self._plot_strike.find('p') > 0:
                         
@@ -1944,7 +1944,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                                 capsize=self.marker_size,
                                                 elinewidth=self.marker_lw)
                                                 
-                        stlst.append(ps2[0])
+                        stlist.append(ps2[0])
                     
                     if self._plot_strike.find('t') > 0:
                         #strike from tipper
@@ -1969,7 +1969,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                                 capsize=self.marker_size,
                                                 elinewidth=self.marker_lw)
                                                 
-                        stlst.append(ps3[0])
+                        stlist.append(ps3[0])
                         
                 #------plot skew angle---------------------------------------------
                 if self._plot_skew == 'y':
@@ -1989,7 +1989,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                             ecolor=cxy[ii],
                                             capsize=self.marker_size,
                                             elinewidth=self.marker_lw)
-                    stlst.append(ps4[0])
+                    stlist.append(ps4[0])
                 
                 #----plot phase tensor ellipse---------------------------------------    
                 if self._plot_pt == 'y':        
@@ -2158,8 +2158,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             
             #make legend
             if self.plot_num == 1:
-                self.axrxy.legend(legendlstxy, 
-                                  stationlst,
+                self.axrxy.legend(legendlistxy, 
+                                  stationlist,
                                   loc=3,
                                   ncol=2,
                                   markerscale=.75, 
@@ -2168,8 +2168,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                   handletextpad=.2, 
                                   borderpad=.25)
                                   
-                self.axryx.legend(legendlstyx, 
-                                  stationlst,
+                self.axryx.legend(legendlistyx, 
+                                  stationlist,
                                   loc=3,
                                   ncol=2,
                                   markerscale=.75, 
@@ -2179,11 +2179,11 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                   borderpad=.25)
                                   
             elif self.plot_num == 3:
-                llst = [ll[0] for ll in legendlstxy]
-                slst = [ss+'_det' for ss in stationlst]
+                llist = [ll[0] for ll in legendlistxy]
+                slist = [ss+'_det' for ss in stationlist]
                      
-                self.axr.legend(llst, 
-                                slst,
+                self.axr.legend(llist, 
+                                slist,
                                 loc=3,
                                 markerscale=.75, 
                                 borderaxespad=.01,
@@ -2278,8 +2278,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                               color=(.25,.25,.25),
                               lw=.25)
                               
-                self.axt.legend(tiplst, 
-                                stationlst,
+                self.axt.legend(tiplist, 
+                                stationlist,
                                 loc=3,
                                 ncol=2,
                                 markerscale=1, 
@@ -2310,8 +2310,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                               which='both', 
                               color=(.25, .25, .25),
                               lw=.25)
-                #self.axst.legend(stlst, 
-                #                stationlst,
+                #self.axst.legend(stlist, 
+                #                stationlist,
                 #                loc=3,
                 #                ncol=2,
                 #                markerscale=1, 
@@ -2337,8 +2337,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                               color=(.25, .25, .25),
                               lw=.25)
                     
-                #self.axsk.legend(sklst, 
-                #                 stationlst,
+                #self.axsk.legend(sklist, 
+                #                 stationlist,
                 #                 loc=4,
                 #                 ncol=2,
                 #                 markerscale=1, 
@@ -2390,13 +2390,13 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 self.cbax = self.fig.add_axes(cb_position)
                 if cmap == 'mt_seg_bl2wh2rd':
                     #make a color list
-                    clst = [(cc, cc, 1) 
+                    clist = [(cc, cc, 1) 
                             for cc in np.arange(0,1+1./(nseg),1./(nseg))]+\
                            [(1, cc, cc) 
                             for cc in np.arange(1,-1./(nseg),-1./(nseg))]
                     
                     #make segmented colormap
-                    mt_seg_bl2wh2rd = colors.ListedColormap(clst)
+                    mt_seg_bl2wh2rd = colors.ListedColormap(clist)
         
                     #make bounds so that the middle is white
                     bounds = np.arange(ckmin-ckstep, ckmax+2*ckstep, ckstep)

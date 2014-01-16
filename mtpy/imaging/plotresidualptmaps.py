@@ -214,13 +214,13 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         >>> import mtpy.imaging.mtplottools as mtplot
         >>> import os
         >>> edipath1 = r"/home/EDIfiles1"
-        >>> edilst1 = [os.path.join(edipath1,edi) for edi in os.listdir(edipath1)
+        >>> edilist1 = [os.path.join(edipath1,edi) for edi in os.listdir(edipath1)
         >>> ...       if edi.find('.edi')>0]
         >>> edipath2 = r"/home/EDIfiles2"
-        >>> edilst2 = [os.path.join(edipath2,edi) for edi in os.listdir(edipath2)
+        >>> edilist2 = [os.path.join(edipath2,edi) for edi in os.listdir(edipath2)
         >>> ...       if edi.find('.edi')>0]
         >>> # color by phimin with a range of 0-5 deg
-        >>> ptmap = mtplot.plot_residual_pt_maps(edilst1, edilst2, freqspot=10,
+        >>> ptmap = mtplot.plot_residual_pt_maps(edilist1, edilist2, freqspot=10,
         >>> ...                                  ellipse_dict={'size':1,
         >>> ...                                              'range':(0,5)})
         >>> 
@@ -283,7 +283,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
 
         -mapscale             scale of map
         
-        -mt_lst               list of mtplot.MTplot instances containing all 
+        -mt_list               list of mtplot.MTplot instances containing all 
                               the important information for each station
                               
         -plot_freq       freq in Hz to plot
@@ -322,8 +322,8 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         self.fn_list1 = fn_list1
         self.fn_list2 = fn_list2
         
-        self.mt_list1 = mtpl.get_mtlst(fn_lst=fn_list1)
-        self.mt_list2 = mtpl.get_mtlst(fn_lst=fn_list2)
+        self.mt_list1 = mtpl.get_mtlist(fn_list=fn_list1)
+        self.mt_list2 = mtpl.get_mtlist(fn_list=fn_list2)
         
         self.residual_pt_list = []
         self.med_filt_kernel = kwargs.pop('med_filt_kernel', None)
@@ -391,14 +391,14 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         self.subplot_bottom = .1
         
         #if rotation angle is an int or float make an array the length of 
-        #mt_lst for plotting purposes
+        #mt_list for plotting purposes
         
         self._rot_z = kwargs.pop('rot_z', 0)
         if type(self._rot_z) is float or type(self._rot_z) is int:
             self._rot_z = np.array([self._rot_z]*len(self.mt_list1))
         
         #if the rotation angle is an array for rotation of different 
-        #freq than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_list)
         elif type(self._rot_z) is np.ndarray:
             if self._rot_z.shape[0]  !=  len(self.mt_list1):
                 self._rot_z = np.repeat(self._rot_z, len(self.mt_list1))
@@ -461,20 +461,20 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         """
         
         #if rotation angle is an int or float make an array the length of 
-        #mt_lst for plotting purposes
+        #mt_list for plotting purposes
         if type(rot_z) is float or type(rot_z) is int:
-            self._rot_z = np.array([rot_z]*len(self.mt_lst))
+            self._rot_z = np.array([rot_z]*len(self.mt_list))
         
         #if the rotation angle is an array for rotation of different 
-        #freq than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_list)
         elif type(rot_z) is np.ndarray:
-            if rot_z.shape[0]!=len(self.mt_lst):
-                self._rot_z = np.repeat(rot_z, len(self.mt_lst))
+            if rot_z.shape[0]!=len(self.mt_list):
+                self._rot_z = np.repeat(rot_z, len(self.mt_list))
                 
         else:
             pass
             
-        for ii,mt in enumerate(self.mt_lst):
+        for ii,mt in enumerate(self.mt_list):
             mt.rot_z = self._rot_z[ii]
     def _get_rot_z(self):
         return self._rot_z
@@ -630,9 +630,9 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             self.tickstrfmt = '%.0f'
         
         #make some empty arrays
-        elliplst=[]
-        latlst = np.zeros(len(self.residual_pt_list))
-        lonlst = np.zeros(len(self.residual_pt_list))
+        elliplist=[]
+        latlist = np.zeros(len(self.residual_pt_list))
+        lonlist = np.zeros(len(self.residual_pt_list))
         self.plot_xarr = np.zeros(len(self.residual_pt_list))
         self.plot_yarr = np.zeros(len(self.residual_pt_list))
         
@@ -653,8 +653,8 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                 
                 #if map scale is lat lon set parameters                
                 if self.mapscale == 'latlon':
-                    latlst[ii] = rpt.lat
-                    lonlst[ii] = rpt.lon
+                    latlist[ii] = rpt.lat
+                    lonlist[ii] = rpt.lon
                     plotx = rpt.lon-refpoint[0]
                     ploty = rpt.lat-refpoint[1]
                 
@@ -680,13 +680,13 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                 east += 500000
                             else:
                                 east -= -500000
-                            latlst[ii] = north-refpoint[1]
-                            lonlst[ii] = east-refpoint[0]
+                            latlist[ii] = north-refpoint[1]
+                            lonlist[ii] = east-refpoint[0]
                             plotx = east-refpoint[0]
                             ploty = north-refpoint[1]
                         else:
-                            latlst[ii] = north-refpoint[1]
-                            lonlst[ii] = east-refpoint[0]
+                            latlist[ii] = north-refpoint[1]
+                            lonlist[ii] = east-refpoint[0]
                             plotx = east-refpoint[0]
                             ploty = north-refpoint[1]
                 
@@ -707,13 +707,13 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                 east += 500000
                             else:
                                 east -= 500000
-                            latlst[ii] = (north-refpoint[1])/1000.
-                            lonlst[ii] = (east-refpoint[0])/1000.
+                            latlist[ii] = (north-refpoint[1])/1000.
+                            lonlist[ii] = (east-refpoint[0])/1000.
                             plotx = (east-refpoint[0])/1000.
                             ploty = (north-refpoint[1])/1000.
                         else:
-                            latlst[ii] = (north-refpoint[1])/1000.
-                            lonlst[ii] = (east-refpoint[0])/1000.
+                            latlist[ii] = (north-refpoint[1])/1000.
+                            lonlist[ii] = (east-refpoint[0])/1000.
                             plotx = (east-refpoint[0])/1000.
                             ploty = (north-refpoint[1])/1000.
                 else:
@@ -785,7 +785,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                                              ckmax))
                 
                 #==> add ellipse to the plot
-                elliplst.append(ellipd)
+                elliplist.append(ellipd)
                 self.ax.add_artist(ellipd)
                         
                 #------------Plot station name------------------------------
@@ -866,13 +866,13 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         
         if cmap == 'mt_seg_bl2wh2rd':
             #make a color list
-            self.clst = [(cc, cc ,1) 
+            self.clist = [(cc, cc ,1) 
                          for cc in np.arange(0, 1+1./(nseg), 1./(nseg))]+\
                        [(1, cc, cc) 
                          for cc in np.arange(1, -1./(nseg), -1./(nseg))]
             
             #make segmented colormap
-            mt_seg_bl2wh2rd = colors.ListedColormap(self.clst)
+            mt_seg_bl2wh2rd = colors.ListedColormap(self.clist)
 
             #make bounds so that the middle is white
             bounds = np.arange(ckmin-ckstep, ckmax+2*ckstep, ckstep)
@@ -950,7 +950,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             
             >>> # to save plot as jpg
             >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotPhaseTensorMaps(edilst,freqspot=10)
+            >>> p1 = mtplot.PlotPhaseTensorMaps(edilist,freqspot=10)
             >>> p1.save_plot(r'/home/MT', file_format='jpg')
             'Figure saved to /home/MT/PTMaps/PTmap_phimin_10Hz.jpg'
             

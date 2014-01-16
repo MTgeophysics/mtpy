@@ -175,7 +175,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
         >>> import mtpy.imaging.mtplottools as mtplot
         >>> import os
         >>> edipath = r"/home/EDIfiles"
-        >>> edilst = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
+        >>> edilist = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
         >>> ...       if edi.find('.edi')>0]
     
     * If you want to plot minimum phase colored from blue to red in a range of
@@ -185,12 +185,12 @@ class PlotResidualPTps(mtpl.MTEllipse):
     :Example: ::
         
         >>> edict = {'range':(20,70), 'cmap':'mt_bl2gr2rd','colorby':'phimin'}
-        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilst,ellipse_dict=edict)
+        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilist,ellipse_dict=edict)
      
     2)
     :Example: ::
         
-        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilst, plot_yn='n')
+        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilist, plot_yn='n')
         >>> pt1.ellipse_colorby = 'phimin'
         >>> pt1.ellipse_cmap = 'mt_bl2gr2rd'
         >>> pt1.ellipse_range = (20,70)
@@ -244,9 +244,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
         
         -linedir              prominent direction of profile being plotted 
              
-        -mt_lst               list of mtplot.MTplot instances containing all
+        -mt_list               list of mtplot.MTplot instances containing all
                               the important information for each station
-        -offsetlst            array of relative offsets of each station
+        -offsetlist            array of relative offsets of each station
         
         -plot_tipper          string to inform program to plot induction arrows
         -plot_yn              plot the pseudo section on instance creation
@@ -255,7 +255,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
                               0 and angle measures clockwise
                               
         -station_id            index [min, max] to reaad station name
-        -stationlst           list of stations plotted
+        -stationlist           list of stations plotted
         -title                title of figure
         -tscale               temporal scale of y-axis ('frequency' | 'period')
         
@@ -284,8 +284,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.fn_list1 = fn_list1
         self.fn_list2 = fn_list2
         
-        self.mt_list1 = mtpl.get_mtlst(fn_lst=fn_list1)
-        self.mt_list2 = mtpl.get_mtlst(fn_lst=fn_list2)
+        self.mt_list1 = mtpl.get_mtlist(fn_list=fn_list1)
+        self.mt_list2 = mtpl.get_mtlist(fn_list=fn_list2)
         
         self.residual_pt_list = []
         self.med_filt_kernel = kwargs.pop('med_filt_kernel', None)
@@ -344,14 +344,14 @@ class PlotResidualPTps(mtpl.MTEllipse):
             self.ystretch = stretch[1]
         
         #if rotation angle is an int or float make an array the length of 
-        #mt_lst for plotting purposes
+        #mt_list for plotting purposes
         
         self._rot_z = kwargs.pop('rot_z', 0)
         if type(self._rot_z) is float or type(self._rot_z) is int:
             self._rot_z = np.array([self._rot_z]*len(self.mt_list1))
         
         #if the rotation angle is an array for rotation of different 
-        #freq than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_list)
         elif type(self._rot_z) is np.ndarray:
             if self._rot_z.shape[0]  !=  len(self.mt_list1):
                 self._rot_z = np.repeat(self._rot_z, len(self.mt_list1))
@@ -380,15 +380,15 @@ class PlotResidualPTps(mtpl.MTEllipse):
         """
         
         #if rotation angle is an int or float make an array the length of 
-        #mt_lst for plotting purposes
+        #mt_list for plotting purposes
         if type(rot_z) is float or type(rot_z) is int:
-            self._rot_z = np.array([rot_z]*len(self.mt_lst))
+            self._rot_z = np.array([rot_z]*len(self.mt_list))
         
         #if the rotation angle is an array for rotation of different 
-        #freq than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_list)
         elif type(rot_z) is np.ndarray:
-            if rot_z.shape[0]!=len(self.mt_lst):
-                self._rot_z = np.repeat(rot_z, len(self.mt_lst))
+            if rot_z.shape[0]!=len(self.mt_list):
+                self._rot_z = np.repeat(rot_z, len(self.mt_list))
                 
         else:
             pass
@@ -501,11 +501,11 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.ax = self.fig.add_subplot(1, 1, 1, aspect='equal')
         
         #create empty lists to put things into
-        self.stationlst = []
-        self.offsetlst = []
-        minlst = []
-        maxlst = []
-        plot_periodlst = None
+        self.stationlist = []
+        self.offsetlist = []
+        minlist = []
+        maxlist = []
+        plot_periodlist = None
         
         #set local parameters with shorter names
         es = self.ellipse_size
@@ -528,7 +528,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
             
         #plot phase tensor ellipses
         for ii, rpt in enumerate(self.residual_pt_list):
-            self.stationlst.append(
+            self.stationlist.append(
                               rpt.station[self.station_id[0]:self.station_id[1]])
             
             #set the an arbitrary origin to compare distance to all other 
@@ -555,9 +555,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
                     else:
                         offset = 0
                         
-            self.offsetlst.append(offset)
+            self.offsetlist.append(offset)
             
-            periodlst = 1./rpt.freq[::-1]
+            periodlist = 1./rpt.freq[::-1]
             phimax = rpt.residual_pt.phimax[0][::-1]
             phimin = rpt.residual_pt.phimin[0][::-1]
             azimuth = rpt.residual_pt.azimuth[0][::-1]
@@ -583,20 +583,20 @@ class PlotResidualPTps(mtpl.MTEllipse):
                 raise NameError(self.ellipse_colorby+' is not supported')
             
             #get the number of periods
-            n = len(periodlst)
+            n = len(periodlist)
             
             if ii == 0:
-                plot_periodlst = periodlst
+                plot_periodlist = periodlist
             
             else:
-                if n > len(plot_periodlst):
-                    plot_periodlst = periodlst
+                if n > len(plot_periodlist):
+                    plot_periodlist = periodlist
             
             #get min and max of the color array for scaling later
-            minlst.append(min(colorarray))
-            maxlst.append(max(colorarray))
+            minlist.append(min(colorarray))
+            maxlist.append(max(colorarray))
 
-            for jj, ff in enumerate(periodlst):
+            for jj, ff in enumerate(periodlist):
                 
                 #make sure the ellipses will be visable
                 eheight = phimin[jj]/emax*es
@@ -631,37 +631,37 @@ class PlotResidualPTps(mtpl.MTEllipse):
                 
                 
         #--> Set plot parameters 
-        self._plot_periodlst = plot_periodlst
-        n = len(plot_periodlst)
+        self._plot_periodlist = plot_periodlist
+        n = len(plot_periodlist)
         
         
         #calculate minimum period and maximum period with a stretch factor
-        pmin = np.log10(plot_periodlst.min())*self.ystretch
-        pmax = np.log10(plot_periodlst.max())*self.ystretch
+        pmin = np.log10(plot_periodlist.min())*self.ystretch
+        pmax = np.log10(plot_periodlist.max())*self.ystretch
         
         #need to sort the offsets and station labels so they plot correctly
         sdtype = [('offset', np.float), ('station','|S10')]
-        slst = np.array([(oo, ss) for oo, ss in zip(self.offsetlst, 
-                         self.stationlst)], dtype=sdtype)
-        offset_sort = np.sort(slst, order='offset')
+        slist = np.array([(oo, ss) for oo, ss in zip(self.offsetlist, 
+                         self.stationlist)], dtype=sdtype)
+        offset_sort = np.sort(slist, order='offset')
      
-        self.offsetlst = offset_sort['offset']
-        self.stationlst = offset_sort['station']
+        self.offsetlist = offset_sort['offset']
+        self.stationlist = offset_sort['station']
         
         #set y-ticklabels
         if self.tscale == 'period':
-            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(plot_periodlst[ll])) 
+            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(plot_periodlist[ll])) 
                             for ll in np.arange(0, n, self.ystep)]+\
-                        ['{0:>4}'.format('{0: .1e}'.format(plot_periodlst[-1]))]
+                        ['{0:>4}'.format('{0: .1e}'.format(plot_periodlist[-1]))]
             
             self.ax.set_ylabel('Period (s)',
                                fontsize=self.font_size+2,
                                fontweight='bold')
                                
         elif self.tscale == 'frequency':
-            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlst[ll])) 
+            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlist[ll])) 
                             for ll in np.arange(0, n, self.ystep)]+\
-                            ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlst[-1]))]
+                            ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlist[-1]))]
             
             self.ax.set_ylabel('Frequency (Hz)',
                                fontsize=self.font_size+2,
@@ -673,31 +673,31 @@ class PlotResidualPTps(mtpl.MTEllipse):
          
         #--> set tick locations and labels
         #set y-axis major ticks
-        self.ax.yaxis.set_ticks([np.log10(plot_periodlst[ll])*self.ystretch 
+        self.ax.yaxis.set_ticks([np.log10(plot_periodlist[ll])*self.ystretch 
                              for ll in np.arange(0, n, self.ystep)])
         
         #set y-axis minor ticks                     
-        self.ax.yaxis.set_ticks([np.log10(plot_periodlst[ll])*self.ystretch 
+        self.ax.yaxis.set_ticks([np.log10(plot_periodlist[ll])*self.ystretch 
                              for ll in np.arange(0, n, 1)],minor=True)
         #set y-axis tick labels
         self.ax.set_yticklabels(yticklabels)
         
         #set x-axis ticks
-        self.ax.set_xticks(self.offsetlst*self.xstretch)
+        self.ax.set_xticks(self.offsetlist*self.xstretch)
         
         #set x-axis tick labels as station names
-        xticklabels = self.stationlst
+        xticklabels = self.stationlist
         if self.xstep != 1:
-            xticklabels = np.zeros(len(self.stationlst), 
-                                   dtype=self.stationlst.dtype)
-            for xx in range(0,len(self.stationlst),self.xstep):
-                xticklabels[xx] = self.stationlst[xx]
+            xticklabels = np.zeros(len(self.stationlist), 
+                                   dtype=self.stationlist.dtype)
+            for xx in range(0,len(self.stationlist),self.xstep):
+                xticklabels[xx] = self.stationlist[xx]
         self.ax.set_xticklabels(xticklabels)
         
         #--> set x-limits
         if self.xlimits == None:
-            self.ax.set_xlim(self.offsetlst.min()*self.xstretch-es*2,
-                             self.offsetlst.max()*self.xstretch+es*2)
+            self.ax.set_xlim(self.offsetlist.min()*self.xstretch-es*2,
+                             self.offsetlist.max()*self.xstretch+es*2)
         else:
             self.ax.set_xlim(self.xlimits)
             
@@ -720,8 +720,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
         
         #print out the min an max of the parameter plotted
         print '-'*25
-        print ck+' min = {0:.2f}'.format(min(minlst))
-        print ck+' max = {0:.2f}'.format(max(maxlst))
+        print ck+' min = {0:.2f}'.format(min(minlist))
+        print ck+' max = {0:.2f}'.format(max(maxlist))
         print '-'*25
 
         #==> make a colorbar with appropriate colors
@@ -734,13 +734,13 @@ class PlotResidualPTps(mtpl.MTEllipse):
         
         if cmap == 'mt_seg_bl2wh2rd':
             #make a color list
-            self.clst = [(cc, cc, 1) 
+            self.clist = [(cc, cc, 1) 
                          for cc in np.arange(0, 1+1./(nseg), 1./(nseg))]+\
                         [(1, cc, cc) 
                          for cc in np.arange(1, -1./(nseg), -1./(nseg))]
             
             #make segmented colormap
-            mt_seg_bl2wh2rd = colors.ListedColormap(self.clst)
+            mt_seg_bl2wh2rd = colors.ListedColormap(self.clist)
 
             #make bounds so that the middle is white
             bounds = np.arange(ckmin-ckstep, ckmax+2*ckstep, ckstep)
@@ -818,7 +818,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
             
             >>> # to save plot as jpg
             >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotPhaseTensorMaps(edilst,freqspot=10)
+            >>> p1 = mtplot.PlotPhaseTensorMaps(edilist,freqspot=10)
             >>> p1.save_plot(r'/home/MT', file_format='jpg')
             'Figure saved to /home/MT/PTMaps/PTmap_phimin_10Hz.jpg'
             

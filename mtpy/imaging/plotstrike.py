@@ -36,7 +36,7 @@ class PlotStrike(object):
     
     Arguments:
     ----------
-        **fn_lst** : list of strings
+        **fn_list** : list of strings
                           full paths to .edi files to plot
                           
         **z_object** : class mtpy.core.z.Z
@@ -103,10 +103,10 @@ class PlotStrike(object):
         >>> import os
         >>> import mtpy.imaging.mtplottools as mtplot
         >>> edipath = r"/home/EDIFiles"
-        >>> edilst = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
+        >>> edilist = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
         >>> ...       if edi.find('.edi')>0]
         >>> #---plot rose plots in decades with tipper and an error floor on pt
-        >>> strike = mtplot.PlotStrike(edilst, plot_type=1,pt_error_floor=5)
+        >>> strike = mtplot.PlotStrike(edilist, plot_type=1,pt_error_floor=5)
         >>> #---plot all decades into one rose plot for each estimation---
         >>> strike.plot_type = 2
         >>> strike.redraw_plot()
@@ -136,7 +136,7 @@ class PlotStrike(object):
       
         -font_size         font size of axes tick labels
         
-        -mt_lst            list of mtplot.MTplot instances containing all
+        -mt_list            list of mtplot.MTplot instances containing all
                            the important information for each station            
         -period_tolerance  tolerance to look for periods being plotted
  
@@ -164,28 +164,28 @@ class PlotStrike(object):
     
     def __init__(self, **kwargs):
         
-        fn_lst = kwargs.pop('fn_lst', None)
-        z_object_lst = kwargs.pop('z_object_lst', None)
-        tipper_object_lst = kwargs.pop('tipper_object_lst', None)
-        mt_object_lst = kwargs.pop('mt_object_lst', None)
+        fn_list = kwargs.pop('fn_list', None)
+        z_object_list = kwargs.pop('z_object_list', None)
+        tipper_object_list = kwargs.pop('tipper_object_list', None)
+        mt_object_list = kwargs.pop('mt_object_list', None)
         
         #------Set attributes of the class-----------------
             
         #--> get the inputs into a list of mt objects
-        self.mt_lst = mtpl.get_mtlst(fn_lst=fn_lst, 
-                                     z_object_lst=z_object_lst, 
-                                     tipper_object_lst=tipper_object_lst, 
-                                     mt_object_lst=mt_object_lst)
+        self.mt_list = mtpl.get_mtlist(fn_list=fn_list, 
+                                     z_object_list=z_object_list, 
+                                     tipper_object_list=tipper_object_list, 
+                                     mt_object_list=mt_object_list)
         
         self._rot_z = kwargs.pop('rot_z', 0)
         if type(self._rot_z) is float or type(self._rot_z) is int:
-            self._rot_z = np.array([self._rot_z]*len(self.mt_lst))
+            self._rot_z = np.array([self._rot_z]*len(self.mt_list))
         
         #if the rotation angle is an array for rotation of different 
-        #freq than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_list)
         elif type(self._rot_z) is np.ndarray:
-            if self._rot_z.shape[0]  !=  len(self.mt_lst):
-                self._rot_z = np.repeat(self._rot_z, len(self.mt_lst))
+            if self._rot_z.shape[0]  !=  len(self.mt_list):
+                self._rot_z = np.repeat(self._rot_z, len(self.mt_list))
                 
         else:
             pass
@@ -245,20 +245,20 @@ class PlotStrike(object):
         """
         
         #if rotation angle is an int or float make an array the length of 
-        #mt_lst for plotting purposes
+        #mt_list for plotting purposes
         if type(rot_z) is float or type(rot_z) is int:
-            self._rot_z = np.array([rot_z]*len(self.mt_lst))
+            self._rot_z = np.array([rot_z]*len(self.mt_list))
         
         #if the rotation angle is an array for rotation of different 
-        #freq than repeat that rotation array to the len(mt_lst)
+        #freq than repeat that rotation array to the len(mt_list)
         elif type(rot_z) is np.ndarray:
-            if rot_z.shape[0]!=len(self.mt_lst):
-                self._rot_z = np.repeat(rot_z, len(self.mt_lst))
+            if rot_z.shape[0]!=len(self.mt_list):
+                self._rot_z = np.repeat(rot_z, len(self.mt_list))
                 
         else:
             pass
             
-        for ii,mt in enumerate(self.mt_lst):
+        for ii,mt in enumerate(self.mt_list):
             mt.rot_z = self._rot_z[ii]
     def _get_rot_z(self):
         return self._rot_z
@@ -284,16 +284,16 @@ class PlotStrike(object):
             histrange = (0, 360)
             
         #set empty lists that will hold dictionaries with keys as the period
-        invlst = []
-        ptlst = []
-        tiprlst = []
+        invlist = []
+        ptlist = []
+        tiprlist = []
         
         #initialize some parameters
-        nc = len(self.mt_lst)
+        nc = len(self.mt_list)
         nt = 0
         kk = 0
         
-        for dd,mt in enumerate(self.mt_lst):
+        for dd,mt in enumerate(self.mt_list):
             
             #--> set the period
             period = mt.period
@@ -325,7 +325,7 @@ class PlotStrike(object):
             
             #make a dictionary of strikes with keys as period
             mdictinv = dict([(ff,jj) for ff,jj in zip(mt.period,zs)])
-            invlst.append(mdictinv)
+            invlist.append(mdictinv)
         
             #------------get strike from phase tensor strike angle---------------
             pt = mt.get_PhaseTensor()
@@ -350,7 +350,7 @@ class PlotStrike(object):
             
             #make a dictionary of strikes with keys as period
             mdictpt = dict([(ff,jj) for ff,jj in zip(mt.period,az)])
-            ptlst.append(mdictpt)
+            ptlist.append(mdictpt)
             
             #-----------get tipper strike------------------------------------
             tip = mt.get_Tipper()
@@ -376,11 +376,11 @@ class PlotStrike(object):
             
             #make a dictionary of strikes with keys as period
             tiprdict = dict([(ff,jj) for ff,jj in zip(mt.period,tipr)])
-            tiprlst.append(tiprdict)
+            tiprlist.append(tiprdict)
 
         #--> get min and max period
-        maxper = np.max([np.max(mm.keys()) for mm in invlst])
-        minper = np.min([np.min(mm.keys()) for mm in ptlst])
+        maxper = np.max([np.max(mm.keys()) for mm in invlist])
+        minper = np.min([np.min(mm.keys()) for mm in ptlist])
         
         #make empty arrays to put data into for easy manipulation
         medinv = np.zeros((nt,nc))
@@ -388,22 +388,22 @@ class PlotStrike(object):
         medtipr = np.zeros((nt,nc))
         
         #make a list of periods from the longest period list
-        plst = np.logspace(np.log10(minper),np.log10(maxper),num=nt,base=10)
-        pdict = dict([(ii,jj) for jj,ii in enumerate(plst)])
+        plist = np.logspace(np.log10(minper),np.log10(maxper),num=nt,base=10)
+        pdict = dict([(ii,jj) for jj,ii in enumerate(plist)])
         
-        self._plst = plst
+        self._plist = plist
         
         #put data into arrays
-        for ii,mm in enumerate(invlst):
+        for ii,mm in enumerate(invlist):
             mperiod=mm.keys()
             for jj,mp in enumerate(mperiod):
                 for kk in pdict.keys():
                     if mp>kk*(1-self.period_tolerance) and \
                          mp<kk*(1+self.period_tolerance):
                         ll = pdict[kk]
-                        medinv[ll,ii] = invlst[ii][mp]
-                        medpt[ll,ii] = ptlst[ii][mp]
-                        medtipr[ll,ii] = tiprlst[ii][mp]
+                        medinv[ll,ii] = invlist[ii][mp]
+                        medpt[ll,ii] = ptlist[ii][mp]
+                        medtipr[ll,ii] = tiprlist[ii][mp]
                     else:
                         pass
 
@@ -441,26 +441,26 @@ class PlotStrike(object):
                 if self.plot_tipper == 'n':
                     self.axhinv = self.fig.add_subplot(2, nb, jj, polar=True)
                     self.axhpt = self.fig.add_subplot(2, nb, jj+nb, polar=True)
-                    axlst = [self.axhinv, self.axhpt]
+                    axlist = [self.axhinv, self.axhpt]
                     
                 if self.plot_tipper == 'y':
                     self.axhinv = self.fig.add_subplot(3, nb, jj, polar=True)
                     self.axhpt = self.fig.add_subplot(3, nb, jj+nb, polar=True)
                     self.axhtip = self.fig.add_subplot(3, nb, jj+2*nb, 
                                                        polar=True)
-                    axlst = [self.axhinv, self.axhpt, self.axhtip]
+                    axlist = [self.axhinv, self.axhpt, self.axhtip]
                 
                 #make a list of indicies for each decades    
-                binlst=[]
-                for ii,ff in enumerate(plst):
+                binlist=[]
+                for ii,ff in enumerate(plist):
                     if ff > 10**bb and ff < 10**(bb+1):
-                        binlst.append(ii)
+                        binlist.append(ii)
                 
                 #extract just the subset for each decade
-                hh = medinv[binlst,:]
-                gg = medpt[binlst,:]
+                hh = medinv[binlist,:]
+                gg = medpt[binlist,:]
                 if self.plot_tipper == 'y':
-                    tr = medtipr[binlst,:]
+                    tr = medtipr[binlist,:]
                     
                     #compute the historgram for the tipper strike
                     trhist = np.histogram(tr[np.nonzero(tr)].flatten(),
@@ -508,7 +508,7 @@ class PlotStrike(object):
                     bar.set_facecolor((fc,1-fc,0))
                     
                 #make axis look correct with N to the top at 90.
-                for aa,axh in enumerate(axlst):
+                for aa,axh in enumerate(axlist):
                     #set multiple locator to be every 15 degrees
                     axh.xaxis.set_major_locator(MultipleLocator(30*np.pi/180))
                     
@@ -689,20 +689,20 @@ class PlotStrike(object):
             if self.plot_tipper == 'n':
                 self.axhinv=self.fig.add_subplot(1,2,1,polar=True)
                 self.axhpt=self.fig.add_subplot(1,2,2,polar=True)
-                axlst=[self.axhinv, self.axhpt]
+                axlist=[self.axhinv, self.axhpt]
             else:
                 self.axhinv=self.fig.add_subplot(1,3,1,polar=True)
                 self.axhpt=self.fig.add_subplot(1,3,2,polar=True)
                 self.axhtip=self.fig.add_subplot(1,3,3,polar=True)
-                axlst=[self.axhinv, self.axhpt, self.axhtip]
+                axlist=[self.axhinv, self.axhpt, self.axhtip]
             
             #make a list of indicies for each decades    
-            binlst=[pdict[ff] for ff in plst 
+            binlist=[pdict[ff] for ff in plist 
                     if ff>10**brange.min() and ff<10**brange.max()]
             
             #extract just the subset for each decade
-            hh=medinv[binlst,:]
-            gg=medpt[binlst,:]
+            hh=medinv[binlist,:]
+            gg=medpt[binlist,:]
             
             #estimate the histogram for the decade for invariants and pt
             invhist=np.histogram(hh[np.nonzero(hh)].flatten(),
@@ -733,7 +733,7 @@ class PlotStrike(object):
             
             #plot tipper if desired
             if self.plot_tipper == 'y':
-                tr = self._medtp[binlst,:]
+                tr = self._medtp[binlist,:]
                 
                 trhist = np.histogram(tr[np.nonzero(tr)].flatten(),
                                       bins=360/bw,
@@ -749,7 +749,7 @@ class PlotStrike(object):
                     bar.set_facecolor((0,1-fc/2,fc))
                         
             #make axis look correct with N to the top at 90.
-            for aa,axh in enumerate(axlst):
+            for aa,axh in enumerate(axlist):
                 #set major ticks to be every 15 degrees
                 axh.xaxis.set_major_locator(MultipleLocator(30*np.pi/180))
                 
@@ -923,7 +923,7 @@ class PlotStrike(object):
             
             >>> # to save plot as jpg
             >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotPhaseTensorMaps(edilst,freqspot=10)
+            >>> p1 = mtplot.PlotPhaseTensorMaps(edilist,freqspot=10)
             >>> p1.save_plot(r'/home/MT', file_format='jpg')
             'Figure saved to /home/MT/PTMaps/PTmap_phimin_10Hz.jpg'
             
@@ -1014,7 +1014,7 @@ class PlotStrike(object):
         #get the path to save the file to
         if save_path == None:
             try:
-                svpath = os.path.dirname(self.mt_lst[0].fn)
+                svpath = os.path.dirname(self.mt_list[0].fn)
             except TypeError:
                 raise IOError('Need to input save_path, could not find path')
         
@@ -1031,39 +1031,39 @@ class PlotStrike(object):
         #set the bin width
         bw = self.bin_width
 
-        slstinv = [['station']]            
-        slstpt = [['station']]            
-        slsttip = [['station']]            
+        slistinv = [['station']]            
+        slistpt = [['station']]            
+        slisttip = [['station']]            
             
         #calculate the strikes for the different period bands
         for jj,bb in enumerate(self._brange):
             tstr = self.title_dict[bb].replace('$','')
             tstr = tstr.replace('{','').replace('}','').replace('^','e')
             tstr = tstr.replace('s', '(s)')
-            slstinv[0].append(tstr)
-            slstpt[0].append(tstr)
-            slsttip[0].append(tstr)
+            slistinv[0].append(tstr)
+            slistpt[0].append(tstr)
+            slisttip[0].append(tstr)
             
             #calculate the strike for the different period bands per station
-            for kk, mt in enumerate(self.mt_lst, 1):
+            for kk, mt in enumerate(self.mt_list, 1):
 
                 
                 if jj == 0:
-                    slstinv.append([mt.station])
-                    slstpt.append([mt.station])
-                    slsttip.append([mt.station])
+                    slistinv.append([mt.station])
+                    slistpt.append([mt.station])
+                    slisttip.append([mt.station])
                 
                 zinv = mt.get_Zinvariants()
                 pt = mt.get_PhaseTensor()
                 tp = mt.get_Tipper()
                 
-                bnlst = []
+                bnlist = []
                 for nn,per in enumerate(mt.period):
                     if per>10**bb and per<10**(bb+1):
-                        bnlst.append(nn)
+                        bnlist.append(nn)
                 
                 #---> strike from invariants
-                zs = 90-zinv.strike[bnlst]
+                zs = 90-zinv.strike[bnlist]
                 #fold so the angle goes from 0 to 180
                 if self.fold == True:
                     #for plotting put the NW angles into the SE quadrant 
@@ -1100,12 +1100,12 @@ class PlotStrike(object):
                 if invmode<0: invmode+=360
                           
                 #==> append to list
-                slstinv[kk].append((invmean,
+                slistinv[kk].append((invmean,
                                     invmed,
                                     invmode))
                 
                 #---> strike from phase tensor
-                az = pt.azimuth[0][bnlst]
+                az = pt.azimuth[0][bnlist]
                 #fold so the angle goes from 0 to 180
                 if self.fold == True:
                     az[np.where(az>90)] = az[np.where(az>90)]-180
@@ -1131,7 +1131,7 @@ class PlotStrike(object):
                                            azhist[0] == azhist[0].max())[0][0]]
                 if ptmode1<0: ptmode1 += 360              
                                 
-                slstpt[kk].append((ptmean1,
+                slistpt[kk].append((ptmean1,
                                    ptmed1,
                                    ptmode1))
 
@@ -1142,7 +1142,7 @@ class PlotStrike(object):
                                                   dtype='complex')
                     tp.compute_components()
                 
-                tipr = -tp.ang_real[bnlst]
+                tipr = -tp.ang_real[bnlist]
                 
                 #fold so the angle goes from 0 to 180
                 if self.fold == True:
@@ -1171,20 +1171,20 @@ class PlotStrike(object):
                 if tpmode1<0: tpmode1 += 360                                           
                                           
                 #--> append statistics to list 
-                slsttip[kk].append((tpmean1,
+                slisttip[kk].append((tpmean1,
                                     tpmed1,
                                     tpmode1))
  
             #make a list of indicies for each decades    
-            binlst=[]
-            for ii,ff in enumerate(self._plst):
+            binlist=[]
+            for ii,ff in enumerate(self._plist):
                 if ff>10**bb and ff<10**(bb+1):
-                    binlst.append(ii)
+                    binlist.append(ii)
             
             #extract just the subset for each decade
-            hh = self._medinv[binlst,:]
-            gg = self._medpt[binlst,:]
-            tr = self._medtp[binlst,:]
+            hh = self._medinv[binlist,:]
+            gg = self._medpt[binlist,:]
+            tr = self._medtp[binlist,:]
 
             #estimate the histogram for the decade for invariants and pt
             invhist = np.histogram(hh[np.nonzero(hh)].flatten(),
@@ -1200,17 +1200,17 @@ class PlotStrike(object):
             
             #--> include the row for mean, median and mode for each parameter
             if jj == 0:                      
-                slstinv.append(['mean'])
-                slstinv.append(['median'])
-                slstinv.append(['mode'])
+                slistinv.append(['mean'])
+                slistinv.append(['median'])
+                slistinv.append(['mode'])
                 
-                slstpt.append(['mean'])
-                slstpt.append(['median'])
-                slstpt.append(['mode'])
+                slistpt.append(['mean'])
+                slistpt.append(['median'])
+                slistpt.append(['mode'])
                 
-                slsttip.append(['mean'])
-                slsttip.append(['median'])
-                slsttip.append(['mode'])
+                slisttip.append(['mean'])
+                slisttip.append(['median'])
+                slisttip.append(['mode'])
 
             #--> compute mean, median and mode for invariants
             # == > mean
@@ -1227,9 +1227,9 @@ class PlotStrike(object):
             if imode<0: imode +=360
                      
             #--> add them to the list of estimates
-            slstinv[kk+1].append(imean)
-            slstinv[kk+2].append(imed)
-            slstinv[kk+3].append(imode)
+            slistinv[kk+1].append(imean)
+            slistinv[kk+2].append(imed)
+            slistinv[kk+3].append(imode)
             
             #--> compute pt statistics
             # == > mean
@@ -1246,9 +1246,9 @@ class PlotStrike(object):
             if ptmode<0: ptmode +=360
                                 
             #--> add the statistics to the parameter list
-            slstpt[kk+1].append(ptmean)
-            slstpt[kk+2].append(ptmed)
-            slstpt[kk+3].append(ptmode)
+            slistpt[kk+1].append(ptmean)
+            slistpt[kk+2].append(ptmed)
+            slistpt[kk+3].append(ptmode)
             
             #--> compute tipper statistics
             # == > mean            
@@ -1265,9 +1265,9 @@ class PlotStrike(object):
             if tpmode<0: tpmode +=360
                             
             #--> add the statistics to parameter list
-            slsttip[kk+1].append(tpmean)
-            slsttip[kk+2].append(tpmed)
-            slsttip[kk+3].append(tpmode)
+            slisttip[kk+1].append(tpmean)
+            slisttip[kk+2].append(tpmed)
+            slisttip[kk+3].append(tpmode)
                                             
         invfid = file(os.path.join(svpath,'Strike.invariants'),'w')        
         ptfid = file(os.path.join(svpath,'Strike.pt'),'w')  
@@ -1276,7 +1276,7 @@ class PlotStrike(object):
         #---> write strike from the invariants
         # == > mean
         invfid.write('-'*20+'MEAN'+'-'*20+'\n')
-        for ii,l1 in enumerate(slstinv):
+        for ii,l1 in enumerate(slistinv):
             for jj,l2 in enumerate(l1):
                 if ii == 0:
                     invfid.write('{0:^16}'.format(l2))
@@ -1294,7 +1294,7 @@ class PlotStrike(object):
         
         # == > median
         invfid.write('-'*20+'MEDIAN'+'-'*20+'\n')
-        for ii,l1 in enumerate(slstinv):
+        for ii,l1 in enumerate(slistinv):
             for jj,l2 in enumerate(l1):
                 if ii == 0:
                     invfid.write('{0:^16}'.format(l2))
@@ -1312,7 +1312,7 @@ class PlotStrike(object):
         
         # == > mode
         invfid.write('-'*20+'MODE'+'-'*20+'\n')
-        for ii,l1 in enumerate(slstinv):
+        for ii,l1 in enumerate(slistinv):
             for jj,l2 in enumerate(l1):
                 if ii == 0:
                     invfid.write('{0:^16}'.format(l2))
@@ -1332,7 +1332,7 @@ class PlotStrike(object):
         
         #---> write the phase tensor text files
         ptfid.write('-'*20+'MEAN'+'-'*20+'\n')
-        for ii,l1 in enumerate(slstpt):
+        for ii,l1 in enumerate(slistpt):
             for jj,l2 in enumerate(l1):
                 if ii == 0:
                     ptfid.write('{0:^16}'.format(l2))
@@ -1349,7 +1349,7 @@ class PlotStrike(object):
             ptfid.write('\n')
             
         ptfid.write('-'*20+'MEDIAN'+'-'*20+'\n')
-        for ii,l1 in enumerate(slstpt):
+        for ii,l1 in enumerate(slistpt):
             for jj,l2 in enumerate(l1):
                 if ii == 0:
                     ptfid.write('{0:^16}'.format(l2))
@@ -1366,7 +1366,7 @@ class PlotStrike(object):
             ptfid.write('\n')
             
         ptfid.write('-'*20+'MODE'+'-'*20+'\n')
-        for ii,l1 in enumerate(slstpt):
+        for ii,l1 in enumerate(slistpt):
             for jj,l2 in enumerate(l1):
                 if ii == 0:
                     ptfid.write('{0:^16}'.format(l2))
@@ -1386,7 +1386,7 @@ class PlotStrike(object):
         
         #---> write the tipper text files
         tpfid.write('-'*20+'MEAN'+'-'*20+'\n')
-        for ii,l1 in enumerate(slsttip):
+        for ii,l1 in enumerate(slisttip):
             for jj,l2 in enumerate(l1):
                 if ii == 0:
                     tpfid.write('{0:^16}'.format(l2))
@@ -1403,7 +1403,7 @@ class PlotStrike(object):
             tpfid.write('\n')
             
         tpfid.write('-'*20+'MEDIAN'+'-'*20+'\n')
-        for ii,l1 in enumerate(slsttip):
+        for ii,l1 in enumerate(slisttip):
             for jj,l2 in enumerate(l1):
                 if ii == 0:
                     tpfid.write('{0:^16}'.format(l2))
@@ -1420,7 +1420,7 @@ class PlotStrike(object):
             tpfid.write('\n')
             
         tpfid.write('-'*20+'MODE'+'-'*20+'\n')
-        for ii,l1 in enumerate(slsttip):
+        for ii,l1 in enumerate(slisttip):
             for jj,l2 in enumerate(l1):
                 if ii == 0:
                     tpfid.write('{0:^16}'.format(l2))

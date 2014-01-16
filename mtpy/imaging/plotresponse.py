@@ -766,7 +766,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             
             nt = len(txr)
             
-            tiplst = []
+            tiplist = []
             tiplabel = []
             
             for aa in range(nt):
@@ -803,7 +803,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                     
                     if aa == 0:
                         line1 = self.axt.plot(0, 0, self.arrow_color_real)
-                        tiplst.append(line1[0])
+                        tiplist.append(line1[0])
                         tiplabel.append('real')
                                    
                 #--> plot imaginary arrows
@@ -818,14 +818,14 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                                    length_includes_head=False)
                     if aa == 0:              
                         line2 = self.axt.plot(0, 0, self.arrow_color_imag)
-                        tiplst.append(line2[0])
+                        tiplist.append(line2[0])
                         tiplabel.append('imag')
                 
             #make a line at 0 for reference
             self.axt.plot(self.period, [0]*nt, 'k', lw=.5)
         
           
-            self.axt.legend(tiplst, tiplabel,
+            self.axt.legend(tiplist, tiplabel,
                             loc='upper left',
                             markerscale=1,
                             borderaxespad=.01,
@@ -865,10 +865,10 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         #------plot strike angles----------------------------------------------
         if self._plot_strike.find('y') == 0:
             
-            stlst = []
+            stlist = []
             stlabel = []
-            st_maxlst = []
-            st_minlst = []
+            st_maxlist = []
+            st_minlist = []
             
             if self._plot_strike.find('i') > 0:
                 #strike from invariants
@@ -893,10 +893,10 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                                         capsize=self.marker_size,
                                         elinewidth=self.marker_lw)
                                         
-                stlst.append(ps1[0])
+                stlist.append(ps1[0])
                 stlabel.append('Z_inv')
-                st_maxlst.append(s1.max())
-                st_minlst.append(s1.min())
+                st_maxlist.append(s1.max())
+                st_minlist.append(s1.min())
                                         
             if self._plot_strike.find('p') > 0:
                 
@@ -922,10 +922,10 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                                         capsize=self.marker_size,
                                         elinewidth=self.marker_lw)
                                         
-                stlst.append(ps2[0])
+                stlist.append(ps2[0])
                 stlabel.append('PT')
-                st_maxlst.append(s2.max())
-                st_minlst.append(s2.min())
+                st_maxlist.append(s2.max())
+                st_minlist.append(s2.min())
             
             if self._plot_strike.find('t') > 0:
                 #strike from tipper
@@ -950,15 +950,15 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                                         capsize=self.marker_size,
                                         elinewidth=self.marker_lw)
                                         
-                stlst.append(ps3[0])
+                stlist.append(ps3[0])
                 stlabel.append('Tip')
-                st_maxlst.append(s3.max())
-                st_minlst.append(s3.min())
+                st_maxlist.append(s3.max())
+                st_minlist.append(s3.min())
                 
             #--> set axes properties
             if self.strike_limits is None:
                 try:
-                    stmin = min(st_minlst)
+                    stmin = min(st_minlist)
                 except ValueError:
                     stmin = -89.99
                 if stmin-3 < -90:
@@ -967,7 +967,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                     stmin = -89.99
                 
                 try:
-                    stmax = min(st_maxlst)
+                    stmax = min(st_maxlist)
                 except ValueError:
                     stmin = 89.99    
                 if stmax+3 < 90:
@@ -991,7 +991,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             self.axst.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
                           lw=.25)
             try:
-                self.axst.legend(stlst, 
+                self.axst.legend(stlist, 
                                  stlabel,
                                  loc=3, 
                                  markerscale=1, 
@@ -1156,13 +1156,13 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             self.cbax = self.fig.add_axes(cb_position)
             if cmap == 'mt_seg_bl2wh2rd':
                 #make a color list
-                clst = [(cc, cc, 1) 
+                clist = [(cc, cc, 1) 
                         for cc in np.arange(0,1+1./(nseg),1./(nseg))]+\
                        [(1, cc, cc) 
                         for cc in np.arange(1,-1./(nseg),-1./(nseg))]
                 
                 #make segmented colormap
-                mt_seg_bl2wh2rd = colors.ListedColormap(clst)
+                mt_seg_bl2wh2rd = colors.ListedColormap(clist)
     
                 #make bounds so that the middle is white
                 bounds = np.arange(ckmin-ckstep, ckmax+2*ckstep, ckstep)
