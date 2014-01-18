@@ -209,7 +209,10 @@ class Data(object):
                 impz.rotate(thetar)
             
             #get resistivity and phase
-            rho, phi, rho_err, phi_err = impz.res_phase
+            rho = impz.resistivity
+            rho_err = impz.resistivity_err
+            phi = impz.phase
+            phi_err = impz.phase_err
             
             freq = impz.freq
             nf = len(freq)
@@ -246,18 +249,19 @@ class Data(object):
         
         self.data_fn = os.path.join(self.save_path, 
                                 '{0}_{1}.dat'.format(self._data_fn, mode.upper()))
-        dfid = open(self.data_fn, 'w')
-    
-        dfid.write('Format:  EMData_1.1 \n')
-        dfid.write('!mode:   {0}\n'.format(mode.upper()))
-        dfid.write('!rotation_angle = {0:.2f}\n'.format(thetar))
+        
+        dlines = []        
+        
+        dlines.append('Format:  EMData_1.1 \n')
+        dlines.append('!mode:   {0}\n'.format(mode.upper()))
+        dlines.append('!rotation_angle = {0:.2f}\n'.format(thetar))
 
         #needs a transmitter to work so put in a dummy one
-        dfid.write('# Transmitters: 1\n')
-        dfid.write('0 0 0 0 0 \n')
+        dlines.append('# Transmitters: 1\n')
+        dlines.append('0 0 0 0 0 \n')
         
         #write frequencies
-        dfid.write('# Frequencies:   {0}\n'.format(nf))
+        dlines.append('# Frequencies:   {0}\n'.format(nf))
         if freq[0] < freq[1]:
             freq = freq[::-1]
             rho = rho[::-1]
@@ -265,16 +269,18 @@ class Data(object):
             rho_err = rho_err[::-1]
             phi_err = phi_err[::-1]
         for ff in freq:
-            dfid.write('   {0:{1}}\n'.format(ff, self._string_fmt))
+            dlines.append('   {0:{1}}\n'.format(ff, self._string_fmt))
         
         #needs a receiver to work so put in a dummy one
-        dfid.write('# Receivers: 1 \n')
-        dfid.write('0 0 0 0 0 0 \n')
+        dlines.append('# Receivers: 1 \n')
+        dlines.append('0 0 0 0 0 0 \n')
         
         #write data
-        dfid.write('# Data:{0}{1}\n'.format(self._ss, 2*nf))
-        dfid.write(self._header_line)
+        dlines.append('# Data:{0}{1}\n'.format(self._ss, 2*nf))
+        num_data_line = len(dlines)
         
+        dlines.append(self._header_line)
+        data_count = 0
         for ii in range(nf):
             if mode.lower() == 'te':
                 pol = 'xy'
@@ -286,13 +292,15 @@ class Data(object):
                 if phase_err == 'data':
                     perr = phi_err[ii, 0, 1]
                 else:
-                    perr = phase_err/100*(180/np.pi)  
-                dfid.write(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
-                            '{0:{1}}'.format(rho[ii, 0, 1], self._string_fmt),
-                            '{0:{1}}\n'.format(rerr, self._string_fmt)]))
-                dfid.write(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
-                            '{0:{1}}'.format(phi[ii, 0, 1]%90,self._string_fmt),
-                            '{0:{1}}\n'.format(perr, self._string_fmt)]))
+                    perr = phase_err/100*(180/np.pi) 
+                if rho[ii, 0, 1] != 0.0:
+                    dlines.append(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
+                                '{0:{1}}'.format(rho[ii, 0, 1], self._string_fmt),
+                                '{0:{1}}\n'.format(rerr, self._string_fmt)]))
+                    dlines.append(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
+                                '{0:{1}}'.format(phi[ii, 0, 1]%90,self._string_fmt),
+                                '{0:{1}}\n'.format(perr, self._string_fmt)]))
+                    data_count += 2
                             
             elif mode.lower() == 'tm':
                 pol = 'yx'
@@ -305,14 +313,14 @@ class Data(object):
                     perr = phi_err[ii, 1, 0]
                 else:
                     perr = phase_err/100*(180/np.pi)
-                    
-                dfid.write(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
-                            '{0:{1}}'.format(rho[ii, 1, 0],self._string_fmt),
-                            '{0:{1}}\n'.format(rerr, self._string_fmt)]))
-                dfid.write(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
-                            '{0:{1}}'.format(phi[ii, 1, 0]%90,self._string_fmt),
-                            '{0:{1}}\n'.format(perr, self._string_fmt)]))
-            
+                if rho[ii, 1, 0] != 0.0:    
+                    dlines.append(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
+                                '{0:{1}}'.format(rho[ii, 1, 0],self._string_fmt),
+                                '{0:{1}}\n'.format(rerr, self._string_fmt)]))
+                    dlines.append(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
+                                '{0:{1}}'.format(phi[ii, 1, 0]%90,self._string_fmt),
+                                '{0:{1}}\n'.format(perr, self._string_fmt)]))
+                    data_count += 2
             elif mode.lower() == 'det':
                 pol = 'det'
                 if res_err == 'data':
@@ -330,13 +338,18 @@ class Data(object):
                                                                zdet_err[ii])
                 else:
                     perr = phase_err/100*(180/np.pi)
-                    
-                dfid.write(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
-                            '{0:{1}}'.format(rho[ii, 1, 0],self._string_fmt),
-                            '{0:{1}}\n'.format(rerr, self._string_fmt)]))
-                dfid.write(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
-                            '{0:{1}}'.format(phi[ii, 1, 0]%90,self._string_fmt),
-                            '{0:{1}}\n'.format(perr, self._string_fmt)]))
+                if rho[ii, 1, 0] != 0.0:    
+                    dlines.append(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
+                                '{0:{1}}'.format(rho[ii, 1, 0],self._string_fmt),
+                                '{0:{1}}\n'.format(rerr, self._string_fmt)]))
+                    dlines.append(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
+                                '{0:{1}}'.format(phi[ii, 1, 0]%90,self._string_fmt),
+                                '{0:{1}}\n'.format(perr, self._string_fmt)]))
+                    data_count += 2
+        #--> write file
+        dlines[num_data_line-1] = '# Data:{0}{1}\n'.format(self._ss, data_count)
+        dfid = open(self.data_fn, 'w')
+        dfid.writelines(dlines)
         dfid.close()
         print 'Wrote Data File to : {0}'.format(self.data_fn)
     
@@ -902,6 +915,8 @@ class Startup(object):
         self.debug_level = kwargs.pop('debug_level', 1)
         self.start_iter = kwargs.pop('start_iter', 0)
         self.start_misfit = kwargs.pop('start_misfit', 100)
+        self.min_max_bounds = kwargs.pop('min_max_bounds', None)
+        self.model_step = kwargs.pop('model_step', None)
         self._startup_fn = 'OccamStartup1D'
         self._ss = ' '*3
         
@@ -1002,8 +1017,18 @@ class Startup(object):
         infid.write('{0:<21}{1}\n'.format('Max Iter:', self.max_iter))
         infid.write('{0:<21}{1}\n'.format('Target Misfit:', self.target_rms))
         infid.write('{0:<21}{1}\n'.format('Roughness Type:', self.rough_type))
-        infid.write('{0:<21}{1}\n'.format('!Model Bounds:', 'min,max'))
-        infid.write('{0:<21}{1}\n'.format('!Model Value Steps:', 'stepsize'))
+        if self.min_max_bounds == None:
+            infid.write('{0:<21}{1}\n'.format('!Model Bounds:', 'min,max'))
+        else:
+            infid.write('{0:<21}{1},{2}\n'.format('Model Bounds:', 
+                                              self.min_max_bounds[0],
+                                              self.min_max_bounds[1]))
+        if self.model_step == None:
+            infid.write('{0:<21}{1}\n'.format('!Model Value Steps:', 
+                                              'stepsize'))
+        else:
+            infid.write('{0:<21}{1}\n'.format('Model Value Steps:', 
+                                              self.model_step))
         infid.write('{0:<21}{1}\n'.format('Debug Level:', self.debug_level))
         infid.write('{0:<21}{1}\n'.format('Iteration:', self.start_iter))
         infid.write('{0:<21}{1}\n'.format('Lagrange Value:', self.start_lagrange))
@@ -1180,6 +1205,7 @@ class Plot1DResponse(object):
         
         self.ms = kwargs.pop('ms', 1.5)
         self.lw = kwargs.pop('lw', .5)
+        self.ls = kwargs.pop('ls', ':')
         self.e_capthick = kwargs.pop('e_capthick', .5)
         self.e_capsize = kwargs.pop('e_capsize', 2)
         
@@ -1304,7 +1330,7 @@ class Plot1DResponse(object):
             if len(rxy) > 0:
                 rte = self.axr.errorbar(1./d1.freq[rxy],
                                         d1.res_te[0][rxy],
-                                        ls='none',
+                                        ls=self.ls,
                                         marker=self.mted,
                                         ms=self.ms,
                                         mfc=self.cted,
@@ -1329,7 +1355,7 @@ class Plot1DResponse(object):
             if len(pxy) > 0:
                 self.axp.errorbar(1./d1.freq[pxy],
                                    d1.phase_te[0][pxy],
-                                   ls='none',
+                                   ls=self.ls,
                                    marker=self.mted,
                                    ms=self.ms,
                                    mfc=self.cted,
@@ -1355,7 +1381,7 @@ class Plot1DResponse(object):
             if len(ryx) > 0:
                 rtm = self.axr.errorbar(1./d1.freq[ryx],
                                         d1.res_tm[0][ryx] ,
-                                        ls='none',
+                                        ls=self.ls,
                                         marker=self.mtmd,
                                         ms=self.ms,
                                         mfc=self.ctmd,
@@ -1381,7 +1407,7 @@ class Plot1DResponse(object):
             if len(pyx)>0:
                 self.axp.errorbar(1./d1.freq[pyx],
                                    d1.phase_tm[0][pyx],
-                                   ls='none',
+                                   ls=self.ls,
                                    marker=self.mtmd,
                                    ms=self.ms,
                                    mfc=self.ctmd,
@@ -1419,7 +1445,7 @@ class Plot1DResponse(object):
             if len(rxy) > 0:
                 rte = self.axr.errorbar(1./d1.freq[rxy],
                                         d1.res_te[2][rxy],
-                                        ls='none',
+                                        ls=self.ls,
                                         marker=self.mtem,
                                         ms=self.ms,
                                         mfc=cxy,
@@ -1446,7 +1472,7 @@ class Plot1DResponse(object):
             if len(pxy) > 0:
                 self.axp.errorbar(1./d1.freq[pxy],
                                    d1.phase_te[2][pxy],
-                                   ls='none',
+                                   ls=self.ls,
                                    marker=self.mtem,
                                    ms=self.ms,
                                    mfc=cxy,
@@ -1479,7 +1505,7 @@ class Plot1DResponse(object):
             if len(ryx) > 0:
                 rtm = self.axr.errorbar(1./d1.freq[ryx],
                                         d1.res_tm[2][ryx] ,
-                                        ls='none',
+                                        ls=self.ls,
                                         marker=self.mtmm,
                                         ms=self.ms,
                                         mfc=cyx,
@@ -1503,7 +1529,7 @@ class Plot1DResponse(object):
             if len(pyx)>0:
                 self.axp.errorbar(1./d1.freq[pyx],
                                    d1.phase_tm[0][pyx],
-                                   ls='none',
+                                   ls=self.ls,
                                    marker=self.mtmm,
                                    ms=self.ms,
                                    mfc=cyx,
@@ -1569,6 +1595,7 @@ class Plot1DResponse(object):
             else:
                 dscale = 1.
             
+            #--> plot te models
             nr = len(self.iter_te_fn)
             for ii, ifn in enumerate(self.iter_te_fn):
                 if ifn == None:
@@ -1593,7 +1620,7 @@ class Plot1DResponse(object):
                 if ifn == None:
                     break
                 if self.color_mode == 'color':   
-                    cyx = (.7+float(ii)/(4*nr),.13,.63-float(rr)/(4*nr))
+                    cyx = (.7+float(ii)/(4*nr),.13,.63-float(ii)/(4*nr))
                 elif self.color_mode == 'bw':                  
                     cyx = (1-1.25/(ii+2.),1-1.25/(ii+2.),1-1.25/(ii+2.))
                 m1 = Model()
@@ -1667,6 +1694,76 @@ class Plot1DResponse(object):
         """
 
         fig.canvas.draw()
+        
+    def save_figure(self, save_fn, file_format='pdf', orientation='portrait', 
+                  fig_dpi=None, close_plot='y'):
+        """
+        save_plot will save the figure to save_fn.
+        
+        Arguments:
+        -----------
+        
+            **save_fn** : string
+                          full path to save figure to, can be input as
+                          * directory path -> the directory path to save to
+                            in which the file will be saved as 
+                            save_fn/station_name_PhaseTensor.file_format
+                            
+                          * full path -> file will be save to the given 
+                            path.  If you use this option then the format
+                            will be assumed to be provided by the path
+                            
+            **file_format** : [ pdf | eps | jpg | png | svg ]
+                              file type of saved figure pdf,svg,eps... 
+                              
+            **orientation** : [ landscape | portrait ]
+                              orientation in which the file will be saved
+                              *default* is portrait
+                              
+            **fig_dpi** : int
+                          The resolution in dots-per-inch the file will be
+                          saved.  If None then the dpi will be that at 
+                          which the figure was made.  I don't think that 
+                          it can be larger than dpi of the figure.
+                          
+            **close_plot** : [ y | n ]
+                             * 'y' will close the plot after saving.
+                             * 'n' will leave plot open
+                          
+        :Example: ::
+            
+            >>> # to save plot as jpg
+            >>> import mtpy.modeling.occam2d as occam2d
+            >>> dfn = r"/home/occam2d/Inv1/data.dat"
+            >>> ocd = occam2d.Occam2DData(dfn)
+            >>> ps1 = ocd.plotPseudoSection()
+            >>> ps1.save_plot(r'/home/MT/figures', file_format='jpg')
+            
+        """
+
+        if fig_dpi == None:
+            fig_dpi = self.fig_dpi
+            
+        if os.path.isdir(save_fn) == False:
+            file_format = save_fn[-3:]
+            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+                             orientation=orientation, bbox_inches='tight')
+            
+        else:
+            save_fn = os.path.join(save_fn, 'Occam1d.'+
+                                    file_format)
+            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+                        orientation=orientation, bbox_inches='tight')
+        
+        if close_plot == 'y':
+            plt.clf()
+            plt.close(self.fig)
+        
+        else:
+            pass
+        
+        self.fig_fn = save_fn
+        print 'Saved figure to: '+self.fig_fn
                           
     def __str__(self):
         """

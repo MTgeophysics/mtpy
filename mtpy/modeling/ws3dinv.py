@@ -1374,15 +1374,15 @@ class WSMesh(object):
         #--> get path to save initial file to
         if save_path is not None:
             self.save_path = save_path
-            
-        if self.save_path is None:
-            self.save_path = os.getcwd()
-            self.initial_fn = os.path.join(self.save_path, "WSInitialModel")
-        elif os.path.isdir(self.save_path) == True:
-            self.initial_fn = os.path.join(self.save_path, "WSInitialModel")
-        else:
-            self.save_path = os.path.dirname(self.save_path)
-            self.initial_fn= os.path.join(self.save_path)
+        if self.initial_fn is None:
+            if self.save_path is None:
+                self.save_path = os.getcwd()
+                self.initial_fn = os.path.join(self.save_path, "WSInitialModel")
+            elif os.path.isdir(self.save_path) == True:
+                self.initial_fn = os.path.join(self.save_path, "WSInitialModel")
+            else:
+                self.save_path = os.path.dirname(self.save_path)
+                self.initial_fn= os.path.join(self.save_path)
         
         #check to see what resistivity in input 
         if type(self.res_list) is not list and \
