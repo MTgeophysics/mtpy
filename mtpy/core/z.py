@@ -564,8 +564,8 @@ class Z(object):
                     zerr_new[idx_f,i,j] = max(MTcc.propagate_error_polar2rect(
                                                         abs_z, 
                                                         abs_z_error, 
-                                                        phase_array, 
-                                                        phaseerr_array))
+                                                        phase_array[idx_f,i,j], 
+                                                        phaseerr_array[idx_f,i,j]))
 
         self.zerr = zerr_new
         
