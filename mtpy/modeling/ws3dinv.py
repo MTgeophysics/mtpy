@@ -2043,6 +2043,7 @@ class WSModelManipulator(object):
         plt.clf()
         self.ax1 = self.fig.add_subplot(1, 1, 1, aspect='equal')
         
+        #transpose to make x--east and y--north
         plot_res = np.log10(self.res_model[:,:,self.depth_index].T)
         
         self.mesh_plot = self.ax1.pcolormesh(self.mesh_east,
@@ -2437,7 +2438,7 @@ class WSModelManipulator(object):
         
         #need to flip the resistivity model so that the first index is the 
         #northern most block in N-S
-        self.res_model = self.res_model[::-1, :, :]
+        #self.res_model = self.res_model[::-1, :, :]
         
         if save_path is not None:
             self.save_path = save_path
@@ -2447,7 +2448,8 @@ class WSModelManipulator(object):
         
         #pass attribute to wsmesh
         att_names = ['nodes_north', 'nodes_east', 'nodes_z', 'grid_east', 
-                     'grid_north', 'grid_z', 'res_model', 'res_list']
+                     'grid_north', 'grid_z', 'res_model', 'res_list',
+                     'res_dict', 'res_model_int' ]
         for name in att_names:
                 if hasattr(self, name):
                     value = getattr(self, name)
@@ -2724,6 +2726,9 @@ class PlotResponse(object):
                              names to plot if station_fn is input, otherwise
                              input a list of integers associated with the 
                              index with in the data file, ie 2 for 2nd station
+    plot_z                   [ True | False ] *default* is True to plot 
+                             impedance, False for plotting resistivity and 
+                             phase
     plot_yn                  [ 'n' | 'y' ] to plot on instantiation
     res_limits               limits of resistivity in linear scale
     resp_fn                  full path to response file
@@ -2783,14 +2788,14 @@ class PlotResponse(object):
             self.mtem = kwargs.pop('mtem', '+')
             self.mtmm = kwargs.pop('mtmm', 'x')
             
-        self.phase_limits = kwargs.pop('phase_limits', (-5, 95))
+        self.phase_limits = kwargs.pop('phase_limits', None)
         self.res_limits = kwargs.pop('res_limits', None)
 
         self.fig_num = kwargs.pop('fig_num', 1)
         self.fig_size = kwargs.pop('fig_size', [6, 6])
         self.fig_dpi = kwargs.pop('dpi', 300)
         
-        self.subplot_wspace = .05
+        self.subplot_wspace = .2
         self.subplot_hspace = .0
         self.subplot_right = .98
         self.subplot_left = .08
@@ -2810,6 +2815,8 @@ class PlotResponse(object):
         self.plot_style = kwargs.pop('plot_style', 1)
         self.plot_component = kwargs.pop('plot_component', 4)
         self.plot_yn = kwargs.pop('plot_yn', 'y')
+        self.plot_z = kwargs.pop('plot_z', True)
+        self.ylabel_pad = kwargs.pop('ylabel_pad', 1.25)
         
         self.fig_list = []
         
@@ -2871,8 +2878,12 @@ class PlotResponse(object):
         #--> set default font size                           
         plt.rcParams['font.size'] = self.font_size
 
-        fontdict = {'size':self.font_size+2, 'weight':'bold'}    
-        gs = gridspec.GridSpec(2, 2, height_ratios=[2, 1.5], hspace=.1)
+        fontdict = {'size':self.font_size+2, 'weight':'bold'} 
+        if self.plot_z == True:
+            h_ratio = [1,1]
+        elif self.plot_z == False:
+            h_ratio = [2, 1.5]
+        gs = gridspec.GridSpec(2, 2, height_ratios=h_ratio, hspace=.1)
         
         ax_list = []
         line_list = []
@@ -2937,7 +2948,7 @@ class PlotResponse(object):
                                    bottom=self.subplot_bottom, 
                                    right=self.subplot_right, 
                                    hspace=self.subplot_hspace,
-                                   height_ratios=[2, 1.5])
+                                   height_ratios=h_ratio)
             #---------plot the apparent resistivity-----------------------------------
             #plot each component in its own subplot
             if self.plot_style == 1:
@@ -2948,28 +2959,52 @@ class PlotResponse(object):
                     axpxy = fig.add_subplot(gs[1, 0:2])
                     axpyx = fig.add_subplot(gs[1, 2:], sharex=axrxy)
                     
-                    #plot resistivity
-                    erxy = self.plot_errorbar(axrxy, 
-                                              period[nzxy], 
-                                              rp.resxy[nzxy], 
-                                              rp.resxy_err[nzxy],
-                                              self.cted, self.mted)
-                    eryx = self.plot_errorbar(axryx, 
-                                              period[nzyx], 
-                                              rp.resyx[nzyx], 
-                                              rp.resyx_err[nzyx],
-                                              self.ctmd, self.mtmd)
-                    #plot phase                         
-                    erxy = self.plot_errorbar(axpxy, 
-                                              period[nzxy], 
-                                              rp.phasexy[nzxy], 
-                                              rp.phasexy_err[nzxy],
-                                              self.cted, self.mted)
-                    eryx = self.plot_errorbar(axpyx, 
-                                              period[nzyx], 
-                                              rp.phaseyx[nzyx], 
-                                              rp.phaseyx_err[nzyx],
-                                              self.ctmd, self.mtmd)
+                    if self.plot_z == False: 
+                        #plot resistivity
+                        erxy = self.plot_errorbar(axrxy, 
+                                                  period[nzxy], 
+                                                  rp.resxy[nzxy], 
+                                                  rp.resxy_err[nzxy],
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axryx, 
+                                                  period[nzyx], 
+                                                  rp.resyx[nzyx], 
+                                                  rp.resyx_err[nzyx],
+                                                  self.ctmd, self.mtmd)
+                        #plot phase                         
+                        erxy = self.plot_errorbar(axpxy, 
+                                                  period[nzxy], 
+                                                  rp.phasexy[nzxy], 
+                                                  rp.phasexy_err[nzxy],
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axpyx, 
+                                                  period[nzyx], 
+                                                  rp.phaseyx[nzyx], 
+                                                  rp.phaseyx_err[nzyx],
+                                                  self.ctmd, self.mtmd)
+                    elif self.plot_z == True:
+                        #plot real
+                        erxy = self.plot_errorbar(axrxy, 
+                                                  period[nzxy], 
+                                                  z_object.z[nzxy,0,1].real, 
+                                                  z_object.zerr[nzxy,0,1].real,
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axryx, 
+                                                  period[nzyx], 
+                                                  z_object.z[nzyx,1,0].real, 
+                                                  z_object.zerr[nzyx,1,0].real,
+                                                  self.ctmd, self.mtmd)
+                        #plot phase                         
+                        erxy = self.plot_errorbar(axpxy, 
+                                                  period[nzxy], 
+                                                  z_object.z[nzxy,0,1].imag, 
+                                                  z_object.zerr[nzxy,0,1].imag,
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axpyx, 
+                                                  period[nzyx], 
+                                                  z_object.z[nzyx,1,0].imag, 
+                                                  z_object.zerr[nzyx,1,0].imag,
+                                                  self.ctmd, self.mtmd)
                                               
                     ax_list = [axrxy, axryx, axpxy, axpyx]
                     line_list = [[erxy[0]], [eryx[0]]]
@@ -2986,48 +3021,93 @@ class PlotResponse(object):
                     axpyx = fig.add_subplot(gs[1, 2], sharex=axrxx)
                     axpyy = fig.add_subplot(gs[1, 3], sharex=axrxx)
                     
-                    #plot resistivity
-                    erxx= self.plot_errorbar(axrxx, 
-                                              period[nzxx], 
-                                              rp.resxx[nzxx], 
-                                              rp.resxx_err[nzxx],
-                                              self.cted, self.mted)
-                    erxy = self.plot_errorbar(axrxy, 
-                                              period[nzxy], 
-                                              rp.resxy[nzxy], 
-                                              rp.resxy_err[nzxy],
-                                              self.cted, self.mted)
-                    eryx = self.plot_errorbar(axryx, 
-                                              period[nzyx], 
-                                              rp.resyx[nzyx], 
-                                              rp.resyx_err[nzyx],
-                                              self.ctmd, self.mtmd)
-                    eryy = self.plot_errorbar(axryy, 
-                                              period[nzyy], 
-                                              rp.resyy[nzyy], 
-                                              rp.resyy_err[nzyy],
-                                              self.ctmd, self.mtmd)
-                    #plot phase                         
-                    erxx= self.plot_errorbar(axpxx, 
-                                              period[nzxx], 
-                                              rp.phasexx[nzxx], 
-                                              rp.phasexx_err[nzxx],
-                                              self.cted, self.mted)
-                    erxy = self.plot_errorbar(axpxy, 
-                                              period[nzxy], 
-                                              rp.phasexy[nzxy], 
-                                              rp.phasexy_err[nzxy],
-                                              self.cted, self.mted)
-                    eryx = self.plot_errorbar(axpyx, 
-                                              period[nzyx], 
-                                              rp.phaseyx[nzyx], 
-                                              rp.phaseyx_err[nzyx],
-                                              self.ctmd, self.mtmd)
-                    eryy = self.plot_errorbar(axpyy, 
-                                              period[nzyy], 
-                                              rp.phaseyy[nzyy], 
-                                              rp.phaseyy_err[nzyy],
-                                              self.ctmd, self.mtmd)
+                    if self.plot_z == False:
+                        #plot resistivity
+                        erxx= self.plot_errorbar(axrxx, 
+                                                  period[nzxx], 
+                                                  rp.resxx[nzxx], 
+                                                  rp.resxx_err[nzxx],
+                                                  self.cted, self.mted)
+                        erxy = self.plot_errorbar(axrxy, 
+                                                  period[nzxy], 
+                                                  rp.resxy[nzxy], 
+                                                  rp.resxy_err[nzxy],
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axryx, 
+                                                  period[nzyx], 
+                                                  rp.resyx[nzyx], 
+                                                  rp.resyx_err[nzyx],
+                                                  self.ctmd, self.mtmd)
+                        eryy = self.plot_errorbar(axryy, 
+                                                  period[nzyy], 
+                                                  rp.resyy[nzyy], 
+                                                  rp.resyy_err[nzyy],
+                                                  self.ctmd, self.mtmd)
+                        #plot phase                         
+                        erxx= self.plot_errorbar(axpxx, 
+                                                  period[nzxx], 
+                                                  rp.phasexx[nzxx], 
+                                                  rp.phasexx_err[nzxx],
+                                                  self.cted, self.mted)
+                        erxy = self.plot_errorbar(axpxy, 
+                                                  period[nzxy], 
+                                                  rp.phasexy[nzxy], 
+                                                  rp.phasexy_err[nzxy],
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axpyx, 
+                                                  period[nzyx], 
+                                                  rp.phaseyx[nzyx], 
+                                                  rp.phaseyx_err[nzyx],
+                                                  self.ctmd, self.mtmd)
+                        eryy = self.plot_errorbar(axpyy, 
+                                                  period[nzyy], 
+                                                  rp.phaseyy[nzyy], 
+                                                  rp.phaseyy_err[nzyy],
+                                                  self.ctmd, self.mtmd)
+                    elif self.plot_z == True:
+                        #plot real
+                        erxx = self.plot_errorbar(axrxx, 
+                                                  period[nzxx], 
+                                                  z_object.z[nzxx,0,0].real, 
+                                                  z_object.zerr[nzxx,0,0].real,
+                                                  self.cted, self.mted)
+                        erxy = self.plot_errorbar(axrxy, 
+                                                  period[nzxy], 
+                                                  z_object.z[nzxy,0,1].real, 
+                                                  z_object.zerr[nzxy,0,1].real,
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axryx, 
+                                                  period[nzyx], 
+                                                  z_object.z[nzyx,1,0].real, 
+                                                  z_object.zerr[nzyx,1,0].real,
+                                                  self.ctmd, self.mtmd)
+                        eryy = self.plot_errorbar(axryy, 
+                                                  period[nzyy], 
+                                                  z_object.z[nzyy,1,1].real, 
+                                                  z_object.zerr[nzyy,1,1].real,
+                                                  self.ctmd, self.mtmd)
+                        #plot phase                         
+                        erxx = self.plot_errorbar(axpxx, 
+                                                  period[nzxx], 
+                                                  z_object.z[nzxx,0,0].imag, 
+                                                  z_object.zerr[nzxx,0,0].imag,
+                                                  self.cted, self.mted)
+                        erxy = self.plot_errorbar(axpxy, 
+                                                  period[nzxy], 
+                                                  z_object.z[nzxy,0,1].imag, 
+                                                  z_object.zerr[nzxy,0,1].imag,
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axpyx, 
+                                                  period[nzyx], 
+                                                  z_object.z[nzyx,1,0].imag, 
+                                                  z_object.zerr[nzyx,1,0].imag,
+                                                  self.ctmd, self.mtmd)
+                        eryy = self.plot_errorbar(axpyy, 
+                                                  period[nzyy], 
+                                                  z_object.z[nzyy,1,1].imag, 
+                                                  z_object.zerr[nzyy,1,1].imag,
+                                                  self.ctmd, self.mtmd)
+                                        
                     ax_list = [axrxx, axrxy, axryx, axryy, 
                                axpxx, axpxy, axpyx, axpyy]
                     line_list = [[erxx[0]], [erxy[0]], [eryx[0]], [eryy[0]]]
@@ -3036,10 +3116,12 @@ class PlotResponse(object):
                     
                 #set axis properties
                 for aa, ax in enumerate(ax_list):
+                    ax.tick_params(axis='y', pad=self.ylabel_pad)
                     if len(ax_list) == 4:
                         if aa < 2:
                             plt.setp(ax.get_xticklabels(), visible=False)
-                            ax.set_yscale('log')
+                            if self.plot_z == False:
+                                ax.set_yscale('log')
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
                         else:
@@ -3047,18 +3129,27 @@ class PlotResponse(object):
                             ax.set_xlabel('Period (s)', fontdict=fontdict)
                         #set axes labels
                         if aa == 0:
-                            ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
-                                          fontdict=fontdict)
+                            if self.plot_z == False:
+                                ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
+                                              fontdict=fontdict)
+                            elif self.plot_z == True:
+                                ax.set_ylabel('Re[Impedance (m/s)]',
+                                              fontdict=fontdict)
                         elif aa == 2:
-                            ax.set_ylabel('Phase (deg)',
-                                          fontdict=fontdict)
-                        else:
-                            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
+                            if self.plot_z == False:
+                                ax.set_ylabel('Phase (deg)',
+                                              fontdict=fontdict)
+                            elif self.plot_z == True:
+                                ax.set_ylabel('Im[Impedance (m/s)]',
+                                              fontdict=fontdict)
+#                        else:
+#                            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
                             
                     elif len(ax_list) == 8:
                         if aa < 4:
                             plt.setp(ax.get_xticklabels(), visible=False)
-                            ax.set_yscale('log')
+                            if self.plot_z == False:
+                                ax.set_yscale('log')
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
                         else:
@@ -3066,13 +3157,21 @@ class PlotResponse(object):
                             ax.set_xlabel('Period (s)', fontdict=fontdict)
                         #set axes labels
                         if aa == 0:
-                            ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
-                                          fontdict=fontdict)
+                            if self.plot_z == False:
+                                ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
+                                              fontdict=fontdict)
+                            elif self.plot_z == True:
+                                ax.set_ylabel('Re[Impedance (m/s)]',
+                                               fontdict=fontdict)
                         elif aa == 4:
-                            ax.set_ylabel('Phase (deg)',
-                                          fontdict=fontdict)
-                        else:
-                            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
+                            if self.plot_z == False:
+                                ax.set_ylabel('Phase (deg)',
+                                              fontdict=fontdict)
+                            elif self.plot_z == True:
+                                ax.set_ylabel('Im[Impedance (m/s)]',
+                                              fontdict=fontdict)
+#                        else:
+#                            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
 
                     ax.set_xscale('log')
                     ax.set_xlim(xmin=10**(np.floor(np.log10(period[0])))*1.01,
@@ -3084,29 +3183,53 @@ class PlotResponse(object):
                 if self.plot_component == 2:
                     axrxy = fig.add_subplot(gs[0, 0:])
                     axpxy = fig.add_subplot(gs[1, 0:], sharex=axrxy)
-                    
-                    #plot resistivity
-                    erxy = self.plot_errorbar(axrxy, 
-                                              period[nzxy], 
-                                              rp.resxy[nzxy], 
-                                              rp.resxy_err[nzxy],
-                                              self.cted, self.mted)
-                    eryx = self.plot_errorbar(axrxy, 
-                                              period[nzyx], 
-                                              rp.resyx[nzyx], 
-                                              rp.resyx_err[nzyx],
-                                              self.ctmd, self.mtmd)
-                    #plot phase                         
-                    erxy = self.plot_errorbar(axpxy, 
-                                              period[nzxy], 
-                                              rp.phasexy[nzxy], 
-                                              rp.phasexy_err[nzxy],
-                                              self.cted, self.mted)
-                    eryx = self.plot_errorbar(axpxy, 
-                                              period[nzyx], 
-                                              rp.phaseyx[nzyx], 
-                                              rp.phaseyx_err[nzyx],
-                                              self.ctmd, self.mtmd)
+                    if self.plot_z == False:
+                        #plot resistivity
+                        erxy = self.plot_errorbar(axrxy, 
+                                                  period[nzxy], 
+                                                  rp.resxy[nzxy], 
+                                                  rp.resxy_err[nzxy],
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axrxy, 
+                                                  period[nzyx], 
+                                                  rp.resyx[nzyx], 
+                                                  rp.resyx_err[nzyx],
+                                                  self.ctmd, self.mtmd)
+                        #plot phase                         
+                        erxy = self.plot_errorbar(axpxy, 
+                                                  period[nzxy], 
+                                                  rp.phasexy[nzxy], 
+                                                  rp.phasexy_err[nzxy],
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axpxy, 
+                                                  period[nzyx], 
+                                                  rp.phaseyx[nzyx], 
+                                                  rp.phaseyx_err[nzyx],
+                                                  self.ctmd, self.mtmd)
+                    elif self.plot_z == True:
+                        #plot real
+                        erxy = self.plot_errorbar(axrxy, 
+                                                  period[nzxy], 
+                                                  z_object.z[nzxy,0,1].real, 
+                                                  z_object.zerr[nzxy,0,1].real,
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axrxy, 
+                                                  period[nzxy], 
+                                                  z_object.z[nzxy,1,0].real, 
+                                                  z_object.zerr[nzxy,1,0].real,
+                                                  self.ctmd, self.mtmd)
+                        #plot phase                         
+                        erxy = self.plot_errorbar(axpxy, 
+                                                  period[nzxy], 
+                                                  z_object.z[nzxy,0,1].imag, 
+                                                  z_object.zerr[nzxy,0,1].imag,
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axpxy, 
+                                                  period[nzyx], 
+                                                  z_object.z[nzyx,1,0].imag, 
+                                                  z_object.zerr[nzyx,1,0].imag,
+                                                  self.ctmd, self.mtmd)
+                        
                     ax_list = [axrxy, axpxy]
                     line_list = [erxy[0], eryx[0]]
                     label_list = ['$Z_{xy}$', '$Z_{yx}$']
@@ -3117,49 +3240,92 @@ class PlotResponse(object):
                     
                     axrxx = fig.add_subplot(gs[0, 2:], sharex=axrxy)
                     axpxx = fig.add_subplot(gs[1, 2:], sharex=axrxy)
-                    
-                    #plot resistivity
-                    erxx= self.plot_errorbar(axrxx, 
-                                              period[nzxx], 
-                                              rp.resxx[nzxx], 
-                                              rp.resxx_err[nzxx],
-                                              self.cted, self.mted)
-                    erxy = self.plot_errorbar(axrxy, 
-                                              period[nzxy], 
-                                              rp.resxy[nzxy], 
-                                              rp.resxy_err[nzxy],
-                                              self.cted, self.mted)
-                    eryx = self.plot_errorbar(axrxy, 
-                                              period[nzyx], 
-                                              rp.resyx[nzyx], 
-                                              rp.resyx_err[nzyx],
-                                              self.ctmd, self.mtmd)
-                    eryy = self.plot_errorbar(axrxx, 
-                                              period[nzyy], 
-                                              rp.resyy[nzyy], 
-                                              rp.resyy_err[nzyy],
-                                              self.ctmd, self.mtmd)
-                    #plot phase                         
-                    erxx= self.plot_errorbar(axpxx, 
-                                              period[nzxx], 
-                                              rp.phasexx[nzxx], 
-                                              rp.phasexx_err[nzxx],
-                                              self.cted, self.mted)
-                    erxy = self.plot_errorbar(axpxy, 
-                                              period[nzxy], 
-                                              rp.phasexy[nzxy], 
-                                              rp.phasexy_err[nzxy],
-                                              self.cted, self.mted)
-                    eryx = self.plot_errorbar(axpxy, 
-                                              period[nzyx], 
-                                              rp.phaseyx[nzyx], 
-                                              rp.phaseyx_err[nzyx],
-                                              self.ctmd, self.mtmd)
-                    eryy = self.plot_errorbar(axpxx, 
-                                              period[nzyy], 
-                                              rp.phaseyy[nzyy], 
-                                              rp.phaseyy_err[nzyy],
-                                              self.ctmd, self.mtmd)
+                    if self.plot_z == False:
+                        #plot resistivity
+                        erxx= self.plot_errorbar(axrxx, 
+                                                  period[nzxx], 
+                                                  rp.resxx[nzxx], 
+                                                  rp.resxx_err[nzxx],
+                                                  self.cted, self.mted)
+                        erxy = self.plot_errorbar(axrxy, 
+                                                  period[nzxy], 
+                                                  rp.resxy[nzxy], 
+                                                  rp.resxy_err[nzxy],
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axrxy, 
+                                                  period[nzyx], 
+                                                  rp.resyx[nzyx], 
+                                                  rp.resyx_err[nzyx],
+                                                  self.ctmd, self.mtmd)
+                        eryy = self.plot_errorbar(axrxx, 
+                                                  period[nzyy], 
+                                                  rp.resyy[nzyy], 
+                                                  rp.resyy_err[nzyy],
+                                                  self.ctmd, self.mtmd)
+                        #plot phase                         
+                        erxx= self.plot_errorbar(axpxx, 
+                                                  period[nzxx], 
+                                                  rp.phasexx[nzxx], 
+                                                  rp.phasexx_err[nzxx],
+                                                  self.cted, self.mted)
+                        erxy = self.plot_errorbar(axpxy, 
+                                                  period[nzxy], 
+                                                  rp.phasexy[nzxy], 
+                                                  rp.phasexy_err[nzxy],
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axpxy, 
+                                                  period[nzyx], 
+                                                  rp.phaseyx[nzyx], 
+                                                  rp.phaseyx_err[nzyx],
+                                                  self.ctmd, self.mtmd)
+                        eryy = self.plot_errorbar(axpxx, 
+                                                  period[nzyy], 
+                                                  rp.phaseyy[nzyy], 
+                                                  rp.phaseyy_err[nzyy],
+                                                  self.ctmd, self.mtmd)
+                    elif self.plot_z == True:
+                         #plot real
+                        erxx = self.plot_errorbar(axrxx, 
+                                                  period[nzxx], 
+                                                  z_object.z[nzxx,0,0].real, 
+                                                  z_object.zerr[nzxx,0,0].real,
+                                                  self.cted, self.mted)
+                        erxy = self.plot_errorbar(axrxy, 
+                                                  period[nzxy], 
+                                                  z_object.z[nzxy,0,1].real, 
+                                                  z_object.zerr[nzxy,0,1].real,
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axrxy, 
+                                                  period[nzyx], 
+                                                  z_object.z[nzyx,1,0].real, 
+                                                  z_object.zerr[nzyx,1,0].real,
+                                                  self.ctmd, self.mtmd)
+                        eryy = self.plot_errorbar(axrxx, 
+                                                  period[nzyy], 
+                                                  z_object.z[nzyy,1,1].real, 
+                                                  z_object.zerr[nzyy,1,1].real,
+                                                  self.ctmd, self.mtmd)
+                        #plot phase                         
+                        erxx = self.plot_errorbar(axpxx, 
+                                                  period[nzxx], 
+                                                  z_object.z[nzxx,0,0].imag, 
+                                                  z_object.zerr[nzxx,0,0].imag,
+                                                  self.cted, self.mted)
+                        erxy = self.plot_errorbar(axpxy, 
+                                                  period[nzxy], 
+                                                  z_object.z[nzxy,0,1].imag, 
+                                                  z_object.zerr[nzxy,0,1].imag,
+                                                  self.cted, self.mted)
+                        eryx = self.plot_errorbar(axpxy, 
+                                                  period[nzyx], 
+                                                  z_object.z[nzyx,1,0].imag, 
+                                                  z_object.zerr[nzyx,1,0].imag,
+                                                  self.ctmd, self.mtmd)
+                        eryy = self.plot_errorbar(axpxx, 
+                                                  period[nzyy], 
+                                                  z_object.z[nzyy,1,1].imag, 
+                                                  z_object.zerr[nzyy,1,1].imag,
+                                                  self.ctmd, self.mtmd)
                                               
                     ax_list = [axrxy, axrxx, axpxy, axpxx]
                     line_list = [[erxy[0], eryx[0]], [erxx[0], eryy[0]]]
@@ -3167,34 +3333,54 @@ class PlotResponse(object):
                                   ['$Z_{xx}$', '$Z_{yy}$']]
                 #set axis properties
                 for aa, ax in enumerate(ax_list):
+                    ax.tick_params(axis='y', pad=self.ylabel_pad)
                     if len(ax_list) == 2:
                         ax.set_xlabel('Period (s)', fontdict=fontdict)
                         if aa == 0:
                             plt.setp(ax.get_xticklabels(), visible=False)
-                            ax.set_yscale('log')
-                            ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
-                                          fontdict=fontdict)
+                            if self.plot_z == False:
+                                ax.set_yscale('log')
+                                ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
+                                              fontdict=fontdict)
+                            elif self.plot_z == True:
+                                ax.set_ylabel('Re[Impedance (m/s)]',
+                                               fontdict=fontdict)
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
                         else:
                             ax.set_ylim(self.phase_limits)
-                            ax.set_ylabel('Phase (deg)', fontdict=fontdict)
+                            if self.plot_z == False:
+                                ax.set_ylabel('Phase (deg)',
+                                              fontdict=fontdict)
+                            elif self.plot_z == True:
+                                ax.set_ylabel('Im[Impedance (m/s)]',
+                                              fontdict=fontdict)
                     elif len(ax_list) == 4:
                         if aa < 2:
                             plt.setp(ax.get_xticklabels(), visible=False)
-                            ax.set_yscale('log')
+                            if self.plot_z == False:
+                                ax.set_yscale('log')
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
                         else:
                             ax.set_ylim(self.phase_limits)
                             ax.set_xlabel('Period (s)', fontdict=fontdict)
                         if aa == 0:
-                            ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
-                                       fontdict=fontdict)
+                            if self.plot_z == False:
+                                ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
+                                              fontdict=fontdict)
+                            elif self.plot_z == True:
+                                ax.set_ylabel('Re[Impedance (m/s)]',
+                                               fontdict=fontdict)
                         elif aa == 2:
-                            ax.set_ylabel('Phase (deg)', fontdict=fontdict)
-                        else:
-                            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
+                            if self.plot_z == False:
+                                ax.set_ylabel('Phase (deg)',
+                                              fontdict=fontdict)
+                            elif self.plot_z == True:
+                                ax.set_ylabel('Im[Impedance (m/s)]',
+                                              fontdict=fontdict)
+#                        else:
+#                            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
 
                     ax.set_xscale('log')
                     ax.set_xlim(xmin=10**(np.floor(np.log10(period[0])))*1.01,
@@ -3232,28 +3418,52 @@ class PlotResponse(object):
                     
                     if self.plot_style == 1:
                         if self.plot_component == 2:
-                            #plot resistivity
-                            rerxy = self.plot_errorbar(axrxy, 
-                                                      period[nzxy], 
-                                                      rrp.resxy[nzxy], 
-                                                      rrp.resxy_err[nzxy],
-                                                      cxy, self.mted)
-                            reryx = self.plot_errorbar(axryx, 
-                                                      period[nzyx], 
-                                                      rrp.resyx[nzyx], 
-                                                      rrp.resyx_err[nzyx],
-                                                      cyx, self.mtmd)
-                            #plot phase                         
-                            rerxy = self.plot_errorbar(axpxy, 
-                                                      period[nzxy], 
-                                                      rrp.phasexy[nzxy], 
-                                                      rrp.phasexy_err[nzxy],
-                                                      cxy, self.mted)
-                            reryx = self.plot_errorbar(axpyx, 
-                                                      period[nzyx], 
-                                                      rrp.phaseyx[nzyx], 
-                                                      rrp.phaseyx_err[nzyx],
-                                                      cyx, self.mtmd)
+                            if self.plot_z == False:
+                                #plot resistivity
+                                rerxy = self.plot_errorbar(axrxy, 
+                                                          period[nzxy], 
+                                                          rrp.resxy[nzxy], 
+                                                          rrp.resxy_err[nzxy],
+                                                          cxy, self.mted)
+                                reryx = self.plot_errorbar(axryx, 
+                                                          period[nzyx], 
+                                                          rrp.resyx[nzyx], 
+                                                          rrp.resyx_err[nzyx],
+                                                          cyx, self.mtmd)
+                                #plot phase                         
+                                rerxy = self.plot_errorbar(axpxy, 
+                                                          period[nzxy], 
+                                                          rrp.phasexy[nzxy], 
+                                                          rrp.phasexy_err[nzxy],
+                                                          cxy, self.mted)
+                                reryx = self.plot_errorbar(axpyx, 
+                                                          period[nzyx], 
+                                                          rrp.phaseyx[nzyx], 
+                                                          rrp.phaseyx_err[nzyx],
+                                                          cyx, self.mtmd)
+                            elif self.plot_z == True:
+                                #plot real
+                                rerxy = self.plot_errorbar(axrxy, 
+                                                          period[nzxy], 
+                                                          resp_z[nzxy,0,1].real, 
+                                                          resp_z_err[nzxy,0,1].real,
+                                                          cxy, self.mted)
+                                reryx = self.plot_errorbar(axryx, 
+                                                          period[nzyx], 
+                                                          resp_z[nzyx,1,0].real, 
+                                                          resp_z_err[nzyx,1,0].real,
+                                                          cyx, self.mtmd)
+                                #plot phase                         
+                                rerxy = self.plot_errorbar(axpxy, 
+                                                          period[nzxy], 
+                                                          resp_z[nzxy,0,1].imag, 
+                                                          resp_z_err[nzxy,0,1].imag,
+                                                          cxy, self.mted)
+                                reryx = self.plot_errorbar(axpyx, 
+                                                          period[nzyx], 
+                                                          resp_z[nzyx,1,0].imag, 
+                                                          resp_z_err[nzyx,1,0].imag,
+                                                          cyx, self.mtmd)
                                                       
                             line_list[0] += [rerxy[0]]
                             line_list[1] += [reryx[0]]
@@ -3262,48 +3472,93 @@ class PlotResponse(object):
                             label_list[1] += ['$Z^m_{yx}$ '+
                                            'rms={0:.2f}'.format(rms_yx)]
                         elif self.plot_component == 4:
-                            #plot resistivity
-                            rerxx= self.plot_errorbar(axrxx, 
-                                                      period[nzxx], 
-                                                      rrp.resxx[nzxx], 
-                                                      rrp.resxx_err[nzxx],
-                                                      cxy, self.mted)
-                            rerxy = self.plot_errorbar(axrxy, 
-                                                      period[nzxy], 
-                                                      rrp.resxy[nzxy], 
-                                                      rrp.resxy_err[nzxy],
-                                                      cxy, self.mted)
-                            reryx = self.plot_errorbar(axryx, 
-                                                      period[nzyx], 
-                                                      rrp.resyx[nzyx], 
-                                                      rrp.resyx_err[nzyx],
-                                                      cyx, self.mtmd)
-                            reryy = self.plot_errorbar(axryy, 
-                                                      period[nzyy], 
-                                                      rrp.resyy[nzyy], 
-                                                      rrp.resyy_err[nzyy],
-                                                      cyx, self.mtmd)
-                            #plot phase                         
-                            rerxx= self.plot_errorbar(axpxx, 
-                                                      period[nzxx], 
-                                                      rrp.phasexx[nzxx], 
-                                                      rrp.phasexx_err[nzxx],
-                                                      cxy, self.mted)
-                            rerxy = self.plot_errorbar(axpxy, 
-                                                      period[nzxy], 
-                                                      rrp.phasexy[nzxy], 
-                                                      rrp.phasexy_err[nzxy],
-                                                      cxy, self.mted)
-                            reryx = self.plot_errorbar(axpyx, 
-                                                      period[nzyx], 
-                                                      rrp.phaseyx[nzyx], 
-                                                      rrp.phaseyx_err[nzyx],
-                                                      cyx, self.mtmd)
-                            reryy = self.plot_errorbar(axpyy, 
-                                                      period[nzyy], 
-                                                      rrp.phaseyy[nzyy], 
-                                                      rrp.phaseyy_err[nzyy],
-                                                      cyx, self.mtmd)
+                            if self.plot_z == False:
+                                #plot resistivity
+                                rerxx= self.plot_errorbar(axrxx, 
+                                                          period[nzxx], 
+                                                          rrp.resxx[nzxx], 
+                                                          rrp.resxx_err[nzxx],
+                                                          cxy, self.mted)
+                                rerxy = self.plot_errorbar(axrxy, 
+                                                          period[nzxy], 
+                                                          rrp.resxy[nzxy], 
+                                                          rrp.resxy_err[nzxy],
+                                                          cxy, self.mted)
+                                reryx = self.plot_errorbar(axryx, 
+                                                          period[nzyx], 
+                                                          rrp.resyx[nzyx], 
+                                                          rrp.resyx_err[nzyx],
+                                                          cyx, self.mtmd)
+                                reryy = self.plot_errorbar(axryy, 
+                                                          period[nzyy], 
+                                                          rrp.resyy[nzyy], 
+                                                          rrp.resyy_err[nzyy],
+                                                          cyx, self.mtmd)
+                                #plot phase                         
+                                rerxx= self.plot_errorbar(axpxx, 
+                                                          period[nzxx], 
+                                                          rrp.phasexx[nzxx], 
+                                                          rrp.phasexx_err[nzxx],
+                                                          cxy, self.mted)
+                                rerxy = self.plot_errorbar(axpxy, 
+                                                          period[nzxy], 
+                                                          rrp.phasexy[nzxy], 
+                                                          rrp.phasexy_err[nzxy],
+                                                          cxy, self.mted)
+                                reryx = self.plot_errorbar(axpyx, 
+                                                          period[nzyx], 
+                                                          rrp.phaseyx[nzyx], 
+                                                          rrp.phaseyx_err[nzyx],
+                                                          cyx, self.mtmd)
+                                reryy = self.plot_errorbar(axpyy, 
+                                                          period[nzyy], 
+                                                          rrp.phaseyy[nzyy], 
+                                                          rrp.phaseyy_err[nzyy],
+                                                          cyx, self.mtmd)
+                            elif self.plot_z == True:
+                                #plot real
+                                rerxx = self.plot_errorbar(axrxx, 
+                                                          period[nzxx], 
+                                                          resp_z[nzxx,0,0].real, 
+                                                          resp_z_err[nzxx,0,0].real,
+                                                          cxy, self.mted)
+                                rerxy = self.plot_errorbar(axrxy, 
+                                                          period[nzxy], 
+                                                          resp_z[nzxy,0,1].real, 
+                                                          resp_z_err[nzxy,0,1].real,
+                                                          cxy, self.mted)
+                                reryx = self.plot_errorbar(axryx, 
+                                                          period[nzyx], 
+                                                          resp_z[nzyx,1,0].real, 
+                                                          resp_z_err[nzyx,1,0].real,
+                                                          cyx, self.mtmd)
+                                reryy = self.plot_errorbar(axryy, 
+                                                          period[nzyy], 
+                                                          resp_z[nzyy,1,1].real, 
+                                                          resp_z_err[nzyy,1,1].real,
+                                                          cyx, self.mtmd)
+                                #plot phase                         
+                                rerxx = self.plot_errorbar(axpxx, 
+                                                          period[nzxx], 
+                                                          resp_z[nzxx,0,0].imag, 
+                                                          resp_z_err[nzxx,0,0].imag,
+                                                          cxy, self.mted)
+                                rerxy = self.plot_errorbar(axpxy, 
+                                                          period[nzxy], 
+                                                          resp_z[nzxy,0,1].imag, 
+                                                          resp_z_err[nzxy,0,1].imag,
+                                                          cxy, self.mted)
+                                reryx = self.plot_errorbar(axpyx, 
+                                                          period[nzyx], 
+                                                          resp_z[nzyx,1,0].imag, 
+                                                          resp_z_err[nzyx,1,0].imag,
+                                                          cyx, self.mtmd)
+                                reryy = self.plot_errorbar(axpyy, 
+                                                          period[nzyy], 
+                                                          resp_z[nzyy,1,1].imag, 
+                                                          resp_z_err[nzyy,1,1].imag,
+                                                          cyx, self.mtmd)
+                                                         
                             line_list[0] += [rerxx[0]]
                             line_list[1] += [rerxy[0]]
                             line_list[2] += [reryx[0]]
@@ -3318,77 +3573,144 @@ class PlotResponse(object):
                                            'rms={0:.2f}'.format(rms_yy)]
                     elif self.plot_style == 2:
                         if self.plot_component == 2:
-                            #plot resistivity
-                            rerxy = self.plot_errorbar(axrxy, 
-                                                      period[nzxy], 
-                                                      rrp.resxy[nzxy], 
-                                                      rrp.resxy_err[nzxy],
-                                                      cxy, self.mted)
-                            reryx = self.plot_errorbar(axrxy, 
-                                                      period[nzyx], 
-                                                      rrp.resyx[nzyx], 
-                                                      rrp.resyx_err[nzyx],
-                                                      cyx, self.mtmd)
-                            #plot phase                         
-                            rerxy = self.plot_errorbar(axpxy, 
-                                                      period[nzxy], 
-                                                      rrp.phasexy[nzxy], 
-                                                      rrp.phasexy_err[nzxy],
-                                                      cxy, self.mted)
-                            reryx = self.plot_errorbar(axpxy, 
-                                                      period[nzyx], 
-                                                      rrp.phaseyx[nzyx], 
-                                                      rrp.phaseyx_err[nzyx],
-                                                      cyx, self.mtmd)
+                            if self.plot_z == False:                            
+                                #plot resistivity
+                                rerxy = self.plot_errorbar(axrxy, 
+                                                          period[nzxy], 
+                                                          rrp.resxy[nzxy], 
+                                                          rrp.resxy_err[nzxy],
+                                                          cxy, self.mted)
+                                reryx = self.plot_errorbar(axrxy, 
+                                                          period[nzyx], 
+                                                          rrp.resyx[nzyx], 
+                                                          rrp.resyx_err[nzyx],
+                                                          cyx, self.mtmd)
+                                #plot phase                         
+                                rerxy = self.plot_errorbar(axpxy, 
+                                                          period[nzxy], 
+                                                          rrp.phasexy[nzxy], 
+                                                          rrp.phasexy_err[nzxy],
+                                                          cxy, self.mted)
+                                reryx = self.plot_errorbar(axpxy, 
+                                                          period[nzyx], 
+                                                          rrp.phaseyx[nzyx], 
+                                                          rrp.phaseyx_err[nzyx],
+                                                          cyx, self.mtmd)
+                            elif self.plot_z == True:
+                                #plot real
+                                rerxy = self.plot_errorbar(axrxy, 
+                                                          period[nzxy], 
+                                                          resp_z[nzxy,0,1].real, 
+                                                          resp_z_err[nzxy,0,1].real,
+                                                          cxy, self.mted)
+                                reryx = self.plot_errorbar(axrxy, 
+                                                          period[nzyx], 
+                                                          resp_z[nzyx,1,0].real, 
+                                                          resp_z_err[nzyx,1,0].real,
+                                                          cyx, self.mtmd)
+                                #plot phase                         
+                                rerxy = self.plot_errorbar(axpxy, 
+                                                          period[nzxy], 
+                                                          resp_z[nzxy,0,1].imag, 
+                                                          resp_z_err[nzxy,0,1].imag,
+                                                          cyx, self.mted)
+                                reryx = self.plot_errorbar(axpxy, 
+                                                          period[nzyx], 
+                                                          resp_z[nzyx,1,0].imag, 
+                                                          resp_z_err[nzyx,1,0].imag,
+                                                          cyx, self.mtmd)
                             line_list += [rerxy[0], reryx[0]]
                             label_list += ['$Z^m_{xy}$ '+
                                            'rms={0:.2f}'.format(rms_xy),
                                            '$Z^m_{yx}$ '+
                                            'rms={0:.2f}'.format(rms_yx)]
                         elif self.plot_component == 4:
-                            #plot resistivity
-                            rerxx= self.plot_errorbar(axrxx, 
-                                                      period[nzxx], 
-                                                      rrp.resxx[nzxx], 
-                                                      rrp.resxx_err[nzxx],
-                                                      cxy, self.mted)
-                            rerxy = self.plot_errorbar(axrxy, 
-                                                      period[nzxy], 
-                                                      rrp.resxy[nzxy], 
-                                                      rrp.resxy_err[nzxy],
-                                                      cxy, self.mted)
-                            reryx = self.plot_errorbar(axrxy, 
-                                                      period[nzyx], 
-                                                      rrp.resyx[nzyx], 
-                                                      rrp.resyx_err[nzyx],
-                                                      cyx, self.mtmd)
-                            reryy = self.plot_errorbar(axrxx, 
-                                                      period[nzyy], 
-                                                      rrp.resyy[nzyy], 
-                                                      rrp.resyy_err[nzyy],
-                                                      cyx, self.mtmd)
-                            #plot phase                         
-                            rerxx= self.plot_errorbar(axpxx, 
-                                                      period[nzxx], 
-                                                      rrp.phasexx[nzxx], 
-                                                      rrp.phasexx_err[nzxx],
-                                                      cxy, self.mted)
-                            rerxy = self.plot_errorbar(axpxy, 
-                                                      period[nzxy], 
-                                                      rrp.phasexy[nzxy], 
-                                                      rrp.phasexy_err[nzxy],
-                                                      cxy, self.mted)
-                            reryx = self.plot_errorbar(axpxy, 
-                                                      period[nzyx], 
-                                                      rrp.phaseyx[nzyx], 
-                                                      rrp.phaseyx_err[nzyx],
-                                                      cyx, self.mtmd)
-                            reryy = self.plot_errorbar(axpxx, 
-                                                      period[nzyy], 
-                                                      rrp.phaseyy[nzyy], 
-                                                      rrp.phaseyy_err[nzyy],
-                                                      cyx, self.mtmd)
-                            
+                            if self.plot_z == False:
+                                #plot resistivity
+                                rerxx= self.plot_errorbar(axrxx, 
+                                                          period[nzxx], 
+                                                          rrp.resxx[nzxx], 
+                                                          rrp.resxx_err[nzxx],
+                                                          cxy, self.mted)
+                                rerxy = self.plot_errorbar(axrxy, 
+                                                          period[nzxy], 
+                                                          rrp.resxy[nzxy], 
+                                                          rrp.resxy_err[nzxy],
+                                                          cxy, self.mted)
+                                reryx = self.plot_errorbar(axrxy, 
+                                                          period[nzyx], 
+                                                          rrp.resyx[nzyx], 
+                                                          rrp.resyx_err[nzyx],
+                                                          cyx, self.mtmd)
+                                reryy = self.plot_errorbar(axrxx, 
+                                                          period[nzyy], 
+                                                          rrp.resyy[nzyy], 
+                                                          rrp.resyy_err[nzyy],
+                                                          cyx, self.mtmd)
+                                #plot phase                         
+                                rerxx= self.plot_errorbar(axpxx, 
+                                                          period[nzxx], 
+                                                          rrp.phasexx[nzxx], 
+                                                          rrp.phasexx_err[nzxx],
+                                                          cxy, self.mted)
+                                rerxy = self.plot_errorbar(axpxy, 
+                                                          period[nzxy], 
+                                                          rrp.phasexy[nzxy], 
+                                                          rrp.phasexy_err[nzxy],
+                                                          cxy, self.mted)
+                                reryx = self.plot_errorbar(axpxy, 
+                                                          period[nzyx], 
+                                                          rrp.phaseyx[nzyx], 
+                                                          rrp.phaseyx_err[nzyx],
+                                                          cyx, self.mtmd)
+                                reryy = self.plot_errorbar(axpxx, 
+                                                          period[nzyy], 
+                                                          rrp.phaseyy[nzyy], 
+                                                          rrp.phaseyy_err[nzyy],
+                                                          cyx, self.mtmd)
+                            elif self.plot_z == True:
+                                #plot real
+                                rerxx = self.plot_errorbar(axrxx, 
+                                                          period[nzxx], 
+                                                          resp_z[nzxx,0,0].real, 
+                                                          resp_z_err[nzxx,0,0].real,
+                                                          cxy, self.mted)
+                                rerxy = self.plot_errorbar(axrxy, 
+                                                          period[nzxy], 
+                                                          resp_z[nzxy,0,1].real, 
+                                                          resp_z_err[nzxy,0,1].real,
+                                                          cxy, self.mted)
+                                reryx = self.plot_errorbar(axrxy, 
+                                                          period[nzyx], 
+                                                          resp_z[nzyx,1,0].real, 
+                                                          resp_z_err[nzyx,1,0].real,
+                                                          cyx, self.mtmd)
+                                reryy = self.plot_errorbar(axrxx, 
+                                                          period[nzyy], 
+                                                          resp_z[nzyy,1,1].real, 
+                                                          resp_z_err[nzyy,1,1].real,
+                                                          cyx, self.mtmd)
+                                #plot phase                         
+                                rerxx = self.plot_errorbar(axpxx, 
+                                                          period[nzxx], 
+                                                          resp_z[nzxx,0,0].imag, 
+                                                          resp_z_err[nzxx,0,0].imag,
+                                                          cxy, self.mted)
+                                rerxy = self.plot_errorbar(axpxy, 
+                                                          period[nzxy], 
+                                                          resp_z[nzxy,0,1].imag, 
+                                                          resp_z_err[nzxy,0,1].imag,
+                                                          cxy, self.mted)
+                                reryx = self.plot_errorbar(axpxy, 
+                                                          period[nzyx], 
+                                                          resp_z[nzyx,1,0].imag, 
+                                                          resp_z_err[nzyx,1,0].imag,
+                                                          cyx, self.mtmd)
+                                reryy = self.plot_errorbar(axpxx, 
+                                                          period[nzyy], 
+                                                          resp_z[nzyy,1,1].imag, 
+                                                          resp_z_err[nzyy,1,1].imag,
+                                                          cyx, self.mtmd)
                             line_list[0] += [rerxy[0], reryx[0]]
                             line_list[1] += [rerxx[0], reryy[0]]
                             label_list[0] += ['$Z^m_{xy}$ '+
