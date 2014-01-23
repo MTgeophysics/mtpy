@@ -23,7 +23,7 @@ if not os.path.isdir(edipath):
 
 
 #flag for merging closely neighbouring periods: 
-merge_periods = False
+merge_periods = True
 
 #merge periods, which do not differ more than this threshold (in percent)
 merge_threshold = 5
@@ -103,7 +103,7 @@ for idx_edi, edi in enumerate(lo_ediobjs):
 periodlist = sorted(list(set(periodlist)),reverse=False)
     
 if merge_periods == True:
-    #mp.plot_merging(periodlist,merge_threshold)
+    mp.plot_merging(periodlist,merge_threshold)
     new_periods = mp.merge_periods(periodlist,merge_threshold)
 else:
     new_periods = periodlist[:]

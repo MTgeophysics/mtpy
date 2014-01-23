@@ -203,17 +203,13 @@ def plotZ(data_dictionary):
 
 	close('all')
 	ion()
+	#maximum station data in one figure:
 	max_stations = 4
-	#determine number of plot windows 
-	n_stations = len(data_dictionary)
-	#4 stations in one plot
-	n_windows = np.ceil(n_stations/max_stations)
 
 	fignum = 1
 	station_counter = 0
 
 	for sta in sorted(data_dictionary):
-
 
 		station_counter += 1
 
@@ -221,8 +217,7 @@ def plotZ(data_dictionary):
 
 		if station_counter%max_stations == 0:
 			fignum += 1
-
-		
+	
 		subfig_index_vertical = (station_counter-1)%max_stations
 
 		data = data_dictionary[sta]
