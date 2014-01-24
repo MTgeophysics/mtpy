@@ -214,10 +214,20 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
         incomplete = 0
         fileindex = 0
 
+        #allocate a data array to fill
+        # this is more memory efficient than extending lists!!
+        #cater for potential rounding errors:
+        if sampling < 1:
+            max_n_data = 86400 * (int(1./sampling)+1)
+        else:
+            max_n_data = int(86400./sampling) + 1
+
+        day_data = np.zeros(max_n_data,'float32')
+
         #loop over all (sorted) files for the current component
         for idx_f,f in enumerate(lo_sorted_files):
 
-            print 'read in file %s' %(f)
+            print 'read in file {0}'.format(f)
             #starting time of current file
             file_start_time = lo_sorted_starttimes[idx_f]
 
@@ -243,14 +253,19 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
             if fileopen == 0:
                 outfile_starttime =  file_start_time
                 outfile_timeaxis = file_time_axis
+         
+                arrayindex = 0
 
                 #if it's a single column of data
                 if np.size(data_in.shape) == 1:
-                    outfile_data = data_in.tolist()
+                    day_data[arrayindex:arrayindex+len(data_in)] = data_in                    
+                    #outfile_data = data_in.tolist()
                 #otherwise assuming that the first column is time, so just take the second one
                 else:
-                    outfile_data = data_in[:,1].tolist()
+                    day_data[arrayindex:arrayindex+len(data_in)] = data_in[:,1]
+                    #outfile_data = data_in[:,1].tolist()
 
+                arrayindex += len(data_in)
 
                 file_date = '{0}{1:02}{2:02}'.format(file_start[0],
                                                  file_start[1], file_start[2]) 
@@ -278,9 +293,12 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                 #if current file starts earlier than the endtime of data in buffer then delete ambiguous  parts of the buffer:
                 elif (outfile_timeaxis[-1] - file_start_time) > epsilon:
 
-                    #find point on the outfile time axis for the beginning of current file:
+                    #find point on the current outfile time axis for the beginning of current file:
                     overlap_idx = np.argmin(np.abs(np.array(
                                             outfile_timeaxis) - file_start_time)) 
+
+                    #set the array index back
+                    arrayindex = overlap_idx
 
                     #re-define outfile time axis and data
                     outfile_timeaxis = np.delete(outfile_timeaxis,
@@ -288,10 +306,10 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                                                  overlap_idx) + 
                                                  overlap_idx).tolist()
 
-                    outfile_data = np.delete(outfile_data, 
-                                                np.arange(len(outfile_data) - 
-                                                overlap_idx) + 
-                                                overlap_idx).tolist()
+                    # outfile_data = np.delete(outfile_data, 
+                    #                             np.arange(len(outfile_data) - 
+                    #                             overlap_idx) + 
+                    #                             overlap_idx).tolist()
                 
 
                 #append current file's time axis
@@ -300,11 +318,15 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                 #append current data                  
                 #if it's a single column of data
                 if np.size(data_in.shape) == 1:
-                    outfile_data.extend(data_in.tolist())
+                    day_data[arrayindex:arrayindex+len(data_in)] = data_in                    
+                    #outfile_data.extend(data_in.tolist())
                 #otherwise assuming that the first column is time, so just take the second one
                 else:
-                    outfile_data.extend(data_in[:,1].tolist())
+                    day_data[arrayindex:arrayindex+len(data_in)] = data_in[:,1]                    
+                    #outfile_data.extend(data_in[:,1].tolist())
 
+                arrayindex += len(data_in)
+                print len(data_in),arrayindex
 
 
 
@@ -347,15 +369,17 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                 #define header info
                 headerline = '# {0} {1} {2:.1f} {3} {4} \n'.format(
                                     stationname, comp.lower(), 1./sampling, 
-                                    outfile_timeaxis[0], len(outfile_timeaxis))
+                                    outfile_timeaxis[0], arrayindex)#len(outfile_timeaxis))
 
                 F.write(headerline)
 
                 #outfile_array = np.zeros((len(outfile_timeaxis),2))
                 #outfile_array[:,0] = outfile_timeaxis
                 #outfile_array[:,1] = outfile_data
-
-                np.savetxt(F, np.array(outfile_data))
+                
+                np.savetxt(F,day_data[:arrayindex])
+                #np.savetxt(F, np.array(outfile_data))
+                arrayindex = 0
 
                 F.close()
                 print '\t wrote file %s'%(new_file)
