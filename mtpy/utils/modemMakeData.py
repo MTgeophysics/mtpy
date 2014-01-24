@@ -15,7 +15,7 @@ import glob
 
 
 
-edipath = 'edis_selected'
+edipath = 'edi2'
 
 if not os.path.isdir(edipath):
     print '\n\tERROR - data path does not exist'
@@ -23,6 +23,7 @@ if not os.path.isdir(edipath):
 
 
 #flag for merging closely neighbouring periods: 
+merge_periods = True
 merge_periods = False
 
 #merge periods, which do not differ more than this threshold (in percent)
@@ -101,15 +102,36 @@ for idx_edi, edi in enumerate(lo_ediobjs):
     periodlist.extend(periods)
 
 periodlist = sorted(list(set(periodlist)),reverse=False)
-    
+
+#error percentage - to be added to the error of values, if the period does not 
+# coincide with the original period but lays within the merge_threshold
+merging_error = None    
+
+#choose number of final periods
+N=None
+
+#lowest period
+Tmin=1e-5
+
+#highest period 
+Tmax=1e5
+
+
+
+
 if merge_periods == True:
     #mp.plot_merging(periodlist,merge_threshold)
-    new_periods = mp.merge_periods(periodlist,merge_threshold)
+    #new_periods = mp.merge_periods(periodlist,merge_threshold)
+    new_periods,merging_error = mp.regular_periods(periodlist,merge_threshold,no_periods=N,
+                                    t_min=Tmin,t_max=Tmax,
+                                    max_merge_error=merging_error)
 else:
     new_periods = periodlist[:]
+    merging_error = [None for i in new_periods]
+
 #setting up a dictionary for old and new period
 for idx,per in enumerate(periodlist):
-    period_dict[str(per)] = new_periods[idx]
+    period_dict[str(per)] = new_periods[idx],merging_error[idx]
 
 
 periodlist = []
@@ -128,15 +150,30 @@ for idx_edi, edi in enumerate(lo_ediobjs):
     
     
     #Generate Impedance Array
-    for i in range(len(periods)):
+    for p in range(len(periods)):
 
-        raw_period = periods[i]
+        raw_period = periods[p]
         raw_period = np.round(raw_period,5)
-        period = float(period_dict[str(raw_period)])
+        if period_dict[str(raw_period)][0] is None:
+            #period is not within the chosen bins
+            continue
+
+        period = float(period_dict[str(raw_period)][0])
         periodlist.append(period)
 
-        Z = zval[i]
-        Zerr = zerr[i]
+
+        merge_error = period_dict[str(raw_period)][1]
+        try:
+            if merge_error is not None:
+                merge_error = float(merge_error)/100.
+            else:
+                raise
+        except:
+            merge_error = 0.
+                
+
+        Z = zval[p]
+        Zerr = zerr[p] * (1.+merge_error)
 
         period_impstring = ''
 
@@ -173,6 +210,10 @@ data.write(header_string)
 data.write(impstring)
 data.close()
 
+
+if use_tipper is False:
+    print 'END'
+    sys.exit()
 
 #start Tipper part ---------------------------------------------
 
