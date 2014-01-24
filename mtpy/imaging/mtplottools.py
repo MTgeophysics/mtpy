@@ -734,7 +734,6 @@ class MTplot(object):
                      
 
         self._station = station
-        self._period = period
         self._freq = freq
         self._lat = lat
         self._lon = lon
@@ -906,7 +905,6 @@ class MTplot(object):
         if self._freq[0] < self._freq[1]:
             print 'Flipping arrays to be ordered from short period to long'
             self._freq = self._freq.copy()[::-1]
-            self._period = 1./self._freq.copy()
             
             self._Z.z = self._Z.z.copy()[::-1]
             self._Z.zerr = self._Z.zerr.copy()[::-1]
@@ -937,7 +935,7 @@ class MTplot(object):
         return self._station
         
     def _get_period(self):
-        return self._period
+        return 1./self._freq
         
     def _get_lat(self):
         return self._lat
