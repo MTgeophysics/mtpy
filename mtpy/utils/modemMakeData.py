@@ -20,6 +20,7 @@ edipath = 'edi2'
 if not os.path.isdir(edipath):
     print '\n\tERROR - data path does not exist'
     sys.exit()
+#-----------------------------------------------------------------
 
 
 #flag for merging closely neighbouring periods: 
@@ -28,6 +29,20 @@ merge_periods = True
 
 #merge periods, which do not differ more than this threshold (in percent)
 merge_threshold = 5
+
+
+#error percentage - to be added to the error of values, if the period does not 
+# coincide with the original period but lays within the merge_threshold
+merging_error = None    
+
+#choose number of final periods
+N=20
+
+#lowest period
+Tmin=1e-5
+
+#highest period 
+Tmax=1e5
 
 
 
@@ -102,20 +117,6 @@ for idx_edi, edi in enumerate(lo_ediobjs):
     periodlist.extend(periods)
 
 periodlist = sorted(list(set(periodlist)),reverse=False)
-
-#error percentage - to be added to the error of values, if the period does not 
-# coincide with the original period but lays within the merge_threshold
-merging_error = None    
-
-#choose number of final periods
-N=None
-
-#lowest period
-Tmin=1e-5
-
-#highest period 
-Tmax=1e5
-
 
 
 
