@@ -14,14 +14,14 @@ def regular_periods(periodlist,merge_threshold=15, no_periods=None, t_min=None,
 
     if no_periods is None:
         no_periods = 20
-    if t_min is None:
+    if t_min is None or min(periodlist)>t_min:
         t_min = min(periodlist)
-    if t_max is None:
+    if t_max is None or max(periodlist)<t_max:
         t_max = max(periodlist)
     if max_merge_error is None:
         max_merge_error = 10.
 
-    print merge_threshold
+
     new_periods = np.logspace(np.log10(t_min),np.log10(t_max),no_periods)
 
     new_periods_log = log10(new_periods)
@@ -61,8 +61,10 @@ def regular_periods(periodlist,merge_threshold=15, no_periods=None, t_min=None,
     ignored_points = [True for i in new_period_list if i is None]
 
     if len(merged_periods) != len(periodlist):
-        print '\n\tDone -- merged {0} periods into {1} period-clusters -'\
+        print '\n\tMerged {0} periods into {1} period-clusters -'\
         ' {2} points outside the bins\n'.format(len(periodlist),len(merged_periods),len(ignored_points))
+
+    new_period_list = [round(i,5)  if i is not None else i for i in new_period_list] 
 
     return new_period_list, merge_errors
 

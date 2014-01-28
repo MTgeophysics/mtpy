@@ -15,7 +15,7 @@ import glob
 
 
 
-edipath = 'edi2'
+edipath = '.'
 
 if not os.path.isdir(edipath):
     print '\n\tERROR - data path does not exist'
@@ -36,7 +36,7 @@ merge_threshold = 5
 merging_error = None    
 
 #choose number of final periods
-N=20
+N=15
 
 #lowest period
 Tmin=1e-5
@@ -122,7 +122,7 @@ periodlist = sorted(list(set(periodlist)),reverse=False)
 
 if merge_periods == True:
 
-    #mp.plot_merging(periodlist,merge_threshold)
+    #mp.plot_merging(periodlist,merge_threshold,N)
     #new_periods = mp.merge_periods(periodlist,merge_threshold)
     new_periods,merging_error = mp.regular_periods(periodlist,merge_threshold,no_periods=N,
                                     t_min=Tmin,t_max=Tmax,
@@ -136,6 +136,13 @@ else:
 for idx,per in enumerate(periodlist):
     period_dict[str(per)] = new_periods[idx],merging_error[idx]
 
+#build dictionary for filtering potential doubles in periodlist of the same file
+new2old_per_dict = {}
+for k, v in period_dict.iteritems():
+    v=v[0]
+    new2old_per_dict[v] = new2old_per_dict.get(v, [])
+    new2old_per_dict[v].append(k)
+
 
 periodlist = []
 
@@ -144,6 +151,7 @@ for idx_edi, edi in enumerate(lo_ediobjs):
 
     freq2 = edi.freq
     periods=1/freq2
+    periods = [round(i,5) for i in periods]
 
     zerr=edi.Z.zerr
     zval=edi.Z.z
@@ -156,12 +164,27 @@ for idx_edi, edi in enumerate(lo_ediobjs):
     for p in range(len(periods)):
 
         raw_period = periods[p]
-        raw_period = np.round(raw_period,5)
         if period_dict[str(raw_period)][0] is None:
             #period is not within the chosen bins
             continue
 
         period = float(period_dict[str(raw_period)][0])
+        tmp_lo_old_periods = new2old_per_dict[period]
+        doubleperiod = False
+        for other_period in tmp_lo_old_periods:
+            #if the other original periods are not present in this file: 
+            if  not other_period in  periods: 
+                continue
+            #if it's the current period:    
+            if other_period == p:
+                continue
+            #skip, if another one is closer to the new merge period:
+            if np.abs(other_period-period) < np.abs(p-period):
+                doubleperiod = True
+        if doubleperiod is True:
+            continue
+
+
         periodlist.append(period)
 
 
@@ -203,7 +226,8 @@ for idx_edi, edi in enumerate(lo_ediobjs):
 n_periods = len(set(periodlist))
 
 
-print 'Z periods: ',n_periods ,  'files:', len(lo_ediobjs)
+print 'Z periods: ',n_periods 
+print 'No. data files:', len(lo_ediobjs)
 
 header_string += '> {0} {1}\n'.format(n_periods,len(lo_ediobjs))
 
@@ -215,7 +239,7 @@ data.close()
 
 
 if use_tipper is False:
-    print 'END'
+    print '\n\tEND\n\n'
     sys.exit()
 
 #start Tipper part ---------------------------------------------
