@@ -211,7 +211,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
          
     :Example: ::
         
-        >>> import mtpy.imaging.mtplottools as mtplot
+        >>> import mtpy.imaging.mtplot as mtplot
         >>> import os
         >>> edipath1 = r"/home/EDIfiles1"
         >>> edilist1 = [os.path.join(edipath1,edi) for edi in os.listdir(edipath1)

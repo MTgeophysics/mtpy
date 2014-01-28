@@ -28,9 +28,9 @@ class PlotPhaseTensor(mtpl.MTEllipse):
     Arguments:
     ----------
     
-        **filename** : string
-                       filename containing impedance (.edi) is the only 
-                       format supported at the moment
+        **fn** : string
+               filename containing impedance (.edi) is the only 
+               format supported at the moment
                  
         **z_object** : class mtpy.core.z.Z
                       object of mtpy.core.z.  If this is input be sure the
@@ -105,8 +105,8 @@ class PlotPhaseTensor(mtpl.MTEllipse):
     :Example: ::
         
         #To plot just the phase tensor components
-        >>> import mtpy.imaging.mtpl.MTplot as mtpl.MTplot
-        >>> pt1 = mtpl.MTplot.PlotPhaseTensor(r"/home/MT/edifiles/MT01.edi")
+        >>> import mtpy.imaging.mtplot as mtplot
+        >>> pt1 = mtplot.plot_pt(fn=r"/home/MT/edifiles/MT01.edi")
         
     Attributes:
     -----------

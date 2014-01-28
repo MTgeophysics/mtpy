@@ -139,7 +139,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             >>> ...       for edi in os.listdir(edipath)
             >>> ...       if edi.find('.edi')>0]
             >>> plot each station in a subplot all in one figure with tipper
-            >>> rp1 = mtplot.PlotMultipleResPhase(edilist, plotnum=1, 
+            >>> rp1 = mtplot.PlotMultipleResPhase(fn_list=edilist, plotnum=1, 
             >>> ...                                plot_tipper='yr,
             >>> ...                                plot_style='all')
 

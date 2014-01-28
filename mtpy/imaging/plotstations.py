@@ -166,13 +166,13 @@ class PlotStations(object):
                    
     :Example: ::
         
-        >>> import mtpy.imaging.plotstations as plotstations
+        >>> import mtpy.imaging.mtplot as mtplot
         >>> import os
         >>> edipath = '/home/MT/edifiles'
         >>> edilist = [os.path.join(edipath, edi) 
         >>> ...       for edi in os.listdir(edipath)
         >>> ...       if edi.find('.edi')>0]
-        >>> ps1 = plotstations.PlotStations(fn_list=edilist)
+        >>> ps1 = mtplot.plot_station_locations(fn_list=edilist)
         >>> # change station label padding and properties
         >>> ps1.text_pad = .001
         >>> ps1.text_angle = 60

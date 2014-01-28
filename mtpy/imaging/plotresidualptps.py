@@ -172,11 +172,15 @@ class PlotResidualPTps(mtpl.MTEllipse):
     To get a list of .edi files that you want to plot -->
     :Example: ::
         
-        >>> import mtpy.imaging.mtplottools as mtplot
+        >>> import mtpy.imaging.mtplot as mtplot
         >>> import os
-        >>> edipath = r"/home/EDIfiles"
-        >>> edilist = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
+        >>> edipath1 = r"/home/EDIfiles1"
+        >>> edilist1 = [os.path.join(edipath1,edi) for edi in os.listdir(edipath1)
         >>> ...       if edi.find('.edi')>0]
+        >>> edipath2 = r"/home/EDIfiles2"
+        >>> edilist2 = [os.path.join(edipath2,edi) for edi in os.listdir(edipath2)
+        >>> ...       if edi.find('.edi')>0]
+        >>> # color by phimin with a range of 0-5 deg
     
     * If you want to plot minimum phase colored from blue to red in a range of
      20 to 70 degrees you can do it one of two ways--> 
@@ -185,12 +189,13 @@ class PlotResidualPTps(mtpl.MTEllipse):
     :Example: ::
         
         >>> edict = {'range':(20,70), 'cmap':'mt_bl2gr2rd','colorby':'phimin'}
-        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilist,ellipse_dict=edict)
+        >>> pt1 = mtplot.residual_pt_ps(edilist1, edilst2, ellipse_dict=edict)
      
     2)
     :Example: ::
         
-        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilist, plot_yn='n')
+        >>> pt1 = mtplot.residual_pt_ps(edilist1, edilst2, ellipse_dict=edict,\
+                                        plot_yn='n')
         >>> pt1.ellipse_colorby = 'phimin'
         >>> pt1.ellipse_cmap = 'mt_bl2gr2rd'
         >>> pt1.ellipse_range = (20,70)

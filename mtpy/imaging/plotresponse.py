@@ -187,7 +187,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                         
         :Example: ::
             
-            >>> import mtpy.imaging.mtplottools as mtplot
+            >>> import mtpy.imaging.mtplot as mtplot
             >>> edifile = r"/home/MT01/MT01.edi"
             >>> rp1 = mtplot.PlotResPhase(fn=edifile, plot_num=2)
             >>> # plots all 4 components

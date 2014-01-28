@@ -211,7 +211,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
     To get a list of .edi files that you want to plot -->
     :Example: ::
         
-        >>> import mtpy.imaging.mtplottools as mtplot
+        >>> import mtpy.imaging.mtplot as mtplot
         >>> import os
         >>> edipath = r"/home/EDIfiles"
         >>> edilist = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
@@ -224,12 +224,13 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
     :Example: ::
         
         >>> edict = {'range':(20,70), 'cmap':'mt_bl2gr2rd','colorby':'phimin'}
-        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilist,ellipse_dict=edict)
+        >>> pt1 = mtplot.plot_pt_pseudosection(fn_list=edilist,
+                                               ellipse_dict=edict)
      
     2)
     :Example: ::
         
-        >>> pt1 = mtplot.PlotPhaseTensorPseudoSection(edilist, plot_yn='n')
+        >>> pt1 = mtplot.plot_pt_pseudosection(fn_list=edilist, plot_yn='n')
         >>> pt1.ellipse_colorby = 'phimin'
         >>> pt1.ellipse_cmap = 'mt_bl2gr2rd'
         >>> pt1.ellipse_range = (20,70)

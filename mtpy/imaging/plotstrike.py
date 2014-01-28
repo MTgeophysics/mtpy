@@ -101,12 +101,13 @@ class PlotStrike(object):
     :Example: ::
         
         >>> import os
-        >>> import mtpy.imaging.mtplottools as mtplot
+        >>> import mtpy.imaging.mtplot as mtplot
         >>> edipath = r"/home/EDIFiles"
         >>> edilist = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
         >>> ...       if edi.find('.edi')>0]
         >>> #---plot rose plots in decades with tipper and an error floor on pt
-        >>> strike = mtplot.PlotStrike(edilist, plot_type=1,pt_error_floor=5)
+        >>> strike = mtplot.plot_strike(fn_list=edilist, plot_type=1,\
+                                        pt_error_floor=5)
         >>> #---plot all decades into one rose plot for each estimation---
         >>> strike.plot_type = 2
         >>> strike.redraw_plot()

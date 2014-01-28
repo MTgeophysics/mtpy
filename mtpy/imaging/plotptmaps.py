@@ -267,13 +267,13 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
          
     :Example: ::
         
-        >>> import mtpy.imaging.mtplottools as mtplot
+        >>> import mtpy.imaging.mtplot as mtplot
         >>> import os
         >>> edipath = r"/home/EDIfiles"
         >>> edilist = [os.path.join(edipath,edi) for edi in os.listdir(edipath)
         >>> ...       if edi.find('.edi')>0]
         >>> # color by phimin with a range of 20-70 deg
-        >>> ptmap = mtplot.PlotPhaseTensorMaps(edilist,freqspot=10,
+        >>> ptmap = mtplot.plot_pt_map(fn_list=edilist,freqspot=10,
         >>> ...                                ellipse_dict={'size':1,
         >>> ...                                              'range':(20,70)})
         >>> 
