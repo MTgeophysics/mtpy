@@ -22,8 +22,8 @@ n_layers = 45
 
 #determine minimum block sizes
 #used in the inner rectangle - constant widths
-dx = 3000
-dy = 3500
+dx = 300
+dy = 350
 #region around stations discretised with these sizes
 #outside, the grid steps will be extended exponentially
 #the size of padding is determined by  the numbers of cells as defined above
@@ -42,6 +42,16 @@ model_extension_factor = 1
 
 #starting resistivity value for homog. halfspace setup
 rho0 = 100.
+
+#define layered/1d model as input
+inmodel1d = np.zeros((4,2))
+inmodel1d[0] = 0,0.1
+inmodel1d[1] = 250,100
+inmodel1d[2] = 2000,10
+inmodel1d[3] = 4000,1000
+
+#inmodel1d = None
+
 #==============================================================================
 #allow rotation of the grid along a known geo electrical strike angle
 # X,Y will be rotated to X',Y' with X' along strike
@@ -327,11 +337,23 @@ for idx_z in range(len(thicknesses)):
     z_string = ''
     #empty line before each layer:
     z_string += '\n'
+    resistivity = rho0
+
+    if inmodel1d is not None:
+        layertop_depth = grid_z_points[idx_z]
+
+        layertop_modelboundary_distance = layertop_depth-inmodel1d[:,0]
+        layertop_idx = (np.abs(layertop_modelboundary_distance)).argmin()
+        if layertop_modelboundary_distance[layertop_idx] < 0:
+            layertop_idx -= 1
+        resistivity = inmodel1d[layertop_idx,1]
+
+
 
     for idx_y in range(len(yblocks)):
         y_string = ''
         for idx_x in range(len(xblocks)):
-            x_string = '{0:.5E}  '.format(np.log(rho0))
+            x_string = '{0:.5E}  '.format(np.log(resistivity))
             y_string += x_string
         y_string += '\n'
         z_string += y_string
