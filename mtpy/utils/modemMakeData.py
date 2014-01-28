@@ -159,7 +159,6 @@ for idx_edi, edi in enumerate(lo_ediobjs):
     northing = rel_coords[idx_edi,1]
     easting = rel_coords[idx_edi,0]
     
-    
     #Generate Impedance Array
     for p in range(len(periods)):
 
@@ -170,17 +169,17 @@ for idx_edi, edi in enumerate(lo_ediobjs):
 
         period = float(period_dict[str(raw_period)][0])
         tmp_lo_old_periods = new2old_per_dict[period]
+
         doubleperiod = False
         for other_period in tmp_lo_old_periods:
+            other_period = float(other_period)
             #if the other original periods are not present in this file: 
             if  not other_period in  periods: 
                 continue
-            #if it's the current period:    
-            if other_period == p:
-                continue
             #skip, if another one is closer to the new merge period:
-            if np.abs(other_period-period) < np.abs(p-period):
+            if np.abs(other_period-period) < np.abs(raw_period-period):
                 doubleperiod = True
+                break
         if doubleperiod is True:
             continue
 
