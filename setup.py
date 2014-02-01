@@ -21,8 +21,7 @@ setup_kwargs = {}
 # can be customized before the equals sign.
 
 setup_kwargs['entry_points'] = {'console_scripts': [
-        'ws2para = mtpy.utils.ws2para:main',
-        'occamgui_v1 = mtpy.utils.gui.occam2d.v1.occamgui_v1:main']}
+        'ws2vtk = mtpy.utils.ws2vtk:main']}
 
 # But many people will not have setuptools installed, so we need to handle
 # the default Python installation, which only has Distutils:
