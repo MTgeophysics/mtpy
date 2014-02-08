@@ -2031,3 +2031,92 @@ def _make_value_str(value, value_list=None, spacing='{0:^8}',
         return value_str
         
     return value_list
+    
+#==============================================================================
+# function for error bar plots 
+#==============================================================================
+def plot_errorbar(ax, x_array, y_array, y_error=None, x_error=None,
+                  color='k', marker='x', ms=2, ls=':', lw=1, e_capsize=2, 
+                  e_capthick=.5):
+    """
+    convinience function to make an error bar instance
+    
+    Arguments:
+    ------------
+        **ax** : matplotlib.axes instance 
+                 axes to put error bar plot on
+    
+        **x_array** : np.ndarray(nx)
+                      array of x values to plot
+                      
+        **y_array** : np.ndarray(nx)
+                      array of y values to plot
+                      
+        **y_error** : np.ndarray(nx)
+                      array of errors in y-direction to plot
+        
+        **x_error** : np.ndarray(ns)
+                      array of error in x-direction to plot
+                      
+        **color** : string or (r, g, b)
+                    color of marker, line and error bar
+                    
+        **marker** : string
+                     marker type to plot data as
+                     
+        **ms** : float
+                 size of marker
+                 
+        **ls** : string
+                 line style between markers
+                 
+        **lw** : float
+                 width of line between markers
+        
+        **e_capsize** : float
+                        size of error bar cap
+        
+        **e_capthick** : float
+                         thickness of error bar cap
+        
+        
+    Returns:
+    ---------
+        **errorbar_object** : matplotlib.Axes.errorbar 
+                              error bar object containing line data, 
+                              errorbars, etc.
+    """
+    #this is to make sure error bars plot in full and not just a dashed line
+    if x_error is not None:
+        x_err_high = np.array(x_error)
+        x_err_low = np.array(x_err_high)
+        x_err_low[x_err_high>=x_array] = x_array[x_err_high>=x_array]*.9999
+        x_err = [x_err_low, x_err_high]
+    else:
+        x_err = None
+    
+    if y_error is not None:
+        y_err_high = np.array(y_error)
+        y_err_low = np.array(y_err_high)
+        y_err_low[y_err_high>=y_array] = y_array[y_err_high>=y_array]*.9999
+        y_err = [y_err_low, y_err_high]
+    else:
+        y_err = None
+        
+    errorbar_object = ax.errorbar(x_array,
+                                  y_array,
+                                  marker=marker,
+                                  ms=ms,
+                                  mfc='None',
+                                  mec=color,
+                                  ls=ls,
+                                  xerr=x_err, 
+                                  yerr=y_err, 
+                                  ecolor=color,   
+                                  color=color,
+                                  picker=2,
+                                  lw=lw,
+                                  elinewidth=lw,
+                                  capsize=e_capsize,
+                                  capthick=e_capthick)
+    return errorbar_object
