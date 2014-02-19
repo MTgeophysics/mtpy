@@ -395,44 +395,46 @@ class PlotStations(object):
             svpath = save_path
 
         if self.map_scale == 'latlon':
-            sfmt = '{0: .3f}'
-            hdr_list = ['Station', 'Longitude(deg)', 'Latitude(deg)']
+            hdr_list = ['Station', 'Longitude(deg)', 'Latitude(deg)', 
+                        'Elevation(m)']
         elif self.map_scale == 'eastnorth':
-            sfmt = '{0: .0f}'
-            hdr_list = ['Station', 'Longitude(m)', 'Latitude(m)']
+            hdr_list = ['Station', 'Easting(m)', 'Northing(m)', 
+                        'Elevation(m)']
         elif self.map_scale == 'eastnorthkm':
-            sfmt = '{0: .0f}'
-            hdr_list = ['Station', 'Longitude(km)', 'Latitude(km)']
+            hdr_list = ['Station', 'Easting(km)', 'Northing(km)',
+                        'Elevation(m)']
             
-        try:
-            self.mt_list.map_xarr
-        except AttributeError:
-            self.mt_list.get_station_locations(map_scale=self.map_scale,
-                                              ref_point=self.ref_point)
+        self.mt_list.get_station_locations(map_scale=self.map_scale,
+                                           ref_point=self.ref_point)
                              
-        fn_svpath = os.path.join(svpath, 'StationLocations.txt')
+        fn_svpath = os.path.join(svpath, 'StationLocations_{0}.txt'.format(
+                                                               self.map_scale))
         tfid = file(fn_svpath, 'w')
         
-        hdr_str = ['{0:15}'.format(hh) for hh in hdr_list]+['\n']
+        hdr_str = ['{0:<15}'.format(hdr_list[0])]+\
+                  ['{0:^15}'.format(hh) for hh in hdr_list[1:]]+['\n']
         
         tfid.write(''.join(hdr_str))
         for ss in self.mt_list.map_dict.keys():
-            tfid.write('{0:15}'.format(ss))
             x = self.mt_list.map_dict[ss][0]
             y = self.mt_list.map_dict[ss][1]
-            tfid.write('{0:15}'.format(mtpt._make_value_str(x, 
-                                       value_format=sfmt, spacing='{0:^15}')))
-            tfid.write('{0:15}'.format(mtpt._make_value_str(y, 
-                                       value_format=sfmt, spacing='{0:^15}')))
-            tfid.write('\n')
+            z = self.mt_list.map_dict[ss][2]
+            if self.map_scale == 'latlon':
+                tline = '{0:<15}{1: ^15.3f}{2: ^15.3f}{3: ^15.1f}\n'.format(ss,
+                                                                             x,
+                                                                             y,
+                                                                             z)
+            else:
+                tline = '{0:<15}{1: ^15.1f}{2: ^15.1f}{3: ^15.1f}\n'.format(ss,
+                                                                             x,
+                                                                             y,
+                                                                             z)
+            tfid.write(tline)
             
         tfid.close()
         
         print 'Saved file to: ', fn_svpath
             
-            
-
-                         
     def save_plot(self, save_fn, file_format='pdf', 
                    orientation='portrait', fig_dpi=None, close_plot='y'):
         """

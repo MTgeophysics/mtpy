@@ -1492,10 +1492,11 @@ def get_station_locations(mt_list, map_scale='latlon', ref_point=(0,0)):
     """
     
     #make some empty arrays
-    latlist = np.zeros(len(mt_list))
-    lonlist = np.zeros(len(mt_list))
-    xarr = np.zeros(len(mt_list))
-    yarr = np.zeros(len(mt_list))
+    lat_list = np.zeros(len(mt_list))
+    lon_list = np.zeros(len(mt_list))
+    elev_list = np.zeros(len(mt_list))
+    x_arr = np.zeros(len(mt_list))
+    y_arr = np.zeros(len(mt_list))
     
     if map_scale == 'eastnorth':
         dscale = 1.
@@ -1505,8 +1506,9 @@ def get_station_locations(mt_list, map_scale='latlon', ref_point=(0,0)):
     map_station_dict = {}
     #need to sort by station
     for ii,mt in enumerate(mt_list):
-        latlist[ii] = mt.lat
-        lonlist[ii] = mt.lon
+        lat_list[ii] = mt.lat
+        lon_list[ii] = mt.lon
+        elev_list[ii] = mt.elev
         
         #if map scale is lat lon set parameters                
         if map_scale == 'latlon':
@@ -1548,12 +1550,12 @@ def get_station_locations(mt_list, map_scale='latlon', ref_point=(0,0)):
             raise NameError('mapscale not recognized')
         
         #put the location of each ellipse into an array in x and y
-        xarr[ii] = x
-        yarr[ii] = y
+        x_arr[ii] = x
+        y_arr[ii] = y
         
-        map_station_dict[mt.station] = (x, y)
+        map_station_dict[mt.station] = (x, y, mt.elev)
         
-    return map_station_dict, xarr, yarr
+    return map_station_dict, x_arr, y_arr
     
     
 #==============================================================================
