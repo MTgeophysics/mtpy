@@ -183,6 +183,8 @@ def generate_birrp_inputstring_simple(stationname, rr_station, ts_directory,
 
     print '...Done!\n\nCalculating optimal time window bisection parameters...'
     longest_section, number_of_bisections = get_optimal_window_bisection(length, sampling_rate)
+    #BIRRP automatically divides by 4 ... for what ever reason....
+    longest_section *= 4
     print '...Done!\n'
 
     birrp_stationdict['max_window_length'] = longest_section
@@ -326,9 +328,9 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
             if header['channel'].lower() in rr_channels:
                 
                 lo_rr_channels.append(header['channel'].lower())
-                lo_rr_starttimes.append(float(header['t_min']))
+                lo_rr_starttimes.append(np.float64(header['t_min']))
                 ta_rr = np.arange(int(float(header['nsamples']))+1)/float(
-                                    header['samplingrate']) + float(header['t_min'])
+                                    header['samplingrate']) + np.float64(header['t_min'])
                 ta_rr_endtime = ta_rr[-1]
                 lo_rr_endtimes.append(ta_rr_endtime)
                 lo_rr_files.append(fn)
@@ -347,7 +349,7 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
                 
         lo_station_channels.append(header['channel'].lower())
         lo_sampling_rates.append(float(header['samplingrate']))
-        lo_station_starttimes.append(float(header['t_min']))
+        lo_station_starttimes.append(np.float64(header['t_min']))
         ta_station = np.arange(int(float(header['nsamples']))+1)/float(header['samplingrate']) + float(header['t_min'])
         ta_station_endtime = ta_station[-1]
         lo_station_endtimes.append(ta_station_endtime)
@@ -446,8 +448,12 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
 
     sampling_interval = (longest_common_time_window[1] - longest_common_time_window[0]) / longest_common_time_window[2]
 
+    
+    
     try:
-        t_start_given = float(starttime)
+        if starttime is None:
+            raise
+        t_start_given = np.float64(starttime)
         if (t_start_given <  longest_common_time_window[0]) and np.abs(t_start_given - longest_common_time_window[0]) > epsilon:
             print 'Warning - given start time is too small - using data start time'
         if t_start_given >=  longest_common_time_window[1]  and np.abs(t_start_given - longest_common_time_window[1]) > epsilon:
@@ -465,7 +471,9 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
 
 
     try:
-        t_end_given = float(endtime)
+        if endtime is None:
+            raise
+        t_end_given = np.float64(endtime)
         if t_end_given >  longest_common_time_window[1] and np.abs(t_end_given - longest_common_time_window[1]) > epsilon:
             print 'Warning - given end time is too large - using data end time' 
         if t_end_given <=  longest_common_time_window[0] and np.abs(t_end_given - longest_common_time_window[0]) > epsilon:
@@ -514,9 +522,11 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
     #maximal the same size though
     ta =  ta_full_dataset[idx_start: idx_end + 1]
     
-
+    #print ta[-1]-ta[0],sampling_interval
+    
     print '\n\tTime section set to {0} - {1} ({2} samples)'.format(ta[0],
                                             ta[-1]+sampling_interval,len(ta))     
+    #sys.exit()
 
     #print ta[0]-ta_full_dataset[0], ta[-1]-ta_full_dataset[0], len(ta)
     
@@ -545,13 +555,19 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
             #if not sampling_rate_read == sampling_rate:
             #    continue
 
+            header = MTfh.read_ts_header(lo_station_files[st])
+            
+            ta_file = np.arange(header['nsamples'])/header['samplingrate'] + header['t_min']
+            if ta[0] > ta_file[-1]:
+                continue
+
             #read in data
             print '\t...reading station data from file {0}'.format(lo_station_files[st])
             data_in = np.loadtxt(lo_station_files[st])
             #print len(data_in), sampling_rate , lo_starttimes[st]
             
             #define time axis for read in data
-            ta_file = np.arange(len(data_in))/sampling_rate + lo_station_starttimes[st]
+            #ta_file = np.arange(len(data_in))/sampling_rate + lo_station_starttimes[st]
             #find overlap of overall time axis and the ta of current data set:
             for min_idx,dummy in enumerate(ta_file):
                 if ta[0]<= dummy <= ta[-1]:
@@ -564,7 +580,8 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
             max_idx = len(ta_file) + max_idx + 1
             #print min_idx,max_idx
             overlap = ta_file[min_idx:max_idx]
-            #print ta_file[0],ta_file[-1], '   ', ta[0],ta[-1]
+            
+            print 'file time section: ',ta_file[0],ta_file[-1], '(overall window: ', ta[0],ta[-1],')'
 
             #find starting index of overlap for current data file time axis
             idx_ta_file = min_idx#np.argmin(np.abs(ta_file - overlap[0]))
@@ -628,7 +645,7 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
     w_directory = op.abspath(op.join(os.curdir, w_directory))
     if not op.isdir(w_directory):
         os.makedirs(w_directory)
-        print '\t(Vreated temporary working directory: {0})'.format(w_directory)
+        print '\t(Created temporary working directory: {0})'.format(w_directory)
 
     #print '\tSize of usable data arry: ',data.shape
 

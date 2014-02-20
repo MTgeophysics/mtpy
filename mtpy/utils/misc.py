@@ -44,6 +44,7 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
     #define time axis:
     ta = np.arange(totallength)/sampling_rate + totalmin
 
+
     #set up array for 4/5 components
     d = np.zeros((totallength,len(lo_time_windows)))
 
@@ -113,6 +114,9 @@ def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
     #print ta[start_idx],ta[end_idx] ,window_length, len(ta)
     #print '\t\tStart time, end time, samples: ',round(ta[start_idx], precision),\
     #                     round(ta[end_idx], precision), window_length#, len(ta))
+    
+
+    window_length = (round(ta[end_idx], precision) - round(ta[start_idx], precision)) *sampling_rate
     
     return (round(ta[start_idx], precision), round(ta[end_idx], precision), window_length)
 
