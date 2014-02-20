@@ -25,6 +25,7 @@ The data have to be either single column values or in 2-column form.
 
 import sys, os
 import os.path as op
+import mtpy.utils.exceptions as MTex
 
 import mtpy.utils.filehandling as MTfh
 reload(MTfh)
@@ -42,6 +43,9 @@ def main():
     outdir = None
     stationname = None
     recursive = False
+
+    multiple_stations = False
+
     if len(sys.argv) > 3:
         optionals = sys.argv[3:]
         for o in optionals:
@@ -56,7 +60,19 @@ def main():
             elif stationname is None:
                 stationname = o 
                 continue
+    
+    if stationname is not None:
+        #check, if it's actually a comma-separated list:
+        if 1:
+            stationlist = stationname.split(',')
+            if len(stationlist) > 1:
+                multiple_stations = True
+                stationlist = [i.upper() for i in stationlist]
+        # except:
+        #     stationlist = [stationname]
+    else: stationlist = [None]
 
+    print stationlist 
 
     pathname_raw = sys.argv[1]
     pathname = op.abspath(op.realpath(pathname_raw))
@@ -73,11 +89,37 @@ def main():
     if recursive is True:
         lo_files = []
         for i,j,k in os.walk(pathname):
-            lof = [op.abspath(op.join(i,f)) for f in j]
-            lo_files.extend(lof)
+            lof = [op.abspath(op.join(i,f)) for f in j]            
+            if stationname is not None:
+                for stationname in stationlist:                    
+                    lof_station = [i for i in lof if stationname.lower() in i.lower()]
+                    lo_files.extend(lof_station)
         pathname = list(set(lo_files))
 
-    MTfh.EDL_make_dayfiles(pathname, sampling, stationname, outdir)
+    if len(pathname) == 0:
+        sys.exit('\n\tERROR - No (sub-) folders for stations {0} found\n'.format(stationlist))
+    
+
+    for stationname in stationlist:
+        print 'processing station ',stationname.upper()
+        if pathname[0] is not None:
+            station_pathname = [i for i in pathname if stationname.lower() in i.lower()]
+            if len(station_pathname) == 0:
+                station_pathname = None
+        else:
+            station_pathname = pathname
+        
+        try:
+            MTfh.EDL_make_dayfiles(station_pathname, sampling, stationname.upper(), outdir)
+        except MTex.MTpyError_inputarguments:
+            if stationname is None:
+                sys.exit('\n\tERROR - No data found in (sub-)folders\n')
+            else:
+                sys.exit('\n\tERROR - No data found in (sub-)folders for station {0}\n'.format(stationname.upper()))
+        except:
+            sys.exit('\n\tERROR - could not process (sub-)folders')
+
+
 
 
 
