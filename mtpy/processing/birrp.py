@@ -561,6 +561,9 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
             if ta[0] > ta_file[-1]:
                 continue
 
+            if ta_file[0] >= ta[-1]:
+                break
+
             #read in data
             print '\t...reading station data from file {0}'.format(lo_station_files[st])
             data_in = np.loadtxt(lo_station_files[st])
@@ -753,7 +756,7 @@ def write_script_file(processing_dict, save_path=None):
     nar                Prewhitening Filter (3< >15) or 0 if not desired',
     imode              Output file mode (0=ascii; 1=binary; 2=headerless ascii; 
                        3=ascii in TS mode',
-    jmode              input file mode (0=user defined; 1=start time 
+    jmode              input file mode (0=user defined; 1=sconvert2tart time 
                                         YYYY-MM-DD HH:MM:SS)',
     nread              Number of points to be read for each data set  
                        (if segments>1 -> npts1,npts2...)',
@@ -2223,8 +2226,11 @@ def _check_j_file_content( periods_array, Z_array, tipper_array):
     lo_periods = []
 
     lo_all_periods_raw = list(set(periods_array.flatten()))
-    lo_all_periods_raw.sort()
-    lo_all_periods = np.array(lo_all_periods_raw)
+    lo_all_periods_raw = [i for i in lo_all_periods_raw if not np.isnan(i)]
+    #print lo_all_periods_raw
+    #lo_all_periods_raw.sort()
+    lo_all_periods = np.array(sorted(lo_all_periods_raw))
+    #print lo_all_periods
 
     n_period_entries = periods_array.shape[1]
 
