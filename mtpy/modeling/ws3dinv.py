@@ -1409,7 +1409,7 @@ class WSMesh(object):
                 'res_model', 'res_model_int', 'save_path', 'initial_fn']
         for key in keys:
             try:
-                setattr(key, kwargs[key])
+                setattr(self, key, kwargs[key])
             except KeyError:
                 if self.__dict__[key] is None:
                     pass
