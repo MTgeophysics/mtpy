@@ -735,6 +735,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 if self.ellipse_colorby == 'phiminang' or \
                    self.ellipse_colorby == 'phimin':
                     colorarray = pt.phimin[0][jj]
+
+                elif self.ellipse_colorby == 'phimax':
+                    colorarray = pt.phimax[0][jj]                                                   
                                                    
                 elif self.ellipse_colorby == 'phidet':
                      colorarray = np.sqrt(abs(pt.det[0][jj]))*(180/np.pi)
