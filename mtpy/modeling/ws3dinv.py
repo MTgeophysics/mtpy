@@ -1322,16 +1322,10 @@ class WSMesh(object):
                                                        1)])
         
         for ii, res in enumerate(self.res_list):
-#            try:
-#                self.res_model_int[np.where(self.res_model==res)] = \
-#                                                            self.res_dict[res]
-#            except KeyError:
             l_index = max([0, ii-1])
             h_index = min([len(self.res_list)-1, ii+1])
             indexes = np.where((self.res_model >= self.res_list[l_index]) &
                                (self.res_model <= self.res_model[h_index]))
-            print res, self.res_list[l_index], self.res_list[h_index]
-            print l_index, h_index
             self.res_model_int[indexes] = self.res_dict[res]
                 
         print 'Converted resistivity model to integers.'
@@ -1422,7 +1416,7 @@ class WSMesh(object):
                 self.initial_fn = os.path.join(self.save_path, "WSInitialModel")
             else:
                 self.save_path = os.path.dirname(self.save_path)
-                self.initial_fn= os.path.join(self.save_path)
+                self.initial_fn= self.save_path
         
         #check to see what resistivity in input
         if self.res_list is None:
@@ -1489,7 +1483,7 @@ class WSMesh(object):
                 ifid.write('{0} {1}\n'.format(ll[0]+1, ll[1]+1))
                 for nn in range(self.nodes_north.shape[0]):
                     for ee in range(self.nodes_east.shape[0]):
-                        ifid.write('{0:.0f} '.format(self.res_model_int[nn, ee, ll[0]]))
+                        ifid.write('{0:>3.0f} '.format(self.res_model_int[nn, ee, ll[0]]))
                     ifid.write('\n')
             ifid.close()
         
