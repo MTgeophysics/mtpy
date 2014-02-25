@@ -170,8 +170,13 @@ class WSData(object):
                            (n_station, n_periods, 2, 2)
     z_data_err             error of data impedance tensors with error map 
                            applied, shape (n_stations, n_periods, 2, 2)
-    z_err                  percent error to give to impedance tensor elements
-                           *default* is .05 or 5%
+    z_err                  [ float | 'data' ] 
+                           'data' to set errors as data errors or
+                           give a percent error to impedance tensor elements
+                           *default* is .05 or 5%  if given as percent, ie. 5%
+                           then it is converted to .05.  
+    z_err_floor            percent error floor, anything below this error will
+                           be set to z_err_floor.  *default* is None
     z_err_map              [zxx, zxy, zyx, zyy] for n_z = 8
                            [zxy, zyx] for n_z = 4
                            Value in percent to multiply the error by, which 
@@ -182,7 +187,10 @@ class WSData(object):
     ====================== ====================================================
     Methods                Description
     ====================== ====================================================
-    write_data_file        writes a data file from a list of .edi files
+    build_data             builds the data from .edi files
+    write_data_file        writes a data file from attribute data.  This way 
+                           you can read in a data file, change some parameters
+                           and rewrite.
     read_data_file         reads in a ws3dinv data file
     ====================== ====================================================
     
@@ -191,10 +199,12 @@ class WSData(object):
     def __init__(self, **kwargs):
         
         self.save_path = kwargs.pop('save_path', None)
+        self.data_basename = kwargs.pop('data_basename', 'WSDataFile.dat')
         self.units = kwargs.pop('units', 'mv')
         self.ncol = kwargs.pop('ncols', 5)
         self.ptol = kwargs.pop('ptol', 0.15)
         self.z_err = kwargs.pop('z_err', 0.05)
+        self.z_err_floor = kwargs.pop('z_err_floor', None)
         self.z_err_map = kwargs.pop('z_err_map', [10,1,1,10])
         self.n_z = kwargs.pop('n_z', 8)
         self.period_list = kwargs.pop('period_list', None)
@@ -216,73 +226,30 @@ class WSData(object):
         
         self.data = None
 
-        
-    def write_data_file(self):
-        """
-        writes a data file for WSINV3D
-        
-        Inputs:
-        --------
-            **period_list** :list
-                            periods to extract from edifiles, can get them from 
-                            using the function getPeriods.
-                            
-            **edi_list** : list
-                        list of full paths to .edi files to use for inversion
-                        
-            **station_locations**  : np.ndarray(ns, 2) (east, north) or
-                                     structured array
-                                     np.ndarray(ns, 3, 
-                                                dtype=('station', 
-                                                       'east',
-                                                       'north'))
-
-                                 This can be found from Make3DGrid.  
-                                 Locations are in meters in grid
-                                 coordinates.  Should be the same order as 
-                                 edi_list.
-                                
-            **wl_site_fn** : string
-                        if you used Winglink to make the model then you need to
-                        input the sites filename (full path)
-                         
-            **wl_out_fn** : string
-                       if you used Winglink to make the model need to input the
-                       winglink .out file (full path)
-                        
-            **save_path** : string
-                           directory or full path to save data file to, default 
-                           path is dirname sites_fn.  
-                           saves as: savepath/WSDataFile.dat
-                           *Need to input if you did not use Winglink*
-                           
-            **z_err** : float
-                      percent error to give to impedance tensor components in 
-                      decimal form --> 10% = 0.10
-                      *default* is .05
-                      
-            **ptol** : float
-                      percent tolerance to locate frequencies in case edi files 
-                      don't have the same frequencies.  
-                      Need to add interpolation.
-                       *default* is 0.15
-                       
-            **z_err_map** :  tuple (zxx, zxy, zyx, zyy)
-                           multiple to multiply err of zxx,zxy,zyx,zyy by.
-                           Note the total error is zerr*zerrmap[ii]
-                           
-            **ncol** : int
-                    number of columns in out_fn, sometimes it outputs different
-                    number of columns.
+        # make sure the error given is a decimal percent
+        if type(self.z_err) is not str and self.z_err > 1:
+            self.z_err /= 100.
             
+        # make sure the error floor given is a decimal percent
+        if self.z_err_floor is not None and self.z_err_floor > 1:
+            self.z_err_floor /= 100.
         
-        Returns:
-        --------
-            
-            **data_fn** : full path to data file, saved in dirname(sites_fn) or 
-                         savepath where savepath can be a directory or full 
-                         filename
+    def build_data(self):
         """
+        Builds the data from .edi files to be written into a data file
+        
+        Need to call this if any parameters have been reset to write a 
+        correct data file.
+        
+        """
+        
+        if self.edi_list is None:
+            raise WSInputError('Need to input a list of .edi files to build '
+                               'the data')
+        
+        if self.period_list is None:
+            raise WSInputError('Need to input a list of periods to extract '
+                               'from the .edi files.' )
 
         #get units correctly
         if self.units == 'mv':
@@ -301,18 +268,6 @@ class WSData(object):
                       ('z_data_err', (np.complex, z_shape)),
                       ('z_err_map', (np.complex, z_shape))]
         self.data = np.zeros(n_stations, dtype=data_dtype)
-        
-        #create the output filename
-        if self.save_path == None:
-            if self.wl_out_fn is not None:
-                self.save_path = os.path.dirname(self.wl_site_fn)
-            else:
-                self.save_path = os.getcwd()
-            self.data_fn = os.path.join(self.save_path, 'WSDataFile.dat')
-        elif self.save_path.find('.') == -1:
-            self.data_fn = os.path.join(self.save_path, 'WSDataFile.dat')
-        else:
-            self.data_fn = self.save_path
         
         #------get station locations-------------------------------------------
         if self.wl_site_fn != None: 
@@ -370,8 +325,21 @@ class WSData(object):
                     if f2 >= (1-self.ptol)*f1 and f2 <= (1+self.ptol)*f1:
                         self.data[ss]['z_data'][ff, :] = \
                                                    zconv*z1.Z.z[kk]
-                        self.data[ss]['z_data_err'][ff, :] = \
-                                    zconv*z1.Z.z[kk]*self.z_err
+                        #get errors 
+                        if self.z_err == 'data':
+                            self.data[ss]['z_data_err'][ff, :] = \
+                                                            zconv*z1.Z.zerr[kk]
+                        else:
+                            self.data[ss]['z_data_err'][ff, :] = \
+                                                    zconv*z1.Z.z[kk]*self.z_err
+                        # if an error floor is set.
+                        if self.z_err_floor is not None:
+                            per_err = self.data[ss]['z_data_err'][ff, :]/\
+                                      self.data[ss]['z_data'][ff, :]
+                            per_err[np.where(per_err < self.z_err_floor)] = \
+                                                        self.z_err_floor
+                            self.data[ss]['z_data_err'][ff, : ] = \
+                                self.data[ss]['z_data'][ff, :] * per_err
                                     
                         self.data[ss]['z_err_map'][ff] = \
                                     np.reshape(self.z_err_map, (2,2))
@@ -379,7 +347,51 @@ class WSData(object):
                         print '   Matched {0:.6g} to {1:.6g}'.format(f1, f2)
                         break
         
+    def write_data_file(self, **kwargs):
+        """
+        Writes a data file based on the attribute data
+        
+        Key Word Arguments:
+        ---------------------
+            **data_fn** : string
+                          full path to data file name
+                         
+            **save_path** : string
+                            directory path to save data file, will be written
+                            as save_path/data_basename
+            **data_basename** : string
+                                basename of data file to be saved as 
+                                save_path/data_basename
+                                *default* is WSDataFile.dat
+                                
+        .. note:: if any of the data attributes have been reset, be sure
+                  to call build_data() before write_data_file.  
+        """
+        if self.data is None:
+            self.build_data()
+            
+        for key in ['data_fn', 'save_path', 'data_basename']:
+            try: 
+                setattr(self, key, kwargs[key])
+            except KeyError:
+                pass
+                 
+        #create the output filename
+        if self.save_path == None:
+            if self.wl_out_fn is not None:
+                self.save_path = os.path.dirname(self.wl_site_fn)
+            else:
+                self.save_path = os.getcwd()
+            self.data_fn = os.path.join(self.save_path, self.data_basename)
+        elif os.path.isdir(self.save_path) == True:
+            self.data_fn = os.path.join(self.save_path, self.data_basename)
+        else:
+            self.data_fn = self.save_path
+            
         #-----Write data file--------------------------------------------------
+        n_stations = len(self.data)
+        n_periods = self.data[0]['z_data'].shape[0]
+        
         ofid = file(self.data_fn, 'w')
         ofid.write('{0:d} {1:d} {2:d}\n'.format(n_stations, n_periods, 
                                                 self.n_z))
@@ -430,6 +442,7 @@ class WSData(object):
         for ii, p1 in enumerate(self.period_list):
             ofid.write('ERMAP_Period: {0:3.6f}\n'.format(p1))
             for ss in range(n_stations):
+                zline = self.data[ss]['z_err_map'][ii].reshape(4,) 
                 for jj in range(self.n_z/2):
                     ofid.write('{0:.5e} '.format(self.z_err_map[jj]))
                     ofid.write('{0:.5e} '.format(self.z_err_map[jj]))
@@ -759,17 +772,27 @@ class WSStation(object):
         self.names = station_locations['station']
         self.elev = station_locations['elev']
         
-    def write_vtk_file(self, save_fn):
-        if os.path.isdir(save_fn) == True:
-            save_fn = os.path.join(save_fn, 'VTKStations')
+    def write_vtk_file(self, save_path, vtk_basename='VTKStations'):
+        """
+        write a vtk file to plot stations
+        
+        Arguments:
+        ------------
+            **save_path** : string
+                            directory to save file to.  Will save as 
+                            save_path/vtk_basename
+            
+            **vtk_basename** : string
+                               base file name for vtk file, extension is 
+                               automatically added.
+        """
+        if os.path.isdir(save_path) == True:
+            save_fn = os.path.join(save_path, vtk_basename)
             
         if self.elev is None:
             self.elev = np.zeros_like(self.north)
             
-        pointsToVTK(save_fn, 
-		            self.north, 
-					self.east, 
-					np.zeros_like(self.north), 
+        pointsToVTK(save_fn, self.north, self.east, self.elev, 
                     data={'value':np.ones_like(self.north)})     
                   
         return save_fn
@@ -2708,6 +2731,12 @@ class WSResponse(object):
         self.z_resp_err = np.zeros_like(self.z_resp)
 
 #==============================================================================
+# WSError
+#==============================================================================
+class WSInputError(Exception):
+    pass
+
+#==============================================================================
 # plot response       
 #==============================================================================
 class PlotResponse(object):
@@ -3172,14 +3201,14 @@ class PlotResponse(object):
                                 ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
                                               fontdict=fontdict)
                             elif self.plot_z == True:
-                                ax.set_ylabel('Re[Impedance (m/s)]',
+                                ax.set_ylabel('Re[Z (m/s)]',
                                               fontdict=fontdict)
                         elif aa == 2:
                             if self.plot_z == False:
                                 ax.set_ylabel('Phase (deg)',
                                               fontdict=fontdict)
                             elif self.plot_z == True:
-                                ax.set_ylabel('Im[Impedance (m/s)]',
+                                ax.set_ylabel('Im[Z (m/s)]',
                                               fontdict=fontdict)
 #                        else:
 #                            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
@@ -3200,14 +3229,14 @@ class PlotResponse(object):
                                 ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
                                               fontdict=fontdict)
                             elif self.plot_z == True:
-                                ax.set_ylabel('Re[Impedance (m/s)]',
+                                ax.set_ylabel('Re[Z (m/s)]',
                                                fontdict=fontdict)
                         elif aa == 4:
                             if self.plot_z == False:
                                 ax.set_ylabel('Phase (deg)',
                                               fontdict=fontdict)
                             elif self.plot_z == True:
-                                ax.set_ylabel('Im[Impedance (m/s)]',
+                                ax.set_ylabel('Im[Z (m/s)]',
                                               fontdict=fontdict)
 #                        else:
 #                            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
