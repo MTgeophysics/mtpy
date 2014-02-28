@@ -506,7 +506,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             except KeyError:
                 raise NameError('Need to include the extent of the image as '+\
                                 '(left, right, bottom, top)')
-        self.image_origin = image_dict.pop('origin', 'lower')
+            self.image_origin = image_dict.pop('origin', 'lower')
                                 
         #--> set a central reference point
         self.plot_reference_point = kwargs.pop('reference_point', (0, 0))
@@ -640,8 +640,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         for ii,mt in enumerate(self.mt_list):
             #try to find the freq in the freq list of each file
             freqfind = [ff for ff,f2 in enumerate(mt.freq) 
-                         if f2>self.plot_freq*(1-self.ftol) and
-                            f2<self.plot_freq*(1+self.ftol)]
+                         if (f2>self.plot_freq*(1-self.ftol)) and
+                            (f2<self.plot_freq*(1+self.ftol))]
+
             try:
                 self.jj = freqfind[0]
                 jj = self.jj
@@ -734,7 +735,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 if self.ellipse_colorby == 'phiminang' or \
                    self.ellipse_colorby == 'phimin':
                     colorarray = pt.phimin[0][jj]
-            
+
+                elif self.ellipse_colorby == 'phimax':
+                    colorarray = pt.phimax[0][jj]                                                   
                                                    
                 elif self.ellipse_colorby == 'phidet':
                      colorarray = np.sqrt(abs(pt.det[0][jj]))*(180/np.pi)
@@ -884,11 +887,12 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         
         #--> set plot limits
-        self.ax.set_xlim(self.plot_xarr.min()-self.xpad,
-                             self.plot_xarr.max()+self.xpad)
-        self.ax.set_ylim(self.plot_yarr.min()-self.xpad,
-                         self.plot_yarr.max()+self.xpad)
-                         
+        #    need to exclude zero values from the calculation of min/max!!!!
+        self.ax.set_xlim(self.plot_xarr[self.plot_xarr != 0.].min()-self.xpad,
+                             self.plot_xarr[self.plot_xarr != 0.].max()+self.xpad)
+        self.ax.set_ylim(self.plot_yarr[self.plot_yarr != 0.].min()-self.xpad,
+                         self.plot_yarr[self.plot_xarr != 0.].max()+self.xpad)
+
         #--> set tick label format
         self.ax.xaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
         self.ax.yaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))

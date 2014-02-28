@@ -669,7 +669,6 @@ class Model(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
         
-        
         #---------create depth layers--------------------                
         log_z = np.logspace(np.log10(self.z1_layer), 
                             np.log10(self.target_depth-
