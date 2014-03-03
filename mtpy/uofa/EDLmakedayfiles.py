@@ -99,15 +99,15 @@ def main():
     if len(pathname) == 0:
         sys.exit('\n\tERROR - No (sub-) folders for stations {0} found\n'.format(stationlist))
     
-
+        
     for stationname in stationlist:
         print 'processing station ',stationname.upper()
-        if pathname[0] is not None:
-            station_pathname = [i for i in pathname if stationname.lower() in i.lower()]
-            if len(station_pathname) == 0:
-                station_pathname = None
-        else:
-            station_pathname = pathname
+        # if pathname[0] is not None:
+        #     station_pathname = [i for i in pathname if stationname.lower() in i.lower()]
+        #     if len(station_pathname) == 0:
+        #         station_pathname = None
+        # else:
+        station_pathname = pathname
         
         try:
             MTfh.EDL_make_dayfiles(station_pathname, sampling, stationname.upper(), outdir)

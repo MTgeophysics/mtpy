@@ -110,7 +110,6 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
     checked for a new day!!
 
     """
-
     try:
         if type(inputdir)==str:
             raise
@@ -125,7 +124,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
     pattern = '*.[ebEB][xyzXYZ]'
     if stationname is not None:
         pattern = '*{0}*.[ebEB][xyzXYZ]'.format(stationname)
-    print '\nsearching for files with pattern: ',pattern
+    print '\nSearching for files with pattern: ',pattern
 
     for folder in lo_foldernames:
         wd = op.abspath(op.realpath(folder)) 
