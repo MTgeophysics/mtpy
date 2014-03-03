@@ -20,7 +20,7 @@ instrument response file
 import sys
 import os
 import os.path as op
-
+import numpy as np
 
 import mtpy.processing.birrp as MTbp
 reload(MTbp)
