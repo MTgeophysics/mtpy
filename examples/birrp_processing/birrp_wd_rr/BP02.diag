@@ -1,0 +1,1516 @@
+  ar filter fft length= 5254
+  poles of ar z-transform and distance from unit circle for series= 1  piece= 1
+ 0.9852894 0. 0.014710605
+ 0.428659 0. 0.57134104
+ -0.16260394 0. 0.837396
+  ar filter coefficients for series= 1  piece= 1
+ -0.8822339 0.071217604 -0.020622017
+  poles of ar z-transform and distance from unit circle for series= 2  piece= 1
+ 0.98936737 0. 0.010632634
+ 0.66689867 0. 0.33310133
+ -0.042526994 0. 0.957473
+  ar filter coefficients for series= 2  piece= 1
+ -0.8822339 0.071217604 -0.020622017
+  poles of ar z-transform and distance from unit circle for series= 3  piece= 1
+ 0.7485149 0. 0.2514851
+ 0.08933966 0.18191203 0.79733384
+ 0.08933966 -0.18191203 0.79733384
+  ar filter coefficients for series= 3  piece= 1
+ -0.8822339 0.071217604 -0.020622017
+  poles of ar z-transform and distance from unit circle for series= 4  piece= 1
+ 0.82922465 0. 0.17077535
+ -0.0029412745 0.19224553 0.807732
+ -0.0029412745 -0.19224553 0.807732
+  ar filter coefficients for series= 4  piece= 1
+ -0.8822339 0.071217604 -0.020622017
+  poles of ar z-transform and distance from unit circle for series= 5  piece= 1
+ 0.7439066 0. 0.25609338
+ 0.08827047 0.15976167 0.8174747
+ 0.08827047 -0.15976167 0.8174747
+  ar filter coefficients for series= 5  piece= 1
+ -0.8822339 0.071217604 -0.020622017
+  poles of ar z-transform and distance from unit circle for series= 6  piece= 1
+ 0.8262471 0. 0.1737529
+ 0.02799341 0.1554832 0.84201694
+ 0.02799341 -0.1554832 0.84201694
+  ar filter coefficients for series= 6  piece= 1
+ -0.8822339 0.071217604 -0.020622017
+ *******************************************
+  section length= 10508
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 262.7
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 10  sections discarded
+  initial number of data= 0
+  #####################################
+  output series= 2
+ 10  sections discarded
+  initial number of data= 0
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 175.13333
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 10  sections discarded
+  initial number of data= 0
+  #####################################
+  output series= 2
+ 10  sections discarded
+  initial number of data= 0
+ *******************************************
+  section length= 5254
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 131.35
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 30  sections discarded
+  initial number of data= 0
+  #####################################
+  output series= 2
+ 30  sections discarded
+  initial number of data= 0
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 87.566666
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 20  sections discarded
+  initial number of data= 10
+  initial solution vector indexed by input variable
+ 1 (-523.5728,-4417.809)
+ 2 (-75.0601,1317.4122)
+  hat matrix iterations= 1
+  lower cutoff= 0.  upper cutoff= 6.5539837
+  huber iteration= 1  scale= 871.358
+  normalized residual sum of squares= 0.02294598
+  huber iteration= 2  scale= 894.28455
+  normalized residual sum of squares= 0.014810398
+  number of data= 10
+  huber solution vector indexed by input variable
+ 1 (-517.08777,-4410.7974)
+ 2 (-79.43443,1314.6403)
+  thomson iteration= 1  scale= 879.30347
+  number of data= 10
+  thomson solution vector indexed by input variable
+ 1 (-523.5728,-4417.809)
+ 2 (-75.0601,1317.4122)
+  normalized residual sum of squares= 0.0077525587
+  convergence on response
+  convergence on residuals
+  #####################################
+  output series= 2
+ 20  sections discarded
+  initial number of data= 10
+  initial solution vector indexed by input variable
+ 1 (3823.85,10411.879)
+ 2 (-1097.3462,-4638.1626)
+  hat matrix iterations= 1
+  lower cutoff= 0.  upper cutoff= 6.5539837
+  huber iteration= 1  scale= 2724.9038
+  normalized residual sum of squares= 0.032791466
+  huber iteration= 2  scale= 2677.235
+  normalized residual sum of squares= 0.012358395
+  number of data= 10
+  huber solution vector indexed by input variable
+ 1 (3616.703,10436.187)
+ 2 (-992.17413,-4679.7305)
+  thomson iteration= 1  scale= 2659.553
+  number of data= 10
+  thomson solution vector indexed by input variable
+ 1 (3823.85,10411.879)
+ 2 (-1097.3462,-4638.1626)
+  normalized residual sum of squares= 0.04359179
+  convergence on response
+ *******************************************
+  section length= 2627
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 65.675
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 60  sections discarded
+  initial number of data= 0
+  #####################################
+  output series= 2
+ 60  sections discarded
+  initial number of data= 0
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 43.783333
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 50  sections discarded
+  initial number of data= 10
+  initial solution vector indexed by input variable
+ 1 (-545.67737,-4041.754)
+ 2 (509.51825,1148.9197)
+  hat matrix iterations= 1
+  lower cutoff= 0.  upper cutoff= 6.5539837
+  huber iteration= 1  scale= 417.52487
+  normalized residual sum of squares= 1.3823935
+  huber iteration= 2  scale= 357.48767
+  normalized residual sum of squares= 0.8639992
+  huber iteration= 3  scale= 597.8022
+  normalized residual sum of squares= 0.40412882
+  huber iteration= 4  scale= 347.2346
+  normalized residual sum of squares= 0.9320769
+  huber iteration= 5  scale= 601.19257
+  normalized residual sum of squares= 0.485599
+  huber iteration= 6  scale= 343.0612
+  normalized residual sum of squares= 0.97355497
+  huber iteration= 7  scale= 597.6284
+  normalized residual sum of squares= 0.48868647
+  huber iteration= 8  scale= 343.6812
+  normalized residual sum of squares= 0.9437275
+  huber iteration= 9  scale= 604.05786
+  normalized residual sum of squares= 0.49007285
+  huber iteration= 10  scale= 347.40607
+  normalized residual sum of squares= 0.9072623
+  WARNING-huber iterations did not converge at hat matrix iteration= 1
+  number of data= 10
+  huber solution vector indexed by input variable
+ 1 (902.3684,-4780.1006)
+ 2 (279.88495,1495.2761)
+  thomson iteration= 1  scale= 620.93695
+  number of data= 8
+  thomson solution vector indexed by input variable
+ 1 (1675.0594,-4256.171)
+ 2 (45.12269,1569.0337)
+  normalized residual sum of squares= 0.6117961
+  thomson iteration= 2  scale= 332.74335
+  number of data= 7
+  thomson solution vector indexed by input variable
+ 1 (308.93417,-1267.1575)
+ 2 (-130.53664,649.0028)
+  normalized residual sum of squares= 2.6355414
+  thomson iteration= 3  scale= 332.74335
+  number of data= 7
+  thomson solution vector indexed by input variable
+ 1 (545.1241,-1497.8945)
+ 2 (-144.8479,758.17834)
+  normalized residual sum of squares= 0.1365658
+  thomson iteration= 4  scale= 332.74335
+  number of data= 7
+  thomson solution vector indexed by input variable
+ 1 (545.579,-1498.2043)
+ 2 (-144.89438,758.3323)
+  normalized residual sum of squares= 0.00036705565
+  convergence on response
+  convergence on residuals
+  #####################################
+  output series= 2
+ 50  sections discarded
+  initial number of data= 10
+  initial solution vector indexed by input variable
+ 1 (-953.8774,9474.511)
+ 2 (-193.87642,-3938.52)
+  hat matrix iterations= 1
+  lower cutoff= 0.  upper cutoff= 6.5539837
+  huber iteration= 1  scale= 1116.1246
+  normalized residual sum of squares= 0.9777438
+  huber iteration= 2  scale= 1678.4005
+  normalized residual sum of squares= 0.13815443
+  huber iteration= 3  scale= 1208.4775
+  normalized residual sum of squares= 0.98414654
+  huber iteration= 4  scale= 1113.7499
+  normalized residual sum of squares= 0.25473538
+  huber iteration= 5  scale= 630.28973
+  normalized residual sum of squares= 1.4411225
+  huber iteration= 6  scale= 1538.2949
+  normalized residual sum of squares= 0.7480275
+  huber iteration= 7  scale= 939.6389
+  normalized residual sum of squares= 1.0288607
+  huber iteration= 8  scale= 808.48987
+  normalized residual sum of squares= 0.3292269
+  huber iteration= 9  scale= 1204.1444
+  normalized residual sum of squares= 0.4651752
+  huber iteration= 10  scale= 628.75977
+  normalized residual sum of squares= 1.6937791
+  WARNING-huber iterations did not converge at hat matrix iteration= 1
+  number of data= 10
+  huber solution vector indexed by input variable
+ 1 (-3031.5571,8525.005)
+ 2 (-251.75235,-3772.4314)
+  thomson iteration= 1  scale= 1523.4535
+  number of data= 7
+  thomson solution vector indexed by input variable
+ 1 (-3229.236,8449.703)
+ 2 (-292.62103,-3854.5493)
+  normalized residual sum of squares= 0.45876732
+  thomson iteration= 2  scale= 486.17194
+  number of data= 6
+  thomson solution vector indexed by input variable
+ 1 (-2806.9207,8627.059)
+ 2 (-343.52838,-3681.893)
+  normalized residual sum of squares= 1.4425004
+  thomson iteration= 3  scale= 486.17194
+  number of data= 6
+  thomson solution vector indexed by input variable
+ 1 (-2808.8372,8613.056)
+ 2 (-341.88608,-3679.8623)
+  normalized residual sum of squares= 0.01894763
+  convergence on response
+ *******************************************
+  section length= 1313
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 32.825
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 120  sections discarded
+  initial number of data= 10
+  initial solution vector indexed by input variable
+ 1 (165.5061,-1793.6471)
+ 2 (-319.8794,1540.5225)
+  hat matrix iterations= 1
+  lower cutoff= 0.  upper cutoff= 6.5539837
+  huber iteration= 1  scale= 391.2195
+  normalized residual sum of squares= 0.70181143
+  huber iteration= 2  scale= 423.6867
+  normalized residual sum of squares= 0.048447005
+  huber iteration= 3  scale= 424.39774
+  normalized residual sum of squares= 0.0013172601
+  number of data= 10
+  huber solution vector indexed by input variable
+ 1 (76.10817,-1847.6936)
+ 2 (-289.84735,1484.6722)
+  thomson iteration= 1  scale= 424.40894
+  number of data= 9
+  thomson solution vector indexed by input variable
+ 1 (36.717735,-1880.7395)
+ 2 (-288.33047,1458.1431)
+  normalized residual sum of squares= 0.26012674
+  thomson iteration= 2  scale= 283.35373
+  number of data= 9
+  thomson solution vector indexed by input variable
+ 1 (22.467897,-1862.9542)
+ 2 (-262.25226,1453.3982)
+  normalized residual sum of squares= 0.3222976
+  convergence on response
+  #####################################
+  output series= 2
+ 120  sections discarded
+  initial number of data= 10
+  initial solution vector indexed by input variable
+ 1 (83.673065,3967.8765)
+ 2 (322.13947,-5835.055)
+  hat matrix iterations= 1
+  lower cutoff= 0.  upper cutoff= 6.5539837
+  huber iteration= 1  scale= 1274.4142
+  normalized residual sum of squares= 0.24862352
+  huber iteration= 2  scale= 1394.2947
+  normalized residual sum of squares= 0.06783547
+  huber iteration= 3  scale= 1416.5308
+  normalized residual sum of squares= 0.017244715
+  number of data= 10
+  huber solution vector indexed by input variable
+ 1 (158.69545,4015.064)
+ 2 (305.72086,-5787.5234)
+  thomson iteration= 1  scale= 1423.8093
+  number of data= 10
+  thomson solution vector indexed by input variable
+ 1 (83.673065,3967.8765)
+ 2 (322.13947,-5835.055)
+  normalized residual sum of squares= 0.130537
+  convergence on response
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 21.883333
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 110  sections discarded
+  initial number of data= 20
+  initial solution vector indexed by input variable
+ 1 (227.05788,-974.3042)
+ 2 (19.083046,386.08868)
+  hat matrix iterations= 1
+  lower cutoff= 0.  upper cutoff= 3.9337692
+  huber iteration= 1  scale= 431.37012
+  normalized residual sum of squares= 0.593403
+  huber iteration= 2  scale= 266.4515
+  normalized residual sum of squares= 0.91086584
+  huber iteration= 3  scale= 402.85468
+  normalized residual sum of squares= 0.4674394
+  huber iteration= 4  scale= 200.25894
+  normalized residual sum of squares= 2.036651
+  huber iteration= 5  scale= 188.56345
+  normalized residual sum of squares= 0.16068532
+  huber iteration= 6  scale= 221.9031
+  normalized residual sum of squares= 0.2559301
+  huber iteration= 7  scale= 286.79724
+  normalized residual sum of squares= 0.36903384
+  huber iteration= 8  scale= 296.93484
+  normalized residual sum of squares= 0.067053996
+  huber iteration= 9  scale= 303.6419
+  normalized residual sum of squares= 0.032849558
+  huber iteration= 10  scale= 311.4445
+  normalized residual sum of squares= 0.024517167
+  WARNING-huber iterations did not converge at hat matrix iteration= 1
+  number of data= 18
+  huber solution vector indexed by input variable
+ 1 (614.58954,-920.6328)
+ 2 (-278.75906,678.60284)
+  thomson iteration= 1  scale= 346.9408
+  number of data= 15
+  thomson solution vector indexed by input variable
+ 1 (671.0954,-897.5172)
+ 2 (-269.96964,712.66766)
+  normalized residual sum of squares= 0.28593135
+  thomson iteration= 2  scale= 407.99847
+  number of data= 15
+  thomson solution vector indexed by input variable
+ 1 (671.0954,-897.5172)
+ 2 (-269.96964,712.66766)
+  normalized residual sum of squares= 0.
+  convergence on response
+  convergence on residuals
+  #####################################
+  output series= 2
+ 110  sections discarded
+  initial number of data= 20
+  initial solution vector indexed by input variable
+ 1 (-724.4656,1584.8279)
+ 2 (227.6837,-719.48395)
+  hat matrix iterations= 1
+  lower cutoff= 0.  upper cutoff= 3.9337692
+  huber iteration= 1  scale= 907.00134
+  normalized residual sum of squares= 1.525308
+  huber iteration= 2  scale= 1230.9478
+  normalized residual sum of squares= 0.2543216
+  huber iteration= 3  scale= 910.0972
+  normalized residual sum of squares= 0.23584041
+  huber iteration= 4  scale= 1667.749
+  normalized residual sum of squares= 0.4034598
+  huber iteration= 5  scale= 1730.6484
+  normalized residual sum of squares= 0.003349902
+  number of data= 19
+  huber solution vector indexed by input variable
+ 1 (-1340.6436,1242.6704)
+ 2 (414.35004,-1400.0725)
+  thomson iteration= 1  scale= 1803.5565
+  number of data= 16
+  thomson solution vector indexed by input variable
+ 1 (-1427.5829,1107.2523)
+ 2 (464.3684,-1464.2545)
+  normalized residual sum of squares= 0.38411278
+  thomson iteration= 2  scale= 1158.3962
+  number of data= 15
+  thomson solution vector indexed by input variable
+ 1 (-1742.6936,1898.8032)
+ 2 (22.577267,-2943.2988)
+  normalized residual sum of squares= 1.1307751
+  thomson iteration= 3  scale= 1158.3962
+  number of data= 14
+  thomson solution vector indexed by input variable
+ 1 (-1034.5721,1920.8629)
+ 2 (504.2048,-2922.2102)
+  normalized residual sum of squares= 1.400377
+  thomson iteration= 4  scale= 1158.3962
+  number of data= 14
+  thomson solution vector indexed by input variable
+ 1 (-1034.5721,1920.8629)
+ 2 (504.2048,-2922.2102)
+  normalized residual sum of squares= 0.
+  convergence on response
+  convergence on residuals
+ *******************************************
+  section length= 656
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 16.400002
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 220  sections discarded
+  initial number of data= 50
+  initial solution vector indexed by input variable
+ 1 (105.9174,-969.6426)
+ 2 (-2.4623008,348.25864)
+  hat matrix iterations= 1
+  lower cutoff= 0.  upper cutoff= 4.3347282
+  huber iteration= 1  scale= 232.49736
+  normalized residual sum of squares= 4.0532894
+  huber iteration= 2  scale= 179.8428
+  normalized residual sum of squares= 0.4161925
+  huber iteration= 3  scale= 175.08104
+  normalized residual sum of squares= 0.05132737
+  huber iteration= 4  scale= 178.66324
+  normalized residual sum of squares= 0.017699422
+  number of data= 46
+  huber solution vector indexed by input variable
+ 1 (39.55586,-834.35284)
+ 2 (-37.093567,385.456)
+  thomson iteration= 1  scale= 180.48126
+  number of data= 39
+  thomson solution vector indexed by input variable
+ 1 (37.064976,-821.74896)
+ 2 (-33.53022,387.89337)
+  normalized residual sum of squares= 0.2033727
+  thomson iteration= 2  scale= 107.996056
+  number of data= 35
+  thomson solution vector indexed by input variable
+ 1 (21.229195,-803.35)
+ 2 (-26.192698,393.2867)
+  normalized residual sum of squares= 0.6024122
+  thomson iteration= 3  scale= 107.996056
+  number of data= 35
+  thomson solution vector indexed by input variable
+ 1 (21.229195,-803.35)
+ 2 (-26.192698,393.2867)
+  normalized residual sum of squares= 0.
+  convergence on response
+  convergence on residuals
+  #####################################
+  output series= 2
+ 220  sections discarded
+  initial number of data= 50
+  initial solution vector indexed by input variable
+ 1 (240.25859,1653.4427)
+ 2 (-128.38895,-953.73816)
+  hat matrix iterations= 1
+  lower cutoff= 0.  upper cutoff= 4.3347282
+  huber iteration= 1  scale= 774.6326
+  normalized residual sum of squares= 6.6679783
+  huber iteration= 2  scale= 396.1507
+  normalized residual sum of squares= 2.027081
+  huber iteration= 3  scale= 241.06436
+  normalized residual sum of squares= 0.802307
+  huber iteration= 4  scale= 350.2932
+  normalized residual sum of squares= 0.40258518
+  huber iteration= 5  scale= 316.6979
+  normalized residual sum of squares= 0.12977962
+  huber iteration= 6  scale= 329.01205
+  normalized residual sum of squares= 0.046419892
+  huber iteration= 7  scale= 334.38065
+  normalized residual sum of squares= 0.0199551
+  number of data= 44
+  huber solution vector indexed by input variable
+ 1 (117.90905,1678.1661)
+ 2 (-55.988064,-1938.4286)
+  thomson iteration= 1  scale= 337.03564
+  number of data= 37
+  thomson solution vector indexed by input variable
+ 1 (162.40535,1666.6296)
+ 2 (-87.724144,-1937.3992)
+  normalized residual sum of squares= 0.2461952
+  thomson iteration= 2  scale= 304.2584
+  number of data= 35
+  thomson solution vector indexed by input variable
+ 1 (162.49382,1623.0996)
+ 2 (-77.398865,-1867.1096)
+  normalized residual sum of squares= 0.2558556
+  thomson iteration= 3  scale= 304.2584
+  number of data= 34
+  thomson solution vector indexed by input variable
+ 1 (142.16096,1692.2715)
+ 2 (-94.53812,-1954.8495)
+  normalized residual sum of squares= 0.027887257
+  thomson iteration= 4  scale= 304.2584
+  number of data= 35
+  thomson solution vector indexed by input variable
+ 1 (142.161,1692.2714)
+ 2 (-94.538124,-1954.8495)
+  normalized residual sum of squares= 0.029411959
+  convergence on response
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 10.933334
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 220  sections discarded
+  initial number of data= 50
+  initial solution vector indexed by input variable
+ 1 (90.59424,-942.7336)
+ 2 (-153.95755,480.3173)
+  hat matrix iterations= 2
+  lower cutoff= 0.  upper cutoff= 6.755891
+  huber iteration= 1  scale= 172.57983
+  normalized residual sum of squares= 1.466061
+  huber iteration= 2  scale= 150.04974
+  normalized residual sum of squares= 0.08917128
+  huber iteration= 3  scale= 147.28793
+  normalized residual sum of squares= 0.025027703
+  huber iteration= 4  scale= 146.94655
+  normalized residual sum of squares= 0.007309238
+  number of data= 49
+  huber solution vector indexed by input variable
+ 1 (91.681526,-751.8947)
+ 2 (-129.81369,323.5903)
+  lower cutoff= 0.  upper cutoff= 4.3347282
+  huber iteration= 1  scale= 143.65556
+  normalized residual sum of squares= 0.023666134
+  huber iteration= 2  scale= 142.11125
+  normalized residual sum of squares= 0.012064232
+  number of data= 49
+  huber solution vector indexed by input variable
+ 1 (87.90277,-748.1806)
+ 2 (-126.81639,320.50354)
+  thomson iteration= 1  scale= 141.31487
+  number of data= 49
+  thomson solution vector indexed by input variable
+ 1 (109.75281,-747.313)
+ 2 (-128.58914,328.20602)
+  normalized residual sum of squares= 0.39989632
+  thomson iteration= 2  scale= 156.35585
+  number of data= 49
+  thomson solution vector indexed by input variable
+ 1 (109.75324,-747.3133)
+ 2 (-128.5893,328.20572)
+  normalized residual sum of squares= 0.000006603498
+  convergence on response
+  convergence on residuals
+  #####################################
+  output series= 2
+ 220  sections discarded
+  initial number of data= 50
+  initial solution vector indexed by input variable
+ 1 (155.3707,1884.944)
+ 2 (275.9676,-1643.9785)
+  hat matrix iterations= 2
+  lower cutoff= 0.  upper cutoff= 6.755891
+  huber iteration= 1  scale= 429.9806
+  normalized residual sum of squares= 2.0586202
+  huber iteration= 2  scale= 396.63
+  normalized residual sum of squares= 0.10092437
+  huber iteration= 3  scale= 347.70734
+  normalized residual sum of squares= 0.1643404
+  huber iteration= 4  scale= 367.36942
+  normalized residual sum of squares= 0.048741043
+  huber iteration= 5  scale= 365.3124
+  normalized residual sum of squares= 0.0071750716
+  number of data= 49
+  huber solution vector indexed by input variable
+ 1 (-34.2948,1475.1635)
+ 2 (202.04332,-1478.1151)
+  lower cutoff= 0.  upper cutoff= 4.3347282
+  huber iteration= 1  scale= 363.49484
+  normalized residual sum of squares= 0.0059026214
+  number of data= 49
+  huber solution vector indexed by input variable
+ 1 (-33.807117,1473.011)
+ 2 (201.70848,-1476.266)
+  thomson iteration= 1  scale= 362.98016
+  number of data= 47
+  thomson solution vector indexed by input variable
+ 1 (3.1823485,1516.4109)
+ 2 (150.94511,-1525.0437)
+  normalized residual sum of squares= 0.28723323
+  thomson iteration= 2  scale= 337.97818
+  number of data= 47
+  thomson solution vector indexed by input variable
+ 1 (-13.558873,1502.5206)
+ 2 (161.36781,-1523.6664)
+  normalized residual sum of squares= 0.023661014
+  thomson iteration= 3  scale= 337.97818
+  number of data= 47
+  thomson solution vector indexed by input variable
+ 1 (-109.62998,1431.2146)
+ 2 (219.01776,-1519.2008)
+  normalized residual sum of squares= 0.15468702
+  thomson iteration= 4  scale= 337.97818
+  number of data= 46
+  thomson solution vector indexed by input variable
+ 1 (-109.62998,1431.2146)
+ 2 (219.01776,-1519.2008)
+  normalized residual sum of squares= 0.021276623
+  convergence on response
+ *******************************************
+  section length= 328
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 8.200001
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 310  sections discarded
+  initial number of data= 240
+  initial solution vector indexed by input variable
+ 1 (168.07085,-561.554)
+ 2 (-191.09657,390.4698)
+  hat matrix iterations= 3
+  lower cutoff= 0.  upper cutoff= 11.908859
+  huber iteration= 1  scale= 136.62169
+  normalized residual sum of squares= 2.4850798
+  huber iteration= 2  scale= 125.4471
+  normalized residual sum of squares= 0.098850876
+  huber iteration= 3  scale= 120.88945
+  normalized residual sum of squares= 0.03878143
+  huber iteration= 4  scale= 122.469284
+  normalized residual sum of squares= 0.017039081
+  number of data= 236
+  huber solution vector indexed by input variable
+ 1 (139.17639,-528.37195)
+ 2 (-187.75143,299.62488)
+  lower cutoff= 0.  upper cutoff= 5.9544296
+  huber iteration= 1  scale= 121.78509
+  normalized residual sum of squares= 0.014859075
+  number of data= 235
+  huber solution vector indexed by input variable
+ 1 (138.778,-524.1494)
+ 2 (-185.82307,291.8888)
+  lower cutoff= 0.  upper cutoff= 4.5570083
+  huber iteration= 1  scale= 121.57066
+  normalized residual sum of squares= 0.009419886
+  number of data= 229
+  huber solution vector indexed by input variable
+ 1 (134.26299,-527.66534)
+ 2 (-184.38744,284.1676)
+  thomson iteration= 1  scale= 118.11565
+  number of data= 213
+  thomson solution vector indexed by input variable
+ 1 (147.90573,-535.3134)
+ 2 (-203.1988,271.72635)
+  normalized residual sum of squares= 0.30304122
+  thomson iteration= 2  scale= 102.75986
+  number of data= 206
+  thomson solution vector indexed by input variable
+ 1 (143.03894,-528.4609)
+ 2 (-204.76721,279.06287)
+  normalized residual sum of squares= 0.14493592
+  thomson iteration= 3  scale= 102.75986
+  number of data= 204
+  thomson solution vector indexed by input variable
+ 1 (137.16649,-531.0867)
+ 2 (-199.04572,288.39456)
+  normalized residual sum of squares= 0.010605046
+  thomson iteration= 4  scale= 102.75986
+  number of data= 203
+  thomson solution vector indexed by input variable
+ 1 (148.5493,-538.3878)
+ 2 (-207.60608,297.66382)
+  normalized residual sum of squares= 0.028046165
+  thomson iteration= 5  scale= 102.75986
+  number of data= 202
+  thomson solution vector indexed by input variable
+ 1 (147.685,-535.3482)
+ 2 (-207.46077,295.89322)
+  normalized residual sum of squares= 0.0006260514
+  convergence on residuals
+  #####################################
+  output series= 2
+ 310  sections discarded
+  initial number of data= 240
+  initial solution vector indexed by input variable
+ 1 (-108.88404,1057.6012)
+ 2 (275.3419,-1144.1637)
+  hat matrix iterations= 3
+  lower cutoff= 0.  upper cutoff= 11.908859
+  huber iteration= 1  scale= 265.33902
+  normalized residual sum of squares= 3.9987557
+  huber iteration= 2  scale= 263.56845
+  normalized residual sum of squares= 0.011644575
+  number of data= 237
+  huber solution vector indexed by input variable
+ 1 (-141.82828,1045.4568)
+ 2 (346.1943,-1218.3986)
+  lower cutoff= 0.  upper cutoff= 5.9544296
+  huber iteration= 1  scale= 260.6435
+  normalized residual sum of squares= 0.046401825
+  huber iteration= 2  scale= 256.319
+  normalized residual sum of squares= 0.047239702
+  huber iteration= 3  scale= 248.89111
+  normalized residual sum of squares= 0.027168564
+  huber iteration= 4  scale= 252.80688
+  normalized residual sum of squares= 0.019402415
+  number of data= 233
+  huber solution vector indexed by input variable
+ 1 (-119.29945,1045.8903)
+ 2 (347.7907,-1161.5474)
+  lower cutoff= 0.  upper cutoff= 4.5570083
+  huber iteration= 1  scale= 252.18172
+  normalized residual sum of squares= 0.006064651
+  number of data= 228
+  huber solution vector indexed by input variable
+ 1 (-112.874664,1057.5983)
+ 2 (344.19333,-1170.8577)
+  thomson iteration= 1  scale= 241.3995
+  number of data= 205
+  thomson solution vector indexed by input variable
+ 1 (-145.33899,1075.5122)
+ 2 (439.35443,-1200.5518)
+  normalized residual sum of squares= 0.2720074
+  thomson iteration= 2  scale= 225.9463
+  number of data= 200
+  thomson solution vector indexed by input variable
+ 1 (-140.34233,1056.7905)
+ 2 (411.33234,-1166.1488)
+  normalized residual sum of squares= 0.14789018
+  thomson iteration= 3  scale= 225.9463
+  number of data= 199
+  thomson solution vector indexed by input variable
+ 1 (-141.00015,1061.3455)
+ 2 (404.93167,-1177.8438)
+  normalized residual sum of squares= 0.0071757385
+  convergence on residuals
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 5.466667
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 350  sections discarded
+  initial number of data= 200
+  initial solution vector indexed by input variable
+ 1 (81.76736,-330.54828)
+ 2 (-140.76797,175.53677)
+  hat matrix iterations= 2
+  lower cutoff= 0.  upper cutoff= 5.906719
+  huber iteration= 1  scale= 77.03132
+  normalized residual sum of squares= 3.3114378
+  huber iteration= 2  scale= 70.159035
+  normalized residual sum of squares= 0.16738328
+  huber iteration= 3  scale= 72.0943
+  normalized residual sum of squares= 0.030293599
+  huber iteration= 4  scale= 70.90852
+  normalized residual sum of squares= 0.020629177
+  huber iteration= 5  scale= 71.04937
+  normalized residual sum of squares= 0.0016615095
+  number of data= 189
+  huber solution vector indexed by input variable
+ 1 (102.12565,-345.73923)
+ 2 (-161.76915,215.15846)
+  lower cutoff= 0.  upper cutoff= 4.5451293
+  huber iteration= 1  scale= 70.87641
+  normalized residual sum of squares= 0.010645868
+  number of data= 185
+  huber solution vector indexed by input variable
+ 1 (102.6472,-343.33304)
+ 2 (-167.54247,214.10892)
+  thomson iteration= 1  scale= 74.56395
+  number of data= 176
+  thomson solution vector indexed by input variable
+ 1 (110.139175,-340.96695)
+ 2 (-177.1007,195.4817)
+  normalized residual sum of squares= 0.2729242
+  thomson iteration= 2  scale= 68.8422
+  number of data= 173
+  thomson solution vector indexed by input variable
+ 1 (110.70668,-344.67133)
+ 2 (-179.31126,214.32295)
+  normalized residual sum of squares= 0.043310694
+  thomson iteration= 3  scale= 68.8422
+  number of data= 171
+  thomson solution vector indexed by input variable
+ 1 (108.62551,-343.30927)
+ 2 (-177.05289,202.97034)
+  normalized residual sum of squares= 0.040583342
+  thomson iteration= 4  scale= 68.8422
+  number of data= 171
+  thomson solution vector indexed by input variable
+ 1 (108.62551,-343.30927)
+ 2 (-177.05289,202.97034)
+  normalized residual sum of squares= 0.
+  convergence on response
+  convergence on residuals
+  #####################################
+  output series= 2
+ 350  sections discarded
+  initial number of data= 200
+  initial solution vector indexed by input variable
+ 1 (-7.462481,528.33875)
+ 2 (262.65454,-525.8703)
+  hat matrix iterations= 2
+  lower cutoff= 0.  upper cutoff= 5.906719
+  huber iteration= 1  scale= 174.97122
+  normalized residual sum of squares= 5.1766925
+  huber iteration= 2  scale= 169.37762
+  normalized residual sum of squares= 0.07256927
+  huber iteration= 3  scale= 167.48451
+  normalized residual sum of squares= 0.07419897
+  huber iteration= 4  scale= 178.86516
+  normalized residual sum of squares= 0.06959454
+  huber iteration= 5  scale= 170.77519
+  normalized residual sum of squares= 0.039775092
+  huber iteration= 6  scale= 171.6342
+  normalized residual sum of squares= 0.004261975
+  number of data= 189
+  huber solution vector indexed by input variable
+ 1 (-85.37658,680.70465)
+ 2 (351.87064,-851.98944)
+  lower cutoff= 0.  upper cutoff= 4.5451293
+  huber iteration= 1  scale= 171.30058
+  normalized residual sum of squares= 0.014772688
+  number of data= 186
+  huber solution vector indexed by input variable
+ 1 (-70.21918,684.79736)
+ 2 (350.915,-843.64734)
+  thomson iteration= 1  scale= 169.33112
+  number of data= 176
+  thomson solution vector indexed by input variable
+ 1 (-107.76781,707.337)
+ 2 (427.03256,-846.9112)
+  normalized residual sum of squares= 0.31526923
+  thomson iteration= 2  scale= 161.01712
+  number of data= 172
+  thomson solution vector indexed by input variable
+ 1 (-95.07527,702.1434)
+ 2 (409.18405,-850.73376)
+  normalized residual sum of squares= 0.09037199
+  thomson iteration= 3  scale= 161.01712
+  number of data= 170
+  thomson solution vector indexed by input variable
+ 1 (-84.39746,700.47784)
+ 2 (366.5817,-856.41046)
+  normalized residual sum of squares= 0.12247185
+  thomson iteration= 4  scale= 161.01712
+  number of data= 170
+  thomson solution vector indexed by input variable
+ 1 (-84.39746,700.47784)
+ 2 (366.5817,-856.41046)
+  normalized residual sum of squares= 0.
+  convergence on response
+  convergence on residuals
+ *******************************************
+  section length= 164
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 4.1000004
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 400  sections discarded
+  initial number of data= 700
+  initial solution vector indexed by input variable
+ 1 (88.47097,-286.41748)
+ 2 (-107.11507,173.22682)
+  hat matrix iterations= 3
+  lower cutoff= 0.  upper cutoff= 14.387284
+  huber iteration= 1  scale= 60.656204
+  normalized residual sum of squares= 3.3163562
+  huber iteration= 2  scale= 58.830296
+  normalized residual sum of squares= 0.03700509
+  huber iteration= 3  scale= 58.156017
+  normalized residual sum of squares= 0.014015739
+  number of data= 693
+  huber solution vector indexed by input variable
+ 1 (103.62601,-273.9341)
+ 2 (-137.56902,160.55167)
+  lower cutoff= 0.  upper cutoff= 7.193642
+  huber iteration= 1  scale= 57.969414
+  normalized residual sum of squares= 0.014350314
+  number of data= 684
+  huber solution vector indexed by input variable
+ 1 (104.3403,-272.83)
+ 2 (-143.24539,155.00826)
+  lower cutoff= 0.  upper cutoff= 4.596187
+  huber iteration= 1  scale= 56.69458
+  normalized residual sum of squares= 0.051188022
+  huber iteration= 2  scale= 56.18436
+  normalized residual sum of squares= 0.05254739
+  huber iteration= 3  scale= 52.873306
+  normalized residual sum of squares= 0.06879397
+  huber iteration= 4  scale= 53.249817
+  normalized residual sum of squares= 0.00880656
+  number of data= 649
+  huber solution vector indexed by input variable
+ 1 (107.37495,-259.824)
+ 2 (-147.15427,126.63938)
+  thomson iteration= 1  scale= 52.711536
+  number of data= 618
+  thomson solution vector indexed by input variable
+ 1 (112.46595,-262.10214)
+ 2 (-154.6044,130.22751)
+  normalized residual sum of squares= 0.40838823
+  thomson iteration= 2  scale= 48.985188
+  number of data= 603
+  thomson solution vector indexed by input variable
+ 1 (115.4928,-259.77292)
+ 2 (-164.79243,113.38641)
+  normalized residual sum of squares= 0.16835791
+  thomson iteration= 3  scale= 48.985188
+  number of data= 597
+  thomson solution vector indexed by input variable
+ 1 (116.28462,-259.80017)
+ 2 (-168.72928,113.85461)
+  normalized residual sum of squares= 0.024542296
+  thomson iteration= 4  scale= 48.985188
+  number of data= 596
+  thomson solution vector indexed by input variable
+ 1 (117.576416,-260.3621)
+ 2 (-172.73547,114.78767)
+  normalized residual sum of squares= 0.014085118
+  thomson iteration= 5  scale= 48.985188
+  number of data= 596
+  thomson solution vector indexed by input variable
+ 1 (117.576416,-260.3621)
+ 2 (-172.73547,114.78767)
+  normalized residual sum of squares= 0.
+  convergence on response
+  convergence on residuals
+  #####################################
+  output series= 2
+ 400  sections discarded
+  initial number of data= 700
+  initial solution vector indexed by input variable
+ 1 (-39.705227,495.56808)
+ 2 (165.05936,-449.8562)
+  hat matrix iterations= 3
+  lower cutoff= 0.  upper cutoff= 14.387284
+  huber iteration= 1  scale= 113.52703
+  normalized residual sum of squares= 5.639475
+  huber iteration= 2  scale= 114.12198
+  normalized residual sum of squares= 0.012990078
+  number of data= 693
+  huber solution vector indexed by input variable
+ 1 (-90.25675,518.584)
+ 2 (246.14754,-576.3932)
+  lower cutoff= 0.  upper cutoff= 7.193642
+  huber iteration= 1  scale= 118.82386
+  normalized residual sum of squares= 0.03340279
+  huber iteration= 2  scale= 117.555534
+  normalized residual sum of squares= 0.023508156
+  huber iteration= 3  scale= 119.43291
+  normalized residual sum of squares= 0.017296592
+  number of data= 679
+  huber solution vector indexed by input variable
+ 1 (-110.83852,521.06476)
+ 2 (312.16525,-590.33344)
+  lower cutoff= 0.  upper cutoff= 4.596187
+  huber iteration= 1  scale= 120.6701
+  normalized residual sum of squares= 0.057551812
+  huber iteration= 2  scale= 112.36324
+  normalized residual sum of squares= 0.093593396
+  huber iteration= 3  scale= 110.23774
+  normalized residual sum of squares= 0.018823724
+  number of data= 648
+  huber solution vector indexed by input variable
+ 1 (-114.07686,495.8948)
+ 2 (312.38925,-524.25586)
+  thomson iteration= 1  scale= 108.499176
+  number of data= 606
+  thomson solution vector indexed by input variable
+ 1 (-134.44958,506.5522)
+ 2 (347.75922,-531.93164)
+  normalized residual sum of squares= 0.42004612
+  thomson iteration= 2  scale= 97.70449
+  number of data= 587
+  thomson solution vector indexed by input variable
+ 1 (-124.77441,499.06326)
+ 2 (336.19092,-519.04803)
+  normalized residual sum of squares= 0.20003852
+  thomson iteration= 3  scale= 97.70449
+  number of data= 582
+  thomson solution vector indexed by input variable
+ 1 (-127.219734,497.5655)
+ 2 (354.82428,-521.11865)
+  normalized residual sum of squares= 0.03640197
+  thomson iteration= 4  scale= 97.70449
+  number of data= 578
+  thomson solution vector indexed by input variable
+ 1 (-130.72476,500.14172)
+ 2 (364.88217,-534.61273)
+  normalized residual sum of squares= 0.007721233
+  convergence on residuals
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 2.7333336
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 500  sections discarded
+  initial number of data= 600
+  initial solution vector indexed by input variable
+ 1 (84.22915,-196.08948)
+ 2 (-56.061634,83.1064)
+  hat matrix iterations= 3
+  lower cutoff= 0.  upper cutoff= 15.673735
+  huber iteration= 1  scale= 35.013184
+  normalized residual sum of squares= 2.9154785
+  huber iteration= 2  scale= 32.510185
+  normalized residual sum of squares= 0.096119836
+  huber iteration= 3  scale= 31.480816
+  normalized residual sum of squares= 0.038955607
+  huber iteration= 4  scale= 31.574644
+  normalized residual sum of squares= 0.0038322725
+  number of data= 597
+  huber solution vector indexed by input variable
+ 1 (80.218056,-167.82512)
+ 2 (-44.200253,48.94181)
+  lower cutoff= 0.  upper cutoff= 7.8368673
+  huber iteration= 1  scale= 31.442352
+  normalized residual sum of squares= 0.009096981
+  number of data= 590
+  huber solution vector indexed by input variable
+ 1 (81.94755,-169.70308)
+ 2 (-46.85676,49.671963)
+  lower cutoff= 0.  upper cutoff= 4.5927715
+  huber iteration= 1  scale= 30.579172
+  normalized residual sum of squares= 0.03209329
+  huber iteration= 2  scale= 30.364275
+  normalized residual sum of squares= 0.006872479
+  number of data= 566
+  huber solution vector indexed by input variable
+ 1 (88.14466,-171.35335)
+ 2 (-58.640434,49.846184)
+  thomson iteration= 1  scale= 29.766916
+  number of data= 526
+  thomson solution vector indexed by input variable
+ 1 (91.0899,-178.51147)
+ 2 (-71.75848,55.955326)
+  normalized residual sum of squares= 0.41577205
+  thomson iteration= 2  scale= 27.924658
+  number of data= 513
+  thomson solution vector indexed by input variable
+ 1 (90.80039,-171.38887)
+ 2 (-78.39614,51.185295)
+  normalized residual sum of squares= 0.18092836
+  thomson iteration= 3  scale= 27.924658
+  number of data= 506
+  thomson solution vector indexed by input variable
+ 1 (90.53075,-168.69505)
+ 2 (-80.882515,50.18789)
+  normalized residual sum of squares= 0.04954239
+  thomson iteration= 4  scale= 27.924658
+  number of data= 502
+  thomson solution vector indexed by input variable
+ 1 (90.68671,-167.51288)
+ 2 (-79.23702,47.51293)
+  normalized residual sum of squares= 0.054912735
+  thomson iteration= 5  scale= 27.924658
+  number of data= 499
+  thomson solution vector indexed by input variable
+ 1 (92.287605,-166.52025)
+ 2 (-83.711845,43.56602)
+  normalized residual sum of squares= 0.015408974
+  thomson iteration= 6  scale= 27.924658
+  number of data= 496
+  thomson solution vector indexed by input variable
+ 1 (93.74849,-166.11455)
+ 2 (-87.29723,43.72695)
+  normalized residual sum of squares= 0.018685315
+  thomson iteration= 7  scale= 27.924658
+  number of data= 496
+  thomson solution vector indexed by input variable
+ 1 (93.74865,-166.11478)
+ 2 (-87.29933,43.726696)
+  normalized residual sum of squares= 0.00003144715
+  convergence on response
+  convergence on residuals
+  #####################################
+  output series= 2
+ 500  sections discarded
+  initial number of data= 600
+  initial solution vector indexed by input variable
+ 1 (-57.378017,335.6009)
+ 2 (95.25543,-247.96545)
+  hat matrix iterations= 3
+  lower cutoff= 0.  upper cutoff= 15.673735
+  huber iteration= 1  scale= 69.79197
+  normalized residual sum of squares= 4.002949
+  huber iteration= 2  scale= 68.202156
+  normalized residual sum of squares= 0.06174415
+  huber iteration= 3  scale= 67.90153
+  normalized residual sum of squares= 0.019229745
+  number of data= 597
+  huber solution vector indexed by input variable
+ 1 (-72.319176,315.19067)
+ 2 (112.45939,-285.20117)
+  lower cutoff= 0.  upper cutoff= 7.8368673
+  huber iteration= 1  scale= 67.56973
+  normalized residual sum of squares= 0.008151981
+  number of data= 589
+  huber solution vector indexed by input variable
+ 1 (-76.582634,320.5953)
+ 2 (122.188934,-292.0649)
+  lower cutoff= 0.  upper cutoff= 4.5927715
+  huber iteration= 1  scale= 68.424965
+  normalized residual sum of squares= 0.015606273
+  number of data= 569
+  huber solution vector indexed by input variable
+ 1 (-82.80306,322.2025)
+ 2 (138.74745,-281.8161)
+  thomson iteration= 1  scale= 66.949684
+  number of data= 514
+  thomson solution vector indexed by input variable
+ 1 (-89.39875,329.64383)
+ 2 (185.34822,-307.5943)
+  normalized residual sum of squares= 0.39255258
+  thomson iteration= 2  scale= 58.061535
+  number of data= 498
+  thomson solution vector indexed by input variable
+ 1 (-91.93124,322.81808)
+ 2 (190.13142,-309.7313)
+  normalized residual sum of squares= 0.22368088
+  thomson iteration= 3  scale= 58.061535
+  number of data= 490
+  thomson solution vector indexed by input variable
+ 1 (-95.68154,316.8825)
+ 2 (189.09221,-295.27695)
+  normalized residual sum of squares= 0.08733076
+  thomson iteration= 4  scale= 58.061535
+  number of data= 486
+  thomson solution vector indexed by input variable
+ 1 (-100.75448,312.40146)
+ 2 (200.42982,-283.5827)
+  normalized residual sum of squares= 0.03735011
+  thomson iteration= 5  scale= 58.061535
+  number of data= 481
+  thomson solution vector indexed by input variable
+ 1 (-105.81009,311.92804)
+ 2 (215.57765,-277.84134)
+  normalized residual sum of squares= 0.02321649
+  thomson iteration= 6  scale= 58.061535
+  number of data= 478
+  thomson solution vector indexed by input variable
+ 1 (-110.38747,314.65735)
+ 2 (234.8423,-280.0248)
+  normalized residual sum of squares= 0.01454426
+  thomson iteration= 7  scale= 58.061535
+  number of data= 479
+  thomson solution vector indexed by input variable
+ 1 (-111.84765,315.27628)
+ 2 (236.92993,-278.2165)
+  normalized residual sum of squares= 0.010184199
+  thomson iteration= 8  scale= 58.061535
+  number of data= 479
+  thomson solution vector indexed by input variable
+ 1 (-115.73171,316.29477)
+ 2 (248.56494,-275.24606)
+  normalized residual sum of squares= 0.030475402
+  thomson iteration= 9  scale= 58.061535
+  number of data= 479
+  thomson solution vector indexed by input variable
+ 1 (-112.36499,315.35635)
+ 2 (237.96329,-277.4903)
+  normalized residual sum of squares= 0.026382698
+  thomson iteration= 10  scale= 58.061535
+  number of data= 478
+  thomson solution vector indexed by input variable
+ 1 (-112.29776,315.44922)
+ 2 (237.56725,-277.58566)
+  normalized residual sum of squares= 0.0016083767
+  convergence on response
+  convergence on residuals
+ *******************************************
+  section length= 82
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 2.0500002
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 650  sections discarded
+  initial number of data= 1530
+  initial solution vector indexed by input variable
+ 1 (76.448654,-147.30606)
+ 2 (-45.252445,55.45789)
+  hat matrix iterations= 4
+  lower cutoff= 0.  upper cutoff= 31.166515
+  huber iteration= 1  scale= 25.870998
+  normalized residual sum of squares= 3.7659268
+  huber iteration= 2  scale= 23.8506
+  normalized residual sum of squares= 0.12932216
+  huber iteration= 3  scale= 23.329468
+  normalized residual sum of squares= 0.040101897
+  huber iteration= 4  scale= 22.911104
+  normalized residual sum of squares= 0.029861292
+  huber iteration= 5  scale= 22.62326
+  normalized residual sum of squares= 0.020919235
+  huber iteration= 6  scale= 22.306677
+  normalized residual sum of squares= 0.021670328
+  huber iteration= 7  scale= 22.124691
+  normalized residual sum of squares= 0.013129705
+  number of data= 1525
+  huber solution vector indexed by input variable
+ 1 (78.11602,-122.38561)
+ 2 (-34.844627,30.74187)
+  lower cutoff= 0.  upper cutoff= 15.583258
+  huber iteration= 1  scale= 22.102766
+  normalized residual sum of squares= 0.008068344
+  number of data= 1524
+  huber solution vector indexed by input variable
+ 1 (77.92281,-122.25982)
+ 2 (-33.872612,30.177515)
+  lower cutoff= 0.  upper cutoff= 7.791629
+  huber iteration= 1  scale= 21.843676
+  normalized residual sum of squares= 0.04389672
+  huber iteration= 2  scale= 21.238823
+  normalized residual sum of squares= 0.039505236
+  huber iteration= 3  scale= 21.144567
+  normalized residual sum of squares= 0.006384575
+  number of data= 1501
+  huber solution vector indexed by input variable
+ 1 (77.50038,-120.95131)
+ 2 (-31.51248,23.181559)
+  lower cutoff= 0.  upper cutoff= 4.607315
+  huber iteration= 1  scale= 21.033133
+  normalized residual sum of squares= 0.031312823
+  huber iteration= 2  scale= 21.115736
+  normalized residual sum of squares= 0.0124489805
+  number of data= 1431
+  huber solution vector indexed by input variable
+ 1 (80.276115,-120.75852)
+ 2 (-43.36546,25.233398)
+  thomson iteration= 1  scale= 21.13607
+  number of data= 1318
+  thomson solution vector indexed by input variable
+ 1 (81.98366,-122.49113)
+ 2 (-55.630127,24.515469)
+  normalized residual sum of squares= 0.4764985
+  thomson iteration= 2  scale= 19.182169
+  number of data= 1261
+  thomson solution vector indexed by input variable
+ 1 (84.742744,-119.17551)
+ 2 (-61.02301,20.594608)
+  normalized residual sum of squares= 0.35677332
+  thomson iteration= 3  scale= 19.182169
+  number of data= 1244
+  thomson solution vector indexed by input variable
+ 1 (85.39592,-117.1884)
+ 2 (-62.596363,16.584686)
+  normalized residual sum of squares= 0.038232334
+  thomson iteration= 4  scale= 19.182169
+  number of data= 1240
+  thomson solution vector indexed by input variable
+ 1 (85.770775,-116.84793)
+ 2 (-62.810745,16.511026)
+  normalized residual sum of squares= 0.0056440183
+  convergence on residuals
+  #####################################
+  output series= 2
+ 650  sections discarded
+  initial number of data= 1530
+  initial solution vector indexed by input variable
+ 1 (-50.660164,247.06969)
+ 2 (66.77134,-137.44308)
+  hat matrix iterations= 4
+  lower cutoff= 0.  upper cutoff= 31.166515
+  huber iteration= 1  scale= 47.28915
+  normalized residual sum of squares= 4.6821823
+  huber iteration= 2  scale= 46.3333
+  normalized residual sum of squares= 0.08054356
+  huber iteration= 3  scale= 48.256264
+  normalized residual sum of squares= 0.035264213
+  huber iteration= 4  scale= 48.348797
+  normalized residual sum of squares= 0.007088712
+  number of data= 1525
+  huber solution vector indexed by input variable
+ 1 (-77.98287,230.82115)
+ 2 (98.80981,-195.22966)
+  lower cutoff= 0.  upper cutoff= 15.583258
+  huber iteration= 1  scale= 47.80523
+  normalized residual sum of squares= 0.026260588
+  huber iteration= 2  scale= 47.98315
+  normalized residual sum of squares= 0.0038271619
+  number of data= 1523
+  huber solution vector indexed by input variable
+ 1 (-77.91533,230.92715)
+ 2 (98.06933,-197.05806)
+  lower cutoff= 0.  upper cutoff= 7.791629
+  huber iteration= 1  scale= 47.904797
+  normalized residual sum of squares= 0.030068915
+  huber iteration= 2  scale= 47.080578
+  normalized residual sum of squares= 0.026908686
+  huber iteration= 3  scale= 46.699146
+  normalized residual sum of squares= 0.0057263384
+  number of data= 1491
+  huber solution vector indexed by input variable
+ 1 (-81.53372,226.47386)
+ 2 (107.4666,-179.77419)
+  lower cutoff= 0.  upper cutoff= 4.607315
+  huber iteration= 1  scale= 46.542706
+  normalized residual sum of squares= 0.02327323
+  huber iteration= 2  scale= 45.03346
+  normalized residual sum of squares= 0.046867736
+  huber iteration= 3  scale= 44.403854
+  normalized residual sum of squares= 0.0080758585
+  number of data= 1388
+  huber solution vector indexed by input variable
+ 1 (-91.451485,220.13837)
+ 2 (144.44963,-158.5191)
+  thomson iteration= 1  scale= 44.337467
+  number of data= 1259
+  thomson solution vector indexed by input variable
+ 1 (-107.15245,227.92276)
+ 2 (201.03465,-161.3971)
+  normalized residual sum of squares= 0.46769896
+  thomson iteration= 2  scale= 39.469242
+  number of data= 1208
+  thomson solution vector indexed by input variable
+ 1 (-108.878624,216.96191)
+ 2 (207.41568,-159.8327)
+  normalized residual sum of squares= 0.25537106
+  thomson iteration= 3  scale= 39.469242
+  number of data= 1193
+  thomson solution vector indexed by input variable
+ 1 (-106.491516,215.69354)
+ 2 (196.74129,-166.49786)
+  normalized residual sum of squares= 0.063876204
+  thomson iteration= 4  scale= 39.469242
+  number of data= 1188
+  thomson solution vector indexed by input variable
+ 1 (-107.22566,214.03484)
+ 2 (195.6509,-162.91891)
+  normalized residual sum of squares= 0.026662104
+  thomson iteration= 5  scale= 39.469242
+  number of data= 1187
+  thomson solution vector indexed by input variable
+ 1 (-106.81727,213.92708)
+ 2 (195.99062,-161.16957)
+  normalized residual sum of squares= 0.0035236862
+  convergence on residuals
+  $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  period= 1.3666668
+  stage 2 coherence threshold= 0.7
+  #####################################
+  output series= 1
+ 600  sections discarded
+  initial number of data= 1580
+  initial solution vector indexed by input variable
+ 1 (82.17021,-102.35576)
+ 2 (-43.649933,51.60153)
+  hat matrix iterations= 4
+  lower cutoff= 0.  upper cutoff= 30.796621
+  huber iteration= 1  scale= 15.454776
+  normalized residual sum of squares= 3.9438734
+  huber iteration= 2  scale= 12.815829
+  normalized residual sum of squares= 0.29505432
+  huber iteration= 3  scale= 11.613445
+  normalized residual sum of squares= 0.14798036
+  huber iteration= 4  scale= 11.3143425
+  normalized residual sum of squares= 0.05422955
+  huber iteration= 5  scale= 11.013742
+  normalized residual sum of squares= 0.04126008
+  huber iteration= 6  scale= 10.886451
+  normalized residual sum of squares= 0.017093346
+  number of data= 1574
+  huber solution vector indexed by input variable
+ 1 (77.017166,-80.00366)
+ 2 (-18.494928,18.086351)
+  lower cutoff= 0.  upper cutoff= 15.398311
+  huber iteration= 1  scale= 10.844151
+  normalized residual sum of squares= 0.0082696695
+  number of data= 1573
+  huber solution vector indexed by input variable
+ 1 (76.90389,-79.83214)
+ 2 (-18.20984,17.374691)
+  lower cutoff= 0.  upper cutoff= 7.6991553
+  huber iteration= 1  scale= 10.81461
+  normalized residual sum of squares= 0.00080937933
+  number of data= 1560
+  huber solution vector indexed by input variable
+ 1 (76.83051,-79.82815)
+ 2 (-18.587324,17.040703)
+  lower cutoff= 0.  upper cutoff= 4.607612
+  huber iteration= 1  scale= 10.73704
+  normalized residual sum of squares= 0.015910868
+  number of data= 1505
+  huber solution vector indexed by input variable
+ 1 (78.566925,-78.98355)
+ 2 (-22.251743,16.092873)
+  thomson iteration= 1  scale= 10.344314
+  number of data= 1354
+  thomson solution vector indexed by input variable
+ 1 (80.46989,-80.0142)
+ 2 (-28.252417,17.574358)
+  normalized residual sum of squares= 0.44032267
+  thomson iteration= 2  scale= 9.0367565
+  number of data= 1284
+  thomson solution vector indexed by input variable
+ 1 (80.32818,-77.702484)
+ 2 (-24.083246,12.194013)
+  normalized residual sum of squares= 0.5011373
+  thomson iteration= 3  scale= 9.0367565
+  number of data= 1256
+  thomson solution vector indexed by input variable
+ 1 (80.13244,-75.881805)
+ 2 (-23.686672,10.741049)
+  normalized residual sum of squares= 0.022978565
+  thomson iteration= 4  scale= 9.0367565
+  number of data= 1234
+  thomson solution vector indexed by input variable
+ 1 (80.05594,-74.57359)
+ 2 (-24.16772,9.851893)
+  normalized residual sum of squares= 0.042704344
+  thomson iteration= 5  scale= 9.0367565
+  number of data= 1220
+  thomson solution vector indexed by input variable
+ 1 (80.76268,-74.151535)
+ 2 (-25.109612,9.126115)
+  normalized residual sum of squares= 0.013456102
+  thomson iteration= 6  scale= 9.0367565
+  number of data= 1215
+  thomson solution vector indexed by input variable
+ 1 (81.112686,-74.04665)
+ 2 (-26.364588,8.727202)
+  normalized residual sum of squares= 0.0034930794
+  convergence on residuals
+  #####################################
+  output series= 2
+ 600  sections discarded
+  initial number of data= 1580
+  initial solution vector indexed by input variable
+ 1 (-65.94901,178.25258)
+ 2 (56.99923,-118.890564)
+  hat matrix iterations= 4
+  lower cutoff= 0.  upper cutoff= 30.796621
+  huber iteration= 1  scale= 24.270761
+  normalized residual sum of squares= 5.4535356
+  huber iteration= 2  scale= 23.922937
+  normalized residual sum of squares= 0.03547449
+  huber iteration= 3  scale= 24.116823
+  normalized residual sum of squares= 0.0031590352
+  number of data= 1575
+  huber solution vector indexed by input variable
+ 1 (-77.99348,155.08635)
+ 2 (62.94637,-119.228584)
+  lower cutoff= 0.  upper cutoff= 15.398311
+  huber iteration= 1  scale= 24.25319
+  normalized residual sum of squares= 0.0010784497
+  number of data= 1574
+  huber solution vector indexed by input variable
+ 1 (-78.377,154.66634)
+ 2 (63.29456,-120.06259)
+  lower cutoff= 0.  upper cutoff= 7.6991553
+  huber iteration= 1  scale= 24.524958
+  normalized residual sum of squares= 0.015776873
+  number of data= 1557
+  huber solution vector indexed by input variable
+ 1 (-79.9099,154.12923)
+ 2 (67.33628,-119.21616)
+  lower cutoff= 0.  upper cutoff= 4.607612
+  huber iteration= 1  scale= 24.371143
+  normalized residual sum of squares= 0.06387365
+  huber iteration= 2  scale= 23.39645
+  normalized residual sum of squares= 0.10167981
+  huber iteration= 3  scale= 21.946192
+  normalized residual sum of squares= 0.0875764
+  huber iteration= 4  scale= 21.434643
+  normalized residual sum of squares= 0.027998986
+  huber iteration= 5  scale= 20.917833
+  normalized residual sum of squares= 0.03542815
+  huber iteration= 6  scale= 20.662237
+  normalized residual sum of squares= 0.01599771
+  number of data= 1396
+  huber solution vector indexed by input variable
+ 1 (-84.5371,141.01422)
+ 2 (73.01062,-87.68153)
+  thomson iteration= 1  scale= 20.704388
+  number of data= 1276
+  thomson solution vector indexed by input variable
+ 1 (-91.17156,142.83664)
+ 2 (85.71924,-82.7274)
+  normalized residual sum of squares= 0.4914915
+  thomson iteration= 2  scale= 17.12106
+  number of data= 1207
+  thomson solution vector indexed by input variable
+ 1 (-88.64162,141.8419)
+ 2 (82.055626,-88.20592)
+  normalized residual sum of squares= 0.46264583
+  thomson iteration= 3  scale= 17.12106
+  number of data= 1192
+  thomson solution vector indexed by input variable
+ 1 (-87.58607,138.62358)
+ 2 (81.63574,-88.785995)
+  normalized residual sum of squares= 0.07063514
+  thomson iteration= 4  scale= 17.12106
+  number of data= 1179
+  thomson solution vector indexed by input variable
+ 1 (-86.83742,136.00938)
+ 2 (80.791756,-85.21118)
+  normalized residual sum of squares= 0.045846056
+  thomson iteration= 5  scale= 17.12106
+  number of data= 1177
+  thomson solution vector indexed by input variable
+ 1 (-86.5693,136.03424)
+ 2 (80.90537,-85.084656)
+  normalized residual sum of squares= 0.0030448327
+  convergence on response
+  convergence on residuals
