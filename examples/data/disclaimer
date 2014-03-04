@@ -1,0 +1,19 @@
+DISCLAIMER
+
+This folder contains examples for magnetotelluric time-series data. The data have been collected during an instrument test at the university of Adelaide, and they have 
+been decimated afterwards. We cannot guarantee that they contain any scientifically relevant signals. They are solely intended to demonstrate the time series data file 
+handling using MTpy. 
+However, if you are interested in the details: The instrumentation for each station consisted of a pair of induction coils, three copper-sulfite electrodes, 
+and an EarthDataLogger. The relevant parameters can be found in the ExampleSurveyConfigfile.cfg, which is located within this example directory. 
+
+The raw data can be converted into re-oriented and scaled dayfiles (c.f. 'mtd_files' directory). For visual data analysis or the utilisation of standard seismological
+processing software, the data have been converted into MiniSEED (c.f. 'miniseed' directory).
+
+By using BIRRP (via the provided wrapping scripts), the time domain data have been transferred into frequency domain, and then converted into EDI files (c.f. 'edi_files' 
+directory).
+
+We hope that this example data set give an impression on how to easily handle data sets using MTpy.
+
+ 
+
+@2014 Lars Krieger/the MTpy team
