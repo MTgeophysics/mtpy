@@ -13,7 +13,11 @@ from pylab import *
 fn = sys.argv[1]
 
 edi = MTedi.Edi()
-edi.readfile(fn)
+try:
+	edi.readfile(fn)
+except:
+	print '\n\tFile does not exist: {0}\n'.format(fn)
+	sys.exit()
 
 
 res_te=[]
@@ -54,11 +58,17 @@ xscale('log')
 yscale('log')
 minval=min( min(res_te,res_tm))
 maxval=max(max(res_te,res_tm))
-ylim([minval/10,maxval*2])
+ylim([minval/10,maxval*10])
+xlim(0.5*min(periods),2*max(periods))
+autoscale(False)
+
 ylabel('resistivity')
 setp( ax1.get_xticklabels(), visible=False)
 ## share x only
 ax2 = subplot(212, sharex=ax1)
+autoscale(False)
+
+ylim(-90,270)
 errorbar(periods,phi_te,phierr_te,marker='s',c='b',fmt='x')
 errorbar(periods,phi_tm,phierr_tm,marker='s',c='r',fmt='x')
 ylabel('phase')

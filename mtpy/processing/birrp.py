@@ -52,6 +52,7 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
                            coherence_threshold = 0.5, rr_station = None, 
                            output_dir = None, starttime = None, endtime = None):
 
+
     """
     Call BIRRP for 2 input and 2 output channels with the simplemost setup. 
 
@@ -87,12 +88,12 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
 
     current_dir = op.abspath(os.curdir)
 
-    wd = op.abspath(op.realpath(op.join(ts_directory,'birrp_processed')))
+    wd = op.abspath(op.realpath(op.join(current_dir,'birrp_wd')))
     if rr_station is not None:
-        wd = op.abspath(op.realpath(op.join(ts_directory,'birrp_processed_rr')))
+        wd = op.abspath(op.realpath(op.join(current_dir,'birrp_wd_rr')))
 
     if output_dir != None:
-        output_dir = op.abspath(op.join(os.curdir,output_dir))
+        output_dir = op.abspath(op.join(current_dir,output_dir))
         if not op.isdir(output_dir) :
             try:
                 os.makedirs(output_dir)
@@ -178,8 +179,7 @@ def generate_birrp_inputstring_simple(stationname, rr_station, ts_directory,
     print '\nSetting basic input components,e.g. filenames, samplingrate,...\n'
     input_filename, length, sampling_rate, birrp_stationdict = set_birrp_input_file_simple(
                                     stationname, rr_station, ts_directory, output_channels, 
-                                    op.join(ts_directory,'birrp_wd'),
-                                    starttime, endtime)
+                                    os.curdir, starttime, endtime)
 
     print '...Done!\n\nCalculating optimal time window bisection parameters...'
     longest_section, number_of_bisections = get_optimal_window_bisection(length, sampling_rate)
@@ -236,7 +236,7 @@ def generate_birrp_inputstring_simple(stationname, rr_station, ts_directory,
 
 
 
-    string_file = op.join(ts_directory,'birrp_wd','birrp_input_string.txt')
+    string_file = 'birrp_string.txt'
     string_file = MTfh.make_unique_filename(string_file)
     with open(string_file,'w') as F:
         F.write(inputstring)
@@ -262,7 +262,7 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
     times. Find longest consecutive time available on all channels.
     Include remote reference station data, if rr_station is given.
     Then generate n x 4/5 array for n consecutive time steps. Array in order 
-    Ex, Ey, Bx, By (,Bz) saved into file 'birrp_input_data.txt'
+    Ex, Ey, Bx, By (,Bz) saved into file 'birrp_data.txt'
 
     If remote reference is include, generate n x 6/7 array in order 
     Ex, Ey, Bx, By (,Bz), remoteBx, remoteBy
@@ -532,11 +532,12 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
     
     #data array to hold time series for longest possible time window for the files given 
     #order Ex, Ey, Bx, By (,Bz)
-    #if remote reference set: Ex, Ey, Bx, By (,Bz), remoteBx, remoteBy
+    #if remote reference is set: Ex, Ey, Bx, By (,Bz), remoteBx, remoteBy
     totalmemory, freememory = MTmc.show_memory()
     print '\n\tTotal memory available: {0} MB - free: {1} MB'.format(totalmemory,freememory)
 
     data = np.zeros((len(ta),output_channels+2))
+
     if rr_station is not None:
         data = np.zeros((len(ta),output_channels+4))
 
@@ -544,8 +545,10 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
 
     print '\tData array (size: {0}) and time axis (length: {1}) initialised - '\
             'looping over channels to read in data...\n'.format(data.shape, len(ta))
-
     for idx_ch, ch in enumerate(station_channels):
+
+        #arrayindex = 0
+        
         for st in station_starttime_sorting:
             ch_read = lo_station_channels[st]
             if not ch == ch_read:
@@ -557,46 +560,48 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
 
             header = MTfh.read_ts_header(lo_station_files[st])
             
-            ta_file = np.arange(header['nsamples'])/header['samplingrate'] + header['t_min']
+            #determine the time axis of the file:
+            ta_file = np.arange(int(float(header['nsamples']))) / \
+                                    float(header['samplingrate']) + \
+                                    float(header['t_min'])
+            
+            #skip file, if file ends before the chosen section starts
             if ta[0] > ta_file[-1]:
                 continue
-
+            #finished station, if file starts after end of chosen section
             if ta_file[0] >= ta[-1]:
                 break
 
             #read in data
             print '\t...reading station data from file {0}'.format(lo_station_files[st])
             data_in = np.loadtxt(lo_station_files[st])
-            #print len(data_in), sampling_rate , lo_starttimes[st]
             
-            #define time axis for read in data
-            #ta_file = np.arange(len(data_in))/sampling_rate + lo_station_starttimes[st]
-            #find overlap of overall time axis and the ta of current data set:
-            for min_idx,dummy in enumerate(ta_file):
-                if ta[0]<= dummy <= ta[-1]:
-                    break
-            for max_idx in range(-1,-(len(ta_file)+1), -1):
-                if ta[0]<=ta_file[max_idx] <= ta[-1]:
-                    break
+            
+            if ta_file[0] >= ta[0]: 
+                startindex = np.abs(ta - ta_file[0]).argmin()
+                if ta_file[-1] <= ta[-1]:
+                    #find starting index w.r.t. overall time axis:
+                    data[startindex:startindex+len(data_in),idx_ch] = data_in
+                else:
+                    endindex = np.abs(ta - ta_file[-1]).argmin()
+                    data_section_length = endindex - startindex + 1
+                    data[startindex:,idx_ch] = data_in[:data_section_length]
+            else:
+                startindex =  np.abs(ta[0] - ta_file).argmin()
+                if ta_file[-1] >= ta[-1]:
+                    data_section_length = len(ta) 
+                    data[:,idx_ch] = data_in[startindex:startindex+data_section_length]
+                else:
+                    endindex = np.abs(ta - ta_file[-1]).argmin() +1 
+                    data_section_length = len(data[:endidx])
+                    data[:endidx,idx_ch] = data_in[startindex:]
 
-            #include the last sample:
-            max_idx = len(ta_file) + max_idx + 1
-            #print min_idx,max_idx
-            overlap = ta_file[min_idx:max_idx]
+
+
+            #print len(data_in), sampling_rate , lo_starttimes[st]
+
             
             print 'file time section: ',ta_file[0],ta_file[-1], '(overall window: ', ta[0],ta[-1],')'
-
-            #find starting index of overlap for current data file time axis
-            idx_ta_file = min_idx#np.argmin(np.abs(ta_file - overlap[0]))
-
-            #find starting index of overlap for overall time axis
-            idx_overall_ta = np.argmin(np.abs(ta - overlap[0])) 
-
-            #set data entries
-            #print 'filling data from file into temporary array'
-            #print idx_overall_ta, len(overlap), idx_ch, idx_ta_file
-            #print data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch].shape, data_in[idx_ta_file:idx_ta_file+len(overlap)].shape
-            data[idx_overall_ta:idx_overall_ta+len(overlap), idx_ch] = data_in[idx_ta_file:idx_ta_file+len(overlap)]
 
             gc.collect()
 
@@ -608,41 +613,46 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
                 if not ch == ch_read:
                     continue
 
+                
+                header = MTfh.read_ts_header(lo_rr_files[st])
+                #determine the time axis of the file:
+                ta_file = np.arange(int(float(header['nsamples']))) / \
+                                    float(header['samplingrate']) + \
+                                    float(header['t_min'])
+
+                #skip file, if file ends before the chosen section starts
+                if ta[0] > ta_file[-1]:
+                    continue
+                #finished station, if file starts after end of chosen section
+                if ta_file[0] >= ta[-1]:
+                    break
+            
+                #read in data
                 print '\t...reading remote data from file {0}'.format(lo_rr_files[st])
                 data_in = np.loadtxt(lo_rr_files[st])
                 
-                #define time axis for read in data
-                ta_file = np.arange(len(data_in))/sampling_rate + lo_rr_starttimes[st]
-                #find overlap of overall time axis and the ta of current data set
-                #by this define minimum and maximum indices:
-                for min_idx,dummy in enumerate(ta_file):
-                    if ta[0]<= dummy <= ta[-1]:
-                        break
-                for max_idx in range(-1,-(len(ta_file)+1), -1):
-                    if ta[0]<=ta_file[max_idx] <= ta[-1]:
-                        break
+                if ta_file[0] >= ta[0]: 
+                    startindex = np.abs(ta - ta_file[0]).argmin()
+                    if ta_file[-1] <= ta[-1]:
+                        #find starting index w.r.t. overall time axis:
+                        data[startindex:startindex+len(data_in),idx_ch+2+output_channels] = data_in
+                    else:
+                        endindex = np.abs(ta - ta_file[-1]).argmin()
+                        data_section_length = endindex - startindex + 1
+                        data[startindex:,idx_ch+2+output_channels] = data_in[:data_section_length]
+                else:
+                    startindex =  np.abs(ta[0] - ta_file).argmin()
+                    if ta_file[-1] >= ta[-1]:
+                        data_section_length = len(ta) 
+                        data[:,idx_ch+2+output_channels] = data_in[startindex:startindex+data_section_length]
+                    else:
+                        endindex = np.abs(ta - ta_file[-1]).argmin() +1 
+                        data_section_length = len(data[:endidx])
+                        data[:endidx,idx_ch+2+output_channels] = data_in[startindex:]
+     
+                print 'file time section: ',ta_file[0],ta_file[-1], '(overall window: ', ta[0],ta[-1],')'
 
-                #include the last sample:
-                max_idx = len(ta_file) + max_idx + 1
-                #print min_idx,max_idx
-                overlap = ta_file[min_idx:max_idx]
-                #print ta_file[0],ta_file[-1], '   ', ta[0],ta[-1]
 
-                #find starting index of overlap for current data file time axis
-                idx_ta_file = min_idx#np.argmin(np.abs(ta_file - overlap[0]))
-
-                #find starting index of overlap for overall time axis
-                idx_overall_ta = np.argmin(np.abs(ta - overlap[0])) 
-
-                #set data entries
-                #print 'filling data from file into temporary array'
-
-                data[idx_overall_ta:idx_overall_ta+len(overlap), 
-                                            idx_ch+2+output_channels] = data_in[
-                                            idx_ta_file:idx_ta_file+len(overlap)]
-
-                gc.collect()
-  
 
     #define output file for storing the output data array to:
     w_directory = op.abspath(op.join(os.curdir, w_directory))
@@ -653,7 +663,7 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
     #print '\tSize of usable data arry: ',data.shape
 
     try:
-        outfn = op.join(w_directory, 'birrp_input_data.txt') 
+        outfn = op.join(w_directory, 'birrp_data.txt') 
         outfn = MTfh.make_unique_filename(outfn)
         print '\n\tSave input data array to file: {0}...'.format(outfn)
         np.savetxt(outfn, data)
@@ -1628,7 +1638,7 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
     if out_dir == None:
         output_dir = input_dir
     else:
-        output_dir = op.abspath(op.realpath(op.join(os.curdir,out_dir)))
+        output_dir = op.abspath(op.realpath(op.join(current_dir,out_dir)))
         if not op.isdir(output_dir):
             try:
                 os.makedirs(output_dir)
@@ -1794,6 +1804,7 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
 
     #find the birrp-output j-file for the current station 
     j_filename_list = [i for i in os.listdir(input_dir) if op.basename(i).upper() == ('%s.j'%stationname).upper() ]
+    j_filename_list = [op.join(input_dir,i) for i in j_filename_list]
     try:
         j_filename = j_filename_list[0]
     except:

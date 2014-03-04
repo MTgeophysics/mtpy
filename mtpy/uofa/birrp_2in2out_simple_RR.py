@@ -75,12 +75,12 @@ def main():
         print '\nError - Time series directory not existing: {0}\n'.format(ts_dir)
         return
 
-    try:
+    if 1:
         MTbp.runbirrp2in2out_simple(birrp_exe, stationname, ts_dir,coherence_th, 
                                     rr_stationname, None, starttime, endtime)
-    except:
-        print '\n\tERROR - Could not process input data using BIRRP\n'
-        return
+    # except:
+    #     print '\n\tERROR - Could not process input data using BIRRP\n'
+    #     return
 
 
 if __name__=='__main__':
