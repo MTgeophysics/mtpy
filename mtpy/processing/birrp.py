@@ -92,7 +92,7 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
         wd = op.abspath(op.realpath(op.join(ts_directory,'birrp_processed_rr')))
 
     if output_dir != None:
-        output_dir = op.abspath(output_dir)
+        output_dir = op.abspath(op.join(os.curdir,output_dir))
         if not op.isdir(output_dir) :
             try:
                 os.makedirs(output_dir)
@@ -1628,7 +1628,7 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
     if out_dir == None:
         output_dir = input_dir
     else:
-        output_dir = op.abspath(op.realpath(out_dir))
+        output_dir = op.abspath(op.realpath(op.join(os.curdir,out_dir)))
         if not op.isdir(output_dir):
             try:
                 os.makedirs(output_dir)
