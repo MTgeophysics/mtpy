@@ -489,6 +489,15 @@ class WSData(object):
         
         if data_fn is not None:
             self.data_fn = data_fn
+            
+        if self.data_fn is None:
+            raise WSInputError('Need to input a data file')
+            
+        if os.path.isfile(self.data_fn) is False:
+            raise WSInputError('Could not find {0}, check path'.format(
+                                self.data_fn))
+                                
+        self.save_path = os.path.dirname(self.data_fn)
         
         dfid = file(self.data_fn, 'r')
         dlines = dfid.readlines()
@@ -761,16 +770,17 @@ class WSStation(object):
             
         self.save_path = os.path.dirname(self.station_fn)
         
-        station_locations = np.loadtxt(self.station_fn, skiprows=1, 
-                                       dtype=[('station', '|S10'),
-                                              ('east_c', np.float),
-                                              ('north_c', np.float),
-                                              ('elev', np.float)])
+        self.station_locations = np.loadtxt(self.station_fn, skiprows=1, 
+                                            dtype=[('station', '|S10'),
+                                                   ('east_c', np.float),
+                                                  ('north_c', np.float),
+                                                  ('elev', np.float)])
                                               
-        self.east = station_locations['east_c']
-        self.north = station_locations['north_c']
-        self.names = station_locations['station']
-        self.elev = station_locations['elev']
+        self.east = self.station_locations['east_c']
+        self.north = self.station_locations['north_c']
+        self.names = self.station_locations['station']
+        self.elev = self.station_locations['elev']
+        
         
     def write_vtk_file(self, save_path, vtk_basename='VTKStations'):
         """
@@ -1364,21 +1374,19 @@ class WSMesh(object):
     
     def write_initial_file(self, **kwargs):
         """
-        will write an initial file for wsinv3d.  At the moment can only make a 
-        layered model that can then be manipulated later.  Input for a layered
-        model is in layers which is [(layer1,layer2,resistivity index for reslist)]
+        will write an initial file for wsinv3d.  
         
         Note that x is assumed to be S --> N, y is assumed to be W --> E and
-        z is positive downwards. 
+        z is positive downwards.  This means that index [0, 0, 0] is the 
+        southwest corner of the first layer.  Therefore if you build a model
+        by hand the layer block will look as it should in map view. 
         
-        Also, the xgrid, ygrid and zgrid are assumed to be the relative distance
-        between neighboring nodes.  This is needed because wsinv3d builds the 
-        model from the bottom NW corner assuming the cell width from the init file.
+        Also, the xgrid, ygrid and zgrid are assumed to be the relative 
+        distance between neighboring nodes.  This is needed because wsinv3d 
+        builds the  model from the bottom SW corner assuming the cell width
+        from the init file.
         
-        Therefore the first line or index=0 is the southern most row of cells, so
-        if you build a model by hand the the layer block will look upside down if
-        you were to picture it in map view. Confusing, perhaps, but that is the 
-        way it is.  
+           
         
         Key Word Arguments:
         ----------------------
@@ -1404,16 +1412,19 @@ class WSMesh(object):
             **res_list** : float or list
                         The start resistivity as a float or a list of
                         resistivities that coorespond to the starting
-                        resistivity model **resmodel**.  
-                        This must be input if you input **resmodel**
+                        resistivity model **res_model_int**.  
+                        This must be input if you input **res_model_int**
+                        If res_list is None, then Nr = 0 and the real 
+                        resistivity values are used from **res_model**.
+                        *default* is 100
                         
             **title** : string
                         Title that goes into the first line of savepath/init3d
                         
-            **res_model_int** : np.array((nx,ny,nz))
+            **res_model** : np.array((nx,ny,nz))
                         Starting resistivity model.  Each cell is allocated an
                         integer value that cooresponds to the index value of
-                        **res_list**.  **Note** again that the modeling code 
+                        **res_list**.  .. note:: again that the modeling code 
                         assumes that the first row it reads in is the southern
                         most row and the first column it reads in is the 
                         western most column.  Similarly, the first plane it 
@@ -1452,10 +1463,13 @@ class WSMesh(object):
         
         #check to see what resistivity in input
         if self.res_list is None:
-            self.res_list = 100
-        if type(self.res_list) is not list and \
-           type(self.res_list) is not np.ndarray:
+            nr = 0
+        elif type(self.res_list) is not list and \
+             type(self.res_list) is not np.ndarray:
             self.res_list = [self.res_list]
+            nr = len(self.res_list)
+        else:
+            nr = len(self.res_list)
 
         #--> write file
         ifid = file(self.initial_fn, 'w')
@@ -1463,7 +1477,7 @@ class WSMesh(object):
         ifid.write('{0} {1} {2} {3}\n'.format(self.nodes_north.shape[0],
                                               self.nodes_east.shape[0],
                                               self.nodes_z.shape[0],
-                                              len(self.res_list)))
+                                              nr))
     
         #write S --> N node block
         for ii, nnode in enumerate(self.nodes_north):
@@ -1490,21 +1504,30 @@ class WSMesh(object):
                 ifid.write('\n')
     
         #write the resistivity list
-        for ff in self.res_list:
-            ifid.write('{0:.1f} '.format(ff))
-        ifid.write('\n')
+        if nr > 0:
+            for ff in self.res_list:
+                ifid.write('{0:.1f} '.format(ff))
+            ifid.write('\n')
+        else:
+            pass
         
         if self.res_model == None:
             ifid.close()
         else:
-            if self.res_model_int is None:
-                self.convert_model_to_int()
-            #get similar layers
+            if nr > 0:
+                if self.res_model_int is None:
+                    self.convert_model_to_int()
+                #need to flip the array such that the 1st index written is the
+                #northern most value
+                write_res_model = self.res_model_int[::-1, :, :]
+                #get similar layers
+            else:
+                write_res_model = self.res_model[::-1, :, :]
             l1 = 0
             layers = []
             for zz in range(self.nodes_z.shape[0]-1):
-                if (self.res_model_int[:, :, zz] == 
-                    self.res_model_int[:, :, zz+1]).all() == False:
+                if (write_res_model[:, :, zz] == 
+                    write_res_model[:, :, zz+1]).all() == False:
                     layers.append((l1, zz))
                     l1 = zz+1
             #need to add on the bottom layers
@@ -1515,7 +1538,12 @@ class WSMesh(object):
                 ifid.write('{0} {1}\n'.format(ll[0]+1, ll[1]+1))
                 for nn in range(self.nodes_north.shape[0]):
                     for ee in range(self.nodes_east.shape[0]):
-                        ifid.write('{0:>3.0f}'.format(self.res_model_int[nn, ee, ll[0]]))
+                        if nr > 0:
+                            ifid.write('{0:>3.0f}'.format(
+                                          write_res_model[nn, ee, ll[0]]))
+                        else:
+                            ifid.write('{0:>8.1f}'.format(
+                                          write_res_model[nn, ee, ll[0]]))
                     ifid.write('\n')
             ifid.close()
         
@@ -1655,13 +1683,20 @@ class WSMesh(object):
                     while count_e < n_east:
                         #be sure the indes of res list starts at 0 not 1 as 
                         #in ws3dinv
+
                         self.res_model[count_n, count_e, l1:l2] =\
                                         self.res_list[int(iline[count_e])-1]
                         self.res_model_int[count_n, count_e, l1:l2] =\
-                                            int(iline[count_e])-1
+                                            int(iline[count_e])
                         count_e += 1
                     count_n += 1
                     line_index += 1
+            # Need to be sure that the resistivity array matches
+            # with the grids, such that the first index is the 
+            # furthest south, even though ws3dinv outputs as first
+            # index as furthest north. 
+            self.res_model = self.res_model[::-1, :, :]
+            self.res_model_int = self.res_model_int[::-1, :, :]
 
 #==============================================================================
 # model class                    
