@@ -336,6 +336,10 @@ class ResPhase(object):
         -phaseyy       yy component of phase with shape (nf)
         -phaseyy_err   yy component of phase error with shape (nf)
         
+        -phase_quadrant [ 1 | 3 ] 
+                        * 1 for both phases to be in 0 to 90, 
+                        * 3 for xy to be in 0-90 and yx to be in -180 to 270            
+        
         -res           res array of shape (nf, 2, 2)
         -res_err       res error array of shape (nf, 2, 2)
         -resdet        determinant of res with shape (nf)
@@ -357,7 +361,8 @@ class ResPhase(object):
      
     """
     def __init__(self, z_object=None, res_array=None, res_err_array=None,
-                 phase_array=None, phase_err_array=None, rot_z=0, period=None):
+                 phase_array=None, phase_err_array=None, rot_z=0, period=None,
+                 phase_quadrant=1):
         
         self._Z = z_object
         self.res = res_array
@@ -365,6 +370,7 @@ class ResPhase(object):
         self.phase = phase_array
         self.phase_err = phase_err_array
         self.period = period
+        self.phase_quadrant = phase_quadrant
         
         
         #check to make sure they are the same size
@@ -451,11 +457,13 @@ class ResPhase(object):
         self.phaseyx_err = self.phase_err[:, 1, 0]
         self.phaseyy_err = self.phase_err[:, 1, 1]
         
-        self.phaseyx[np.where(self.phaseyx>120)] -= 180 
-        self.phaseyx[np.where(self.phaseyx<-90)] += 180
-        
-        self.phaseyy[np.where(self.phaseyy>120)] -= 180 
-        self.phaseyy[np.where(self.phaseyy<-90)] += 180
+        if self.phase_quadrant == 1:
+            if self.phaseyx.mean() > 180:
+                self.phaseyx -= 180
+                self.phaseyy -= 180
+            else:
+                self.phaseyx += 180
+                self.phaseyy += 180
         
         #calculate determinant values
         zdet = np.array([np.linalg.det(zz)**.5 for zz in self._Z.z])
@@ -1007,12 +1015,12 @@ class MTplot(object):
     #     class object
     #==========================================================================
 
-    def get_ResPhase(self):
+    def get_ResPhase(self, **kwargs):
         """
         returns a ResPhase object from z_object
         
         """
-        rp = ResPhase(self._Z)
+        rp = ResPhase(self._Z, **kwargs)
         return rp
 
     def get_PhaseTensor(self):
