@@ -149,6 +149,11 @@ class WSData(object):
     ptol                   if periods in edi files don't match period_list
                            then program looks for periods within ptol
                            *defualt* is .15 or 15 percent
+    rotation_angle         Angle to rotate the data relative to north.  Here 
+                           the angle is measure clockwise from North, 
+                           Assuming North is 0 and East is 90.  Rotating data,
+                           and grid to align with regional geoelectric strike
+                           can improve the inversion. *default* is None
     save_path              path to save the data file
     station_fn             full path to station file written by WSStation
     station_locations      numpy structured array for station locations keys:
@@ -210,6 +215,7 @@ class WSData(object):
         self.period_list = kwargs.pop('period_list', None)
         self.edi_list = kwargs.pop('edi_list', None)
         self.station_locations = kwargs.pop('station_locations', None)
+        self.rotation_angle = kwargs.pop('roatation_angle', None)
         
         self.station_east = None
         self.station_north = None
@@ -319,6 +325,8 @@ class WSData(object):
 
             z1 = mtedi.Edi()
             z1.readfile(edi)
+            if self.rotation_angle is not None:
+                z1.rotate(self.rotation_angle)
             print '{0}{1}{0}'.format('-'*20, z1.station) 
             for ff, f1 in enumerate(self.period_list):
                 for kk,f2 in enumerate(z1.period):
@@ -890,6 +898,9 @@ class WSMesh(object):
                          *default* is 5
     res_list             list of resistivity values for starting model
     res_model            starting resistivity model
+    rotation_angle       Angle to rotate the grid to. Angle is measured
+                         positve clockwise assuming North is 0 and east is 90.
+                         *default* is None
     save_path            path to save file to  
     station_fn           full path to station file
     station_locations    location of stations
@@ -953,6 +964,9 @@ class WSMesh(object):
         self.res_list = None
         self.res_model_int = None
         
+        #rotation angle
+        self.rotation_angle = kwargs.pop('rotation_angle', None)
+        
         #inital file stuff
         self.initial_fn = None
         self.station_fn = None
@@ -976,7 +990,7 @@ class WSMesh(object):
         The vertical cells are built to increase in size exponentially with
         depth.  The first cell depth is first_layer_thickness and should be
         about 1/10th the shortest skin depth.  The layers then increase
-        exponentially accoring to pad_root_z for n_layers.  Then the model is
+        on a log scale to z_target_depth.  Then the model is
         padded with pad_z number of cells to extend the depth of the model.
         
         padding = np.round(cell_size_east*pad_root_east**np.arange(start=.5,
@@ -997,7 +1011,8 @@ class WSMesh(object):
                                                      ('east', np.float),
                                                      ('north', np.float), 
                                                      ('east_c', np.float),
-                                                     ('north_c', np.float)])
+                                                     ('north_c', np.float),
+                                                     ('elev', np.float)])
             #get station locations in meters
             for ii, edi in enumerate(self.edi_list):
                 zz = mtedi.Edi()
@@ -1006,6 +1021,7 @@ class WSMesh(object):
                 self.station_locations[ii]['station'] = zz.station
                 self.station_locations[ii]['east'] = east
                 self.station_locations[ii]['north'] = north
+                self.station_locations[ii]['elev'] = zz.elev
              
             #remove the average distance to get coordinates in a relative space
             self.station_locations['east'] -= self.station_locations['east'].mean()
@@ -1178,6 +1194,7 @@ class WSMesh(object):
         stations = WSStation()
         stations.write_station_file(east=self.station_locations['east_c'],
                                     north=self.station_locations['north_c'],
+                                    elev=self.station_locations['elev'],
                                     station_list=self.station_locations['station'],
                                     save_path=self.save_path)
         self.station_fn = stations.station_fn
@@ -1224,7 +1241,7 @@ class WSMesh(object):
         plt.rcParams['figure.subplot.left'] = .08
         plt.rcParams['font.size'] = 7
         
-        fig = plt.figure(fig_num, fig_size=fig_size, dpi=fig_dpi)
+        fig = plt.figure(fig_num, figsize=fig_size, dpi=fig_dpi)
         plt.clf()
         
         #---plot map view    
