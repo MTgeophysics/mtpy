@@ -412,7 +412,7 @@ class Z(object):
                     self._resistivity[idx_f,i,j] = np.abs(self.z[idx_f,i,j])**2/\
                                                   self.freq[idx_f]*0.2
                     self._phase[idx_f,i,j] = math.degrees(cmath.phase(
-                                                    self.z[idx_f,i,j]))%360
+                                                    self.z[idx_f,i,j]))
                 
                     if self.zerr is not None:
                         

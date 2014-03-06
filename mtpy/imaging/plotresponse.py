@@ -321,6 +321,10 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                         0.  Input in degrees.  Note this only changes the xy
                         and yx components.
                         
+        -phase_quadrant [ 1 | 3 ] 
+                        * 1 for both phases to be in 0 to 90, 
+                        * 3 for xy to be in 0-90 and yx to be in -180 to 270  
+                        
         -tipper_limits  limits of the y-axis, *default* is (-1,1)
         
         -skew_limits    limits for skew angle, *default* is (-9,9)
@@ -356,6 +360,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         mt_object = kwargs.pop('mt_object', None)
         period = kwargs.pop('period', None)
         res_phase_object = kwargs.pop('res_phase_object', None)
+        self.phase_quadrant = kwargs.pop('phase_quadrant', 1)
         
         
         #--> initialize an MTplot object
@@ -515,7 +520,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         
         #get the reistivity and phase object
         try:
-            self.rp = self._mt.get_ResPhase()
+            self.rp = self._mt.get_ResPhase(phase_quadrant=self.phase_quadrant)
         except AttributeError:
             pass
         
