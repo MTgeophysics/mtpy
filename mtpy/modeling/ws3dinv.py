@@ -1966,6 +1966,8 @@ class WSModelManipulator(object):
         self.initial_fn = initial_fn
         self.data_fn = data_fn
         self.new_initial_fn = None
+        self.initial_fn_basename = kwargs.pop('initial_fn_basename', 
+                                              'WSInitialModel_mm')
         
         if self.model_fn is not None:
             self.save_path = os.path.dirname(self.model_fn)
@@ -2579,7 +2581,8 @@ class WSModelManipulator(object):
         if save_path is not None:
             self.save_path = save_path
         
-        self.new_initial_fn = os.path.join(self.save_path, 'WSInitialFile_RW_mm')
+        self.new_initial_fn = os.path.join(self.save_path, 
+                                           self.initial_fn_basename)
         wsmesh = WSMesh()
         #pass attribute to wsmesh
         att_names = ['nodes_north', 'nodes_east', 'nodes_z', 'grid_east', 
