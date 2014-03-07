@@ -1740,7 +1740,6 @@ class WSModel(object):
     nodes_east              relative distance between nodes in east direction 
     nodes_north             relative distance between nodes in north direction 
     nodes_z                 relative distance between nodes in east direction 
-    res_list                list of resistivity values for starting model
     res_model               starting resistivity model
     rms                     root mean squared error of data and model
     ======================= ===================================================
@@ -1762,7 +1761,6 @@ class WSModel(object):
         self.rms = None
         self.lagrange = None
         self.res_model = None
-        self.res_list = None
         
         self.nodes_north = None
         self.nodes_east = None
@@ -2027,6 +2025,12 @@ class WSModelManipulator(object):
                                       dtype=np.float))
         
         else:
+            try:
+                if len(self.res_list) > 10:
+                    print ('!! Warning -- ws3dinv can only deal with 10 '
+                           'resistivity values for the initial model')
+            except TypeError:
+                self.res_list = [self.res_list]   
             self.set_res_list(self.res_list) 
         
         
@@ -2251,7 +2255,7 @@ class WSModelManipulator(object):
                       color='k')
         
         #plot the colorbar
-        self.ax2 = mcb.make_axes(self.ax1, orientation='vertical', shrink=.5)
+        self.ax2 = mcb.make_axes(self.ax1, orientation='vertical', shrink=.35)
         seg_cmap = cmap_discretize(self.cmap, len(self.res_list))
         self.cb = mcb.ColorbarBase(self.ax2[0],cmap=seg_cmap,
                                    norm=colors.Normalize(vmin=self.cmin,
@@ -2265,7 +2269,7 @@ class WSModelManipulator(object):
                                 for cc in np.arange(self.cmin, self.cmax+1)])
                             
         #make a resistivity radio button
-        resrb = self.fig.add_axes([.85,.1,.1,.15])
+        resrb = self.fig.add_axes([.85,.1,.1,.2])
         reslabels = ['{0:.4g}'.format(res) for res in self.res_list]
         self.radio_res = widgets.RadioButtons(resrb, reslabels, 
                                         active=self.res_dict[self.res_value])
