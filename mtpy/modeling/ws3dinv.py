@@ -4311,7 +4311,7 @@ class PlotDepthSlice(object):
         for ii in zrange: 
             depth = '{0:.3f} ({1})'.format(self.grid_z[ii], 
                                      self.map_scale)
-            fig = plt.figure(depth, fig_size=self.fig_size, dpi=self.fig_dpi)
+            fig = plt.figure(depth, figsize=self.fig_size, dpi=self.fig_dpi)
             plt.clf()
             ax1 = fig.add_subplot(1, 1, 1, aspect=self.fig_aspect)
             plot_res = np.log10(self.res_model[:, :, ii].T)
@@ -4797,7 +4797,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                
         for ff, per in enumerate(self.plot_period_list):
             print 'Plotting Period: {0:.5g}'.format(per)
-            fig = plt.figure('{0:.5g}'.format(per), fig_size=self.fig_size,
+            fig = plt.figure('{0:.5g}'.format(per), figsize=self.fig_size,
                              dpi=self.fig_dpi)
             fig.clf()
                              
@@ -5522,7 +5522,7 @@ class PlotSlices(object):
                                  self.grid_z[-5])
             
         
-        self.fig = plt.figure(self.fig_num, fig_size=self.fig_size,
+        self.fig = plt.figure(self.fig_num, figsize=self.fig_size,
                               dpi=self.fig_dpi)
         plt.clf()
         gs = gridspec.GridSpec(2, 2,
