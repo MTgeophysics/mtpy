@@ -4635,7 +4635,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
         self.cb_tick_step = kwargs.pop('cb_tick_step', 45)
         self.cb_residual_tick_step = kwargs.pop('cb_residual_tick_step', 3)
         self.cb_pt_pad = kwargs.pop('cb_pt_pad', .90)
-        self.cb_res_pad = kwargs.pop('cb_pt_pad', 1.22)
+        self.cb_res_pad = kwargs.pop('cb_res_pad', 1.22)
         
         
         self.res_limits = kwargs.pop('res_limits', (0,4))
