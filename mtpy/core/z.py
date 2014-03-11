@@ -537,7 +537,7 @@ class Z(object):
                 return 
 
         else:
-            z_new = np.zeros(reserr_array.shape,'float')
+            zerr_new = np.zeros(reserr_array.shape,'float')
             try:
                 if reserr_array.shape != phaseerr_array.shape:
                     print 'Error - shape of "phase" array does not match'+\
