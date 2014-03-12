@@ -14,8 +14,6 @@ Created on Wed Oct 16 14:56:04 2013
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-from matplotlib.ticker import FormatStrFormatter
-import mtpy.utils.conversions as utm2ll
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.colorbar as mcb
@@ -44,7 +42,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
                  of edi files and have the same station names.  If you get
                  an error check this first.
                  
-        
+        **rot90** : [ True | False ] True to rotate residual phase tensor
+                    by 90 degrees. False to leave as is.
+
         **ellipse_dict** : dictionary
                           dictionary of parameters for the phase tensor 
                           ellipses with keys:
@@ -294,6 +294,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
         
         self.residual_pt_list = []
         self.med_filt_kernel = kwargs.pop('med_filt_kernel', None)
+        self.rot90 = kwargs.pop('rot90', False)
         
         #--> set the ellipse properties
         self._ellipse_dict = kwargs.pop('ellipse_dict', {'cmap':'mt_wh2or',
@@ -414,8 +415,32 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.residual_pt_list = []
         for mt1 in self.mt_list1:
             station_find = False
+            fdict1 = dict([(ff, ii) for ii, ff in enumerate(mt1.freq)])
             for mt2 in self.mt_list2:
                 if mt2.station == mt1.station:
+                    fdict2 = dict([(ff, ii) for ii, ff in enumerate(mt2.freq)])
+                    
+                    #need to make sure only matched frequencies are compared
+                    index_1 = []
+                    index_2 = []
+                    for key1 in fdict1.keys():
+                        try:
+                            index_2.append(fdict2[key1])
+                            index_1.append(fdict1[key1])
+                        except KeyError:
+                            'Did not find {0:.4e} Hz in {1}'.format(key1, 
+                                                                  mt2.fn)
+                                                                  
+                    new_z1 = mtpl.mtz.Z(z_array=mt1.z[index_1],
+                                        zerr_array=mt1.z_err[index_1],
+                                        freq=mt1.freq[index_1])
+                    mt1._Z = new_z1
+                    new_z2 = mtpl.mtz.Z(z_array=mt2.z[index_2],
+                                        zerr_array=mt2.z_err[index_2],
+                                        freq=mt2.freq[index_2])
+                    mt2._Z = new_z2
+                    mt1.freq = mt1.freq[index_1]
+                    mt2.freq = mt2.freq[index_2]
                     pt1 = mt1.get_PhaseTensor()
                     pt2 = mt2.get_PhaseTensor()
                     rpt = mtpt.ResidualPhaseTensor(pt1, pt2)
@@ -474,7 +499,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
         suggesting size of change
         
         """
-        color_array = np.array([rpt.residual_pt.phimax[0] for 
+        color_array = np.array([rpt.residual_pt.phimax[0].max() for 
                                     rpt in self.residual_pt_list])
                              
         return color_array.max()
@@ -510,7 +535,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.offsetlist = []
         minlist = []
         maxlist = []
-        plot_periodlist = None
+        plot_period_list = []
         
         #set local parameters with shorter names
         es = self.ellipse_size
@@ -562,7 +587,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
                         
             self.offsetlist.append(offset)
             
-            periodlist = 1./rpt.freq[::-1]
+            period_list = 1./rpt.freq[::-1]
             phimax = rpt.residual_pt.phimax[0][::-1]
             phimin = rpt.residual_pt.phimin[0][::-1]
             azimuth = rpt.residual_pt.azimuth[0][::-1]
@@ -588,20 +613,15 @@ class PlotResidualPTps(mtpl.MTEllipse):
                 raise NameError(self.ellipse_colorby+' is not supported')
             
             #get the number of periods
-            n = len(periodlist)
+            n = len(period_list)
             
-            if ii == 0:
-                plot_periodlist = periodlist
-            
-            else:
-                if n > len(plot_periodlist):
-                    plot_periodlist = periodlist
+            plot_period_list.extend(list(period_list))
             
             #get min and max of the color array for scaling later
             minlist.append(min(colorarray))
             maxlist.append(max(colorarray))
 
-            for jj, ff in enumerate(periodlist):
+            for jj, ff in enumerate(period_list):
                 
                 #make sure the ellipses will be visable
                 eheight = phimin[jj]/emax*es
@@ -610,11 +630,18 @@ class PlotResidualPTps(mtpl.MTEllipse):
                 #create an ellipse scaled by phimin and phimax and orient
                 #the ellipse so that north is up and east is right
                 #need to add 90 to do so instead of subtracting
-                ellipd = patches.Ellipse((offset*self.xstretch,
-                                          np.log10(ff)*self.ystretch),
-                                            width=ewidth,
-                                            height=eheight,
-                                            angle=azimuth[jj]-90)
+                if self.rot90 == True:
+                    ellipd = patches.Ellipse((offset*self.xstretch,
+                                              np.log10(ff)*self.ystretch),
+                                                width=ewidth,
+                                                height=eheight,
+                                                angle=azimuth[jj]-90)
+                else:
+                    ellipd = patches.Ellipse((offset*self.xstretch,
+                                              np.log10(ff)*self.ystretch),
+                                                width=ewidth,
+                                                height=eheight,
+                                                angle=azimuth[jj])
                                             
                 #get ellipse color
                 if cmap.find('seg')>0:
@@ -635,14 +662,15 @@ class PlotResidualPTps(mtpl.MTEllipse):
                 self.ax.add_artist(ellipd)
                 
                 
-        #--> Set plot parameters 
-        self._plot_periodlist = plot_periodlist
-        n = len(plot_periodlist)
+        #--> Set plot parameters
+        plot_period_list = np.array(sorted(list(set(plot_period_list))))
+        self._plot_period_list = plot_period_list
+        n = len(plot_period_list)
         
         
         #calculate minimum period and maximum period with a stretch factor
-        pmin = np.log10(plot_periodlist.min())*self.ystretch
-        pmax = np.log10(plot_periodlist.max())*self.ystretch
+        pmin = int(np.floor(np.log10(self._plot_period_list.min())))
+        pmax = int(np.ceil(np.log10(self._plot_period_list.max())))
         
         #need to sort the offsets and station labels so they plot correctly
         sdtype = [('offset', np.float), ('station','|S10')]
@@ -655,19 +683,21 @@ class PlotResidualPTps(mtpl.MTEllipse):
         
         #set y-ticklabels
         if self.tscale == 'period':
-            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(plot_periodlist[ll])) 
-                            for ll in np.arange(0, n, self.ystep)]+\
-                        ['{0:>4}'.format('{0: .1e}'.format(plot_periodlist[-1]))]
+            yticklabels = [mtpl.labeldict[ii] for ii in range(pmin, pmax+1, 1)]
+#            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(plot_period_list[ll])) 
+#                            for ll in np.arange(0, n, self.ystep)]+\
+#                        ['{0:>4}'.format('{0: .1e}'.format(plot_period_list[-1]))]
             
             self.ax.set_ylabel('Period (s)',
                                fontsize=self.font_size+2,
                                fontweight='bold')
                                
         elif self.tscale == 'frequency':
-            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlist[ll])) 
-                            for ll in np.arange(0, n, self.ystep)]+\
-                            ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlist[-1]))]
-            
+#            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(1./plot_period_list[ll])) 
+#                            for ll in np.arange(0, n, self.ystep)]+\
+#                            ['{0:>4}'.format('{0: .1e}'.format(1./plot_period_list[-1]))]
+#            
+            yticklabels = [mtpl.labeldict[-ii] for ii in range(pmin, pmax+1, 1)]
             self.ax.set_ylabel('Frequency (Hz)',
                                fontsize=self.font_size+2,
                                fontweight='bold')
@@ -678,12 +708,15 @@ class PlotResidualPTps(mtpl.MTEllipse):
          
         #--> set tick locations and labels
         #set y-axis major ticks
-        self.ax.yaxis.set_ticks([np.log10(plot_periodlist[ll])*self.ystretch 
-                             for ll in np.arange(0, n, self.ystep)])
+        self.ax.yaxis.set_ticks(np.arange(pmin*self.ystretch, 
+                                          (pmax+1)*self.ystretch, 
+                                          self.ystretch))
+#        self.ax.yaxis.set_ticks([np.log10(plot_period_list[ll])*self.ystretch 
+#                             for ll in np.arange(0, n, self.ystep)])
         
         #set y-axis minor ticks                     
-        self.ax.yaxis.set_ticks([np.log10(plot_periodlist[ll])*self.ystretch 
-                             for ll in np.arange(0, n, 1)],minor=True)
+#        self.ax.yaxis.set_ticks([np.log10(plot_period_list[ll])*self.ystretch 
+#                             for ll in np.arange(0, n, 1)],minor=True)
         #set y-axis tick labels
         self.ax.set_yticklabels(yticklabels)
         
@@ -708,11 +741,11 @@ class PlotResidualPTps(mtpl.MTEllipse):
             
         #--> set y-limits
         if self.ylimits == None:
-            self.ax.set_ylim(pmax+es*2, pmin-es*2)
+            self.ax.set_ylim(pmax*self.ystretch, pmin*self.ystretch)
         else:
             pmin = np.log10(self.ylimits[0])*self.ystretch
             pmax = np.log10(self.ylimits[1])*self.ystretch
-            self.ax.set_ylim(pmax+es*2, pmin-es*2)
+            self.ax.set_ylim(pmax, pmin)
             
         #--> set title of the plot
         if self.plot_title == None:
