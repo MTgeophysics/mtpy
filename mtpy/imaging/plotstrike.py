@@ -751,8 +751,8 @@ class PlotStrike(object):
                         
             #make axis look correct with N to the top at 90.
             for aa,axh in enumerate(axlist):
-                #set major ticks to be every 15 degrees
-                axh.xaxis.set_major_locator(MultipleLocator(30*np.pi/180))
+                #set major ticks to be every 30 degrees
+                axh.xaxis.set_major_locator(MultipleLocator(2*np.pi/12))
                 
                 #set a light grid                
                 axh.grid(alpha=0.25)
@@ -761,10 +761,10 @@ class PlotStrike(object):
                 plt.setp(axh.yaxis.get_ticklabels(),visible=False)
 
                 #place the correct label at the cardinal directions
-                axh.xaxis.set_ticklabels(['E','','',
-                                          'N','','',
-                                          'W','','',
-                                          'S','',''])
+                axh.xaxis.set_ticklabels(['', 'E', '', '',
+                                          'N', '', '',
+                                          'W', '', '',
+                                          'S', '', ''])
                                           
                 #set invariant axes properties
                 if aa == 0:
