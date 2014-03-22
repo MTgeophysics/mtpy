@@ -410,6 +410,7 @@ class ResPhase(object):
         """
         
         if self._Z is not None:
+            self._Z._compute_res_phase()            
             self.res = self._Z.resistivity
             self.phase = self._Z.phase
             self.res_err = self._Z.resistivity_err
