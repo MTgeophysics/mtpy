@@ -490,8 +490,32 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         self.residual_pt_list = []
         for mt1 in self.mt_list1:
             station_find = False
+            fdict1 = dict([(ff, ii) for ii, ff in enumerate(mt1.freq)])
             for mt2 in self.mt_list2:
                 if mt2.station == mt1.station:
+                    fdict2 = dict([(ff, ii) for ii, ff in enumerate(mt2.freq)])
+                    
+                    #need to make sure only matched frequencies are compared
+                    index_1 = []
+                    index_2 = []
+                    for key1 in fdict1.keys():
+                        try:
+                            index_2.append(fdict2[key1])
+                            index_1.append(fdict1[key1])
+                        except KeyError:
+                            'Did not find {0:.4e} Hz in {1}'.format(key1, 
+                                                                  mt2.fn)
+                                                                  
+                    new_z1 = mtpl.mtz.Z(z_array=mt1.z[index_1],
+                                        zerr_array=mt1.z_err[index_1],
+                                        freq=mt1.freq[index_1])
+                    mt1._Z = new_z1
+                    new_z2 = mtpl.mtz.Z(z_array=mt2.z[index_2],
+                                        zerr_array=mt2.z_err[index_2],
+                                        freq=mt2.freq[index_2])
+                    mt2._Z = new_z2
+                    mt1.freq = mt1.freq[index_1]
+                    mt2.freq = mt2.freq[index_2]
                     pt1 = mt1.get_PhaseTensor()
                     pt2 = mt2.get_PhaseTensor()
                     rpt = mtpt.ResidualPhaseTensor(pt1, pt2)
@@ -507,6 +531,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                     pass
             if station_find == False:
                 print 'Did not find {0} from list 1 in list 2'.format(mt1.station) 
+                 
                 
     def _apply_median_filter(self, kernel=(3, 3)):
         """
