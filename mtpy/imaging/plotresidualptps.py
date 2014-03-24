@@ -368,7 +368,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
             
         #--> set station name properties
         station_dict = kwargs.pop('station_dict', {})
-        self.station_id = station_dict.pop('id', (0, 3))
+        self.station_id = station_dict.pop('id', self.station_id)
         self.station_pad = station_dict.pop('pad', .0005)
         self.station_font_dict = station_dict.pop('font_dict', 
                                                   {'size':self.font_size,
