@@ -410,6 +410,7 @@ class ResPhase(object):
         """
         
         if self._Z is not None:
+            self._Z._compute_res_phase()            
             self.res = self._Z.resistivity
             self.phase = self._Z.phase
             self.res_err = self._Z.resistivity_err
@@ -2100,7 +2101,7 @@ def plot_errorbar(ax, x_array, y_array, y_error=None, x_error=None,
     if x_error is not None:
         x_err_high = np.array(x_error)
         x_err_low = np.array(x_err_high)
-        x_err_low[x_err_high>=x_array] = x_array[x_err_high>=x_array]*.9999
+        x_err_low[x_err_high>=abs(x_array)] = x_array[x_err_high>=abs(x_array)]*.9999
         x_err = [x_err_low, x_err_high]
     else:
         x_err = None
@@ -2108,7 +2109,7 @@ def plot_errorbar(ax, x_array, y_array, y_error=None, x_error=None,
     if y_error is not None:
         y_err_high = np.array(y_error)
         y_err_low = np.array(y_err_high)
-        y_err_low[y_err_high>=y_array] = y_array[y_err_high>=y_array]*.9999
+        y_err_low[y_err_high>=abs(y_array)] = y_array[y_err_high>=abs(y_array)]*.9999
         y_err = [y_err_low, y_err_high]
     else:
         y_err = None
