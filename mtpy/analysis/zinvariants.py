@@ -110,7 +110,7 @@ class Zinvariants:
         self.rotate(rot_z)
         
         # compute the invariants
-        self.compute_invariants
+        self.compute_invariants()
 
     def compute_invariants(self):
         """
@@ -158,6 +158,9 @@ class Zinvariants:
         self.strike = np.zeros(nz)
         self.strike_err = np.zeros(nz)
         
+        c_tf = self._Z.z.all() == 0.0
+        if c_tf == True:
+            return
         # loop over each freq
         for ii in range(nz):
             #compute the mathematical invariants
@@ -171,40 +174,55 @@ class Zinvariants:
             e4 = .5 * (self._Z.z[ii,0,1].imag - self._Z.z[ii,1,0].imag) #berd
             ex = x1 * e1 - x2 * e2 - x3 * e3 + x4 * e4
             
-            d12 = (x1*e2-x2*e1)/ex
-            d34 = (x3*e4-x4*e3)/ex
-            d13 = (x1*e3-x3*e1)/ex
-            d24 = (x2*e4-x4*e2)/ex
-            d41 = (x4*e1-x1*e4)/ex
-            d23 = (x2*e3-x3*e2)/ex
-            
-            inv1 = np.sqrt(x4**2 + x1**2)
-            inv2 = np.sqrt(e4**2 + e1**2)
-            inv3 = np.sqrt(x2**2 + x3**2)/inv1
-            inv4 = np.sqrt(e2**2 + e3**2)/inv2
-            
-            s41 = (x4*e1+x1*e4)/ex
-            
-            inv5 = s41*ex/(inv1*inv2)
-            inv6 = d41*ex/(inv1*inv2)
-            
-            q = np.sqrt((d12-d34)**2 + (d13+d24)**2)
-            
-            inv7 = (d41-d23)/q
-            
-            strikeang = .5*np.arctan2(d12-d34,d13+d24)*(180/np.pi)
-            strikeangerr = abs(.5*np.arcsin(inv7))*(180/np.pi)
-            
-            self.inv1[ii] = inv1
-            self.inv2[ii] = inv2
-            self.inv3[ii] = inv3
-            self.inv4[ii] = inv4
-            self.inv5[ii] = inv5
-            self.inv6[ii] = inv6
-            self.inv7[ii] = inv7
-            self.q[ii] = q
-            self.strike[ii] = strikeang
-            self.strike_err[ii] = strikeangerr
+            if ex == 0.0:
+                print 'Could not compute invariants for {0:5e} Hz'.format(
+                       self._Z.freq[ii])
+                self.inv1[ii] = np.nan
+                self.inv2[ii] = np.nan
+                self.inv3[ii] = np.nan
+                self.inv4[ii] = np.nan
+                self.inv5[ii] = np.nan
+                self.inv6[ii] = np.nan
+                self.inv7[ii] = np.nan
+                self.q[ii] = np.nan
+                self.strike[ii] = np.nan
+                self.strike_err[ii] = np.nan
+            else:
+                    
+                d12 = (x1*e2-x2*e1)/ex
+                d34 = (x3*e4-x4*e3)/ex
+                d13 = (x1*e3-x3*e1)/ex
+                d24 = (x2*e4-x4*e2)/ex
+                d41 = (x4*e1-x1*e4)/ex
+                d23 = (x2*e3-x3*e2)/ex
+                
+                inv1 = np.sqrt(x4**2 + x1**2)
+                inv2 = np.sqrt(e4**2 + e1**2)
+                inv3 = np.sqrt(x2**2 + x3**2)/inv1
+                inv4 = np.sqrt(e2**2 + e3**2)/inv2
+                
+                s41 = (x4*e1+x1*e4)/ex
+                
+                inv5 = s41*ex/(inv1*inv2)
+                inv6 = d41*ex/(inv1*inv2)
+                
+                q = np.sqrt((d12-d34)**2 + (d13+d24)**2)
+                
+                inv7 = (d41-d23)/q
+                
+                strikeang = .5*np.arctan2(d12-d34,d13+d24)*(180/np.pi)
+                strikeangerr = abs(.5*np.arcsin(inv7))*(180/np.pi)
+                
+                self.inv1[ii] = inv1
+                self.inv2[ii] = inv2
+                self.inv3[ii] = inv3
+                self.inv4[ii] = inv4
+                self.inv5[ii] = inv5
+                self.inv6[ii] = inv6
+                self.inv7[ii] = inv7
+                self.q[ii] = q
+                self.strike[ii] = strikeang
+                self.strike_err[ii] = strikeangerr
             
             
     def rotate(self, rot_z):
