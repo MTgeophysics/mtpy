@@ -34,8 +34,8 @@ for r in edi.Z.resistivity:
 	res_tm.append(r[1,0])
 
 for p in edi.Z.phase:
-    phi_te.append(p[0,1])
-    phi_tm.append(p[1,0])
+    phi_te.append(p[0,1]%360)
+    phi_tm.append(p[1,0]%360)
 
 if np.mean(phi_te)>90 and np.mean(phi_tm)>90:
 	phi_te = [i%90 for i in phi_te]
@@ -68,7 +68,7 @@ setp( ax1.get_xticklabels(), visible=False)
 ax2 = subplot(212, sharex=ax1)
 autoscale(False)
 
-ylim(-90,270)
+ylim(-45,135)
 errorbar(periods,phi_te,phierr_te,marker='s',c='b',fmt='x')
 errorbar(periods,phi_tm,phierr_tm,marker='s',c='r',fmt='x')
 ylabel('phase')
