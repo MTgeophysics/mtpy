@@ -85,7 +85,7 @@ class MT(object):
     def __init__(self, fn=None, **kwargs):
         
         self._fn = fn
-        self.name = kwargs.pop('name', None)
+        self.station = kwargs.pop('station', None)
         self._lat = kwargs.pop('lat', None)
         self._lon = kwargs.pop('lon', None)
         self.elev = kwargs.pop('elev', None)
@@ -241,6 +241,7 @@ class MT(object):
         """
         
         self._Z = z_object
+        self._Z._compute_res_phase()
         
         #--> compute phase tensor
         self.pt = MTpt.PhaseTensor(z_object=self._Z, freq=self._Z.freq)
@@ -331,7 +332,7 @@ class MT(object):
         self.elev = self.edi_object.elev
         self.Z = self.edi_object.Z
         self.Tipper = self.edi_object.Tipper
-        self.name = self.edi_object.station
+        self.station = self.edi_object.station
         
         #--> get utm coordinates from lat and lon        
         self._get_utm()
@@ -358,7 +359,7 @@ class MT(object):
         self.edi_object.Tipper = self.Tipper
         self.edi_object.lat = self._lat
         self.edi_object.lon = self._lon
-        self.edi_object.station = self.name
+        self.edi_object.station = self.station
         self.edi_object.zrot = self.rotation_angle
         
         if new_fn is None:
@@ -399,12 +400,14 @@ class MT(object):
             >>> mt1 = mt.MT(fn=r"/home/mt/edi_files/mt01.edi")
             >>> D, new_z = mt1.remove_distortion()
             >>> mt1.write_edi_file(new_fn=r"/home/mt/edi_files/mt01_dr.edi",\
-            >>> ...                new_Z=new_z)
+                                   new_Z=new_z)
         """
         
         D, new_z_object = MTdistortion.remove_distortion(z_object=self.Z)
         
         return D, new_z_object
+        
+    
         
         
         
