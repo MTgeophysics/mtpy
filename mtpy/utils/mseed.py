@@ -50,7 +50,7 @@ def convertfile_ts2miniseed(infile, outfile,channel=None, station = None, locati
         network = ''
 
     delta_t = 1./float(samplingrate)
-    t0 = float(t_min)
+    t0 = np.float64(t_min)
 
     outfilename = op.abspath(outfile)
     try:
