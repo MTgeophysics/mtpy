@@ -61,16 +61,16 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                               'skew_seg' | 'phidet' | 
                                               'ellipticity' ]
                                         
-                                        - 'phimin' -> colors by minimum phase
-                                        - 'phimax' -> colors by maximum phase
-                                        - 'skew' -> colors by beta (skew)
-                                        - 'skew_seg' -> colors by beta in 
-                                                       discrete segments 
-                                                       defined by the range
-                                        - 'phidet' -> colors by determinant of
-                                                     the phase tensor
-                                        - 'ellipticity' -> colors by ellipticity
-                                        *default* is 'phimin'
+                                    - 'phimin' -> colors by minimum phase
+                                    - 'phimax' -> colors by maximum phase
+                                    - 'skew' -> colors by beta (skew)
+                                    - 'skew_seg' -> colors by beta in 
+                                                   discrete segments 
+                                                   defined by the range
+                                    - 'phidet' -> colors by determinant of
+                                                 the phase tensor
+                                    - 'ellipticity' -> colors by ellipticity
+                                    *default* is 'phimin'
                                 
                                * 'range' : tuple (min, max, step)
                                      Need to input at least the min and max
@@ -101,17 +101,17 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                        *default* is vertical
                                        
                       * 'position' : tuple (x,y,dx,dy)
-                                    - x -> lateral position of left hand corner 
-                                          of the color bar in figure between 
-                                          [0,1], 0 is left side
-                                          
-                                    - y -> vertical position of the bottom of 
-                                          the color bar in figure between 
-                                          [0,1], 0 is bottom side.
-                                          
-                                    - dx -> width of the color bar [0,1]
-                                    
-                                    - dy -> height of the color bar [0,1]
+                            - x -> lateral position of left hand corner 
+                                  of the color bar in figure between 
+                                  [0,1], 0 is left side
+                                  
+                            - y -> vertical position of the bottom of 
+                                  the color bar in figure between 
+                                  [0,1], 0 is bottom side.
+                                  
+                            - dx -> width of the color bar [0,1]
+                            
+                            - dy -> height of the color bar [0,1]
         
         **xpad** : float
                    padding in the east-west direction of plot boundaries.  Note
@@ -157,14 +157,14 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                      
                      * 'freq' -> plot vertical scale in freq
         
-        **mapscale** : [ 'latlon ' | 'eastnorth' | 'eastnorthkm' ]
+        **map_scale** : [ 'deg' | 'm' | 'km' ]
                        Scale of the map coordinates.
                        
-                       * 'latlon' --> degrees in latitude and longitude
+                       * 'deg' --> degrees in latitude and longitude
                        
-                       * 'eastnorth' --> meters for easting and northing
+                       * 'm' --> meters for easting and northing
                        
-                       * 'eastnorthkm' --> kilometers for easting and northing
+                       * 'km' --> kilometers for easting and northing
              
         **image_dict** : dictionary of image properties
         
@@ -172,7 +172,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                    full path to image file name
                                    
                          * 'extent' : tuple (xmin, xmax, ymin, ymax)
-                                     coordinates according to mapscale. Must be
+                                     coordinates according to map_scale. Must be
                                      input if image file is not None.
          
         **plot_yn** : [ 'y' | 'n' ]
@@ -208,6 +208,10 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                               reference point estimate relative distance to.  
                               This point will be (0,0) on the map and 
                               everything else is referenced to this point
+        
+        **rot90** : [ 0 | 90 | 180 | 270 ]
+                    rotate the ellipses by this amout, *default* is 90
+                    angle of long axis is rot90-azimuth
          
     :Example: ::
         
@@ -281,7 +285,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         -ftol                 tolerance to look for matching freq
         -jj                   index of plot freq
 
-        -mapscale             scale of map
+        -map_scale             scale of map
         
         -mt_list               list of mtplot.MTplot instances containing all 
                               the important information for each station
@@ -325,7 +329,8 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         self.mt_list1 = mtpl.get_mtlist(fn_list=fn_list1)
         self.mt_list2 = mtpl.get_mtlist(fn_list=fn_list2)
         
-        self.residual_pt_list = []
+        self.residual_pt_list = None
+        self.plot_data = None
         self.med_filt_kernel = kwargs.pop('med_filt_kernel', None)
         
         
@@ -353,29 +358,35 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         
         self.tscale = kwargs.pop('tscale', 'period')
         self.fig_size = kwargs.pop('fig_size', [8, 8])
-        self.mapscale = kwargs.pop('mapscale', 'latlon')
-        if self.mapscale == 'latlon':        
-            self.xpad = kwargs.pop('xpad', .001)
-            self.ypad = kwargs.pop('ypad', .001)
+        self.map_scale = kwargs.pop('map_scale', 'deg')
+        self.rot90 = kwargs.pop('rot90', 90)
+        if self.map_scale == 'deg':        
+            self.xpad = kwargs.pop('xpad', .005)
+            self.ypad = kwargs.pop('ypad', .005)
             #--> set the ellipse properties -------------------
             self._ellipse_dict = kwargs.pop('ellipse_dict', 
-                                            {'range':(0,1), 'cmap':'mt_wh2or',
-                                             'size':.005}) 
+                                            {'range':(0,5), 'cmap':'mt_wh2or',
+                                             'size':.005,
+                                             'colorby':'geometric_mean'}) 
             self._read_ellipse_dict()
-        elif self.mapscale == 'eastnorth':        
+        elif self.map_scale == 'm':        
             self.xpad = kwargs.pop('xpad', 1000)
             self.ypad = kwargs.pop('ypad', 1000)
             #--> set the ellipse properties -------------------
             self._ellipse_dict = kwargs.pop('ellipse_dict', 
-                                            {'range':(0,1), 'cmap':'mt_wh2or',
-                                             'size':500})
-        elif self.mapscale == 'eastnorthkm':        
+                                            {'range':(0,5), 'cmap':'mt_wh2or',
+                                             'size':500,
+                                             'colorby':'geometric_mean'})
+            self._read_ellipse_dict()
+        elif self.map_scale == 'km':        
             self.xpad = kwargs.pop('xpad', 1)
             self.ypad = kwargs.pop('ypad', 1)
             #--> set the ellipse properties -------------------
             self._ellipse_dict = kwargs.pop('ellipse_dict', 
-                                            {'range':(0,1), 'cmap':'mt_wh2or',
-                                             'size':.5})
+                                            {'range':(0,5), 'cmap':'mt_wh2or',
+                                             'size':.5,
+                                             'colorby':'geometric_mean'})
+            self._read_ellipse_dict()
         self.font_size = kwargs.pop('font_size', 7)
         
         #--> set the freq to plot
@@ -490,50 +501,111 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         self.residual_pt_list = []
         for mt1 in self.mt_list1:
             station_find = False
-            fdict1 = dict([(ff, ii) for ii, ff in enumerate(mt1.freq)])
+            
             for mt2 in self.mt_list2:
                 if mt2.station == mt1.station:
-                    fdict2 = dict([(ff, ii) for ii, ff in enumerate(mt2.freq)])
+
+                    fdict1 = dict([(np.round(ff, 5), ii) 
+                                    for ii, ff in enumerate(mt1.freq)])
                     
-                    #need to make sure only matched frequencies are compared
-                    index_1 = []
-                    index_2 = []
-                    for key1 in fdict1.keys():
+                    fdict2 = dict([(np.round(ff, 5), jj) 
+                                    for jj, ff in enumerate(mt2.freq)])
+                    f1_index_list = []
+                    f2_index_list = []
+                    for ff in sorted(fdict1.keys()):
                         try:
-                            index_2.append(fdict2[key1])
-                            index_1.append(fdict1[key1])
+                            f2_index_list.append(fdict2[ff])
+                            f1_index_list.append(fdict1[ff])
                         except KeyError:
-                            'Did not find {0:.4e} Hz in {1}'.format(key1, 
-                                                                  mt2.fn)
-                                                                  
-                    new_z1 = mtpl.mtz.Z(z_array=mt1.z[index_1],
-                                        zerr_array=mt1.z_err[index_1],
-                                        freq=mt1.freq[index_1])
-                    mt1._Z = new_z1
-                    new_z2 = mtpl.mtz.Z(z_array=mt2.z[index_2],
-                                        zerr_array=mt2.z_err[index_2],
-                                        freq=mt2.freq[index_2])
-                    mt2._Z = new_z2
-                    mt1.freq = mt1.freq[index_1]
-                    mt2.freq = mt2.freq[index_2]
-                    pt1 = mt1.get_PhaseTensor()
-                    pt2 = mt2.get_PhaseTensor()
-                    rpt = mtpt.ResidualPhaseTensor(pt1, pt2)
-                    rpt.compute_residual_pt(pt1, pt2)
-                    rpt.station = mt1.station
-                    rpt.lat = mt1.lat
-                    rpt.lon = mt1.lon
-                    rpt.freq = mt1.freq
-                    self.residual_pt_list.append(rpt)
-                    station_find = True
-                    break
+                            pass
+
+                    try:
+                        new_Z1 = mtpl.mtz.Z(z_array=mt1.z[f1_index_list],
+                                            zerr_array=mt1.z_err[f1_index_list],
+                                            freq=mt1.freq[f1_index_list])
+                        new_Z2 = mtpl.mtz.Z(z_array=mt2.z[f2_index_list],
+                                            zerr_array=mt2.z_err[f2_index_list],
+                                            freq=mt2.freq[f2_index_list])
+                       
+                        pt1 = mtpt.PhaseTensor(z_object=new_Z1)
+                        pt2 = mtpt.PhaseTensor(z_object=new_Z2)
+
+                        rpt = mtpt.ResidualPhaseTensor(pt1, pt2)
+                        rpt.compute_residual_pt(pt1, pt2)
+                        rpt.station = mt1.station
+                        rpt.lat = mt1.lat
+                        rpt.lon = mt1.lon
+                        rpt.freq = new_Z1.freq
+                        self.residual_pt_list.append(rpt)
+                        station_find = True
+                        break
+                    except IndexError:
+                        for key in sorted(fdict2.keys()):
+                            print key, fdict2[key]
+                        
                 else:
                     pass
             if station_find == False:
                 print 'Did not find {0} from list 1 in list 2'.format(mt1.station) 
                  
-                
-    def _apply_median_filter(self, kernel=(3, 3)):
+    def _get_plot_freq_data(self):
+        """
+        get the data to plot in the form of arrays
+        
+        """
+        
+        if self.residual_pt_list is None:
+            self._compute_residual_pt()
+            
+        data_count = 0
+        d_index_list = []
+        for r_index, rpt in enumerate(self.residual_pt_list):
+            try:
+                dd = np.where(rpt.freq == self.plot_freq)[0][0]
+                data_count += 1
+                d_index_list.append([data_count, r_index, dd])
+            except IndexError:
+                try:
+                    dd = np.where((rpt.freq >= self.plot_freq*(1-self.ftol)) &
+                             (rpt.freq <= self.plot_freq*(1+self.ftol)))[0][0]
+                    data_count += 1
+                    d_index_list.append([data_count-1, r_index, dd])
+                except IndexError:
+                    pass
+            
+        if data_count == 0:
+            raise mtpl.mtex.MTpyError_value('No data at {0:.5e} Hz'.format(
+                                            self.plot_freq))
+
+        self.plot_data = np.zeros(data_count, dtype=[('phimin', np.float),
+                                                    ('phimax', np.float),
+                                                    ('skew', np.float),
+                                                    ('azimuth', np.float),
+                                                    ('ellipticity', np.float),
+                                                    ('station', '|S20'),
+                                                    ('lat', np.float),
+                                                    ('lon', np.float),
+                                                    ('geometric_mean', np.float)])
+        
+        for ii, r_index, f_index in d_index_list:
+            
+            rpt = self.residual_pt_list[r_index]
+
+            self.plot_data[ii]['phimin'] = rpt.residual_pt.phimin[0][f_index]
+            self.plot_data[ii]['phimax'] = rpt.residual_pt.phimax[0][f_index]
+            self.plot_data[ii]['skew'] = rpt.residual_pt.beta[0][f_index]
+            self.plot_data[ii]['azimuth'] = rpt.residual_pt.azimuth[0][f_index]
+            self.plot_data[ii]['ellipticity'] = rpt.residual_pt.ellipticity[0][f_index]
+            self.plot_data[ii]['station'] = rpt.station
+            self.plot_data[ii]['lat'] = rpt.lat
+            self.plot_data[ii]['lon'] = rpt.lon
+            self.plot_data[ii]['geometric_mean'] = np.sqrt(abs(
+                                          rpt.residual_pt.phimin[0][f_index]*\
+                                          rpt.residual_pt.phimax[0][f_index]))
+
+            
+                     
+    def _apply_median_filter(self):
         """
         apply a median filter to the data to remove extreme outliers
         
@@ -541,55 +613,21 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         
         """
         
-        if self.ellipse_colorby == 'phimin':
-            color_array = np.array([rpt.residual_pt.phimin[0] for 
-                                    rpt in self.residual_pt_list])
-            filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
-            for ss in range(filt_array.shape[0]):
-                self.residual_pt_list[ss].residual_pt.phimin[0] = filt_array[ss]
-        
-        elif self.ellipse_colorby == 'phimax':
-            color_array = np.array([rpt.residual_pt.phimax[0] for 
-                                    rpt in self.residual_pt_list])
-            filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
-            for ss in range(filt_array.shape[0]):
-                self.residual_pt_list[ss].residual_pt.phimax[0] = filt_array[ss]
-                
-        elif self.ellipse_colorby == 'skew':
-            color_array = np.array([rpt.residual_pt.beta[0] for 
-                                    rpt in self.residual_pt_list])
-            filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
-            for ss in range(filt_array.shape[0]):
-                self.residual_pt_list[ss].residual_pt.beta[0] = filt_array[ss]
-        
-        #--> need to do azimuth for all
-        color_array = np.array([rpt.residual_pt.azimuth[0] for 
-                                rpt in self.residual_pt_list])
-        filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
-        for ss in range(filt_array.shape[0]):
-            self.residual_pt_list[ss].residual_pt.azimuth[0] = filt_array[ss] 
+        for key in ['phimin', 'phimax', 'skew', 'azimuth', 'ellipticity']:
+            self.plot_data[key] = sps.medfilt(self.plot_data[key], 
+                                              self.med_filt_kernel[0])
             
-    def _get_ellipse_size_max(self, freq_spot):
-        """
-        get the maximum size of ellipses for the given period to normalize by
-        suggesting size of change
-        
-        """
-        color_array = np.array([rpt.residual_pt.phimax[0] for 
-                                    rpt in self.residual_pt_list])
-                             
-        return color_array[:, freq_spot].max()
       
     def plot(self):
         """
         plot residual phase tensor
         """                            
         #get residual phase tensor for plotting        
-        self._compute_residual_pt()
+        self._get_plot_freq_data()
         
         #filter data if desired
         if self.med_filt_kernel is not None:
-            self._apply_median_filter(kernel=self.med_filt_kernel)
+            self._apply_median_filter()
         
         
         #set position properties for the plot
@@ -645,200 +683,149 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
 
         #--> set the bounds on the segmented colormap
         if cmap == 'mt_seg_bl2wh2rd':
-            bounds = np.arange(ckmin, ckmax+ckstep, ckstep) 
+            bounds = np.arange(ckmin, ckmax+ckstep, ckstep)
+            nseg = float((ckmax-ckmin)/(2*ckstep)) 
             
-        #set tick parameters depending on the mapscale
-        if self.mapscale == 'latlon':
+        #set tick parameters depending on the map_scale
+        if self.map_scale == 'deg':
             self.tickstrfmt = '%.3f'
             
-        elif self.mapscale == 'eastnorth' or self.mapscale == 'eastnorthkm':
+        elif self.map_scale == 'm' or self.map_scale == 'km':
             self.tickstrfmt = '%.0f'
         
         #make some empty arrays
         elliplist=[]
-        latlist = np.zeros(len(self.residual_pt_list))
-        lonlist = np.zeros(len(self.residual_pt_list))
-        self.plot_xarr = np.zeros(len(self.residual_pt_list))
-        self.plot_yarr = np.zeros(len(self.residual_pt_list))
-        
-        
-        for ii, rpt in enumerate(self.residual_pt_list):
-            #try to find the freq in the freq list of each file
-            freqfind = [ff for ff, f2 in enumerate(rpt.freq) 
-                         if f2 > self.plot_freq*(1-self.ftol) and
-                            f2 < self.plot_freq*(1+self.ftol)]
-            try:
-                self.jj = freqfind[0]
-                jj = self.jj
+        self.plot_xarr = np.zeros(len(self.plot_data))
+        self.plot_yarr = np.zeros(len(self.plot_data))
+
+        #--> get size of largest ellipse for this frequency for 
+        #    normalization to give an indication of the size of 
+        #    change.
+        emax = self.plot_data[self.ellipse_colorby].max()
+        for ii, rpt in enumerate(self.plot_data):
+            #if map scale is lat lon set parameters                
+            if self.map_scale == 'deg':
+                plotx = rpt['lon']-refpoint[0]
+                ploty = rpt['lat']-refpoint[1]
+            
+            #if map scale is in meters easting and northing
+            elif self.map_scale == 'm':
+                zone, east, north = utm2ll.LLtoUTM(23, rpt['lat'], 
+                                                   rpt['lon'])
                 
-                #--> get size of largest ellipse for this frequency for 
-                #    normalization to give an indication of the size of 
-                #    change.
-                emax = self._get_ellipse_size_max(jj)
-                
-                #if map scale is lat lon set parameters                
-                if self.mapscale == 'latlon':
-                    latlist[ii] = rpt.lat
-                    lonlist[ii] = rpt.lon
-                    plotx = rpt.lon-refpoint[0]
-                    ploty = rpt.lat-refpoint[1]
-                
-                #if map scale is in meters easting and northing
-                elif self.mapscale == 'eastnorth':
-                    zone, east, north = utm2ll.LLtoUTM(23, rpt.lat, rpt.lon)
+                #set the first point read in as a refernce other points                    
+                if ii == 0:
+                    zone1 = zone
+                    plotx = east-refpoint[0]
+                    ploty = north-refpoint[1]
                     
-                    #set the first point read in as a refernce other points                    
-                    if ii == 0:
-                        zone1 = zone
+                #read in all the other point
+                else:
+                    #check to make sure the zone is the same this needs
+                    #to be more rigorously done
+                    if zone1 != zone:
+                        print 'Zone change at station {0}'.format(
+                                                            rpt['station'])
+                        if zone1[0:2] == zone[0:2]:
+                            pass
+                        elif int(zone1[0:2])<int(zone[0:2]):
+                            east += 500000
+                        else:
+                            east -= -500000
                         plotx = east-refpoint[0]
                         ploty = north-refpoint[1]
-                        
-                    #read in all the other point
                     else:
-                        #check to make sure the zone is the same this needs
-                        #to be more rigorously done
-                        if zone1!=zone:
-                            print 'Zone change at station '+rpt.station
-                            if zone1[0:2] == zone[0:2]:
-                                pass
-                            elif int(zone1[0:2])<int(zone[0:2]):
-                                east += 500000
-                            else:
-                                east -= -500000
-                            latlist[ii] = north-refpoint[1]
-                            lonlist[ii] = east-refpoint[0]
-                            plotx = east-refpoint[0]
-                            ploty = north-refpoint[1]
-                        else:
-                            latlist[ii] = north-refpoint[1]
-                            lonlist[ii] = east-refpoint[0]
-                            plotx = east-refpoint[0]
-                            ploty = north-refpoint[1]
+                        plotx = east-refpoint[0]
+                        ploty = north-refpoint[1]
                 
-                #if mapscale is in km easting and northing
-                elif self.mapscale == 'eastnorthkm':
-                    zone,east,north = utm2ll.LLtoUTM(23, rpt.lat, rpt.lon)
-                    if ii == 0:
-                        zone1 = zone
+            #if map_scale is in km easting and northing
+            elif self.map_scale == 'km':
+                zone, east, north = utm2ll.LLtoUTM(23, rpt['lat'], 
+                                                       rpt['lon'])
+                if ii == 0:
+                    zone1 = zone
+                    plotx = (east-refpoint[0])/1000.
+                    ploty = (north-refpoint[1])/1000.
+                
+                else:
+                    if zone1 != zone:
+                        print 'Zone change at station {0}'.format(
+                                                            rpt['station'])
+                        if zone1[0:2] == zone[0:2]:
+                            pass
+                        elif int(zone1[0:2])<int(zone[0:2]):
+                            east += 500000
+                        else:
+                            east -= 500000
+
                         plotx = (east-refpoint[0])/1000.
                         ploty = (north-refpoint[1])/1000.
-                    
                     else:
-                        if zone1!=zone:
-                            print 'Zone change at station '+rpt.station
-                            if zone1[0:2] == zone[0:2]:
-                                pass
-                            elif int(zone1[0:2])<int(zone[0:2]):
-                                east += 500000
-                            else:
-                                east -= 500000
-                            latlist[ii] = (north-refpoint[1])/1000.
-                            lonlist[ii] = (east-refpoint[0])/1000.
-                            plotx = (east-refpoint[0])/1000.
-                            ploty = (north-refpoint[1])/1000.
-                        else:
-                            latlist[ii] = (north-refpoint[1])/1000.
-                            lonlist[ii] = (east-refpoint[0])/1000.
-                            plotx = (east-refpoint[0])/1000.
-                            ploty = (north-refpoint[1])/1000.
-                else:
-                    raise NameError('mapscale not recognized')
+                        plotx = (east-refpoint[0])/1000.
+                        ploty = (north-refpoint[1])/1000.
                 
-                #put the location of each ellipse into an array in x and y
-                self.plot_xarr[ii] = plotx
-                self.plot_yarr[ii] = ploty
-                
-                #--> set local variables
-                phimin = np.nan_to_num(rpt.residual_pt.phimin[0][jj])
-                phimax = np.nan_to_num(rpt.residual_pt.phimax[0][jj])
-                eangle = np.nan_to_num(rpt.residual_pt.azimuth[0][jj])
-                
-                if cmap == 'mt_seg_bl2wh2rd':
-                    bounds = np.arange(ckmin, ckmax+ckstep, ckstep)
-                    nseg = float((ckmax-ckmin)/(2*ckstep))
-        
-                #get the properties to color the ellipses by
-                if self.ellipse_colorby == 'phiminang' or \
-                   self.ellipse_colorby == 'phimin':
-                    colorarray = rpt.residual_pt.phimin[0][jj]
+            #put the location of each ellipse into an array in x and y
+            self.plot_xarr[ii] = plotx
+            self.plot_yarr[ii] = ploty
+
+            #--> get ellipse properties
+            #if the ellipse size is not physically correct make it a dot
+            if rpt['phimax'] == 0 or rpt['phimax'] > 100 or\
+               rpt['phimin'] == 0 or rpt['phimin'] > 100:
+                eheight=.0000001*es
+                ewidth=.0000001*es
+                print 'Bad data at {0}'.format(rpt['station'])
+            else:
+                scaling = es/emax
+                eheight = rpt['phimin']*scaling
+                ewidth = rpt['phimax']*scaling
             
-                                                   
-                elif self.ellipse_colorby == 'phidet':
-                     colorarray = np.sqrt(abs(rpt.det[0][jj]))*(180/np.pi)
-                     
+            #make an ellipse
+            ellipd=patches.Ellipse((plotx,ploty),
+                                   width=ewidth,
+                                   height=eheight,
+                                   angle=self.rot90-rpt['azimuth'])
+                                   
+            #get ellipse color
+            if cmap.find('seg')>0:
+                ellipd.set_facecolor(mtcl.get_plot_color(rpt[self.ellipse_colorby],
+                                                         self.ellipse_colorby,
+                                                         cmap,
+                                                         ckmin,
+                                                         ckmax,
+                                                         bounds=bounds))
+            else:
+                ellipd.set_facecolor(mtcl.get_plot_color(rpt[self.ellipse_colorby],
+                                                         self.ellipse_colorby,
+                                                         cmap,
+                                                         ckmin,
+                                                         ckmax))
+            
+            #==> add ellipse to the plot
+            elliplist.append(ellipd)
+            self.ax.add_artist(ellipd)
                     
-                elif self.ellipse_colorby == 'skew' or\
-                     self.ellipse_colorby == 'skew_seg':
-                    colorarray = rpt.residual_pt.beta[0][jj]
-                    
-                elif self.ellipse_colorby == 'ellipticity':
-                    colorarray = rpt.residual_pt.ellipticity[0][jj]
-                    
-                else:
-                    raise NameError(self.ellipse_colorby+' is not supported')
-                
-                #--> get ellipse properties
-                #if the ellipse size is not physically correct make it a dot
-                if phimax == 0 or phimax>100 or phimin == 0 or phimin>100:
-                    eheight=.0000001*es
-                    ewidth=.0000001*es
-                    print rpt.station
-                else:
-                    scaling = es/emax
-                    eheight = phimin*scaling
-                    ewidth = phimax*scaling
-                
-                #make an ellipse
-                ellipd=patches.Ellipse((plotx,ploty),
-                                       width=ewidth,
-                                       height=eheight,
-                                       angle=90-eangle)
-                
-                #get ellipse color
-                if cmap.find('seg')>0:
-                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray,
-                                                             self.ellipse_colorby,
-                                                             cmap,
-                                                             ckmin,
-                                                             ckmax,
-                                                             bounds=bounds))
-                else:
-                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray,
-                                                             self.ellipse_colorby,
-                                                             cmap,
-                                                             ckmin,
-                                                             ckmax))
-                
-                #==> add ellipse to the plot
-                elliplist.append(ellipd)
-                self.ax.add_artist(ellipd)
-                        
-                #------------Plot station name------------------------------
-                try:
-                    self.ax.text(plotx,
-                            ploty+self.station_pad,
-                            rpt.station[self.station_id[0]:self.station_id[1]],
-                            horizontalalignment='center',
-                            verticalalignment='baseline',
-                            fontdict=self.station_font_dict)
-                except AttributeError:
-                    pass
-                
-            #==> print a message if couldn't find the freq
-            except IndexError:
-                print 'Did not find {0:.5g} Hz for station {1}'.format(
-                                               self.plot_freq, rpt.station)
+            #------------Plot station name------------------------------
+            try:
+                self.ax.text(plotx,
+                        ploty+self.station_pad,
+                        rpt['station'][self.station_id[0]:self.station_id[1]],
+                        horizontalalignment='center',
+                        verticalalignment='baseline',
+                        fontdict=self.station_font_dict)
+            except AttributeError:
+                pass
         
         #--> set axes properties depending on map scale------------------------
-        if self.mapscale == 'latlon':    
-            self.ax.set_xlabel('longitude',
+        if self.map_scale == 'deg':    
+            self.ax.set_xlabel('Longitude',
                                fontsize=self.font_size+2,
                                fontweight='bold')
-            self.ax.set_ylabel('latitude',
+            self.ax.set_ylabel('Latitude',
                                fontsize=self.font_size+2,
                                fontweight='bold')
             
-        elif self.mapscale == 'eastnorth':
+        elif self.map_scale == 'm':
             self.ax.set_xlabel('Easting (m)',
                                fontsize=self.font_size+2,
                                fontweight='bold')
@@ -846,7 +833,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                fontsize=self.font_size+2,
                                fontweight='bold')
       
-        elif self.mapscale == 'eastnorthkm':
+        elif self.map_scale == 'km':
             self.ax.set_xlabel('Easting (km)',
                                fontsize=self.font_size+2,
                                fontweight='bold')
@@ -872,7 +859,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             titlefreq='{0:.5g} (Hz)'.format(self.plot_freq)
         
         if not self.plot_title:
-            self.ax.set_title('Phase Tensor Map for '+titlefreq,
+            self.ax.set_title('Phase Tensor Map for {0}'.format(titlefreq),
                               fontsize=self.font_size+2,fontweight='bold')
         else:
             self.ax.set_title(self.plot_title+titlefreq,
