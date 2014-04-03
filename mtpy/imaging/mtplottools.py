@@ -33,7 +33,8 @@ ckdict = {'phiminang' : r'$\Phi_{min}$ (deg)',
           'phidet' : r'Det{$\Phi$} (deg)',
           'skew' : r'Skew (deg)',
           'ellipticity' : r'Ellipticity',
-          'skew_seg' : r'Skew (deg)'}
+          'skew_seg' : r'Skew (deg)',
+          'geometric_mean' : r'$\sqrt{\Phi_{min} \cdot \Phi_{max}}$' }
           
 
             
@@ -410,7 +411,7 @@ class ResPhase(object):
         """
         
         if self._Z is not None:
-            self._Z._compute_res_phase()            
+            self._Z._compute_res_phase()
             self.res = self._Z.resistivity
             self.phase = self._Z.phase
             self.res_err = self._Z.resistivity_err
@@ -911,18 +912,19 @@ class MTplot(object):
             
     def _check_freq_order(self):
         #make sure things are in order from highest freq first
-        if self._freq[0] < self._freq[1]:
-            print 'Flipping arrays to be ordered from short period to long'
-            self._freq = self._freq.copy()[::-1]
-            
-            self._Z.z = self._Z.z.copy()[::-1]
-            self._Z.zerr = self._Z.zerr.copy()[::-1]
-            self._Z.freq = self._freq.copy()
-            
-            if self._Tipper.tipper is not None:
-                self._Tipper.tipper = self._Tipper.tipper.copy()[::-1]
-                self._Tipper.tippererr = self._Tipper.tippererr.copy()[::-1]
-                self._Tipper.freq = self._freq.copy()
+        if len(self._freq) > 1:
+            if self._freq[0] < self._freq[1]:
+                print 'Flipping arrays to be ordered from short period to long'
+                self._freq = self._freq.copy()[::-1]
+                
+                self._Z.z = self._Z.z.copy()[::-1]
+                self._Z.zerr = self._Z.zerr.copy()[::-1]
+                self._Z.freq = self._freq.copy()
+                
+                if self._Tipper.tipper is not None:
+                    self._Tipper.tipper = self._Tipper.tipper.copy()[::-1]
+                    self._Tipper.tippererr = self._Tipper.tippererr.copy()[::-1]
+                    self._Tipper.freq = self._freq.copy()
 
         
     #==========================================================================
@@ -2099,18 +2101,20 @@ def plot_errorbar(ax, x_array, y_array, y_error=None, x_error=None,
     """
     #this is to make sure error bars plot in full and not just a dashed line
     if x_error is not None:
-        x_err_high = np.array(x_error)
-        x_err_low = np.array(x_err_high)
-        x_err_low[x_err_high>=abs(x_array)] = x_array[x_err_high>=abs(x_array)]*.9999
-        x_err = [x_err_low, x_err_high]
+#        x_err_high = np.array(x_error)
+#        x_err_low = np.array(x_err_high)
+#        x_err_low[x_err_high>=x_array] = x_array[x_err_high>=x_array]*.9999
+#        x_err = [x_err_low, x_err_high]
+        x_err = x_error
     else:
         x_err = None
     
     if y_error is not None:
-        y_err_high = np.array(y_error)
-        y_err_low = np.array(y_err_high)
-        y_err_low[y_err_high>=abs(y_array)] = y_array[y_err_high>=abs(y_array)]*.9999
-        y_err = [y_err_low, y_err_high]
+#        y_err_high = np.array(y_error)
+#        y_err_low = np.array(y_err_high)
+#        y_err_low[y_err_high>=y_array] = y_array[y_err_high>=y_array]*.9999
+#        y_err = [y_err_low, y_err_high]
+        y_err = y_error
     else:
         y_err = None
         
