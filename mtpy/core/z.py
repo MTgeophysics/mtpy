@@ -143,7 +143,7 @@ class Z(object):
                     self._zerr[0] = zerr_array            
 
         self.rotation_angle = 0.
-        if self.z is not None:
+        if self._z is not None:
             self.rotation_angle = np.zeros((len(self._z)))
         
         #make attributes for resistivity and phase
@@ -152,8 +152,9 @@ class Z(object):
         
         self._phase = None
         self._phase_err = None
-        
-        self._compute_res_phase()
+        if self._freq is not None:
+            if self._z is not None:
+                self._compute_res_phase()
 
     #---frequency-------------------------------------------------------------
     def _set_freq(self, lo_freq):
