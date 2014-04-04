@@ -1874,7 +1874,7 @@ class Data():
         for idx, zone in enumerate(utmzones):
             if zone == main_utmzone:
                 continue
-            utm = MTcv.LLtoUTM(23,edi.lat,edi.lon,main_utmzone)
+            utm = MTcv.LLtoUTM(23,self.station_coords[idx][0],self.station_coords[idx][1],main_utmzone)
 
             lo_easts[idx] = utm[1]
             lo_norths[idx] = utm[2]
