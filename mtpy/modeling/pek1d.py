@@ -11,7 +11,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as si
-
+from subprocess import Popen
 
 
 class Setup():
@@ -41,16 +41,23 @@ class Setup():
         self.strike_fmax = 0.01 # maximum frequency to calculate strike
         self.lat = 0.0
         self.lon = 0.0
+        self.inmodel_vals = {0:[100,100,0]} # dictionary containing values for 
+                                            # inmodel file, in format topdepth: [minres,maxres,strike]
         
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])
-
-    
-    def generate_inputfiles(self):
-        os.chdir(self.wd)
+       
         
+    
+    def generate_inputfiles(self,modeldir = None):
+
+        os.chdir(self.wd)    
         self.write_datafile()
         self.write_ctlfile()
+        if self.run_input[-1] == 1:
+            if modeldir is not None:
+                self.write_inmodel(self.inmodel_vals,modeldir)
+        
         
     
     def build_data(self):
@@ -114,7 +121,7 @@ class Setup():
             i += 1
             svpath = svpath_str+'_%02i'%i
             
-        self.savepath = svpath
+        self.savepath = os.path.join(wkdir,svpath)
             
         # make the save path and move into savepath
         os.mkdir(os.path.join(wkdir,svpath))
@@ -135,7 +142,7 @@ class Setup():
         fmt = ['%14.5f']+['%12.5e']*16
         
         # define file name and save data file
-        fname_bas = svpath[:8]
+        fname_bas = os.path.basename(svpath)[:8]
         fname = os.path.join(wkdir,svpath,fname_bas+'.dat')
         self.datafile = os.path.basename(fname)
         np.savetxt(fname,self.data,fmt=fmt,header=self.header,comments='')    
@@ -201,12 +208,12 @@ class Setup():
     
     
     
-    def write_inmodel(self):
+    def write_inmodel(self,vals,modeldir):
         """
         """
         
         if not hasattr(self,'inmodel'):
-            self.build_inmodel()
+            self.build_inmodel(vals,modeldir)
         
         np.savetxt(os.path.join(self.wd,self.savepath,'inmodel.dat'),self.inmodel,fmt=['%5i','%11.4e','%11.4e','%11.4e','%11.4e'])
 
@@ -608,4 +615,15 @@ def sort_folder_list(wkdir,order_file,indices=[0,9999]):
                 plst.append(f)
     return plst
        
-        
+def get_elevation(x,y,elevfn,skiprows = 1):
+    """
+    get elevation at an arbitrary point, interpolated from an xyz file containing elevations
+    x = x location of point, can be a numpy array to return multiple z values
+    y = y location of point, can be a numpy array to return multiple z values
+    elevfn = full path to elevation filename
+    """
+    elev = np.loadtxt(elevfn)
+    f = si.interp2d(elev[:,0],elev[:,1],elev[:,2])
+    return f(x,y)
+    
+    
