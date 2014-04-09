@@ -6,12 +6,10 @@ Created on Fri Mar 14 10:21:05 2014
 """
 
 import mtpy.core.edi as e
-import mtpy.analysis.geometry as g
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as si
-from subprocess import Popen
 
 
 class Setup():
@@ -46,8 +44,9 @@ class Setup():
         
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])
-       
         
+        if not os.path.exists(self.wd):
+            os.mkdir(self.wd)
     
     def generate_inputfiles(self,modeldir = None):
 
