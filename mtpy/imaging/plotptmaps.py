@@ -27,7 +27,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
     path.
     
     Arguments:
-    ----------
+    -------------
     
         **fn_list** : list of strings
                           full paths to .edi files to plot
@@ -66,8 +66,14 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                         
                                         - 'phimin' -> colors by minimum phase
                                         - 'phimax' -> colors by maximum phase
-                                        - 'skew' -> colors by beta (skew)
-                                        - 'skew_seg' -> colors by beta in 
+                                        - 'skew' -> colors by skew
+                                        - 'skew_seg' -> colors by skew in 
+                                                       discrete segments 
+                                                       defined by the range
+                                        - 'normalized_skew' -> colors by skew
+                                                see [Booker, 2014]
+                                        - 'normalized_skew_seg' -> colors by 
+                                                       normalized skew in 
                                                        discrete segments 
                                                        defined by the range
                                         - 'phidet' -> colors by determinant of
@@ -305,7 +311,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         >>> ptmap.update_plot()
         
     Attributes:
-    -----------
+    --------------
     
         -arrow_color_imag         imaginary induction arrow color
         -arrow_color_real         real induction arrow color
@@ -370,7 +376,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                               and axes edge
                               
     Methods:
-    --------
+    ----------
 
         -plot                 plots the pseudo section
         -redraw_plot          on call redraws the plot from scratch
@@ -746,6 +752,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 elif self.ellipse_colorby == 'skew' or\
                      self.ellipse_colorby == 'skew_seg':
                     colorarray = pt.beta[0][jj]
+                    
+                elif self.ellipse_colorby == 'normalized_skew' or\
+                     self.ellipse_colorby == 'normalized_skew_seg':
+                    colorarray = 2*pt.beta[0][jj]
                     
                 elif self.ellipse_colorby == 'ellipticity':
                     colorarray = pt.ellipticity[0][jj]

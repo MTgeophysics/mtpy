@@ -323,13 +323,13 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
             
         return get_color(cvar, cmap)
 
-    elif comp == 'skew':
+    elif comp == 'skew' or comp == 'normalized_skew':
         cvar = 2*colorx/(ckmax-ckmin) 
         
         return get_color(cvar, cmap)
             
         
-    elif comp == 'skew_seg':
+    elif comp == 'skew_seg' or comp == 'normalized_skew_seg':
         if bounds is None:
             raise IOError('Need to input bounds for segmented colormap')
         

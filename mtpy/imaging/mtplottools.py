@@ -32,8 +32,10 @@ ckdict = {'phiminang' : r'$\Phi_{min}$ (deg)',
           'phimax' : r'$\Phi_{max}$ (deg)',
           'phidet' : r'Det{$\Phi$} (deg)',
           'skew' : r'Skew (deg)',
+          'normalized_skew' : r'Normalized Skew (deg)',
           'ellipticity' : r'Ellipticity',
           'skew_seg' : r'Skew (deg)',
+          'normalized_skew_seg' : r'Normalized Skew (deg)',
           'geometric_mean' : r'$\sqrt{\Phi_{min} \cdot \Phi_{max}}$' }
           
 
@@ -166,7 +168,7 @@ class MTEllipse(object):
     helper class for getting ellipse properties from an input dictionary
     
     Arguments:
-    ----------
+    -------------
         **ellipse_dict** : dictionary
                           dictionary of parameters for the phase tensor 
                           ellipses with keys:
@@ -181,6 +183,13 @@ class MTEllipse(object):
                                     - 'phimax' -> colors by maximum phase
                                     - 'skew' -> colors by skew
                                     - 'skew_seg' -> colors by skew in 
+                                                   discrete segments 
+                                                   defined by the range
+                                    - 'normalized_skew' -> colors by 
+                                                    normalized_skew
+                                                    see Booker, 2014
+                                    - 'normalized_skew_seg' -> colors by 
+                                                   normalized_skew
                                                    discrete segments 
                                                    defined by the range
                                     - 'phidet' -> colors by determinant of
@@ -247,7 +256,9 @@ class MTEllipse(object):
             self.ellipse_range = self._ellipse_dict['range']
         except KeyError:
             if self.ellipse_colorby == 'skew' or \
-                self.ellipse_colorby == 'skew_seg':
+                self.ellipse_colorby == 'skew_seg' or \
+                self.ellipse_colorby == 'normalized_skew' or \
+                self.ellipse_colorby == 'normalized_skew_seg':
                 
                 self.ellipse_range = (-9, 9, 3)
             
@@ -268,10 +279,12 @@ class MTEllipse(object):
         try:
             self.ellipse_cmap = self._ellipse_dict['cmap']
         except KeyError:
-            if self.ellipse_colorby == 'skew':
+            if self.ellipse_colorby == 'skew' or \
+               self.ellipse_colorby == 'normalized_skew':
                 self.ellipse_cmap = 'mt_bl2wh2rd'
                 
-            elif self.ellipse_colorby == 'skew_seg':
+            elif self.ellipse_colorby == 'skew_seg' or\
+                 self.ellipse_colorby == 'normalized_skew_seg':
                 self.ellipse_cmap = 'mt_seg_bl2wh2rd'
                 
             else:

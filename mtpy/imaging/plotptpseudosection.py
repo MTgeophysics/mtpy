@@ -25,7 +25,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
     
     
     Arguments:
-    ----------
+    ------------
     
         **fn_list** : list of strings
                           full paths to .edi files to plot
@@ -56,8 +56,14 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                                         
                                         - 'phimin' -> colors by minimum phase
                                         - 'phimax' -> colors by maximum phase
-                                        - 'skew' -> colors by beta (skew)
-                                        - 'skew_seg' -> colors by beta in 
+                                        - 'skew' -> colors by skew
+                                        - 'skew_seg' -> colors by skew in 
+                                                       discrete segments 
+                                                       defined by the range
+                                        - 'normalized_skew' -> colors by skew
+                                                see [Booker, 2014]
+                                        - 'normalized_skew_seg' -> colors by 
+                                                       normalized skew in 
                                                        discrete segments 
                                                        defined by the range
                                         - 'phidet' -> colors by determinant of
@@ -251,7 +257,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         File saved to '/home/PTFigures/PTPseudoSection.pdf'
         
     Attributes:
-    -----------
+    -------------
         -arrow_color_imag     color of imaginary induction arrow
         -arrow_color_real     color of real induction arrow
         -arrow_direction      convention of arrows pointing to or away from 
@@ -307,7 +313,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         -ystretch             scaling factor to strech axes in y direction
         
     Methods:
-    --------
+    ----------
 
         -plot                 plots the pseudo section
         -redraw_plot          on call redraws the plot from scratch
@@ -541,6 +547,10 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                  self.ellipse_colorby == 'skew_seg':
                 colorarray = pt.beta[0][::-1]
                 
+            elif self.ellipse_colorby == 'normalized_skew' or\
+                 self.ellipse_colorby == 'normalized_skew_seg':
+                colorarray = 2*pt.beta[0][::-1]
+                
             elif self.ellipse_colorby == 'ellipticity':
                 colorarray = pt.ellipticity[::-1]
                 
@@ -577,7 +587,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                                             angle=azimuth[jj]+90)
                                             
                 #get ellipse color
-                if cmap.find('seg')>0:
+                if cmap.find('seg') > 0:
                     ellipd.set_facecolor(mtcl.get_plot_color(colorarray[jj],
                                                              self.ellipse_colorby,
                                                              cmap,
@@ -655,8 +665,11 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         
         
         #calculate minimum period and maximum period with a stretch factor
-        pmin = np.log10(plot_periodlist.min())*self.ystretch
-        pmax = np.log10(plot_periodlist.max())*self.ystretch
+#        pmin = np.log10(plot_periodlist.min())*self.ystretch
+#        pmax = np.log10(plot_periodlist.max())*self.ystretch
+        
+        pmin = int(np.floor(np.log10(plot_periodlist.min())))
+        pmax = int(np.ceil(np.log10(plot_periodlist.max())))
         
         #need to sort the offsets and station labels so they plot correctly
         sdtype = [('offset', np.float), ('station','|S10')]
@@ -673,19 +686,21 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         
         #set y-ticklabels
         if self.tscale == 'period':
-            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(plot_periodlist[ll])) 
-                            for ll in np.arange(0, n, self.ystep)]+\
-                        ['{0:>4}'.format('{0: .1e}'.format(plot_periodlist[-1]))]
+            yticklabels = [mtpl.labeldict[ii] for ii in range(pmin, pmax+1, 1)]
+#            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(plot_period_list[ll])) 
+#                            for ll in np.arange(0, n, self.ystep)]+\
+#                        ['{0:>4}'.format('{0: .1e}'.format(plot_period_list[-1]))]
             
             self.ax.set_ylabel('Period (s)',
                                fontsize=self.font_size+2,
                                fontweight='bold')
                                
         elif self.tscale == 'frequency':
-            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlist[ll])) 
-                            for ll in np.arange(0, n, self.ystep)]+\
-                            ['{0:>4}'.format('{0: .1e}'.format(1./plot_periodlist[-1]))]
-            
+#            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(1./plot_period_list[ll])) 
+#                            for ll in np.arange(0, n, self.ystep)]+\
+#                            ['{0:>4}'.format('{0: .1e}'.format(1./plot_period_list[-1]))]
+#            
+            yticklabels = [mtpl.labeldict[-ii] for ii in range(pmin, pmax+1, 1)]
             self.ax.set_ylabel('Frequency (Hz)',
                                fontsize=self.font_size+2,
                                fontweight='bold')
@@ -696,12 +711,15 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
          
         #--> set tick locations and labels
         #set y-axis major ticks
-        self.ax.yaxis.set_ticks([np.log10(plot_periodlist[ll])*self.ystretch 
-                             for ll in np.arange(0, n, self.ystep)])
+#        self.ax.yaxis.set_ticks([np.log10(plot_periodlist[ll])*self.ystretch 
+#                             for ll in np.arange(0, n, self.ystep)]):
+        self.ax.yaxis.set_ticks(np.arange(pmin*self.ystretch, 
+                                          (pmax+1)*self.ystretch, 
+                                          self.ystretch))
         
         #set y-axis minor ticks                     
-        self.ax.yaxis.set_ticks([np.log10(plot_periodlist[ll])*self.ystretch 
-                             for ll in np.arange(0, n, 1)],minor=True)
+#        self.ax.yaxis.set_ticks([np.log10(plot_periodlist[ll])*self.ystretch 
+#                             for ll in np.arange(0, n, 1)],minor=True)
         #set y-axis tick labels
         self.ax.set_yticklabels(yticklabels)
         
@@ -726,11 +744,13 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             
         #--> set y-limits
         if self.ylimits == None:
-            self.ax.set_ylim(pmax+es*2, pmin-es*2)
+#            self.ax.set_ylim(pmax+es*2, pmin-es*2)
+             self.ax.set_ylim(pmax*self.ystretch, pmin*self.ystretch)
         else:
             pmin = np.log10(self.ylimits[0])*self.ystretch
             pmax = np.log10(self.ylimits[1])*self.ystretch
             self.ax.set_ylim(pmax+es*2, pmin-es*2)
+#            self.ax.set_ylim(pmax, pmin)
             
         #--> set title of the plot
         if self.plot_title == None:
