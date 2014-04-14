@@ -21,6 +21,42 @@ ogr.UseExceptions()
 class PTShapeFile(object):
     """
     write shape file for GIS plotting programs
+    
+    ======================== ==================================================
+    key words/attributes      Description
+    ======================== ==================================================
+    edi_list                 list of edi files, full paths
+    ellipse_size             size of normalized ellipse in map scale
+                             *default* is .01
+    mt_obj_list              list of mt.MT objects
+                             *default* is None, filled if edi_list is given
+    plot_period              list or value of period to convert to shape file
+                             *default* is None, which will write a file for
+                             every period in the edi files 
+    ptol                     tolerance to look for given periods
+                             *default* is .05
+    pt_dict                  dictionary with keys of plot_period.  Each
+                             dictionary key is a structured array containing
+                             the important information for the phase tensor.
+    projection               projection of coordinates see EPSG for all options
+                             *default* is WSG84 in lat and lon
+    save_path                path to save files to
+                             *default* is current working directory.
+    ======================== ==================================================
+  
+      .. note:: only WSG84 is supported at the moment.  If you want 
+                a different projection, try reprojecting in your view of choice
+                or use the reproject function below.
+                
+    :Example: ::
+        >>> edipath = r"/home/edi_files_rotated_to_geographic_north"
+        >>> edilist = [os.path.join(edipath, edi) \
+                      for edi in os.listdir(edipath)\
+                      if edi.find('.edi')>0]
+        >>> pts = PTShapeFile(edilist, save_path=r"/home/gis")
+        >>> pts.write_shape_files()
+        
+  
     """
     
     def __init__(self, edi_list=None, **kwargs):
@@ -231,7 +267,58 @@ class PTShapeFile(object):
 #==============================================================================
 class TipperShapeFile(object):
     """
-    write shape file for GIS plotting programs
+    write shape file for GIS plotting programs.
+    
+    currently only writes the real induction vectors.
+    
+    ======================== ==================================================
+    key words/attributes      Description
+    ======================== ==================================================
+    arrow_direction          [ 1 | -1 ] 1 for Weise convention --> point 
+                             toward conductors. *default* is 1 
+                             (-1 is not supported yet)
+    arrow_head_height        height of arrow head in map units
+                             *default* is .002
+    arrow_head_width         width of arrow head in map units
+                             *default* is .001
+    arrow_lw                 width of arrow in map units
+                             *default* is .0005
+                        
+    arrow_size               size of normalized arrow length in map units
+                             *default* is .01
+                             
+    edi_list                 list of edi files, full paths
+    mt_obj_list              list of mt.MT objects
+                             *default* is None, filled if edi_list is given
+    plot_period              list or value of period to convert to shape file
+                             *default* is None, which will write a file for
+                             every period in the edi files 
+    ptol                     tolerance to look for given periods
+                             *default* is .05
+    pt_dict                  dictionary with keys of plot_period.  Each
+                             dictionary key is a structured array containing
+                             the important information for the phase tensor.
+    projection               projection of coordinates see EPSG for all options
+                             *default* is WSG84 in lat and lon
+    save_path                path to save files to
+                             *default* is current working directory.
+    ======================== ==================================================
+  
+      .. note:: only WSG84 is supported at the moment.  If you want 
+                a different projection, try reprojecting in your view of choice
+                or use the reproject function below.
+                
+    :Example: ::
+        >>> edipath = r"/home/edi_files_rotated_to_geographic_north"
+        >>> edilist = [os.path.join(edipath, edi) \
+                      for edi in os.listdir(edipath)\
+                      if edi.find('.edi')>0]
+        >>> tps = TipperShapeFile(edilist, save_path=r"/home/gis")
+        >>> tps.arrow_head_height = .005
+        >>> tps.arrow_lw = .0001
+        >>> tps.arrow_size = .05
+        >>> tps.write_shape_files()
+        
     """
     
     def __init__(self, edi_list=None, **kwargs):
@@ -520,17 +607,4 @@ def reproject_layer(in_shape_file, out_shape_file=None, out_proj='WGS84'):
     
     # close the shapefiles
     inDataSet.Destroy()
-    outDataSet.Destroy()
-            
-#==============================================================================
-# run test
-#==============================================================================
-            
-#get a list of edi files
-edipath = r"c:\Users\jrpeacock\Documents\Mendenhall\MonoBasin\EDI_Files\GeographicNorth"
-edilst = [os.path.join(edipath, edi) for edi in os.listdir(edipath) 
-          if edi.find('.edi') > 0]
-edilst.remove(os.path.join(edipath, 'mb035.edi'))
-              
-pts = TipperShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
-pts.write_shape_files() 
+    outDataSet.Destroy() 
