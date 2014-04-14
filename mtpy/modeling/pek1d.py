@@ -2,14 +2,16 @@
 """
 Created on Fri Mar 14 10:21:05 2014
 
-@author: a1655681
+@author: Alison Kirkby
+
 """
 
-import mtpy.core.edi as e
+import mtpy.core.edi as mtedi
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as si
+import mtpy.utils.exceptions as MTex
 
 
 class Setup():
@@ -48,6 +50,13 @@ class Setup():
         if not os.path.exists(self.wd):
             os.mkdir(self.wd)
     
+        # read edi file to edi object
+        edifile = os.path.join(self.epath,self.efile)
+        eo = mtedi.Edi()
+        eo.readfile(edifile)
+        self.lat = eo.lat
+        self.lon = eo.lon    
+    
     def generate_inputfiles(self,modeldir = None):
 
         os.chdir(self.wd)    
@@ -57,14 +66,12 @@ class Setup():
             if modeldir is not None:
                 self.write_inmodel(self.inmodel_vals,modeldir)
         
-        
-    
     def build_data(self):
         
         
         # read edi file to edi object
         edifile = os.path.join(self.epath,self.efile)
-        eo = e.Edi()
+        eo = mtedi.Edi()
         eo.readfile(edifile)
         self.lat = eo.lat
         self.lon = eo.lon
@@ -223,10 +230,12 @@ class Model():
     """    
     
     def __init__(self,wkdir,**input_parameters):
+        
         self.wd = wkdir
         self.modelfile = 'ai1mod.dat'
         self.respfile = 'ai1dat.dat'
         self.fitfile = 'ai1fit.dat'
+        self.inmodelfile = 'inmodel.dat'
         self.misfit_threshold = 1.1
         self.station = None
         
@@ -318,86 +327,144 @@ class Model():
         models = np.genfromtxt(fpath,skiprows=1,invalid_raise=False)
         self.models = models.reshape(0.5*len(models)/nlayers,2*nlayers,5)
         
-        
-    def plot_model(self,
-                   modelno,
-                   parameter = None,
-                   save = True,
-                   c = 'k',
-                   smm = (0,180),
-                   rmm = (0.1,1000),
-                   amm = (0,50),
-                   ymm = (10,0),
-                   ylabel = True):
+    def read_inmodel(self):
         """
-        plot the model
+        read the inmodel file
         """
         
-        # if model file hasn't been read, read it 
-        if not hasattr(self,'models'):
-            self.read_model()
-            
-            
-        # if modelno is not defined, find the best one according to default parameters
-        if modelno is None:
-            # find best model
-            if not hasattr(self,'params_bestmodel'):
-                self.find_bestmodel()
-            modelno = self.params_bestmodel[0]
-            
-        model = self.models[modelno]            
-            
-        allowed_params = ['tetm_a','a','tetm','strike']#'te','tm',
+        # read in file
+        inmodel = np.loadtxt(os.path.join(self.wd,self.inmodelfile))
         
-        if parameter not in allowed_params:
-            parameter = 'tetm_a'
+        # convert layer thicknesses to depths
+        depths = np.array([[sum(inmodel[:i,1]),sum(inmodel[:i+1,1])] for i in range(len(inmodel))]).flatten()
+        values = np.zeros((len(inmodel)*2,5))
+        ii = 0
+        for val in inmodel:
+            for i in range(2):
+                values[ii] = val
+                ii += 1
         
-        if self.station is None:
-            self.station = ''
-              
-        while np.any(model[:,4]>180):
-            model[:,4][model[:,4]>180] -= 180
-        while np.any(model[:,4]<0):
-            model[:,4][model[:,4]<0] += 180
+        self.inmodel = np.vstack([values[:,0],depths,values[:,2],values[:,3],values[:,4]]).T
         
         
-        if 'tetm' in parameter:
-            if parameter != 'tetm':
-                ax1 = plt.subplot(121)
-            plt.plot(model[:,2],model[:,1],color=c,label = 'model{}'.format(modelno))
-            plt.plot(model[:,3],model[:,1],'--',color=c,label = 'model{}'.format(modelno))
-            plt.title('tetm')
-            plt.xscale('log')
+    
+    def plot_model(self, **input_parameters):
+        """
+        plot inmodelfile
+        
+        
+        parameter = list of parameters to plot. allowed values are
+                    ['minmax','aniso','strike']
+        xlim = dictionary containing limits for parameters
+                    if not given then defaults are used.
+                    keys are the parameter values.
+                    format {parameter:[xmin,xmax]}
+        ylim = list containing depth limits, default [6,0]
+        titles = dictionary containing titles for plots. Keys are the
+                 values in parameter (e.g. 'minmax')
+        
+        """
 
-#            plt.legend()
-            plt.title(self.station)
-            if ylabel:
-                plt.ylabel('depth')
-            plt.ylim(ymm)
-            plt.xlim(rmm)
-        if 'a' in parameter:
-            if parameter != 'a':
-                ax2 = plt.subplot(122)
-            plt.plot(model[:,3]/model[:,2],model[:,1],c=c,label = 'model{}'.format(modelno))
-            plt.xlabel('aniso')
-            plt.ylim(ymm)
-            plt.xlim(amm)
-            if ylabel:
-                plt.ylabel('depth')
-            plt.title(self.station)
-        if parameter == 'strike':
-            plt.plot(model[:,4],model[:,1],c=c,label = 'model{}'.format(modelno))
-            plt.xlabel('strike')
-            plt.ylim(ymm)
-            plt.xlim(smm)
-            if ylabel:
-                plt.ylabel('depth')
-            plt.title(self.station)
-            plt.grid()
-        if save:
-            plt.savefig(os.path.join(self.wd,parameter+'.png'))
-            plt.close()   
+        defaults = {}
+        defaults['parameter'] = ['minmax','aniso','strike']
+        defaults['titles'] = {'minmax':'Minimum and maximum\nresistivity, ohm-m',
+                              'aniso':'Anisotropy in resistivity',
+                              'strike':'Strike angle of\nminimum resistivity'}
+        defaults['xlim'] = {'minmax':[0.1,1000],'aniso':[0,20],'strike':[0,180]}
+        defaults['modeltype'] = 'model'
+        defaults['ylim'] = [6,0]
+        defaults['modelno'] = None
+        defaults['ax'] = None
+        
+        plot_variables = {}
+        plot_variables.update(defaults)
+        plot_variables.update(input_parameters)        
+
+        parameter = plot_variables['parameter']
+        ylim = plot_variables['ylim']
+        xlim = plot_variables['xlim']
+        titles = plot_variables['titles']
+        modelno = plot_variables['modelno']
+        ax = plot_variables['ax']
+        
+        data_list = []
+        if plot_variables['modeltype'] in ['model','both']:
+            self.read_model()
+            if modelno is None:
+                self.find_bestmodel()
+                modelno = self.params_bestmodel[0]
+            data_list.append(self.models[modelno-1])
+        
+        if plot_variables['modeltype'] in ['inmodel','both']:
+            self.read_inmodel()
+            data_list.append(self.inmodel)
+        
+        
+        # assess how many parameters
+        allowed_params = ['minmax','aniso','strike']
+        symbol = 'k-'
+        
+        nparams = 0
+        for p in allowed_params:
+            if p in parameter:
+                nparams += 1
+                
+        axes_list = {}
+        
+        for data in data_list:
             
+            dep = data[:,1]
+            resmin = data[:,2]
+            resmax = data[:,3]
+            strike = data[:,4]%180
+    
+            
+            axes_count = 1
+            if 'minmax' in parameter:
+                if ax is None:
+                    axes_list['minmax'] = plt.subplot(1,nparams,axes_count)
+                else:
+                    axes_list['minmax'] = ax
+                plt.plot(resmax,dep,symbol)
+                symbol += '-'
+                plt.plot(resmin,dep,symbol)
+                symbol = symbol[:-1]
+                axes_count += 1
+                plt.xscale('log')
+            if 'aniso' in parameter:
+                if ax is None:
+                    axes_list['aniso'] = plt.subplot(1,nparams,axes_count)
+                else:
+                    axes_list['aniso'] = ax
+                plt.plot(resmax/resmin,dep,symbol)
+                axes_count += 1
+            if 'strike' in parameter:
+                if ax is None:
+                    axes_list['strike'] = plt.subplot(1,nparams,axes_count)
+                else:
+                    axes_list['strike'] = ax
+                plt.plot(strike,dep,symbol)    
+                axes_count += 1      
+            
+            symbol = 'b-'
+            
+        for key in axes_list.keys():
+            ax = axes_list[key]
+            ax.set_xlim(xlim[key][0],xlim[key][1])
+            ax.set_ylim(ylim[0],ylim[1])
+            ax.set_title(titles[key],fontsize=10)
+            ax.grid()
+                
+            
+    def plot_section(self):
+        """
+        plot 1d models along a profile
+        
+        """
+        return
+        
+        
+        
     def plot_lcurve_contourmap(self, 
                                levels = None,
                                imethod = 'linear',
@@ -625,4 +692,31 @@ def get_elevation(x,y,elevfn,skiprows = 1):
     f = si.interp2d(elev[:,0],elev[:,1],elev[:,2])
     return f(x,y)
     
+    
+def project_interface(interface,epsg_from,epsg_to,suffix,skiprows=1):
+    """
+    project interface, save into a new file with suffix
+    interface = full path to xyz file containing x,y,z values
+    epsg_from = epsg from
+    epsg_to = epsg to
+    suffix = suffix to add to new files
+    
+    useful epsg numbers:
+    28354 - GDA 94 mga zone 54
+    4326 - WGS 84
+    """
+    try:
+        import pyproj
+    except:
+        raise MTex.MTpyError_module_import('pyproj module not found; cannot continue')
+        
+    coord_from = pyproj.Proj("+init=EPSG:%i"%epsg_from)
+    coord_to = pyproj.Proj("+init=EPSG:%i"%epsg_to)
+    
+    data = np.loadtxt(interface,skiprows=skiprows)
+    xp,yp = pyproj.transform(coord_from,coord_to,data[:,0],data[:,1])
+    
+    filename,extension = os.path.splitext(interface)
+    outfile = filename + suffix + extension
+    np.savetxt(outfile,np.vstack([xp,yp,data[:,2]]).T,fmt = ['%12.2f','%12.2f','%10.2f'])
     
