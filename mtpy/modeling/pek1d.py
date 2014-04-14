@@ -88,9 +88,9 @@ class Setup():
             ze = np.abs(z)*zer
             
             # set errors in off-diagonals to the minimum error of on-diagonal components
-            for ze_sub in ze:
-                min_offdiags = min(ze_sub[0,1],ze_sub[1,0])
-                ze_sub[ze_sub<min_offdiags] = min_offdiags   
+#            for ze_sub in ze:
+#                min_offdiags = min(ze_sub[0,1],ze_sub[1,0])
+#                ze_sub[ze_sub<min_offdiags] = min_offdiags   
         
         elif self.errorfloor_type == 'absolute':
             ze[ze<self.errorfloor_z] = self.errorfloor_z
@@ -672,7 +672,9 @@ def sort_folder_list(wkdir,order_file,indices=[0,9999]):
     indices = indices to search on; default take the whole string
     
     """
-    order = open(os.path.join(order_file)).readlines()
+    order = open(order_file).readlines()
+    order = [ff.strip() for ff in order]
+
     plst = []
     flst = os.listdir(wkdir)
     for o in order:
@@ -718,5 +720,5 @@ def project_interface(interface,epsg_from,epsg_to,suffix,skiprows=1):
     
     filename,extension = os.path.splitext(interface)
     outfile = filename + suffix + extension
-    np.savetxt(outfile,np.vstack([xp,yp,data[:,2]]).T,fmt = ['%12.2f','%12.2f','%10.2f'])
+    np.savetxt(outfile,np.vstack([xp,yp,data[:,2]]).T,fmt = ['%12.6f','%12.6f','%10.2f'])
     
