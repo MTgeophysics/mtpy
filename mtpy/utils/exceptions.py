@@ -46,3 +46,5 @@ class MTpyError_PT( Exception ):
 class MTpyError_occam( Exception ):
     pass
 
+class MTpyError_module_import( Exception ):
+    pass
