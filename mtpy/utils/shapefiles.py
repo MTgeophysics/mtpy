@@ -9,12 +9,12 @@ Created on Sun Apr 13 12:32:16 2014
 try:
     from osgeo import ogr, gdal, osr
 except ImportError:
-    print ('Did not find GDAL, be sure it is installed correctly and '
+    raise ImportError('Did not find GDAL, be sure it is installed correctly and '
           'all the paths are correct')
-    return
 import numpy as np
 import os
 import mtpy.core.mt as mt
+import mtpy.utils.latlongutmconversion as utm2ll
 
 ogr.UseExceptions()
 
@@ -61,10 +61,10 @@ class PTShapeFile(object):
     
     def __init__(self, edi_list=None, **kwargs):
         self.edi_list = edi_list
-        self.projection = 'WSG84'
+        self.projection = 'WGS84'
         self.plot_period = None
         self.save_path = os.getcwd()
-        self.ellipse_size = .01
+        self.ellipse_size = 500.0
         self._theta = np.arange(0, 2*np.pi, np.pi/30.)
         self.ptol = .05
         
@@ -119,7 +119,13 @@ class PTShapeFile(object):
                     p_index = [ff for ff, f2 in enumerate(1./mt_obj.Z.freq) 
                                if (f2 > plot_per*(1-self.ptol)) and
                                   (f2 < plot_per*(1+self.ptol))][0]
-                    pt_tuple = (mt_obj.station, mt_obj.lat, mt_obj.lon,
+                    if self.projection is None:
+                        east, north, elev = (mt_obj.lon, mt_obj.lat, 0)
+                    else:
+                        east, north, elev = transform_ll_to_utm(mt_obj.lon, 
+                                                                mt_obj.lat,
+                                                                self.projection)              
+                    pt_tuple = (mt_obj.station, east, north,
                                 mt_obj.pt.phimin[0][p_index],
                                 mt_obj.pt.phimax[0][p_index],
                                 mt_obj.pt.azimuth[0][p_index],
@@ -131,8 +137,8 @@ class PTShapeFile(object):
                 
             self.pt_dict[plot_per] = np.array(self.pt_dict[plot_per],
                                               dtype=[('station', '|S15'),
-                                                     ('lat', np.float),
-                                                     ('lon', np.float),
+                                                     ('east', np.float),
+                                                     ('north', np.float),
                                                      ('phimin', np.float),
                                                      ('phimax', np.float),
                                                      ('azimuth', np.float),
@@ -198,8 +204,8 @@ class PTShapeFile(object):
                 azimuth = np.deg2rad(pt_array['azimuth'])
                 width = self.ellipse_size*(pt_array['phimax']/phimax)
                 height = self.ellipse_size*(pt_array['phimin']/phimax) 
-                x0 = pt_array['lon']
-                y0 = pt_array['lat']
+                x0 = pt_array['east']
+                y0 = pt_array['north']
                 
                 x = x0+height*np.cos(self._theta)*np.cos(azimuth)-\
                        width*np.sin(self._theta)*np.sin(azimuth)  
@@ -299,7 +305,7 @@ class TipperShapeFile(object):
                              dictionary key is a structured array containing
                              the important information for the phase tensor.
     projection               projection of coordinates see EPSG for all options
-                             *default* is WSG84 in lat and lon
+                             *default* is WSG84 
     save_path                path to save files to
                              *default* is current working directory.
     ======================== ==================================================
@@ -323,15 +329,15 @@ class TipperShapeFile(object):
     
     def __init__(self, edi_list=None, **kwargs):
         self.edi_list = edi_list
-        self.projection = 'WSG84'
+        self.projection = 'WGS84'
         self.plot_period = None
         self.save_path = os.getcwd()
-        self.arrow_size = .01
+        self.arrow_size = 1000
         self.arrow_direction = 1
         self.ptol = .05
-        self.arrow_head_width = .001
-        self.arrow_head_height = .002
-        self.arrow_lw = .0005
+        self.arrow_head_width = 50
+        self.arrow_head_height = 100
+        self.arrow_lw = 20
         
         self.mt_obj_list = None
         self.tip_dict = None
@@ -384,11 +390,15 @@ class TipperShapeFile(object):
                     p_index = [ff for ff, f2 in enumerate(1./mt_obj.Z.freq) 
                                if (f2 > plot_per*(1-self.ptol)) and
                                   (f2 < plot_per*(1+self.ptol))][0]
+                                  
+                    east, north, elev = transform_ll_to_utm(mt_obj.lon,
+                                                            mt_obj.lat,
+                                                            self.projection) 
                     if mt_obj.Tipper.tipper is not None:             
                         if mt_obj.Tipper.tipper[p_index].all() != 0.0:
                             tp_tuple = (mt_obj.station, 
-                                        mt_obj.lat,
-                                        mt_obj.lon,
+                                        east,
+                                        north,
                                         mt_obj.Tipper.mag_real[p_index],
                                         mt_obj.Tipper.mag_imag[p_index],
                                         mt_obj.Tipper.angle_real[p_index],
@@ -401,15 +411,15 @@ class TipperShapeFile(object):
                 
             self.tip_dict[plot_per] = np.array(self.tip_dict[plot_per],
                                               dtype=[('station', '|S15'),
-                                                     ('lat', np.float),
-                                                     ('lon', np.float),
+                                                     ('east', np.float),
+                                                     ('north', np.float),
                                                      ('mag_real', np.float),
                                                      ('mag_imag', np.float),
                                                      ('ang_real', np.float),
                                                      ('ang_imag', np.float)])
             
                 
-    def write_shape_files(self):
+    def write_real_shape_files(self):
         """
         write shape file from given attributes
         """
@@ -419,7 +429,7 @@ class TipperShapeFile(object):
         for plot_per in self.plot_period:
             #shape file path
             shape_fn = os.path.join(self.save_path, 
-                                    'Tip_{0:.5g}s_{1}.shp'.format(plot_per,
+                                    'Tip_{0:.5g}s_{1}_real.shp'.format(plot_per,
                                     self.projection))
             
             # remove the shape file if it already exists, has trouble over writing
@@ -494,8 +504,8 @@ class TipperShapeFile(object):
                 xy = np.array([x, y])
                 rot_xy = np.dot(rot_matrix, xy)
                 
-                x = tp_arr['lon']+rot_xy[0]
-                y = tp_arr['lat']+rot_xy[1]
+                x = tp_arr['east']+rot_xy[0]
+                y = tp_arr['north']+rot_xy[1]
                        
                 #1) make a geometry shape line
                 arrow = ogr.Geometry(ogr.wkbLinearRing)
@@ -545,7 +555,146 @@ class TipperShapeFile(object):
             
             print 'Wrote shape file to {0}'.format(shape_fn)
             
+    def write_imag_shape_files(self):
+        """
+        write shape file from given attributes
+        """
+        if self.tip_dict is None:
+            self._get_tip_array()
             
+        for plot_per in self.plot_period:
+            #shape file path
+            shape_fn = os.path.join(self.save_path, 
+                                    'Tip_{0:.5g}s_{1}_imag.shp'.format(plot_per,
+                                    self.projection))
+            
+            # remove the shape file if it already exists, has trouble over writing
+            if os.path.isfile(shape_fn) == True:
+                os.remove(shape_fn)
+            
+            # need to tell ogr which driver to use
+            driver = ogr.GetDriverByName('ESRI Shapefile')
+            
+            if os.path.isfile(shape_fn) == True:
+                driver.DeleteDataSource(shape_fn)
+                
+            #create shape file
+            data_source = driver.CreateDataSource(shape_fn)
+            
+            ##if you read from a raster get the georeference point otherwise create one
+            spatial_ref = osr.SpatialReference()
+            #this puts it in the wsg84 reference frame.
+            spatial_ref.ImportFromWkt(self.projection) 
+            
+            ##create a layer to put the ellipses onto
+            layer = data_source.CreateLayer('TIPPER', spatial_ref,
+                                            ogr.wkbPolygon)
+            
+            #make field names
+            field_name = ogr.FieldDefn("Name", ogr.OFTString)
+            layer.CreateField(field_name)
+            
+            field_mag_imag = ogr.FieldDefn('mag_imag', ogr.OFTReal)
+            layer.CreateField(field_mag_imag)
+            
+            field_ang_imag = ogr.FieldDefn('ang_imag', ogr.OFTReal)
+            layer.CreateField(field_ang_imag)
+            
+            for tp_arr in self.tip_dict[plot_per]:
+                cos_t = np.cos(-np.deg2rad(tp_arr['ang_imag']))
+                sin_t = np.sin(-np.deg2rad(tp_arr['ang_imag']))
+                # calculate the points to make the line
+                txr = 0
+                tyr = tp_arr['mag_imag']*self.arrow_size
+                
+                
+                x0 = 0
+                y0 = 0
+                
+                x1 = x0+self.arrow_lw
+                y1 = y0
+                
+                x2 = x0+self.arrow_lw
+                y2 = y0+tyr-self.arrow_head_height
+                
+                x3 = x0+self.arrow_lw+self.arrow_head_width                 
+                y3 = y2
+                
+                x4 = x0+txr
+                y4 = y0+tyr
+                
+                x7 = x0-self.arrow_lw
+                y7 = y0
+                
+                x6 = x0-self.arrow_lw                  
+                y6 = y0+tyr-self.arrow_head_height
+                
+                x5 = x0-self.arrow_lw-self.arrow_head_width              
+                y5 = y6
+                
+                x = np.array([x0, x1, x2, x3, x4, x5, x6, x7]) 
+                y = np.array([y0, y1, y2, y3, y4, y5, y6, y7])
+                
+                rot_matrix = np.array([[cos_t, -sin_t], [sin_t, cos_t]])
+                
+                xy = np.array([x, y])
+                rot_xy = np.dot(rot_matrix, xy)
+                
+                x = tp_arr['east']+rot_xy[0]
+                y = tp_arr['north']+rot_xy[1]
+                       
+                #1) make a geometry shape line
+                arrow = ogr.Geometry(ogr.wkbLinearRing)
+                for ii, jj in zip(x, y):
+                    arrow.AddPoint(np.round(ii, 6), np.round(jj, 6))
+
+                arrow.CloseRings()
+                
+                poly = ogr.Geometry(ogr.wkbPolygon)
+                poly.AddGeometry(arrow)
+                ##4) this part is confusing but we need to create a 
+                ##   feature that has the
+                ##   same definition as the layer that we created.
+                #    get the layer definition
+                feature_def = layer.GetLayerDefn()
+                
+                #create a new feature
+                new_feature = ogr.Feature(feature_def)
+                #set the geometry of that feature to be the ellipse
+                new_feature.SetGeometry(poly)
+                #create the feature in the layer. 
+                layer.CreateFeature(new_feature)
+                
+                #
+                ###5) create a field to color by
+                new_feature.SetField("Name", tp_arr['station'])
+                new_feature.SetField("mag_imag", tp_arr['mag_imag'])
+                new_feature.SetField("ang_imag", tp_arr['ang_imag'])
+            
+                #add the new feature to the layer.
+                layer.SetFeature(new_feature)
+                
+                #apparently need to destroy the feature
+                new_feature.Destroy()
+                
+                
+            # Need to be sure that all the new info is saved to 
+            data_source.SyncToDisk()
+            
+            #write a projection file
+            spatial_ref = layer.GetSpatialRef() 
+            prj_file = open('{0}.prj'.format(shape_fn[:-3]), 'w')
+            prj_file.write(spatial_ref.ExportToWkt())
+            prj_file.close()
+            
+            data_source.Destroy()
+            
+            print 'Wrote shape file to {0}'.format(shape_fn)
+            
+
+#==============================================================================
+# reproject a layer DOESNT WORK YET
+#==============================================================================
 def reproject_layer(in_shape_file, out_shape_file=None, out_proj='WGS84'):
     """
     reproject coordinates into a different coordinate system
@@ -608,3 +757,69 @@ def reproject_layer(in_shape_file, out_shape_file=None, out_proj='WGS84'):
     # close the shapefiles
     inDataSet.Destroy()
     outDataSet.Destroy() 
+    
+#==============================================================================
+#     
+#==============================================================================
+def transform_utm_to_ll(easting, northing, zone, 
+                           reference_ellipsoid='WGS84'):
+    
+    utm_coordinate_system = osr.SpatialReference() 
+    # Set geographic coordinate system to handle lat/lon
+    utm_coordinate_system.SetWellKnownGeogCS(reference_ellipsoid)
+    is_northern = northing > 0    
+    utm_coordinate_system.SetUTM(zone, is_northern)
+    
+    # Clone ONLY the geographic coordinate system 
+    ll_coordinate_system = utm_coordinate_system.CloneGeogCS() 
+    
+    # create transform component
+    utm_to_ll_geo_transform = osr.CoordinateTransformation(utm_coordinate_system, 
+                                                           ll_coordinate_system)
+     # returns lon, lat, altitude
+    return utm_to_ll_geo_transform.TransformPoint(easting, northing, 0)
+    
+
+def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):    
+    def get_utm_zone(longitude):
+        return (int(1+(longitude+180.0)/6.0))
+    
+    def is_northern(latitude):
+        """
+        Determines if given latitude is a northern for UTM
+        """
+        if (latitude < 0.0):
+            return 0
+        else:
+            return 1
+            
+    utm_coordinate_system = osr.SpatialReference()
+    # Set geographic coordinate system to handle lat/lon  
+    utm_coordinate_system.SetWellKnownGeogCS(reference_ellipsoid) 
+    utm_coordinate_system.SetUTM(get_utm_zone(lon), is_northern(lat))
+    
+    # Clone ONLY the geographic coordinate system 
+    ll_coordinate_system = utm_coordinate_system.CloneGeogCS() 
+    # create transform component
+    ll_to_utm_geo_transform = osr.CoordinateTransformation(ll_coordinate_system, 
+                                                          utm_coordinate_system)
+                                                                                  
+    
+    # returns easting, northing, altitude  
+    return ll_to_utm_geo_transform.TransformPoint(lon, lat, 0)
+    
+#==============================================================================
+# test
+#==============================================================================
+edipath = r"c:\Users\jrpeacock\Documents\Mendenhall\MonoBasin\EDI_Files\GeographicNorth"
+edilst = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
+          if edi.find('.edi') > 0]
+
+pts = PTShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
+pts.projection = 'NAD27'
+pts.write_shape_files()
+tps = TipperShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
+tps.projection = 'NAD27'
+tps.write_real_shape_files()
+tps.write_imag_shape_files()
+    
