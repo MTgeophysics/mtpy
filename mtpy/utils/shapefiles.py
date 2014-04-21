@@ -65,7 +65,7 @@ class PTShapeFile(object):
         self.plot_period = None
         self.save_path = os.getcwd()
         self.ellipse_size = 500.0
-        self._theta = np.arange(0, 2*np.pi, np.pi/30.)
+        self._theta = np.arange(0, 2*np.pi, np.pi/180.)
         self.ptol = .05
         
         self.mt_obj_list = None
@@ -79,6 +79,10 @@ class PTShapeFile(object):
             
         self._get_plot_period()
         self._get_pt_array()
+        
+        self._proj_dict = {'WGS84':4326, 'NAD27':4267}
+        
+        self.utm_cs = None
     
     def _get_plot_period(self):
         """
@@ -121,10 +125,15 @@ class PTShapeFile(object):
                                   (f2 < plot_per*(1+self.ptol))][0]
                     if self.projection is None:
                         east, north, elev = (mt_obj.lon, mt_obj.lat, 0)
+                        self.utm_cs = osr.SpatialReference()
+                        # Set geographic coordinate system to handle lat/lon  
+                        self.utm_cs.SetWellKnownGeogCS(self.projection)
                     else:
-                        east, north, elev = transform_ll_to_utm(mt_obj.lon, 
+                        self.utm_cs, utm_point = transform_ll_to_utm(mt_obj.lon, 
                                                                 mt_obj.lat,
-                                                                self.projection)              
+                                                                self.projection)
+                        east, north, elev = utm_point
+
                     pt_tuple = (mt_obj.station, east, north,
                                 mt_obj.pt.phimin[0][p_index],
                                 mt_obj.pt.phimax[0][p_index],
@@ -150,8 +159,8 @@ class PTShapeFile(object):
         """
         write shape file from given attributes
         """
-        if self.pt_dict is None:
-            self._get_pt_array()
+        
+        self._get_pt_array()
             
         for plot_per in self.plot_period:
             #shape file path
@@ -172,13 +181,13 @@ class PTShapeFile(object):
             #create shape file
             data_source = driver.CreateDataSource(shape_fn)
             
-            ##if you read from a raster get the georeference point otherwise create one
-            spatial_ref = osr.SpatialReference()
-            #this puts it in the wsg84 reference frame.
-            spatial_ref.ImportFromWkt(self.projection) 
+#            ##if you read from a raster get the georeference point otherwise create one
+#            spatial_ref = osr.SpatialReference()
+#            #this puts it in the wsg84 reference frame.
+#            spatial_ref.ImportFromEPSG(self._proj_dict[self.projection]) 
             
             ##create a layer to put the ellipses onto
-            layer = data_source.CreateLayer('PT', spatial_ref, ogr.wkbPolygon)
+            layer = data_source.CreateLayer('PT', self.utm_cs, ogr.wkbPolygon)
             
             #make field names
             field_name = ogr.FieldDefn("Name", ogr.OFTString)
@@ -258,9 +267,11 @@ class PTShapeFile(object):
             data_source.SyncToDisk()
             
             #write a projection file
-            spatial_ref.MorphToESRI()
-            prj_file = open('{0}.prj'.format(shape_fn[:-3]), 'w')
-            prj_file.write(spatial_ref.ExportToWkt())
+#            spatial_ref.MorphToESRI()
+            self.utm_cs.MorphToESRI()
+            prj_file = open('{0}prj'.format(shape_fn[:-3]), 'w')
+#            prj_file.write(spatial_ref.ExportToWkt())
+            prj_file.write(self.utm_cs.ExportToWkt())
             prj_file.close()
             
             data_source.Destroy()
@@ -338,6 +349,7 @@ class TipperShapeFile(object):
         self.arrow_head_width = 50
         self.arrow_head_height = 100
         self.arrow_lw = 20
+        self.utm_cs = None
         
         self.mt_obj_list = None
         self.tip_dict = None
@@ -350,6 +362,8 @@ class TipperShapeFile(object):
             
         self._get_plot_period()
         self._get_tip_array()
+        
+        self._proj_dict = {'WGS84':4326, 'NAD27':4267}
     
     def _get_plot_period(self):
         """
@@ -390,10 +404,17 @@ class TipperShapeFile(object):
                     p_index = [ff for ff, f2 in enumerate(1./mt_obj.Z.freq) 
                                if (f2 > plot_per*(1-self.ptol)) and
                                   (f2 < plot_per*(1+self.ptol))][0]
-                                  
-                    east, north, elev = transform_ll_to_utm(mt_obj.lon,
-                                                            mt_obj.lat,
-                                                            self.projection) 
+                    if self.projection is None:
+                        east, north, elev = (mt_obj.lon, mt_obj.lat, 0)
+                        self.utm_cs = osr.SpatialReference()
+                        # Set geographic coordinate system to handle lat/lon  
+                        self.utm_cs.SetWellKnownGeogCS(self.projection)
+                    else:
+                        self.utm_cs, utm_point = transform_ll_to_utm(mt_obj.lon, 
+                                                                mt_obj.lat,
+                                                                self.projection)
+                        east, north, elev = utm_point             
+                        
                     if mt_obj.Tipper.tipper is not None:             
                         if mt_obj.Tipper.tipper[p_index].all() != 0.0:
                             tp_tuple = (mt_obj.station, 
@@ -423,8 +444,8 @@ class TipperShapeFile(object):
         """
         write shape file from given attributes
         """
-        if self.tip_dict is None:
-            self._get_tip_array()
+        
+        self._get_tip_array()
             
         for plot_per in self.plot_period:
             #shape file path
@@ -446,12 +467,12 @@ class TipperShapeFile(object):
             data_source = driver.CreateDataSource(shape_fn)
             
             ##if you read from a raster get the georeference point otherwise create one
-            spatial_ref = osr.SpatialReference()
+            #spatial_ref = osr.SpatialReference()
             #this puts it in the wsg84 reference frame.
-            spatial_ref.ImportFromWkt(self.projection) 
+            #spatial_ref.ImportFromEPSG(self._proj_dict[self.projection]) 
             
             ##create a layer to put the ellipses onto
-            layer = data_source.CreateLayer('TIPPER', spatial_ref,
+            layer = data_source.CreateLayer('TIPPER', self.utm_cs,
                                             ogr.wkbPolygon)
             
             #make field names
@@ -546,9 +567,10 @@ class TipperShapeFile(object):
             data_source.SyncToDisk()
             
             #write a projection file
-            spatial_ref = layer.GetSpatialRef() 
-            prj_file = open('{0}.prj'.format(shape_fn[:-3]), 'w')
-            prj_file.write(spatial_ref.ExportToWkt())
+            #spatial_ref.MorphFromESRI() 
+            self.utm_cs.MorphFromESRI() 
+            prj_file = open('{0}prj'.format(shape_fn[:-3]), 'w')
+            prj_file.write(self.utm_cs.ExportToWkt())
             prj_file.close()
             
             data_source.Destroy()
@@ -559,8 +581,8 @@ class TipperShapeFile(object):
         """
         write shape file from given attributes
         """
-        if self.tip_dict is None:
-            self._get_tip_array()
+        
+        self._get_tip_array()
             
         for plot_per in self.plot_period:
             #shape file path
@@ -582,12 +604,12 @@ class TipperShapeFile(object):
             data_source = driver.CreateDataSource(shape_fn)
             
             ##if you read from a raster get the georeference point otherwise create one
-            spatial_ref = osr.SpatialReference()
+            #spatial_ref = osr.SpatialReference()
             #this puts it in the wsg84 reference frame.
-            spatial_ref.ImportFromWkt(self.projection) 
+            #spatial_ref.ImportFromEPSG(self._proj_dict[self.projection])
             
             ##create a layer to put the ellipses onto
-            layer = data_source.CreateLayer('TIPPER', spatial_ref,
+            layer = data_source.CreateLayer('TIPPER', self.utm_cs,
                                             ogr.wkbPolygon)
             
             #make field names
@@ -682,9 +704,10 @@ class TipperShapeFile(object):
             data_source.SyncToDisk()
             
             #write a projection file
-            spatial_ref = layer.GetSpatialRef() 
-            prj_file = open('{0}.prj'.format(shape_fn[:-3]), 'w')
-            prj_file.write(spatial_ref.ExportToWkt())
+            #spatial_ref.MorphFromESRI() 
+            self.utm_cs.MorphFromESRI() 
+            prj_file = open('{0}prj'.format(shape_fn[:-3]), 'w')
+            prj_file.write(self.utm_cs.ExportToWkt())
             prj_file.close()
             
             data_source.Destroy()
@@ -805,8 +828,10 @@ def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
                                                           utm_coordinate_system)
                                                                                   
     
+    utm_point = ll_to_utm_geo_transform.TransformPoint(lon, lat, 0)
+        
     # returns easting, northing, altitude  
-    return ll_to_utm_geo_transform.TransformPoint(lon, lat, 0)
+    return utm_coordinate_system, utm_point
     
 #==============================================================================
 # test
@@ -814,12 +839,17 @@ def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
 edipath = r"c:\Users\jrpeacock\Documents\Mendenhall\MonoBasin\EDI_Files\GeographicNorth"
 edilst = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
           if edi.find('.edi') > 0]
+edilst.remove(os.path.join(edipath, 'mb035.edi'))
 
-pts = PTShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
-pts.projection = 'NAD27'
-pts.write_shape_files()
+#pts = PTShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
+#pts.projection = 'NAD27'
+#pts.ellipse_size = 1200
+#pts.write_shape_files()
 tps = TipperShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
 tps.projection = 'NAD27'
+tps.arrow_lw = 30
+tps.arrow_head_height = 100
+tps.arrow_head_width = 70
 tps.write_real_shape_files()
-tps.write_imag_shape_files()
+#tps.write_imag_shape_files()
     
