@@ -74,7 +74,7 @@ def _assert_position_format(coordinate, value):
         if coordinate in ['latitude','lat'] and ( not -90 <= latlon <= 90):
             raise MTex.MTpyError_value('Error - Latitude out of range')
 
-        if coordinate in ['longitude','lon','long'] and ( not -180 <= latlon <= 180):
+        if coordinate in ['longitude','lon','long'] and ( not -180 <= latlon <= 360):
             raise MTex.MTpyError_value('Error - Longitude out of range')
 
         value = latlon

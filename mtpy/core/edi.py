@@ -463,6 +463,9 @@ class Edi(object):
                 key = 'lat'
             if key in ['long','lon','longitude']:
                 key = 'long'
+                #bring longitude to standard interval:
+                if 180 < value <= 360:
+                    value -= 360  
 
             head_dict[key] = value
 
