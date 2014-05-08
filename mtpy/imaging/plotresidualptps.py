@@ -28,9 +28,13 @@ class PlotResidualPTps(mtpl.MTEllipse):
     """
     plot residual phase tensor pseudo section. 
     
+     ..note:: it is assumed that the edi file lists have the same number
+              of edi files and have the same station names.  If you get
+              an error check this first.  Similarly, the frequencies must be
+              the same for all edi files
     
     Arguments:
-    ----------
+    ------------
     
         **fn_list1** : list of strings
                         full paths to .edi files for survey 1
@@ -38,9 +42,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
         **fn_list2** : list of strings
                         full paths to .edi files for survey 2
                         
-        **Note** it is assumed that the edi file lists have the same number
-                 of edi files and have the same station names.  If you get
-                 an error check this first.
+       
                  
         **rot90** : [ True | False ] True to rotate residual phase tensor
                     by 90 degrees. False to leave as is.
@@ -53,7 +55,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
                               
                               * 'colorby' : [ 'phimin' | 'phimax' | 'skew' | 
                                               'skew_seg' | 'phidet' | 
-                                              'ellipticity' ]
+                                              'ellipticity' | 'geometric_mean']
                                         
                                         - 'phimin' -> colors by minimum phase
                                         - 'phimax' -> colors by maximum phase
@@ -64,7 +66,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
                                         - 'phidet' -> colors by determinant of
                                                      the phase tensor
                                         - 'ellipticity' -> colors by ellipticity
-                                        *default* is 'phimin'
+                                        - 'geometric_mean' -> sqrt(phimin*phimax)
+                                        *default* is 'geometric_mean'
                                 
                                * 'range' : tuple (min, max, step)
                                      Need to input at least the min and max
@@ -87,12 +90,21 @@ class PlotResidualPTps(mtpl.MTEllipse):
                                    - 'mt_seg_bl2wh2rd' -> discrete blue to 
                                                          white to red
         
-                                         
+        **med_filt_kernel** : tuple(station, period)
+                              kernel size for the 2D median filter.  
+                              the first is the number of stations to smooth 
+                              over. The first number is the number of periods 
+                              to smooth over. Both should be odd.
+                              *default* is None
         
-        **stretch** : float or tuple (xstretch, ystretch)
+        **xstretch** : float 
                         is a factor that scales the distance from one 
                         station to the next to make the plot readable.
-                        *Default* is 200
+                        *Default* is 1000
+        **ystretch** : float 
+                        is a factor that scales the distance from one 
+                        period to the next to make the plot readable.
+                        *Default* is 25
                         
         **linedir** : [ 'ns' | 'ew' ]
                       predominant direction of profile line
@@ -293,12 +305,15 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.mt_list2 = mtpl.get_mtlist(fn_list=fn_list2)
         
         self.residual_pt_list = []
+        self.freq_list = None
+        self.rpt_array = None
         self.med_filt_kernel = kwargs.pop('med_filt_kernel', None)
-        self.rot90 = kwargs.pop('rot90', False)
+        self.rot90 = kwargs.pop('rot90', True)
         
         #--> set the ellipse properties
         self._ellipse_dict = kwargs.pop('ellipse_dict', {'cmap':'mt_wh2or',
-                                                         'range':(0, 2)})
+                                                         'range':(0, 2),
+                                                          'colorby':'geometric_mean'})
         self._read_ellipse_dict()
         
         #--> set colorbar properties---------------------------------
@@ -341,13 +356,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.subplot_bottom = .1
         
         #set the stretching in each direction
-        stretch = kwargs.pop('stretch', (50, 25))
-        if type(stretch) == float or type(stretch) == int:
-            self.xstretch = stretch
-            self.ystretch = stretch
-        else:
-            self.xstretch = stretch[0]
-            self.ystretch = stretch[1]
+        self.xstretch = kwargs.pop('xstretch', 1000)
+        self.ystretch = kwargs.pop('ystretch', 25)
+
         
         #if rotation angle is an int or float make an array the length of 
         #mt_list for plotting purposes
@@ -401,24 +412,61 @@ class PlotResidualPTps(mtpl.MTEllipse):
             
         for ii,rpt in enumerate(self.residual_pt_list):
             rpt.rot_z = self._rot_z[ii]
+    
     def _get_rot_z(self):
         return self._rot_z
         
     rot_z = property(fget=_get_rot_z, fset=_set_rot_z, 
                      doc="""rotation angle(s)""")
                      
+    def _get_freq_list(self):
+        """
+        get all possible periods to plot
+        
+        """
+        
+        freq_list = []
+        for mt1 in self.mt_list1:
+            freq_list.extend(mt1.freq)
+        for mt2 in self.mt_list2:
+            freq_list.extend(mt2.freq)
+            
+        self.freq_list = np.array(sorted(set(freq_list), reverse=True))
+        
     def _compute_residual_pt(self):
         """
         compute residual phase tensor so the result is something useful to 
         plot
         """
+        
+        self._get_freq_list()
+        freq_dict = dict([(np.round(key, 5), value) 
+                           for value, key in enumerate(self.freq_list)])
+                               
+        num_freq = self.freq_list.shape[0]
+        num_station = len(self.mt_list1)
+        
+        #make a structured array to put stuff into for easier manipulation
+        self.rpt_array = np.zeros(num_station, 
+                                  dtype=[('station', '|S10'),
+                                         ('lat', np.float),
+                                         ('lon', np.float),
+                                         ('elev', np.float),
+                                         ('offset', np.float),
+                                         ('phimin', (np.float, num_freq)),
+                                         ('phimax', (np.float, num_freq)),
+                                         ('skew', (np.float, num_freq)),
+                                         ('azimuth', (np.float, num_freq))])
+                                         
         self.residual_pt_list = []
-        for mt1 in self.mt_list1:
+        for mm, mt1 in enumerate(self.mt_list1):
             station_find = False
-            fdict1 = dict([(ff, ii) for ii, ff in enumerate(mt1.freq)])
+            fdict1 = dict([(np.round(ff, 5), ii) 
+                            for ii, ff in enumerate(mt1.freq)])
             for mt2 in self.mt_list2:
                 if mt2.station == mt1.station:
-                    fdict2 = dict([(ff, ii) for ii, ff in enumerate(mt2.freq)])
+                    fdict2 = dict([(np.round(ff, 5), ii) 
+                                    for ii, ff in enumerate(mt2.freq)])
                     
                     #need to make sure only matched frequencies are compared
                     index_1 = []
@@ -430,33 +478,65 @@ class PlotResidualPTps(mtpl.MTEllipse):
                         except KeyError:
                             'Did not find {0:.4e} Hz in {1}'.format(key1, 
                                                                   mt2.fn)
-                                                                  
+                    #create new Z objects that have similar frequencies                                              
                     new_z1 = mtpl.mtz.Z(z_array=mt1.z[index_1],
                                         zerr_array=mt1.z_err[index_1],
                                         freq=mt1.freq[index_1])
-                    mt1._Z = new_z1
                     new_z2 = mtpl.mtz.Z(z_array=mt2.z[index_2],
                                         zerr_array=mt2.z_err[index_2],
                                         freq=mt2.freq[index_2])
-                    mt2._Z = new_z2
-                    mt1.freq = mt1.freq[index_1]
-                    mt2.freq = mt2.freq[index_2]
-                    pt1 = mt1.get_PhaseTensor()
-                    pt2 = mt2.get_PhaseTensor()
+                                        
+                    #make new phase tensor objects
+                    pt1 = mtpt.PhaseTensor(z_object=new_z1)
+                    pt2 = mtpt.PhaseTensor(z_object=new_z2)
+
+                    #compute residual phase tensor
                     rpt = mtpt.ResidualPhaseTensor(pt1, pt2)
                     rpt.compute_residual_pt(pt1, pt2)
+                    
+                    #add some attributes to residual phase tensor object
                     rpt.station = mt1.station
                     rpt.lat = mt1.lat
                     rpt.lon = mt1.lon
-                    rpt.freq = mt1.freq
+                    
+                    #append to list for manipulating later
                     self.residual_pt_list.append(rpt)
+                    
+                    #be sure to tell the program you found the station
                     station_find = True
+                   
+                    #put stuff into an array because we cannot set values of 
+                    #rpt, need this for filtering.
+                    st_1, st_2 = self.station_id
+                    self.rpt_array[mm]['station'] = mt1.station[st_1:st_2]
+                    self.rpt_array[mm]['lat'] = mt1.lat
+                    self.rpt_array[mm]['lon'] = mt1.lon
+                    self.rpt_array[mm]['elev'] = mt1.elev
+                    for f_index, freq in enumerate(mt1.freq):
+                        aa = freq_dict[np.round(freq, 5)]
+                        try:
+                            rr = fdict1[np.round(freq, 5)]
+                            
+                            self.rpt_array[mm]['phimin'][aa] = \
+                                                rpt.residual_pt.phimin[0][rr]
+                            self.rpt_array[mm]['phimax'][aa] = \
+                                                rpt.residual_pt.phimax[0][rr]
+                            self.rpt_array[mm]['skew'][aa] = \
+                                                rpt.residual_pt.beta[0][rr]
+                            self.rpt_array[mm]['azimuth'][aa] = \
+                                                rpt.residual_pt.azimuth[0][rr]
+                        except KeyError:
+                            print 'Station {0} does not have {1:.5f}Hz'.format(
+                                   mt1.station, freq)
+                        
+                    
                     break
                 else:
                     pass
             if station_find == False:
-                print 'Did not find {0} from list 1 in list 2'.format(mt1.station) 
+                print 'Did not find {0} from list 1 in list 2'.format(mt1.station)
                 
+
     def _apply_median_filter(self, kernel=(3, 3)):
         """
         apply a median filter to the data to remove extreme outliers
@@ -464,50 +544,62 @@ class PlotResidualPTps(mtpl.MTEllipse):
         kernel is (station, frequency)
         
         """
+
+                                   
+        filt_phimin_arr = sps.medfilt2d(self.rpt_array['phimin'], 
+                                        kernel_size=kernel)                            
+        filt_phimax_arr = sps.medfilt2d(self.rpt_array['phimax'], 
+                                        kernel_size=kernel)                            
+        filt_skew_arr = sps.medfilt2d(self.rpt_array['skew'],
+                                      kernel_size=kernel)                            
+        filt_azimuth_arr = sps.medfilt2d(self.rpt_array['azimuth'], 
+                                         kernel_size=kernel) 
         
-        if self.ellipse_colorby == 'phimin':
-            color_array = np.array([rpt.residual_pt.phimin[0] for 
-                                    rpt in self.residual_pt_list])
-            filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
-            for ss in range(filt_array.shape[0]):
-                self.residual_pt_list[ss].residual_pt.phimin[0] = filt_array[ss]
+        self.rpt_array['phimin'] = filt_phimin_arr
+        self.rpt_array['phimax'] = filt_phimax_arr
+        self.rpt_array['skew'] = filt_skew_arr
+        self.rpt_array['azimuth'] = filt_azimuth_arr
         
-        elif self.ellipse_colorby == 'phimax':
-            color_array = np.array([rpt.residual_pt.phimax[0] for 
-                                    rpt in self.residual_pt_list])
-            filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
-            for ss in range(filt_array.shape[0]):
-                self.residual_pt_list[ss].residual_pt.phimax[0] = filt_array[ss]
-                
-        elif self.ellipse_colorby == 'skew':
-            color_array = np.array([rpt.residual_pt.beta[0] for 
-                                    rpt in self.residual_pt_list])
-            filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
-            for ss in range(filt_array.shape[0]):
-                self.residual_pt_list[ss].residual_pt.beta[0] = filt_array[ss]
+        print 'Applying Median Filter with kernel {0}'.format(kernel)
         
-        #--> need to do azimuth for all
-        color_array = np.array([rpt.residual_pt.azimuth[0] for 
-                                rpt in self.residual_pt_list])
-        filt_array = sps.medfilt2d(color_array, kernel_size=kernel)
-        for ss in range(filt_array.shape[0]):
-            self.residual_pt_list[ss].residual_pt.azimuth[0] = filt_array[ss] 
-            
-    def _get_ellipse_size_max(self):
+    def _get_offsets(self):
         """
-        get the maximum size of ellipses for the given period to normalize by
-        suggesting size of change
-        
+        get relative offsets of stations
         """
-        color_array = np.array([rpt.residual_pt.phimax[0].max() for 
-                                    rpt in self.residual_pt_list])
-                             
-        return color_array.max()
-      
+        
+        for ii, r_arr in enumerate(self.rpt_array):
+            #set the an arbitrary origin to compare distance to all other 
+                #stations.
+                if ii == 0:
+                    east0 = r_arr['lon']
+                    north0 = r_arr['lat']
+                    offset = 0.0
+                    r_arr['offset'] = offset
+                else:
+                    east = r_arr['lon']
+                    north = r_arr['lat']
+                    if self.linedir == 'ew': 
+                        if east0 < east:
+                            offset = np.sqrt((east0-east)**2+(north0-north)**2)
+                        elif east0 > east:
+                            offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
+                        else:
+                            offset = 0
+                        r_arr['offset'] = offset
+                    elif self.linedir == 'ns':
+                        if north0 < north:
+                            offset = np.sqrt((east0-east)**2+(north0-north)**2)
+                        elif north0 > north:
+                            offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
+                        else:
+                            offset = 0
+                        r_arr['offset'] = offset
+  
     def plot(self):
         """
         plot residual phase tensor
-        """                            
+        """ 
+                           
         #get residual phase tensor for plotting        
         self._compute_residual_pt()
         
@@ -515,6 +607,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
         if self.med_filt_kernel is not None:
             self._apply_median_filter(kernel=self.med_filt_kernel)
         
+        #get offsets of stations
+        self._get_offsets()
         
         #set position properties for the plot
         plt.rcParams['font.size']=self.font_size
@@ -528,15 +622,10 @@ class PlotResidualPTps(mtpl.MTEllipse):
         #make figure instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         
+        #create axis instance, be sure to make aspect equal or ellipses will
+        #look funny.
         self.ax = self.fig.add_subplot(1, 1, 1, aspect='equal')
-        
-        #create empty lists to put things into
-        self.stationlist = []
-        self.offsetlist = []
-        minlist = []
-        maxlist = []
-        plot_period_list = []
-        
+
         #set local parameters with shorter names
         es = self.ellipse_size
         ck = self.ellipse_colorby
@@ -554,149 +643,100 @@ class PlotResidualPTps(mtpl.MTEllipse):
             bounds = np.arange(ckmin, ckmax+ckstep, ckstep)
             
         #get largest ellipse
-        emax = self._get_ellipse_size_max()
-            
+        emax = self.rpt_array['phimax'].max()*.85
+           
+        period_list = 1./self.freq_list
         #plot phase tensor ellipses
-        for ii, rpt in enumerate(self.residual_pt_list):
-            self.stationlist.append(
-                              rpt.station[self.station_id[0]:self.station_id[1]])
-            
-            #set the an arbitrary origin to compare distance to all other 
-            #stations.
-            if ii == 0:
-                east0 = rpt.lon
-                north0 = rpt.lat
-                offset = 0.0
-            else:
-                east = rpt.lon
-                north = rpt.lat
-                if self.linedir == 'ew': 
-                    if east0 < east:
-                        offset = np.sqrt((east0-east)**2+(north0-north)**2)
-                    elif east0 > east:
-                        offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
-                    else:
-                        offset = 0
-                elif self.linedir == 'ns':
-                    if north0 < north:
-                        offset = np.sqrt((east0-east)**2+(north0-north)**2)
-                    elif north0 > north:
-                        offset = -1*np.sqrt((east0-east)**2+(north0-north)**2)
-                    else:
-                        offset = 0
-                        
-            self.offsetlist.append(offset)
-            
-            period_list = 1./rpt.freq[::-1]
-            phimax = rpt.residual_pt.phimax[0][::-1]
-            phimin = rpt.residual_pt.phimin[0][::-1]
-            azimuth = rpt.residual_pt.azimuth[0][::-1]
+        for ii, rpt in enumerate(self.rpt_array):
+
+            phimax = rpt['phimax'][::-1]
+            phimin = rpt['phimin'][::-1]
+            azimuth = rpt['azimuth'][::-1]
                 
             #get the properties to color the ellipses by
             if self.ellipse_colorby == 'phimin':
-                colorarray = rpt.residual_pt.phimin[0][::-1]
+                colorarray = phimin
                 
             elif self.ellipse_colorby == 'phimax':
-                colorarray = rpt.residual_pt.phimin[0][::-1]
-                
-            elif self.ellipse_colorby == 'phidet':
-                colorarray = np.sqrt(abs(rpt.residual_pt.det[::-1]))*(180/np.pi)
+                colorarray = phimax
                 
             elif self.ellipse_colorby == 'skew' or\
                  self.ellipse_colorby == 'skew_seg':
-                colorarray = rpt.residual_pt.beta[0][::-1]
-                
-            elif self.ellipse_colorby == 'ellipticity':
-                colorarray = rpt.residual_pt.ellipticity[::-1]
+                colorarray = rpt['skew'][::-1]
+
+            elif self.ellipse_colorby == 'geometric_mean':
+                colorarray = np.sqrt(phimin*phimax)
                 
             else:
                 raise NameError(self.ellipse_colorby+' is not supported')
-            
-            #get the number of periods
-            n = len(period_list)
-            
-            plot_period_list.extend(list(period_list))
-            
-            #get min and max of the color array for scaling later
-            minlist.append(min(colorarray))
-            maxlist.append(max(colorarray))
 
             for jj, ff in enumerate(period_list):
                 
-                #make sure the ellipses will be visable
-                eheight = phimin[jj]/emax*es
-                ewidth = phimax[jj]/emax*es
+                if phimin[jj] == 0.0 or phimax[jj] == 0.0:
+                    pass
+                else:
+                    #make sure the ellipses will be visable
+                    eheight = phimin[jj]/emax*es
+                    ewidth = phimax[jj]/emax*es
             
-                #create an ellipse scaled by phimin and phimax and orient
-                #the ellipse so that north is up and east is right
-                #need to add 90 to do so instead of subtracting
-                if self.rot90 == True:
-                    ellipd = patches.Ellipse((offset*self.xstretch,
-                                              np.log10(ff)*self.ystretch),
-                                                width=ewidth,
-                                                height=eheight,
-                                                angle=azimuth[jj]-90)
-                else:
-                    ellipd = patches.Ellipse((offset*self.xstretch,
-                                              np.log10(ff)*self.ystretch),
-                                                width=ewidth,
-                                                height=eheight,
-                                                angle=azimuth[jj])
-                                            
-                #get ellipse color
-                if cmap.find('seg')>0:
-                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray[jj],
-                                                             self.ellipse_colorby,
-                                                             cmap,
-                                                             ckmin,
-                                                             ckmax,
-                                                             bounds=bounds))
-                else:
-                    ellipd.set_facecolor(mtcl.get_plot_color(colorarray[jj],
-                                                             self.ellipse_colorby,
-                                                             cmap,
-                                                             ckmin,
-                                                             ckmax))
+                    #create an ellipse scaled by phimin and phimax and orient
+                    #the ellipse so that north is up and east is right
+                    #need to add 90 to do so instead of subtracting
+                    if self.rot90 == True:
+                        ellipd = patches.Ellipse((rpt['offset']*self.xstretch,
+                                                  np.log10(ff)*self.ystretch),
+                                                    width=ewidth,
+                                                    height=eheight,
+                                                    angle=azimuth[jj]-90)
+                    else:
+                        ellipd = patches.Ellipse((rpt['offset']*self.xstretch,
+                                                  np.log10(ff)*self.ystretch),
+                                                    width=ewidth,
+                                                    height=eheight,
+                                                    angle=azimuth[jj])
+                                                
+                    #get ellipse color
+                    if cmap.find('seg')>0:
+                        ellipd.set_facecolor(mtcl.get_plot_color(colorarray[jj],
+                                             self.ellipse_colorby,
+                                             cmap,
+                                             ckmin,
+                                             ckmax,
+                                             bounds=bounds))
+                    else:
+                        ellipd.set_facecolor(mtcl.get_plot_color(colorarray[jj],
+                                             self.ellipse_colorby,
+                                             cmap,
+                                             ckmin,
+                                             ckmax))
+                        
+                    # == =add the ellipse to the plot == ========
+                    self.ax.add_artist(ellipd)
                     
-                # == =add the ellipse to the plot == ========
-                self.ax.add_artist(ellipd)
-                
                 
         #--> Set plot parameters
-        plot_period_list = np.array(sorted(list(set(plot_period_list))))
-        self._plot_period_list = plot_period_list
-        n = len(plot_period_list)
-        
-        
         #calculate minimum period and maximum period with a stretch factor
-        pmin = int(np.floor(np.log10(self._plot_period_list.min())))
-        pmax = int(np.ceil(np.log10(self._plot_period_list.max())))
+        pmin = int(np.floor(np.log10(period_list.min())))
+        pmax = int(np.ceil(np.log10(period_list.max())))
         
         #need to sort the offsets and station labels so they plot correctly
         sdtype = [('offset', np.float), ('station','|S10')]
-        slist = np.array([(oo, ss) for oo, ss in zip(self.offsetlist, 
-                         self.stationlist)], dtype=sdtype)
+        slist = np.array([(oo, ss) for oo, ss in zip(self.rpt_array['offset'], 
+                         self.rpt_array['station'])], dtype=sdtype)
+        
         offset_sort = np.sort(slist, order='offset')
      
-        self.offsetlist = offset_sort['offset']
-        self.stationlist = offset_sort['station']
+        self.offset_list = offset_sort['offset']
+        self.station_list = offset_sort['station']
         
         #set y-ticklabels
         if self.tscale == 'period':
             yticklabels = [mtpl.labeldict[ii] for ii in range(pmin, pmax+1, 1)]
-#            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(plot_period_list[ll])) 
-#                            for ll in np.arange(0, n, self.ystep)]+\
-#                        ['{0:>4}'.format('{0: .1e}'.format(plot_period_list[-1]))]
-            
             self.ax.set_ylabel('Period (s)',
                                fontsize=self.font_size+2,
                                fontweight='bold')
                                
-        elif self.tscale == 'frequency':
-#            yticklabels = ['{0:>4}'.format('{0: .1e}'.format(1./plot_period_list[ll])) 
-#                            for ll in np.arange(0, n, self.ystep)]+\
-#                            ['{0:>4}'.format('{0: .1e}'.format(1./plot_period_list[-1]))]
-#            
+        elif self.tscale == 'frequency':         
             yticklabels = [mtpl.labeldict[-ii] for ii in range(pmin, pmax+1, 1)]
             self.ax.set_ylabel('Frequency (Hz)',
                                fontsize=self.font_size+2,
@@ -711,31 +751,26 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.ax.yaxis.set_ticks(np.arange(pmin*self.ystretch, 
                                           (pmax+1)*self.ystretch, 
                                           self.ystretch))
-#        self.ax.yaxis.set_ticks([np.log10(plot_period_list[ll])*self.ystretch 
-#                             for ll in np.arange(0, n, self.ystep)])
-        
-        #set y-axis minor ticks                     
-#        self.ax.yaxis.set_ticks([np.log10(plot_period_list[ll])*self.ystretch 
-#                             for ll in np.arange(0, n, 1)],minor=True)
+
         #set y-axis tick labels
         self.ax.set_yticklabels(yticklabels)
         
         #set x-axis ticks
-        self.ax.set_xticks(self.offsetlist*self.xstretch)
+        self.ax.set_xticks(self.offset_list*self.xstretch)
         
         #set x-axis tick labels as station names
-        xticklabels = self.stationlist
+        xticklabels = self.station_list
         if self.xstep != 1:
-            xticklabels = np.zeros(len(self.stationlist), 
-                                   dtype=self.stationlist.dtype)
-            for xx in range(0,len(self.stationlist),self.xstep):
-                xticklabels[xx] = self.stationlist[xx]
+            xticklabels = np.zeros(len(self.station_list), 
+                                   dtype=self.station_list.dtype)
+            for xx in range(0,len(self.station_list),self.xstep):
+                xticklabels[xx] = self.station_list[xx]
         self.ax.set_xticklabels(xticklabels)
         
         #--> set x-limits
         if self.xlimits == None:
-            self.ax.set_xlim(self.offsetlist.min()*self.xstretch-es*2,
-                             self.offsetlist.max()*self.xstretch+es*2)
+            self.ax.set_xlim(self.offset_list.min()*self.xstretch-es*2,
+                             self.offset_list.max()*self.xstretch+es*2)
         else:
             self.ax.set_xlim(self.xlimits)
             
@@ -755,12 +790,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
         
         #put a grid on the plot
         self.ax.grid(alpha=.25, which='both', color=(.25, .25, .25))
-        
-        #print out the min an max of the parameter plotted
-        print '-'*25
-        print ck+' min = {0:.2f}'.format(min(minlist))
-        print ck+' max = {0:.2f}'.format(max(maxlist))
-        print '-'*25
 
         #==> make a colorbar with appropriate colors
         if self.cb_position == None:
