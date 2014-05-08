@@ -26,24 +26,37 @@ import scipy.signal as sps
 
 class PlotResidualPTps(mtpl.MTEllipse):
     """
-    plot residual phase tensor pseudo section. 
+    This will plot residual phase tensors in a pseudo section.  The data is 
+    read in and stored in 2 ways, one as a list ResidualPhaseTensor object for
+    each matching station and the other in a structured array with all the 
+    important information.  The structured array is the one that is used for 
+    plotting.  It is computed each time plot() is called so if it is
+    manipulated it is reset.  The array is sorted by relative offset, so no
+    special order of input is needed for the file names.  However, the 
+    station names should be verbatim between surveys, otherwise it will not
+    work.  
     
-     ..note:: it is assumed that the edi file lists have the same number
-              of edi files and have the same station names.  If you get
-              an error check this first.  Similarly, the frequencies must be
-              the same for all edi files
+    The residual phase tensor is calculated as I-(Phi_2)^-1 (Phi_1)
+    
+    The default coloring is by the geometric mean as sqrt(Phi_min*Phi_max), 
+    which defines the percent change between measurements.
+    
+    There are a lot of parameters to change how the plot looks, have a look 
+    below if you figure looks a little funny.  The most useful will be 
+    xstretch, ystretch and ellipse_size
+    
+    The ellipses are normalized by the largest Phi_max of the survey.
+
     
     Arguments:
-    ------------
+    --------------
     
         **fn_list1** : list of strings
                         full paths to .edi files for survey 1
 
         **fn_list2** : list of strings
                         full paths to .edi files for survey 2
-                        
-       
-                 
+                             
         **rot90** : [ True | False ] True to rotate residual phase tensor
                     by 90 degrees. False to leave as is.
 
@@ -78,7 +91,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
                           * 'cmap' : [ 'mt_yl2rd' | 'mt_bl2yl2rd' | 
                                       'mt_wh2bl' | 'mt_rd2bl' | 
                                       'mt_bl2wh2rd' | 'mt_seg_bl2wh2rd' |
-                                      'mt_rd2gr2bl' ]
+                                      'mt_rd2gr2bl' | 'mt_wh2or ]
                                       
                                    - 'mt_yl2rd' -> yellow to red
                                    - 'mt_bl2yl2rd' -> blue to yellow to red
@@ -89,6 +102,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
                                    - 'mt_rd2gr2bl' -> red to green to blue
                                    - 'mt_seg_bl2wh2rd' -> discrete blue to 
                                                          white to red
+                                   - 'mt_wh2or' -> white to orange
+                                                    *default*
         
         **med_filt_kernel** : tuple(station, period)
                               kernel size for the 2D median filter.  
@@ -135,7 +150,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
                   dots per inch of the resolution. *default* is 300
                     
                        
-        **fignum** : int
+        **fig_num** : int
                      figure number.  *Default* is 1
         
                          
@@ -172,15 +187,91 @@ class PlotResidualPTps(mtpl.MTEllipse):
                       
                       * 'n' to not plot on creating an instance
                       
-        **xlim** : tuple(xmin, xmax)
+        **xlimits** : tuple(xmin, xmax)
                    min and max along the x-axis in relative distance of degrees
                    and multiplied by xstretch
                    
-        **ylim** : tuple(ymin, ymax)
+        **ylimits** : tuple(ymin, ymax)
                    min and max period to plot, note that the scaling will be
                    done in the code.  So if you want to plot from (.1s, 100s)
                    input ylim=(.1,100)
     
+        
+    ==================== ======================================================
+      Attributes          Description
+    ==================== ======================================================
+     ax                   matplotlib.axes instance for the main plot
+     ax2                  matplotlib.axes instance for the color bar
+     cb                   matplotlib.colors.ColorBar instance for color bar
+     cb_orientation       color bar orientation ('vertical' | 'horizontal')
+     cb_position          color bar position (x, y, dx, dy)
+     ellipse_cmap         ellipse color map, see above for options
+     ellipse_colorby      parameter to color ellipse by
+     ellipse_range        (min, max, step) values to color ellipses
+     ellipse_size         scaling factor to make ellipses visible
+     fig                  matplotlib.figure instance for the figure  
+     fig_dpi              dots-per-inch resolution
+     fig_num              number of figure being plotted
+     fig_size             size of figure in inches
+     fn_list1             list of .edi file names for survey 1
+     fn_list2             list of .edi file names for survey 2
+     font_size            font size of axes tick label, axes labels will be
+                          font_size + 2
+     freq_list            list of frequencies from all .edi files
+     linedir              prominent direction of profile being plotted
+     med_filt_kernel      (station, frequency) kernel to apply median smoothing
+                          to the data.      
+     mt_list1             list of mtplot.MTplot instances containing all
+                          important information for each station in survey 1
+     mt_list2             list of mtplot.MTplot instances containing all
+                          important information for each station in survey 2
+     offset_list          array of relative offsets of each station
+     plot_title           title of the plot
+     plot_yn              plot the pseudo section on instance creation
+     residual_pt_list     list ofmtpy.pt.ResidualPhaseTensor objects
+     rot90                rotates the residual phase tensors by 90 degrees
+                          if set to True
+     rpt_array            structured array with all the important information.
+                          This is the important array from which plotting 
+                          occurs.
+     station_font_dict    font dictionary for station labels 
+     station_id           index [min, max] to reaad station name
+     station_list         list of stations plotted
+     station_pad          padding between axis and station label
+     subplot_bottom       spacing between plot and bottom of figure window
+     subplot_hspace       vertical spacing between subplots
+     subplot_left         spacing between plot and left of figure window
+     subplot_right        spacing between plot and right of figure window
+     subplot_top          spacing between plot and top of figure window
+     subplot_wspace       horizontal spacing between subplots
+     tscale               temporal scale of y-axis ('frequency' | 'period')
+     xlimits              limits on x-axis (xmin, xmax)
+     xstretch             scaling factor to stretch x offsets
+     xstep                interval of station labels to plot 
+                          *default* is 1 to label all stations 
+     ylimits              limits on y-axis (ymin, ymax)
+     ystep                interval of period labels to plot 
+                          *default* is 1 to label all powers of 10
+     ystretch             scaling factor to strech axes in y direction
+    ==================== ======================================================        
+    
+    
+    ======================= ===================================================
+    Methods                 Description  
+    ======================= ===================================================
+     plot                   plots the pseudo section
+     redraw_plot            on call redraws the plot from scratch
+     save_figure            saves figure to a file of given format
+     update_plot            updates the plot while still active
+     _apply_median_filter   apply a 2D median filter to the data 
+     _compute_residual_pt   compute residual pt and fill rpt_array and 
+                            fill residaul_pt_list          
+     _get_freq_list         get a list of all possible frequencies from .edi's 
+     _get_offsets           get a list of offsets of the station locations
+                            and fill rpt_array['offset']
+     _read_ellipse_dict     read ellipse dictionary and return a ellipse object
+    ======================= ===================================================
+        
     To get a list of .edi files that you want to plot -->
     :Example: ::
         
@@ -194,13 +285,14 @@ class PlotResidualPTps(mtpl.MTEllipse):
         >>> ...       if edi.find('.edi')>0]
         >>> # color by phimin with a range of 0-5 deg
     
-    * If you want to plot minimum phase colored from blue to red in a range of
-     20 to 70 degrees you can do it one of two ways--> 
+    * If you want to plot geometric mean colored from white to orange in a
+      range of 0 to 10 percent you can do it one of two ways--> 
     
     1)          
     :Example: ::
         
-        >>> edict = {'range':(20,70), 'cmap':'mt_bl2gr2rd','colorby':'phimin'}
+        >>> edict = {'range':(0,10), 'cmap':'mt_wh2or', \
+                     'colorby':'geometric_mean', 'size':10}
         >>> pt1 = mtplot.residual_pt_ps(edilist1, edilst2, ellipse_dict=edict)
      
     2)
@@ -208,91 +300,17 @@ class PlotResidualPTps(mtpl.MTEllipse):
         
         >>> pt1 = mtplot.residual_pt_ps(edilist1, edilst2, ellipse_dict=edict,\
                                         plot_yn='n')
-        >>> pt1.ellipse_colorby = 'phimin'
-        >>> pt1.ellipse_cmap = 'mt_bl2gr2rd'
-        >>> pt1.ellipse_range = (20,70)
+        >>> pt1.ellipse_colorby = 'geometric_mean'
+        >>> pt1.ellipse_cmap = 'mt_wh2or'
+        >>> pt1.ellipse_range = (0, 10)
+        >>> pt1.ellipse_size = 10
         >>> pt1.plot()
         
-    * If you want to add real induction arrows that are scaled by 10 and point
-     away from a conductor --> 
-    :Example: ::
-        
-        >>> pt1.plot_tipper = 'yr'
-        >>> pt1.arrow_size = 10
-        >>> pt1.arrow_direction = -1
-        >>> pt1.redraw_plot()
     
     * If you want to save the plot as a pdf with a generic name -->
     :Example: ::
         >>> pt1.save_figure(r"/home/PTFigures", file_format='pdf', dpi=300)
         File saved to '/home/PTFigures/PTPseudoSection.pdf'
-        
-    Attributes:
-    -----------
-        -arrow_color_imag     color of imaginary induction arrow
-        -arrow_color_real     color of real induction arrow
-        -arrow_direction      convention of arrows pointing to or away from 
-                              conductors, see above.
-        -arrow_head_length    length of arrow head in relative points
-        -arrow_head_width     width of arrow head in relative points
-        -arrow_lw             line width of arrows
-        -arrow_size           scaling factor to multiple arrows by to be visible
-        -arrow_threshold      threshold for plotting arrows, anything above 
-                              this number will not be plotted.
-        
-        -ax                   matplotlib.axes instance for the main plot
-        -ax2                  matplotlib.axes instance for the color bar
-        -cb                   matplotlib.colors.ColorBar instance for color bar
-        -cb_orientation       color bar orientation ('vertical' | 'horizontal')
-        -cb_position          color bar position (x, y, dx, dy)
-        
-        -dpi                  dots-per-inch resolution
-        
-        -ellipse_cmap         ellipse color map, see above for options
-        -ellipse_colorby      parameter to color ellipse by
-        -ellipse_range        (min, max, step) values to color ellipses
-        -ellipse_size         scaling factor to make ellipses visible
-        
-        -fig                  matplotlib.figure instance for the figure 
-        -fignum               number of figure being plotted
-        -figsize              size of figure in inches
-        -font_size            font size of axes tick label, axes labels will be
-                              font_size + 2
-        
-        -linedir              prominent direction of profile being plotted 
-             
-        -mt_list               list of mtplot.MTplot instances containing all
-                              the important information for each station
-        -offsetlist            array of relative offsets of each station
-        
-        -plot_tipper          string to inform program to plot induction arrows
-        -plot_yn              plot the pseudo section on instance creation
-        
-        -rot_z                rotates the data by this angle assuming North is
-                              0 and angle measures clockwise
-                              
-        -station_id            index [min, max] to reaad station name
-        -stationlist           list of stations plotted
-        -title                title of figure
-        -tscale               temporal scale of y-axis ('frequency' | 'period')
-        
-        -xlimits              limits on x-axis (xmin, xmax)
-        -xstretch             scaling factor to stretch x offsets
-        
-        -ylimits              limits on y-axis (ymin, ymax)
-        -ystep                step to set major ticks on y-axis
-        -ystretch             scaling factor to strech axes in y direction
-        
-    Methods:
-    --------
-
-        -plot                 plots the pseudo section
-        -redraw_plot          on call redraws the plot from scratch
-        -save_figure          saves figure to a file of given format
-        -update_plot          updates the plot while still active
-        -writeTextFiles       writes parameters of the phase tensor and tipper
-                              to text files.
-
     
     """
     
@@ -311,9 +329,10 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.rot90 = kwargs.pop('rot90', True)
         
         #--> set the ellipse properties
-        self._ellipse_dict = kwargs.pop('ellipse_dict', {'cmap':'mt_wh2or',
-                                                         'range':(0, 2),
-                                                          'colorby':'geometric_mean'})
+        self._ellipse_dict = kwargs.pop('ellipse_dict',
+                                        {'cmap':'mt_wh2or',
+                                         'range':(0, 10),
+                                         'colorby':'geometric_mean'})
         self._read_ellipse_dict()
         
         #--> set colorbar properties---------------------------------
@@ -343,9 +362,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.xstep = kwargs.pop('xstep', 1)
         self.xlimits = kwargs.pop('xlimits', None)
         self.ylimits = kwargs.pop('ylimits', None)
-        
-        #--> set the freq to plot
-        self.ftol = kwargs.pop('ftol', .1)
         
         #--> set spacing of plot
         self.subplot_wspace = .1
@@ -418,7 +434,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
         
     rot_z = property(fget=_get_rot_z, fset=_set_rot_z, 
                      doc="""rotation angle(s)""")
-                     
+    #-------------------------------------------------------------------                 
     def _get_freq_list(self):
         """
         get all possible periods to plot
@@ -432,7 +448,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
             freq_list.extend(mt2.freq)
             
         self.freq_list = np.array(sorted(set(freq_list), reverse=True))
-        
+     
+    #------------------------------------------------------------------ 
     def _compute_residual_pt(self):
         """
         compute residual phase tensor so the result is something useful to 
@@ -456,7 +473,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
                                          ('phimin', (np.float, num_freq)),
                                          ('phimax', (np.float, num_freq)),
                                          ('skew', (np.float, num_freq)),
-                                         ('azimuth', (np.float, num_freq))])
+                                         ('azimuth', (np.float, num_freq)),
+                                         ('geometric_mean', (np.float, num_freq))])
                                          
         self.residual_pt_list = []
         for mm, mt1 in enumerate(self.mt_list1):
@@ -525,6 +543,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
                                                 rpt.residual_pt.beta[0][rr]
                             self.rpt_array[mm]['azimuth'][aa] = \
                                                 rpt.residual_pt.azimuth[0][rr]
+                            self.rpt_array[mm]['geometric_mean'][aa] = \
+                                        np.sqrt(rpt.residual_pt.phimin[0][rr]*
+                                                rpt.residual_pt.phimax[0][rr])
                         except KeyError:
                             print 'Station {0} does not have {1:.5f}Hz'.format(
                                    mt1.station, freq)
@@ -535,8 +556,11 @@ class PlotResidualPTps(mtpl.MTEllipse):
                     pass
             if station_find == False:
                 print 'Did not find {0} from list 1 in list 2'.format(mt1.station)
-                
-
+               
+        # from the data get the relative offsets and sort the data by them
+        self._get_offsets()
+    
+    #-------------------------------------------------------------------
     def _apply_median_filter(self, kernel=(3, 3)):
         """
         apply a median filter to the data to remove extreme outliers
@@ -561,7 +585,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.rpt_array['azimuth'] = filt_azimuth_arr
         
         print 'Applying Median Filter with kernel {0}'.format(kernel)
-        
+    
+    #-------------------------------------------------------------------    
     def _get_offsets(self):
         """
         get relative offsets of stations
@@ -594,7 +619,12 @@ class PlotResidualPTps(mtpl.MTEllipse):
                         else:
                             offset = 0
                         r_arr['offset'] = offset
-  
+                        
+        # be sure to order the structured array by offset, this will make
+        # sure that the median filter is spatially correct
+        self.rpt_array.sort(order='offset')
+    
+    #--------------------------------------------------------------------------    
     def plot(self):
         """
         plot residual phase tensor
@@ -606,9 +636,6 @@ class PlotResidualPTps(mtpl.MTEllipse):
         #filter data if desired
         if self.med_filt_kernel is not None:
             self._apply_median_filter(kernel=self.med_filt_kernel)
-        
-        #get offsets of stations
-        self._get_offsets()
         
         #set position properties for the plot
         plt.rcParams['font.size']=self.font_size
@@ -636,7 +663,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
             ckstep = float(self.ellipse_range[2])
         except IndexError:
             ckstep = 3
-                
+        #set the number of segments in case a segmented map is desired        
         nseg = float((ckmax-ckmin)/(2*ckstep))
 
         if cmap == 'mt_seg_bl2wh2rd':
@@ -654,21 +681,11 @@ class PlotResidualPTps(mtpl.MTEllipse):
             azimuth = rpt['azimuth'][::-1]
                 
             #get the properties to color the ellipses by
-            if self.ellipse_colorby == 'phimin':
-                colorarray = phimin
-                
-            elif self.ellipse_colorby == 'phimax':
-                colorarray = phimax
-                
-            elif self.ellipse_colorby == 'skew' or\
-                 self.ellipse_colorby == 'skew_seg':
-                colorarray = rpt['skew'][::-1]
-
-            elif self.ellipse_colorby == 'geometric_mean':
-                colorarray = np.sqrt(phimin*phimax)
-                
-            else:
-                raise NameError(self.ellipse_colorby+' is not supported')
+            try:
+                color_array = rpt[self.ellipse_colorby]
+            except ValueError:
+                raise NameError('{0} is not supported'.format(
+                                                        self.ellipse_colorby))
 
             for jj, ff in enumerate(period_list):
                 
@@ -685,26 +702,26 @@ class PlotResidualPTps(mtpl.MTEllipse):
                     if self.rot90 == True:
                         ellipd = patches.Ellipse((rpt['offset']*self.xstretch,
                                                   np.log10(ff)*self.ystretch),
-                                                    width=ewidth,
-                                                    height=eheight,
-                                                    angle=azimuth[jj]-90)
+                                                  width=ewidth,
+                                                  height=eheight,
+                                                  angle=90-azimuth[jj])
                     else:
                         ellipd = patches.Ellipse((rpt['offset']*self.xstretch,
                                                   np.log10(ff)*self.ystretch),
-                                                    width=ewidth,
-                                                    height=eheight,
-                                                    angle=azimuth[jj])
+                                                  width=ewidth,
+                                                  height=eheight,
+                                                  angle=azimuth[jj])
                                                 
                     #get ellipse color
                     if cmap.find('seg')>0:
-                        ellipd.set_facecolor(mtcl.get_plot_color(colorarray[jj],
+                        ellipd.set_facecolor(mtcl.get_plot_color(color_array[jj],
                                              self.ellipse_colorby,
                                              cmap,
                                              ckmin,
                                              ckmax,
                                              bounds=bounds))
                     else:
-                        ellipd.set_facecolor(mtcl.get_plot_color(colorarray[jj],
+                        ellipd.set_facecolor(mtcl.get_plot_color(color_array[jj],
                                              self.ellipse_colorby,
                                              cmap,
                                              ckmin,
@@ -846,6 +863,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
         
         plt.show()
 
+    #-----------------------------------------------------------------------
     def save_figure(self, save_fn, file_format='pdf', 
                   orientation='portrait', fig_dpi=None, close_plot='y'):
         """
@@ -883,15 +901,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
                           
         :Example: ::
             
-            >>> # to save plot as jpg
-            >>> import mtpy.imaging.mtplottools as mtplot
-            >>> p1 = mtplot.PlotPhaseTensorMaps(edilist,freqspot=10)
-            >>> p1.save_plot(r'/home/MT', file_format='jpg')
-            'Figure saved to /home/MT/PTMaps/PTmap_phimin_10Hz.jpg'
+            >>> ptr.save_figure()
             
         """
-
-        sf='_{0:.6g}'.format(self.plot_freq)
         
         if fig_dpi == None:
             fig_dpi = self.fig_dpi
@@ -906,12 +918,12 @@ class PlotResidualPTps(mtpl.MTEllipse):
         else:
             if not os.path.exists(save_fn):
                 os.mkdir(save_fn)
-            if not os.path.exists(os.path.join(save_fn, 'PTMaps')):
-                os.mkdir(os.path.join(save_fn, 'PTMaps'))
-                save_fn = os.path.join(save_fn, 'PTMaps')
+            if not os.path.exists(os.path.join(save_fn, 'RPT_PS')):
+                os.mkdir(os.path.join(save_fn, 'RPT_PS'))
+                save_fn = os.path.join(save_fn, 'RPT_PS')
                 
-            save_fn = os.path.join(save_fn, 'PTmap_'+self.ellipse_colorby+sf+
-                                    'Hz.'+file_format)
+            save_fn = os.path.join(save_fn, 'RPT_PS_{0}.{1}'.format(
+                                   self.ellipse_colorby, file_format))
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
                         orientation=orientation, bbox_inches='tight')
                         
@@ -925,6 +937,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.fig_fn = save_fn
         print 'Saved figure to: '+self.fig_fn
 
+    
+    #-----------------------------------------------------------------------
     def update_plot(self):
         """
         update any parameters that where changed using the built-in draw from
@@ -943,7 +957,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
         """
 
         self.fig.canvas.draw()
-        
+   
+   #-------------------------------------------------------------------------    
     def redraw_plot(self):
         """
         use this function if you updated some attributes and want to re-plot.
