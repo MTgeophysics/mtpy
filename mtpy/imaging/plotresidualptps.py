@@ -583,6 +583,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.rpt_array['phimax'] = filt_phimax_arr
         self.rpt_array['skew'] = filt_skew_arr
         self.rpt_array['azimuth'] = filt_azimuth_arr
+        self.rpt_array['geometric_mean'] = np.sqrt(filt_phimin_arr*\
+                                                   filt_phimax_arr)
         
         print 'Applying Median Filter with kernel {0}'.format(kernel)
     
@@ -704,7 +706,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
                                                   np.log10(ff)*self.ystretch),
                                                   width=ewidth,
                                                   height=eheight,
-                                                  angle=90-azimuth[jj])
+                                                  angle=azimuth[jj]-90)
                     else:
                         ellipd = patches.Ellipse((rpt['offset']*self.xstretch,
                                                   np.log10(ff)*self.ystretch),
