@@ -403,7 +403,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             self.ypad = kwargs.pop('ypad', .005)
             #--> set the ellipse properties -------------------
             self._ellipse_dict = kwargs.pop('ellipse_dict', 
-                                            {'range':(0,5), 'cmap':'mt_wh2or',
+                                            {'range':(0,5), 'cmap':'mt_yl2rd',
                                              'size':.005,
                                              'colorby':'geometric_mean'}) 
             self._read_ellipse_dict()
@@ -412,7 +412,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             self.ypad = kwargs.pop('ypad', 1000)
             #--> set the ellipse properties -------------------
             self._ellipse_dict = kwargs.pop('ellipse_dict', 
-                                            {'range':(0,5), 'cmap':'mt_wh2or',
+                                            {'range':(0,5), 'cmap':'mt_yl2rd',
                                              'size':500,
                                              'colorby':'geometric_mean'})
             self._read_ellipse_dict()
@@ -421,7 +421,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             self.ypad = kwargs.pop('ypad', 1)
             #--> set the ellipse properties -------------------
             self._ellipse_dict = kwargs.pop('ellipse_dict', 
-                                            {'range':(0,5), 'cmap':'mt_wh2or',
+                                            {'range':(0,5), 'cmap':'mt_yl2rd',
                                              'size':.5,
                                              'colorby':'geometric_mean'})
             self._read_ellipse_dict()
@@ -667,14 +667,13 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                       kernel_size=kernel)                            
         filt_azimuth_arr = sps.medfilt2d(self.rpt_array['azimuth'], 
                                          kernel_size=kernel) 
-        filt_gm_arr = sps.medfilt2d(self.rpt_array['geometric_mean'], 
-                                         kernel_size=kernel) 
         
         self.rpt_array['phimin'] = filt_phimin_arr
         self.rpt_array['phimax'] = filt_phimax_arr
         self.rpt_array['skew'] = filt_skew_arr
         self.rpt_array['azimuth'] = filt_azimuth_arr
-        self.rpt_array['geometric_mean'] = filt_gm_arr
+        self.rpt_array['geometric_mean'] = np.sqrt(filt_phimin_arr*\
+                                                   filt_phimax_arr)
         
         print 'Applying Median Filter with kernel {0}'.format(kernel)
     

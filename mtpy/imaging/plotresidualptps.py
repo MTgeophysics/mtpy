@@ -330,7 +330,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
         
         #--> set the ellipse properties
         self._ellipse_dict = kwargs.pop('ellipse_dict',
-                                        {'cmap':'mt_wh2or',
+                                        {'cmap':'mt_yl2rd',
                                          'range':(0, 10),
                                          'colorby':'geometric_mean'})
         self._read_ellipse_dict()
