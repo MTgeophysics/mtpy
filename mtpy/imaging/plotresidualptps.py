@@ -549,8 +549,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
                                 self.rpt_array[mm]['azimuth'][aa] = \
                                                     rpt.residual_pt.azimuth[0][rr]
                                 self.rpt_array[mm]['geometric_mean'][aa] = \
-                                            np.sqrt(rpt.residual_pt.phimin[0][rr]*
-                                                    rpt.residual_pt.phimax[0][rr])
+                                            np.sqrt(abs(rpt.residual_pt.phimin[0][rr]*
+                                                    rpt.residual_pt.phimax[0][rr]))
                             except IndexError:
                                 print '-'*50
                                 print mt1.station 
