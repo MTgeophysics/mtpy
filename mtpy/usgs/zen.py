@@ -36,8 +36,9 @@ import mtpy.imaging.plotspectrogram as plotspectrogram
 try:
     import mtpy.utils.mseed as mtmseed
 except ImportError:
-    print ('Can not convert data to mini seed format need to install Obspy '
-           'good luck!') 
+    print ('Can not convert data to mini seed format need to install Obspy, '
+           'good luck! You can find information on Obspy at '
+           'https://github.com/obspy/obspy/wiki') 
 
 try:
     import mtpy.processing.filter as mtfilt
@@ -100,7 +101,7 @@ class Zen3D(object):
     df                  sampling rate 
     fn                  full path to file name read in
     gps_diff            difference between gps time stamps
-    gps_lst             list of gps stamps
+    gps_list             list of gps stamps
     gps_time            np.ndarray of gps times from time stamps
     gps_week            gps week
     header_dict         dictionary of header parameters
@@ -128,7 +129,7 @@ class Zen3D(object):
     _seconds_diff       difference in seconds from start time to look for 
                          gps stamp. *default* is 5
     _stamp_len          length of gps time stamp in bits
-    _stamp_lst          list of gps time stamp variables
+    _stamp_list          list of gps time stamp variables
     _week_len           length of a gps week in seconds
     =================== =======================================================
     """
@@ -141,14 +142,14 @@ class Zen3D(object):
         self._stamp_len = kwargs.pop('stamp_len', 36)
         self._gps_stamp = kwargs.pop('gps_stamp', '\xff\xff\xff\xff')
         
-        self._stamp_lst = ['gps', 'time', 'lat', 'lon', 'status', 
+        self._stamp_list = ['gps', 'time', 'lat', 'lon', 'status', 
                            'gps_accuracy', 'temperature']
                            
         self._data_types = [np.int32, np.int32, np.float64, np.float64, 
                             np.uint32, np.int32, np.float32]
                             
         self._data_type = np.dtype([(st, dt) for st, dt in 
-                                     zip(self._stamp_lst, self._data_types)])
+                                     zip(self._stamp_list, self._data_types)])
                                      
         self._week_len = 604800
         self._gps_epoch = (1980, 1, 6, 0, 0, 0, -1, -1, 0)
@@ -160,7 +161,7 @@ class Zen3D(object):
         self.log_lines = []
         self.verbose = True
         self._skip_sample_tolerance = 5
-        self.sample_diff_lst = []
+        self.sample_diff_list = []
         self.counts_to_mv_conversion = 9.5367431640625e-10
         self.units = 'counts'
         self.gps_week = 1740
@@ -187,7 +188,7 @@ class Zen3D(object):
         
         self.gps_diff = None
         self.gps_time = None
-        self.gps_lst = None
+        self.gps_list = None
         self.temperature = None
         self.lat = None
         self.lon = None
@@ -211,10 +212,10 @@ class Zen3D(object):
         """
         
         #----read in header information----------------------------------------
-        header_lst = header_string.replace('\n', ',').split(',')
+        header_list = header_string.replace('\n', ',').split(',')
         
         header_dict = {}
-        for hh in header_lst:
+        for hh in header_list:
             if hh != '' and hh.find('builddate') == -1:
                 hkv = hh.split(':')
                 if len(hkv) == 2:
@@ -238,14 +239,14 @@ class Zen3D(object):
                 hline = hh.split(';')
                 for ll in hline:
                     if ll.find('builddate') > 0:
-                        hlst = ll.split('&')
-                        for kk in hlst:
-                            klst = kk.split(':')
-                            header_dict[klst[0].strip().lower()] = klst[1].strip()
+                        hlist = ll.split('&')
+                        for kk in hlist:
+                            klist = kk.split(':')
+                            header_dict[klist[0].strip().lower()] = klist[1].strip()
                     else:
-                        hlst = ll.split(':')
+                        hlist = ll.split(':')
                         try:
-                            header_dict[hlst[0].strip().lower()] = hlst[1].strip()
+                            header_dict[hlist[0].strip().lower()] = hlist[1].strip()
                         except IndexError:
                             pass
         #make attributes that will be useful latter
@@ -287,12 +288,12 @@ class Zen3D(object):
             * tx.id          --> name of transmitter if used
             
         """
-        meta_lst = meta_data_string.replace('\n','|').split('|') 
+        meta_list = meta_data_string.replace('\n','|').split('|') 
         meta_dict = {}
-        for mm in meta_lst:
-            mlst = mm.split(',')
-            if len(mlst) == 2:
-                meta_dict[mlst[0].strip().lower()] = mlst[1].strip().lower()
+        for mm in meta_list:
+            mlist = mm.split(',')
+            if len(mlist) == 2:
+                meta_dict[mlist[0].strip().lower()] = mlist[1].strip().lower()
             else:
                 pass
         self.meta_dict = meta_dict  
@@ -387,10 +388,10 @@ class Zen3D(object):
         num_blocks = int(np.ceil(num_bytes/float(block_len)))
         
         #get position of gps stamps
-        gps_lst = np.zeros(num_blocks, dtype=np.int)
+        gps_list = np.zeros(num_blocks, dtype=np.int)
         
         gps_dict = dict([(key, np.zeros(num_blocks, dtype=dtp)) 
-                          for key, dtp in zip(self._stamp_lst, 
+                          for key, dtp in zip(self._stamp_list, 
                                               self._data_types)])
         #make the time array floats instead of ints so can get the decimal 
         #place if it isn't 0.
@@ -399,8 +400,8 @@ class Zen3D(object):
         #get gps information from the data
         #get first time stamp that matches the starting time
         s1 = 0
-        gps_lst[0] = self.get_gps_stamp_location()
-        gps_info = np.fromstring(raw_data[gps_lst[0]:gps_lst[0]+self._stamp_len], 
+        gps_list[0] = self.get_gps_stamp_location()
+        gps_info = np.fromstring(raw_data[gps_list[0]:gps_list[0]+self._stamp_len], 
                                  dtype=self._data_type)
         gps_info['time'] = gps_info['time'].astype(np.float32)
         gps_info['time'] = self.get_gps_time(gps_info['time'])
@@ -412,8 +413,8 @@ class Zen3D(object):
         while start_test != self.start_dt and s1 <= self._seconds_diff and \
                 time_stop <= self._seconds_diff:
             s1 += 1
-            gps_lst[0] = self.get_gps_stamp_location(gps_lst[0]+7)
-            gps_info = np.fromstring(raw_data[gps_lst[0]:gps_lst[0]+\
+            gps_list[0] = self.get_gps_stamp_location(gps_list[0]+7)
+            gps_info = np.fromstring(raw_data[gps_list[0]:gps_list[0]+\
                                                 self._stamp_len], 
                                      dtype=self._data_type)
                                      
@@ -425,7 +426,7 @@ class Zen3D(object):
                 s1 = 0
                 self.start_dt = self.start_dt[:-2]+\
                                  '{0:02}'.format(int(self.start_dt[-2:])+1)
-                gps_lst[0] = self.get_gps_stamp_location()
+                gps_list[0] = self.get_gps_stamp_location()
                 time_stop += 1  
        
         #----Raise an error if the first gps stamp is more than allowed time
@@ -439,19 +440,19 @@ class Zen3D(object):
                            start_test, self._seconds_diff))
                      
         #put the information into the correct arrays via dictionary                         
-        for jj, key in enumerate(self._stamp_lst):
+        for jj, key in enumerate(self._stamp_list):
             gps_dict[key][0] = gps_info[0][jj]
   
         #find the next time stamp
         for ii in range(s1,num_blocks-1):
-            sfind = self.get_gps_stamp_location(gps_lst[ii-1]+7)
+            sfind = self.get_gps_stamp_location(gps_list[ii-1]+7)
             #make sure it isn't the same time stamp as before
-            if sfind != gps_lst[ii-1] and sfind != -1:
+            if sfind != gps_list[ii-1] and sfind != -1:
                 gps_info, gps_index, gps_week = self.get_gps_stamp(sfind)
-                gps_lst[ii] = gps_index
+                gps_list[ii] = gps_index
                 
                 if gps_info is not None:
-                    for jj, key in enumerate(self._stamp_lst):
+                    for jj, key in enumerate(self._stamp_list):
                         gps_dict[key][ii] = gps_info[0][jj]
         
         #get only the values that are non zero
@@ -470,7 +471,7 @@ class Zen3D(object):
             for bb in bad_lock:
                 if gps_diff[bb] > 5:
                     self.log_lines.append(' '*4+\
-                                      'point {0:^15},'.format(gps_lst[bb])+\
+                                      'point {0:^15},'.format(gps_list[bb])+\
                                       'gps diff {0:^15}\n'.format(gps_diff[bb]))
             
             self.log_lines.append(' '*4+'*'*52+'\n')
@@ -478,7 +479,7 @@ class Zen3D(object):
         #need to be sure that the number of data points between time stamps is 
         #equal to the sampling rate, if it is not then remove that interval.  
         #Most likely it is at the beginning or end of time series.
-        dsamples = np.array([(gps_lst[nn+1]-gps_lst[nn]-self._stamp_len-df*4)/4 
+        dsamples = np.array([(gps_list[nn+1]-gps_list[nn]-self._stamp_len-df*4)/4 
                               for nn in range(num_samples)])
         
         bad_interval = np.where(abs(dsamples)>self._skip_sample_tolerance)[0]
@@ -492,9 +493,9 @@ class Zen3D(object):
                 if bb > num_samples-10:
                     bmax = bb
         
-            gps_lst = gps_lst[bmin:bmax]
+            gps_list = gps_list[bmin:bmax]
             
-        num_samples = len(gps_lst)
+        num_samples = len(gps_list)
         if self.verbose:
             print 'Found {0} gps time stamps, '.format(num_samples)+\
                   'with equal intervals of {0} samples'.format(int(self.df))
@@ -505,10 +506,10 @@ class Zen3D(object):
         
         #read in data
         data_array = np.zeros((num_samples+1)*df, dtype=np.float32)
-        for ll, kk in enumerate(gps_lst[0:-1]):
-            pdiff = ((gps_lst[ll+1]-(kk+self._stamp_len))-(df*4))/4
-            self.sample_diff_lst.append(pdiff)
-            dblock = raw_data[kk+self._stamp_len:gps_lst[ll+1]] 
+        for ll, kk in enumerate(gps_list[0:-1]):
+            pdiff = ((gps_list[ll+1]-(kk+self._stamp_len))-(df*4))/4
+            self.sample_diff_list.append(pdiff)
+            dblock = raw_data[kk+self._stamp_len:gps_list[ll+1]] 
             try:
                 data_array[ll*df:(ll+1)*df+pdiff] = np.fromstring(dblock, 
                                                                 dtype=np.int32)
@@ -516,12 +517,12 @@ class Zen3D(object):
                 print 'samples between time step {0} is off by {1} samples'.format(ll,
                                                                    abs(pdiff))
                           
-        if sum(self.sample_diff_lst) != 0:
+        if sum(self.sample_diff_list) != 0:
             if self.verbose:
                 print 'time series is off by {0} seconds'.format(
-                                           float(sum(self.sample_diff_lst))/df)
+                                           float(sum(self.sample_diff_list))/df)
                 self.log_lines.append('time series is off by {0} seconds'.format(
-                                          float(sum(self.sample_diff_lst))/df))
+                                          float(sum(self.sample_diff_list))/df))
                                            
         #get only the non-zero data bits, this is dangerous if there is 
         #actually an exact 0 in the data, but rarely happens 
@@ -535,7 +536,7 @@ class Zen3D(object):
         #make attributes of imporant information
         self.gps_diff = gps_diff[bmin:bmax]
         self.gps_time = gps_dict['time']
-        self.gps_lst = gps_lst
+        self.gps_list = gps_list
         self.temperature = gps_dict['temperature']
         self.lat = gps_dict['lat']
         self.lon = gps_dict['lon']
@@ -861,7 +862,7 @@ class Zen3D(object):
         kwargs = {'df':self.df, 'notches':notches, 'notchradius':notchradius,
                   'freqrad':freqrad, 'rp':rp}
                   
-        self.time_series, self.filt_lst = \
+        self.time_series, self.filt_list = \
                     mtfilt.adaptive_notch_filter(self.time_series, **kwargs) 
         
     #==================================================
@@ -922,7 +923,7 @@ class Zen3D(object):
         if notch_dict is not None:
             self.apply_adaptive_notch_filter(notch_dict)
             print 'Filtered notches: '
-            for nfilt in self.filt_lst:
+            for nfilt in self.filt_list:
                 if type(nfilt[0]) != str:
                     print '{0}{1:.2f} Hz'.format(' '*4, nfilt[0])
                                                    
@@ -1112,14 +1113,14 @@ class ZenCache(object):
      Attributes         Description
     ================== ======================================================== 
     cal_data            list of calibrations, as is from file
-    fn_lst              list of filenames merged together
+    fn_list              list of filenames merged together
     log_lines           list of information to put into a log file
     meta_data           dictionary of meta data key words and values
     nav_data            list of navigation data, as is from file
     save_fn             file to save merged file to
     ts                  np.ndarray(len(ts), num_channels) of time series
     verbose             [ True | False ] True prints information to console
-    zt_lst              list of class: Zen3D objects
+    zt_list              list of class: Zen3D objects
     _ch_factor          scaling factor for the channels, got this from Zonge
     _ch_gain            gain on channel, not sure of the format
     _ch_lowpass_dict    dictionary of values for lowpass filter, not sure how
@@ -1152,18 +1153,18 @@ class ZenCache(object):
         >>> # write a cache file
         >>> import os
         >>> file_path = r"/home/MT/Station1"
-        >>> fn_lst = [os.path.join(file_path, fn) 
+        >>> fn_list = [os.path.join(file_path, fn) 
         >>> ...       for fn in os.listdir(file_path)
         >>> ...       if fn.find('.Z3D')>0]
-        >>> zc.write_cache_file(fn_lst, r"/home/MT/Station1", station='s1')
+        >>> zc.write_cache_file(fn_list, r"/home/MT/Station1", station='s1')
         >>> Saved File to: /home/MT/Station1/Merged/s1_20130601_190001_4096.cac
         
     """   
     
     def __init__(self):
         
-        self.fn_lst = None
-        self.zt_lst = None
+        self.fn_list = None
+        self.zt_list = None
         self.save_fn = None
         self._ch_factor = '9.5367431640625e-10'
         self._ch_gain = '01-0'
@@ -1243,13 +1244,13 @@ class ZenCache(object):
                            'TX.SHUNT' : ','}
     
     #==================================================
-    def check_sampling_rate(self, zt_lst):
+    def check_sampling_rate(self, zt_list):
         """
         check to make sure the sampling rate is the same for all channels
         
         Arguments:
         -----------
-            **zt_lst** : list of Zen3D instances
+            **zt_list** : list of Zen3D instances
         
         Outputs:
         --------
@@ -1257,45 +1258,45 @@ class ZenCache(object):
             
         """
         
-        nz = len(zt_lst)
+        nz = len(zt_list)
         
-        df_lst = np.zeros(nz)
-        for ii, zt in enumerate(zt_lst):
-            df_lst[ii] = zt.df
+        df_list = np.zeros(nz)
+        for ii, zt in enumerate(zt_list):
+            df_list[ii] = zt.df
             
         tf_array = np.zeros((nz, nz))
         
         for jj in range(nz):
-            tf_array[jj] = np.in1d(df_lst, [df_lst[jj]])
+            tf_array[jj] = np.in1d(df_list, [df_list[jj]])
         
         false_test = np.where(tf_array==False)
         
         if len(false_test[0]) != 0:
             raise IOError('Sampling rates are not the same for all channels '+\
-                          'Check file(s)'+zt_lst[false_test[0]])
+                          'Check file(s)'+zt_list[false_test[0]])
         
     #==================================================
-    def check_time_series(self, zt_lst, decimate=1):
+    def check_time_series(self, zt_list, decimate=1):
         """
         check to make sure timeseries line up with eachother.
         
         """
         
-        n_fn = len(zt_lst)
+        n_fn = len(zt_list)
         
         #test start time
-        #st_lst = np.array([int(zt.date_time[0][-2:]) for zt in zt_lst])
-        st_lst = np.array([int(zt.gps_time[0]) for zt in zt_lst])
-        time_max = max(st_lst)
-        #time_max = np.where(st_lst==st_lst.max())[0]
+        #st_list = np.array([int(zt.date_time[0][-2:]) for zt in zt_list])
+        st_list = np.array([int(zt.gps_time[0]) for zt in zt_list])
+        time_max = max(st_list)
+        #time_max = np.where(st_list==st_list.max())[0]
         
         #get the number of seconds each time series is off by
         skip_dict = {}
-        for ii, zt in enumerate(list(zt_lst)):
+        for ii, zt in enumerate(list(zt_list)):
             try:
                 skip_dict[ii] = np.where(zt.gps_time==time_max)[0][0]
             except IndexError:
-                zt_lst.remove(zt_lst[ii])
+                zt_list.remove(zt_list[ii])
                 print '***SKIPPING {0} '.format(zt.fn)
                 print '   because it does not contain correct gps time'
                 print '   {0} --> {1}'.format(time_max, 
@@ -1303,22 +1304,22 @@ class ZenCache(object):
                                                              time_max))    
         
         #change data by amount needed        
-        for ii, zt in zip(skip_dict.keys(), zt_lst):
+        for ii, zt in zip(skip_dict.keys(), zt_list):
             if skip_dict[ii] != 0:
                 skip_points = skip_dict[ii]*zt.df
                 print 'Skipping {0} points for {1}'.format(skip_points,
                                                             zt.ch_cmp)
                 zt.time_series = zt.time_series[skip_points:]
                 zt.gps_diff = zt.gps_diff[skip_dict[ii]:]
-                zt.gps_lst = zt.gps_lst[skip_dict[ii]:]
+                zt.gps_list = zt.gps_list[skip_dict[ii]:]
                 zt.date_time = zt.date_time[skip_dict[ii]:]
                 zt.gps_time = zt.gps_time[skip_dict[ii]:]
             
         #test length of time series
-        ts_len_lst = np.array([len(zt.time_series) for zt in zt_lst])
+        ts_len_list = np.array([len(zt.time_series) for zt in zt_list])
         
         #get the smallest number of points in the time series
-        ts_min = ts_len_lst.min()
+        ts_min = ts_len_list.min()
         
         #make a time series array for easy access
         ts_min /= decimate
@@ -1326,7 +1327,7 @@ class ZenCache(object):
         ts_array = np.zeros((ts_min, n_fn))
         
         #trim the time series if needed
-        for ii, zt in enumerate(zt_lst):
+        for ii, zt in enumerate(zt_list):
             if decimate > 1:
                 zt.time_series = sps.resample(zt.time_series, 
                                               zt.time_series.shape[0]/decimate,
@@ -1359,24 +1360,24 @@ class ZenCache(object):
         return ts_array, ts_min
     
     #==================================================    
-    def write_cache_file(self, fn_lst, save_fn, station='ZEN', decimate=1):
+    def write_cache_file(self, fn_list, save_fn, station='ZEN', decimate=1):
         """
         write a cache file from given filenames
         
         """
         #sort the files so they are in order
-        fn_sort_lst = []
+        fn_sort_list = []
         for cs in self.chn_order:
-            for fn in fn_lst:
+            for fn in fn_list:
                 if cs in fn.lower():
-                    fn_sort_lst.append(fn)
+                    fn_sort_list.append(fn)
 
-        fn_lst = fn_sort_lst
-        print fn_lst
+        fn_list = fn_sort_list
+        print fn_list
             
-        n_fn = len(fn_lst)
-        self.zt_lst = []
-        for fn in fn_lst:
+        n_fn = len(fn_list)
+        self.zt_list = []
+        for fn in fn_list:
             zt1 = Zen3D(fn=fn)
             zt1.verbose = self.verbose
             try:
@@ -1384,7 +1385,7 @@ class ZenCache(object):
             except ZenGPSError:
                 zt1._seconds_diff = 59
                 zt1.read_3d()
-            self.zt_lst.append(zt1)
+            self.zt_list.append(zt1)
         
             #fill in meta data from the time series file
             self.meta_data['DATA.DATE0'] = ','+zt1.date_time[0].split(',')[0]
@@ -1404,10 +1405,10 @@ class ZenCache(object):
             self.meta_data['RX.STN'] += ','+zt1.rx_stn
             
         #make sure all files have the same sampling rate
-        self.check_sampling_rate(self.zt_lst)
+        self.check_sampling_rate(self.zt_list)
         
         #make sure the length of time series is the same for all channels
-        self.ts, ts_len = self.check_time_series(self.zt_lst,
+        self.ts, ts_len = self.check_time_series(self.zt_list,
                                                  decimate=decimate)
         
         self.meta_data['TS.NPNT'] = ',{0}'.format(ts_len)
@@ -1612,8 +1613,8 @@ class ZenCache(object):
         ii = int(jj)
         jj = ii+meta_block['len']-2
         self.meta_data = {}
-        meta_lst = cdata[ii:jj].split('\n')
-        for mm in meta_lst:
+        meta_list = cdata[ii:jj].split('\n')
+        for mm in meta_list:
             mfind = mm.find(',')
             self.meta_data[mm[0:mfind]] = [ms.strip() for ms in 
                                             mm[mfind+1:].split(',')]
@@ -1672,8 +1673,8 @@ class ZenCache(object):
         ii = int(jj)
         jj = ii+meta_block['len']-2
         self.meta_data = {}
-        meta_lst = cdata[ii:jj].split('\n')
-        for mm in meta_lst:
+        meta_list = cdata[ii:jj].split('\n')
+        for mm in meta_list:
             mfind = mm.find(',')
             self.meta_data[mm[0:mfind]] = mm[mfind+1:].split(',')
         
@@ -1759,9 +1760,9 @@ class ZenSchedule(object):
                            label
     ch_num_dict            dictionary for channel components whith keys 
                            being channel label and values being channel number
-    df_lst                 sequential list of sampling rates to repeat in 
+    df_list                 sequential list of sampling rates to repeat in 
                            schedule
-    df_time_lst            sequential list of time intervals to measure for
+    df_time_list            sequential list of time intervals to measure for
                            each corresponding sampling rate
     dt_format              date and time format. *default* is 
                            YYY-MM-DD,hh:mm:ss
@@ -1775,7 +1776,7 @@ class ZenSchedule(object):
     meta_dict              dictionary for meta data
     meta_keys              keys for meta data dictionary
     sa_keys                keys for schedule actions
-    sa_lst                 list of schedule actions including time and df
+    sa_list                 list of schedule actions including time and df
     sr_dict                dictionary of sampling rate values
     verbose                [ True | False ] True to print information to 
                            console 
@@ -1792,7 +1793,7 @@ class ZenSchedule(object):
         self.gain_dict = dict([(mm, 2**mm) for mm in range(7)])
         self.sa_keys = ['date', 'time', 'resync_yn', 'log_yn', 'tx_duty', 
                         'tx_period', 'sr', 'gain', 'nf_yn']
-        self.sa_lst = []
+        self.sa_list = []
         self.ch_cmp_dict = {'1':'hx', '2':'hy', '3':'hz', '4':'ex', '5':'ey',
                             '6':'hz'}
         self.ch_num_dict = dict([(self.ch_cmp_dict[key], key) 
@@ -1810,10 +1811,10 @@ class ZenSchedule(object):
         self.dt_format = datetime_fmt 
         self.initial_dt = '2000-01-01,00:00:00'
         self.dt_offset = time.strftime(datetime_fmt ,time.gmtime())
-        self.df_lst = (4096, 1024, 256)
-        self.df_time_lst = ('00:05:00','00:15:00','05:40:00')
-        self.master_schedule = self.make_schedule(self.df_lst, 
-                                                  self.df_time_lst,
+        self.df_list = (4096, 1024, 256)
+        self.df_time_list = ('00:05:00','00:15:00','05:40:00')
+        self.master_schedule = self.make_schedule(self.df_list, 
+                                                  self.df_time_list,
                                                   repeat=21)
                                                   
     #==================================================
@@ -1828,27 +1829,27 @@ class ZenSchedule(object):
         
         for line in lines:
             if line.find('scheduleaction') == 0:
-                line_lst = line.strip().split(' ')[1].split(',')
+                line_list = line.strip().split(' ')[1].split(',')
                 sa_dict = {}
                 for ii, key in enumerate(self.sa_keys):
-                    sa_dict[key] = line_lst[ii]
-                self.sa_lst.append(sa_dict)
+                    sa_dict[key] = line_list[ii]
+                self.sa_list.append(sa_dict)
                 
             elif line.find('metadata'.upper()) == 0:
-                line_lst = line.strip().split(' ')[1].split('|')
-                for md in line_lst[:-1]:
-                    md_lst = md.strip().split(',')
-                    self.meta_dict[md_lst[0]] = md_lst[1]
+                line_list = line.strip().split(' ')[1].split('|')
+                for md in line_list[:-1]:
+                    md_list = md.strip().split(',')
+                    self.meta_dict[md_list[0]] = md_list[1]
                     
             elif line.find('offset') == 0:
                 line_str = line.strip().split(' ')
                 self.offset = line_str[1]
                 
             elif line.find('Light') > 0:
-                line_lst = line.strip().split(' ')
+                line_list = line.strip().split(' ')
                 try:
-                    self.light_dict[line_lst[0]]
-                    self.light_dict[line_lst[0]] = line_lst[1]
+                    self.light_dict[line_list[0]]
+                    self.light_dict[line_list[0]] = line_list[1]
                 except KeyError:
                     pass
     
@@ -1871,17 +1872,17 @@ class ZenSchedule(object):
         return fulldate
     
     #==================================================
-    def make_schedule(self, df_lst, df_length_lst, repeat=5, t1_dict=None):
+    def make_schedule(self, df_list, df_length_list, repeat=5, t1_dict=None):
         """
         make a repeated schedule given list of sampling frequencies and
         duration for each.
         
         Arguments:
         -----------
-            **df_lst** : list   
+            **df_list** : list   
                          list of sampling frequencies in Hz, note needs to be
                          powers of 2 starting at 256
-            **df_length_lst** : list
+            **df_length_list** : list
                                 list of durations in hh:mm:ss format
             **repeat** : int
                          number of times to repeat the sequence
@@ -1891,41 +1892,41 @@ class ZenSchedule(object):
                           
         Returns:
         --------
-            **time_lst**: list of dictionaries with keys:
+            **time_list**: list of dictionaries with keys:
                             * 'dt' --> date and time of schedule event
                             * 'df' --> sampling rate for that event
         """
     
-        df_lst = np.array(df_lst)
-        df_length_lst = np.array(df_length_lst)
-        ndf = len(df_lst)
+        df_list = np.array(df_list)
+        df_length_list = np.array(df_length_list)
+        ndf = len(df_list)
         
     
         if t1_dict is not None:
-            time_lst = [{'dt':self.initial_dt,'df':t1_dict['df']}]
+            time_list = [{'dt':self.initial_dt,'df':t1_dict['df']}]
     
-            kk = np.where(np.array(df_lst)==t1_dict['df'])[0]-ndf+1
-            df_lst = np.append(df_lst[kk:], df_lst[:kk])
-            df_length_lst = np.append(df_length_lst[kk:], df_length_lst[:kk])
-            print df_lst, df_length_lst
-            time_lst.append(dict([('dt',t1_dict['dt']), ('df',df_lst[0])]))
+            kk = np.where(np.array(df_list)==t1_dict['df'])[0]-ndf+1
+            df_list = np.append(df_list[kk:], df_list[:kk])
+            df_length_list = np.append(df_length_list[kk:], df_length_list[:kk])
+            print df_list, df_length_list
+            time_list.append(dict([('dt',t1_dict['dt']), ('df',df_list[0])]))
             ii = 1
         else:
-            time_lst = [{'dt':self.initial_dt,'df':df_lst[0]}]
+            time_list = [{'dt':self.initial_dt,'df':df_list[0]}]
             ii = 0
             
         for rr in range(1,repeat+1):
-            for df, df_length, jj in zip(df_lst, df_length_lst, range(ndf)):
+            for df, df_length, jj in zip(df_list, df_length_list, range(ndf)):
                 dtime = time.strptime(df_length, '%H:%M:%S')
-                ndt = self.add_time(time_lst[ii]['dt'], 
+                ndt = self.add_time(time_list[ii]['dt'], 
                                     add_hours=dtime.tm_hour,
                                     add_minutes=dtime.tm_min,
                                     add_seconds=dtime.tm_sec)
-                time_lst.append({'dt':ndt.strftime(self.dt_format),
-                                 'df':df_lst[jj-ndf+1]})
+                time_list.append({'dt':ndt.strftime(self.dt_format),
+                                 'df':df_list[jj-ndf+1]})
                 ii += 1
                 
-        for nn, ns in enumerate(time_lst):
+        for nn, ns in enumerate(time_list):
             sdate, stime = ns['dt'].split(',')
             ns['date'] = sdate
             ns['time'] = stime
@@ -1937,21 +1938,21 @@ class ZenSchedule(object):
             ns['resync_yn'] = 'Y'
             ns['gain'] = '0'
             
-        return time_lst
+        return time_list
     
     #==================================================    
-    def get_schedule_offset(self, time_offset, schedule_time_lst):
+    def get_schedule_offset(self, time_offset, schedule_time_list):
         """
         gets the offset in time from master schedule list and time_offset so 
         that all schedules will record at the same time according to master
-        schedule list schedule_time_lst
+        schedule list schedule_time_list
         
         Attributes:
         -----------
             **time_offset** : hh:mm:ss
                               the time offset given to the zen reciever
                               
-            **schedule_time_lst** : list
+            **schedule_time_list** : list
                                     list of actual schedule times returned 
                                     from make_schedule
                                     
@@ -1960,14 +1961,14 @@ class ZenSchedule(object):
             **s1** : dictionary
                      dictionary with keys:
                          * 'dt' --> date and time of offset from next schedule
-                                    event from schedule_time_lst
+                                    event from schedule_time_list
                          * 'df' --> sampling rate of that event
         """
         
         dt_offset = '{0},{1}'.format('2000-01-01', time_offset)
         t0 = time.mktime(time.strptime('2000-01-01,00:00:00', self.dt_format))
         
-        for ii, tt in enumerate(schedule_time_lst):
+        for ii, tt in enumerate(schedule_time_list):
             ssec = time.mktime(time.strptime(tt['dt'], self.dt_format))
             osec = time.mktime(time.strptime(dt_offset, self.dt_format))
             
@@ -1978,15 +1979,15 @@ class ZenSchedule(object):
                                    add_minutes=sdiff.tm_min,
                                    add_seconds=sdiff.tm_sec)
                 s1 = {'dt':t1.strftime(self.dt_format), 
-                      'df':schedule_time_lst[ii-1]['df']}
+                      'df':schedule_time_list[ii-1]['df']}
                 return s1
     
     #==================================================            
     def write_schedule(self, station, clear_schedule=True, 
                        clear_metadata=True, varaspace=100, 
                        savename=0, dt_offset=None, 
-                       df_lst=None, 
-                       df_time_lst=None, 
+                       df_list=None, 
+                       df_time_list=None, 
                        repeat=8, gain=0):
         """
         write a zen schedule file
@@ -2024,14 +2025,14 @@ class ZenSchedule(object):
                                       match the master schedule, so that all
                                       stations have the same schedule.
                                       
-            **df_lst** : list
+            **df_list** : list
                          list of sampling rates in Hz
             
-            **df_time_lst** : list
-                              list of time intervals corresponding to df_lst
+            **df_time_list** : list
+                              list of time intervals corresponding to df_list
                               in hh:mm:ss format
             **repeat** : int
-                         number of time to repeat the cycle of df_lst
+                         number of time to repeat the cycle of df_list
             
             **gain** : int
                        gain on instrument, 2 raised to this number.
@@ -2048,17 +2049,17 @@ class ZenSchedule(object):
         s1_dict = self.get_schedule_offset(self.dt_offset.split(',')[1],
                                            self.master_schedule)
 
-        if df_lst is not None:
-            self.df_lst = df_lst
-        if df_time_lst is not None:
-            self.df_time_lst = df_time_lst
+        if df_list is not None:
+            self.df_list = df_list
+        if df_time_list is not None:
+            self.df_time_list = df_time_list
         
-        self.master_schedule =  self.make_schedule(self.df_lst, 
-                                                  self.df_time_lst,
+        self.master_schedule =  self.make_schedule(self.df_list, 
+                                                  self.df_time_list,
                                                   repeat=repeat*3)
                                                   
-        self.sa_lst = self.make_schedule(self.df_lst,
-                                          self.df_time_lst,
+        self.sa_list = self.make_schedule(self.df_list,
+                                          self.df_time_list,
                                           t1_dict=s1_dict, repeat=repeat)
 
         drive_names = get_drive_names()
@@ -2073,7 +2074,7 @@ class ZenSchedule(object):
             save_name = 'ZEN.cfg'
             sfid = file(os.path.normpath(os.path.join('c:\\MT', save_name)),
                         'w')
-            for sa_dict in self.sa_lst:
+            for sa_dict in self.sa_list:
                 new_time = self.add_time(self.dt_offset,
                                          add_hours=int(sa_dict['time'][0:2]),
                                          add_minutes=int(sa_dict['time'][3:5]),
@@ -2099,7 +2100,7 @@ class ZenSchedule(object):
                 dname = drive_names[dd]
                 sfid = file(os.path.normpath(os.path.join(dd+':\\', save_name)),
                             'w')
-                for sa_dict in self.sa_lst:
+                for sa_dict in self.sa_list:
                     new_time = self.add_time(self.dt_offset,
                                              add_hours=int(sa_dict['time'][0:2]),
                                              add_minutes=int(sa_dict['time'][3:5]),
@@ -2135,7 +2136,7 @@ class ZenSchedule(object):
                 sfid.write('clearschedule\n')
             if clear_metadata:
                 sfid.write('metadata clear\n')
-            for sa_dict in self.sa_lst:
+            for sa_dict in self.sa_list:
                 if gain != 0:
                     sa_dict['gain'] = gain
                 sa_line = ''.join([sa_dict[key]+',' for key in self.sa_keys])
@@ -2164,12 +2165,122 @@ class ZenBIRRP():
     survey file is .cfg file
     
     Need to create a processing file which has information on how to 
-    process the data.  See read_processing_file.
+    process the data.  See read_processing_file and BIRRP documentation
+    for details.
+    
+    The program will run BIRRP from python and convert the outputs into 
+    an .edi file.  
+    
+    Arguments:
+    ------------
+        **station_path** : string   
+                           full path to station data that will be processed
+                           
+        **station** : string
+                      name of station to be processes.  
+                      *default* is os.path.basename(station_path) 
+                      
+        **birrp_exe** : string
+                        full path to BIRRP executable.
+                        
+        **calibration_path** : string
+                               full path to calibration file directory
+                               In this directory should be the calibration
+                               files for the coils named by the coil number.
+                               You need to make these files from the 
+                               amtant.cal, basically it into individual files
+                               which are seperated by commas (csv) files.
+                               ex: Ant2344_cal.csv
+                           
+        **processing_fn** : string
+                            full path to processing file, see BIRRP 
+                            documentation and mtpy.zen.read_processing_file 
+                            for more details on the structure and key words.
+       
+       **survey_config_fn** : string
+                               full path to survey configuration file.
+                               This file contains all the important information
+                               on how the data was collected. For more see
+                               mtpy.utils.configfile.read_survey_configfile
+      
+        **df** : float
+                 sampling rate in Hz of the data being processed.  
+
+        **rr_path** : string
+                      full path to remote reference data.
+
+        **rr_station** : string
+                         name of remote reference station
+                         *default* is os.path.basename(rr_path)
+                    
+    ======================== ==================================================
+      Attributes               Description    
+    ======================== ==================================================
+    birrp_config_fn          configuration file written once BIRRP runs for
+                             convenience if you want to rember what you did.  
+    birrp_exe                full path to the BIRRP executable 
+    birrp_dict               dictionary of birrp parameters, *default* is None 
+    calibration_path         full path to where calibration files exist
+    calibration_list         list of coils numbers used in the measurement
+    calibration_dict         dictionary of calibration values with keys
+                             as coil numbers and values as calbration values.
+    df                       sampling frequency (Hz))
+    output_path              path to put BIRRP output files
+                             *default* is station_path/BF
+    processing_dict          dictionary of porcessing information from 
+                             processin_fn  
+    processing_fn            full path to processing file.  This contains the
+                             the information BIRRP needs to process the 
+                             station.  For more details on what key words and
+                             values would be useful see BIRRP documentation and
+                             mtpy.zen.read_processing_file  
+    rr_path                  full path to remote reference station /home/mt/rr
+    rr_station               name of remote reference station
+    rr_survey_dict           dictionary of survey parameters from 
+                             survey_config_fn for remote reference 
+    script_file              full path to script file used to process BIRRP
+    station                  name of station to process
+    station_path             full path to station directory ex. /home/mt/mt01
+    survey_config_fn         full path to survey cofiguration file which 
+                             contains all the important information about how 
+                             the data was collected. For more details see on
+                             what key words and values to put in see
+                             mtpy.utils.configfile.read_survey_configfile
+    survey_dict              dictionary with information about survey 
+                             parameters from survey_config_fn
+    ======================== ==================================================
+    
+    ======================== ==================================================
+     Methods                  Description
+    ======================== ==================================================
+    get_birrp_parameters     gets the birrp parameters from processing_fn
+    get_calibrations         reads in the files in calibration_path and gets
+                             data for coil numbers in calibration_list
+    get_survey_parameters    get the survey info from survey_config_fn
+    set_remote_reference     set the remote refernce station and get 
+                             survey information
+    get_fn_list               get filenames of data files to process
+    run_birrp                writes a script file, run's BIRRP from Python
+                             and then converts the outputs of BIRRP to .edi
+    write_edi_file           writes and .edi file from the outputs of BIRRP
+    write_script_file        writes a script file to control how BIRRP 
+                             processes the data    
+    ======================== ==================================================
     
     
-    
-    
-    
+    :Example: ::
+        
+        >>> import mtpy.usgs.zen as zen
+        >>> zen_bp = zen.ZenBIRRP(r"/home/mt/mt01")
+        >>> zen.processing_fn = r"/home/mt/mt01/processing.txt"
+        >>> zen.survey_config_fn = r"/home/mt/survey.cfg"
+        >>> zen.df = 256
+        >>> zen_bp.birrp_exe = r"/home/bin/birrp.exe"
+        >>> zen.calibration_list = ['2234', '2244', '2254']
+        >>> zen.calibration_path = r"/home/zonge/ant_calibrations"
+        >>> zen.rr_path = r"/home/mt/rr01"
+        >>> zen.run_birrp()
+        
     """              
 
     def __init__(self, station_path, **kwargs):
@@ -2177,16 +2288,16 @@ class ZenBIRRP():
         self.station_path = station_path
         self.rr_path = kwargs.pop('rr_path', self.station_path)
         self.survey_config_fn = kwargs.pop('survey_config_fn', None)
-        self.processing_file = kwargs.pop('processing_file', None)
+        self.processing_fn = kwargs.pop('processing_fn', None)
         self.calibration_path = kwargs.pop('calibration_path', 
                                          r"d:\Peacock\MTData\Ant_calibrations")
-        self.calibration_lst = ['2254', '2264', '2274', '2284', '2294',
+        self.calibration_list = ['2254', '2264', '2274', '2284', '2294',
                                 '2304', '2314', '2324', '2334', '2344']
         self.birrp_dict = kwargs.pop('birrp_dict', None)
         self.station = kwargs.pop('station', 
                         os.path.basename(os.path.dirname(self.station_path)))
-        self.rrstation = None
-        self.rrsurvey_dict = None
+        self.rr_station = None
+        self.rr_survey_dict = None
         self.df = kwargs.pop('df', 256)
         self.processing_dict = kwargs.pop('processing_dict', None)
         self.survey_dict = kwargs.pop('survey_dict', None)
@@ -2194,33 +2305,39 @@ class ZenBIRRP():
         self.script_file = None
         self.output_path = None
         self.birrp_config_fn = None
+        
         self.calibration_dict = {}
+        
+    def get_calibrations(self):
+        """
+        get coil calibrations
+        """
         for cal_fn in os.listdir(self.calibration_path):
-            for cal_num in self.calibration_lst:
+            for cal_num in self.calibration_list:
                 if cal_num in cal_fn:
                     self.calibration_dict[cal_num] = \
                                     os.path.join(self.calibration_path, cal_fn)
                     break
             
         
-    def get_birrp_parameters(self, processing_file=None):
+    def get_birrp_parameters(self, processing_fn=None):
         """
         get parameters to put into birrp from file
         
         """
-        if processing_file is not None:
-            self.processing_file = processing_file
-        if self.processing_file is None:
+        if processing_fn is not None:
+            self.processing_fn = processing_fn
+        if self.processing_fn is None:
             raise IOError('Need to input a processing file')
             
-        processing_lst = read_processing_file(self.processing_file)
-        for pdict in processing_lst:
+        processing_list = read_processing_fn(self.processing_fn)
+        for pdict in processing_list:
             if pdict['station'] == self.station and \
                                         float(pdict['df']) == self.df:
                 return pdict
 
     
-    def get_survey_parameters(self, survey_config_fn=None, rrstation=None):
+    def get_survey_parameters(self, survey_config_fn=None, rr_station=None):
         """
         get survey parameters from file
         
@@ -2230,26 +2347,26 @@ class ZenBIRRP():
         if self.survey_config_fn is None:
             raise IOError('Need to input a survey config file')
             
-        survey_dict_lst = mtcf.read_survey_configfile(self.survey_config_fn)
+        survey_dict_list = mtcf.read_survey_configfile(self.survey_config_fn)
         
         try:
-            self.survey_dict = survey_dict_lst[self.station.upper()]
+            self.survey_dict = survey_dict_list[self.station.upper()]
         except KeyError:
             print 'Did not find station information in {0}'.format(
                                                         self.survey_config_fn)
         
-        if self.rrstation is not None:                                                
+        if self.rr_station is not None:                                                
             try:
-                self.rrsurvey_dict = survey_dict_lst[self.rrstation.upper()]
+                self.rr_survey_dict = survey_dict_list[self.rr_station.upper()]
             except KeyError:
                 print 'Did not find remote station information in {0}'.format(
                                                       self.survey_config_fn)
                     
-    def set_remote_reference(self, rrstation, rrpath=None):
+    def set_remote_reference(self, rr_station, rrpath=None):
         """
         set remote reference station and find survey information and filenames
         """ 
-        self.rrstation = rrstation
+        self.rr_station = rr_station
         if rrpath is not None:
             self.rr_path = rrpath
         elif not os.path.exists(self.rr_path):
@@ -2259,14 +2376,14 @@ class ZenBIRRP():
                 rr_path = os.path.dirname(rr_path)
                 kk += 1
             self.rr_path = os.path.join(os.path.dirname(rr_path), 
-                                        self.rrstation, 'TS')
+                                        self.rr_station, 'TS')
             if not os.path.exists(self.rr_path):
                 raise IOError('Need to input rrpath, could not find it')
             
         self.get_survey_parameters()
                     
                 
-    def get_fn_lst(self, df=None, start_dt=None, end_dt=None, ncomps=5):
+    def get_fn_list(self, df=None, start_dt=None, end_dt=None, ncomps=5):
         """
         get the file name list to process
         
@@ -2288,7 +2405,7 @@ class ZenBIRRP():
         else:
             end_seconds = 10E11
             
-        fn_lst = []
+        fn_list = []
         ii = 0
         for fn in os.listdir(self.station_path):
             try:
@@ -2317,7 +2434,7 @@ class ZenBIRRP():
                     
                     ii += 1
                 if ii == ncomps:
-                    fn_lst.append(tarr)
+                    fn_list.append(tarr)
                     ii = 0
             except mtex.MTpyError_ts_data:
                 pass
@@ -2325,7 +2442,7 @@ class ZenBIRRP():
                 pass
         
         #get remote reference time series
-        rrfn_lst = []
+        rrfn_list = []
         ii = 0
         for fn in os.listdir(self.rr_path):
             try:
@@ -2357,22 +2474,23 @@ class ZenBIRRP():
                     except KeyError:
                         pass
                 if ii == 2:
-                    rrfn_lst.append(tarr)
+                    rrfn_list.append(tarr)
                     ii = 0
             except mtex.MTpyError_ts_data:
                 pass
             except mtex.MTpyError_inputarguments:
                 pass
         
-        return fn_lst, rrfn_lst
+        return fn_list, rrfn_list
                                     
-    def write_script_file(self, df=None, processing_file=None,
+    def write_script_file(self, df=None, processing_fn=None,
                           processing_dict=None, start_dt=None, end_dt=None,
                           ncomps=5, jmode=0, survey_config_fn=None):
         """
         write a script file to guide birrp
         
         """       
+        self.get_calibrations()
         
         if df is not None:
             self.df = df
@@ -2385,15 +2503,15 @@ class ZenBIRRP():
             self.get_survey_parameters()
             
         #--> get processing dictionary 
-        if processing_file is not None:
-            self.processing_file = processing_file
+        if processing_fn is not None:
+            self.processing_fn = processing_fn
         
         self.processing_dict = self.get_birrp_parameters()
         
         if processing_dict is not None:
             self.processing_dict = processing_dict
             
-        if self.processing_file is None and self.processing_dict is None:
+        if self.processing_fn is None and self.processing_dict is None:
             raise IOError('Need to input a processing file')
         
         #--> set jmode (how files are read in) as points
@@ -2421,15 +2539,15 @@ class ZenBIRRP():
             self.set_remote_reference(self.station)
         
         #get list of files to process from the station folder
-        fn_lst, rrfn_lst = self.get_fn_lst(self.df, 
+        fn_list, rrfn_list = self.get_fn_list(self.df, 
                                            start_dt=start_dt, 
                                            end_dt=end_dt, 
                                            ncomps=ncomps)
         
         
-        self.processing_dict['fn_lst'] = [fnlst['fn'] for fnlst in fn_lst]
-        self.processing_dict['rrfn_lst'] = [rrfnlst['fn'] 
-                             for rrfnlst in rrfn_lst]
+        self.processing_dict['fn_list'] = [fnlist['fn'] for fnlist in fn_list]
+        self.processing_dict['rrfn_list'] = [rrfnlist['fn'] 
+                             for rrfnlist in rrfn_list]
         
         #need to skip the header string                         
         try:
@@ -2444,17 +2562,17 @@ class ZenBIRRP():
         
         #if jmode == 0 for number of points
         if self.processing_dict['jmode'] == 0:
-            self.processing_dict['nread'] = [fnlst['npts'].min() 
-                                  for fnlst in fn_lst]
+            self.processing_dict['nread'] = [fnlist['npts'].min() 
+                                  for fnlist in fn_list]
         
         #if jmode == 1 for entering start and end times
         elif self.processing_dict['jmode'] == 1:
-            self.processing_dict['dstim'] = [fnlst['start_dt'] 
-                                             for fnlst in fn_lst]
-            self.processing_dict['wstim'] = [fnlst['start_dt'] 
-                                             for fnlst in fn_lst]
-            self.processing_dict['wetim'] = [fnlst['end_dt'] 
-                                             for fnlst in fn_lst]
+            self.processing_dict['dstim'] = [fnlist['start_dt'] 
+                                             for fnlist in fn_list]
+            self.processing_dict['wstim'] = [fnlist['start_dt'] 
+                                             for fnlist in fn_list]
+            self.processing_dict['wetim'] = [fnlist['end_dt'] 
+                                             for fnlist in fn_list]
                                                  
         #get calibration files
         #--> HX                                                 
@@ -2487,10 +2605,10 @@ class ZenBIRRP():
             self.processing_dict['hz_cal'] = self.calibration_dict['2284']
             print 'Setting calibration coil number to 2284 as default.' 
             
-        if self.rrsurvey_dict is not None:
+        if self.rr_survey_dict is not None:
             try:
                 self.processing_dict['rrhx_cal'] = \
-                                self.calibration_dict[self.rrsurvey_dict['hx']]
+                                self.calibration_dict[self.rr_survey_dict['hx']]
             except KeyError:
                 print 'Did not find RRHX calibration in {0}'.format(
                                                     self.survey_config_fn)
@@ -2500,7 +2618,7 @@ class ZenBIRRP():
                 
             try:
                 self.processing_dict['rrhy_cal'] = \
-                                self.calibration_dict[self.rrsurvey_dict['hy']]
+                                self.calibration_dict[self.rr_survey_dict['hy']]
             except KeyError:
                 print 'Did not find RRHY calibration in {0}'.format(
                                                         self.survey_config_fn)
@@ -2510,7 +2628,7 @@ class ZenBIRRP():
         
         #set the save path to include the sampling rate
         self.output_path = os.path.join(os.path.dirname(
-                                        self.processing_dict['fn_lst'][0][0]), 
+                                        self.processing_dict['fn_list'][0][0]), 
                                         'BF_{0}'.format(self.df))
         #write script file using mtpy.processing.birrp    
         script_file, birrp_dict = birrp.write_script_file(dict(self.processing_dict),
@@ -2623,7 +2741,7 @@ class CacheTimeSeriesError(Exception):
 #==============================================================================
 # read processing file
 #==============================================================================
-def read_processing_file(processing_file, delimiter='\t'):
+def read_processing_fn(processing_fn, delimiter='\t'):
     """
     Read in the information from processing file and output
     as a list of dictionaries.
@@ -2697,24 +2815,35 @@ def read_processing_file(processing_file, delimiter='\t'):
             
     Arguments:
     -----------
-        **processing_file** : string (full path to file)
+        **processing_fn** : string (full path to file)
                               tab delimited text file with appropriate 
                               information.
                               
         **station_path** : directory path to where station folders are
         
     Outputs:
-    --------
-        **slst** : list of dictionaries with key words related to headers of 
+    ----------
+        **slist** : list of dictionaries with key words related to headers of 
                    txt file
+                   
+    :Example File: ::
+    
+    station	df	start_dt	stop	rrstation	rrstart	rrstop	mcomps\
+    magori	elecori	rrmagori	tbw	ainuin	magtype	nfft	nsctmax\
+    ilev	nar	nrr	c2thresb	nsctinc	nf1	nfinc	nfsect	ainlin\
+    declination	thetae
+    mb037	256	2013-06-28,00:00:00	2013-06-28,18:00:00	mbrr	\
+    2013-06-28,00:00:00	2013-06-28,18:00:00	5	"HZ,HX,HY"	"EX,EY"\
+    "HX,HY"	2	0.9999	bb	262144	14	1	5	0	0.45	2\
+    3	1	3	0.0001	-13.367	0,90,180
     
     """
     
-    pfid = open(processing_file, 'r')
+    pfid = open(processing_fn, 'r')
     plines = pfid.readlines()
     pkeys = plines[0].rstrip()
     pkeys = pkeys.split('\t')
-    plst=[]
+    plist=[]
     for pline in plines[1:]:
         pstr = pline.rstrip()
         pstr = pstr.split(delimiter)
@@ -2723,11 +2852,11 @@ def read_processing_file(processing_file, delimiter='\t'):
             for kk, pkey in enumerate(pkeys):
                 pstr[kk] = pstr[kk].replace('"','')
                 pdict[pkey.lower()] = pstr[kk]
-        plst.append(pdict)
+        plist.append(pdict)
         
     pfid.close()
     
-    return plst
+    return plist
 #==============================================================================
 # get the external drives for SD cards
 #==============================================================================
@@ -2738,8 +2867,13 @@ def get_drives():
     Note this only works for windows.
     
     Outputs:
-    --------
+    ----------
         **drives** : list of drives as letters
+        
+    :Example: ::
+    
+        >>> import mtpy.usgs.zen as zen
+        >>> zen.get_drives()
     
     """
     drives = []
@@ -2760,11 +2894,14 @@ def get_drive_names():
     and channel.
     
     Outputs:
-    --------
+    ----------
         **drive_dict** : dictionary
                          keys are the drive letters and values are the 
                          drive names
+    :Example: ::
     
+        >>> import mtpy.usgs.zen as zen
+        >>> zen.get_drives_names()
     """
     
     drives = get_drives()
@@ -2787,12 +2924,12 @@ def get_drive_names():
 #==============================================================================
 # copy files from SD cards   
 #==============================================================================
-def copy_from_sd(station, savepath=r"d:\Peacock\MTData", 
+def copy_from_sd(station, save_path=r"d:\Peacock\MTData", 
                  channel_dict={'1':'HX', '2':'HY', '3':'HZ',
                                '4':'EX', '5':'EY', '6':'HZ'},
                  copy_date=None, copy_type='all'):
     """
-    copy files from sd cards into a common folder
+    copy files from sd cards into a common folder (save_path)
     
     do not put an underscore in station, causes problems at the moment
     
@@ -2801,7 +2938,7 @@ def copy_from_sd(station, savepath=r"d:\Peacock\MTData",
         **station** : string
                       full name of station from which data is being saved
         
-        **savepath** : string
+        **save_path** : string
                        full path to save data to
                        
         **channel_dict** : dictionary
@@ -2820,23 +2957,28 @@ def copy_from_sd(station, savepath=r"d:\Peacock\MTData",
                         * 'on' --> copy files on this date only
                         
     Outputs:
-    --------
-        **fn_lst** : list
-                     list of filenames copied to savepath
+    -----------
+        **fn_list** : list
+                     list of filenames copied to save_path
+                     
+    :Example: ::
+    
+        >>> import mtpy.usgs.zen as zen
+        >>> fn_list = zen.copy_from_sd('mt01', save_path=r"/home/mt/survey_1")
     
     """
     
     drive_names = get_drive_names()
     if drive_names is None:
         raise IOError('No drives to copy from.')
-    save_path = os.path.join(savepath,station)
+    save_path = os.path.join(save_path,station)
     if not os.path.exists(save_path):
         os.mkdir(save_path)
     log_fid = file(os.path.join(save_path,'Log_file.log'),'w')
     
     
     st_test = time.ctime()
-    fn_lst = []
+    fn_list = []
     for key in drive_names.keys():
         dr = r"{0}:\\".format(key)
         print '='*25+drive_names[key]+'='*25
@@ -2881,7 +3023,7 @@ def copy_from_sd(station, savepath=r"d:\Peacock\MTData",
                                                                      channel)
                                                                  
                             full_path_sv = os.path.join(save_path, sv_fn)
-                            fn_lst.append(full_path_sv)
+                            fn_list.append(full_path_sv)
                             
                             shutil.copy(full_path_fn, full_path_sv)
                             print 'copied {0} to {1}\n'.format(full_path_fn, 
@@ -2913,12 +3055,12 @@ def copy_from_sd(station, savepath=r"d:\Peacock\MTData",
     
     print 'Started at: {0}'.format(st_test)
     print 'Ended at: {0}'.format(et_test)
-    return fn_lst
+    return fn_list
  
 #==============================================================================
 # merge files into cache files for each sample block   
 #==============================================================================
-def merge_3d_files(fn_lst, savepath=None, verbose=False, 
+def merge_3d_files(fn_list, save_path=None, verbose=False, 
                    calibration_fn=r"c:\MT\amtant.cal"):
     """
     merge .Z3D files into cache files.  Looks through the file list and 
@@ -2928,10 +3070,10 @@ def merge_3d_files(fn_lst, savepath=None, verbose=False,
     
     Arguments:
     ----------
-        **fn_lst** : list
+        **fn_list** : list
                      list of files to be merged
                      
-        **savepath** : directory to save cach files to
+        **save_path** : directory to save cach files to
         
         **verbose** : [ True | False ]
                       * True --> prints out information about the merging
@@ -2942,53 +3084,59 @@ def merge_3d_files(fn_lst, savepath=None, verbose=False,
                              
     Outputs:
     --------
-        **merged_fn_lst** : nested list of files that were merged together
+        **merged_fn_list** : nested list of files that were merged together
         
-        A log file is written to savepath\station_merged_log.log that contains
+        A log file is written to save_path\station_merged_log.log that contains
         information about the files that were merged together.
+        
+     :Example: ::
+    
+        >>> import mtpy.usgs.zen as zen
+        >>> fn_list = zen.copy_from_sd('mt01', save_path=r"/home/mt/survey_1")
+        >>> zen.merge_3d_files(fn_list, calibration_fn=r"/home/mt/amtant.cal")
     
     """
     
     start_time = time.ctime()
-    merge_lst = np.array([[fn]+\
+    merge_list = np.array([[fn]+\
                           os.path.basename(fn)[:-4].split('_')
-                          for fn in fn_lst if fn[-4:]=='.Z3D'])
+                          for fn in fn_list if fn[-4:]=='.Z3D'])
                               
-    merge_lst = np.array([merge_lst[:,0], 
-                          merge_lst[:,1],  
-                          np.core.defchararray.add(merge_lst[:,2],
-                                                   merge_lst[:,3]),
-                          merge_lst[:,4],
-                          merge_lst[:,5]])
-    merge_lst = merge_lst.T
+    merge_list = np.array([merge_list[:,0], 
+                          merge_list[:,1],  
+                          np.core.defchararray.add(merge_list[:,2],
+                                                   merge_list[:,3]),
+                          merge_list[:,4],
+                          merge_list[:,5]])
+    merge_list = merge_list.T
                               
-    time_counts = Counter(merge_lst[:,2])
-    time_lst = time_counts.keys()
+    time_counts = Counter(merge_list[:,2])
+    time_list = time_counts.keys()
     
     log_lines = []
   
-    merged_fn_lst = []
-    for tt in time_lst:
+    merged_fn_list = []
+    for tt in time_list:
         log_lines.append('+'*72+'\n')
         log_lines.append('Files Being Merged: \n')
-        cache_fn_lst = merge_lst[np.where(merge_lst==tt)[0],0].tolist()
+        cache_fn_list = merge_list[np.where(merge_list==tt)[0],0].tolist()
         
-        for cfn in cache_fn_lst:
+        for cfn in cache_fn_list:
             log_lines.append(' '*4+cfn+'\n')
-        if savepath is None:
-            save_path = os.path.dirname(cache_fn_lst[0])
-            station_name = merge_lst[np.where(merge_lst==tt)[0][0],1]
+        if save_path is None:
+            save_path = os.path.dirname(cache_fn_list[0])
+            station_name = merge_list[np.where(merge_list==tt)[0][0],1]
         else:
-            save_path = savepath
+            save_path = save_path
             station_name = 'ZEN'
             
         zc = ZenCache()
         zc.verbose = verbose
-        zc.write_cache_file(cache_fn_lst, save_path, station=station_name)
+        zc.write_cache_file(cache_fn_list, save_path, station=station_name)
             
-        for zt in zc.zt_lst:
+        for zt in zc.zt_list:
             log_lines.append(zt.log_lines)
-        merged_fn_lst.append(zc.save_fn)
+        merged_fn_list.append(zc.save_fn)
         log_lines.append('\n---> Merged Time Series Lengths and Start Time \n')
         log_lines.append(zc.log_lines)
         log_lines.append('\n')
@@ -3018,7 +3166,7 @@ def merge_3d_files(fn_lst, savepath=None, verbose=False,
         log_fid.writelines(line)
     log_fid.close()
         
-    return merged_fn_lst
+    return merged_fn_list
     
 #==============================================================================
 # delete files from sd cards    
@@ -3049,8 +3197,19 @@ def delete_files_from_sd(delete_date=None, delete_type=None,
                             
     Returns:
     ---------
-        **delete_fn_lst** : list
+        **delete_fn_list** : list
                             list of deleted files.
+                            
+     :Example: ::
+    
+        >>> import mtpy.usgs.zen as zen
+        >>> # Delete all files before given date, forever. 
+        >>> zen.delete_files_from_sd(delete_date='2004/04/20', 
+                                     delete_type='before',
+                                     delete_folder=None)
+        >>> # Delete all files into a folder just in case 
+        >>> zen.delete_files_from_sd(delete_type='all',
+                                     delete_folder=r"/home/mt/deleted_files")
     
     """
     
@@ -3067,7 +3226,7 @@ def delete_files_from_sd(delete_date=None, delete_type=None,
     if delete_date is not None:
         delete_date = int(delete_date.replace('-',''))
     
-    delete_fn_lst = []
+    delete_fn_list = []
     for key in drive_names.keys():
         dr = r"{0}:\\".format(key)
         log_lines.append('='*25+drive_names[key]+'='*25+'\n')
@@ -3079,13 +3238,13 @@ def delete_files_from_sd(delete_date=None, delete_type=None,
                 if delete_type == 'all' or delete_date is None:
                     if delete_folder is None:
                         os.remove(full_path_fn)
-                        delete_fn_lst.append(full_path_fn)
+                        delete_fn_list.append(full_path_fn)
                         log_lines.append('Deleted {0}'.format(full_path_fn))
                     else:
                         shutil.move(full_path_fn, 
                                     os.path.join(delete_folder,
                                     os.path.basename(full_path_fn)))
-                        delete_fn_lst.append(full_path_fn)
+                        delete_fn_list.append(full_path_fn)
                         log_lines.append('Moved {0} '.format(full_path_fn)+
                                          'to {0}'.format(delete_folder))
                 else:
@@ -3095,39 +3254,39 @@ def delete_files_from_sd(delete_date=None, delete_type=None,
                         if zt_date <= delete_date:
                             if delete_folder is None:
                                 os.remove(full_path_fn)
-                                delete_fn_lst.append(full_path_fn)
+                                delete_fn_list.append(full_path_fn)
                                 log_lines.append('Deleted {0}\n'.format(full_path_fn))
                             else:
                                 shutil.move(full_path_fn, 
                                             os.path.join(delete_folder,
                                             os.path.basename(full_path_fn)))
-                                delete_fn_lst.append(full_path_fn)
+                                delete_fn_list.append(full_path_fn)
                                 log_lines.append('Moved {0} '.format(full_path_fn)+
                                                  'to {0}\n'.format(delete_folder))
                     elif delete_type == 'after':
                         if zt_date >= delete_date:
                             if delete_folder is None:
                                 os.remove(full_path_fn)
-                                delete_fn_lst.append(full_path_fn)
+                                delete_fn_list.append(full_path_fn)
                                 log_lines.append('Deleted {0}\n'.format(full_path_fn))
                             else:
                                 shutil.move(full_path_fn, 
                                             os.path.join(delete_folder,
                                             os.path.basename(full_path_fn)))
-                                delete_fn_lst.append(full_path_fn)
+                                delete_fn_list.append(full_path_fn)
                                 log_lines.append('Moved {0} '.format(full_path_fn)+
                                                  'to {0}\n'.format(delete_folder))
                     elif delete_type == 'on':
                         if zt_date == delete_date:
                             if delete_folder is None:
                                 os.remove(full_path_fn)
-                                delete_fn_lst.append(full_path_fn)
+                                delete_fn_list.append(full_path_fn)
                                 log_lines.append('Deleted {0}\n'.format(full_path_fn))
                             else:
                                 shutil.move(full_path_fn, 
                                             os.path.join(delete_folder,
                                             os.path.basename(full_path_fn)))
-                                delete_fn_lst.append(full_path_fn)
+                                delete_fn_list.append(full_path_fn)
                                 log_lines.append('Moved {0} '.format(full_path_fn)+
                                                  'to {0}\n'.format(delete_folder))
     if delete_folder is not None:
@@ -3138,12 +3297,12 @@ def delete_files_from_sd(delete_date=None, delete_type=None,
         for lline in log_lines:
             print lline
     
-    return delete_fn_lst
+    return delete_fn_list
     
 #==============================================================================
 # copy and merge Z3D files from SD cards          
 #==============================================================================
-def copy_and_merge(station, z3d_savepath=None, merge_savepath=None, 
+def copy_and_merge(station, z3d_save_path=None, merge_save_path=None, 
                    channel_dict={'1':'HX', '2':'HY', '3':'HZ','4':'EX', 
                                  '5':'EY', '6':'HZ'},
                    copy_date=None, copy_type='all'):
@@ -3155,12 +3314,12 @@ def copy_and_merge(station, z3d_savepath=None, merge_savepath=None,
         **station** : string
                       full station name
                       
-        **z3d_savepath** : string
+        **z3d_save_path** : string
                           full path to save .Z3D files
                           
-        **merge_savepath** : string
+        **merge_save_path** : string
                              full path to save merged cache files.  If None
-                             saved to z3d_savepath\Merged
+                             saved to z3d_save_path\Merged
                              
         
         **channel_dict** : dictionary
@@ -3177,7 +3336,20 @@ def copy_and_merge(station, z3d_savepath=None, merge_savepath=None,
                         * 'before' --> copy files before and on this date
                         * 'after' --> copy files on and after this date
                         * 'on' --> copy files on this date only
-        
+                        
+    Returns:
+    ------------
+        **mfn_list** : list
+                      list of merged file names
+                      
+    :Example: ::
+    
+        >>> import mpty.usgs.zen as zen
+        >>> mfn_list = zen.copy_and_merge('mt01', z3d_save_path=r"/home/mt")
+        >>> #copy only after a certain date
+        >>> mfn_list = zen.copy_and_merge('mt01', z3d_save_path=r"/home/mt",\
+                                          copy_date='2014/04/20', \
+                                          copy_type='after')
     
     """
     
@@ -3186,21 +3358,21 @@ def copy_and_merge(station, z3d_savepath=None, merge_savepath=None,
     cpkwargs['channel_dict'] = channel_dict
     cpkwargs['copy_date'] = copy_date
     cpkwargs['copy_type'] = copy_type
-    if z3d_savepath != None:
-        cpkwargs['savepath'] = z3d_savepath
+    if z3d_save_path != None:
+        cpkwargs['save_path'] = z3d_save_path
     
-    fn_lst = copy_from_sd(station, **cpkwargs)
+    fn_list = copy_from_sd(station, **cpkwargs)
     
     #--> merge files into cache files
-    mfn_lst = merge_3d_files(fn_lst, savepath=merge_savepath)
+    mfn_list = merge_3d_files(fn_list, save_path=merge_save_path)
     
-    return mfn_lst
+    return mfn_list
     
 #==============================================================================
 #   Make mtpy_mt files  
 #==============================================================================
     
-def make_mtpy_mt_files(fn_lst, station_name='mb', fmt='%.8e', 
+def make_mtpy_mt_files(fn_list, station_name='mb', fmt='%.8e', 
                        ex=1, ey=1, notch_dict=None, ey_skip=False):
     """
     makes mtpy_mt files from .Z3D files
@@ -3216,15 +3388,21 @@ def make_mtpy_mt_files(fn_lst, station_name='mb', fmt='%.8e',
     Outputs:
     --------
         **fn_arr** : np.ndarray(file, length, df, start_dt)
+        
+    :Example: ::
+    
+        >>> import mtpy.usgs.zen as zen
+        >>> fn_list = zen.copy_from_sd('mt01')
+        >>> mtpy_fn = zen.make_mtpy_files(fn_list, station_name='mt')
     """
     
-    fn_arr = np.zeros(len(fn_lst), 
+    fn_arr = np.zeros(len(fn_list), 
                       dtype=[('station','|S6'), ('len',np.int), ('df', np.int),
                              ('start_dt', '|S22'), ('comp','|S2'),
                              ('fn','|S100')])
     fn_lines = []
                              
-    for ii, fn in enumerate(fn_lst):
+    for ii, fn in enumerate(fn_list):
         zd = Zen3D(fn)
         
         #read in Z3D data
@@ -3266,7 +3444,7 @@ def make_mtpy_mt_files(fn_lst, station_name='mb', fmt='%.8e',
 #==============================================================================
 # make time series loop
 #==============================================================================
-def make_mtpy_ts_loop(station_path, station_lst, survey_file=None, 
+def make_mtpy_ts_loop(station_path, station_list, survey_file=None, 
                       station_name='mb', fmt='%.8e', notch_dict=None,
                       ey_skip=False):
     """
@@ -3276,7 +3454,7 @@ def make_mtpy_ts_loop(station_path, station_lst, survey_file=None,
     ----------
         **station_path** : directory of station folders
         
-        **station_lst** : list of stations to process
+        **station_list** : list of stations to process
         
         **survey_file** : string
                           full path to survey_config file created by 
@@ -3318,7 +3496,7 @@ def make_mtpy_ts_loop(station_path, station_lst, survey_file=None,
     if survey_file is not None:
         survey_dict = mtcf.read_survey_configfile(survey_file)
     
-    for station in station_lst:
+    for station in station_list:
         spath = os.path.join(station_path, station)
         if survey_file is not None:
             try:
@@ -3333,9 +3511,9 @@ def make_mtpy_ts_loop(station_path, station_lst, survey_file=None,
             ey = 1.
         
         log_fid.write('-'*72+'\n')
-        fn_lst = [os.path.join(spath, fn) for fn in os.listdir(spath)
+        fn_list = [os.path.join(spath, fn) for fn in os.listdir(spath)
                   if fn[-3:]=='Z3D']
-        sfn_arr, sfn_lines = make_mtpy_mt_files(fn_lst, 
+        sfn_arr, sfn_lines = make_mtpy_mt_files(fn_list, 
                                                 station_name=station_name,
                                                 fmt=fmt, 
                                                 ex=ex, 

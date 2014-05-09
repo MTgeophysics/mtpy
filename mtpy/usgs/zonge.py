@@ -35,13 +35,130 @@ class ZongeMTFT():
     """
     Reads and writes config files for MTFT24 version 1.10
     
+    The important thing to have is the survey configuration file.  This is a
+    configuration file that has all the important information about the
+    survey in it.  And entry in this file should look something like:
+    
+    [MB093]
+    battery = Li
+    b_xaxis_azimuth = 0
+    b_yaxis_azimuth = 90
+    b_instrument_amplification = 1.0
+    b_instrument_type = coil
+    b_logger_gain = 1.0
+    b_logger_type = zen
+    date = 2013-11-05
+    data_logger = 25
+    e_xaxis_azimuth = 0
+    e_yaxis_azimuth = 90
+    e_instrument_amplification = 1.0
+    e_instrument_type = electrodes
+    e_logger_gain = 1.0
+    e_logger_type = zen
+    e_xaxis_length = 107
+    e_yaxis_length = 104
+    declination = 0.0
+    elevation = 2324
+    latitude = 37.82125
+    location = Mono Basin
+    longitude = -119.04723
+    hx = 2304
+    hy = 2344
+    hz = 2314
+    network = USGS
+    notes = near an intrusion, HX power off on pickup, HY loose connection
+    sampling_interval = 0
+    station = MB093
+    station_type = MT
+    
     
     ========================= =================================================
     Attributes                Description
     ========================= =================================================
-    
-    
+     Ant_FrqMax               Frequency max of antenna
+     Ant_FrqMin               Frequency min of antenna
+     Chn_Cmp                  Channel components (string)
+     Chn_Cmp_lst              List of channel components
+     Chn_Gain                 Channel gain
+     Chn_ID                   Channel ID (number))
+     Chn_Length               length of dipole for that channel
+     Chn_dict                 dictionary of channel information
+     MTFT_BandFrq             Frequency band to process
+     MTFT_BandFrqMax          frequency band max to process
+     MTFT_BandFrqMin          frequency band min to process
+     MTFT_DeTrend             remove DC components from data 
+     MTFT_Despike             remove spikes from the data
+     MTFT_MHAFreq             Not sure
+     MTFT_NDecFlt             Number of decade filter to apply to data
+     MTFT_NPWCoef             number of prewhitening coefficients to apply
+     MTFT_NotchFlt            apply a notch filter
+     MTFT_NotchFrq            notch filter frequencies
+     MTFT_NotchWidth          notch width
+     MTFT_PWFilter            prewhitening filter
+     MTFT_SpikeDev            spike deviation 
+     MTFT_SpikePnt            number of points per spike
+     MTFT_StackFlt            stack data
+     MTFT_StackFrq            stack frequencies
+     MTFT_StackTaper          taper of stack filter
+     MTFT_SysCal              system calibraions 
+     MTFT_T0OffsetMax         offset of time 0
+     MTFT_TSPlot_ChnRange     time series plot channel range
+     MTFT_TSPlot_PntRange     time series plot number of points 
+     MTFT_Version             version of mtft
+     MTFT_WindowLength        length of decimation window
+     MTFT_WindowOverlap       amount of overlap between decimation windows
+     MTFT_WindowTaper         taper on decimation window
+     Remote_Component         remote reference components
+     Remote_Path              path to remote reference data
+     Remote_Rotation          rotation on remote reference data
+     Rx_HPR                   rotation of data
+     Setup_ID                 setup ID, in case there were different setups
+     Setup_Number             setup number
+     Setup_Use                use setup in processing
+     TS_FrqBand               time series frequency band
+     TS_Number                time series number
+     TS_T0Error               time series time zero error
+     TS_T0Offset              time series time zero offset  
+     Unit_Length              length units
+     cache_path               path to .cac files
+     log_lines                list of lines to write to a log file 
+     meta_dict                dictionary of meta data 
+     meta_keys                keys of meta data
+     new_remote_path          new remote referenc path
+     num_comp                 number of components
+     rr_tdiff_dict            difference in remote reference and data
+     setup_keys               key words for setup
+     setup_lst                list of setup values
+     sort_ts_lst              sorted time series list
+     ts_info_keys             keys for time series information
+     ts_info_lst              list of time series information
+     value_lst                values of meta data
+     verbose                  [ True | False ] to write things to screen
     ========================= =================================================
+    
+    ========================== ================================================
+     methods                   description
+    ========================== ================================================
+     compute_number_of_setups  compute the number of setups from the data
+     get_rr_ts                 get remote reference time series 
+     get_survey_info           get survey information
+     get_ts_info_lst           get time series information
+     make_value_dict           make values for time series
+     read_cfg                  read configuration file
+     set_remote_reference_info set important remote reference data
+     set_values                set values of meta_dict
+     write_mtft_cfg           write MTFT configuration file
+    ========================== ================================================
+    
+    :Example: ::
+        
+        >>> import mtpy.usgs.zonge as zonge
+        >>> mtft = zonge.ZongeMTFT()
+        >>> mtft.write_mtft_cfg(r"/home/mt/mt01/Merged", \
+                                'mt01', \
+                                rrstation='rr01',\
+                                survey_file=r"/home/mt/survey/cfg")
+    
     """
     def __init__(self):
         
@@ -172,6 +289,9 @@ class ZongeMTFT():
         
      
     def make_value_dict(self):
+        """
+        make value dictionary with all the important information
+        """
         self.value_lst = [self.MTFT_Version, 
                           self.MTFT_MHAFreq, 
                           self.MTFT_WindowTaper,   
@@ -1204,7 +1324,9 @@ class ZongeMTFT():
 #==============================================================================
 class ZongeMTEdit():
     """
-    deal with input and output config files for mtedit
+    deal with input and output config files for mtedi.  
+    
+    This is not used as much, but works if you need it
     """
     
     def __init__(self):
@@ -1445,8 +1567,65 @@ class ZongeMTEdit():
 #==============================================================================    
 class ZongeMTAvg():
     """
-    deal with avg files output from mtedit
+    deal with avg files output from mtedit and makes an .edi file.
     
+    
+    =============================== ===========================================
+    Attributes                       Description     
+    =============================== ===========================================
+     MTEdit3Auto_PhaseFlip          [ yes | no ] flip phase automatically
+     MTEdit3DPlus_Use               [ yes | no ] use D+ smoothing
+     MTEdit3PhaseSlope_Smooth       [ yes | no ] smooth data using phase
+     MTEdit3PhaseSlope_toMag        [ yes | no ] use phase to predict mag
+     MTEdit3Version                 version of mtedit
+     Rx_GdpStn                      station name
+     Rx_HPR                         station rotation (N, E, Z)
+     Rx_Length                      dipole lenghts
+     Survey_Array                   survey array
+     Survey_Type                    survey type (MT)
+     Tipper                         mtpy.core.z.Tipper object
+     Tx_Type                        Transmitter type
+     Unit_Length                    units of length (m) 
+     Z                              mtpy.core.z.Z object
+     avg_dict                       dictionary of all meta data for MTAvg 
+     comp                           components
+     comp_dict                      dictionary of components
+     comp_flag                      component flag
+     comp_index                     index of component
+     comp_lst_tip                   list of tipper information
+     comp_lst_z                     list of z information
+     freq_dict                      dictionary of frequencies
+     freq_dict_x                    dictionary of frequencies in x direction
+     freq_dict_y                    dictionary of frequencies in y direction
+     header_dict                    dictionary of header information
+     info_dtype                     numpy.dtype for information 
+     info_keys                      keys for information
+     info_type                      keys type
+     nfreq                          number of frequencies
+     nfreq_tipper                   number of frequencies for tipper
+     z_coordinate                   coordinate of z
+    =============================== ===========================================
+    
+    =============================== ===========================================
+    Methods                         Description
+    =============================== ===========================================
+    convert2complex                 convert res/phase to Z          
+    fill_Tipper                     fill tipper data in to Tipper             
+    fill_Z                          fill z data to Z
+    read_avg_file                   read in .avg file output by MTEdit 
+    write_edi                       write .edi from .avg file   
+    =============================== ===========================================
+    
+    
+    :Example: ::
+        
+        >>> import mtpy.usgs.zonge as zonge
+        >>> zm = zonge.ZongeMTAvg(r"/home/mt01/Merged"\
+                                  'mt01', \
+                                  survey_cfg_file=r"/home/mt/survey.cfg",\
+                                  mtft_cfg_file=r"/home/mt/mt01/Merged/mtft24.cfg"\,
+                                  mtedit_cfg_file=r"/home/bin/mtedit.cfg",\
+                                  copy_path=r"/home/mt/edi_files")
     """                     
 
     def __init__(self):
