@@ -31,13 +31,13 @@ import mtpy.processing.birrp as birrp
 import mtpy.utils.exceptions as mtex
 import mtpy.utils.configfile as mtcf
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator
 import mtpy.imaging.plotspectrogram as plotspectrogram
 
 try:
     import mtpy.utils.mseed as mtmseed
 except ImportError:
-    pass
+    print ('Can not convert data to mini seed format need to install Obspy '
+           'good luck!') 
 
 try:
     import mtpy.processing.filter as mtfilt
@@ -49,10 +49,20 @@ datetime_fmt = '%Y-%m-%d,%H:%M:%S'
 
 class Zen3D(object):
     """
-    Deal with the raw data output from the Zen box as Z3D files.
+    Deal with the raw data output from the Zen box as Z3D files, which is in
+    a formatted binary file with GPS time stamps every second.  Each time
+    stamp contains information about position, GPS lock, temperature and a 
+    few other things.  The stamp is 32 bytes long.  
+    
+    The read_file makes sure that there is the correct number of points 
+    between time stamps, and the time stamp is correct.  The data read from 
+    the file begins on the first coherent time stamp and ends on the last one.
+    
+    Usually the first coherent time stamp is a few seconds after scheduled 
+    start time.  
     
     Arguments:
-    ----------
+    ------------
         **fn**: string
                 full path to .Z3D file to be manipulated
                 
@@ -182,6 +192,7 @@ class Zen3D(object):
         self.lat = None
         self.lon = None
         
+    #==================================================    
     def read_header(self, header_string):
         """
         read header information and fill attribute:
@@ -260,7 +271,8 @@ class Zen3D(object):
             self.ch_adcard_sn = header_dict['serial']
         except KeyError:
             self.ch_adcard_sn = header_dict['brd339 serial']
-            
+    
+    #==================================================        
     def read_metadata(self, meta_data_string):
         """
         read in meta data and make important information attributes
@@ -289,7 +301,8 @@ class Zen3D(object):
         self.ch_length = meta_dict['ch.varasp']
         self.rx_stn = meta_dict['rx.stn']
         self.tx_id = meta_dict['tx.id']
-        
+    
+    #==================================================    
     def get_info(self):
         """
         read header and meta data
@@ -321,10 +334,8 @@ class Zen3D(object):
         #---read in meta raw_data----------------------------------------------
         meta_string = raw_data[self._header_len-1:ds]
         self.read_metadata(meta_string)
-        
-        
-        
-    
+ 
+    #==================================================
     def read_3d(self):
         """
         read in the time series and gps time stamps.
@@ -417,15 +428,9 @@ class Zen3D(object):
                 gps_lst[0] = self.get_gps_stamp_location()
                 time_stop += 1  
        
-       #----Raise an error if the first gps stamp is more than allowed time
+        #----Raise an error if the first gps stamp is more than allowed time
         #    difference.
         if time_stop >= self._seconds_diff:
-#            raise ZenGPSError('GPS start time is more than '+\
-#                           '{0} '.format(self._seconds_diff)+\
-#                           'seconds different than scheduled start time of '+\
-#                           '{0}. \n '.format(self.start_dt)+\
-#                           'Estimated start time is {0} +/- {1} sec'.format(
-#                           start_test, self._seconds_diff))
             print ('GPS start time is more than '+\
                            '{0} '.format(self._seconds_diff)+\
                            'seconds different than scheduled start time of '+\
@@ -534,8 +539,7 @@ class Zen3D(object):
         self.temperature = gps_dict['temperature']
         self.lat = gps_dict['lat']
         self.lon = gps_dict['lon']
-        
-        
+
         self.date_time = np.zeros_like(gps_dict['time'], dtype='|S24')
 
         for gg, gtime in enumerate(gps_dict['time']):
@@ -559,7 +563,8 @@ class Zen3D(object):
             
         if self.units == 'mv':
             self.time_series = self.convert_counts()
-        
+    
+    #==================================================    
     def convert_counts(self):
         """
         convert the time series from counts to millivolts
@@ -567,7 +572,8 @@ class Zen3D(object):
         """
         
         return self.time_series*self.counts_to_mv_conversion
-        
+    
+    #==================================================    
     def convert_mV(self):
         """
         convert millivolts to counts assuming no other scaling has been applied
@@ -575,7 +581,8 @@ class Zen3D(object):
         """
         
         return self.time_series/self.counts_to_mv_conversion
-        
+    
+    #==================================================    
     def compute_schedule_start(self, start_date, start_time, 
                                leap_seconds=None):
         """
@@ -644,7 +651,8 @@ class Zen3D(object):
                                     new_seconds, 0, 0, 0))
                                     
         return ndate_time
-        
+    
+    #==================================================
     def get_gps_stamp_location(self, start_index=None):
         """
         get the location in the data file where there is a gps stamp.  Makes
@@ -675,7 +683,8 @@ class Zen3D(object):
                         gps_index += 1
                         
         return gps_index
-        
+    
+    #==================================================    
     def get_gps_stamp(self, gps_index):
         """
         get the gps stamp data
@@ -710,13 +719,6 @@ class Zen3D(object):
                 gps_info = np.fromstring(self._raw_data[gps_index:gps_index+self._stamp_len], 
                                          dtype=self._data_type)
                 
-#            while np.log10(abs(gps_info['lat'])) < -3:
-#                gps_index = self.get_gps_stamp_location(start_index=gps_index+7)
-#                print 'lat_log', gps_index    
-#                gps_info = np.fromstring(self._raw_data[gps_index:gps_index+self._stamp_len], 
-#                                         dtype=self._data_type)
-
-            
             #convert lat and lon into decimal degrees
             gps_info['lat'] = self.get_degrees(gps_info['lat'])
             gps_info['lon'] = self.get_degrees(gps_info['lon'])
@@ -729,8 +731,6 @@ class Zen3D(object):
             if gps_index == -1:
                 print gps_info
                 raise ZenGPSError('Something is fucked')
-#            if gps_info:
-#                return -1, -1, -1
                 
             return gps_info, gps_index, gps_week 
             
@@ -738,7 +738,8 @@ class Zen3D(object):
             print 'Ran into end of file, gps stamp not complete.'+\
                   ' Only {0} points.'.format(len(self._raw_data[gps_index:]))
             return None, gps_index, 0
-            
+    
+    #==================================================        
     def get_gps_time(self, gps_int, gps_week=0):
         """
         from the gps integer get the time in seconds.
@@ -774,7 +775,8 @@ class Zen3D(object):
         gps_time = np.floor(gps_seconds)+gps_ms+cc
         
         return gps_time, gps_week
-        
+    
+    #==================================================
     def get_date_time(self, gps_week, gps_time):
         """
         get the actual date and time of measurement as UTC. 
@@ -824,7 +826,8 @@ class Zen3D(object):
                                                  int(seconds+mseconds), 
                                                  0, 0, 0))
         return date_time
-        
+    
+    #==================================================    
     def get_degrees(self, radian_value):
         """
         convert lat or lon into decimal degrees
@@ -834,7 +837,8 @@ class Zen3D(object):
         degrees = radian_value*180/np.pi
         
         return degrees
-        
+    
+    #==================================================    
     def apply_adaptive_notch_filter(self, notch_dict):
         """
         apply notch filter to the data that finds the peak around each 
@@ -860,6 +864,7 @@ class Zen3D(object):
         self.time_series, self.filt_lst = \
                     mtfilt.adaptive_notch_filter(self.time_series, **kwargs) 
         
+    #==================================================
     def write_ascii_mt_file(self, save_fn=None, save_station='mb', fmt='%.8e',
                             ex=1, ey=1, notch_dict=None):
         """
@@ -937,7 +942,8 @@ class Zen3D(object):
                                                          fmt=fmt)
         
         print 'Wrote mtpy timeseries file to {0}'.format(self.fn_mt_ascii)
-        
+   
+    #==================================================     
     def write_mseed_mt_file(self, save_fn=None, save_station='mb', 
                             location='Mono Basin', network='USGS'):
         """
@@ -994,7 +1000,8 @@ class Zen3D(object):
                                                                t0,
                                                                time_series)
         return save_fn
-                                                               
+    
+    #==================================================                                                           
     def plot_time_series(self, fig_num=1):
         """
         plots the time series
@@ -1016,7 +1023,8 @@ class Zen3D(object):
         
         self.convert_mV()
         return fig, ax
-        
+    
+    #==================================================    
     def plot_spectrogram(self, time_window=2**8, time_step=2**6, s_window=11,
                          frequency_window=1, n_freq_bins=2**9, sigma_L=None):
         """
@@ -1062,7 +1070,7 @@ class Zen3D(object):
         
         return ptf
         
-    
+    #==================================================
     def plot_spectra(self, fig_num=2):
         """
         plot the spectra of time series
@@ -1088,10 +1096,17 @@ class Zen3D(object):
         
         return fig, ax
         
-
+#==============================================================================
+# Cache files
+#==============================================================================
 class ZenCache(object):
     """
     deals with cache files or combined time series files.
+    
+    This will combine all coincident files into a .cac file for use in the
+    Zonge processing software.  It will start at the first coherent time
+    stamp and go to the longest coherent time stamp, such that each channel 
+    will have the same start time and end time and same number of data points.
     
     ================== ========================================================
      Attributes         Description
@@ -1227,6 +1242,7 @@ class ZenCache(object):
                            'TX.AMP' : ',',
                            'TX.SHUNT' : ','}
     
+    #==================================================
     def check_sampling_rate(self, zt_lst):
         """
         check to make sure the sampling rate is the same for all channels
@@ -1258,7 +1274,7 @@ class ZenCache(object):
             raise IOError('Sampling rates are not the same for all channels '+\
                           'Check file(s)'+zt_lst[false_test[0]])
         
-    
+    #==================================================
     def check_time_series(self, zt_lst, decimate=1):
         """
         check to make sure timeseries line up with eachother.
@@ -1284,12 +1300,7 @@ class ZenCache(object):
                 print '   because it does not contain correct gps time'
                 print '   {0} --> {1}'.format(time_max, 
                                              zt.get_date_time(zt.gps_week, 
-                                                             time_max))
-#        skip_dict = dict([(ii, np.where(zt.gps_time==time_max)[0][0]) 
-#                          for ii, zt in enumerate(zt_lst)])
-#        if len(time_max) != n_fn:
-#            for ii in range(n_fn):
-#                skip_dict[ii] = st_lst.max()-st_lst[ii]       
+                                                             time_max))    
         
         #change data by amount needed        
         for ii, zt in zip(skip_dict.keys(), zt_lst):
@@ -1346,7 +1357,8 @@ class ZenCache(object):
             
         
         return ts_array, ts_min
-        
+    
+    #==================================================    
     def write_cache_file(self, fn_lst, save_fn, station='ZEN', decimate=1):
         """
         write a cache file from given filenames
@@ -1488,7 +1500,8 @@ class ZenCache(object):
         self.log_lines.append('Saved File to: \n')
         self.log_lines.append(' '*4+'{0}\n'.format(self.save_fn))
         self.log_lines.append('='*72+'\n')
-        
+    
+    #==================================================    
     def rewrite_cache_file(self):
         """
         rewrite a cache file if parameters changed
@@ -1557,7 +1570,8 @@ class ZenCache(object):
         cfid.close()
         
         print 'Rewrote {0}\n to {1}'.format(self.save_fn, self.save_fn_rw)        
-        
+    
+    #==================================================    
     def read_cache_metadata(self, cache_fn):
         """
         read only the meta data from the cache file
@@ -1616,6 +1630,7 @@ class ZenCache(object):
                                      meta_block['len'], meta_len_check))
         cfid.close()
         
+    #==================================================
     def read_cache(self, cache_fn):
         """
         read a cache file
@@ -1725,10 +1740,14 @@ class ZenCache(object):
 class ZenSchedule(object):
     """
     deals with reading, writing and copying schedule
+
+    Creates a repeating schedule based on the master_schedule.  It will
+    then change the first scheduling action to coincide with the master 
+    schedule, such that all deployed boxes will have the same schedule.
     
     :Example: ::
     
-        >>> import myp.usgs.zen as zen
+        >>> import mtpy.usgs.zen as zen
         >>> zs = zen.ZenSchedule()
         >>> zs.write_schedule('MT01', dt_offset='2013-06-23,04:00:00')
         
@@ -1797,7 +1816,7 @@ class ZenSchedule(object):
                                                   self.df_time_lst,
                                                   repeat=21)
                                                   
-
+    #==================================================
     def read_schedule(self, fn):
         """
         read zen schedule file
@@ -1832,7 +1851,8 @@ class ZenSchedule(object):
                     self.light_dict[line_lst[0]] = line_lst[1]
                 except KeyError:
                     pass
-                
+    
+    #==================================================            
     def add_time(self, date_time, add_minutes=0, add_seconds=0, add_hours=0,
                  add_days=0):
         """
@@ -1849,7 +1869,8 @@ class ZenSchedule(object):
                                                  minutes=add_minutes,
                                                  seconds=add_seconds)
         return fulldate
-        
+    
+    #==================================================
     def make_schedule(self, df_lst, df_length_lst, repeat=5, t1_dict=None):
         """
         make a repeated schedule given list of sampling frequencies and
@@ -1917,7 +1938,8 @@ class ZenSchedule(object):
             ns['gain'] = '0'
             
         return time_lst
-        
+    
+    #==================================================    
     def get_schedule_offset(self, time_offset, schedule_time_lst):
         """
         gets the offset in time from master schedule list and time_offset so 
@@ -1958,7 +1980,8 @@ class ZenSchedule(object):
                 s1 = {'dt':t1.strftime(self.dt_format), 
                       'df':schedule_time_lst[ii-1]['df']}
                 return s1
-                
+    
+    #==================================================            
     def write_schedule(self, station, clear_schedule=True, 
                        clear_metadata=True, varaspace=100, 
                        savename=0, dt_offset=None, 
@@ -2139,6 +2162,13 @@ class ZenBIRRP():
     class to deal with Birrp from Zen outputs
     
     survey file is .cfg file
+    
+    Need to create a processing file which has information on how to 
+    process the data.  See read_processing_file.
+    
+    
+    
+    
     
     """              
 
