@@ -616,22 +616,36 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                     self.rpt_array[mm]['lat'] = mt1.lat
                     self.rpt_array[mm]['lon'] = mt1.lon
                     self.rpt_array[mm]['elev'] = mt1.elev
-                    for f_index, freq in enumerate(mt1.freq):
+                    
+                    rpt_fdict = dict([(np.round(key, 5), value)
+                                       for value, key in enumerate(rpt.freq)])
+                    for f_index, freq in enumerate(rpt.freq):
                         aa = freq_dict[np.round(freq, 5)]
                         try:
-                            rr = fdict1[np.round(freq, 5)]
-                            
-                            self.rpt_array[mm]['phimin'][aa] = \
-                                                rpt.residual_pt.phimin[0][rr]
-                            self.rpt_array[mm]['phimax'][aa] = \
-                                                rpt.residual_pt.phimax[0][rr]
-                            self.rpt_array[mm]['skew'][aa] = \
-                                                rpt.residual_pt.beta[0][rr]
-                            self.rpt_array[mm]['azimuth'][aa] = \
-                                                rpt.residual_pt.azimuth[0][rr]
-                            self.rpt_array[mm]['geometric_mean'][aa] = \
-                                        np.sqrt(rpt.residual_pt.phimin[0][rr]*\
-                                                rpt.residual_pt.phimax[0][rr])
+                            try:
+                                rr = rpt_fdict[np.round(freq, 5)]
+                                
+                                self.rpt_array[mm]['phimin'][aa] = \
+                                                    rpt.residual_pt.phimin[0][rr]
+                                self.rpt_array[mm]['phimax'][aa] = \
+                                                    rpt.residual_pt.phimax[0][rr]
+                                self.rpt_array[mm]['skew'][aa] = \
+                                                    rpt.residual_pt.beta[0][rr]
+                                self.rpt_array[mm]['azimuth'][aa] = \
+                                                    rpt.residual_pt.azimuth[0][rr]
+                                self.rpt_array[mm]['geometric_mean'][aa] = \
+                                            np.sqrt(abs(rpt.residual_pt.phimin[0][rr]*\
+                                                    rpt.residual_pt.phimax[0][rr]))
+                            except IndexError:
+                                print '-'*50
+                                print mt1.station 
+                                print 'freq_index for 1:  {0}'.format(f_index)
+                                print 'freq looking for:  {0}'.format(freq)
+                                print 'index in big    :  {0}'.format(aa)
+                                print 'index in 1      :  {0} '.format(rr)
+                                print 'len_1 = {0}, len_2 = {1}'.format(
+                                        len(mt2.freq), len(mt1.freq))
+                                print 'len rpt_freq = {0}'.format(len(rpt.freq))
                         except KeyError:
                             print 'Station {0} does not have {1:.5f}Hz'.format(
                                    mt1.station, freq)
