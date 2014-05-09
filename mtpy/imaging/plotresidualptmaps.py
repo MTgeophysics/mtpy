@@ -887,7 +887,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                 ellipd = patches.Ellipse((rpt['plotx'],rpt['ploty']),
                                          width=ewidth,
                                          height=eheight,
-                                         angle=90-rpt['azimuth'][f_index])
+                                         angle=rpt['azimuth'][f_index]-90)
             elif self.rot90 == False:
                 ellipd = patches.Ellipse((rpt['plotx'],rpt['ploty']),
                                          width=ewidth,
