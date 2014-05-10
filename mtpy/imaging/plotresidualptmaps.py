@@ -403,10 +403,11 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             self.ypad = kwargs.pop('ypad', .005)
             #--> set the ellipse properties -------------------
             self._ellipse_dict = kwargs.pop('ellipse_dict', 
-                                            {'range':(0,5), 'cmap':'mt_yl2rd',
+                                            {'range':(0,10), 'cmap':'mt_yl2rd',
                                              'size':.005,
                                              'colorby':'geometric_mean'}) 
             self._read_ellipse_dict()
+            self.ellipse_scale = kwargs.pop('ellipse_scale', None)
         elif self.map_scale == 'm':        
             self.xpad = kwargs.pop('xpad', 1000)
             self.ypad = kwargs.pop('ypad', 1000)
@@ -575,13 +576,18 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                     #need to make sure only matched frequencies are compared
                     index_1 = []
                     index_2 = []
-                    for key1 in fdict1.keys():
+                    for key1 in sorted(fdict1.keys()):
                         try:
                             index_2.append(fdict2[key1])
                             index_1.append(fdict1[key1])
                         except KeyError:
                             'Did not find {0:.4e} Hz in {1}'.format(key1, 
                                                                   mt2.fn)
+                                                                  
+                    #need to sort the index list, otherwise weird things happen
+                    index_1.sort()
+                    index_2.sort()
+                    
                     #create new Z objects that have similar frequencies                                              
                     new_z1 = mtpl.mtz.Z(z_array=mt1.z[index_1],
                                         zerr_array=mt1.z_err[index_1],
@@ -626,9 +632,9 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                 rr = rpt_fdict[np.round(freq, 5)]
                                 
                                 self.rpt_array[mm]['phimin'][aa] = \
-                                                    rpt.residual_pt.phimin[0][rr]
+                                            abs(rpt.residual_pt.phimin[0][rr])
                                 self.rpt_array[mm]['phimax'][aa] = \
-                                                    rpt.residual_pt.phimax[0][rr]
+                                            abs(rpt.residual_pt.phimax[0][rr])
                                 self.rpt_array[mm]['skew'][aa] = \
                                                     rpt.residual_pt.beta[0][rr]
                                 self.rpt_array[mm]['azimuth'][aa] = \
@@ -686,8 +692,8 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         self.rpt_array['phimax'] = filt_phimax_arr
         self.rpt_array['skew'] = filt_skew_arr
         self.rpt_array['azimuth'] = filt_azimuth_arr
-        self.rpt_array['geometric_mean'] = np.sqrt(filt_phimin_arr*\
-                                                   filt_phimax_arr)
+        self.rpt_array['geometric_mean'] = np.sqrt(abs(filt_phimin_arr*\
+                                                   filt_phimax_arr))
         
         print 'Applying Median Filter with kernel {0}'.format(kernel)
     

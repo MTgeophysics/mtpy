@@ -334,6 +334,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
                                          'range':(0, 10),
                                          'colorby':'geometric_mean'})
         self._read_ellipse_dict()
+        self.ellipse_scale = kwargs.pop('ellipse_scale', 10)
         
         #--> set colorbar properties---------------------------------
         #set orientation to horizontal
@@ -455,6 +456,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
         compute residual phase tensor so the result is something useful to 
         plot
         """
+        log_path = os.path.dirname(os.path.dirname(self.fn_list1[0]))
+        log_fn = os.path.join(log_path, 'Residual_PT.log')
+        logfid = file(log_fn, 'w')
         
         self._get_freq_list()
         freq_dict = dict([(np.round(key, 5), value) 
@@ -484,19 +488,29 @@ class PlotResidualPTps(mtpl.MTEllipse):
                             for ii, ff in enumerate(mt1.freq)])
             for mt2 in self.mt_list2:
                 if mt2.station == mt1.station:
+                    logfid.write('{0}{1}{0}\n'.format('='*30, mt1.station))
                     fdict2 = dict([(np.round(ff, 5), ii) 
                                     for ii, ff in enumerate(mt2.freq)])
                     
                     #need to make sure only matched frequencies are compared
                     index_1 = []
                     index_2 = []
-                    for key1 in fdict1.keys():
+                    for key1 in sorted(fdict1.keys()):
                         try:
                             index_2.append(fdict2[key1])
                             index_1.append(fdict1[key1])
+                            logfid.write('-'*20+'\n')
+                            logfid.write('found {0} in both\n'.format(key1))
+                            logfid.write('Index 1={0}, Index 2={1}\n'.format(
+                                         fdict1[key1], fdict2[key1]))
                         except KeyError:
                             'Did not find {0:.4e} Hz in {1}'.format(key1, 
                                                                   mt2.fn)
+                                                                  
+                    #need to sort the index list, otherwise weird things happen
+                    index_1.sort()
+                    index_2.sort()
+                    
                     #create new Z objects that have similar frequencies                                              
                     new_z1 = mtpl.mtz.Z(z_array=mt1.z[index_1],
                                         zerr_array=mt1.z_err[index_1],
@@ -523,7 +537,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
                     
                     #be sure to tell the program you found the station
                     station_find = True
-                   
+                    
                     #put stuff into an array because we cannot set values of 
                     #rpt, need this for filtering.
                     st_1, st_2 = self.station_id
@@ -535,15 +549,17 @@ class PlotResidualPTps(mtpl.MTEllipse):
                     
                     rpt_fdict = dict([(np.round(key, 5), value)
                                        for value, key in enumerate(rpt.freq)])
+                                           
+                    
                     for f_index, freq in enumerate(rpt.freq):
                         aa = freq_dict[np.round(freq, 5)]
                         try:
                             rr = rpt_fdict[np.round(freq, 5)]
                             try:
                                 self.rpt_array[mm]['phimin'][aa] = \
-                                                    rpt.residual_pt.phimin[0][rr]
+                                        abs(rpt.residual_pt.phimin[0][rr])
                                 self.rpt_array[mm]['phimax'][aa] = \
-                                                    rpt.residual_pt.phimax[0][rr]
+                                        abs(rpt.residual_pt.phimax[0][rr])
                                 self.rpt_array[mm]['skew'][aa] = \
                                                     rpt.residual_pt.beta[0][rr]
                                 self.rpt_array[mm]['azimuth'][aa] = \
@@ -551,6 +567,16 @@ class PlotResidualPTps(mtpl.MTEllipse):
                                 self.rpt_array[mm]['geometric_mean'][aa] = \
                                             np.sqrt(abs(rpt.residual_pt.phimin[0][rr]*
                                                     rpt.residual_pt.phimax[0][rr]))
+                                logfid.write('Freq={0:.5f} '.format(freq))                    
+                                logfid.write('Freq_list_index={0} '.format(np.where(self.freq_list==freq)[0][0]))                    
+                                logfid.write('rpt_array_index={0} '.format(aa))
+                                logfid.write('rpt_dict={0} '.format(rr))
+                                logfid.write('rpt.freq_index={0} '.format(np.where(rpt.freq==freq)[0][0]))
+                                logfid.write('Phi_max={0:2f} '.format(abs(rpt.residual_pt.phimax[0][rr])))
+                                logfid.write('Phi_min={0:2f} '.format(abs(rpt.residual_pt.phimin[0][rr])))
+                                logfid.write('Skew={0:2f} '.format(rpt.residual_pt.beta[0][rr]))
+                                logfid.write('Azimuth={0:2f}\n'.format(rpt.residual_pt.azimuth[0][rr]))
+                            
                             except IndexError:
                                 print '-'*50
                                 print mt1.station 
@@ -574,7 +600,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
                
         # from the data get the relative offsets and sort the data by them
         self._get_offsets()
-    
+
+        logfid.close()    
     #-------------------------------------------------------------------
     def _apply_median_filter(self, kernel=(3, 3)):
         """
@@ -688,13 +715,8 @@ class PlotResidualPTps(mtpl.MTEllipse):
             bounds = np.arange(ckmin, ckmax+ckstep, ckstep)
             
         #get largest ellipse
-        emax = self.rpt_array['phimax'].max()
-        
-        if self.tscale == 'frequency':
-            plot_freq = self.freq_list
-            
-        elif self.tscale == 'period':
-            plot_freq = 1./self.freq_list
+        emax = self.ellipse_scale
+        #emax = self.rpt_array['phimax'].max()
         
         #plot phase tensor ellipses
         for ii, rpt in enumerate(self.rpt_array):
@@ -710,7 +732,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
                 raise NameError('{0} is not supported'.format(
                                                         self.ellipse_colorby))
 
-            for jj, ff in enumerate(plot_freq):
+            for jj, ff in enumerate(self.freq_list):
                 if phimin[jj] == 0.0 or phimax[jj] == 0.0:
                     pass
                 else:
@@ -764,33 +786,27 @@ class PlotResidualPTps(mtpl.MTEllipse):
         self.offset_list = offset_sort['offset']
         self.station_list = offset_sort['station']
         
-        #set y-ticklabels
+        #min and max frequency of the plot
+        pmin = int(np.floor(np.log10(self.freq_list.min())))
+        pmax = int(np.ceil(np.log10(self.freq_list.max())))
+
+        #set y-axis major ticks to be on each power of 10
+        self.ax.yaxis.set_ticks(np.arange(pmin*self.ystretch, 
+                                          (pmax+1)*self.ystretch, 
+                                          self.ystretch))
+        #set y-ticklabels to coincide with the desired label
         if self.tscale == 'period':
-            #calculate minimum period and maximum period with a stretch factor
-            pmax = int(np.floor(np.log10(plot_freq.min())))
-            pmin = int(np.ceil(np.log10(plot_freq.max())))
-            
-            yticklabels = [mtpl.labeldict[ii] for ii in range(pmin, pmax-1, -1)]
+            #make tick labels that will represent period
+            yticklabels = [mtpl.labeldict[-ii] for ii in range(pmax, pmin-1, -1)]
             self.ax.set_ylabel('Period (s)',
                                fontsize=self.font_size+2,
                                fontweight='bold')
-            #set y-axis major ticks
-            self.ax.yaxis.set_ticks(np.arange(pmax*self.ystretch, 
-                                              (pmin+1)*self.ystretch, 
-                                               self.ystretch))
 
         elif self.tscale == 'frequency': 
-            #calculate minimum period and maximum period with a stretch factor
-            pmin = int(np.floor(np.log10(plot_freq.min())))
-            pmax = int(np.ceil(np.log10(plot_freq.max())))
-            yticklabels = [mtpl.labeldict[-ii] for ii in range(pmin, pmax+1, 1)]
+            yticklabels = [mtpl.labeldict[ii] for ii in range(pmax, pmin-1, -1)]
             self.ax.set_ylabel('Frequency (Hz)',
                                fontsize=self.font_size+2,
                                fontweight='bold')
-            
-        #--> set y-axis tick labels
-        self.ax.set_yticklabels(yticklabels)
-        
         #--> set y-limits
         if self.ylimits == None:
             self.ax.set_ylim(pmax*self.ystretch, pmin*self.ystretch)
@@ -799,7 +815,9 @@ class PlotResidualPTps(mtpl.MTEllipse):
             pmax = np.log10(self.ylimits[1])*self.ystretch
             self.ax.set_ylim(pmax, pmin)
             
-            
+        #--> set y-axis tick labels
+        self.ax.set_yticklabels(yticklabels)
+    
         #--> set x-axis label                       
         self.ax.set_xlabel('Station',
                            fontsize=self.font_size+2,
