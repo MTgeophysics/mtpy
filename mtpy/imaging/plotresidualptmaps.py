@@ -101,7 +101,12 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                                          white to red
                                    - 'mt_wh2or' -> white to orange
                                                     *default*
-                             
+        **ellipse_scale** : float
+                            value to which all ellipses are scaled.
+                            *default* is None, which means all ellipses
+                            will be scaled by the maximum value of Phi_max
+                            of the full set of data.
+                            
         **rot90** : [ True | False ] True to rotate residual phase tensor
                     by 90 degrees. False to leave as is.
 
@@ -261,6 +266,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
      ellipse_cmap         ellipse color map, see above for options
      ellipse_colorby      parameter to color ellipse by
      ellipse_range        (min, max, step) values to color ellipses
+     ellipse_scale        value to which all ellipses are normalized to.     
      ellipse_size         scaling factor to make ellipses visible
      fig                  matplotlib.figure instance for the figure  
      fig_dpi              dots-per-inch resolution
@@ -866,7 +872,10 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         #--> get size of largest ellipse for this frequency for 
         #    normalization to give an indication of the size of 
         #    change.
-        emax = self.rpt_array['phimax'].max()
+        if self.ellipse_scale is None:
+            emax = self.rpt_array['phimax'].max()
+        else:
+            emax = self.ellipse_scale
         
         #--> plot        
         for ii, rpt in enumerate(self.rpt_array):

@@ -105,6 +105,14 @@ class PlotResidualPTps(mtpl.MTEllipse):
                                    - 'mt_wh2or' -> white to orange
                                                     *default*
         
+        **ellipse_scale** : float
+                            value to which all ellipses are normalized to. So 
+                            if you think a the maximum of change in the 
+                            phase tensor is about 10 degrees, set this value
+                            to 10, then any phimax that is 10 degrees will make
+                            an ellipse with unit length.                            
+                            
+        
         **med_filt_kernel** : tuple(station, period)
                               kernel size for the 2D median filter.  
                               the first is the number of stations to smooth 
@@ -208,6 +216,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
      ellipse_cmap         ellipse color map, see above for options
      ellipse_colorby      parameter to color ellipse by
      ellipse_range        (min, max, step) values to color ellipses
+     ellipse_scale        value to which all ellipses are normalized to         
      ellipse_size         scaling factor to make ellipses visible
      fig                  matplotlib.figure instance for the figure  
      fig_dpi              dots-per-inch resolution
