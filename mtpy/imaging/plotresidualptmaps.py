@@ -115,7 +115,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         **med_filt_kernel** : tuple(station, period)
                               kernel size for the 2D median filter.  
                               the first is the number of stations to smooth 
-                              over. The first number is the number of periods 
+                              over. The second number is the number of periods 
                               to smooth over. Both should be odd.
                               *default* is None
         
@@ -436,7 +436,7 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             self._read_ellipse_dict()
             self.ellipse_scale = kwargs.pop('ellipse_scale', None)
 
-            
+
         self.font_size = kwargs.pop('font_size', 7)
         
         #--> set the freq to plot
@@ -807,7 +807,10 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
         
         #filter data if desired
         if self.med_filt_kernel is not None:
-            self._apply_median_filter()
+          try:
+            self._apply_median_filter(kernel=self.med_filt_kernel)
+          except:
+            print 'Warning - Could not apply median filter'
             
         #get frequency index
         self._get_plot_freq_index()
