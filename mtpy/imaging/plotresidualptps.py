@@ -829,7 +829,7 @@ class PlotResidualPTps(mtpl.MTEllipse):
         else:
             pmin = np.log10(self.ylimits[0])*self.ystretch
             pmax = np.log10(self.ylimits[1])*self.ystretch
-            self.ax.set_ylim(pmax, pmin)
+            self.ax.set_ylim(pmin, pmax)
             
         #--> set y-axis tick labels
         self.ax.set_yticklabels(yticklabels)
