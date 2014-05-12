@@ -423,6 +423,8 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                              'size':500,
                                              'colorby':'geometric_mean'})
             self._read_ellipse_dict()
+            self.ellipse_scale = kwargs.pop('ellipse_scale', None)
+
         elif self.map_scale == 'km':        
             self.xpad = kwargs.pop('xpad', 1)
             self.ypad = kwargs.pop('ypad', 1)
@@ -432,6 +434,9 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                                              'size':.5,
                                              'colorby':'geometric_mean'})
             self._read_ellipse_dict()
+            self.ellipse_scale = kwargs.pop('ellipse_scale', None)
+
+            
         self.font_size = kwargs.pop('font_size', 7)
         
         #--> set the freq to plot
