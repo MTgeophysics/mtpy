@@ -77,7 +77,6 @@ class Setup():
         self.lon = eo.lon
 
         # define z
-
         zr = np.real(eo.Z.z)
         zi = -np.imag(eo.Z.z)
         ze = eo.Z.zerr
@@ -87,10 +86,10 @@ class Setup():
             zer[(zer<self.errorfloor_z)] = self.errorfloor_z
             ze = np.abs(z)*zer
             
-            # set errors in off-diagonals to the minimum error of on-diagonal components
-#            for ze_sub in ze:
-#                min_offdiags = min(ze_sub[0,1],ze_sub[1,0])
-#                ze_sub[ze_sub<min_offdiags] = min_offdiags   
+            #  set errors in off-diagonals to the minimum error of on-diagonal components
+            for ze_sub in ze:
+                min_offdiags = min(ze_sub[0,1],ze_sub[1,0])
+                ze_sub[ze_sub<min_offdiags] = min_offdiags   
         
         elif self.errorfloor_type == 'absolute':
             ze[ze<self.errorfloor_z] = self.errorfloor_z
@@ -622,13 +621,13 @@ class Data():
             self.phase_err = phs_err.T.reshape(len(phs_err[0]),2,2)
         
 
-    def plot_responses(self,modelno=45,adjust_phase = True):
+    def plot_responses(self,datafile,modelno=45,adjust_phase = True):
         """
         
         """
         
         if not hasattr(self,'resistivity'):
-            self.read_datafile()
+            self.read_datafile(datafile)
             
         T = 1./self.freq
         r = self.resistivity
