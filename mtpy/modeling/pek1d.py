@@ -690,7 +690,7 @@ def get_elevation(x,y,elevfn,skiprows = 1):
     elevfn = full path to elevation filename
     """
     elev = np.loadtxt(elevfn)
-    f = si.interp2d(elev[:,0],elev[:,1],elev[:,2])
+    f = si.LinearNDInterpolator(elev[:,0:2],elev[:,2])
     return f(x,y)
     
     
