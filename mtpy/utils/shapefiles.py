@@ -14,7 +14,6 @@ except ImportError:
 import numpy as np
 import os
 import mtpy.core.mt as mt
-import mtpy.utils.latlongutmconversion as utm2ll
 
 ogr.UseExceptions()
 
@@ -43,17 +42,31 @@ class PTShapeFile(object):
     save_path                path to save files to
                              *default* is current working directory.
     ======================== ==================================================
-  
-      .. note:: only WSG84 is supported at the moment.  If you want 
-                a different projection, try reprojecting in your view of choice
-                or use the reproject function below.
-                
+    
+    
+    ======================== ==================================================
+    Methods                   Description
+    ======================== ==================================================
+    _get_plot_period         get a list of all frequencies possible from
+                             input files
+    _get_pt_array            get phase tensors from input files and put the
+                             information into a structured array 
+    write_shape_files        write shape files based on attributes of class
+    ======================== ==================================================
+
+    * This will project the data into UTM WSG84
     :Example: ::
         >>> edipath = r"/home/edi_files_rotated_to_geographic_north"
         >>> edilist = [os.path.join(edipath, edi) \
                       for edi in os.listdir(edipath)\
                       if edi.find('.edi')>0]
         >>> pts = PTShapeFile(edilist, save_path=r"/home/gis")
+        >>> pts.write_shape_files()
+        
+    * To project into another datum, set the projection attribute
+    :Example: ::
+        >>> pts = PTShapeFile(edilist, save_path=r"/home/gis")
+        >>> pts.projection = 'NAD27'
         >>> pts.write_shape_files()
         
   
@@ -86,7 +99,8 @@ class PTShapeFile(object):
     
     def _get_plot_period(self):
         """
-        from the list of edi's get a frequency list to invert for.
+        from the list of edi's get a frequency list from all possible 
+        frequencies.
         
         """
 
@@ -210,7 +224,7 @@ class PTShapeFile(object):
             for pt_array in self.pt_dict[plot_per]:
                 
                 #need to make an ellipse first using the parametric equation
-                azimuth = np.deg2rad(pt_array['azimuth'])
+                azimuth = -np.deg2rad(pt_array['azimuth'])
                 width = self.ellipse_size*(pt_array['phimax']/phimax)
                 height = self.ellipse_size*(pt_array['phimin']/phimax) 
                 x0 = pt_array['east']
@@ -320,10 +334,16 @@ class TipperShapeFile(object):
     save_path                path to save files to
                              *default* is current working directory.
     ======================== ==================================================
-  
-      .. note:: only WSG84 is supported at the moment.  If you want 
-                a different projection, try reprojecting in your view of choice
-                or use the reproject function below.
+    
+    ======================== ==================================================
+    Methods                   Description
+    ======================== ==================================================
+    _get_plot_period         get a list of all possible frequencies from data
+    _get_tip_array           get Tipper information from data and put into 
+                             a structured array for easy manipulation
+    write_real_shape_files   write real induction arrow shape files
+    write_imag_shape_files   write imaginary induction arrow shape files
+    ======================== ==================================================
                 
     :Example: ::
         >>> edipath = r"/home/edi_files_rotated_to_geographic_north"
@@ -492,7 +512,9 @@ class TipperShapeFile(object):
                 txr = 0
                 tyr = tp_arr['mag_real']*self.arrow_size
                 
-                
+                # make an arrow by drawing an outline.  have the arrow point 
+                # north to start and then rotate later with the rotation 
+                # matrix to properly orient it. 
                 x0 = 0
                 y0 = 0
                 
@@ -522,9 +544,11 @@ class TipperShapeFile(object):
                 
                 rot_matrix = np.array([[cos_t, -sin_t], [sin_t, cos_t]])
                 
+                # rotate the arrow to be properly oriented
                 xy = np.array([x, y])
                 rot_xy = np.dot(rot_matrix, xy)
                 
+                # shift the arrow to be centered on the station.
                 x = tp_arr['east']+rot_xy[0]
                 y = tp_arr['north']+rot_xy[1]
                        
@@ -629,7 +653,9 @@ class TipperShapeFile(object):
                 txr = 0
                 tyr = tp_arr['mag_imag']*self.arrow_size
                 
-                
+                # make an arrow by drawing an outline.  have the arrow point 
+                # north to start and then rotate later with the rotation 
+                # matrix to properly orient it.
                 x0 = 0
                 y0 = 0
                 
@@ -659,9 +685,11 @@ class TipperShapeFile(object):
                 
                 rot_matrix = np.array([[cos_t, -sin_t], [sin_t, cos_t]])
                 
+                # rotate the arrow to be properly oriented
                 xy = np.array([x, y])
                 rot_xy = np.dot(rot_matrix, xy)
                 
+                # shift the arrow to be centered on the station
                 x = tp_arr['east']+rot_xy[0]
                 y = tp_arr['north']+rot_xy[1]
                        
@@ -780,7 +808,28 @@ def reproject_layer(in_shape_file, out_shape_file=None, out_proj='WGS84'):
     # close the shapefiles
     inDataSet.Destroy()
     outDataSet.Destroy() 
+
+#==============================================================================
+# create a raster from an array     
+#==============================================================================
     
+def array2raster(newRasterfn,rasterOrigin,pixelWidth,pixelHeight,array):
+
+    cols = array.shape[1]
+    rows = array.shape[0]
+    originX = rasterOrigin[0]
+    originY = rasterOrigin[1]
+
+    driver = gdal.GetDriverByName('GTiff')
+    outRaster = driver.Create(newRasterfn, cols, rows, 1, gdal.GDT_Byte)
+    outRaster.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
+    outband = outRaster.GetRasterBand(1)
+    outband.WriteArray(array)
+    outRasterSRS = osr.SpatialReference()
+    outRasterSRS.ImportFromEPSG(4326)
+    outRaster.SetProjection(outRasterSRS.ExportToWkt())
+    outband.FlushCache()
+
 #==============================================================================
 #     
 #==============================================================================
@@ -833,23 +882,25 @@ def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
     # returns easting, northing, altitude  
     return utm_coordinate_system, utm_point
     
+    
+    
 #==============================================================================
 # test
 #==============================================================================
-#edipath = r"c:\Users\jrpeacock\Documents\Mendenhall\MonoBasin\EDI_Files\GeographicNorth"
-#edilst = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
-#          if edi.find('.edi') > 0]
-#edilst.remove(os.path.join(edipath, 'mb035.edi'))
-#
-##pts = PTShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
-##pts.projection = 'NAD27'
-##pts.ellipse_size = 1200
-##pts.write_shape_files()
+edipath = r"c:\Users\jrpeacock\Documents\Mendenhall\MonoBasin\EDI_Files\GeographicNorth"
+edilst = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
+          if edi.find('.edi') > 0]
+edilst.remove(os.path.join(edipath, 'mb035.edi'))
+
+pts = PTShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
+pts.projection = 'NAD27'
+pts.ellipse_size = 1200
+pts.write_shape_files()
 #tps = TipperShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
 #tps.projection = 'NAD27'
 #tps.arrow_lw = 30
 #tps.arrow_head_height = 100
 #tps.arrow_head_width = 70
 #tps.write_real_shape_files()
-##tps.write_imag_shape_files()
+#tps.write_imag_shape_files()
     
