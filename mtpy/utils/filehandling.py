@@ -60,6 +60,27 @@ def make_unique_filename(infn):
 
     return outfn
 
+def make_unique_folder(wd,basename):
+    """
+    make a folder that doesn't exist already.
+    """        
+  
+    # define savepath. need to choose a name that doesn't already exist
+    i = 1
+    svpath_str = basename
+    svpath = svpath_str+'_%02i'%i
+    while os.path.exists(os.path.join(wd,svpath)):
+        i += 1
+        svpath = svpath_str+'_%02i'%i
+        
+    savepath = os.path.join(wd,svpath)
+        
+    # make the save path
+    os.mkdir(savepath)
+    
+    return savepath
+    
+
 
 def get_sampling_interval_fromdatafile(filename, length = 3600):
     """ 
