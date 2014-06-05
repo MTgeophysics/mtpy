@@ -93,4 +93,29 @@ def generate_inputfiles(epath, **input_parameters):
             Inmodel = pek1dc.Inmodel(input_parameters['inmodel_modeldir'],
                                      **inmodel_inputs)
             Inmodel.write_inmodel()
+
+def parse_arguments(arguments):
+    """
+    parse command line arguments
+    
+    """
+    return
+
+
+def create_filelist(wd,subfolder_list = None):
+    """
+    create a list of full paths to edi files    
+    
+    """
+    return
+    
+    
+def build_run(**input_parameters):
+    """
+        
+    
+    """
+    return
+    
+
     

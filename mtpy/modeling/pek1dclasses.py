@@ -59,13 +59,14 @@ class Control():
 
 
 class Inmodel():
+    
 
     def __init__(self, inmodel_modeldir, **input_parameters):
         self.wd = '.'
         self.inmodel_modeldir = inmodel_modeldir
         self.inmodel_vals = {0:[100,100,0]} # dictionary containing values for 
-                                        # inmodel file, in format topdepth: [minres,maxres,strike]
-
+                                            # inmodel file, in format topdepth: [minres,maxres,strike]
+        self.elevation_file = None
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])
 
