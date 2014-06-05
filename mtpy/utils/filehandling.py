@@ -80,6 +80,28 @@ def make_unique_folder(wd,basename):
     
     return savepath
     
+            
+def sort_folder_list(wkdir,order_file,indices=[0,9999]):
+    """
+    sort subfolders in wkdir according to order in order_file
+    
+    wkdir = working directory containing subfolders
+    order = full path to text file containing order.
+            needs to contain a string to search on that is the same length
+            for each item in the list
+    indices = indices to search on; default take the whole string
+    
+    """
+    order = open(order_file).readlines()
+    order = [ff.strip() for ff in order]
+
+    plst = []
+    flst = [i for i in os.listdir(wkdir) if os.path.isdir(os.path.join(wkdir,i))]
+    for o in order:
+        for f in flst:
+            if str.lower(o.strip().split('_')[0][indices[0]:indices[1]]) == str.lower(f)[indices[0]:indices[1]]:
+                plst.append(f)
+    return plst
 
 
 def get_sampling_interval_fromdatafile(filename, length = 3600):

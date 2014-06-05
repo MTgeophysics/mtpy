@@ -18,7 +18,7 @@ import mtpy.utils.exceptions as MTex
 
 class Control():    
     
-    def __init__(self, wd, **input_parameters):
+    def __init__(self, **input_parameters):
         
         self.run_input = [1,0,0.1,40,1.05,1,0]
         # define control file parameters
@@ -27,7 +27,7 @@ class Control():
         self.type_aniso = 2 # type of structure and anisotropy penalties
         self.value_struct = [0.1,1.0,10.0] # values for the structure penalty weights
         self.value_aniso = [0.1,1.0,10.0] # values for the anisotropy penalty weights   
-        self.wd = wd
+        self.wd = '.'
 
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])
@@ -40,6 +40,7 @@ class Control():
         """
         write control file
         """
+
         
         # create control file
         ctlfile = open(os.path.join(self.wd,'inregulm.dat'),'wb') # control file name is hardcoded into software!
@@ -53,14 +54,15 @@ class Control():
         for thing in [self.value_struct,self.value_aniso]:
             ctlfile.write('  '.join([str(i) for i in thing])+'\n')
         ctlfile.close()
+        print "written control file to {}".format(self.wd)
 
 
 
 class Inmodel():
 
-    def __init__(self, modeldir, **input_parameters):
+    def __init__(self, inmodel_modeldir, **input_parameters):
         self.wd = '.'
-        self.modeldir = modeldir
+        self.inmodel_modeldir = inmodel_modeldir
         self.inmodel_vals = {0:[100,100,0]} # dictionary containing values for 
                                         # inmodel file, in format topdepth: [minres,maxres,strike]
 
@@ -77,7 +79,7 @@ class Inmodel():
         the model planned to run.
         """
 
-        modelf = open(os.path.join(self.modeldir,'ai1mod.dat'))
+        modelf = open(os.path.join(self.inmodel_modeldir,'ai1mod.dat'))
         modelf.readline()
         
         flag = True
@@ -123,7 +125,7 @@ class Inmodel():
         np.savetxt(os.path.join(self.wd,'inmodel.dat'),
                    self.inmodel,
                    fmt=['%5i','%11.4e','%11.4e','%11.4e','%11.4e'])
-
+        print "written inmodel file to {}".format(self.wd)
 
 
 class Data():
@@ -133,7 +135,7 @@ class Data():
     
     """    
     def __init__(self, **input_parameters):
-        self.wd = '.'
+        self.wd = None
         self.respfile = 'ai1dat.dat'
         self.datafile = None
         self.errorfloor_z = 0.1
@@ -144,6 +146,13 @@ class Data():
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])   
 
+        # default working directory is epath if it is specified, otherwise
+        # current directory
+        if self.wd is None:
+            if self.epath is not None:
+                self.wd = os.path.dirname(self.epath)
+            else:
+                self.wd = '.'
 
     def build_data(self):
         """
@@ -154,7 +163,7 @@ class Data():
         # read edi file to edi object
         eo = mtedi.Edi()
         eo.readfile(self.epath)
-        self.edi_object = eo  
+        self.edi_object = eo
         
         # define z
         zr = np.real(eo.Z.z)
@@ -207,7 +216,7 @@ class Data():
         fmt = ['%14.5f']+['%12.5e']*16
         
         # define file name and save data file
-        fname_bas = self.eo.station[:5]
+        fname_bas = self.edi_object.station[:5]
         self.datafile = fname_bas+'.dat'
         fname = os.path.join(self.wd,self.datafile)
 
