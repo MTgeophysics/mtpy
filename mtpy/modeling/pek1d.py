@@ -110,7 +110,7 @@ def parse_arguments(arguments):
     import argparse
     
     parser = argparse.ArgumentParser(description = 'Set up and run a set of 1d anisotropic model runs')
-    parser.add_argument('-l','--inversion_location',nargs=7,
+    parser.add_argument('-l','--program_location',
                         help='path to the inversion program',
                         type=str,default=r'$HOME/aniso1d/ai1oz_ak')    
     parser.add_argument('-r','--run_input',nargs=7,
@@ -269,6 +269,7 @@ def build_run():
     edi_list = create_filelist(os.path.join(input_parameters['working_directory'],
                                             input_parameters['edifolder_list']))
     
+    # update input parameters for building of model
     build_inputs = {}
     for key in build_parameters:
         try:
@@ -279,10 +280,18 @@ def build_run():
     # build a model
     savepath, datafile = generate_inputfiles(edi_list[rank],build_inputs)
     os.chdir(savepath)
-    
+
+
+    # create an inmodel dictionary, if required
+    if input_parameters['build_inmodel']:
+        create_inmodel_dictionary_from_file(input_file,
+                                        x,y,
+                                        working_directory = None) 
+   
     # run the model
-    call([a1d_loc]+[ao.datafile]+[str(n) for n in input_parameters['run_input']])
-    
+    call([input_parameters['program_location']]+[datafile]+[str(n) for n in input_parameters['run_input']])
+
+
 if __name__ == '__main__':
     build_run()
     
