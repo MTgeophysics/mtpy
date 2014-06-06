@@ -13,8 +13,7 @@ import matplotlib.pyplot as plt
 import scipy.interpolate as si
 import mtpy.utils.exceptions as MTex
 
-
-    
+  
 
 class Control():    
     
@@ -22,18 +21,18 @@ class Control():
         
         self.run_input = [1,0,0.1,40,1.05,1,0]
         # define control file parameters
-        self.imax = 100 # max number of iterations
-        self.type_struct = 6
-        self.type_aniso = 2 # type of structure and anisotropy penalties
-        self.value_struct = [0.1,1.0,10.0] # values for the structure penalty weights
-        self.value_aniso = [0.1,1.0,10.0] # values for the anisotropy penalty weights   
-        self.wd = '.'
+        self.iteration_max = 100 # max number of iterations
+        self.penalty_type_structure = 6
+        self.penalty_type_anisotropy = 2 # type of structure and anisotropy penalties
+        self.penalty_weight_structure = [0.1,1.0,10.0] # values for the structure penalty weights
+        self.penalty_weight_anisotropy = [0.1,1.0,10.0] # values for the anisotropy penalty weights   
+        self.working_directory = '.'
 
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])
         
-        if not os.path.exists(self.wd):
-            os.mkdir(self.wd) 
+        if not os.path.exists(self.working_directory):
+            os.mkdir(self.working_directory) 
             
             
     def write_ctlfile(self):
@@ -43,30 +42,32 @@ class Control():
 
         
         # create control file
-        ctlfile = open(os.path.join(self.wd,'inregulm.dat'),'wb') # control file name is hardcoded into software!
+        ctlfile = open(os.path.join(self.working_directory,'inregulm.dat'),'wb') # control file name is hardcoded into software!
         
         # define number of weights
-        nw_struct = len(self.value_struct)
-        nw_aniso = len(self.value_aniso)  
+        nw_struct = len(self.penalty_weight_structure)
+        nw_aniso = len(self.penalty_weight_anisotropy)  
         
-        for thing in [(2,self.imax),(nw_struct,nw_aniso),(self.type_struct,self.type_aniso)]:
+        for thing in [(2,self.iteration_max),(nw_struct,nw_aniso),(self.penalty_type_structure,self.penalty_type_anisotropy)]:
             ctlfile.write('%1i%6i\n'%thing)
-        for thing in [self.value_struct,self.value_aniso]:
+        for thing in [self.penalty_weight_structure,self.penalty_weight_anisotropy]:
             ctlfile.write('  '.join([str(i) for i in thing])+'\n')
         ctlfile.close()
-        print "written control file to {}".format(self.wd)
+        print "written control file to {}".format(self.working_directory)
 
-
+    inmodel_kwds = ['inmodel_dictionary']
 
 class Inmodel():
-    
+    """
+    **inmodel_
+    """
 
     def __init__(self, inmodel_modeldir, **input_parameters):
-        self.wd = '.'
+        self.working_directory = '.'
         self.inmodel_modeldir = inmodel_modeldir
-        self.inmodel_vals = {0:[100,100,0]} # dictionary containing values for 
+        self.inmodel_dictionary = {0:[100,100,0]} # dictionary containing values for 
                                             # inmodel file, in format topdepth: [minres,maxres,strike]
-        self.elevation_file = None
+        
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])
 
@@ -104,11 +105,12 @@ class Inmodel():
         mdepths = [0.]+list(model[:,1])
         mthick = np.array([mdepths[i+1]-mdepths[i] for i in range(len(mi))])
         
-        keys = self.inmodel_vals.keys()
+        keys = self.inmodel_dictionary.keys()
+        
         keys.sort()
         for key in keys:
             cond = model[:,1] >= key
-            mvals[cond] = np.array(self.inmodel_vals[key])
+            mvals[cond] = np.array(self.inmodel_dictionary[key])
         
         self.inmodel = np.vstack([mi,mthick,mvals.T]).T
         
@@ -118,15 +120,15 @@ class Inmodel():
         """
         
         if wd is not None:
-            self.wd = wd
+            self.working_directory = wd
         
         if not hasattr(self,'inmodel'):
             self.build_inmodel()
         
-        np.savetxt(os.path.join(self.wd,'inmodel.dat'),
+        np.savetxt(os.path.join(self.working_directory,'inmodel.dat'),
                    self.inmodel,
                    fmt=['%5i','%11.4e','%11.4e','%11.4e','%11.4e'])
-        print "written inmodel file to {}".format(self.wd)
+        print "written inmodel file to {}".format(self.working_directory)
 
 
 class Data():
@@ -136,12 +138,12 @@ class Data():
     
     """    
     def __init__(self, **input_parameters):
-        self.wd = None
+        self.working_directory = None
         self.respfile = 'ai1dat.dat'
         self.datafile = None
-        self.errorfloor_z = 0.1
+        self.errorfloor = 0.1
         self.errorfloor_type = 'relative' # choose whether to set an absolute or relative error floor
-        self.epath = None
+        self.edipath = None
         self.mode = 'I'
 
         for key in input_parameters.keys():
@@ -149,11 +151,11 @@ class Data():
 
         # default working directory is epath if it is specified, otherwise
         # current directory
-        if self.wd is None:
-            if self.epath is not None:
-                self.wd = os.path.dirname(self.epath)
+        if self.working_directory is None:
+            if self.edipath is not None:
+                self.working_directory = os.path.dirname(self.edipath)
             else:
-                self.wd = '.'
+                self.working_directory = '.'
 
     def build_data(self):
         """
@@ -163,7 +165,7 @@ class Data():
         
         # read edi file to edi object
         eo = mtedi.Edi()
-        eo.readfile(self.epath)
+        eo.readfile(self.edipath)
         self.edi_object = eo
         
         # define z
@@ -174,7 +176,7 @@ class Data():
         z = zr + 1j*zi
         if self.errorfloor_type == 'relative':
             zer = ze/np.abs(z)
-            zer[(zer<self.errorfloor_z)] = self.errorfloor_z
+            zer[(zer<self.errorfloor)] = self.errorfloor
             ze = np.abs(z)*zer
             
             #  set errors in off-diagonals to the minimum error of on-diagonal components
@@ -183,7 +185,7 @@ class Data():
                 ze_sub[ze_sub<min_offdiags] = min_offdiags   
         
         elif self.errorfloor_type == 'absolute':
-            ze[ze<self.errorfloor_z] = self.errorfloor_z
+            ze[ze<self.errorfloor] = self.errorfloor
             
         # define header info for data file
         header = '{:>5}\n{:>5}'.format(self.mode,len(eo.Z.resistivity))
@@ -209,7 +211,7 @@ class Data():
         """
         
         if wd is not None:
-            self.wd = wd
+            self.working_directory = wd
         
         self.build_data()
         
@@ -219,7 +221,7 @@ class Data():
         # define file name and save data file
         fname_bas = self.edi_object.station[:5]
         self.datafile = fname_bas+'.dat'
-        fname = os.path.join(self.wd,self.datafile)
+        fname = os.path.join(self.working_directory,self.datafile)
 
         np.savetxt(fname,self.data,fmt=fmt,header=self.header,comments='')    
 
@@ -231,7 +233,7 @@ class Data():
         
         """
         if self.datafile is None:
-            dlst = [i for i in os.listdir(self.wd) if i[-4:] == '.dat']
+            dlst = [i for i in os.listdir(self.working_directory) if i[-4:] == '.dat']
             default_files = ['ai1dat.dat','ai1mod.dat','ai1fit.dat',
                              'inmodel.dat','inregulm.dat']
             for dd in default_files:
@@ -246,7 +248,7 @@ class Data():
                 return           
 
         # define path to file
-        datafpath = os.path.join(self.wd,self.datafile)
+        datafpath = os.path.join(self.working_directory,self.datafile)
         self.mode = open(datafpath).readline().strip().split()[0]
         data = np.loadtxt(datafpath,skiprows = 2)
         self.freq = 1./data[:,0]
@@ -299,7 +301,7 @@ class Model():
     
     def __init__(self,wkdir,**input_parameters):
         
-        self.wd = wkdir
+        self.working_directory = wkdir
         self.modelfile = 'ai1mod.dat'
         self.respfile = 'ai1dat.dat'
         self.fitfile = 'ai1fit.dat'
@@ -337,7 +339,7 @@ class Model():
         read all models into an array
         """
         
-        fpath = os.path.join(self.wd,self.modelfile)
+        fpath = os.path.join(self.working_directory,self.modelfile)
         
         nlayers = 0
         flag = True
@@ -359,7 +361,7 @@ class Model():
         """
         
         # read in file
-        inmodel = np.loadtxt(os.path.join(self.wd,self.inmodelfile))
+        inmodel = np.loadtxt(os.path.join(self.working_directory,self.inmodelfile))
         
         # convert layer thicknesses to depths
         depths = np.array([[sum(inmodel[:i,1]),sum(inmodel[:i+1,1])] for i in range(len(inmodel))]).flatten()
@@ -381,7 +383,7 @@ class Response():
     
     def __init__(self,wkdir,**input_parameters):
         
-        self.wd = wkdir
+        self.working_directory = wkdir
         self.respfile = 'ai1dat.dat'
         self.misfit_threshold = 1.1
         self.station = None
@@ -396,7 +398,7 @@ class Response():
         """
         
         # define path to file
-        respfpath = os.path.join(self.wd,self.respfile)
+        respfpath = os.path.join(self.working_directory,self.respfile)
         respf = open(respfpath)
 
         # find out number of models
@@ -431,7 +433,7 @@ class Fit():
     
     def __init__(self,wkdir,**input_parameters):
         
-        self.wd = wkdir
+        self.working_directory = wkdir
         self.fitfile = 'ai1fit.dat'
         self.misfit_threshold = 1.1
         self.station = None
@@ -446,7 +448,7 @@ class Fit():
         """
         
         # find out number of periods
-        respfpath = os.path.join(self.wd,self.respfile)
+        respfpath = os.path.join(self.working_directory,self.respfile)
         respf = open(respfpath)
         respf.readline()
         
@@ -463,7 +465,7 @@ class Fit():
         read fit file to give structure and anisotropy penalties and penalty weights
         """
         # load the file with fit values in it
-        fit = np.loadtxt(os.path.join(self.wd,self.fitfile))
+        fit = np.loadtxt(os.path.join(self.working_directory,self.fitfile))
         
         # find number of periods
         self.find_nperiods()        
