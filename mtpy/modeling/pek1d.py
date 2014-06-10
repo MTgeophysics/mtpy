@@ -272,8 +272,8 @@ def build_run():
     rank = MPI.COMM_WORLD.Get_rank()
     
     # make a master directory under the working directory to save all runs into
-    master_directory = fh.make_unique_folder(input_parameters['master_savepath'],
-                                             basename = 'test_run')
+    master_directory = fh.make_unique_folder(input_parameters['working_directory'],
+                                             basename = input_parameters['master_savepath'])
     os.mkdir(master_directory)
     
     # create a list of edi files to model
