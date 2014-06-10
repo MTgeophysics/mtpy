@@ -69,14 +69,15 @@ def make_unique_folder(wd,basename = 'run'):
     i = 1
     svpath_str = basename
     svpath = svpath_str+'_%02i'%i
-    while os.path.exists(os.path.join(wd,svpath)):
+    while os.path.exists(op.join(wd,svpath)):
         i += 1
         svpath = svpath_str+'_%02i'%i
         
-    savepath = os.path.join(wd,svpath)
+    savepath = op.join(wd,svpath)
         
     # make the save path
-    os.mkdir(savepath)
+    if not os.path.exists(savepath):
+        os.mkdir(savepath)
     
     return savepath
     

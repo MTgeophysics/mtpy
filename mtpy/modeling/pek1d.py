@@ -274,7 +274,6 @@ def build_run():
     # make a master directory under the working directory to save all runs into
     master_directory = fh.make_unique_folder(input_parameters['working_directory'],
                                              basename = input_parameters['master_savepath'])
-    os.mkdir(master_directory)
     
     # create a list of edi files to model
     edi_list = create_filelist(os.path.join(input_parameters['working_directory'],
