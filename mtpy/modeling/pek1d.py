@@ -64,7 +64,7 @@ def generate_inputfiles(epath, **input_parameters):
                     'iteration_max']
     inmodel_kwds = ['inmodel_dictionary','inmodel_modeldir']
 
-    data_inputs = {'epath':epath}
+    data_inputs = {'edipath':epath}
     control_inputs = {}
     inmodel_inputs = {}
     
@@ -80,20 +80,21 @@ def generate_inputfiles(epath, **input_parameters):
         if key == 'build_inmodel':
             build_inmodel = input_parameters[key]
 
-
+    print data_inputs
     Data = pek1dc.Data(**data_inputs)
+    print "Data.edipath",Data.edipath
     Data.build_data()
     
     # make a save path to match the edi file
     wd = input_parameters['working_directory']
     sp = input_parameters['master_savepath']
     savepath = fh.make_unique_folder(os.path.join(wd,sp),
-                                     os.path.basename(Data.epath)[:5]+Data.mode)
+                                     os.path.basename(Data.edipath)[:5]+Data.mode)
     Data.write_datafile(wd = savepath)
     
     # update the working directory to the new savepath
-    control_inputs['wd'] = savepath
-    inmodel_inputs['wd'] = savepath
+    control_inputs['working_directory'] = savepath
+    inmodel_inputs['working_directory'] = savepath
     
     Ctl = pek1dc.Control(**control_inputs)
     Ctl.write_ctlfile()
@@ -121,10 +122,10 @@ def parse_arguments(arguments):
     parser = argparse.ArgumentParser(description = 'Set up and run a set of 1d anisotropic model runs')
     parser.add_argument('-l','--program_location',
                         help='path to the inversion program',
-                        type=str,default=r'$HOME/aniso1d/ai1oz_ak')    
-    parser.add_argument('-r','--run_input',nargs=7,
+                        type=str,default=r'/home/547/alk547/aniso1d/ai1oz_ak')    
+    parser.add_argument('-r','--run_input',action='append',nargs=7,
                         help='command line input for the inversion program',
-                        type=list,default=[1,0,0.1,40,1.05,1,0])    
+                        type=float)    
     parser.add_argument('-ef','--errorfloor',
                         help='error floor for impedence tensor or resisitivity values',
                         type=float,default=0.1)
@@ -171,7 +172,13 @@ def parse_arguments(arguments):
                         help = 'master directory to save suite of runs into',
                         default = 'inversion_suite')
                         
-    return parser.parse_args(arguments)
+    args = parser.parse_args(arguments)
+    args.working_directory = os.path.abspath(args.working_directory)
+    args.run_input = args.run_input[0]
+    for i in [0,1,3,5,6]:
+        args.run_input[i] = int(args.run_input[i])    
+
+    return args
 
 
 def create_inmodel_dictionary_from_file(input_file,
@@ -264,8 +271,8 @@ def build_run():
     from mpi4py import MPI
     
     # get command line arguments as a dictionary
-    input_parameters = update_inputs()
-    
+    input_parameters = update_inputs()    
+
     # categorise inputs
     build_parameters = ['working_directory','datafile', 'errorfloor', 
                         'errorfloor_type', 'edipath', 'mode',
@@ -295,9 +302,13 @@ def build_run():
     build_inputs['master_savepath'] = master_directory
 
     # build a model
+    print 'program_location',input_parameters['program_location']
     Data = generate_inputfiles(edi_list[rank],**build_inputs)
-    os.chdir(Data.wd)
-   
+    os.chdir(Data.working_directory)
+
+    print input_parameters['run_input']
+    print [input_parameters['program_location']]+[Data.datafile]+[str(n) for n in input_parameters['run_input']]  
+ 
     # run the model
     call([input_parameters['program_location']]+[Data.datafile]+[str(n) for n in input_parameters['run_input']])
 
