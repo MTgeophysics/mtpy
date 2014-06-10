@@ -132,6 +132,9 @@ def parse_arguments(arguments):
     parser.add_argument('-el','--edifolder_list',
                         help='list of folders containing edi files to use, full path or relative to working directory',
                         type=str,default=None)
+    parser.add_argument('-ei','--edifolder_identifier',
+                        help='identifying string contained in folders of interest',
+                        type=str,default='')
     parser.add_argument('-m','--mode',
                         help='mode to put in data file, impedence (I) or resistivity (R) and phase',
                         type=str,default='I')    
@@ -211,7 +214,7 @@ def create_inmodel_dictionary_from_file(input_file,
     return inmodel_dict
         
 
-def create_filelist(wd,subfolder_list = None):
+def create_filelist(wd, subfolder_list = None, subfolder_identifier = None):
     """
     create a list of full paths to edi files    
     
@@ -221,7 +224,9 @@ def create_filelist(wd,subfolder_list = None):
     
     if subfolder_list is None:
         subfolder_list = [folder for folder, sf, f in os.walk(wd) if folder != wd]
-        
+    if subfolder_identifier is not None:
+        subfolder_list = [f for f in subfolder_list if subfolder_identifier in f]
+    
     for subfolder in subfolder_list:
         epath = os.path.join(wd,subfolder)
         edi_list += [os.path.join(epath,ff) for ff in os.listdir(epath) if ff[-4:] == '.edi']
