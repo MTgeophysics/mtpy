@@ -62,7 +62,7 @@ def generate_inputfiles(epath, **input_parameters):
     control_kwds = ['penalty_type_structure', 'penalty_type_anisotropy',
                     'penalty_weight_structure', 'penalty_weight_anisotropy', 
                     'iteration_max']
-    inmodel_kwds = ['inmodel_dictionary','inmodel_modeldir']
+    inmodel_kwds = ['inmodel_dictionary']
 
     data_inputs = {'edipath':epath}
     control_inputs = {}
@@ -76,7 +76,7 @@ def generate_inputfiles(epath, **input_parameters):
         if key in control_kwds:
             control_inputs[key] = input_parameters[key]
         if key in inmodel_kwds:
-            inmodel_inputs = input_parameters[key]
+            inmodel_inputs[key] = input_parameters[key]
         if key == 'build_inmodel':
             build_inmodel = input_parameters[key]
 
@@ -98,14 +98,15 @@ def generate_inputfiles(epath, **input_parameters):
     
     Ctl = pek1dc.Control(**control_inputs)
     Ctl.write_ctlfile()
-    
+    print 'build_Inmodel',build_inmodel 
     if build_inmodel:
         if 'inmodel_modeldir' in input_parameters.keys():
             inmodel_dict = pek1d.create_inmodel_dictionary_from_file(input_parameters['inmodel_parameters_file'],
-                                                               Data.x,Data.y,
+                                                               Data.edi_object.lon,Data.edi_object.lat,
                                                                working_directory = None)                                      
             Inmodel = pek1dc.Inmodel(input_parameters['inmodel_modeldir'],
-                                     inmodel_dictionary = inmodel_dict)
+                                     inmodel_dictionary = inmodel_dict,
+                                     **inmodel_inputs)
             Inmodel.write_inmodel()
     
     return Data
@@ -208,6 +209,7 @@ def create_inmodel_dictionary_from_file(input_file,
     inmodel_dict = {}
     
     for line in open(input_file).readlines()[1:]:
+        print 'line',line
         if str.lower(line[0]) != 'none':
             try:
                 if working_directory is not None:
@@ -220,7 +222,9 @@ def create_inmodel_dictionary_from_file(input_file,
                 elev = 0.0
         else:
             elev = 0.0
-        params = [float(param) for param in line.strip().split(',')[1:]]
+        print 'elev',elev
+        params = [float(pp) for pp in line.strip().split(',')[1:]]
+        print params
         inmodel_dict[round(elev+params[0],2)] = params[1:]
 
     return inmodel_dict
@@ -272,13 +276,14 @@ def build_run():
     
     # get command line arguments as a dictionary
     input_parameters = update_inputs()    
-
+    
     # categorise inputs
     build_parameters = ['working_directory','datafile', 'errorfloor', 
-                        'errorfloor_type', 'edipath', 'mode',
+                        'errorfloor_type', 'mode',
                         'penalty_type_structure', 'penalty_type_anisotropy',
                         'penalty_weight_structure', 'penalty_weight_anisotropy', 
-                        'iteration_max','inmodel_dictionary']
+                        'iteration_max','inmodel_parameters_file','build_inmodel',
+                        'inmodel_modeldir']
     
     # establish the rank of the computer
     rank = MPI.COMM_WORLD.Get_rank()
@@ -294,21 +299,17 @@ def build_run():
         try:
             build_inputs[key] = input_parameters[key]
         except:
-            pass
-
+            print "problems with {}".format(key)
+    
     # make a master directory under the working directory to save all runs into
     master_directory = fh.make_unique_folder(input_parameters['working_directory'],
                                              basename = input_parameters['master_savepath'])
     build_inputs['master_savepath'] = master_directory
 
     # build a model
-    print 'program_location',input_parameters['program_location']
     Data = generate_inputfiles(edi_list[rank],**build_inputs)
     os.chdir(Data.working_directory)
 
-    print input_parameters['run_input']
-    print [input_parameters['program_location']]+[Data.datafile]+[str(n) for n in input_parameters['run_input']]  
- 
     # run the model
     call([input_parameters['program_location']]+[Data.datafile]+[str(n) for n in input_parameters['run_input']])
 
