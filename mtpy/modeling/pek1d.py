@@ -82,6 +82,7 @@ def generate_inputfiles(epath, **input_parameters):
 
 
     Data = pek1dc.Data(**data_inputs)
+    Data.build_data()
     
     # make a save path to match the edi file
     wd = input_parameters['working_directory']
