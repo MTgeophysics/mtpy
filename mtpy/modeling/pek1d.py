@@ -55,13 +55,14 @@ def generate_inputfiles(epath, **input_parameters):
     {layer top depth:[minimum_resistivity, maximum_resistivity, strike]}
     
     """
+    import pek1d
     
     data_kwds = ['working_directory','datafile', 'errorfloor', 
                  'errorfloor_type', 'edipath', 'mode']
     control_kwds = ['penalty_type_structure', 'penalty_type_anisotropy',
                     'penalty_weight_structure', 'penalty_weight_anisotropy', 
                     'iteration_max']
-    inmodel_kwds = ['inmodel_dictionary']
+    inmodel_kwds = ['inmodel_dictionary','inmodel_modeldir']
 
     data_inputs = {'epath':epath}
     control_inputs = {}
@@ -94,11 +95,14 @@ def generate_inputfiles(epath, **input_parameters):
     
     if build_inmodel:
         if 'inmodel_modeldir' in input_parameters.keys():
+            inmodel_dict = pek1d.create_inmodel_dictionary_from_file(input_parameters['inmodel_parameters_file'],
+                                                               Data.x,Data.y,
+                                                               working_directory = None)                                      
             Inmodel = pek1dc.Inmodel(input_parameters['inmodel_modeldir'],
-                                     **inmodel_inputs)
+                                     inmodel_dictionary = inmodel_dict)
             Inmodel.write_inmodel()
     
-    return savepath, Data.datafile
+    return Data
 
 
 def parse_arguments(arguments):
@@ -151,7 +155,10 @@ def parse_arguments(arguments):
                         type=bool,default=False)
     parser.add_argument('-ip','--inmodel_parameters_file',
                         help='full path (or path relative to working directory) to file containing inmodel parameters',
-                        type=str,default=2)
+                        type=str)
+    parser.add_argument('-id','--inmodel_modeldir',
+                        help='full path to an output model file from previous run containing layer depths',
+                        type=str)
     parser.add_argument('-s','--master_savepath',
                         help = 'master directory to save suite of runs into',
                         default = 'inversion_suite')
@@ -255,8 +262,6 @@ def build_run():
                         'penalty_type_structure', 'penalty_type_anisotropy',
                         'penalty_weight_structure', 'penalty_weight_anisotropy', 
                         'iteration_max','inmodel_dictionary']
-    suite_parameters = ['build_inmodel','inmodel_parameters_file']
-    inversion_parameters = ['run_input']
     
     # establish the rank of the computer
     rank = MPI.COMM_WORLD.Get_rank()
@@ -278,18 +283,11 @@ def build_run():
             pass
 
     # build a model
-    savepath, datafile = generate_inputfiles(edi_list[rank],build_inputs)
-    os.chdir(savepath)
-
-
-    # create an inmodel dictionary, if required
-    if input_parameters['build_inmodel']:
-        create_inmodel_dictionary_from_file(input_file,
-                                        x,y,
-                                        working_directory = None) 
+    Data = generate_inputfiles(edi_list[rank],build_inputs)
+    os.chdir(Data.wd)
    
     # run the model
-    call([input_parameters['program_location']]+[datafile]+[str(n) for n in input_parameters['run_input']])
+    call([input_parameters['program_location']]+[Data.datafile]+[str(n) for n in input_parameters['run_input']])
 
 
 if __name__ == '__main__':
