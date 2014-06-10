@@ -274,7 +274,6 @@ def build_run():
     
     # establish the rank of the computer
     rank = MPI.COMM_WORLD.Get_rank()
-
    
     # create a list of edi files to model
     edi_list = create_filelist(input_parameters['working_directory'],
@@ -295,7 +294,7 @@ def build_run():
     build_inputs['master_savepath'] = master_directory
 
     # build a model
-    Data = generate_inputfiles(edi_list[rank],build_inputs)
+    Data = generate_inputfiles(edi_list[rank],**build_inputs)
     os.chdir(Data.wd)
    
     # run the model
