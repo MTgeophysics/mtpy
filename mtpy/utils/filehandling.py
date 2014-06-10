@@ -60,7 +60,7 @@ def make_unique_filename(infn):
 
     return outfn
 
-def make_unique_folder(wd,basename):
+def make_unique_folder(wd,basename = 'run'):
     """
     make a folder that doesn't exist already.
     """        
