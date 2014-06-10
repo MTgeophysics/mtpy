@@ -82,8 +82,12 @@ def generate_inputfiles(epath, **input_parameters):
 
 
     Data = pek1dc.Data(**data_inputs)
+    
     # make a save path to match the edi file
-    savepath = fh.make_unique_folder(Data.wd,os.path.basename(Data.epath)[:5]+Data.mode)
+    wd = input_parameters['working_directory']
+    sp = input_parameters['master_savepath']
+    savepath = fh.make_unique_folder(os.path.join(wd,sp),
+                                     os.path.basename(Data.epath)[:5]+Data.mode)
     Data.write_datafile(wd = savepath)
     
     # update the working directory to the new savepath
@@ -274,10 +278,12 @@ def build_run():
     # make a master directory under the working directory to save all runs into
     master_directory = fh.make_unique_folder(input_parameters['working_directory'],
                                              basename = input_parameters['master_savepath'])
-    
+    build_parameters['master_savepath'] = master_directory
+   
     # create a list of edi files to model
-    edi_list = create_filelist(os.path.join(input_parameters['working_directory'],
-                                            input_parameters['edifolder_list']))
+    edi_list = create_filelist(input_parameters['working_directory'],
+                               subfolder_list = input_parameters['edifolder_list'],
+                               subfolder_identifier = input_parameters['edifolder_identifier'])
     
     # update input parameters for building of model
     build_inputs = {}
