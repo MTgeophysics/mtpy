@@ -75,10 +75,6 @@ def make_unique_folder(wd,basename = 'run'):
         
     savepath = op.join(wd,svpath)
         
-    # make the save path
-    if not os.path.exists(savepath):
-        os.mkdir(savepath)
-    
     return savepath
     
             

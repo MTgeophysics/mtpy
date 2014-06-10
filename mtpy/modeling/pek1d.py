@@ -12,7 +12,8 @@ import mtpy.utils.elevation_data as mted
 import pek1dclasses as pek1dc
 from sys import argv
 from subprocess import call
-
+import time
+import numpy as np
 
 def generate_inputfiles(epath, **input_parameters):
     
@@ -70,7 +71,6 @@ def generate_inputfiles(epath, **input_parameters):
     
     build_inmodel = False
     for key in input_parameters.keys():
-        print key
         if key in data_kwds:
             data_inputs[key] = input_parameters[key]
         if key in control_kwds:
@@ -79,10 +79,11 @@ def generate_inputfiles(epath, **input_parameters):
             inmodel_inputs[key] = input_parameters[key]
         if key == 'build_inmodel':
             build_inmodel = input_parameters[key]
-
-    print data_inputs
+    
+    for pw in ['penalty_weight_structure','penalty_weight_anisotropy']:
+        min,max,n = control_inputs[pw]
+        control_inputs[pw]=np.logspace(min,max,n)
     Data = pek1dc.Data(**data_inputs)
-    print "Data.edipath",Data.edipath
     Data.build_data()
     
     # make a save path to match the edi file
@@ -90,6 +91,7 @@ def generate_inputfiles(epath, **input_parameters):
     sp = input_parameters['master_savepath']
     savepath = fh.make_unique_folder(os.path.join(wd,sp),
                                      os.path.basename(Data.edipath)[:5]+Data.mode)
+    os.mkdir(savepath)
     Data.write_datafile(wd = savepath)
     
     # update the working directory to the new savepath
@@ -98,7 +100,6 @@ def generate_inputfiles(epath, **input_parameters):
     
     Ctl = pek1dc.Control(**control_inputs)
     Ctl.write_ctlfile()
-    print 'build_Inmodel',build_inmodel 
     if build_inmodel:
         if 'inmodel_modeldir' in input_parameters.keys():
             inmodel_dict = pek1d.create_inmodel_dictionary_from_file(input_parameters['inmodel_parameters_file'],
@@ -124,9 +125,9 @@ def parse_arguments(arguments):
     parser.add_argument('-l','--program_location',
                         help='path to the inversion program',
                         type=str,default=r'/home/547/alk547/aniso1d/ai1oz_ak')    
-    parser.add_argument('-r','--run_input',action='append',nargs=7,
+    parser.add_argument('-r','--run_input',nargs=7,
                         help='command line input for the inversion program',
-                        type=float)    
+                        type=float,default=[1,0,0.1,40,1.05,1,0])    
     parser.add_argument('-ef','--errorfloor',
                         help='error floor for impedence tensor or resisitivity values',
                         type=float,default=0.1)
@@ -151,12 +152,12 @@ def parse_arguments(arguments):
     parser.add_argument('-pa','--penalty_type_anisotropy',
                         help='number describing type of anisotropy penalty',
                         type=int,default=2)  
-    parser.add_argument('-pws','--penalty_weight_structure',nargs='*',
-                        help='structure penalty weights to apply in the inversion',
-                        type=list,action='append',default=[1,10,100])
-    parser.add_argument('-pwa','--penalty_weight_anisotropy',nargs='*',
-                        help='anisotropy penalty weights to apply in the inversion',
-                        type=list,action='append',default=[1,10,100])
+    parser.add_argument('-pws','--penalty_weight_structure',nargs=3,
+                        help='structure penalty weights to apply in the inversion, applied in log space, provide log10(minimum), log10(maximum), number of values',
+                        type=float,default=[0,2,3])
+    parser.add_argument('-pwa','--penalty_weight_anisotropy',nargs=3,
+                        help='anisotropy penalty weights to apply in the inversion, applied in log space, provide log10(minimum), log10(maximum), number of values',
+                        type=float,default=[0,2,3])
     parser.add_argument('-imax','--iteration_max',
                         help='maximum number of iterations',
                         type=int,default=100)
@@ -175,7 +176,7 @@ def parse_arguments(arguments):
                         
     args = parser.parse_args(arguments)
     args.working_directory = os.path.abspath(args.working_directory)
-    args.run_input = args.run_input[0]
+    #args.run_input = args.run_input[0]
     for i in [0,1,3,5,6]:
         args.run_input[i] = int(args.run_input[i])    
 
@@ -209,7 +210,6 @@ def create_inmodel_dictionary_from_file(input_file,
     inmodel_dict = {}
     
     for line in open(input_file).readlines()[1:]:
-        print 'line',line
         if str.lower(line[0]) != 'none':
             try:
                 if working_directory is not None:
@@ -222,9 +222,7 @@ def create_inmodel_dictionary_from_file(input_file,
                 elev = 0.0
         else:
             elev = 0.0
-        print 'elev',elev
         params = [float(pp) for pp in line.strip().split(',')[1:]]
-        print params
         inmodel_dict[round(elev+params[0],2)] = params[1:]
 
     return inmodel_dict
@@ -287,6 +285,8 @@ def build_run():
     
     # establish the rank of the computer
     rank = MPI.COMM_WORLD.Get_rank()
+    if rank != 0:
+        time.sleep(10)
    
     # create a list of edi files to model
     edi_list = create_filelist(input_parameters['working_directory'],
@@ -302,8 +302,9 @@ def build_run():
             print "problems with {}".format(key)
     
     # make a master directory under the working directory to save all runs into
-    master_directory = fh.make_unique_folder(input_parameters['working_directory'],
-                                             basename = input_parameters['master_savepath'])
+    master_directory = input_parameters['master_savepath']
+    if rank == 0:
+        os.mkdir(master_directory)
     build_inputs['master_savepath'] = master_directory
 
     # build a model
