@@ -240,7 +240,7 @@ def update_inputs():
     
     """
     
-    args = parse_arguments(argv)
+    args = parse_arguments(argv[1:])
     cline_inputs = {}
     cline_keys = [i for i in dir(args) if i[0] != '_']
     
