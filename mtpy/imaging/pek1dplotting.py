@@ -51,6 +51,9 @@ class Plot_model():
         """
         base function for plotting a single model
         
+        **parameter** string or list containing 'model', 'inmodel' or both
+        tells the function whether to plot the model, inmodel (a priori), or both
+        
         """
         data_list = []
         
