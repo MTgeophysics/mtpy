@@ -104,7 +104,7 @@ def generate_inputfiles(epath, **input_parameters):
         if 'inmodel_modeldir' in input_parameters.keys():
             inmodel_dict = pek1d.create_inmodel_dictionary_from_file(input_parameters['inmodel_parameters_file'],
                                                                Data.edi_object.lon,Data.edi_object.lat,
-                                                               working_directory = None)                                      
+                                                               working_directory = data_inputs['working_directory'])                                      
             Inmodel = pek1dc.Inmodel(input_parameters['inmodel_modeldir'],
                                      inmodel_dictionary = inmodel_dict,
                                      **inmodel_inputs)
@@ -208,23 +208,27 @@ def create_inmodel_dictionary_from_file(input_file,
     """
  
     inmodel_dict = {}
+
+    if working_directory is None:
+        working_directory = os.path.abspath('.')
     
     for line in open(input_file).readlines()[1:]:
+        line = line.strip().split(',')
         if str.lower(line[0]) != 'none':
+            elevfn = os.path.join(working_directory,line[0])
+            print elevfn
             try:
-                if working_directory is not None:
-                    elevfn = os.path.join(line[0])
-                else:
-                    elevfn = line[0]
-                elev = mted.get_elevation(x,y,elevfn)
+                elev = np.abs(mted.get_elevation(x,y,elevfn)/1000.)
             except IOError:
                 print "File not found, set elevation to zero instead"
                 elev = 0.0
         else:
             elev = 0.0
-        params = [float(pp) for pp in line.strip().split(',')[1:]]
+        params = [float(pp) for pp in line[1:]]
+        print elev,params
         inmodel_dict[round(elev+params[0],2)] = params[1:]
-
+    
+    print "inmodel_dict",inmodel_dict
     return inmodel_dict
         
 
