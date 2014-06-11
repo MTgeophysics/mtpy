@@ -153,10 +153,10 @@ def parse_arguments(arguments):
                         help='number describing type of anisotropy penalty',
                         type=int,default=2)  
     parser.add_argument('-pws','--penalty_weight_structure',nargs=3,
-                        help='structure penalty weights to apply in the inversion, applied in log space, provide log10(minimum), log10(maximum), number of values',
+                        help='structure penalty weights to apply in the inversion, provide log10(minimum penalty weight), log10(maximum), number of values',
                         type=float,default=[0,2,3])
     parser.add_argument('-pwa','--penalty_weight_anisotropy',nargs=3,
-                        help='anisotropy penalty weights to apply in the inversion, applied in log space, provide log10(minimum), log10(maximum), number of values',
+                        help='anisotropy penalty weights to apply in the inversion, provide log10(minimum penalty weight), log10(maximum), number of values',
                         type=float,default=[0,2,3])
     parser.add_argument('-imax','--iteration_max',
                         help='maximum number of iterations',
