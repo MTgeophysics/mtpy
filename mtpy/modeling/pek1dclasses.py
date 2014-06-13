@@ -620,9 +620,11 @@ class Model_suite():
             model_params[i] = x,y,depth,te,tm,strike
         
         self.anisotropy_max_parameters = model_params
+        
         np.savetxt(os.path.join(self.working_directory,
                                 self.anisotropy_surface_file%self.modelno),
                    model_params,
+                   header = ' '.join(['x','y','z','resmin','resmax','strike']),
                    fmt=['%14.6f','%14.6f','%8.2f','%8.2f','%8.2f','%8.2f'])
             
             

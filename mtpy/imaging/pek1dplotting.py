@@ -298,15 +298,71 @@ class Plot_map():
     1d models
     
     """
-    def __init__():
-        return
+    def __init__(self,**input_parameters):
+        self.levels = None
+        self.escale = 0.001
+        self.anisotropy_threshold = 2.
+        self.cmap = 'jet_r'
+        self.scaleby = 'resmin'
         
+        for key in input_parameters.keys():
+            setattr(self,key,input_parameters[key]) 
+
         
+    def plot_aniso_depth_map(self,aniso_depth_file,scale='km'):
+        """
+        """
+        import matplotlib.patches as mpatches
         
+        surface = np.loadtxt(aniso_depth_file,skiprows=1)
+        surface = surface[surface[:,4]/surface[:,3]>self.anisotropy_threshold]
+        x,y,z,resmin,resmax,strike = [surface[:,i] for i in range(len(surface[0]))]
+        aniso = resmax/resmin
+                
+        self.plot_interface(x,y,z,scale=scale)
         
+        if self.scaleby == 'resmin':
+            scale = 1./resmin
+        else:
+            scale = aniso
+                              
+        # make rectangles
+        recs = [mpatches.Rectangle(xy=np.array([x[i],y[i]]), 
+                                   width = self.escale*scale[i],
+                                   height = self.escale,
+                                   angle=90-strike[i],
+                                   lw=0) for i in range(len(x))]       
+        ax1 = plt.gca()        
+        for i,e in enumerate(recs):
+            ax1.add_artist(e)
+            e.set_facecolor('k')
         
+    
+    def plot_interface(self,x,y,z,scale='km'):
         
+#        x,y,z = [np.loadtxt(interface_file)[:,i] for i in range(3)]
+        xi = np.array(np.meshgrid(np.linspace(min(x),max(x),20),np.linspace(min(y),max(y),50))).T
         
+        zi = si.griddata(np.vstack([x,y]).T,z,xi)
+        
+        cmap = plt.get_cmap(self.cmap)
+        
+        if self.levels is None:
+            plt1 = plt.contourf(xi[:,:,0],xi[:,:,1],zi,cmap=cmap)
+            self.levels = plt1.levels
+        else:
+            plt1 = plt.contourf(xi[:,:,0],xi[:,:,1],zi,
+                                levels=self.levels,cmap=cmap)
+        
+        ax = plt.gca()
+        ax.set_aspect('equal')
+        
+        plt.colorbar()
+        
+    
+    def plot_aniso_and_interface(self,aniso_depth_file):
+        
+    
         
         
         
