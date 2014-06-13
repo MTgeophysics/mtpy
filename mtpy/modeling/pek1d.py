@@ -15,103 +15,6 @@ from subprocess import call
 import time
 import numpy as np
 
-def generate_inputfiles(epath, **input_parameters):
-    
-    """
-    generate input files for a model. 
-    
-    -----------------------Compulsory parameter--------------------------------
-    **epath** the full path to the edi file.
-    
-    -----------------------Recommended parameter-------------------------------
-    **wd** working directory, default is the edi directory. A new directory
-           is created under this directory to put all the input files into
-
-    ------------------------Optional Parameters--------------------------------
-    **datafile** name for the input file, if not specified, name is taken from
-                 the edi file
-    **errorfloor_z** error floor for the input z values, can be an absolute
-                     value or relative (e.g. 0.1 means 10%)
-                     default is 0.1
-    **errorfloor_type** type of error floor, either 'relative' or 'absolute'
-                        default is relative.
-    **type_struct** type of structure penalty, default is 6
-    **type_aniso** type of anisotropy penalty, default is 2
-    **value_struct** structural penalty weights to apply, default is [1,10,100]
-    **value_aniso** anisotropy penalty weights to apply, default is [1,10,100]
-    **imax** maximum number of iterations to run, default is 100
-
-
-    to generate an a priori (inmodel) file, need to put keyword
-    **build_inmodel** = True, default is False
-    
-    also need to specify the following parameters:
-    **inmodel_vals**
-    
-
-    
-    inmodel_modeldir = string, folder containing previous model run with same 
-    resolution, necessary for constructing the layer depths in the inmodel file.
-    inmodel_vals = dictionary structured as follows:
-    {layer top depth:[minimum_resistivity, maximum_resistivity, strike]}
-    
-    """
-    import pek1d
-    
-    data_kwds = ['working_directory','datafile', 'errorfloor', 
-                 'errorfloor_type', 'edipath', 'mode']
-    control_kwds = ['penalty_type_structure', 'penalty_type_anisotropy',
-                    'penalty_weight_structure', 'penalty_weight_anisotropy', 
-                    'iteration_max']
-    inmodel_kwds = ['inmodel_dictionary']
-
-    data_inputs = {'edipath':epath}
-    control_inputs = {}
-    inmodel_inputs = {}
-    
-    build_inmodel = False
-    for key in input_parameters.keys():
-        if key in data_kwds:
-            data_inputs[key] = input_parameters[key]
-        if key in control_kwds:
-            control_inputs[key] = input_parameters[key]
-        if key in inmodel_kwds:
-            inmodel_inputs[key] = input_parameters[key]
-        if key == 'build_inmodel':
-            build_inmodel = input_parameters[key]
-    
-    for pw in ['penalty_weight_structure','penalty_weight_anisotropy']:
-        min,max,n = control_inputs[pw]
-        control_inputs[pw]=np.logspace(min,max,n)
-    Data = pek1dc.Data(**data_inputs)
-    Data.build_data()
-    
-    # make a save path to match the edi file
-    wd = input_parameters['working_directory']
-    sp = input_parameters['master_savepath']
-    savepath = fh.make_unique_folder(os.path.join(wd,sp),
-                                     os.path.basename(Data.edipath)[:5]+Data.mode)
-    os.mkdir(savepath)
-    Data.write_datafile(wd = savepath)
-    
-    # update the working directory to the new savepath
-    control_inputs['working_directory'] = savepath
-    inmodel_inputs['working_directory'] = savepath
-    
-    Ctl = pek1dc.Control(**control_inputs)
-    Ctl.write_ctlfile()
-    if build_inmodel:
-        if 'inmodel_modeldir' in input_parameters.keys():
-            inmodel_dict = pek1d.create_inmodel_dictionary_from_file(input_parameters['inmodel_parameters_file'],
-                                                               Data.edi_object.lon,Data.edi_object.lat,
-                                                               working_directory = data_inputs['working_directory'])                                      
-            Inmodel = pek1dc.Inmodel(input_parameters['inmodel_modeldir'],
-                                     inmodel_dictionary = inmodel_dict,
-                                     **inmodel_inputs)
-            Inmodel.write_inmodel()
-    
-    return Data
-
 
 def parse_arguments(arguments):
     """
@@ -266,6 +169,104 @@ def update_inputs():
         cline_inputs[key] = getattr(args,key)
 
     return cline_inputs
+
+
+def generate_inputfiles(epath, **input_parameters):
+    
+    """
+    generate input files for a model. 
+    
+    -----------------------Compulsory parameter--------------------------------
+    **epath** the full path to the edi file.
+    
+    -----------------------Recommended parameter-------------------------------
+    **wd** working directory, default is the edi directory. A new directory
+           is created under this directory to put all the input files into
+
+    ------------------------Optional Parameters--------------------------------
+    **datafile** name for the input file, if not specified, name is taken from
+                 the edi file
+    **errorfloor_z** error floor for the input z values, can be an absolute
+                     value or relative (e.g. 0.1 means 10%)
+                     default is 0.1
+    **errorfloor_type** type of error floor, either 'relative' or 'absolute'
+                        default is relative.
+    **type_struct** type of structure penalty, default is 6
+    **type_aniso** type of anisotropy penalty, default is 2
+    **value_struct** structural penalty weights to apply, default is [1,10,100]
+    **value_aniso** anisotropy penalty weights to apply, default is [1,10,100]
+    **imax** maximum number of iterations to run, default is 100
+
+
+    to generate an a priori (inmodel) file, need to put keyword
+    **build_inmodel** = True, default is False
+    
+    also need to specify the following parameters:
+    **inmodel_vals**
+    
+
+    
+    inmodel_modeldir = string, folder containing previous model run with same 
+    resolution, necessary for constructing the layer depths in the inmodel file.
+    inmodel_vals = dictionary structured as follows:
+    {layer top depth:[minimum_resistivity, maximum_resistivity, strike]}
+    
+    """
+    import pek1d
+    
+    data_kwds = ['working_directory','datafile', 'errorfloor', 
+                 'errorfloor_type', 'edipath', 'mode']
+    control_kwds = ['penalty_type_structure', 'penalty_type_anisotropy',
+                    'penalty_weight_structure', 'penalty_weight_anisotropy', 
+                    'iteration_max']
+    inmodel_kwds = ['inmodel_dictionary']
+
+    data_inputs = {'edipath':epath}
+    control_inputs = {}
+    inmodel_inputs = {}
+    
+    build_inmodel = False
+    for key in input_parameters.keys():
+        if key in data_kwds:
+            data_inputs[key] = input_parameters[key]
+        if key in control_kwds:
+            control_inputs[key] = input_parameters[key]
+        if key in inmodel_kwds:
+            inmodel_inputs[key] = input_parameters[key]
+        if key == 'build_inmodel':
+            build_inmodel = input_parameters[key]
+    
+    for pw in ['penalty_weight_structure','penalty_weight_anisotropy']:
+        min,max,n = control_inputs[pw]
+        control_inputs[pw]=np.logspace(min,max,n)
+    Data = pek1dc.Data(**data_inputs)
+    Data.build_data()
+    
+    # make a save path to match the edi file
+    wd = input_parameters['working_directory']
+    sp = input_parameters['master_savepath']
+    savepath = fh.make_unique_folder(os.path.join(wd,sp),
+                                     os.path.basename(Data.edipath)[:5]+Data.mode)
+    os.mkdir(savepath)
+    Data.write_datafile(wd = savepath)
+    
+    # update the working directory to the new savepath
+    control_inputs['working_directory'] = savepath
+    inmodel_inputs['working_directory'] = savepath
+    
+    Ctl = pek1dc.Control(**control_inputs)
+    Ctl.write_ctlfile()
+    if build_inmodel:
+        if 'inmodel_modeldir' in input_parameters.keys():
+            inmodel_dict = pek1d.create_inmodel_dictionary_from_file(input_parameters['inmodel_parameters_file'],
+                                                               Data.edi_object.lon,Data.edi_object.lat,
+                                                               working_directory = data_inputs['working_directory'])                                      
+            Inmodel = pek1dc.Inmodel(input_parameters['inmodel_modeldir'],
+                                     inmodel_dictionary = inmodel_dict,
+                                     **inmodel_inputs)
+            Inmodel.write_inmodel()
+    
+    return Data
     
 
 def build_run():

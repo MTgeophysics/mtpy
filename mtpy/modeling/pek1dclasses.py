@@ -131,6 +131,28 @@ class Inmodel():
         print "written inmodel file to {}".format(self.working_directory)
 
 
+        
+    def read_inmodel(self):
+        """
+        read the inmodel file
+        """
+        
+        # read in file
+        inmodel = np.loadtxt(os.path.join(self.working_directory,self.inmodelfile))
+        
+        # convert layer thicknesses to depths
+        depths = np.array([[sum(inmodel[:i,1]),sum(inmodel[:i+1,1])] for i in range(len(inmodel))]).flatten()
+        values = np.zeros((len(inmodel)*2,5))
+        ii = 0
+        for val in inmodel:
+            for i in range(2):
+                values[ii] = val
+                ii += 1
+        
+        self.inmodel = np.vstack([values[:,0],depths,values[:,2],values[:,3],values[:,4]]).T
+
+
+
 class Data():
     """
     deals with input data from 1d inversions, including creating a data file
@@ -306,32 +328,15 @@ class Model():
         self.respfile = 'ai1dat.dat'
         self.fitfile = 'ai1fit.dat'
         self.inmodelfile = 'inmodel.dat'
+        self.modelno = 1
+        self.models = None
         self.misfit_threshold = 1.1
         self.station = None
+        self.Fit = None
         
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])       
-        
-        
-    def find_bestmodel(self):
-        """
-        find the smoothest model that fits the data within self.misfit_threshold
-        """
-        # read fitfile
-        self.read_fit()
-        fit = self.fit
-        
-        # define parameters
-        mis = self.misfit
-        s = self.penalty_structure
-        a = self.penalty_anisotropy
-        
-        # define function to minimise
-        f = a*s*np.abs(a-s)/(a+s)
-        
-        # define the parameters relating to the best model
-        self.params_bestmodel = fit[f==min(f[mis<min(mis)*self.misfit_threshold])][0]
-        self.params_fittingmodels = fit[mis<min(mis)*self.misfit_threshold]
+   
 
         
     def read_model(self):
@@ -354,25 +359,69 @@ class Model():
         
         models = np.genfromtxt(fpath,skiprows=1,invalid_raise=False)
         self.models = models.reshape(0.5*len(models)/nlayers,2*nlayers,5)
-        
-    def read_inmodel(self):
+
+
+    def check_consistent_strike(self, depth,
+                                window = 5,
+                                threshold = 10.):
         """
-        read the inmodel file
+        check if a particular depth point corresponds to a consistent 
+        strike direction
+        
         """
         
-        # read in file
-        inmodel = np.loadtxt(os.path.join(self.working_directory,self.inmodelfile))
+        if self.models is None:
+            self.read_model()
         
-        # convert layer thicknesses to depths
-        depths = np.array([[sum(inmodel[:i,1]),sum(inmodel[:i+1,1])] for i in range(len(inmodel))]).flatten()
-        values = np.zeros((len(inmodel)*2,5))
-        ii = 0
-        for val in inmodel:
-            for i in range(2):
-                values[ii] = val
-                ii += 1
+        # get model of interest
+        model = self.models[self.modelno-1]
         
-        self.inmodel = np.vstack([values[:,0],depths,values[:,2],values[:,3],values[:,4]]).T
+        # 
+        depths = model[:,1]
+        closest_depth = depths[np.abs(depths-depth) == np.amin(np.abs(depths-depth))][0]
+        cdi = list(depths).index(closest_depth)
+        i1 = max(0,cdi - int(window/2)*2 - 1)
+        i2 = min(len(model)-2,cdi + int(window/2)*2+1)
+        
+        strikes = model[:,-1][i1:i2]
+
+        return np.std(strikes) < threshold
+        
+    
+    def find_max_anisotropy(self,min_depth = 0.,
+                            max_depth = None,
+                            strike_window = 5,
+                            strike_threshold = 10.):
+        """
+        find the point of maximum anisotropy in a model result within a given
+        depth range. Check that the strike is stable below defined threshold
+        
+        """
+        if self.models is None:
+            self.read_model()
+        
+        # get model of interest
+        model = self.models[self.modelno-1]
+
+        if max_depth is None:
+            max_depth = np.amax(model[:,1])
+            
+        model_filt = model[(model[:,1]>min_depth)&(model[:,1]<max_depth)]
+  
+        aniso = 1.*model_filt[:,3]/model_filt[:,2]
+        aniso_max = np.amax(aniso)
+        depth_aniso_max = model_filt[:,1][aniso == aniso_max][0]
+        
+        while not self.check_consistent_strike(depth_aniso_max):   
+            aniso[aniso == aniso_max] = 1.
+            aniso_max = np.amax(aniso)
+            depth_aniso_max = model_filt[:,1][aniso == aniso_max][0]
+        
+        strike_aniso_max = model_filt[:,-1][aniso == aniso_max][0]%180
+                
+        self.anisotropy_max = aniso_max
+        self.anisotropy_max_depth = depth_aniso_max
+        self.anisotropy_max_strike = strike_aniso_max
         
         
 
@@ -435,6 +484,7 @@ class Fit():
         
         self.working_directory = wkdir
         self.fitfile = 'ai1fit.dat'
+        self.respfile = 'ai1dat.dat'
         self.misfit_threshold = 1.1
         self.station = None
         
@@ -480,3 +530,24 @@ class Fit():
         self.weight_anisotropy = fit[:,4]
         self.modelno = fit[:,0]
         self.fit = fit
+
+    def find_bestmodel(self):
+        """
+        find the smoothest model that fits the data within self.misfit_threshold
+        """
+
+            
+        self.read_fit()
+        fit = self.fit
+        
+        # define parameters
+        mis = self.misfit
+        s = self.penalty_structure
+        a = self.penalty_anisotropy
+        
+        # define function to minimise
+        f = a*s*np.abs(a-s)/(a+s)
+        
+        # define the parameters relating to the best model
+        self.params_bestmodel = fit[f==min(f[mis<min(mis)*self.misfit_threshold])][0]
+        self.params_fittingmodels = fit[mis<min(mis)*self.misfit_threshold]

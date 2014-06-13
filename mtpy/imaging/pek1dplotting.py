@@ -29,7 +29,8 @@ class Plot_model():
     def __init__(self, Model, **input_parameters):
 
         self.Model = Model
-        self.wd = self.Model.wd
+        self.Inmodel = None
+        self.working_directory = self.Model.working_directory
         self.parameters = ['minmax','aniso','strike']
         self.titles = {'minmax':'Minimum and maximum\nresistivity, ohm-m',
                        'aniso':'Anisotropy in resistivity',
@@ -60,11 +61,11 @@ class Plot_model():
         if 'model' in self.modeltype:
             if self.modeltype != 'inmodel':
                 self.Model.read_model()
-                data_list.append(self.models[self.modelno-1])
+                data_list.append(self.Model.models[self.modelno-1])
         
         if 'inmodel' in self.modeltype:
-            self.read_inmodel()
-            data_list.append(self.inmodel)
+            self.Inmodel.read_inmodel()
+            data_list.append(self.Inmodel.inmodel)
         
         
         # assess how many parameters
@@ -100,9 +101,9 @@ class Plot_model():
             
             symbol = 'b-'
             
-        plt.set_xlim(self.xlim[parameter][0],self.xlim[parameter][1])
-        plt.set_ylim(self.ylim[0],self.ylim[1])
-        plt.set_title(self.titles[parameter],fontsize=10)
+        plt.xlim(self.xlim[parameter][0],self.xlim[parameter][1])
+        plt.ylim(self.ylim[0],self.ylim[1])
+        plt.title(self.titles[parameter],fontsize=10)
         plt.grid()
         
         
@@ -122,7 +123,7 @@ class Plot_model():
         if self.save:
             if self.output_filename is None:
                 self.construct_filename()
-            plt.savefig(os.path.join(self.wd,self.output_filename))
+            plt.savefig(os.path.join(self.working_directory,self.output_filename))
                 
             
     def plot_section(self):
@@ -138,19 +139,28 @@ class Plot_model():
         create a filename to save file to
         
         """
-        filename = os.path.basename(self.wd)
+        filename = os.path.basename(self.working_directory)
         filename += '_'.join(self.parameters)     
         self.output_filename = filename
         
+
+class Plot_fit():
+    
+    def __init__(self, Fit, **input_parameters):
+        self.Fit = Fit
+        self.imethod = 'linear'
+        self.symbol = 'o'
+        self.fontsize = 8
+        self.cmap = 'rainbow'
         
-    def plot_lcurve_contourmap(self, 
-                               levels = None,
-                               imethod = 'linear',
-                               symbol = 'o',
-                               fontsize = 8,
-                               draw_threshold = None,
-                               lim = 100,
-                               cmap = 'rainbow'
+        
+        for key in input_parameters.keys():
+            setattr(self,key,input_parameters[key]) 
+
+        
+    def plot_lcurve_contourmap(self, draw_threshold = False,
+                               xlim = None, ylim = None,
+                               contour_step = None
                                ):
         """
         plot 'lcurve' contour map
@@ -164,12 +174,13 @@ class Plot_model():
         
         """
         
-        self.read_fit()
-        a = self.penalty_anisotropy
-        s = self.penalty_structure
-        mis = self.misfit
-        aa = [str(round(i,1)) for i in self.weight_anisotropy]
-        ss = [str(round(i,1)) for i in self.weight_structure]
+        self.Fit.read_fit()
+        a = self.Fit.penalty_anisotropy
+        s = self.Fit.penalty_structure
+        mis = self.Fit.misfit
+        aa = [str(round(i,1)) for i in self.Fit.weight_anisotropy]
+        ss = [str(round(i,1)) for i in self.Fit.weight_structure]
+           
         
         # grid the data to make contour plot
         # first, define points to grid
@@ -177,27 +188,45 @@ class Plot_model():
         # define points xi to grid onto
         xi = np.array(np.meshgrid(np.linspace(0.,max(s)),np.linspace(0.,max(a)))).T
 #        print xi
-        f1 = si.griddata(points,mis,xi,method = imethod)
-        cmap = plt.get_cmap(cmap)
-        if levels is not None:
-            plt.contour(xi[:,:,0],xi[:,:,1],f1,cmap=cmap,levels=levels)
+        f1 = si.griddata(points,mis,xi,method = self.imethod)
+        cmap = plt.get_cmap(self.cmap)
+        
+        if contour_step is not None:
+            if contour_step < 1.:
+                rounding = int(np.ceil(np.abs(np.log10(contour_step))))
+            else:
+                rounding = 0
+            levels = np.arange(round(np.amin(self.Fit.misfit),rounding),
+                   round(np.amax(self.Fit.misfit),rounding),
+                   contour_step)
+            plt.contour(xi[:,:,0],
+                        xi[:,:,1],
+                        f1,cmap=cmap,
+                        levels=levels)
         else:
             plt.contour(xi[:,:,0],xi[:,:,1],f1,cmap=cmap)
         plt.colorbar()
-        if draw_threshold is not None:
+        
+        if draw_threshold:
             plt.contour(xi[:,:,0],xi[:,:,1],f1,
-                        levels=[round(min(mis)*draw_threshold/100.,2)],
+                        levels=[round(min(mis)*self.Fit.misfit_threshold,2)],
                                 linewidths=[1.5],
                                 colors='k')
         plt.gca().set_aspect('equal')
-        plt.scatter(s,a,c='k',marker=symbol,lw=0)
+        plt.scatter(s,a,c='k',marker=self.symbol,lw=0)
         
+
+                
+        if xlim is None:
+            xlim = plt.xlim()
+        if ylim is None:
+            ylim = plt.ylim()
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+            
         for i in range(len(aa)):
-            if (s[i]<lim) and (a[i]<lim):
-                plt.text(s[i],a[i],','.join([ss[i],aa[i]]),fontsize=fontsize)
-        
-        plt.xlim(0,lim)
-        plt.ylim(0,lim)
+            if (s[i] < xlim[-1]) and (a[i] < ylim[-1]):
+                plt.text(s[i],a[i],','.join([ss[i],aa[i]]),fontsize=self.fontsize)
         plt.xlabel('structure penalty')
         plt.ylabel('anisotropy penalty')   
 
@@ -213,7 +242,7 @@ class Plot_responses():
 
         self.Data = Data
         self.Response = Response
-        self.wd = self.Response.wd
+        self.working_directory = self.Response.working_directory
         self.modelno = 0
         self.save = True
         self.output_filename = None

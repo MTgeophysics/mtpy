@@ -88,6 +88,8 @@ def sort_folder_list(wkdir,order_file,indices=[0,9999]):
             for each item in the list
     indices = indices to search on; default take the whole string
     
+    returns a list of directories, in order.
+    
     """
     order = open(order_file).readlines()
     order = [ff.strip() for ff in order]
@@ -97,7 +99,7 @@ def sort_folder_list(wkdir,order_file,indices=[0,9999]):
     for o in order:
         for f in flst:
             if str.lower(o.strip().split('_')[0][indices[0]:indices[1]]) == str.lower(f)[indices[0]:indices[1]]:
-                plst.append(f)
+                plst.append(os.path.join(wkdir,f))
     return plst
 
 
