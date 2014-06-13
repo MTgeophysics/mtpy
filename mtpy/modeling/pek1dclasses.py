@@ -333,10 +333,14 @@ class Model():
         self.misfit_threshold = 1.1
         self.station = None
         self.Fit = None
+        self.x = 0.
+        self.y = 0.
         
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])       
-   
+            
+        if self.station is None:
+            self.station = os.path.basename(self.working_directory).split('_')[0]
 
         
     def read_model(self):
@@ -417,11 +421,22 @@ class Model():
             aniso_max = np.amax(aniso)
             depth_aniso_max = model_filt[:,1][aniso == aniso_max][0]
         
-        strike_aniso_max = model_filt[:,-1][aniso == aniso_max][0]%180
-                
-        self.anisotropy_max = aniso_max
-        self.anisotropy_max_depth = depth_aniso_max
-        self.anisotropy_max_strike = strike_aniso_max
+
+        params = model_filt[aniso == aniso_max][0]
+        params[-1] = params[-1]%180
+
+        self.anisotropy_max_parameters = params
+
+    def update_location_from_file(self,xyfile,indices=[0,999]):
+        """
+        updates x and y location from an xy file with format
+        station x y
+        can give indices to search on if the station name in the file
+        is not exactly the same as defined in the model.
+        
+        """
+        return
+        
         
         
 
@@ -558,13 +573,78 @@ class Model_suite():
     """
     def __init__(self,working_directory,**input_parameters):
         self.working_directory = working_directory
+        self.model_list = []
         self.modelfile = 'ai1mod.dat'
         self.respfile = 'ai1dat.dat'
         self.fitfile = 'ai1fit.dat'
-        self.inmodelfile = 'inmodel.dat'       
+        self.inmodelfile = 'inmodel.dat' 
+        self.modelno = 1
         self.station_list = None
+        self.station_xyfile = None
+        self.anisotropy_surface_file = 'model%03i_aniso_depth.dat'
         
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])
+        
+        if self.model_list == []:
+            wd = self.working_directory
+            folder_list = [os.path.join(wd,f) for f in os.listdir(wd) if os.path.isdir(os.path.join(wd,f))]            
+            for folder in folder_list:
+                self.model_list.append(Model(folder))
             
-    def 
+    def get_aniso_peak_depth(self, 
+                             min_depth = 0, 
+                             max_depth = None,
+                             strike_threshold = 10.,
+                             strike_window = 5.):
+        """
+        get the min and max resistivities, depth and strike at point of maximum
+        anisotropy between min and max depth.
+        
+        the depth is only selected if the strike is stable within parameters
+        given by strike threshold and strike window.
+        
+        """
+
+        model_params = np.zeros([len(self.model_list),6])
+        
+        for i,model in enumerate(self.model_list):
+            model.modelno = self.modelno
+            model.find_max_anisotropy(min_depth=min_depth,
+                                      max_depth=max_depth,
+                                      strike_window=strike_window,
+                                      strike_threshold=strike_threshold)
+            x,y = model.x,model.y
+            depth,te,tm,strike = model.anisotropy_max_parameters[1:]
+            
+            model_params[i] = x,y,depth,te,tm,strike
+        
+        self.anisotropy_max_parameters = model_params
+        np.savetxt(os.path.join(self.working_directory,
+                                self.anisotropy_surface_file%self.modelno),
+                   model_params,
+                   fmt=['%14.6f','%14.6f','%8.2f','%8.2f','%8.2f','%8.2f'])
+            
+            
+    def update_multiple_locations_from_file(self,indices=[0,999]):
+        """
+        updates multiple x and y locations from an xy file with format
+        station x y
+        can give indices to search on if the station name in the file
+        is not exactly the same as defined in the model.
+        
+        """
+        xy = {}
+        i1,i2 = indices
+        
+        for line in open(self.station_xyfile):
+            line = line.strip().split()
+            xy[str.lower(line[0])] = [float(line[1]),float(line[2])]
+        
+        for model in self.model_list:
+            model.x,model.y = xy[str.lower(model.station[i1:i2])]
+
+
+          
+            
+        
