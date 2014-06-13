@@ -290,3 +290,27 @@ class Plot_responses():
                     plt.yscale('log')
                 plt.grid()
                 ii += 1
+                
+                
+class Plot_map():
+    """
+    class dealing with plotting results in map format, from multiple 
+    1d models
+    
+    """
+    def __init__():
+        return
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        

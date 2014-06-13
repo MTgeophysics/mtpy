@@ -169,7 +169,7 @@ def update_inputs():
         cline_inputs[key] = getattr(args,key)
 
     return cline_inputs
-
+    
 
 def generate_inputfiles(epath, **input_parameters):
     
@@ -318,6 +318,9 @@ def build_run():
 
     # run the model
     call([input_parameters['program_location']]+[Data.datafile]+[str(n) for n in input_parameters['run_input']])
+
+
+ 
 
 
 if __name__ == '__main__':

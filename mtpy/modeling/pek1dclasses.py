@@ -551,3 +551,20 @@ class Fit():
         # define the parameters relating to the best model
         self.params_bestmodel = fit[f==min(f[mis<min(mis)*self.misfit_threshold])][0]
         self.params_fittingmodels = fit[mis<min(mis)*self.misfit_threshold]
+        
+        
+class Model_suite():
+    """
+    """
+    def __init__(self,working_directory,**input_parameters):
+        self.working_directory = working_directory
+        self.modelfile = 'ai1mod.dat'
+        self.respfile = 'ai1dat.dat'
+        self.fitfile = 'ai1fit.dat'
+        self.inmodelfile = 'inmodel.dat'       
+        self.station_list = None
+        
+        for key in input_parameters.keys():
+            setattr(self,key,input_parameters[key])
+            
+    def 
