@@ -5,7 +5,7 @@ This is a convenience script for the generation of dayfiles.
 It needs the location of a folder with time series and the sampling period as arguments.
 
 The time series files have to be named in the EDL-ascii output standard, 
-which codes stationname and start time of the file in the name. 
+which codes stationname and start time  of the file in the name. 
 
 The data have to be either single column values or in 2-column form.
 
@@ -34,11 +34,13 @@ reload(MTfh)
 def main():
 
     if len(sys.argv) < 3:
-        sys.exit('\nNeed at least 2 arguments: \n\n '
-            '<path to files> \n <sampling in seconds> \n\n'
-            '[optional: <output dir>] \n [optional: <stationname>]\n'
+        sys.exit('\nNeed at least 4 arguments: \n\n '
+            '<path to files> \n <sampling in seconds> \n'
+            '<output dir> \n <stationname>\n'
             '[optional: <recursive flag -R>]\n'
             '(set this option for including all subfolders)\n\n')
+
+    print 
 
     outdir = None
     stationname = None
@@ -63,13 +65,13 @@ def main():
     
     if stationname is not None:
         #check, if it's actually a comma-separated list:
-        if 1:
+        try:
             stationlist = stationname.split(',')
             if len(stationlist) > 1:
                 multiple_stations = True
                 stationlist = [i.upper() for i in stationlist]
-        # except:
-        #     stationlist = [stationname]
+        except:
+            stationlist = [stationname]
     else: stationlist = [None]
 
     print stationlist 
@@ -87,20 +89,26 @@ def main():
         sys.exit('Second argument must be sampling interval in seconds (int/float)')
 
     if recursive is True:
-        lo_files = []
+        lo_folders = []
         for i,j,k in os.walk(pathname):
             lof = [op.abspath(op.join(i,f)) for f in j]            
             if stationname is not None:
-                for stationname in stationlist:                    
-                    lof_station = [i for i in lof if stationname.lower() in i.lower()]
-                    lo_files.extend(lof_station)
-        pathname = list(set(lo_files))
+                for stationname in stationlist:
+                    for curr_folder in lof:
+                        content_of_folder = os.listdir(curr_folder)
+                        #print curr_folder
+                        lof_station = [i for i in content_of_folder if stationname.lower() in i.lower()]
+                        if len(lof_station) > 0 :
+                            lo_folders.append(curr_folder)
+        pathname = list(set(lo_folders))
 
     if len(pathname) == 0:
         sys.exit('\n\tERROR - No (sub-) folders for stations {0} found\n'.format(stationlist))
-    
+
+
         
     for stationname in stationlist:
+        print '....\n'
         print 'processing station ',stationname.upper()
         # if pathname[0] is not None:
         #     station_pathname = [i for i in pathname if stationname.lower() in i.lower()]
@@ -109,17 +117,17 @@ def main():
         # else:
         station_pathname = pathname
         
-        try:
+        if 1:
             MTfh.EDL_make_dayfiles(station_pathname, sampling, stationname.upper(), outdir)
-        except MTex.MTpyError_inputarguments:
-            if stationname is None:
-                sys.exit('\n\tERROR - No data found in (sub-)folders\n')
-            else:
-                sys.exit('\n\tERROR - No data found in (sub-)folders for station {0}\n'.format(stationname.upper()))
-        except:
-            sys.exit('\n\tERROR - could not process (sub-)folders')
+        # except MTex.MTpyError_inputarguments:
+        #     if stationname is None:
+        #         sys.exit('\n\tERROR - No data found in (sub-)folders\n')
+        #     else:
+        #         sys.exit('\n\tERROR - No data found in (sub-)folders for station {0}\n'.format(stationname.upper()))
+        # except:
+        #     sys.exit('\n\tERROR - could not process (sub-)folders')
 
-
+    print '\n'
 
 
 

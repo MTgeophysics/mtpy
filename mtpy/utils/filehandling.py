@@ -123,7 +123,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
     lo_allfiles = []
     pattern = '*.[ebEB][xyzXYZ]'
     if stationname is not None:
-        pattern = '*{0}*.[ebEB][xyzXYZ]'.format(stationname)
+        pattern = '*{0}*.[ebEB][xyzXYZ]'.format(stationname.lower())
     print '\nSearching for files with pattern: ',pattern
 
     for folder in lo_foldernames:
@@ -134,7 +134,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
             continue    
 
         lo_dirfiles = [op.abspath(op.join(wd,i))  for i in os.listdir(wd) 
-                        if fnmatch.fnmatch(i,pattern) is True]
+                        if fnmatch.fnmatch(i.lower(),pattern.lower()) is True]
         lo_allfiles.extend(lo_dirfiles)   
 
     #check, if list of files is empty
@@ -227,15 +227,20 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
         #loop over all (sorted) files for the current component
         for idx_f,f in enumerate(lo_sorted_files):
 
-            print 'read in file %s' %(f)
-            #starting time of current file
-            file_start_time = lo_sorted_starttimes[idx_f]
+            try:
 
-            #get tuple with the starting time of the current file
-            file_start = time.gmtime(file_start_time)
+                print 'trying to read in file %s' %(f)
+                #starting time of current file
+                file_start_time = lo_sorted_starttimes[idx_f]
+
+                #get tuple with the starting time of the current file
+                file_start = time.gmtime(file_start_time)
             
-            #read in raw data
-            data_in = np.loadtxt(f)
+                #read in raw data
+                data_in = np.loadtxt(f)
+            except:
+                print 'WARNING - could not read file - skipping...'
+                continue
 
             no_samples = len(data_in)
 
@@ -372,9 +377,9 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
             if incomplete == 1 :
 
                 #define header info
-                headerline = '# {0} {1} {2:.1f} {3} {4} \n'.format(
+                headerline = '# {0} {1} {2:.1f} {3:f} {4} \n'.format(
                                     stationname, comp.lower(), 1./sampling, 
-                                    outfile_timeaxis[0], len(outfile_timeaxis))
+                                    outfile_starttime, arrayindex)
 
                 F.write(headerline)
 
