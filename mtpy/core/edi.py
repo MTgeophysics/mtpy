@@ -28,7 +28,7 @@ LK, JP 2013
 
 #=================================================================
 import numpy as np
-import os
+import os,sys
 import os.path as op
 import time, calendar, datetime
 import copy
@@ -106,7 +106,7 @@ class Edi(object):
         
     """
 
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, datatype = 'z'):
 
         """
         Initialise an instance of the Edi class.
@@ -134,7 +134,7 @@ class Edi(object):
         self.station = None
         
         if filename is not None:
-            self.readfile(self.filename)
+            self.readfile(self.filename, datatype = datatype)
 
     def readfile(self, fn, datatype = 'z'):
         """
@@ -218,18 +218,18 @@ class Edi(object):
             print 'Could not read FREQ section: %s'%infile
 
         if datatype == 'z':
-            if 1:
+            try:
                 self._read_z(edistring)
-            # except:
-            #     raise MTex.MTpyError_edi_file(
-            #         'Could not read Z section: %s'%infile)
+            except:
+                raise MTex.MTpyError_edi_file(
+                    'Could not read Z section: %s -- check datatype!'%infile)
 
         elif datatype == 'resphase':
             try:
                 self._read_res_phase(edistring)
             except:
                 raise MTex.MTpyError_edi_file(
-                    'Could not read ResPhase-/Rho-section: %s'%infile)
+                    'Could not read ResPhase-/Rho-section -- check datatype!: %s'%infile)
             #rotation is optional
             try:
                 self._read_rhorot(edistring)
@@ -664,7 +664,6 @@ class Edi(object):
 
         compstrings = ['ZXX','ZXY','ZYX','ZYY']
         Z_entries = ['R','I','.VAR']
-
         z_array = np.zeros((self.n_freq(), 2, 2), dtype=np.complex)
         zerr_array = np.zeros((self.n_freq(), 2, 2), dtype=np.float)
         z_dict = {}
@@ -962,7 +961,6 @@ class Edi(object):
         Convert the information into Z and Tipper.
 
         """
-
         #identify and cut spectrasect part:
         specset_string = _cut_sectionstring(edistring,'SPECTRASECT')
         s_dict = {}
@@ -1049,6 +1047,7 @@ class Edi(object):
                 raise MTex.MTpyError_edi_file('Mandatory data for channel'+\
                                               '{0} missing!'.format(j))
 
+
         for s_idx, spectra in enumerate(lo_spectra_strings):
             firstline = spectra.split('\n')[0]
             freq = float(_find_key_value('FREQ','=',firstline))
@@ -1071,22 +1070,21 @@ class Edi(object):
                                                                 channellist)
             else:
                 z_array[s_idx] = spectra2z(data, channellist)[0]
- 
-        self.Z.z = z_array
-        self.Z.zerr = zerr_array
         
-        self.zrot = np.array(lo_rots)
-        self.Z.rotation_angle = self.zrot
 
-        self.freq = np.array(lo_freqs)
-        self.Z.freq = self.freq
+
+        self.Z = MTz.Z(z_array=z_array,zerr_array=zerr_array,freq=np.array(lo_freqs))        
+        self._set_freq(self.Z.freq)
+        self.Z.rotation_angle = np.array(lo_rots)
+
+        self.zrot = self.Z.rotation_angle
+
 
         if tipper_array is not None:
             self.Tipper = MTz.Tipper(tipper_array=tipper_array,
                                      tippererr_array= tippererr_array,
                                      freq=self.freq)
             self.Tipper.rotation_angle = self.zrot
-            self.Tipper.freq = self.freq
 
         for i,j in enumerate(id_list):
             s_dict[ id_comps[i] ] = j
@@ -1416,17 +1414,31 @@ class Edi(object):
 
         No test for consistency!
         """
-
-        if len(lo_freq) is not len(self.Z.z):
-            print 'length of freq list not correct'+\
-                  '({0} instead of {1})'.format(len(lo_freq), 
-                                                len(self.Z.z))
-            return
+        # try:
+        #     if len(lo_freq) is not len(self.Z.z):
+        #         print 'length of freq list not correct'+\
+        #               '({0} instead of {1})'.format(len(lo_freq), 
+        #                                             len(self.Z.z))
+        #         return
+        # except:
+        #     print 'array self.Z.z is not defined'
+        #     return
 
         self._freq = np.array(lo_freq)
-        self.Z.freq = self._freq
+        if self.Z.z is not None:
+            try:
+                self.Z._set_freq(self.freq)
+            except:
+                print 'length of freq list not consistent with Z.z array '+\
+                           '({0} instead of {1})'.format(len(lo_freq), 
+                                                     len(self.Z.z))
         if self.Tipper.tipper is not None:
-            self.Tipper.freq = self._freq
+            try:
+                self.Tipper._set_freq(self.freq)
+            except:
+                print 'length of freq list not consistent with Tipper.tipper array '+\
+                           '({0} instead of {1})'.format(len(lo_freq), 
+                                                     len(self.Tipper.tipper))
 
     def _get_freq(self): 
         if self._freq is not None:
@@ -2397,7 +2409,7 @@ def _validate_edifile_string(edistring):
             continue
 
     if n_numbers == 0:
-        print  MTex.MTpyError_edi_file('Problem in FREQ block: no freq'+\
+        print  MTex.MTpyError_edi_file('Problem in FREQ block: no frequencies '+\
                                        'found...checking for spectra instead')
         #found *= 0
     #Check for data entry following priority:
@@ -2515,10 +2527,11 @@ def _validate_edifile_string(edistring):
         if not len(dummy6.split()) == no_values:
             found *= 0
 
+
         if not edistring.upper().count('>SPECTRA') ==  n_freq:
             found *= 0
         if found > 0:
-            print 'Found spectra data'
+            print 'Found spectra data !!'
             spectra_found = 1
  
     if z_found == 0 and rhophi_found == 0 and spectra_found == 0 :

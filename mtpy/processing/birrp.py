@@ -1780,7 +1780,8 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
     #     raise EX.MTpyError_config_file( 'Config file cannot be read: %s' % (survey_configfile) )
 
     if not stationname in survey_config_dict:
-        raise MTex.MTpyError_config_file( 'No information about station {0} found in configuration file: {1}'.format(stationname, survey_configfile) )
+        print  'No information about station {0} found in configuration file: {1}'.format(stationname, survey_configfile)  
+        raise MTex.MTpyError_config_file()
 
     station_config_dict = survey_config_dict[stationname]
 
