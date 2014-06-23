@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as si
 import mtpy.modeling.pek1dclasses as pek1dc
+import mtpy.utils.elevation_data as ed
 
 class Plot_model():
     """
@@ -473,22 +474,21 @@ class Plot_profile():
             setattr(self,key,input_parameters[key])
             
         self.working_directory = os.path.abspath(self.working_directory)
-#        print self.Model_suite.model_list
+        print self.Model_suite.station_list
+        print[m.station for m in self.Model_suite.model_list]
 
-        self.x = np.array([m.x for m in self.Model_suite.model_list])
-        self.y = np.array([m.y for m in self.Model_suite.model_list])
 
             
     def get_profile(self):
         """
         get location of profile by linear regression
         """
-        if self.x is None:
+        if self.Model_suite.x is None:
             print "can't get profile, no x y locations"
             return
         
-        x = self.x
-        y = self.y
+        x = self.Model_suite.x
+        y = self.Model_suite.y
         
         self.profile = np.polyfit(x,y,1)
         
@@ -503,7 +503,7 @@ class Plot_profile():
         if not hasattr(self,'profile'):
             self.get_profile()
             
-        x,y = self.x,self.y
+        x,y = self.Model_suite.x,self.Model_suite.y
         x1,y1 = x[0],y[0]
         [m,c1] = self.profile
         x0 = (y1+(1.0/m)*x1-c1)/(m+(1.0/m))
@@ -522,7 +522,7 @@ class Plot_profile():
         """
         distances = []
         
-        x,y = self.x,self.y
+        x,y = self.Model_suite.x,self.Model_suite.y
         
         if not hasattr(self,'profile_origin'):
             self.get_profile_origin()
@@ -540,9 +540,12 @@ class Plot_profile():
         distances = (xp**2.+yp**2.)**(0.5)
             
         self.station_distances = distances
+#        for 
                 
         
-    def plot_parameter(self,parameter,ylim=[6,0]):
+    def plot_parameter(self,parameter,
+                       ylim=[6,0],
+                       horizon_list = None):
         """
         parameter = 'anisotropy', 'minmax', or 'strike' or list containing 
         several of these
@@ -550,9 +553,12 @@ class Plot_profile():
         """
         
         self.get_station_distance()
+        
                 
         profile_x = self.station_distances/np.amax(self.station_distances)
-        profile_x_buf = np.zeros_like(profile_x)       
+        profile_x_buf = np.zeros_like(profile_x)      
+        print profile_x
+        print [m.station for m in self.Model_suite.model_list]
         
         modelno = self.Model_suite.modelno
         print modelno
@@ -567,7 +573,7 @@ class Plot_profile():
         px /= np.amax(profile_x_buf)
         profile_x_buf /= np.amax(profile_x_buf)/(1.-2.*px)
 
-        fig = plt.figure(figsize=(len(profile_x),5))
+        plt.figure(figsize=(len(profile_x),5))
 
         for i in range(len(profile_x_buf)):
             plt.axes([profile_x_buf[i],0.1,px,0.8])
@@ -575,9 +581,18 @@ class Plot_profile():
             model = self.Model_suite.model_list[i]
             model.read_model()
             modelvals = model.models[modelno]
-            plt.plot(modelvals[:,2],modelvals[:,1])
-            plt.plot(modelvals[:,3],modelvals[:,1])
+            if parameter == 'minmax':
+                plt.plot(modelvals[:,2],modelvals[:,1],'k--')
+                plt.plot(modelvals[:,3],modelvals[:,1],'k-')
             plt.ylim(self.ylim)
+            if i != 0:
+                plt.gca().set_xticklabels([])
             plt.xscale('log')
+            plt.title(model.station)
+            if horizon_list is not None:
+                for h in horizon_list:
+                    elev = ed.get_elevation(model.x,model.y,h)
+                    plt.plot(plt.xlim(),[-elev/1000.]*2)
+            
 
         

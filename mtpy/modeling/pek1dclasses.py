@@ -601,8 +601,8 @@ class Model_suite():
             if len(self.station_list)>0:
                 i1,i2 = self.station_search_indices
                 folder_list2 = []
-                for ff in folder_list:
-                    for s in self.station_list:
+                for s in self.station_list:
+                    for ff in folder_list:
                         if str.lower(os.path.basename(ff).split('_')[0][i1:i2]) == str.lower(s):
                             folder_list2.append(ff)
             for folder in folder_list2:
@@ -666,6 +666,7 @@ class Model_suite():
         for model in self.model_list:
             model.x,model.y = xy[str.lower(model.station[i1:i2])]
 
-          
+        self.x = np.array([m.x for m in self.model_list])
+        self.y = np.array([m.y for m in self.model_list])  
             
         
