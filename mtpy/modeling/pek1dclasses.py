@@ -579,24 +579,44 @@ class Model_suite():
         self.fitfile = 'ai1fit.dat'
         self.inmodelfile = 'inmodel.dat' 
         self.modelno = 1
-        self.station_list = None
+        self.station_list = []
+        self.station_listfile = None
+        self.station_search_indices=[0,999]
         self.station_xyfile = None
         self.anisotropy_surface_file = 'model%03i_aniso_depth.dat'
         
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])
+            
+        if self.station_listfile is not None:
+            try:
+                self.station_list = [i.strip() for i in open(self.station_listfile).readlines()]
+            except:
+                print "can't open station list file"
+
         
         if self.model_list == []:
             wd = self.working_directory
             folder_list = [os.path.join(wd,f) for f in os.listdir(wd) if os.path.isdir(os.path.join(wd,f))]            
-            for folder in folder_list:
+            if len(self.station_list)>0:
+                i1,i2 = self.station_search_indices
+                folder_list2 = []
+                for ff in folder_list:
+                    for s in self.station_list:
+                        if str.lower(os.path.basename(ff).split('_')[0][i1:i2]) == str.lower(s):
+                            folder_list2.append(ff)
+            for folder in folder_list2:
                 self.model_list.append(Model(folder))
+
+        if self.station_xyfile is not None:
+            self.update_multiple_locations_from_file()
+                
             
     def get_aniso_peak_depth(self, 
                              min_depth = 0, 
                              max_depth = None,
                              strike_threshold = 10.,
-                             strike_window = 5.):
+                             strike_window = 5):
         """
         get the min and max resistivities, depth and strike at point of maximum
         anisotropy between min and max depth.
@@ -628,7 +648,7 @@ class Model_suite():
                    fmt=['%14.6f','%14.6f','%8.2f','%8.2f','%8.2f','%8.2f'])
             
             
-    def update_multiple_locations_from_file(self,indices=[0,999]):
+    def update_multiple_locations_from_file(self):
         """
         updates multiple x and y locations from an xy file with format
         station x y
@@ -637,15 +657,14 @@ class Model_suite():
         
         """
         xy = {}
-        i1,i2 = indices
+        i1,i2 = self.station_search_indices
         
         for line in open(self.station_xyfile):
             line = line.strip().split()
             xy[str.lower(line[0])] = [float(line[1]),float(line[2])]
-        
+
         for model in self.model_list:
             model.x,model.y = xy[str.lower(model.station[i1:i2])]
-
 
           
             
