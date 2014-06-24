@@ -46,3 +46,6 @@ class MTpyError_PT( Exception ):
 class MTpyError_occam( Exception ):
     pass
 
+class MTpyError_parameter_number( Exception ):
+    pass
+

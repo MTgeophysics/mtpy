@@ -238,11 +238,11 @@ class Edi(object):
                 print 'Could not read Rhorot section: %s'%infile
 
         elif datatype == 'spectra':
-            try:
+            if 1:
                 self._read_spectra(edistring)
-            except:
-                raise MTex.MTpyError_edi_file(
-                    'Could not read Spectra section: %s'%infile)
+            # except:
+            #     raise MTex.MTpyError_edi_file(
+            #         'Could not read Spectra section: %s'%infile)
 
 
         #Tipper is optional
@@ -1051,6 +1051,14 @@ class Edi(object):
         for s_idx, spectra in enumerate(lo_spectra_strings):
             firstline = spectra.split('\n')[0]
             freq = float(_find_key_value('FREQ','=',firstline))
+            # Read information on uncertainties on data, given by AVGT value:
+            avgt = None
+            try:
+                avgt = float(_find_key_value('AVGT','=',firstline))
+            except:
+                avgt = None
+            #if AVGT cannot be read, no errors are calculated
+
             lo_freqs.append(freq)
             rotangle = 0.
             try:
@@ -1064,14 +1072,17 @@ class Edi(object):
                 datalist.extend(innerline.strip().split())
             data = np.array([float(i) 
                              for i in datalist]).reshape(n_chan,n_chan)
-
+            
+            zdata = spectra2z(data, avgt, channellist)
+            z_array[s_idx] = zdata[0]
+            if zdata[2] is not None:
+                zerr_array[s_idx] = zdata[2]
+            
             if n_chan%2 != 0 :
-                z_array[s_idx], tipper_array[s_idx] = spectra2z(data, 
-                                                                channellist)
-            else:
-                z_array[s_idx] = spectra2z(data, channellist)[0]
-        
-
+                tipper_array[s_idx] = zdata[1]
+                if zdata[3] is not None:
+                    tippererr_array[s_idx] = zdata[3]
+            
 
         self.Z = MTz.Z(z_array=z_array,zerr_array=zerr_array,freq=np.array(lo_freqs))        
         self._set_freq(self.Z.freq)
@@ -2608,12 +2619,13 @@ def _find_key_value(key, separator, instring, valuelength=None):
 
 
 
-def spectra2z(data, channellist=None):
+def spectra2z(data, avgt=None, channellist=None):
     """
     Convert data from spectral form into Z - for one fixed freq.
 
     Input:
     spectral data array, real-valued, n x n sized 
+    degrees of freedom, equiv. to 'AVGT' (number of averaged time windows)
 
     Output:
     Z array, complex valued, 2x2 sized
@@ -2625,8 +2637,11 @@ def spectra2z(data, channellist=None):
     """
 
     z_array = np.zeros((2,2), 'complex')
+    zerr_array = np.zeros((2,2),'float')
+
     S = np.zeros(data.shape, 'complex')
     tipper_array = None
+    tippererr_array = None
 
     #in case the components are in a crazy order
     comps =  ['HX', 'HY', 'HZ', 'EX', 'EY']
@@ -2654,17 +2669,31 @@ def spectra2z(data, channellist=None):
     # if HY is not present, the list entry is a NONE
 
     #build upper right triangular matrix with compex valued entries
-    for i in range(data.shape[0]-1):
-        for j in range(i+1,data.shape[0]):
+    for i in range(data.shape[0]):
+        for j in range(i,data.shape[0]):
             if i == j :
-                continue
-            #minus sign for keeping the TE/TM right 
-            # TODO - to be checked for generality
-            S[i,j] = np.complex( data[i,j] , +data[j,i] )
+                S[i,j] = ( data[i,j])
+            else:
+                #minus sign for complex conjugation
+                # original spectra data are of form <A,B*>, but we need 
+                # the order <B,A*>...
+                # this is achieved by complex conjugation of the original entries
+                S[i,j] = np.complex( data[j,i] , -data[i,j] )
+                #keep complex conjugated entries in the lower triangular matrix:
+                S[j,i] = np.complex( data[j,i] , +data[i,j] )
 
-    #use formulas from Bahr/Simpson to convert the Spectra into Z entries:
 
-    Zdet = np.real( S[idx[0],idx[5]] * S[idx[1],idx[6]] - S[idx[0],idx[6]] *\
+
+    #use formulas from Bahr/Simpson to convert the Spectra into Z entries
+    # the entries of S are sorted like
+    # <X,X*>  <X,Y*>  <X,Z*>  <X,En*>  <X,Ee*>  <X,Rx*>  <X,Ry*>
+    #         <Y,Y*>  <Y,Z*>  <Y,En*>  <Y,Ee*>  <Y,Rx*>  <Y,Ry*> 
+    # .....
+
+    # note: the sorting can be influenced by wrong order of indices - 
+    # the list 'idx' takes care of that
+
+    Zdet = ( S[idx[0],idx[5]] * S[idx[1],idx[6]] - S[idx[0],idx[6]] *\
                     S[idx[1],idx[5]] )
 
     z_array[0,0] =  S[idx[3],idx[5]] * S[idx[1],idx[6]] - S[idx[3],idx[6]] *\
@@ -2678,6 +2707,7 @@ def spectra2z(data, channellist=None):
 
     z_array /= Zdet
 
+
     #if HZ information is present:
     if data.shape[0] %2 != 0:
         tipper_array = np.zeros((1,2),dtype=np.complex)
@@ -2686,7 +2716,103 @@ def spectra2z(data, channellist=None):
         tipper_array[0,1] = S[idx[2],idx[6]] * S[idx[0],idx[5]] - \
                             S[idx[2],idx[5]] * S[idx[0],idx[6]] 
 
-    return z_array, tipper_array
+        tipper_array /= Zdet
+
+    if avgt is None:
+        print 'Information on uncertainties (AVGT value) missing -- cannot calculate errors'
+        return z_array, tipper_array, None, None
+
+    if avgt <= 4:
+        print 'Warning -- Information on uncertainties insufficient (AVGT <= 4)'
+        return z_array, tipper_array, None, None
+
+
+    #calculate error using formulas in Bahr&Simpson, Appendix 4. 
+    # BUT: using 68% quantil to be consistent with general error bars, which
+    # are usually rather 1 sigma of a normal distribution
+
+    # BUT: needs scipy.stats.distributions providing the Fisher distribution
+    try: 
+        import scipy.stats.distributions as ssd
+    except:
+        print 'module "scipy.stats.distributions" not found -- cannot calculate errors'
+        return z_array, tipper_array, None, None
+
+
+    zerr_array,tippererr_array = _spectraerr2zerr(S,idx,z_array,tipper_array,avgt,ssd)
+
+    del ssd
+
+    return z_array, tipper_array, zerr_array, tippererr_array
+
+
+def _spectraerr2zerr(S,idx,Z,Tipper,avgt,ssd):
+    """calculating spectral error for one frequency
+
+    input: NxN complex valued matrix. Important entries containing remote reference 
+    information are in the last two columns.
+
+    Errors do only depend on the station - no remote reference used here!
+
+    output: 
+    2-tuple: [2,2] array with errors for Z , [1,2] array with errors for tipper
+
+    """
+    zerr_array = np.zeros((2,2))
+
+
+    Zdet =  np.real (S[idx[0],idx[0]] * S[idx[1],idx[1]] - np.abs(S[idx[0],idx[1]])**2)
+    #split up into three steps: first for Ex component, second for Ey, and then Tipper
+
+    # 68% Quantil of the Fisher distribution:
+    sigma_quantil = ssd.f.ppf(0.68,4,avgt-4)
+    
+    #1) Ex
+    a =  S[idx[3],idx[0]] * S[idx[1],idx[1]] - S[idx[3],idx[1]] * S[idx[1],idx[0]] 
+    b =  S[idx[3],idx[1]] * S[idx[0],idx[0]] - S[idx[3],idx[0]] * S[idx[0],idx[1]]
+    a /= Zdet
+    b /= Zdet  
+
+    psi_squared = np.real(1./np.real(S[idx[3],idx[3]]) * (a*S[idx[0],idx[3]]+b*S[idx[1],idx[3]]))
+    epsilon_squared = 1.-psi_squared
+
+    scaling = sigma_quantil*4/(avgt-4.)*epsilon_squared/Zdet*np.real(S[idx[3],idx[3]])
+    zerr_array[0,0] = np.sqrt(scaling*np.real(S[idx[1],idx[1]]))
+    zerr_array[0,1] = np.sqrt(scaling*np.real(S[idx[0],idx[0]]))
+
+
+    #2) Ey
+    a =  S[idx[4],idx[0]] * S[idx[1],idx[1]] - S[idx[4],idx[1]] * S[idx[1],idx[0]] 
+    b =  S[idx[4],idx[1]] * S[idx[0],idx[0]] - S[idx[4],idx[0]] * S[idx[0],idx[1]] 
+    a /= Zdet
+    b /= Zdet  
+
+    psi_squared = np.real(1./np.real(S[idx[4],idx[4]]) * (a*S[idx[0],idx[4]]+b*S[idx[1],idx[4]]))
+    epsilon_squared = 1.-psi_squared
+
+    scaling = sigma_quantil*4/(avgt-4.)*epsilon_squared/Zdet*np.real(S[idx[4],idx[4]])
+    zerr_array[1,0] = np.sqrt(scaling*np.real(S[idx[1],idx[1]]))
+    zerr_array[1,1] = np.sqrt(scaling*np.real(S[idx[0],idx[0]]))
+
+    tippererr_array = None
+
+    if Tipper is not None:
+        tippererr_array = np.zeros((1,2))
+        #3) Tipper
+        a =  S[idx[2],idx[0]] * S[idx[1],idx[1]] - S[idx[2],idx[1]] * S[idx[1],idx[0]] 
+        b =  S[idx[2],idx[1]] * S[idx[0],idx[0]] - S[idx[2],idx[0]] * S[idx[0],idx[1]] 
+        a /= Zdet
+        b /= Zdet  
+
+        psi_squared = np.real(1./np.real(S[idx[2],idx[2]]) * (a* S[idx[0],idx[2]] + b *S[idx[1],idx[2]]))
+        epsilon_squared = 1.-psi_squared
+        scaling = sigma_quantil*4/(avgt-4.)*epsilon_squared/Zdet*np.real(S[idx[2],idx[2]])
+
+        tippererr_array[0,0] = np.sqrt(scaling*np.real(S[idx[1],idx[1]]))
+        tippererr_array[0,1] = np.sqrt(scaling*np.real(S[idx[0],idx[0]]))
+
+
+    return zerr_array, tippererr_array
 
 
 def _make_z_dict(Z_object):
