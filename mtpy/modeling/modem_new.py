@@ -740,6 +740,8 @@ class Data(object):
         
         if data_fn is not None:
             self.data_fn = data_fn
+            self.save_path = os.path.dirname(self.data_fn)
+            self.fn_basename = os.path.basename(self.data_fn)
             
         if self.data_fn is None:
             raise ModEMError('data_fn is None, enter a data file to read.')
@@ -923,7 +925,7 @@ class Model(object):
                         for edi in os.listdir(edi_path) 
         >>> ...         if edi.find('.edi') > 0]
         >>> #2) create data file
-        >>> md = modem.Data(edi_list, coord_array=mmesh.station_locations)
+        >>> md = modem.Data(edi_list)
         >>> md.write_data_file(save_path=r"/home/modem/Inv1")
         >>> #3) make a grid from the stations themselves with 200m cell spacing
         >>> mmesh = modem.Model(edi_list=edi_list, cell_size_east=200, 
