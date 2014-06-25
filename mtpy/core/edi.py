@@ -41,6 +41,7 @@ import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
 import mtpy.core.z as MTz
 
+#for interactive debugging:
 reload(MTex)
 reload(MTft)
 reload(MTcc)
@@ -238,11 +239,11 @@ class Edi(object):
                 print 'Could not read Rhorot section: %s'%infile
 
         elif datatype == 'spectra':
-            if 1:
+            try:
                 self._read_spectra(edistring)
-            # except:
-            #     raise MTex.MTpyError_edi_file(
-            #         'Could not read Spectra section: %s'%infile)
+            except:
+                raise MTex.MTpyError_edi_file(
+                    'Could not read Spectra section: %s'%infile)
 
 
         #Tipper is optional

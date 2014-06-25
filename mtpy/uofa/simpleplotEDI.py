@@ -62,7 +62,7 @@ ylim([minval/10,maxval*10])
 xlim(0.5*min(periods),2*max(periods))
 autoscale(False)
 
-ylabel('resistivity')
+ylabel('app.res. in Ohm m')
 setp( ax1.get_xticklabels(), visible=False)
 ## share x only
 ax2 = subplot(212, sharex=ax1)

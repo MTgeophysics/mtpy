@@ -60,7 +60,6 @@ import numpy as np
 import copy
 
 import mtpy.core.edi as MTedi 
-import mtpy.core.z as MTz 
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.calculator as MTcc
 
@@ -117,8 +116,13 @@ class PhaseTensor(object):
         
         #if a z object is input be sure to set the z and z_err so that the
         #pt will be calculated
-        if isinstance(z_object, MTz.Z):
-            self.set_z_object(z_object)
+        # print type(z_object)==type(MTz.Z()),isinstance(z_object, MTz.Z)
+        # if isinstance(z_object, MTz.Z):
+        if z_object is not None:
+            try:
+                self.set_z_object(z_object)
+            except:
+                print '\tWarning - could not digest provided Z-Object'
 
         elif z_array is not None:
 
@@ -1346,10 +1350,11 @@ def z_object2pt(z_object):
 
     # """
 
-    if not isinstance(z_object, MTz.Z):
-        raise MTex.MTpyError_Z('Input argument is not an instance of the Z class')
+    try:
+        p = PhaseTensor(z_object = z_object)
+    except:
+        raise MTex.MTpyError_Z('Input argument is not a valid instance of the Z class')
 
-    p = PhaseTensor(z_object = z_object)
 
     # pt_array = p.pt
     # pterr_array = p.pterr
