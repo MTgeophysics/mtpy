@@ -292,8 +292,10 @@ class Plot_responses():
                     plt.yscale('log')
                 plt.grid()
                 ii += 1
-                
-                
+
+      
+         
+         
 class Plot_map():
     """
     class dealing with plotting results in map format, from multiple 
@@ -350,7 +352,8 @@ class Plot_map():
     
     def plot_interface(self,x,y,z,scale='km',cbar=True):
 
-        z = self.update_scale(z,scale)
+        import pek1dplotting as p1dp
+        z = p1dp.update_scale(z,scale)
 
         xi = np.array(np.meshgrid(np.linspace(min(x),max(x),20),np.linspace(min(y),max(y),50))).T
         
@@ -377,14 +380,7 @@ class Plot_map():
             plt.ylim(self.ylim)
 
         
-    def update_scale(self,z,scale):
-        
-        if 'k' not in scale:
-            z = z/1000.
-        if '-' in scale:
-            z = -1.*z
-            
-        return z
+
         
     def plot_aniso_and_interfaces(self,aniso_depth_file,
                                  xyzfiles, header_rows = [1,1],
@@ -393,6 +389,7 @@ class Plot_map():
         plot a set of models and up to three interfaces for comparison.        
         
         """        
+        import pek1dplotting as p1dp        
         
         if type(xyzfiles) == str:
             xyzfiles = [xyzfiles]
@@ -411,11 +408,11 @@ class Plot_map():
             sp_labels = ['','xy','x']
             
         xyz = np.loadtxt(aniso_depth_file,skiprows=header_rows[0])
-        z = self.update_scale(xyz[:,2],scale[0])
+        z = p1dp.update_scale(xyz[:,2],scale[0])
         zmin,zmax = np.amin(z),np.amax(z)
         
         for f in xyzfiles:
-            z = self.update_scale(np.loadtxt(f,skiprows=header_rows[1])[:,2],
+            z = p1dp.update_scale(np.loadtxt(f,skiprows=header_rows[1])[:,2],
                                   scale[1])
             if np.amin(z) < zmin:
                 zmin = np.amin(z)
@@ -451,8 +448,26 @@ class Plot_map():
         ax = plt.axes([0.85,0.1,0.1,0.8])
         ax.set_visible(False)
         plt.colorbar(fraction=0.8)
-                
-            
+
+
+    def plot_location_map(self,
+                          plot_names = True):
+        """
+        plot location map of all stations.        
+        
+        """
+
+
+def update_scale(z,scale):
+    
+    if 'k' not in scale:
+        z = z/1000.
+    if '-' in scale:
+        z = -1.*z
+        
+    return z                        
+    
+        
 
 class Plot_profile():
     """
@@ -466,17 +481,23 @@ class Plot_profile():
         self.station_listfile = None
         self.station_xyfile = None
         self.Model_suite = Model_suite
-        self.plotsize_x = 0.05
+        self.fig_width = 1.
+        self.ax_width = 0.03
+        self.ax_height = 0.8
+        self.ax_bottom = 0.1
         self.plot_spacing = 0.02
         self.ylim = [6,0]
-        
+        self.titles = {'minmax':'Minimum and maximum resistivity, ohm-m',
+                       'aniso':'Anisotropy in resistivity (maximum/minimum resistivity)',
+                       'strike':'Strike angle of minimum resistivity'}
+        self.xlim = {'minmax':[0.1,1000],
+                     'aniso':[0,20],
+                     'strike':[0,180]}
+                     
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])
             
         self.working_directory = os.path.abspath(self.working_directory)
-        print self.Model_suite.station_list
-        print[m.station for m in self.Model_suite.model_list]
-
 
             
     def get_profile(self):
@@ -545,54 +566,111 @@ class Plot_profile():
         
     def plot_parameter(self,parameter,
                        ylim=[6,0],
-                       horizon_list = None):
+                       horizon_list = None,
+                       horizon_zscale = 'km',
+                       new_figure = True):
         """
         parameter = 'anisotropy', 'minmax', or 'strike' or list containing 
         several of these
         
         """
+        import pek1dplotting as p1dp
         
         self.get_station_distance()
+        xlim = self.xlim[parameter]        
         
-                
-        profile_x = self.station_distances/np.amax(self.station_distances)
+        # define some initial locations to put the plots corresponding to distance along profile
+        profile_x = (self.station_distances - np.amin(self.station_distances))
+        
+        # normalise so max distance is at 1
+        profile_x /= (np.amax(self.station_distances)-np.amin(self.station_distances))
+        
+        # make an empty array to put buffered distances
         profile_x_buf = np.zeros_like(profile_x)      
-        print profile_x
-        print [m.station for m in self.Model_suite.model_list]
         
         modelno = self.Model_suite.modelno
-        print modelno
-        px = self.plotsize_x      
+
+        px = self.ax_width    
         
+        # shift each station along the profile so that they don't overlap each other
         for i in range(len(profile_x)):
             if i == 0:
                 profile_x_buf[i] = profile_x[i]
             else:
                 profile_x_buf[i] = max(profile_x[i],profile_x_buf[i-1]+px+self.plot_spacing)
 
-        px /= np.amax(profile_x_buf)
-        profile_x_buf /= np.amax(profile_x_buf)/(1.-2.*px)
+        
+#        px /= np.amax(profile_x_buf)/(self.fig_width)
+        # renormalise so that end station is still within the plot bounds
+        profile_x_buf /= np.amax(profile_x_buf)/(self.fig_width-3.*px)
+#        px *= (1.-3.*px)
+#        profile_x_buf *= (1.-3.*px)
+        profile_x_buf += px
 
-        plt.figure(figsize=(len(profile_x),5))
+        if new_figure:        
+            plt.figure(figsize=(len(profile_x),5*self.ax_height))
 
         for i in range(len(profile_x_buf)):
-            plt.axes([profile_x_buf[i],0.1,px,0.8])
-            
+            ax = plt.axes([profile_x_buf[i],self.ax_bottom,px,self.ax_height])
+         
             model = self.Model_suite.model_list[i]
             model.read_model()
             modelvals = model.models[modelno]
-            if parameter == 'minmax':
-                plt.plot(modelvals[:,2],modelvals[:,1],'k--')
-                plt.plot(modelvals[:,3],modelvals[:,1],'k-')
-            plt.ylim(self.ylim)
-            if i != 0:
-                plt.gca().set_xticklabels([])
-            plt.xscale('log')
-            plt.title(model.station)
             if horizon_list is not None:
                 for h in horizon_list:
                     elev = ed.get_elevation(model.x,model.y,h)
-                    plt.plot(plt.xlim(),[-elev/1000.]*2)
-            
+                    elev = p1dp.update_scale(elev,horizon_zscale)
+                    plt.plot(xlim,[elev]*2)
 
+            if 'minmax' in parameter:
+                plt.plot(modelvals[:,3],modelvals[:,1],'0.5')
+                plt.plot(modelvals[:,2],modelvals[:,1],'k-')
+                plt.xscale('log')
+            if 'aniso' in parameter:
+                plt.plot(modelvals[:,3]/modelvals[:,2],modelvals[:,1],'k-')
+            if 'strike' in parameter:
+                plt.plot(modelvals[:,4]%180,modelvals[:,1],'k-')
+            plt.ylim(self.ylim)
+            plt.xlim(xlim)
+            if i != 0:
+                plt.gca().set_yticklabels([])
+            plt.gca().set_xticklabels([])
+            if i == 0:
+                plt.title(self.titles[parameter],
+                          loc = 'left')
+                plt.ylabel('Depth, km')
+
+            
+        self.profile_x = profile_x_buf
+        
+    def plot_location_map(self):
+        """
+        plot location map of all stations with profile shown on map.        
+        
+        """
+        
+        if self.Model_suite.station_xyfile is None:
+            print "can't get locations, no x y file"
+            return
+        
+        if not hasattr(self,'profile_origin'):
+            self.get_profile_origin()
+            
+        xy_all = np.genfromtxt(self.Model_suite.station_xyfile,invalid_raise=False)[:,1:]
+        plt.plot(xy_all[:,0],xy_all[:,1],'k.')
+        
+        m,c = self.profile
+        x0,y0 = self.profile_origin
+        
+        if m > 1:
+            y1 = max(self.Model_suite.y)
+            x1 = (y1-c)/m
+        else:
+            x1 = max(self.Model_suite.x)
+            y1 = m*x1 + c
+        
+        plt.plot([x0,x1],[y0,y1])
+        
+        
+        
         
