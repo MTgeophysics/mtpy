@@ -166,9 +166,9 @@ def read_survey_configfile(filename):
 
     E-field recorded:
 
-    - E_logger_type (edl/elogger)
-    - E_logger_gain (factor/gain level)
-    - E_instrument_type (electrodes)
+    - E_logger_type ('edl'/'elogger'/'qel')
+    - E_logger_gain (factor/gain-level)
+    - E_instrument_type ('electrodes'/'dipole')
     - E_instrument_amplification (applied amplification factor)
     - E_Xaxis_azimuth (degrees)
     - E_Xaxis_length (in meters)
@@ -177,9 +177,9 @@ def read_survey_configfile(filename):
 
     B-field recorded:
   
-    - B_logger_type (edl)
+    - B_logger_type ('edl'/'qel_blogger')
     - B_logger_gain (factor/gain level)
-    - B_instrument_type (coil, fluxgate)
+    - B_instrument_type ('coil(s)', 'fluxgate')
     - B_instrument_amplification (applied amplification factor)
     - B_Xaxis_azimuth (degrees)
     - B_Yaxis_azimuth (degrees)
@@ -188,22 +188,22 @@ def read_survey_configfile(filename):
 
 
 
-    dict_of_allowed_values_efield = {'E_logger_type':['edl','elogger', 'zen'] ,
+    dict_of_allowed_values_efield = {'E_logger_type':['edl','elogger', 'zen','qel'] ,
                                     'E_logger_gain': ['low', 'verylow','high', 
                                                       0.4, 1, 10, 11, 2, 4, 
                                                       8, 16, 32, 64],
-                                    'E_instrument_type':['electrodes', 
+                                    'E_instrument_type':['electrodes','dipole', 
                                                          'cu-cuso4 electrodes',
                                                          'cuso4_electrodes',
                                                          'pbcl2_electrodes'],
                                     'E_instrument_amplification':[1,10]
                                     }
     
-    dict_of_allowed_values_bfield = {'B_logger_type':['edl', 'zen'] ,
+    dict_of_allowed_values_bfield = {'B_logger_type':['edl', 'zen','qel_blogger'] ,
                                     'B_logger_gain': ['low', 'verylow','high',
                                                       0.4, 1, 10, 2, 4, 
                                                       8, 16, 32, 64],
-                                    'B_instrument_type':['fluxgate', 'coil']
+                                    'B_instrument_type':['fluxgate', 'coil','coils']
                                     }
 
     list_of_station_types = ['mt','e','b']
@@ -316,47 +316,48 @@ def read_survey_configfile(filename):
     #in the same config file!
     for station in config_dict.iterkeys():
         stationdict = config_dict[station]
+        if not stationdict.has_key('rr_station'):
+            continue
 
-        stationdict['rr_station'] = None
+        #stationdict['rr_station'] = None
         stationdict['rr_station_latitude'] = None
         stationdict['rr_station_longitude'] = None
         stationdict['rr_station_elevation'] = None
 
 
-        if stationdict.has_key('rr_station'):
-            rem_station = stationdict['rr_station'] 
+        rem_station = stationdict['rr_station'] 
+        try:
+            #check, if values are contained in dict 
+            float(stationdict['rr_station_latitude'] )
+            float(stationdict['rr_station_longitude'])
+            float(stationdict['rr_station_elevation'])
+        except:
             try:
-                #check, if values are contained in dict 
-                float(stationdict['rr_station_latitude'] )
-                float(stationdict['rr_station_longitude'])
-                float(stationdict['rr_station_elevation'])
+                #check for shortened form
+                stationdict['rr_station_latitude']  = float(
+                                        stationdict['rr_station_lat'] )
+                stationdict['rr_station_longitude'] = float(
+                                        stationdict['rr_station_lon'] )
+                stationdict['rr_station_elevation'] = float(
+                                        stationdict['rr_station_ele'] )                 
+
             except:
                 try:
-                    #check for shortened form
-                    stationdict['rr_station_latitude']  = float(
-                                            stationdict['rr_station_lat'] )
-                    stationdict['rr_station_longitude'] = float(
-                                            stationdict['rr_station_lon'] )
-                    stationdict['rr_station_elevation'] = float(
-                                            stationdict['rr_station_ele'] )                 
+                    #read from other config dict entry
+                    stationdict['rr_station_latitude'] = \
+                                      config_dict[rem_station]['latitude']
+                    stationdict['rr_station_longitude'] = \
+                                     config_dict[rem_station]['longitude']
+                    stationdict['rr_station_elevation'] = \
+                                     config_dict[rem_station]['elevation']
 
                 except:
-                    try:
-                        #read from other config dict entry
-                        stationdict['rr_station_latitude'] = \
-                                          config_dict[rem_station]['latitude']
-                        stationdict['rr_station_longitude'] = \
-                                         config_dict[rem_station]['longitude']
-                        stationdict['rr_station_elevation'] = \
-                                         config_dict[rem_station]['elevation']
-
-                    except:
-                        #if finally failed to read rr_station info,\
-                        #set rr_station back to None
-                        stationdict['rr_station'] = None
-                        stationdict['rr_station_latitude'] = None
-                        stationdict['rr_station_longitude'] = None
-                        stationdict['rr_station_elevation'] = None
+                    #if finally failed to read rr_station info,\
+                    #set rr_station back to None
+                    stationdict['rr_station'] = None
+                    stationdict['rr_station_latitude'] = None
+                    stationdict['rr_station_longitude'] = None
+                    stationdict['rr_station_elevation'] = None
 
         #check consistency of coordinates, if rr_station is present
         if stationdict['rr_station'] != None:

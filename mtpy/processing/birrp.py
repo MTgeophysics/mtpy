@@ -1665,6 +1665,7 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
         raise MTex.MTpyError_config_file( 'No information about station {0} found in configuration file: {1}'.format(stationname, survey_configfile) )
 
     station_config_dict = survey_config_dict[stationname]
+    print station_config_dict
 
 
     #read the BIRRP/processing config file:
@@ -1697,7 +1698,7 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
     # Dictionaries information goes into EDI header: HEAD and INFO section - check for other sections though
     # output EDI file is out_fn
       
-    periods, Z_array, tipper_array = read_j_file(j_filename)
+    periods, Z_array, tipper_array,processing_dict,sorting_dict = read_j_file(j_filename)
 
 
     HEAD = _set_edi_head(station_config_dict,birrp_config_dict)
@@ -1827,7 +1828,10 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
     # Dictionaries information goes into EDI header: HEAD and INFO section - check for other sections though
     # output EDI file is out_fn
     
-    periods, Z_array, tipper_array = read_j_file(j_filename)
+    periods, Z_array, tipper_array,processing_dict,sorting_dict = read_j_file(j_filename)
+
+    #add meta data from j-file to the processing dictionary:
+    birrp_config_dict.update(processing_dict)
 
     frequencies = 1./periods
     
@@ -1869,7 +1873,7 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
             #finally correct Z for the instrument influence by multiplying with the instrument response value: 
             for i in range(4):
                 zentry = np.complex(Z_array[idx_f,0,i], Z_array[idx_f,1,i] )
-                corrected = zentry * correction_factor
+                corrected = zentry * correction_factor 
                 Z_array[idx_f,0,i] = np.real(corrected)
                 Z_array[idx_f,1,i] = np.imag(corrected)
                 #correct the error: stretch by the ratio of amplitudes of original and correct Z value
@@ -1884,7 +1888,7 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
 
 
     HEAD = _set_edi_head(station_config_dict,birrp_config_dict)
-    INFO = _set_edi_info(station_config_dict,birrp_config_dict)
+    INFO = _set_edi_info(station_config_dict,birrp_config_dict,sorting_dict)
     DATA = _set_edi_data(periods, Z_array, tipper_array)
     DEFINEMEAS = _set_edi_defmeas(station_config_dict)
     MTSECT = _set_edi_mtsect(station_config_dict,periods)
@@ -1970,10 +1974,15 @@ def _set_edi_data(lo_periods, Z_array, tipper_array):
     return datastring.expandtabs(4)
 
 
-def _set_edi_info(station_config_dict,birrp_config_dict):
+def _set_edi_info(station_config_dict,birrp_config_dict,sorting_dict):
 
     infostring = ''
     infostring += '>INFO\t max lines=1000\n'
+    infostring += '\t\tEDI file generated using MTpy\n'
+    infostring += '\t\tTF processing: BIRRP \n'
+    infostring += '\t\tZ unit: km/s \n\n'
+   
+  
     infostring += '\tStation parameters\n'
 
     for key in sorted(station_config_dict.iterkeys()):
@@ -1982,11 +1991,28 @@ def _set_edi_info(station_config_dict,birrp_config_dict):
     
 
     infostring += '\n'
-    infostring += '\tProcessing parameters\n'
+    infostring += '\tBIRRP processing parameters\n'
 
-    for key in sorted(birrp_config_dict.iterkeys()):
+    temp_dict = birrp_config_dict.copy()
+    #first write out all imtems, which are vcontained in the sorting dict, then 
+    #append the ones that are left
+    for key in sorted(sorting_dict):
+        newkey = sorting_dict[key]
+        try:
+            infostring += '\t\t{0}: {1}  \n'.format(str(newkey),
+                                                temp_dict.pop(newkey))
+        except:
+            continue
+
+
+    for key in sorted(temp_dict.iterkeys()):
         infostring += '\t\t{0}: {1}  \n'.format(str(key),
-                                                str(birrp_config_dict[key]))   
+                                                str(temp_dict[key]))   
+
+    # for key in sorted(birrp_config_dict.iterkeys()):
+    #     infostring += '\t\t{0}: {1}  \n'.format(str(key),
+    #                                             str(birrp_config_dict[key]))   
+
     infostring += '\n'    
     if len(birrp_config_dict) == 0 :
         infostring += '\t\tunknown\n\n'
@@ -2003,10 +2029,10 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
     
     set date to format YYYY-MM-DD,HH:MM:SS
     """
-    frmt = '%Y/%m/%dT%H:%M:%S'
+    frmt = '%Y/%m/%d %H:%M:%S UTC'
 
     headstring = ''
-    headstring += '>HEAD\n\n'
+    headstring += '>HEAD\n'
     if len((station_config_dict['station'].split())) != 1: 
         headstring += '\tdataid="%s"\n'%(station_config_dict['station'])
     else:
@@ -2015,6 +2041,8 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
 
     if station_config_dict.has_key('company'):
         acqby = station_config_dict.has_key('company')
+    elif station_config_dict.has_key('acqby'):
+        acqby = station_config_dict.has_key('acqby')
     else:
         acqby = ''
 
@@ -2138,6 +2166,16 @@ def _set_edi_mtsect(station_config_dict,periods):
 def read_j_file(fn):
     """
     read_j_file will read in a *.j file output by BIRRP (better than reading lots of *.<k>r<l>.rf files)
+
+    Input:
+    j-filename
+
+    Output: 4-tuple
+    - periods : N-array
+    - Z_array : 2-tuple - values and errors
+    - tipper_array : 2-tuple - values and errors
+    - processing_dict : parsed processing parameters from j-file header
+
     """   
 
     j_fn = op.abspath(fn)
@@ -2148,6 +2186,9 @@ def read_j_file(fn):
     
     with open(j_fn,'r') as F_in:
         j_lines = F_in.readlines()
+
+    processing_dict,sorting_dict = parse_jfile_header(j_lines)
+
     
     Z_start_row = None
     tipper_start_row = None
@@ -2223,10 +2264,77 @@ def read_j_file(fn):
                             value = np.nan
                         tipper[idx_per,idx_z_entry,idx_comp] = value
 
+    periods,Z,tipper = _check_j_file_content(periods, Z, tipper)
+
+    return periods, Z, tipper, processing_dict,sorting_dict
+
+def parse_jfile_header(j_lines):
+
+    """
+    Parsing the header lines of a j-file to extract processing information.
+
+    Input:
+    - j-file as list of lines (output of readlines())
+
+    Output:
+    - Dictionary with all parameters found
+
+    !TODO!
+    
+    """
+    header_dict = {}
+    sorting_dict = {}
+    tuples = []
+
+    for line in j_lines:
+        if not '=' in line: continue
+        if not '#' in line: continue
+        line = line.strip().replace('#','')
+        line=[i.strip() for i in line.split('=')]
+        no_keys = len(line)-1
+        elements = [line[0]]
+        for i in np.arange(no_keys-1)+1:
+            elements.extend(line[i].split())
+        elements.append(line[-1])
+
+        for i in np.arange(no_keys)*2:
+            tuples.append([elements[i],elements[i+1]])
+
+        #print elements
+    #print tuples 
+
+    for dict_idx,pair in enumerate(tuples):
+        k= pair[0]
+        v= pair[1]
+        if len(v) == 0:
+            continue
+        try:
+            v = float(v)
+            try:
+                if v%1 ==0:
+                    v = int(v)
+            except:
+                pass
+        except:
+            pass
+        if k=='deltat':
+            header_dict['sampling_rate'] = 1./v
+        if k=='nread':
+            header_dict['n_samples']=v
+
+        idx = 2
+        if k in header_dict.keys():
+            knew = k
+            while knew in header_dict.keys():
+                knew = '{0}_{1}'.format(k,idx)
+                idx += 1
+            k = knew
+        header_dict[k] = v
+
+        sorting_dict[dict_idx+1]=k
 
 
-    return _check_j_file_content(periods, Z, tipper)
-
+    return header_dict,sorting_dict
  
 
 def _check_j_file_content( periods_array, Z_array, tipper_array):

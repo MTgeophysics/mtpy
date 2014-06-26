@@ -2066,7 +2066,6 @@ def _generate_edifile_string(edidict):
         raise MTex.MTpyError_edi_file('Cannot generate string from empty'+\
                              'EDI dictionary. Fill dict or read in file first')
 
-
     for sectionhead in lo_sectionheads:
 
         if sectionhead == 'HEAD':
@@ -2111,6 +2110,8 @@ def _generate_edifile_string(edidict):
                 edistring += '>INFO \n'
 
             for k in sorted(info_dict.iterkeys()):
+                # if k.startswith('__'):
+                #     continue
                 v = str(info_dict[k])
                 #get station name (to be returned aside with the edistring, 
                 #                  allowing for proper naming of output file)
