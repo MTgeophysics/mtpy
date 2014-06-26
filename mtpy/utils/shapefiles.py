@@ -918,36 +918,36 @@ def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
 #==============================================================================
 # test
 #==============================================================================
-#edipath = r"c:\Users\jrpeacock\Documents\Mendenhall\MonoBasin\EDI_Files\GeographicNorth"
-#edilst = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
-#          if edi.find('.edi') > 0]
-#edilst.remove(os.path.join(edipath, 'mb035.edi'))
+##edipath = r"c:\Users\jrpeacock\Documents\Mendenhall\MonoBasin\EDI_Files\GeographicNorth"
+##edilst = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
+##          if edi.find('.edi') > 0]
+##edilst.remove(os.path.join(edipath, 'mb035.edi'))
+##
+##pts = PTShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
+##pts.projection = 'NAD27'
+##pts.ellipse_size = 1200
+##pts.write_shape_files()
 #
-#pts = PTShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
-#pts.projection = 'NAD27'
-#pts.ellipse_size = 1200
-#pts.write_shape_files()
-
-
-#tps = TipperShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
+#
+##tps = TipperShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
+##tps.projection = 'NAD27'
+##tps.arrow_lw = 30
+##tps.arrow_head_height = 100
+##tps.arrow_head_width = 70
+##tps.write_real_shape_files()
+##tps.write_imag_shape_files()
+#    
+#mfn = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\Modular_NLCG_110.dat"
+#sv_path = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\GIS_Tip_Response"
+##sv_path = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\GIS_PT_Response"
+##pts = PTShapeFile(save_path=sv_path)
+##pts.projection = 'NAD27'
+##pts.ellipse_size = 1200
+##pts.write_pt_shape_files_modem(mfn)
+#
+#tps = TipperShapeFile(save_path=sv_path)
 #tps.projection = 'NAD27'
 #tps.arrow_lw = 30
 #tps.arrow_head_height = 100
 #tps.arrow_head_width = 70
-#tps.write_real_shape_files()
-#tps.write_imag_shape_files()
-    
-mfn = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\Modular_NLCG_110.dat"
-sv_path = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\GIS_Tip_Response"
-#sv_path = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\GIS_PT_Response"
-#pts = PTShapeFile(save_path=sv_path)
-#pts.projection = 'NAD27'
-#pts.ellipse_size = 1200
-#pts.write_pt_shape_files_modem(mfn)
-
-tps = TipperShapeFile(save_path=sv_path)
-tps.projection = 'NAD27'
-tps.arrow_lw = 30
-tps.arrow_head_height = 100
-tps.arrow_head_width = 70
-tps.write_tip_shape_files_modem(mfn)
+#tps.write_tip_shape_files_modem(mfn)

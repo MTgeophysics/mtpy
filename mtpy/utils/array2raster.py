@@ -19,6 +19,15 @@ class ModEM2Raster(object):
     """
     create a raster image of a model slice from a ModEM model
     
+    :Example: ::
+        >>> import mtpy.utils.array2raster as a2r
+        >>> mfn = r"/home/ModEM/Inv1/Modular_NLCG_110.rho"
+        >>> m_obj = a2r.ModEM2Raster()
+        >>> m_obj.model_fn = mfn
+        >>> m_obj.origin = (-119.11, 37.80)
+        >>> m_obj.write_raster_files(save_path=r"/home/ModEM/Inv1/GIS_depth_slices")
+
+    
     """
 
     def __init__(self, **kwargs):
@@ -197,9 +206,9 @@ def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
 #==============================================================================
 # modem test
 #==============================================================================
-mfn = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\Modular_NLCG_110.rho"
-
-m_obj = ModEM2Raster()
-m_obj.model_fn = mfn
-m_obj.origin = (-119.11, 37.80)
-m_obj.write_raster_files(save_path=r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\GIS_depth_slices")
+#mfn = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\Modular_NLCG_110.rho"
+#
+#m_obj = ModEM2Raster()
+#m_obj.model_fn = mfn
+#m_obj.origin = (-119.11, 37.80)
+#m_obj.write_raster_files(save_path=r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\GIS_depth_slices")
