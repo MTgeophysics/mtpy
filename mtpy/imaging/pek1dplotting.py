@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import scipy.interpolate as si
 import mtpy.modeling.pek1dclasses as pek1dc
 import mtpy.utils.elevation_data as ed
+from matplotlib.font_manager import FontProperties
 
 class Plot_model():
     """
@@ -599,14 +600,14 @@ class Plot_profile():
             else:
                 profile_x_buf[i] = max(profile_x[i],profile_x_buf[i-1]+px+self.plot_spacing)
 
-        
-#        px /= np.amax(profile_x_buf)/(self.fig_width)
         # renormalise so that end station is still within the plot bounds
         profile_x_buf /= np.amax(profile_x_buf)/(self.fig_width-3.*px)
-#        px *= (1.-3.*px)
-#        profile_x_buf *= (1.-3.*px)
         profile_x_buf += px
 
+        font0 = FontProperties()
+        font = font0.copy()
+        font.set_family('serif')        
+        
         if new_figure:        
             plt.figure(figsize=(len(profile_x),5*self.ax_height))
 
@@ -633,12 +634,16 @@ class Plot_profile():
             plt.ylim(self.ylim)
             plt.xlim(xlim)
             if i != 0:
-                plt.gca().set_yticklabels([])
-            plt.gca().set_xticklabels([])
+                ax.set_yticklabels([])
+            else:
+                for label in ax.get_yticklabels():
+                    label.set_fontproperties(font)
+            ax.set_xticklabels([])
             if i == 0:
                 plt.title(self.titles[parameter],
+                          fontproperties=font,
                           loc = 'left')
-                plt.ylabel('Depth, km')
+                plt.ylabel('$Depth, km$')
 
             
         self.profile_x = profile_x_buf
@@ -655,9 +660,13 @@ class Plot_profile():
         
         if not hasattr(self,'profile_origin'):
             self.get_profile_origin()
+
+        font0 = FontProperties()
+        font = font0.copy()
+        font.set_family('serif')        
             
         xy_all = np.genfromtxt(self.Model_suite.station_xyfile,invalid_raise=False)[:,1:]
-        plt.plot(xy_all[:,0],xy_all[:,1],'k.')
+        plt.plot(xy_all[:,0],xy_all[:,1],'.',c='0.5')
         
         m,c = self.profile
         x0,y0 = self.profile_origin
@@ -669,8 +678,12 @@ class Plot_profile():
             x1 = max(self.Model_suite.x)
             y1 = m*x1 + c
         
-        plt.plot([x0,x1],[y0,y1])
+        plt.plot([x0,x1],[y0,y1],'k')
+        plt.plot(self.Model_suite.x,self.Model_suite.y,'k.')
         
-        
-        
+        ax=plt.gca()
+        for label in ax.get_yticklabels():
+            label.set_fontproperties(font)
+        for label in ax.get_xticklabels():
+            label.set_fontproperties(font)        
         
