@@ -14,6 +14,7 @@ except ImportError:
 import numpy as np
 import os
 import mtpy.core.mt as mt
+import mtpy.modeling.modem_new as modem
 
 ogr.UseExceptions()
 
@@ -89,9 +90,10 @@ class PTShapeFile(object):
             
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-            
-        self._get_plot_period()
-        self._get_pt_array()
+        
+        if self.mt_obj_list is not None:
+            self._get_plot_period()
+            self._get_pt_array()
         
         self._proj_dict = {'WGS84':4326, 'NAD27':4267}
         
@@ -292,7 +294,20 @@ class PTShapeFile(object):
             
             print 'Wrote shape file to {0}'.format(shape_fn)
             
+    def write_pt_shape_files_modem(self, modem_data_fn):
+        """
+        write pt files from a modem data file.
+        
+        """
 
+        modem_obj = modem.Data()
+        modem_obj.read_data_file(modem_data_fn)
+        
+        self.plot_period = modem_obj.period_list.copy()
+        self.mt_obj_list = [modem_obj.mt_dict[key] 
+                            for key in modem_obj.mt_dict.keys()]
+        self.write_shape_files()
+        
 #==============================================================================
 # Tipper arrows
 #==============================================================================
@@ -380,8 +395,9 @@ class TipperShapeFile(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
             
-        self._get_plot_period()
-        self._get_tip_array()
+        if self.mt_obj_list is not None:
+            self._get_plot_period()
+            self._get_tip_array()
         
         self._proj_dict = {'WGS84':4326, 'NAD27':4267}
     
@@ -435,7 +451,8 @@ class TipperShapeFile(object):
                                                                 self.projection)
                         east, north, elev = utm_point             
                         
-                    if mt_obj.Tipper.tipper is not None:             
+                    if mt_obj.Tipper.tipper is not None: 
+                        
                         if mt_obj.Tipper.tipper[p_index].all() != 0.0:
                             tp_tuple = (mt_obj.station, 
                                         east,
@@ -742,6 +759,20 @@ class TipperShapeFile(object):
             
             print 'Wrote shape file to {0}'.format(shape_fn)
             
+    def write_tip_shape_files_modem(self, modem_data_fn):
+        """
+        write pt files from a modem data file.
+        
+        """
+
+        modem_obj = modem.Data()
+        modem_obj.read_data_file(modem_data_fn)
+        
+        self.plot_period = modem_obj.period_list.copy()
+        self.mt_obj_list = [modem_obj.mt_dict[key] 
+                            for key in modem_obj.mt_dict.keys()]
+        self.write_imag_shape_files()
+        self.write_real_shape_files()
 
 #==============================================================================
 # reproject a layer DOESNT WORK YET
@@ -887,15 +918,17 @@ def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
 #==============================================================================
 # test
 #==============================================================================
-edipath = r"c:\Users\jrpeacock\Documents\Mendenhall\MonoBasin\EDI_Files\GeographicNorth"
-edilst = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
-          if edi.find('.edi') > 0]
-edilst.remove(os.path.join(edipath, 'mb035.edi'))
+#edipath = r"c:\Users\jrpeacock\Documents\Mendenhall\MonoBasin\EDI_Files\GeographicNorth"
+#edilst = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
+#          if edi.find('.edi') > 0]
+#edilst.remove(os.path.join(edipath, 'mb035.edi'))
+#
+#pts = PTShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
+#pts.projection = 'NAD27'
+#pts.ellipse_size = 1200
+#pts.write_shape_files()
 
-pts = PTShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
-pts.projection = 'NAD27'
-pts.ellipse_size = 1200
-pts.write_shape_files()
+
 #tps = TipperShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
 #tps.projection = 'NAD27'
 #tps.arrow_lw = 30
@@ -904,3 +937,17 @@ pts.write_shape_files()
 #tps.write_real_shape_files()
 #tps.write_imag_shape_files()
     
+mfn = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\Modular_NLCG_110.dat"
+sv_path = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\GIS_Tip_Response"
+#sv_path = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\GIS_PT_Response"
+#pts = PTShapeFile(save_path=sv_path)
+#pts.projection = 'NAD27'
+#pts.ellipse_size = 1200
+#pts.write_pt_shape_files_modem(mfn)
+
+tps = TipperShapeFile(save_path=sv_path)
+tps.projection = 'NAD27'
+tps.arrow_lw = 30
+tps.arrow_head_height = 100
+tps.arrow_head_width = 70
+tps.write_tip_shape_files_modem(mfn)
