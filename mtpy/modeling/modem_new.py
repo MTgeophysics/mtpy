@@ -412,7 +412,8 @@ class Data(object):
                 #if odd ball zone is north of main zone, add 888960 m 
                 if utm_zones_dict[c_utm_zone[-1]] > main_utm_zone[-1]:
                     north_shift = 888960.*\
-                        abs(utm_zones_dict[c_utm_zone[-1]]-main_utm_zone[-1])
+                                  abs(utm_zones_dict[c_utm_zone[-1]]-\
+                                      utm_zones_dict[main_utm_zone[-1]])
                     print ('adding {0:.2f}'.format(north_shift)+\
                           ' meters N to place station in ' +\
                           'proper coordinates relative to all other ' +\
@@ -421,8 +422,9 @@ class Data(object):
                 
                 #if odd ball zone is south of main zone, subtract 88960 m 
                 elif utm_zones_dict[c_utm_zone[-1]] < main_utm_zone[-1]:
-                    north_shift = 888960.\
-                        *abs(utm_zones_dict[c_utm_zone[-1]]-main_utm_zone[-1])
+                    north_shift = 888960.*\
+                                  abs(utm_zones_dict[c_utm_zone[-1]]-\
+                                      utm_zones_dict[main_utm_zone[-1]])
                     print ('subtracting {0:.2f}'.format(north_shift)+\
                           ' meters N to place station in ' +\
                           'proper coordinates relative to all other ' +\
