@@ -19,6 +19,15 @@ class ModEM2Raster(object):
     """
     create a raster image of a model slice from a ModEM model
     
+    :Example: ::
+        >>> import mtpy.utils.array2raster as a2r
+        >>> mfn = r"/home/ModEM/Inv1/Modular_NLCG_110.rho"
+        >>> m_obj = a2r.ModEM2Raster()
+        >>> m_obj.model_fn = mfn
+        >>> m_obj.origin = (-119.11, 37.80)
+        >>> m_obj.write_raster_files(save_path=r"/home/ModEM/Inv1/GIS_depth_slices")
+
+    
     """
 
     def __init__(self, **kwargs):
@@ -46,11 +55,13 @@ class ModEM2Raster(object):
         self.cell_size_north = np.median(model_obj.nodes_north)
         
         self.pad_east = np.where(model_obj.nodes_east[0:10] > 
-                                                    self.cell_size_east*1.1)
+                                    self.cell_size_east*1.1)[0][-1]
         self.pad_north = np.where(model_obj.nodes_north[0:10] > 
-                                                    self.cell_size_north*1.1)
+                                    self.cell_size_north*1.1)[0][-1]
         self.grid_z = model_obj.grid_z.copy()                                            
-        self.res_array = model_obj.res_model
+        self.res_array = model_obj.res_model[self.pad_north:-self.pad_north,
+                                             self.pad_east:-self.pad_east,
+                                             :]
         
     def write_raster_files(self, save_path=None):
         """
@@ -108,7 +119,7 @@ def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
           values are in log scale for coloring purposes.
     
     """
-    res_array = np.log10(res_array[::-1])
+    res_array = np.log10(np.flipud(res_array[::-1]))
 
     ncols = res_array.shape[1]
     nrows = res_array.shape[0]
@@ -195,9 +206,9 @@ def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
 #==============================================================================
 # modem test
 #==============================================================================
-mfn = r"c:\Users\jrpeacock\Documents\ModEM_Mesh"
-
-m_obj = ModEM2Raster()
-m_obj.model_fn = mfn
-m_obj.origin = (-119.1, 37.85)
-m_obj.write_raster_files(save_path=r"c:\Users\jrpeacock\Documents\RasterTest")
+#mfn = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\Modular_NLCG_110.rho"
+#
+#m_obj = ModEM2Raster()
+#m_obj.model_fn = mfn
+#m_obj.origin = (-119.11, 37.80)
+#m_obj.write_raster_files(save_path=r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\GIS_depth_slices")
