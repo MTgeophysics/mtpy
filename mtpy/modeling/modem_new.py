@@ -319,11 +319,20 @@ class Data(object):
         """
         reset the header sring for file
         """
-        self.header_strings = \
-        ['# Created using MTpy error {0} of {1:.0f}%\n'.format(self.error_type, 
-                                                             self.error_floor), 
-        '# Period(s) Code GG_Lat GG_Lon X(m) Y(m) Z(m) Component Real Imag Error\n']
-   
+        if self.error_type == 'egbert':
+            self.header_strings[0] = \
+            '# Created using MTpy error {0} of {1:.0f}%\n'.format(self.error_type, 
+                                                                  self.error_egbert)
+        elif self.error_type == 'floor':
+            self.header_strings[0] = \
+            '# Created using MTpy error {0} of {1:.0f}%\n'.format(self.error_type, 
+                                                                  self.error_floor)
+        elif self.error_type == 'value':
+            self.header_strings[0] = \
+            '# Created using MTpy error {0} of {1:.0f}%\n'.format(self.error_type, 
+                                                                  self.error_value)
+            
+
     def get_mt_dict(self):
         """
         get mt_dict from edi file list
@@ -451,7 +460,8 @@ class Data(object):
         """
 
         self.get_station_locations()
-        self.get_period_list()
+        if self.period_list is None:
+            self.get_period_list()
              
         ns = len(self.mt_dict.keys())
         nf = len(self.period_list)
@@ -543,8 +553,7 @@ class Data(object):
         if self.coord_array is None:
             self.get_station_locations()
         
-        if self.period_list is None:
-            self.get_period_list()
+        self.get_period_list()
         
         if self.data_array is None:
             self.get_data_from_edi()
@@ -607,9 +616,18 @@ class Data(object):
                                     rel_err = abs(zz)*self.error_value/100.
                                 
                                 elif self.error_type == 'egbert':
-                                    rel_err = np.sqrt(abs(self.data_array[ss][c_key][ff, 0, 1]*\
-                                              self.data_array[ss][c_key][ff, 1, 0]))*\
+                                    d_zxy = self.data_array[ss]['z'][ff, 0, 1]
+                                    d_zyx = self.data_array[ss]['z'][ff, 1, 0]
+                                    rel_err = np.sqrt(abs(d_zxy*d_zyx))*\
                                               self.error_egbert/100.
+#                                    print '-'*10
+#                                    print ' station index = {0}'.format(ss)
+#                                    print ' period index  = {0}'.format(ff)
+#                                    print ' period        = {0:.4f}'.format(self.period_list[ff])
+#                                    print ' z_xy          = {0:.4f}'.format(d_zxy)
+#                                    print ' z_yx          = {0:.4f}'.format(d_zyx)
+#                                    print ' egbert error  = {0:.4f}'.format(rel_err)
+                                    
                             
                             rel_err = '{0:> 14.6e}'.format(abs(rel_err))
                             #make sure that x==north, y==east, z==+down
@@ -2625,7 +2643,7 @@ class PlotResponse(object):
     
         >>> import mtpy.modeling.new_modem as modem
         >>> dfn = r"/home/MT/ModEM/Inv1/DataFile.dat"
-        >>> rfn = r"/home/MT/ModEM/Inv1/Test_resp_000.res"
+        >>> rfn = r"/home/MT/ModEM/Inv1/Test_resp_000.dat"
         >>> mrp = modem.PlotResponse(data_fn=dfn, resp_fn=rfn)
         >>> # plot only the TE and TM modes
         >>> mrp.plot_component = 2
