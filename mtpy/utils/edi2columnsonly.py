@@ -62,6 +62,8 @@ def convert2columns(fn):
 
 	print '\tWritten data to file: {0}\n'.format(outfn)
 
+	return outfn
+
 
 
 

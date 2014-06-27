@@ -49,3 +49,6 @@ class MTpyError_occam( Exception ):
 class MTpyError_parameter_number( Exception ):
     pass
 
+class MTpyError_processing( Exception ):
+    pass
+

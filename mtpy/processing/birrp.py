@@ -1688,7 +1688,8 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
     try:
         j_filename = op.join(input_dir, j_filename_list[0])
     except:
-        raise MTex.MTpyError_file_handling('j-file for station %s not found in directory %s'%(stationname, input_dir))
+        print 'j-file for station %s not found in directory %s'%(stationname, input_dir)
+        raise MTex.MTpyError_file_handling
     
     if len(j_filename_list) > 1:
         print 'Warning - more than one j-file found - taking the first one only: {0}'.format(j_filename)
@@ -1819,7 +1820,8 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
     try:
         j_filename = j_filename_list[0]
     except:
-        raise MTex.MTpyError_file_handling('j-file for station %s not found in directory %s'%(stationname, input_dir))
+        print 'j-file for station %s not found in directory %s'%(stationname, input_dir)
+        raise MTex.MTpyError_file_handling
     
     if len(j_filename_list) > 1:
         print 'Warning - more than one j-file found - taking the first one only: {0}'.format(j_filename)
