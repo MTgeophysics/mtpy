@@ -67,6 +67,7 @@ class Data(object):
                                * lat --> latitude in decimal degrees
                                * lon --> longitude in decimal degrees
                                * elev --> elevation (m)
+                               * zone --> UTM zone
                                * rel_east -- > relative east location to 
                                                center_position (m)
                                * rel_north --> relative north location to 
@@ -83,6 +84,7 @@ class Data(object):
                                                center_position (m)
                                * east --> UTM east (m)
                                * north --> UTM north (m)
+                               * zone --> UTM zone
                                * z --> impedance tensor array with shape
                                        (num_freq, 2, 2)
                                * z_err --> impedance tensor error array with
@@ -269,6 +271,7 @@ class Data(object):
                        ('rel_north', np.float), 
                        ('east', np.float),
                        ('north', np.float),
+                       ('zone', '|S4'),
                        ('z', (np.complex, self._z_shape)),
                        ('z_err', (np.complex, self._z_shape)),
                        ('tip', (np.complex, self._t_shape)),
@@ -310,6 +313,7 @@ class Data(object):
                        ('rel_north', np.float), 
                        ('east', np.float),
                        ('north', np.float),
+                       ('zone', '|S4'),
                        ('z', (np.complex, self._z_shape)),
                        ('z_err', (np.complex, self._z_shape)),
                        ('tip', (np.complex, self._t_shape)),
@@ -319,18 +323,17 @@ class Data(object):
         """
         reset the header sring for file
         """
+        
+        h_str = '# Created using MTpy error {0} of {1:.0f}%\n'
         if self.error_type == 'egbert':
-            self.header_strings[0] = \
-            '# Created using MTpy error {0} of {1:.0f}%\n'.format(self.error_type, 
-                                                                  self.error_egbert)
+            self.header_strings[0] =  h_str.format(self.error_type, 
+                                                   self.error_egbert)
         elif self.error_type == 'floor':
-            self.header_strings[0] = \
-            '# Created using MTpy error {0} of {1:.0f}%\n'.format(self.error_type, 
-                                                                  self.error_floor)
+            self.header_strings[0] = h_str.format(self.error_type, 
+                                                  self.error_floor)
         elif self.error_type == 'value':
-            self.header_strings[0] = \
-            '# Created using MTpy error {0} of {1:.0f}%\n'.format(self.error_type, 
-                                                                  self.error_value)
+            self.header_strings[0] = h_str.format(self.error_type, 
+                                                  self.error_value)
             
 
     def get_mt_dict(self):
@@ -355,7 +358,10 @@ class Data(object):
         """
         get station locations from edi files
         """
-        
+        utm_zones_dict = {'M':9, 'L':8, 'K':7, 'J':6, 'H':5, 'G':4, 'F':3, 
+                          'E':2, 'D':1, 'C':0, 'N':10, 'P':11, 'Q':12, 'R':13,
+                          'S':14, 'T':15, 'U':16, 'V':17, 'W':18, 'X':19}
+                          
         if self.mt_dict is None:
             self.get_mt_dict()
 
@@ -365,6 +371,7 @@ class Data(object):
         self.coord_array = np.zeros(ns, dtype=[('station','|S10'),
                                                ('east', np.float),
                                                ('north', np.float),
+                                               ('zone', '|S4'),
                                                ('lat', np.float),
                                                ('lon', np.float),
                                                ('elev', np.float),
@@ -379,7 +386,67 @@ class Data(object):
             self.coord_array[ii]['east'] = float(mt_obj.east)
             self.coord_array[ii]['north'] = float(mt_obj.north)
             self.coord_array[ii]['elev'] = float(mt_obj.elev)
+            self.coord_array[ii]['zone'] = mt_obj.utm_zone
             
+        #--> need to check to see if all stations are in the same zone
+        utm_zone_list = list(set(self.coord_array['zone']))
+        
+        #if there are more than one zone, figure out which zone is the odd ball
+        utm_zone_dict = dict([(utmzone, 0) for utmzone in utm_zone_list])        
+        if len(utm_zone_list) != 1:
+            for c_arr in self.coord_array:
+                utm_zone_dict[c_arr['zone']] += 1
+        
+            utm_zone_dict = dict([(utm_zone_dict[key], key) 
+                                  for key in utm_zone_dict.keys()])
+            main_utm_zone = utm_zone_dict[max(utm_zone_dict.keys())]
+            diff_zones = np.where(self.coord_array['zone'] != main_utm_zone)[0]
+            for c_index in diff_zones:
+                c_arr = self.coord_array[c_index]
+                c_utm_zone = c_arr['zone']
+               
+                print '{0} utm_zone is {1} and does not match {2}'.format(
+                       c_arr['station'], c_arr['zone'], main_utm_zone)
+                       
+                #--> check to see if the zone is in the same latitude
+                #if odd ball zone is north of main zone, add 888960 m 
+                if utm_zones_dict[c_utm_zone[-1]] > main_utm_zone[-1]:
+                    north_shift = 888960.*\
+                        abs(utm_zones_dict[c_utm_zone[-1]]-main_utm_zone[-1])
+                    print ('adding {0:.2f}'.format(north_shift)+\
+                          ' meters N to place station in ' +\
+                          'proper coordinates relative to all other ' +\
+                           'staions.')
+                    c_arr['north'] += north_shift
+                
+                #if odd ball zone is south of main zone, subtract 88960 m 
+                elif utm_zones_dict[c_utm_zone[-1]] < main_utm_zone[-1]:
+                    north_shift = 888960.\
+                        *abs(utm_zones_dict[c_utm_zone[-1]]-main_utm_zone[-1])
+                    print ('subtracting {0:.2f}'.format(north_shift)+\
+                          ' meters N to place station in ' +\
+                          'proper coordinates relative to all other ' +\
+                           'staions.')
+                    c_arr['north'] -= north_shift
+                
+                #--> if zone is shited east or west
+                if int(c_utm_zone[0:-1]) > int(main_utm_zone[0:-1]):
+                    east_shift = 500000.*\
+                           abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
+                    print ('adding {0:.2f}'.format(east_shift)+\
+                          ' meters E to place station in ' +\
+                          'proper coordinates relative to all other ' +\
+                           'staions.')
+                    c_arr['east'] += east_shift
+                if int(c_utm_zone[0:-1]) < int(main_utm_zone[0:-1]):
+                    east_shift = 500000.*\
+                           abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
+                    print ('subtracting {0:.2f}'.format(east_shift)+\
+                          ' meters E to place station in ' +\
+                          'proper coordinates relative to all other ' +\
+                           'staions.')
+                    c_arr['east'] -= east_shift
+
         #--> get center of the grid
         east_0 = self.coord_array['east'].mean()
         north_0 = self.coord_array['north'].mean()
@@ -703,6 +770,7 @@ class Data(object):
         self.coord_array = np.zeros(ns, dtype=[('station','|S10'),
                                                ('east', np.float),
                                                ('north', np.float),
+                                               ('zone','|S4'), 
                                                ('lat', np.float),
                                                ('lon', np.float),
                                                ('elev', np.float),
@@ -858,6 +926,7 @@ class Data(object):
         self.coord_array = np.zeros(ns, dtype=[('station','|S10'),
                                                ('east', np.float),
                                                ('north', np.float),
+                                               ('zone', '|S4'),  
                                                ('lat', np.float),
                                                ('lon', np.float),
                                                ('elev', np.float),
@@ -870,6 +939,7 @@ class Data(object):
         #Be sure to caclulate invariants and phase tensor for each station
         for ii, s_key in enumerate(sorted(self.mt_dict.keys())):
             mt_obj = self.mt_dict[s_key]
+            mt_obj._get_utm()
             
             self.mt_dict[s_key].zinv.compute_invariants()
             self.mt_dict[s_key].pt.set_z_object(mt_obj.Z)
@@ -879,6 +949,7 @@ class Data(object):
             self.coord_array[ii]['elev'] = mt_obj.elev
             self.coord_array[ii]['rel_east'] = mt_obj.grid_east
             self.coord_array[ii]['rel_north'] = mt_obj.grid_north
+            self.coord_array[ii]['zone'] = mt_obj.utm_zone
             
             
             self.data_array[ii]['station'] = mt_obj.station
@@ -1088,6 +1159,11 @@ class Model(object):
                            stop=3, step=3./pad_east))+west 
         
         """
+        
+        utm_zones_dict = {'M':9, 'L':8, 'K':7, 'J':6, 'H':5, 'G':4, 'F':3, 
+                          'E':2, 'D':1, 'C':0, 'N':10, 'P':11, 'Q':12, 'R':13,
+                          'S':14, 'T':15, 'U':16, 'V':17, 'W':18, 'X':19}
+                       
         #if station locations are not input read from the edi files
         if self.station_locations is None:
             if self.edi_list is None:
@@ -1106,22 +1182,81 @@ class Model(object):
                                                      ('lat', np.float),
                                                      ('lon', np.float),
                                                      ('east', np.float),
-                                                     ('north', np.float), 
+                                                     ('north', np.float),
+                                                     ('zone', '|S4'),
                                                      ('rel_east', np.float),
                                                      ('rel_north', np.float),
                                                      ('elev', np.float)])
             #get station locations in meters
             for ii, edi in enumerate(self.edi_list):
-                zz = mtedi.Edi()
-                zz.readfile(edi)
-                zone, east, north = utm2ll.LLtoUTM(23, zz.lat, zz.lon)
-                self.station_locations[ii]['lat'] = zz.lat
-                self.station_locations[ii]['lon'] = zz.lon
-                self.station_locations[ii]['station'] = zz.station
-                self.station_locations[ii]['east'] = east
-                self.station_locations[ii]['north'] = north
-                self.station_locations[ii]['elev'] = zz.elev
-             
+                mt_obj = mt.MT(edi)
+                self.station_locations[ii]['lat'] = mt_obj.lat
+                self.station_locations[ii]['lon'] = mt_obj.lon
+                self.station_locations[ii]['station'] = mt_obj.station
+                self.station_locations[ii]['east'] = mt_obj.east
+                self.station_locations[ii]['north'] = mt_obj.north
+                self.station_locations[ii]['elev'] = mt_obj.elev
+                self.station_locations[ii]['zone'] = mt_obj.utm_zone
+            
+            #--> need to check to see if all stations are in the same zone
+            utm_zone_list = list(set(self.station_array['zone']))
+            
+            #if there are more than one zone, figure out which zone is the odd ball
+            utm_zone_dict = dict([(utmzone, 0) for utmzone in utm_zone_list])        
+            if len(utm_zone_list) != 1:
+                for c_arr in self.station_array:
+                    utm_zone_dict[c_arr['zone']] += 1
+            
+                utm_zone_dict = dict([(utm_zone_dict[key], key) 
+                                      for key in utm_zone_dict.keys()])
+                main_utm_zone = utm_zone_dict[max(utm_zone_dict.keys())]
+                diff_zones = np.where(self.coord_array['zone'] != main_utm_zone)[0]
+                for c_index in diff_zones:
+                    c_arr = self.station_array[c_index]
+                    c_utm_zone = c_arr['zone']
+                   
+                    print '{0} utm_zone is {1} and does not match {2}'.format(
+                           c_arr['station'], c_arr['zone'], main_utm_zone)
+                           
+                    #--> check to see if the zone is in the same latitude
+                    #if odd ball zone is north of main zone, add 888960 m 
+                    if utm_zones_dict[c_utm_zone[-1]] > main_utm_zone[-1]:
+                        north_shift = 888960.*\
+                            abs(utm_zones_dict[c_utm_zone[-1]]-main_utm_zone[-1])
+                        print ('adding {0:.2f}'.format(north_shift)+\
+                              ' meters N to place station in ' +\
+                              'proper coordinates relative to all other ' +\
+                               'staions.')
+                        c_arr['north'] += north_shift
+                    
+                    #if odd ball zone is south of main zone, subtract 88960 m 
+                    elif utm_zones_dict[c_utm_zone[-1]] < main_utm_zone[-1]:
+                        north_shift = 888960.\
+                            *abs(utm_zones_dict[c_utm_zone[-1]]-main_utm_zone[-1])
+                        print ('subtracting {0:.2f}'.format(north_shift)+\
+                              ' meters N to place station in ' +\
+                              'proper coordinates relative to all other ' +\
+                               'staions.')
+                        c_arr['north'] -= north_shift
+                    
+                    #--> if zone is shited east or west
+                    if int(c_utm_zone[0:-1]) > int(main_utm_zone[0:-1]):
+                        east_shift = 500000.*\
+                               abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
+                        print ('adding {0:.2f}'.format(east_shift)+\
+                              ' meters E to place station in ' +\
+                              'proper coordinates relative to all other ' +\
+                               'staions.')
+                        c_arr['east'] += east_shift
+                    if int(c_utm_zone[0:-1]) < int(main_utm_zone[0:-1]):
+                        east_shift = 500000.*\
+                               abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
+                        print ('subtracting {0:.2f}'.format(east_shift)+\
+                              ' meters E to place station in ' +\
+                              'proper coordinates relative to all other ' +\
+                               'staions.')
+                        c_arr['east'] -= east_shift
+                        
             #remove the average distance to get coordinates in a relative space
             self.station_locations['rel_east'] = self.station_locations['east']-\
                                                  self.station_locations['east'].mean()
@@ -1161,8 +1296,8 @@ class Model(object):
         #cells within station area
         east_gridr = np.arange(start=west, stop=east+self.cell_size_east,
                                step=self.cell_size_east)
-        #padding cells in the east-west direction
         
+        #padding cells in the east-west direction
         for ii in range(1, self.pad_east+1):
             east_0 = float(east_gridr[-1])
             west_0 = float(east_gridr[0])
