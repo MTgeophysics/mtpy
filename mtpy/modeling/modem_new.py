@@ -421,7 +421,7 @@ class Data(object):
                     c_arr['north'] += north_shift
                 
                 #if odd ball zone is south of main zone, subtract 88960 m 
-                elif utm_zones_dict[c_utm_zone[-1]] < main_utm_zone[-1]:
+                if utm_zones_dict[c_utm_zone[-1]] < main_utm_zone[-1]:
                     north_shift = 888960.*\
                                   abs(utm_zones_dict[c_utm_zone[-1]]-\
                                       utm_zones_dict[main_utm_zone[-1]])
@@ -440,7 +440,7 @@ class Data(object):
                           'proper coordinates relative to all other ' +\
                            'staions.')
                     c_arr['east'] += east_shift
-                if int(c_utm_zone[0:-1]) < int(main_utm_zone[0:-1]):
+                elif int(c_utm_zone[0:-1]) < int(main_utm_zone[0:-1]):
                     east_shift = 500000.*\
                            abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
                     print ('subtracting {0:.2f}'.format(east_shift)+\
@@ -1201,20 +1201,20 @@ class Model(object):
                 self.station_locations[ii]['zone'] = mt_obj.utm_zone
             
             #--> need to check to see if all stations are in the same zone
-            utm_zone_list = list(set(self.station_array['zone']))
+            utm_zone_list = list(set(self.station_locations['zone']))
             
             #if there are more than one zone, figure out which zone is the odd ball
             utm_zone_dict = dict([(utmzone, 0) for utmzone in utm_zone_list])        
             if len(utm_zone_list) != 1:
-                for c_arr in self.station_array:
+                for c_arr in self.station_locations:
                     utm_zone_dict[c_arr['zone']] += 1
             
                 utm_zone_dict = dict([(utm_zone_dict[key], key) 
                                       for key in utm_zone_dict.keys()])
                 main_utm_zone = utm_zone_dict[max(utm_zone_dict.keys())]
-                diff_zones = np.where(self.coord_array['zone'] != main_utm_zone)[0]
+                diff_zones = np.where(self.station_locations['zone'] != main_utm_zone)[0]
                 for c_index in diff_zones:
-                    c_arr = self.station_array[c_index]
+                    c_arr = self.station_locations[c_index]
                     c_utm_zone = c_arr['zone']
                    
                     print '{0} utm_zone is {1} and does not match {2}'.format(
@@ -1224,7 +1224,8 @@ class Model(object):
                     #if odd ball zone is north of main zone, add 888960 m 
                     if utm_zones_dict[c_utm_zone[-1]] > main_utm_zone[-1]:
                         north_shift = 888960.*\
-                            abs(utm_zones_dict[c_utm_zone[-1]]-main_utm_zone[-1])
+                                      abs(utm_zones_dict[c_utm_zone[-1]]-\
+                                          utm_zones_dict[main_utm_zone[-1]])
                         print ('adding {0:.2f}'.format(north_shift)+\
                               ' meters N to place station in ' +\
                               'proper coordinates relative to all other ' +\
@@ -1232,9 +1233,10 @@ class Model(object):
                         c_arr['north'] += north_shift
                     
                     #if odd ball zone is south of main zone, subtract 88960 m 
-                    elif utm_zones_dict[c_utm_zone[-1]] < main_utm_zone[-1]:
-                        north_shift = 888960.\
-                            *abs(utm_zones_dict[c_utm_zone[-1]]-main_utm_zone[-1])
+                    if utm_zones_dict[c_utm_zone[-1]] < main_utm_zone[-1]:
+                        north_shift = 888960.*\
+                                      abs(utm_zones_dict[c_utm_zone[-1]]-\
+                                          utm_zones_dict[main_utm_zone[-1]])
                         print ('subtracting {0:.2f}'.format(north_shift)+\
                               ' meters N to place station in ' +\
                               'proper coordinates relative to all other ' +\
@@ -1250,7 +1252,7 @@ class Model(object):
                               'proper coordinates relative to all other ' +\
                                'staions.')
                         c_arr['east'] += east_shift
-                    if int(c_utm_zone[0:-1]) < int(main_utm_zone[0:-1]):
+                    elif int(c_utm_zone[0:-1]) < int(main_utm_zone[0:-1]):
                         east_shift = 500000.*\
                                abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
                         print ('subtracting {0:.2f}'.format(east_shift)+\
