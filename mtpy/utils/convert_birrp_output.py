@@ -130,15 +130,15 @@ def convertbirrpoutput(stationname, datadir, survey_configfile,birrp_configfile=
                 print 'trying to find files for uppercase stationname'
                 cohfn = MTbp.convert2coh(stationname.upper(), datadir) 
             except:
+                cohfn =  None
                 print 'Could not generate coherence file'
-
-
         try:
             edifn = MTbp.convert2edi_incl_instrument_correction(stationname,\
                                                         datadir,\
                                                         survey_configfile,\
                                                         birrp_configfile,\
                                                         ir_fn)
+
         except:
             try:
                 edifn = MTbp.convert2edi_incl_instrument_correction(stationname.upper(),\
@@ -147,6 +147,7 @@ def convertbirrpoutput(stationname, datadir, survey_configfile,birrp_configfile=
                                                         birrp_configfile,\
                                                         ir_fn)
             except:
+                edifn = None
                 print 'Could not generate EDI file'
         
         return edifn, cohfn    
@@ -159,6 +160,7 @@ def convertbirrpoutput(stationname, datadir, survey_configfile,birrp_configfile=
             print 'trying to find files for uppercase stationname'
             cohfn = MTbp.convert2coh(stationname.upper(), datadir) 
         except:
+            cohfn =  None
             print 'Could not generate coherence file'
 
     try:
@@ -175,6 +177,7 @@ def convertbirrpoutput(stationname, datadir, survey_configfile,birrp_configfile=
         
         except:
             print 'Could not generate EDI file'
+            edifn = None
     
     return edifn, cohfn    
 

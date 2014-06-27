@@ -274,6 +274,7 @@ class Edi(object):
 
         edi_dict['HEAD'] = self.head
         edi_dict['INFO'] = self.info_dict
+        edi_dict['info_string'] = self.info_string
         edi_dict['DEFINEMEAS'] = self.definemeas
         edi_dict['HMEAS_EMEAS'] = self.hmeas_emeas
         edi_dict['MTSECT'] = self.mtsect
@@ -1154,14 +1155,23 @@ class Edi(object):
 
 
     #--------------Write out file---------------------------------------------
-    def writefile(self, *fn):
+    def writefile(self, fn=None, allow_overwrite=False, use_info_string=True):
         """
             Write out the edi object into an EDI file.
+
+            Default: existing files are not overwritten, a unique filename is 
+            generated for each new file
+
+            Default: the INFO section is written using the self.info_dict. This
+            behaviour can be changed to allow a verbatim write of the 
+            self.info_string (useful, if existing EDIs are only sliughtly altered)
+
+
         """
 
-        if len(fn) == 0:
+        if fn is not None and len(fn) == 0:
             fn = None
-        else:
+        elif fn is not None:
             #see, if it's iterable
             if type(fn) is not str:
                 fn = fn[0]
@@ -1169,7 +1179,7 @@ class Edi(object):
         self.info_dict['edifile_generated_with'] = 'MTpy'
 
         try:
-            outstring, stationname = _generate_edifile_string(self.edi_dict())
+            outstring, stationname = _generate_edifile_string(self.edi_dict(),use_info_string)
         except:
             print 'ERROR - could not generate valid EDI file \n-> check, if'\
                    ' method "edi_dict" returns sufficient information '
@@ -1193,8 +1203,9 @@ class Edi(object):
 
         if fn == None:
             outfilename = op.abspath(stationname.upper()+'.edi')
-
-        outfilename = MTfh.make_unique_filename(outfilename)
+        
+        if allow_overwrite is not True:
+            outfilename = MTfh.make_unique_filename(outfilename)
 
         try:
             with open(outfilename , 'w') as F:
@@ -2042,7 +2053,7 @@ def rotate_edifile(fn, angle, out_fn = None):
 
 
 
-def _generate_edifile_string(edidict):
+def _generate_edifile_string(edidict,use_info_string=False):
     """
     Generate a string to write out to an EDI file.
 
@@ -2077,6 +2088,9 @@ def _generate_edifile_string(edidict):
             checkdate = 0
             for k in  sorted(head_dict.iterkeys()):
                 v = str(head_dict[k])
+                #remove old time stamp of former EDI file:
+                if k.lower() == 'filedate':
+                    continue
 
                 if len(v) == 0:
                     edistring += '\t%s=""\n'%(k.upper())
@@ -2088,13 +2102,14 @@ def _generate_edifile_string(edidict):
                     except:
                         pass
                     edistring += '\t%s=%s\n'%(k.upper(),v)
-                if k.lower == 'filedate':
-                    checkdate = 1
-            if checkdate == 0:
-                todaystring = datetime.datetime.utcnow().strftime(
-                                                        '%Y/%m/%d %H:%M:%S UTC')
-                edistring += '\tfiledate=%s\n'%(todaystring)
 
+            #update time stamp of the file:
+            todaystring = datetime.datetime.utcnow().strftime(
+                                                    '%Y/%m/%d %H:%M:%S UTC')
+                        
+            todaystring = '\tfiledate="%s"\n'%(todaystring)
+            edistring += todaystring.upper()
+ 
 
         if sectionhead == 'INFO':
             if not sectionhead in edidict:
@@ -2109,20 +2124,27 @@ def _generate_edifile_string(edidict):
             else:
                 edistring += '>INFO \n'
 
-            for k in sorted(info_dict.iterkeys()):
-                # if k.startswith('__'):
-                #     continue
-                v = str(info_dict[k])
-                #get station name (to be returned aside with the edistring, 
-                #                  allowing for proper naming of output file)
-                if k == 'station':
-                    v = v.upper().replace(' ','_')
-                    stationname = v
+            #If an existing info string is to be written verbatim
+            #to not lose any original information (even if uunnecessary/wrong):
+            if use_info_string is True:                
+                edistring += edidict['info_string']
+                edistring += '\n'
+            #otherwise use the standard way of writing dict contents:
+            else:
+                for k in sorted(info_dict.iterkeys()):
+                    # if k.startswith('__'):
+                    #     continue
+                    v = str(info_dict[k])
+                    #get station name (to be returned aside with the edistring, 
+                    #                  allowing for proper naming of output file)
+                    if k == 'station':
+                        v = v.upper().replace(' ','_')
+                        stationname = v
 
-                if len(v) == 0 or len(v.split()) > 1:
-                    edistring += '\t%s: "%s"\n'%(k,v)
-                else:
-                    edistring += '\t%s: %s\n'%(k,v)
+                    if len(v) == 0 or len(v.split()) > 1:
+                        edistring += '\t%s: "%s"\n'%(k,v)
+                    else:
+                        edistring += '\t%s: %s\n'%(k,v)
 
 
 

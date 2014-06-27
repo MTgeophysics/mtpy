@@ -38,6 +38,7 @@ import mtpy.utils.format as MTft
 import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
 import mtpy.utils.misc as MTmc
+import pdb
 
 reload(MTcf)
 reload(MTft)
@@ -1680,14 +1681,17 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
     
 
     #find the birrp-output j-file for the current station 
-    j_filename_list = [i for i in os.listdir(input_dir) if op.basename(i).upper() == ('%s.j'%stationname).upper() ]
+    #j_filename_list = [i for i in os.listdir(input_dir) if op.basename(i).upper() == ('%s.j'%stationname).upper() ]
+    j_filename_list = [i for i in os.listdir(input_dir) if i.lower().endswith('.j') ]
+    j_filename_list = [i for i in  j_filename_list if '{0}'.format(stationname.upper()) in op.basename(i).upper() ]
+    j_filename_list = [op.join(input_dir,i) for i in j_filename_list]
     try:
         j_filename = op.join(input_dir, j_filename_list[0])
     except:
         raise MTex.MTpyError_file_handling('j-file for station %s not found in directory %s'%(stationname, input_dir))
     
     if len(j_filename_list) > 1:
-        raise MTex.MTpyError_file_handling('More than one j-file for station %s found in directory %s'%(stationname, input_dir))
+        print 'Warning - more than one j-file found - taking the first one only: {0}'.format(j_filename)
 
     #Having now:
     # station_config_dict - contains information about station setup
@@ -1809,7 +1813,8 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
             raise MTex.MTpyError_config_file( 'Config file with BIRRP processing parameters could not be read: %s' % (birrp_configfile) )
 
     #find the birrp-output j-file for the current station 
-    j_filename_list = [i for i in os.listdir(input_dir) if op.basename(i).upper() == ('%s.j'%stationname).upper() ]
+    j_filename_list = [i for i in os.listdir(input_dir) if i.lower().endswith('.j') ]
+    j_filename_list = [i for i in  j_filename_list if '{0}'.format(stationname.upper()) in op.basename(i).upper() ]
     j_filename_list = [op.join(input_dir,i) for i in j_filename_list]
     try:
         j_filename = j_filename_list[0]
@@ -1817,7 +1822,8 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
         raise MTex.MTpyError_file_handling('j-file for station %s not found in directory %s'%(stationname, input_dir))
     
     if len(j_filename_list) > 1:
-        raise MTex.MTpyError_file_handling('More than one j-file for station %s found in directory %s'%(stationname, input_dir))
+        print 'Warning - more than one j-file found - taking the first one only: {0}'.format(j_filename)
+        #raise MTex.MTpyError_file_handling('More than one j-file for station %s found in directory %s'%(stationname, input_dir))
 
     #Having now:
     # station_config_dict - contains information about station setup
@@ -1978,9 +1984,9 @@ def _set_edi_info(station_config_dict,birrp_config_dict,sorting_dict):
 
     infostring = ''
     infostring += '>INFO\t max lines=1000\n'
-    infostring += '\t\tEDI file generated using MTpy\n'
-    infostring += '\t\tTF processing: BIRRP \n'
-    infostring += '\t\tZ unit: km/s \n\n'
+    infostring += '\t\tedifile_generated_with: MTpy\n'
+    infostring += '\t\tTF_processing: BIRRP \n'
+    infostring += '\t\tZ_unit: km/s \n\n'
    
   
     infostring += '\tStation parameters\n'
@@ -2079,8 +2085,8 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
                  headstring += '\tacqdate={0} \n'.format('1970-01-01')
                 
 
-    todaystring = datetime.datetime.now().strftime(frmt)
-    headstring += '\tfiledate=%s\n'%(todaystring)
+    todaystring = datetime.datetime.utcnow().strftime(frmt)
+    headstring += '\tfiledate="%s"\n'%(todaystring)
 
 
     network = ''
@@ -2099,7 +2105,7 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
 
     headstring += '\n'
 
-    return headstring.expandtabs(4)
+    return headstring.upper().expandtabs(4)
 
 
 def _set_edi_defmeas(station_config_dict):
