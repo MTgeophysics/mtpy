@@ -1851,7 +1851,9 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
                 correction_factor = 0.
                 continue
 
-            #find the appropriate frequencies ( since the current freq-value is most likely inbetween two values on the instr_freqs-axis) - get the respective value by linear interpolation
+            #find the appropriate frequencies ( since the current freq-value is 
+            #most likely inbetween two values on the instr_freqs-axis) 
+            #- get the respective value by linear interpolation in log-log space!
 
             #find the value closest to the current freq, assume it's lower
             closest_lower = np.abs(freq-instr_resp[:,0]).argmin()
@@ -1863,20 +1865,48 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
             elif closest_lower == 0:
                 correction_factor = np.complex(instr_resp[0,1],instr_resp[0,2])
             else:
-                #in case the closest frequency value is not lower but higher, take the freq value below as lower bound for the interval:        
+                #in case the closest frequency value is not lower but higher, 
+                #take the freq value below as lower bound for the interval:        
                 if instr_resp[closest_lower,0] > freq:
                     closest_lower -= 1
                 
                 #define the interval:
                 instrfreq1 = instr_resp[closest_lower,0]
                 instrfreq2 = instr_resp[closest_lower+1,0]
-                instrfactor1 = np.complex( instr_resp[closest_lower,1]  , instr_resp[closest_lower,2] )
-                instrfactor2 = np.complex( instr_resp[closest_lower+1,1], instr_resp[closest_lower+1,2])
-                intervallength = instrfreq2 - instrfreq1
-                weight = (freq-instrfreq1)/intervallength
 
-                correction_factor = weight * instrfactor2 + (1-weight) * instrfactor1
-                #lo_freqs.append([freq,instrfreq1,instrfreq2,weight,instrfactor1,instrfactor2,factor])
+                #take the interval values:
+                realval1 = instr_resp[closest_lower,1]
+                realval2 = instr_resp[closest_lower+1,1]
+                imagval1 = instr_resp[closest_lower,2]
+                imagval2 = instr_resp[closest_lower+1,2]
+
+
+                #interpolate real and imaginary part independently in log-space:
+                logfreq1 = np.log(instrfreq1)
+                logfreq2 = np.log(instrfreq2)
+
+                loginterval = logfreq2 - logfreq1
+                logfreq = np.log(freq)
+                weight = (logfreq-logfreq1)/loginterval
+
+                #for low frequencies take the log of the values to get into loglog space:
+                if freq <= 5:                    
+                    logrealval1 = np.log(realval1)
+                    logrealval2 = np.log(realval2)
+                    logimagval1 = np.log(imagval1)
+                    logimagval2 = np.log(imagval2)
+                 
+                    interpval_real = np.exp(weight*logrealval1 +  (1-weight) * logrealval2)
+                    interpval_imag = np.exp(weight*logimagval1 +  (1-weight) * logimagval2)
+                    
+
+                else:
+                    interpval_real = np.exp(weight*realval1 +  (1-weight) * realval2)
+                    interpval_imag = np.exp(weight*imagval1 +  (1-weight) * imagval2)
+ 
+
+                correction_factor = np.complex(interpval_real,interpval_imag)
+
             
             #finally correct Z for the instrument influence by multiplying with the instrument response value: 
             for i in range(4):
