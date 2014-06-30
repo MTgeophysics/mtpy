@@ -1666,7 +1666,6 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
         raise MTex.MTpyError_config_file( 'No information about station {0} found in configuration file: {1}'.format(stationname, survey_configfile) )
 
     station_config_dict = survey_config_dict[stationname]
-    print station_config_dict
 
 
     #read the BIRRP/processing config file:
@@ -1708,7 +1707,7 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
 
     HEAD = _set_edi_head(station_config_dict,birrp_config_dict)
 
-    INFO = _set_edi_info(station_config_dict,birrp_config_dict)
+    INFO = _set_edi_info(station_config_dict,birrp_config_dict, sorting_dict)
 
     DATA = _set_edi_data(periods, Z_array, tipper_array)
 
