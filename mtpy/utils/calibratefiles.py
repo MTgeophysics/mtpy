@@ -92,13 +92,13 @@ def main():
     else:
         pathname = [pathname]
 
-
+    #config_dict = MTcf.read_survey_configfile(configfile)
     try:
         config_dict = MTcf.read_survey_configfile(configfile)
         #done internally already 
         #MTcf.validate_dict(config_dict)
     except:
-        sys.exit( 'Config file cannot be read: {0}'.format(configfile) )
+        sys.exit( 'Config file invalid or cannot be read: {0}'.format(configfile) )
 
     #----------------------------------------------------------------------------
 
@@ -158,9 +158,11 @@ def main():
         #this only comes up, if the generic location cannot be generated
         sys.exit('Generic directory cannot be generated: {0}'.format(cal_outdir))
 
+    print '\t Output directory ok: {0}\n'.format(cal_outdir)
+
     #if re-orientation is required, do it first:
     if orientation is True:
-        print '\n....re-orient data first...\n'
+        print '\n\t....re-orient data first...\n'
         ori_outdir = op.abspath(op.join(cal_outdir,'../reoriented_tmp'))
         try:
             if not op.isdir(ori_outdir):
@@ -207,6 +209,7 @@ def main():
         if stationname is not None:
             if stationname.upper() != curr_station.upper():
                 continue
+        print 'reading file {0}...'.format(filename)
 
         channel = lo_allheaders[file_idx]['channel']
         lo_calibrated_stations.append(curr_station)
@@ -244,7 +247,7 @@ def main():
 
             logger = stationdict['e_logger_type']
             gain = float(stationdict['e_logger_gain'])
-            instrument = stationdict['e_instrument_type']
+            instrument = stationdict.get('e_instrument_type','electrodes')
             instrument_amplification = float(stationdict['e_instrument_amplification'])
 
         elif field == 'b':
@@ -254,7 +257,7 @@ def main():
             dipolelength = 1.
             logger = stationdict['b_logger_type']
             gain = float(stationdict['b_logger_gain'])
-            instrument = stationdict['b_instrument_type']
+            instrument = stationdict.get('b_instrument_type','coils')
             instrument_amplification = float(stationdict['b_instrument_amplification'])
 
 

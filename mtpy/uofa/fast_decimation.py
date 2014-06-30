@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 """
-Fast decimation for MTpy ts-data (mtd) files
-(Quick and dirty)
+Fast decimation for MTpy ts-data files
+(Nasty)
 
 - no filtering applied
 - only integer ratios of orignal/output sampling allowed
@@ -63,10 +63,8 @@ def run():
 
     decimation_factor = int(decimation_factor)
 
-    lo_files = os.listdir(inpath)
-
+    lo_files=os.listdir(inpath)
     lo_files = [i for i in lo_files if op.isfile(op.join(inpath,i))]
-    
 
     if len(lo_files) == 0:
     	sys.exit('\n\tERROR - no data files in directory {0} \n'.format(inpath))
@@ -78,62 +76,47 @@ def run():
 
         try:
             header = MTfh.read_ts_header(infile)
-        except MTex.MTpyError_ts_data:
+        except MTex.MTpyError_inputarguments:
             #no TS data file
-            print '\n\tWARNING - not a valid MTpy TS data file: {0} '.format(infile)
-            header = None
-            #continue
-
-        if header is not None:
-            old_sampling = header['samplingrate']        
-            new_sampling = old_sampling/decimation_factor
-        
-        try:
-            old_data = np.loadtxt(infile)
-        except:
-            print '\tERROR - file does not contain single column data: {0} - SKIPPED'.format(infile)
+            print '\tWARNING - not a valid MTpy TS data file: {0} '.format(infile)
             continue
 
+        old_sampling = header['samplingrate']        
+        new_sampling = old_sampling/decimation_factor
 
-        len_data = len(old_data)
-        if header is not None:
-            n_samples = header['nsamples'] 
-
-            if len_data != n_samples:
-                print '\tWARNING - header shows wrong number of samples: {0} instead of {1}'.format(n_samples,len_data)
-
+        old_data = np.loadtxt(infile)
+        n_samples = header['nsamples'] 
 
         print 'Decimating file {0} by factor {1} '.format(infile, decimation_factor)
 
-        if len_data%decimation_factor != 0 :
+        if n_samples%decimation_factor != 0 :
             print 'Warning - decimation of file not continuous due to mismatching decimation factor'
-
-        new_data = old_data[::decimation_factor]
         
-        index = 0
-        while index < len(new_data):
-            old_data_index = index * decimation_factor
+        new_data = [] 
+        counter = 0
+        while counter <= len(old_data):
+            startidx = counter
             try:
-                new_data[index] = np.mean(old_data[old_data_index:old_data_index+decimation_factor])
+                new_data.append(np.mean(old_data[startidx:startidx+decimation_factor]))
             except:
-                new_data[index] = np.mean(old_data[old_data_index:])
+                new_data.append(np.mean(old_data[startidx:]))
 
-            index += 1
+            startidx += decimation_factor
+
+        new_data = np.array(new_data)
+        #new_data = old_data[::decimation_factor]
+
+        header['nsamples'] = len(new_data)
+        header['samplingrate'] = new_sampling
+
+        new_header_line = MTfh.get_ts_header_string(header)
 
         Fout = open(outfile,'w')
-
-        if header is not None:
-            header['nsamples'] = len(new_data)
-            header['samplingrate'] = new_sampling
-
-            new_header_line = MTfh.get_ts_header_string(header)
-            
-            Fout.write(new_header_line)
-        
+        Fout.write(new_header_line)
         np.savetxt(Fout,new_data)
         Fout.close()
 
-    print '\nOutput files written to {0}'.format(outpath)
+    print '\nOutput files written to {0}\n'.format(outpath)
     print '\n...Done\n'
 
 

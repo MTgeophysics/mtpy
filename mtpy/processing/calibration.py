@@ -32,15 +32,20 @@ import os.path as op
 import copy
 
 import  mtpy.utils.exceptions as MTex
+import mtpy.utils.configfile as MTcf
 
 #=================================================================
 
 list_of_channels = ['ex','ey','bx','by','bz']
 
-list_of_loggers = ['edl','elogger']
-list_of_instruments = ['electrodes','fluxgate', 'coil']
-list_of_bfield_loggers = ['edl']
-list_of_bfield_instruments = ['fluxgate', 'coil']
+
+list_of_bfield_loggers = MTcf.dict_of_allowed_values_bfield['B_logger_type']
+list_of_bfield_instruments = MTcf.dict_of_allowed_values_bfield['B_instrument_type']
+list_of_efield_loggers = MTcf.dict_of_allowed_values_efield['E_logger_type']
+list_of_efield_instruments = MTcf.dict_of_allowed_values_efield['E_instrument_type']
+
+list_of_loggers = list(set(list_of_bfield_loggers + list_of_efield_loggers))
+list_of_instruments = list(set(list_of_bfield_instruments+list_of_efield_instruments))
 
 # section for amplification and scaling factors:
 
@@ -384,7 +389,7 @@ def calibrate_file(filename, outdir, instrument, instrument_amplification,
     Fout = open(outfile,'w')
 
     Fout.write(newfirstline)
-    np.savetxt(Fout,data_out)
+    np.savetxt(Fout,data_out,fmt='%.8e')
     Fout.close()
 
     print 'read file',filename ,'  ->  wrote file %s'%(outfile)

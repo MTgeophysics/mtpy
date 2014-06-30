@@ -90,6 +90,28 @@ list_of_keyword_defaults_bfield = ['edl',
                                     90.
                                     ]
 
+
+dict_of_allowed_values_efield = {'E_logger_type':['edl','elogger', 'zen','qel'] ,
+                                'E_logger_gain': ['low', 'verylow','high', 
+                                                  0.4, 1, 10, 11, 2, 4, 
+                                                  8, 16, 32, 64],
+                                'E_instrument_type':['electrodes','dipole', 
+                                                     'cu-cuso4 electrodes',
+                                                     'cuso4_electrodes',
+                                                     'pbcl2_electrodes'],
+                                'E_instrument_amplification':[1,10]
+                                }
+
+dict_of_allowed_values_bfield = {'B_logger_type':['edl', 'zen','qel_blogger'] ,
+                                'B_logger_gain': ['low', 'verylow','high',
+                                                  0.4, 1, 10, 2, 4, 
+                                                  8, 16, 32, 64],
+                                'B_instrument_type':['fluxgate', 'coil','coils']
+                                }
+
+list_of_station_types = ['mt','e','b']
+
+
 #=================================================================
 
 def read_configfile(filename):
@@ -188,25 +210,6 @@ def read_survey_configfile(filename):
 
 
 
-    dict_of_allowed_values_efield = {'E_logger_type':['edl','elogger', 'zen','qel'] ,
-                                    'E_logger_gain': ['low', 'verylow','high', 
-                                                      0.4, 1, 10, 11, 2, 4, 
-                                                      8, 16, 32, 64],
-                                    'E_instrument_type':['electrodes','dipole', 
-                                                         'cu-cuso4 electrodes',
-                                                         'cuso4_electrodes',
-                                                         'pbcl2_electrodes'],
-                                    'E_instrument_amplification':[1,10]
-                                    }
-    
-    dict_of_allowed_values_bfield = {'B_logger_type':['edl', 'zen','qel_blogger'] ,
-                                    'B_logger_gain': ['low', 'verylow','high',
-                                                      0.4, 1, 10, 2, 4, 
-                                                      8, 16, 32, 64],
-                                    'B_instrument_type':['fluxgate', 'coil','coils']
-                                    }
-
-    list_of_station_types = ['mt','e','b']
 
 
     error_counter = 0
@@ -250,33 +253,37 @@ def read_survey_configfile(filename):
 
         #check for presence of all mandatory keywords for the current station
         #case insensitive - allow for short forms 'lat', 'lon', and 'ele'
-        for req_keyword in list_of_required_keywords:
-            if req_keyword.lower() in temp_dict_in.keys():
-                stationdict[req_keyword.lower()] = \
-                                      temp_dict_in[req_keyword.lower()].lower()
-            elif req_keyword in ['latitude', 'longitude', 'elevation']:
-                if req_keyword[:3] in temp_dict_in.keys():
-                    stationdict[req_keyword] = temp_dict_in[req_keyword[:3]]
-            else:  
-                print 'Station {0} - keyword {1} missing'.format(stationname,
-                                                                 req_keyword)
-                error_counter += 1
-                continue
+        try:
+            for req_keyword in list_of_required_keywords:
+                if req_keyword.lower() in temp_dict_in.keys():
+                    stationdict[req_keyword.lower()] = \
+                                          temp_dict_in[req_keyword.lower()].lower()
+                elif req_keyword in ['latitude', 'longitude', 'elevation']:
+                    if req_keyword[:3] in temp_dict_in.keys():
+                        stationdict[req_keyword] = temp_dict_in[req_keyword[:3]]
+                else:  
+                    print 'Station {0} - keyword {1} missing'.format(stationname,
+                                                                     req_keyword)
+                    error_counter += 1
+                    continue
 
-        #check format of lat/lon - convert to degrees, if given in 
-        #(deg,min,sec)-triple
-        for coordinate in ['latitude', 'longitude', 'elevation']:
-            value = stationdict[coordinate]
-            try:
-                new_value = MTft._assert_position_format(coordinate,value)
-            except:
-                raise MTex.MTpyError_config_file('Error - wrong '
-                        'coordinate format for station {0}'.format(stationname))
-            stationdict[coordinate] = new_value
+            #check format of lat/lon - convert to degrees, if given in 
+            #(deg,min,sec)-triple
+            for coordinate in ['latitude', 'longitude', 'elevation']:
+                value = stationdict[coordinate]
+                try:
+                    new_value = MTft._assert_position_format(coordinate,value)
+                except:
+                    raise MTex.MTpyError_config_file('Error - wrong '
+                            'coordinate format for station {0}'.format(stationname))
+                stationdict[coordinate] = new_value
 
-        if not stationdict['station_type'] in list_of_station_types:
-            raise MTex.MTpyError_config_file( 'Station type not valid' )
-
+            if not stationdict['station_type'] in list_of_station_types:
+                raise MTex.MTpyError_config_file( 'Station type not valid' )
+        except:
+            print 'Missing information on station {0} in config file - skipping'.format(
+                                                                        station)
+            continue
 
         if stationdict['station_type'] in ['mt','e']:
             #check for required electric field parameters
@@ -387,10 +394,19 @@ def read_survey_configfile(filename):
     if error_counter != 0:
         print 'Could not read all mandatory sections and options'\
                 ' in config file - found {0} errors - check configuration'\
-                ' file before continuing!'.format(error_counter)
-    
-    else:
-        return config_dict
+                ' file before continue!'.format(error_counter)
+        answer = 5
+        while not answer in ['y','n']:
+            answer = raw_input('\n\tDo you want to continue anyway? (y/n)')
+            try:
+                answer = answer.strip().lower()[0]
+            except:
+                continue
+            if answer == 'n':
+                print
+                sys.exit()
+    print 
+    return config_dict
 
 #=================================================================
 
@@ -433,24 +449,41 @@ def write_dict_to_configfile(dictionary, output_filename):
  
 def _validate_dictionary(dict2validate,referencedict):
 
-    for key, value in referencedict.items():
+    """Check, if there are lists of allowed entries for all 
+    keys of the current dictionary. If yes, test, if the current 
+    value is among the allowed ones. 
+    """
+
+    for key, value in dict2validate.items():
         #make everything to strings - easier to compare
         #in case of numbers, make to float first
+
         try:
-            value2validate = str(float(dict2validate[key.lower()]))
+            allowed_vals = referencedict[key]
         except:
-            value2validate = str( dict2validate[key.lower()] ).lower()
-        
+            try:
+                key = key.lower()
+                allowed_vals = referencedict[key]
+            except:
+                #no reference entry found - skip key
+                continue
+
         tmp = []
-        for i in value:
+        #allowed values must be given as a list (iterable)!!
+        for i in allowed_vals:
             try: 
                 tmp.append(str(float(i)))
             except:
                 tmp.append(str(i))  
-        value = tmp
-        if not value2validate in value:
+        tmp = [i.lower() for  i in tmp]
+        allowed_vals = tmp
+
+        #compare case-insensitive
+        value = value.lower()
+
+        if not value in allowed_vals:
             raise MTex.MTpyError_config_file('Config file error --'
-                ' key {0}, value {1} not valid'.format(key, value2validate) )
+                ' key {0}, value {1} not valid'.format(key, value) )
 
 #==============================================================================
 def read_survey_txt_file(survey_file, delimiter=None):
@@ -536,7 +569,8 @@ def read_survey_txt_file(survey_file, delimiter=None):
     skeys = [i.strip().replace(' ','_') for i in skeys]
        
     survey_dict = {}
-    
+    print skeys, len(skeys)
+
     for ss, sline in enumerate(slines[1:]):
 
         sstr = sline.strip()
@@ -547,11 +581,12 @@ def read_survey_txt_file(survey_file, delimiter=None):
             sstr = sstr.split(delimiter)
         else:
             sstr = sstr.split()
-        
+        print sstr
         #get rid of quotations
         sstr = [i.replace('"','') for i in sstr]  
         #get rid of spaces
         sstr = [i.replace(' ','_') for i in sstr]  
+        print sstr,len(sstr)
        
         if len(sstr) != len(skeys):
             print 'cannot read line {0} - wrong number of entries - need {2}\

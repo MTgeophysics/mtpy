@@ -273,8 +273,9 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                     day_data[arrayindex:arrayindex+len(data_in)] = data_in[:,1]
                     #outfile_data = data_in[:,1].tolist()
                 
+                #jump with index to current point on time axis 
                 arrayindex += len(data_in)
-
+                outfile_endtime = file_end_time
 
                 file_date = '{0}{1:02}{2:02}'.format(file_start[0],
                                                  file_start[1], file_start[2]) 
@@ -296,16 +297,15 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
             else:
                 #check, if the new file ends earlier than data in buffer.
                 #if yes, just skip this file:
-                if file_end_time < outfile_timeaxis[-1]:
+                if file_end_time < outfile_endtime:
                     continue 
 
                 #if current file starts earlier than the endtime of data in buffer then delete ambiguous  parts of the buffer:
                 #elif (outfile_timeaxis[-1] - file_start_time) > epsilon:
-                elif (old_time_axis[-1] - file_start_time) > epsilon:
+                elif (outfile_endtime - file_start_time) > epsilon:
 
                     #find point on the outfile time axis for the beginning of current file:
-                    overlap_idx = np.argmin(np.abs(np.array(
-                                            outfile_timeaxis) - file_start_time)) 
+                    overlap_idx = arrayindex - int((outfile_endtime - file_start_time)/sampling)
 
                     #set the array index back
                     arrayindex = overlap_idx
@@ -322,7 +322,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                     #                             overlap_idx).tolist()
                 
 
-                old_time_axis = tmp_file_time_axis[:]
+                #old_time_axis = tmp_file_time_axis[:]
                 #append current file's time axis
                 #outfile_timeaxis.extend(file_time_axis)
                     
@@ -338,6 +338,8 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
 
 
                 arrayindex += len(data_in)
+                outfile_endtime = (arrayindex+1)*sampling + outfile_starttime
+
 
 
             #-----------
@@ -644,6 +646,11 @@ def read_ts_header(tsfile):
             header_dict[h] = float(header_dict[h])
         except:
             pass
+        try:
+            if header_dict[h]%1==0:
+                header_dict[h] = int(header_dict[h])
+        except:
+            pass
 
     return header_dict
 
@@ -760,7 +767,7 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
         except:
             raise MTex.MTpyError_inputarguments('ERROR - "lo_stations"'
                                                 ' argument must be iterable!')
-    
+    print '\t re-orienting data for collection of stations:\n{0}'.format(lo_stations)
     #Do not require list of headers as input, as this function can be called directly rather than from a 'calibratefiles.py'-like script - so the list not necessarily exists in beforehand - 
     #collect header lines of files in list
     lo_headers = []
@@ -825,7 +832,8 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
 
         for sensor in ['e','b']:
             #TODO:
-            # reduce this function to the re-orientation of files that have the same length for X and Y. Do the puzzlling for varying lengths later!!
+            # reduce this function to the re-orientation of files that have the same length for X and Y. 
+            #Do the puzzlling for varying lengths later!!
 
             for idx_h_x, header_x in enumerate(lo_headers):
                 #looking for one specific station
@@ -904,7 +912,7 @@ def reorient_files(lo_files, configfile, lo_stations = None, outdir = None):
                 if z_file is not None:
                     shutil.copyfile(z_file, z_outfn)
                     written_files.append(z_outfn)
-                print 'written files {0}'.format(written_files)
+                print '\tSuccessfullly written files {0}'.format(written_files)
 
 
             
