@@ -1749,9 +1749,13 @@ def readcoh(filename):
         np.array(zcoh3)
 def bbcalfunc(bbfile,nfreqlst):
     """bbcalfunc(bbfile,nfreqlst) will generate a function fitting the 
-    calibration data in bbfile to the frequencies in nfreqlst using a cubic
+    calibration data in bbfile to the frequencies in nfreqlst using a linear (old:cubic)
     interpolation algorithm.  The output is the real and imaginary functions
-    as a function of the nfreqlst in units of microV/nT.""" 
+    as a function of the nfreqlst (unit depends on calibration file).
+
+    Calibration file must contain values in 3 columns: freq, real, imag
+
+    """ 
     
     fid=file(bbfile,'r')
     fidlines=fid.readlines()
@@ -1769,6 +1773,7 @@ def bbcalfunc(bbfile,nfreqlst):
         linestr=linestr.rstrip()
         linelst=linestr.split(delimiter)
         if len(linelst)>2:
+            #frequency linear:!!
             freq.append(float(linelst[0]))
             breal.append(float(linelst[1]))
             bimag.append(float(linelst[2]))
@@ -1776,16 +1781,72 @@ def bbcalfunc(bbfile,nfreqlst):
             pass
     
     freq=np.array(freq)
+    #frequencies in log space:
+    logfreqs = np.log(freq)
+    #linear values:
     breal=np.array(breal)
     bimag=np.array(bimag)
-    nfreq=np.log10(np.array(nfreqlst))
-    
-    brinterp=interpolate.splrep(freq,breal)
-    brep=1E3*interpolate.splev(nfreq, brinterp)
-    
-    biinterp=interpolate.splrep(freq,bimag)
-    bip=1E3*interpolate.splev(nfreq, biinterp)
-    
+    #frequency of interest in log space:
+    freqs_of_interest = np.array(nfreqlst)
+    brep = []
+    bimp = []
+
+    for idx,f in enumerate(freqs_of_interest):
+        logfreq = np.log(f)
+        #find the calibration value closest to the current freq, assume it's lower
+        closest_lower = np.abs(logfreq-logfreqs).argmin()
+        
+        #if it coincides with the highest frequency/last entry:
+        if closest_lower == len(logfreqs)-1:
+            brep.append(breal[-1])
+            bimp.append(bimag[-1])
+        # or the lowest
+        elif closest_lower == 0:
+            brep.append(breal[0])
+            bimp.append(bimag[0])
+        else:
+            #in case the closest frequency value is not lower but higher, 
+            #take the freq value below as lower bound for the interval:        
+            if logfreqs[closest_lower] > logfreq:
+                closest_lower -= 1
+            
+            #define the interval:
+            logfreq1 = logfreqs[closest_lower]
+            logfreq2 = logfreqs[closest_lower+1]
+
+            #take the interval values:
+            realval1 = breal[closest_lower]
+            realval2 = breal[closest_lower+1]
+            imagval1 = bimag[closest_lower]
+            imagval2 = bimag[closest_lower+1]
+
+
+            loginterval = logfreq2 - logfreq1
+            logfreq = np.log(freq)
+            weight = (logfreq-logfreq1)/loginterval
+
+            #for low frequencies take the log of the values to get into loglog space:
+            if freq <= 5:                    
+                logrealval1 = np.log(realval1)
+                logrealval2 = np.log(realval2)
+                logimagval1 = np.log(imagval1)
+                logimagval2 = np.log(imagval2)
+             
+                interpval_real = np.exp(weight*logrealval1 +  (1-weight) * logrealval2)
+                interpval_imag = np.exp(weight*logimagval1 +  (1-weight) * logimagval2)
+                
+
+            else:
+                interpval_real = weight*realval1 +  (1-weight) * realval2
+                interpval_imag = weight*imagval1 +  (1-weight) * imagval2
+
+
+            brep.append(interpval_real)
+            bimp.append(interpval_imag)
+ 
+    brep = np.array(brep)
+    bimp = np.array(bimp)
+
     return brep,bip
     
 def readj(jfn,egain=1,dlgain=1,dlen=[50,50],magtype='bb',

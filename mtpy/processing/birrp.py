@@ -1901,8 +1901,8 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
                     
 
                 else:
-                    interpval_real = np.exp(weight*realval1 +  (1-weight) * realval2)
-                    interpval_imag = np.exp(weight*imagval1 +  (1-weight) * imagval2)
+                    interpval_real = weight*realval1 +  (1-weight) * realval2
+                    interpval_imag = weight*imagval1 +  (1-weight) * imagval2
  
 
                 correction_factor = np.complex(interpval_real,interpval_imag)
