@@ -1850,7 +1850,7 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
     frequencies = 1./periods
     
     def correct_z_for_instrument_response(Z_array, instr_resp, frequencies):
-        
+
         for idx_f, freq in enumerate(frequencies):
             if not (instr_resp[0,0] <= np.abs(freq) <= instr_resp[-1,0]):
                 print 'no instrument response in this frequency range - array values set to zero here: ', freq
@@ -1893,7 +1893,7 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
 
                 loginterval = logfreq2 - logfreq1
                 logfreq = np.log(freq)
-                weight = (logfreq-logfreq1)/loginterval
+                weight = (logfreq2-logfreq)/loginterval
 
                 #for low frequencies take the log of the values to get into loglog space:
                 if freq <= 5:                    

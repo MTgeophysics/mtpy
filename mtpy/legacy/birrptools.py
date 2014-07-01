@@ -1823,7 +1823,7 @@ def bbcalfunc(bbfile,nfreqlst):
 
             loginterval = logfreq2 - logfreq1
             logfreq = np.log(freq)
-            weight = (logfreq-logfreq1)/loginterval
+            weight = (logfreq2-logfreq)/loginterval
 
             #for low frequencies take the log of the values to get into loglog space:
             if freq <= 5:                    
