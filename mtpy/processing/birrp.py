@@ -32,6 +32,7 @@ import time
 import datetime 
 import fnmatch
 import math
+import scipy.signal as SS
 
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.format as MTft
@@ -662,11 +663,17 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
         print '\t(Created temporary working directory: {0})'.format(w_directory)
 
     #print '\tSize of usable data arry: ',data.shape
+    
+    # for all channels wihtin the 'data'-array:
+    # linear detrending as first order pre-whitening filter for BIRRP
+
+    for i in range(data.shape[1]):
+        data[:,i] = SS.detrend(data[:,i])
 
     try:
         outfn = op.join(w_directory, 'birrp_data.txt') 
         outfn = MTfh.make_unique_filename(outfn)
-        print '\n\tSave input data array to file: {0}...'.format(outfn)
+        print '\n\tSave input data array to file: {0} ...'.format(outfn)
         np.savetxt(outfn, data)
     except:
         raise MTex.MTpyError_file_handling('Error - cannot write data to file:{0}'.format(outfn))

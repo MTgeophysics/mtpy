@@ -221,7 +221,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
         else:
             max_n_data = int(86400./sampling) + 1
 
-        day_data = np.zeros(max_n_data,'float32')
+        day_data = np.zeros(max_n_data,'int')
 
 
         #loop over all (sorted) files for the current component
@@ -229,7 +229,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
 
             try:
 
-                print 'trying to read in file %s' %(f)
+                print 'Reading file %s' %(f)
                 #starting time of current file
                 file_start_time = lo_sorted_starttimes[idx_f]
 
@@ -237,11 +237,19 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                 file_start = time.gmtime(file_start_time)
             
                 #read in raw data
-                data_in = np.loadtxt(f)
+                data_in = []
+                Fin = open(f)
+                for line in Fin:#.readlines():
+                #    try:
+                    data_in.append(int(float(line.strip())))
+                 #   except:
+                  #      pass
+                data_in = np.array(data_in)
+                Fin.close()
+                #data_in = np.loadtxt(f)
             except:
                 print 'WARNING - could not read file - skipping...'
                 continue
-
             no_samples = len(data_in)
 
             tmp_file_time_axis = np.arange(no_samples)*sampling+file_start_time
@@ -379,7 +387,14 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
             if incomplete == 1 :
 
                 #define header info
-                headerline = '# {0} {1} {2:.1f} {3:f} {4} \n'.format(
+                if outfile_starttime%1==0:
+                    outfile_starttime = int(outfile_starttime)
+
+                    headerline = '# {0} {1} {2:.1f} {3} {4} \n'.format(
+                                    stationname, comp.lower(), 1./sampling, 
+                                    outfile_starttime, arrayindex)
+                else:
+                    headerline = '# {0} {1} {2:.1f} {3:f} {4} \n'.format(
                                     stationname, comp.lower(), 1./sampling, 
                                     outfile_starttime, arrayindex)
 
@@ -388,8 +403,11 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                 #outfile_array = np.zeros((len(outfile_timeaxis),2))
                 #outfile_array[:,0] = outfile_timeaxis
                 #outfile_array[:,1] = outfile_data
-
-                np.savetxt(F,day_data[:arrayindex])
+                for i in range(arrayindex):
+                    F.write('{0}\n'.format(int(day_data[i])))
+                #outstring = '\n'.join(['{0:d}'.format(i) for i in day_data[:arrayindex]])
+                #F.write(outstring)
+                #np.savetxt(F,day_data[:arrayindex],fmt='%d')
                 #np.savetxt(F, np.array(outfile_data))
                 arrayindex = 0
                 

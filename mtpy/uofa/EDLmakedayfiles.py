@@ -80,7 +80,7 @@ def main():
     pathname = op.abspath(op.realpath(pathname_raw))
 
     if not op.isdir(pathname):
-        sys.exit('Data file(s) path not existing: {0}'.format(pathname))
+        sys.exit('Data file(s) path not existing: {0}\n'.format(pathname))
 
     try:
         sampling = float(sys.argv[2])
@@ -117,15 +117,15 @@ def main():
         # else:
         station_pathname = pathname
         
-        try:
+        if 1 :
             MTfh.EDL_make_dayfiles(station_pathname, sampling, stationname.upper(), outdir)
-        except MTex.MTpyError_inputarguments:
-            if stationname is None:
-                sys.exit('\n\tERROR - No data found in (sub-)folders\n')
-            else:
-                sys.exit('\n\tERROR - No data found in (sub-)folders for station {0}\n'.format(stationname.upper()))
-        except:
-            sys.exit('\n\tERROR - could not process (sub-)folders')
+        # except MTex.MTpyError_inputarguments:
+        #     if stationname is None:
+        #         sys.exit('\n\tERROR - No data found in (sub-)folders\n')
+        #     else:
+        #         sys.exit('\n\tERROR - No data found in (sub-)folders for station {0}\n'.format(stationname.upper()))
+        # except:
+        #     sys.exit('\n\tERROR - could not process (sub-)folders')
 
     print '\n'
 
