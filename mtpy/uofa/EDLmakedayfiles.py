@@ -117,15 +117,15 @@ def main():
         # else:
         station_pathname = pathname
         
-        if 1 :
+        try :
             MTfh.EDL_make_dayfiles(station_pathname, sampling, stationname.upper(), outdir)
-        # except MTex.MTpyError_inputarguments:
-        #     if stationname is None:
-        #         sys.exit('\n\tERROR - No data found in (sub-)folders\n')
-        #     else:
-        #         sys.exit('\n\tERROR - No data found in (sub-)folders for station {0}\n'.format(stationname.upper()))
-        # except:
-        #     sys.exit('\n\tERROR - could not process (sub-)folders')
+        except MTex.MTpyError_inputarguments:
+            if stationname is None:
+                sys.exit('\n\tERROR - No data found in (sub-)folders\n')
+            else:
+                sys.exit('\n\tERROR - No data found in (sub-)folders for station {0}\n'.format(stationname.upper()))
+        except:
+            sys.exit('\n\tERROR - could not process (sub-)folders')
 
     print '\n'
 

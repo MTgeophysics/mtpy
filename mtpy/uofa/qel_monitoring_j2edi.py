@@ -103,17 +103,17 @@ def convert2edi(station,directory,survey_configfile,instrument_response_file, st
     #split the date information
     dateinfo =  dateinfo.split('-')
 
-    if 1:
+    try:
         day = int(float(dateinfo[0]))
         month = dateinfo[1].lower()
         month_num = {'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,
                         'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12,}[month]
         year = 14
 
-    # except:
-    #     day = 0
-    #     month_num = 0 
-    #     year = 0
+    except:
+        day = 0
+        month_num = 0 
+        year = 0
 
     # re read the edi file:
     e_object = MTedi.Edi(filename=edifn)

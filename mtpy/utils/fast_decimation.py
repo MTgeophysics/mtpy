@@ -88,37 +88,65 @@ def run():
             old_sampling = header['samplingrate']        
             new_sampling = old_sampling/decimation_factor
         
+        
+        new_data = []
         try:
-            old_data = np.loadtxt(infile)
+            #new_data = []
+            #old_data = []
+            counter = 0
+            tempdata = 0 
+            for line in open(infile):
+                line = line.strip().split()
+                if line[0].startswith('#'):
+                    continue
+                val = float(line[0])
+                tempdata += val
+                counter += 1
+                if counter ==  decimation_factor:
+                    new_data.append(tempdata/decimation_factor)
+                    tempdata = 0
+                    counter = 0
+
+            if counter != 0:
+                new_data.append(tempdata/counter)
+
+        #except:
+
+                #if val%1==0:
+                #    val = int(val)
+                #old_data.append(val)
+
+            #old_data = np.array(old_data)
+
         except:
             print '\tERROR - file does not contain single column data: {0} - SKIPPED'.format(infile)
             continue
 
 
-        len_data = len(old_data)
+        #len_data = len(old_data)
         if header is not None:
             n_samples = header['nsamples'] 
 
-            if len_data != n_samples:
-                print '\tWARNING - header shows wrong number of samples: {0} instead of {1}'.format(n_samples,len_data)
+            # if len_data != n_samples:
+            #     print '\tWARNING - header shows wrong number of samples: {0} instead of {1}'.format(n_samples,len_data)
 
 
         print 'Decimating file {0} by factor {1} '.format(infile, decimation_factor)
 
-        if len_data%decimation_factor != 0 :
-            print 'Warning - decimation of file not continuous due to mismatching decimation factor'
+        if n_samples%decimation_factor != 0 :
+            print '\tWarning - decimation of file not continuous due to mismatching decimation factor'
 
-        new_data = old_data[::decimation_factor]
+        #new_data = old_data[::decimation_factor]
         
-        index = 0
-        while index < len(new_data):
-            old_data_index = index * decimation_factor
-            try:
-                new_data[index] = np.mean(old_data[old_data_index:old_data_index+decimation_factor])
-            except:
-                new_data[index] = np.mean(old_data[old_data_index:])
+        # index = 0
+        # while index < len(new_data):
+        #     old_data_index = index * decimation_factor
+        #     try:
+        #         new_data[index] = np.mean(old_data[old_data_index:old_data_index+decimation_factor])
+        #     except:
+        #         new_data[index] = np.mean(old_data[old_data_index:])
 
-            index += 1
+        #     index += 1
 
         Fout = open(outfile,'w')
 
@@ -130,7 +158,12 @@ def run():
             
             Fout.write(new_header_line)
         
-        np.savetxt(Fout,new_data)
+        for i in new_data:
+            if i%1==0:
+                Fout.write('{0:d}\n'.format(int(i)))
+            else:
+                Fout.write('{0:.8}\n'.format(i))
+        #np.savetxt(Fout,new_data)
         Fout.close()
 
     print '\nOutput files written to {0}'.format(outpath)

@@ -66,8 +66,8 @@ def plotedi(fn, saveplot=False):
 
 
 	ax1 = subplot(211)
-	errorbar(periods,res_te,reserr_te, marker='s',c='b',fmt='x')
-	errorbar(periods,res_tm,reserr_tm, marker='s',c='r',fmt='x')
+	errorbar(periods,res_te,reserr_te, marker='x',c='b',fmt='x')
+	errorbar(periods,res_tm,reserr_tm, marker='x',c='r',fmt='x')
 	xscale('log')
 	yscale('log')
 	minval=min( min(res_te,res_tm))
@@ -83,8 +83,8 @@ def plotedi(fn, saveplot=False):
 	#autoscale(False)
 
 	#ylim(-45,135)
-	errorbar(periods,phi_te,phierr_te,marker='s',c='b',fmt='x')
-	errorbar(periods,phi_tm,phierr_tm,marker='s',c='r',fmt='x')
+	errorbar(periods,phi_te,phierr_te,marker='x',c='b',fmt='x')
+	errorbar(periods,phi_tm,phierr_tm,marker='x',c='r',fmt='x')
 	ylabel('phase')
 	xlabel('period (in s)')
 
