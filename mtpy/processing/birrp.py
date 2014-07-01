@@ -51,7 +51,7 @@ epsilon = 1e-5
 #=================================================================
 
 def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, 
-                           coherence_threshold = 0.5, rr_station = None, 
+                           coherence_threshold = 0.0, rr_station = None, 
                            output_dir = None, starttime = None, endtime = None):
 
 
@@ -2071,7 +2071,7 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
     """
     set header string
     
-    set date to format YYYY-MM-DD,HH:MM:SS
+    set date to format YYYY/MM/DD HH:MM:SS UTC
     """
     frmt = '%Y/%m/%d %H:%M:%S UTC'
 
@@ -2107,11 +2107,11 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
         try:
             acq_starttime = float(birrp_config_dict['processing_window_start'])
             dt_start = datetime.datetime.fromtimestamp(acq_starttime)
-            acq_start = dt_start.combine(dt_start.date(),dt_start.time()).strftime(frmt+'.%f')
+            acq_start = dt_start.combine(dt_start.date(),dt_start.time()).strftime(frmt)
 
             dt_end_time =  acq_starttime + 1./sampling_rate*(n_samples) 
             dt_end = datetime.datetime.fromtimestamp(dt_end_time)
-            acq_end = dt_end.combine(dt_end.date(),dt_end.time()).strftime(frmt+'.%f')
+            acq_end = dt_end.combine(dt_end.date(),dt_end.time()).strftime(frmt)
             
             headstring +='\tacqdate=%s \n'%(acq_start)
             headstring +='\tenddate=%s \n'%(acq_end)
@@ -2120,7 +2120,7 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
                 acq_start = station_config_dict.has_key('acq_date')
                 headstring += '\tacqdate={0} \n'.format(acq_start)
             except KeyError:
-                 headstring += '\tacqdate={0} \n'.format('1970-01-01')
+                 headstring += '\tacqdate={0} \n'.format('1970/01/01 00:00:00 UTC')
                 
 
     todaystring = datetime.datetime.utcnow().strftime(frmt)

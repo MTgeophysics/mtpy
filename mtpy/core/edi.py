@@ -1653,6 +1653,7 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
             merge_freq = overlap_mid_freq
     else:
         merge_freq = overlap_mid_freq
+    print merge_freq
 
 
     #find indices for all freq from the freq lists, which are 
@@ -1670,32 +1671,33 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
     #------------
     # fill data fields
 
-    eom.z = np.zeros((eom.n_freq(),2,2),dtype=np.complex)
-    eom.zerr = np.zeros((eom.n_freq(),2,2),dtype=np.float)
+
+    eom.Z.z = np.zeros((n_total_freqs,2,2),dtype=np.complex)
+    eom.Z.zerr = np.zeros((n_total_freqs,2,2),dtype=np.float)
 
     #check, if tipper exists for both files:
-    if (eo1.tipper  is not None ) and (eo2.tipper  is not None ):
-        eom.tipper = np.zeros((eom.n_freq(),1,2),dtype=np.complex)
-        eom.tippererr = np.zeros((eom.n_freq(),1,2),dtype=np.float)
+    if (eo1.Tipper.tipper  is not None ) and (eo2.Tipper.tipper  is not None ):
+        eom.Tipper.tipper = np.zeros((n_total_freqs,1,2),dtype=np.complex)
+        eom.Tipper.tippererr = np.zeros((n_total_freqs,1,2),dtype=np.float)
 
     freq_idx = 0
     zrot = []
     lo_freqs = []
     #first read out z, zerr (and tipper) of lower freq. edi object:
-    in_z_lower = eo1.z[inc_freq_idxs_lower]
-    in_zerr_lower = eo1.zerr[inc_freq_idxs_lower]
-    if eom.tipper is not None:
-        in_t_lower = eo1.tipper[inc_freq_idxs_lower]
-        in_terr_lower = eo1.tippererr[inc_freq_idxs_lower]
+    in_z_lower = eo1.Z.z[inc_freq_idxs_lower]
+    in_zerr_lower = eo1.Z.zerr[inc_freq_idxs_lower]
+    if eom.Tipper is not None:
+        in_t_lower = eo1.Tipper.tipper[inc_freq_idxs_lower]
+        in_terr_lower = eo1.Tipper.tippererr[inc_freq_idxs_lower]
 
     for li in lower_idxs:
         lo_freqs.append(np.array(lo_eos[0].freq)[inc_freq_idxs_lower][li])
 
-        eom.z[freq_idx,:,:] = in_z_lower[li,:,:]
-        eom.zerr[freq_idx,:,:] = in_zerr_lower[li,:,:]
-        if eom.tipper is not None:
-            eom.tipper[freq_idx,:,:] =  in_t_lower[li,:,:]
-            eom.tippererr[freq_idx,:,:] =  in_terr_lower[li,:,:]
+        eom.Z.z[freq_idx,:,:] = in_z_lower[li,:,:]
+        eom.Z.zerr[freq_idx,:,:] = in_zerr_lower[li,:,:]
+        if eom.Tipper is not None:
+            eom.Tipper.tipper[freq_idx,:,:] =  in_t_lower[li,:,:]
+            eom.Tipper.tippererr[freq_idx,:,:] =  in_terr_lower[li,:,:]
         try:
             zrot.append(eo1.zrot[freq_idx])
         except:
@@ -1704,21 +1706,21 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
         freq_idx += 1
 
     #then read upper freq. edi object:
-    in_z_upper = eo2.z[inc_freq_idxs_upper]
-    in_zerr_upper = eo2.zerr[inc_freq_idxs_upper]
-    if eom.tipper is not None:
-        in_t_upper = eo2.tipper[inc_freq_idxs_upper]
-        in_terr_upper = eo2.tippererr[inc_freq_idxs_upper]
+    in_z_upper = eo2.Z.z[inc_freq_idxs_upper]
+    in_zerr_upper = eo2.Z.zerr[inc_freq_idxs_upper]
+    if eom.Tipper.tipper is not None:
+        in_t_upper = eo2.Tipper.tipper[inc_freq_idxs_upper]
+        in_terr_upper = eo2.Tipper.tippererr[inc_freq_idxs_upper]
 
     for ui in upper_idxs:
         lo_freqs.append(np.array(lo_eos[1].freq)[inc_freq_idxs_upper][ui])
 
-        eom.z[freq_idx,:,:] = in_z_upper[ui,:,:]
-        eom.zerr[freq_idx,:,:] = in_zerr_upper[ui,:,:]
+        eom.Z.z[freq_idx,:,:] = in_z_upper[ui,:,:]
+        eom.Z.zerr[freq_idx,:,:] = in_zerr_upper[ui,:,:]
 
-        if eom.tipper is not None:
-            eom.tipper[freq_idx,:,:] =  in_t_upper[ui,:,:]
-            eom.tippererr[freq_idx,:,:] =  in_terr_upper[ui,:,:]
+        if eom.Tipper.tipper is not None:
+            eom.Tipper.tipper[freq_idx,:,:] =  in_t_upper[ui,:,:]
+            eom.Tipper.tippererr[freq_idx,:,:] =  in_terr_upper[ui,:,:]
         try:
             zrot.append(eo1.zrot[freq_idx])
         except:
@@ -1726,9 +1728,9 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
 
         freq_idx += 1
 
-    eom.zrot = zrot
-    eom.freq = lo_freqs
-
+    eom.Z.zrot = np.array(zrot)
+    eom.Z.freq = np.array(lo_freqs)
+    eom._set_freq(np.array(lo_freqs))
 
     #------------
     # fill header information
@@ -1737,11 +1739,11 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
     head1 = dict((k.lower(),v) for k,v in eo1.head.items())
     head2 = dict((k.lower(),v) for k,v in eo2.head.items())
 
+
     so_headsections = set(head1.keys() + head2.keys())
 
     head_dict = {}
     for element in so_headsections:
-
         if (element in head1) and (element not in head2):
             head_dict[element] = str(head1[element])
             continue
@@ -1767,10 +1769,11 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
             continue
 
         if 'date' in element:
-            dateformat1 = '%d/%m/%y'
-            dateformat2 = '%d.%m.%y'
-            dateformat3 = '%d.%m.%Y'
+            dateformat1 = '%Y/%m/%d %H:%M:%S UTC'
+            dateformat2 = '%d.%m.%y %H:%M:%S UTC'
+            dateformat3 = '%d.%m.%Y %H:%M:%S UTC'
             date1 = None
+
             try:
                 date1 = calendar.timegm(time.strptime(head1[element], 
                                                       dateformat1))
@@ -1793,7 +1796,7 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
             except:
                 pass
             if date1 is None:
-                raise MTex.MTpyError_edi_file('Cannot merge file, because'+\
+                raise MTex.MTpyError_edi_file('Cannot merge file, because '+\
                                               'data format is not '+\
                                               'understood: '+\
                                               '{0}={1}|{2}'.format(element,
@@ -1808,12 +1811,15 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
                 date = max(date1, date2  )
 
             elif element in ['filedate']:
-                date = calendar.timegm(time.gmtime())
-
+                todaystring = datetime.datetime.utcnow().strftime(dateformat1)
+                head_dict[element]  = todaystring
+                continue                                  
+                        
             datetuple = time.gmtime(date)
-            head_dict[element] = '{0:02}/{1:02}/{2:2}'.format(datetuple[2],
-                                                              datetuple[1],
-                                                              datetuple[0])
+            head_dict[element] = '{0:02}/{1:02}/{2:02} '.format(datetuple[0],
+                                                                datetuple[1],
+                                                               datetuple[2])
+            print head_dict[element]
 
     eom.head = head_dict
 
@@ -1901,6 +1907,7 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
                 date = date1
 
             datetuple = time.gmtime(date)
+            print datetuple
             info_dict[element] = '{0:02}/{1:02}/{2:2}'.format(datetuple[2],
                                                               datetuple[1],
                                                               datetuple[0])
@@ -1987,8 +1994,9 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
         else:
             out_fn = op.join(dirname,fn)
 
+    print eom.edi_dict().keys()
 
-        eom.writefile(out_fn)
+    eom.writefile(out_fn)
 
 
     return eom, out_fn

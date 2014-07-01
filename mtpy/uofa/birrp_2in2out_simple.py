@@ -37,11 +37,11 @@ def main():
 
     try:
         coherence_th = float(sys.argv[4])
-        if not 0 < coherence_th <= 1: 
+        if not 0 <= coherence_th <= 1: 
             raise
     except: 
-        print 'coherence value invalid (float from interval ]0,1]) - set to 0.5 instead'
-        coherence_th = 0.5
+        print 'coherence value invalid (float from interval [0,1]) - set to 0 instead'
+        coherence_th = 0
 
     try:
         starttime = float(sys.argv[5])
