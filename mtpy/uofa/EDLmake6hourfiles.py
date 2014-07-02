@@ -130,7 +130,7 @@ def main():
         except MemoryError:
             sys.exit('\n\tERROR - Not enough memory to store temporary arrays!\n')
         except IOError:
-            sys.exit('\n\tERROR - Not enough space on local disk to store output!\n'
+            sys.exit('\n\tERROR - Not enough space on local disk to store output!\n')
 
         except:
             sys.exit('\n\tERROR - could not process (sub-)folders')
