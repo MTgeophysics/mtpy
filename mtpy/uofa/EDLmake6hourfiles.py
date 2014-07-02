@@ -33,6 +33,9 @@ reload(MTfh)
 
 def main():
 
+    print '\n\tnot working yet - code under development !!\n'
+    return
+
     if len(sys.argv) < 3:
         sys.exit('\nNeed at least 4 arguments: \n\n '
             '<path to files> \n <sampling in seconds> \n'

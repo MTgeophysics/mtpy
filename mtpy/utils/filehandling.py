@@ -94,8 +94,11 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
     1.   24%%N = 0
     2.   input data files start on the hour marks
 
+    Not working yet!!
 
     """
+    print '\n\tnot working yet - code under development !!\n'
+    return
 
     try:
         if 24%n_hours != 0:
