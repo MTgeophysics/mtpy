@@ -35,6 +35,7 @@ reload(MTgn)
 reload(MTcc)
 reload(MTex)
 reload(MTcf)
+import ipdb
 
 #=================================================================
 
@@ -97,8 +98,8 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
     Not working yet!!
 
     """
-    print '\n\tnot working yet - code under development !!\n'
-    return
+    #print '\n\tnot working yet - code under development !!\n'
+    #return
 
     try:
         if 24%n_hours != 0:
@@ -124,9 +125,7 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
             dummylist = []
             counter = 0 
 
-
-
-    #most of the following code is redundant/taken from the 
+    # most of the following code is redundant/taken from the 
     # 'EDL_make_dayfiles' function
     # This can be cleaned up later
 
@@ -228,11 +227,14 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
 
         #set counting variables - needed for handling of consecutive files
 
-        sameday = 0
-        sameblock = 0
-        fileopen = 0
-        incomplete = 0
+        #flags, checking, if data has to written to file
+        sameday = True
+        sameblock = True
+        fileopen = False
+        complete = False
+        #numerical index of files for same combination of date and hour
         fileindex = 0
+        #current file's daily block number 
         blockindex = 0 
 
         #allocate a data array to fill
@@ -274,42 +276,41 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
                 continue
             no_samples = len(data_in)
 
+            #time axis of the file read in :
             tmp_file_time_axis = np.arange(no_samples)*sampling+file_start_time
-            #file_time_axis = (np.arange(no_samples)*sampling +
-            #                 file_start_time).tolist()
 
-
-            #time of the last sample + 1x sampling-interval
-            #file_end_time =  file_time_axis[-1] + sampling
+            #end: time of the last sample + 1x sampling-interval
             file_end_time =  tmp_file_time_axis[-1] + sampling
          
+            #set the current file's starting time as starting time for output file, 
+            #if no output file is open already
 
-
-
-            #set the time as starting time for output file, if no output file is open already
-            if fileopen == 0:
+            
+            if fileopen is False:
+                #starttime of output file
                 outfile_starttime =  file_start_time
-                #outfile_timeaxis = file_time_axis
-                old_time_axis = tmp_file_time_axis[:]
-                
+                #output data sample index:                
                 arrayindex = 0
 
                 #if it's a single column of data
                 if np.size(data_in.shape) == 1:
-                    block_data[arrayindex:arrayindex+len(data_in)] = data_in                    
-                    #outfile_data = data_in.tolist()
+                    block_data[:len(data_in)] = data_in                    
+                    
                 #otherwise assuming that the first column is time, so just take the second one
                 else:
-                    block_data[arrayindex:arrayindex+len(data_in)] = data_in[:,1]
-                    #outfile_data = data_in[:,1].tolist()
+                    block_data[:len(data_in)] = data_in[:,1]
                 
                 #jump with index to current point on time axis 
                 arrayindex += len(data_in)
+
+                #current (virtual) end time of open file
                 outfile_endtime = file_end_time
 
+                #find the date code of the outputfile
                 file_date = '{0}{1:02}{2:02}'.format(file_start[0],
                                                  file_start[1], file_start[2])
                 
+                #...aaaand the hour code as well
                 data_hour = file_start[3]
 
                 #determine, which of the daily data blocks we are currently 
@@ -321,21 +322,20 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
                     if lo_hours[t+1]>data_hour:
                         blockindex = t
                         file_hour = lo_hours[blockindex]
-
                         break
-                
+
 
                 #define output filename
                 new_fn = '{0}_{5}hours_{1}_{2:02d}_{3}.{4}'.format(stationname,
                                                  file_date, file_hour,fileindex, comp,n_hours)
-                
+                #absolute filename:
                 new_file = op.abspath(op.join(outpath,new_fn))
                 
                 #open output file 
                 F = open(new_file,'w')
                 
-                fileopen = 1
-
+                #set flag for further loop steps
+                fileopen = True
 
             
             else:
@@ -344,14 +344,15 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
                 if file_end_time < outfile_endtime:
                     continue 
 
-                #if current file starts earlier than the endtime of data in buffer then delete ambiguous  parts of the buffer:
-                #elif (outfile_timeaxis[-1] - file_start_time) > epsilon:
+                #if current file starts earlier than the endtime of data in buffer, but extends the time span
+                #then delete ambiguous  parts of the buffer:
                 elif (outfile_endtime - file_start_time) > epsilon:
 
                     #find point on the outfile time axis for the beginning of current file:
                     overlap_idx = arrayindex - int((outfile_endtime - file_start_time)/sampling)
 
-                    #set the array index back
+                    #set the array index back to the appropriate value corresponding to the 
+                    #start of the new file
                     arrayindex = overlap_idx
                    
   
@@ -365,56 +366,61 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
                     block_data[arrayindex:arrayindex+len(data_in)] = data_in[:,1]                    
                     #outfile_data.extend(data_in[:,1].tolist())
 
-
+                #update position in time
                 arrayindex += len(data_in)
+
+                #update (virtual) end of outfile data
                 outfile_endtime = (arrayindex+1)*sampling + outfile_starttime
 
-            #-----------
 
-            #check, if there is a next file:
+            #-----------
+            # current file has been read in, data in buffer have been updated
+            # now check, if it has to be written to file....
+
+            #check, if there is a next file at all:
             try:
                 next_file_start_time = lo_sorted_starttimes[idx_f + 1]
             except:
-                incomplete = 1
+                complete = True
 
             #if there is a next file, 
             # - check, if it's the same day
             # - check, if it' the same block
             # - check, if it continues at the end of the current one:
-            if incomplete == 0:
+
+            if complete is False:
                 next_file_start_time = lo_sorted_starttimes[idx_f + 1]
                 next_file_start = time.gmtime(next_file_start_time)
                 
-                nextfile_hour = next_file_start[2]
-                if not nextfile_hour in lo_blockhours[blockindex]:
-                    incomplete = 1
-                    sameblock = 0 
-                    fileindex = 0
-                
+                nextfile_hour = next_file_start[3]
 
-                elif next_file_start[2] == file_start[2] :
-                    #print 'sameday',file_start[:]
-                    sameday = 1
-
-                else:
-                    incomplete = 1
-                    sameday = 0
-                    sameblock = 0
-                    fileindex = 0
-                    blockindex = 0 
-                    #print '\t NOT sameday', fileindex
+                nextfile_blockindex  = no_blocks-1
+                for t in range(len(lo_hours)-1):
+                    if lo_hours[t+1]>nextfile_hour:
+                        nextfile_blockindex = t
+                        break
 
 
+                nextfile_day = '{0}{1:02}{2:02}'.format(next_file_start[0],
+                                                 next_file_start[1], next_file_start[2])
+                if  nextfile_day != file_date: 
+                    complete = True
+                    sameday = False                    
+                if  nextfile_blockindex != blockindex:
+                    complete = True
+                    sameblock = False
 
+            if complete is False:
                 if next_file_start_time - file_end_time > epsilon: 
-                    incomplete = 1
+                    complete = True
+                    sameblock = True
+                    sameday = True
 
-            if incomplete == 1 and sameday == 1 and sameblock == 1 : 
-                fileindex +=1        
-          
+         
+            #ipdb.set_trace()
 
             #check, if the file has to be closed and written now
-            if incomplete == 1 :
+            if complete is True :
 
                 #define header info
                 if outfile_starttime%1==0:
@@ -444,11 +450,16 @@ def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, output
                 F.close()
                 print '\t wrote file %s'%(new_file)
 
-                fileopen = 0
-                incomplete = 0
-                blockindex = (blockindex+1)%no_blocks
+                fileopen = False
+                complete = False
+                #blockindex = (blockindex+1)%no_blocks
     
+                if sameday is True and sameblock is True : 
+                    fileindex +=1        
+                else:
+                    fileindex = 0
 
+ 
 
 
 def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None):
