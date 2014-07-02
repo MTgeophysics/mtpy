@@ -120,18 +120,20 @@ def main():
         # else:
         station_pathname = pathname
         
-        if 1 :
+        try:
             MTfh.EDL_make_Nhour_files(6,station_pathname, sampling, stationname.upper(), outdir)
-        # except MTex.MTpyError_inputarguments:
-        #     if stationname is None:
-        #         sys.exit('\n\tERROR - No data found in (sub-)folders\n')
-        #     else:
-        #         sys.exit('\n\tERROR - No data found in (sub-)folders for station {0}\n'.format(stationname.upper()))
-        # except MemoryError:
-        #     sys.exit('\n\tERROR - Not enough memory to store temporary arrays!\n')
-        # except:
-        #     sys.exit('\n\tERROR - could not process (sub-)folders')
+        except MTex.MTpyError_inputarguments:
+            if stationname is None:
+                sys.exit('\n\tERROR - No data found in (sub-)folders\n')
+            else:
+                sys.exit('\n\tERROR - No data found in (sub-)folders for station {0}\n'.format(stationname.upper()))
+        except MemoryError:
+            sys.exit('\n\tERROR - Not enough memory to store temporary arrays!\n')
+        except IOError:
+            sys.exit('\n\tERROR - Not enough space on local disk to store output!\n'
 
+        except:
+            sys.exit('\n\tERROR - could not process (sub-)folders')
     print '\n'
 
 
