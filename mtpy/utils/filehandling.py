@@ -81,6 +81,371 @@ def get_sampling_interval_fromdatafile(filename, length = 3600):
     return sampling_interval
 
 
+def EDL_make_Nhour_files(n_hours,inputdir, sampling , stationname = None, outputdir = None):
+
+    """
+    See 'EDL_make_dayfiles' for description and syntax.
+
+    Only difference: output files are blocks of (max) N hours, starting to count 
+    at midnight (00:00h) each day.
+
+    Conditions:
+    
+    1.   24%%N = 0
+    2.   input data files start on the hour marks
+
+
+    """
+
+    try:
+        if 24%n_hours != 0:
+            raise
+    except:
+        sys.exit('ERROR - File block length must be on of: 1,2,3,4,6,8,12 \n')
+    
+    n_hours = int(n_hours)
+    #list of starting hours for the data blocks:
+    lo_hours = [int(i) for i in np.arange(int(24/n_hours))*n_hours ]
+    no_blocks = len(lo_hours)
+    
+    #build a list that contains the respective groups of starting hours belonging
+    # to the same block
+    lo_blockhours = []
+    counter = 0 
+    dummylist = []
+    for i in range(24):
+        dummylist.append(i)
+        counter += 1
+        if counter == n_hours:
+            lo_blockhours.append(dummylist)
+            dummylist = []
+            counter = 0 
+
+
+
+    #most of the following code is redundant/taken from the 
+    # 'EDL_make_dayfiles' function
+    # This can be cleaned up later
+
+    try:
+        if type(inputdir)==str:
+            raise
+        lo_foldernames = [i for i in inputdir]
+    except TypeError:
+        lo_foldernames = [inputdir]
+
+    #typical suffixes for EDL output file names
+    components = ['ex', 'ey', 'bx', 'by', 'bz']
+
+    lo_allfiles = []
+    pattern = '*.[ebEB][xyzXYZ]'
+    if stationname is not None:
+        pattern = '*{0}*.[ebEB][xyzXYZ]'.format(stationname.lower())
+    print '\nSearching for files with pattern: ',pattern
+
+    for folder in lo_foldernames:
+        wd = op.abspath(op.realpath(folder)) 
+        if not op.isdir(wd):
+            #print 'Directory not existing: %s' % (wd)
+            lo_foldernames.remove(wd)
+            continue    
+
+        lo_dirfiles = [op.abspath(op.join(wd,i))  for i in os.listdir(wd) 
+                        if fnmatch.fnmatch(i.lower(),pattern.lower()) is True]
+        lo_allfiles.extend(lo_dirfiles)   
+
+    #check, if list of files is empty
+    if len(lo_allfiles) == 0:
+        if stationname is not None:
+            raise MTex.MTpyError_inputarguments('Directory(ies) do(es) not contain'\
+            ' files to combine for station {0}:\n {1}'.format(stationname, inputdir))
+
+        raise MTex.MTpyError_inputarguments('Directory does not contain files'\
+                                            ' to combine:\n {0}'.format(inputdir))
+
+    #define subfolder for storing dayfiles
+    outpath = op.join(os.curdir,'{0}hourfiles'.format(int(n_hours)))    
+    if outputdir is not None:
+        try:
+            outpath = op.abspath(op.join(os.curdir,outputdir))
+            if not op.exists(outpath):
+                try:
+                    os.makedirs(outpath)
+                except:
+                    raise
+            if not os.access(outpath, os.W_OK):
+                raise
+        except:
+            print 'Cannot generate writable output directory {0} - using'\
+                    ' generic location "dayfiles" instead'.format(outpath)
+            outpath = op.join(wd,'{0}hourfiles'.format(int(n_hours)))    
+            pass
+
+    #generate subfolder, if not existing
+    if not op.exists(outpath):
+        try:
+            os.makedirs(outpath)
+        except:
+            MTex.MTpyError_inputarguments('Cannot generate output'\
+                                ' directory {0} '.format(outpath))
+
+    #outer loop over all components
+    for comp in components:
+
+        #make list of files for the current component
+        lo_files = np.array([op.join(wd,i) for i in lo_allfiles 
+                            if (i.lower()[-2:] == comp)])
+
+        #make list of starting times for the respective files
+        lo_starttimes = np.array([EDL_get_starttime_fromfilename(f) 
+                                    for f in lo_files])
+        
+        #sort the files by their starting times
+        idx_chronologic = np.argsort(lo_starttimes)
+        
+        #obtain sorted lists of files and starting times
+        lo_sorted_files = list(lo_files[idx_chronologic])
+        lo_sorted_starttimes = list(lo_starttimes[idx_chronologic])
+        idx = 0
+        while idx < len(lo_sorted_starttimes):
+            try:
+                val = lo_sorted_starttimes[idx]
+            except:
+                break
+            if val is None:
+                dummy = lo_sorted_files.pop(idx)
+                dummy = lo_sorted_starttimes.pop(idx)
+            else:
+                idx += 1
+
+
+        #set stationname, either from arguments or from filename
+        if stationname is None:
+            stationname = EDL_get_stationname_fromfilename(lo_sorted_files[0]).upper()
+
+        #set counting variables - needed for handling of consecutive files
+
+        sameday = 0
+        sameblock = 0
+        fileopen = 0
+        incomplete = 0
+        fileindex = 0
+        blockindex = 0 
+
+        #allocate a data array to fill
+        # this is more memory efficient than extending lists!!
+        #cater for potential rounding errors:
+        if sampling < 1:
+            max_n_data = 3600*int(n_hours) * (int(1./sampling)+1)
+        else:
+            max_n_data = int(3600.*int(n_hours)/sampling) + 1
+
+        block_data = np.zeros(max_n_data,'int')
+
+
+        #loop over all (sorted) files for the current component
+        for idx_f,f in enumerate(lo_sorted_files):
+
+            try:
+
+                print 'Reading file %s' %(f)
+                #starting time of current file
+                file_start_time = lo_sorted_starttimes[idx_f]
+
+                #get tuple with the starting time of the current file
+                file_start = time.gmtime(file_start_time)
+            
+                #read in raw data
+                data_in = []
+                Fin = open(f)
+                for line in Fin:#.readlines():
+                #    try:
+                    data_in.append(int(float(line.strip())))
+                 #   except:
+                  #      pass
+                data_in = np.array(data_in)
+                Fin.close()
+                #data_in = np.loadtxt(f)
+            except:
+                print 'WARNING - could not read file - skipping...'
+                continue
+            no_samples = len(data_in)
+
+            tmp_file_time_axis = np.arange(no_samples)*sampling+file_start_time
+            #file_time_axis = (np.arange(no_samples)*sampling +
+            #                 file_start_time).tolist()
+
+
+            #time of the last sample + 1x sampling-interval
+            #file_end_time =  file_time_axis[-1] + sampling
+            file_end_time =  tmp_file_time_axis[-1] + sampling
+         
+
+
+
+            #set the time as starting time for output file, if no output file is open already
+            if fileopen == 0:
+                outfile_starttime =  file_start_time
+                #outfile_timeaxis = file_time_axis
+                old_time_axis = tmp_file_time_axis[:]
+                
+                arrayindex = 0
+
+                #if it's a single column of data
+                if np.size(data_in.shape) == 1:
+                    block_data[arrayindex:arrayindex+len(data_in)] = data_in                    
+                    #outfile_data = data_in.tolist()
+                #otherwise assuming that the first column is time, so just take the second one
+                else:
+                    block_data[arrayindex:arrayindex+len(data_in)] = data_in[:,1]
+                    #outfile_data = data_in[:,1].tolist()
+                
+                #jump with index to current point on time axis 
+                arrayindex += len(data_in)
+                outfile_endtime = file_end_time
+
+                file_date = '{0}{1:02}{2:02}'.format(file_start[0],
+                                                 file_start[1], file_start[2])
+                
+                data_hour = file_start[3]
+
+                #determine, which of the daily data blocks we are currently 
+                #processing/writing
+                blockindex = no_blocks-1
+                
+                file_hour = lo_hours[-1]
+                for t in range(len(lo_hours)-1):
+                    if lo_hours[t+1]>data_hour:
+                        blockindex = t
+                        file_hour = lo_hours[blockindex]
+
+                        break
+                
+
+                #define output filename
+                new_fn = '{0}_{5}hours_{1}_{2:02d}_{3}.{4}'.format(stationname,
+                                                 file_date, file_hour,fileindex, comp,n_hours)
+                
+                new_file = op.abspath(op.join(outpath,new_fn))
+                
+                #open output file 
+                F = open(new_file,'w')
+                
+                fileopen = 1
+
+
+            
+            else:
+                #check, if the new file ends earlier than data in buffer.
+                #if yes, just skip this file:
+                if file_end_time < outfile_endtime:
+                    continue 
+
+                #if current file starts earlier than the endtime of data in buffer then delete ambiguous  parts of the buffer:
+                #elif (outfile_timeaxis[-1] - file_start_time) > epsilon:
+                elif (outfile_endtime - file_start_time) > epsilon:
+
+                    #find point on the outfile time axis for the beginning of current file:
+                    overlap_idx = arrayindex - int((outfile_endtime - file_start_time)/sampling)
+
+                    #set the array index back
+                    arrayindex = overlap_idx
+                   
+  
+                #append current data                  
+                #if it's a single column of data
+                if np.size(data_in.shape) == 1:
+                    block_data[arrayindex:arrayindex+len(data_in)] = data_in                    
+                    #outfile_data.extend(data_in.tolist())
+                #otherwise assuming that the first column is time, so just take the second one
+                else:
+                    block_data[arrayindex:arrayindex+len(data_in)] = data_in[:,1]                    
+                    #outfile_data.extend(data_in[:,1].tolist())
+
+
+                arrayindex += len(data_in)
+                outfile_endtime = (arrayindex+1)*sampling + outfile_starttime
+
+            #-----------
+
+            #check, if there is a next file:
+            try:
+                next_file_start_time = lo_sorted_starttimes[idx_f + 1]
+            except:
+                incomplete = 1
+
+            #if there is a next file, 
+            # - check, if it's the same day
+            # - check, if it' the same block
+            # - check, if it continues at the end of the current one:
+            if incomplete == 0:
+                next_file_start_time = lo_sorted_starttimes[idx_f + 1]
+                next_file_start = time.gmtime(next_file_start_time)
+                
+                nextfile_hour = next_file_start[2]
+                if not nextfile_hour in lo_blockhours[blockindex]:
+                    incomplete = 1
+                    sameblock = 0 
+                    fileindex = 0
+                
+
+                elif next_file_start[2] == file_start[2] :
+                    #print 'sameday',file_start[:]
+                    sameday = 1
+
+                else:
+                    incomplete = 1
+                    sameday = 0
+                    sameblock = 0
+                    fileindex = 0
+                    blockindex = 0 
+                    #print '\t NOT sameday', fileindex
+
+
+
+                if next_file_start_time - file_end_time > epsilon: 
+                    incomplete = 1
+
+            if incomplete == 1 and sameday == 1 and sameblock == 1 : 
+                fileindex +=1        
+          
+
+            #check, if the file has to be closed and written now
+            if incomplete == 1 :
+
+                #define header info
+                if outfile_starttime%1==0:
+                    outfile_starttime = int(outfile_starttime)
+
+                    headerline = '# {0} {1} {2:.1f} {3} {4} \n'.format(
+                                    stationname, comp.lower(), 1./sampling, 
+                                    outfile_starttime, arrayindex)
+                else:
+                    headerline = '# {0} {1} {2:.1f} {3:f} {4} \n'.format(
+                                    stationname, comp.lower(), 1./sampling, 
+                                    outfile_starttime, arrayindex)
+
+                F.write(headerline)
+
+                #outfile_array = np.zeros((len(outfile_timeaxis),2))
+                #outfile_array[:,0] = outfile_timeaxis
+                #outfile_array[:,1] = outfile_data
+                for i in range(arrayindex):
+                    F.write('{0}\n'.format(int(block_data[i])))
+                #outstring = '\n'.join(['{0:d}'.format(i) for i in day_data[:arrayindex]])
+                #F.write(outstring)
+                #np.savetxt(F,day_data[:arrayindex],fmt='%d')
+                #np.savetxt(F, np.array(outfile_data))
+                arrayindex = 0
+                
+                F.close()
+                print '\t wrote file %s'%(new_file)
+
+                fileopen = 0
+                incomplete = 0
+                blockindex = (blockindex+1)%no_blocks
+    
+
 
 
 def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None):
