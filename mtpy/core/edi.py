@@ -35,6 +35,7 @@ import copy
 #required for finding HMEAS and EMEAS at once:
 import re
 
+
 import mtpy.utils.format as MTft
 import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
@@ -46,6 +47,7 @@ reload(MTex)
 reload(MTft)
 reload(MTcc)
 reload(MTz)
+#import ipdb
 
 
 #=================================================================
@@ -1153,6 +1155,19 @@ class Edi(object):
         self.Z = z_object
         self.freq = z_object.freq
 
+    #--------------Write out file---------------------------------------------
+    def set_Tipper(self, tipper_object):
+        """
+        Set the Tipper object attribute.
+        """
+        if not isinstance(tipper_object, MTz.Tipper):
+            raise MTex.MTpyError_Tipper('Input argument is not an instance of '+\
+                                                                 'the Tipper class')
+
+        self.Tipper = tipper_object
+        
+        #self.freq = tipper_object.freq
+
 
     #--------------Write out file---------------------------------------------
     def writefile(self, fn=None, allow_overwrite=False, use_info_string=True):
@@ -1184,6 +1199,11 @@ class Edi(object):
             print 'ERROR - could not generate valid EDI file \n-> check, if'\
                    ' method "edi_dict" returns sufficient information '
             return
+
+        if stationname is None:
+            stationname = 'dummy'
+        if len(stationname) == 0:
+            stationname = 'unknown'
 
         if not _validate_edifile_string(outstring):
             #return outstring
@@ -1616,13 +1636,13 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
                                           'set to False')
 
 
-    #determine, which is the low freq part
-    lo_eos = [eo1, eo2]
+    #determine, which is the low freq part, sort descending
+    lo_eos = [eo2, eo1]
 
     if min(lo_freqs1) <= min(lo_freqs2):
         if max(lo_freqs1) >= max(lo_freqs2):
-            print 'freq range of file {0} fully contained'.format(fn1)+\
-                  'in range of file {1} => no merging of files!'.format(fn2)
+            print 'freq range of file {0} fully contained'.format(fn2)+\
+                  'in range of file {1} => no merging of files!'.format(fn1)
             return
 
     if min(lo_freqs1) >= min(lo_freqs2):
@@ -1631,17 +1651,18 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
                   'in range of file {1} => no merging of files!'.format(fn2)
             return
         else:
-            lo_eos = [eo2, eo1]
+            lo_eos = [eo1, eo2]
 
-    #find sorting indices for obtaining strictly increasing frequencies:
-    inc_freq_idxs_lower = np.array(lo_eos[0].freq).argsort()
-    inc_freq_idxs_upper = np.array(lo_eos[1].freq).argsort()
+    #find sorting indices for obtaining strictly decreasing frequencies:
+    dec_freq_idxs_lower = np.array(lo_eos[1].freq).argsort()[::-1]
+    dec_freq_idxs_upper = np.array(lo_eos[0].freq).argsort()[::-1]
 
     #determine overlap in frequencies
-    upper_bound = max(lo_eos[0].freq)
-    lower_bound = min(lo_eos[1].freq)
+    upper_bound = max(lo_eos[1].freq)
+    lower_bound = min(lo_eos[0].freq)
+    
 
-    overlap_mid_freq = 0.5*(upper_bound + lower_bound)
+    overlap_mid_freq = np.exp(0.5*(np.log(upper_bound) + np.log(lower_bound)))
 
     if merge_freq is not None:
         try:
@@ -1653,84 +1674,91 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
             merge_freq = overlap_mid_freq
     else:
         merge_freq = overlap_mid_freq
-    print merge_freq
+    
+    #print merge_freq
 
 
     #find indices for all freq from the freq lists, which are 
     #below(lower part) or above (upper part) of the merge freq -
     #use sorted freq lists !:
 
-    lower_idxs = list(np.where(np.array(lo_eos[0].freq)[inc_freq_idxs_lower]<=\
-                               merge_freq)[0])
-    upper_idxs = list(np.where(np.array(lo_eos[1].freq)[inc_freq_idxs_upper]>\
-                               merge_freq)[0])
+    upper_idxs = np.where(np.array(lo_eos[0].freq)[dec_freq_idxs_upper]>\
+                               merge_freq)[0]
+    lower_idxs = np.where(np.array(lo_eos[1].freq)[dec_freq_idxs_lower]<=\
+                               merge_freq)[0]
 
     #total of freq in new edi object
-    n_total_freqs = len(lower_idxs) + len(upper_idxs)
+    new_freqs = lo_eos[0].freq[upper_idxs]
+    new_freqs= np.append(new_freqs,lo_eos[1].freq[lower_idxs])
+
+    n_total_freqs = len(new_freqs)# len(lower_idxs) + len(upper_idxs)
+
 
     #------------
     # fill data fields
 
-
-    eom.Z.z = np.zeros((n_total_freqs,2,2),dtype=np.complex)
-    eom.Z.zerr = np.zeros((n_total_freqs,2,2),dtype=np.float)
+    new_z = np.zeros((n_total_freqs,2,2),dtype=np.complex)
+    new_zerr = np.zeros((n_total_freqs,2,2),dtype=np.float)
 
     #check, if tipper exists for both files:
     if (eo1.Tipper.tipper  is not None ) and (eo2.Tipper.tipper  is not None ):
-        eom.Tipper.tipper = np.zeros((n_total_freqs,1,2),dtype=np.complex)
-        eom.Tipper.tippererr = np.zeros((n_total_freqs,1,2),dtype=np.float)
+        new_tipper = np.zeros((n_total_freqs,1,2),dtype=np.complex)
+        new_tippererr = np.zeros((n_total_freqs,1,2),dtype=np.float)
+    
 
-    freq_idx = 0
+    counter = 0
     zrot = []
-    lo_freqs = []
-    #first read out z, zerr (and tipper) of lower freq. edi object:
-    in_z_lower = eo1.Z.z[inc_freq_idxs_lower]
-    in_zerr_lower = eo1.Z.zerr[inc_freq_idxs_lower]
-    if eom.Tipper is not None:
-        in_t_lower = eo1.Tipper.tipper[inc_freq_idxs_lower]
-        in_terr_lower = eo1.Tipper.tippererr[inc_freq_idxs_lower]
-
-    for li in lower_idxs:
-        lo_freqs.append(np.array(lo_eos[0].freq)[inc_freq_idxs_lower][li])
-
-        eom.Z.z[freq_idx,:,:] = in_z_lower[li,:,:]
-        eom.Z.zerr[freq_idx,:,:] = in_zerr_lower[li,:,:]
-        if eom.Tipper is not None:
-            eom.Tipper.tipper[freq_idx,:,:] =  in_t_lower[li,:,:]
-            eom.Tipper.tippererr[freq_idx,:,:] =  in_terr_lower[li,:,:]
+    for idx_u in upper_idxs:
         try:
-            zrot.append(eo1.zrot[freq_idx])
+            new_z[counter] = lo_eos[0].Z.z[idx_u]
+            new_zerr[counter] = lo_eos[0].Z.zerr[idx_u]
+        except:
+            pass
+        try:
+            new_tipper[counter] = lo_eos[0].Tipper.tipper[idx_u]
+            new_tippererr[counter] = lo_eos[0].Tipper.tippererr[idx_u]
+        except:
+            pass
+        try:
+            zrot.append(lo_eos[0].zrot[idx_u])
         except:
             zrot.append(0.)
+           
+        counter +=1
 
-        freq_idx += 1
-
-    #then read upper freq. edi object:
-    in_z_upper = eo2.Z.z[inc_freq_idxs_upper]
-    in_zerr_upper = eo2.Z.zerr[inc_freq_idxs_upper]
-    if eom.Tipper.tipper is not None:
-        in_t_upper = eo2.Tipper.tipper[inc_freq_idxs_upper]
-        in_terr_upper = eo2.Tipper.tippererr[inc_freq_idxs_upper]
-
-    for ui in upper_idxs:
-        lo_freqs.append(np.array(lo_eos[1].freq)[inc_freq_idxs_upper][ui])
-
-        eom.Z.z[freq_idx,:,:] = in_z_upper[ui,:,:]
-        eom.Z.zerr[freq_idx,:,:] = in_zerr_upper[ui,:,:]
-
-        if eom.Tipper.tipper is not None:
-            eom.Tipper.tipper[freq_idx,:,:] =  in_t_upper[ui,:,:]
-            eom.Tipper.tippererr[freq_idx,:,:] =  in_terr_upper[ui,:,:]
+    for idx_l in lower_idxs:
         try:
-            zrot.append(eo1.zrot[freq_idx])
+            new_z[counter] = lo_eos[1].Z.z[idx_l]
+            new_zerr[counter] = lo_eos[1].Z.zerr[idx_l]
+        except:
+            pass
+        try:
+            new_tipper[counter] = lo_eos[1].Tipper.tipper[idx_l]
+            new_tippererr[counter] = lo_eos[1].Tipper.tippererr[idx_l]
+        except:
+            pass
+        try:
+            zrot.append(lo_eos[1].zrot[idx_l])
         except:
             zrot.append(0.)
+        counter +=1
 
-        freq_idx += 1
 
-    eom.Z.zrot = np.array(zrot)
-    eom.Z.freq = np.array(lo_freqs)
-    eom._set_freq(np.array(lo_freqs))
+    # eom.Z.z = np.zeros((n_total_freqs,2,2),dtype=np.complex)
+    # eom.Z.zerr = np.zeros((n_total_freqs,2,2),dtype=np.float)
+
+    Znew = MTz.Z(z_array=new_z, zerr_array=new_zerr, freq=new_freqs)
+    eom.set_Z(Znew)
+
+
+    if (eo1.Tipper.tipper  is not None ) and (eo2.Tipper.tipper  is not None ):
+        TipperNew = MTz.Tipper(tipper_array=new_tipper, tippererr_array=new_tippererr, 
+                 freq=new_freqs)
+
+        eom.set_Tipper(TipperNew)
+    
+    eom.zrot = zrot    
+
 
     #------------
     # fill header information
@@ -1822,6 +1850,7 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
             print head_dict[element]
 
     eom.head = head_dict
+    
 
     #II) INFO
     info1 = dict((k.lower(),v) for k,v in eo1.info_dict.items())
@@ -1919,6 +1948,10 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
 
     eom.info_dict = info_dict
 
+    eom.info_string = '\n\t=== File 1: ===\n'+eo1.info_string+\
+                        '\n\n\t=== File 2: ===\n'+eo2.info_string
+
+
     #III) DEFINEMEAS
     dmeas1 = dict((k.lower(),v) for k,v in eo1.definemeas.items())
     dmeas2 = dict((k.lower(),v) for k,v in eo2.definemeas.items())
@@ -1956,9 +1989,11 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
 
     eom.definemeas = dmeas_dict
 
-    #take hmeas/dmeas section directly from file1:
+    #take hmeas/dmeas section directly from file 1:
 
     eom.hmeas_emeas = eo1.hmeas_emeas
+
+
 
     #IV) MTSECT
 
@@ -1976,7 +2011,10 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
         if element == 'nfreq':
             msec_dict[element] = eom.n_freq()
         if element == 'sectid':
-            msec_dict[element] = msec1[element]+'+'+msec2[element]
+            if msec1[element] != msec2[element]:
+                msec_dict[element] = msec1[element]+'+'+msec2[element]
+            else:
+                msec_dict[element] = msec1[element]+'(A)'+'+'+msec2[element]+'(B)'
 
 
     eom.mtsect = msec_dict
@@ -1993,10 +2031,20 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
                 out_fn = None
         else:
             out_fn = op.join(dirname,fn)
+        out_fn = op.splitext(out_fn)[0]+'_merged'+op.splitext(out_fn)[1]
 
-    print eom.edi_dict().keys()
+    else:
+        stationname = eom.info_dict.get('station',None)
+        if stationname is None:
+            stationname = eom.head.get('dataid',None)
+        if stationname is None:
+            stationname = 'unknown'
+        out_fn = op.join(op.abspath(os.curdir),stationname.upper()+'_merged.edi')
+       
 
-    eom.writefile(out_fn)
+    out_fn = eom.writefile(out_fn)
+    if out_fn is not None:
+        print '\tWritten merged EDI file {0}\n'.format(out_fn)
 
 
     return eom, out_fn
@@ -2085,6 +2133,7 @@ def _generate_edifile_string(edidict,use_info_string=False):
         raise MTex.MTpyError_edi_file('Cannot generate string from empty'+\
                              'EDI dictionary. Fill dict or read in file first')
 
+
     for sectionhead in lo_sectionheads:
 
         if sectionhead == 'HEAD':
@@ -2094,11 +2143,16 @@ def _generate_edifile_string(edidict,use_info_string=False):
             edistring += '>HEAD\n'
             head_dict = edidict['HEAD']
             checkdate = 0
+
             for k in  sorted(head_dict.iterkeys()):
                 v = str(head_dict[k])
                 #remove old time stamp of former EDI file:
                 if k.lower() == 'filedate':
                     continue
+                
+                if k.lower()=='dataid':
+                
+                    stationname = v
 
                 if len(v) == 0:
                     edistring += '\t%s=""\n'%(k.upper())
@@ -2134,8 +2188,11 @@ def _generate_edifile_string(edidict,use_info_string=False):
 
             #If an existing info string is to be written verbatim
             #to not lose any original information (even if uunnecessary/wrong):
-            if use_info_string is True:                
-                edistring += edidict['info_string']
+            if use_info_string is True:
+                try:                
+                    edistring += edidict['info_string']
+                except:
+                    pass
                 edistring += '\n'
             #otherwise use the standard way of writing dict contents:
             else:
