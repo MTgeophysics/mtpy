@@ -378,11 +378,13 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
     del Counter
 
     if not len(set(lo_station_channels)) in [4,5]:
-        sys.exit( 'Error - Missing data files in directory {0} - not all channels found'.format(ts_directory))
+        print 'Error - Missing data files in directory {0} - not all channels found\n'.format(ts_directory)
+        sys.exit( )
     if not len(set(lo_rr_channels)) in [2]:
         if rr_station is not None:
-            sys.exit( 'Error - Missing data files in directory {0} - not all remote channels'\
-                        ' found'.format(ts_directory))
+            print 'Error - Missing data files in directory {0} - not all remote channels'\
+                        ' found\n'.format(ts_directory)
+            sys.exit( )
 
 
     #get a list with all existing time windows of consecutive data for all the channels

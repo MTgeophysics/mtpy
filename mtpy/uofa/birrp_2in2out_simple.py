@@ -69,11 +69,11 @@ def main():
     if not op.isdir(ts_dir):
         raise MTex.MTpyError_inputarguments('Time series directory not existing: %s' % (ts_dir))
 
-    try:
+    if 1:
         MTbp.runbirrp2in2out_simple(birrp_exe, stationname, ts_dir, coherence_th,
                                                     None, None, starttime, endtime)
-    except:
-        print 'ERROR - Could not process input data using BIRRP'
+    # except:
+    #     print 'ERROR - Could not process input data using BIRRP'
 
 
 
