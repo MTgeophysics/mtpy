@@ -39,7 +39,7 @@ import mtpy.utils.format as MTft
 import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
 import mtpy.utils.misc as MTmc
-import pdb
+#import pdb
 
 reload(MTcf)
 reload(MTft)
@@ -2468,28 +2468,63 @@ def convert2coh(stationname, birrp_output_directory):
 
     stationname = stationname.upper()
     #locate file names
-    cohfilenames = [ op.abspath(op.join(directory,i)) for i in fnmatch.filter(
-                os.listdir(directory), '*%s*.[123]r.2c2'%stationname.upper()) ] 
+
+    # only for second stage coherences...:
+
+    cohfilenames = sorted([ op.abspath(op.join(directory,i)) for i in fnmatch.filter(
+                os.listdir(directory), '*%s*.[12]r.[12]c2'%stationname.upper()) ] )
     
     if len(cohfilenames) < 1:
         print 'No coherence files for station %s found in: %s'%(stationname, directory)
         raise MTex.MTpyError_file_handling()#'No coherence files for station %s found in: %s'%(stationname, directory))
 
 
-    if len(cohfilenames) > 3:
-        print 'Too many coherence files for station %s found in: %s'%(stationname, directory)
-        raise MTex.MTpyError_file_handling()#'Too many coherence files for station %s found in: %s'%(stationname, directory))
-
+    # if len(cohfilenames) > 3:
+    #     print 'Too many coherence files for station %s found in: %s'%(stationname, directory)
+    #     raise MTex.MTpyError_file_handling()#'Too many coherence files for station %s found in: %s'%(stationname, directory))
     try:
-        period,freq,coh1,zcoh1 = MTfh.read_2c2_file(cohfilenames[0])
-        period,freq,coh2,zcoh2 = MTfh.read_2c2_file(cohfilenames[1])
+        for fn in cohfilenames:
+            if fn.lower().endswith('1r.2c2'):
+                break
+        period,freq,coh1,zcoh1 = MTfh.read_2c2_file(fn)
+        for fn in cohfilenames:
+            if fn.lower().endswith('2r.2c2'):
+                break
+        period,freq,coh2,zcoh2 = MTfh.read_2c2_file(fn)
 
-        if len(cohfilenames) == 3:
-
-            period,freq,coh3,zcoh3 = MTfh.read_2c2_file(cohfilenames[2])
     except:
         print 'Cannot read coherence files for station %s found in: %s'%(stationname, directory)
         raise MTex.MTpyError_file_handling()#'Cannot read coherence files for station %s found in: %s'%(stationname, directory))
+
+
+    twostage=False
+
+    for fn in cohfilenames:
+        if fn.lower().endswith('1r.1c2') or fn.lower().endswith('2r.1c2'):
+            twostage = True
+            break
+    if twostage is True:
+        coh3 = None
+        coh4 = None
+        zcoh3 = None
+        zcoh4 = None
+        try:
+            for fn in cohfilenames:
+                if fn.lower().endswith('1r.2c2'):
+                    break
+            period,freq,coh3,zcoh3 = MTfh.read_2c2_file(fn)
+        except:
+            coh3 = None
+
+        try:
+            for fn in cohfilenames:
+                if fn.lower().endswith('2r.2c2'):
+                    break
+            period,freq,coh4,zcoh4 = MTfh.read_2c2_file(fn)
+        except:
+            coh4 = None
+
+
 
     fn = '%s.coh'%(stationname)
     out_fn = op.abspath(op.join(directory,fn))
@@ -2497,16 +2532,24 @@ def convert2coh(stationname, birrp_output_directory):
 
 
     F_out =  open(out_fn,'w')
-    F_out.write('period \t freq \t coh1 \t zcoh1 \t coh2 \t zcoh2 \t coh3 \t zcoh3 \n'.expandtabs(4))
+    if twostage is False:
+        F_out.write('#period \t freq \t\t cohEx \t zcohEx \t\t cohEy \t zcohEy \n'.expandtabs(4))
+    else:
+        F_out.write('#period \t freq \t\t cohEx \t zcohEx \t\t cohEy \t zcohEy'\
+                    ' \t\t cohBx \t zcohBx \t\t cohBy \t zcohBx\n'.expandtabs(4))
 
 
     for ff in range(len(period)):
+        tmp_string =''
+        tmp_string += '{0:.5f} \t {1:.5f}\t\t'.format(period[ff], freq[ff])
+
         try:
             c1 = float(coh1[ff])
             zc1 = float(zcoh1[ff])
         except :
             c1= 0.
             zc1= 0.
+        tmp_string += '{0:.5f} \t {1:.5f}\t\t'.format(c1,zc1)
         
         try:
             c2 = float(coh2[ff])
@@ -2514,20 +2557,32 @@ def convert2coh(stationname, birrp_output_directory):
         except :
             c2 = 0.
             zc2 = 0.
-        
-        c3 = 0.
-        zc3 = 0.
+        tmp_string += '{0:.5f} \t {1:.5f}\t\t'.format(c2,zc2)
 
-        if len(cohfilenames) == 3:
-  
-            try:
-                c3 = float(coh3[ff])
-                zc3 = float(zcoh3[ff])
-            except:
-                pass
-    
+        if twostage is True:
+            c3 = 0.
+            zc3 = 0.
+            c4 = 0.
+            zc4 = 0.
+            if coh3 is not None:
+                try:
+                    c3 = float(coh3[ff])
+                    zc3 = float(zcoh3[ff])
+                except:
+                    pass
+            tmp_string += '{0:.5f} \t {1:.5f}\t\t'.format(c3,zc3)
+            if coh4 is not None:
+                try:
+                    c4 = float(coh4[ff])
+                    zc4 = float(zcoh4[ff])
+                except:
+                    pass
+            tmp_string += '{0:.5f} \t {1:.5f}\t\t'.format(c4,zc4)
+
+        tmp_string += '\n'
+        F_out.write(tmp_string.expandtabs(4))
                    
-        F_out.write(('%f \t %f \t %f \t %f \t %f \t %f \t %f \t %f \n'%(period[ff], freq[ff], c1, zc1, c2, zc2, c3, zc3)).expandtabs(4))
+        #F_out.write(('%f \t %f \t %f \t %f \t %f \t %f \t %f \t %f \n'%(period[ff], freq[ff], c1, zc1, c2, zc2, c3, zc3)).expandtabs(4))
     F_out.close()
 
     return out_fn
