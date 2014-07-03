@@ -15,6 +15,7 @@ import numpy as np
 import os
 import mtpy.core.mt as mt
 import mtpy.modeling.modem_new as modem
+import mtpy.analysis.pt as mtpt
 
 ogr.UseExceptions()
 
@@ -171,7 +172,7 @@ class PTShapeFile(object):
                                                      ('n_skew', np.float)])
             
                 
-    def write_shape_files(self):
+    def write_shape_files(self, ):
         """
         write shape file from given attributes
         """
@@ -294,7 +295,7 @@ class PTShapeFile(object):
             
             print 'Wrote shape file to {0}'.format(shape_fn)
             
-    def write_pt_shape_files_modem(self, modem_data_fn):
+    def write_data_pt_shape_files_modem(self, modem_data_fn):
         """
         write pt files from a modem data file.
         
@@ -307,6 +308,354 @@ class PTShapeFile(object):
         self.mt_obj_list = [modem_obj.mt_dict[key] 
                             for key in modem_obj.mt_dict.keys()]
         self.write_shape_files()
+        
+    def write_resp_pt_shape_files_modem(self, modem_data_fn, modem_resp_fn):
+        """
+        write pt files from a modem response file where ellipses are normalized
+        by the data file.
+        
+        """
+
+        #first get the data and response and place them in array for later use
+        modem_data_obj = modem.Data()
+        modem_data_obj.read_data_file(modem_data_fn)
+        
+        self.plot_period = modem_data_obj.period_list.copy()
+        self.mt_obj_list = [modem_data_obj.mt_dict[key] 
+                            for key in modem_data_obj.mt_dict.keys()]
+        self._get_pt_array()
+            
+        modem_resp_obj = modem.Data()
+        modem_resp_obj.read_data_file(modem_resp_fn)
+            
+        resp_pt_dict = {}        
+        for p_index, plot_per in enumerate(self.plot_period):
+            resp_pt_dict[plot_per] = []
+            for key in modem_data_obj.mt_dict.keys():
+                mt_obj = modem_data_obj.mt_dict[key]
+                if self.projection is None:
+                    east, north, elev = (mt_obj.lon, mt_obj.lat, 0)
+                    self.utm_cs = osr.SpatialReference()
+                    # Set geographic coordinate system to handle lat/lon  
+                    self.utm_cs.SetWellKnownGeogCS(self.projection)
+                else:
+                    self.utm_cs, utm_point = transform_ll_to_utm(mt_obj.lon, 
+                                                            mt_obj.lat,
+                                                            self.projection)
+                    east, north, elev = utm_point
+                
+                #get pt objects from data and model response
+                mpt = modem_resp_obj.mt_dict[key].pt
+            
+                pt_tuple = (mt_obj.station, east, north,
+                            mpt.phimin[0][p_index],
+                            mpt.phimax[0][p_index],
+                            mpt.azimuth[0][p_index],
+                            mpt.beta[0][p_index],
+                            2*mpt.beta[0][p_index])           
+                resp_pt_dict[plot_per].append(pt_tuple)
+
+            #now make each period an array for writing to file    
+            resp_pt_dict[plot_per] = np.array(resp_pt_dict[plot_per],
+                                              dtype=[('station', '|S15'),
+                                                     ('east', np.float),
+                                                     ('north', np.float),
+                                                     ('phimin', np.float),
+                                                     ('phimax', np.float),
+                                                     ('azimuth', np.float),
+                                                     ('skew', np.float),
+                                                     ('n_skew', np.float)])
+                
+        #write files
+        for plot_per in self.plot_period:
+            #shape file path
+            shape_fn = os.path.join(self.save_path, 
+                                    'Resp_PT_{0:.5g}s_{1}.shp'.format(plot_per,
+                                    self.projection))
+            
+            # remove the shape file if it already exists, has trouble over writing
+            if os.path.isfile(shape_fn) == True:
+                os.remove(shape_fn)
+            
+            # need to tell ogr which driver to use
+            driver = ogr.GetDriverByName('ESRI Shapefile')
+            
+            if os.path.isfile(shape_fn) == True:
+                driver.DeleteDataSource(shape_fn)
+                
+            #create shape file
+            data_source = driver.CreateDataSource(shape_fn)
+            
+            ##create a layer to put the ellipses onto
+            layer = data_source.CreateLayer('RPT', self.utm_cs, ogr.wkbPolygon)
+            
+            #make field names
+            field_name = ogr.FieldDefn("Name", ogr.OFTString)
+            layer.CreateField(field_name)
+            
+            field_phimin = ogr.FieldDefn('phi_min', ogr.OFTReal)
+            layer.CreateField(field_phimin)
+            
+            field_phimax = ogr.FieldDefn('phi_max', ogr.OFTReal)
+            layer.CreateField(field_phimax)
+            
+            field_skew = ogr.FieldDefn('skew', ogr.OFTReal)
+            layer.CreateField(field_skew)
+            
+            field_normalized_skew = ogr.FieldDefn('n_skew', ogr.OFTReal)
+            layer.CreateField(field_normalized_skew)
+            
+            poly_list = []
+            phimax = self.pt_dict[plot_per]['phimax'].max()
+            for pt_array in resp_pt_dict[plot_per]:
+                
+                #need to make an ellipse first using the parametric equation
+                azimuth = -np.deg2rad(pt_array['azimuth'])
+                width = self.ellipse_size*(pt_array['phimax']/phimax)
+                height = self.ellipse_size*(pt_array['phimin']/phimax) 
+                x0 = pt_array['east']
+                y0 = pt_array['north']
+                
+                x = x0+height*np.cos(self._theta)*np.cos(azimuth)-\
+                       width*np.sin(self._theta)*np.sin(azimuth)  
+                y = y0+height*np.cos(self._theta)*np.sin(azimuth)+\
+                       width*np.sin(self._theta)*np.cos(azimuth) 
+                       
+                #1) make a geometry shape of the ellipse
+                ellipse = ogr.Geometry(ogr.wkbLinearRing)
+                
+                for ii, jj in zip(x, y):
+                    ellipse.AddPoint(np.round(ii, 6), np.round(jj, 6))
+                    
+                ellipse.CloseRings()
+                    
+                #2) make a polygon
+                poly = ogr.Geometry(ogr.wkbPolygon)
+                poly.AddGeometry(ellipse)
+                
+                poly_list.append(poly)
+            
+            
+                ##4) this part is confusing but we need to create a feature that has the
+                ##   same definition as the layer that we created.
+                # get the layer definition
+                feature_def = layer.GetLayerDefn()
+                
+                #create a new feature
+                new_feature = ogr.Feature(feature_def)
+                #set the geometry of that feature to be the ellipse
+                new_feature.SetGeometry(poly)
+                #create the feature in the layer. 
+                layer.CreateFeature(new_feature)
+                
+                #
+                ###5) create a field to color by
+                new_feature.SetField("Name", pt_array['station'])
+                new_feature.SetField("phi_min", pt_array['phimin'])
+                new_feature.SetField("phi_max", pt_array['phimax'])
+                new_feature.SetField("skew", pt_array['skew'])
+                new_feature.SetField("n_skew", pt_array['n_skew'])
+            
+                #add the new feature to the layer.
+                layer.SetFeature(new_feature)
+                
+                #apparently need to destroy the feature
+                new_feature.Destroy()
+                
+                
+            # Need to be sure that all the new info is saved to 
+            data_source.SyncToDisk()
+            
+            #write a projection file
+            self.utm_cs.MorphToESRI()
+            prj_file = open('{0}prj'.format(shape_fn[:-3]), 'w')
+            prj_file.write(self.utm_cs.ExportToWkt())
+            prj_file.close()
+            
+            data_source.Destroy()
+            
+            print 'Wrote shape file to {0}'.format(shape_fn)
+        
+    def write_residual_pt_shape_files_modem(self, modem_data_fn, modem_resp_fn):
+        """
+        write residual pt shape files from ModEM output
+        
+        
+        """
+        
+        #first get the data and response and place them in array for later use
+        modem_data_obj = modem.Data()
+        modem_data_obj.read_data_file(modem_data_fn)
+        
+        self.plot_period = modem_data_obj.period_list.copy()
+        self.mt_obj_list = [modem_data_obj.mt_dict[key] 
+                            for key in modem_data_obj.mt_dict.keys()]
+        self._get_pt_array()
+            
+        modem_resp_obj = modem.Data()
+        modem_resp_obj.read_data_file(modem_resp_fn)
+            
+        residual_pt_dict = {}        
+        for p_index, plot_per in enumerate(self.plot_period):
+            residual_pt_dict[plot_per] = []
+            for key in modem_data_obj.mt_dict.keys():
+                mt_obj = modem_data_obj.mt_dict[key]
+                if self.projection is None:
+                    east, north, elev = (mt_obj.lon, mt_obj.lat, 0)
+                    self.utm_cs = osr.SpatialReference()
+                    # Set geographic coordinate system to handle lat/lon  
+                    self.utm_cs.SetWellKnownGeogCS(self.projection)
+                else:
+                    self.utm_cs, utm_point = transform_ll_to_utm(mt_obj.lon, 
+                                                            mt_obj.lat,
+                                                            self.projection)
+                    east, north, elev = utm_point
+                
+                #get pt objects from data and model response
+                dpt = modem_data_obj.mt_dict[key].pt
+                mpt = modem_resp_obj.mt_dict[key].pt
+
+                #calculate the residual pt
+                try:
+                    rpt = mtpt.ResidualPhaseTensor(pt_object1=dpt, 
+                                                   pt_object2=mpt)
+                    rpt = rpt.residual_pt
+                    pt_tuple = (mt_obj.station, east, north,
+                                rpt.phimin[0][p_index],
+                                rpt.phimax[0][p_index],
+                                rpt.azimuth[0][p_index],
+                                rpt.beta[0][p_index],
+                                np.sqrt(abs(rpt.phimin[0][p_index]*
+                                            rpt.phimax[0][p_index])))           
+                    residual_pt_dict[plot_per].append(pt_tuple)
+                except mtpt.MTex.MTpyError_PT:
+                    print key, dpt.pt.shape, mpt.pt.shape
+                    pt_tuple = (mt_obj.station, east, north,
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0)
+                    residual_pt_dict[plot_per].append(pt_tuple)
+            #now make each period an array for writing to file    
+            residual_pt_dict[plot_per] = np.array(residual_pt_dict[plot_per],
+                                              dtype=[('station', '|S15'),
+                                                     ('east', np.float),
+                                                     ('north', np.float),
+                                                     ('phimin', np.float),
+                                                     ('phimax', np.float),
+                                                     ('azimuth', np.float),
+                                                     ('skew', np.float),
+                                                     ('geometric_mean', np.float)])
+        #return residual_pt_dict
+        #write files
+        for plot_per in self.plot_period:
+            #shape file path
+            shape_fn = os.path.join(self.save_path, 
+                                    'ResidualPT_{0:.5g}s_{1}.shp'.format(plot_per,
+                                    self.projection))
+            
+            # remove the shape file if it already exists, has trouble over writing
+            if os.path.isfile(shape_fn) == True:
+                os.remove(shape_fn)
+            
+            # need to tell ogr which driver to use
+            driver = ogr.GetDriverByName('ESRI Shapefile')
+            
+            if os.path.isfile(shape_fn) == True:
+                driver.DeleteDataSource(shape_fn)
+                
+            #create shape file
+            data_source = driver.CreateDataSource(shape_fn)
+            
+            ##create a layer to put the ellipses onto
+            layer = data_source.CreateLayer('RPT', self.utm_cs, ogr.wkbPolygon)
+            
+            #make field names
+            field_name = ogr.FieldDefn("Name", ogr.OFTString)
+            layer.CreateField(field_name)
+            
+            field_phimin = ogr.FieldDefn('phi_min', ogr.OFTReal)
+            layer.CreateField(field_phimin)
+            
+            field_phimax = ogr.FieldDefn('phi_max', ogr.OFTReal)
+            layer.CreateField(field_phimax)
+            
+            field_skew = ogr.FieldDefn('skew', ogr.OFTReal)
+            layer.CreateField(field_skew)
+            
+            field_geometric_mean = ogr.FieldDefn('mean', ogr.OFTReal)
+            layer.CreateField(field_geometric_mean)
+            
+            poly_list = []
+            phimax = self.pt_dict[plot_per]['phimax'].max()
+            for pt_array in residual_pt_dict[plot_per]:
+                #need to make an ellipse first using the parametric equation
+                azimuth = -np.deg2rad(pt_array['azimuth'])
+                width = self.ellipse_size*(pt_array['phimax']/phimax)
+                height = self.ellipse_size*(pt_array['phimin']/phimax) 
+                x0 = pt_array['east']
+                y0 = pt_array['north']
+                
+                x = x0+height*np.cos(self._theta)*np.cos(azimuth)-\
+                       width*np.sin(self._theta)*np.sin(azimuth)  
+                y = y0+height*np.cos(self._theta)*np.sin(azimuth)+\
+                       width*np.sin(self._theta)*np.cos(azimuth) 
+                       
+                #1) make a geometry shape of the ellipse
+                ellipse = ogr.Geometry(ogr.wkbLinearRing)
+                
+                for ii, jj in zip(x, y):
+                    ellipse.AddPoint(np.round(ii, 6), np.round(jj, 6))
+                    
+                ellipse.CloseRings()
+                    
+                #2) make a polygon
+                poly = ogr.Geometry(ogr.wkbPolygon)
+                poly.AddGeometry(ellipse)
+                
+                poly_list.append(poly)
+            
+            
+                ##4) this part is confusing but we need to create a feature that has the
+                ##   same definition as the layer that we created.
+                # get the layer definition
+                feature_def = layer.GetLayerDefn()
+                
+                #create a new feature
+                new_feature = ogr.Feature(feature_def)
+                #set the geometry of that feature to be the ellipse
+                new_feature.SetGeometry(poly)
+                #create the feature in the layer. 
+                layer.CreateFeature(new_feature)
+                
+                #
+                ###5) create a field to color by
+                new_feature.SetField('Name', pt_array['station'])
+                new_feature.SetField('phi_min', pt_array['phimin'])
+                new_feature.SetField('phi_max', pt_array['phimax'])
+                new_feature.SetField('skew', pt_array['skew'])
+                new_feature.SetField('mean', pt_array['geometric_mean'])
+            
+                #add the new feature to the layer.
+                layer.SetFeature(new_feature)
+                
+                #apparently need to destroy the feature
+                new_feature.Destroy()
+                
+                
+            # Need to be sure that all the new info is saved to 
+            data_source.SyncToDisk()
+            
+            #write a projection file
+            self.utm_cs.MorphToESRI()
+            prj_file = open('{0}prj'.format(shape_fn[:-3]), 'w')
+            prj_file.write(self.utm_cs.ExportToWkt())
+            prj_file.close()
+            
+            data_source.Destroy()
+            
+            print 'Wrote shape file to {0}'.format(shape_fn)
         
 #==============================================================================
 # Tipper arrows

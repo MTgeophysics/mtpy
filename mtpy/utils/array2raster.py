@@ -12,6 +12,7 @@ except ImportError:
 import numpy as np
 import mtpy.modeling.modem_new as modem
 import os
+import scipy.interpolate as interpolate
 
 ogr.UseExceptions()
 
@@ -24,7 +25,7 @@ class ModEM2Raster(object):
         >>> mfn = r"/home/ModEM/Inv1/Modular_NLCG_110.rho"
         >>> m_obj = a2r.ModEM2Raster()
         >>> m_obj.model_fn = mfn
-        >>> m_obj.origin = (-119.11, 37.80)
+        >>> m_obj.lower_left_corner = (-119.11, 37.80)
         >>> m_obj.write_raster_files(save_path=r"/home/ModEM/Inv1/GIS_depth_slices")
 
     
@@ -34,7 +35,7 @@ class ModEM2Raster(object):
         self.model_fn = kwargs.pop('model_fn', None)
         self.save_path = kwargs.pop('save_path', os.getcwd())
         self.projection = kwargs.pop('projection', 'WGS84')
-        self.origin = kwargs.pop('origin', None)
+        self.lower_left_corner = kwargs.pop('lower_left_corner', None)
         
         self.pad_east = None
         self.pad_north = None
@@ -62,25 +63,99 @@ class ModEM2Raster(object):
         self.res_array = model_obj.res_model[self.pad_north:-self.pad_north,
                                              self.pad_east:-self.pad_east,
                                              :]
+                                             
+    def interpolate_grid(self, pad_east=None, pad_north=None, cell_size=None):
+        """
+        interpolate the irregular model grid onto a regular grid.
         
-    def write_raster_files(self, save_path=None):
+        """
+        
+        model_obj = modem.Model()
+        model_obj.model_fn = self.model_fn
+        model_obj.read_model_file()
+
+        self.grid_z = model_obj.grid_z.copy()                                            
+
+        if cell_size is not None:
+            self.cell_size_east = cell_size
+            self.cell_size_north = cell_size
+        else:
+            self.cell_size_east = np.median(model_obj.nodes_east)
+            self.cell_size_north = np.median(model_obj.nodes_north)
+        
+        if pad_east is not None:
+            self.pad_east = pad_east
+        else:
+            self.pad_east = np.where(model_obj.nodes_east[0:10] > 
+                                     self.cell_size_east*1.1)[0][-1]
+        if pad_north is not None:
+            self.pad_north = pad_north
+        else:
+            self.pad_north = np.where(model_obj.nodes_north[0:10] > 
+                                    self.cell_size_north*1.1)[0][-1]
+        
+            
+        new_east = np.arange(model_obj.grid_east[self.pad_east],
+                             model_obj.grid_east[-self.pad_east-1],
+                             self.cell_size_east)
+        new_north = np.arange(model_obj.grid_north[self.pad_north],
+                             model_obj.grid_north[-self.pad_north-1],
+                             self.cell_size_north)
+            
+        model_n, model_e = np.broadcast_arrays(model_obj.grid_north[:, None], 
+                                                      model_obj.grid_east[None, :])
+
+                                             
+        new_res_arr = np.zeros((new_north.shape[0],
+                                new_east.shape[0],
+                                model_obj.grid_z.shape[0]))
+                                
+        for z_index in range(model_obj.grid_z.shape[0]):
+            res = model_obj.res_model[:, :, z_index]
+            new_res_arr[:, :, z_index] = interpolate.griddata(
+                                         (model_n.ravel(), model_e.ravel()),
+                                         res.ravel(), 
+                                         (new_north[:, None], new_east[None, :]))
+            
+#        #1) first need to make x, y, z have dimensions (nx, ny, nz), similar to res
+#        north, east, vert = np.broadcast_arrays(model_obj.grid_north[:, None, None], 
+#                                                model_obj.grid_east[None, :, None], 
+#                                                model_obj.grid_z[None, None, :])
+#        
+#        #2) next interpolate ont the new mesh
+#        new_res = interpolate.griddata((north.ravel(), 
+#                                        east.ravel(), 
+#                                        vert.ravel()),
+#                                        model_obj.res_model.ravel(),
+#                                        (new_north[:, None, None], 
+#                                         new_east[None, :, None], 
+#                                         model_obj.grid_z[None, None, :]),
+#                                         method='linear')
+        self.res_array = new_res_arr
+        
+    def write_raster_files(self, save_path=None, pad_east=None, 
+                           pad_north=None, cell_size=None):
         """
         write a raster file for each layer
         
         """
-        if self.origin is None:
-            raise ValueError('Need to input an origin as (lon, lat) of the'
-                             'southeast corner of the station grid.')
+        if self.lower_left_corner is None:
+            raise ValueError('Need to input an lower_left_corner as (lon, lat)')
         if save_path is not None:
             self.save_path = save_path
             
-        self._get_model()
+        self.interpolate_grid(pad_east=pad_east, pad_north=pad_north, 
+                              cell_size=cell_size)
         
         for ii in range(self.res_array.shape[2]):
             d = self.grid_z[ii]
-            raster_fn = os.path.join(save_path, 'Depth_{0:.2f}.tif'.format(d))
-            array2raster(raster_fn, self.origin, self.cell_size_east, 
-                         self.cell_size_north, self.res_array[:,:,ii],
+            raster_fn = os.path.join(save_path, 'Depth_{0:.2f}_{1}.tif'.format(d, 
+                                     self.projection))
+            array2raster(raster_fn, 
+                         self.lower_left_corner, 
+                         self.cell_size_east, 
+                         self.cell_size_north, 
+                         np.log10(self.res_array[:,:,ii]),
                          self.projection)            
         
         
@@ -119,7 +194,7 @@ def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
           values are in log scale for coloring purposes.
     
     """
-    res_array = np.log10(np.flipud(res_array[::-1]))
+    res_array = np.flipud(res_array[::-1])
 
     ncols = res_array.shape[1]
     nrows = res_array.shape[0]
