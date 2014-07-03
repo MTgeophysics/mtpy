@@ -369,13 +369,17 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
                                         '!!\n'.format(ts_directory,rr_station)
             raise MTex.MTpyError_ts_data()
 
+    try:
     #take the most common sampling rate, if there are more than one
     #assuming typo in this case!!
-    from collections import Counter
-    tmp_dummy1 = lo_sampling_rates
-    tmp_dummy2 = Counter(tmp_dummy1)
-    sampling_rate = tmp_dummy2.most_common(1)[0][0]
-    del Counter
+        from collections import Counter
+        tmp_dummy1 = lo_sampling_rates
+        tmp_dummy2 = Counter(tmp_dummy1)
+        sampling_rate = tmp_dummy2.most_common(1)[0][0]
+        del Counter
+    except:
+        #for older Python versions :-( ... 
+        sampling_rate = lo_sampling_rates[0]
 
     if not len(set(lo_station_channels)) in [4,5]:
         print 'Error - Missing data files in directory {0} - not all channels found\n'.format(ts_directory)
