@@ -62,14 +62,16 @@ class Inmodel():
     **inmodel_
     """
 
-    def __init__(self, inmodel_modeldir, **input_parameters):
+    def __init__(self, **input_parameters):
         self.working_directory = '.'
-        self.inmodel_modeldir = inmodel_modeldir
+        self.inmodel_modeldir = None
+        self.inmodelfile = 'inmodel.dat'
         self.inmodel_dictionary = {0:[100,100,0]} # dictionary containing values for 
                                             # inmodel file, in format topdepth: [minres,maxres,strike]
         
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])
+
 
 
     def build_inmodel(self):
@@ -131,6 +133,28 @@ class Inmodel():
         print "written inmodel file to {}".format(self.working_directory)
 
 
+        
+    def read_inmodel(self):
+        """
+        read the inmodel file
+        """
+        
+        # read in file
+        inmodel = np.loadtxt(os.path.join(self.working_directory,self.inmodelfile))
+        
+        # convert layer thicknesses to depths
+        depths = np.array([[sum(inmodel[:i,1]),sum(inmodel[:i+1,1])] for i in range(len(inmodel))]).flatten()
+        values = np.zeros((len(inmodel)*2,5))
+        ii = 0
+        for val in inmodel:
+            for i in range(2):
+                values[ii] = val
+                ii += 1
+        
+        self.inmodel = np.vstack([values[:,0],depths,values[:,2],values[:,3],values[:,4]]).T
+
+
+
 class Data():
     """
     deals with input data from 1d inversions, including creating a data file
@@ -141,7 +165,7 @@ class Data():
         self.working_directory = None
         self.respfile = 'ai1dat.dat'
         self.datafile = None
-        self.errorfloor = 0.1
+        self.errorfloor = np.ones([2,2])*0.1
         self.errorfloor_type = 'relative' # choose whether to set an absolute or relative error floor
         self.edipath = None
         self.mode = 'I'
@@ -170,22 +194,25 @@ class Data():
         
         # define z
         zr = np.real(eo.Z.z)
-        # sign of imaginary component needs to be reversed for this particular code
+        # sign of imaginary component needs to be reversed for the pek1d inversion code
         zi = -np.imag(eo.Z.z)
         ze = eo.Z.zerr
         z = zr + 1j*zi
+        
+        if type(self.errorfloor) in [int,float]:
+            self.errorfloor = np.ones([2,2])*self.errorfloor
+        
         if self.errorfloor_type == 'relative':
             zer = ze/np.abs(z)
-            zer[(zer<self.errorfloor)] = self.errorfloor
+            for i in range(2):
+                for j in range(2):               
+                    zer[:,i,j][(zer[:,i,j]<self.errorfloor[i,j])] = self.errorfloor[i,j]
             ze = np.abs(z)*zer
-            
-            #  set errors in off-diagonals to the minimum error of on-diagonal components
-            for ze_sub in ze:
-                min_offdiags = min(ze_sub[0,1],ze_sub[1,0])
-                ze_sub[ze_sub<min_offdiags] = min_offdiags   
         
         elif self.errorfloor_type == 'absolute':
-            ze[ze<self.errorfloor] = self.errorfloor
+            for i in range(2):
+                for j in range(2):               
+                    ze[:,i,j][(ze[:,i,j]<self.errorfloor[i,j])] = self.errorfloor[i,j]
             
         # define header info for data file
         header = '{:>5}\n{:>5}'.format(self.mode,len(eo.Z.resistivity))
@@ -306,32 +333,19 @@ class Model():
         self.respfile = 'ai1dat.dat'
         self.fitfile = 'ai1fit.dat'
         self.inmodelfile = 'inmodel.dat'
+        self.modelno = 1
+        self.models = None
         self.misfit_threshold = 1.1
         self.station = None
+        self.Fit = None
+        self.x = 0.
+        self.y = 0.
         
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])       
-        
-        
-    def find_bestmodel(self):
-        """
-        find the smoothest model that fits the data within self.misfit_threshold
-        """
-        # read fitfile
-        self.read_fit()
-        fit = self.fit
-        
-        # define parameters
-        mis = self.misfit
-        s = self.penalty_structure
-        a = self.penalty_anisotropy
-        
-        # define function to minimise
-        f = a*s*np.abs(a-s)/(a+s)
-        
-        # define the parameters relating to the best model
-        self.params_bestmodel = fit[f==min(f[mis<min(mis)*self.misfit_threshold])][0]
-        self.params_fittingmodels = fit[mis<min(mis)*self.misfit_threshold]
+            
+        if self.station is None:
+            self.station = os.path.basename(self.working_directory).split('_')[0]
 
         
     def read_model(self):
@@ -354,25 +368,80 @@ class Model():
         
         models = np.genfromtxt(fpath,skiprows=1,invalid_raise=False)
         self.models = models.reshape(0.5*len(models)/nlayers,2*nlayers,5)
-        
-    def read_inmodel(self):
+
+
+    def check_consistent_strike(self, depth,
+                                window = 5,
+                                threshold = 10.):
         """
-        read the inmodel file
+        check if a particular depth point corresponds to a consistent 
+        strike direction
+        
         """
         
-        # read in file
-        inmodel = np.loadtxt(os.path.join(self.working_directory,self.inmodelfile))
+        if self.models is None:
+            self.read_model()
         
-        # convert layer thicknesses to depths
-        depths = np.array([[sum(inmodel[:i,1]),sum(inmodel[:i+1,1])] for i in range(len(inmodel))]).flatten()
-        values = np.zeros((len(inmodel)*2,5))
-        ii = 0
-        for val in inmodel:
-            for i in range(2):
-                values[ii] = val
-                ii += 1
+        # get model of interest
+        model = self.models[self.modelno-1]
         
-        self.inmodel = np.vstack([values[:,0],depths,values[:,2],values[:,3],values[:,4]]).T
+        # 
+        depths = model[:,1]
+        closest_depth = depths[np.abs(depths-depth) == np.amin(np.abs(depths-depth))][0]
+        cdi = list(depths).index(closest_depth)
+        i1 = max(0,cdi - int(window/2)*2 - 1)
+        i2 = min(len(model)-2,cdi + int(window/2)*2+1)
+        
+        strikes = model[:,-1][i1:i2]
+
+        return np.std(strikes) < threshold
+        
+    
+    def find_max_anisotropy(self,min_depth = 0.,
+                            max_depth = None,
+                            strike_window = 5,
+                            strike_threshold = 10.):
+        """
+        find the point of maximum anisotropy in a model result within a given
+        depth range. Check that the strike is stable below defined threshold
+        
+        """
+        if self.models is None:
+            self.read_model()
+        
+        # get model of interest
+        model = self.models[self.modelno-1]
+
+        if max_depth is None:
+            max_depth = np.amax(model[:,1])
+            
+        model_filt = model[(model[:,1]>min_depth)&(model[:,1]<max_depth)]
+  
+        aniso = 1.*model_filt[:,3]/model_filt[:,2]
+        aniso_max = np.amax(aniso)
+        depth_aniso_max = model_filt[:,1][aniso == aniso_max][0]
+        
+        while not self.check_consistent_strike(depth_aniso_max):   
+            aniso[aniso == aniso_max] = 1.
+            aniso_max = np.amax(aniso)
+            depth_aniso_max = model_filt[:,1][aniso == aniso_max][0]
+        
+
+        params = model_filt[aniso == aniso_max][0]
+        params[-1] = params[-1]%180
+
+        self.anisotropy_max_parameters = params
+
+    def update_location_from_file(self,xyfile,indices=[0,999]):
+        """
+        updates x and y location from an xy file with format
+        station x y
+        can give indices to search on if the station name in the file
+        is not exactly the same as defined in the model.
+        
+        """
+        return
+        
         
         
 
@@ -435,6 +504,7 @@ class Fit():
         
         self.working_directory = wkdir
         self.fitfile = 'ai1fit.dat'
+        self.respfile = 'ai1dat.dat'
         self.misfit_threshold = 1.1
         self.station = None
         
@@ -480,3 +550,154 @@ class Fit():
         self.weight_anisotropy = fit[:,4]
         self.modelno = fit[:,0]
         self.fit = fit
+
+    def find_bestmodel(self):
+        """
+        find the smoothest model that fits the data within self.misfit_threshold
+        """
+
+            
+        self.read_fit()
+        fit = self.fit
+        
+        # define parameters
+        mis = self.misfit
+        s = self.penalty_structure
+        a = self.penalty_anisotropy
+        
+        # define function to minimise
+        f = a*s*np.abs(a-s)/(a+s)
+        
+        # define the parameters relating to the best model
+        self.params_bestmodel = fit[f==min(f[mis<min(mis)*self.misfit_threshold])][0]
+        self.params_fittingmodels = fit[mis<min(mis)*self.misfit_threshold]
+        
+        
+class Model_suite():
+    """
+    """
+    def __init__(self,working_directory,**input_parameters):
+        self.working_directory = working_directory
+        self.model_list = []
+        self.inmodel_list = []
+        self.modelfile = 'ai1mod.dat'
+        self.respfile = 'ai1dat.dat'
+        self.fitfile = 'ai1fit.dat'
+        self.inmodelfile = 'inmodel.dat' 
+        self.modelno = 1
+        self.station_list = []
+        self.station_listfile = None
+        self.station_search_indices=[0,999]
+        self.station_xyfile = None
+        self.anisotropy_surface_file = 'model%03i_aniso_depth.dat'
+        
+        for key in input_parameters.keys():
+            setattr(self,key,input_parameters[key])
+            
+        if self.station_listfile is not None:
+            try:
+                self.station_list = [i.strip() for i in open(self.station_listfile).readlines()]
+            except:
+                print "can't open station list file"
+
+        
+        if self.model_list == []:
+            self.inmodel_list = []
+            wd = self.working_directory
+            folder_list = [os.path.join(wd,f) for f in os.listdir(wd) if os.path.isdir(os.path.join(wd,f))]            
+            if len(self.station_list)>0:
+                i1,i2 = self.station_search_indices
+                folder_list2 = []
+                for s in self.station_list:
+                    for ff in folder_list:
+                        if str.lower(os.path.basename(ff).split('_')[0][i1:i2]) == str.lower(s):
+                            folder_list2.append(ff)
+                            print s
+                folder_list = folder_list2
+        for folder in folder_list:
+            try:                
+                model = Model(folder)
+                model.read_model()
+                self.model_list.append(model) 
+            except IOError:
+                print "model file not found"                    
+            try:
+                inmodel = Inmodel(working_directory=folder)
+                inmodel.read_inmodel()
+                self.inmodel_list.append(inmodel)
+            except IOError:
+                print "inmodel file not found"
+
+        if self.station_xyfile is not None:
+            self.update_multiple_locations_from_file()
+                
+            
+    def get_aniso_peak_depth(self, 
+                             min_depth = 0, 
+                             max_depth = None,
+                             strike_threshold = 10.,
+                             strike_window = 5):
+        """
+        get the min and max resistivities, depth and strike at point of maximum
+        anisotropy between min and max depth.
+        
+        min and max depth can be float, integer or numpy array
+        
+        the depth is only selected if the strike is stable within parameters
+        given by strike threshold and strike window.
+        
+        """
+
+        model_params = np.zeros([len(self.model_list),6])
+        
+        if type(min_depth) in [float,int]:
+            min_depth = np.zeros(len(self.model_list))+min_depth
+        if type(max_depth) in [float,int]:
+            max_depth = np.zeros(len(self.model_list))+max_depth
+            
+            
+        for i,model in enumerate(self.model_list):
+            model.modelno = self.modelno
+            model.find_max_anisotropy(min_depth=min_depth[i],
+                                      max_depth=max_depth[i],
+                                      strike_window=strike_window,
+                                      strike_threshold=strike_threshold)
+            x,y = model.x,model.y
+            depth,te,tm,strike = model.anisotropy_max_parameters[1:]
+            
+            model_params[i] = x,y,depth,te,tm,strike
+        
+        self.anisotropy_max_parameters = model_params
+        
+        if '%' in self.anisotropy_surface_file:
+           self.anisotropy_surface_file = self.anisotropy_surface_file%self.modelno 
+        
+        np.savetxt(os.path.join(self.working_directory,
+                                self.anisotropy_surface_file),
+                   model_params,
+                   header = ' '.join(['x','y','z','resmin','resmax','strike']),
+                   fmt=['%14.6f','%14.6f','%8.2f','%8.2f','%8.2f','%8.2f'])
+            
+            
+    def update_multiple_locations_from_file(self):
+        """
+        updates multiple x and y locations from an xy file with format
+        station x y
+        can give indices to search on if the station name in the file
+        is not exactly the same as defined in the model.
+        
+        """
+        xy = {}
+        i1,i2 = self.station_search_indices
+        
+        for line in open(self.station_xyfile):
+            line = line.strip().split()
+            xy[str.lower(line[0])] = [float(line[1]),float(line[2])]
+
+        for model in self.model_list:
+            model.x,model.y = xy[str.lower(model.station[i1:i2])]
+
+        self.x = np.array([m.x for m in self.model_list])
+        self.y = np.array([m.y for m in self.model_list])  
+            
+        
