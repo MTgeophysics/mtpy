@@ -90,7 +90,7 @@ def generate_inputfiles(epath, **input_parameters):
     wd = input_parameters['working_directory']
     sp = input_parameters['master_savepath']
     savepath = fh.make_unique_folder(os.path.join(wd,sp),
-                                     os.path.basename(Data.edipath)[:5]+Data.mode)
+                                     os.path.basename(Data.edipath).split('_')[0]+Data.mode)
     os.mkdir(savepath)
     Data.write_datafile(wd = savepath)
     
@@ -137,7 +137,7 @@ def parse_arguments(arguments):
     parser.add_argument('-wd','--working_directory',
                         help='working directory',
                         type=str,default='.')
-    parser.add_argument('-el','--edifolder_list',
+    parser.add_argument('-el','--edifolder_list', nargs='*',
                         help='list of folders containing edi files to use, full path or relative to working directory',
                         type=str,default=None)
     parser.add_argument('-ei','--edifolder_identifier',
@@ -289,14 +289,15 @@ def build_run():
     
     # establish the rank of the computer
     rank = MPI.COMM_WORLD.Get_rank()
-    if rank != 0:
-        time.sleep(10)
    
     # create a list of edi files to model
     edi_list = create_filelist(input_parameters['working_directory'],
                                subfolder_list = input_parameters['edifolder_list'],
                                subfolder_identifier = input_parameters['edifolder_identifier'])
-    
+    print edi_list
+    print input_parameters['working_directory']
+    print input_parameters['edifolder_list']
+    print input_parameters['edifolder_identifier'] 
     # update input parameters for building of model
     build_inputs = {}
     for key in build_parameters:
@@ -306,10 +307,14 @@ def build_run():
             print "problems with {}".format(key)
     
     # make a master directory under the working directory to save all runs into
-    master_directory = input_parameters['master_savepath']
+    master_directory = os.path.join(input_parameters['working_directory'],input_parameters['master_savepath'])
     if rank == 0:
-        os.mkdir(master_directory)
+        if not os.path.exists(master_directory):
+            os.mkdir(master_directory)
     build_inputs['master_savepath'] = master_directory
+    # wait til master directory is made until progressing
+    while not os.path.isdir(master_directory):
+        time.sleep(1)
 
     # build a model
     Data = generate_inputfiles(edi_list[rank],**build_inputs)

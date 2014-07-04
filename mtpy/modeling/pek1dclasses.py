@@ -219,7 +219,7 @@ class Data():
         fmt = ['%14.5f']+['%12.5e']*16
         
         # define file name and save data file
-        fname_bas = self.edi_object.station[:5]
+        fname_bas = self.edi_object.station.split('_')[0]
         self.datafile = fname_bas+'.dat'
         fname = os.path.join(self.working_directory,self.datafile)
 
