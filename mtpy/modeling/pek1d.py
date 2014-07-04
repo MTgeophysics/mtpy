@@ -123,10 +123,12 @@ def create_inmodel_dictionary_from_file(input_file,
     """
  
     inmodel_dict = {}
+    inmodel_list = []
 
     if working_directory is None:
         working_directory = os.path.abspath('.')
     
+    elev_old = -999.
     for line in open(input_file).readlines()[1:]:
         line = line.strip().split(',')
         if str.lower(line[0]) != 'none':
@@ -141,7 +143,14 @@ def create_inmodel_dictionary_from_file(input_file,
             elev = 0.0
         params = [float(pp) for pp in line[1:]]
         print elev,params
-        inmodel_dict[round(elev+params[0],2)] = params[1:]
+        inmodel_list.append([round(elev+params[0],2),params[1:]])
+    
+    for i in range(len(inmodel_list) - 1):
+        if inmodel_list[i][0] > inmodel_list[i+1][0]:
+            inmodel_list.remove(inmodel_list[i])
+    
+    for item in inmodel_list:
+        inmodel_dict[item[0]] = item[1]
     
     print "inmodel_dict",inmodel_dict
     return inmodel_dict
@@ -153,7 +162,7 @@ def create_filelist(wd, subfolder_list = None, subfolder_identifier = None):
     
     """
     
-    edi_list = []    
+    edi_list = []
     
     if subfolder_list is None:
         subfolder_list = [folder for folder, sf, f in os.walk(wd) if folder != wd]
