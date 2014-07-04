@@ -58,7 +58,6 @@ def plotcoh(fn, saveplot=False):
 	data = np.loadtxt(fn)
 
 	periods = data[:,0]
-	print periods 
 	if data.shape[1] == 6:
 
 		#ipdb.set_trace()
@@ -68,7 +67,6 @@ def plotcoh(fn, saveplot=False):
 
 		ax1 = figure(11)
 		
-		print coh1.shape
 		plot(periods,coh1)
 		scatter(periods,coh1,marker='x',c='b')
 		
