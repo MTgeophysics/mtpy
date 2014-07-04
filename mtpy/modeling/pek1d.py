@@ -31,8 +31,14 @@ def parse_arguments(arguments):
     parser.add_argument('-r','--run_input',nargs=7,
                         help='command line input for the inversion program',
                         type=float,default=[1,0,0.1,40,1.05,1,0])    
+    efhelp = 'error floor for impedence tensor or resisitivity values, provide 1,2 or 4 values.\n'
+    efhelp += '1 value: same errorfloor applied to all 4 components of impedance tensor\n'
+    efhelp += '2 values: first value applied to diagonals (xx and yy), second value applied to off diagonals\n'
+    efhelp += '4 values: values applied in order to xx, xy, yx, yy'
+    efhelp += 'if 3 values are provided then first 2 are taken. If > 4 are provided then first 4 are taken\n'
+
     parser.add_argument('-ef','--errorfloor',
-                        help='error floor for impedence tensor or resisitivity values',
+                        help=efhelp,nargs='*',
                         type=float,default=0.1)
     parser.add_argument('-eft','--errorfloor_type',
                         help='type of error floor, absolute or relative',
@@ -81,7 +87,13 @@ def parse_arguments(arguments):
     args.working_directory = os.path.abspath(args.working_directory)
     #args.run_input = args.run_input[0]
     for i in [0,1,3,5,6]:
-        args.run_input[i] = int(args.run_input[i])    
+        args.run_input[i] = int(args.run_input[i])
+        
+    if (len(args.errorfloor) == 2) or (len(args.errorfloor) == 3):
+        ef = args.errorfloor[:2]
+        args.errorfloor = np.array([ef,ef[::-1]])
+    elif len(args.errorfloor) == 4:
+        args.errorfloor = np.reshape(args.errorfloor,[2,2])
 
     return args
 
