@@ -313,6 +313,7 @@ class Plot_map():
         self.anisotropy_display_factor = 0.75
         self.xlim = None
         self.ylim = None
+        self.cbar=True
 
         
         for key in input_parameters.keys():
@@ -321,8 +322,7 @@ class Plot_map():
         
     def plot_aniso_depth_map(self,aniso_depth_file,
                              scale='km',
-                             header_rows=1,
-                             cbar=True):
+                             header_rows=1):
         """
         """
         import matplotlib.patches as mpatches
@@ -332,7 +332,7 @@ class Plot_map():
         x,y,z,resmin,resmax,strike = [surface[:,i] for i in range(len(surface[0]))]
         aniso = resmax/resmin
                 
-        self.plot_interface(x,y,z,scale=scale,cbar=cbar)
+        self.plot_interface(x,y,z,scale=scale)
         
         if self.scaleby == 'resmin':
             scale = 1./resmin
@@ -351,7 +351,7 @@ class Plot_map():
             e.set_facecolor('k')
         
     
-    def plot_interface(self,x,y,z,scale='km',cbar=True):
+    def plot_interface(self,x,y,z,scale='km'):
 
         import pek1dplotting as p1dp
         z = p1dp.update_scale(z,scale)
@@ -372,7 +372,7 @@ class Plot_map():
         ax = plt.gca()
         ax.set_aspect('equal')
         
-        if cbar:
+        if self.cbar:
             plt.colorbar()
         
         if self.xlim is not None:
@@ -429,8 +429,7 @@ class Plot_map():
         plt.subplot(s1,s2,1)
         self.plot_aniso_depth_map(aniso_depth_file,
                                   scale=scale[0],
-                                  header_rows=header_rows[0],
-                                  cbar=False)     
+                                  header_rows=header_rows[0])     
         plt.gca().set_xticklabels([])
         for s,ss in enumerate(sp):
             ax = plt.subplot(s1,s2,ss)
@@ -444,11 +443,12 @@ class Plot_map():
                 ax.set_xticklabels([])
             if 'y' not in sp_labels[s]:
                 ax.set_yticklabels([])
-            
+
         
         ax = plt.axes([0.85,0.1,0.1,0.8])
         ax.set_visible(False)
-        plt.colorbar(fraction=0.8)
+        if self.cbar:
+            plt.colorbar(fraction=0.8)
 
 
     def plot_location_map(self,
@@ -482,15 +482,16 @@ class Plot_profile():
         self.station_listfile = None
         self.station_xyfile = None
         self.Model_suite = Model_suite
+        self.modeltype = 'model'
         self.fig_width = 1.
         self.ax_width = 0.03
         self.ax_height = 0.8
         self.ax_bottom = 0.1
         self.plot_spacing = 0.02
         self.ylim = [6,0]
-        self.titles = {'minmax':'Minimum and maximum resistivity, ohm-m',
+        self.titles = {'minmax':'Minimum and maximum resistivity, $\Omega m$',
                        'aniso':'Anisotropy in resistivity (maximum/minimum resistivity)',
-                       'strike':'Strike angle of minimum resistivity'}
+                       'strike':'Strike angle of minimum resistivity, $^\circ$'}
         self.xlim = {'minmax':[0.1,1000],
                      'aniso':[0,20],
                      'strike':[0,180]}
@@ -576,6 +577,9 @@ class Plot_profile():
         
         """
         import pek1dplotting as p1dp
+
+
+
         
         self.get_station_distance()
         xlim = self.xlim[parameter]        
@@ -612,38 +616,51 @@ class Plot_profile():
             plt.figure(figsize=(len(profile_x),5*self.ax_height))
 
         for i in range(len(profile_x_buf)):
-            ax = plt.axes([profile_x_buf[i],self.ax_bottom,px,self.ax_height])
-         
-            model = self.Model_suite.model_list[i]
-            model.read_model()
-            modelvals = model.models[modelno]
-            if horizon_list is not None:
-                for h in horizon_list:
-                    elev = ed.get_elevation(model.x,model.y,h)
-                    elev = p1dp.update_scale(elev,horizon_zscale)
-                    plt.plot(xlim,[elev]*2)
 
-            if 'minmax' in parameter:
-                plt.plot(modelvals[:,3],modelvals[:,1],'0.5')
-                plt.plot(modelvals[:,2],modelvals[:,1],'k-')
-                plt.xscale('log')
-            if 'aniso' in parameter:
-                plt.plot(modelvals[:,3]/modelvals[:,2],modelvals[:,1],'k-')
-            if 'strike' in parameter:
-                plt.plot(modelvals[:,4]%180,modelvals[:,1],'k-')
-            plt.ylim(self.ylim)
-            plt.xlim(xlim)
-            if i != 0:
-                ax.set_yticklabels([])
-            else:
-                for label in ax.get_yticklabels():
-                    label.set_fontproperties(font)
-            ax.set_xticklabels([])
-            if i == 0:
-                plt.title(self.titles[parameter],
-                          fontproperties=font,
-                          loc = 'left')
-                plt.ylabel('$Depth, km$')
+            data_list = []
+            try:
+                Model = self.Model_suite.model_list[i]
+    
+                data_list.append(Model.models[modelno-1])
+    
+                if len(self.Model_suite.inmodel_list) > 0:
+                    Inmodel = self.Model_suite.inmodel_list[i]
+                    data_list.append(Inmodel.inmodel)
+                ax = plt.axes([profile_x_buf[i],self.ax_bottom,px,self.ax_height])
+                for modelvals in data_list:
+                    
+                    if 'minmax' in parameter:
+                        plt.plot(modelvals[:,3],modelvals[:,1],'0.5')
+                        plt.plot(modelvals[:,2],modelvals[:,1],'k-')
+                        plt.xscale('log')
+                    if 'aniso' in parameter:
+                        plt.plot(modelvals[:,3]/modelvals[:,2],modelvals[:,1],'k-')
+                    if 'strike' in parameter:
+                        plt.plot(modelvals[:,4]%180,modelvals[:,1],'k-')
+                if horizon_list is not None:
+                    for h in horizon_list:
+                        elev = ed.get_elevation(Model.x,Model.y,h)
+                        elev = p1dp.update_scale(elev,horizon_zscale)
+                        plt.plot(xlim,[elev]*2)
+    
+                plt.ylim(self.ylim)
+                plt.xlim(xlim)
+                if i != 0:
+                    ax.set_yticklabels([])
+                else:
+                    for label in ax.get_yticklabels():
+                        label.set_fontproperties(font)
+                ax.set_xticklabels([])
+                plt.title(Model.station)
+                if i == 0:
+#                    plt.title(self.titles[parameter],
+#                              fontproperties=font,
+#                              loc = 'left')
+                    plt.ylabel('$Depth, km$')
+
+            except IndexError:
+                print "station {} omitted".format(self.Model_suite.model_list[i].station)
+
 
             
         self.profile_x = profile_x_buf
