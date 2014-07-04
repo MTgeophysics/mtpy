@@ -261,7 +261,7 @@ def generate_inputfiles(epath, **input_parameters):
             inmodel_dict = pek1d.create_inmodel_dictionary_from_file(input_parameters['inmodel_parameters_file'],
                                                                Data.edi_object.lon,Data.edi_object.lat,
                                                                working_directory = data_inputs['working_directory'])                                      
-            Inmodel = pek1dc.Inmodel(input_parameters['inmodel_modeldir'],
+            Inmodel = pek1dc.Inmodel(inmodel_modeldir = input_parameters['inmodel_modeldir'],
                                      inmodel_dictionary = inmodel_dict,
                                      **inmodel_inputs)
             Inmodel.write_inmodel()
