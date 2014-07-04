@@ -62,14 +62,16 @@ class Inmodel():
     **inmodel_
     """
 
-    def __init__(self, inmodel_modeldir, **input_parameters):
+    def __init__(self, **input_parameters):
         self.working_directory = '.'
-        self.inmodel_modeldir = inmodel_modeldir
+        self.inmodel_modeldir = None
+        self.inmodelfile = 'inmodel.dat'
         self.inmodel_dictionary = {0:[100,100,0]} # dictionary containing values for 
                                             # inmodel file, in format topdepth: [minres,maxres,strike]
         
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])
+
 
 
     def build_inmodel(self):
@@ -163,7 +165,7 @@ class Data():
         self.working_directory = None
         self.respfile = 'ai1dat.dat'
         self.datafile = None
-        self.errorfloor = 0.1
+        self.errorfloor = np.ones([2,2])*0.1
         self.errorfloor_type = 'relative' # choose whether to set an absolute or relative error floor
         self.edipath = None
         self.mode = 'I'
@@ -192,22 +194,25 @@ class Data():
         
         # define z
         zr = np.real(eo.Z.z)
-        # sign of imaginary component needs to be reversed for this particular code
+        # sign of imaginary component needs to be reversed for the pek1d inversion code
         zi = -np.imag(eo.Z.z)
         ze = eo.Z.zerr
         z = zr + 1j*zi
+        
+        if type(self.errorfloor) in [int,float]:
+            self.errorfloor = np.ones([2,2])*self.errorfloor
+        
         if self.errorfloor_type == 'relative':
             zer = ze/np.abs(z)
-            zer[(zer<self.errorfloor)] = self.errorfloor
+            for i in range(2):
+                for j in range(2):               
+                    zer[:,i,j][(zer[:,i,j]<self.errorfloor[i,j])] = self.errorfloor[i,j]
             ze = np.abs(z)*zer
-            
-            #  set errors in off-diagonals to the minimum error of on-diagonal components
-            for ze_sub in ze:
-                min_offdiags = min(ze_sub[0,1],ze_sub[1,0])
-                ze_sub[ze_sub<min_offdiags] = min_offdiags   
         
         elif self.errorfloor_type == 'absolute':
-            ze[ze<self.errorfloor] = self.errorfloor
+            for i in range(2):
+                for j in range(2):               
+                    ze[:,i,j][(ze[:,i,j]<self.errorfloor[i,j])] = self.errorfloor[i,j]
             
         # define header info for data file
         header = '{:>5}\n{:>5}'.format(self.mode,len(eo.Z.resistivity))
@@ -574,6 +579,7 @@ class Model_suite():
     def __init__(self,working_directory,**input_parameters):
         self.working_directory = working_directory
         self.model_list = []
+        self.inmodel_list = []
         self.modelfile = 'ai1mod.dat'
         self.respfile = 'ai1dat.dat'
         self.fitfile = 'ai1fit.dat'
@@ -596,6 +602,7 @@ class Model_suite():
 
         
         if self.model_list == []:
+            self.inmodel_list = []
             wd = self.working_directory
             folder_list = [os.path.join(wd,f) for f in os.listdir(wd) if os.path.isdir(os.path.join(wd,f))]            
             if len(self.station_list)>0:
@@ -605,8 +612,21 @@ class Model_suite():
                     for ff in folder_list:
                         if str.lower(os.path.basename(ff).split('_')[0][i1:i2]) == str.lower(s):
                             folder_list2.append(ff)
-            for folder in folder_list2:
-                self.model_list.append(Model(folder))
+                            print s
+                folder_list = folder_list2
+        for folder in folder_list:
+            try:                
+                model = Model(folder)
+                model.read_model()
+                self.model_list.append(model) 
+            except IOError:
+                print "model file not found"                    
+            try:
+                inmodel = Inmodel(working_directory=folder)
+                inmodel.read_inmodel()
+                self.inmodel_list.append(inmodel)
+            except IOError:
+                print "inmodel file not found"
 
         if self.station_xyfile is not None:
             self.update_multiple_locations_from_file()
@@ -621,6 +641,8 @@ class Model_suite():
         get the min and max resistivities, depth and strike at point of maximum
         anisotropy between min and max depth.
         
+        min and max depth can be float, integer or numpy array
+        
         the depth is only selected if the strike is stable within parameters
         given by strike threshold and strike window.
         
@@ -628,10 +650,16 @@ class Model_suite():
 
         model_params = np.zeros([len(self.model_list),6])
         
+        if type(min_depth) in [float,int]:
+            min_depth = np.zeros(len(self.model_list))+min_depth
+        if type(max_depth) in [float,int]:
+            max_depth = np.zeros(len(self.model_list))+max_depth
+            
+            
         for i,model in enumerate(self.model_list):
             model.modelno = self.modelno
-            model.find_max_anisotropy(min_depth=min_depth,
-                                      max_depth=max_depth,
+            model.find_max_anisotropy(min_depth=min_depth[i],
+                                      max_depth=max_depth[i],
                                       strike_window=strike_window,
                                       strike_threshold=strike_threshold)
             x,y = model.x,model.y
@@ -641,8 +669,11 @@ class Model_suite():
         
         self.anisotropy_max_parameters = model_params
         
+        if '%' in self.anisotropy_surface_file:
+           self.anisotropy_surface_file = self.anisotropy_surface_file%self.modelno 
+        
         np.savetxt(os.path.join(self.working_directory,
-                                self.anisotropy_surface_file%self.modelno),
+                                self.anisotropy_surface_file),
                    model_params,
                    header = ' '.join(['x','y','z','resmin','resmax','strike']),
                    fmt=['%14.6f','%14.6f','%8.2f','%8.2f','%8.2f','%8.2f'])
