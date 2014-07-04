@@ -13,9 +13,8 @@ import pek1dclasses as pek1dc
 from sys import argv
 from subprocess import call
 import time
+import numpy as np
 
-
->>>>>>> 628b607350cb9b746a1c361e8d88dac6f14e0aca
 
 def parse_arguments(arguments):
     """
@@ -89,8 +88,10 @@ def parse_arguments(arguments):
     #args.run_input = args.run_input[0]
     for i in [0,1,3,5,6]:
         args.run_input[i] = int(args.run_input[i])
-        
-    if (len(args.errorfloor) == 2) or (len(args.errorfloor) == 3):
+
+    if len(args.errorfloor) == 1:
+        args.errorfloor = args.errorfloor[0]        
+    elif (len(args.errorfloor) == 2) or (len(args.errorfloor) == 3):
         ef = args.errorfloor[:2]
         args.errorfloor = np.array([ef,ef[::-1]])
     elif len(args.errorfloor) == 4:
@@ -147,7 +148,9 @@ def create_inmodel_dictionary_from_file(input_file,
         inmodel_list.append([round(elev+params[0],2),params[1:]])
     
     for i in range(len(inmodel_list) - 1):
+        print inmodel_list[i][0],inmodel_list[i+1][0],
         if inmodel_list[i][0] > inmodel_list[i+1][0]:
+            print "remove"
             inmodel_list.remove(inmodel_list[i])
     
     for item in inmodel_list:
