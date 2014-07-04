@@ -93,7 +93,7 @@ def run():
         try:
             #new_data = []
             #old_data = []
-            counter = 0
+            counter = 1
             tempdata = 0 
             for line in open(infile):
                 line = line.strip().split()
@@ -101,14 +101,17 @@ def run():
                     continue
                 val = float(line[0])
                 tempdata += val
-                counter += 1
-                if counter ==  decimation_factor:
-                    new_data.append(tempdata/decimation_factor)
-                    tempdata = 0
-                    counter = 0
 
-            if counter != 0:
-                new_data.append(tempdata/counter)
+
+                if counter ==  1:
+                    new_data.append(val)#tempdata/decimation_factor)
+                    tempdata = 0
+                counter += 1
+                if counter == (decimation_factor+1):
+                    counter = 1 
+
+            #if counter != 0:
+            #    new_data.append(tempdata/counter)
 
         #except:
 
