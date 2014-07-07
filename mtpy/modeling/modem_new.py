@@ -945,6 +945,9 @@ class Data(object):
             
             self.mt_dict[s_key].zinv.compute_invariants()
             self.mt_dict[s_key].pt.set_z_object(mt_obj.Z)
+            self.mt_dict[s_key].Tipper._compute_amp_phase()
+            self.mt_dict[s_key].Tipper._compute_mag_direction()
+            
             self.coord_array[ii]['station'] = mt_obj.station
             self.coord_array[ii]['lat'] = mt_obj.lat
             self.coord_array[ii]['lon'] = mt_obj.lon
@@ -1104,7 +1107,7 @@ class Model(object):
         self.n_layers = kwargs.pop('n_layers', 30)
         
         #strike angle to rotate grid to
-        self.strike_angle = kwargs.pop('strike_angle', None)
+        self.mesh_rotation_angle = kwargs.pop('mesh_rotation_angle', 0)
         
         #--> attributes to be calculated
         #station information
@@ -1277,6 +1280,24 @@ class Model(object):
             self.station_locations['rel_east'] -= east_center
             self.station_locations['rel_north'] -= north_center
         
+        #--> rotate grid if necessary
+        #to do this rotate the station locations because ModEM assumes the
+        #input mesh is a lateral grid.  
+        if self.mesh_rotation_angle != 0:
+            cos_ang = np.cos(np.deg2rad(self.mesh_rotation_angle))
+            sin_ang = np.sin(np.deg2rad(self.mesh_rotation_angle))
+            rot_matrix = np.matrix(np.array([[cos_ang, sin_ang], 
+                                             [-sin_ang, cos_ang]]))
+                                             
+            new_coords = np.array([self.station_locations['rel_east'],
+                                   self.station_locations['rel_north']])
+            
+            #rotate the relative station locations
+            new_coords = np.dot(rot_matrix, new_coords)
+            
+            self.station_locations['rel_east'][:] = new_coords[0, :]
+            self.station_locations['rel_north'][:] = new_coords[1, :]
+        
         #pickout the furtherst south and west locations 
         #and put that station as the bottom left corner of the main grid
         west = self.station_locations['rel_east'].min()-self.cell_size_east/2
@@ -1425,6 +1446,8 @@ class Model(object):
         print '      e-w = {0:.1f} (m)'.format(east_nodes.__abs__().sum())
         print '      n-s = {0:.1f} (m)'.format(north_nodes.__abs__().sum())
         print '      0-z = {0:.1f} (m)'.format(self.nodes_z.__abs__().sum())
+        
+        print '++ Mesh rotated by {0} deg'.format(self.mesh_rotation_angle)
         print '-'*15
 
     def plot_mesh(self, east_limits=None, north_limits=None, z_limits=None,
@@ -1471,24 +1494,51 @@ class Model(object):
         fig = plt.figure(fig_num, figsize=fig_size, dpi=fig_dpi)
         plt.clf()
         
-        #---plot map view    
+        #make a rotation matrix to rotate data
+        cos_ang = np.cos(np.deg2rad(self.mesh_rotation_angle))
+        sin_ang = np.sin(np.deg2rad(self.mesh_rotation_angle))
+        neg_cos_ang = np.cos(np.deg2rad(-self.mesh_rotation_angle))
+        neg_sin_ang = np.sin(np.deg2rad(-self.mesh_rotation_angle))
+
+        neg_rot_matrix = np.matrix(np.array([[neg_cos_ang, neg_sin_ang], 
+                                             [-neg_sin_ang, neg_cos_ang]]))
+        
+        #--->plot map view    
         ax1 = fig.add_subplot(1, 2, 1, aspect='equal')
         
-        #make sure the station is in the center of the cell
-        ax1.scatter(self.station_locations['rel_east'],
-                    self.station_locations['rel_north'], 
+        
+        #plot station locations
+        #rotate stations
+        plot_east, plot_north = np.dot(neg_rot_matrix, 
+                                       np.array([self.station_locations['rel_east'],
+                                                 self.station_locations['rel_north']]))
+        #plot_east and plot_north come out as type matrix, need to change that
+        plot_east = np.array(plot_east)
+        plot_east = plot_east.flatten()
+        plot_north = np.array(plot_north)
+        plot_north = plot_north.flatten()
+        
+        ax1.scatter(plot_east,
+                    plot_north, 
                     marker=station_marker,
                     c=marker_color,
                     s=marker_size)
                 
         #plot the grid if desired
+#        plot_grid_east, plot_grid_north = np.dot(rot_matrix, 
+#                                                 np.array([self.grid_east,
+#                                                           self.grid_north]))                
+        
         east_line_xlist = []
-        east_line_ylist = []            
+        east_line_ylist = []   
+        north_min = self.grid_north.min()         
+        north_max = self.grid_north.max()         
         for xx in self.grid_east:
-            east_line_xlist.extend([xx, xx])
+            east_line_xlist.extend([xx*cos_ang+north_min*sin_ang,
+                                    xx*cos_ang+north_max*sin_ang])
             east_line_xlist.append(None)
-            east_line_ylist.extend([self.grid_north.min(), 
-                                    self.grid_north.max()])
+            east_line_ylist.extend([-xx*sin_ang+north_min*cos_ang, 
+                                    -xx*sin_ang+north_max*cos_ang])
             east_line_ylist.append(None)
         ax1.plot(east_line_xlist,
                       east_line_ylist,
@@ -1497,11 +1547,14 @@ class Model(object):
 
         north_line_xlist = []
         north_line_ylist = [] 
+        east_max = self.grid_east.max()
+        east_min = self.grid_east.min()
         for yy in self.grid_north:
-            north_line_xlist.extend([self.grid_east.min(),
-                                     self.grid_east.max()])
+            north_line_xlist.extend([east_min*cos_ang+yy*sin_ang,
+                                     east_max*cos_ang+yy*sin_ang])
             north_line_xlist.append(None)
-            north_line_ylist.extend([yy, yy])
+            north_line_ylist.extend([-east_min*sin_ang+yy*cos_ang, 
+                                     -east_max*sin_ang+yy*cos_ang])
             north_line_ylist.append(None)
         ax1.plot(north_line_xlist,
                       north_line_ylist,
@@ -1509,18 +1562,14 @@ class Model(object):
                       color=line_color)
         
         if east_limits == None:
-            ax1.set_xlim(self.station_locations['rel_east'].min()-\
-                            10*self.cell_size_east,
-                         self.station_locations['rel_east'].max()+\
-                             10*self.cell_size_east)
+            ax1.set_xlim(plot_east.min()-10*self.cell_size_east,
+                         plot_east.max()+10*self.cell_size_east)
         else:
             ax1.set_xlim(east_limits)
         
         if north_limits == None:
-            ax1.set_ylim(self.station_locations['rel_north'].min()-\
-                            10*self.cell_size_north,
-                         self.station_locations['rel_north'].max()+\
-                             10*self.cell_size_east)
+            ax1.set_ylim(plot_north.min()-10*self.cell_size_north,
+                         plot_north.max()+ 10*self.cell_size_east)
         else:
             ax1.set_ylim(north_limits)
             
@@ -1531,7 +1580,7 @@ class Model(object):
         ax2 = fig.add_subplot(1, 2, 2, aspect='auto', sharex=ax1)
         
 
-        #plot the grid if desired
+        #plot the grid 
         east_line_xlist = []
         east_line_ylist = []            
         for xx in self.grid_east:
@@ -1560,7 +1609,7 @@ class Model(object):
                       
         
         #--> plot stations
-        ax2.scatter(self.station_locations['rel_east'],
+        ax2.scatter(plot_east,
                     [0]*self.station_locations.shape[0],
                     marker=station_marker,
                     c=marker_color,
@@ -1573,10 +1622,8 @@ class Model(object):
             ax2.set_ylim(z_limits)
             
         if east_limits == None:
-            ax1.set_xlim(self.station_locations['rel_east'].min()-\
-                            10*self.cell_size_east,
-                         self.station_locations['rel_east'].max()+\
-                             10*self.cell_size_east)
+            ax1.set_xlim(plot_east.min()-10*self.cell_size_east,
+                         plot_east.max()+10*self.cell_size_east)
         else:
             ax1.set_xlim(east_limits)
             
@@ -2309,7 +2356,7 @@ class ModelManipulator(Model):
         self.res_list = kwargs.pop('res_list', None)
         if self.res_list is None:
             self.set_res_list(np.array([self._res_sea, 1, 10, 50, 100, 500, 
-                                        1000, 5000, self._res_air],
+                                        1000, 5000],
                                       dtype=np.float))
 
         #set initial resistivity value
@@ -2372,7 +2419,7 @@ class ModelManipulator(Model):
             #get station locations
             self.station_east = md_data.coord_array['rel_east']
             self.station_north = md_data.coord_array['rel_north']
-            
+        
         #get cell block sizes
         self.m_height = np.median(self.nodes_north[5:-5])/self.dscale
         self.m_width = np.median(self.nodes_east[5:-5])/self.dscale
@@ -2393,7 +2440,7 @@ class ModelManipulator(Model):
             self.get_model()
             
         self.cmin = np.floor(np.log10(min(self.res_list)))
-        self.cmax = np.ceil(np.log10(max(self.res_list)))
+        self.cmax = np.ceil(np.log10(max(self.res_list)))   
         
         #-->Plot properties
         plt.rcParams['font.size'] = self.font_size
@@ -2766,7 +2813,7 @@ class ModelManipulator(Model):
         
         if model_fn_basename is not None:
             self.model_fn_basename = model_fn_basename
-            
+                 
         self.write_model_file()
                                                          
 #==============================================================================
