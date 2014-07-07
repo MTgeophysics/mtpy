@@ -130,7 +130,6 @@ def create_inmodel_dictionary_from_file(input_file,
     if working_directory is None:
         working_directory = os.path.abspath('.')
     
-    elev_old = -999.
     for line in open(input_file).readlines()[1:]:
         line = line.strip().split(',')
         if str.lower(line[0]) != 'none':
@@ -271,7 +270,7 @@ def generate_inputfiles(epath, **input_parameters):
     wd = input_parameters['working_directory']
     sp = input_parameters['master_savepath']
     savepath = fh.make_unique_folder(os.path.join(wd,sp),
-                                     os.path.basename(Data.edipath)[:5]+Data.mode)
+                                     os.path.basename(Data.edipath).split('_')[0]+Data.mode)
     os.mkdir(savepath)
     Data.write_datafile(wd = savepath)
     
