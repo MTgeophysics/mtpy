@@ -620,7 +620,7 @@ class Model_suite():
                 model.read_model()
                 self.model_list.append(model) 
             except IOError:
-                print "model file not found"                    
+                print folder,"model file not found"                    
             try:
                 inmodel = Inmodel(working_directory=folder)
                 inmodel.read_inmodel()
@@ -700,4 +700,24 @@ class Model_suite():
         self.x = np.array([m.x for m in self.model_list])
         self.y = np.array([m.y for m in self.model_list])  
             
+        
+    def get_median_misfit(self):
+        """
+        """
+        
+        n = len(self.model_list)
+        model_misfits = np.zeros(n)
+        for m,model in enumerate(self.model_list):
+            fit = Fit(model.working_directory,
+                      fitfile=self.fitfile,
+                      respfile=self.respfile)
+            fit.read_fit()
+            model_misfits[m] = fit.misfit[self.modelno-1]
+            
+        self.model_misfits = model_misfits
+        self.median_misfit = np.median(model_misfits)
+            
+        
+        
+        
         
