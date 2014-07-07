@@ -134,7 +134,7 @@ def create_inmodel_dictionary_from_file(input_file,
         line = line.strip().split(',')
         if str.lower(line[0]) != 'none':
             elevfn = os.path.join(working_directory,line[0])
-            print elevfn
+    #        print "elevfn",elevfn
             try:
                 elev = np.abs(mted.get_elevation(x,y,elevfn)/1000.)
             except IOError:
@@ -143,19 +143,25 @@ def create_inmodel_dictionary_from_file(input_file,
         else:
             elev = 0.0
         params = [float(pp) for pp in line[1:]]
-        print elev,params
+   #     print elev,params
         inmodel_list.append([round(elev+params[0],2),params[1:]])
-    
-    for i in range(len(inmodel_list) - 1):
-        print inmodel_list[i][0],inmodel_list[i+1][0],
+    print x,y,"inmodel_list",inmodel_list,
+    i = 0
+    while i < len(inmodel_list) - 1:
+        print i,
         if inmodel_list[i][0] > inmodel_list[i+1][0]:
             print "remove"
             inmodel_list.remove(inmodel_list[i])
-    
+        i += 1
+    print "inmodel_list",inmodel_list,
     for item in inmodel_list:
-        inmodel_dict[item[0]] = item[1]
+        try:
+            print "item[0],item[1]",item[0],item[1],
+            inmodel_dict[item[0]] = item[1]
+        except:
+            print "couldn't assign value to dictionary"
     
-    print "inmodel_dict",inmodel_dict
+    #print "inmodel_dict",inmodel_dict
     return inmodel_dict
         
 
@@ -173,6 +179,7 @@ def create_filelist(wd, subfolder_list = None, subfolder_identifier = None):
         subfolder_list = [f for f in subfolder_list if subfolder_identifier in f]
     
     for subfolder in subfolder_list:
+        #print subfolder
         epath = os.path.join(wd,subfolder)
         edi_list += [os.path.join(epath,ff) for ff in os.listdir(epath) if ff[-4:] == '.edi']
     
@@ -280,11 +287,14 @@ def generate_inputfiles(epath, **input_parameters):
     
     Ctl = pek1dc.Control(**control_inputs)
     Ctl.write_ctlfile()
+    print os.path.basename(Data.working_directory),build_inmodel
     if build_inmodel:
         if 'inmodel_modeldir' in input_parameters.keys():
+            print os.path.basename(Data.working_directory),
             inmodel_dict = pek1d.create_inmodel_dictionary_from_file(input_parameters['inmodel_parameters_file'],
                                                                Data.edi_object.lon,Data.edi_object.lat,
-                                                               working_directory = data_inputs['working_directory'])                                      
+                                                               working_directory = data_inputs['working_directory'])
+            print inmodel_dict                             
             Inmodel = pek1dc.Inmodel(inmodel_modeldir = input_parameters['inmodel_modeldir'],
                                      inmodel_dictionary = inmodel_dict,
                                      **inmodel_inputs)
@@ -319,10 +329,10 @@ def build_run():
     edi_list = create_filelist(input_parameters['working_directory'],
                                subfolder_list = input_parameters['edifolder_list'],
                                subfolder_identifier = input_parameters['edifolder_identifier'])
-    print edi_list
-    print input_parameters['working_directory']
-    print input_parameters['edifolder_list']
-    print input_parameters['edifolder_identifier'] 
+    #print "edi_list",edi_list
+    #print 'working_directory',input_parameters['working_directory']
+    #print 'edifolder_list',input_parameters['edifolder_list']
+    #print 'edifolder_identifier',input_parameters['edifolder_identifier'] 
     # update input parameters for building of model
     build_inputs = {}
     for key in build_parameters:
