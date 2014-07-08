@@ -1069,8 +1069,20 @@ class Model(object):
     z1_layer             first layer thickness
     z_bottom             absolute bottom of the model *default* is 300,000 
     z_target_depth       Depth of deepest target, *default* is 50,000
+    _utm_grid_size_east  size of a UTM grid in east direction. 
+                         *default* is 640000 meters
+    _utm_grid_size_north size of a UTM grid in north direction. 
+                         *default* is 888960 meters
+    
     ==================== ======================================================
     
+    ..note:: If the survey steps across multiple UTM zones, then a 
+                 distance will be added to the stations to place them in 
+                 the correct location.  This distance is 
+                 _utm_grid_size_north and _utm_grid_size_east.  You should 
+                 these parameters to place the locations in the proper spot
+                 as grid distances and overlaps change over the globe.
+                 
     ==================== ======================================================
     Methods              Description
     ==================== ======================================================
@@ -1123,6 +1135,11 @@ class Model(object):
         self.grid_north = None
         self.grid_z = None
         
+        #size of a utm grid
+        self._utm_grid_size_north = 888960.0
+        self._utm_grid_size_east = 640000.0
+        self._utm_cross = False
+        
         #resistivity model
         self.res_model = None
         
@@ -1162,6 +1179,13 @@ class Model(object):
         
         padding = np.round(cell_size_east*pad_root_east**np.arange(start=.5,
                            stop=3, step=3./pad_east))+west 
+                           
+        ..note:: If the survey steps across multiple UTM zones, then a 
+                 distance will be added to the stations to place them in 
+                 the correct location.  This distance is 
+                 _utm_grid_size_north and _utm_grid_size_east.  You should 
+                 these parameters to place the locations in the proper spot
+                 as grid distances and overlaps change over the globe.
         
         """
         
@@ -1209,12 +1233,20 @@ class Model(object):
             #if there are more than one zone, figure out which zone is the odd ball
             utm_zone_dict = dict([(utmzone, 0) for utmzone in utm_zone_list])        
             if len(utm_zone_list) != 1:
+                self._utm_cross = True
                 for c_arr in self.station_locations:
                     utm_zone_dict[c_arr['zone']] += 1
-            
+                
+                #flip keys and values so the key is the number of zones and 
+                # the value is the utm zone
                 utm_zone_dict = dict([(utm_zone_dict[key], key) 
                                       for key in utm_zone_dict.keys()])
+                
+                #get the main utm zone as the one with the most stations in it
                 main_utm_zone = utm_zone_dict[max(utm_zone_dict.keys())]
+                
+                #Get a list of index values where utm zones are not the 
+                #same as the main zone
                 diff_zones = np.where(self.station_locations['zone'] != main_utm_zone)[0]
                 for c_index in diff_zones:
                     c_arr = self.station_locations[c_index]
@@ -1223,24 +1255,23 @@ class Model(object):
                     print '{0} utm_zone is {1} and does not match {2}'.format(
                            c_arr['station'], c_arr['zone'], main_utm_zone)
                            
+                    zone_shift = 1-abs(utm_zones_dict[c_utm_zone[-1]]-\
+                                          utm_zones_dict[main_utm_zone[-1]]) 
+                           
                     #--> check to see if the zone is in the same latitude
-                    #if odd ball zone is north of main zone, add 888960 m 
-                    if utm_zones_dict[c_utm_zone[-1]] > main_utm_zone[-1]:
-                        north_shift = 888960.*\
-                                      abs(utm_zones_dict[c_utm_zone[-1]]-\
-                                          utm_zones_dict[main_utm_zone[-1]])
-                        print ('adding {0:.2f}'.format(north_shift)+\
+                    #if odd ball zone is north of main zone, add 888960 m
+                    if zone_shift > 1:
+                        north_shift = self._utm_grid_size_north*zone_shift
+                        print ('--> adding {0:.2f}'.format(north_shift)+\
                               ' meters N to place station in ' +\
                               'proper coordinates relative to all other ' +\
                                'staions.')
                         c_arr['north'] += north_shift
                     
                     #if odd ball zone is south of main zone, subtract 88960 m 
-                    if utm_zones_dict[c_utm_zone[-1]] < main_utm_zone[-1]:
-                        north_shift = 888960.*\
-                                      abs(utm_zones_dict[c_utm_zone[-1]]-\
-                                          utm_zones_dict[main_utm_zone[-1]])
-                        print ('subtracting {0:.2f}'.format(north_shift)+\
+                    elif zone_shift < -1:
+                        north_shift = self._utm_grid_size_north*zone_shift
+                        print ('--> subtracting {0:.2f}'.format(north_shift)+\
                               ' meters N to place station in ' +\
                               'proper coordinates relative to all other ' +\
                                'staions.')
@@ -1248,17 +1279,17 @@ class Model(object):
                     
                     #--> if zone is shited east or west
                     if int(c_utm_zone[0:-1]) > int(main_utm_zone[0:-1]):
-                        east_shift = 500000.*\
+                        east_shift = self._utm_grid_size_east*\
                                abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
-                        print ('adding {0:.2f}'.format(east_shift)+\
+                        print ('--> adding {0:.2f}'.format(east_shift)+\
                               ' meters E to place station in ' +\
                               'proper coordinates relative to all other ' +\
                                'staions.')
                         c_arr['east'] += east_shift
                     elif int(c_utm_zone[0:-1]) < int(main_utm_zone[0:-1]):
-                        east_shift = 500000.*\
+                        east_shift = self._utm_grid_size_east*\
                                abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
-                        print ('subtracting {0:.2f}'.format(east_shift)+\
+                        print ('--> subtracting {0:.2f}'.format(east_shift)+\
                               ' meters E to place station in ' +\
                               'proper coordinates relative to all other ' +\
                                'staions.')
@@ -1447,8 +1478,20 @@ class Model(object):
         print '      n-s = {0:.1f} (m)'.format(north_nodes.__abs__().sum())
         print '      0-z = {0:.1f} (m)'.format(self.nodes_z.__abs__().sum())
         
-        print '++ Mesh rotated by {0} deg'.format(self.mesh_rotation_angle)
+        print '  Mesh rotated by: {0:.1f} deg clockwise positive from N'.format(self.mesh_rotation_angle)
         print '-'*15
+        
+        if self._utm_cross is True:
+            print '{0} {1} {2}'.format('-'*25, 'NOTE', '-'*25)
+            print '   Survey crosses UTM zones, be sure that stations'
+            print '   are properly located, if they are not, adjust parameters'
+            print '   _utm_grid_size_east and _utm_grid_size_north.'
+            print '   these are in meters and represent the utm grid size'
+            print ' Example: '
+            print ' >>> modem_model._utm_grid_size_east = 644000'
+            print ' >>> modem_model.make_mesh()'
+            print ''
+            print '-'*56
 
     def plot_mesh(self, east_limits=None, north_limits=None, z_limits=None,
                   **kwargs):
