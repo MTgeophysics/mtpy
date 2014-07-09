@@ -13,7 +13,7 @@ ModEM
 """
 
 import os
-import mtpy.core.edi as mtedi
+import mtpy.utils.calculator as mtcalculator
 import mtpy.core.z as mtz
 import mtpy.core.mt as mt
 import numpy as np
@@ -134,7 +134,8 @@ class Data(object):
     period_dict            dictionary of period index for period_list
     period_list            list of periods to invert for
     period_max             maximum value of period to invert for
-    period_min             minimum value of period to invert for           
+    period_min             minimum value of period to invert for
+    rotate_angle           Angle to rotate data to assuming 0 is N and E is 90            
     save_path              path to save data file to
     units                  [ [V/m]/[T] | [mV/km]/[nT] | Ohm ] units of Z
                            *default* is [mV/km]/[nT]
@@ -256,7 +257,11 @@ class Data(object):
         self.fn_basename = kwargs.pop('fn_basename', 'ModEM_Data.dat')
         self.save_path = kwargs.pop('save_path', os.getcwd())
         
-        self.coord_array = None
+        self._rotation_angle = kwargs.pop('rotation_angle', 0.0)
+        self._set_rotation_angle(self._rotation_angle)
+        
+        
+        self.station_locations = None
         self.center_position = (0.0, 0.0, 0.0)
         self.data_array = None
         self.mt_dict = None
@@ -294,9 +299,16 @@ class Data(object):
         
                               
         self.header_strings = \
-        ['# Created using MTpy error {0} of {1:.0f}%\n'.format(self.error_type, self.error_floor), 
+        ['# Created using MTpy error {0} of {1:.0f}%, data rotated {2:.1f} deg clockwise from N\n'.format(
+            self.error_type, self.error_floor, self._rotation_angle), 
         '# Period(s) Code GG_Lat GG_Lon X(m) Y(m) Z(m) Component Real Imag Error\n']
 
+        #size of a utm grid
+        self._utm_grid_size_north = 888960.0
+        self._utm_grid_size_east = 640000.0
+        self._utm_cross = False
+        self._utm_ellipsoid = 23
+        
     def _set_dtype(self, z_shape, t_shape):
         """
         reset dtype
@@ -324,16 +336,19 @@ class Data(object):
         reset the header sring for file
         """
         
-        h_str = '# Created using MTpy error {0} of {1:.0f}%\n'
+        h_str = '# Created using MTpy error {0} of {1:.0f}%, data rotated {2:.1f} deg clockwise from N\n'
         if self.error_type == 'egbert':
             self.header_strings[0] =  h_str.format(self.error_type, 
-                                                   self.error_egbert)
+                                                   self.error_egbert,
+                                                   self._rotation_angle)
         elif self.error_type == 'floor':
             self.header_strings[0] = h_str.format(self.error_type, 
-                                                  self.error_floor)
+                                                  self.error_floor,
+                                                   self._rotation_angle)
         elif self.error_type == 'value':
             self.header_strings[0] = h_str.format(self.error_type, 
-                                                  self.error_value)
+                                                  self.error_value,
+                                                   self._rotation_angle)
             
 
     def get_mt_dict(self):
@@ -368,7 +383,7 @@ class Data(object):
         #--> read in .edi files and get position information as well as center
         #    station. 
         ns = len(self.mt_dict.keys())
-        self.coord_array = np.zeros(ns, dtype=[('station','|S10'),
+        self.station_locations = np.zeros(ns, dtype=[('station','|S10'),
                                                ('east', np.float),
                                                ('north', np.float),
                                                ('zone', '|S4'),
@@ -380,89 +395,105 @@ class Data(object):
                                         
         for ii, s_key in enumerate(sorted(self.mt_dict.keys())):
             mt_obj = self.mt_dict[s_key]
-            self.coord_array[ii]['station'] = mt_obj.station
-            self.coord_array[ii]['lat'] = float(mt_obj.lat)
-            self.coord_array[ii]['lon'] = float(mt_obj.lon)
-            self.coord_array[ii]['east'] = float(mt_obj.east)
-            self.coord_array[ii]['north'] = float(mt_obj.north)
-            self.coord_array[ii]['elev'] = float(mt_obj.elev)
-            self.coord_array[ii]['zone'] = mt_obj.utm_zone
+            self.station_locations[ii]['station'] = mt_obj.station
+            self.station_locations[ii]['lat'] = float(mt_obj.lat)
+            self.station_locations[ii]['lon'] = float(mt_obj.lon)
+            self.station_locations[ii]['east'] = float(mt_obj.east)
+            self.station_locations[ii]['north'] = float(mt_obj.north)
+            self.station_locations[ii]['elev'] = float(mt_obj.elev)
+            self.station_locations[ii]['zone'] = mt_obj.utm_zone
+            
+        #--> need to convert lat and lon to east and north
+        for c_arr in self.station_locations:
+            if c_arr['lat'] != 0.0 and c_arr['lon'] != 0.0:
+                c_arr['zone'], c_arr['east'], c_arr['north'] = \
+                                          utm2ll.LLtoUTM(self._utm_ellipsoid,
+                                                         c_arr['lat'],
+                                                         c_arr['lon'])
             
         #--> need to check to see if all stations are in the same zone
-        utm_zone_list = list(set(self.coord_array['zone']))
+        utm_zone_list = list(set(self.station_locations['zone']))
         
         #if there are more than one zone, figure out which zone is the odd ball
         utm_zone_dict = dict([(utmzone, 0) for utmzone in utm_zone_list])        
-        if len(utm_zone_list) != 1:
-            for c_arr in self.coord_array:
-                utm_zone_dict[c_arr['zone']] += 1
         
+        if len(utm_zone_list) != 1:
+            self._utm_cross = True
+            for c_arr in self.station_locations:
+                utm_zone_dict[c_arr['zone']] += 1
+            
+            #flip keys and values so the key is the number of zones and 
+            # the value is the utm zone
             utm_zone_dict = dict([(utm_zone_dict[key], key) 
                                   for key in utm_zone_dict.keys()])
+            
+            #get the main utm zone as the one with the most stations in it
             main_utm_zone = utm_zone_dict[max(utm_zone_dict.keys())]
-            diff_zones = np.where(self.coord_array['zone'] != main_utm_zone)[0]
+            
+            #Get a list of index values where utm zones are not the 
+            #same as the main zone
+            diff_zones = np.where(self.station_locations['zone'] != main_utm_zone)[0]
             for c_index in diff_zones:
-                c_arr = self.coord_array[c_index]
+                c_arr = self.station_locations[c_index]
                 c_utm_zone = c_arr['zone']
                
                 print '{0} utm_zone is {1} and does not match {2}'.format(
                        c_arr['station'], c_arr['zone'], main_utm_zone)
                        
+                zone_shift = 1-abs(utm_zones_dict[c_utm_zone[-1]]-\
+                                      utm_zones_dict[main_utm_zone[-1]]) 
+                       
                 #--> check to see if the zone is in the same latitude
-                #if odd ball zone is north of main zone, add 888960 m 
-                if utm_zones_dict[c_utm_zone[-1]] > main_utm_zone[-1]:
-                    north_shift = 888960.*\
-                                  abs(utm_zones_dict[c_utm_zone[-1]]-\
-                                      utm_zones_dict[main_utm_zone[-1]])
-                    print ('adding {0:.2f}'.format(north_shift)+\
+                #if odd ball zone is north of main zone, add 888960 m
+                if zone_shift > 1:
+                    north_shift = self._utm_grid_size_north*zone_shift
+                    print ('--> adding {0:.2f}'.format(north_shift)+\
                           ' meters N to place station in ' +\
                           'proper coordinates relative to all other ' +\
                            'staions.')
                     c_arr['north'] += north_shift
                 
                 #if odd ball zone is south of main zone, subtract 88960 m 
-                if utm_zones_dict[c_utm_zone[-1]] < main_utm_zone[-1]:
-                    north_shift = 888960.*\
-                                  abs(utm_zones_dict[c_utm_zone[-1]]-\
-                                      utm_zones_dict[main_utm_zone[-1]])
-                    print ('subtracting {0:.2f}'.format(north_shift)+\
+                elif zone_shift < -1:
+                    north_shift = self._utm_grid_size_north*zone_shift
+                    print ('--> subtracting {0:.2f}'.format(north_shift)+\
                           ' meters N to place station in ' +\
                           'proper coordinates relative to all other ' +\
                            'staions.')
                     c_arr['north'] -= north_shift
                 
-                #--> if zone is shited east or west
+                #--> if zone is shifted east or west
                 if int(c_utm_zone[0:-1]) > int(main_utm_zone[0:-1]):
-                    east_shift = 500000.*\
+                    east_shift = self._utm_grid_size_east*\
                            abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
-                    print ('adding {0:.2f}'.format(east_shift)+\
+                    print ('--> adding {0:.2f}'.format(east_shift)+\
                           ' meters E to place station in ' +\
                           'proper coordinates relative to all other ' +\
                            'staions.')
                     c_arr['east'] += east_shift
                 elif int(c_utm_zone[0:-1]) < int(main_utm_zone[0:-1]):
-                    east_shift = 500000.*\
+                    east_shift = self._utm_grid_size_east*\
                            abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
-                    print ('subtracting {0:.2f}'.format(east_shift)+\
+                    print ('--> subtracting {0:.2f}'.format(east_shift)+\
                           ' meters E to place station in ' +\
                           'proper coordinates relative to all other ' +\
                            'staions.')
                     c_arr['east'] -= east_shift
 
         #--> get center of the grid
-        east_0 = self.coord_array['east'].mean()
-        north_0 = self.coord_array['north'].mean()
+        east_0 = self.station_locations['east'].mean()
+        north_0 = self.station_locations['north'].mean()
         
         #set the center of the grid, for now leve elevation at 0, but later
         #add in elevation.  Also should find the closest station to center
         #of the grid.
         self.center_position = (east_0, north_0, 0.0)
         
-        self.coord_array['rel_east'] = self.coord_array['east']-east_0
-        self.coord_array['rel_north'] = self.coord_array['north']-north_0
+        self.station_locations['rel_east'] = self.station_locations['east']-east_0
+        self.station_locations['rel_north'] = self.station_locations['north']-north_0
         
         #fill in value for relative location in mt_obj
-        for cc in self.coord_array:
+        for cc in self.station_locations:
             self.mt_dict[cc['station']].grid_east = cc['rel_east']
             self.mt_dict[cc['station']].grid_north = cc['rel_north']
         
@@ -518,20 +549,46 @@ class Data(object):
             raise ModEMError('Need to input period_min, period_max, '
                              'max_num_periods or a period_list')
         
-        
-    
-    def get_data_from_edi(self):
-        """
-        get data from edi files and put into an array for easy manipulation 
-        later, this will be handy if you want to rewrite the data file from
-        an existing file
-        
-        """
 
-        self.get_station_locations()
-        if self.period_list is None:
-            self.get_period_list()
-             
+    def _set_rotation_angle(self, rotation_angle):
+        """
+        on set rotation angle rotate mt_dict and data_array
+        """
+        if self._rotation_angle == rotation_angle:
+            return
+            
+        new_rotation_angle = -self._rotation_angle+rotation_angle
+        print 'Changing rotation angle from {0:.1f} to {1:.1f}'.format(
+                                    self._rotation_angle, rotation_angle)
+        self._rotation_angle = new_rotation_angle
+        if self._rotation_angle == 0.0:
+            return
+            
+        if self.data_array is None:
+            return
+        if self.mt_dict is None:
+            return
+            
+        for mt_key in sorted(self.mt_dict.keys()):
+            mt_obj = self.mt_dict[mt_key]
+            mt_obj.Z.rotate(self._rotation_angle)
+            mt_obj.Tipper.rotate(self._rotation_angle)
+            
+        print 'Data rotated by {0:.1f} deg clockwise from N'.format(
+                                                        self._rotation_angle)
+                
+    def _get_rotation_angle(self):
+        return self._rotation_angle
+        
+    rotation_angle = property(fget=_get_rotation_angle, 
+                              fset=_set_rotation_angle,
+                              doc="""Rotate data assuming N=0, E=90""")
+                              
+    def _fill_data_array(self):
+        """
+        fill the data array from mt_dict
+        
+        """
         ns = len(self.mt_dict.keys())
         nf = len(self.period_list)
         
@@ -576,9 +633,10 @@ class Data(object):
                                         mt_obj.Tipper.tipper[jj, :, :]
                         
                         self.data_array[ii]['tip_err'][ff] = \
-                                        mt_obj.Tipper.tippererr[jj, :, :]                                            
+                                        mt_obj.Tipper.tippererr[jj, :, :]
                     
-    def write_data_file(self, save_path=None, fn_basename=None):
+    def write_data_file(self, save_path=None, fn_basename=None, 
+                        rotation_angle=0.0):
         """
         write data file for ModEM
         
@@ -593,6 +651,10 @@ class Data(object):
             **fn_basename** : string
                               basename to save data file as
                               *default* is 'ModEM_Data.dat'
+                              
+            **rotation_angle** : float
+                                angle to rotate the data by assuming N = 0, 
+                                E = 90. *default* is 0.0
                               
         Outputs:
         ----------
@@ -619,14 +681,18 @@ class Data(object):
             
         self.data_fn = os.path.join(self.save_path, self.fn_basename)
         
-        if self.coord_array is None:
+        if self.station_locations is None:
             self.get_station_locations()
         
         self.get_period_list()
         
-        if self.data_array is None:
-            self.get_data_from_edi()
-            
+        #rotate data if desired
+        self.rotation_angle = rotation_angle
+        
+        #be sure to fill in data array 
+        self._fill_data_array()
+        
+        #reset the header string to be informational
         self._set_header_string()
 
         dlines = []        
@@ -769,7 +835,7 @@ class Data(object):
         self.data_array = np.zeros(ns, dtype=self._dtype)
         
         #--> fill coord array
-        self.coord_array = np.zeros(ns, dtype=[('station','|S10'),
+        self.station_locations = np.zeros(ns, dtype=[('station','|S10'),
                                                ('east', np.float),
                                                ('north', np.float),
                                                ('zone','|S4'), 
@@ -787,12 +853,12 @@ class Data(object):
             self.data_array[ii]['z'][:] = d_arr['z_data']
             self.data_array[ii]['z_err'][:] = d_arr['z_data_err'].real*\
                                                 d_arr['z_err_map'].real
-            self.coord_array[ii]['station'] = d_arr['station']
-            self.coord_array[ii]['lat'] = 0.0
-            self.coord_array[ii]['lon'] = 0.0
-            self.coord_array[ii]['rel_east'] = d_arr['east']
-            self.coord_array[ii]['rel_north'] = d_arr['north']
-            self.coord_array[ii]['elev'] = 0.0
+            self.station_locations[ii]['station'] = d_arr['station']
+            self.station_locations[ii]['lat'] = 0.0
+            self.station_locations[ii]['lon'] = 0.0
+            self.station_locations[ii]['rel_east'] = d_arr['east']
+            self.station_locations[ii]['rel_north'] = d_arr['north']
+            self.station_locations[ii]['elev'] = 0.0
             self.data_array[ii]['station'] = d_arr['station']
             self.data_array[ii]['lat'] = 0.0
             self.data_array[ii]['lon'] = 0.0
@@ -862,6 +928,17 @@ class Data(object):
                     station_list.append(dline_list[1])
                     
                     data_list.append(dline_list)
+        
+        #try to find rotation angle
+        h_list = header_list[0].split()
+        for h_str in h_list:
+            try:
+                self._rotation_angle = float(h_str)
+                print ('Set rotation angle to {0:.1f} '.format(
+                         self._rotation_angle)+'deg clockwise from N')
+            except ValueError:
+                pass
+                
             
         self.period_list = np.array(sorted(set(period_list)))
         station_list = sorted(set(station_list))
@@ -925,7 +1002,7 @@ class Data(object):
         #--> fill coord array
         ns = len(self.mt_dict.keys())
         nf = len(self.period_list)
-        self.coord_array = np.zeros(ns, dtype=[('station','|S10'),
+        self.station_locations = np.zeros(ns, dtype=[('station','|S10'),
                                                ('east', np.float),
                                                ('north', np.float),
                                                ('zone', '|S4'),  
@@ -935,8 +1012,6 @@ class Data(object):
                                                ('rel_east', np.float),
                                                ('rel_north', np.float)])
         
-        self._set_dtype((nf, 2, 2), (nf, 1, 2))
-        self.data_array = np.zeros(ns, dtype=self._dtype)
 
         #Be sure to caclulate invariants and phase tensor for each station
         for ii, s_key in enumerate(sorted(self.mt_dict.keys())):
@@ -948,30 +1023,16 @@ class Data(object):
             self.mt_dict[s_key].Tipper._compute_amp_phase()
             self.mt_dict[s_key].Tipper._compute_mag_direction()
             
-            self.coord_array[ii]['station'] = mt_obj.station
-            self.coord_array[ii]['lat'] = mt_obj.lat
-            self.coord_array[ii]['lon'] = mt_obj.lon
-            self.coord_array[ii]['elev'] = mt_obj.elev
-            self.coord_array[ii]['rel_east'] = mt_obj.grid_east
-            self.coord_array[ii]['rel_north'] = mt_obj.grid_north
-            self.coord_array[ii]['zone'] = mt_obj.utm_zone
+            self.station_locations[ii]['station'] = mt_obj.station
+            self.station_locations[ii]['lat'] = mt_obj.lat
+            self.station_locations[ii]['lon'] = mt_obj.lon
+            self.station_locations[ii]['elev'] = mt_obj.elev
+            self.station_locations[ii]['rel_east'] = mt_obj.grid_east
+            self.station_locations[ii]['rel_north'] = mt_obj.grid_north
+            self.station_locations[ii]['zone'] = mt_obj.utm_zone
             
             
-            self.data_array[ii]['station'] = mt_obj.station
-            self.data_array[ii]['lat'] = mt_obj.lat
-            self.data_array[ii]['lon'] = mt_obj.lon
-            self.data_array[ii]['east'] = mt_obj.east
-            self.data_array[ii]['north'] = mt_obj.north
-            self.data_array[ii]['elev'] = mt_obj.elev
-            self.data_array[ii]['rel_east'] = mt_obj.grid_east
-            self.data_array[ii]['rel_north'] = mt_obj.grid_north
-            
-            
-            self.data_array[ii]['z'][:] = mt_obj.Z.z
-            self.data_array[ii]['z_err'][:] = mt_obj.Z.zerr
-
-            self.data_array[ii]['tip'][:] =  mt_obj.Tipper.tipper
-            self.data_array[ii]['tip_err'][:] = mt_obj.Tipper.tippererr 
+        self._fill_data_array()
             
         
 #==============================================================================
