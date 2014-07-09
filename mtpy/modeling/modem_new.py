@@ -1351,8 +1351,7 @@ class Model(object):
         
         self.get_station_locations()
         
-        #pickout the furtherst south and west locations 
-        #and put that station as the bottom left corner of the main grid
+        #find the edges of the grid
         west = self.station_locations['rel_east'].min()-self.cell_size_east/2
         east = self.station_locations['rel_east'].max()+self.cell_size_east/2
         south = self.station_locations['rel_north'].min()-self.cell_size_north/2
@@ -1493,7 +1492,12 @@ class Model(object):
         print '      n-s = {0:.1f} (m)'.format(north_nodes.__abs__().sum())
         print '      0-z = {0:.1f} (m)'.format(self.nodes_z.__abs__().sum())
         
-        print '  Mesh rotated by: {0:.1f} deg clockwise positive from N'.format(self.mesh_rotation_angle)
+        print '  Stations rotated by: {0:.1f} deg clockwise positive from N'.format(self.mesh_rotation_angle)
+        print ''        
+        print ' ** Note ModEM does not accommodate mesh rotations, it assumes'
+        print '    all coordinates are aligned to geographic N, E'
+        print '    therefore rotating the stations will have a similar effect'
+        print '    as rotating the mesh.'
         print '-'*15
         
         if self._utm_cross is True:
@@ -1553,8 +1557,13 @@ class Model(object):
         plt.clf()
         
         #make a rotation matrix to rotate data
-        cos_ang = np.cos(np.deg2rad(self.mesh_rotation_angle))
-        sin_ang = np.sin(np.deg2rad(self.mesh_rotation_angle))
+        #cos_ang = np.cos(np.deg2rad(self.mesh_rotation_angle))
+        #sin_ang = np.sin(np.deg2rad(self.mesh_rotation_angle))
+        
+        #turns out ModEM has not accomodated rotation of the grid, so for
+        #now we will not rotate anything.
+        cos_ang = 1
+        sin_ang = 0
         
         #--->plot map view    
         ax1 = fig.add_subplot(1, 2, 1, aspect='equal')
@@ -1563,12 +1572,6 @@ class Model(object):
         #plot station locations
         plot_east = self.station_locations['rel_east']
         plot_north = self.station_locations['rel_north']
-        
-        #plot_east and plot_north come out as type matrix, need to change that
-        plot_east = np.array(plot_east)
-        plot_east = plot_east.flatten()
-        plot_north = np.array(plot_north)
-        plot_north = plot_north.flatten()
         
         ax1.scatter(plot_east,
                     plot_north, 
