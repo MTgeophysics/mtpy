@@ -1139,6 +1139,7 @@ class Model(object):
         self._utm_grid_size_north = 888960.0
         self._utm_grid_size_east = 640000.0
         self._utm_cross = False
+        self._utm_ellipsoid = 23
         
         #resistivity model
         self.res_model = None
@@ -1157,38 +1158,10 @@ class Model(object):
         self.title = 'Model File written by MTpy.modeling.modem'
         self.res_scale = kwargs.pop('res_scale', 'loge')
         
-        
-    def make_mesh(self):
-        """ 
-        create finite element mesh according to parameters set.
-        
-        The mesh is built by first finding the center of the station area.  
-        Then cells are added in the north and east direction with width
-        cell_size_east and cell_size_north to the extremeties of the station 
-        area.  Padding cells are then added to extend the model to reduce 
-        edge effects.  The number of cells are pad_east and pad_north and the
-        increase in size is by pad_root_east and pad_root_north.  The station
-        locations are then computed as the center of the nearest cell as 
-        required by the code.
-        
-        The vertical cells are built to increase in size exponentially with
-        depth.  The first cell depth is first_layer_thickness and should be
-        about 1/10th the shortest skin depth.  The layers then increase
-        on a log scale to z_target_depth.  Then the model is
-        padded with pad_z number of cells to extend the depth of the model.
-        
-        padding = np.round(cell_size_east*pad_root_east**np.arange(start=.5,
-                           stop=3, step=3./pad_east))+west 
-                           
-        ..note:: If the survey steps across multiple UTM zones, then a 
-                 distance will be added to the stations to place them in 
-                 the correct location.  This distance is 
-                 _utm_grid_size_north and _utm_grid_size_east.  You should 
-                 these parameters to place the locations in the proper spot
-                 as grid distances and overlaps change over the globe.
-        
+    def get_station_locations(self):
         """
-        
+        get the station locations from lats and lons
+        """
         utm_zones_dict = {'M':9, 'L':8, 'K':7, 'J':6, 'H':5, 'G':4, 'F':3, 
                           'E':2, 'D':1, 'C':0, 'N':10, 'P':11, 'Q':12, 'R':13,
                           'S':14, 'T':15, 'U':16, 'V':17, 'W':18, 'X':19}
@@ -1226,108 +1199,157 @@ class Model(object):
                 self.station_locations[ii]['north'] = mt_obj.north
                 self.station_locations[ii]['elev'] = mt_obj.elev
                 self.station_locations[ii]['zone'] = mt_obj.utm_zone
+                
+        #--> need to convert lat and lon to east and north
+        for c_arr in self.station_locations:
+            if c_arr['lat'] != 0.0 and c_arr['lon'] != 0.0:
+                c_arr['zone'], c_arr['east'], c_arr['north'] = \
+                                          utm2ll.LLtoUTM(self._utm_ellipsoid,
+                                                         c_arr['lat'],
+                                                         c_arr['lon'])
             
-            #--> need to check to see if all stations are in the same zone
-            utm_zone_list = list(set(self.station_locations['zone']))
+        #--> need to check to see if all stations are in the same zone
+        utm_zone_list = list(set(self.station_locations['zone']))
+        
+        #if there are more than one zone, figure out which zone is the odd ball
+        utm_zone_dict = dict([(utmzone, 0) for utmzone in utm_zone_list])        
+        
+        if len(utm_zone_list) != 1:
+            self._utm_cross = True
+            for c_arr in self.station_locations:
+                utm_zone_dict[c_arr['zone']] += 1
             
-            #if there are more than one zone, figure out which zone is the odd ball
-            utm_zone_dict = dict([(utmzone, 0) for utmzone in utm_zone_list])        
-            if len(utm_zone_list) != 1:
-                self._utm_cross = True
-                for c_arr in self.station_locations:
-                    utm_zone_dict[c_arr['zone']] += 1
+            #flip keys and values so the key is the number of zones and 
+            # the value is the utm zone
+            utm_zone_dict = dict([(utm_zone_dict[key], key) 
+                                  for key in utm_zone_dict.keys()])
+            
+            #get the main utm zone as the one with the most stations in it
+            main_utm_zone = utm_zone_dict[max(utm_zone_dict.keys())]
+            
+            #Get a list of index values where utm zones are not the 
+            #same as the main zone
+            diff_zones = np.where(self.station_locations['zone'] != main_utm_zone)[0]
+            for c_index in diff_zones:
+                c_arr = self.station_locations[c_index]
+                c_utm_zone = c_arr['zone']
+               
+                print '{0} utm_zone is {1} and does not match {2}'.format(
+                       c_arr['station'], c_arr['zone'], main_utm_zone)
+                       
+                zone_shift = 1-abs(utm_zones_dict[c_utm_zone[-1]]-\
+                                      utm_zones_dict[main_utm_zone[-1]]) 
+                       
+                #--> check to see if the zone is in the same latitude
+                #if odd ball zone is north of main zone, add 888960 m
+                if zone_shift > 1:
+                    north_shift = self._utm_grid_size_north*zone_shift
+                    print ('--> adding {0:.2f}'.format(north_shift)+\
+                          ' meters N to place station in ' +\
+                          'proper coordinates relative to all other ' +\
+                           'staions.')
+                    c_arr['north'] += north_shift
                 
-                #flip keys and values so the key is the number of zones and 
-                # the value is the utm zone
-                utm_zone_dict = dict([(utm_zone_dict[key], key) 
-                                      for key in utm_zone_dict.keys()])
+                #if odd ball zone is south of main zone, subtract 88960 m 
+                elif zone_shift < -1:
+                    north_shift = self._utm_grid_size_north*zone_shift
+                    print ('--> subtracting {0:.2f}'.format(north_shift)+\
+                          ' meters N to place station in ' +\
+                          'proper coordinates relative to all other ' +\
+                           'staions.')
+                    c_arr['north'] -= north_shift
                 
-                #get the main utm zone as the one with the most stations in it
-                main_utm_zone = utm_zone_dict[max(utm_zone_dict.keys())]
-                
-                #Get a list of index values where utm zones are not the 
-                #same as the main zone
-                diff_zones = np.where(self.station_locations['zone'] != main_utm_zone)[0]
-                for c_index in diff_zones:
-                    c_arr = self.station_locations[c_index]
-                    c_utm_zone = c_arr['zone']
-                   
-                    print '{0} utm_zone is {1} and does not match {2}'.format(
-                           c_arr['station'], c_arr['zone'], main_utm_zone)
-                           
-                    zone_shift = 1-abs(utm_zones_dict[c_utm_zone[-1]]-\
-                                          utm_zones_dict[main_utm_zone[-1]]) 
-                           
-                    #--> check to see if the zone is in the same latitude
-                    #if odd ball zone is north of main zone, add 888960 m
-                    if zone_shift > 1:
-                        north_shift = self._utm_grid_size_north*zone_shift
-                        print ('--> adding {0:.2f}'.format(north_shift)+\
-                              ' meters N to place station in ' +\
-                              'proper coordinates relative to all other ' +\
-                               'staions.')
-                        c_arr['north'] += north_shift
+                #--> if zone is shifted east or west
+                if int(c_utm_zone[0:-1]) > int(main_utm_zone[0:-1]):
+                    east_shift = self._utm_grid_size_east*\
+                           abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
+                    print ('--> adding {0:.2f}'.format(east_shift)+\
+                          ' meters E to place station in ' +\
+                          'proper coordinates relative to all other ' +\
+                           'staions.')
+                    c_arr['east'] += east_shift
+                elif int(c_utm_zone[0:-1]) < int(main_utm_zone[0:-1]):
+                    east_shift = self._utm_grid_size_east*\
+                           abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
+                    print ('--> subtracting {0:.2f}'.format(east_shift)+\
+                          ' meters E to place station in ' +\
+                          'proper coordinates relative to all other ' +\
+                           'staions.')
+                    c_arr['east'] -= east_shift
                     
-                    #if odd ball zone is south of main zone, subtract 88960 m 
-                    elif zone_shift < -1:
-                        north_shift = self._utm_grid_size_north*zone_shift
-                        print ('--> subtracting {0:.2f}'.format(north_shift)+\
-                              ' meters N to place station in ' +\
-                              'proper coordinates relative to all other ' +\
-                               'staions.')
-                        c_arr['north'] -= north_shift
-                    
-                    #--> if zone is shited east or west
-                    if int(c_utm_zone[0:-1]) > int(main_utm_zone[0:-1]):
-                        east_shift = self._utm_grid_size_east*\
-                               abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
-                        print ('--> adding {0:.2f}'.format(east_shift)+\
-                              ' meters E to place station in ' +\
-                              'proper coordinates relative to all other ' +\
-                               'staions.')
-                        c_arr['east'] += east_shift
-                    elif int(c_utm_zone[0:-1]) < int(main_utm_zone[0:-1]):
-                        east_shift = self._utm_grid_size_east*\
-                               abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
-                        print ('--> subtracting {0:.2f}'.format(east_shift)+\
-                              ' meters E to place station in ' +\
-                              'proper coordinates relative to all other ' +\
-                               'staions.')
-                        c_arr['east'] -= east_shift
-                        
-            #remove the average distance to get coordinates in a relative space
-            self.station_locations['rel_east'] = self.station_locations['east']-\
-                                                 self.station_locations['east'].mean()
-            self.station_locations['rel_north'] = self.station_locations['north']-\
-                                                  self.station_locations['north'].mean()
-         
-            #translate the stations so they are relative to 0,0
-            east_center = (self.station_locations['rel_east'].max()-
-                            np.abs(self.station_locations['rel_east'].min()))/2
-            north_center = (self.station_locations['rel_north'].max()-
-                            np.abs(self.station_locations['rel_north'].min()))/2
-            
-            #remove the average distance to get coordinates in a relative space
-            self.station_locations['rel_east'] -= east_center
-            self.station_locations['rel_north'] -= north_center
+       
+                                                    
+        #remove the average distance to get coordinates in a relative space
+        self.station_locations['rel_east'] = self.station_locations['east']-\
+                                             self.station_locations['east'].mean()
+        self.station_locations['rel_north'] = self.station_locations['north']-\
+                                              self.station_locations['north'].mean()
         
         #--> rotate grid if necessary
         #to do this rotate the station locations because ModEM assumes the
-        #input mesh is a lateral grid.  
+        #input mesh is a lateral grid.
+        #needs to be 90 - because North is assumed to be 0 but the rotation
+        #matrix assumes that E is 0.
         if self.mesh_rotation_angle != 0:
             cos_ang = np.cos(np.deg2rad(self.mesh_rotation_angle))
             sin_ang = np.sin(np.deg2rad(self.mesh_rotation_angle))
             rot_matrix = np.matrix(np.array([[cos_ang, sin_ang], 
                                              [-sin_ang, cos_ang]]))
                                              
-            new_coords = np.array([self.station_locations['rel_east'],
-                                   self.station_locations['rel_north']])
+            coords = np.array([self.station_locations['rel_east'],
+                               self.station_locations['rel_north']])
             
             #rotate the relative station locations
-            new_coords = np.dot(rot_matrix, new_coords)
+            new_coords = np.array(np.dot(rot_matrix, coords))
             
             self.station_locations['rel_east'][:] = new_coords[0, :]
             self.station_locations['rel_north'][:] = new_coords[1, :]
+            
+            print 'Rotated stations by {0:.1f} deg clockwise from N'.format(
+                                                    self.mesh_rotation_angle)
+     
+        #translate the stations so they are relative to 0,0
+        east_center = (self.station_locations['rel_east'].max()-
+                        np.abs(self.station_locations['rel_east'].min()))/2
+        north_center = (self.station_locations['rel_north'].max()-
+                        np.abs(self.station_locations['rel_north'].min()))/2
+        
+        #remove the average distance to get coordinates in a relative space
+        self.station_locations['rel_east'] -= east_center
+        self.station_locations['rel_north'] -= north_center
+
+    def make_mesh(self):
+        """ 
+        create finite element mesh according to parameters set.
+        
+        The mesh is built by first finding the center of the station area.  
+        Then cells are added in the north and east direction with width
+        cell_size_east and cell_size_north to the extremeties of the station 
+        area.  Padding cells are then added to extend the model to reduce 
+        edge effects.  The number of cells are pad_east and pad_north and the
+        increase in size is by pad_root_east and pad_root_north.  The station
+        locations are then computed as the center of the nearest cell as 
+        required by the code.
+        
+        The vertical cells are built to increase in size exponentially with
+        depth.  The first cell depth is first_layer_thickness and should be
+        about 1/10th the shortest skin depth.  The layers then increase
+        on a log scale to z_target_depth.  Then the model is
+        padded with pad_z number of cells to extend the depth of the model.
+        
+        padding = np.round(cell_size_east*pad_root_east**np.arange(start=.5,
+                           stop=3, step=3./pad_east))+west 
+                           
+        ..note:: If the survey steps across multiple UTM zones, then a 
+                 distance will be added to the stations to place them in 
+                 the correct location.  This distance is 
+                 _utm_grid_size_north and _utm_grid_size_east.  You should 
+                 these parameters to place the locations in the proper spot
+                 as grid distances and overlaps change over the globe.
+        
+        """
+        
+        self.get_station_locations()
         
         #pickout the furtherst south and west locations 
         #and put that station as the bottom left corner of the main grid
@@ -1339,13 +1361,6 @@ class Model(object):
         east= np.round(east, -2)
         south= np.round(south, -2)
         north = np.round(north, -2)
-
-
-        #make sure the variable n_stations is initialized        
-        try:
-            n_stations
-        except NameError:
-            n_stations = self.station_locations.shape[0]
 
         #-------make a grid around the stations from the parameters above------
         #--> make grid in east-west direction
@@ -1531,7 +1546,7 @@ class Model(object):
         
         plt.rcParams['figure.subplot.hspace'] = .3
         plt.rcParams['figure.subplot.wspace'] = .3
-        plt.rcParams['figure.subplot.left'] = .08
+        plt.rcParams['figure.subplot.left'] = .12
         plt.rcParams['font.size'] = 7
         
         fig = plt.figure(fig_num, figsize=fig_size, dpi=fig_dpi)
@@ -1540,21 +1555,15 @@ class Model(object):
         #make a rotation matrix to rotate data
         cos_ang = np.cos(np.deg2rad(self.mesh_rotation_angle))
         sin_ang = np.sin(np.deg2rad(self.mesh_rotation_angle))
-        neg_cos_ang = np.cos(np.deg2rad(-self.mesh_rotation_angle))
-        neg_sin_ang = np.sin(np.deg2rad(-self.mesh_rotation_angle))
-
-        neg_rot_matrix = np.matrix(np.array([[neg_cos_ang, neg_sin_ang], 
-                                             [-neg_sin_ang, neg_cos_ang]]))
         
         #--->plot map view    
         ax1 = fig.add_subplot(1, 2, 1, aspect='equal')
         
         
         #plot station locations
-        #rotate stations
-        plot_east, plot_north = np.dot(neg_rot_matrix, 
-                                       np.array([self.station_locations['rel_east'],
-                                                 self.station_locations['rel_north']]))
+        plot_east = self.station_locations['rel_east']
+        plot_north = self.station_locations['rel_north']
+        
         #plot_east and plot_north come out as type matrix, need to change that
         plot_east = np.array(plot_east)
         plot_east = plot_east.flatten()
@@ -1566,18 +1575,14 @@ class Model(object):
                     marker=station_marker,
                     c=marker_color,
                     s=marker_size)
-                
-        #plot the grid if desired
-#        plot_grid_east, plot_grid_north = np.dot(rot_matrix, 
-#                                                 np.array([self.grid_east,
-#                                                           self.grid_north]))                
+                                
         
         east_line_xlist = []
         east_line_ylist = []   
         north_min = self.grid_north.min()         
         north_max = self.grid_north.max()         
         for xx in self.grid_east:
-            east_line_xlist.extend([xx*cos_ang+north_min*sin_ang,
+            east_line_xlist.extend([xx*cos_ang+north_min*sin_ang, 
                                     xx*cos_ang+north_max*sin_ang])
             east_line_xlist.append(None)
             east_line_ylist.extend([-xx*sin_ang+north_min*cos_ang, 
