@@ -1059,7 +1059,7 @@ class Model(object):
                          *default* is 5
     res_list             list of resistivity values for starting model
     res_model            starting resistivity model
-    rotation_angle       Angle to rotate the grid to. Angle is measured
+    mesh_rotation_angle  Angle to rotate the grid to. Angle is measured
                          positve clockwise assuming North is 0 and east is 90.
                          *default* is None
     save_path            path to save file to  
