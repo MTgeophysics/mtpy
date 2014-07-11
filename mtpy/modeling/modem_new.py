@@ -4891,16 +4891,16 @@ class PlotPTMaps(mtplottools.MTEllipse):
         
         # set plot limits to be the station area
         if self.ew_limits == None:
-            east_min = self.data_obj.coord_array['rel_east'].min()-\
+            east_min = self.data_obj.data_array['rel_east'].min()-\
                                                             self.pad_east
-            east_max = self.data_obj.coord_array['rel_east'].max()+\
+            east_max = self.data_obj.data_array['rel_east'].max()+\
                                                             self.pad_east
             self.ew_limits = (east_min/self.dscale, east_max/self.dscale)
             
         if self.ns_limits == None:
-            north_min = self.data_obj.coord_array['rel_north'].min()-\
+            north_min = self.data_obj.data_array['rel_north'].min()-\
                                                             self.pad_north
-            north_max = self.data_obj.coord_array['rel_north'].max()+\
+            north_max = self.data_obj.data_array['rel_north'].max()+\
                                                             self.pad_north
             self.ns_limits = (north_min/self.dscale, north_max/self.dscale)
 
@@ -4925,8 +4925,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
             
             #plot model below the phase tensors
             if self.model_fn is not None:
-                approx_depth, d_index = ws.estimate_skin_depth(self.model_obj.res_model,
-                                                            self.model_obj.grid_z, 
+                approx_depth, d_index = ws.estimate_skin_depth(self.model_obj.res_model.copy(),
+                                                            self.model_obj.grid_z.copy(), 
                                                             per, 
                                                             dscale=self.dscale)  
                 #need to add an extra row and column to east and north to make sure 
