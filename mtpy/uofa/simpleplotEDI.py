@@ -6,8 +6,6 @@ import os.path as op
 
 import mtpy.core.edi as MTedi
 
-from pylab import *
-
 def main():
 
 	fn = sys.argv[1]
@@ -32,6 +30,12 @@ def plotedi(fn, saveplot=False):
 	except:
 		print '\n\tERROR - not a valid EDI file: {0}\n'.format(fn)
 		sys.exit()
+
+	if saveplot is True:
+		import matplotlib 
+		matplotlib.use('Agg')
+
+	from pylab import *
 
 
 	res_te=[]
@@ -72,24 +76,31 @@ def plotedi(fn, saveplot=False):
 	yscale('log')
 	minval=min( min(res_te,res_tm))
 	maxval=max(max(res_te,res_tm))
-	ylim([minval/10,maxval*10])
 	xlim(0.5*min(periods),2*max(periods))
+
+	ylim([0.01,1000])
+	#ylim([minval/10,maxval*10])
+
+
 	autoscale(False)
 
 	ylabel('app.res. in Ohm m')
 	setp( ax1.get_xticklabels(), visible=False)
 	## share x only
 	ax2 = subplot(212, sharex=ax1)
-	#autoscale(False)
+	autoscale(False)
 
 	#ylim(-45,135)
 	errorbar(periods,phi_te,phierr_te,marker='x',c='b',fmt='x')
 	errorbar(periods,phi_tm,phierr_tm,marker='x',c='r',fmt='x')
 	ylabel('phase')
 	xlabel('period (in s)')
+	plot([xlim()[0],xlim()[1]],[45,45],'-.',c='0.7')
+	ylim([-50,100])
 
 	tight_layout()
 	if saveplot is True:
+
 		ioff()
 		outfn = op.splitext(fn)[0]+'.png'
 		savefig(outfn, bbox_inches='tight')
