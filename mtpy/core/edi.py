@@ -2214,11 +2214,11 @@ def _generate_edifile_string(edidict,use_info_string=False):
             info_dict = edidict['INFO']
             info_dict = dict((k.lower(),v) for k,v in info_dict.items())
 
-            if 'max lines' in info_dict:
-                edistring += '>INFO  MAX LINES={0}\n'.format(
-                                        int(float(info_dict.pop('max lines'))))
-            else:
-                edistring += '>INFO \n'
+            # if 'max lines' in info_dict:
+            #     edistring += '>INFO  MAX LINES={0}\n'.format(
+            #                             int(float(info_dict.pop('max lines'))))
+            # else:
+            edistring += '>INFO \n'
 
             #If an existing info string is to be written verbatim
             #to not lose any original information (even if uunnecessary/wrong):
@@ -2239,6 +2239,8 @@ def _generate_edifile_string(edidict,use_info_string=False):
                     if k == 'station':
                         v = v.upper().replace(' ','_')
                         stationname = v
+                    if k.lower() == 'max lines':
+                        continue
 
                     if len(v) == 0 or len(v.split()) > 1:
                         edistring += '\t%s: "%s"\n'%(k,v)
@@ -2264,7 +2266,6 @@ def _generate_edifile_string(edidict,use_info_string=False):
                     edistring += '\t%s=%s\n'%(k,v)
             if 'reflat' not in sorted(defm_dict.iterkeys()):
                 v = MTft.convert_degrees2dms_tuple(edidict['HEAD']['lat'])
-                print v
                 edistring += '\tREFLAT={0}:{1}:{2:.2f}\n'.format(int(v[0]),int(v[1]),v[2])
             if 'reflong' not in sorted(defm_dict.iterkeys()):
                 v = MTft.convert_degrees2dms_tuple(edidict['HEAD']['long'])
