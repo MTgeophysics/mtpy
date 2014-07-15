@@ -514,6 +514,8 @@ class Data(object):
         make a period list to invert for
         
         """
+        if self.mt_dict is None:
+            self.get_mt_dict()
         
         if self.period_list is not None:
             print '-'*50
@@ -522,9 +524,6 @@ class Data(object):
                 print '     {0:<12.6f}'.format(per)
             print '-'*50
             return
-        
-        if self.mt_dict is None:
-            self.get_mt_dict()
             
         data_period_list = []
         for s_key in sorted(self.mt_dict.keys()):
