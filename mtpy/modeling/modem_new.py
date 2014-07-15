@@ -514,7 +514,9 @@ class Data(object):
         make a period list to invert for
         
         """
-        
+        if self.mt_dict is None:
+            self.get_mt_dict()
+            
         if self.period_list is not None:
             print '-'*50
             print 'Inverting for periods:'
@@ -522,10 +524,7 @@ class Data(object):
                 print '     {0:<12.6f}'.format(per)
             print '-'*50
             return
-        
-        if self.mt_dict is None:
-            self.get_mt_dict()
-            
+
         data_period_list = []
         for s_key in sorted(self.mt_dict.keys()):
             mt_obj = self.mt_dict[s_key]
@@ -2005,10 +2004,10 @@ class Model(object):
         ifid.write('\n{0:>16.3f}{1:>16.3f}{2:>16.3f}\n'.format(self.grid_center[0],
                    self.grid_center[1], self.grid_center[2]))
                    
-        if self.strike_angle is None:
+        if self.mesh_rotation_angle is None:
             ifid.write('{0:>9.3f}\n'.format(0))
         else:
-            ifid.write('{0:>9.3f}\n'.format(self.strike_angle))
+            ifid.write('{0:>9.3f}\n'.format(self.mesh_rotation_angle))
         ifid.close()
         
         print 'Wrote file to: {0}'.format(self.model_fn)
