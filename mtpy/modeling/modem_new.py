@@ -13,7 +13,6 @@ ModEM
 """
 
 import os
-import mtpy.utils.calculator as mtcalculator
 import mtpy.core.z as mtz
 import mtpy.core.mt as mt
 import numpy as np
@@ -29,10 +28,19 @@ import mtpy.imaging.mtplottools as mtplottools
 import matplotlib.widgets as widgets
 import matplotlib.colors as colors
 import matplotlib.cm as cm
-import mtpy.modeling.winglink as wl
 import mtpy.utils.exceptions as mtex
 import mtpy.analysis.pt as mtpt
 import mtpy.imaging.mtcolors as mtcl
+try:
+    from evtk.hl import gridToVTK, pointsToVTK
+except ImportError:
+    print ('If you want to write a vtk file for 3d viewing, you need download '
+           'and install evtk from https://bitbucket.org/pauloh/pyevtk')
+           
+    print ('Note: if you are using Windows you should build evtk first with'
+           'either MinGW or cygwin using the command: \n'
+           '    python setup.py build -compiler=mingw32  or \n'
+           '    python setup.py build -compiler=cygwin')
 
 #==============================================================================
 
@@ -59,7 +67,7 @@ class Data(object):
                            array.  All stations are relative to this location
                            for plotting purposes.
     comp_index_dict        dictionary for index values of component of Z and T
-    coord_array            numpy.ndarray structured to store station 
+    station_locations      numpy.ndarray structured to store station 
                            location values.  Keys are:
                                * station --> station name
                                * east --> UTM east (m)
@@ -560,9 +568,7 @@ class Data(object):
         """
         if self._rotation_angle == rotation_angle:
             return
-            
-        
-            
+  
         new_rotation_angle = -self._rotation_angle+rotation_angle
         
         if new_rotation_angle == 0:
@@ -1096,6 +1102,36 @@ class Data(object):
             
             self.data_array[ii]['tip'][:] = mt_obj.Tipper.tipper
             self.data_array[ii]['tip_err'][:] = mt_obj.Tipper.tippererr
+            
+    def write_vtk_station_file(self, vtk_save_path=None, 
+                               vtk_fn_basename='ModEM_stations'):
+        """
+        write a vtk file for station locations.  For now this in relative 
+        coordinates.  
+        
+        Arguments:
+        -------------
+            **vtk_save_path** : string
+                                directory to save vtk file to.  
+                                *default* is Model.save_path
+            **vtk_fn_basename** : string
+                                  filename basename of vtk file
+                                  *default* is ModEM_stations, evtk will add
+                                  on the extension .vtu
+        """
+        
+        if vtk_save_path is not None:
+            vtk_fn = os.path.join(self.save_path, vtk_fn_basename)
+        else:
+            vtk_fn = os.path.join(vtk_save_path, vtk_fn_basename)
+            
+        gridToVTK(vtk_fn, 
+                 self.station_locations['rel_north'], 
+                 self.station_locations['rel_east'],
+                 -self.station_locations['elev'],
+                 pointData={'elevation':self.station_locations['elev']})
+                 
+        print 'Wrote file to {0}'.format(vtk_fn)
             
         
 #==============================================================================
@@ -2143,11 +2179,34 @@ class Model(object):
         self.grid_center = np.array([center_north, center_east, center_z]) 
         
             
-    def write_vtk_file(self, vtk_fn=None):
+    def write_vtk_file(self, vtk_save_path=None,
+                       vtk_fn_basename='ModEM_model_res'):
         """
         write a vtk file to view in Paraview or other
+        
+        Arguments:
+        -------------
+            **vtk_save_path** : string
+                                directory to save vtk file to.  
+                                *default* is Model.save_path
+            **vtk_fn_basename** : string
+                                  filename basename of vtk file
+                                  *default* is ModEM_model_res, evtk will add
+                                  on the extension .vtr
         """
-        pass
+        
+        if vtk_save_path is not None:
+            vtk_fn = os.path.join(self.save_path, vtk_fn_basename)
+        else:
+            vtk_fn = os.path.join(vtk_save_path, vtk_fn_basename)
+            
+        gridToVTK(vtk_fn, 
+                 self.grid_north, 
+                 self.grid_east,
+                 self.grid_z,
+                 pointData={'resistivity':self.res_model}) 
+        
+        print 'Wrote file to {0}'.format(vtk_fn)
             
 #==============================================================================
 # Control File
@@ -2559,6 +2618,13 @@ class ModelManipulator(Model):
         self.depth_index = kwargs.pop('depth_index', 0)
         
         self.fdict = {'size':self.font_size+2, 'weight':'bold'}
+        
+        self.subplot_wspace = .2
+        self.subplot_hspace = .0
+        self.subplot_right = .8
+        self.subplot_left = .01
+        self.subplot_top = .93
+        self.subplot_bottom = .1
 
         #plot on initialization
         self.plot_yn = kwargs.pop('plot_yn', 'y')
@@ -2601,8 +2667,8 @@ class ModelManipulator(Model):
             md_data.read_data_file(self.data_fn)
             
             #get station locations
-            self.station_east = md_data.coord_array['rel_east']
-            self.station_north = md_data.coord_array['rel_north']
+            self.station_east = md_data.station_locations['rel_east']
+            self.station_north = md_data.station_locations['rel_north']
         
         #get cell block sizes
         self.m_height = np.median(self.nodes_north[5:-5])/self.dscale
@@ -2619,6 +2685,14 @@ class ModelManipulator(Model):
             -radio dial for resistivity value
             
         """
+        # set plot properties
+        plt.rcParams['font.size'] = self.font_size
+        plt.rcParams['figure.subplot.left'] = self.subplot_left
+        plt.rcParams['figure.subplot.right'] = self.subplot_right
+        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
+        plt.rcParams['figure.subplot.top'] = self.subplot_top
+        font_dict = {'size':self.font_size+2, 'weight':'bold'}
+        
         #make sure there is a model to plot
         if self.res_model is None:
             self.get_model()
@@ -2725,11 +2799,14 @@ class ModelManipulator(Model):
                       color='k')
         
         #plot the colorbar
-        self.ax2 = mcb.make_axes(self.ax1, orientation='vertical', shrink=.35)
+#        self.ax2 = mcb.make_axes(self.ax1, orientation='vertical', shrink=.35)
+        self.ax2 = self.fig.add_axes([.81, .45, .16, .03])
+        self.ax2.xaxis.set_ticks_position('top')
         seg_cmap = ws.cmap_discretize(self.cmap, len(self.res_list))
-        self.cb = mcb.ColorbarBase(self.ax2[0],cmap=seg_cmap,
+        self.cb = mcb.ColorbarBase(self.ax2,cmap=seg_cmap,
                                    norm=colors.Normalize(vmin=self.cmin,
-                                                         vmax=self.cmax))
+                                                         vmax=self.cmax),
+                                    orientation='horizontal')
                                                          
                             
         self.cb.set_label('Resistivity ($\Omega \cdot$m)',
@@ -2739,10 +2816,18 @@ class ModelManipulator(Model):
                                 for cc in np.arange(self.cmin, self.cmax+1)])
                             
         #make a resistivity radio button
-        resrb = self.fig.add_axes([.85,.1,.1,.2])
-        reslabels = ['{0:.4g}'.format(res) for res in self.res_list]
-        self.radio_res = widgets.RadioButtons(resrb, reslabels, 
-                                        active=self.res_dict[self.res_value])
+        #resrb = self.fig.add_axes([.85,.1,.1,.2])
+        #reslabels = ['{0:.4g}'.format(res) for res in self.res_list]
+        #self.radio_res = widgets.RadioButtons(resrb, reslabels, 
+        #                                active=self.res_dict[self.res_value])
+                                        
+#        slider_ax_bounds = list(self.cb.ax.get_position().bounds)
+#        slider_ax_bounds[0] += .1
+        slider_ax = self.fig.add_axes([.81, .5, .16, .03])
+        self.slider_res = widgets.Slider(slider_ax, 'Resistivity', 
+                                         self.cmin, self.cmax, 
+                                         valinit=2)
+        
         
         #make a rectangular selector
         self.rect_selector = widgets.RectangleSelector(self.ax1, 
@@ -2754,7 +2839,8 @@ class ModelManipulator(Model):
         plt.show()
         
         #needs to go after show()
-        self.radio_res.on_clicked(self.set_res_value)
+        self.slider_res.on_changed(self.set_res_value)
+        #self.radio_res.on_clicked(self.set_res_value)
 
 
     def redraw_plot(self):
@@ -2823,10 +2909,13 @@ class ModelManipulator(Model):
         #be sure to redraw the canvas                  
         self.fig.canvas.draw()
         
-    def set_res_value(self, label):
-        self.res_value = float(label)
-        print 'set resistivity to ', label
-        print self.res_value
+#    def set_res_value(self, label):
+#        self.res_value = float(label)
+#        print 'set resistivity to ', label
+#        print self.res_value
+    def set_res_value(self, val):
+        self.res_value = 10**val
+        print 'set resistivity to ', self.res_value
         
         
     def _on_key_callback(self,event):
@@ -4926,7 +5015,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
             #plot model below the phase tensors
             if self.model_fn is not None:
                 approx_depth, d_index = ws.estimate_skin_depth(self.model_obj.res_model.copy(),
-                                                            self.model_obj.grid_z.copy(), 
+                                                            self.model_obj.grid_z.copy()/self.dscale, 
                                                             per, 
                                                             dscale=self.dscale)  
                 #need to add an extra row and column to east and north to make sure 
