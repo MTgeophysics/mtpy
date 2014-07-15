@@ -516,7 +516,7 @@ class Data(object):
         """
         if self.mt_dict is None:
             self.get_mt_dict()
-        
+            
         if self.period_list is not None:
             print '-'*50
             print 'Inverting for periods:'
@@ -524,7 +524,7 @@ class Data(object):
                 print '     {0:<12.6f}'.format(per)
             print '-'*50
             return
-            
+
         data_period_list = []
         for s_key in sorted(self.mt_dict.keys()):
             mt_obj = self.mt_dict[s_key]
