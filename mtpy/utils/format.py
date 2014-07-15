@@ -14,19 +14,22 @@ e.g. lat/lon or datetimes.
 
 """
 import numpy as np
-import  os
+import os
 import sys
 import re
 
 import mtpy.utils.exceptions as MTex
 
 
+
 def _assert_position_format(coordinate, value): 
 
     """
-    Check, if value is valid for the three coordinates of a position: 'latitude, longitude, elevation' - raise 'MTpyError_config_file'-exception, if not.
+    Check, if value is valid for the three coordinates of a position: 
+    'latitude, longitude, elevation' - raise 'MTpyError_config_file'-exception if not.
 
-    If lat/lon are given in deg,min,sec it is converted do degrees. The value is returned, if no exception was raised 
+    If lat/lon are given in deg,min,sec it is converted into degrees. 
+    The value is returned if no exception was raised 
 
     """
     if coordinate in ['ele','elev','elevation']:
@@ -135,6 +138,19 @@ def assert_decimal_coordinates(coordinate_string):
     else:
         return convert_degmin_tuple2degrees(latlon_list)
 
+def convert_dms_string2tuple(coordinatestring):
+
+    dms = [0,0,0]
+    try:
+        dms_raw = coordinatestring.split(':')
+        dms[0] = float(dms_raw[0])
+        dms[1] = float(dms_raw[1])
+        dms[2] = float(dms_raw[2])
+        return dms
+
+    except:
+        print 'coordinate string invalid - must be of form "deg:min:sec.ss"'
+        return
 
 
 def convert_dms_tuple2degrees(latlon_list):
@@ -142,7 +158,7 @@ def convert_dms_tuple2degrees(latlon_list):
     """
     Convert a triple (list, tuple, array) of degrees, minuts, seconds into degrees.
 
-    Validity of the triple is assumed and has to be asserted in advanced.
+    Validity of the triple is assumed and has to be asserted in advance.
     """
 
     sign = 1.
@@ -170,8 +186,9 @@ def convert_dms_tuple2degrees(latlon_list):
     deg = latlon_list[0]
     minutes = latlon_list[1]
     seconds = latlon_list[2]
-    if not (0<=minutes<60 and 0<=seconds<60):
-        raise MTex.MTpyError_inputarguments('Minutes or seconds value invalid')
+    if not (-180<=deg<=360 and  0<=minutes<60 and 0<=seconds<60):
+        print 'Value for degrees, minutes, or seconds invalid'
+        raise MTex.MTpyError_inputarguments()
 
     #take out sign for easier conversion into degrees
 

@@ -354,21 +354,30 @@ class Edi(object):
                 print 'Could not find elevation value'
         
     def _set_elev(self, value): 
+        
+        no_key = True
         try:
             self.head['elev'] = MTft._assert_position_format('elev',value)
-        except KeyError:
-            try:
-                self.definemeas['refelev'] = \
-                                 MTft._assert_position_format('elev',value)
-            except KeyError:
-                print 'Could not find Elevation'
+            no_key = False
+        except :
+            pass
+        try:
+            self.definemeas['refelev'] = \
+                             MTft._assert_position_format('elev',value)
+            no_key = False
+        except :
+            pass
+
+        if no_key is True:
+            print 'Could not find Elevation'
     
     elev = property(_get_elev, _set_elev, doc='Location elevation in meters')
 
     #----------------latitude----------------------------------------------
     def _get_lat(self):
         """
-        gets latitude looking for keywords lat in head or reflat in definemeas
+        get latitude looking for keywords 'lat' in head or 'reflat' in definemeas
+
         """
         try:
             return self.head['lat']
@@ -380,24 +389,30 @@ class Edi(object):
         
     def _set_lat(self, value):
         """
-        set latitude value, converts to decimal degrees
+        set latitude value in head and defmeas - converts to decimal degrees
         """
         
+        no_key = True
         try:
             self.head['lat'] = MTft._assert_position_format('lat',value)
-        except KeyError:
-            try:
-                self.definemeas['reflat'] = \
-                                 MTft._assert_position_format('lat',value)
-            except KeyError:
-                print 'Could not find Latitude'
+            no_key = False 
+        except:
+            pass
+        try:
+            self.definemeas['reflat'] = \
+                             MTft._assert_position_format('lat',value)
+            no_key = False 
+        except:
+            pass
+        if no_key is True:
+            print 'Could not find Latitude'
                 
     lat = property(_get_lat, _set_lat, doc='Location latitude in degrees') 
     
     #----------------longitude----------------------------------------------      
     def _get_lon(self): 
         """
-        gets longitude looking for keywords long in head or reflong in
+        get longitude looking for keywords 'long' in head or 'reflong' in
         definemeas
         """
         try:
@@ -416,24 +431,37 @@ class Edi(object):
         
     def _set_lon(self, value):
         """
-        set longitude value, converts to decimal degrees
+        set longitude value in head and defmeas - converts to decimal degrees
         """
+
+        no_key = True
+
         try:
             self.head['long'] = MTft._assert_position_format('lon',value)
-        except KeyError:
-            try:
-                self.definemeas['reflong'] = \
-                                 MTft._assert_position_format('lon',value)
-            except KeyError:
-                try:
-                    self.head['lon'] = \
-                                 MTft._assert_position_format('lon',value)    
-                except KeyError:
-                    try:
-                        self.definemeas['reflon'] = \
-                                 MTft._assert_position_format('lon',value)
-                    except KeyError:
-                        print 'Could not find Longitude'
+            no_key = False
+        except:
+            pass
+        try:
+            self.definemeas['reflong'] = \
+                             MTft._assert_position_format('lon',value)
+            no_key = False
+        except:
+            pass
+
+        if no_key is True:
+
+            # except KeyError:
+            #     try:
+            #         self.head['lon'] = \
+            #                      MTft._assert_position_format('lon',value)    
+            #     except KeyError:
+            #         try:
+            #             self.definemeas['reflon'] = \
+            #                      MTft._assert_position_format('lon',value)
+            #         except KeyError:
+            print 'Could not find Longitude'
+
+
                 
     lon = property(_get_lon, _set_lon, doc='Location longitude in degrees')
 
@@ -1179,7 +1207,7 @@ class Edi(object):
 
             Default: the INFO section is written using the self.info_dict. This
             behaviour can be changed to allow a verbatim write of the 
-            self.info_string (useful, if existing EDIs are only sliughtly altered)
+            self.info_string (useful if existing EDIs are only slightly altered)
 
 
         """
@@ -2154,6 +2182,12 @@ def _generate_edifile_string(edidict,use_info_string=False):
                 
                     stationname = v
 
+                if k.lower() in  ['lat','long']:
+                    v = MTft.convert_degrees2dms_tuple(v)
+                    edistring += '\t{0}={1}:{2}:{3:.2f}\n'.format(k.upper(),
+                                                        int(v[0]),int(v[1]),v[2])
+                    continue 
+
                 if len(v) == 0:
                     edistring += '\t%s=""\n'%(k.upper())
                 elif len(v.split()) > 1:
@@ -2228,6 +2262,15 @@ def _generate_edifile_string(edidict,use_info_string=False):
                     edistring += '\t%s=""\n'%(k)
                 else:
                     edistring += '\t%s=%s\n'%(k,v)
+            if 'reflat' not in sorted(defm_dict.iterkeys()):
+                v = MTft.convert_degrees2dms_tuple(edidict['HEAD']['lat'])
+                print v
+                edistring += '\tREFLAT={0}:{1}:{2:.2f}\n'.format(int(v[0]),int(v[1]),v[2])
+            if 'reflong' not in sorted(defm_dict.iterkeys()):
+                v = MTft.convert_degrees2dms_tuple(edidict['HEAD']['long'])
+                edistring += '\tREFLONG={0}:{1}:{2:.2f}\n'.format(int(v[0]),int(v[1]),v[2])
+            if 'refelev' not in sorted(defm_dict.iterkeys()):
+                edistring += '\tREFELEV={0:.1f}'.format(edidict['HEAD']['elev'])
 
 
         if sectionhead == 'HMEAS_EMEAS':
