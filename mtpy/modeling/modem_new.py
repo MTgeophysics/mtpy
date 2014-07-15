@@ -2004,10 +2004,10 @@ class Model(object):
         ifid.write('\n{0:>16.3f}{1:>16.3f}{2:>16.3f}\n'.format(self.grid_center[0],
                    self.grid_center[1], self.grid_center[2]))
                    
-        if self.strike_angle is None:
+        if self.mesh_rotation_angle is None:
             ifid.write('{0:>9.3f}\n'.format(0))
         else:
-            ifid.write('{0:>9.3f}\n'.format(self.strike_angle))
+            ifid.write('{0:>9.3f}\n'.format(self.mesh_rotation_angle))
         ifid.close()
         
         print 'Wrote file to: {0}'.format(self.model_fn)
