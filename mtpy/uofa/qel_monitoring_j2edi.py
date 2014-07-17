@@ -97,9 +97,11 @@ def convert2edi(station,directory,survey_configfile,instrument_response_file, st
     
     #TODO : automatise these two steps if possible...!!!
     #...maybe by agreeing on a common format for the date...??
-    dateinfo = dateinfo.replace('_RR_B125_','')
+    #dateinfo = dateinfo.replace('_RR_B125_','')
     if string2strip is not None:
-        dateinfo = dateinfo.replace(string2strip.upper(),'')
+        for i in string2strip:
+            dateinfo = dateinfo.replace(i,'')
+            dateinfo = dateinfo.replace(i.upper(),'')
 
     #split the date information
     dateinfo =  dateinfo.split('-')
@@ -112,9 +114,19 @@ def convert2edi(station,directory,survey_configfile,instrument_response_file, st
         year = 14
 
     except:
-        day = 0
-        month_num = 0 
-        year = 0
+        try:
+            datestring = int(float(dateinfo[0]))
+            day = int(float(dateinfo[0][-2:]))
+            month_num = int(float(dateinfo[0][-4:-2]))
+
+            # month_num = {'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,
+            #             'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12,}[month]
+            year = 14
+
+        except:
+            day = 0
+            month_num = 0 
+            year = 0
 
     # re read the edi file:
     e_object = MTedi.Edi(filename=edifn)
