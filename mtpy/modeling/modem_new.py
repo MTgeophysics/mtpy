@@ -2801,8 +2801,8 @@ class ModelManipulator(Model):
 #        self.ax2 = mcb.make_axes(self.ax1, orientation='vertical', shrink=.35)
         self.ax2 = self.fig.add_axes([.81, .45, .16, .03])
         self.ax2.xaxis.set_ticks_position('top')
-        seg_cmap = ws.cmap_discretize(self.cmap, len(self.res_list))
-        self.cb = mcb.ColorbarBase(self.ax2,cmap=seg_cmap,
+        #seg_cmap = ws.cmap_discretize(self.cmap, len(self.res_list))
+        self.cb = mcb.ColorbarBase(self.ax2,cmap=self.cmap,
                                    norm=colors.Normalize(vmin=self.cmin,
                                                          vmax=self.cmax),
                                     orientation='horizontal')
@@ -4031,7 +4031,7 @@ class PlotResponse(object):
                         cyx = (1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))
                     
                     resp_z_obj = self.resp_object[rr].mt_dict[station].Z
-                    resp_z_err = (z_obj.z-resp_z_obj.z)/z_obj.zerr
+                    resp_z_err = np.nan_to_num((z_obj.z-resp_z_obj.z)/z_obj.zerr)
     
                     resp_t_obj = self.resp_object[rr].mt_dict[station].Tipper
                     
