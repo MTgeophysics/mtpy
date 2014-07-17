@@ -153,7 +153,30 @@ class Inmodel():
         
         self.inmodel = np.vstack([values[:,0],depths,values[:,2],values[:,3],values[:,4]]).T
 
-
+    def get_boundaries(self):
+        """
+        get points at which the resistivity changes in the inmodel file
+        
+        """
+        
+        if not hasattr(self,'inmodel'):
+            try:
+                self.read_inmodel()
+            except IOError:
+                print "please define working directory"
+                return
+                
+        data = self.inmodel
+        
+        bd = []
+        
+        for i in range(len(data)-1):
+            if data[i,2] != data[i+1,2]:
+                bd.append(data[i,1])
+            elif data[i,2] != data[i+1,2]:
+                bd.append(data[i,1])
+                
+        self.boundary_depths = bd
 
 class Data():
     """
@@ -421,7 +444,7 @@ class Model():
         aniso_max = np.amax(aniso)
         depth_aniso_max = model_filt[:,1][aniso == aniso_max][0]
         
-        while not self.check_consistent_strike(depth_aniso_max):   
+        while not self.check_consistent_strike(depth_aniso_max):
             aniso[aniso == aniso_max] = 1.
             aniso_max = np.amax(aniso)
             depth_aniso_max = model_filt[:,1][aniso == aniso_max][0]
@@ -536,7 +559,8 @@ class Fit():
         """
         # load the file with fit values in it
         fit = np.loadtxt(os.path.join(self.working_directory,self.fitfile))
-        
+        print os.path.join(self.working_directory,self.fitfile)
+        print np.shape(fit)
         # find number of periods
         self.find_nperiods()        
         
@@ -562,8 +586,8 @@ class Fit():
         
         # define parameters
         mis = self.misfit
-        s = self.penalty_structure
-        a = self.penalty_anisotropy
+        s = self.penalty_structure/np.median(self.penalty_structure)
+        a = self.penalty_anisotropy/np.median(self.penalty_anisotropy)
         
         # define function to minimise
         f = a*s*np.abs(a-s)/(a+s)
@@ -576,7 +600,9 @@ class Fit():
 class Model_suite():
     """
     """
-    def __init__(self,working_directory,**input_parameters):
+    def __init__(self,
+                 working_directory,
+                 **input_parameters):
         self.working_directory = working_directory
         self.model_list = []
         self.inmodel_list = []
