@@ -1198,7 +1198,7 @@ class Edi(object):
 
 
     #--------------Write out file---------------------------------------------
-    def writefile(self, fn=None, allow_overwrite=False, use_info_string=True):
+    def writefile(self, fn=None, allow_overwrite=False, use_info_string=False):
         """
             Write out the edi object into an EDI file.
 
@@ -2259,19 +2259,33 @@ def _generate_edifile_string(edidict,use_info_string=False):
             edistring += '>=DEFINEMEAS \n'
 
             for k in sorted(defm_dict.iterkeys()):
+                print k
                 v = str(defm_dict[k])
+                if k == 'REFLAT':
+                    v = MTft.convert_degrees2dms_tuple(edidict['HEAD']['lat'])
+                    edistring += '\tREFLAT={0}:{1}:{2:.2f}\n'.format(int(v[0]),int(v[1]),v[2])
+                    continue
+                if k == 'REFLONG':
+                    v = MTft.convert_degrees2dms_tuple(edidict['HEAD']['long'])
+                    edistring += '\tREFLONG={0}:{1}:{2:.2f}\n'.format(int(v[0]),int(v[1]),v[2])
+                    continue
+                if k == 'REFELEV':
+                    edistring += '\tREFELEV={0:.1f}\n'.format(edidict['HEAD']['elev'])
+                    continue
+
                 if len(v) == 0  or len(v.split()) > 1:
                     edistring += '\t%s=""\n'%(k)
                 else:
                     edistring += '\t%s=%s\n'%(k,v)
-            if 'reflat' not in sorted(defm_dict.iterkeys()):
+            
+            if 'REFLAT' not in sorted(defm_dict.iterkeys()):
                 v = MTft.convert_degrees2dms_tuple(edidict['HEAD']['lat'])
                 edistring += '\tREFLAT={0}:{1}:{2:.2f}\n'.format(int(v[0]),int(v[1]),v[2])
-            if 'reflong' not in sorted(defm_dict.iterkeys()):
+            if 'REFLONG' not in sorted(defm_dict.iterkeys()):
                 v = MTft.convert_degrees2dms_tuple(edidict['HEAD']['long'])
                 edistring += '\tREFLONG={0}:{1}:{2:.2f}\n'.format(int(v[0]),int(v[1]),v[2])
-            if 'refelev' not in sorted(defm_dict.iterkeys()):
-                edistring += '\tREFELEV={0:.1f}'.format(edidict['HEAD']['elev'])
+            if 'REFELEV' not in sorted(defm_dict.iterkeys()):
+                edistring += '\tREFELEV={0:.1f}\n'.format(edidict['HEAD']['elev'])
 
 
         if sectionhead == 'HMEAS_EMEAS':
