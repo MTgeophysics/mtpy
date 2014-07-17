@@ -97,9 +97,11 @@ def convert2edi(station,directory,survey_configfile,instrument_response_file, st
     
     #TODO : automatise these two steps if possible...!!!
     #...maybe by agreeing on a common format for the date...??
-    dateinfo = dateinfo.replace('_RR_B125_','')
+    #dateinfo = dateinfo.replace('_RR_B125_','')
     if string2strip is not None:
-        dateinfo = dateinfo.replace(string2strip.upper(),'')
+        for i in string2strip:
+            dateinfo = dateinfo.replace(i,'')
+            dateinfo = dateinfo.replace(i.upper(),'')
 
     #split the date information
     dateinfo =  dateinfo.split('-')

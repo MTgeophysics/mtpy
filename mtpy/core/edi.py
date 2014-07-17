@@ -1875,7 +1875,7 @@ def combine_edifiles(fn1, fn2,  merge_freq=None, out_fn = None,
             head_dict[element] = '{0:02}/{1:02}/{2:02} '.format(datetuple[0],
                                                                 datetuple[1],
                                                                datetuple[2])
-            print head_dict[element]
+            #print head_dict[element]
 
     eom.head = head_dict
     
@@ -2259,7 +2259,6 @@ def _generate_edifile_string(edidict,use_info_string=False):
             edistring += '>=DEFINEMEAS \n'
 
             for k in sorted(defm_dict.iterkeys()):
-                print k
                 v = str(defm_dict[k])
                 if k == 'REFLAT':
                     v = MTft.convert_degrees2dms_tuple(edidict['HEAD']['lat'])
