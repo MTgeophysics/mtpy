@@ -417,31 +417,35 @@ class Plot_map():
             scale = 1./resmin
         else:
             scale = aniso**self.anisotropy_display_factor
-                              
+
+        x += np.sin(np.deg2rad(strike-180.))*scale*self.escale*0.5
+        y += np.cos(np.deg2rad(strike-180.))*scale*self.escale*0.5
+#        print np.sin(np.deg2rad(strike-180.))*scale*self.escale*0.5
+#        print np.cos(np.deg2rad(strike-180.))*scale*self.escale*0.5
 
         # make rectangles
         recs = [mpatches.Rectangle(xy=np.array([x[i],y[i]]), 
                                    width = self.escale*scale[i],
                                    height = self.escale,
                                    angle=90-strike[i],
-                                   lw=0) for i in range(len(x))]
+                                   lw=0.5) for i in range(len(x))]
         if self.scalebar:
             scalebar_size = round(max(scale))
-            sxy = np.array([plt.xlim()[0]+0.02,plt.ylim()[-1]-0.02])
+            sxy = np.array([plt.xlim()[0]+0.01,plt.ylim()[-1]-0.015])
             recs.append(mpatches.Rectangle(xy=sxy, 
                                            width = self.escale*scalebar_size,
                                            height = self.escale,
                                            angle=0,
-                                           lw=1))
+                                           lw=0.5))
             plt.text(sxy[0],sxy[1]+0.005,
-            'anisotropy = %1i'%scalebar_size,
-            fontsize=8)
+            'a = %1i'%scalebar_size,
+            fontsize=10)
             print sxy,scalebar_size
         ax1 = plt.gca()
         for i,e in enumerate(recs):
             ax1.add_artist(e)
             e.set_facecolor('k')
-        plt.plot(x,y,'o')
+
             
 
         
