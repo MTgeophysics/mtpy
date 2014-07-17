@@ -27,7 +27,7 @@ outdir = op.join(op.abspath(outdir),station)
 indir = op.abspath(indir)
 
 dirs = os.listdir(indir)
-#dirs = [op.join(indir,i) for i in dirs]
+
 dirs = sorted([i for i in dirs if op.isdir(op.join(indir,i))])
 
 basedir = op.abspath(os.curdir)
