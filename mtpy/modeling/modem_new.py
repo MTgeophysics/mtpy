@@ -352,7 +352,7 @@ class Data(object):
         reset the header sring for file
         """
         
-        h_str = '# Created using MTpy error {0} of {1:.0f}%, data rotated {2:.1f} deg clockwise from N\n'
+        h_str = '# Created using MTpy error {0} of {1:.0f}%, data rotated {2:.1f}_deg clockwise from N\n'
         if self.error_type == 'egbert':
             self.header_strings[0] =  h_str.format(self.error_type, 
                                                    self.error_egbert,
@@ -1004,13 +1004,14 @@ class Data(object):
         
         #try to find rotation angle
         h_list = header_list[0].split()
-        for h_str in h_list:
-            try:
-                self._rotation_angle = float(h_str)
-                print ('Set rotation angle to {0:.1f} '.format(
-                         self._rotation_angle)+'deg clockwise from N')
-            except ValueError:
-                pass
+        for hh, h_str in enumerate(h_list):
+            if h_str.find('_deg') > 0:
+                try:
+                    self._rotation_angle = float(h_str[0:h_str.find('_deg')])
+                    print ('Set rotation angle to {0:.1f} '.format(
+                             self._rotation_angle)+'deg clockwise from N')
+                except ValueError:
+                    pass
                 
             
         self.period_list = np.array(sorted(set(period_list)))
@@ -2801,8 +2802,8 @@ class ModelManipulator(Model):
 #        self.ax2 = mcb.make_axes(self.ax1, orientation='vertical', shrink=.35)
         self.ax2 = self.fig.add_axes([.81, .45, .16, .03])
         self.ax2.xaxis.set_ticks_position('top')
-        seg_cmap = ws.cmap_discretize(self.cmap, len(self.res_list))
-        self.cb = mcb.ColorbarBase(self.ax2,cmap=seg_cmap,
+        #seg_cmap = ws.cmap_discretize(self.cmap, len(self.res_list))
+        self.cb = mcb.ColorbarBase(self.ax2,cmap=self.cmap,
                                    norm=colors.Normalize(vmin=self.cmin,
                                                          vmax=self.cmax),
                                     orientation='horizontal')
@@ -4031,7 +4032,7 @@ class PlotResponse(object):
                         cyx = (1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))
                     
                     resp_z_obj = self.resp_object[rr].mt_dict[station].Z
-                    resp_z_err = (z_obj.z-resp_z_obj.z)/z_obj.zerr
+                    resp_z_err = np.nan_to_num((z_obj.z-resp_z_obj.z)/z_obj.zerr)
     
                     resp_t_obj = self.resp_object[rr].mt_dict[station].Tipper
                     
