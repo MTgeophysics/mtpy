@@ -50,6 +50,26 @@ class Plot_model():
 
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key]) 
+
+    def _set_axis_params(self,ax,parameter):
+        
+ 
+        xlim = self.xlim[parameter]
+
+        plt.xlim(xlim)
+        plt.ylim(self.ylim)
+        plt.grid()
+        ax.set_xticks(xlim)
+
+#        ax.get_xticklabels()[0].set_horizontalalignment('left')
+#        ax.get_xticklabels()[-1].set_horizontalalignment('right')
+        for label in ax.get_xticklabels():
+            label.set_fontsize(self.label_fontsize)
+            label.set_rotation(90)
+            label.set_verticalalignment('top')
+            
+
+        return plt.gca()
     
     
     def plot_parameter(self,parameter):
@@ -88,22 +108,48 @@ class Plot_model():
             strike = data[:,4]%180
                
             axes_count = 1
-            
+
             if 'minmax' in parameter:
-                plt.plot(resmax,dep,symbol)
-                symbol += '-'
-                plt.plot(resmin,dep,symbol)
-                symbol = symbol[:-1]
-                axes_count += 1
-                plt.xscale('log')
-            elif 'aniso' in parameter:
-                plt.plot(resmax/resmin,dep,symbol)
-                axes_count += 1
-            elif 'strike' in parameter:
-                plt.plot(strike,dep,symbol)    
-                axes_count += 1      
+                ls,lw = '-',1
+                twin = True
+                for modelvals in data_list:
+                    
+                    plt.plot(modelvals[:,3],modelvals[:,1],'0.5',ls=ls,lw=lw)
+                    p, = plt.plot(modelvals[:,2],modelvals[:,1],'k',ls=ls,lw=lw)
+                    plt.xscale('log')
+                    lw*=0.5
+                    ax = self._set_axis_params(ax,'minmax')
+                axes.append([ax,p])
+
+            if 'aniso' in parameter:
+                ls,lw = '-',1
+                color = 'k'
+                if twin:
+                    ax = make_twiny()
+                    color = 'b'
+                twin = True
+                for modelvals in data_list:
+                    
+                    p, = plt.plot(modelvals[:,3]/modelvals[:,2],modelvals[:,1],
+                    'k-',ls=ls,lw=lw)
+                    plt.xscale('log')  
+                    lw *= 0.5
+                    ax = self._set_axis_params(ax,'aniso')
+                axes.append([ax,p])
+            if 'strike' in parameter:
+                color,lw = 'k',1
+                ls = '-'
+                if twin:
+                    ax=make_twiny() 
+                    color,lw = 'b',0.5
+                twin = True
+                for modelvals in data_list:
+                    p, = plt.plot(modelvals[:,4]%180,modelvals[:,1],color,ls=ls,lw=lw)
+                    
+                    lw *= 0.5
+                    ax = self._set_axis_params(ax,'strike')
+
             
-            symbol = 'b-'
             
         plt.xlim(self.xlim[parameter][0],self.xlim[parameter][1])
         plt.ylim(self.ylim[0],self.ylim[1])
