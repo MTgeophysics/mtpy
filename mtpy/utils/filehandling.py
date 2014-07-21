@@ -48,6 +48,13 @@ lo_headerelements = ['station', 'channel','samplingrate','t_min',
 
 #=================================================================
 
+def read1columntext(textfile):
+    """
+    read a list from a one column text file
+    """
+    
+    return [ff.strip() for ff in open(textfile).readlines()]
+
 def make_unique_filename(infn):
 
     fn = op.abspath(infn)
@@ -78,7 +85,7 @@ def make_unique_folder(wd,basename = 'run'):
     return savepath
     
             
-def sort_folder_list(wkdir,order_file,indices=[0,9999]):
+def sort_folder_list(wkdir,order_file,indices=[0,9999],delimiter = ''):
     """
     sort subfolders in wkdir according to order in order_file
     
@@ -91,14 +98,14 @@ def sort_folder_list(wkdir,order_file,indices=[0,9999]):
     returns a list of directories, in order.
     
     """
-    order = open(order_file).readlines()
-    order = [ff.strip() for ff in order]
+    order = read1columntext(order_file)
 
     plst = []
-    flst = [i for i in os.listdir(wkdir) if os.path.isdir(os.path.join(wkdir,i))]
+    flst = [i for i in os.listdir(wkdir) if os.path.exists(os.path.join(wkdir,i))]
+#    print flst
     for o in order:
         for f in flst:
-            if str.lower(o.strip().split('_')[0][indices[0]:indices[1]]) == str.lower(f)[indices[0]:indices[1]]:
+            if str.lower(f.strip().split(delimiter)[0][indices[0]:indices[1]]) == str.lower(o)[indices[0]:indices[1]]:
                 plst.append(os.path.join(wkdir,f))
     return plst
 
