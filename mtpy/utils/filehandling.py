@@ -49,6 +49,13 @@ lo_headerelements = ['station', 'channel','samplingrate','t_min',
 
 #=================================================================
 
+def read1columntext(textfile):
+    """
+    read a list from a one column text file
+    """
+    
+    return [ff.strip() for ff in open(textfile).readlines()]
+
 def make_unique_filename(infn):
 
     fn = op.abspath(infn)
@@ -60,6 +67,48 @@ def make_unique_filename(infn):
         i += 1
 
     return outfn
+
+def make_unique_folder(wd,basename = 'run'):
+    """
+    make a folder that doesn't exist already.
+    """        
+  
+    # define savepath. need to choose a name that doesn't already exist
+    i = 1
+    svpath_str = basename
+    svpath = svpath_str+'_%02i'%i
+    while os.path.exists(op.join(wd,svpath)):
+        i += 1
+        svpath = svpath_str+'_%02i'%i
+        
+    savepath = op.join(wd,svpath)
+        
+    return savepath    
+    
+            
+def sort_folder_list(wkdir,order_file,indices=[0,9999],delimiter = ''):
+    """
+    sort subfolders in wkdir according to order in order_file
+    
+    wkdir = working directory containing subfolders
+    order = full path to text file containing order.
+            needs to contain a string to search on that is the same length
+            for each item in the list
+    indices = indices to search on; default take the whole string
+    
+    returns a list of directories, in order.
+    
+    """
+    order = read1columntext(order_file)
+
+    plst = []
+    flst = [i for i in os.listdir(wkdir) if os.path.exists(os.path.join(wkdir,i))]
+#    print flst
+    for o in order:
+        for f in flst:
+            if str.lower(f.strip().split(delimiter)[0][indices[0]:indices[1]]) == str.lower(o)[indices[0]:indices[1]]:
+                plst.append(os.path.join(wkdir,f))
+    return plst
 
 
 def get_sampling_interval_fromdatafile(filename, length = 3600):
