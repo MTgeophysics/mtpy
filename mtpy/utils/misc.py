@@ -13,6 +13,7 @@ Calculations, optimisations, ....
 import sys
 import os 
 import numpy as np
+import ctypes
 
 def find_longest_common_time_window_from_list(lo_time_windows, sampling_rate):
     """

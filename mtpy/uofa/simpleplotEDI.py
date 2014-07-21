@@ -79,7 +79,7 @@ def plotedi(fn, saveplot=False):
 	xlim(0.5*min(periods),2*max(periods))
 
 	ylim([0.01,1000])
-	#ylim([minval/10,maxval*10])
+	ylim([minval/10,maxval*10])
 
 
 	autoscale(False)

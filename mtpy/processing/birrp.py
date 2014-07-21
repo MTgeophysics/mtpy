@@ -39,7 +39,7 @@ import mtpy.utils.format as MTft
 import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
 import mtpy.utils.misc as MTmc
-#import pdb
+#import ipdb
 
 reload(MTcf)
 reload(MTft)
@@ -50,13 +50,13 @@ reload(MTfh)
 epsilon = 1e-5
 #=================================================================
 
-def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory, 
-                           coherence_threshold = 0.0, rr_station = None, 
+def runbirrp_Nin2out_simple(birrp_exe, stationname, ts_directory, 
+                           coherence_threshold = 0.0, rr_station = None, output_channels= 2,
                            output_dir = None, starttime = None, endtime = None):
 
 
     """
-    Call BIRRP for 2 input and 2 output channels with the simplemost setup. 
+    Call BIRRP for N input and 2 output channels with the simplemost setup. 
 
     Provide stationname and directory containing the data folders. Data must 
     be in 1-column ascii format, including one header line for identification 
@@ -116,10 +116,9 @@ def runbirrp2in2out_simple(birrp_exe, stationname, ts_directory,
     print "\nFound/generated output directory: {0}".format(wd)
 
     os.chdir(wd)
-
     inputstring, birrp_stationdict, inputfilename = generate_birrp_inputstring_simple(
                                             stationname, rr_station, ts_directory, 
-                                            coherence_threshold,2, starttime, endtime)
+                                            coherence_threshold,output_channels, starttime, endtime)
 
     print "Inputstring and configuration dictionary generated for station {0}\n".format(stationname)
     #print inputstring
@@ -222,19 +221,18 @@ def generate_birrp_inputstring_simple(stationname, rr_station, ts_directory,
     elif output_channels == 3:
         birrp_stationdict['nout'] = 3
         birrp_stationdict['nz'] = 2
-
-        inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1\n3\n2'\
-                    '\n0\n0\n0\n0\n0\n0\n0\n5,1,2,5,3,4\n%s\n0\n\i\n5,3,4\n%s\n0'\
+        inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%.2f\n2\n%s\n0\n1\n0\n2\n0'\
+                    '\n0\n0\n0\n0\n0\n0\n0\n5,3,4,5,3,4\n%s\n0\n%i\n5,3,4\n%s\n0'\
                     '\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,longest_section,
                         number_of_bisections,coherence_threshold,stationname,
-                        input_filename,length,stationname)
+                        input_filename,length,input_filename)
         if rr_station is not None:
-            inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%f\n2\n%s\n0\n1'\
-                        '\n3\n2\n0\n0\n0\n0\n0\n0\n0\n7,1,2,5,3,4\n%s\n0\n\i\n'\
+            inputstring = '0\n3\n2\n2\n-%f\n%i,%i\ny\n0,0.999\n%.2f\n2\n%s\n0\n1\n0'\
+                        '\n2\n0\n0\n0\n0\n0\n0\n0\n0\n7,1,2,5,3,4\n%s\n0\n%i\n'\
                         '7,6,7\n%s\n0\n0,90,0\n0,90,0\n0,90,0\n'%(sampling_rate,
                             longest_section,number_of_bisections,
                             coherence_threshold,stationname,input_filename,
-                            length,stationname)
+                            length,input_filename)
 
 
 
@@ -714,13 +712,16 @@ def get_optimal_window_bisection(length, sampling_rate):
     #statistically sound results (maybe correcting this to 1/100 later); value given in samples
     longest_window = int(length/30.)
 
+    #restrict lentght to power of 2...optimisinf the FFT and memory allocation:
+    longest_window = 2**(int(np.log2(longest_window)))
+
     #shortest_window cannot be smaller than 2^4=16 times the sampling interval 
     #in order to suit Nyquist and other criteria; value given in samples
     shortest_window = 16 
 
 
     #find maximal number of bisections so that the current window is still longer than the shortest window allowed
-    number_of_bisections = int(np.ceil(np.log(16./longest_window) / np.log(0.5) ))
+    number_of_bisections = int(np.ceil(np.log(float(shortest_window)/longest_window) / np.log(0.5) ))
 
     return longest_window, number_of_bisections
 

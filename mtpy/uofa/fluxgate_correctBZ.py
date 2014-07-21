@@ -10,7 +10,10 @@ Works in-place - so make sure, it's only run once!!!!
 
 
 import os,sys
+import os.path as op
 import numpy as np
+
+import ipdb
 
 if len(sys.argv) < 2:
     sys.exit('\nNeed at least 1 argument: \n\n '
@@ -40,7 +43,7 @@ try:
         raise
 except:
     print 'Cannot generate writable output directory {0} - using'\
-            ' generic location "dayfiles" instead'.format(outpath)
+            ' generic location "dayfiles" instead'.format(outdir)
     outpath = pathname
     pass
 
@@ -51,32 +54,34 @@ lo_files=os.listdir(pathname)
 lo_files = [i for i in lo_files if i.lower().endswith('.bz')]
 
 if len(lo_files) == 0:
-	sys.exit('ERROR - no BZ data in directory {0} \n'.format(pathname))
+    sys.exit('ERROR - no BZ data in directory {0} \n'.format(pathname))
 
 
 print  
 
+
 for bz_file in lo_files:
 
-	try:
-		infile = os.path(join(pathname,bz_file))
 
-		with open(infile) as F:
-			header = F.readline()
+    try:
+        infile = op.join(pathname,bz_file)
 
-		data = np.loadtxt(infile)
+        with open(infile) as F:
+            header = F.readline()
 
-		outfile = os.path.join(outpath,bz_file)
+        data = np.loadtxt(infile)
 
-		Fout = open(outfile,'w')
-		Fout.write(header)
-		np.savetxt(Fout,2.2*data)
-		Fout.close()
-	
-		print '\tcorrecting file {0} ....output: {1}'.format(infile,outfile)
+        outfile = os.path.join(outpath,bz_file)
 
-	except:
-		print '\n\t\tERROR - could not correct file {0}\n'.format(infile)
+        Fout = open(outfile,'w')
+        Fout.write(header)
+        np.savetxt(Fout,2.2*data)
+        Fout.close()
+    
+        print '\tcorrecting file {0} ....output: {1}'.format(infile,outfile)
+
+    except:
+      print '\n\t\tERROR - could not correct file {0}\n'.format(bz_file)
 
 print '\n...Done\n'
 

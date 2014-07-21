@@ -71,7 +71,7 @@ def main():
 
     if 1:
         MTbp.runbirrp_Nin2out_simple(birrp_exe, stationname, ts_dir, coherence_th,
-                                                    None, 2,None, starttime, endtime)
+                                                    None,3, None, starttime, endtime)
     # except:
     #     print 'ERROR - Could not process input data using BIRRP'
 
