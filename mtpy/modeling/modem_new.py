@@ -815,7 +815,8 @@ class Data(object):
                         
                         #get the value for that compenent at that frequency
                         zz = self.data_array[ss][c_key][ff, z_ii, z_jj]
-                        if zz != 0.0+0.0j:
+                        if zz.real != 0.0 and zz.imag != 0.0 and \
+                           zz.real != 1e32 and zz.imag != 1e32:
                             per = '{0:<12.5e}'.format(self.period_list[ff])
                             sta = '{0:>7}'.format(self.data_array[ss]['station'])
                             lat = '{0:> 9.3f}'.format(self.data_array[ss]['lat'])
