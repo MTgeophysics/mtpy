@@ -13,14 +13,16 @@ import mtpy.utils.edi2columnsonly as edi2col
 import mtpy.uofa.simpleplotEDI as smplplt
 
 
-indir = 'Day_By_Day'
+#indir = 'L09_before_23Feb_birrpoutput'
+#indir = 'test'
+indir = 'L102_after_23Feb_birrpoutput'
 
-outdir = 'qel_collected'
+outdir = 'qel_collected_L102_after'
 
-station = 'L101'
+station = 'L102'
 
-survey_configfile= op.abspath('romasurvey.cfg')
-instr_resp = op.abspath('lemi_coils_instrument_response_freq_real_imag_microvolts.txt')
+survey_configfile= op.abspath('/data/temp/nigel/romasurvey.cfg')
+instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_microvolts.txt')
 
 outdir = op.join(op.abspath(outdir),station)
 
@@ -47,12 +49,12 @@ for date in dirs:
     # except:
     #     continue
         
-    try:
-        outfn,outfn_coh = qel2edi.convert2edi(station,'.',survey_configfile,instr_resp,string2strip=['_'])
+    if 1:
+        outfn,outfn_coh = qel2edi.convert2edi(station,'.',survey_configfile,instr_resp,string2strip=['_before','_23Feb'], datestring=fullday)
 
-    except:
-        print 'no information found in folder {0}'.format(op.abspath(os.curdir))
-        pass
+    # except:
+    #     print 'no information found in folder {0}'.format(op.abspath(os.curdir))
+    #     pass
     try:
         colfile = edi2col.convert2columns(op.basename(outfn))
     except:

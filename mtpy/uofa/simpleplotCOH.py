@@ -48,7 +48,6 @@ def main():
 		arg2 = sys.argv[2]
 		if 's' in arg2.lower():
 			saveflag = True
-
 	plotcoh(fn,saveflag)
 
 
@@ -58,12 +57,13 @@ def plotcoh(fn, saveplot=False):
 	data = np.loadtxt(fn)
 
 	periods = data[:,0]
-	if data.shape[1] == 6:
+	if data.shape[1] != 99:
 
 		#ipdb.set_trace()
 		
 		coh1 = data[:,2]
 		coh2 = data[:,4]
+
 
 		ax1 = figure(11)
 		
@@ -73,7 +73,17 @@ def plotcoh(fn, saveplot=False):
 
 		plot(periods,coh2)
 		scatter(periods,coh2,marker='x',c='r')
-		
+		try:
+			plot(periods,data[:,6],'g:')
+			scatter(periods,data[:,6],marker='d',c='g')
+		except:
+			pass
+		try:
+			plot(periods,data[:,8],'y:')
+			scatter(periods,data[:,8],marker='d',c='y')
+		except:
+			pass
+
 		xscale('log')
 		ylim([-.1,1.1])
 		xlim(0.5*min(periods),2*max(periods))

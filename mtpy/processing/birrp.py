@@ -2526,7 +2526,7 @@ def convert2coh(stationname, birrp_output_directory):
         zcoh4 = None
         try:
             for fn in cohfilenames:
-                if fn.lower().endswith('1r.2c2'):
+                if fn.lower().endswith('1r.1c2'):
                     break
             period,freq,coh3,zcoh3 = MTfh.read_2c2_file(fn)
         except:
@@ -2534,7 +2534,7 @@ def convert2coh(stationname, birrp_output_directory):
 
         try:
             for fn in cohfilenames:
-                if fn.lower().endswith('2r.2c2'):
+                if fn.lower().endswith('2r.1c2'):
                     break
             period,freq,coh4,zcoh4 = MTfh.read_2c2_file(fn)
         except:

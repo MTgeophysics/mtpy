@@ -13,11 +13,14 @@ import mtpy.utils.edi2columnsonly as edi2col
 import mtpy.uofa.simpleplotEDI as smplplt
 
 
-indir = 'BIRRP_Outtape'
+#indir = 'BIRRP_Outtape'
+indir ='L2JanBIRRPOut_Rev1'
+indir = 'birrp_output'
 
 outdir = 'qel_collected'
-survey_configfile= op.abspath('romasurvey.cfg')
-instr_resp = op.abspath('lemi_coils_instrument_response_freq_real_imag_microvolts.txt')
+
+survey_configfile= op.abspath('/data/temp/nigel/romasurvey.cfg')
+instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_normalised.txt')
 
 outdir = op.abspath(outdir)
 
@@ -27,6 +30,7 @@ dirs = os.listdir(indir)
 #dirs = [op.join(indir,i) for i in dirs]
 dirs = sorted([i for i in dirs if op.isdir(op.join(indir,i))])
 
+print dirs 
 basedir = op.abspath(os.curdir)
 
 for station in dirs:
@@ -39,25 +43,27 @@ for station in dirs:
     os.chdir(stationbase)
 
     for daydir in daydirs:
-        try:
+        if 1:
             date = daydir.split('-')
             day = int(float(date[0]))
             month = date[1].lower()
             month_num = {'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,
                         'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12,}[month]
-        except:
-            continue
+            year = 14
+            fullday='%02d%02d%02d'%(year, month_num,day)
+        # except:
+        #     continue
         
 
         os.chdir(daydir)
         print op.abspath(os.curdir)
 
-        try:
-            outfn,outfn_coh = qel2edi.convert2edi(station,'.',survey_configfile,instr_resp,string2strip=['_B125_','_RR','_ADV'])
+        if 1:#try:
+            outfn,outfn_coh = qel2edi.convert2edi(station,'.',survey_configfile,instr_resp,string2strip=None, datestring=fullday)
 
-        except:
-            print 'no information found in folder {0}'.format(op.abspath(os.curdir))
-            pass
+        # except:
+        #     print 'no information found in folder {0}'.format(op.abspath(os.curdir))
+        #     pass
         try:
             colfile = edi2col.convert2columns(op.basename(outfn))
         except:
@@ -72,6 +78,7 @@ for station in dirs:
             os.makedirs(outdir_edi)
         try:
             shutil.copy(op.basename(outfn),outdir_edi)
+            print 'copied EDI file to %s'%(outdir_edi)
         except:
             pass
 
@@ -100,6 +107,8 @@ for station in dirs:
         try:
             plotfn = smplplt.plotedi(outfn,saveplot=True)
             shutil.copy(op.basename(plotfn),outdir_plots)
+            print 'copied res/phase plot %s'%(plotfn)
+
         except:
             pass
 
@@ -114,7 +123,7 @@ for station in dirs:
     os.chdir(indir)
 
 os.chdir(basedir)
-
+print 
 
 
 

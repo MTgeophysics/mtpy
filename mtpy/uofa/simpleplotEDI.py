@@ -78,8 +78,8 @@ def plotedi(fn, saveplot=False):
 	maxval=max(max(res_te,res_tm))
 	xlim(0.5*min(periods),2*max(periods))
 
-	ylim([0.01,1000])
-	ylim([minval/10,maxval*10])
+	ylim([0.1,100])
+	#ylim([minval/10,maxval*10])
 
 
 	autoscale(False)
@@ -96,7 +96,7 @@ def plotedi(fn, saveplot=False):
 	ylabel('phase')
 	xlabel('period (in s)')
 	plot([xlim()[0],xlim()[1]],[45,45],'-.',c='0.7')
-	ylim([-50,100])
+	ylim([-0,90])
 
 	tight_layout()
 	if saveplot is True:
