@@ -134,7 +134,7 @@ class Edi(object):
         self._zrot = None
         self.Z = MTz.Z()
         self.Tipper = MTz.Tipper()
-        self.station = None
+        self._station = None
         
         if filename is not None:
             self.readfile(self.filename, datatype = datatype)
@@ -1324,11 +1324,43 @@ class Edi(object):
         """
 
         self._head = head_dict
-    
+
+
     def _get_head(self): 
+
+        if not 'dataid' in self._head :
+            print self.station
+            if self.station is not None:
+                self._head['dataid'] = self.station
+
         return self._head
         
     head = property(_get_head, _set_head, doc='HEAD attribute of EDI file')
+
+    #--------------get/set station -------------------------------
+    def _set_station(self, stationname):
+        """
+        Set the attribute 'station'.
+
+        Updates the 'dataid' key in 'HEAD'...
+
+        Input:
+        HEAD section dictionary
+
+        No test for consistency!
+
+        """
+
+        self._station = stationname
+        if not 'dataid' in self._head :
+            self._head['dataid'] = stationname
+
+
+    def _get_station(self): 
+
+        return self._station
+        
+    station = property(_get_station, _set_station, doc='station attribute of EDI file')
 
 
     #--------------get/set info dict -------------------------------
