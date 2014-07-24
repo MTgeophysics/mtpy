@@ -301,7 +301,7 @@ class Edi(object):
         data_dict['z'] = self.Z.z
         data_dict['zerr'] = self.Z.zerr
         data_dict['tipper'] = self.Tipper.tipper
-        data_dict['tippererr'] = self.Tipper.tipper_err
+        data_dict['tippererr'] = self.Tipper.tippererr
         data_dict['zrot'] = self.zrot
         data_dict['freq'] = self.freq
 
