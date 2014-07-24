@@ -381,7 +381,14 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         self.xstep = kwargs.pop('xstep', 1)
         self.xlimits = kwargs.pop('xlimits', None)
         self.ylimits = kwargs.pop('ylimits', None)
-        
+        self.scale_arrow = kwargs.pop('scale_arrow',False)
+        self.scale_arrow_dict = kwargs.pop('scale_arrow_dict',{})
+
+        if 'size' not in self.scale_arrow_dict.keys():
+            self.scale_arrow_dict['size'] = 1.
+        if 'text_offset_y' not in self.scale_arrow_dict.keys():
+            self.scale_arrow_dict['text_offset_y'] = 0.
+                
         self._rot_z = kwargs.pop('rot_z', 0)
         if type(self._rot_z) is float or type(self._rot_z) is int:
             self._rot_z = np.array([self._rot_z]*len(self.mt_list))
@@ -552,8 +559,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                 colorarray = 2*pt.beta[0][::-1]
                 
             elif self.ellipse_colorby == 'ellipticity':
-                colorarray = pt.ellipticity[::-1]
-                
+                colorarray = pt.ellipticity[0][::-1]
             else:
                 raise NameError(self.ellipse_colorby+' is not supported')
             
@@ -608,15 +614,18 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                 #--------- Add induction arrows if desired --------------------
                 if self.plot_tipper.find('y') == 0:
                     
+
+                        
+        
                     #--> plot real tipper
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yr':
                         txr = tmr[jj]*np.sin(tar[jj]*np.pi/180+\
                                              np.pi*self.arrow_direction)*\
                                              self.arrow_size
-                        tyr = tmr[jj]*np.cos(tar[jj]*np.pi/180+\
+                        tyr = -tmr[jj]*np.cos(tar[jj]*np.pi/180+\
                                              np.pi*self.arrow_direction)*\
                                              self.arrow_size
-                        
+                                    
                         maxlength = np.sqrt((txr/self.arrow_size)**2+\
                                             (tyr/self.arrow_size)**2)
                                             
@@ -633,13 +642,13 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                                           length_includes_head=False,
                                           head_width=awidth,
                                           head_length=aheight)
-                                      
+
                     #--> plot imaginary tipper
                     if self.plot_tipper == 'yri' or self.plot_tipper == 'yi':
                         txi = tmi[jj]*np.sin(tai[jj]*np.pi/180+\
                                              np.pi*self.arrow_direction)*\
                                              self.arrow_size
-                        tyi = tmi[jj]*np.cos(tai[jj]*np.pi/180+\
+                        tyi = -tmi[jj]*np.cos(tai[jj]*np.pi/180+\
                                              np.pi*self.arrow_direction)*\
                                              self.arrow_size
                         
@@ -801,6 +810,24 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
                                markerscale=.5,
                                borderaxespad=.005,
                                borderpad=.25)
+
+            # make a scale arrow
+            if self.scale_arrow:
+                print (np.log10(self.ylimits[1] - self.scale_arrow_dict['text_offset_y']))*self.ystretch
+                txrl = self.scale_arrow_dict['size']
+                self.ax.arrow(min(self.offsetlist)*self.xstretch, 
+                              np.log10(self.ylimits[1])*self.ystretch, 
+                              txrl*self.arrow_size,
+                              0.,
+                              lw=alw,
+                              facecolor=self.arrow_color_real,
+                              edgecolor=self.arrow_color_real,
+                              length_includes_head=False,
+                              head_width=awidth,
+                              head_length=aheight)
+                self.ax.text(min(self.offsetlist)*self.xstretch, 
+                              (np.log10(self.ylimits[1] - self.scale_arrow_dict['text_offset_y']))*self.ystretch,
+                              '|T| = %3.1f'%txrl)
         
         #put a grid on the plot
         self.ax.grid(alpha=.25, which='both', color=(.25, .25, .25))
