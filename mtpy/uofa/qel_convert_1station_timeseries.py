@@ -49,12 +49,12 @@ for date in dirs:
     # except:
     #     continue
         
-    if 1:
+    try:
         outfn,outfn_coh = qel2edi.convert2edi(station,'.',survey_configfile,instr_resp,string2strip=['_before','_23Feb'], datestring=fullday)
 
-    # except:
-    #     print 'no information found in folder {0}'.format(op.abspath(os.curdir))
-    #     pass
+    except:
+        print 'no information found in folder {0}'.format(op.abspath(os.curdir))
+        pass
     try:
         colfile = edi2col.convert2columns(op.basename(outfn))
     except:

@@ -21,7 +21,7 @@ def main():
 
 	fn = plotedi(fn,saveplot)
 
-def plotedi(fn, saveplot=False):
+def plotedi(fn, saveplot=False, component=None):
 
 
 	edi = MTedi.Edi()
@@ -37,6 +37,21 @@ def plotedi(fn, saveplot=False):
 
 	from pylab import *
 
+	lo_comps = []
+	if component is not None:
+		'n' in component.lower()
+		try:
+			if 'n' in component.lower():
+				lo_comps.append('n')
+		except:
+			pass
+		try:
+			if 'e' in component.lower():
+				lo_comps.append('e')
+		except:
+			pass
+	if len(lo_comps) == 0:
+		lo_comps = ['n','e']
 
 	res_te=[]
 	res_tm=[]
@@ -68,10 +83,14 @@ def plotedi(fn, saveplot=False):
 
 	periods = 1./edi.freq
 
+	resplotelement_xy = None
+	resplotelement_yx = None
 
 	ax1 = subplot(211)
-	errorbar(periods,res_te,reserr_te, marker='x',c='b',fmt='x')
-	errorbar(periods,res_tm,reserr_tm, marker='x',c='r',fmt='x')
+	if 'n' in lo_comps:
+		resplotelement_xy = errorbar(periods,res_te,reserr_te, marker='x',c='b',fmt='x')
+	if 'e' in lo_comps:
+		resplotelement_yx =errorbar(periods,res_tm,reserr_tm, marker='x',c='r',fmt='x')
 	xscale('log')
 	yscale('log')
 	minval=min( min(res_te,res_tm))
@@ -91,12 +110,19 @@ def plotedi(fn, saveplot=False):
 	autoscale(False)
 
 	#ylim(-45,135)
-	errorbar(periods,phi_te,phierr_te,marker='x',c='b',fmt='x')
-	errorbar(periods,phi_tm,phierr_tm,marker='x',c='r',fmt='x')
+	if 'n' in lo_comps:
+		errorbar(periods,phi_te,phierr_te,marker='x',c='b',fmt='x')
+	if 'e' in lo_comps:
+		errorbar(periods,phi_tm,phierr_tm,marker='x',c='r',fmt='x')
 	ylabel('phase')
 	xlabel('period (in s)')
 	plot([xlim()[0],xlim()[1]],[45,45],'-.',c='0.7')
 	ylim([-0,90])
+
+	ax1.legend([resplotelement_xy,resplotelement_yx],['$E_{X}/B_Y$','$E_Y/B_X$'],loc=2,ncol=1,
+					numpoints=1,markerscale=0.8,frameon=True,labelspacing=0.3, 
+					prop={'size':8},fancybox=True,shadow=False)
+
 
 	tight_layout()
 	if saveplot is True:

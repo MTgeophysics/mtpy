@@ -2544,7 +2544,7 @@ def convert2coh(stationname, birrp_output_directory):
 
     fn = '%s.coh'%(stationname)
     out_fn = op.abspath(op.join(directory,fn))
-    out_fn = MTfh.make_unique_filename(out_fn)
+    #out_fn = MTfh.make_unique_filename(out_fn)
 
 
     F_out =  open(out_fn,'w')
