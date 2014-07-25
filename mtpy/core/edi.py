@@ -124,7 +124,7 @@ class Edi(object):
 
         self.filename = filename
         self.infile_string = None
-        self._head = {}
+        self._head = {'lat':None,'long':None,'elev':None}
         self._info_string = None
         self._info_dict = {}
         self._definemeas = {}
@@ -135,6 +135,10 @@ class Edi(object):
         self.Z = MTz.Z()
         self.Tipper = MTz.Tipper()
         self._station = None
+        self._lat = None
+        self._lon = None
+        self._elev = None
+
         
         if filename is not None:
             self.readfile(self.filename, datatype = datatype)
@@ -313,7 +317,10 @@ class Edi(object):
         Return an array of periods (output values in seconds).
         """
 
-        return 1./np.array(self.freq)
+        try:
+            return 1./np.array(self.freq)
+        except:
+            return None
     
     def _set_period(self, period_lst):
         """
@@ -369,7 +376,7 @@ class Edi(object):
             pass
 
         if no_key is True:
-            print 'Could not find Elevation'
+            print 'Invalid elevation value'
     
     elev = property(_get_elev, _set_elev, doc='Location elevation in meters')
 
@@ -379,13 +386,13 @@ class Edi(object):
         get latitude looking for keywords 'lat' in head or 'reflat' in definemeas
 
         """
-        try:
-            return self.head['lat']
-        except KeyError:
-            try:
-                return self.definemeas['reflat']
-            except KeyError:
-                print 'Could not find Latitude'
+#        try:
+        return self.head['lat']
+        # except KeyError:
+        #     try:
+        #         return self.definemeas['reflat']
+        #     except KeyError:
+        #         print 'Could not find Latitude'
         
     def _set_lat(self, value):
         """
@@ -405,7 +412,7 @@ class Edi(object):
         except:
             pass
         if no_key is True:
-            print 'Could not find Latitude'
+            print 'Invalid latitude value'
                 
     lat = property(_get_lat, _set_lat, doc='Location latitude in degrees') 
     
@@ -421,13 +428,7 @@ class Edi(object):
             try:
                 return self.definemeas['reflong']
             except KeyError:
-                try:
-                    return self.head['lon']
-                except KeyError:
-                    try:
-                        return self.definemeas['reflon']
-                    except KeyError:
-                        print 'Could not find Longitude'
+                print 'Could not find Longitude'
         
     def _set_lon(self, value):
         """
@@ -450,16 +451,7 @@ class Edi(object):
 
         if no_key is True:
 
-            # except KeyError:
-            #     try:
-            #         self.head['lon'] = \
-            #                      MTft._assert_position_format('lon',value)    
-            #     except KeyError:
-            #         try:
-            #             self.definemeas['reflon'] = \
-            #                      MTft._assert_position_format('lon',value)
-            #         except KeyError:
-            print 'Could not find Longitude'
+            print 'Invalid longitude value'
 
 
                 
@@ -1225,7 +1217,8 @@ class Edi(object):
             outstring, stationname = _generate_edifile_string(self.edi_dict(),use_info_string)
         except:
             print 'ERROR - could not generate valid EDI file \n-> check, if'\
-                   ' method "edi_dict" returns sufficient information '
+                   ' method "edi_dict" returns sufficient information\n '\
+                    ''
             return
 
         if stationname is None:
@@ -1328,10 +1321,6 @@ class Edi(object):
 
     def _get_head(self): 
 
-        if not 'dataid' in self._head :
-            print self.station
-            if self.station is not None:
-                self._head['dataid'] = self.station
 
         return self._head
         
