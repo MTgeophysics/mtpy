@@ -11,15 +11,19 @@ import mtpy.utils.exceptions as MTex
 import mtpy.uofa.qel_monitoring_j2edi as qel2edi
 import mtpy.utils.edi2columnsonly as edi2col
 import mtpy.uofa.simpleplotEDI as smplplt
+import mtpy.uofa.simpleplotCOH as smplpltCOH
 
 
 #indir = 'L09_before_23Feb_birrpoutput'
-#indir = 'test'
-indir = 'L102_after_23Feb_birrpoutput'
+indir = 'test'
+indir = 'L224_all_days_birrpoutput'
 
-outdir = 'qel_collected_L102_after'
+outdir = 'qel_collected_L224_all_days_birrpoutput'
+#outdir = 'testout'
 
-station = 'L102'
+station = 'L224'
+
+plot_component_dict={'0111':'ne'}
 
 survey_configfile= op.abspath('/data/temp/nigel/romasurvey.cfg')
 instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_microvolts.txt')
@@ -38,6 +42,16 @@ for date in dirs:
 
     daybase = op.abspath(op.join(indir,date))
     os.chdir(daybase)
+
+    donefiles = os.listdir('.')
+    donefiles = [i for i in donefiles if i.lower().endswith('.j.done')]
+    for df in donefiles:
+        os.rename(df,df.replace('.done',''))
+
+    lo_old_coh_files = os.listdir('.')
+    lo_old_coh_files = [i for i in lo_old_coh_files if i.lower().endswith('.coh')]
+    for i in lo_old_coh_files:
+        os.remove(i)
 
     if 1:
         fullday = date.split('-')[0]
@@ -95,10 +109,23 @@ for date in dirs:
         os.makedirs(outdir_plots)
 
     try:
-        plotfn = smplplt.plotedi(outfn,saveplot=True)
+        plot_component = 'ne'
+        if fullday[-4:] in plot_component_dict:
+            plot_component = plot_component_dict[fullday[-4:]]
+
+        plotfn = smplplt.plotedi(outfn,saveplot=True,component=plot_component)
         shutil.copy(op.basename(plotfn),outdir_plots)
+        print 'copied res/phase plot %s'%(plotfn)
     except:
         pass
+
+    try:
+        plotfncoh = smplpltCOH.plotcoh(outfn_coh,saveplot=True)
+        shutil.copy(op.basename(plotfncoh),outdir_plots)
+        print 'copied coherence plot %s'%(plotfncoh)
+    except:
+        pass
+
 
     donefiles = os.listdir('.')
     donefiles = [i for i in donefiles if i.lower().endswith('.j.done')]
