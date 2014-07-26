@@ -667,7 +667,7 @@ class Data(object):
                 except KeyError:
                     try:
                         jj = np.where(((1./mt_obj.Z.freq)*(1-self.ptol) <= per) & 
-                                      ((1./mt_obj.Z.freq)*(1+self.pto) >= per))[0][0]
+                                      ((1./mt_obj.Z.freq)*(1+self.ptol) >= per))[0][0]
                     except IndexError:
                         print 'Could not find {0:<12.6f} in {1}'.format(per,
                                                                 mt_obj.station)
