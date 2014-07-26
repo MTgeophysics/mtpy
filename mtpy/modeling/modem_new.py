@@ -267,6 +267,7 @@ class Data(object):
         self.period_min = kwargs.pop('period_min', None)
         self.period_max = kwargs.pop('period_max', None)
         self.max_num_periods = kwargs.pop('max_num_periods', None)
+        self.ptol = kwargs.pop('ptol', .05)
         self.period_dict = None
         self.data_period_list = None
         
@@ -665,8 +666,8 @@ class Data(object):
                     jj = p_dict[per]
                 except KeyError:
                     try:
-                        jj = np.where(((1./mt_obj.Z.freq)*.95 <= per) & 
-                                      ((1./mt_obj.Z.freq) >= per))[0][0]
+                        jj = np.where(((1./mt_obj.Z.freq)*(1-self.ptol) <= per) & 
+                                      ((1./mt_obj.Z.freq)*(1+self.pto) >= per))[0][0]
                     except IndexError:
                         print 'Could not find {0:<12.6f} in {1}'.format(per,
                                                                 mt_obj.station)
