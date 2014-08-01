@@ -901,8 +901,7 @@ class Plot_profile():
                         data_list.append(Inmodel.inmodel)
 #                ax = plt.subplot(1,len(self.Model_suite.model_list),i+1)
                 ax = plt.axes([profile_x[i],self.ax_bottom,px,self.ax_height])
-                if i == 0:
-                    plt.ylabel('$Depth, km$')
+
                 axes = []
                 twin = False
                 
@@ -965,7 +964,8 @@ class Plot_profile():
                         for label in ax.get_yticklabels():
                             label.set_fontproperties(self.font)
                             label.set_fontsize(self.label_fontsize)
-
+                            ylab = plt.ylabel('Depth, km')
+                            ylab.set_fontproperties(self.font)
                     if self.title_type == 'single':
                         if i == 0:
                             if type(parameter) == list:
