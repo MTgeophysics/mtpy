@@ -11,16 +11,30 @@ import mtpy.utils.exceptions as MTex
 import mtpy.uofa.qel_monitoring_j2edi as qel2edi
 import mtpy.utils.edi2columnsonly as edi2col
 import mtpy.uofa.simpleplotEDI as smplplt
+import mtpy.uofa.simpleplotCOH as smplpltCOH
 
+#===============================================================================
 
 #indir = 'BIRRP_Outtape'
-indir ='L2JanBIRRPOut_Rev1'
-indir = 'birrp_output'
+indir ='BIRRP_Outtape_L2_20Mar'
+#indir = 'birrp_output'
+#indir ='testin'
 
-outdir = 'qel_collected'
+outdir = 'qel_collected_20'
+#outdir = 'testout'
+
+#20
+plot_component_dict={'L209':'e','L213':'e','L224':'e','L218':'n'}
+#21
+#plot_component_dict={'L209':'e','L213':'e','L224':'e','L202':'e','L204':'e','L220':'n','L223':'n'}
+#18
+#plot_component_dict={'L209':'e','L213':'e','L224':'e','L208':'n','L200':'e','L210':'n','L214':'n'}
+
 
 survey_configfile= op.abspath('/data/temp/nigel/romasurvey.cfg')
 instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_normalised.txt')
+
+#===============================================================================
 
 outdir = op.abspath(outdir)
 
@@ -57,6 +71,17 @@ for station in dirs:
 
         os.chdir(daydir)
         print op.abspath(os.curdir)
+
+        donefiles = os.listdir('.')
+        donefiles = [i for i in donefiles if i.lower().endswith('.j.done')]
+        for df in donefiles:
+            os.rename(df,df.replace('.done',''))
+
+
+        lo_old_coh_files = os.listdir('.')
+        lo_old_coh_files = [i for i in lo_old_coh_files if i.lower().endswith('.coh')]
+        for i in lo_old_coh_files:
+            os.remove(i)
 
         if 1:#try:
             outfn,outfn_coh = qel2edi.convert2edi(station,'.',survey_configfile,instr_resp,string2strip=None, datestring=fullday)
@@ -105,12 +130,27 @@ for station in dirs:
             os.makedirs(outdir_plots)
 
         try:
-            plotfn = smplplt.plotedi(outfn,saveplot=True)
+            plot_component = 'ne'
+            if station.upper() in plot_component_dict:
+                plot_component = plot_component_dict[station.upper()]
+
+            plotfn = smplplt.plotedi(outfn,saveplot=True,component=plot_component)
             shutil.copy(op.basename(plotfn),outdir_plots)
             print 'copied res/phase plot %s'%(plotfn)
 
         except:
             pass
+
+        try:
+            plotfncoh = smplpltCOH.plotcoh(outfn_coh,saveplot=True)
+            shutil.copy(op.basename(plotfncoh),outdir_plots)
+            print 'copied coherence plot %s'%(plotfncoh)
+
+        except:
+            pass
+
+
+
 
         donefiles = os.listdir('.')
         donefiles = [i for i in donefiles if i.lower().endswith('.j.done')]
