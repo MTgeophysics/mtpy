@@ -55,3 +55,5 @@ class MTpyError_parameter_number( Exception ):
 class MTpyError_processing( Exception ):
     pass
 
+class MTpyError_module_import( Exception ):
+    pass
