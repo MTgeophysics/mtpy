@@ -2,13 +2,13 @@
 """
     MTpy Script module 
 
-    edi2wiperdata.py
+    edi2crossdata.py
 
 
-    Read EDI file(s) and extract information needed to generate a PhaseTensorWiper plot 
+    Read EDI file(s) and extract information needed to generate a PhaseTensorCross plot 
     representation of data
 
-    Actual PT Wiper Plot is then generated using GMT
+    Actual PT Cross Plot is then generated using GMT
     (to be included later)
 
 
@@ -26,10 +26,10 @@ import mtpy.analysis.geometry as MTgy
 import mtpy
 #for debugging:
 
-import pdb
+#import pdb
 #reload(MTedi)
 #reload(MTpt)
-reload(MTgy)
+#reload(MTgy)
 
 
 def main():
@@ -72,7 +72,7 @@ def main():
     try:
         generate_ptwiperdata_file(edi_object, outdir, fn_out)
     except:
-        print '\n\tERROR - could not generate PT Wiper Data file - check EDI file!\n'
+        print '\n\tERROR - could not generate PT Cross Data file - check EDI file!\n'
 
 
 def generate_ptwiperdata_file(edi_object, outdir,outfn=None):
@@ -94,7 +94,7 @@ def generate_ptwiperdata_file(edi_object, outdir,outfn=None):
     e = pt.ellipticity
 
     if outfn is None:
-        fn = '{0}_PTwiperdata'.format(station)
+        fn = '{0}_PTcrossdata'.format(station)
         outfn = op.join(outdir,fn)
     
     outfn = op.realpath(outfn)
