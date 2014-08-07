@@ -16,15 +16,16 @@ import mtpy.uofa.simpleplotCOH as smplpltCOH
 #===============================================================================
 
 #indir = 'BIRRP_Outtape'
-indir ='BIRRP_Outtape_L2_20Mar'
+#indir ='L2_All_stations_March_Basic_18Mar'
 #indir = 'birrp_output'
 #indir ='testin'
+indir = '.'
 
-outdir = 'qel_collected_20'
-#outdir = 'testout'
+#outdir = 'qel_collected_L2_All_stations_March_Basic_18Mar'
+outdir = 'testout'
 
 #20
-plot_component_dict={'L209':'e','L213':'e','L224':'e','L218':'n'}
+plot_component_dict={}#'L209':'e','L213':'e','L224':'e','L218':'n'}
 #21
 #plot_component_dict={'L209':'e','L213':'e','L224':'e','L202':'e','L204':'e','L220':'n','L223':'n'}
 #18
@@ -33,6 +34,7 @@ plot_component_dict={'L209':'e','L213':'e','L224':'e','L218':'n'}
 
 survey_configfile= op.abspath('/data/temp/nigel/romasurvey.cfg')
 instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_normalised.txt')
+#instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_microvolts.txt')
 
 #===============================================================================
 
@@ -82,13 +84,12 @@ for station in dirs:
         lo_old_coh_files = [i for i in lo_old_coh_files if i.lower().endswith('.coh')]
         for i in lo_old_coh_files:
             os.remove(i)
+        try:
+            outfn,outfn_coh = qel2edi.convert2edi(station,'.',survey_configfile,instr_resp,string2strip=['_RR','_B125'], datestring=fullday)
 
-        if 1:#try:
-            outfn,outfn_coh = qel2edi.convert2edi(station,'.',survey_configfile,instr_resp,string2strip=None, datestring=fullday)
-
-        # except:
-        #     print 'no information found in folder {0}'.format(op.abspath(os.curdir))
-        #     pass
+        except:
+            print 'no information found in folder {0}'.format(op.abspath(os.curdir))
+            continue
         try:
             colfile = edi2col.convert2columns(op.basename(outfn))
         except:

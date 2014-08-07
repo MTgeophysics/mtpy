@@ -16,17 +16,21 @@ import mtpy.uofa.simpleplotCOH as smplpltCOH
 
 #indir = 'L09_before_23Feb_birrpoutput'
 indir = 'test'
-indir = 'L224_all_days_birrpoutput'
+indir = 'L101_all_days_birrpoutput'
 
-outdir = 'qel_collected_L224_all_days_birrpoutput'
+outdir = 'qel_collected_'+indir#L224_all_days_birrpoutput'
 #outdir = 'testout'
 
-station = 'L224'
+station = 'L101'
 
-plot_component_dict={'0111':'ne'}
+#plot_component_dict={}
+plot_component_dict={'0227':'n','0302':'n','0303':'n','0304':'n','0305':'n','0306':'n','0307':'n','0308':'n','0309':'n','0310':'n'}
+#plot_component_dict={'0304':'n','0305':'n','0306':'n','0307':'n'}
+
 
 survey_configfile= op.abspath('/data/temp/nigel/romasurvey.cfg')
 instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_microvolts.txt')
+#instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_normalised.txt')
 
 outdir = op.join(op.abspath(outdir),station)
 
@@ -82,7 +86,7 @@ for date in dirs:
     if not op.isdir(outdir_edi):
         os.makedirs(outdir_edi)
     try:
-        shutil.copy(op.basename(outfn),outdir_edi)
+        shutil.copyfile(op.basename(outfn),op.join(outdir_edi,op.basename(outfn)))
     except:
         pass
 
@@ -91,7 +95,7 @@ for date in dirs:
         os.makedirs(outdir_coh)
 
     try:
-        shutil.copy(op.basename(outfn_coh),outdir_coh)
+        shutil.copyfile(op.basename(outfn_coh),op.join(outdir_coh,op.basename(outfn_coh)))
     except:
         pass
 
@@ -100,7 +104,7 @@ for date in dirs:
         os.makedirs(outdir_cols)
 
     try:
-        shutil.copy(op.basename(colfile),outdir_cols)
+        shutil.copyfile(op.basename(colfile),op.join(outdir_cols,op.basename(colfile)))
     except:
         pass
 
@@ -108,20 +112,20 @@ for date in dirs:
     if not op.isdir(outdir_plots):
         os.makedirs(outdir_plots)
 
-    try:
+    if 1:
         plot_component = 'ne'
         if fullday[-4:] in plot_component_dict:
             plot_component = plot_component_dict[fullday[-4:]]
 
         plotfn = smplplt.plotedi(outfn,saveplot=True,component=plot_component)
-        shutil.copy(op.basename(plotfn),outdir_plots)
+        shutil.copyfile(op.basename(plotfn),op.join(outdir_plots,op.basename(plotfn)))
         print 'copied res/phase plot %s'%(plotfn)
-    except:
-        pass
+    #except:
+    #    pass
 
     try:
         plotfncoh = smplpltCOH.plotcoh(outfn_coh,saveplot=True)
-        shutil.copy(op.basename(plotfncoh),outdir_plots)
+        shutil.copyfile(op.basename(plotfncoh),op.join(outdir_plots,op.basename(plotfncoh)))
         print 'copied coherence plot %s'%(plotfncoh)
     except:
         pass
