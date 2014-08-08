@@ -697,7 +697,7 @@ def make_twiny():
     
     ax3 = plt.twiny()
     ax3.xaxis.set_ticks_position('bottom')
-    ax3.spines['bottom'].set_position(('axes',-0.35))
+    ax3.spines['bottom'].set_position(('axes',-0.25))
     ax3.set_frame_on(True)
     ax3.patch.set_visible(False)
     ax3.spines["bottom"].set_visible(True)
@@ -981,6 +981,7 @@ class Plot_profile():
                         title = plt.title(self.Model_suite.model_list[i].station)
                     title.set_fontproperties(self.font)
                     title.set_fontsize(self.title_fontsize)
+#                    title.set_horizontalalignment('left')
 
             except IndexError:
                 print "station omitted"
