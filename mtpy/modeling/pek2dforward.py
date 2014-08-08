@@ -271,12 +271,12 @@ class Model():
             self.build_mesh()
         elif self.Data is None:
             self.build_mesh()
-            
+            fh.get_pathlist()
         self.inversion1d_dirdict = \
-        p2d.find_directory(self.Data.stations,
-                           self.inversion1d_masterdir,
-                           start_dict=self.inversion1d_dirdict,
-                           split=split)
+        fh.get_pathlist(self.inversion1d_masterdir,
+                        search_stringlist = self.Data.stations,
+                        start_dict=self.inversion1d_dirdict,
+                        split=split)
         models1d = {}
         
         for key in self.inversion1d_dirdict.keys():
@@ -460,5 +460,5 @@ class Response():
         self.resistivity = res
         self.phase = np.rad2deg(np.arctan(np.imag(z)/np.real(z)))
                 
-    def read_edifiles(self):
-        
+#    def read_edifiles(self):
+#        
