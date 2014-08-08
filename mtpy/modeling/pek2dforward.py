@@ -12,6 +12,7 @@ import os.path as op
 import pek2dforward as p2d
 import string
 import scipy.interpolate as si
+import mtpy.utils.filehandling as fh
 
 class Model():
     """
@@ -405,25 +406,6 @@ def bin_results(in_array,binsize):
 
 
 
-def find_directory(search_string,masterdir,start_dict = {},split='_'):
-
-    for s in search_string:
-        s = str.lower(s)#.split(split)[indices[0]:indices[1]]
-        for d in os.listdir(masterdir):
-            d = str.lower(d)#.split(split)[indices[0]:indices[1]]
-            append = False
-            if s in os.path.basename(d):
-                append = True
-            else:
-                slst = s.strip().split(split)
-                for ss in slst:
-                    if ss in d:
-                        append = True
-            if append:
-                start_dict[s] = op.join(masterdir,d)
-        
-        
-    return start_dict
     
 def create_multiple_line_string(inlist,linelength,sformat): 
     linestring = ''
