@@ -135,14 +135,14 @@ def get_pathlist(masterdir, search_stringlist = None, search_stringfile = None,
     
     
     """
-    
-    if search_stringfile is not None:
-        if (search_stringlist is None) or (len(search_stringlist)) == 0:
-            search_stringlist = read1columntext(search_stringfile)
 
-    flist = [i for i in os.listdir(masterdir) if i[-len(extension):] == \
-             extension]
-    
+    if search_stringfile is not None:
+        if (search_stringlist is None) or (len(search_stringlist) == 0):
+            search_stringlist = read1columntext(search_stringfile)
+            
+    flist = os.listdir(masterdir)
+    if len(extension)>0:
+        flist = [i for i in flist if i[-len(extension):] == extension]
     if folder:
         flist = [op.join(masterdir,i) for i in flist if op.isdir(op.join(masterdir,i))]
 
