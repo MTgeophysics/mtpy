@@ -139,7 +139,7 @@ def get_pathlist(masterdir, search_stringlist = None, search_stringfile = None,
     if search_stringfile is not None:
         if (search_stringlist is None) or (len(search_stringlist) == 0):
             search_stringlist = read1columntext(search_stringfile)
-            
+
     flist = os.listdir(masterdir)
     if len(extension)>0:
         flist = [i for i in flist if i[-len(extension):] == extension]
@@ -159,6 +159,7 @@ def get_pathlist(masterdir, search_stringlist = None, search_stringfile = None,
                     if ss in d:
                         append = True
             if append:
+
                 start_dict[s] = op.join(masterdir,d)
     
     return start_dict

@@ -13,6 +13,7 @@ import pek2dforward as p2d
 import string
 import scipy.interpolate as si
 import mtpy.utils.filehandling as fh
+import mtpy.core.edi as mtedi
 
 class Model():
     """
@@ -26,6 +27,14 @@ class Model():
         self.edi_directory = None
         self.occam_configfile = None
         self.parameters_model = {}
+        self.parameters_model['no_sideblockelements'] = 5
+        self.parameters_model['no_bottomlayerelements'] = 4
+        self.parameters_model['firstlayer_thickness'] = 100
+        
+        #model depth is in km!
+        self.parameters_model['model_depth'] = 100
+        self.parameters_model['no_layers'] = 25
+        self.parameters_model['max_blockwidth'] = 1000
         self.n_airlayers = 5
 
         self.mesh = None
@@ -44,13 +53,14 @@ class Model():
         self.build_from_1d = True
         self.rotation = 0.
         self.modelfile = 'model.dat'
+        self.anisotropy_min_depth = 0.
 
         self.edifiles = []
 
         self.Data = None
 
         self.modelfile = 'model'
-
+        
 
         update_dict = {}
 
@@ -91,6 +101,8 @@ class Model():
             except:
                 continue
 
+        self.input_parameters = update_dict
+
         if self.edifiles == []:
             if self.edi_directory is not None:
                 try:
@@ -100,7 +112,7 @@ class Model():
                     pass
                 
                 
-        self.input_parameters = update_dict
+        
         
     
     def build_model(self):
@@ -148,7 +160,6 @@ class Model():
         
 
         meshz = list(self.meshblockthicknesses_zair)+list(self.meshblockthicknesses_z)
-        print meshz
         for meshstep in [self.meshblockwidths_x,meshz]:
             modelfilestring.append\
             (p2d.create_multiple_line_string(meshstep,
@@ -200,10 +211,12 @@ class Model():
         so = o2d.Setup(wd=self.working_directory,
                        edi_directory=self.edi_directory,
                        edifiles=self.edifiles,
-                       configfile=self.occam_configfile)
+                       configfile=self.occam_configfile,
+                       **self.parameters_model)
+
         so.read_edifiles(edi_dir=self.edi_directory)
         # create an occam2d data object
-        so.Data = o2d.Data(edilist=so.edifiles,wd=so.wd,**so.parameters_data)
+        so.Data = o2d.Data(edilist=self.edifiles,wd=so.wd,**so.parameters_data)
         # set up meshlocations
         so.setup_mesh_and_model()
         self.stationlocations = np.array(so.Data.stationlocations)/1000.
@@ -286,7 +299,7 @@ class Model():
             models1d[key] = mod.models[self.inversion1d_modelno-1]
 
         self.models1d = models1d
-
+        
 
     def interpolate_1d_results(self):
         """
@@ -337,22 +350,49 @@ class Model():
 #                rvals = f(xi[:,:,0],xi[:,:,1])
 #                self.resistivity[:,:,n] = rvals.reshape(xishape[:-1])
 
+
         # index in x direction before which resistivities are null
-        i1 = list(np.isfinite(self.resistivity[0,:,0])).index(True)
+        n = int(len(self.resistivity)/2)
+        i1 = list(np.isfinite(self.resistivity[n,:,0])).index(True)
         # index in x direction after which resistivities are null
-        i2 = -1 - list(np.isfinite(self.resistivity[0,:,0][::-1])).index(True)
+        i2 = -1 - list(np.isfinite(self.resistivity[n,:,0][::-1])).index(True)
+
+        n=int(len(self.resistivity[0])/2)
+        k1 = list(np.isfinite(self.resistivity[:,n,0])).index(True)
         # index in z direction after which resistivities are null
-        k2 = -1 - list(np.isfinite\
-        (self.resistivity[:,int(len(self.resistivity)/2),0][::-1])).index(True)
+        k2 = -1 - list(np.isfinite(self.resistivity[:,n,0][::-1])).index(True)
         
         for i in range(0,i1):
             self.resistivity[:,i] = self.resistivity[:,i1]
         for i in range(i2,0):
             self.resistivity[:,i] = self.resistivity[:,i2]
+        for k in range(0,k1):
+            self.resistivity[k] = self.resistivity[k1]
         for k in range(k2,0):
             self.resistivity[k] = self.resistivity[k2]
+        
+        self.blockcentres_x = np.array(self.blockcentres_x)
+        self.blockcentres_z = np.array(self.blockcentres_z)
+        self.force_isotropy()
         self.resistivity[:,:,-1] = self.resistivity[:,:,-1]%180
-       
+      
+    def force_isotropy(self):
+        """
+        force isotropy at depths shallower than anisotropy_min_depth. Clears
+        up some bins for resistivity - these are limited
+        
+        """
+
+        rnew = 1.*self.resistivity
+        rmedian = 1.*np.median(self.resistivity[:,:,:2],axis=2)
+        
+        for j in range(len(rnew)):
+            for k in range(len(rnew[j])):
+                for i in range(2):
+                    if self.blockcentres_z[j] < self.anisotropy_min_depth:
+                        rnew[j,k,i] = rmedian[j,k]
+
+        self.resistivity = rnew
 
     def bin_resistivity_values(self):
 
@@ -426,7 +466,7 @@ class Response():
         self.working_directory = working_directory
         self.edi_directory = None
         self.datafile = 'MT_TAB_ROT.DAT'
-        self.station_dict = {}
+        self.station_dict = {} # dict with station names as keys and number in modelfile as values
         
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])    
@@ -460,5 +500,24 @@ class Response():
         self.resistivity = res
         self.phase = np.rad2deg(np.arctan(np.imag(z)/np.real(z)))
                 
-#    def read_edifiles(self):
-#        
+    def find_edifiles(self):
+        """
+        """
+        search_stringlist = self.station_dict.keys()
+        self.edifiles = fh.get_pathlist(self.edi_directory,
+                                        search_stringlist=search_stringlist,
+                                        split = '_',
+                                        extension = '.edi')
+        print self.edifiles.keys()
+    
+    def read_edifiles(self):
+        """
+        """
+        
+        self.find_edifiles()
+        
+        if len(self.edifiles) > 0:
+            self.edi_objects = [mtedi.Edi(filename=efile) for efile in \
+            self.edifiles.values()]
+        
+        
