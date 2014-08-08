@@ -71,6 +71,7 @@ def convert2edi(station,directory,survey_configfile,instrument_response_file, st
     infn_coh = '{0}.coh'.format(station.upper())
     directory = op.abspath(directory)
     os.chdir(directory)
+    
     print 
     #print station,directory, survey_configfile,None,instrument_response_file
     print directory

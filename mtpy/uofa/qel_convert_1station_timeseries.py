@@ -14,6 +14,11 @@ import mtpy.uofa.simpleplotEDI as smplplt
 import mtpy.uofa.simpleplotCOH as smplpltCOH
 
 
+#==============================================================================
+
+# change values here
+
+
 #indir = 'L09_before_23Feb_birrpoutput'
 indir = 'test'
 indir = 'L101_all_days_birrpoutput'
@@ -24,13 +29,20 @@ outdir = 'qel_collected_'+indir#L224_all_days_birrpoutput'
 station = 'L101'
 
 #plot_component_dict={}
-plot_component_dict={'0227':'n','0302':'n','0303':'n','0304':'n','0305':'n','0306':'n','0307':'n','0308':'n','0309':'n','0310':'n'}
+plot_component_dict={'0227':'n','0302':'n','0303':'n','0304':'n','0305':'n',
+                        '0306':'n','0307':'n','0308':'n','0309':'n','0310':'n'}
 #plot_component_dict={'0304':'n','0305':'n','0306':'n','0307':'n'}
 
 
 survey_configfile= op.abspath('/data/temp/nigel/romasurvey.cfg')
+
 instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_microvolts.txt')
 #instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_normalised.txt')
+
+
+#==============================================================================
+
+# No changes past this point!
 
 outdir = op.join(op.abspath(outdir),station)
 
