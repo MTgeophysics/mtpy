@@ -36,6 +36,10 @@ survey_configfile= op.abspath('/data/temp/nigel/romasurvey.cfg')
 instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_normalised.txt')
 #instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_microvolts.txt')
 
+outdir_prefix = ''
+
+string2strip = ['_RR','_B125']
+
 #===============================================================================
 
 outdir = op.abspath(outdir)
@@ -85,7 +89,7 @@ for station in dirs:
         for i in lo_old_coh_files:
             os.remove(i)
         try:
-            outfn,outfn_coh = qel2edi.convert2edi(station,'.',survey_configfile,instr_resp,string2strip=['_RR','_B125'], datestring=fullday)
+            outfn,outfn_coh = qel2edi.convert2edi(station,'.',survey_configfile,instr_resp,string2strip=string2strip, datestring=fullday)
 
         except:
             print 'no information found in folder {0}'.format(op.abspath(os.curdir))
@@ -96,7 +100,7 @@ for station in dirs:
             pass
 
 
-        outdir_edi = op.join(basedir,outdir,'roma_2014{0:02d}{1:02d}'.format(month_num,day),'edi')
+        outdir_edi = op.join(basedir,outdir,'{0}{1:02d}{2:02d}'.format(outdir_prefix,month_num,day),'edi')
 
         print outfn,outfn_coh,colfile
 
@@ -108,7 +112,7 @@ for station in dirs:
         except:
             pass
 
-        outdir_coh = op.join(basedir,outdir,'roma_2014{0:02d}{1:02d}'.format(month_num,day),'coh')
+        outdir_coh = op.join(basedir,outdir,'{0}{1:02d}{2:02d}'.format(outdir_prefix,month_num,day),'coh')
         if not op.isdir(outdir_coh):
             os.makedirs(outdir_coh)
 
@@ -117,7 +121,7 @@ for station in dirs:
         except:
             pass
 
-        outdir_cols = op.join(basedir,outdir,'roma_2014{0:02d}{1:02d}'.format(month_num,day),'columns')
+        outdir_cols = op.join(basedir,outdir,'{0}{1:02d}{2:02d}'.format(outdir_prefix,month_num,day),'columns')
         if not op.isdir(outdir_cols):
             os.makedirs(outdir_cols)
 
@@ -126,7 +130,7 @@ for station in dirs:
         except:
             pass
 
-        outdir_plots = op.join(basedir,outdir,'roma_2014{0:02d}{1:02d}'.format(month_num,day),'plots')
+        outdir_plots = op.join(basedir,outdir,'{0}{1:02d}{2:02d}'.format(outdir_prefix,month_num,day),'plots')
         if not op.isdir(outdir_plots):
             os.makedirs(outdir_plots)
 

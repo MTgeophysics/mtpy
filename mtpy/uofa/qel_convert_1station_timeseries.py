@@ -39,7 +39,7 @@ survey_configfile= op.abspath('/data/temp/nigel/romasurvey.cfg')
 instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_microvolts.txt')
 #instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_normalised.txt')
 
-
+string2strip = ['_before','_23Feb']
 #==============================================================================
 
 # No changes past this point!
@@ -80,7 +80,7 @@ for date in dirs:
     #     continue
         
     try:
-        outfn,outfn_coh = qel2edi.convert2edi(station,'.',survey_configfile,instr_resp,string2strip=['_before','_23Feb'], datestring=fullday)
+        outfn,outfn_coh = qel2edi.convert2edi(station,'.',survey_configfile,instr_resp,string2strip=string2strip, datestring=fullday)
 
     except:
         print 'no information found in folder {0}'.format(op.abspath(os.curdir))
