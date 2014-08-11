@@ -1,17 +1,49 @@
 #!/usr/bin/env python
 
+"""
+
+    qel_convert_allstations.py
+
+Convert the outputs of BIRRP. Loop over all stations for a single day.
+The directory structure must be:
+- input dir (to be set in the header of this file)
+ - stationname (at least starting with it and then separated by underscore)
+     -date (at least ending with it and  separated by underscore)
+       - outputfiles (only one of each file type *.2c2 and *.j will be processed)
+
+Output:
+- new directory (to be set in the header of this file)
+    - date (to be set in the header of this file)
+        - subdirectories 'coh columns edi plots'
+
+
+Requires: 
+survey_configfile, 
+calibrationfile,
+plot component dictionary (can be empty)
+ 
+ all to be set in the header of this file
+
+
+The EDI file prefix is set in  "qel_monitoring_j2edi.py"
+
+"""
+
+
+
 import os,sys,shutil
 import os.path as op
 
 import mtpy.core.edi as MTedi
 import mtpy.utils.convert_birrp_output as MTbp
-import pdb
 import numpy as np
 import mtpy.utils.exceptions as MTex
 import mtpy.uofa.qel_monitoring_j2edi as qel2edi
 import mtpy.utils.edi2columnsonly as edi2col
 import mtpy.uofa.simpleplotEDI as smplplt
 import mtpy.uofa.simpleplotCOH as smplpltCOH
+
+#import pdb
 
 #===============================================================================
 
@@ -23,6 +55,8 @@ indir = '.'
 
 #outdir = 'qel_collected_L2_All_stations_March_Basic_18Mar'
 outdir = 'testout'
+
+date = '140318'
 
 #20
 plot_component_dict={}#'L209':'e','L213':'e','L224':'e','L218':'n'}
@@ -47,33 +81,35 @@ outdir = op.abspath(outdir)
 indir = op.abspath(indir)
 
 dirs = os.listdir(indir)
-#dirs = [op.join(indir,i) for i in dirs]
+
 dirs = sorted([i for i in dirs if op.isdir(op.join(indir,i))])
 
 print dirs 
 basedir = op.abspath(os.curdir)
 
-for station in dirs:
+for stationdir  in dirs:
 
-    subdir = op.join(indir,station)
-    daydirs = os.listdir(subdir)
-    daydirs = sorted([i for i in daydirs if op.isdir(op.join(subdir,i))])
+    station = stationdir.split('_')[0]
 
-    stationbase = op.abspath(op.join(indir,station))
+    stationbase = op.abspath(op.join(indir,stationdir))
+    
     os.chdir(stationbase)
 
+    daydirs = os.listdir('.')
+    daydirs = sorted([i for i in daydirs if op.isdir(i)])
+
     for daydir in daydirs:
-        if 1:
-            date = daydir.split('-')
-            day = int(float(date[0]))
-            month = date[1].lower()
-            month_num = {'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,
-                        'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12,}[month]
-            year = 14
-            fullday='%02d%02d%02d'%(year, month_num,day)
+        fullday = daydir.split('_')[-1] 
+        # if 1:
+        #     date = daydir.split('-')
+        #     day = int(float(date[0]))
+        #     month = date[1].lower()
+        #     month_num = {'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,
+        #                 'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12,}[month]
+        #     year = 14
+        #     fullday='%02d%02d%02d'%(year, month_num,day)
         # except:
-        #     continue
-        
+        #     continue       
 
         os.chdir(daydir)
         print op.abspath(os.curdir)

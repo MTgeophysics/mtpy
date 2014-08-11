@@ -7,7 +7,7 @@
 Convert the outputs of BIRRP. Loop over all dayfolders/blocks for a single 
 station. The directory structure must be:
 - input dir (to be set in the header of this file)
- - dayfolders (naming: YYYYMMDD)
+ - dayfolders (naming: YYMMDD)
      - outputfiles (only one of each file type *.2c2 and *.j will be processed)
 
 Output:
