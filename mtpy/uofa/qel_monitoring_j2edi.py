@@ -23,6 +23,9 @@ import numpy as np
 import mtpy.utils.exceptions as MTex
 
 
+edi_prefix = 'qel'
+
+
 def main():
     print 
     if len(sys.argv) < 4:
@@ -121,12 +124,12 @@ def convert2edi(station,directory,survey_configfile,instrument_response_file, st
     #print j_file 
 
     if datestring is not None:
-            #print datestring
+
         #try:
-            day = int(float(datestring))
-            day = int(float(datestring[-2:]))
-            month_num = int(float(datestring[-4:-2]))
-            year = 14
+        day = int(float(datestring))
+        day = int(float(datestring[-2:]))
+        month_num = int(float(datestring[-4:-2]))
+        year = int(float(datestring[-6:-4]))
 
         #except:
         #    datestring = None
@@ -176,7 +179,9 @@ def convert2edi(station,directory,survey_configfile,instrument_response_file, st
     e_object.head['acqby']='UofA'
     e_object.head['acqdate']='2014/{0:02d}/{1:02d}'.format(month_num,day)
 
-    outfn_base = 'roma_{3:02d}{0:02d}{1:02d}_{2}'.format(month_num,day,station.upper(),year)
+    outfn_base = '{0}_{1}_{2:02d}{3:02d}{4:02d}'.format(edi_prefix, station.upper(),
+                                                             year,month_num,day)
+
     outfn = outfn_base+'.edi'
     if 1:
         outfn_true = e_object.writefile(outfn,allow_overwrite=True, use_info_string=True)

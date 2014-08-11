@@ -1,17 +1,50 @@
 #!/usr/bin/env python
 
+"""
+
+    qel_convert_1station_timeseries.py
+
+Convert the outputs of BIRRP. Loop over all dayfolders/blocks for a single 
+station. The directory structure must be:
+- input dir (to be set in the header of this file)
+ - dayfolders (naming: YYYYMMDD)
+     - outputfiles (only one of each file type *.2c2 and *.j will be processed)
+
+Output:
+- new directory (to be set in the header of this file)
+    - stationname (to be set in the header of this file)
+        - subdirectories 'coh columns edi plots'
+
+
+Requires: 
+survey_configfile, 
+calibrationfile,
+plot component dictionary (can be empty)
+ 
+ all to be set in the header of this file
+
+
+The EDI file prefix is set in  "qel_monitoring_j2edi.py"
+
+"""
+
+
+
+
 import os,sys,shutil
 import os.path as op
 
 import mtpy.core.edi as MTedi
 import mtpy.utils.convert_birrp_output as MTbp
-import pdb
 import numpy as np
 import mtpy.utils.exceptions as MTex
 import mtpy.uofa.qel_monitoring_j2edi as qel2edi
 import mtpy.utils.edi2columnsonly as edi2col
 import mtpy.uofa.simpleplotEDI as smplplt
 import mtpy.uofa.simpleplotCOH as smplpltCOH
+
+#for debugging:
+import pdb
 
 
 #==============================================================================
@@ -71,12 +104,13 @@ for date in dirs:
     for i in lo_old_coh_files:
         os.remove(i)
 
-    if 1:
-        fullday = date#.split('-')[0]
-        day_try = int(float(fullday))
-        day = int(float(fullday[-2:]))
-        month_num = int(float(fullday[-4:-2]))
-        year = int(float(fullday[-6:-4])) 
+    
+    fullday = date.split('_')[-1]
+
+    day_try = int(float(fullday))
+    day = int(float(fullday[-2:]))
+    month_num = int(float(fullday[-4:-2]))
+    year = int(float(fullday[-6:-4])) 
         #month_num = {'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,
         #                'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12,}[month]
     # except:
@@ -87,7 +121,7 @@ for date in dirs:
 
     # except:
     #     print 'no information found in folder {0}'.format(op.abspath(os.curdir))
-    #     pass
+        pass
     try:
         colfile = edi2col.convert2columns(op.basename(outfn))
     except:
@@ -127,7 +161,7 @@ for date in dirs:
     if not op.isdir(outdir_plots):
         os.makedirs(outdir_plots)
 
-    if 1:
+    try:
         plot_component = 'ne'
         if fullday[-4:] in plot_component_dict:
             plot_component = plot_component_dict[fullday[-4:]]
@@ -135,14 +169,16 @@ for date in dirs:
         plotfn = smplplt.plotedi(outfn,saveplot=True,component=plot_component)
         shutil.copyfile(op.basename(plotfn),op.join(outdir_plots,op.basename(plotfn)))
         print 'copied res/phase plot %s'%(plotfn)
-    #except:
-    #    pass
+    except:
+        print 'Warning - no res/phase plot for %s'%(fullday)
 
     try:
         plotfncoh = smplpltCOH.plotcoh(outfn_coh,saveplot=True)
         shutil.copyfile(op.basename(plotfncoh),op.join(outdir_plots,op.basename(plotfncoh)))
         print 'copied coherence plot %s'%(plotfncoh)
     except:
+        print 'Warning - no coherence  plot for %s'%(fullday)
+       
         pass
 
 
@@ -157,6 +193,7 @@ for date in dirs:
 
 os.chdir(basedir)
 
+print 
 
 
 
