@@ -19,14 +19,12 @@ import mtpy.uofa.simpleplotCOH as smplpltCOH
 # change values here
 
 
-#indir = 'L09_before_23Feb_birrpoutput'
-indir = 'test'
-indir = 'L101_all_days_birrpoutput'
+#indir = 'test'
+indir = 'L206_birrpoutput'
 
-outdir = 'qel_collected_'+indir#L224_all_days_birrpoutput'
-#outdir = 'testout'
+outdir = 'testout'
 
-station = 'L101'
+station = 'L206'
 
 #plot_component_dict={}
 plot_component_dict={'0227':'n','0302':'n','0303':'n','0304':'n','0305':'n',
@@ -34,17 +32,21 @@ plot_component_dict={'0227':'n','0302':'n','0303':'n','0304':'n','0305':'n',
 #plot_component_dict={'0304':'n','0305':'n','0306':'n','0307':'n'}
 
 
-survey_configfile= op.abspath('/data/temp/nigel/romasurvey.cfg')
+survey_configfile= op.abspath('romasurvey.cfg')
 
-instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_microvolts.txt')
-#instr_resp = op.abspath('/data/mtpy/mtpy/uofa/lemi_coils_instrument_response_freq_real_imag_normalised.txt')
+instr_resp = op.abspath('qel_instrument_response_freq_re_im.txt')
+
 
 string2strip = ['_before','_23Feb']
+
 #==============================================================================
 
 # No changes past this point!
 
 outdir = op.join(op.abspath(outdir),station)
+
+if not op.isdir(outdir):
+    os.makedirs(outdir)
 
 indir = op.abspath(indir)
 
@@ -70,21 +72,22 @@ for date in dirs:
         os.remove(i)
 
     if 1:
-        fullday = date.split('-')[0]
+        fullday = date#.split('-')[0]
         day_try = int(float(fullday))
         day = int(float(fullday[-2:]))
         month_num = int(float(fullday[-4:-2]))
+        year = int(float(fullday[-6:-4])) 
         #month_num = {'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,
         #                'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12,}[month]
     # except:
     #     continue
         
-    try:
+    if 1:
         outfn,outfn_coh = qel2edi.convert2edi(station,'.',survey_configfile,instr_resp,string2strip=string2strip, datestring=fullday)
 
-    except:
-        print 'no information found in folder {0}'.format(op.abspath(os.curdir))
-        pass
+    # except:
+    #     print 'no information found in folder {0}'.format(op.abspath(os.curdir))
+    #     pass
     try:
         colfile = edi2col.convert2columns(op.basename(outfn))
     except:
