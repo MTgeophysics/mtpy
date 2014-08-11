@@ -85,7 +85,7 @@ def convert2edi(station,directory,survey_configfile,instrument_response_file, st
         j_filename_list = [i for i in j_filename_list if 
                     '{0}'.format(station.upper()) in op.basename(i).upper() ]
 
-        j_file = j_filename_list[0].upper()
+        j_file = j_filename_list[0]
         new_j_file = '%s.j'%(station.upper())
         shutil.move(j_file,new_j_file)
         print 'renamed j_file %s into %s'%(j_file,new_j_file) 

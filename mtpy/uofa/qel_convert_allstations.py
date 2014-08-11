@@ -100,16 +100,11 @@ for stationdir  in dirs:
 
     for daydir in daydirs:
         fullday = daydir.split('_')[-1] 
-        # if 1:
-        #     date = daydir.split('-')
-        #     day = int(float(date[0]))
-        #     month = date[1].lower()
-        #     month_num = {'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,
-        #                 'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12,}[month]
-        #     year = 14
-        #     fullday='%02d%02d%02d'%(year, month_num,day)
-        # except:
-        #     continue       
+      
+        day = int(float(fullday[-2:]))
+        month = int(float(fullday[-4:-2]))
+        year = int(float(fullday[-6:-4]))
+        
 
         os.chdir(daydir)
         print op.abspath(os.curdir)
@@ -136,7 +131,7 @@ for stationdir  in dirs:
             pass
 
 
-        outdir_edi = op.join(basedir,outdir,'{0}{1:02d}{2:02d}'.format(outdir_prefix,month_num,day),'edi')
+        outdir_edi = op.join(basedir,outdir,'{0}{1:02d}{1:02d}{2:02d}'.format(outdir_prefix,year,month,day),'edi')
 
         print outfn,outfn_coh,colfile
 
@@ -148,7 +143,7 @@ for stationdir  in dirs:
         except:
             pass
 
-        outdir_coh = op.join(basedir,outdir,'{0}{1:02d}{2:02d}'.format(outdir_prefix,month_num,day),'coh')
+        outdir_coh = op.join(basedir,outdir,'{0}{1:02d}{1:02d}{2:02d}'.format(outdir_prefix,year,month,day),'coh')
         if not op.isdir(outdir_coh):
             os.makedirs(outdir_coh)
 
@@ -157,7 +152,7 @@ for stationdir  in dirs:
         except:
             pass
 
-        outdir_cols = op.join(basedir,outdir,'{0}{1:02d}{2:02d}'.format(outdir_prefix,month_num,day),'columns')
+        outdir_cols = op.join(basedir,outdir,'{0}{1:02d}{1:02d}{2:02d}'.format(outdir_prefix,year,month,day),'columns')
         if not op.isdir(outdir_cols):
             os.makedirs(outdir_cols)
 
@@ -166,7 +161,7 @@ for stationdir  in dirs:
         except:
             pass
 
-        outdir_plots = op.join(basedir,outdir,'{0}{1:02d}{2:02d}'.format(outdir_prefix,month_num,day),'plots')
+        outdir_plots = op.join(basedir,outdir,'{0}{1:02d}{1:02d}{2:02d}'.format(outdir_prefix,year,month,day),'plots')
         if not op.isdir(outdir_plots):
             os.makedirs(outdir_plots)
 
