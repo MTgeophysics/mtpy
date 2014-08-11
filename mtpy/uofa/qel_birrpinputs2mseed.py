@@ -17,6 +17,7 @@ import os.path as op
 
 from pyrocko import trace, util, io
 
+#import pdb
 
 channel_dict = {'n':0,'e':1,'s':2,'w':3}
 
@@ -134,7 +135,7 @@ def run(infile, outfn, station, t0,samplingrate, chan='n', nw='',loc=''):
             continue
         data.append([int(float(i)) for i in line.strip().split()])
     Fin.close()
-    data = array(data)
+    data = array(data,dtype=int32)
     #print '...done!'
 
     stationname = station 
@@ -185,6 +186,7 @@ def run(infile, outfn, station, t0,samplingrate, chan='n', nw='',loc=''):
         lo_traces = [trace.Trace(station=stationname, channel=channel, 
                     location=location, deltat=deltat, tmin=t0, ydata=data)]
 
+    #pdb.set_trace()
     #print '...done!'
 
     print '\t writing file %s ... '%outfn
