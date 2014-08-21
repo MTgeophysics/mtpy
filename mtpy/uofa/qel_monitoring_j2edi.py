@@ -14,12 +14,16 @@ which contains the date again. Then discard the intermediate EDI file.
 
 import os,sys
 import os.path as op
+import shutil
 
 import mtpy.core.edi as MTedi
 import mtpy.utils.convert_birrp_output as MTbp
 import pdb
 import numpy as np
 import mtpy.utils.exceptions as MTex
+
+
+edi_prefix = 'qel'
 
 
 def main():
@@ -63,16 +67,41 @@ def main():
     convert2edi(stationname,datadir,survey_cfg_fn,instr_resp_fn, string2strip)
     
 
-def convert2edi(station,directory,survey_configfile,instrument_response_file, string2strip=None):
+def convert2edi(station,directory,survey_configfile,instrument_response_file, string2strip=None, datestring=None):
 
     basedir = op.abspath(os.curdir)
     #name of intermediate coherence file:
     infn_coh = '{0}.coh'.format(station.upper())
-
+    directory = op.abspath(directory)
     os.chdir(directory)
+    
     print 
-    print station,directory, survey_configfile,None,instrument_response_file
-    print 
+    #print station,directory, survey_configfile,None,instrument_response_file
+    print directory
+
+    if string2strip is not None:
+
+        j_filename_list = [i for i in os.listdir(directory) if op.basename(i).upper().endswith('.j'.upper())]
+        j_filename_list = [i for i in j_filename_list if 
+                    '{0}'.format(station.upper()) in op.basename(i).upper() ]
+
+        j_file = j_filename_list[0]
+        new_j_file = '%s.j'%(station.upper())
+        shutil.move(j_file,new_j_file)
+        print 'renamed j_file %s into %s'%(j_file,new_j_file) 
+
+        coh_filenames_list = [i for i in os.listdir(directory) if op.basename(i).upper().endswith('c2'.upper())]
+        for coh in coh_filenames_list:
+            suffix2 = op.splitext(coh)[-1]
+            suffix1 = op.splitext(op.splitext(coh)[-2])[-1]
+            newcoh = '%s'%(station.upper())+suffix1+suffix2
+            shutil.move(coh,newcoh)
+            print 'renamed coh file %s into %s'%(coh,newcoh) 
+
+
+
+
+
     edifn,cohfn=MTbp.convertbirrpoutput(station,directory,
                                 survey_configfile,None,instrument_response_file)
     if edifn is None:
@@ -92,41 +121,57 @@ def convert2edi(station,directory,survey_configfile,instrument_response_file, st
                     '{0}'.format(station.upper()) in op.basename(i).upper() ]
 
     j_file = j_filename_list[0].upper()
-    dateinfo = j_file.replace('.J','')
-    dateinfo = dateinfo.replace(station.upper(),'')
+    #print j_file 
+
+    if datestring is not None:
+
+        #try:
+        day = int(float(datestring))
+        day = int(float(datestring[-2:]))
+        month_num = int(float(datestring[-4:-2]))
+        year = int(float(datestring[-6:-4]))
+
+        #except:
+        #    datestring = None
+
+
+
+    if datestring is None:
+        dateinfo = j_file.replace('.J','')
+        dateinfo = dateinfo.replace(station.upper(),'')
     
-    #TODO : automatise these two steps if possible...!!!
-    #...maybe by agreeing on a common format for the date...??
-    #dateinfo = dateinfo.replace('_RR_B125_','')
-    if string2strip is not None:
-        for i in string2strip:
-            dateinfo = dateinfo.replace(i,'')
-            dateinfo = dateinfo.replace(i.upper(),'')
+        #TODO : automatise these two steps if possible...!!!
+        #...maybe by agreeing on a common format for the date...??
+        #dateinfo = dateinfo.replace('_RR_B125_','')
+        if string2strip is not None:
+            for i in string2strip:
+                dateinfo = dateinfo.replace(i,'')
+                dateinfo = dateinfo.replace(i.upper(),'')
 
-    #split the date information
-    dateinfo =  dateinfo.split('-')
+        #split the date information
+        dateinfo =  dateinfo.split('-')
 
-    try:
-        day = int(float(dateinfo[0]))
-        month = dateinfo[1].lower()
-        month_num = {'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,
-                        'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12,}[month]
-        year = 14
-
-    except:
         try:
-            datestring = int(float(dateinfo[0]))
-            day = int(float(dateinfo[0][-2:]))
-            month_num = int(float(dateinfo[0][-4:-2]))
-
-            # month_num = {'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,
-            #             'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12,}[month]
+            day = int(float(dateinfo[0]))
+            month = dateinfo[1].lower()
+            month_num = {'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,
+                            'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12,}[month]
             year = 14
 
         except:
-            day = 0
-            month_num = 0 
-            year = 0
+            try:
+                datestring = int(float(dateinfo[0]))
+                day = int(float(dateinfo[0][-2:]))
+                month_num = int(float(dateinfo[0][-4:-2]))
+
+                # month_num = {'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,
+                #             'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12,}[month]
+                year = 14
+
+            except:
+                day = 0
+                month_num = 0 
+                year = 0
 
     # re read the edi file:
     e_object = MTedi.Edi(filename=edifn)
@@ -134,15 +179,17 @@ def convert2edi(station,directory,survey_configfile,instrument_response_file, st
     e_object.head['acqby']='UofA'
     e_object.head['acqdate']='2014/{0:02d}/{1:02d}'.format(month_num,day)
 
-    outfn_base = 'roma_{3:02d}{0:02d}{1:02d}_{2}'.format(month_num,day,station.upper(),year)
+    outfn_base = '{0}_{1}_{2:02d}{3:02d}{4:02d}'.format(edi_prefix, station.upper(),
+                                                             year,month_num,day)
+
     outfn = outfn_base+'.edi'
-    try:
+    if 1:
         outfn_true = e_object.writefile(outfn,allow_overwrite=True, use_info_string=True)
         if outfn_true is None:
             raise
         print 'EDI file written: {0}\n'.format(outfn_true)
-    except:
-        print '\tERROR - could not write final EDI file {0}\n'.format(outfn)
+    # except:
+    #     print '\tERROR - could not write final EDI file {0}\n'.format(outfn)
     
     outfn = outfn_true
 

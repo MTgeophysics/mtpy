@@ -2,13 +2,13 @@
 """
     MTpy Script module 
 
-    edi2wiperdata.py
+    edi2crossdata.py
 
 
-    Read EDI file(s) and extract information needed to generate a PhaseTensorWiper plot 
+    Read EDI file(s) and extract information needed to generate a PhaseTensorCross plot 
     representation of data
 
-    Actual PT Wiper Plot is then generated using GMT
+    Actual PT Cross Plot is then generated using GMT
     (to be included later)
 
 
@@ -26,10 +26,10 @@ import mtpy.analysis.geometry as MTgy
 import mtpy
 #for debugging:
 
-import pdb
+#import pdb
 #reload(MTedi)
 #reload(MTpt)
-reload(MTgy)
+#reload(MTgy)
 
 
 def main():
@@ -72,7 +72,7 @@ def main():
     try:
         generate_ptwiperdata_file(edi_object, outdir, fn_out)
     except:
-        print '\n\tERROR - could not generate PT Wiper Data file - check EDI file!\n'
+        print '\n\tERROR - could not generate PT Cross Data file - check EDI file!\n'
 
 
 def generate_ptwiperdata_file(edi_object, outdir,outfn=None):
@@ -94,7 +94,7 @@ def generate_ptwiperdata_file(edi_object, outdir,outfn=None):
     e = pt.ellipticity
 
     if outfn is None:
-        fn = '{0}_PTwiperdata'.format(station)
+        fn = '{0}_PTcrossdata'.format(station)
         outfn = op.join(outdir,fn)
     
     outfn = op.realpath(outfn)
@@ -105,15 +105,15 @@ def generate_ptwiperdata_file(edi_object, outdir,outfn=None):
         print '\n\tERROR - Cannot generate output file!\n'
         raise
     Fout.write('# {0}   {1:+010.6f}   {2:+011.6f}\n'.format(station,edi_object.lat,edi_object.lon))
-    headerstring = '# freq \t\t Phimin  sigma \t Phimax  sigma \t alpha  '\
+    headerstring = '# lat \t\t lon \t\t freq \t\t Phimin  sigma \t Phimax  sigma \t alpha  '\
                     'sigma \t beta  sigma \t ellipticity  sigma \n'
     Fout.write(headerstring)
     for i,freq in enumerate(edi_object.freq):
         try:
-            vals = '{0:.4e}\t{1: 3.2f}\t{2:3.2f}\t{3: 3.2f}\t{4:3.2f}\t{5: 3.2f}\t{6:3.2f}'\
+            vals = '{11:.4f}\t{12:.4f}\t{0:.4e}\t{1: 3.2f}\t{2:3.2f}\t{3: 3.2f}\t{4:3.2f}\t{5: 3.2f}\t{6:3.2f}'\
             '\t{7: 3.2f}\t{8:3.2f}\t{9:.3f}\t{10:.3f}\n'.format(
                 freq,pmin[0][i],pmin[1][i],pmax[0][i],pmax[1][i],a[0][i],a[1][i],
-                b[0][i],b[1][i],e[0][i],e[1][i])            
+                b[0][i],b[1][i],e[0][i],e[1][i],edi_object.lat,edi_object.lon)            
             Fout.write(vals)
         except:
             continue
