@@ -68,7 +68,7 @@ class Ui_MainWindow(object):
         self.phase_yy_limits = None 
  
         
-        self.subplot_wspace = .2
+        self.subplot_wspace = .25
         self.subplot_hspace = .0
         self.subplot_right = .98
         self.subplot_left = .08
@@ -329,6 +329,8 @@ class Ui_MainWindow(object):
         z_obj = self.modem_data.mt_dict[self.station].Z
         t_obj = self.modem_data.mt_dict[self.station].Tipper
         period = self.modem_data.period_list
+		
+        plt.rcParams['font.size'] = self.fs
         
         fontdict = {'size':self.fs+2, 'weight':'bold'} 
         if self.plot_z == True:
