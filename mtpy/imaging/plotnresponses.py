@@ -383,9 +383,9 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         #set arrow properties
         self._arrow_dict = kwargs.pop('arrow_dict', {'color' : ('k', 'b'),
                                                      'direction' : 0,
-                                                     'head_length' : 0,
-                                                     'head_width' : 0,
-                                                     'lw' : .75})
+                                                     'head_length' : 0.03,
+                                                     'head_width' : 0.03,
+                                                     'lw' : .5})
                            
         self._read_arrow_dict()
         
@@ -1604,8 +1604,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             
             #--> plot tipper
             try:
-                self.axt = self.fig.add_subplot(gs[pdict['tip'], :], 
-                                                sharex=self.axrxy)
+                self.axt = self.fig.add_subplot(gs[pdict['tip'], :])
                 self.axt.yaxis.set_label_coords(labelcoords[0]*.5, 
                                                 labelcoords[1])
             except KeyError:
@@ -1833,58 +1832,46 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     
                     tp = mt.get_Tipper()
                     
-                    txr = tp.mag_real*np.cos(tp.ang_real*np.pi/180+\
+                    txr = tp.mag_real*np.sin(tp.ang_real*np.pi/180+\
                                              np.pi*self.arrow_direction)
-                    tyr = tp.mag_real*np.sin(tp.ang_real*np.pi/180+\
+                    tyr = tp.mag_real*np.cos(tp.ang_real*np.pi/180+\
                                              np.pi*self.arrow_direction)
             
-                    txi = tp.mag_imag*np.cos(tp.ang_imag*np.pi/180+\
+                    txi = tp.mag_imag*np.sin(tp.ang_imag*np.pi/180+\
                                              np.pi*self.arrow_direction)
-                    tyi = tp.mag_imag*np.sin(tp.ang_imag*np.pi/180+\
+                    tyi = tp.mag_imag*np.cos(tp.ang_imag*np.pi/180+\
                                              np.pi*self.arrow_direction)
                     
                     nt = len(txr)
                     
                     for aa in range(nt):
-                        xlenr = txr[aa]*mt.period[aa]
-                        xleni = txi[aa]*mt.period[aa]
-                        
-                        #scale the arrow head height and width to fit in a log
-                        #scale
-                        if np.log10(mt.period[aa])<0:
-                            hwidth = self.arrow_head_width*\
-                                      10**(np.floor(np.log10(mt.period[aa])))
-                            hheight = self.arrow_head_length*\
-                                      10**(np.floor(np.log10(mt.period[aa])))
-                        else:
-                            hwidth = self.arrow_head_width/\
-                                      10**(np.floor(np.log10(mt.period[aa])))
-                            hheight = self.arrow_head_length/\
-                                      10**(np.floor(np.log10(mt.period[aa]))) 
+                        xlenr = txr[aa]*np.log10(mt.period[aa])
+                        xleni = txi[aa]*np.log10(mt.period[aa])
+                         
                             
                         #--> plot real arrows
                         if self._plot_tipper.find('r') > 0:
-                            self.axt.arrow(mt.period[aa],
+                            self.axt.arrow(np.log10(mt.period[aa]),
                                            0,
                                            xlenr,
                                            tyr[aa],
                                            lw=self.arrow_lw,
                                            facecolor=ctipr[ii],
                                            edgecolor=ctipr[ii],
-                                           head_width=hwidth,
-                                           head_length=hheight,
+                                           head_width=self.arrow_head_width,
+                                           head_length=self.arrow_head_length,
                                            length_includes_head=False)
                             
                                            
                         #--> plot imaginary arrows
                         if self._plot_tipper.find('i')>0:               
-                            self.axt.arrow(mt.period[aa],
+                            self.axt.arrow(np.log10(mt.period[aa]),
                                            0,
                                            xleni,
                                            tyi[aa],
-                                           lw=alw,
-                                           facecolor=ctipi[ii],
-                                           edgecolor=ctipi[ii],
+                                           lw=self.arrow_lw,
+                                           head_width=self.arrow_head_width,
+                                           head_length=self.arrow_head_length,
                                            length_includes_head=False)
                         
                     lt = self.axt.plot(0, 0, lw=1, color=ctipr[ii])
@@ -2245,7 +2232,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     self.axp2yx.set_xlabel('')
                           
             if self._plot_tipper.find('y') == 0:
-                self.axt.plot(self.axrxy.get_xlim(), [0, 0], color='k', lw=.5)
+                self.axt.plot(self.axt.get_xlim(), [0, 0], color='k', lw=.5)
                 #--> set axis properties Tipper 
                 if self.plot_num == 2:
                     plt.setp(self.axp2xy.get_xticklabels(), visible=False)
@@ -2258,17 +2245,25 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 self.axt.set_xlabel('Period(s)', fontdict=fontdict)
                 self.axt.set_ylabel('Tipper', fontdict=fontdict)    
                 
-                self.axt.set_xscale('log')
+                tklabels = []
+                xticks = []
+                for tk in self.axt.get_xticks():
+                    try:
+                        tklabels.append(mtpl.labeldict[tk])
+                        xticks.append(tk)
+                    except KeyError:
+                        pass
+                self.axt.set_xticks(xticks)
+                self.axt.set_xticklabels(tklabels, 
+                                          fontdict={'size':self.font_size})
                 if self.tipper_limits is None:
-                    tmax = max([np.sqrt(txr.max()**2+tyr.max()**2),
-                                np.sqrt(txi.max()**2+tyi.max()**2)])
+                    tmax = max([tyr.max(), tyi.max()])
                     if tmax > 1:
-                        tmax = .99
+                        tmax = .899
                                 
-                    tmin = -min([np.sqrt(txr.min()**2+tyr.min()**2),
-                                np.sqrt(txi.min()**2+tyi.min()**2)])
+                    tmin = min([tyr.min(), tyi.min()])
                     if tmin < -1:
-                        tmin = -.99
+                        tmin = -.899
                                 
                     self.tipper_limits = (tmin-.1, tmax+.1)
                 
@@ -2287,6 +2282,12 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                 labelspacing=.07, 
                                 handletextpad=.2, 
                                 borderpad=.02)
+                                
+                #need to reset the xlimits caouse they get reset when calling
+                #set_ticks for some reason
+                self.axt.set_xlim(np.log10(self.xlimits[0]),
+                                   np.log10(self.xlimits[1]))
+                                   
                 if pdict['tip'] != nrows-1:
                     plt.setp(self.axt.xaxis.get_ticklabels(), visible=False)
                     self.axt.set_xlabel(' ')
