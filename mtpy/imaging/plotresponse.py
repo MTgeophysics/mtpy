@@ -756,14 +756,14 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         if self._plot_tipper.find('y') == 0:
             tp = self._mt.get_Tipper()
             
-            txr = tp.mag_real*np.cos(tp.ang_real*np.pi/180+\
+            txr = tp.mag_real*np.sin(tp.ang_real*np.pi/180+\
                                      np.pi*self.arrow_direction)
-            tyr = tp.mag_real*np.sin(tp.ang_real*np.pi/180+\
+            tyr = tp.mag_real*np.cos(tp.ang_real*np.pi/180+\
                                      np.pi*self.arrow_direction)
     
-            txi = tp.mag_imag*np.cos(tp.ang_imag*np.pi/180+\
+            txi = tp.mag_imag*np.sin(tp.ang_imag*np.pi/180+\
                                      np.pi*self.arrow_direction)
-            tyi = tp.mag_imag*np.sin(tp.ang_imag*np.pi/180+\
+            tyi = tp.mag_imag*np.cos(tp.ang_imag*np.pi/180+\
                                      np.pi*self.arrow_direction)
             
             nt = len(txr)
@@ -1402,7 +1402,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         
 
     def save_plot(self, save_fn, file_format='pdf', orientation='portrait', 
-                  fig_fig_dpi=None, close_plot='y'):
+                  fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.
         
@@ -1445,12 +1445,12 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             
         """
 
-        if fig_fig_dpi == None:
-            fig_fig_dpi = self.fig_dpi
+        if fig_dpi == None:
+            fig_dpi = self.fig_dpi
             
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
-            self.fig.savefig(save_fn, fig_dpi=fig_fig_dpi, format=file_format,
+            self.fig.savefig(save_fn, fig_dpi=fig_dpi, format=file_format,
                              orientation=orientation)
             plt.clf()
             plt.close(self.fig)
@@ -1458,7 +1458,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         else:
             save_fn = os.path.join(save_fn, self._mt.station+'_ResPhase.'+
                                     file_format)
-            self.fig.savefig(save_fn, fig_dpi=fig_fig_dpi, format=file_format,
+            self.fig.savefig(save_fn, fig_dpi=fig_dpi, format=file_format,
                         orientation=orientation)
         
         if close_plot == 'y':
