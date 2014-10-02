@@ -1347,8 +1347,8 @@ class PlotSettings(QtGui.QWidget):
 
 #def main():
     
-
-if __name__ == "__main__":
+def main():
+#if __name__ == "__main__":
     import sys
     app = QtGui.QApplication(sys.argv)
     MainWindow = QtGui.QMainWindow()
@@ -1357,3 +1357,6 @@ if __name__ == "__main__":
     MainWindow.show()
     sys.exit(app.exec_())
 
+if __name__ == '__main__':
+
+    main()
