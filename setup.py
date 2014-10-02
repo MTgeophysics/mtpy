@@ -49,7 +49,7 @@ setup_kwargs['packages'] = ['mtpy',
                             'mtpy.test',
                             'mtpy.uofa',
                             'mtpy.usgs',
-							'mtp.gui']
+							'mtpy.gui']
 
 	
 
