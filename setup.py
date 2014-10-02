@@ -22,7 +22,7 @@ setup_kwargs = {}
 
 setup_kwargs['entry_points'] = {'console_scripts': 
                     ['ws2vtk = mtpy.utils.ws2vtk:main',
-                     'modem_plot_response = mtpy.gui.modem_pyqt:main']}
+                     'modem_pyqt = mtpy.gui.modem_pyqt:main']}
 
 # But many people will not have setuptools installed, so we need to handle
 # the default Python installation, which only has Distutils:
@@ -48,7 +48,8 @@ setup_kwargs['packages'] = ['mtpy',
                             'mtpy.analysis',
                             'mtpy.test',
                             'mtpy.uofa',
-					'mtpy.usgs']
+                            'mtpy.usgs',
+                            'mtpy.gui']
 
 	
 
