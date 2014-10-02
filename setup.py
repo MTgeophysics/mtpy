@@ -20,8 +20,8 @@ setup_kwargs = {}
 # by adding :func_name after the module name, and the name of the script
 # can be customized before the equals sign.
 
-setup_kwargs['entry_points'] = {'console_scripts': [
-        'ws2vtk = mtpy.utils.ws2vtk:main']}
+setup_kwargs['entry_points'] = {'console_scripts': 
+                                ['ws2vtk = mtpy.utils.ws2vtk:main']}
 
 # But many people will not have setuptools installed, so we need to handle
 # the default Python installation, which only has Distutils:
