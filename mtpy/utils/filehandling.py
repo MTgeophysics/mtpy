@@ -83,8 +83,8 @@ def make_unique_folder(wd,basename = 'run'):
         
     savepath = op.join(wd,svpath)
         
-    return savepath    
-    
+    return savepath
+
             
 def sort_folder_list(wkdir,order_file,indices=[0,9999],delimiter = ''):
     """
@@ -110,6 +110,59 @@ def sort_folder_list(wkdir,order_file,indices=[0,9999],delimiter = ''):
                 plst.append(os.path.join(wkdir,f))
     return plst
 
+
+def get_pathlist(masterdir, search_stringlist = None, search_stringfile = None,
+                 start_dict = {},split='_',extension='',folder=False):
+    """
+    get a list of files or folders by searching on a string contained in 
+    search_stringlist or alternatively search_stringfile
+    
+    returns:
+    dictionary containing search strings as keys and file/folder as values
+    
+    masterdir - directory to search in
+    search_stringlist = list containing string identifiers for files or folders, 
+                        e.g. k0101 will work for edifile k0101.edi or 
+                        folder k0101.
+    search_stringfile = alternative to search_stringlist (need to provide one)
+                        will get search_stringlist from a file, full path
+                        or make sure you are in the correct directory!
+    start_dict = starting dictionary to append to, default is an empty dict
+    split = if no exact match is found, search string will be split using split
+            character, useful when matching up edi's to inversion directories
+            that both contain additional characters
+    extension = file extension, e.g. '.edi'
+    
+    
+    """
+    
+    if search_stringfile is not None:
+        if (search_stringlist is None) or (len(search_stringlist)) == 0:
+            search_stringlist = read1columntext(search_stringfile)
+
+    flist = [i for i in os.listdir(masterdir) if i[-len(extension):] == \
+             extension]
+    
+    if folder:
+        flist = [op.join(masterdir,i) for i in flist if op.isdir(op.join(masterdir,i))]
+
+    for s in search_stringlist:
+        s = str.lower(s)#.split(split)[indices[0]:indices[1]]
+        for d in flist:
+            d = str.lower(d)#.split(split)[indices[0]:indices[1]]
+            append = False
+            if s in os.path.basename(d):
+                append = True
+            else:
+                slst = s.strip().split(split)
+                for ss in slst:
+                    if ss in d:
+                        append = True
+            if append:
+                start_dict[s] = op.join(masterdir,d)
+    
+    return start_dict
+                
 
 def get_sampling_interval_fromdatafile(filename, length = 3600):
     """ 

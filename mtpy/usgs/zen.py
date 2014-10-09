@@ -32,6 +32,7 @@ import mtpy.utils.exceptions as mtex
 import mtpy.utils.configfile as mtcf
 import matplotlib.pyplot as plt
 import mtpy.imaging.plotspectrogram as plotspectrogram
+import tables
 
 try:
     import mtpy.utils.mseed as mtmseed
@@ -332,9 +333,24 @@ class Zen3D(object):
         header_string = raw_data[0:self._header_len]
         self.read_header(header_string)
         
+        print('-'*40)
+        print('   ad card sn     =  {0}'.format(self.ch_adcard_sn))
+        print('   sampling rate  =  {0:.0f}'.format(self.df))
+        print('   gain           =  {0:.1f}'.format(self.gain))
+        print('   gps_week       =  {0:.0f}'.format(self.gps_week))
+        print('   schedule date  =  {0}'.format(self.schedule_date))
+        print('   schedule time  =  {0}'.format(self.schedule_time))
+        
         #---read in meta raw_data----------------------------------------------
         meta_string = raw_data[self._header_len-1:ds]
         self.read_metadata(meta_string)
+
+        print('   channel no     =  {0}'.format(self.ch_number))
+        print('   channel comp   =  {0}'.format(self.ch_cmp))
+        print('   channel len    =  {0}'.format(self.ch_length))
+        print('   rx station     =  {0}'.format(self.rx_stn))
+        print('   tx id          =  {0}'.format(self.tx_id))
+        print('-'*40)
  
     #==================================================
     def read_3d(self):
@@ -2257,7 +2273,7 @@ class ZenBIRRP():
     get_calibrations         reads in the files in calibration_path and gets
                              data for coil numbers in calibration_list
     get_survey_parameters    get the survey info from survey_config_fn
-    set_remote_reference     set the remote refernce station and get 
+    set_remote_reference_path     set the remote refernce station and get 
                              survey information
     get_fn_list               get filenames of data files to process
     run_birrp                writes a script file, run's BIRRP from Python
@@ -2286,7 +2302,7 @@ class ZenBIRRP():
     def __init__(self, station_path, **kwargs):
         
         self.station_path = station_path
-        self.rr_path = kwargs.pop('rr_path', self.station_path)
+        self.rr_path = kwargs.pop('rr_path', None)
         self.survey_config_fn = kwargs.pop('survey_config_fn', None)
         self.processing_fn = kwargs.pop('processing_fn', None)
         self.calibration_path = kwargs.pop('calibration_path', 
@@ -2362,14 +2378,18 @@ class ZenBIRRP():
                 print 'Did not find remote station information in {0}'.format(
                                                       self.survey_config_fn)
                     
-    def set_remote_reference(self, rr_station, rrpath=None):
+    def set_remote_reference_path(self, rr_station, rr_path=None):
         """
         set remote reference station and find survey information and filenames
         """ 
         self.rr_station = rr_station
-        if rrpath is not None:
-            self.rr_path = rrpath
-        elif not os.path.exists(self.rr_path):
+        
+        if rr_path is not None:
+            self.rr_path = rr_path
+            return
+        
+        # look for path if none is given
+        if self.rr_station is not self.station:
             rr_path = self.station_path
             kk = 0
             while os.path.basename(rr_path) != self.station and kk < 5:
@@ -2379,7 +2399,9 @@ class ZenBIRRP():
                                         self.rr_station, 'TS')
             if not os.path.exists(self.rr_path):
                 raise IOError('Need to input rrpath, could not find it')
-            
+        else:
+            self.rr_path = self.station_path
+              
         self.get_survey_parameters()
                     
                 
@@ -2452,14 +2474,15 @@ class ZenBIRRP():
                                                ('start_dt','|S19'),
                                                ('end_dt','|S19')])
                 header_dict = \
-                        mtfh.read_ts_header(os.path.join(self.station_path,fn))
+                        mtfh.read_ts_header(os.path.join(self.rr_path,fn))
+                        
                 if header_dict['t_min'] >= start_seconds and \
                    header_dict['t_min'] <= end_seconds and \
                    header_dict['samplingrate'] == float(self.df):
                     
                     try:
                         kk = rrcomp_dict[header_dict['channel'].lower()]
-                        tarr[kk]['fn'] = os.path.join(self.station_path,fn)
+                        tarr[kk]['fn'] = os.path.join(self.rr_path,fn)
                         tarr[kk]['npts'] = int(header_dict['nsamples'])
                         ts_start_dt = time.strftime(datetime_fmt.replace(',',' '), 
                                                     time.localtime(header_dict['t_min']))
@@ -2477,9 +2500,15 @@ class ZenBIRRP():
                     rrfn_list.append(tarr)
                     ii = 0
             except mtex.MTpyError_ts_data:
-                pass
+                print 'MTpyError_ts_data'
             except mtex.MTpyError_inputarguments:
-                pass
+                print 'MTpyError_inputarguments'
+            
+        if len(fn_list) > 3:
+            fn_list = fn_list[0:3]
+            
+        if len(rrfn_list) > 3:
+            rrfn_list = rrfn_list[0:3]
         
         return fn_list, rrfn_list
                                     
@@ -2534,9 +2563,9 @@ class ZenBIRRP():
             pass
         
         try:
-            self.set_remote_reference(self.processing_dict['rrstation'])
+            self.set_remote_reference_path(self.processing_dict['rrstation'])
         except KeyError:
-            self.set_remote_reference(self.station)
+            self.set_remote_reference_path(self.station)
         
         #get list of files to process from the station folder
         fn_list, rrfn_list = self.get_fn_list(self.df, 
@@ -2636,7 +2665,7 @@ class ZenBIRRP():
         
         cfg_fn = mtfh.make_unique_filename('{0}_birrp_params.cfg'.format(
                                                              script_file[:-7]))
-        print cfg_fn        
+                                                             
         mtcf.write_dict_to_configfile(birrp_dict, cfg_fn)
         print 'Wrote BIRRP config file for edi file to {0}'.format(cfg_fn)
         

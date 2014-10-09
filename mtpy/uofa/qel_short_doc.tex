@@ -1,0 +1,290 @@
+\documentclass[11pt,DIV=12]{scrartcl}
+
+\usepackage{mdwlist}
+
+
+\begin{document}
+{\centering \bf \Large QEL data processing - a short guide \par}
+
+\section*{Scripts}
+
+\begin{itemize}
+\item C:
+
+\begin{itemize*}
+\item InterpAdl
+\item Pak2Bin
+\item Bin2Adl
+\item Pak2AscDeci650
+\end{itemize*}
+
+
+\item  Python:
+
+\begin{itemize*}
+\item qel\_birrp1Hzdata2overview\_fd.py
+\item qel\_birrp\_all\_days\_one\_station\_loop.py
+\item qel\_birrp\_one\_day\_all\_stations\_loop.py
+\item qel\_birrpinputs2mseed.py
+\item qel\_concatenate\_650downsampled\_bits.py
+\item qel\_convert\_1station\_timeseries.py
+\item qel\_convert\_allstations.py
+\item qel\_monitoring\_j2edi.py
+\item qel\_rawdata2birrpinput.py
+\item qel\_unpack\_and\_decimate\_1Hz.py
+\item qel\_prepare\_birrp\_data3.py
+\item qel\_unpack6hrs\_loop.py
+\end{itemize*} 
+\item  Other files:
+\begin{itemize*}
+\item qel\_instrument\_response\_freq\_re\_im.txt
+\item qel\_short\_doc.tex
+\end{itemize*}
+
+\end{itemize}
+
+\section{Steps}
+
+
+\subsection{unpack N hour block data}
+
+Preparation:\\
+In the file \texttt{qel\_rawdata2birrpinput.py}, set the sampling rate and the length of the blocks. The length is given in hours (integer) and must be $>6$ 
+
+Additionally you must specify the location of the compiled C-codes (see above)\\
+
+Call:\\
+
+\texttt{python qel\_rawdata2birrpinput.py <data directory sta A> <data directory sta B> <data directory sta C>   <channelsA> <channelsB> <channelsC>  <start time yymmdd-HHhMM> [<destination folder>] }\\
+        
+Example:\\
+
+\texttt{python qel\_rawdata2birrpinput.py L206 L107 MagRR n,e,s,w n,e n,e 140318-07h15}
+
+
+\subsection{1Hz data overview}
+
+Preparation - in the header of \texttt{qel\_unpack\_and\_decimate\_1Hz.py}:
+
+\begin{itemize*}
+\item specify the executable \texttt{Pak2AscDeci650}
+\item if necessary, define the temporary output filename 
+\item set the base for the input data
+\item set the output data folder name
+\item define a 'profile\_prefix' for the stations
+\item define the starting station and the number of stations
+\end{itemize*}
+Note: at the moment, indices go over two-digit numbers, i.e. $00 - 99$.
+
+Call:\\
+
+\texttt{python qel\_unpack\_and\_decimate\_1Hz.py}
+
+
+\subsection{unpack 6 hour block data (legacy)}
+
+Preparation:\\
+In file \texttt{qel\_prepare\_birrp\_data3.py}
+\begin{itemize*}
+\item set location of SymRes (C-codes) executables
+\end{itemize*}
+
+In file \texttt{qel\_unpack6hrs\_loop.py}
+\begin{itemize*}
+\item set list of station name(s)
+\item define list of subfolders
+\item set list of dates (hard-coded so far)
+\item set channels of interest
+\item define output data base directory
+\item set B-field data locations (and channels)
+\item set prefix (according to definition of station names before)
+\item define subfolder add\_on (everything that is NOT prefix+station in the naming)
+\end{itemize*}
+
+Call:\\
+
+\texttt{python qel\_unpack6hrs\_loop.py}
+
+\subsection{1Hz data overview (alternative)}
+
+Preparation: use file \texttt{qel\_rawdata2birrpinput.py}, set the samplingrate to 1 and the hours to 'as long as possible'. This produces then 4 files per station for the given time. Note that they all start at the same time. 
+
+
+Call:\\
+
+\texttt{python qel\_rawdata2birrpinput.py <data directory sta A> <data directory sta B> <data directory sta C>  n,e,s,w n,e,s,w n,e,s,w   <start time> <destination folder> }\\
+
+The outputs can be concatenated into a 4-column first differences file using \\
+
+\texttt{python qel\_birrp1Hzdata2overview\_fd.py <input dir> <output dir> <stationname A> <stationname B> <stationname C> <prefix>}
+
+( 'prefix' is everything predeeding the \texttt{'.timestamp'}, but WITHOUT the \texttt{staX} bit)
+
+
+\subsection{BIRRP loop -- fixed station, variable days}
+
+Preparation:
+
+In file \texttt{qel\_birrp\_all\_days\_one\_station\_loop.py}
+\begin{itemize*}
+\item set input base directory name 
+\item set output directory name 
+\item define station name
+\item define BIRRP executable
+\item set list of frequencies to be notch-filtered
+\item define channels to be used for E-field data
+\end{itemize*}
+
+The actual BIRRP parameters are hardcoded in a string in the lower header section. A good set of parameters should be established first (without this loop script), and then edited. Afterwards, it should not be necessary to change them during processing.\\
+
+
+The input data directory must contain subdirectories, sorted and named by days.
+
+
+The name of the subdirectories must end with a date, separated from the rest
+of the name by an underscore.
+
+date format: YYMMDD (e.g. 140320 for the 20th of March 2014) 
+
+
+Call:\\
+
+\texttt{python qel\_birrp\_all\_days\_one\_station\_loop.py}
+
+
+\subsection{BIRRP loop -- fixed day, variable stations}
+
+Preparation:
+
+In file \texttt{qel\_birrp\_all\_days\_one\_station\_loop.py}
+\begin{itemize*}
+\item set input base directory name 
+\item set output directory name 
+\item define date 
+\item define BIRRP executable
+\item set list of frequencies to be notch-filtered
+\item define channels to be used for E-field data
+\end{itemize*}
+The input data directory must contain subdirectories, sorted and named by stations.
+
+The name of the subdirectories must start with a station name. If the name is 
+longer, it must be  separated from the rest of the name by an underscore.
+
+
+Call:\\
+
+\texttt{python qel\_birrp\_all\_days\_one\_station\_loop.py }
+
+
+\subsection{convert BIRRP output -- fixed station, variable days }
+
+Preparation:
+
+
+In the file \texttt{ qel\_convert\_1station\_timeseries.py}
+\begin{itemize*}
+\item set input base directory name 
+\item set output directory name
+\item define station name
+\item define plot\_component\_dict (can be empty, but must be present)
+\item define survey config file location
+\item define calibration file location
+\item (legacy) optional: define a list of strings, which shall be stripped from filenames during the handling 
+\end{itemize*}
+
+Convert the outputs of BIRRP. Loop over all dayfolders/blocks for a single 
+station. The directory structure must be:
+- input dir (to be set in the header of this file)
+ - dayfolders (naming: YYMMDD)
+     - outputfiles (only one of each file type *.2c2 and *.j will be processed)
+
+Output:
+- new directory (to be set in the header of this file)
+    - stationname (to be set in the header of this file)
+        - subdirectories 'coh columns edi plots'
+
+
+Requires: 
+survey\_configfile, 
+calibrationfile,
+plot component dictionary (can be empty)
+ 
+ all to be set in the header of this file
+
+
+The EDI file prefix is set in  "qel\_monitoring\_j2edi.py"
+
+
+Call:\\
+
+\texttt{python qel\_convert\_1station\_timeseries.py}
+
+
+
+\subsection{convert BIRRP output -- fixed day, variable stations}
+
+Preparation:\\
+
+In the file \texttt{qel\_convert\_allstations.py}
+\begin{itemize*}
+\item set input base directory name 
+\item set output directory name
+\item define station name
+\item define plot\_component\_dict (can be empty, but must be present)
+\item define survey config file location
+\item define calibration file location
+\item (legacy) optional: define a list of strings, which shall be stripped from filenames during the handling 
+\end{itemize*}
+Convert the outputs of BIRRP. Loop over all stations for a single day.
+The directory structure must be:
+- input dir (to be set in the header of this file)
+ - stationname (at least starting with it and then separated by underscore)
+     -date (at least ending with it and  separated by underscore)
+       - outputfiles (only one of each file type *.2c2 and *.j will be processed)
+
+Output:
+- new directory (to be set in the header of this file)
+    - date (to be set in the header of this file)
+        - subdirectories 'coh columns edi plots'
+
+
+Requires: 
+survey\_configfile, 
+calibrationfile,
+plot component dictionary (can be empty)
+ 
+ all to be set in the header of this file
+
+
+Call:\\
+
+\texttt{python qel\_convert\_allstations.py}
+
+
+
+
+
+
+\subsection{convert BIRRP input to MiniSEED}
+
+
+Preparation:
+
+Have the BIRRP input files ready in one folder. This script loops automatically over all available channels. The timing and sampling is read from the \texttt{*.timestamps} file in the respective folder.\\
+
+Call:\\
+
+\texttt{python qel\_birrpinputs2mseed.py <input dir> <output dir><stationname> <prefix>}\\
+('prefix' is everything preceding the '\texttt{.timestamps}', incl. \texttt{staX} )
+
+
+\section*{Comments}
+\begin{itemize*}
+\item user \textit{qel} available on Feynman and Gauss - password is \textit{'password'}
+\item Gauss Python is old (version 2.4) - this causes multiple issues (formatting and missing modules/attributes). Try Feynman or personal desktops instead!
+\item BIRRP runs best on Gauss
+\item always use \textit{screen} to  work in emulated detachable terminals
+\end{itemize*}
+
+
+\end{document}
