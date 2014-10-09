@@ -22,7 +22,8 @@ setup_kwargs = {}
 
 setup_kwargs['entry_points'] = {'console_scripts': 
                     ['ws2vtk = mtpy.utils.ws2vtk:main',
-                     'modem_pyqt = mtpy.gui.modem_pyqt:main']}
+                     'modem_pyqt = mtpy.gui.modem_pyqt:main'
+                     'modem2vtk = mtpy.utils.modem2vtk:main']}
 
 # But many people will not have setuptools installed, so we need to handle
 # the default Python installation, which only has Distutils:
