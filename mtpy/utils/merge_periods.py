@@ -6,11 +6,73 @@ import numpy as np
 from pylab import *
 
 
+def regular_periods(periodlist,merge_threshold=15, no_periods=None, t_min=None,
+                    t_max=None, max_merge_error=None):
+    """merging bins are rgegularly shaped on the log10 axis around the respective center frequencies
+
+    """
+
+    if no_periods is None:
+        no_periods = 20
+    if t_min is None or min(periodlist)>t_min:
+        t_min = min(periodlist)
+    if t_max is None or max(periodlist)<t_max:
+        t_max = max(periodlist)
+    if max_merge_error is None:
+        max_merge_error = 10.
+
+
+    new_periods = np.logspace(np.log10(t_min),np.log10(t_max),no_periods)
+
+    new_periods_log = log10(new_periods)
+    bin_width = merge_threshold/100. *(max(new_periods_log)-min(new_periods_log))
+    new_periods = np.logspace(np.log10(t_min)+0.25*bin_width,np.log10(t_max)-0.25*bin_width,no_periods)
+
+    new_period_bins = []
+
+    for log_p in new_periods_log:
+        min_p = 10**(log_p-bin_width/2.)
+        max_p = 10**(log_p+bin_width/2.)
+        new_period_bins.append([min_p,max_p])
+
+    new_period_list = []
+    merge_errors = []
+
+    for p in periodlist:
+        new_p = None
+        p_error = None
+        for idx_p, p_bin in enumerate(new_period_bins):
+            if p_bin[0] <= p <= p_bin[1]:                
+                new_p = new_periods[idx_p]
+                deviation = np.abs(p-new_p)
+                try:
+                    max_deviation = max(np.abs(new_p-p_bin[0]),np.abs(p_bin[1])-new_p)                    
+                    p_error = deviation/max_deviation
+                except:
+                    #only possible, if bin-width is zero, so it's exactly correct:
+                    p_error = 0.
+
+
+        new_period_list.append(new_p)
+        merge_errors.append(p_error)
+
+    merged_periods = set([i for i in new_period_list if i is not None])
+
+    ignored_points = [True for i in new_period_list if i is None]
+
+    if len(merged_periods) != len(periodlist):
+        print '\n\tMerged {0} periods into {1} period-clusters -'\
+        ' {2} points outside the bins\n'.format(len(periodlist),len(merged_periods),len(ignored_points))
+
+    new_period_list = [round(i,5)  if i is not None else i for i in new_period_list] 
+
+    return new_period_list, merge_errors
+
 
 def merge_periods(periods,merge_threshold):
     """
-    assume periods in increasing order
-    merge_threshold given in percent
+    - assume that the periods are in increasing order
+    - merge_threshold given in percent
 
     """
     old_periods = sorted(list(periods),reverse=False)
@@ -86,7 +148,8 @@ def merge_periods(periods,merge_threshold):
     return new_period_list
 
 
-def plot_merging(periods,merge_threshold):
+def plot_merging(periods,merge_threshold,no_periods=None, t_min=None,
+                    t_max=None, max_merge_error=None):
 
 
     # import platform,os,sys 
@@ -105,9 +168,12 @@ def plot_merging(periods,merge_threshold):
     close('all')
     ion()
 
-    mergedperiods = merge_periods(periods,merge_threshold)
+    if no_periods is not None:
+        mergedperiods,dummy = regular_periods(periods,merge_threshold,no_periods,
+                                    t_min,t_max, max_merge_error)
+    else:
+        mergedperiods = merge_periods(periods,merge_threshold)
     
-
 
 
     ax = subplot2grid((1, 1), (0, 0), colspan=1)
@@ -117,13 +183,26 @@ def plot_merging(periods,merge_threshold):
 
     hold(True)
 
+    n_points_used = len([i for i in mergedperiods if i is not None])
+    n_points_outside = len([i for i in mergedperiods if i is  None])
+
+    mergedperiods = [i for i in mergedperiods if i is not None]
+
     mergedperiods = sorted(list(set(mergedperiods)),reverse=False)
 
     lo_limits = []
-    for i,p in enumerate(mergedperiods):
-        if i == 0:
-            continue
-        lo_limits.append(np.sqrt(mergedperiods[i] *mergedperiods[i-1]))
+
+    new_periods_log = log10(np.array(mergedperiods))
+    bin_width = merge_threshold/100. *(max(new_periods_log)-min(new_periods_log))
+
+    new_period_bins = []
+
+    for log_p in new_periods_log:
+        min_p = 10**(log_p-bin_width/2.)
+        max_p = 10**(log_p+bin_width/2.)
+        lo_limits.append(min_p)
+        lo_limits.append(max_p)
+
 
 
     ax.set_xticks(lo_limits, minor=True)
@@ -132,11 +211,13 @@ def plot_merging(periods,merge_threshold):
 
     merge = ax.scatter(mergedperiods,ones(len(mergedperiods)),c='r',label='merged periods')
     ax.set_ylim([-1,2])
+    ax.set_xlim([10**(min(new_periods_log)-0.5),10**(max(new_periods_log)+0.5)])
     handles, labels = ax.get_legend_handles_labels()
     ax.legend([orig, merge], ["original ({0})".format(len(periods)), "merged ({0})".format(len(mergedperiods))],scatterpoints=1,loc='upper center', 
                 ncol=2)
+    ax.set_title('{0} periods in bins - {1} periods left out'.format(n_points_used, n_points_outside))
     
-    #tight_layout()
+    tight_layout()
     show()#block=True)
     raw_input()
 
@@ -149,7 +230,7 @@ if __name__ == '__main__':
     rng= 4
     rnd = np.array(sorted((np.random.random_sample(N)-0.5)*2*rng,reverse=False))
     periods = 10**(rnd)
-    threshold = 5
+    threshold = 10
     print """
 
         This is a module - not to be run as as a script! 
@@ -158,5 +239,8 @@ This call yields an example result plot for merging {0} random periods.
 
 """.format(N)
 
-    plot_merging(periods,threshold)
+    no_periods=5
+    print min(periods),max(periods)
+
+    plot_merging(periods,threshold,no_periods)
 

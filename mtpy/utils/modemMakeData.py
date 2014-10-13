@@ -15,18 +15,34 @@ import glob
 
 
 
-edipath = 'edis_selected'
+edipath = '.'
 
 if not os.path.isdir(edipath):
     print '\n\tERROR - data path does not exist'
     sys.exit()
+#-----------------------------------------------------------------
 
 
 #flag for merging closely neighbouring periods: 
-merge_periods = False
+merge_periods = True
+
 
 #merge periods, which do not differ more than this threshold (in percent)
 merge_threshold = 5
+
+
+#error percentage - to be added to the error of values, if the period does not 
+# coincide with the original period but lays within the merge_threshold
+merging_error = None    
+
+#choose number of final periods
+N=15
+
+#lowest period
+Tmin=1e-5
+
+#highest period 
+Tmax=1e5
 
 
 
@@ -101,15 +117,31 @@ for idx_edi, edi in enumerate(lo_ediobjs):
     periodlist.extend(periods)
 
 periodlist = sorted(list(set(periodlist)),reverse=False)
-    
+
+
+
 if merge_periods == True:
-    #mp.plot_merging(periodlist,merge_threshold)
-    new_periods = mp.merge_periods(periodlist,merge_threshold)
+
+    #mp.plot_merging(periodlist,merge_threshold,N)
+    #new_periods = mp.merge_periods(periodlist,merge_threshold)
+    new_periods,merging_error = mp.regular_periods(periodlist,merge_threshold,no_periods=N,
+                                    t_min=Tmin,t_max=Tmax,
+                                    max_merge_error=merging_error)
+
 else:
     new_periods = periodlist[:]
+    merging_error = [None for i in new_periods]
+
 #setting up a dictionary for old and new period
 for idx,per in enumerate(periodlist):
-    period_dict[str(per)] = new_periods[idx]
+    period_dict[str(per)] = new_periods[idx],merging_error[idx]
+
+#build dictionary for filtering potential doubles in periodlist of the same file
+new2old_per_dict = {}
+for k, v in period_dict.iteritems():
+    v=v[0]
+    new2old_per_dict[v] = new2old_per_dict.get(v, [])
+    new2old_per_dict[v].append(k)
 
 
 periodlist = []
@@ -119,6 +151,7 @@ for idx_edi, edi in enumerate(lo_ediobjs):
 
     freq2 = edi.freq
     periods=1/freq2
+    periods = [round(i,5) for i in periods]
 
     zerr=edi.Z.zerr
     zval=edi.Z.z
@@ -126,17 +159,46 @@ for idx_edi, edi in enumerate(lo_ediobjs):
     northing = rel_coords[idx_edi,1]
     easting = rel_coords[idx_edi,0]
     
-    
     #Generate Impedance Array
-    for i in range(len(periods)):
+    for p in range(len(periods)):
 
-        raw_period = periods[i]
-        raw_period = np.round(raw_period,5)
-        period = float(period_dict[str(raw_period)])
+        raw_period = periods[p]
+        if period_dict[str(raw_period)][0] is None:
+            #period is not within the chosen bins
+            continue
+
+        period = float(period_dict[str(raw_period)][0])
+        tmp_lo_old_periods = new2old_per_dict[period]
+
+        doubleperiod = False
+        for other_period in tmp_lo_old_periods:
+            other_period = float(other_period)
+            #if the other original periods are not present in this file: 
+            if  not other_period in  periods: 
+                continue
+            #skip, if another one is closer to the new merge period:
+            if np.abs(other_period-period) < np.abs(raw_period-period):
+                doubleperiod = True
+                break
+        if doubleperiod is True:
+            continue
+
+
         periodlist.append(period)
 
-        Z = zval[i]
-        Zerr = zerr[i]
+
+        merge_error = period_dict[str(raw_period)][1]
+        try:
+            if merge_error is not None:
+                merge_error = float(merge_error)/100.
+            else:
+                raise
+        except:
+            merge_error = 0.
+                
+
+        Z = zval[p]
+        Zerr = zerr[p] * (1.+merge_error)
 
         period_impstring = ''
 
@@ -163,7 +225,8 @@ for idx_edi, edi in enumerate(lo_ediobjs):
 n_periods = len(set(periodlist))
 
 
-print 'Z periods: ',n_periods ,  'files:', len(lo_ediobjs)
+print 'Z periods: ',n_periods 
+print 'No. data files:', len(lo_ediobjs)
 
 header_string += '> {0} {1}\n'.format(n_periods,len(lo_ediobjs))
 
@@ -173,6 +236,10 @@ data.write(header_string)
 data.write(impstring)
 data.close()
 
+
+if use_tipper is False:
+    print '\n\tEND\n\n'
+    sys.exit()
 
 #start Tipper part ---------------------------------------------
 
