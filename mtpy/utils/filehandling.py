@@ -705,6 +705,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
         day_data = np.zeros(max_n_data,'int')
 
 
+
         #loop over all (sorted) files for the current component
         for idx_f,f in enumerate(lo_sorted_files):
 
@@ -713,6 +714,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                 print 'Reading file %s' %(f)
                 #starting time of current file
                 file_start_time = lo_sorted_starttimes[idx_f]
+
 
                 #get tuple with the starting time of the current file
                 file_start = time.gmtime(file_start_time)
@@ -748,9 +750,11 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
             #set the time as starting time for output file, if no output file is open already
             if fileopen == 0:
                 outfile_starttime =  file_start_time
+
                 #outfile_timeaxis = file_time_axis
                 old_time_axis = tmp_file_time_axis[:]
                 
+
                 arrayindex = 0
 
                 #if it's a single column of data
@@ -765,6 +769,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                 #jump with index to current point on time axis 
                 arrayindex += len(data_in)
                 outfile_endtime = file_end_time
+
 
                 file_date = '{0}{1:02}{2:02}'.format(file_start[0],
                                                  file_start[1], file_start[2]) 
@@ -805,6 +810,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                     #                              overlap_idx) + 
                     #                              overlap_idx).tolist()
 
+
                     # outfile_data = np.delete(outfile_data, 
                     #                             np.arange(len(outfile_data) - 
                     #                             overlap_idx) + 
@@ -825,6 +831,8 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                     day_data[arrayindex:arrayindex+len(data_in)] = data_in[:,1]                    
                     #outfile_data.extend(data_in[:,1].tolist())
 
+                arrayindex += len(data_in)
+                print len(data_in),arrayindex
 
                 arrayindex += len(data_in)
                 outfile_endtime = (arrayindex+1)*sampling + outfile_starttime
@@ -879,6 +887,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                                     stationname, comp.lower(), 1./sampling, 
                                     outfile_starttime, arrayindex)
 
+
                 F.write(headerline)
 
                 #outfile_array = np.zeros((len(outfile_timeaxis),2))
@@ -892,6 +901,7 @@ def EDL_make_dayfiles(inputdir, sampling , stationname = None, outputdir = None)
                 #np.savetxt(F, np.array(outfile_data))
                 arrayindex = 0
                 
+
                 F.close()
                 print '\t wrote file %s'%(new_file)
 
