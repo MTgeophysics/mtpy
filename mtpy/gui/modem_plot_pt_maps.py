@@ -62,7 +62,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         #make map scale
         if self.map_scale == 'km':
             self.dscale = 1000.
-            self._ellipse_dict = {'size':.5}
+            self._ellipse_dict = {'size':1}
             self._arrow_dict = {'size':.5,
                                 'head_length':.05,
                                 'head_width':.05,
@@ -82,8 +82,8 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.ew_limits = None
         self.ns_limits = None
         
-        self.pad_east = 2000/self.dscale
-        self.pad_north = 2000/self.dscale
+        self.pad_east = 2*self.ellipse_size
+        self.pad_north = 2*self.ellipse_size
         
         self.plot_grid = 'n'
         
@@ -397,12 +397,16 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
             tip = self.modem_data.mt_dict[key].Tipper
             tip._compute_mag_direction()
                         
-            data_pt_arr[:, ii]['txr'] = tip.mag_real*np.sin(np.deg2rad(tip.angle_real))
-            data_pt_arr[:, ii]['tyr'] = tip.mag_real*np.cos(np.deg2rad(tip.angle_real))
-            data_pt_arr[:, ii]['txi'] = tip.mag_imag*np.sin(np.deg2rad(tip.angle_imag))
-            data_pt_arr[:, ii]['tyi'] = tip.mag_imag*np.cos(np.deg2rad(tip.angle_imag))
+            data_pt_arr[:, ii]['txr'] = tip.mag_real*\
+                                        np.sin(np.deg2rad(tip.angle_real))
+            data_pt_arr[:, ii]['tyr'] = tip.mag_real*\
+                                        np.cos(np.deg2rad(tip.angle_real))
+            data_pt_arr[:, ii]['txi'] = tip.mag_imag*\
+                                        np.sin(np.deg2rad(tip.angle_imag))
+            data_pt_arr[:, ii]['tyi'] = tip.mag_imag*\
+                                        np.cos(np.deg2rad(tip.angle_imag))
             if self.modem_resp_fn is not None:
-                mpt = self.resp_obj.mt_dict[key].pt
+                mpt = self.modem_resp.mt_dict[key].pt
                 
                 model_pt_arr[:, ii]['east'] = east
                 model_pt_arr[:, ii]['north'] = north
@@ -494,19 +498,17 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         
         # set plot limits to be the station area
         if self.ew_limits == None:
-            east_min = self.modem_data.data_array['rel_east'].min()-\
-                                                            self.pad_east
-            east_max = self.modem_data.data_array['rel_east'].max()+\
-                                                            self.pad_east
-            self.ew_limits = (east_min/self.dscale, east_max/self.dscale)
+            east_min = self.pt_data_arr['east'].min()-self.pad_east
+            east_max = self.pt_data_arr['east'].max()+self.pad_east
+
+            self.ew_limits = (east_min, east_max)
             
         if self.ns_limits == None:
-            north_min = self.modem_data.data_array['rel_north'].min()-\
-                                                            self.pad_north
-            north_max = self.modem_data.data_array['rel_north'].max()+\
-                                                            self.pad_north
-            self.ns_limits = (north_min/self.dscale, north_max/self.dscale)
+            north_min = self.pt_data_arr['north'].min()-self.pad_north
+            north_max = self.pt_data_arr['north'].max()+self.pad_north
 
+            self.ns_limits = (north_min, north_max)
+        print self.ew_limits, self.ns_limits, self.pad_east, self.pad_north
         #-------------plot phase tensors------------------------------------                    
         data_ii = self.period_dict[self.plot_period]
         
@@ -597,8 +599,8 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                 if real_mag <= self.arrow_threshold:
                     axd.arrow(pt['east'],
                               pt['north'],
-                              pt['east']+self.arrow_size*pt['txr']*arr_dir,
-                              pt['north']+self.arrow_size*pt['tyr']*arr_dir,
+                              self.arrow_size*pt['txr']*arr_dir,
+                              self.arrow_size*pt['tyr']*arr_dir,
                               lw=self.arrow_lw,
                               facecolor=self.arrow_color_real,
                               edgecolor=self.arrow_color_real,
@@ -612,8 +614,8 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                 if imag_mag <= self.arrow_threshold:
                     axd.arrow(pt['east'],
                               pt['north'],
-                              pt['east']+self.arrow_size*pt['txi']*arr_dir,
-                              pt['north']+self.arrow_size*pt['tyi']*arr_dir,
+                              self.arrow_size*pt['txi']*arr_dir,
+                              self.arrow_size*pt['tyi']*arr_dir,
                               lw=self.arrow_lw,
                               facecolor=self.arrow_color_imag,
                               edgecolor=self.arrow_color_imag,
@@ -667,8 +669,8 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                     if real_mag <= self.arrow_threshold:
                         axm.arrow(mpt['east'],
                                   mpt['north'],
-                                  mpt['east']+self.arrow_size*mpt['txr']*arr_dir,
-                                  mpt['north']+self.arrow_size*mpt['tyr']*arr_dir,
+                                  self.arrow_size*mpt['txr']*arr_dir,
+                                  self.arrow_size*mpt['tyr']*arr_dir,
                                   lw=self.arrow_lw,
                                   facecolor=self.arrow_color_real,
                                   edgecolor=self.arrow_color_real,
@@ -682,8 +684,8 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                     if imag_mag <= self.arrow_threshold:
                         axm.arrow(mpt['east'],
                                   mpt['north'],
-                                  mpt['east']+self.arrow_size*mpt['txi']*arr_dir,
-                                  mpt['north']+self.arrow_size*mpt['tyi']*arr_dir,
+                                  self.arrow_size*mpt['txi']*arr_dir,
+                                  self.arrow_size*mpt['tyi']*arr_dir,
                                   lw=self.arrow_lw,
                                   facecolor=self.arrow_color_imag,
                                   edgecolor=self.arrow_color_imag,
@@ -734,8 +736,8 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                     if real_mag <= self.arrow_threshold:
                         axr.arrow(rpt['east'],
                                   rpt['north'],
-                                  rpt['east']+self.arrow_size*rpt['txr']*arr_dir,
-                                  rpt['north']+self.arrow_size*rpt['tyr']*arr_dir,
+                                  self.arrow_size*rpt['txr']*arr_dir,
+                                  self.arrow_size*rpt['tyr']*arr_dir,
                                   lw=self.arrow_lw,
                                   facecolor=self.arrow_color_real,
                                   edgecolor=self.arrow_color_real,
@@ -749,8 +751,8 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                     if imag_mag <= self.arrow_threshold:
                         axr.arrow(rpt['east'],
                                   rpt['north'],
-                                  rpt['east']+self.arrow_size*rpt['txi']*arr_dir,
-                                  rpt['north']+self.arrow_size*rpt['tyi']*arr_dir,
+                                  self.arrow_size*rpt['txi']*arr_dir,
+                                  self.arrow_size*rpt['tyi']*arr_dir,
                                   lw=self.arrow_lw,
                                   facecolor=self.arrow_color_imag,
                                   edgecolor=self.arrow_color_imag,
@@ -877,33 +879,37 @@ class PlotSettings(QtGui.QWidget):
         super(PlotSettings, self).__init__(parent)
         
         self.fs = kwargs.pop('fs', 10)
-        self.lw = kwargs.pop('lw', 1.5)
-        self.ms = kwargs.pop('ms', 5)
         
-        self.e_capthick = kwargs.pop('e_capthick', 1)
-        self.e_capsize =  kwargs.pop('e_capsize', 5)
-
-        #color mode
-        self.cted = kwargs.pop('cted', (0, 0, 1))
-        self.ctmd = kwargs.pop('ctmd', (1, 0, 0))
-        self.mted = kwargs.pop('mted', 's')
-        self.mtmd = kwargs.pop('mtmd', 'o')
+        self.map_scale = kwargs.pop('map_scale', 'km')
         
-        #color for occam2d model
-        self.ctem = kwargs.pop('ctem', (0, .6, .3))
-        self.ctmm = kwargs.pop('ctmm', (.9, 0, .8))
-        self.mtem = kwargs.pop('mtem', '+')
-        self.mtmm = kwargs.pop('mtmm', '+')
-         
-        self.res_xx_limits = kwargs.pop('res_xx_limits', None)   
-        self.res_xy_limits = kwargs.pop('res_xy_limits', None)   
-        self.res_yx_limits = kwargs.pop('res_yx_limits', None)   
-        self.res_yy_limits = kwargs.pop('res_yy_limits', None) 
+        if self.map_scale == 'km': 
+            self.ellipse_size = kwargs.pop('ellipse_size', .5)
+            self.arrow_head_length = kwargs.pop('arrow_head_length', .025)
+            self.arrow_head_width = kwargs.pop('arrow_head_width', .025)
+            self.arrow_size = kwargs.pop('arrow_size', .5)
+            self.pad_east = kwargs.pop('pad_east', 1)
+            self.pad_north = kwargs.pop('pad_north', 1)
+            
+        if self.map_scale == 'm': 
+            self.ellipse_size = kwargs.pop('ellipse_size', 500)
+            self.arrow_head_length = kwargs.pop('arrow_head_length', 50)
+            self.arrow_head_width = kwargs.pop('arrow_head_width', 50)
+            self.arrow_size = kwargs.pop('arrow_size', 500)
+            self.pad_east = kwargs.pop('pad_east', 1000)
+            self.pad_north = kwargs.pop('pad_north', 1000)
+            
+        self.ellipse_cmap = kwargs.pop('ellipse_cmap', 'mt_bl2wh2rd')
+        self.ellipse_range = kwargs.pop('ellipse_range', [0, 90, 5])
+        self.ellipse_colorby = kwargs.pop('ellipse_colorby', 'phimin')
         
-        self.phase_xx_limits = kwargs.pop('phase_xx_limits', None)   
-        self.phase_xy_limits = kwargs.pop('phase_xy_limits', None)   
-        self.phase_yx_limits = kwargs.pop('phase_yx_limits', None)   
-        self.phase_yy_limits = kwargs.pop('phase_yy_limits', None)   
+        if type(self.ellipse_range) == tuple:
+            self.ellipse_range = list(self.ellipse_range)
+        
+        self.arrow_threshold = kwargs.pop('arrow_threshold', 2)
+        self.arrow_color_imag = kwargs.pop('arrow_color_imag', 'b')
+        self.arrow_color_real = kwargs.pop('arrow_color_real', 'k')
+        self.arrow_direction = kwargs.pop('arrow_direction', 0)
+        self.arrow_lw = kwargs.pop('arrow_lw', .75)
         
         self.subplot_wspace = kwargs.pop('subplot_wspace', .2)
         self.subplot_hspace = kwargs.pop('subplot_hspace', .0)
@@ -911,14 +917,7 @@ class PlotSettings(QtGui.QWidget):
         self.subplot_left = kwargs.pop('subplot_left', .08)
         self.subplot_top = kwargs.pop('subplot_top', .93)
         self.subplot_bottom = kwargs.pop('subplot_bottom', .08)
-        
-        self.legend_loc = kwargs.pop('legend_loc', 'upper center')
-        self.legend_pos = kwargs.pop('legend_pos', (.5, 1.11))
-        self.legend_marker_scale = kwargs.pop('legend_marker_scale', 1)
-        self.legend_border_axes_pad = kwargs.pop('legend_border_axes_pad', .01)
-        self.legend_label_spacing = kwargs.pop('legend_label_spacing', 0.07)
-        self.legend_handle_text_pad = kwargs.pop('legend_handle_text_pad', .2)
-        self.legend_border_pad = kwargs.pop('legend_border_pad', .15)
+
         
         self.initUI()
 
@@ -929,20 +928,21 @@ class PlotSettings(QtGui.QWidget):
         fs_edit.setText('{0:.1f}'.format(self.fs))
         fs_edit.textChanged[str].connect(self.set_text_fs)
         
-        lw_label = QtGui.QLabel('Line Width')
-        lw_edit = QtGui.QLineEdit()
-        lw_edit.setText('{0:.1f}'.format(self.lw))
-        lw_edit.textChanged[str].connect(self.set_text_lw)
+        mapscale_label = QtGui.QLabel('Map Scale')
+        mapscale_combo = QtGui.QComboBox()
+        mapscale_combo.addItem('km')
+        mapscale_combo.addItem('m')
+        mapscale_combo.activated[str].connect(self.set_mapscale) 
         
-        e_capthick_label = QtGui.QLabel('Error cap thickness')
-        e_capthick_edit = QtGui.QLineEdit()
-        e_capthick_edit.setText('{0:.1f}'.format(self.e_capthick))
-        e_capthick_edit.textChanged[str].connect(self.set_text_e_capthick)
+        pad_east_label = QtGui.QLabel('Map Pad East')
+        pad_east_edit = QtGui.QLineEdit()
+        pad_east_edit.setText('{0:.3f}'.format(self.pad_east))
+        pad_east_edit.textChanged[str].connect(self.set_pad_east)
         
-        e_capsize_label = QtGui.QLabel('Error cap size')
-        e_capsize_edit = QtGui.QLineEdit()
-        e_capsize_edit.setText('{0:.1f}'.format(self.e_capsize))
-        e_capsize_edit.textChanged[str].connect(self.set_text_e_capsize)
+        pad_north_label = QtGui.QLabel('Map Pad North')
+        pad_north_edit = QtGui.QLineEdit()
+        pad_north_edit.setText('{0:.3f}'.format(self.pad_north))
+        pad_north_edit.textChanged[str].connect(self.set_pad_north)
         
         grid_line = QtGui.QGridLayout()
         grid_line.setSpacing(10)
@@ -950,182 +950,187 @@ class PlotSettings(QtGui.QWidget):
         grid_line.addWidget(fs_label, 1, 0)
         grid_line.addWidget(fs_edit, 1, 1)
         
-        grid_line.addWidget(lw_label, 1, 2)
-        grid_line.addWidget(lw_edit, 1, 3)
+        grid_line.addWidget(mapscale_label, 1, 2)
+        grid_line.addWidget(mapscale_combo, 1, 3)
         
-        grid_line.addWidget(e_capthick_label, 1, 4)
-        grid_line.addWidget(e_capthick_edit, 1, 5)
+        grid_line.addWidget(pad_east_label, 1, 4)
+        grid_line.addWidget(pad_east_edit, 1, 5)
         
-        grid_line.addWidget(e_capsize_label, 1, 6)
-        grid_line.addWidget(e_capsize_edit, 1, 7)
+        grid_line.addWidget(pad_north_label, 1, 6)
+        grid_line.addWidget(pad_north_edit, 1, 7)
         
-        #--> marker properties
-        ms_label = QtGui.QLabel('Marker Size')
-        ms_edit = QtGui.QLineEdit()
-        ms_edit.setText('{0:.1f}'.format(self.ms))
-        ms_edit.textChanged[str].connect(self.set_text_ms)
+        #--> ellipse properties
+        ellipse_size_label = QtGui.QLabel('Ellipse Size')
+        ellipse_size_edit = QtGui.QLineEdit()
+        ellipse_size_edit.setText('{0:.2f}'.format(self.ellipse_size))
+        ellipse_size_edit.textChanged[str].connect(self.set_ellipse_size)
         
-        dcxy_label = QtGui.QLabel('Data Color xy')
-        dcxy_edit = QtGui.QLineEdit()
-        dcxy_edit.setText('{0}'.format(self.cted))
-        dcxy_edit.textChanged[str].connect(self.set_text_cted)
+        ellipse_range_label = QtGui.QLabel('Ellipse Range (min, max, step)')
         
-        dcyx_label = QtGui.QLabel('Data Color yx')
-        dcyx_edit = QtGui.QLineEdit()
-        dcyx_edit.setText('{0}'.format(self.ctmd))
-        dcyx_edit.textChanged[str].connect(self.set_text_ctmd)
+        ellipse_range_edit_min = QtGui.QLineEdit()
+        try:
+            ellipse_range_edit_min.setText('{0:.2f}'.format(self.ellipse_range[0]))
+        except IndexError:
+            if self.ellipse_colorby == 'skew':
+                ellipse_range_edit_min.setText('{0:.2f}'.format(-9))
+                self.ellipse_range = [-9.0]
+            else:
+                ellipse_range_edit_min.setText('{0:.2f}'.format(0))
+                self.ellipse_range = [0]
+        ellipse_range_edit_min.textChanged[str].connect(self.set_ellipse_range_min)
         
-        dmxy_label = QtGui.QLabel('Data Marker xy')
-        dmxy_edit = QtGui.QLineEdit()
-        dmxy_edit.setText('{0}'.format(self.mted))
-        dmxy_edit.textChanged[str].connect(self.set_text_mted)
+        ellipse_range_edit_max = QtGui.QLineEdit()
+        try:
+            ellipse_range_edit_max.setText('{0:.2f}'.format(self.ellipse_range[1]))
+        except IndexError:
+            if self.ellipse_colorby == 'skew':
+                ellipse_range_edit_max.setText('{0:.2f}'.format(9))
+                self.ellipse_range.append(9.0)
+            else:
+                ellipse_range_edit_max.setText('{0:.2f}'.format(90))
+                self.ellipse_range.append(90.0)
+        ellipse_range_edit_max.textChanged[str].connect(self.set_ellipse_range_max)
         
-        dmyx_label = QtGui.QLabel('Data Marker yx')
-        dmyx_edit = QtGui.QLineEdit()
-        dmyx_edit.setText('{0}'.format(self.mtmd))
-        dmyx_edit.textChanged[str].connect(self.set_text_mtmd)
-        
-        mcxy_label = QtGui.QLabel('Model Color xy')
-        mcxy_edit = QtGui.QLineEdit()
-        mcxy_edit.setText('{0}'.format(self.ctem))
-        mcxy_edit.textChanged[str].connect(self.set_text_ctem)
-        
-        mcyx_label = QtGui.QLabel('Model Color yx')
-        mcyx_edit = QtGui.QLineEdit()
-        mcyx_edit.setText('{0}'.format(self.ctmm))
-        mcyx_edit.textChanged[str].connect(self.set_text_ctmm)
-        
-        mmxy_label = QtGui.QLabel('Model Marker xy')
-        mmxy_edit = QtGui.QLineEdit()
-        mmxy_edit.setText('{0}'.format(self.mtem))
-        mmxy_edit.textChanged[str].connect(self.set_text_mtem)
-    
-        mmyx_label = QtGui.QLabel('Model Marker yx')
-        mmyx_edit = QtGui.QLineEdit()
-        mmyx_edit.setText('{0}'.format(self.mtmm))
-        mmyx_edit.textChanged[str].connect(self.set_text_mtmm)
+        ellipse_range_edit_step = QtGui.QLineEdit()
+        try:
+            ellipse_range_edit_step.setText('{0:.2f}'.format(self.ellipse_range[0]))
+        except IndexError:
+            if self.ellipse_colorby == 'skew':
+                ellipse_range_edit_step.setText('{0:.2f}'.format(3))
+                self.ellipse_range.append(3.0)
+            else:
+                ellipse_range_edit_step.setText('{0:.2f}'.format(5))
+                self.ellipse_range.append(5)
+        ellipse_range_edit_step.textChanged[str].connect(self.set_ellipse_range_step)
 
-        marker_label = QtGui.QLabel('Maker Properties:')
+        range_grid = QtGui.QGridLayout()
+        range_grid.setSpacing(5)
+        range_grid.addWidget(ellipse_range_edit_min, 1, 0)
+        range_grid.addWidget(ellipse_range_edit_max, 1, 1)
+        range_grid.addWidget(ellipse_range_edit_step, 1, 2)
+
+        ellipse_colorby_label = QtGui.QLabel('Ellipse Color By')
+        ellipse_colorby_combo = QtGui.QComboBox()
+        ellipse_colorby_combo.addItem('phimin')
+        ellipse_colorby_combo.addItem('phimax')
+        ellipse_colorby_combo.addItem('ellipticty')
+        ellipse_colorby_combo.addItem('skew')
+        ellipse_colorby_combo.addItem('skew_seg')
+        ellipse_colorby_combo.activated[str].connect(self.set_ellipse_colorby)
         
-        marker_grid = QtGui.QGridLayout()
-        marker_grid.setSpacing(10)
-                
-        marker_grid.addWidget(marker_label, 1, 0)
-        marker_grid.addWidget(ms_label, 1, 2)
-        marker_grid.addWidget(ms_edit, 1, 3)
+        ellipse_cmap_label = QtGui.QLabel('Ellipse Color Map')
+        ellipse_cmap_combo = QtGui.QComboBox()
+        ellipse_cmap_combo.addItem('mt_bl2wh2rd')
+        ellipse_cmap_combo.addItem('mt_yl2rd')
+        ellipse_cmap_combo.addItem('mt_wh2bl')
+        ellipse_cmap_combo.addItem('mt_bl2gr2rd')
+        ellipse_cmap_combo.addItem('mt_rd2gr2bl')
+        ellipse_cmap_combo.addItem('mt_seg_bl2wh2rd')
+        ellipse_cmap_combo.activated[str].connect(self.set_ellipse_cmap)
         
-        marker_grid.addWidget(dcxy_label, 2, 0)
-        marker_grid.addWidget(dcxy_edit, 2, 1)
+        ellipse_grid = QtGui.QGridLayout()
+        ellipse_grid.setSpacing(10)
         
-        marker_grid.addWidget(dcyx_label, 2, 2)
-        marker_grid.addWidget(dcyx_edit, 2, 3)
+        ellipse_grid.addWidget(ellipse_size_label, 1, 0)
+        ellipse_grid.addWidget(ellipse_size_edit, 1, 1)
         
-        marker_grid.addWidget(dmxy_label, 2, 4)
-        marker_grid.addWidget(dmxy_edit, 2, 5)
+        ellipse_grid.addWidget(ellipse_range_label, 1, 2)
+        ellipse_grid.addLayout(range_grid, 1, 3)
         
-        marker_grid.addWidget(dmyx_label, 2, 6)
-        marker_grid.addWidget(dmyx_edit, 2, 7)
+        ellipse_grid.addWidget(ellipse_colorby_label, 1, 4)
+        ellipse_grid.addWidget(ellipse_colorby_combo, 1, 5)
         
-        marker_grid.addWidget(mcxy_label, 3, 0)
-        marker_grid.addWidget(mcxy_edit, 3, 1)
-        
-        marker_grid.addWidget(mcyx_label, 3, 2)
-        marker_grid.addWidget(mcyx_edit, 3, 3)
-        
-        marker_grid.addWidget(mmxy_label, 3, 4)
-        marker_grid.addWidget(mmxy_edit, 3, 5)
-        
-        marker_grid.addWidget(mmyx_label, 3, 6)
-        marker_grid.addWidget(mmyx_edit, 3, 7)
+        ellipse_grid.addWidget(ellipse_cmap_label, 1, 6)
+        ellipse_grid.addWidget(ellipse_cmap_combo, 1, 7)
         
         #--> plot limits
-        ylimr_xx_label = QtGui.QLabel('Res_xx')
-        ylimr_xx_edit = QtGui.QLineEdit()
-        ylimr_xx_edit.setText('{0}'.format(self.res_xx_limits))
-        ylimr_xx_edit.textChanged[str].connect(self.set_text_res_xx) 
-        
-        ylimr_xy_label = QtGui.QLabel('Res_xy')
-        ylimr_xy_edit = QtGui.QLineEdit()
-        ylimr_xy_edit.setText('{0}'.format(self.res_xy_limits))
-        ylimr_xy_edit.textChanged[str].connect(self.set_text_res_xy) 
-        
-        ylimr_yx_label = QtGui.QLabel('Res_yx')
-        ylimr_yx_edit = QtGui.QLineEdit()
-        ylimr_yx_edit.setText('{0}'.format(self.res_yx_limits))
-        ylimr_yx_edit.textChanged[str].connect(self.set_text_res_yx) 
-        
-        ylimr_yy_label = QtGui.QLabel('Res_yy')
-        ylimr_yy_edit = QtGui.QLineEdit()
-        ylimr_yy_edit.setText('{0}'.format(self.res_yy_limits))
-        ylimr_yy_edit.textChanged[str].connect(self.set_text_res_yy)  
-        
-        ylimp_xx_label = QtGui.QLabel('phase_xx')
-        ylimp_xx_edit = QtGui.QLineEdit()
-        ylimp_xx_edit.setText('{0}'.format(self.phase_xx_limits))
-        ylimp_xx_edit.textChanged[str].connect(self.set_text_phase_xx) 
-        
-        ylimp_xy_label = QtGui.QLabel('phase_xy')
-        ylimp_xy_edit = QtGui.QLineEdit()
-        ylimp_xy_edit.setText('{0}'.format(self.phase_xy_limits))
-        ylimp_xy_edit.textChanged[str].connect(self.set_text_phase_xy) 
-        
-        ylimp_yx_label = QtGui.QLabel('phase_yx')
-        ylimp_yx_edit = QtGui.QLineEdit()
-        ylimp_yx_edit.setText('{0}'.format(self.phase_yx_limits))
-        ylimp_yx_edit.textChanged[str].connect(self.set_text_phase_yx) 
-        
-        ylimp_yy_label = QtGui.QLabel('phase_yy')
-        ylimp_yy_edit = QtGui.QLineEdit()
-        ylimp_yy_edit.setText('{0}'.format(self.phase_yy_limits))
-        ylimp_yy_edit.textChanged[str].connect(self.set_text_phase_yy)        
-        
-        limits_grid = QtGui.QGridLayout()
-        limits_grid.setSpacing(10)
-        
-        limits_label = QtGui.QLabel('Plot Limits: (Res=Real, Phase=Imaginary)'
-                                    ' --> input on a linear scale')
-        
-        limits_grid.addWidget(limits_label, 1, 0, 1, 7)
-        
-        limits_grid.addWidget(ylimr_xx_label, 2, 0)
-        limits_grid.addWidget(ylimr_xx_edit, 2, 1)
-        limits_grid.addWidget(ylimr_xy_label, 2, 2)
-        limits_grid.addWidget(ylimr_xy_edit, 2, 3)
-        limits_grid.addWidget(ylimr_yx_label, 2, 4)
-        limits_grid.addWidget(ylimr_yx_edit, 2, 5)
-        limits_grid.addWidget(ylimr_yy_label, 2, 6)
-        limits_grid.addWidget(ylimr_yy_edit, 2, 7)
-        
-        limits_grid.addWidget(ylimp_xx_label, 3, 0)
-        limits_grid.addWidget(ylimp_xx_edit, 3, 1)
-        limits_grid.addWidget(ylimp_xy_label, 3, 2)
-        limits_grid.addWidget(ylimp_xy_edit, 3, 3)
-        limits_grid.addWidget(ylimp_yx_label, 3, 4)
-        limits_grid.addWidget(ylimp_yx_edit, 3, 5)
-        limits_grid.addWidget(ylimp_yy_label, 3, 6)
-        limits_grid.addWidget(ylimp_yy_edit, 3, 7)
-        
-        #--> legend properties
-        legend_pos_label = QtGui.QLabel('Legend Position')
-        legend_pos_edit = QtGui.QLineEdit()
-        legend_pos_edit.setText('{0}'.format(self.legend_pos))
-        legend_pos_edit.textChanged[str].connect(self.set_text_legend_pos)
-        
-        legend_grid = QtGui.QGridLayout()
-        legend_grid.setSpacing(10)
-        
-        legend_grid.addWidget(QtGui.QLabel('Legend Properties:'), 1, 0)
-        legend_grid.addWidget(legend_pos_label, 1, 2,)
-        legend_grid.addWidget(legend_pos_edit, 1, 3)
+#        ylimr_xx_label = QtGui.QLabel('Res_xx')
+#        ylimr_xx_edit = QtGui.QLineEdit()
+#        ylimr_xx_edit.setText('{0}'.format(self.res_xx_limits))
+#        ylimr_xx_edit.textChanged[str].connect(self.set_text_res_xx) 
+#        
+#        ylimr_xy_label = QtGui.QLabel('Res_xy')
+#        ylimr_xy_edit = QtGui.QLineEdit()
+#        ylimr_xy_edit.setText('{0}'.format(self.res_xy_limits))
+#        ylimr_xy_edit.textChanged[str].connect(self.set_text_res_xy) 
+#        
+#        ylimr_yx_label = QtGui.QLabel('Res_yx')
+#        ylimr_yx_edit = QtGui.QLineEdit()
+#        ylimr_yx_edit.setText('{0}'.format(self.res_yx_limits))
+#        ylimr_yx_edit.textChanged[str].connect(self.set_text_res_yx) 
+#        
+#        ylimr_yy_label = QtGui.QLabel('Res_yy')
+#        ylimr_yy_edit = QtGui.QLineEdit()
+#        ylimr_yy_edit.setText('{0}'.format(self.res_yy_limits))
+#        ylimr_yy_edit.textChanged[str].connect(self.set_text_res_yy)  
+#        
+#        ylimp_xx_label = QtGui.QLabel('phase_xx')
+#        ylimp_xx_edit = QtGui.QLineEdit()
+#        ylimp_xx_edit.setText('{0}'.format(self.phase_xx_limits))
+#        ylimp_xx_edit.textChanged[str].connect(self.set_text_phase_xx) 
+#        
+#        ylimp_xy_label = QtGui.QLabel('phase_xy')
+#        ylimp_xy_edit = QtGui.QLineEdit()
+#        ylimp_xy_edit.setText('{0}'.format(self.phase_xy_limits))
+#        ylimp_xy_edit.textChanged[str].connect(self.set_text_phase_xy) 
+#        
+#        ylimp_yx_label = QtGui.QLabel('phase_yx')
+#        ylimp_yx_edit = QtGui.QLineEdit()
+#        ylimp_yx_edit.setText('{0}'.format(self.phase_yx_limits))
+#        ylimp_yx_edit.textChanged[str].connect(self.set_text_phase_yx) 
+#        
+#        ylimp_yy_label = QtGui.QLabel('phase_yy')
+#        ylimp_yy_edit = QtGui.QLineEdit()
+#        ylimp_yy_edit.setText('{0}'.format(self.phase_yy_limits))
+#        ylimp_yy_edit.textChanged[str].connect(self.set_text_phase_yy)        
+#        
+#        limits_grid = QtGui.QGridLayout()
+#        limits_grid.setSpacing(10)
+#        
+#        limits_label = QtGui.QLabel('Plot Limits: (Res=Real, Phase=Imaginary)'
+#                                    ' --> input on a linear scale')
+#        
+#        limits_grid.addWidget(limits_label, 1, 0, 1, 7)
+#        
+#        limits_grid.addWidget(ylimr_xx_label, 2, 0)
+#        limits_grid.addWidget(ylimr_xx_edit, 2, 1)
+#        limits_grid.addWidget(ylimr_xy_label, 2, 2)
+#        limits_grid.addWidget(ylimr_xy_edit, 2, 3)
+#        limits_grid.addWidget(ylimr_yx_label, 2, 4)
+#        limits_grid.addWidget(ylimr_yx_edit, 2, 5)
+#        limits_grid.addWidget(ylimr_yy_label, 2, 6)
+#        limits_grid.addWidget(ylimr_yy_edit, 2, 7)
+#        
+#        limits_grid.addWidget(ylimp_xx_label, 3, 0)
+#        limits_grid.addWidget(ylimp_xx_edit, 3, 1)
+#        limits_grid.addWidget(ylimp_xy_label, 3, 2)
+#        limits_grid.addWidget(ylimp_xy_edit, 3, 3)
+#        limits_grid.addWidget(ylimp_yx_label, 3, 4)
+#        limits_grid.addWidget(ylimp_yx_edit, 3, 5)
+#        limits_grid.addWidget(ylimp_yy_label, 3, 6)
+#        limits_grid.addWidget(ylimp_yy_edit, 3, 7)
+#        
+#        #--> legend properties
+#        legend_pos_label = QtGui.QLabel('Legend Position')
+#        legend_pos_edit = QtGui.QLineEdit()
+#        legend_pos_edit.setText('{0}'.format(self.legend_pos))
+#        legend_pos_edit.textChanged[str].connect(self.set_text_legend_pos)
+#        
+#        legend_grid = QtGui.QGridLayout()
+#        legend_grid.setSpacing(10)
+#        
+#        legend_grid.addWidget(QtGui.QLabel('Legend Properties:'), 1, 0)
+#        legend_grid.addWidget(legend_pos_label, 1, 2,)
+#        legend_grid.addWidget(legend_pos_edit, 1, 3)
         
         update_button = QtGui.QPushButton('Update')
         update_button.clicked.connect(self.update_settings)        
         
         vbox = QtGui.QVBoxLayout()
         vbox.addLayout(grid_line)
-        vbox.addLayout(marker_grid)
-        vbox.addLayout(limits_grid)
-        vbox.addLayout(legend_grid)
+        vbox.addLayout(ellipse_grid)
+#        vbox.addLayout(limits_grid)
+#        vbox.addLayout(legend_grid)
         vbox.addWidget(update_button)
         
         self.setLayout(vbox) 
@@ -1141,262 +1146,53 @@ class PlotSettings(QtGui.QWidget):
         except ValueError:
             print "Enter a float point number"
             
-    def set_text_e_capthick(self, text):
-        try:
-            self.e_capthick = float(text)
-        except ValueError:
-            print "Enter a float point number"
+    def set_mapscale(self, text):
+        self.map_scale = str(text)
             
-    def set_text_e_capsize(self, text):
+    def set_pad_east(self, text):
         try:
-            self.e_capsize = float(text)
+            self.pad_east = float(text)
         except ValueError:
             print "Enter a float point number"
 
     
-    def set_text_lw(self, text):
+    def set_pad_north(self, text):
         try:
-            self.lw = float(text)
+            self.pad_north = float(text)
         except ValueError:
             print "Enter a float point number"
             
-    def set_text_ms(self, text):
+    def set_ellipse_size(self, text):
         try:
-            self.ms = float(text)
+            self.ellipse_size = float(text)
         except ValueError:
             print "Enter a float point number"
             
-    def set_text_cted(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 3:
-            print 'enter as (r, g, b)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 3:
-            self.cted = tuple(l_list)
-            
-    def set_text_ctmd(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 3:
-            print 'enter as (r, g, b)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 3:
-            self.ctmd = tuple(l_list)
-            
-    def set_text_mted(self, text):
+    def set_ellipse_range_min(self, text):
         try:
-            self.mted = str(text)
+            self.ellipse_range[0] = float(text) 
         except ValueError:
-            print "Enter a string"
+            print "Enter a float point number"
             
-    def set_text_mtmd(self, text):
+    def set_ellipse_range_max(self, text):
         try:
-            self.mtmd = str(text)
+            self.ellipse_range[1] = float(text) 
         except ValueError:
-            print "Enter a string"
-            
-    def set_text_ctem(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 3:
-            print 'enter as (r, g, b)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 3:
-            self.ctem = tuple(l_list)
-    
-    def set_text_ctmm(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 3:
-            print 'enter as (r, g, b)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 3:
-            self.ctmm = tuple(l_list)
-            
-    def set_text_mtem(self, text):
+            print "Enter a float point number"
+    def set_ellipse_range_step(self, text):
         try:
-            self.mtem = str(text)
+            self.ellipse_range[2] = float(text)
+        except IndexError:
+            self.ellipse_range.append(float(text))
         except ValueError:
-            print "Enter a string"
+            print "Enter a float point number"
             
-    def set_text_mtmm(self, text):
-        try:
-            self.mtmm = str(text)
-        except ValueError:
-            print "Enter a string"
+    def set_ellipse_cmap(self, text):
+        self.ellipse_cmap = str(text)
+        
+    def set_ellipse_colorby(self, text):
+        self.ellipse_colorby = str(text)
             
-    def set_text_res_xx(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 2:
-            print 'enter as (min, max)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 2:
-            self.res_xx_limits = tuple(l_list)
-            
-    def set_text_res_xy(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 2:
-            print 'enter as (min, max)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 2:
-            self.res_xy_limits = tuple(l_list)
-            
-    def set_text_res_yx(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 2:
-            print 'enter as (min, max)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 2:
-            self.res_yx_limits = tuple(l_list)
-            
-    def set_text_res_yy(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 2:
-            print 'enter as (min, max)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 2:
-            self.res_yy_limits = tuple(l_list)
-            
-    def set_text_phase_xx(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 2:
-            print 'enter as (min, max)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 2:
-            self.phase_xx_limits = tuple(l_list)
-            
-    def set_text_phase_xy(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 2:
-            print 'enter as (min, max)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 2:
-            self.phase_xy_limits = tuple(l_list)
-            
-    def set_text_phase_yx(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 2:
-            print 'enter as (min, max)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 2:
-            self.phase_yx_limits = tuple(l_list)
-            
-    def set_text_phase_yy(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 2:
-            print 'enter as (min, max)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 2:
-            self.phase_yy_limits = tuple(l_list)
-            
-    def set_text_legend_pos(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 2:
-            print 'enter as (min, max)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 2:
-            self.legend_pos = tuple(l_list)
             
     def update_settings(self):
         self.settings_updated.emit()
