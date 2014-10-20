@@ -19,6 +19,7 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
 import mtpy.imaging.mtplottools as mtplottools
 import matplotlib.gridspec as gridspec
+import matplotlib.colors as colors
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -62,11 +63,11 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         #make map scale
         if self.map_scale == 'km':
             self.dscale = 1000.
-            self._ellipse_dict = {'size':1}
-            self._arrow_dict = {'size':.5,
-                                'head_length':.05,
-                                'head_width':.05,
-                                'lw':.75}
+            self._ellipse_dict = {'size':2}
+            self._arrow_dict = {'size':2,
+                                'head_length':.1,
+                                'head_width':.1,
+                                'lw':1.5}
                                 
         elif self.map_scale == 'm':
             self.dscale = 1.
@@ -467,6 +468,14 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         
         """
         
+        plt.rcParams['font.size'] = self.font_size
+         # set plot properties
+        plt.rcParams['figure.subplot.left'] = self.subplot_left
+        plt.rcParams['figure.subplot.right'] = self.subplot_right
+        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
+        plt.rcParams['figure.subplot.top'] = self.subplot_top
+                
+        
         #make sure there is PT data
         if self.modem_data_fn is not None:
             print self.modem_data_fn
@@ -494,6 +503,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
             else:
                 ckstep = 3
         bounds = np.arange(ckmin, ckmax+ckstep, ckstep)
+        nseg = float((ckmax-ckmin)/(2*ckstep))
         
         # set plot limits to be the station area
         if self.ew_limits == None:
@@ -774,16 +784,40 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         cb_location = (3.35*bb[2]/5+bb[0], 
                         y1*self.cb_pt_pad, .295*bb[2], .02)
         cbaxd = self.figure.add_axes(cb_location)
-        cbd = mcb.ColorbarBase(cbaxd, 
-                               cmap=mtcl.cmapdict[self.ellipse_cmap],
-                               norm=Normalize(vmin=ckmin,
-                                              vmax=ckmax),
-                               orientation='horizontal')
+        
+        if self.ellipse_cmap == 'mt_seg_bl2wh2rd':
+            #make a color list
+            clist = [(cc, cc ,1) 
+                         for cc in np.arange(0, 1+1./(nseg), 1./(nseg))]+\
+                       [(1, cc, cc) 
+                         for cc in np.arange(1, -1./(nseg), -1./(nseg))]
+            
+            #make segmented colormap
+            mt_seg_bl2wh2rd = colors.ListedColormap(clist)
+
+            #make bounds so that the middle is white
+            bounds = np.arange(ckmin-ckstep, ckmax+2*ckstep, ckstep)
+            
+            #normalize the colors
+            norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
+            
+            #make the colorbar
+            cbd = mcb.ColorbarBase(cbaxd,
+                                   cmap=mt_seg_bl2wh2rd,
+                                   norm=norms,
+                                   orientation='horizontal',
+                                   ticks=bounds[1:-1])
+        else:
+            
+            cbd = mcb.ColorbarBase(cbaxd, 
+                                   cmap=mtcl.cmapdict[self.ellipse_cmap],
+                                   norm=Normalize(vmin=ckmin,
+                                                  vmax=ckmax),
+                                   orientation='horizontal')
         cbd.ax.xaxis.set_label_position('top')
         cbd.ax.xaxis.set_label_coords(.5, 1.75)
         cbd.set_label(mtplottools.ckdict[self.ellipse_colorby])
-        cbd.set_ticks(np.arange(ckmin, ckmax+self.cb_tick_step, 
-                                self.cb_tick_step))
+        cbd.set_ticks([ckmin, (ckmax-ckmin)/2, ckmax])
                                 
         axd.text(self.ew_limits[0]*.95,
                  self.ns_limits[1]*.95,
@@ -809,11 +843,34 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                                y1*self.cb_pt_pad, .295*bb[2], .02)
                 cbax = self.figure.add_axes(cb_location)
                 if aa == 0:
-                    cb = mcb.ColorbarBase(cbax, 
-                                          cmap=mtcl.cmapdict[self.ellipse_cmap],
-                                          norm=Normalize(vmin=ckmin,
-                                                         vmax=ckmax),
-                                           orientation='horizontal')
+                    if self.ellipse_cmap == 'mt_seg_bl2wh2rd':
+                        #make a color list
+                        clist = [(cc, cc ,1) 
+                                     for cc in np.arange(0, 1+1./(nseg), 1./(nseg))]+\
+                                   [(1, cc, cc) 
+                                     for cc in np.arange(1, -1./(nseg), -1./(nseg))]
+                        
+                        #make segmented colormap
+                        mt_seg_bl2wh2rd = colors.ListedColormap(clist)
+            
+                        #make bounds so that the middle is white
+                        bounds = np.arange(ckmin-ckstep, ckmax+2*ckstep, ckstep)
+                        
+                        #normalize the colors
+                        norms = colors.BoundaryNorm(bounds, mt_seg_bl2wh2rd.N)
+                        
+                        #make the colorbar
+                        cbd = mcb.ColorbarBase(cbaxd,
+                                               cmap=mt_seg_bl2wh2rd,
+                                               norm=norms,
+                                               orientation='horizontal',
+                                               ticks=bounds[1:-1])
+                    else:
+                        cb = mcb.ColorbarBase(cbax, 
+                                              cmap=mtcl.cmapdict[self.ellipse_cmap],
+                                              norm=Normalize(vmin=ckmin,
+                                                             vmax=ckmax),
+                                               orientation='horizontal')
                     cb.ax.xaxis.set_label_position('top')
                     cb.ax.xaxis.set_label_coords(.5, 1.75)
                     cb.set_label(mtplottools.ckdict[self.ellipse_colorby])
@@ -912,14 +969,21 @@ class PlotSettings(QtGui.QWidget):
         self.arrow_direction = kwargs.pop('arrow_direction', 0)
         self.arrow_lw = kwargs.pop('arrow_lw', .75)
         
+        self.cb_pt_pad = kwargs.pop('cb_pt_pad', 0.5)
+        self.cb_res_pad = kwargs.pop('cb_res_pad', 1.2)
+        
+        self.res_limits = kwargs.pop('res_limits', [0, 4])
+        if type(self.res_limits) is tuple:
+            self.res_limits = list(self.res_limits)
+        
         self.subplot_wspace = kwargs.pop('subplot_wspace', .2)
         self.subplot_hspace = kwargs.pop('subplot_hspace', .0)
         self.subplot_right = kwargs.pop('subplot_right', .98)
         self.subplot_left = kwargs.pop('subplot_left', .08)
         self.subplot_top = kwargs.pop('subplot_top', .93)
         self.subplot_bottom = kwargs.pop('subplot_bottom', .08)
-
         
+        #--> run the init function to make the gui
         self.initUI()
 
     def initUI(self):
@@ -1013,7 +1077,7 @@ class PlotSettings(QtGui.QWidget):
         
         ellipse_range_edit_step = QtGui.QLineEdit()
         try:
-            ellipse_range_edit_step.setText('{0:.2f}'.format(self.ellipse_range[0]))
+            ellipse_range_edit_step.setText('{0:.2f}'.format(self.ellipse_range[2]))
         except IndexError:
             if self.ellipse_colorby == 'skew':
                 ellipse_range_edit_step.setText('{0:.2f}'.format(3))
@@ -1035,7 +1099,6 @@ class PlotSettings(QtGui.QWidget):
         ellipse_colorby_combo.addItem('phimax')
         ellipse_colorby_combo.addItem('ellipticty')
         ellipse_colorby_combo.addItem('skew')
-        ellipse_colorby_combo.addItem('skew_seg')
         ellipse_colorby_combo.activated[str].connect(self.set_ellipse_colorby)
         
         ellipse_cmap_label = QtGui.QLabel('Ellipse Color Map')
@@ -1095,6 +1158,12 @@ class PlotSettings(QtGui.QWidget):
         arrow_threshold_edit.setText('{0:.2f}'.format(self.arrow_threshold))
         arrow_threshold_edit.textChanged[str].connect(self.set_arrow_threshold)
         
+        arrow_color_real = QtGui.QPushButton('Arrow Color Real', self)
+        arrow_color_real.clicked.connect(self.get_arrow_color_real)    
+        
+        arrow_color_imag = QtGui.QPushButton('Arrow Color Imaginary', self)
+        arrow_color_imag.clicked.connect(self.get_arrow_color_imag)        
+        
         arrow_grid = QtGui.QGridLayout()
         arrow_grid.setSpacing(10)
         
@@ -1115,7 +1184,98 @@ class PlotSettings(QtGui.QWidget):
         
         arrow_grid.addWidget(arrow_threshold_label, 2, 4)
         arrow_grid.addWidget(arrow_threshold_edit, 2, 5)
-
+        
+        arrow_grid.addWidget(arrow_color_real, 3, 1)
+        arrow_grid.addWidget(arrow_color_imag, 3, 3)
+        
+        #--> colorbar properties
+        cb_pt_label = QtGui.QLabel('PT Colorbar Pad')
+        cb_pt_edit = QtGui.QLineEdit()
+        cb_pt_edit.setText('{0:.2f}'.format(self.cb_pt_pad))
+        cb_pt_edit.textChanged[str].connect(self.set_cb_pt_pad)
+        
+        cb_res_label = QtGui.QLabel('Resistivity Colorbar Pad')
+        cb_res_edit = QtGui.QLineEdit()
+        cb_res_edit.setText('{0:.2f}'.format(self.cb_res_pad))
+        cb_res_edit.textChanged[str].connect(self.set_cb_res_pad)
+        
+        res_limits_label = QtGui.QLabel('Resistivity Limits (log scale)')
+        res_limits_min_edit = QtGui.QLineEdit()
+        res_limits_min_edit.setText('{0:.1f}'.format(self.res_limits[0]))
+        res_limits_min_edit.textChanged[str].connect(self.set_res_limits_min)
+        
+        res_limits_max_edit = QtGui.QLineEdit()
+        res_limits_max_edit.setText('{0:.1f}'.format(self.res_limits[1]))
+        res_limits_max_edit.textChanged[str].connect(self.set_res_limits_max)
+    
+        res_grid = QtGui.QGridLayout()
+        res_grid.addWidget(res_limits_min_edit, 1, 0)        
+        res_grid.addWidget(res_limits_max_edit, 1, 1)        
+        
+        cb_grid = QtGui.QGridLayout()
+        cb_grid.setSpacing(5)
+        
+        cb_grid.addWidget(cb_pt_label, 1, 0)
+        cb_grid.addWidget(cb_pt_edit, 1, 1)
+        
+        cb_grid.addWidget(cb_res_label, 1, 2)
+        cb_grid.addWidget(cb_res_edit, 1, 3)
+        
+        cb_grid.addWidget(res_limits_label, 1, 4)
+        cb_grid.addLayout(res_grid, 1, 5)
+        
+        #--> subplot parameters
+        subplot_left_label = QtGui.QLabel('Subplot Left')
+        subplot_left_edit = QtGui.QLineEdit()
+        subplot_left_edit.setText('{0:.2f}'.format(self.subplot_left))
+        subplot_left_edit.textChanged[str].connect(self.set_subplot_left)
+        
+        subplot_right_label = QtGui.QLabel('Subplot right')
+        subplot_right_edit = QtGui.QLineEdit()
+        subplot_right_edit.setText('{0:.2f}'.format(self.subplot_right))
+        subplot_right_edit.textChanged[str].connect(self.set_subplot_right)
+        
+        subplot_bottom_label = QtGui.QLabel('Subplot bottom')
+        subplot_bottom_edit = QtGui.QLineEdit()
+        subplot_bottom_edit.setText('{0:.2f}'.format(self.subplot_bottom))
+        subplot_bottom_edit.textChanged[str].connect(self.set_subplot_bottom)
+        
+        subplot_top_label = QtGui.QLabel('Subplot top')
+        subplot_top_edit = QtGui.QLineEdit()
+        subplot_top_edit.setText('{0:.2f}'.format(self.subplot_top))
+        subplot_top_edit.textChanged[str].connect(self.set_subplot_top)
+        
+        subplot_hspace_label = QtGui.QLabel('Subplot Horizontal Spacing')
+        subplot_hspace_edit = QtGui.QLineEdit()
+        subplot_hspace_edit.setText('{0:.2f}'.format(self.subplot_wspace))
+        subplot_hspace_edit.textChanged[str].connect(self.set_subplot_hspace)
+        
+        subplot_vspace_label = QtGui.QLabel('Subplot Vertical Spacing')
+        subplot_vspace_edit = QtGui.QLineEdit()
+        subplot_vspace_edit.setText('{0:.2f}'.format(self.subplot_wspace))
+        subplot_vspace_edit.textChanged[str].connect(self.set_subplot_vspace)
+        
+        subplot_grid = QtGui.QGridLayout()
+        subplot_grid.setSpacing(5)
+        
+        subplot_grid.addWidget(subplot_left_label, 1, 0)
+        subplot_grid.addWidget(subplot_left_edit, 1, 1)
+        
+        subplot_grid.addWidget(subplot_right_label, 1, 2)
+        subplot_grid.addWidget(subplot_right_edit, 1, 3)
+        
+        subplot_grid.addWidget(subplot_bottom_label, 1, 4)
+        subplot_grid.addWidget(subplot_bottom_edit, 1, 5)
+        
+        subplot_grid.addWidget(subplot_top_label, 1, 6)
+        subplot_grid.addWidget(subplot_top_edit, 1, 7)
+        
+        subplot_grid.addWidget(subplot_hspace_label, 2, 0)
+        subplot_grid.addWidget(subplot_hspace_edit, 2, 1)
+        
+        subplot_grid.addWidget(subplot_vspace_label, 2, 1)
+        subplot_grid.addWidget(subplot_vspace_edit, 2, 2)
+        
         #--> update button        
         update_button = QtGui.QPushButton('Update')
         update_button.clicked.connect(self.update_settings) 
@@ -1125,12 +1285,14 @@ class PlotSettings(QtGui.QWidget):
         vbox.addLayout(grid_line)
         vbox.addLayout(ellipse_grid)
         vbox.addLayout(arrow_grid)
+        vbox.addLayout(cb_grid)
+        #vbox.addLayout(subplot_grid)
         vbox.addWidget(update_button)
         
         self.setLayout(vbox) 
         
         self.setGeometry(300, 300, 350, 300)
-        self.resize(1350, 500)
+        self.resize(1050, 500)
         self.setWindowTitle('Plot Settings')    
         self.show()
 
@@ -1184,6 +1346,7 @@ class PlotSettings(QtGui.QWidget):
             self.ellipse_range[1] = float(text) 
         except ValueError:
             print "Enter a floating point number"
+            
     def set_ellipse_range_step(self, text):
         try:
             self.ellipse_range[2] = float(text)
@@ -1235,6 +1398,82 @@ class PlotSettings(QtGui.QWidget):
             self.arrow_direction = 0
         elif text.lower() == 'weise':
             self.arrow_direction = 1
+            
+    def get_arrow_color_real(self):
+        real_color = QtGui.QColorDialog().getColor()
+        
+        if real_color.isValid():
+            self.arrow_color_real = real_color.getRgbF()
+        else:
+            print 'Not a valid color'
+            
+    def get_arrow_color_imag(self):
+        imag_color = QtGui.QColorDialog().getColor()
+        
+        if imag_color.isValid():
+            self.arrow_color_imag = imag_color.getRgbF()
+        else:
+            print 'Not a valid color'
+            
+    def set_cb_pt_pad(self, text):
+        try:
+            self.cb_pt_pad = float(text)
+        except ValueError:
+            print "Enter a floating point number"
+            
+    def set_cb_res_pad(self, text):
+        try:
+            self.cb_res_pad = float(text)
+        except ValueError:
+            print "Enter a floating point number"
+            
+    def set_res_limits_min(self, text):
+        try:
+            self.res_limits[0] = float(text) 
+        except ValueError:
+            print "Enter a floating point number"
+            
+    def set_res_limits_max(self, text):
+        try:
+            self.res_limits[1] = float(text) 
+        except ValueError:
+            print "Enter a floating point number"
+            
+    def set_subplot_left(self, text):
+        try:
+            self.subplot_left = float(text) 
+        except ValueError:
+            print "Enter a floating point number"
+            
+    def set_subplot_right(self, text):
+        try:
+            self.subplot_right = float(text) 
+        except ValueError:
+            print "Enter a floating point number"
+            
+    def set_subplot_bottom(self, text):
+        try:
+            self.subplot_bottom = float(text) 
+        except ValueError:
+            print "Enter a floating point number"
+            
+    def set_subplot_top(self, text):
+        try:
+            self.subplot_top = float(text) 
+        except ValueError:
+            print "Enter a floating point number"
+            
+    def set_subplot_hspace(self, text):
+        try:
+            self.subplot_wspace= float(text) 
+        except ValueError:
+            print "Enter a floating point number"
+            
+    def set_subplot_vspace(self, text):
+        try:
+            self.subplot_hspace= float(text) 
+        except ValueError:
+            print "Enter a floating point number"
             
     def update_settings(self):
         self.settings_updated.emit()
