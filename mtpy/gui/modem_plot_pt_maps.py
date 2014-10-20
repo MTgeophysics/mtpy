@@ -270,7 +270,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.modem_data.read_data_file(fn)
         self.modem_data_fn = fn
         
-        self.dirpath = os.path.dirname(fn)
+        self.dir_path = os.path.dirname(fn)
         
         self.period_list = sorted(self.modem_data.period_list)
         self.period_dict = dict([('{0:.5f}'.format(key), value) for value, key
@@ -290,7 +290,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         
         """        
 
-        fn_dialog = QtGui.QFileDialog()
+        fn_dialog = QtGui.QFileDialog(directory=self.dir_path)
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM model file',
                                        filter='(*.rho);; (*.ws)'))
                                    
@@ -312,7 +312,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         get response file name
         """
         
-        fn_dialog = QtGui.QFileDialog(directory=self.dirpath)
+        fn_dialog = QtGui.QFileDialog(directory=self.dir_path)
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM response file',
                                        filter='*.dat'))
                                        
@@ -322,21 +322,20 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.plot()
         
     def show_settings(self):
-#        kw_dict = {'fs':self.fs,
-#                   'lw':self.lw,
-#                   'ms':self.ms,
-#                   'e_capthick':self.e_capthick,
-#                   'e_capsize':self.e_capsize,
-#                   'cted':self.cted}
+        """
+        show setting window
+        """
         self.settings_window = PlotSettings(None, **self.__dict__)
         self.settings_window.show()
         self.settings_window.settings_updated.connect(self.update_settings)
         
     def update_settings(self):
+        """
+        update all the new plot settings
+        """
         
         for attr in sorted(self.settings_window.__dict__.keys()):
             setattr(self, attr, self.settings_window.__dict__[attr])
-            print attr, self.__dict__[attr]
             
         self.plot()
         
@@ -508,11 +507,8 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
             north_max = self.pt_data_arr['north'].max()+self.pad_north
 
             self.ns_limits = (north_min, north_max)
-        print self.ew_limits, self.ns_limits, self.pad_east, self.pad_north
         #-------------plot phase tensors------------------------------------                    
         data_ii = self.period_dict[self.plot_period]
-        
-        print data_ii, type(self.pt_data_arr)
         
         self.figure.clf()
                          
@@ -878,25 +874,30 @@ class PlotSettings(QtGui.QWidget):
     def __init__(self, parent, **kwargs):
         super(PlotSettings, self).__init__(parent)
         
-        self.fs = kwargs.pop('fs', 10)
+        self.font_size = kwargs.pop('font_size', 10)
         
         self.map_scale = kwargs.pop('map_scale', 'km')
         
         if self.map_scale == 'km': 
-            self.ellipse_size = kwargs.pop('ellipse_size', .5)
+            self.ellipse_size = kwargs.pop('ellipse_size', 1)
             self.arrow_head_length = kwargs.pop('arrow_head_length', .025)
             self.arrow_head_width = kwargs.pop('arrow_head_width', .025)
-            self.arrow_size = kwargs.pop('arrow_size', .5)
-            self.pad_east = kwargs.pop('pad_east', 1)
-            self.pad_north = kwargs.pop('pad_north', 1)
+            self.arrow_size = kwargs.pop('arrow_size', 1)
+            self.ew_limits = kwargs.pop('ew_limits', [-10, 10])
+            self.ns_limits = kwargs.pop('ns_limits', [-10, 10])
             
         if self.map_scale == 'm': 
             self.ellipse_size = kwargs.pop('ellipse_size', 500)
             self.arrow_head_length = kwargs.pop('arrow_head_length', 50)
             self.arrow_head_width = kwargs.pop('arrow_head_width', 50)
             self.arrow_size = kwargs.pop('arrow_size', 500)
-            self.pad_east = kwargs.pop('pad_east', 1000)
-            self.pad_north = kwargs.pop('pad_north', 1000)
+            self.ew_limits = kwargs.pop('ew_limits', [-10000, 10000])
+            self.ns_limits = kwargs.pop('ns_limits', [-10000, 10000])
+            
+        if type(self.ns_limits) is tuple:
+            self.ns_limits = list(self.ns_limits)
+        if type(self.ew_limits) is tuple:
+            self.ew_limits = list(self.ew_limits)
             
         self.ellipse_cmap = kwargs.pop('ellipse_cmap', 'mt_bl2wh2rd')
         self.ellipse_range = kwargs.pop('ellipse_range', [0, 90, 5])
@@ -925,24 +926,45 @@ class PlotSettings(QtGui.QWidget):
         #--> line properties
         fs_label = QtGui.QLabel('Font Size')
         fs_edit = QtGui.QLineEdit()
-        fs_edit.setText('{0:.1f}'.format(self.fs))
+        fs_edit.setText('{0:.1f}'.format(self.font_size))
         fs_edit.textChanged[str].connect(self.set_text_fs)
         
+        #--> Map properties
         mapscale_label = QtGui.QLabel('Map Scale')
         mapscale_combo = QtGui.QComboBox()
         mapscale_combo.addItem('km')
         mapscale_combo.addItem('m')
         mapscale_combo.activated[str].connect(self.set_mapscale) 
         
-        pad_east_label = QtGui.QLabel('Map Pad East')
-        pad_east_edit = QtGui.QLineEdit()
-        pad_east_edit.setText('{0:.3f}'.format(self.pad_east))
-        pad_east_edit.textChanged[str].connect(self.set_pad_east)
+        ew_limits_label = QtGui.QLabel('E-W Limits (min, max)')
+        ew_limits_min_edit = QtGui.QLineEdit()
+        ew_limits_min_edit.setText('{0:.3f}'.format(self.ew_limits[0]))
+        ew_limits_min_edit.textChanged[str].connect(self.set_ew_limits_min)
         
-        pad_north_label = QtGui.QLabel('Map Pad North')
-        pad_north_edit = QtGui.QLineEdit()
-        pad_north_edit.setText('{0:.3f}'.format(self.pad_north))
-        pad_north_edit.textChanged[str].connect(self.set_pad_north)
+        ew_limits_max_edit = QtGui.QLineEdit()
+        ew_limits_max_edit.setText('{0:.3f}'.format(self.ew_limits[1]))
+        ew_limits_max_edit.textChanged[str].connect(self.set_ew_limits_max)
+        
+        ew_limits_grid = QtGui.QGridLayout()
+        ew_limits_grid.setSpacing(5)
+        ew_limits_grid.addWidget(ew_limits_label, 1, 0)
+        ew_limits_grid.addWidget(ew_limits_min_edit, 1, 1)
+        ew_limits_grid.addWidget(ew_limits_max_edit, 1, 2)
+        
+        ns_limits_label = QtGui.QLabel('N-S Limits (min, max)')
+        ns_limits_min_edit = QtGui.QLineEdit()
+        ns_limits_min_edit.setText('{0:.3f}'.format(self.ns_limits[0]))
+        ns_limits_min_edit.textChanged[str].connect(self.set_ns_limits_min)
+        
+        ns_limits_max_edit = QtGui.QLineEdit()
+        ns_limits_max_edit.setText('{0:.3f}'.format(self.ns_limits[1]))
+        ns_limits_max_edit.textChanged[str].connect(self.set_ns_limits_max)
+        
+        ns_limits_grid = QtGui.QGridLayout()
+        ns_limits_grid.setSpacing(5)
+        ns_limits_grid.addWidget(ns_limits_label, 1, 0)
+        ns_limits_grid.addWidget(ns_limits_min_edit, 1, 1)
+        ns_limits_grid.addWidget(ns_limits_max_edit, 1, 2)
         
         grid_line = QtGui.QGridLayout()
         grid_line.setSpacing(10)
@@ -953,11 +975,9 @@ class PlotSettings(QtGui.QWidget):
         grid_line.addWidget(mapscale_label, 1, 2)
         grid_line.addWidget(mapscale_combo, 1, 3)
         
-        grid_line.addWidget(pad_east_label, 1, 4)
-        grid_line.addWidget(pad_east_edit, 1, 5)
+        grid_line.addLayout(ew_limits_grid, 1, 4)
         
-        grid_line.addWidget(pad_north_label, 1, 6)
-        grid_line.addWidget(pad_north_edit, 1, 7)
+        grid_line.addLayout(ns_limits_grid, 1, 5)
         
         #--> ellipse properties
         ellipse_size_label = QtGui.QLabel('Ellipse Size')
@@ -1043,94 +1063,68 @@ class PlotSettings(QtGui.QWidget):
         ellipse_grid.addWidget(ellipse_cmap_label, 1, 6)
         ellipse_grid.addWidget(ellipse_cmap_combo, 1, 7)
         
-        #--> plot limits
-#        ylimr_xx_label = QtGui.QLabel('Res_xx')
-#        ylimr_xx_edit = QtGui.QLineEdit()
-#        ylimr_xx_edit.setText('{0}'.format(self.res_xx_limits))
-#        ylimr_xx_edit.textChanged[str].connect(self.set_text_res_xx) 
-#        
-#        ylimr_xy_label = QtGui.QLabel('Res_xy')
-#        ylimr_xy_edit = QtGui.QLineEdit()
-#        ylimr_xy_edit.setText('{0}'.format(self.res_xy_limits))
-#        ylimr_xy_edit.textChanged[str].connect(self.set_text_res_xy) 
-#        
-#        ylimr_yx_label = QtGui.QLabel('Res_yx')
-#        ylimr_yx_edit = QtGui.QLineEdit()
-#        ylimr_yx_edit.setText('{0}'.format(self.res_yx_limits))
-#        ylimr_yx_edit.textChanged[str].connect(self.set_text_res_yx) 
-#        
-#        ylimr_yy_label = QtGui.QLabel('Res_yy')
-#        ylimr_yy_edit = QtGui.QLineEdit()
-#        ylimr_yy_edit.setText('{0}'.format(self.res_yy_limits))
-#        ylimr_yy_edit.textChanged[str].connect(self.set_text_res_yy)  
-#        
-#        ylimp_xx_label = QtGui.QLabel('phase_xx')
-#        ylimp_xx_edit = QtGui.QLineEdit()
-#        ylimp_xx_edit.setText('{0}'.format(self.phase_xx_limits))
-#        ylimp_xx_edit.textChanged[str].connect(self.set_text_phase_xx) 
-#        
-#        ylimp_xy_label = QtGui.QLabel('phase_xy')
-#        ylimp_xy_edit = QtGui.QLineEdit()
-#        ylimp_xy_edit.setText('{0}'.format(self.phase_xy_limits))
-#        ylimp_xy_edit.textChanged[str].connect(self.set_text_phase_xy) 
-#        
-#        ylimp_yx_label = QtGui.QLabel('phase_yx')
-#        ylimp_yx_edit = QtGui.QLineEdit()
-#        ylimp_yx_edit.setText('{0}'.format(self.phase_yx_limits))
-#        ylimp_yx_edit.textChanged[str].connect(self.set_text_phase_yx) 
-#        
-#        ylimp_yy_label = QtGui.QLabel('phase_yy')
-#        ylimp_yy_edit = QtGui.QLineEdit()
-#        ylimp_yy_edit.setText('{0}'.format(self.phase_yy_limits))
-#        ylimp_yy_edit.textChanged[str].connect(self.set_text_phase_yy)        
-#        
-#        limits_grid = QtGui.QGridLayout()
-#        limits_grid.setSpacing(10)
-#        
-#        limits_label = QtGui.QLabel('Plot Limits: (Res=Real, Phase=Imaginary)'
-#                                    ' --> input on a linear scale')
-#        
-#        limits_grid.addWidget(limits_label, 1, 0, 1, 7)
-#        
-#        limits_grid.addWidget(ylimr_xx_label, 2, 0)
-#        limits_grid.addWidget(ylimr_xx_edit, 2, 1)
-#        limits_grid.addWidget(ylimr_xy_label, 2, 2)
-#        limits_grid.addWidget(ylimr_xy_edit, 2, 3)
-#        limits_grid.addWidget(ylimr_yx_label, 2, 4)
-#        limits_grid.addWidget(ylimr_yx_edit, 2, 5)
-#        limits_grid.addWidget(ylimr_yy_label, 2, 6)
-#        limits_grid.addWidget(ylimr_yy_edit, 2, 7)
-#        
-#        limits_grid.addWidget(ylimp_xx_label, 3, 0)
-#        limits_grid.addWidget(ylimp_xx_edit, 3, 1)
-#        limits_grid.addWidget(ylimp_xy_label, 3, 2)
-#        limits_grid.addWidget(ylimp_xy_edit, 3, 3)
-#        limits_grid.addWidget(ylimp_yx_label, 3, 4)
-#        limits_grid.addWidget(ylimp_yx_edit, 3, 5)
-#        limits_grid.addWidget(ylimp_yy_label, 3, 6)
-#        limits_grid.addWidget(ylimp_yy_edit, 3, 7)
-#        
-#        #--> legend properties
-#        legend_pos_label = QtGui.QLabel('Legend Position')
-#        legend_pos_edit = QtGui.QLineEdit()
-#        legend_pos_edit.setText('{0}'.format(self.legend_pos))
-#        legend_pos_edit.textChanged[str].connect(self.set_text_legend_pos)
-#        
-#        legend_grid = QtGui.QGridLayout()
-#        legend_grid.setSpacing(10)
-#        
-#        legend_grid.addWidget(QtGui.QLabel('Legend Properties:'), 1, 0)
-#        legend_grid.addWidget(legend_pos_label, 1, 2,)
-#        legend_grid.addWidget(legend_pos_edit, 1, 3)
+        #--> arrow settings
+        arrow_size_label = QtGui.QLabel('Induction Arrow Size')
+        arrow_size_edit = QtGui.QLineEdit()
+        arrow_size_edit.setText('{0:.2f}'.format(self.arrow_size))
+        arrow_size_edit.textChanged[str].connect(self.set_arrow_size)
         
+        arrow_lw_label = QtGui.QLabel('Arrow Line Width')
+        arrow_lw_edit = QtGui.QLineEdit()
+        arrow_lw_edit.setText('{0:.2f}'.format(self.arrow_lw))
+        arrow_lw_edit.textChanged[str].connect(self.set_arrow_lw)
+        
+        arrow_head_length_label = QtGui.QLabel('Arrow Head Size')
+        arrow_head_length_edit = QtGui.QLineEdit()
+        arrow_head_length_edit.setText('{0:.2f}'.format(self.arrow_head_length))
+        arrow_head_length_edit.textChanged[str].connect(self.set_arrow_head_length)
+        
+        arrow_head_width_label = QtGui.QLabel('Arrow Head Width')
+        arrow_head_width_edit = QtGui.QLineEdit()
+        arrow_head_width_edit.setText('{0:.2f}'.format(self.arrow_head_width))
+        arrow_head_width_edit.textChanged[str].connect(self.set_arrow_head_width)
+        
+        arrow_direction_label = QtGui.QLabel('Arrow Direction')
+        arrow_direction_combo = QtGui.QComboBox()
+        arrow_direction_combo.addItem('Parkinson')
+        arrow_direction_combo.addItem('Weise')
+        arrow_direction_combo.activated[str].connect(self.set_arrow_direction)
+        
+        arrow_threshold_label = QtGui.QLabel('Arrow Threshold')
+        arrow_threshold_edit = QtGui.QLineEdit()
+        arrow_threshold_edit.setText('{0:.2f}'.format(self.arrow_threshold))
+        arrow_threshold_edit.textChanged[str].connect(self.set_arrow_threshold)
+        
+        arrow_grid = QtGui.QGridLayout()
+        arrow_grid.setSpacing(10)
+        
+        arrow_grid.addWidget(arrow_size_label, 1, 0)
+        arrow_grid.addWidget(arrow_size_edit, 1, 1)
+        
+        arrow_grid.addWidget(arrow_lw_label, 1, 2)
+        arrow_grid.addWidget(arrow_lw_edit, 1, 3)
+        
+        arrow_grid.addWidget(arrow_direction_label, 1, 4)
+        arrow_grid.addWidget(arrow_direction_combo, 1, 5)
+        
+        arrow_grid.addWidget(arrow_head_length_label, 2, 0)
+        arrow_grid.addWidget(arrow_head_length_edit, 2, 1)
+        
+        arrow_grid.addWidget(arrow_head_width_label, 2, 2)
+        arrow_grid.addWidget(arrow_head_width_edit, 2, 3)
+        
+        arrow_grid.addWidget(arrow_threshold_label, 2, 4)
+        arrow_grid.addWidget(arrow_threshold_edit, 2, 5)
+
+        #--> update button        
         update_button = QtGui.QPushButton('Update')
-        update_button.clicked.connect(self.update_settings)        
+        update_button.clicked.connect(self.update_settings) 
         
+        #--> set the final layout as a vertical box
         vbox = QtGui.QVBoxLayout()
         vbox.addLayout(grid_line)
         vbox.addLayout(ellipse_grid)
-#        vbox.addLayout(limits_grid)
-#        vbox.addLayout(legend_grid)
+        vbox.addLayout(arrow_grid)
         vbox.addWidget(update_button)
         
         self.setLayout(vbox) 
@@ -1142,57 +1136,105 @@ class PlotSettings(QtGui.QWidget):
 
     def set_text_fs(self, text):
         try:
-            self.fs = float(text)
+            self.font_size = float(text)
         except ValueError:
-            print "Enter a float point number"
+            print "Enter a floating point number"
             
     def set_mapscale(self, text):
         self.map_scale = str(text)
             
-    def set_pad_east(self, text):
+    def set_ew_limits_min(self, text):
         try:
-            self.pad_east = float(text)
+            self.ew_limits[0] = float(text)
         except ValueError:
-            print "Enter a float point number"
-
-    
-    def set_pad_north(self, text):
+            print "Enter a floating point number"
+            
+    def set_ew_limits_max(self, text):
         try:
-            self.pad_north = float(text)
+            self.ew_limits[1] = float(text)
         except ValueError:
-            print "Enter a float point number"
+            print "Enter a floating point number"
+            
+    def set_ns_limits_min(self, text):
+        try:
+            self.ns_limits[0] = float(text)
+        except ValueError:
+            print "Enter a floating point number"
+            
+    def set_ns_limits_max(self, text):
+        try:
+            self.ns_limits[1] = float(text)
+        except ValueError:
+            print "Enter a floating point number"
             
     def set_ellipse_size(self, text):
         try:
             self.ellipse_size = float(text)
         except ValueError:
-            print "Enter a float point number"
+            print "Enter a floating point number"
             
     def set_ellipse_range_min(self, text):
         try:
             self.ellipse_range[0] = float(text) 
         except ValueError:
-            print "Enter a float point number"
+            print "Enter a floating point number"
             
     def set_ellipse_range_max(self, text):
         try:
             self.ellipse_range[1] = float(text) 
         except ValueError:
-            print "Enter a float point number"
+            print "Enter a floating point number"
     def set_ellipse_range_step(self, text):
         try:
             self.ellipse_range[2] = float(text)
         except IndexError:
             self.ellipse_range.append(float(text))
         except ValueError:
-            print "Enter a float point number"
+            print "Enter a floating point number"
             
     def set_ellipse_cmap(self, text):
         self.ellipse_cmap = str(text)
         
     def set_ellipse_colorby(self, text):
         self.ellipse_colorby = str(text)
+        
+    def set_arrow_size(self, text):
+        try:
+            self.arrow_size = float(text)
+        except ValueError:
+            print "Enter a floating point number"
             
+    def set_arrow_lw(self, text):
+        try:
+            self.arrow_lw = float(text)
+        except ValueError:
+            print "Enter a floating point number"
+            
+    def set_arrow_threshold(self, text):
+        try:
+            self.arrow_threshold = float(text)
+        except ValueError:
+            print "Enter a floating point number"
+            
+    def set_arrow_head_length(self, text):
+        try:
+            self.arrow_head_length = float(text)
+        except ValueError:
+            print "Enter a floating point number"
+            
+    def set_arrow_head_width(self, text):
+        try:
+            self.arrow_head_width = float(text)
+        except ValueError:
+            print "Enter a floating point number"
+            
+    def set_arrow_direction(self, text):
+        text = str(text)
+        
+        if text.lower() == 'parkinson':
+            self.arrow_direction = 0
+        elif text.lower() == 'weise':
+            self.arrow_direction = 1
             
     def update_settings(self):
         self.settings_updated.emit()
