@@ -467,9 +467,9 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         #set arrow properties
         self._arrow_dict = kwargs.pop('arrow_dict', {'color' : ('k', 'b'),
                                                      'direction' : 0,
-                                                     'head_length' : 0,
-                                                     'head_width' : 0,
-                                                     'lw' : .75})
+                                                     'head_length' : .03,
+                                                     'head_width' : .03,
+                                                     'lw' : .5})
                            
         self._read_arrow_dict()
         
@@ -619,8 +619,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         
         #--> plot tipper
         try:
-            self.axt = self.fig.add_subplot(gs[pdict['tip'], :], 
-                                            sharex=self.axr)
+            self.axt = self.fig.add_subplot(gs[pdict['tip'], :], )
             self.axt.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
         except KeyError:
             pass
@@ -757,14 +756,14 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         if self._plot_tipper.find('y') == 0:
             tp = self._mt.get_Tipper()
             
-            txr = tp.mag_real*np.cos(tp.ang_real*np.pi/180+\
+            txr = tp.mag_real*np.sin(tp.ang_real*np.pi/180+\
                                      np.pi*self.arrow_direction)
-            tyr = tp.mag_real*np.sin(tp.ang_real*np.pi/180+\
+            tyr = tp.mag_real*np.cos(tp.ang_real*np.pi/180+\
                                      np.pi*self.arrow_direction)
     
-            txi = tp.mag_imag*np.cos(tp.ang_imag*np.pi/180+\
+            txi = tp.mag_imag*np.sin(tp.ang_imag*np.pi/180+\
                                      np.pi*self.arrow_direction)
-            tyi = tp.mag_imag*np.sin(tp.ang_imag*np.pi/180+\
+            tyi = tp.mag_imag*np.cos(tp.ang_imag*np.pi/180+\
                                      np.pi*self.arrow_direction)
             
             nt = len(txr)
@@ -773,35 +772,20 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             tiplabel = []
             
             for aa in range(nt):
-                xlenr = txr[aa]*self.period[aa]
-                xleni = txi[aa]*self.period[aa]
+                xlenr = txr[aa]*np.log10(self.period[aa])
+                xleni = txi[aa]*np.log10(self.period[aa])
                 
-                #scale the arrow head height and width to fit in a log scale
-                if np.log10(self.period[aa]) < 0:
-                    hwidth = self.arrow_head_width*\
-                                10**(np.floor(np.log10(self.period[aa])))
-                    hlength = self.arrow_head_length*\
-                                 10**(np.floor(np.log10(self.period[aa])))
-                else:
-                    hwidth = self.arrow_head_width/\
-                                 10**(np.floor(np.log10(self.period[aa])))
-                    hlength = self.arrow_head_length/\
-                                 10**(np.floor(np.log10(self.period[aa]))) 
-                if np.log10(self.period[aa])<0:
-                    alw = self.arrow_lw*self.period[aa]
-                else:
-                    alw = self.arrow_lw
                 #--> plot real arrows
                 if self._plot_tipper.find('r') > 0:
-                    self.axt.arrow(self.period[aa],
+                    self.axt.arrow(np.log10(self.period[aa]),
                                    0,
                                    xlenr,
                                    tyr[aa],
-                                   lw=alw,
+                                   lw=self.arrow_lw,
                                    facecolor=self.arrow_color_real,
                                    edgecolor=self.arrow_color_real,
-                                   head_width=hwidth,
-                                   head_length=hlength,
+                                   head_width=self.arrow_head_width,
+                                   head_length=self.arrow_head_length,
                                    length_includes_head=False)
                     
                     if aa == 0:
@@ -811,13 +795,15 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                                    
                 #--> plot imaginary arrows
                 if self._plot_tipper.find('i') > 0:               
-                    self.axt.arrow(self.period[aa],
+                    self.axt.arrow(np.log10(self.period[aa]),
                                    0,
                                    xleni,
                                    tyi[aa],
-                                   lw=alw,
+                                   lw=self.arrow_lw,
                                    facecolor=self.arrow_color_imag,
                                    edgecolor=self.arrow_color_imag,
+                                   head_width=self.arrow_head_width,
+                                   head_length=self.arrow_head_length,
                                    length_includes_head=False)
                     if aa == 0:              
                         line2 = self.axt.plot(0, 0, self.arrow_color_imag)
@@ -825,9 +811,9 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                         tiplabel.append('imag')
                 
             #make a line at 0 for reference
-            self.axt.plot(self.period, [0]*nt, 'k', lw=.5)
+            self.axt.plot(np.log10(self.period), [0]*nt, 'k', lw=.5)
         
-          
+            
             self.axt.legend(tiplist, tiplabel,
                             loc='upper left',
                             markerscale=1,
@@ -837,21 +823,41 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                             borderpad=.1,
                             prop={'size':self.font_size})
 
-            #set axis properties            
+            #set axis properties  
+            
+            self.axt.set_xlim(np.log10(self.xlimits[0]),
+                               np.log10(self.xlimits[1]))
+                               
+            tklabels = []
+            xticks = []
+
+            for tk in self.axt.get_xticks():
+                try:
+                    tklabels.append(mtpl.labeldict[tk])
+                    xticks.append(tk)
+                except KeyError:
+                    pass
+            self.axt.set_xticks(xticks)
+            self.axt.set_xticklabels(tklabels, 
+                                      fontdict={'size':self.font_size})
+            self.axt.set_xlabel('Period (s)', fontdict=fontdict)
+            #need to reset the xlimits caouse they get reset when calling
+            #set_ticks for some reason
+            self.axt.set_xlim(np.log10(self.xlimits[0]),
+                               np.log10(self.xlimits[1]))
+                               
             self.axt.yaxis.set_major_locator(MultipleLocator(.2))               
             self.axt.yaxis.set_minor_locator(MultipleLocator(.1))               
             self.axt.set_xlabel('Period (s)', fontdict=fontdict)
             self.axt.set_ylabel('Tipper', fontdict=fontdict)    
             
-            self.axt.set_xscale('log')
+            #self.axt.set_xscale('log')
             if self.tipper_limits is None:
-                tmax = max([np.sqrt(txr.max()**2+tyr.max()**2),
-                            np.sqrt(txi.max()**2+tyi.max()**2)])
+                tmax = max([tyr.max(), tyi.max()])
                 if tmax > 1:
                     tmax = .899
                             
-                tmin = -min([np.sqrt(txr.min()**2+tyr.min()**2),
-                            np.sqrt(txi.min()**2+tyi.min()**2)])
+                tmin = min([tyr.min(), tyi.min()])
                 if tmin < -1:
                     tmin = -.899
                             
@@ -1020,6 +1026,11 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                                     lw=self.lw, 
                                     y_error=sk_err, 
                                     e_capsize=self.marker_size)
+                                    
+            self.axsk.plot(self.period, [3]*len(self.period), '-k',
+                           lw = self.lw)
+            self.axsk.plot(self.period, [-3]*len(self.period), '-k',
+                           lw = self.lw)
                                     
             if self.skew_limits is None:
                 self.skew_limits = (-9, 9)
@@ -1391,7 +1402,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         
 
     def save_plot(self, save_fn, file_format='pdf', orientation='portrait', 
-                  fig_fig_dpi=None, close_plot='y'):
+                  fig_dpi=None, close_plot='y'):
         """
         save_plot will save the figure to save_fn.
         
@@ -1434,12 +1445,12 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             
         """
 
-        if fig_fig_dpi == None:
-            fig_fig_dpi = self.fig_dpi
+        if fig_dpi == None:
+            fig_dpi = self.fig_dpi
             
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
-            self.fig.savefig(save_fn, fig_dpi=fig_fig_dpi, format=file_format,
+            self.fig.savefig(save_fn, fig_dpi=fig_dpi, format=file_format,
                              orientation=orientation)
             plt.clf()
             plt.close(self.fig)
@@ -1447,7 +1458,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         else:
             save_fn = os.path.join(save_fn, self._mt.station+'_ResPhase.'+
                                     file_format)
-            self.fig.savefig(save_fn, fig_dpi=fig_fig_dpi, format=file_format,
+            self.fig.savefig(save_fn, fig_dpi=fig_dpi, format=file_format,
                         orientation=orientation)
         
         if close_plot == 'y':

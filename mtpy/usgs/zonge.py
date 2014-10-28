@@ -205,7 +205,7 @@ class ZongeMTFT():
         #--> survey parameters
         self.Unit_Length = 'm'
         self.Chn_Cmp = ['Hx', 'Hy', 'Hz', 'Ex', 'Ey']
-        self.Chn_ID = ['2314', '2324', '2334', '4', '5']
+        self.Chn_ID = ['2314', '2324', '2334', '1', '1']
         self.Chn_Gain = [1, 1, 1, 1, 1]
         self.Chn_Length = [100]*5
         self.Chn_dict = dict([(chkey, [cid, cg, cl]) for chkey, cid, cg, cl in 
@@ -1922,9 +1922,9 @@ class ZongeMTAvg():
                     ll = self.freq_dict[self.comp_dict[ikey]['freq'][kk]]
                     
                     if self.z_coordinate == 'up':
-                        new_Tipper.tipper[ll, ii, jj] += -1*(tzr+tzi*1j)
+                        new_Tipper.tipper[ll, ii, jj] = -1*(tzr+tzi*1j)
                     else:
-                        new_Tipper.tipper[ll, ii, jj] += tzr+tzi*1j
+                        new_Tipper.tipper[ll, ii, jj] = tzr+tzi*1j
                     #error estimation
                     new_Tipper.tippererr[ll,ii, jj] += \
                                 self.comp_dict[ikey]['ares.%err'][kk]*\
@@ -1932,10 +1932,6 @@ class ZongeMTAvg():
                 
             new_Tipper.freq = sorted(self.freq_dict.keys())
             self.Tipper = new_Tipper
-            
-            #apparently need to average the outputs from the two .avg files                                         
-            self.Tipper.tipper /= 2.
-            self.Tipper.tippererr / 2.
            
         else:
             self.nfreq_tipper = nz
@@ -1951,9 +1947,9 @@ class ZongeMTAvg():
                                               self.comp_dict[ikey]['z.phz'][:nz])
                 
                 if self.z_coordinate == 'up':
-                    tipper[:, ii, jj] += -1*(tzr+tzi*1j)
+                    tipper[:, ii, jj] = -1*(tzr+tzi*1j)
                 else:
-                    tipper[:, ii, jj] += tzr+tzi*1j
+                    tipper[:, ii, jj] = tzr+tzi*1j
                 tippererr[:, ii, jj] = self.comp_dict[ikey]['ares.%err'][:nz]*\
                                                      .05*np.sqrt(tzr**2+tzi**2)
                     

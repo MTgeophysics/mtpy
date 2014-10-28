@@ -20,8 +20,11 @@ setup_kwargs = {}
 # by adding :func_name after the module name, and the name of the script
 # can be customized before the equals sign.
 
-setup_kwargs['entry_points'] = {'console_scripts': [
-        'ws2vtk = mtpy.utils.ws2vtk:main']}
+setup_kwargs['entry_points'] = {'console_scripts': 
+                    ['ws2vtk = mtpy.utils.ws2vtk:main',
+                     'modem_plot_response = mtpy.gui.modem_plot_response:main',
+                     'modem_plot_pt_maps = mtpy.gui.modem_plot_pt_maps:main',
+                     'modem2vtk = mtpy.utils.modem2vtk:main']}
 
 # But many people will not have setuptools installed, so we need to handle
 # the default Python installation, which only has Distutils:
@@ -47,8 +50,8 @@ setup_kwargs['packages'] = ['mtpy',
                             'mtpy.analysis',
                             'mtpy.test',
                             'mtpy.uofa',
-							'mtpy.usgs'
-                           ]
+                            'mtpy.usgs',
+					'mtpy.gui']
 
 	
 

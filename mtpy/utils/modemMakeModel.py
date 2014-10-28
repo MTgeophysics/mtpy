@@ -11,19 +11,19 @@ plot = True
 
 
 # parameters:
-n_xpadding = 6
+n_xpadding = 10
 n_ypadding = 6
 
 #number of vertical padding layers is set to 3 !
 #factor with which the padding stretches outside the central rectangle grid
 padding_stretch = 1.2
 
-n_layers = 35
+n_layers = 45
 
 #determine minimum block sizes
 #used in the inner rectangle - constant widths
-dx = 650
-dy = 750
+dx = 300
+dy = 350
 #region around stations discretised with these sizes
 #outside, the grid steps will be extended exponentially
 #the size of padding is determined by  the numbers of cells as defined above
@@ -32,16 +32,26 @@ dy = 750
 n_maximum_gridshifts = 123
 
 #depth of first layer
-z0 = 500
+z0 = 50
 
 #total model depth in meters
-model_depth = 80000
+model_depth = 200000
 
 #stretching factor for the whole model extension
-model_extension_factor = 3
+model_extension_factor = 1
 
 #starting resistivity value for homog. halfspace setup
 rho0 = 100.
+
+#define layered/1d model as input
+inmodel1d = np.zeros((4,2))
+inmodel1d[0] = 0,0.1
+inmodel1d[1] = 250,100
+inmodel1d[2] = 2000,10
+inmodel1d[3] = 4000,1000
+
+#inmodel1d = None
+
 #==============================================================================
 #allow rotation of the grid along a known geo electrical strike angle
 # X,Y will be rotated to X',Y' with X' along strike
@@ -134,6 +144,7 @@ y_shifts = 0
 
 
 while all_points_in_single_cell is False:
+    #stop after a finite number of steps
     if n_shifts > n_maximum_gridshifts:
         break
 
@@ -142,7 +153,7 @@ while all_points_in_single_cell is False:
     offset_x = x_shifts * dx/shifting_fraction
     offset_y = y_shifts * dy/shifting_fraction
 
-    if n_shifts >0:
+    if n_shifts > 0:
         print '{0} shift(s): x-offset {1} m - y-offset {2} m'.format(n_shifts,offset_x,offset_y)
 
 
@@ -275,8 +286,8 @@ for idx_pad in range(n_zpadding-1):
 total_padding = np.sum(padding)
 pad_ratio = total_padding/model_depth
 
-if pad_ratio < 1:
-    padding = list(np.array(padding)/pad_ratio)
+if pad_ratio < 1.5:
+    padding = list(np.array(padding)/pad_ratio*1.5)
 if pad_ratio >2 :
     padding = list(np.array(padding)/pad_ratio*2)
 
@@ -326,11 +337,23 @@ for idx_z in range(len(thicknesses)):
     z_string = ''
     #empty line before each layer:
     z_string += '\n'
+    resistivity = rho0
+
+    if inmodel1d is not None:
+        layertop_depth = grid_z_points[idx_z]
+
+        layertop_modelboundary_distance = layertop_depth-inmodel1d[:,0]
+        layertop_idx = (np.abs(layertop_modelboundary_distance)).argmin()
+        if layertop_modelboundary_distance[layertop_idx] < 0:
+            layertop_idx -= 1
+        resistivity = inmodel1d[layertop_idx,1]
+
+
 
     for idx_y in range(len(yblocks)):
         y_string = ''
         for idx_x in range(len(xblocks)):
-            x_string = '{0:.5E}  '.format(np.log(rho0))
+            x_string = '{0:.5E}  '.format(np.log(resistivity))
             y_string += x_string
         y_string += '\n'
         z_string += y_string
@@ -351,7 +374,10 @@ Fout.close()
 def plotgrid(stations,grid_x,grid_y,grid_z=None, n_xpadding = None, n_y_padding=None, n_zpadding_layers = None):
     ion()
     close('all')
+
     
+    equal = True
+    equal = False
 
     grid_x = [i/1000. for i in grid_x]
     grid_y = [i/1000. for i in grid_y]
@@ -361,10 +387,18 @@ def plotgrid(stations,grid_x,grid_y,grid_z=None, n_xpadding = None, n_y_padding=
     #ax = fig.gca()
     fig = figure(figsize=(8, 6))
     if  grid_z is not None:
-        ax = subplot2grid((1, 4), (0, 0), colspan=3,aspect='equal')
+        colspan = 3
     else:
-        ax = subplot2grid((1, 4), (0, 0), colspan=4,aspect='equal')
-    
+        colspan = 4
+
+    if equal == True:
+        ax = subplot2grid((1, 4), (0, 0), colspan=colspan,aspect='equal')
+    else:
+        ax = subplot2grid((1, 4), (0, 0), colspan=colspan,aspect='auto')
+
+
+
+
 
     #ax = subplot(1,2,1)
     ax.scatter(stations[:,1]/1000.,stations[:,0]/1000.,c='r')
@@ -402,7 +436,9 @@ def plotgrid(stations,grid_x,grid_y,grid_z=None, n_xpadding = None, n_y_padding=
     ax.set_xlabel('Easting (Y-coordinate) in km')
     ax.set_ylabel('Northing (X-coordinate) in km')
     ax.set_title('Model geometry (origin at {0:.1f},{1:.1f})'.format(xmin_padded,ymin_padded))
-    ax.set_aspect('equal',adjustable='box')
+    
+    if equal == True:
+        ax.set_aspect('equal',adjustable='box')
     draw()
 
     if grid_z is not None:
@@ -410,7 +446,11 @@ def plotgrid(stations,grid_x,grid_y,grid_z=None, n_xpadding = None, n_y_padding=
         grid_z = [-i/1000. for i in grid_z]
         bottom_index = len(grid_z) - n_zpadding_layers -1
         
-        ax2 = subplot2grid((1, 4), (0, 3),aspect='equal')
+        if equal == True:
+            ax2 = subplot2grid((1, 4), (0, 3),aspect='equal')
+        else:
+            ax2 = subplot2grid((1, 4), (0, 3),aspect='auto')
+
         #fig2 = figure(2)
         #ax2 = fig2.gca()
         #ax2 = subplot(1,2,2)
