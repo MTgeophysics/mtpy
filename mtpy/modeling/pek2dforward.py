@@ -132,10 +132,10 @@ class Model():
         self.bin_resistivity_values()
         self.get_station_meshblock_numbers()
         self.build_modelfilestring()
-        self.writefile()
+        self.write_modelfile()
         
         
-    def writefile(self):
+    def write_modelfile(self):
         outfile = open(op.join(self.working_directory,self.modelfile),'w')
         outfile.write(self.modelfilestring)
         outfile.close()
@@ -266,7 +266,7 @@ class Model():
             for j in range(len(self.blockcentres_x[:-1])):
                 for sl in self.stationlocations:      
                     if (sl>self.blockcentres_x[j])&(sl<=self.blockcentres_x[j+1]):
-                        ivals.append(ii)
+                        ivals = ii
                 ii += 1
             self.stationblocknums = ivals
         except AttributeError:
