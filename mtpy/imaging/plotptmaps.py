@@ -438,7 +438,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         self.xpad = kwargs.pop('xpad', .2)
         self.ypad = kwargs.pop('ypad', .2)
         self.mapscale = kwargs.pop('mapscale', 'latlon')
-        self.font_size = kwargs.pop('font_size', 7)
+        self.font_size = kwargs.pop('font_size', 7)      
         
         #if rotation angle is an int or float make an array the length of 
         #mt_list for plotting purposes
@@ -630,7 +630,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             
         #set tick parameters depending on the mapscale
         if self.mapscale == 'latlon':
-            self.tickstrfmt = '%.3f'
+            self.tickstrfmt = '%.2f'
             
         elif self.mapscale == 'eastnorth' or self.mapscale == 'eastnorthkm':
             self.tickstrfmt = '%.0f'
