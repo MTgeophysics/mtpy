@@ -30,11 +30,14 @@ class Model():
         self.parameters_model['no_sideblockelements'] = 5
         self.parameters_model['no_bottomlayerelements'] = 4
         self.parameters_model['firstlayer_thickness'] = 100
-        
+
         #model depth is in km!
         self.parameters_model['model_depth'] = 100
         self.parameters_model['no_layers'] = 25
         self.parameters_model['max_blockwidth'] = 1000
+
+        self.parameters_data = {}
+        self.parameters_data['strike'] = 0.
         self.n_airlayers = 5
 
         self.mesh = None
@@ -54,7 +57,7 @@ class Model():
         self.rotation = 0.
         self.modelfile = 'model.dat'
         self.anisotropy_min_depth = 0.
-
+        
         self.edifiles = []
 
         self.Data = None
@@ -212,6 +215,7 @@ class Model():
                        edi_directory=self.edi_directory,
                        edifiles=self.edifiles,
                        configfile=self.occam_configfile,
+                       strike=self.parameters_data['strike'],
                        **self.parameters_model)
 
         so.read_edifiles(edi_dir=self.edi_directory)
@@ -266,7 +270,7 @@ class Model():
             for j in range(len(self.blockcentres_x[:-1])):
                 for sl in self.stationlocations:      
                     if (sl>self.blockcentres_x[j])&(sl<=self.blockcentres_x[j+1]):
-                        ivals = ii
+                        ivals.append(ii)
                 ii += 1
             self.stationblocknums = ivals
         except AttributeError:
@@ -341,8 +345,12 @@ class Model():
 #                f = si.interp2d(points[:,0],points[:,1],values)
 #                rvals = 10**(f(xi[:,:,0],xi[:,:,1]))
 #                self.resistivity[:,:,n] = rvals.reshape(xishape[:-1])
-                
+                print "points",points
+                print "values",values
+                print "xi",xi
+                print si.griddata(points,values,xi,method=self.inversion1d_imethod).T
                 self.resistivity[:,:,n] = 10**(si.griddata(points,values,xi,method=self.inversion1d_imethod).T)
+
             else:
 #                f = si.interp2d(points[:,0],points[:,1],values)
 #                self.resistivity[:,:,n] = f(xi[:,:,0],xi[:,:,1])

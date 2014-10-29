@@ -29,6 +29,18 @@ class Model():
         self.working_directory = working_directory
         self.edi_directory = None
         self.occam_configfile = None
+        
+        self.parameters_ctl = {}
+        self.parameters_ctl['ctl_string'] = 'TAB'
+        self.parameters_ctl['units_string'] = 'PR'
+        self.parameters_ctl['quadrants'] = '++--'
+        self.parameters_ctl['orientation_string'] = '0  0.d0  0.d0'
+        self.parameters_ctl['convergence_string'] = '1  6  1.d-4'
+        self.parameters_ctl['roughness_string'] = '2  1000.0d0  1000.0d0  0.d0'
+        self.parameters_ctl['anisotropy_penalty_string'] = '2  1000.d0  0.d0'
+        self.parameters_ctl['anisotropy_ctl_string'] = '1.d0  1.d0  1.d0'
+
+
         self.parameters_model = {}
         self.parameters_model['no_sideblockelements'] = 5
         self.parameters_model['no_bottomlayerelements'] = 4
@@ -38,6 +50,13 @@ class Model():
         self.parameters_model['model_depth'] = 100
         self.parameters_model['no_layers'] = 25
         self.parameters_model['max_blockwidth'] = 1000
+        self.parameters_data = {}
+        self.parameters_data['strike'] = 0.
+        self.parameters_data['errorfloor'] = dict(z=np.array([[0.05,0.05],
+                                                              [0.05,0.05]]),
+                                                  tipper=np.array([0.01,0.01]))
+        self.parameters_data['max_no_frequencies'] = 80
+        self.parameters_data['mode'] = [1,1,1,1,1,1]
         self.n_airlayers = 5
 
         self.mesh = None
@@ -64,7 +83,12 @@ class Model():
         self.Data = None
 
         self.modelfile = 'model'
-        
+        self.resfile = 'pb.res'
+        self.cvgfile = 'pb.cvg'
+        self.outfile = 'pb.out'
+        self.pexfile = 'pb.pex'
+        self.andfile = 'pb.and'
+        self.exlfile = 'pb.exl'        
 
         update_dict = {}
 
@@ -75,7 +99,7 @@ class Model():
 
         update_dict.update(input_parameters_nocase)
 
-        for dictionary in [self.parameters_model]:
+        for dictionary in [self.parameters_model,self.parameters_data]:
             for key in dictionary.keys():
                 if key in update_dict:
                     #check if entry exists:
@@ -114,7 +138,14 @@ class Model():
                 except IOError:
                     print("failed to find edi directory")
                     pass
-                
+           
+    def build_inputfiles(self):
+        self.inversiondir = fh.make_unique_folder(self.working_directory,basename='aniso')
+        os.mkdir(op.join(self.working_directory,self.inversiondir))
+        self.build_model()
+        self.write_modelfile()
+        self.write_datafiles()
+        self.write_ctlfile()
                 
     def build_model(self):
         """
@@ -154,11 +185,15 @@ class Model():
         self.stationblocknums=ro.stationblocknums
         
         self.build_modelfilestring()
-        self.write_modelfile()
         
         
     def write_modelfile(self):
-        outfile = open(op.join(self.working_directory,self.modelfile),'w')
+        
+        if not hasattr(self,'modelfilestring'):
+            self.build_model()
+        outfile = open(op.join(self.working_directory,
+                               self.inversiondir,
+                               self.modelfile),'w')
         outfile.write(self.modelfilestring)
         outfile.close()
 
@@ -175,7 +210,7 @@ class Model():
         # add string giving number of cells:
         modelfilestring.append(''.join(['%5i'%i for i in [len(self.meshlocations_x),
                                                          len(self.meshlocations_z)+self.n_airlayers,
-                                                             self.n_airlayers]]))
+                                                             self.n_airlayers+1]]))
 
         # add strings giving horizontal and vertical mesh steps
         meshz = list(self.meshblockthicknesses_zair)+list(self.meshblockthicknesses_z)
@@ -188,11 +223,11 @@ class Model():
         # add resistivity map
         rmap = ('%5i'%0*len(self.resistivity[0])+'\n')*self.n_airlayers
         rmap += '\n'.join([''.join('%5i'%ii for ii in i) for i in \
-        np.arange(np.size(self.resistivity[:,:,0])).reshape(np.shape(self.resistivity)[:2])])
+        np.arange(1,np.size(self.resistivity[:,:,0])+1).reshape(np.shape(self.resistivity)[:2])])
         modelfilestring.append(rmap)
         
         # add number of resistivity domains (+1 to include air)
-        modelfilestring.append('%5i'%(np.size(self.resistivity[:,:,0])))
+        modelfilestring.append('%5i'%(np.size(self.resistivity[:,:,0])+1))
         
         # add dictionary contents, assuming rvertical = rmax, slant and dip zero
         # first, air layer, properties always the same
@@ -229,119 +264,160 @@ class Model():
                                                                5,'  %03i'))
                                                                
         modelfilestring.append('%5i'%0)
-        self.modelfilestring = '\n'.join(modelfilestring)
+        self.modelfilestring = '\n'.join(modelfilestring)+'\n'
 
 
-    def build_datafiles(self):
+    def build_data(self):
 
-        imethod = 'nearest'        
+        imethod = 'nearest'
+        ftol = 0.000001
         
-        self.read_edifiles()
-        if self.eos is None:
-            self.get_edis()
-        
-        eos = self.eos
-        eos_sorted = []
         num_freq = int(self.parameters_data['max_no_frequencies'])
-        
-        strike = self.strike
-     
-        nx = len(self.meshblockwidths_x)
 
-        for i in range(nx):
-             for jj, j in enumerate(self.stationlocations):
-                 if self.meshlocations_x[i]<=j<self.meshlocations_x[i+1]:
-                     self.stn_blocknums[i+1] = self.stations[jj]        
-        
-
-            
-        min_val = max([min([np.log10(i) for i in 1./eo.freq]) for eo in self.eos])
-        max_val = min([max([np.log10(i) for i in 1./eo.freq]) for eo in self.eos])
-        
+        # get minimum and maximum periods
+        min_val = max([min(1./zo.freq) for zo in self.Data.Z])
+        max_val = min([max(1./zo.freq) for zo in self.Data.Z])
         
         
         periodlst = []
         
-        for eo in self.eos:
-            for period in 1./eo.freq:
-                if len(periodlst) > 0:
-                    closest_period_diff = np.amin(np.abs(np.array(periodlst)-period))
-                else:
-                    closest_period_diff = 99999
-#                print closest_period_diff,period
-                if closest_period_diff/period > ftol:
-                    if 10**min_val <= period <= 10**max_val:
-                        periodlst.append(period)
+        for period in 1./self.Data.frequencies:
+            if len(periodlst) > 0:
+                # find the difference between the period and the closest period already in the list
+                closest_period_diff = np.amin(np.abs(np.array(periodlst)-period))
+            else:
+                # otherwise set period difference to a large number
+                closest_period_diff = 99999
+
+            # check whether the fractional difference is bigger than the tolerance set
+#            print closest_period_diff,closest_period_diff/period,
+            if closest_period_diff/period > ftol:
+                if min_val <= period <= max_val:
+                    periodlst.append(period)
         periodlst.sort()
-
-
-        if len(periodlst) > num_freq:
-            sub_factor = int(np.ceil(float(len(periodlst))/num_freq))
-            print "sub_factor",sub_factor
-            periodlst = [periodlst[i] for i in range(0,len(periodlst),sub_factor)]
-
+#        print periodlst
+        # if number of periods still too long based on the number of frequencies set
+        # then take out some frequencies
+        n = 1
+        while len(periodlst) > num_freq:
+            to_remove = int(float(len(periodlst))/num_freq*n)-n
+            periodlst = periodlst[:to_remove]+periodlst[to_remove+1:]
+            n += 1
+#        print periodlst
 
         mode = self.parameters_data['mode']
         if type(mode) in [str]:
             mode = mode.split(',')
             self.parameters_data['mode'] = mode
-        datafiles = {}
+        datafile_data = {}
         
-        for ee,eo in enumerate(eos_sorted):
-            eo.rotate(round(strike))
-            datfn = str(stn_blocknums_keys[ee])+'_'+eo.station+'.dat'
+        for ee,zo in enumerate(self.Data.Z):
+            to=self.Data.Tipper[ee]
+            datfn = str(self.stationblocknums[ee])+'_'+self.Data.stations[ee]+'.dat'
 
-            
-            datfstr = ''
-            
 
-            zerr = eo.Z.zerr
-            z = eo.Z.z
+            zerr = zo.zerr
+            z = zo.z
             ze_rel = zerr/np.abs(z)
             
+            terr = to.tippererr
+            t = to.tipper
+            te_rel = terr/np.abs(t)
+            
             # set error floors
-            ef_arr = np.array([np.float(i) for i in self.parameters_ctl['errorfloors']])
-            if max(ef_arr) > 0.:
-                ef = np.amin(ef_arr[ef_arr>0.])
-            else:
-                ef = 0.
-            ze_rel[ze_rel<ef] = ef
+            efz = self.parameters_data['errorfloor']['z']
+            eft = self.parameters_data['errorfloor']['tipper']
+            for i in range(2):
+                for j in range(2):
+                    ze_rel[ze_rel<efz[i,j]] = efz[i,j]
+                te_rel[te_rel<eft[i]] = eft[i]
             zerr = ze_rel * np.abs(z)
+            terr = te_rel * np.abs(t)
+            terr[terr<0.02]=0.02
             zvar = zerr**2
-            
-            # set diagonals errors to minimum of off current value and off diagonal value.
-            # because off diags are often very small values            
-            for ze_sub in zerr:
-                min_offdiags = min(ze_sub[0,1],ze_sub[1,0])
-                ze_sub[ze_sub<min_offdiags] = min_offdiags
-                
-                
-            f_pr = si.interp1d(np.log10(1./eo.freq),np.real(z),axis = 0,kind = imethod)
-            f_pi = si.interp1d(np.log10(1./eo.freq),np.imag(z),axis = 0,kind = imethod)
-            f_err = si.interp1d(np.log10(1./eo.freq),zvar,axis = 0,kind = imethod)
-            
-            self.freq = 1./(np.array(periodlst))
+      
+            # create interpolation functions to interpolate z and tipper values
+            properties = dict(z_real=np.real(z),z_imag=np.imag(z),
+                              z_var=zvar,tipper_real=np.real(t),
+                              tipper_imag=np.imag(t),tipper_err=terr)
+            properties_interp = {}
+            for key in properties.keys():
+                f = si.interp1d(np.log10(1./zo.freq),properties[key],
+                                axis = 0,kind = imethod)
+                properties_interp[key] = f(np.log10(periodlst))
 
-
-            for pv in periodlst:
-                datlst = '{0:>12}'.format('%.06f'%(pv))
-                for ii in range(4):
-                    datlst += '{0:>12}'.format('%.06f'%f_pr(np.log10(pv)).flatten()[ii])
-                    datlst += '{0:>12}'.format('%.06f'%f_pi(np.log10(pv)).flatten()[ii])
-                    datlst += '{0:>12}'.format('%.06f'%f_err(np.log10(pv)).flatten()[ii])
-                datlst += 4*'{0:>12}'.format('%.06f'%0.0)
-                datfstr += ''.join(datlst)+'\n'
+            datafile_data[datfn] = properties_interp
             
-            datafiles[datfn] = datfstr
             
-        self.datafile_strings = datafiles
-
-    def get_edis(self):
-        """
-        get edi files as edi objects
-        """
-
-        self.read_edifiles()
+        self.datafile_data = datafile_data
+        self.freq = 1./(np.array(periodlst))
+            
+    def build_datafiles(self):
         
-        self.eos = [mtedi.Edi(filename = os.path.join(self.edi_directory,edi)) for edi in self.edifiles]
-        self.stations = [eo.station for eo in self.eos]            
+        if not hasattr(self,'datafile_data'):
+            self.build_data()
+        dfstrings = {}
+        
+        for dfile in self.datafile_data.keys():
+            datfstr = '{:<3} '.format(len(self.freq))+\
+            ' '.join([str(i) for i in self.parameters_data['mode']])+'\n'
+            for pv in range(len(self.freq)):
+                datlst = '{0:>12}'.format('%.06f'%(1./(self.freq[pv])))
+                for ii in range(2):
+                    for jj in range(2):
+                        for pval in [k for k in self.datafile_data[dfile].keys() if 'z' in k]:
+#                            print self.datafile_data[dfile][pval][pv][ii,jj]
+                            datlst += '{0:>12}'.format('%.06f'%self.datafile_data[dfile][pval][pv][ii,jj])
+                for ii in range(2):
+                    for pval in [k for k in self.datafile_data[dfile].keys() if 't' in k]:
+                        datlst += '{0:>12}'.format('%.06f'%self.datafile_data[dfile][pval][pv][0,ii])
+
+                datfstr += ''.join(datlst)+'\n'
+            dfstrings[dfile] = datfstr
+        
+        self.datafile_strings = dfstrings
+
+    def write_datafiles(self):
+        
+        if not hasattr(self,'datafile_strings'):
+            self.build_datafiles()
+            
+        exlf = open(os.path.join(self.working_directory,self.inversiondir,self.exlfile),'w')
+        dfkeys=self.datafile_strings.keys()
+        dfkeys.sort()
+        for dfile in dfkeys:
+            f = open(op.join(self.working_directory,self.inversiondir,dfile),'w')
+            f.write(self.datafile_strings[dfile])
+            f.close()
+            exlf.write(dfile+'\n')
+        exlf.close()
+
+    def write_ctlfile(self):
+        ctrf = open(op.join(self.working_directory,self.inversiondir,'pb.ctr'),'w')
+        
+        if type(self.parameters_data['mode']) == str:
+            self.parameters_data['mode'] = self.parameters_data['mode'].split(',')
+        ef = np.hstack([self.parameters_data['errorfloor'][l].flatten() for l in ['z','tipper']])
+
+        
+        clist = []
+        clist.append(self.exlfile)
+        clist.append(self.parameters_ctl['ctl_string']+self.parameters_ctl['units_string']+self.parameters_ctl['quadrants'])
+        clist.append(' '.join([str(i) for i in self.parameters_data['mode']]))
+        clist.append(' '.join([str(i) for i in ef]))
+        clist.append(self.parameters_ctl['orientation_string'])
+        clist.append(self.modelfile)
+        clist.append(self.resfile)
+        clist.append(self.parameters_ctl['convergence_string'])
+        clist.append(self.parameters_ctl['roughness_string'])
+        clist.append(self.parameters_ctl['anisotropy_penalty_string'])
+        clist.append(self.parameters_ctl['anisotropy_ctl_string'])
+        clist.append(self.cvgfile)
+        clist.append(self.outfile)
+        clist.append(self.pexfile)
+        clist.append(self.andfile)       
+        
+        self.controlfile_string = '\n'.join(clist)
+        ctrf.write(self.controlfile_string)
+
+        ctrf.close()
