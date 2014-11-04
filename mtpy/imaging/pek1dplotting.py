@@ -14,6 +14,31 @@ import mtpy.modeling.pek1dclasses as pek1dc
 import mtpy.utils.elevation_data as ed
 from matplotlib.font_manager import FontProperties
 
+
+def update_scale(z,scale):
+    
+    if 'k' not in scale:
+        z = z/1000.
+    if '-' in scale:
+        z = -1.*z
+        
+    return z                        
+    
+
+def make_twiny():
+    """
+    """
+    
+    ax3 = plt.twiny()
+    ax3.xaxis.set_ticks_position('bottom')
+    ax3.spines['bottom'].set_position(('axes',-0.25))
+    ax3.set_frame_on(True)
+    ax3.patch.set_visible(False)
+    ax3.spines["bottom"].set_visible(True)
+    
+    return ax3
+
+
 class Plot_model():
     """
     plot model results. Inherits a mtpy.modeling.pek1dclasses.Model object
@@ -48,6 +73,9 @@ class Plot_model():
         self.save = True
         self.output_filename = None
 
+        self.label_fontsize = 8
+        self.title_fontsize = 12
+
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key]) 
 
@@ -70,9 +98,86 @@ class Plot_model():
             
 
         return plt.gca()
+
+
     
-    
-    def plot_parameter(self,parameter):
+    def plot_parameter(self,parameter,
+                       ylim=[6,0],
+                       horizon_list = None,
+                       horizon_zscale = 'km',
+                       plot_inmodel=True,
+                       additional_data = None):
+        
+        
+
+        try:
+            # initialise a list containing a model to plot  
+            models_to_plot = [self.Model.models[self.Model.modelno-1]]
+            
+            # append inmodel to list if needed
+            if plot_inmodel:
+                if self.Inmodel is not None:
+                    models_to_plot.append(self.Inmodel.inmodel)
+
+            axes = []
+            twin = False
+            
+            if 'minmax' in parameter:
+                ls,lw = '-',1
+                twin = True
+                for model in models_to_plot:
+                    plt.plot(model[:,3],model[:,1],'0.5',ls=ls,lw=lw)
+                    p, = plt.plot(model[:,2],model[:,1],'k',ls=ls,lw=lw)
+                    plt.xscale('log')
+                    lw*=0.5
+                ax = self._set_axis_params(plt.gca(),'minmax')
+                axes.append([ax,p])
+
+            if 'aniso' in parameter:
+                ls,lw = '-',1
+                color = 'k'
+                if twin:
+                    ax = make_twiny()
+                    color = 'b'
+                twin = True
+                for modelvals in models_to_plot:           
+                    p, = plt.plot(modelvals[:,3]/modelvals[:,2],modelvals[:,1],
+                    'k-',ls=ls,lw=lw)
+                    plt.xscale('log')  
+                    lw *= 0.5
+                    ax = self._set_axis_params(ax,'aniso')
+                axes.append([ax,p])
+            if 'strike' in parameter:
+                color,lw = 'k',1
+                ls = '-'
+                if twin:
+                    ax=make_twiny() 
+                    color,lw = 'b',0.5
+                twin = True
+                for modelvals in models_to_plot:
+                    p, = plt.plot(modelvals[:,4]%180,modelvals[:,1],color,ls=ls,lw=lw)
+                    
+                    lw *= 0.5
+                    ax = self._set_axis_params(ax,'strike')
+
+                axes.append([ax,p])
+
+            if horizon_list is not None:
+                for h in horizon_list:
+                    elev = ed.get_elevation(self.Model.x,self.Model.y,h)
+                    elev = update_scale(elev,horizon_zscale)
+                    plt.plot(plt.xlim(),[elev]*2) 
+#
+#            if additional_data is not None:
+#                print "plotting additional data"
+#                plt.plot(additional_data[:,0],additional_data[:,1],lw=0.1)
+
+            return axes
+        except IndexError:
+            print "station omitted"
+
+
+    def plot_parameter_old(self,parameter):
         """
         base function for plotting a single model
         
@@ -681,28 +786,7 @@ class Plot_map():
         """
 
 
-def update_scale(z,scale):
-    
-    if 'k' not in scale:
-        z = z/1000.
-    if '-' in scale:
-        z = -1.*z
-        
-    return z                        
-    
 
-def make_twiny():
-    """
-    """
-    
-    ax3 = plt.twiny()
-    ax3.xaxis.set_ticks_position('bottom')
-    ax3.spines['bottom'].set_position(('axes',-0.25))
-    ax3.set_frame_on(True)
-    ax3.patch.set_visible(False)
-    ax3.spines["bottom"].set_visible(True)
-    
-    return ax3
         
 
 class Plot_profile():
@@ -731,7 +815,7 @@ class Plot_profile():
         self.xlim = {'minmax':[0.1,1000],
                      'aniso':[0,20],
                      'strike':[0,180]}
-        self.fonttype = 'serif'
+        self.fonttype = 'sans-serif'
         self.label_fontsize = 8
         self.title_fontsize = 12
                      
@@ -888,103 +972,58 @@ class Plot_profile():
             
         
         
-        
         for i in range(len(self.Model_suite.model_list)):
-            data_list = []
-            try:
-                Model = self.Model_suite.model_list[i]
-    
-                data_list.append(Model.models[modelno-1])
-                if plot_inmodel:
-                    if len(self.Model_suite.inmodel_list) > 0:
-                        Inmodel = self.Model_suite.inmodel_list[i]
-                        data_list.append(Inmodel.inmodel)
-#                ax = plt.subplot(1,len(self.Model_suite.model_list),i+1)
-                ax = plt.axes([profile_x[i],self.ax_bottom,px,self.ax_height])
+#            try:
+            Model = self.Model_suite.model_list[i]
+            PM = Plot_model(Model)
+            plt.subplot(1,len(self.Model_suite.model_list),i+1)
+            axes = PM.plot_parameter(parameter,
+                                     ylim=[6,0],
+                                     horizon_list = horizon_list,
+                                     horizon_zscale = 'km',
+                                     plot_inmodel=True,
+                                     additional_data = None)
 
-                axes = []
-                twin = False
-                
-                if 'minmax' in parameter:
-                    ls,lw = '-',1
-                    twin = True
-                    for modelvals in data_list:
-                        
-                        plt.plot(modelvals[:,3],modelvals[:,1],'0.5',ls=ls,lw=lw)
-                        p, = plt.plot(modelvals[:,2],modelvals[:,1],'k',ls=ls,lw=lw)
-                        plt.xscale('log')
-                        lw*=0.5
-                        ax = self._set_axis_params(ax,'minmax')
-                    axes.append([ax,p])
-
-                if 'aniso' in parameter:
-                    ls,lw = '-',1
-                    color = 'k'
-                    if twin:
-                        ax = make_twiny()
-                        color = 'b'
-                    twin = True
-                    for modelvals in data_list:
-                        
-                        p, = plt.plot(modelvals[:,3]/modelvals[:,2],modelvals[:,1],
-                        'k-',ls=ls,lw=lw)
-                        plt.xscale('log')  
-                        lw *= 0.5
-                        ax = self._set_axis_params(ax,'aniso')
-                    axes.append([ax,p])
-                if 'strike' in parameter:
-                    color,lw = 'k',1
-                    ls = '-'
-                    if twin:
-                        ax=make_twiny() 
-                        color,lw = 'b',0.5
-                    twin = True
-                    for modelvals in data_list:
-                        p, = plt.plot(modelvals[:,4]%180,modelvals[:,1],color,ls=ls,lw=lw)
-                        
-                        lw *= 0.5
-                        ax = self._set_axis_params(ax,'strike')
-
-                    axes.append([ax,p])
-                if horizon_list is not None:
-                    for h in horizon_list:
-                        elev = ed.get_elevation(Model.x,Model.y,h)
-                        elev = p1dp.update_scale(elev,horizon_zscale)
-                        plt.plot(plt.xlim(),[elev]*2) 
-                if additional_data is not None:
-                    print "plotting additional data"
-                    plt.plot(additional_data[i][:,0],additional_data[i][:,1],lw=0.1)
-                if i != 0:
-                    ax.set_yticklabels([])
-                for ax,p in axes:
-                    ax.xaxis.label.set_color(p.get_color())
-                    ax.tick_params(axis='x', colors=p.get_color())
-                    ax.spines['bottom'].set_color(p.get_color())
+            if horizon_list is not None:
+                for h in horizon_list:
+                    elev = ed.get_elevation(Model.x,Model.y,h)
+                    elev = p1dp.update_scale(elev,horizon_zscale)
+                    plt.plot(plt.xlim(),[elev]*2) 
+            if additional_data is not None:
+                print "plotting additional data"
+                plt.plot(additional_data[i][:,0],additional_data[i][:,1],lw=0.1)
+            if i != 0:
+                axes[0][0].set_yticklabels([])
+            for ax,p in axes:
+                ax.xaxis.label.set_color(p.get_color())
+                ax.tick_params(axis='x', colors=p.get_color())
+                ax.spines['bottom'].set_color(p.get_color())
+                if i == 0:
+                    for label in ax.get_yticklabels():
+                        label.set_fontproperties(self.font)
+                        label.set_fontsize(self.label_fontsize)
+                        ylab = plt.ylabel('Depth, km')
+                        ylab.set_fontproperties(self.font)
+                if self.title_type == 'single':
                     if i == 0:
-                        for label in ax.get_yticklabels():
-                            label.set_fontproperties(self.font)
-                            label.set_fontsize(self.label_fontsize)
-                            ylab = plt.ylabel('Depth, km')
-                            ylab.set_fontproperties(self.font)
-                    if self.title_type == 'single':
-                        if i == 0:
-                            if type(parameter) == list:
-                                titlestring = ' and '.join([self.titles[p] for p in parameter])
-                            else: titlestring = self.titles[parameter]
-                            title = plt.title(titlestring,ha='left')
-                            title.set_fontproperties(self.font)
-                            title.set_fontsize(self.title_fontsize)
+                        if type(parameter) == list:
+                            titlestring = ' and '.join([self.titles[p] for p in parameter])
+                        else: titlestring = self.titles[parameter]
+                        title = plt.title(titlestring,ha='left')
+                        title.set_fontproperties(self.font)
+                        title.set_fontsize(self.title_fontsize)
 
-                    elif self.title_type == 'multiple':
-                        title = plt.title(self.titles[i])
-                    elif self.title_type == 'station':
-                        title = plt.title(self.Model_suite.model_list[i].station)
-                    title.set_fontproperties(self.font)
-                    title.set_fontsize(self.title_fontsize)
+                elif self.title_type == 'multiple':
+                    title = plt.title(self.titles[i])
+                elif self.title_type == 'station':
+                    title = plt.title(self.Model_suite.model_list[i].station)
+                    print "set title",self.Model_suite.model_list[i].station
+                title.set_fontproperties(self.font)
+                title.set_fontsize(self.title_fontsize)
 #                    title.set_horizontalalignment('left')
 
-            except IndexError:
-                print "station omitted"
+#            except IndexError:
+#                print "station omitted"
 
 
             
