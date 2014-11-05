@@ -6572,6 +6572,83 @@ class Plot_RMS_Maps(object):
     of the data file.  Gets this infomration from the .res file output
     by ModEM.
     
+    Arguments:
+    ------------------
+    
+        **residual_fn** : string
+                          full path to .res file
+                          
+    =================== =======================================================
+    Attributes                   Description    
+    =================== =======================================================
+    fig                 matplotlib.figure instance for a single plot                       
+    fig_dpi             dots-per-inch resolution of figure *default* is 200
+    fig_num             number of fig instance *default* is 1
+    fig_size            size of figure in inches [width, height] 
+                        *default* is [7,6]
+    font_size           font size of tick labels, axis labels are +2
+                        *default* is 8 
+    marker              marker style for station rms, 
+                        see matplotlib.line for options,
+                        *default* is 's' --> square
+    marker_size         size of marker in points. *default* is 10
+    pad_x               padding in map units from edge of the axis to stations
+                        at the extremeties in longitude. 
+                        *default* is 1/2 tick_locator
+    pad_y               padding in map units from edge of the axis to stations
+                        at the extremeties in latitude. 
+                        *default* is 1/2 tick_locator 
+    period_index        index of the period you want to plot according to 
+                        self.residual.period_list. *default* is 1
+    plot_yn             [ 'y' | 'n' ] default is 'y' to plot on instantiation
+    plot_z_list         internal variable for plotting
+    residual            modem.Data instance that holds all the information 
+                        from the residual_fn given
+    residual_fn         full path to .res file
+    rms_cmap            matplotlib.cm object for coloring the markers
+    rms_cmap_dict       dictionary of color values for rms_cmap 
+    rms_max             maximum rms to plot. *default* is 5.0
+    rms_min             minimum rms to plot. *default* is 1.0
+    save_path           path to save figures to. *default* is directory of 
+                        residual_fn
+    subplot_bottom      spacing from axis to bottom of figure canvas.
+                        *default* is .1
+    subplot_hspace      horizontal spacing between subplots.
+                        *default* is .1
+    subplot_left        spacing from axis to left of figure canvas.
+                        *default* is .1
+    subplot_right       spacing from axis to right of figure canvas.
+                        *default* is .9
+    subplot_top         spacing from axis to top of figure canvas.
+                        *default* is .95
+    subplot_vspace      vertical spacing between subplots.
+                        *default* is .01
+    tick_locator        increment for x and y major ticks. *default* is 
+                        limits/5  
+    =================== =======================================================
+    
+    =================== =======================================================
+    Methods             Description    
+    =================== =======================================================
+    plot                plot rms maps for a single period 
+    plot_loop           loop over all frequencies and save figures to save_path
+    read_residual_fn    read in residual_fn
+    redraw_plot         after updating attributes call redraw_plot to 
+                        well redraw the plot
+    save_figure         save the figure to a file
+    =================== =======================================================
+    
+    
+    :Example: ::
+    
+        >>> import mtpy.modeling.modem_new as modem
+        >>> rms_plot = Plot_RMS_Maps(r"/home/ModEM/Inv1/mb_NLCG_030.res")
+        >>> # change some attributes
+        >>> rms_plot.fig_size = [6, 4]
+        >>> rms_plot.rms_max = 3
+        >>> rms_plot.redraw_plot()
+        >>> # happy with the look now loop over all periods
+        >>> rms_plot.plot_loop()
     """
     
     def __init__(self, residual_fn, **kwargs):
@@ -6594,6 +6671,10 @@ class Plot_RMS_Maps(object):
         self.fig_dpi = kwargs.pop('fig_dpi', 200)
         self.fig_num = kwargs.pop('fig_num', 1)
         self.fig = None
+        
+        self.marker = kwargs.pop('marker', 's')
+        self.marker_size = kwargs.pop('marker_size', 10)
+        
         
         self.rms_max = kwargs.pop('rms_max', 5)
         self.rms_min = kwargs.pop('rms_min', 0)
@@ -6695,26 +6776,26 @@ class Plot_RMS_Maps(object):
                 if np.nan_to_num(rms) == 0.0:
                     marker_color = (1, 1, 1)
                     marker = '.'
-                    marker_size = .001
+                    marker_size = .1
                     marker_edge_color = (1, 1, 1)
                 if rms > self.rms_max:
                     marker_color = (0, 0, 0)
-                    marker = 's'
-                    marker_size = 10
+                    marker = self.marker
+                    marker_size = self.marker_size
                     marker_edge_color = (0, 0, 0)
                     
                 elif rms >= 1 and rms <= self.rms_max:
                     r_color = 1-rms/self.rms_max+rms_1
                     marker_color = (r_color, r_color, r_color)
-                    marker = 's'
-                    marker_size = 10
+                    marker = self.marker
+                    marker_size = self.marker_size
                     marker_edge_color = (0, 0, 0)
                     
                 elif rms < 1:
                     r_color = 1-rms/self.rms_max
                     marker_color = (1, r_color, r_color)
-                    marker = 's'
-                    marker_size = 10
+                    marker = self.marker
+                    marker_size = self.marker_size
                     marker_edge_color = (0, 0, 0)
                     
                 ax.plot(r_arr['lon'], r_arr['lat'], 
