@@ -75,6 +75,9 @@ class Plot_model():
 
         self.label_fontsize = 8
         self.title_fontsize = 12
+        self.linestyles = ['-','-']
+        self.linewidths = [1,0.5]
+        self.linecolours = ['0.5','k','b']
 
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key]) 
@@ -88,14 +91,14 @@ class Plot_model():
         plt.ylim(self.ylim)
         plt.grid()
         ax.set_xticks(xlim)
-
 #        ax.get_xticklabels()[0].set_horizontalalignment('left')
 #        ax.get_xticklabels()[-1].set_horizontalalignment('right')
         for label in ax.get_xticklabels():
             label.set_fontsize(self.label_fontsize)
             label.set_rotation(90)
             label.set_verticalalignment('top')
-            
+        for label in ax.get_yticklabels():
+            label.set_fontsize(self.label_fontsize)            
 
         return plt.gca()
 
@@ -121,43 +124,44 @@ class Plot_model():
 
             axes = []
             twin = False
+            c = 0
+            nlc = len(self.linecolours)
             
             if 'minmax' in parameter:
-                ls,lw = '-',1
+                ls,lw = self.linestyles[0],self.linewidths[0]
                 twin = True
                 for model in models_to_plot:
-                    plt.plot(model[:,3],model[:,1],'0.5',ls=ls,lw=lw)
-                    p, = plt.plot(model[:,2],model[:,1],'k',ls=ls,lw=lw)
+                    plt.plot(model[:,3],model[:,1],self.linecolours[c%nlc],ls=ls,lw=lw)
+                    p, = plt.plot(model[:,2],model[:,1],self.linecolours[(c+1)%nlc],ls=ls,lw=lw)
                     plt.xscale('log')
-                    lw*=0.5
+                    c += 2
+                    ls,lw = self.linestyles[1],self.linewidths[1]
                 ax = self._set_axis_params(plt.gca(),'minmax')
                 axes.append([ax,p])
-
+                
             if 'aniso' in parameter:
-                ls,lw = '-',1
-                color = 'k'
+                ls,lw = self.linestyles[0],self.linewidths[0]
                 if twin:
                     ax = make_twiny()
-                    color = 'b'
                 twin = True
                 for modelvals in models_to_plot:           
                     p, = plt.plot(modelvals[:,3]/modelvals[:,2],modelvals[:,1],
-                    'k-',ls=ls,lw=lw)
+                                  self.linecolours[c%nlc],ls=ls,lw=lw)
                     plt.xscale('log')  
-                    lw *= 0.5
+                    ls,lw = self.linestyles[1],self.linewidths[1]
                     ax = self._set_axis_params(ax,'aniso')
                 axes.append([ax,p])
+                
             if 'strike' in parameter:
-                color,lw = 'k',1
+                ls,lw = self.linestyles[0],self.linewidths[0]
                 ls = '-'
                 if twin:
                     ax=make_twiny() 
                     color,lw = 'b',0.5
                 twin = True
                 for modelvals in models_to_plot:
-                    p, = plt.plot(modelvals[:,4]%180,modelvals[:,1],color,ls=ls,lw=lw)
-                    
-                    lw *= 0.5
+                    p, = plt.plot(modelvals[:,4]%180,modelvals[:,1],self.linecolours[c%nlc],ls=ls,lw=lw)
+                    ls,lw = self.linestyles[1],self.linewidths[1]
                     ax = self._set_axis_params(ax,'strike')
 
                 axes.append([ax,p])
