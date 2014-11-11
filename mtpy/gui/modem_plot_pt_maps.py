@@ -63,11 +63,11 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         #make map scale
         if self.map_scale == 'km':
             self.dscale = 1000.
-            self._ellipse_dict = {'size':2}
+            self._ellipse_dict = {'size':3}
             self._arrow_dict = {'size':2,
-                                'head_length':.1,
-                                'head_width':.1,
-                                'lw':1.5}
+                                'head_length':.35,
+                                'head_width':.35,
+                                'lw':1.}
                                 
         elif self.map_scale == 'm':
             self.dscale = 1.
@@ -93,15 +93,15 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.yminorticks = 1000/self.dscale
         
         self.residual_cmap = 'mt_wh2or'
-        self.font_size = 7
+        self.font_size = 9
         
         self.cb_tick_step = 45
         self.cb_residual_tick_step = 3
-        self.cb_pt_pad = 1.2
-        self.cb_res_pad = .5
+        self.cb_pt_pad = 1.25
+        self.cb_res_pad = .65
         
         
-        self.res_limits = (0,4)
+        self.res_limits = (-1,4)
         self.res_cmap = 'jet_r'
         
         #--> set the ellipse properties -------------------
@@ -137,6 +137,13 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         # it takes the `figure` instance as a parameter to __init__
         self.figure = Figure(dpi=150)
         self.mpl_widget = FigureCanvas(self.figure)
+        
+        self.figure.subplots_adjust(left=self.subplot_left,
+                                    right=self.subplot_right,
+                                    bottom=self.subplot_bottom,
+                                    top=self.subplot_top,
+                                    hspace=self.subplot_hspace,
+                                    wspace=self.subplot_wspace)
         
         #make sure the figure takes up the entire plottable space
         self.mpl_widget.setSizePolicy(QtGui.QSizePolicy.Expanding,
@@ -469,12 +476,6 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         """
         
         plt.rcParams['font.size'] = self.font_size
-         # set plot properties
-        plt.rcParams['figure.subplot.left'] = self.subplot_left
-        plt.rcParams['figure.subplot.right'] = self.subplot_right
-        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
-        plt.rcParams['figure.subplot.top'] = self.subplot_top
-                
         
         #make sure there is PT data
         if self.modem_data_fn is not None:
