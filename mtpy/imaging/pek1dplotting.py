@@ -68,7 +68,7 @@ class Plot_model():
                      'aniso':[0,20],
                      'strike':[0,180]}
         self.ylim = [6,0]
-        self.modelno = 0
+        self.modelno = Model.modelno
         self.modeltype = 'model'
         self.save = True
         self.output_filename = None
@@ -115,8 +115,8 @@ class Plot_model():
 
         try:
             # initialise a list containing a model to plot  
-            models_to_plot = [self.Model.models[self.Model.modelno-1]]
-            
+            models_to_plot = [self.Model.models[self.modelno-1]]
+            print self.modelno
             # append inmodel to list if needed
             if plot_inmodel:
                 if self.Inmodel is not None:
@@ -455,8 +455,11 @@ class Plot_fit():
         else:
             c = 'k'
 
-        plt.scatter(x,y,c=c,lw=0,
+        plt.scatter(x,y,c=c,
+                    s=40,
+                    linewidth=0.0,
                     cmap=self.cmap,
+                    edgecolor='white',
                     marker=self.symbol)
         
         if self.labels:

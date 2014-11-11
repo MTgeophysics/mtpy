@@ -377,7 +377,7 @@ class Model():
         """
         
         fpath = os.path.join(self.working_directory,self.modelfile)
-        
+        print fpath
         nlayers = 0
         flag = True
         modelf = open(fpath)
