@@ -633,7 +633,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             labelcoords = (-0.095, 0.5)            
             
             #space out the subplots
-            gs.update(hspace=.05, wspace=.15, left=.07)
+            gs.update(**self.subplot_dict)
             
             #--> create the axes instances
             #apparent resistivity axis
