@@ -25,13 +25,13 @@ def update_scale(z,scale):
     return z                        
     
 
-def make_twiny():
+def make_twiny(offset):
     """
     """
     
     ax3 = plt.twiny()
     ax3.xaxis.set_ticks_position('bottom')
-    ax3.spines['bottom'].set_position(('axes',-0.25))
+    ax3.spines['bottom'].set_position(('axes',-offset))
     ax3.set_frame_on(True)
     ax3.patch.set_visible(False)
     ax3.spines["bottom"].set_visible(True)
@@ -75,12 +75,17 @@ class Plot_model():
 
         self.label_fontsize = 8
         self.title_fontsize = 12
-        self.linestyles = ['-','-']
-        self.linewidths = [1,0.5]
-        self.linecolours = ['0.5','k','b']
+        self.linestyles = ['-','-'] # linestyles for xy and yx results
+        self.linewidths = [1,0.5] # linewidths for model and inmodel
+        self.linecolours = ['0.5','k','b','r'] # linecolours for different plots
 
         for key in input_parameters.keys():
-            setattr(self,key,input_parameters[key]) 
+            if hasattr(self,key):
+                setattr(self,key,input_parameters[key]) 
+                
+        # make sure there are enough line colours
+        while len(self.linecolours) < 4:
+            self.linecolours.append('k')
 
     def _set_axis_params(self,ax,parameter):
         
@@ -105,7 +110,7 @@ class Plot_model():
 
     
     def plot_parameter(self,parameter,
-                       ylim=[6,0],
+                       twiny_offset=0.25,
                        horizon_list = None,
                        horizon_zscale = 'km',
                        plot_inmodel=True,
@@ -116,7 +121,6 @@ class Plot_model():
         try:
             # initialise a list containing a model to plot  
             models_to_plot = [self.Model.models[self.modelno-1]]
-            print self.modelno
             # append inmodel to list if needed
             if plot_inmodel:
                 if self.Inmodel is not None:
@@ -134,36 +138,39 @@ class Plot_model():
                     plt.plot(model[:,3],model[:,1],self.linecolours[c%nlc],ls=ls,lw=lw)
                     p, = plt.plot(model[:,2],model[:,1],self.linecolours[(c+1)%nlc],ls=ls,lw=lw)
                     plt.xscale('log')
-                    c += 2
+                    
                     ls,lw = self.linestyles[1],self.linewidths[1]
+                plt.xlabel('minmax')
+                c += 2
                 ax = self._set_axis_params(plt.gca(),'minmax')
                 axes.append([ax,p])
                 
             if 'aniso' in parameter:
                 ls,lw = self.linestyles[0],self.linewidths[0]
                 if twin:
-                    ax = make_twiny()
+                    ax = make_twiny(twiny_offset)
                 twin = True
                 for modelvals in models_to_plot:           
                     p, = plt.plot(modelvals[:,3]/modelvals[:,2],modelvals[:,1],
                                   self.linecolours[c%nlc],ls=ls,lw=lw)
-                    plt.xscale('log')  
+                    plt.xscale('log')
                     ls,lw = self.linestyles[1],self.linewidths[1]
-                    ax = self._set_axis_params(ax,'aniso')
+                    ax = self._set_axis_params(plt.gca(),'aniso')
+                plt.xlabel('aniso')
+                c += 1
                 axes.append([ax,p])
                 
             if 'strike' in parameter:
                 ls,lw = self.linestyles[0],self.linewidths[0]
                 ls = '-'
                 if twin:
-                    ax=make_twiny() 
-                    color,lw = 'b',0.5
+                    ax=make_twiny(twiny_offset) 
                 twin = True
                 for modelvals in models_to_plot:
-                    p, = plt.plot(modelvals[:,4]%180,modelvals[:,1],self.linecolours[c%nlc],ls=ls,lw=lw)
+                    p, = plt.plot(modelvals[:,4]%180,modelvals[:,1],self.linecolours[c],ls=ls,lw=lw)
                     ls,lw = self.linestyles[1],self.linewidths[1]
-                    ax = self._set_axis_params(ax,'strike')
-
+                    ax = self._set_axis_params(plt.gca(),'strike')
+                plt.xlabel('strike')
                 axes.append([ax,p])
 
             if horizon_list is not None:
@@ -217,14 +224,17 @@ class Plot_model():
             strike = data[:,4]%180
                
             axes_count = 1
+            ci = 0
 
             if 'minmax' in parameter:
                 ls,lw = '-',1
                 twin = True
                 for modelvals in data_list:
-                    
-                    plt.plot(modelvals[:,3],modelvals[:,1],'0.5',ls=ls,lw=lw)
-                    p, = plt.plot(modelvals[:,2],modelvals[:,1],'k',ls=ls,lw=lw)
+                    ci = 0
+                    plt.plot(modelvals[:,3],modelvals[:,1],self.linecolours[ci],ls=ls,lw=lw)
+                    ci += 1
+                    p, = plt.plot(modelvals[:,2],modelvals[:,1],self.linecolours[ci],ls=ls,lw=lw)
+                    ci += 1
                     plt.xscale('log')
                     lw*=0.5
                     ax = self._set_axis_params(ax,'minmax')
@@ -235,7 +245,8 @@ class Plot_model():
                 color = 'k'
                 if twin:
                     ax = make_twiny()
-                    color = 'b'
+                    color = self.linecolours[ci]
+                    ci += 1
                 twin = True
                 for modelvals in data_list:
                     
@@ -250,7 +261,8 @@ class Plot_model():
                 ls = '-'
                 if twin:
                     ax=make_twiny() 
-                    color,lw = 'b',0.5
+                    color,lw = self.linecolours[ci],0.5
+                    ci += 1
                 twin = True
                 for modelvals in data_list:
                     p, = plt.plot(modelvals[:,4]%180,modelvals[:,1],color,ls=ls,lw=lw)
@@ -650,7 +662,7 @@ class Plot_map():
             plt.text(sxy[0],sxy[1]+0.005,
             'a = %1i'%scalebar_size,
             fontsize=10)
-            print sxy,scalebar_size
+#            print sxy,scalebar_size
         ax1 = plt.gca()
         for i,e in enumerate(recs):
             ax1.add_artist(e)
@@ -760,7 +772,7 @@ class Plot_map():
         plt.gca().set_xticklabels([])
         for s,ss in enumerate(sp):
             ax = plt.subplot(s1,s2,ss)
-            print self.xyzfiles[s]
+#            print self.xyzfiles[s]
             xyz = np.loadtxt(self.xyzfiles[s],skiprows=header_rows[1])
             x,y,z = [xyz[:,i] for i in range(3)]
             self.plot_interface(x,y,z,
@@ -825,6 +837,11 @@ class Plot_profile():
         self.fonttype = 'sans-serif'
         self.label_fontsize = 8
         self.title_fontsize = 12
+        self.linestyles = ['-','-']
+        self.linewidths = [1,0.5]
+        self.linecolours = ['0.5','k','b']
+        self.input_parameters = input_parameters
+
                      
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key])
@@ -923,7 +940,7 @@ class Plot_profile():
              
         
     def plot_parameter(self,parameter,
-                       ylim=[6,0],
+                       twiny_offset=0.25,
                        horizon_list = None,
                        horizon_zscale = 'km',
                        new_figure = True,
@@ -982,14 +999,14 @@ class Plot_profile():
         for i in range(len(self.Model_suite.model_list)):
 #            try:
             Model = self.Model_suite.model_list[i]
-            PM = Plot_model(Model)
+            PM = Plot_model(Model,**self.input_parameters)
             plt.subplot(1,len(self.Model_suite.model_list),i+1)
             axes = PM.plot_parameter(parameter,
-                                     ylim=[6,0],
+                                     twiny_offset=twiny_offset,
                                      horizon_list = horizon_list,
-                                     horizon_zscale = 'km',
-                                     plot_inmodel=True,
-                                     additional_data = None)
+                                     horizon_zscale = horizon_zscale,
+                                     plot_inmodel=plot_inmodel,
+                                     additional_data = additional_data)
 
             if horizon_list is not None:
                 for h in horizon_list:
@@ -1016,7 +1033,7 @@ class Plot_profile():
                         if type(parameter) == list:
                             titlestring = ' and '.join([self.titles[p] for p in parameter])
                         else: titlestring = self.titles[parameter]
-                        title = plt.title(titlestring,ha='left')
+                        title = plt.xlabel(titlestring,ha='left')
                         title.set_fontproperties(self.font)
                         title.set_fontsize(self.title_fontsize)
 
@@ -1024,7 +1041,7 @@ class Plot_profile():
                     title = plt.title(self.titles[i])
                 elif self.title_type == 'station':
                     title = plt.title(self.Model_suite.model_list[i].station)
-                    print "set title",self.Model_suite.model_list[i].station
+#                    print "set title",self.Model_suite.model_list[i].station
                 title.set_fontproperties(self.font)
                 title.set_fontsize(self.title_fontsize)
 #                    title.set_horizontalalignment('left')
