@@ -377,7 +377,7 @@ class Model():
         """
         
         fpath = os.path.join(self.working_directory,self.modelfile)
-        
+#        print fpath
         nlayers = 0
         flag = True
         modelf = open(fpath)
@@ -451,7 +451,7 @@ class Model():
         
 
         params = model_filt[aniso == aniso_max][0]
-        params[-1] = params[-1]%180
+#        params[-1] = params[-1]%180
 
         self.anisotropy_max_parameters = params
 
@@ -559,8 +559,8 @@ class Fit():
         """
         # load the file with fit values in it
         fit = np.loadtxt(os.path.join(self.working_directory,self.fitfile))
-        print os.path.join(self.working_directory,self.fitfile)
-        print np.shape(fit)
+#        print os.path.join(self.working_directory,self.fitfile)
+#        print np.shape(fit)
         # find number of periods
         self.find_nperiods()        
         
@@ -638,7 +638,7 @@ class Model_suite():
                     for ff in folder_list:
                         if str.lower(os.path.basename(ff).split('_')[0][i1:i2]) == str.lower(s):
                             folder_list2.append(ff)
-                            print s
+#                            print s
                 folder_list = folder_list2
         for folder in folder_list:
             try:                
