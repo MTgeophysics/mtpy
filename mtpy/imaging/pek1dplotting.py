@@ -575,7 +575,7 @@ class Plot_map():
                                   scale='km')
         self.xyzfile_titles = None
         self.set_titles = True
-        self.figsize=16
+        self.figsize=(8,5)
         
         for key in input_parameters.keys():
             setattr(self,key,input_parameters[key]) 
@@ -765,8 +765,8 @@ class Plot_map():
         
         x,y = self.x,self.y
         ar = ((float(s1)/float(s2))*((np.amax(y) - np.amin(y))/(np.amax(x) - np.amin(x))))**0.9
-        
-        plt.figure(figsize=(self.figsize,self.figsize*ar))
+
+        plt.figure(figsize=(self.figsize[0],self.figsize[1]))
 
         plt.subplot(s1,s2,1)
 
