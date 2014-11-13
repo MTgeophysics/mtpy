@@ -75,28 +75,30 @@ class Plot_model():
 
         self.label_fontsize = 8
         self.title_fontsize = 12
-        self.linestyles = ['-','-'] # linestyles for xy and yx results
-        self.linewidths = [1,0.5] # linewidths for model and inmodel
-        self.linecolours = ['0.5','k','b','r'] # linecolours for different plots
-
+        self.linedict = dict(style='-',width=1,
+                              colour=['0.5','k']*2)
+        self.horizon_linedict = dict(style='-',width=1.5,
+                                     colour=['c','y','b','r','g','m'])
+        self.horizon_list = None
+        self.horizon_zscale = 'km'
+        
         for key in input_parameters.keys():
             if hasattr(self,key):
                 setattr(self,key,input_parameters[key]) 
                 
-        # make sure there are enough line colours
-        while len(self.linecolours) < 4:
-            self.linecolours.append('k')
 
-    def _set_axis_params(self,ax,parameter):
+    def _set_axis_params(self,ax,
+                         parameter
+                         ):
         
- 
         xlim = self.xlim[parameter]
-
+        
         plt.xlim(xlim)
         plt.ylim(self.ylim)
         plt.grid()
         ax.set_xticks(xlim)
-#        ax.get_xticklabels()[0].set_horizontalalignment('left')
+        
+        ax.get_xticklabels()[0].set_horizontalalignment('left')
 #        ax.get_xticklabels()[-1].set_horizontalalignment('right')
         for label in ax.get_xticklabels():
             label.set_fontsize(self.label_fontsize)
@@ -105,18 +107,16 @@ class Plot_model():
         for label in ax.get_yticklabels():
             label.set_fontsize(self.label_fontsize)            
 
-        return plt.gca()
+        return ax
 
 
     
-    def plot_parameter(self,parameter,
-                       twiny_offset=0.25,
-                       horizon_list = None,
-                       horizon_zscale = 'km',
+    def plot_parameter(self,#parameter,
+                       twiny_offset=0.35,
                        plot_inmodel=True,
                        additional_data = None):
         
-        
+        parameter = self.parameters
 
         try:
             # initialise a list containing a model to plot  
@@ -129,55 +129,60 @@ class Plot_model():
             axes = []
             twin = False
             c = 0
-            nlc = len(self.linecolours)
+            nlc = len(self.linedict['colour'])
+            ls,lw = self.linedict['style'],self.linedict['width']       
             
             if 'minmax' in parameter:
-                ls,lw = self.linestyles[0],self.linewidths[0]
                 twin = True
                 for model in models_to_plot:
-                    plt.plot(model[:,3],model[:,1],self.linecolours[c%nlc],ls=ls,lw=lw)
-                    p, = plt.plot(model[:,2],model[:,1],self.linecolours[(c+1)%nlc],ls=ls,lw=lw)
-                    plt.xscale('log')
-                    
-                    ls,lw = self.linestyles[1],self.linewidths[1]
-                plt.xlabel('minmax')
+#                    print c,nlc
+                    plt.plot(model[:,3],model[:,1],
+                             self.linedict['colour'][c%nlc],ls=ls,lw=lw)
+                    p, = plt.plot(model[:,2],model[:,1],
+                                  self.linedict['colour'][(c+1)%nlc],ls=ls,lw=lw)
+                    plt.xscale('log')   
                 c += 2
-                ax = self._set_axis_params(plt.gca(),'minmax')
+                ax = plt.gca()
+                ax = self._set_axis_params(ax,'minmax')
                 axes.append([ax,p])
                 
             if 'aniso' in parameter:
-                ls,lw = self.linestyles[0],self.linewidths[0]
                 if twin:
                     ax = make_twiny(twiny_offset)
-                twin = True
+                
                 for modelvals in models_to_plot:           
                     p, = plt.plot(modelvals[:,3]/modelvals[:,2],modelvals[:,1],
-                                  self.linecolours[c%nlc],ls=ls,lw=lw)
+                                  self.linedict['colour'][c%nlc],ls=ls,lw=lw)
                     plt.xscale('log')
-                    ls,lw = self.linestyles[1],self.linewidths[1]
-                    ax = self._set_axis_params(plt.gca(),'aniso')
-                plt.xlabel('aniso')
+#                    if not twin:
+                    ax = plt.gca()
+                    twin = True
+                    ax = self._set_axis_params(ax,'aniso')
                 c += 1
                 axes.append([ax,p])
                 
             if 'strike' in parameter:
-                ls,lw = self.linestyles[0],self.linewidths[0]
-                ls = '-'
+                strike = modelvals[:,4]%180
+#                if self.xlim['strike'][-1] == 180:
+                strike[strike < self.xlim['strike'][0]-45] += 180
                 if twin:
-                    ax=make_twiny(twiny_offset) 
-                twin = True
+                    ax = make_twiny(twiny_offset)
                 for modelvals in models_to_plot:
-                    p, = plt.plot(modelvals[:,4]%180,modelvals[:,1],self.linecolours[c],ls=ls,lw=lw)
-                    ls,lw = self.linestyles[1],self.linewidths[1]
-                    ax = self._set_axis_params(plt.gca(),'strike')
-                plt.xlabel('strike')
+                    p, = plt.plot(strike,modelvals[:,1],self.linedict['colour'][c%nlc],ls=ls,lw=lw)
+                    ax = plt.gca()
+                    twin = True
+                    ax = self._set_axis_params(ax,'strike')
                 axes.append([ax,p])
 
-            if horizon_list is not None:
-                for h in horizon_list:
+            if self.horizon_list is not None:
+                c = 0
+                for h in self.horizon_list:
                     elev = ed.get_elevation(self.Model.x,self.Model.y,h)
-                    elev = update_scale(elev,horizon_zscale)
-                    plt.plot(plt.xlim(),[elev]*2) 
+                    elev = update_scale(elev,self.horizon_zscale)
+                    plt.plot(plt.xlim(),[elev]*2,
+                             self.horizon_linedict['colour'][c],
+                             lw=self.horizon_linedict['width'])
+                    c += 1
 #
 #            if additional_data is not None:
 #                print "plotting additional data"
@@ -803,9 +808,6 @@ class Plot_map():
         plot location map of all stations.        
         
         """
-
-
-
         
 
 class Plot_profile():
@@ -816,35 +818,48 @@ class Plot_profile():
     
     def __init__(self,Model_suite,**input_parameters):
         
-        self.working_directory = '.'
-        self.station_listfile = None
-        self.station_xyfile = None
         self.Model_suite = Model_suite
-        self.modeltype = 'model'
-        self.fig_width = 1.
-        self.ax_width = 0.03
-        self.ax_height = 0.8
-        self.ax_bottom = 0.1
-        self.plot_spacing = 0.02
-        self.ylim = [6,0]
-        self.title_type = 'single'
+        self.working_directory = Model_suite.working_directory
+        self.parameters = [['minmax'],['aniso','strike']]
         self.titles = {'minmax':'Minimum and maximum resistivity, $\Omega m$',
                        'aniso':'Anisotropy in resistivity',# (maximum/minimum resistivity)
                        'strike':'Strike angle of minimum resistivity'}#, $^\circ$
         self.xlim = {'minmax':[0.1,1000],
                      'aniso':[0,20],
                      'strike':[0,180]}
+        self.ylim = [6,0]
+        self.modelno = Model_suite.modelno
+        self.modeltype = 'model'
+        
+        
+        
+        self.station_listfile = None
+        self.station_xyfile = None
+        
+        self.figsize = (6,6)
+        self.plot_spacing = 0.1
+        self.title_type = 'single'
         self.fonttype = 'sans-serif'
         self.label_fontsize = 8
         self.title_fontsize = 12
-        self.linestyles = ['-','-']
-        self.linewidths = [1,0.5]
-        self.linecolours = ['0.5','k','b']
+        self.linedict = dict(style='-',width=1,
+                              colour=[['0.5','k']]*2)
+        self.horizon_list = None
+        self.horizon_zscale = 'km'
+        self.horizon_linedict = dict(style=['-']*6,width=[2]*6,
+                                     colour=['c','y','b','r','g','m'])
+                                     
+                                     
+        self.subplot_dict = dict(wspace=0.1,bottom=0.25,hspace=0.4)
+        
+        # store inputs in the object to pass through to Plot_model object
         self.input_parameters = input_parameters
 
-                     
+        # set attributes from keyword arguments          
         for key in input_parameters.keys():
-            setattr(self,key,input_parameters[key])
+            if hasattr(self,key):
+                setattr(self,key,input_parameters[key])
+                self.input_parameters[key] = input_parameters[key]
 
         font0 = FontProperties()
         font = font0.copy()
@@ -939,10 +954,8 @@ class Plot_profile():
 
              
         
-    def plot_parameter(self,parameter,
+    def plot_parameter(self,#parameter,
                        twiny_offset=0.25,
-                       horizon_list = None,
-                       horizon_zscale = 'km',
                        new_figure = True,
                        plot_inmodel=True,
                        additional_data = None):
@@ -955,103 +968,58 @@ class Plot_profile():
         
         
         """
-        import pek1dplotting as p1dp
+        
+        nvplots = len(self.parameters)
+        
+        for nv in range(nvplots):
+            for i in range(len(self.Model_suite.model_list)):
+                Model = self.Model_suite.model_list[i]
+                PM = Plot_model(Model,**self.input_parameters)
+                PM.parameters = self.parameters[nv]
+                if 'minmax' not in self.parameters[nv]:
+                    PM.horizon_list = None
+                plt.subplot(nvplots,
+                            len(self.Model_suite.model_list),
+                            nv*len(self.Model_suite.model_list)+i+1)
 
-        
-#        self.get_station_distance()
-#        
-#        # define some initial locations to put the plots corresponding to distance along profile
-#        profile_x = (self.station_distances - np.amin(self.station_distances))
-#        
-#        # normalise so max distance is at 1
-#        profile_x /= (np.amax(self.station_distances)-np.amin(self.station_distances))
-#        
-#        # make an empty array to put buffered distances
-#        profile_x_buf = np.zeros_like(profile_x)      
-#        
-        modelno = self.Model_suite.modelno
-#
-##        print profile_x
-        px = self.ax_width
-        dx = self.plot_spacing
-        nx = len(self.Model_suite.model_list)
-        profile_x = np.linspace(0.,px*nx+dx*(nx-1),nx) + px/2.
-        profile_x = np.linspace(0.,1.-2.5*px-dx,nx) + px + dx
-#        print profile_x,px,dx,nx
-#     
-#        
-#        
-#        # shift each station along the profile so that they don't overlap each other
-#        for i in range(len(profile_x)):
-#            if i == 0:
-#                profile_x_buf[i] = profile_x[i]
-#            else:
-#                profile_x_buf[i] = max(profile_x[i],profile_x_buf[i-1]+px+self.plot_spacing)
-#        # renormalise so that end station is still within the plot bounds
-#        profile_x_buf /= np.amax(profile_x_buf)/(self.fig_width-2.*px)
-#        profile_x_buf += px/2
-#
-#        if new_figure:        
-#            plt.figure(figsize=(len(profile_x),5*self.ax_height))
-            
-        
-        
-        for i in range(len(self.Model_suite.model_list)):
-#            try:
-            Model = self.Model_suite.model_list[i]
-            PM = Plot_model(Model,**self.input_parameters)
-            plt.subplot(1,len(self.Model_suite.model_list),i+1)
-            axes = PM.plot_parameter(parameter,
-                                     twiny_offset=twiny_offset,
-                                     horizon_list = horizon_list,
-                                     horizon_zscale = horizon_zscale,
-                                     plot_inmodel=plot_inmodel,
-                                     additional_data = additional_data)
-
-            if horizon_list is not None:
-                for h in horizon_list:
-                    elev = ed.get_elevation(Model.x,Model.y,h)
-                    elev = p1dp.update_scale(elev,horizon_zscale)
-                    plt.plot(plt.xlim(),[elev]*2) 
-            if additional_data is not None:
-                print "plotting additional data"
-                plt.plot(additional_data[i][:,0],additional_data[i][:,1],lw=0.1)
-            if i != 0:
-                axes[0][0].set_yticklabels([])
-            for ax,p in axes:
-                ax.xaxis.label.set_color(p.get_color())
-                ax.tick_params(axis='x', colors=p.get_color())
-                ax.spines['bottom'].set_color(p.get_color())
-                if i == 0:
-                    for label in ax.get_yticklabels():
-                        label.set_fontproperties(self.font)
-                        label.set_fontsize(self.label_fontsize)
-                        ylab = plt.ylabel('Depth, km')
-                        ylab.set_fontproperties(self.font)
-                if self.title_type == 'single':
+                axes = PM.plot_parameter(twiny_offset=twiny_offset,
+                                         plot_inmodel=plot_inmodel,
+                                         additional_data = additional_data)
+    
+                if additional_data is not None:
+#                    print "plotting additional data"
+                    plt.plot(additional_data[i][:,0],additional_data[i][:,1],lw=0.1)
+                if i != 0:
+                    axes[0][0].set_yticklabels([])
+                for ax,p in axes:
+                    ax.xaxis.label.set_color(p.get_color())
+                    ax.tick_params(axis='x', colors=p.get_color())
+                    ax.spines['bottom'].set_color(p.get_color())
                     if i == 0:
-                        if type(parameter) == list:
-                            titlestring = ' and '.join([self.titles[p] for p in parameter])
-                        else: titlestring = self.titles[parameter]
-                        title = plt.xlabel(titlestring,ha='left')
-                        title.set_fontproperties(self.font)
-                        title.set_fontsize(self.title_fontsize)
-
-                elif self.title_type == 'multiple':
-                    title = plt.title(self.titles[i])
-                elif self.title_type == 'station':
-                    title = plt.title(self.Model_suite.model_list[i].station)
-#                    print "set title",self.Model_suite.model_list[i].station
-                title.set_fontproperties(self.font)
-                title.set_fontsize(self.title_fontsize)
-#                    title.set_horizontalalignment('left')
-
-#            except IndexError:
-#                print "station omitted"
-
-
-            
-#        self.profile_x = profile_x_buf
+                        for label in ax.get_yticklabels():
+                            label.set_fontproperties(self.font)
+                            label.set_fontsize(self.label_fontsize)
+                            ylab = plt.ylabel('Depth, km')
+                            ylab.set_fontproperties(self.font)
+                    if self.title_type == 'single':
+                        if i == int(len(self.Model_suite.model_list)/2)-1:
+#                        if i == 0:
+                            if type(self.parameters[nv]) == list:
+                                titlestring = ' and\n'.join([self.titles[p] for p in self.parameters[nv]])
+                            else: titlestring = self.titles[self.parameters[nv]]
+                            title = plt.xlabel(titlestring,ha='center',va='top')
+                            if len(self.parameters[nv]) > 1:
+                                ax.xaxis.set_label_coords(0.5,-self.subplot_dict['hspace']-0.05)
+#                                ax.xaxis.label.set_color('k')
+                            title.set_fontproperties(self.font)
+                            title.set_fontsize(self.title_fontsize)
+    
+#                    elif self.title_type == 'multiple':
+#                        title = plt.title(self.titles[i])
+#                    elif self.title_type == 'station':
+#                        title = plt.title(self.Model_suite.model_list[i].station)
+#                    title.set_fontproperties(self.font)
+            plt.subplots_adjust(**self.subplot_dict)
         
     def plot_location_map(self):
         """
