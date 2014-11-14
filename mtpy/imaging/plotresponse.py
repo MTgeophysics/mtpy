@@ -183,7 +183,16 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                           
         *fig_dpi*: int
                  dots-per-inch resolution, *default* is 300
-                    
+        
+
+        *legend_dict*: legend properties, default:
+                       {'loc':3,
+                        'markerscale':1,
+                        'borderaxespad':.01,
+                        'labelspacing':.07, 
+                        'handletextpad':.2, 
+                        'borderpad':.02}                     }            
+
                         
         :Example: ::
             
@@ -398,6 +407,15 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         self.plot_title = kwargs.pop('plot_title', None)
         self.fig_dpi = kwargs.pop('fig_dpi', 300)
         self.rot_z = kwargs.pop('rot_z', 0)
+        self.legend_dict = {'loc':3,'markerscale':1,'borderaxespad':.01,
+                            'labelspacing':.07,'handletextpad':.2,'borderpad':.02}
+        self.subplot_dict=dict(hspace=.05, wspace=.15, left=.1)
+        print self.subplot_dict
+        for dictname in ['legend_dict','subplot_dict']:
+            if dictname in kwargs.keys():
+                setattr(self,
+                        dictname,
+                        self._update_dict(getattr(self,dictname),kwargs[dictname]))
         
         #-->line properties
         #line style between points
@@ -499,6 +517,17 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         if self.plot_yn == 'y':
             self.plot()
 
+    def _update_dict(self,old_dict,input_dict):
+        """
+        update dictionary from inputs
+        """
+
+        for key in input_dict:
+            if key in old_dict.keys():
+                old_dict[key] = input_dict[key]
+        
+        return old_dict
+
     def plot(self):
         """
         plotResPhase(filename,fig_num) will plot the apparent resistivity and 
@@ -587,7 +616,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             labelcoords = (-0.075, 0.5)
             
             #space out the subplots
-            gs.update(hspace=.05, wspace=.15, left=.1)
+            gs.update(**self.subplot_dict)
             
             #--> create the axes instances
             #apparent resistivity axis
@@ -604,7 +633,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             labelcoords = (-0.095, 0.5)            
             
             #space out the subplots
-            gs.update(hspace=.05, wspace=.15, left=.07)
+            gs.update(**self.subplot_dict)
             
             #--> create the axes instances
             #apparent resistivity axis
@@ -688,12 +717,12 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                       lw=.25)
         self.axr.legend((self.ebxyr[0], self.ebyxr[0]), 
                         ('$Z_{xy}$', '$Z_{yx}$'),
-                        loc=3, 
-                        markerscale=1, 
-                        borderaxespad=.01,
-                        labelspacing=.07, 
-                        handletextpad=.2, 
-                        borderpad=.02)
+                        loc=self.legend_dict['loc'], 
+                        markerscale=self.legend_dict['markerscale'], 
+                        borderaxespad=self.legend_dict['borderaxespad'],
+                        labelspacing=self.legend_dict['labelspacing'], 
+                        handletextpad=self.legend_dict['handletextpad'], 
+                        borderpad=self.legend_dict['borderpad'])
         
         #-----Plot the phase---------------------------------------------------
         #phase_xy
@@ -1242,11 +1271,12 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                            
             self.axr2.legend((self.ebxxr[0], self.ebyyr[0]), 
                             ('$Z_{xx}$','$Z_{yy}$'),
-                            loc=3, markerscale=1, 
-                            borderaxespad=.01,
-                            labelspacing=.07, 
-                            handletextpad=.2, 
-                            borderpad=.02)
+                            loc=self.legend_dict['loc'], 
+                            markerscale=self.legend_dict['markerscale'], 
+                            borderaxespad=self.legend_dict['borderaxespad'],
+                            labelspacing=self.legend_dict['labelspacing'], 
+                            handletextpad=self.legend_dict['handletextpad'], 
+                            borderpad=self.legend_dict['borderpad'])
             
             #-----Plot the phase-----------------------------------------------
             self.axp2 = self.fig.add_subplot(gs[1, 1], sharex=self.axr)

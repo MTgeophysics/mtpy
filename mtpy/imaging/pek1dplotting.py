@@ -14,6 +14,31 @@ import mtpy.modeling.pek1dclasses as pek1dc
 import mtpy.utils.elevation_data as ed
 from matplotlib.font_manager import FontProperties
 
+
+def update_scale(z,scale):
+    
+    if 'k' not in scale:
+        z = z/1000.
+    if '-' in scale:
+        z = -1.*z
+        
+    return z                        
+    
+
+def make_twiny(offset):
+    """
+    """
+    
+    ax3 = plt.twiny()
+    ax3.xaxis.set_ticks_position('bottom')
+    ax3.spines['bottom'].set_position(('axes',-offset))
+    ax3.set_frame_on(True)
+    ax3.patch.set_visible(False)
+    ax3.spines["bottom"].set_visible(True)
+    
+    return ax3
+
+
 class Plot_model():
     """
     plot model results. Inherits a mtpy.modeling.pek1dclasses.Model object
@@ -43,36 +68,132 @@ class Plot_model():
                      'aniso':[0,20],
                      'strike':[0,180]}
         self.ylim = [6,0]
-        self.modelno = 0
+        self.modelno = Model.modelno
         self.modeltype = 'model'
         self.save = True
         self.output_filename = None
 
-        for key in input_parameters.keys():
-            setattr(self,key,input_parameters[key]) 
-
-    def _set_axis_params(self,ax,parameter):
+        self.label_fontsize = 8
+        self.title_fontsize = 12
+        self.linedict = dict(style='-',width=1,
+                              colour=['0.5','k']*2)
+        self.horizon_linedict = dict(style='-',width=1.5,
+                                     colour=['c','y','b','r','g','m'])
+        self.horizon_list = None
+        self.horizon_zscale = 'km'
         
- 
-        xlim = self.xlim[parameter]
+        for key in input_parameters.keys():
+            if hasattr(self,key):
+                setattr(self,key,input_parameters[key]) 
+                
 
+    def _set_axis_params(self,ax,
+                         parameter
+                         ):
+        
+        xlim = self.xlim[parameter]
+        
         plt.xlim(xlim)
         plt.ylim(self.ylim)
         plt.grid()
         ax.set_xticks(xlim)
-
-#        ax.get_xticklabels()[0].set_horizontalalignment('left')
+        
+        ax.get_xticklabels()[0].set_horizontalalignment('left')
 #        ax.get_xticklabels()[-1].set_horizontalalignment('right')
         for label in ax.get_xticklabels():
             label.set_fontsize(self.label_fontsize)
             label.set_rotation(90)
             label.set_verticalalignment('top')
-            
+        for label in ax.get_yticklabels():
+            label.set_fontsize(self.label_fontsize)            
 
-        return plt.gca()
+        return ax
+
+
     
-    
-    def plot_parameter(self,parameter):
+    def plot_parameter(self,#parameter,
+                       twiny_offset=0.35,
+                       plot_inmodel=True,
+                       additional_data = None):
+        
+        parameter = self.parameters
+
+        try:
+            # initialise a list containing a model to plot  
+            models_to_plot = [self.Model.models[self.modelno-1]]
+            # append inmodel to list if needed
+            if plot_inmodel:
+                if self.Inmodel is not None:
+                    models_to_plot.append(self.Inmodel.inmodel)
+
+            axes = []
+            twin = False
+            c = 0
+            nlc = len(self.linedict['colour'])
+            ls,lw = self.linedict['style'],self.linedict['width']       
+            
+            if 'minmax' in parameter:
+                twin = True
+                for model in models_to_plot:
+#                    print c,nlc
+                    plt.plot(model[:,3],model[:,1],
+                             self.linedict['colour'][c%nlc],ls=ls,lw=lw)
+                    p, = plt.plot(model[:,2],model[:,1],
+                                  self.linedict['colour'][(c+1)%nlc],ls=ls,lw=lw)
+                    plt.xscale('log')   
+                c += 2
+                ax = plt.gca()
+                ax = self._set_axis_params(ax,'minmax')
+                axes.append([ax,p])
+                
+            if 'aniso' in parameter:
+                if twin:
+                    ax = make_twiny(twiny_offset)
+                
+                for modelvals in models_to_plot:           
+                    p, = plt.plot(modelvals[:,3]/modelvals[:,2],modelvals[:,1],
+                                  self.linedict['colour'][c%nlc],ls=ls,lw=lw)
+                    plt.xscale('log')
+#                    if not twin:
+                    ax = plt.gca()
+                    twin = True
+                    ax = self._set_axis_params(ax,'aniso')
+                c += 1
+                axes.append([ax,p])
+                
+            if 'strike' in parameter:
+                strike = modelvals[:,4]%180
+#                if self.xlim['strike'][-1] == 180:
+                strike[strike < self.xlim['strike'][0]-45] += 180
+                if twin:
+                    ax = make_twiny(twiny_offset)
+                for modelvals in models_to_plot:
+                    p, = plt.plot(strike,modelvals[:,1],self.linedict['colour'][c%nlc],ls=ls,lw=lw)
+                    ax = plt.gca()
+                    twin = True
+                    ax = self._set_axis_params(ax,'strike')
+                axes.append([ax,p])
+
+            if self.horizon_list is not None:
+                c = 0
+                for h in self.horizon_list:
+                    elev = ed.get_elevation(self.Model.x,self.Model.y,h)
+                    elev = update_scale(elev,self.horizon_zscale)
+                    plt.plot(plt.xlim(),[elev]*2,
+                             self.horizon_linedict['colour'][c],
+                             lw=self.horizon_linedict['width'])
+                    c += 1
+#
+#            if additional_data is not None:
+#                print "plotting additional data"
+#                plt.plot(additional_data[:,0],additional_data[:,1],lw=0.1)
+
+            return axes
+        except IndexError:
+            print "station omitted"
+
+
+    def plot_parameter_old(self,parameter):
         """
         base function for plotting a single model
         
@@ -108,14 +229,17 @@ class Plot_model():
             strike = data[:,4]%180
                
             axes_count = 1
+            ci = 0
 
             if 'minmax' in parameter:
                 ls,lw = '-',1
                 twin = True
                 for modelvals in data_list:
-                    
-                    plt.plot(modelvals[:,3],modelvals[:,1],'0.5',ls=ls,lw=lw)
-                    p, = plt.plot(modelvals[:,2],modelvals[:,1],'k',ls=ls,lw=lw)
+                    ci = 0
+                    plt.plot(modelvals[:,3],modelvals[:,1],self.linecolours[ci],ls=ls,lw=lw)
+                    ci += 1
+                    p, = plt.plot(modelvals[:,2],modelvals[:,1],self.linecolours[ci],ls=ls,lw=lw)
+                    ci += 1
                     plt.xscale('log')
                     lw*=0.5
                     ax = self._set_axis_params(ax,'minmax')
@@ -126,7 +250,8 @@ class Plot_model():
                 color = 'k'
                 if twin:
                     ax = make_twiny()
-                    color = 'b'
+                    color = self.linecolours[ci]
+                    ci += 1
                 twin = True
                 for modelvals in data_list:
                     
@@ -141,7 +266,8 @@ class Plot_model():
                 ls = '-'
                 if twin:
                     ax=make_twiny() 
-                    color,lw = 'b',0.5
+                    color,lw = self.linecolours[ci],0.5
+                    ci += 1
                 twin = True
                 for modelvals in data_list:
                     p, = plt.plot(modelvals[:,4]%180,modelvals[:,1],color,ls=ls,lw=lw)
@@ -346,14 +472,18 @@ class Plot_fit():
         else:
             c = 'k'
 
-        plt.scatter(x,y,c=c,lw=0,
+        plt.scatter(x,y,c=c,
+                    s=40,
+                    linewidth=0.0,
                     cmap=self.cmap,
+                    edgecolor='white',
                     marker=self.symbol)
         
         if self.labels:
             for i in range(len(lx)):
                 plt.text(x[i],y[i],str(round(lx[i],1)))
 
+        self.ax = plt.gca()
       
 
 class Plot_responses():
@@ -435,7 +565,8 @@ class Plot_map():
         self.anisotropy_display_factor = 0.75
         self.xlim = None
         self.ylim = None
-        self.cbar=True
+        self.plot_cbar=True
+        self.cbar_ax = [0.8,0.1,0.08,0.8]
         self.imethod = 'linear'
         self.scalebar = True
         self.aniso_depth_file = aniso_depth_file
@@ -445,11 +576,19 @@ class Plot_map():
         self.xyzfiles_dict = dict(header_rows=1,
                                   scale='km')
         self.xyzfile_titles = None
+        self.additional_xy_data = {}
+        self.plot_text = {}
         self.set_titles = True
-        self.figsize=16
+
+        self.subplot_layout = 'vertical'
+        self.wspace = 0.02
+        self.hspace = 0.15
+        self.fonttype = 'serif'
+        self.figsize=(8,5)
         
         for key in input_parameters.keys():
-            setattr(self,key,input_parameters[key]) 
+            if hasattr(self,str.lower(key)):
+                setattr(self,key,input_parameters[key]) 
             
         self.read_aniso_depth_data()
         if self.xyzfiles is not None:
@@ -465,15 +604,19 @@ class Plot_map():
                     self.xyzfile_titles = [self.xyzfile_titles]
                 while len(self.xyzfile_titles) < len(self.xyzfiles):
                     self.xyzfile_titles.append('')
-                    
+
+        font0 = FontProperties()
+        font = font0.copy()
+        font.set_family(self.fonttype)
+        self.font = font                   
                     
     def _update_axis_params(self,title='',labels='xy'):
         
         ax = plt.gca()
 
+
         xticks = ax.get_xticks()
         ax.set_xticklabels(['%6.2f'%t for t in xticks])
-        
         if 'x' in labels:
             plt.xlabel('Longitude')
         else:
@@ -507,11 +650,24 @@ class Plot_map():
         x,y,z,resmin = self.x,self.y,self.z,self.resmin
         resmax,strike,aniso = self.resmax,self.strike,self.aniso
         
+        if self.levels is None:
+            zmin,zmax = np.amin(self.z),np.amax(self.z)
+            self.levels = np.linspace(zmin,zmax,self.n_levels)
+        
+        
         # reset anisotropy values greater than a threshold for plotting
         aniso[aniso>self.anisotropy_threshold[1]] = self.anisotropy_threshold[1]
         
         scale = self.aniso_depth_file_dict['scale']
+        cbar = self.plot_cbar
+        self.plot_cbar = False
+        
         self.plot_interface(x,y,z,scale=scale)
+        
+        if len(self.xyzfiles) == 0:
+            title = "Magnitude and depth of anisotropy\nfrom 1D anisotropic inversions"
+            self._update_axis_params(title,'xy')
+
         
         if self.scaleby == 'resmin':
             scale = 1./resmin
@@ -536,16 +692,21 @@ class Plot_map():
                                            angle=0,
                                            lw=0.5))
             plt.text(sxy[0],sxy[1]+0.005,
-            'a = %1i'%scalebar_size,
+            '|a|=%1i'%scalebar_size,
             fontsize=10)
-            print sxy,scalebar_size
+
         ax1 = plt.gca()
+        
         for i,e in enumerate(recs):
             ax1.add_artist(e)
             e.set_facecolor('k')
-
+         
+        self.add_ax_text(1)
+        self.add_xy_data(1)
             
-
+        if cbar:
+            self.add_cbar()
+        self.cbar = cbar
         
     
     def plot_interface(self,x,y,z,scale='km'):
@@ -573,13 +734,13 @@ class Plot_map():
         else:
             plt1 = plt.contourf(xi[:,:,0],xi[:,:,1],zi,
                                 levels=self.levels,cmap=cmap)
-        
         ax = plt.gca()
+       
         ax.set_aspect('equal')
         
-        if self.cbar:
-            plt.colorbar()
-        
+        if self.plot_cbar:
+            self.add_cbar() 
+
         if self.xlim is not None:
             plt.xlim(self.xlim)
         if self.ylim is not None:
@@ -589,7 +750,7 @@ class Plot_map():
         
 
         
-    def plot_aniso_and_interfaces(self):
+    def plot_aniso_and_interfaces(self,plot_aniso=True):
         """
         plot a set of models and up to three interfaces for comparison.        
         
@@ -598,25 +759,31 @@ class Plot_map():
         
         if type(self.xyzfiles) == str:
             self.xyzfiles = [self.xyzfiles]
-        if len(self.xyzfiles) == 1:
-            s1,s2 = 2,1
-            sp = [2]
-            sp_labels = ['y']
-            ad_labels = 'xy'
-        elif len(self.xyzfiles) == 2:
-            s1,s2 = 3,1
-            sp = [2,3]
-            sp_labels = ['y','xy']
+            
+        if self.subplot_layout == 'vertical':
+            s1,s2 = len(self.xyzfiles)+1,1
+            sp_labels = ['y']*(len(self.xyzfiles)-1)+['xy']
             ad_labels = 'y'
-        # if more than 3 interfaces provided, plot the first 3
-        elif len(self.xyzfiles) >= 3:
-            s1,s2 = 2,2
-            sp = [2,3,4]
-            sp_labels = ['','xy','x']
-            ad_labels = 'y'            
+            if not plot_aniso:
+                s1 -= 1
+        elif self.subplot_layout == 'horizontal':
+            s2,s1 = len(self.xyzfiles)+1,1
+            sp_labels = ['x']*(len(self.xyzfiles))
+            ad_labels = 'xy'
+            if not plot_aniso:
+                s2 -= 1
+                sp_labels[0] += 'y'
+#        elif self.subplot_layout == 'grid':
+#            s1 = int(np.ceil((len(self.xyzfiles)+1)**0.5))
+#            s2 = s1
+#            sp_labels = ['','xy','x']
+#            ad_labels = 'y'
+        
+        
+
         # set self.cmap false for the time being, until all individual plots are done
-        cbar = self.cbar
-        self.cbar = False          
+        cbar = self.plot_cbar
+        self.plot_cbar = False          
             
         header_rows,scale = [[d[at] for d in [self.aniso_depth_file_dict,
                              self.xyzfiles_dict]] for at in ['header_rows','scale']]
@@ -635,24 +802,33 @@ class Plot_map():
         self.levels = np.linspace(zmin,zmax,self.n_levels)
         
         x,y = self.x,self.y
-        ar = ((float(s1)/float(s2))*((np.amax(y) - np.amin(y))/(np.amax(x) - np.amin(x))))**0.9
+#        if self.figsize is None:
+#            ar = ((float(s1)/float(s2))*((np.amax(y) - np.amin(y))/(np.amax(x) - np.amin(x))))**0.9
+#            self.figsize=(10,10*ar)
+        plt.figure(figsize=self.figsize)
         
-        plt.figure(figsize=(self.figsize,self.figsize*ar))
 
         plt.subplot(s1,s2,1)
 
-        self.plot_aniso_depth_map()
-        title = "Magnitude and depth of anisotropy\nfrom 1D anisotropic inversions"
-        self._update_axis_params(title,ad_labels)
+        if plot_aniso:
+            sp = range(2,len(self.xyzfiles)+2)
+            self.plot_aniso_depth_map()
+            title = "Magnitude and depth of anisotropy\nfrom 1D anisotropic inversions"
+            self._update_axis_params(title,ad_labels)
+        else:
+            sp = range(1,len(self.xyzfiles)+1)
         
-        plt.gca().set_xticklabels([])
+#        plt.gca().set_xticklabels([])
         for s,ss in enumerate(sp):
             ax = plt.subplot(s1,s2,ss)
-            print self.xyzfiles[s]
+#            print self.xyzfiles[s]
             xyz = np.loadtxt(self.xyzfiles[s],skiprows=header_rows[1])
             x,y,z = [xyz[:,i] for i in range(3)]
             self.plot_interface(x,y,z,
                                 scale=scale[1])
+            self.add_xy_data(ss)
+            self.add_ax_text(ss)
+                    
             self._update_axis_params(title=self.xyzfile_titles[s],
                                      labels=sp_labels[s])
             if 'x' not in sp_labels[s]:
@@ -662,16 +838,45 @@ class Plot_map():
                 ax.set_yticklabels([])
                 plt.ylabel('')
 
-        self.cbar = cbar
+        self.plot_cbar = cbar
+        bottom = self.cbar_ax[1]+self.cbar_ax[3]+0.05
+        plt.subplots_adjust(wspace=self.wspace,
+                            hspace=self.hspace,
+                            bottom=bottom)
 
-        plt.subplots_adjust(wspace=0.0)
-        ax = plt.axes([0.88,0.1,0.08,0.8])
+        if self.plot_cbar:
+            self.add_cbar()
+
+    def add_cbar(self):
+        if self.cbar_ax[-2]/self.cbar_ax[-1] > 1.:
+            cbo = 'horizontal'
+        else:
+            cbo = 'vertical'
+        ax = plt.axes(self.cbar_ax)
         ax.set_visible(False)
-        if self.cbar:
-            cbar = plt.colorbar(fraction=0.8)
-            cbar.set_label("Depth, km")
-            cticks = range(int(self.levels[0]),int(self.levels[-1]+1))
-            cbar.set_ticks(cticks)
+        cbar = plt.colorbar(fraction=0.8,orientation=cbo)
+        cbar.set_label("Depth, km")
+        cticks = range(int(self.levels[0]),int(self.levels[-1]+1))
+        cbar.set_ticks(cticks)
+
+    def add_xy_data(self,spn):
+        
+        if str(spn) in self.additional_xy_data.keys():
+            for dd in self.additional_xy_data[str(spn)]:
+                try:
+                    zorder=dd[3]
+                except:
+                    zorder=10
+                plt.plot(dd[0],dd[1],dd[2],zorder=zorder)
+        
+    def add_ax_text(self,spn):
+        
+        if str(spn) in self.plot_text.keys():
+            for dd in self.plot_text[str(spn)]:
+                for ii in range(len(dd[0])):
+                    plt.text(dd[0][ii],dd[1][ii],dd[2][ii])
+                
+
 
     def plot_location_map(self,
                           plot_names = True):
@@ -679,7 +884,7 @@ class Plot_map():
         plot location map of all stations.        
         
         """
-
+        return
 
 def update_scale(z,scale):
     
@@ -697,12 +902,13 @@ def make_twiny():
     
     ax3 = plt.twiny()
     ax3.xaxis.set_ticks_position('bottom')
-    ax3.spines['bottom'].set_position(('axes',-0.35))
+    ax3.spines['bottom'].set_position(('axes',-0.3))
     ax3.set_frame_on(True)
     ax3.patch.set_visible(False)
     ax3.spines["bottom"].set_visible(True)
     
     return ax3
+
         
 
 class Plot_profile():
@@ -713,30 +919,49 @@ class Plot_profile():
     
     def __init__(self,Model_suite,**input_parameters):
         
-        self.working_directory = '.'
-        self.station_listfile = None
-        self.station_xyfile = None
         self.Model_suite = Model_suite
-        self.modeltype = 'model'
-        self.fig_width = 1.
-        self.ax_width = 0.03
-        self.ax_height = 0.8
-        self.ax_bottom = 0.1
-        self.plot_spacing = 0.02
-        self.ylim = [6,0]
-        self.title_type = 'single'
+        self.working_directory = Model_suite.working_directory
+        self.parameters = [['minmax'],['aniso','strike']]
         self.titles = {'minmax':'Minimum and maximum resistivity, $\Omega m$',
                        'aniso':'Anisotropy in resistivity',# (maximum/minimum resistivity)
                        'strike':'Strike angle of minimum resistivity'}#, $^\circ$
         self.xlim = {'minmax':[0.1,1000],
                      'aniso':[0,20],
                      'strike':[0,180]}
-        self.fonttype = 'serif'
+
+        self.ylim = [6,0]
+        self.modelno = Model_suite.modelno
+        self.modeltype = 'model'
+        
+        
+        
+        self.station_listfile = None
+        self.station_xyfile = None
+        
+        self.figsize = (6,6)
+        self.plot_spacing = 0.1
+        self.title_type = 'single'
+        self.fonttype = 'sans-serif'
         self.label_fontsize = 8
         self.title_fontsize = 12
-                     
+        self.linedict = dict(style='-',width=1,
+                              colour=[['0.5','k']]*2)
+        self.horizon_list = None
+        self.horizon_zscale = 'km'
+        self.horizon_linedict = dict(style=['-']*6,width=[2]*6,
+                                     colour=['c','y','b','r','g','m'])
+                                     
+                                     
+        self.subplot_dict = dict(wspace=0.1,bottom=0.25,hspace=0.4)
+        
+        # store inputs in the object to pass through to Plot_model object
+        self.input_parameters = input_parameters
+
+        # set attributes from keyword arguments          
         for key in input_parameters.keys():
-            setattr(self,key,input_parameters[key])
+            if hasattr(self,key):
+                setattr(self,key,input_parameters[key])
+                self.input_parameters[key] = input_parameters[key]
 
         font0 = FontProperties()
         font = font0.copy()
@@ -831,10 +1056,8 @@ class Plot_profile():
 
              
         
-    def plot_parameter(self,parameter,
-                       ylim=[6,0],
-                       horizon_list = None,
-                       horizon_zscale = 'km',
+    def plot_parameter(self,#parameter,
+                       twiny_offset=0.25,
                        new_figure = True,
                        plot_inmodel=True,
                        additional_data = None):
@@ -847,52 +1070,23 @@ class Plot_profile():
         
         
         """
-        import pek1dplotting as p1dp
-
         
-#        self.get_station_distance()
-#        
-#        # define some initial locations to put the plots corresponding to distance along profile
-#        profile_x = (self.station_distances - np.amin(self.station_distances))
-#        
-#        # normalise so max distance is at 1
-#        profile_x /= (np.amax(self.station_distances)-np.amin(self.station_distances))
-#        
-#        # make an empty array to put buffered distances
-#        profile_x_buf = np.zeros_like(profile_x)      
-#        
-        modelno = self.Model_suite.modelno
-#
-##        print profile_x
-        px = self.ax_width
-        dx = self.plot_spacing
-        nx = len(self.Model_suite.model_list)
-        profile_x = np.linspace(0.,px*nx+dx*(nx-1),nx) + px/2.
-        profile_x = np.linspace(0.,1.-2.5*px-dx,nx) + px + dx
-#        print profile_x,px,dx,nx
-#     
-#        
-#        
-#        # shift each station along the profile so that they don't overlap each other
-#        for i in range(len(profile_x)):
-#            if i == 0:
-#                profile_x_buf[i] = profile_x[i]
-#            else:
-#                profile_x_buf[i] = max(profile_x[i],profile_x_buf[i-1]+px+self.plot_spacing)
-#        # renormalise so that end station is still within the plot bounds
-#        profile_x_buf /= np.amax(profile_x_buf)/(self.fig_width-2.*px)
-#        profile_x_buf += px/2
-#
-#        if new_figure:        
-#            plt.figure(figsize=(len(profile_x),5*self.ax_height))
-            
+        nvplots = len(self.parameters)
         
-        
-        
-        for i in range(len(self.Model_suite.model_list)):
-            data_list = []
-            try:
+        for nv in range(nvplots):
+            for i in range(len(self.Model_suite.model_list)):
                 Model = self.Model_suite.model_list[i]
+                PM = Plot_model(Model,**self.input_parameters)
+                PM.parameters = self.parameters[nv]
+                if 'minmax' not in self.parameters[nv]:
+                    PM.horizon_list = None
+                plt.subplot(nvplots,
+                            len(self.Model_suite.model_list),
+                            nv*len(self.Model_suite.model_list)+i+1)
+
+                axes = PM.plot_parameter(twiny_offset=twiny_offset,
+                                         plot_inmodel=plot_inmodel,
+                                         additional_data = additional_data)
     
                 data_list.append(Model.models[modelno-1])
                 if plot_inmodel:
@@ -915,6 +1109,10 @@ class Plot_profile():
                         plt.xscale('log')
                         lw*=0.5
                         ax = self._set_axis_params(ax,'minmax')
+                    if i == 0:
+                        ylab = ax.set_ylabel('Depth, km')
+                        ylab.set_fontproperties(self.font)
+                        ylab.set_fontsize(self.label_fontsize)
                     axes.append([ax,p])
 
                 if 'aniso' in parameter:
@@ -931,6 +1129,10 @@ class Plot_profile():
                         plt.xscale('log')  
                         lw *= 0.5
                         ax = self._set_axis_params(ax,'aniso')
+                        if i == 0:
+                            ylab = ax.set_ylabel('Depth, km')
+                            ylab.set_fontproperties(self.font)
+                            ylab.set_fontsize(self.label_fontsize)
                     axes.append([ax,p])
                 if 'strike' in parameter:
                     color,lw = 'k',1
@@ -944,18 +1146,22 @@ class Plot_profile():
                         
                         lw *= 0.5
                         ax = self._set_axis_params(ax,'strike')
-
+                        if i == 0:
+                            ylab = ax.set_ylabel('Depth, km')
+                            ylab.set_fontproperties(self.font)
+                            ylab.set_fontsize(self.label_fontsize)
                     axes.append([ax,p])
                 if horizon_list is not None:
                     for h in horizon_list:
                         elev = ed.get_elevation(Model.x,Model.y,h)
                         elev = p1dp.update_scale(elev,horizon_zscale)
                         plt.plot(plt.xlim(),[elev]*2) 
+
                 if additional_data is not None:
-                    print "plotting additional data"
+#                    print "plotting additional data"
                     plt.plot(additional_data[i][:,0],additional_data[i][:,1],lw=0.1)
                 if i != 0:
-                    ax.set_yticklabels([])
+                    axes[0][0].set_yticklabels([])
                 for ax,p in axes:
                     ax.xaxis.label.set_color(p.get_color())
                     ax.tick_params(axis='x', colors=p.get_color())
@@ -967,27 +1173,24 @@ class Plot_profile():
                             ylab = plt.ylabel('Depth, km')
                             ylab.set_fontproperties(self.font)
                     if self.title_type == 'single':
-                        if i == 0:
-                            if type(parameter) == list:
-                                titlestring = ' and '.join([self.titles[p] for p in parameter])
-                            else: titlestring = self.titles[parameter]
-                            title = plt.title(titlestring,ha='left')
+                        if i == int(len(self.Model_suite.model_list)/2)-1:
+#                        if i == 0:
+                            if type(self.parameters[nv]) == list:
+                                titlestring = ' and\n'.join([self.titles[p] for p in self.parameters[nv]])
+                            else: titlestring = self.titles[self.parameters[nv]]
+                            title = plt.xlabel(titlestring,ha='center',va='top')
+                            if len(self.parameters[nv]) > 1:
+                                ax.xaxis.set_label_coords(0.5,-self.subplot_dict['hspace']-0.05)
+#                                ax.xaxis.label.set_color('k')
                             title.set_fontproperties(self.font)
                             title.set_fontsize(self.title_fontsize)
-
-                    elif self.title_type == 'multiple':
-                        title = plt.title(self.titles[i])
-                    elif self.title_type == 'station':
-                        title = plt.title(self.Model_suite.model_list[i].station)
-                    title.set_fontproperties(self.font)
-                    title.set_fontsize(self.title_fontsize)
-
-            except IndexError:
-                print "station omitted"
-
-
-            
-#        self.profile_x = profile_x_buf
+    
+#                    elif self.title_type == 'multiple':
+#                        title = plt.title(self.titles[i])
+#                    elif self.title_type == 'station':
+#                        title = plt.title(self.Model_suite.model_list[i].station)
+#                    title.set_fontproperties(self.font)
+            plt.subplots_adjust(**self.subplot_dict)
         
     def plot_location_map(self):
         """
