@@ -479,7 +479,6 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         
         #make sure there is PT data
         if self.modem_data_fn is not None:
-            print self.modem_data_fn
             if self.pt_data_arr is None:
                 print 'data array is none'
                 self._get_pt()
