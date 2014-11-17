@@ -28,7 +28,7 @@ coh Ey : col 5
 
 import numpy as np
 import os.path as op
-
+import sys
 
 def main():
 	
@@ -62,7 +62,7 @@ def plotcoh(fn, saveplot=False):
 		coh2 = data[:,4]
 
 
-		ax1 = figure(11)
+		ax1 = figure('coherence')
 		
 		cohplotelement1 = None
 		cohplotelement2 = None
@@ -91,13 +91,22 @@ def plotcoh(fn, saveplot=False):
 		ylim([-.1,1.1])
 		xlim(0.5*min(periods),2*max(periods))
 		autoscale(False)
-		xlabel('period (in s)')
-		ylabel('squared Coherence')
+		xlabel('Period (in s)')
+		ylabel('Coherence$^2$')
 
-		ax1.legend([cohplotelement1,cohplotelement2,cohplotelement3,cohplotelement4],
-					['$E_{X}$','$E_{Y}$','$B_{X}$','$B_{Y}$'],loc=1,ncol=2,
+		eps = 0.05
+		if (cohplotelement3 is not None) and (cohplotelement4 is not None):
+			ax1.legend([cohplotelement1,cohplotelement2,cohplotelement3,cohplotelement4],
+					['$E_{X}$','$E_{Y}$','$B_{X}$','$B_{Y}$'],loc=1,ncol=2,bbox_to_anchor=[1-eps, 1-eps],
 					numpoints=1,markerscale=0.8,frameon=True,labelspacing=0.3, 
 					prop={'size':9},fancybox=True,shadow=False)
+
+		else:
+			ax1.legend([cohplotelement1,cohplotelement2],
+					['$E_{X}$','$E_{Y}$'],loc=1,ncol=2,bbox_to_anchor=[1-eps, 1-eps],
+					numpoints=1,markerscale=0.8,frameon=True,labelspacing=0.3, 
+					prop={'size':9},fancybox=True,shadow=False)
+
 
 
 		if saveplot is True:

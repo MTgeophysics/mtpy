@@ -1698,8 +1698,15 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
     #find the birrp-output j-file for the current station 
     #j_filename_list = [i for i in os.listdir(input_dir) if op.basename(i).upper() == ('%s.j'%stationname).upper() ]
     j_filename_list = [i for i in os.listdir(input_dir) if i.lower().endswith('.j') ]
-    j_filename_list = [i for i in  j_filename_list if '{0}'.format(stationname.upper()) in op.basename(i).upper() ]
+
+    j_filename_list += [i for i in  j_filename_list if '{0}'.format(stationname.upper()) in op.basename(i).upper() ]
+
+    print j_filename_list
+    print    
     j_filename_list = [op.join(input_dir,i) for i in j_filename_list]
+    
+
+
     try:
         j_filename = op.join(input_dir, j_filename_list[0])
     except:
@@ -2437,10 +2444,16 @@ def convert2coh(stationname, birrp_output_directory):
     #locate file names
 
     # only for second stage coherences...:
-
+    
     cohfilenames = sorted([ op.abspath(op.join(directory,i)) for i in fnmatch.filter(
                 os.listdir(directory), '*%s*.[12]r.[12]c2'%stationname.upper()) ] )
+    if len(cohfilenames) == 0:
+        lo_files = [i.lower() for i in os.listdir(directory)]
+        cohfilenames = sorted([ op.abspath(op.join(directory,i)) for i in fnmatch.filter(
+                lo_files, '*%s*.[12]r.[12]c2'%stationname.lower()) ] ) 
     
+    #print cohfilenames
+
     if len(cohfilenames) < 1:
         print 'No coherence files for station %s found in: %s'%(stationname, directory)
         raise MTex.MTpyError_file_handling()#'No coherence files for station %s found in: %s'%(stationname, directory))
