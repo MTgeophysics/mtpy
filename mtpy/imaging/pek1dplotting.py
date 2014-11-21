@@ -685,14 +685,15 @@ class Plot_map():
                                    lw=0.5) for i in range(len(x))]
         if self.scalebar:
             scalebar_size = round(max(scale))
-            sxy = np.array([plt.xlim()[0]+0.01,plt.ylim()[-1]-0.015])
+            sxy = np.array([plt.xlim()[0]+0.01,plt.ylim()[-1]-0.018])
+            
             recs.append(mpatches.Rectangle(xy=sxy, 
                                            width = self.escale*scalebar_size,
                                            height = self.escale,
                                            angle=0,
                                            lw=0.5))
-            plt.text(sxy[0],sxy[1]+0.005,
-            '|a|=%1i'%scalebar_size,
+            plt.text(sxy[0],sxy[1]+0.006,
+            r'${\frac{\phi_{max}}{\phi_{min}}}=%1i$'%scalebar_size,
             fontsize=10)
 
         ax1 = plt.gca()
@@ -1087,7 +1088,7 @@ class Plot_profile():
                 axes = PM.plot_parameter(twiny_offset=twiny_offset,
                                          plot_inmodel=plot_inmodel,
                                          additional_data = additional_data)
-    
+                data_list = []
                 data_list.append(Model.models[modelno-1])
                 if plot_inmodel:
                     if len(self.Model_suite.inmodel_list) > 0:
