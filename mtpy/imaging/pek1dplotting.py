@@ -1007,7 +1007,7 @@ class Plot_profile():
                             if type(self.parameters[nv]) == list:
                                 titlestring = ' and\n'.join([self.titles[p] for p in self.parameters[nv]])
                             else: titlestring = self.titles[self.parameters[nv]]
-                            title = plt.xlabel(titlestring,ha='center',va='top')
+                            title = plt.xlabel(titlestring,ha='center',va='top',labelpad=0)
                             if len(self.parameters[nv]) > 1:
                                 ax.xaxis.set_label_coords(0.5,-self.subplot_dict['hspace']-0.05)
 #                                ax.xaxis.label.set_color('k')
