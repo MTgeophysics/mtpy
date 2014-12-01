@@ -427,11 +427,16 @@ class WSData(object):
             ofid.write('\n')
             
         #write impedance tensor components
+        if self.n_z == 8:
+            z_index_list = range(4)
+        elif self.n_z == 4:
+            z_index_list = [2, 3]
+            
         for ii, p1 in enumerate(self.period_list):
             ofid.write('DATA_Period: {0:3.6f}\n'.format(p1))
             for ss in range(n_stations):
                 zline = self.data[ss]['z_data'][ii].reshape(4,)
-                for jj in range(self.n_z/2):
+                for jj in z_index_list:
                     ofid.write('{0:+.4e} '.format(zline[jj].real))
                     ofid.write('{0:+.4e} '.format(-zline[jj].imag))
                 ofid.write('\n')
@@ -441,7 +446,7 @@ class WSData(object):
             ofid.write('ERROR_Period: {0:3.6f}\n'.format(p1))
             for ss in range(n_stations):
                 zline = self.data[ss]['z_data_err'][ii].reshape(4,)
-                for jj in range(self.n_z/2):
+                for jj in z_index_list:
                     ofid.write('{0:+.4e} '.format(zline[jj].real))
                     ofid.write('{0:+.4e} '.format(zline[jj].imag))
                 ofid.write('\n')
@@ -451,7 +456,7 @@ class WSData(object):
             ofid.write('ERMAP_Period: {0:3.6f}\n'.format(p1))
             for ss in range(n_stations):
                 zline = self.data[ss]['z_err_map'][ii].reshape(4,) 
-                for jj in range(self.n_z/2):
+                for jj in z_index_list:
                     ofid.write('{0:.5e} '.format(self.z_err_map[jj]))
                     ofid.write('{0:.5e} '.format(self.z_err_map[jj]))
                 ofid.write('\n')
