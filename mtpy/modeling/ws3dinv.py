@@ -1383,10 +1383,16 @@ class WSMesh(object):
             ax2.set_ylim(z_limits)
             
         if east_limits == None:
-            ax1.set_xlim(self.station_locations['east'].min()-\
-                            10*self.cell_size_east,
-                         self.station_locations['east'].max()+\
-                             10*self.cell_size_east)
+            try:
+                ax1.set_xlim(self.station_locations['east'].min()-\
+                                10*self.cell_size_east,
+                             self.station_locations['east'].max()+\
+                                 10*self.cell_size_east)
+            except ValueError:
+                ax1.set_xlim(self.station_locations['east_c'].min()-\
+                                10*self.cell_size_east,
+                             self.station_locations['east_c'].max()+\
+                                 10*self.cell_size_east)
         else:
             ax1.set_xlim(east_limits)
             
