@@ -2805,10 +2805,16 @@ class WSResponse(object):
                 break
             else:
                 zline = np.array(dl.strip().split(),dtype=np.float)*self._zconv
-                self.resp[st][dkey][per-1,:] = np.array([[zline[0]-1j*zline[1],
-                                                         zline[2]-1j*zline[3]],
-                                                         [zline[4]-1j*zline[5],
-                                                         zline[6]-1j*zline[7]]])
+                if self.n_z == 4:
+                    self.resp[st][dkey][per-1,:] = np.array([[0-1j*0,
+                                                             zline[0]-1j*zline[1]],
+                                                             [zline[2]-1j*zline[3],
+                                                             0-1j*0]])
+                if self.n_z == 8:
+                    self.resp[st][dkey][per-1,:] = np.array([[zline[0]-1j*zline[1],
+                                                             zline[2]-1j*zline[3]],
+                                                             [zline[4]-1j*zline[5],
+                                                             zline[6]-1j*zline[7]]])
                 st += 1
                 
         self.station_east = self.resp['east']
