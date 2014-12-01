@@ -513,9 +513,9 @@ class Response():
             for f in range(len(self.freq)):
                 zabs[m,f] = (self.resistivity[m,f]/(0.2*period[f]))**0.5
         zr = zabs*np.cos(np.deg2rad(self.phase))
-        zi = zabs*np.sin(np.deg2rad(self.phase))
+        zi = -zabs*np.sin(np.deg2rad(self.phase))
         self.z = zr + 1j*zi
-               
+        self.phase = np.rad2deg(np.arctan(zi/zr))
 
 
 class Fit():

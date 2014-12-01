@@ -56,6 +56,43 @@ def read1columntext(textfile):
     
     return [ff.strip() for ff in open(textfile).readlines()]
 
+def read_stationdatafile(textfile,read_duplicates = True):
+    """
+    read a space delimited file containing station info of any sort - 
+    3 columns: station x, y, ... - to a dictionary - station:[x,y,...]
+    textfile = full path to text file
+    read_duplicates = True/False - if stations are listed more than once do you 
+                                   want to read all information or just the 
+                                   first occurrence, default True
+    
+    example:
+    import mtpy.utils.filehandling as fh
+    stationdict = fh.read_stationxyfile(textfile)
+    
+    
+    """
+    stationdict = {}
+    for line in open(textfile).readlines():
+        line = line.split()
+        for l in range(1,len(line)):
+            try:
+                line[l] = float(line[l])
+            except:
+                pass
+        sname = line[0]
+        if sname not in stationdict.keys():
+            stationdict[sname] = line[1:]
+        else:
+            if read_duplicates:
+                if len(line) <= 2:
+                    value = line[1]
+                else:
+                    value = line[1:]
+                stationdict[sname].append(value)
+
+            
+    return stationdict
+
 def make_unique_filename(infn):
 
     fn = op.abspath(infn)

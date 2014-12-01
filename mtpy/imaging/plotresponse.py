@@ -452,6 +452,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         self.strike_limits = kwargs.pop('strike_limits', None)
         self.skew_limits = kwargs.pop('skew_limits', None)
         self.pt_limits = kwargs.pop('pt_limits', None)
+        self.set_diag_limits = kwargs.pop('set_diag_limits', False)
         
         #set font parameters
         self.font_size = kwargs.pop('font_size', 7)
@@ -1264,6 +1265,8 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             self.axr2.set_yscale('log')
             self.axr2.set_xscale('log')
             self.axr2.set_xlim(self.xlimits)
+            if self.set_diag_limits:
+                self.axr2.set_ylim(self.res_limits)
             self.axr2.grid(True, alpha=.25, 
                            which='both', 
                            color=(.25, .25, .25),
