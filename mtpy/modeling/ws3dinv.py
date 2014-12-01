@@ -1271,7 +1271,7 @@ class WSMesh(object):
                         marker=station_marker,
                         c=marker_color,
                         s=marker_size)
-        except KeyError:
+        except ValueError:
             ax1.scatter(self.station_locations['east'],
                         self.station_locations['north'], 
                         marker=station_marker,
@@ -1306,18 +1306,31 @@ class WSMesh(object):
                       color=line_color)
         
         if east_limits == None:
-            ax1.set_xlim(self.station_locations['east'].min()-\
-                            10*self.cell_size_east,
-                         self.station_locations['east'].max()+\
-                             10*self.cell_size_east)
+            try:
+                ax1.set_xlim(self.station_locations['east'].min()-\
+                                10*self.cell_size_east,
+                             self.station_locations['east'].max()+\
+                                 10*self.cell_size_east)
+            except ValueError:
+                ax1.set_xlim(self.station_locations['east_c'].min()-\
+                                10*self.cell_size_east,
+                             self.station_locations['east_c'].max()+\
+                                 10*self.cell_size_east)
+            
         else:
             ax1.set_xlim(east_limits)
         
         if north_limits == None:
-            ax1.set_ylim(self.station_locations['north'].min()-\
-                            10*self.cell_size_north,
-                         self.station_locations['north'].max()+\
-                             10*self.cell_size_east)
+            try:
+                ax1.set_ylim(self.station_locations['north'].min()-\
+                                10*self.cell_size_north,
+                             self.station_locations['north'].max()+\
+                                 10*self.cell_size_east)
+            except ValueError:
+                ax1.set_ylim(self.station_locations['north_c'].min()-\
+                                10*self.cell_size_north,
+                             self.station_locations['north_c'].max()+\
+                                 10*self.cell_size_east)
         else:
             ax1.set_ylim(north_limits)
             
