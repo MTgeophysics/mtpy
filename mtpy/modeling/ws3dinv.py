@@ -607,16 +607,28 @@ class WSData(object):
             else:
                 if dkey == 'z_err_map':
                     zline = np.array(dl.strip().split(), dtype=np.float)
-                    self.data[st][dkey][per-1,:] = np.array([[zline[0]-1j*zline[1],
-                                                        zline[2]-1j*zline[3]],
-                                                        [zline[4]-1j*zline[5],
-                                                        zline[6]-1j*zline[7]]])
+                    if self.n_z == 4:
+                        self.data[st][dkey][per-1,:] = np.array([[0-1j*0,
+                                                            zline[0]-1j*zline[1]],
+                                                            [zline[2]-1j*zline[3],
+                                                            0-1j*0]])
+                    elif self.n_z == 8:
+                        self.data[st][dkey][per-1,:] = np.array([[zline[0]-1j*zline[1],
+                                                            zline[2]-1j*zline[3]],
+                                                            [zline[4]-1j*zline[5],
+                                                            zline[6]-1j*zline[7]]])
                 else:
                     zline = np.array(dl.strip().split(), dtype=np.float)*zconv
-                    self.data[st][dkey][per-1,:] = np.array([[zline[0]-1j*zline[1],
-                                                        zline[2]-1j*zline[3]],
-                                                        [zline[4]-1j*zline[5],
-                                                        zline[6]-1j*zline[7]]])
+                    if self.n_z == 4: 
+                        self.data[st][dkey][per-1,:] = np.array([[0-1j*0,
+                                                            zline[0]-1j*zline[1]],
+                                                            [zline[2]-1j*zline[3],
+                                                            0-1j*0]])
+                    elif self.n_z == 8: 
+                        self.data[st][dkey][per-1,:] = np.array([[zline[0]-1j*zline[1],
+                                                            zline[2]-1j*zline[3]],
+                                                            [zline[4]-1j*zline[5],
+                                                            zline[6]-1j*zline[7]]])
                 st += 1
                 
         
