@@ -430,7 +430,7 @@ class WSData(object):
         if self.n_z == 8:
             z_index_list = range(4)
         elif self.n_z == 4:
-            z_index_list = [2, 3]
+            z_index_list = [1, 2]
             
         for ii, p1 in enumerate(self.period_list):
             ofid.write('DATA_Period: {0:3.6f}\n'.format(p1))
