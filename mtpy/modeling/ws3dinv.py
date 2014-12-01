@@ -1265,11 +1265,18 @@ class WSMesh(object):
         ax1 = fig.add_subplot(1, 2, 1, aspect='equal')
         
         #make sure the station is in the center of the cell
-        ax1.scatter(self.station_locations['east_c'],
-                    self.station_locations['north_c'], 
-                    marker=station_marker,
-                    c=marker_color,
-                    s=marker_size)
+        try:
+            ax1.scatter(self.station_locations['east_c'],
+                        self.station_locations['north_c'], 
+                        marker=station_marker,
+                        c=marker_color,
+                        s=marker_size)
+        except KeyError:
+            ax1.scatter(self.station_locations['east'],
+                        self.station_locations['north'], 
+                        marker=station_marker,
+                        c=marker_color,
+                        s=marker_size)
                 
         #plot the grid if desired
         east_line_xlist = []
