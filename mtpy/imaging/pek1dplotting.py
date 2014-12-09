@@ -856,7 +856,7 @@ class Plot_map():
         ax = plt.axes(self.cbar_ax)
         ax.set_visible(False)
         cbar = plt.colorbar(fraction=0.8,orientation=cbo)
-        cbar.set_label("Depth, km")
+        cbar.set_label("Depth (km)")
         cticks = range(int(self.levels[0]),int(self.levels[-1]+1))
         cbar.set_ticks(cticks)
 
