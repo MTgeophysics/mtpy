@@ -395,7 +395,7 @@ class Model():
 
     def check_consistent_strike(self, depth,
                                 window = 5,
-                                threshold = 10.):
+                                threshold = 15.):
         """
         check if a particular depth point corresponds to a consistent 
         strike direction
@@ -431,23 +431,35 @@ class Model():
         """
         if self.models is None:
             self.read_model()
-        
+        print self.station
         # get model of interest
         model = self.models[self.modelno-1]
 
         if max_depth is None:
             max_depth = np.amax(model[:,1])
-            
+        
+        # get values only between min and max depth
         model_filt = model[(model[:,1]>min_depth)&(model[:,1]<max_depth)]
   
+        
         aniso = 1.*model_filt[:,3]/model_filt[:,2]
         aniso_max = np.amax(aniso)
+        # define an initial aniso max depth 
         depth_aniso_max = model_filt[:,1][aniso == aniso_max][0]
         
-        while not self.check_consistent_strike(depth_aniso_max):
+        i = 0
+        while not self.check_consistent_strike(depth_aniso_max,
+                                               window=strike_window,
+                                               threshold=strike_threshold):
+            
             aniso[aniso == aniso_max] = 1.
             aniso_max = np.amax(aniso)
             depth_aniso_max = model_filt[:,1][aniso == aniso_max][0]
+            i += 1
+            if i > len(model_filt):
+                print "can't get stable strike"
+                break
+            
         
 
         params = model_filt[aniso == aniso_max][0]
@@ -610,6 +622,7 @@ class Model_suite():
         self.respfile = 'ai1dat.dat'
         self.fitfile = 'ai1fit.dat'
         self.inmodelfile = 'inmodel.dat' 
+        self.rotation_angle = 0
         self.modelno = 1
         self.station_list = []
         self.station_listfile = None
@@ -690,6 +703,7 @@ class Model_suite():
                                       strike_threshold=strike_threshold)
             x,y = model.x,model.y
             depth,te,tm,strike = model.anisotropy_max_parameters[1:]
+            strike = strike + self.rotation_angle
             
             model_params[i] = x,y,depth,te,tm,strike
         
