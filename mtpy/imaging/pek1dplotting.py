@@ -72,6 +72,7 @@ class Plot_model():
         self.modeltype = 'model'
         self.save = True
         self.output_filename = None
+        self.rotation_angle = 0.
 
         self.label_fontsize = 8
         self.title_fontsize = 12
@@ -162,7 +163,7 @@ class Plot_model():
                 axes.append([ax,p])
                 
             if 'strike' in parameter:
-                strike = modelvals[:,4]%180
+                strike = modelvals[:,4]%180 + self.rotation_angle 
 #                if self.xlim['strike'][-1] == 180:
                 strike[strike < self.xlim['strike'][0]-45] += 180
                 if twin:
@@ -830,7 +831,7 @@ class Plot_profile():
         self.ylim = [6,0]
         self.modelno = Model_suite.modelno
         self.modeltype = 'model'
-        
+        self.rotation_angle = 0.
         
         
         self.station_listfile = None
