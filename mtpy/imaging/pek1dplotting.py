@@ -1089,76 +1089,7 @@ class Plot_profile():
                 axes = PM.plot_parameter(twiny_offset=twiny_offset,
                                          plot_inmodel=plot_inmodel,
                                          additional_data = additional_data)
-                data_list = []
-                data_list.append(Model.models[modelno-1])
-                if plot_inmodel:
-                    if len(self.Model_suite.inmodel_list) > 0:
-                        Inmodel = self.Model_suite.inmodel_list[i]
-                        data_list.append(Inmodel.inmodel)
-#                ax = plt.subplot(1,len(self.Model_suite.model_list),i+1)
-                ax = plt.axes([profile_x[i],self.ax_bottom,px,self.ax_height])
-
-                axes = []
-                twin = False
-                
-                if 'minmax' in parameter:
-                    ls,lw = '-',1
-                    twin = True
-                    for modelvals in data_list:
-                        
-                        plt.plot(modelvals[:,3],modelvals[:,1],'0.5',ls=ls,lw=lw)
-                        p, = plt.plot(modelvals[:,2],modelvals[:,1],'k',ls=ls,lw=lw)
-                        plt.xscale('log')
-                        lw*=0.5
-                        ax = self._set_axis_params(ax,'minmax')
-                    if i == 0:
-                        ylab = ax.set_ylabel('Depth, km')
-                        ylab.set_fontproperties(self.font)
-                        ylab.set_fontsize(self.label_fontsize)
-                    axes.append([ax,p])
-
-                if 'aniso' in parameter:
-                    ls,lw = '-',1
-                    color = 'k'
-                    if twin:
-                        ax = make_twiny()
-                        color = 'b'
-                    twin = True
-                    for modelvals in data_list:
-                        
-                        p, = plt.plot(modelvals[:,3]/modelvals[:,2],modelvals[:,1],
-                        'k-',ls=ls,lw=lw)
-                        plt.xscale('log')  
-                        lw *= 0.5
-                        ax = self._set_axis_params(ax,'aniso')
-                        if i == 0:
-                            ylab = ax.set_ylabel('Depth, km')
-                            ylab.set_fontproperties(self.font)
-                            ylab.set_fontsize(self.label_fontsize)
-                    axes.append([ax,p])
-                if 'strike' in parameter:
-                    color,lw = 'k',1
-                    ls = '-'
-                    if twin:
-                        ax=make_twiny() 
-                        color,lw = 'b',0.5
-                    twin = True
-                    for modelvals in data_list:
-                        p, = plt.plot(modelvals[:,4]%180,modelvals[:,1],color,ls=ls,lw=lw)
-                        
-                        lw *= 0.5
-                        ax = self._set_axis_params(ax,'strike')
-                        if i == 0:
-                            ylab = ax.set_ylabel('Depth, km')
-                            ylab.set_fontproperties(self.font)
-                            ylab.set_fontsize(self.label_fontsize)
-                    axes.append([ax,p])
-                if horizon_list is not None:
-                    for h in horizon_list:
-                        elev = ed.get_elevation(Model.x,Model.y,h)
-                        elev = p1dp.update_scale(elev,horizon_zscale)
-                        plt.plot(plt.xlim(),[elev]*2) 
-
+    
                 if additional_data is not None:
 #                    print "plotting additional data"
                     plt.plot(additional_data[i][:,0],additional_data[i][:,1],lw=0.1)
