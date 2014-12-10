@@ -897,20 +897,6 @@ def update_scale(z,scale):
         
     return z                        
     
-
-def make_twiny():
-    """
-    """
-    
-    ax3 = plt.twiny()
-    ax3.xaxis.set_ticks_position('bottom')
-    ax3.spines['bottom'].set_position(('axes',-0.3))
-    ax3.set_frame_on(True)
-    ax3.patch.set_visible(False)
-    ax3.spines["bottom"].set_visible(True)
-    
-    return ax3
-
         
 
 class Plot_profile():
