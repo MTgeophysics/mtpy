@@ -888,16 +888,7 @@ class Plot_map():
         """
         return
 
-def update_scale(z,scale):
-    
-    if 'k' not in scale:
-        z = z/1000.
-    if '-' in scale:
-        z = -1.*z
-        
-    return z                        
-    
-        
+
 
 class Plot_profile():
     """
