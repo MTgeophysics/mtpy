@@ -7,6 +7,7 @@ Created on Fri Mar 14 10:21:05 2014
 """
 
 import os
+import os.path as op
 import mtpy.utils.filehandling as fh
 import mtpy.utils.elevation_data as mted
 import pek1dclasses as pek1dc
@@ -176,7 +177,7 @@ def create_filelist(wd, subfolder_list = None, subfolder_identifier = None):
     if subfolder_list is None:
         subfolder_list = [folder for folder, sf, f in os.walk(wd) if folder != wd]
     if subfolder_identifier is not None:
-        subfolder_list = [f for f in subfolder_list if subfolder_identifier in f]
+        subfolder_list = [f for f in subfolder_list if subfolder_identifier == op.basename(f)]
     
     for subfolder in subfolder_list:
         #print subfolder
