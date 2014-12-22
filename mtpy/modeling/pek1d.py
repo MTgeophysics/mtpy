@@ -357,6 +357,7 @@ def build_run():
 
     # build a model
     Data = generate_inputfiles(edi_list[rank],**build_inputs)
+    time.sleep(5)
     os.chdir(Data.working_directory)
 
     # run the model
