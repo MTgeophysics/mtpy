@@ -361,6 +361,7 @@ def build_run():
 
     # run the model
     print "running model on cpu number {} from directory {}".format(rank,Data.working_directory)
+    print "current directory, {}".format(os.getcwd())
     call([input_parameters['program_location']]+[Data.datafile]+[str(n) for n in input_parameters['run_input']])
 
 
