@@ -340,23 +340,27 @@ def build_run():
         try:
             build_inputs[key] = input_parameters[key]
         except:
-            print "problems with {}".format(key)
+            pass
     
     # make a master directory under the working directory to save all runs into
     master_directory = os.path.join(input_parameters['working_directory'],input_parameters['master_savepath'])
     if rank == 0:
         if not os.path.exists(master_directory):
             os.mkdir(master_directory)
+            
     build_inputs['master_savepath'] = master_directory
     # wait til master directory is made until progressing
+    print "waiting for directory"
     while not os.path.isdir(master_directory):
         time.sleep(1)
+        print '.',
 
     # build a model
     Data = generate_inputfiles(edi_list[rank],**build_inputs)
     os.chdir(Data.working_directory)
 
     # run the model
+    print "running model on cpu number {} from directory {}".format(rank,Data.working_directory)
     call([input_parameters['program_location']]+[Data.datafile]+[str(n) for n in input_parameters['run_input']])
 
 
