@@ -63,22 +63,22 @@ def interpolate_lemi_coils_response(freq, instrument_response):
     """
 
     #find the value closest to the current freq, assume it's lower
-    closest_lower = np.abs(freq-instr_resp[:,0]).argmin()
+    closest_lower = np.abs(freq-instrument_response[:,0]).argmin()
 
     #in case the closest frequency value is not lower but higher, 
     #take the freq value below as lower bound for the interval:        
-    if instr_resp[closest_lower,0] > freq:
+    if instrument_response[closest_lower,0] > freq:
         closest_lower -= 1
     
     #define the interval:
-    instrfreq1 = instr_resp[closest_lower,0]
-    instrfreq2 = instr_resp[closest_lower+1,0]
+    instrfreq1 = instrument_response[closest_lower,0]
+    instrfreq2 = instrument_response[closest_lower+1,0]
 
     #take the interval values:
-    realval1 = instr_resp[closest_lower,1]
-    realval2 = instr_resp[closest_lower+1,1]
-    imagval1 = instr_resp[closest_lower,2]
-    imagval2 = instr_resp[closest_lower+1,2]
+    realval1 = instrument_response[closest_lower,1]
+    realval2 = instrument_response[closest_lower+1,1]
+    imagval1 = instrument_response[closest_lower,2]
+    imagval2 = instrument_response[closest_lower+1,2]
 
     #for linear interpolation in abs/angle instead of real/imag:
     absval1 = np.abs(np.complex(realval1,imagval1))

@@ -22,6 +22,7 @@ import pdb
 import numpy as np
 import mtpy.utils.exceptions as MTex
 
+reload(MTbp)
 
 edi_prefix = 'qel'
 
@@ -74,10 +75,13 @@ def convert2edi(station,directory,survey_configfile,instrument_response_file, st
     infn_coh = '{0}.coh'.format(station.upper())
     directory = op.abspath(directory)
     os.chdir(directory)
-    
+    instrument_response_file = op.abspath(op.join(basedir,instrument_response_file))
+    survey_configfile = op.abspath(op.join(basedir,survey_configfile))
+
     print 
-    #print station,directory, survey_configfile,None,instrument_response_file
+    print station,directory, survey_configfile,None,instrument_response_file
     print directory
+    print
 
     if string2strip is not None:
 
@@ -97,7 +101,6 @@ def convert2edi(station,directory,survey_configfile,instrument_response_file, st
             newcoh = '%s'%(station.upper())+suffix1+suffix2
             shutil.move(coh,newcoh)
             print 'renamed coh file %s into %s'%(coh,newcoh) 
-
 
 
 
@@ -205,7 +208,7 @@ def convert2edi(station,directory,survey_configfile,instrument_response_file, st
     
     #rename j file, so that another one can be found and processed, if this code
     # is called within a loop:
-    os.rename(j_filename_list[0],j_filename_list[0]+'.done')
+    #os.rename(j_filename_list[0],j_filename_list[0]+'.done')
     
     #remove intermediate EDI file
     os.remove(edifn)

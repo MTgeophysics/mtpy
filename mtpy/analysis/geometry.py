@@ -146,7 +146,6 @@ def eccentricity(z_array = None, z_object = None, pt_array= None, pt_object = No
     elif z_object is not None:
         if not isinstance(z_object, MTz.Z):
             raise MTex.MTpyError_Z('Input argument is not an instance of the Z class')
-        print'assssss'
         pt_obj = MTpt.PhaseTensor(z_object = z_object)
     elif pt_array is not None:
         pt_obj = MTpt.PhaseTensor(pt_array= pt_array)

@@ -86,7 +86,9 @@ def plotedi(fn, saveplot=False, component=None):
 	resplotelement_xy = None
 	resplotelement_yx = None
 
+	axes = figure('EDI '+fn)
 	ax1 = subplot(211)
+
 	if 'n' in lo_comps:
 		resplotelement_xy = errorbar(periods,res_te,reserr_te, marker='x',c='b',fmt='x')
 	if 'e' in lo_comps:
@@ -97,13 +99,13 @@ def plotedi(fn, saveplot=False, component=None):
 	maxval=max(max(res_te,res_tm))
 	xlim(0.5*min(periods),2*max(periods))
 
-	ylim([0.1,100])
-	#ylim([minval/10,maxval*10])
+	#ylim([0.1,100])
+	ylim([minval/10,maxval*10])
 
 
 	autoscale(False)
 
-	ylabel('app.res. in Ohm m')
+	ylabel(r' $\rho$ (in $\Omega m$)')
 	setp( ax1.get_xticklabels(), visible=False)
 	## share x only
 	ax2 = subplot(212, sharex=ax1)
@@ -114,8 +116,8 @@ def plotedi(fn, saveplot=False, component=None):
 		errorbar(periods,phi_te,phierr_te,marker='x',c='b',fmt='x')
 	if 'e' in lo_comps:
 		errorbar(periods,phi_tm,phierr_tm,marker='x',c='r',fmt='x')
-	ylabel('phase')
-	xlabel('period (in s)')
+	ylabel('Phase angle ($\degree$)')
+	xlabel('Period (in s)')
 	plot([xlim()[0],xlim()[1]],[45,45],'-.',c='0.7')
 	ylim([-0,90])
 

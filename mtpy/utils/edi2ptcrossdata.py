@@ -52,7 +52,7 @@ import mtpy.core.edi as MTedi
 import mtpy.analysis.pt as MTpt
 
 #for debugging:
-#import ipdb
+import ipdb
 
 
 
@@ -144,7 +144,7 @@ def generate_ptcrossdata_file(edi_object, n_iterations, sigma_scaling, outdir,ou
         Fout.write('# {0}   {1:+010.6f}   {2:+011.6f} \t\t statistical evaluation of {3} realisations\n'.format(
                                                                             station,edi_object.lat,edi_object.lon,abs(int(n_iterations))))
     headerstring = '# lat \t\t lon \t\t freq \t\t Phimin  sigma \t Phimax  sigma \t alpha  '\
-                    'sigma \t beta  sigma \t ellipticity  sigma \n'
+                    'sigma \t beta  sigma \t ellipticity  \n'
     Fout.write(headerstring)
 
 
@@ -153,18 +153,22 @@ def generate_ptcrossdata_file(edi_object, n_iterations, sigma_scaling, outdir,ou
         
         pt = MTpt.PhaseTensor(z_object=edi_object.Z,freq=freqs)
 
+        ipdb.set_trace()
         a = pt.alpha
         b = pt.beta
-        pmin = pt.phimin
-        pmax = pt.phimax
-        e = pt.ellipticity
+        pi1 = pt._pi1()[0]
+        pi2 = pt._pi2()[0]
+        pmin = pi2-pi1
+        pmax = pi2+pi1
+        #e = pt.ellipticity
+        e = (pmax-pmin)/(pmax+pmin)
         
         for i,freq in enumerate(edi_object.freq):
             try:
-                vals = '{11:.4f}\t\t{12:.4f}\t\t{0:.4e}\t{1: 3.2f}\t{2:3.2f}\t{3: 3.2f}\t{4:3.2f}\t{5: 3.2f}\t{6:3.2f}'\
-                '\t{7: 3.2f}\t{8:3.2f}\t{9:.3f}\t{10:.3f}\n'.format(
-                    freq,pmin[0][i],pmin[1][i],pmax[0][i],pmax[1][i],a[0][i],a[1][i],
-                    b[0][i],b[1][i],e[0][i],e[1][i],edi_object.lat,edi_object.lon)            
+                vals = '{10:.4f}\t\t{11:.4f}\t\t{0:.4e}\t{1: 3.2f}\t{2:3.2f}\t{3: 3.2f}\t{4:3.2f}\t{5: 3.2f}\t{6:3.2f}'\
+                '\t{7: 3.2f}\t{8:3.2f}\t{9:.3f}\n'.format(
+                    freq,pmin[0][i],pmin[1][i],pmax[0][i],pmax[1][i],a[0][i]%90,a[1][i]%90,
+                    b[0][i],b[1][i],e,edi_object.lat,edi_object.lon)            
                 Fout.write(vals)
             except:
                 continue
@@ -229,7 +233,7 @@ def generate_ptcrossdata_file(edi_object, n_iterations, sigma_scaling, outdir,ou
 
         lo_alphas = []
         lo_betas = []
-        lo_ellipticities = []
+        #lo_ellipticities = []
 
         #print 'running {0} iterations for {1} Hz'.format(n_iterations,f)
         for run in np.arange(abs(int(n_iterations))):
@@ -245,17 +249,33 @@ def generate_ptcrossdata_file(edi_object, n_iterations, sigma_scaling, outdir,ou
                         ]]
                         )
             tmp_pt = MTpt.PhaseTensor(z_array=tmp_z.reshape(1,2,2),freq=f.reshape(1))
+            pi1 = tmp_pt._pi1()[0]
+            pi2 = tmp_pt._pi2()[0]
+            lo_pmin.append(pi2-pi1)
+            lo_pmax.append(pi2+pi1)
 
-            lo_pmin.append(tmp_pt.phimin[0][0])
-            lo_pmax.append(tmp_pt.phimax[0][0])
-            lo_alphas.append(tmp_pt.alpha[0][0])
+            
+            alpha = tmp_pt.alpha[0][0]
+            if alpha < 0 and alpha%90 < 10:
+                lo_alphas.append(alpha%90 +90)
+            else: 
+                lo_alphas.append(alpha%90)
+            
+            # if idx%10==0:
+            #     print alpha,lo_alphas[-1]
+
             lo_betas.append(tmp_pt.beta[0][0])
             #in percent:
-            lo_ellipticities.append(100*tmp_pt.ellipticity[0][0])
+            #lo_ellipticities.append(100*tmp_pt.ellipticity[0][0])
 
-        
-        a = np.mean(lo_alphas)
-        aerr = np.std(lo_alphas)
+        lo_alphas = np.array(lo_alphas)       
+        a = np.median(lo_alphas)
+        aerr = np.median(np.abs(lo_alphas - a))
+        #aerr = np.std(lo_alphas)
+        # if idx%10==0: 
+        #     print '\t',a,aerr
+        #     print
+
 
         b = np.mean(lo_betas)
         berr = np.std(lo_betas)
@@ -266,14 +286,14 @@ def generate_ptcrossdata_file(edi_object, n_iterations, sigma_scaling, outdir,ou
         pmax = np.mean(lo_pmax)
         pmaxerr = np.std(lo_pmax)
 
-        e = np.mean(lo_ellipticities)
-        eerr = np.std(lo_ellipticities)
+        #e = np.mean(lo_ellipticities)
+        #eerr = np.std(lo_ellipticities)
+        e = (pmax-pmin)/(pmax+pmin) 
 
         try:
-            vals = '{11:.4f}\t\t{12:.4f}\t\t{0:.4e}\t{1: 3.2f}\t{2:3.2f}\t{3: 3.2f}\t{4:3.2f}\t{5: 3.2f}\t{6:3.2f}'\
-            '\t{7: 3.2f}\t{8:3.2f}\t{9:.3f}\t{10:.3f}\n'.format(
-                f,pmin,pminerr,pmax,pmaxerr,a,aerr, b,berr,e,eerr,
-                edi_object.lat,edi_object.lon)            
+            vals = '{10:.4f}\t{11:.4f}\t{0:.4e}\t{1: 3.2f}\t{2:3.2f}\t{3: 3.2f}\t{4:3.2f}\t{5: 3.2f}\t{6:3.2f}'\
+            '\t{7: 3.2f}\t{8:3.2f}\t{9:.3f}\n'.format(
+                f,pmin,pminerr,pmax,pmaxerr,a,aerr, b,berr,e,edi_object.lat,edi_object.lon)            
             Fout.write(vals)
         except:
             continue
