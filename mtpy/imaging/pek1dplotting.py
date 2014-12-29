@@ -478,7 +478,8 @@ class Plot_fit():
                     linewidth=0.0,
                     cmap=self.cmap,
                     edgecolor='white',
-                    marker=self.symbol)
+                    marker=self.symbol,
+                    label=self.Fit.station)
         
         if self.labels:
             for i in range(len(lx)):
