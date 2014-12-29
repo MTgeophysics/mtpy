@@ -61,7 +61,7 @@ import mtpy.utils.calculator as MTcc
 
 
 
-def find_distortion(z_object, lo_dims = None):
+def find_distortion(z_object, g = 'det', lo_dims = None):
     """
     find optimal distortion tensor from z object
 
@@ -96,8 +96,13 @@ def find_distortion(z_object, lo_dims = None):
 
             mat1 = np.matrix([[0, -1],[1, 0]])
 
-            gr = np.sqrt(np.linalg.det(realz))
-            gi = np.sqrt(np.linalg.det(imagz))
+
+            if g in ['01','10']:
+                gr = np.abs(realz[int(g[0]),int(g[1])])
+                gi = np.abs(imagz[int(g[0]),int(g[1])])
+            else:
+                gr = np.sqrt(np.linalg.det(realz))
+                gi = np.sqrt(np.linalg.det(imagz))
 
             lo_dis.append(1./gr*np.dot(realz,mat1))  
             lo_dis.append(1./gi*np.dot(imagz,mat1))  
