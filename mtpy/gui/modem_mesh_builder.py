@@ -35,7 +35,7 @@ class Ui_Mesh_Window(QtGui.QMainWindow):
         self.ui_setup()
         
     def ui_setup(self):
-        
+        pass
         
         
         
