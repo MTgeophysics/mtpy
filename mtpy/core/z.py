@@ -1852,11 +1852,11 @@ def _read_z_array(z_array, zerr_array = None):
     try:
 
 
-        z_object = Z( z_array=z_array, zerr_array=zerr_array)
+        z_object = Z(z_array=z_array, zerr_array=zerr_array)
     except:
         raise MTex.MTpyError_Z('Cannot generate Z instance - check z-array'+\
                                'dimensions/type: (N,2,2)/complex ; '+\
-                               '{0}'.format(z_array.shape()))
+                               '{0}'.format(z_array.shape))
 
     return z_object
 
