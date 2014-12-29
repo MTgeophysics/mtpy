@@ -131,15 +131,15 @@ class Z(object):
 
         self._freq = freq
         if z_array is not None:
-            if len(z_array.shape()) == 2 and z_array.shape() == (2,2):
+            if len(z_array.shape) == 2 and z_array.shape == (2,2):
                 if z_array.dtype in ['complex', 'float','int']:
-                    self._z = np.zeros((1,2,2),'complex')
+                    self._z = np.zeros((1, 2, 2),'complex')
                     self._z[0] = z_array            
 
         if zerr_array is not None:
             if len(zerr_array.shape) == 2 and zerr_array.shape == (2,2):
                 if zerr_array.dtype in ['complex', 'float','int']:
-                    self._zerr = np.zeros((1,2,2),'complex')
+                    self._zerr = np.zeros((1, 2, 2),'complex')
                     self._zerr[0] = zerr_array            
 
         self.rotation_angle = 0.
