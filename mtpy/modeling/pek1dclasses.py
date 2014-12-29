@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as si
 import mtpy.utils.exceptions as MTex
-
+import mtpy.analysis.geometry as MTg
   
 
 class Control():    
@@ -518,16 +518,44 @@ class Response():
         period = resp[:len(resp)/n,0]
 
         self.resistivity = resmod.T.reshape(n,len(resp)/n,2,2)
-        self.phase = phsmod.T.reshape(n,len(resp)/n,2,2)
+        self._phase = phsmod.T.reshape(n,len(resp)/n,2,2)
         self.freq = 1./period
         zabs = np.zeros((n,len(resp)/n,2,2))
         for m in range(n):
             for f in range(len(self.freq)):
-                zabs[m,f] = (self.resistivity[m,f]/(0.2*period[f]))**0.5
-        zr = zabs*np.cos(np.deg2rad(self.phase))
-        zi = -zabs*np.sin(np.deg2rad(self.phase))
+                zabs[m,f] = (self.resistivity[m,f]*0.2*self.freq[f])**0.5
+        zr = zabs*np.cos(np.deg2rad(self._phase))
+        zi = -zabs*np.sin(np.deg2rad(self._phase))
         self.z = zr + 1j*zi
-        self.phase = np.rad2deg(np.arctan(zi/zr))
+        self.phase = -self._phase
+
+    def rotate(self,rotation_angle):
+        """
+        use mtpy.analysis.geometry to rotate a z array and recalculate res and phase
+        
+        """
+        if not hasattr(self,'z'):
+            self.read_respfile()
+            
+        new_z = []
+        new_res = []
+        
+        for zarray in self.z:
+            zval = MTg.MTz.rotate_z(zarray,rotation_angle)[0]
+            new_z.append(zval)
+            resi = []
+            for i,freq in enumerate(self.freq):
+#                print i,freq,zval
+                resi.append((np.abs(zval[i])**2/(0.2*freq)))
+            new_res.append(resi)
+        self.z = np.array(new_z)
+
+        self.resistivity = np.array(new_res)        
+        self.phase = np.rad2deg(np.arctan(np.imag(self.z)/np.real(self.z)))
+
+        self.rotation_angle = rotation_angle
+        
+        
 
 
 class Fit():
