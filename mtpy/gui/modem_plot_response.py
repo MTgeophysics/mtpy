@@ -314,7 +314,6 @@ class Ui_MainWindow(object):
         
         for attr in sorted(self.settings_window.__dict__.keys()):
             setattr(self, attr, self.settings_window.__dict__[attr])
-            print attr, self.__dict__[attr]
             
         self.plot()
                 
