@@ -19,7 +19,7 @@ import numpy as np
 import mtpy.utils.latlongutmconversion as utm2ll
 import mtpy.modeling.ws3dinv as ws
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 from matplotlib.patches import Ellipse
 from matplotlib.colors import Normalize
 import matplotlib.colorbar as mcb
@@ -267,6 +267,7 @@ class Data(object):
         self.period_min = kwargs.pop('period_min', None)
         self.period_max = kwargs.pop('period_max', None)
         self.max_num_periods = kwargs.pop('max_num_periods', None)
+        self.ptol = kwargs.pop('ptol', .05)
         self.period_dict = None
         self.data_period_list = None
         
@@ -665,8 +666,8 @@ class Data(object):
                     jj = p_dict[per]
                 except KeyError:
                     try:
-                        jj = np.where(((1./mt_obj.Z.freq)*.95 <= per) & 
-                                      ((1./mt_obj.Z.freq) >= per))[0][0]
+                        jj = np.where(((1./mt_obj.Z.freq)*(1-self.ptol) <= per) & 
+                                      ((1./mt_obj.Z.freq)*(1+self.ptol) >= per))[0][0]
                     except IndexError:
                         print 'Could not find {0:<12.6f} in {1}'.format(per,
                                                                 mt_obj.station)
@@ -717,9 +718,9 @@ class Data(object):
         """
         if self.data_array is None:
             return None
-            
+        
         station_locations = self.data_array[['station', 'lat', 'lon', 
-                                             'north', 'east', 'elev',
+                                             'north', 'east', 'elev', 'zone',
                                              'rel_north', 'rel_east']]
         return station_locations
         
@@ -728,7 +729,7 @@ class Data(object):
                                   doc="""location of stations""") 
                 
     def write_data_file(self, save_path=None, fn_basename=None, 
-                        rotation_angle=None):
+                        rotation_angle=None, fill_data=False):
         """
         write data file for ModEM
         
@@ -779,8 +780,12 @@ class Data(object):
         if rotation_angle is not None:
             self.rotation_angle = rotation_angle
         
-        #be sure to fill in data array 
-        self._fill_data_array()
+        #be sure to fill in data array
+        if self.data_array is None:
+            self._fill_data_array()
+            
+        if fill_data == True:
+            self.fill_data_array()
         
         #reset the header string to be informational
         self._set_header_string()
@@ -846,15 +851,10 @@ class Data(object):
                                     d_zyx = self.data_array[ss]['z'][ff, 1, 0]
                                     rel_err = np.sqrt(abs(d_zxy*d_zyx))*\
                                               self.error_egbert/100.
-#                                    print '-'*10
-#                                    print ' station index = {0}'.format(ss)
-#                                    print ' period index  = {0}'.format(ff)
-#                                    print ' period        = {0:.4f}'.format(self.period_list[ff])
-#                                    print ' z_xy          = {0:.4f}'.format(d_zxy)
-#                                    print ' z_yx          = {0:.4f}'.format(d_zyx)
-#                                    print ' egbert error  = {0:.4f}'.format(rel_err)
-                                    
-                            
+                            if rel_err == 0.0:
+                                rel_err = 1e3
+                                print ('error at {0} is 0 for period {1}'.format(
+                                        sta, per)+'set to 1e3')
                             rel_err = '{0:> 14.6e}'.format(abs(rel_err))
                             #make sure that x==north, y==east, z==+down
                             dline = ''.join([per, sta, lat, lon, nor, eas, ele, 
@@ -1214,7 +1214,7 @@ class Model(object):
     grid_east            overall distance of grid nodes in east direction 
     grid_north           overall distance of grid nodes in north direction 
     grid_z               overall distance of grid nodes in z direction 
-    model_fn           full path to initial file name
+    model_fn             full path to initial file name
     n_layers             total number of vertical layers in model
     nodes_east           relative distance between nodes in east direction 
     nodes_north          relative distance between nodes in north direction 
@@ -1538,10 +1538,10 @@ class Model(object):
                                step=self.cell_size_east)
         
         #padding cells in the east-west direction
-        for ii in range(1, self.pad_east+1):
+        for ii in range(0, self.pad_east):
             east_0 = float(east_gridr[-1])
             west_0 = float(east_gridr[0])
-            add_size = np.round(self.cell_size_east*self.pad_stretch_h*ii, -2)
+            add_size = np.round(self.cell_size_east*self.pad_stretch_h**ii, -2)
             pad_w = west_0-add_size
             pad_e = east_0+add_size
             east_gridr = np.insert(east_gridr, 0, pad_w)
@@ -1567,10 +1567,10 @@ class Model(object):
                                 step=self.cell_size_north)
         
         #padding cells in the east-west direction
-        for ii in range(1, self.pad_north+1):
+        for ii in range(0, self.pad_north):
             south_0 = float(north_gridr[0]) 
             north_0 = float(north_gridr[-1])
-            add_size = np.round(self.cell_size_north*self.pad_stretch_h*ii, -2)
+            add_size = np.round(self.cell_size_north*self.pad_stretch_h**ii, -2)
             pad_s = south_0-add_size
             pad_n = north_0+add_size
             north_gridr = np.insert(north_gridr, 0, pad_s)
@@ -2210,13 +2210,11 @@ class Model(object):
         print 'Wrote file to {0}'.format(vtk_fn)
             
 #==============================================================================
-# Control File
+# Control File for inversion
 #==============================================================================
-class Control(object):
+class Control_Inv(object):
     """
-    read and write control file
-    
-    This file controls how the inversion starts and how it is run
+    read and write control file for how the inversion starts and how it is run
     
     """
     
@@ -2227,7 +2225,7 @@ class Control(object):
         self.lambda_step = kwargs.pop('lambda_step', 10)
         self.model_search_step = kwargs.pop('model_search_step', 1)
         self.rms_reset_search = kwargs.pop('rms_reset_search', 2.0e-3)
-        self.rms_target = kwargs.pop('rms_target', 1.00)
+        self.rms_target = kwargs.pop('rms_target', 1.05)
         self.lambda_exit = kwargs.pop('lambda_exit', 1.0e-4)
         self.max_iterations = kwargs.pop('max_iterations', 100)
         self.save_path = kwargs.pop('save_path', os.getcwd())
@@ -2345,7 +2343,142 @@ class Control(object):
         for key, kattr in zip(self._control_keys, attr_list):
             setattr(self, kattr, self._control_dict[key])
             
+
+#==============================================================================
+# Control File for inversion
+#==============================================================================
+class Control_Fwd(object):
+    """
+    read and write control file for 
+    
+    This file controls how the inversion starts and how it is run
+    
+    """
+    
+    def __init__(self, **kwargs):
+        
+        self.num_qmr_iter = kwargs.pop('num_qmr_iter', 40)
+        self.max_num_div_calls = kwargs.pop('max_num_div_calls', 20)
+        self.max_num_div_iters = kwargs.pop('max_num_div_iters', 100)
+        self.misfit_tol_fwd = kwargs.pop('misfit_tol_fwd', 1.0e-7)
+        self.misfit_tol_adj = kwargs.pop('misfit_tol_adj', 1.0e-7)
+        self.misfit_tol_div = kwargs.pop('misfit_tol_div', 1.0e-5)
+
+        self.save_path = kwargs.pop('save_path', os.getcwd())
+        self.fn_basename = kwargs.pop('fn_basename', 'control.fwd')
+        self.control_fn = kwargs.pop('control_fn', os.path.join(self.save_path,
+                                                            self.fn_basename))
+                                                            
+        self._control_keys = ['Number of QMR iters per divergence correction',
+                              'Maximum number of divergence correction calls',
+                              'Maximum number of divergence correction iters',
+                              'Misfit tolerance for EM forward solver',
+                              'Misfit tolerance for EM adjoint solver',
+                              'Misfit tolerance for divergence correction']
+        
+        self._control_dict = dict([(key, value) 
+                                    for key, value in zip(self._control_keys,
+                                    [self.num_qmr_iter, 
+                                     self.max_num_div_calls,
+                                     self.max_num_div_iters,
+                                     self.misfit_tol_fwd,
+                                     self.misfit_tol_adj,
+                                     self.misfit_tol_div])])
+        self._string_fmt_dict = dict([(key, value) 
+                                    for key, value in zip(self._control_keys,
+                                    ['<.0f', '<.0f', '<.0f', '<.1e', '<.1e', 
+                                     '<.1e'])])
+                                     
+    def write_control_file(self, control_fn=None, save_path=None, 
+                           fn_basename=None):
+        """
+        write control file
+        
+        Arguments:
+        ------------
+            **control_fn** : string
+                             full path to save control file to
+                             *default* is save_path/fn_basename
             
+            **save_path** : string
+                            directory path to save control file to
+                            *default* is cwd
+            
+            **fn_basename** : string
+                              basename of control file
+                              *default* is control.inv
+                              
+        """
+        
+        if control_fn is not None:
+            self.save_path = os.path.dirname(control_fn)
+            self.fn_basename = os.path.basename(control_fn)
+
+        if save_path is not None:
+            self.save_path = save_path
+            
+        if fn_basename is not None:
+            self.fn_basename = fn_basename
+            
+        self.control_fn = os.path.join(self.save_path, self.fn_basename)
+        
+        self._control_dict = dict([(key, value) 
+                                    for key, value in zip(self._control_keys,
+                                    [self.num_qmr_iter, 
+                                     self.max_num_div_calls,
+                                     self.max_num_div_iters,
+                                     self.misfit_tol_fwd,
+                                     self.misfit_tol_adj,
+                                     self.misfit_tol_div])])
+        
+        clines = []
+        for key in self._control_keys:
+            value = self._control_dict[key]
+            str_fmt = self._string_fmt_dict[key]
+            clines.append('{0:<47}: {1:{2}}\n'.format(key, value, str_fmt))
+            
+        cfid = file(self.control_fn, 'w')
+        cfid.writelines(clines)
+        cfid.close()
+        
+        print 'Wrote ModEM control file to {0}'.format(self.control_fn)
+        
+    def read_control_file(self, control_fn=None):
+        """
+        read in a control file
+        """
+        
+        if control_fn is not None:
+            self.control_fn = control_fn
+
+        if self.control_fn is None:
+            raise mtex.MTpyError_file_handling('control_fn is None, input '
+                                                'control file')
+            
+        if os.path.isfile(self.control_fn) is False:
+            raise mtex.MTpyError_file_handling('Could not find {0}'.format(
+                                                self.control_fn))
+                                                
+        self.save_path = os.path.dirname(self.control_fn)
+        self.fn_basename = os.path.basename(self.control_fn)
+        
+        cfid = file(self.control_fn, 'r')
+        clines = cfid.readlines()
+        cfid.close()
+        for cline in clines:
+            clist = cline.strip().split(':')
+            if len(clist) == 2:
+
+                try:
+                    self._control_dict[clist[0].strip()] = float(clist[1])
+                except ValueError:
+                    self._control_dict[clist[0].strip()] = clist[1]
+
+        #set attributes
+        attr_list = ['num_qmr_iter','max_num_div_calls', 'max_num_div_iters', 
+                     'misfit_tol_fwd', 'misfit_tol_adj', 'misfit_tol_div']
+        for key, kattr in zip(self._control_keys, attr_list):
+            setattr(self, kattr, self._control_dict[key])
 #==============================================================================
 # covariance 
 #==============================================================================
@@ -2557,7 +2690,7 @@ class ModelManipulator(Model):
         
         self.data_fn = data_fn
         self.model_fn_basename = kwargs.pop('model_fn_basename', 
-                                             'ModeEM_Model_rw.ws')
+                                             'ModEM_Model_rw.ws')
         
         if self.model_fn is not None:
             self.save_path = os.path.dirname(self.model_fn)
@@ -5770,11 +5903,10 @@ class PlotSlices(object):
     
     :Example: ::
     
-        >>> import mtpy.modeling.ws3dinv as ws
-        >>> mfn = r"/home/MT/ws3dinv/Inv1/Test_model.00"
-        >>> sfn = r"/home/MT/ws3dinv/Inv1/WSStationLocations.txt"
-        >>> # plot just first layer to check the formating        
-        >>> pds = ws.PlotSlices(model_fn=mfn, station_fn=sfn)
+        >>> import mtpy.modeling.modem_new as modem
+        >>> mfn = r"/home/modem/Inv1/Modular_NLCG_100.rho"
+        >>> dfn = r"/home/modem/Inv1/ModEM_data.dat"       
+        >>> pds = ws.PlotSlices(model_fn=mfn, data_fn=dfn)
         
     ======================= ===================================================
     Buttons                  Description    
@@ -6435,6 +6567,346 @@ class PlotSlices(object):
         
         self.fig_fn = save_fn
         print 'Saved figure to: '+self.fig_fn
+        
+#==============================================================================
+# plot rms maps
+#==============================================================================
+class Plot_RMS_Maps(object):
+    """
+    plots the RMS as (data-model)/(error) in map view for all components
+    of the data file.  Gets this infomration from the .res file output
+    by ModEM.
+    
+    Arguments:
+    ------------------
+    
+        **residual_fn** : string
+                          full path to .res file
+                          
+    =================== =======================================================
+    Attributes                   Description    
+    =================== =======================================================
+    fig                 matplotlib.figure instance for a single plot                       
+    fig_dpi             dots-per-inch resolution of figure *default* is 200
+    fig_num             number of fig instance *default* is 1
+    fig_size            size of figure in inches [width, height] 
+                        *default* is [7,6]
+    font_size           font size of tick labels, axis labels are +2
+                        *default* is 8 
+    marker              marker style for station rms, 
+                        see matplotlib.line for options,
+                        *default* is 's' --> square
+    marker_size         size of marker in points. *default* is 10
+    pad_x               padding in map units from edge of the axis to stations
+                        at the extremeties in longitude. 
+                        *default* is 1/2 tick_locator
+    pad_y               padding in map units from edge of the axis to stations
+                        at the extremeties in latitude. 
+                        *default* is 1/2 tick_locator 
+    period_index        index of the period you want to plot according to 
+                        self.residual.period_list. *default* is 1
+    plot_yn             [ 'y' | 'n' ] default is 'y' to plot on instantiation
+    plot_z_list         internal variable for plotting
+    residual            modem.Data instance that holds all the information 
+                        from the residual_fn given
+    residual_fn         full path to .res file
+    rms_cmap            matplotlib.cm object for coloring the markers
+    rms_cmap_dict       dictionary of color values for rms_cmap 
+    rms_max             maximum rms to plot. *default* is 5.0
+    rms_min             minimum rms to plot. *default* is 1.0
+    save_path           path to save figures to. *default* is directory of 
+                        residual_fn
+    subplot_bottom      spacing from axis to bottom of figure canvas.
+                        *default* is .1
+    subplot_hspace      horizontal spacing between subplots.
+                        *default* is .1
+    subplot_left        spacing from axis to left of figure canvas.
+                        *default* is .1
+    subplot_right       spacing from axis to right of figure canvas.
+                        *default* is .9
+    subplot_top         spacing from axis to top of figure canvas.
+                        *default* is .95
+    subplot_vspace      vertical spacing between subplots.
+                        *default* is .01
+    tick_locator        increment for x and y major ticks. *default* is 
+                        limits/5  
+    =================== =======================================================
+    
+    =================== =======================================================
+    Methods             Description    
+    =================== =======================================================
+    plot                plot rms maps for a single period 
+    plot_loop           loop over all frequencies and save figures to save_path
+    read_residual_fn    read in residual_fn
+    redraw_plot         after updating attributes call redraw_plot to 
+                        well redraw the plot
+    save_figure         save the figure to a file
+    =================== =======================================================
+    
+    
+    :Example: ::
+    
+        >>> import mtpy.modeling.modem_new as modem
+        >>> rms_plot = Plot_RMS_Maps(r"/home/ModEM/Inv1/mb_NLCG_030.res")
+        >>> # change some attributes
+        >>> rms_plot.fig_size = [6, 4]
+        >>> rms_plot.rms_max = 3
+        >>> rms_plot.redraw_plot()
+        >>> # happy with the look now loop over all periods
+        >>> rms_plot.plot_loop()
+    """
+    
+    def __init__(self, residual_fn, **kwargs):
+        self.residual_fn = residual_fn
+        self.residual = None
+        self.save_path = kwargs.pop('save_path', os.path.dirname(self.residual_fn))
+
+        self.period_index = kwargs.pop('period_index', 0)        
+        
+        self.subplot_left = kwargs.pop('subplot_left', .1)
+        self.subplot_right = kwargs.pop('subplot_right', .9)
+        self.subplot_top = kwargs.pop('subplot_top', .95)
+        self.subplot_bottom = kwargs.pop('subplot_bottom', .1)
+        self.subplot_hspace = kwargs.pop('subplot_hspace', .1)
+        self.subplot_vspace = kwargs.pop('subplot_vspace', .01)
+
+        self.font_size = kwargs.pop('font_size', 8)
+        
+        self.fig_size = kwargs.pop('fig_size', [7.75, 6.75])
+        self.fig_dpi = kwargs.pop('fig_dpi', 200)
+        self.fig_num = kwargs.pop('fig_num', 1)
+        self.fig = None
+        
+        self.marker = kwargs.pop('marker', 's')
+        self.marker_size = kwargs.pop('marker_size', 10)
+        
+        
+        self.rms_max = kwargs.pop('rms_max', 5)
+        self.rms_min = kwargs.pop('rms_min', 0)
+        
+        self.tick_locator = kwargs.pop('tick_locator', None)
+        self.pad_x = kwargs.pop('pad_x', None)
+        self.pad_y = kwargs.pop('pad_y', None)
+        
+        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        
+        # colormap for rms, goes white to black from 0 to rms max and 
+        # red below 1 to show where the data is being over fit
+        self.rms_cmap_dict = {'red':((0.0, 1.0, 1.0), 
+                                    (0.2, 1.0, 1.0),
+                                    (1.0, 0.0, 0.0)),
+                             'green':((0.0, 0.0, 0.0), 
+                                      (0.2, 1.0, 1.0),
+                                      (1.0, 0.0, 0.0)),
+                             'blue':((0.0, 0.0, 0.0),
+                                     (0.2, 1.0, 1.0),
+                                     (1.0, 0.0, 0.0))}
+                      
+        self.rms_cmap = colors.LinearSegmentedColormap('rms_cmap', 
+                                                       self.rms_cmap_dict, 
+                                                       256)
+                                                       
+        self.plot_z_list = [{'label':r'$Z_{xx}$', 'index':(0, 0), 'plot_num':1},
+                           {'label':r'$Z_{xy}$', 'index':(0, 1), 'plot_num':2},
+                           {'label':r'$Z_{yx}$', 'index':(1, 0), 'plot_num':3},
+                           {'label':r'$Z_{yy}$', 'index':(1, 1), 'plot_num':4},
+                           {'label':r'$T_{x}$', 'index':(0, 0), 'plot_num':5},
+                           {'label':r'$T_{y}$', 'index':(0, 1), 'plot_num':6}]
+                           
+                           
+        if self.plot_yn == 'y':
+            self.plot()
+            
+    def read_residual_fn(self):
+        if self.residual is None:
+            self.residual = Data()
+            self.residual.read_data_file(self.residual_fn)
+        else:
+            pass
+        
+    def plot(self):
+        """
+        plot rms in map view
+        """
+
+        self.read_residual_fn()
+
+        font_dict = {'size':self.font_size+2, 'weight':'bold'}
+        rms_1 = 1./self.rms_max
+        
+        if self.tick_locator is None:
+            x_locator = np.round((self.residual.data_array['lon'].max()-
+                                    self.residual.data_array['lon'].min())/5, 2)
+            y_locator = np.round((self.residual.data_array['lat'].max()-
+                                    self.residual.data_array['lat'].min())/5, 2)
+                                    
+            if x_locator > y_locator:
+                tick_locator = x_locator
+            
+            elif x_locator < y_locator:
+                tick_locator = y_locator
+            
+        if self.pad_x is None:
+            self.pad_x = tick_locator/2
+        if self.pad_y is None:
+            self.pad_y = tick_locator/2
+        
+        
+        plt.rcParams['font.size'] = self.font_size
+        plt.rcParams['figure.subplot.left'] = self.subplot_left
+        plt.rcParams['figure.subplot.right'] = self.subplot_right
+        plt.rcParams['figure.subplot.bottom'] = self.subplot_bottom
+        plt.rcParams['figure.subplot.top'] = self.subplot_top
+        plt.rcParams['figure.subplot.wspace'] = self.subplot_hspace
+        plt.rcParams['figure.subplot.hspace'] = self.subplot_vspace
+        self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
+        
+        for p_dict in self.plot_z_list:
+            ax = self.fig.add_subplot(3, 2, p_dict['plot_num'], aspect='equal')
+            
+            ii = p_dict['index'][0]
+            jj = p_dict['index'][0]
+            
+            for r_arr in self.residual.data_array:
+                # calulate the rms self.residual/error
+                if p_dict['plot_num'] < 5:
+                    rms = r_arr['z'][self.period_index, ii, jj].__abs__()/\
+                                (r_arr['z_err'][self.period_index, ii, jj].real)
+                    
+                else: 
+                    rms = r_arr['tip'][self.period_index, ii, jj].__abs__()/\
+                                (r_arr['tip_err'][self.period_index, ii, jj].real)
+        
+                #color appropriately
+                if np.nan_to_num(rms) == 0.0:
+                    marker_color = (1, 1, 1)
+                    marker = '.'
+                    marker_size = .1
+                    marker_edge_color = (1, 1, 1)
+                if rms > self.rms_max:
+                    marker_color = (0, 0, 0)
+                    marker = self.marker
+                    marker_size = self.marker_size
+                    marker_edge_color = (0, 0, 0)
+                    
+                elif rms >= 1 and rms <= self.rms_max:
+                    r_color = 1-rms/self.rms_max+rms_1
+                    marker_color = (r_color, r_color, r_color)
+                    marker = self.marker
+                    marker_size = self.marker_size
+                    marker_edge_color = (0, 0, 0)
+                    
+                elif rms < 1:
+                    r_color = 1-rms/self.rms_max
+                    marker_color = (1, r_color, r_color)
+                    marker = self.marker
+                    marker_size = self.marker_size
+                    marker_edge_color = (0, 0, 0)
+                    
+                ax.plot(r_arr['lon'], r_arr['lat'], 
+                        marker=marker,
+                        ms=marker_size,
+                        mec=marker_edge_color,
+                        mfc=marker_color,
+                        zorder=3)
+            
+            if p_dict['plot_num'] == 1 or p_dict['plot_num'] == 3:
+                ax.set_ylabel('Latitude (deg)', fontdict=font_dict)
+                plt.setp(ax.get_xticklabels(), visible=False)
+                
+            elif p_dict['plot_num'] == 2 or p_dict['plot_num'] == 4:
+                plt.setp(ax.get_xticklabels(), visible=False)
+                plt.setp(ax.get_yticklabels(), visible=False)
+                
+            elif p_dict['plot_num'] == 6:
+                plt.setp(ax.get_yticklabels(), visible=False)
+                ax.set_xlabel('Longitude (deg)', fontdict=font_dict)
+                
+            else:
+                ax.set_xlabel('Longitude (deg)', fontdict=font_dict)
+                ax.set_ylabel('Latitude (deg)', fontdict=font_dict)
+                
+            ax.text(self.residual.data_array['lon'].min()+.005-self.pad_x, 
+                    self.residual.data_array['lat'].max()-.005+self.pad_y,
+                    p_dict['label'],
+                    verticalalignment='top',
+                    horizontalalignment='left',
+                    bbox={'facecolor':'white'},
+                    zorder=3)
+                    
+            ax.tick_params(direction='out')
+            ax.grid(zorder=0, color=(.75, .75, .75))
+            
+            #[line.set_zorder(3) for line in ax.lines]
+            
+            ax.set_xlim(self.residual.data_array['lon'].min()-self.pad_x, 
+                        self.residual.data_array['lon'].max()+self.pad_x)
+                        
+            ax.set_ylim(self.residual.data_array['lat'].min()-self.pad_y, 
+                        self.residual.data_array['lat'].max()+self.pad_y)
+            
+            ax.xaxis.set_major_locator(MultipleLocator(tick_locator))
+            ax.yaxis.set_major_locator(MultipleLocator(tick_locator))
+            ax.xaxis.set_major_formatter(FormatStrFormatter('%2.2f'))
+            ax.yaxis.set_major_formatter(FormatStrFormatter('%2.2f'))
+            
+        
+        
+        #cb_ax = mcb.make_axes(ax, orientation='vertical', fraction=.1)
+        cb_ax = self.fig.add_axes([.925, .225, .02, .45])
+        color_bar = mcb.ColorbarBase(cb_ax, 
+                                     cmap=self.rms_cmap, 
+                                     norm=colors.Normalize(vmin=self.rms_min, 
+                                                           vmax=self.rms_max),
+                                     orientation='vertical')
+        
+        color_bar.set_label('RMS', fontdict=font_dict)
+        
+        self.fig.suptitle('period = {0:.5g} (s)'.format(self.residual.period_list[self.period_index]), 
+                     fontdict={'size':self.font_size+3, 'weight':'bold'})
+        plt.show()
+        
+    def redraw_plot(self):
+        plt.close('all')
+        self.plot()
+
+    def save_figure(self, save_path=None, save_fn_basename=None, 
+                    save_fig_dpi=None, fig_format='.png', fig_close=True):
+        """
+        save figure in the desired format
+        """
+        if save_path is not None:
+            self.save_path = save_path
+        
+        if save_fn_basename is not None:
+            pass
+        else:
+            save_fn_basename = '{0:02}_RMS_{1:.5g}_s.{2}'.format(self.period_index,
+                                self.residual.period_list[self.period_index],
+                                fig_format)
+        save_fn = os.path.join(self.save_path, save_fn_basename) 
+        
+        if save_fig_dpi is not None:
+            self.fig_dpi = save_fig_dpi
+        
+        self.fig.savefig(save_fn,  dpi=self.fig_dpi)
+        print 'saved file to {0}'.format(save_fn)
+                    
+        if fig_close == True:
+            plt.close('all')
+            
+    def plot_loop(self):
+        """
+        loop over all periods and save figures accordingly
+        """
+        self.read_residual_fn()
+        
+        for f_index in range(self.residual.period_list.shape[0]):
+            self.period_index = f_index
+            self.plot()
+            self.save_figure()
+            
+
 
 #==============================================================================
 # Exceptions

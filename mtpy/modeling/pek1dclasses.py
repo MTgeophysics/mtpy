@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as si
 import mtpy.utils.exceptions as MTex
-
+import mtpy.analysis.geometry as MTg
   
 
 class Control():    
@@ -377,7 +377,7 @@ class Model():
         """
         
         fpath = os.path.join(self.working_directory,self.modelfile)
-        
+#        print fpath
         nlayers = 0
         flag = True
         modelf = open(fpath)
@@ -395,7 +395,7 @@ class Model():
 
     def check_consistent_strike(self, depth,
                                 window = 5,
-                                threshold = 10.):
+                                threshold = 15.):
         """
         check if a particular depth point corresponds to a consistent 
         strike direction
@@ -431,27 +431,39 @@ class Model():
         """
         if self.models is None:
             self.read_model()
-        
+        print self.station
         # get model of interest
         model = self.models[self.modelno-1]
 
         if max_depth is None:
             max_depth = np.amax(model[:,1])
-            
+        
+        # get values only between min and max depth
         model_filt = model[(model[:,1]>min_depth)&(model[:,1]<max_depth)]
   
+        
         aniso = 1.*model_filt[:,3]/model_filt[:,2]
         aniso_max = np.amax(aniso)
+        # define an initial aniso max depth 
         depth_aniso_max = model_filt[:,1][aniso == aniso_max][0]
         
-        while not self.check_consistent_strike(depth_aniso_max):
+        i = 0
+        while not self.check_consistent_strike(depth_aniso_max,
+                                               window=strike_window,
+                                               threshold=strike_threshold):
+            
             aniso[aniso == aniso_max] = 1.
             aniso_max = np.amax(aniso)
             depth_aniso_max = model_filt[:,1][aniso == aniso_max][0]
+            i += 1
+            if i > len(model_filt):
+                print "can't get stable strike"
+                break
+            
         
 
         params = model_filt[aniso == aniso_max][0]
-        params[-1] = params[-1]%180
+#        params[-1] = params[-1]%180
 
         self.anisotropy_max_parameters = params
 
@@ -506,16 +518,44 @@ class Response():
         period = resp[:len(resp)/n,0]
 
         self.resistivity = resmod.T.reshape(n,len(resp)/n,2,2)
-        self.phase = phsmod.T.reshape(n,len(resp)/n,2,2)
+        self._phase = phsmod.T.reshape(n,len(resp)/n,2,2)
         self.freq = 1./period
         zabs = np.zeros((n,len(resp)/n,2,2))
         for m in range(n):
             for f in range(len(self.freq)):
-                zabs[m,f] = (self.resistivity[m,f]/(0.2*period[f]))**0.5
-        zr = zabs*np.cos(np.deg2rad(self.phase))
-        zi = zabs*np.sin(np.deg2rad(self.phase))
+                zabs[m,f] = (self.resistivity[m,f]*0.2*self.freq[f])**0.5
+        zr = zabs*np.cos(np.deg2rad(self._phase))
+        zi = -zabs*np.sin(np.deg2rad(self._phase))
         self.z = zr + 1j*zi
-               
+        self.phase = -self._phase
+
+    def rotate(self,rotation_angle):
+        """
+        use mtpy.analysis.geometry to rotate a z array and recalculate res and phase
+        
+        """
+        if not hasattr(self,'z'):
+            self.read_respfile()
+            
+        new_z = []
+        new_res = []
+        
+        for zarray in self.z:
+            zval = MTg.MTz.rotate_z(zarray,rotation_angle)[0]
+            new_z.append(zval)
+            resi = []
+            for i,freq in enumerate(self.freq):
+#                print i,freq,zval
+                resi.append((np.abs(zval[i])**2/(0.2*freq)))
+            new_res.append(resi)
+        self.z = np.array(new_z)
+
+        self.resistivity = np.array(new_res)        
+        self.phase = np.rad2deg(np.arctan(np.imag(self.z)/np.real(self.z)))
+
+        self.rotation_angle = rotation_angle
+        
+        
 
 
 class Fit():
@@ -559,8 +599,8 @@ class Fit():
         """
         # load the file with fit values in it
         fit = np.loadtxt(os.path.join(self.working_directory,self.fitfile))
-        print os.path.join(self.working_directory,self.fitfile)
-        print np.shape(fit)
+#        print os.path.join(self.working_directory,self.fitfile)
+#        print np.shape(fit)
         # find number of periods
         self.find_nperiods()        
         
@@ -610,6 +650,7 @@ class Model_suite():
         self.respfile = 'ai1dat.dat'
         self.fitfile = 'ai1fit.dat'
         self.inmodelfile = 'inmodel.dat' 
+        self.rotation_angle = 0
         self.modelno = 1
         self.station_list = []
         self.station_listfile = None
@@ -638,7 +679,7 @@ class Model_suite():
                     for ff in folder_list:
                         if str.lower(os.path.basename(ff).split('_')[0][i1:i2]) == str.lower(s):
                             folder_list2.append(ff)
-                            print s
+#                            print s
                 folder_list = folder_list2
         for folder in folder_list:
             try:                
@@ -690,6 +731,7 @@ class Model_suite():
                                       strike_threshold=strike_threshold)
             x,y = model.x,model.y
             depth,te,tm,strike = model.anisotropy_max_parameters[1:]
+            strike = strike + self.rotation_angle
             
             model_params[i] = x,y,depth,te,tm,strike
         

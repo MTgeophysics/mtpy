@@ -97,7 +97,7 @@ def build_data_dict(datafile, responsefile):
 		line = line.split()	
 
 		sta = line[1].upper()
-		#print 'station:<{0}>'.format(sta)
+
 		if sta in data_dict:
 			station_data = data_dict[sta]
 		else:
@@ -133,6 +133,7 @@ def build_data_dict(datafile, responsefile):
 			idx_comp = components.index(comp)
 		except:
 			continue
+
 		data[idx_comp] = np.complex(float(line[8]),float(line[9]))
 		error[idx_comp] = float(line[10])
 		datalist[idx_period] = data
@@ -148,6 +149,7 @@ def build_data_dict(datafile, responsefile):
 	
 	print len(data_dict)
 	
+
 	Fin2 = open(responsefile)
 	for line in Fin2:
 		line = line.strip()
@@ -187,6 +189,7 @@ def build_data_dict(datafile, responsefile):
 			idx_comp = components.index(comp)
 		except:
 			continue
+
 		response[idx_comp] = np.complex(float(line[8]),float(line[9]))
 		responselist[idx_period] = response
 
@@ -208,10 +211,12 @@ def build_data_dict(datafile, responsefile):
 		#print sta
 		#print four_tuples
 
+
 	return data_dict
 
 
 def plotZ(data_dictionary, no_comps = 4,step=1):
+
 
 	close('all')
 	ion()
@@ -234,6 +239,7 @@ def plotZ(data_dictionary, no_comps = 4,step=1):
 		#if station_counter >4 :
 		#	break
 
+
 		figure(fignum)
 
 		if station_counter%max_stations == 0:
@@ -247,6 +253,7 @@ def plotZ(data_dictionary, no_comps = 4,step=1):
 			if no_comps == 2:
 				if idx_c in [0,3]:
 					continue
+
 
 			subfig_index_horizontal = idx_c
 			
@@ -321,6 +328,7 @@ def plotZ(data_dictionary, no_comps = 4,step=1):
 
 
 			if (subfigure_index == 1)  or (no_comps == 2 and subfigure_index == 2):
+
 				ax.legend([orig_real,orig_imag],['RE','IM'],ncol=1,
 					numpoints=1,markerscale=0.8,frameon=True,labelspacing=0.3, 
 					prop={'size':8},fancybox=True,shadow=False)
@@ -328,6 +336,7 @@ def plotZ(data_dictionary, no_comps = 4,step=1):
 			tick_params(axis='both', which='minor', labelsize=6)
 
 		tight_layout()
+
 	show()
 
 

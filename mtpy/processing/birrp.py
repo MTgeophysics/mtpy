@@ -39,6 +39,8 @@ import mtpy.utils.format as MTft
 import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
 import mtpy.utils.misc as MTmc
+import mtpy.utils.interpolation as MTip
+
 #import ipdb
 
 reload(MTcf)
@@ -1696,8 +1698,15 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
     #find the birrp-output j-file for the current station 
     #j_filename_list = [i for i in os.listdir(input_dir) if op.basename(i).upper() == ('%s.j'%stationname).upper() ]
     j_filename_list = [i for i in os.listdir(input_dir) if i.lower().endswith('.j') ]
-    j_filename_list = [i for i in  j_filename_list if '{0}'.format(stationname.upper()) in op.basename(i).upper() ]
+
+    j_filename_list += [i for i in  j_filename_list if '{0}'.format(stationname.upper()) in op.basename(i).upper() ]
+
+    print j_filename_list
+    print    
     j_filename_list = [op.join(input_dir,i) for i in j_filename_list]
+    
+
+
     try:
         j_filename = op.join(input_dir, j_filename_list[0])
     except:
@@ -1747,7 +1756,7 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
     
 def convert2edi_incl_instrument_correction(stationname, in_dir, 
                                         survey_configfile, birrp_configfile, 
-                                        instr_response_file, out_dir = None):
+                                        instr_response_file, out_dir = None, instr_type='lemi'):
     """
     Convert BIRRP output files into EDI file.
 
@@ -1855,7 +1864,7 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
     birrp_config_dict.update(processing_dict)
 
     frequencies = 1./periods
-    def correct_z_for_instrument_response(Z_array, instr_resp, frequencies):
+    def correct_z_for_instrument_response(Z_array, instr_resp, frequencies, instr_type):
 
         for idx_f, freq in enumerate(frequencies):
             if not (instr_resp[0,0] <= np.abs(freq) <= instr_resp[-1,0]):
@@ -1864,73 +1873,22 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
                 continue
             #find the appropriate frequencies ( since the current freq-value is 
             #most likely inbetween two values on the instr_freqs-axis) 
-            #- get the respective value by linear interpolation in log-log space!
+            #- get the respective value by interpolation !
 
             #find the value closest to the current freq, assume it's lower
             closest_lower = np.abs(freq-instr_resp[:,0]).argmin()
 
             #if it coincides with the highest frequency/last entry:
-            if closest_lower == len(instr_resp)-1:
+            if freq == instr_resp[-1,0]:
                 correction_factor = np.complex(instr_resp[-1,1],instr_resp[-1,2])
-            # or the lowest
-            elif closest_lower == 0:
+    
+            #if it coincides with the lowest frequency/first entry:
+            elif freq == instr_resp[0,0]:
                 correction_factor = np.complex(instr_resp[0,1],instr_resp[0,2])
     
             else:
-                #in case the closest frequency value is not lower but higher, 
-                #take the freq value below as lower bound for the interval:        
-                if instr_resp[closest_lower,0] > freq:
-                    closest_lower -= 1
-                
-                #define the interval:
-                instrfreq1 = instr_resp[closest_lower,0]
-                instrfreq2 = instr_resp[closest_lower+1,0]
 
-                #take the interval values:
-                realval1 = instr_resp[closest_lower,1]
-                realval2 = instr_resp[closest_lower+1,1]
-                imagval1 = instr_resp[closest_lower,2]
-                imagval2 = instr_resp[closest_lower+1,2]
-
-                #for linear interpolation in abs/angle instead of real/imag:
-                absval1 = np.abs(np.complex(realval1,imagval1))
-                phival1 = np.angle(np.complex(realval1,imagval1))/np.pi*180
-                absval2 = np.abs(np.complex(realval2,imagval2))
-                phival2 = np.angle(np.complex(realval2,imagval2))/np.pi*180
-
-
-                #interpolate real and imaginary part independently in log-space:
-                logfreq1 = np.log(instrfreq1)
-                logfreq2 = np.log(instrfreq2)
-
-                loginterval = logfreq2 - logfreq1
-                logfreq = np.log(freq)
-                weight = (logfreq2-logfreq)/loginterval
-
-                #for low frequencies take the log of the values to get into loglog space:
-                #print  5 < freq <= 500
-                if freq <= 5:                    
-                    logrealval1 = np.log(realval1)
-                    logrealval2 = np.log(realval2)
-                    logimagval1 = np.log(imagval1)
-                    logimagval2 = np.log(imagval2)
-                 
-                    interpval_real = np.exp(weight*logrealval1 +  (1-weight) * logrealval2)
-                    interpval_imag = np.exp(weight*logimagval1 +  (1-weight) * logimagval2)
-                
-                elif 5 < freq <= 500:
-                    #linear interpolation on res phase instead of real/imag
-                    interpval_abs = weight*absval1 +  (1-weight) * absval2
-                    interpval_phi = weight*phival1 +  (1-weight) * phival2
-                    interpval_real = np.real(cmath.rect(interpval_abs,interpval_phi/180.*np.pi))
-                    interpval_imag = np.imag(cmath.rect(interpval_abs,interpval_phi/180.*np.pi))
-                    
-                else:
-                    interpval_real = weight*realval1 +  (1-weight) * realval2
-                    interpval_imag = weight*imagval1 +  (1-weight) * imagval2
- 
-
-                correction_factor = np.complex(interpval_real,interpval_imag)
+                correction_factor = MTip.interpolate_instrumentresponse(freq,instr_resp ,instr_type)
 
             
             #finally correct Z for the instrument influence by multiplying with the instrument response value: 
@@ -1945,7 +1903,7 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
 
         return Z_array
 
-    Z_array = correct_z_for_instrument_response(Z_array, instr_resp, frequencies)
+    Z_array = correct_z_for_instrument_response(Z_array, instr_resp, frequencies,instr_type)
 
 
 
@@ -2486,10 +2444,16 @@ def convert2coh(stationname, birrp_output_directory):
     #locate file names
 
     # only for second stage coherences...:
-
+    
     cohfilenames = sorted([ op.abspath(op.join(directory,i)) for i in fnmatch.filter(
                 os.listdir(directory), '*%s*.[12]r.[12]c2'%stationname.upper()) ] )
+    if len(cohfilenames) == 0:
+        lo_files = [i.lower() for i in os.listdir(directory)]
+        cohfilenames = sorted([ op.abspath(op.join(directory,i)) for i in fnmatch.filter(
+                lo_files, '*%s*.[12]r.[12]c2'%stationname.lower()) ] ) 
     
+    #print cohfilenames
+
     if len(cohfilenames) < 1:
         print 'No coherence files for station %s found in: %s'%(stationname, directory)
         raise MTex.MTpyError_file_handling()#'No coherence files for station %s found in: %s'%(stationname, directory))

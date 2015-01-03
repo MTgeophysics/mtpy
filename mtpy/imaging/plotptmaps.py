@@ -192,14 +192,14 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                      
                      * 'freq' -> plot vertical scale in freq
         
-        **mapscale** : [ 'deg' | 'm' | 'km' ]
+        **mapscale** : [ 'latlon ' | 'eastnorth' | 'eastnorthkm' ]
                        Scale of the map coordinates.
                        
-                       * 'deg' --> degrees in latitude and longitude
+                       * 'latlon' --> degrees in latitude and longitude
                        
-                       * 'm' --> meters for easting and northing
+                       * 'eastnorth' --> meters for easting and northing
                        
-                       * 'km' --> kilometers for easting and northing
+                       * 'eastnorthkm' --> kilometers for easting and northing
              
         **image_dict** : dictionary of image properties
         
@@ -284,7 +284,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         >>> ...                                              'range':(20,70)})
         >>> 
         >>> #----add real induction arrows----
-        >>> ptmap.plot_tipper = 'yr'
+        >>> ptmap.indarrows = 'yr'
         >>> ptmap.redraw_plot()
         >>> #
         >>> #---change the arrow properties---
@@ -406,41 +406,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         self.plot_freq = kwargs.pop('plot_freq', 1.0)
         self.ftol = kwargs.pop('ftol', .1)
         
-        #read in map scale
-        self.mapscale = kwargs.pop('mapscale', 'deg')
-        
         #--> set the ellipse properties -------------------
         #set default size to 2
-        if self.mapscale == 'deg': 
-            self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':.05})
-            self._arrow_dict = kwargs.pop('arrow_dict', 
-                                          {'size':.05,
-                                           'head_length':.005,
-                                           'head_width':.005,
-                                           'lw':.75})
-        
-            self.xpad = .05
-            self.ypad = .05
-        elif self.mapscale == 'm':
-            self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':500})
-            self._arrow_dict = kwargs.pop('arrow_dict', 
-                                          {'size':500,
-                                           'head_length':50,
-                                           'head_width':50,
-                                           'lw':.75})
-            self.xpad = 500
-            self.ypad = 500
-        elif self.mapscale == 'km':
-            self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':.5})
-            self._arrow_dict = kwargs.pop('arrow_dict', 
-                                          {'size':.5,
-                                           'head_length':.05,
-                                           'head_width':.05,
-                                           'lw':.75})
-            self.xpad = .5
-            self.ypad = .5
+        self._ellipse_dict = kwargs.pop('ellipse_dict', {})
         self._read_ellipse_dict()
-        self._read_arrow_dict()
             
         #--> set colorbar properties---------------------------------
         #set orientation to horizontal
@@ -466,8 +435,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         
         self.tscale = kwargs.pop('tscale', 'period')
         self.fig_size = kwargs.pop('fig_size', [8, 8])
-        
-        self.font_size = kwargs.pop('font_size', 7)
+        self.xpad = kwargs.pop('xpad', .2)
+        self.ypad = kwargs.pop('ypad', .2)
+        self.mapscale = kwargs.pop('mapscale', 'latlon')
+        self.font_size = kwargs.pop('font_size', 7)      
         
         #if rotation angle is an int or float make an array the length of 
         #mt_list for plotting purposes
@@ -488,7 +459,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         #--> set induction arrow properties -------------------------------
         self.plot_tipper = kwargs.pop('plot_tipper', 'n')
         
-        
+        self._arrow_dict = kwargs.pop('arrow_dict', {})
+        self._read_arrow_dict()
             
         #--> set arrow legend properties -------------------------------
         arrow_legend_dict = kwargs.pop('arrow_legend_dict', {})
@@ -657,10 +629,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             bounds = np.arange(ckmin, ckmax+ckstep, ckstep) 
             
         #set tick parameters depending on the mapscale
-        if self.mapscale == 'deg':
-            self.tickstrfmt = '%.3f'
+        if self.mapscale == 'latlon':
+            self.tickstrfmt = '%.2f'
             
-        elif self.mapscale == 'm' or self.mapscale == 'km':
+        elif self.mapscale == 'eastnorth' or self.mapscale == 'eastnorthkm':
             self.tickstrfmt = '%.0f'
         
         #make some empty arrays
@@ -685,14 +657,14 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 pt = mt.get_PhaseTensor()
                 
                 #if map scale is lat lon set parameters                
-                if self.mapscale == 'deg':
+                if self.mapscale == 'latlon':
                     latlist[ii] = mt.lat
                     lonlist[ii] = mt.lon
                     plotx = mt.lon-refpoint[0]
                     ploty = mt.lat-refpoint[1]
                 
                 #if map scale is in meters easting and northing
-                elif self.mapscale == 'm':
+                elif self.mapscale == 'eastnorth':
                     zone, east, north = utm2ll.LLtoUTM(23, mt.lat, mt.lon)
                     
                     #set the first point read in as a refernce other points                    
@@ -724,7 +696,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                             ploty = north-refpoint[1]
                 
                 #if mapscale is in km easting and northing
-                elif self.mapscale == 'km':
+                elif self.mapscale == 'eastnorthkm':
                     zone,east,north = utm2ll.LLtoUTM(23, mt.lat, mt.lon)
                     if ii == 0:
                         zone1 = zone
@@ -899,7 +871,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                                self.plot_freq, mt.station)
         
         #--> set axes properties depending on map scale------------------------
-        if self.mapscale == 'deg':    
+        if self.mapscale == 'latlon':    
             self.ax.set_xlabel('longitude',
                                fontsize=self.font_size+2,
                                fontweight='bold')
@@ -907,7 +879,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                fontsize=self.font_size+2,
                                fontweight='bold')
             
-        elif self.mapscale == 'm':
+        elif self.mapscale == 'eastnorth':
             self.ax.set_xlabel('Easting (m)',
                                fontsize=self.font_size+2,
                                fontweight='bold')
@@ -915,7 +887,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                fontsize=self.font_size+2,
                                fontweight='bold')
       
-        elif self.mapscale == 'km':
+        elif self.mapscale == 'eastnorthkm':
             self.ax.set_xlabel('Easting (km)',
                                fontsize=self.font_size+2,
                                fontweight='bold')

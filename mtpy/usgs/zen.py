@@ -420,7 +420,7 @@ class Zen3D(object):
         gps_info = np.fromstring(raw_data[gps_list[0]:gps_list[0]+self._stamp_len], 
                                  dtype=self._data_type)
         gps_info['time'] = gps_info['time'].astype(np.float32)
-        gps_info['time'] = self.get_gps_time(gps_info['time'])
+        gps_info['time'] = self.get_gps_time(gps_info['time'])[0]
         start_test = self.get_date_time(self.gps_week, gps_info['time'])
         
         #--> test to make sure the first time corresponds to the scheduled 
