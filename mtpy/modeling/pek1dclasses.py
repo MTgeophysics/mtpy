@@ -8,11 +8,14 @@ Created on Thu Jun 05 13:55:13 2014
 
 import mtpy.core.edi as mtedi
 import os
+import os.path as op
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as si
 import mtpy.utils.exceptions as MTex
 import mtpy.analysis.geometry as MTg
+import cmath
+import math
   
 
 class Control():    
@@ -194,7 +197,8 @@ class Data():
         self.mode = 'I'
 
         for key in input_parameters.keys():
-            setattr(self,key,input_parameters[key])   
+            if hasattr(self,key):
+                setattr(self,key,input_parameters[key])   
 
         # default working directory is epath if it is specified, otherwise
         # current directory
@@ -283,14 +287,11 @@ class Data():
         
         """
         if self.datafile is None:
-            dlst = [i for i in os.listdir(self.working_directory) if i[-4:] == '.dat']
+
             default_files = ['ai1dat.dat','ai1mod.dat','ai1fit.dat',
                              'inmodel.dat','inregulm.dat']
-            for dd in default_files:
-                try:
-                    dlst.remove(dd)
-                except:
-                    pass
+            dlst = [i for i in os.listdir(self.working_directory) if \
+            (i[-4:] == '.dat') and (i not in default_files)]
             if len(dlst) == 1:
                 self.datafile = dlst[0]
             else:
@@ -306,24 +307,24 @@ class Data():
         if self.mode == 'I':   
             zr = np.vstack([data[:,i] for i in range(len(data[0])) if (i-1)%4 == 0])
             ze = np.vstack([data[:,i] for i in range(len(data[0])) if (i-2)%4 == 0])
-            zi = np.vstack([data[:,i] for i in range(len(data[0])) if (i-3)%4 == 0])
+            zi = -np.vstack([data[:,i] for i in range(len(data[0])) if (i-3)%4 == 0])
             z = zr + 1j*zi
             self.z = z.T.reshape(len(z[0]),2,2)
             self.zerr = ze.T.reshape(len(z[0]),2,2)
-            zi = np.imag(self.z)
-            zr = np.real(self.z)
+
             
+            # make a frequency array that has the same shape as z
             freq2 = np.zeros(np.shape(self.z))
             for i in range(len(freq2)):
                 freq2[i,:,:] = 1./data[:,0][i]             
             
-#            self.resistivity = 
+#           calculate resistivity
             self.resistivity = 0.2*np.abs(self.z)**2/freq2
             self.resistivity_err = (self.zerr/np.abs(self.z))*self.resistivity
             
             q = np.zeros(np.shape(self.resistivity))
-            q[(zr<0)&(zi<0)] = np.pi
-            q[(zr<0)&(zi>0)] = -np.pi
+#            q[(zr<0)&(zi<0)] = np.pi
+#            q[(zr<0)&(zi>0)] = -np.pi
             self.q = q
 
             phase = np.rad2deg(np.arctan(np.imag(self.z)/np.real(self.z))+q)
@@ -342,6 +343,172 @@ class Data():
             phs_err = np.vstack([data[:,i] for i in range(len(data[0])) if (i-4)%4 == 0])
             self.phase_err = phs_err.T.reshape(len(phs_err[0]),2,2)
 
+class Response():
+    """
+    deals with responses from 1d inversions
+    """    
+    
+    def __init__(self,wkdir,**input_parameters):
+        
+        self.working_directory = wkdir
+        self.respfile = 'ai1dat.dat'
+        self.misfit_threshold = 1.1
+        self.station = None
+        
+        for key in input_parameters.keys():
+            if hasattr(self,key):
+                setattr(self,key,input_parameters[key])    
+
+        self.read_respfile()
+
+    def read_respfile(self):
+        """
+        read respfile into a data object
+        """
+        
+        # define path to file
+        respfpath = os.path.join(self.working_directory,self.respfile)
+        respf = open(respfpath)
+
+        # find out number of models
+        n = 0
+        for line in respf.readlines():
+            if 'REG' in line:
+                n += 1
+
+        # load model responses into an array
+        resp = np.genfromtxt(respfpath,skiprows=1,invalid_raise=False)
+        resmod = np.vstack([resp[:,i] for i in range(len(resp[0])) if (i-1)%2 == 0])
+        phsmod = np.vstack([resp[:,i] for i in range(len(resp[0])) if i!= 0 and (i-2)%2 == 0])
+        period = resp[:len(resp)/n,0]
+
+        self.resistivity = resmod.T.reshape(n,len(resp)/n,2,2)
+        self._phase = phsmod.T.reshape(n,len(resp)/n,2,2)
+        self.freq = 1./period
+        zabs = np.zeros((n,len(resp)/n,2,2))
+        for m in range(n):
+            for f in range(len(self.freq)):
+                zabs[m,f] = (self.resistivity[m,f]*self.freq[f]/0.2)**0.5
+        zr = zabs*np.cos(np.deg2rad(self._phase))
+        zi = -zabs*np.sin(np.deg2rad(self._phase))
+        self.z = zr + 1j*zi
+        self.phase = -self._phase
+
+    def rotate(self,rotation_angle):
+        """
+        use mtpy.analysis.geometry to rotate a z array and recalculate res and phase
+        
+        """
+        if not hasattr(self,'z'):
+            self.read_respfile()
+            
+        new_z = []
+        new_res = []
+        
+        for zarray in self.z:
+            zval = MTg.MTz.rotate_z(zarray,rotation_angle)[0]
+            new_z.append(zval)
+            resi = []
+            for i,freq in enumerate(self.freq):
+#                print i,freq,zval
+                resi.append(0.2*(np.abs(zval[i])**2/freq))
+            new_res.append(resi)
+        self.z = np.array(new_z)
+
+        self.resistivity = np.array(new_res)        
+        self.phase = np.zeros(np.shape(self.z))
+        for m in range(len(self.phase)):
+            for idf in range(len(self.phase[m])):
+                for i in range(2):
+                    for j in range(2):
+                        self.phase[m,idf,i,j] = math.degrees(cmath.phase(self.z[m,idf,i,j]))
+
+        self.rotation_angle = rotation_angle
+        
+
+
+
+class Fit():
+    """
+    deals with outputs from 1d inversions
+    """    
+    
+    def __init__(self,wkdir,**input_parameters):
+        
+        self.working_directory = wkdir
+        self.fitfile = 'ai1fit.dat'
+        self.respfile = 'ai1dat.dat'
+        self.misfit_threshold = 1.1
+        self.station = None
+        
+        for key in input_parameters.keys():
+            if hasattr(self,key):
+                setattr(self,key,input_parameters[key])    
+        
+        self.read_fit()
+        
+    def find_nperiods(self):
+        """
+        find number of periods used in inversion
+        """
+        
+        # find out number of periods
+        respfpath = os.path.join(self.working_directory,self.respfile)
+        respf = open(respfpath)
+        respf.readline()
+        
+        n = 0
+        line = respf.readline()
+        while 'REG' not in line:
+            line = respf.readline()
+            n += 1
+        self.n_periods = n-1
+        
+
+    def read_fit(self):
+        """
+        read fit file to give structure and anisotropy penalties and penalty weights
+        """
+        # load the file with fit values in it
+        fit = np.loadtxt(os.path.join(self.working_directory,self.fitfile))
+#        print os.path.join(self.working_directory,self.fitfile)
+#        print np.shape(fit)
+        # find number of periods
+        self.find_nperiods()        
+        
+        # total misfit
+        self.misfit_mean = (fit[:,5]/(self.n_periods*8.))**0.5
+        
+        # structure and anisotropy penalty
+        self.penalty_structure = fit[:,6]
+        self.penalty_anisotropy = fit[:,7]
+        self.weight_structure = fit[:,2]
+        self.weight_anisotropy = fit[:,4]
+        self.modelno = fit[:,0]
+        self.fit = fit
+
+    def find_bestmodel(self):
+        """
+        find the smoothest model that fits the data within self.misfit_threshold
+        """
+
+            
+        self.read_fit()
+        fit = self.fit
+        
+        # define parameters
+        mis = self.misfit_mean
+        s = self.penalty_structure/np.median(self.penalty_structure)
+        a = self.penalty_anisotropy/np.median(self.penalty_anisotropy)
+        
+        # define function to minimise
+        f = a*s*np.abs(a-s)/(a+s)
+        
+        # define the parameters relating to the best model
+        self.params_bestmodel = fit[f==min(f[mis<min(mis)*self.misfit_threshold])][0]
+        self.params_fittingmodels = fit[mis<min(mis)*self.misfit_threshold]
+
+
 
 
 class Model():
@@ -356,20 +523,30 @@ class Model():
         self.respfile = 'ai1dat.dat'
         self.fitfile = 'ai1fit.dat'
         self.inmodelfile = 'inmodel.dat'
+        self.datafile = None
         self.modelno = 1
         self.models = None
         self.misfit_threshold = 1.1
         self.station = None
         self.Fit = None
+        self.Resp = None
+        self.Data = None
         self.x = 0.
         self.y = 0.
+        self.input_parameters = input_parameters
         
         for key in input_parameters.keys():
-            setattr(self,key,input_parameters[key])       
+            if hasattr(self,key):
+                setattr(self,key,input_parameters[key])       
             
         if self.station is None:
             self.station = os.path.basename(self.working_directory).split('_')[0]
-
+            
+        self.read_model()
+        self.read_fit()
+        self.read_response()
+        self.read_datafile()
+        self._calculate_fit_vs_freq()
         
     def read_model(self):
         """
@@ -392,6 +569,30 @@ class Model():
         models = np.genfromtxt(fpath,skiprows=1,invalid_raise=False)
         self.models = models.reshape(0.5*len(models)/nlayers,2*nlayers,5)
 
+    
+    def read_fit(self):
+        if self.Fit is None:
+            self.Fit = Fit(self.working_directory,**self.input_parameters)
+            
+    def read_response(self):
+        if self.Resp is None:
+            self.Resp = Response(self.working_directory,**self.input_parameters)
+
+    def read_datafile(self):
+        if self.Data is None:
+
+            self.Data = Data(working_directory=self.working_directory,
+                             **self.input_parameters)
+            self.Data.read_datafile()
+
+    def _calculate_fit_vs_freq(self):
+        
+        misfit_real = ((np.real(self.Resp.z[self.modelno-1])-np.real(self.Data.z))/self.Data.zerr)**2
+        misfit_imag = ((np.imag(self.Resp.z[self.modelno-1])-np.imag(self.Data.z))/self.Data.zerr)**2
+        
+
+        self.Fit.misfit = misfit_real + 1j*misfit_imag
+        
 
     def check_consistent_strike(self, depth,
                                 window = 5,
@@ -480,161 +681,7 @@ class Model():
         
         
 
-class Response():
-    """
-    deals with responses from 1d inversions
-    """    
-    
-    def __init__(self,wkdir,**input_parameters):
-        
-        self.working_directory = wkdir
-        self.respfile = 'ai1dat.dat'
-        self.misfit_threshold = 1.1
-        self.station = None
-        
-        for key in input_parameters.keys():
-            setattr(self,key,input_parameters[key])    
 
-
-    def read_respfile(self):
-        """
-        read respfile into a data object
-        """
-        
-        # define path to file
-        respfpath = os.path.join(self.working_directory,self.respfile)
-        respf = open(respfpath)
-
-        # find out number of models
-        n = 0
-        for line in respf.readlines():
-            if 'REG' in line:
-                n += 1
-
-        # load model responses into an array
-        resp = np.genfromtxt(respfpath,skiprows=1,invalid_raise=False)
-        resmod = np.vstack([resp[:,i] for i in range(len(resp[0])) if (i-1)%2 == 0])
-        phsmod = np.vstack([resp[:,i] for i in range(len(resp[0])) if i!= 0 and (i-2)%2 == 0])
-        period = resp[:len(resp)/n,0]
-
-        self.resistivity = resmod.T.reshape(n,len(resp)/n,2,2)
-        self._phase = phsmod.T.reshape(n,len(resp)/n,2,2)
-        self.freq = 1./period
-        zabs = np.zeros((n,len(resp)/n,2,2))
-        for m in range(n):
-            for f in range(len(self.freq)):
-                zabs[m,f] = (self.resistivity[m,f]*0.2*self.freq[f])**0.5
-        zr = zabs*np.cos(np.deg2rad(self._phase))
-        zi = -zabs*np.sin(np.deg2rad(self._phase))
-        self.z = zr + 1j*zi
-        self.phase = -self._phase
-
-    def rotate(self,rotation_angle):
-        """
-        use mtpy.analysis.geometry to rotate a z array and recalculate res and phase
-        
-        """
-        if not hasattr(self,'z'):
-            self.read_respfile()
-            
-        new_z = []
-        new_res = []
-        
-        for zarray in self.z:
-            zval = MTg.MTz.rotate_z(zarray,rotation_angle)[0]
-            new_z.append(zval)
-            resi = []
-            for i,freq in enumerate(self.freq):
-#                print i,freq,zval
-                resi.append((np.abs(zval[i])**2/(0.2*freq)))
-            new_res.append(resi)
-        self.z = np.array(new_z)
-
-        self.resistivity = np.array(new_res)        
-        self.phase = np.rad2deg(np.arctan(np.imag(self.z)/np.real(self.z)))
-
-        self.rotation_angle = rotation_angle
-        
-        
-
-
-class Fit():
-    """
-    deals with outputs from 1d inversions
-    """    
-    
-    def __init__(self,wkdir,**input_parameters):
-        
-        self.working_directory = wkdir
-        self.fitfile = 'ai1fit.dat'
-        self.respfile = 'ai1dat.dat'
-        self.misfit_threshold = 1.1
-        self.station = None
-        
-        for key in input_parameters.keys():
-            setattr(self,key,input_parameters[key])    
-        
-        
-    def find_nperiods(self):
-        """
-        find number of periods used in inversion
-        """
-        
-        # find out number of periods
-        respfpath = os.path.join(self.working_directory,self.respfile)
-        respf = open(respfpath)
-        respf.readline()
-        
-        n = 0
-        line = respf.readline()
-        while 'REG' not in line:
-            line = respf.readline()
-            n += 1
-        self.n_periods = n-1
-        
-
-    def read_fit(self):
-        """
-        read fit file to give structure and anisotropy penalties and penalty weights
-        """
-        # load the file with fit values in it
-        fit = np.loadtxt(os.path.join(self.working_directory,self.fitfile))
-#        print os.path.join(self.working_directory,self.fitfile)
-#        print np.shape(fit)
-        # find number of periods
-        self.find_nperiods()        
-        
-        # total misfit
-        self.misfit = (fit[:,5]/(self.n_periods*8.))**0.5
-        
-        # structure and anisotropy penalty
-        self.penalty_structure = fit[:,6]
-        self.penalty_anisotropy = fit[:,7]
-        self.weight_structure = fit[:,2]
-        self.weight_anisotropy = fit[:,4]
-        self.modelno = fit[:,0]
-        self.fit = fit
-
-    def find_bestmodel(self):
-        """
-        find the smoothest model that fits the data within self.misfit_threshold
-        """
-
-            
-        self.read_fit()
-        fit = self.fit
-        
-        # define parameters
-        mis = self.misfit
-        s = self.penalty_structure/np.median(self.penalty_structure)
-        a = self.penalty_anisotropy/np.median(self.penalty_anisotropy)
-        
-        # define function to minimise
-        f = a*s*np.abs(a-s)/(a+s)
-        
-        # define the parameters relating to the best model
-        self.params_bestmodel = fit[f==min(f[mis<min(mis)*self.misfit_threshold])][0]
-        self.params_fittingmodels = fit[mis<min(mis)*self.misfit_threshold]
         
         
 class Model_suite():

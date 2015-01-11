@@ -131,7 +131,8 @@ class Z(object):
 
         self._freq = freq
         if z_array is not None:
-            if len(z_array.shape()) == 2 and z_array.shape() == (2,2):
+
+            if (len(z_array.shape) == 2) and (z_array.shape == (2,2)):
                 if z_array.dtype in ['complex', 'float','int']:
                     self._z = np.zeros((1,2,2),'complex')
                     self._z[0] = z_array            
@@ -1849,14 +1850,14 @@ def _read_z_array(z_array, zerr_array = None):
     """
 
 
-    try:
+#    try:
 
 
-        z_object = Z( z_array=z_array, zerr_array=zerr_array)
-    except:
-        raise MTex.MTpyError_Z('Cannot generate Z instance - check z-array'+\
-                               'dimensions/type: (N,2,2)/complex ; '+\
-                               '{0}'.format(z_array.shape()))
+    z_object = Z( z_array=z_array, zerr_array=zerr_array)
+#    except:
+#        raise MTex.MTpyError_Z('Cannot generate Z instance - check z-array'+\
+#                               'dimensions/type: (N,2,2)/complex ; '+\
+#                               '{0}'.format(z_array.shape))
 
     return z_object
 
