@@ -150,7 +150,6 @@ class Plot_model():
             if 'aniso' in parameter:
                 if twin:
                     ax = make_twiny(twiny_offset)
-                
                 for modelvals in models_to_plot:           
                     p, = plt.plot(modelvals[:,3]/modelvals[:,2],modelvals[:,1],
                                   self.linedict['colour'][c%nlc],ls=ls,lw=lw)
@@ -372,7 +371,7 @@ class Plot_fit():
         self.Fit.read_fit()
         a = self.Fit.penalty_anisotropy
         s = self.Fit.penalty_structure
-        mis = self.Fit.misfit
+        mis = self.Fit.misfit_mean
         aa = [str(round(i,1)) for i in self.Fit.weight_anisotropy]
         ss = [str(round(i,1)) for i in self.Fit.weight_structure]
            
@@ -391,9 +390,9 @@ class Plot_fit():
                 rounding = int(np.ceil(np.abs(np.log10(contour_step))))
             else:
                 rounding = 0
-            levels = np.arange(round(np.amin(self.Fit.misfit),rounding),
-                   round(np.amax(self.Fit.misfit),rounding),
-                   contour_step)
+            levels = np.arange(round(np.amin(self.Fit.misfit_mean),rounding),
+                   round(np.amax(self.Fit.misfit_mean,rounding),
+                   contour_step))
             plt.contour(xi[:,:,0],
                         xi[:,:,1],
                         f1,cmap=cmap,
@@ -437,7 +436,7 @@ class Plot_fit():
         self.Fit.read_fit()
         a = self.Fit.penalty_anisotropy
         s = self.Fit.penalty_structure
-        mis = self.Fit.misfit
+        mis = self.Fit.misfit_mean
         aa = self.Fit.weight_anisotropy
         ss = self.Fit.weight_structure
 #        print aa
