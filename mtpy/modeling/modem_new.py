@@ -718,9 +718,9 @@ class Data(object):
         """
         if self.data_array is None:
             return None
-            
+        
         station_locations = self.data_array[['station', 'lat', 'lon', 
-                                             'north', 'east', 'elev',
+                                             'north', 'east', 'elev', 'zone',
                                              'rel_north', 'rel_east']]
         return station_locations
         
@@ -729,7 +729,7 @@ class Data(object):
                                   doc="""location of stations""") 
                 
     def write_data_file(self, save_path=None, fn_basename=None, 
-                        rotation_angle=None):
+                        rotation_angle=None, fill_data=False):
         """
         write data file for ModEM
         
@@ -780,8 +780,12 @@ class Data(object):
         if rotation_angle is not None:
             self.rotation_angle = rotation_angle
         
-        #be sure to fill in data array 
-        self._fill_data_array()
+        #be sure to fill in data array
+        if self.data_array is None:
+            self._fill_data_array()
+            
+        if fill_data == True:
+            self.fill_data_array()
         
         #reset the header string to be informational
         self._set_header_string()
@@ -1534,10 +1538,10 @@ class Model(object):
                                step=self.cell_size_east)
         
         #padding cells in the east-west direction
-        for ii in range(1, self.pad_east+1):
+        for ii in range(0, self.pad_east):
             east_0 = float(east_gridr[-1])
             west_0 = float(east_gridr[0])
-            add_size = np.round(self.cell_size_east*self.pad_stretch_h*ii, -2)
+            add_size = np.round(self.cell_size_east*self.pad_stretch_h**ii, -2)
             pad_w = west_0-add_size
             pad_e = east_0+add_size
             east_gridr = np.insert(east_gridr, 0, pad_w)
@@ -1563,10 +1567,10 @@ class Model(object):
                                 step=self.cell_size_north)
         
         #padding cells in the east-west direction
-        for ii in range(1, self.pad_north+1):
+        for ii in range(0, self.pad_north):
             south_0 = float(north_gridr[0]) 
             north_0 = float(north_gridr[-1])
-            add_size = np.round(self.cell_size_north*self.pad_stretch_h*ii, -2)
+            add_size = np.round(self.cell_size_north*self.pad_stretch_h**ii, -2)
             pad_s = south_0-add_size
             pad_n = north_0+add_size
             north_gridr = np.insert(north_gridr, 0, pad_s)
@@ -2545,15 +2549,15 @@ class Covariance(object):
         
         #--> smoothing in north direction        
         n_smooth_line = ''
-        for zz in range(self.grid_dimensions[2]):
+        for zz in range(self.grid_dimensions[0]):
             n_smooth_line += ' {0:<5.1f}'.format(self.smoothing_north)
         clines.append(n_smooth_line+'\n')
 
         #--> smoothing in east direction
         e_smooth_line = ''
-        for zz in range(self.grid_dimensions[2]):
+        for zz in range(self.grid_dimensions[1]):
             e_smooth_line += ' {0:<5.1f}'.format(self.smoothing_east)
-        clines.append(n_smooth_line+'\n')
+        clines.append(e_smooth_line+'\n')
         
         #--> smoothing in vertical direction
         clines.append(' {0:<5.1f}\n'.format(self.smoothing_z))
