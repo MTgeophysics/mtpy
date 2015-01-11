@@ -192,7 +192,7 @@ class Data():
         self.respfile = 'ai1dat.dat'
         self.datafile = None
         self.errorfloor = np.ones([2,2])*0.1
-        self.errorfloor_type = 'relative' # relative, absolute or off_diagonals
+        self.errorfloor_type = 'relative' # relative, absolute or offdiagonals
         self.edipath = None
         self.mode = 'I'
 
