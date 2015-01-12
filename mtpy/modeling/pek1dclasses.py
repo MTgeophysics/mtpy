@@ -330,7 +330,7 @@ class Data():
             
 #           calculate resistivity
             self.resistivity = 0.2*np.abs(self.z)**2/freq2
-            self.resistivity_err = (self.zerr/np.abs(self.z))*self.resistivity
+            self.resistivity_err = 2*(self.zerr/np.abs(self.z))*self.resistivity
             
             q = np.zeros(np.shape(self.resistivity))
 #            q[(zr<0)&(zi<0)] = np.pi
