@@ -230,12 +230,17 @@ class Data():
         if type(self.errorfloor) in [int,float]:
             self.errorfloor = np.ones([2,2])*self.errorfloor
         
-        if self.errorfloor_type == 'relative':
+        if self.errorfloor_type in ['relative','offdiagonals']:
             zer = ze/np.abs(z)
             for i in range(2):
                 for j in range(2):               
                     zer[:,i,j][(zer[:,i,j]<self.errorfloor[i,j])] = self.errorfloor[i,j]
             ze = np.abs(z)*zer
+            if self.errorfloor_type == 'offdiagonals':
+                for i in range(2):
+                    for iz in range(len(z)):
+                        if ze[iz,i,i] < ze[iz,i,1-i]:
+                            ze[iz,i,i] = ze[iz,i,1-i]
         
         elif self.errorfloor_type == 'absolute':
             for i in range(2):

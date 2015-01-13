@@ -452,11 +452,7 @@ class Plot_fit():
             lx = ss[c]          
         y = mis[c]
         
-#        print mis
-#        print fixed_value
-#        print c
-#        print y
-        
+
         if self.normalise_misfit:
             y = 1.*y/np.amin(y)
         if self.normalise_x:
