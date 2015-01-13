@@ -247,14 +247,6 @@ class Data():
                 for j in range(2):               
                     ze[:,i,j][(ze[:,i,j]<self.errorfloor[i,j])] = self.errorfloor[i,j]
         
-        elif self.errorfloor_type == 'offdiagonals':
-            zer = ze/np.abs(z)
-            for i in range(2):        
-                zer[:,i,1-i][(zer[:,i,1-i]<self.errorfloor[i,1-i])] = self.errorfloor[i,1-i]             
-                ze[:,i,1-i] = zer[:,i,1-i]*np.abs(z[:,i,1-i])
-                for iz in range(len(z)):
-                    if ze[iz,i,i] < ze[iz,i,1-i]:
-                        ze[iz,i,i] = ze[iz,i,1-i]
             
         # define header info for data file
         header = '{:>5}\n{:>5}'.format(self.mode,len(eo.Z.resistivity))
