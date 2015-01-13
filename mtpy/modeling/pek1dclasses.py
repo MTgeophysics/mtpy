@@ -271,6 +271,8 @@ class Data():
         
         self.header = header
         self.data = np.vstack(data_list).T
+        self.z = zr + 1j*zi
+        self.zerr = ze
 
 
     def write_datafile(self, wd = None):
