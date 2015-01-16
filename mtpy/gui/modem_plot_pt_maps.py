@@ -87,6 +87,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.pad_north = 2*self.ellipse_size
         
         self.plot_grid = 'n'
+        self.plot_stations = False
         
         
         self.xminorticks = 1000/self.dscale
@@ -254,6 +255,13 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.action_plot_settings.setText('Settings')
         self.action_plot_settings.triggered.connect(self.show_settings)
         self.menu_display.addAction(self.action_plot_settings)
+        
+        self.action_plot_stations = QtGui.QAction(MainWindow)
+        self.action_plot_stations.setText('Plot Stations')
+        self.action_plot_stations.setCheckable(True)
+        self.action_plot_stations.toggled.connect(self.set_plot_stations)
+        self.menu_display.addAction(self.action_plot_stations)
+        
         self.menubar.addAction(self.menu_display.menuAction())
         
 #        self.menuDisplay.addAction(self.menu_plot_style.menuAction())
@@ -346,6 +354,16 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
             setattr(self, attr, self.settings_window.__dict__[attr])
             
         self.plot()
+        
+    def set_plot_stations(self, toggled):
+        """
+        plot station names if desired
+        """
+        
+        self.plot_stations = toggled
+        
+        self.plot()
+            
         
     def _get_pt(self):
         """
@@ -923,6 +941,17 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                                      np.ceil(self.res_limits[1]+1), 1)
                 cb.set_ticks(cb_ticks)
                 cb.set_ticklabels([mtplottools.labeldict[ctk] for ctk in cb_ticks])
+
+        if self.plot_stations == True:
+            for ax in ax_list:
+                for s_arr in self.modem_data.station_locations:
+                    ax.text(s_arr['rel_east']/self.dscale,
+                            s_arr['rel_north']/self.dscale,
+                            s_arr['station'],
+                            horizontalalignment='center',
+                            verticalalignment='baseline',
+                            fontdict={'size':self.font_size}) 
+                
 
         self.mpl_widget.draw()
         
