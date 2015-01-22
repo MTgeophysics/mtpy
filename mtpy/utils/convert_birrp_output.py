@@ -142,6 +142,7 @@ def convertbirrpoutput(stationname, datadir, survey_configfile,birrp_configfile=
                                                         ir_fn)
 
         except:
+            raise
             try:
                 edifn = MTbp.convert2edi_incl_instrument_correction(stationname.upper(),\
                                                         datadir,\
