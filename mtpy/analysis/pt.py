@@ -331,18 +331,18 @@ class PhaseTensor(object):
                         print 'Computed singular matrix'
                         print '  --> pt[{0}]=np.zeros((2,2))'.format(idx_f)
             
-            #--> if there is not error to the impedance tensor
-            else:
-                for idx_f in range(len(self._z)):
+        #--> if there is no error to the impedance tensor
+        else:
+            for idx_f in range(len(self._z)):
+                try:
+                    self._pt[idx_f] = z2pt(self._z[idx_f])[0]
+                except MTex.MTpyError_PT:
                     try:
-                        self._pt[idx_f] = z2pt(self._z[idx_f])[0]
-                    except MTex.MTpyError_PT:
-                        try:
-                            print 'Singular Matrix at {0:.5g}'.format(
-                                                       self._freq[idx_f])
-                        except AttributeError:
-                            print 'Computed singular matrix'
-                            print '  --> pt[{0}]=np.zeros((2,2))'.format(idx_f)
+                        print 'Singular Matrix at {0:.5g}'.format(
+                                                   self._freq[idx_f])
+                    except AttributeError:
+                        print 'Computed singular matrix'
+                        print '  --> pt[{0}]=np.zeros((2,2))'.format(idx_f)
 
         self.rotation_angle = z_object.rotation_angle
         
