@@ -338,9 +338,14 @@ class PhaseTensor(object):
                     self._pt[idx_f] = z2pt(self._z[idx_f])[0]
                 except MTex.MTpyError_PT:
                     try:
+
+
+
                         print 'Singular Matrix at {0:.5g}'.format(
                                                    self._freq[idx_f])
                     except AttributeError:
+
+
                         print 'Computed singular matrix'
                         print '  --> pt[{0}]=np.zeros((2,2))'.format(idx_f)
 
@@ -558,9 +563,9 @@ class PhaseTensor(object):
             betaerr = np.zeros_like(beta)
 
             y = self.pt[:,0,1] - self.pt[:,1,0]
-            yerr = np.sqrt( self.pterr[:,0,1]**2 + self.pterr[:,1,0]**2  )
+            yerr = np.sqrt( self.pterr[:,0,1]**2 + self.pterr[:,1,0]**2)
             x = self.pt[:,0,0] + self.pt[:,1,1] 
-            xerr = np.sqrt( self.pterr[:,0,0]**2 + self.pterr[:,1,1]**2  )
+            xerr = np.sqrt( self.pterr[:,0,0]**2 + self.pterr[:,1,1]**2)
 
             betaerr[:] = 0.5 / ( x**2 + y**2) * np.sqrt( y**2 * xerr**2 +\
                                                          x**2 * yerr**2 )
@@ -982,43 +987,49 @@ class ResidualPhaseTensor():
 
         #--> compute residual phase tensor
         if pt1 is not None and pt2 is not None:
-            try:
-                if pt1.dtype not in [float,int]:
-                    raise
-                if pt2.dtype not in [float,int]:
-                    raise
-                if not pt1.shape == pt2.shape:
-                    raise
-                if (not len(pt1.shape) in [2,3]) :
-                    raise
+            if pt1.dtype not in [float,int]:
+                raise AttributeError('pt1 is not an np.ndarray with proper '
+                                     'dtype of float or int')
+            if pt2.dtype not in [float,int]:
+                raise AttributeError('pt1 is not an np.ndarray with proper '
+                                     'dtype of float or int')
+            if not pt1.shape == pt2.shape:
+                raise MTex.MTpyError_PT('pt1 {0} is not same shape as pt2 {1}'.format(pt1.shape, pt2.shape))
+            if (not len(pt1.shape) in [2,3]) :
+                raise AttributeError('pt1 {0} is not the proper shape'.format(pt1.shape)+
+                                     'needs to be (num_freq, 2, 2)')
+                
 
-                if len(pt1.shape) == 3:
-                    self.rpt = np.zeros_like(pt1)
+            if len(pt1.shape) == 3:
+                self.rpt = np.zeros_like(pt1)
 
-                    for idx in range(len(pt1)):
+                for idx in range(len(pt1)):
+                    try:
                         self.rpt[idx] = np.eye(2)-np.dot(np.matrix(pt1[idx]).I,
                                                          np.matrix(pt2[idx]))
-                 
-                    self._pt1 = pt1  
-                    self._pt2 = pt2  
+                    except np.linalg.linalg.LinAlgError:
+                        print 'Singular matrix found at {0}'.format(idx)
+                        print '  frequency {0:.5g}'.format(self.freq[idx])
+                self._pt1 = pt1  
+                self._pt2 = pt2  
 
-                else:
-                    self.rpt = np.zeros((1,2,2)) 
-                    self.rpt[0] = np.eye(2)-np.dot(np.matrix(pt1).I, 
-                                                   np.matrix(pt2))
-                    
-                    self._pt1 =  np.zeros((1,2,2))  
-                    self._pt1[0] = pt1 
-                    self._pt2 =  np.zeros((1,2,2))  
-                    self._pt2[0] = pt2 
-
-            except:
-                raise MTex.MTpyError_PT('ERROR - both PhaseTensor objects must'
-                                  ' contain valid PT arrays of the same shape')
+            else:
+                self.rpt = np.zeros((1,2,2))
+                try:
+                    self.rpt[0] = np.eye(2)-np.dot(np.matrix(pt1).I,
+                                                     np.matrix(pt2))
+                except np.linalg.linalg.LinAlgError:
+                    print 'Singular matrix found at'
+                    print '  frequency {0:.5g}'.format(self.freq)
+                
+                self._pt1 =  np.zeros((1,2,2))  
+                self._pt1[0] = pt1 
+                self._pt2 =  np.zeros((1,2,2))  
+                self._pt2[0] = pt2 
 
         else:
-            print  ('Could not determine ResPT - both PhaseTensor objects must'
-                   'contain PT arrays of the same shape')
+            raise MTex.MTpyError_PT('Need to enter pt1 and pt2 to compute ' 
+                                    'ResidualPhaseTensor')
 
         
         #--> compute residual error
@@ -1027,27 +1038,30 @@ class ResidualPhaseTensor():
 
         if pt1err is not None and pt2err is not None:
             self.rpterr = np.zeros(self.rpt.shape)
-            try:
-                if (pt1err.dtype not in [float,int]) or \
-                    (pt2err.dtype not in [float,int]):
-                    raise
-                if not pt1err.shape == pt2err.shape:
-                    raise
-                if (not len(pt1err.shape) in [2,3] ):
-                    raise
-                if self.rpterr is not None:
-                    if self.rpterr.shape != pt1err.shape:
-                        raise
+            if (pt1err.dtype not in [float,int]) or \
+                (pt2err.dtype not in [float,int]):
+                raise AttributeError('pt1 is not an np.ndarray with proper '
+                                     'dtype of float or int')
+            if not pt1err.shape == pt2err.shape:
+                raise MTex.MTpyError_PT('pt1 {0} is not same shape as pt2 {1}'.format(pt1.shape, pt2.shape))
+            if (not len(pt1err.shape) in [2,3] ):
+                raise AttributeError('pt1 {0} is not the proper shape'.format(pt1.shape)+
+                                     'needs to be (num_freq, 2, 2)')
+            if self.rpterr is not None:
+                if self.rpterr.shape != pt1err.shape:
+                    raise AttributeError('pt1_err {0} is not the proper shape'.format(pt1.shape)+
+                                     'needs to be (num_freq, 2, 2)')
 
-                if len(pt1err.shape) == 3:
-                    self.rpterr = np.zeros((len(pt1),2,2))
+            if len(pt1err.shape) == 3:
+                self.rpterr = np.zeros((len(pt1),2,2))
 
-                    for idx in range(len(pt1err)):
-                        matrix1 = pt1[idx]
-                        matrix1err = pt1err[idx]                        
+                for idx in range(len(pt1err)):
+                    matrix1 = pt1[idx]
+                    matrix1err = pt1err[idx] 
+                    try:                       
                         matrix2, matrix2err = MTcc.invertmatrix_incl_errors(
                                         pt2[idx], inmatrix_err = pt2err[idx])
-
+    
                         summand1,err1 = MTcc.multiplymatrices_incl_errors(
                                             matrix2, matrix1, 
                                             inmatrix1_err = matrix2err,
@@ -1056,22 +1070,27 @@ class ResidualPhaseTensor():
                                             matrix1, matrix2, 
                                             inmatrix1_err = matrix1err,
                                             inmatrix2_err =  matrix2err)
-
+    
                         self.rpterr[idx] = np.sqrt(0.25*err1**2 +0.25*err2**2)
+                    except AttributeError:
+                        print 'Singular matrix found at {0}'.format(idx)
+                        print '  frequency {0:.5g}'.format(self.freq[idx])
 
-                    self._pterr1 = pt1err  
-                    self._pterr2 = pt2err  
+                self._pterr1 = pt1err  
+                self._pterr2 = pt2err  
 
-                else:
-                    self.rpterr = np.zeros((1,2,2))
+            else:
+                self.rpterr = np.zeros((1,2,2))
+                try:
                     self.rpterr[0] = np.eye(2) - 0.5 * np.array( 
                                     np.dot( np.matrix(pt2).I, np.matrix(pt1) ) 
                                     + np.dot( np.matrix(pt1), np.matrix(pt2).I))
                     matrix1 = pt1
-                    matrix1err = pt1err                        
+                    matrix1err = pt1err 
+                           
                     matrix2, matrix2err = MTcc.invertmatrix_incl_errors(
                                                    pt2, inmatrix_err = pt2err)
-
+    
                     summand1,err1 = MTcc.multiplymatrices_incl_errors(
                                         matrix2, matrix1, 
                                         inmatrix1_err = matrix2err,
@@ -1080,17 +1099,17 @@ class ResidualPhaseTensor():
                                         matrix1, matrix2, 
                                         inmatrix1_err = matrix1err,
                                         inmatrix2_err =  matrix2err)
-
+    
                     self.rpterr = np.sqrt(0.25*err1**2 +0.25*err2**2)
-            
-                    self._pt1err =  np.zeros((1,2,2))  
-                    self._pt1err[0] = pt1err
-                    self._pt2err =  np.zeros((1,2,2))  
-                    self._pt2err[0] = pt2err 
+                    
+                except AttributeError:
+                        print 'Singular matrix found at '
+                        print '  frequency {0:.5g}'.format(self.freq)
+                self._pt1err =  np.zeros((1,2,2))  
+                self._pt1err[0] = pt1err
+                self._pt2err =  np.zeros((1,2,2))  
+                self._pt2err[0] = pt2err 
 
-            except:
-                raise MTex.MTpyError_PT('ERROR - both PhaseTensor objects must'
-                                   'contain PT-error arrays of the same shape')
                 
         else:
             print  ('Could not determine Residual PT uncertainties - both'
