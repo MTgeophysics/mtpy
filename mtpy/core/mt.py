@@ -22,6 +22,7 @@ import mtpy.analysis.pt as MTpt
 import mtpy.analysis.zinvariants as MTinv
 import mtpy.analysis.distortion as MTdistortion
 import os
+import mtpy.imaging.plotresponse as plotresponse
 
 #==============================================================================
 
@@ -406,6 +407,24 @@ class MT(object):
         D, new_z_object = MTdistortion.remove_distortion(z_object=self.Z)
         
         return D, new_z_object
+        
+    def plot_mt_response(self, **kwargs):
+        """ 
+        returns a mtpy.imaging.plotresponse.PlotResponse object
+        
+        :Example: ::
+            >>> mt_obj = mt.MT(edi_file)
+            >>> pr = mt.plot_mt_response()
+            >>> # if you need more infor on plot_mt_response 
+            >>> help(pr)
+            
+        """
+        
+        plot_obj = plotresponse.PlotResponse(fn=self.fn, **kwargs)
+        
+        return plot_obj
+        
+        
         
     
         
