@@ -55,7 +55,7 @@ class Model():
         self.parameters_data['errorfloor'] = dict(z=np.array([[0.05,0.05],
                                                               [0.05,0.05]]),
                                                   tipper=np.array([0.01,0.01]))
-        self.parameters_data['max_no_frequencies'] = 80
+        self.parameters_data['max_no_frequencies'] = 50
         self.parameters_data['mode'] = [1,1,1,1,1,1]
         self.n_airlayers = 5
 
@@ -72,7 +72,7 @@ class Model():
         self.inversion1d_imethod = 'nearest'
         self.binsize_resistivitylog10 = 1.
         self.binsize_strike = 20.
-        self.build_from_1d = True
+        self.build_from_1d = False
         self.rotation = 0.
         self.modelfile = 'model.dat'
         self.anisotropy_min_depth = 0.
@@ -130,11 +130,13 @@ class Model():
                 continue
 
         self.input_parameters = update_dict
+        print self.input_parameters
 
         if self.edifiles == []:
             if self.edi_directory is not None:
                 try:
-                    self.edifiles = os.listdir(self.edi_directory)
+                    self.edifiles = [op.join(self.edi_directory,
+                                             f) for f in os.listdir(self.edi_directory)]
                 except IOError:
                     print("failed to find edi directory")
                     pass
@@ -153,8 +155,7 @@ class Model():
         """
         # build a forward model object
         ro = p2d.Model(self.working_directory,**self.input_parameters)
-        ro.build_mesh()
-        ro.build_aircells()
+        ro.build_model()
 
 
         # assign relavent parameters to pek 2d inverse object
@@ -169,17 +170,22 @@ class Model():
 
         ro.get_station_meshblock_numbers()
         if ro.build_from_1d:
-            ro.get_1d_results()
-            ro.interpolate_1d_results()
-            for at in ['inversion1d_dirdict','inversion1d_modelno',
-                       'models1d','resistivity','stationlocations',
-                       'blockcentres_x','blockcentres_z']:
-                       attvalue = getattr(ro,at)
-                       setattr(self,at,attvalue)                           
+#            try:
+                ro.get_1d_results()
+                ro.interpolate_1d_results()
+                for at in ['inversion1d_dirdict','inversion1d_modelno',
+                           'models1d','resistivity','stationlocations',
+                           'blockcentres_x','blockcentres_z']:
+                           attvalue = getattr(ro,at)
+                           setattr(self,at,attvalue)
+#                except:
         else:
-            if not hasattr(ro,'resistivity'):
-                print "Cannot build model, please provide resistivity or a 1d"+\
-                " model to build resistivity from first"
+            for at in ['resistivity','stationlocations',
+                       'blockcentres_x','blockcentres_z']:
+                           setattr(self,at,getattr(ro,at))
+            for at in ['inversion1d_dirdict','inversion1d_modelno',
+                       'models1d']:
+                           setattr(self,at,None)
 
         ro.get_station_meshblock_numbers()
         self.stationblocknums=ro.stationblocknums
@@ -298,12 +304,12 @@ class Model():
 #        print periodlst
         # if number of periods still too long based on the number of frequencies set
         # then take out some frequencies
-        n = 1
-        while len(periodlst) > num_freq:
-            to_remove = int(float(len(periodlst))/num_freq*n)-n
-            periodlst = periodlst[:to_remove]+periodlst[to_remove+1:]
+        n = 2
+        new_periodlst = periodlst
+        while len(new_periodlst) > num_freq:
+            new_periodlst = [periodlst[int(p)] for p in range(len(periodlst)) if p%n == 0]
             n += 1
-#        print periodlst
+        periodlst = new_periodlst
 
         mode = self.parameters_data['mode']
         if type(mode) in [str]:
