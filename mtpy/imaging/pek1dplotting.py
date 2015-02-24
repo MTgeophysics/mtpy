@@ -682,16 +682,16 @@ class Plot_map():
                                    lw=0.5) for i in range(len(x))]
         if self.scalebar:
             scalebar_size = round(max(scale))
-            sxy = np.array([plt.xlim()[0]+0.01,plt.ylim()[-1]-0.018])
+            sxy = np.array([plt.xlim()[0]+0.01,plt.ylim()[-1]-0.025])
             
             recs.append(mpatches.Rectangle(xy=sxy, 
                                            width = self.escale*scalebar_size,
                                            height = self.escale,
                                            angle=0,
                                            lw=0.5))
-            plt.text(sxy[0],sxy[1]+0.006,
-            r'${\frac{\phi_{max}}{\phi_{min}}}=%1i$'%scalebar_size,
-            fontsize=10)
+            plt.text(sxy[0],sxy[1]+0.007,
+            r'${\frac{\rho_{max}}{\rho_{min}}}=%1i$'%scalebar_size,
+            fontsize=11)
 
         ax1 = plt.gca()
         

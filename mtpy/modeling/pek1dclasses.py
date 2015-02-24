@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as si
 import mtpy.utils.exceptions as MTex
+import mtpy.utils.calculator as MTcc
 import mtpy.analysis.geometry as MTg
 import cmath
 import math
@@ -236,6 +237,7 @@ class Data():
                 for j in range(2):               
                     zer[:,i,j][(zer[:,i,j]<self.errorfloor[i,j])] = self.errorfloor[i,j]
             ze = np.abs(z)*zer
+            
             if self.errorfloor_type == 'offdiagonals':
                 for i in range(2):
                     for iz in range(len(z)):
@@ -305,7 +307,7 @@ class Data():
                 self.datafile = dlst[0]
             else:
                 print "please define datafile"
-                return           
+                return
 
         # define path to file
         datafpath = os.path.join(self.working_directory,self.datafile)
@@ -329,17 +331,38 @@ class Data():
             
 #           calculate resistivity
             self.resistivity = 0.2*np.abs(self.z)**2/freq2
-            self.resistivity_err = 2*(self.zerr/np.abs(self.z))*self.resistivity
             
             q = np.zeros(np.shape(self.resistivity))
 #            q[(zr<0)&(zi<0)] = np.pi
 #            q[(zr<0)&(zi>0)] = -np.pi
+            phase = np.zeros([len(self.z),2,2])
+            res = np.zeros([len(self.z),2,2])
+            self.resistivity_err = np.zeros([len(self.z),2,2])
+            self.phase_err = np.zeros([len(self.z),2,2])        
+            
+            
             self.q = q
+            for iz in range(len(self.z)):
+                for i in range(2):
+                    for j in range(2):
+                        phase[iz,i,j] = np.rad2deg(cmath.phase(self.z[iz,i,j]))
+                        res[iz,i,j]= 0.2*np.abs(self.z[iz,i,j])**2/self.freq[iz]
+                        r_err, phi_err = MTcc.zerror2r_phi_error(
+                                                 np.real(self.z[iz,i,j]), 
+                                                 self.zerr[iz,i,j], 
+                                                 np.imag(self.z[iz,i,j]), 
+                                                 self.zerr[iz,i,j])
 
-            phase = np.rad2deg(np.arctan(np.imag(self.z)/np.real(self.z))+q)
+                        
+
+                        self.resistivity_err[iz,i,j] = \
+                                               0.4*np.abs(self.z[iz,i,j])/\
+                                               self.freq[iz]*r_err
+                        self.phase_err[iz,i,j] = phi_err
+
             phase[phase<-180] += 360
             self.phase = phase
-            self.phase_err = np.rad2deg(np.arcsin(self.zerr/np.abs(self.z)))
+            self.resistivity = res
             
         elif self.mode == 'R':
             res = np.vstack([data[:,i] for i in range(len(data[0])) if (i-1)%4 == 0])
@@ -351,6 +374,32 @@ class Data():
             self.phase = phs.T.reshape(len(phs[0]),2,2)
             phs_err = np.vstack([data[:,i] for i in range(len(data[0])) if (i-4)%4 == 0])
             self.phase_err = phs_err.T.reshape(len(phs_err[0]),2,2)
+
+    def rotate(self,rotation_angle):
+        """
+        use mtpy.analysis.geometry to rotate a z array and recalculate res and phase
+        
+        """
+        import pek1dclasses as pek1dc
+        
+        if not hasattr(self,'z'):
+            self.read_datafile()
+            
+        new_z = np.zeros_like(self.z)
+        new_ze = np.zeros_like(self.zerr,dtype=float)
+        
+#        for iz,zarray in enumerate(self.z):
+        new_z,new_ze = MTg.MTz.rotate_z(self.z,rotation_angle,zerr_array = self.zerr)
+            
+        self.z = new_z
+        self.zerr = new_ze
+
+        self.resistivity, self.resistivity_err, self.phase, self.phase_err = \
+        pek1dc._compute_res_phase(self.z,self.zerr,self.freq)
+
+
+        self.rotation_angle = rotation_angle
+
 
 class Response():
     """
@@ -408,29 +457,31 @@ class Response():
         use mtpy.analysis.geometry to rotate a z array and recalculate res and phase
         
         """
+        import pek1dclasses as pek1dc
+        
         if not hasattr(self,'z'):
             self.read_respfile()
             
-        new_z = []
-        new_res = []
+        new_z = np.zeros_like(self.z)
+        zerr = np.zeros_like(self.z,dtype=float)
         
-        for zarray in self.z:
-            zval = MTg.MTz.rotate_z(zarray,rotation_angle)[0]
-            new_z.append(zval)
-            resi = []
-            for i,freq in enumerate(self.freq):
-#                print i,freq,zval
-                resi.append(0.2*(np.abs(zval[i])**2/freq))
-            new_res.append(resi)
-        self.z = np.array(new_z)
+        for iz,zarray in enumerate(self.z):
+            new_z[iz],ze = MTg.MTz.rotate_z(zarray,rotation_angle)
+            
+        self.z = new_z
 
-        self.resistivity = np.array(new_res)        
-        self.phase = np.zeros(np.shape(self.z))
-        for m in range(len(self.phase)):
-            for idf in range(len(self.phase[m])):
-                for i in range(2):
-                    for j in range(2):
-                        self.phase[m,idf,i,j] = math.degrees(cmath.phase(self.z[m,idf,i,j]))
+
+        self.resistivity = np.zeros_like(self.z,dtype=float)
+        self.phase = np.zeros_like(self.z,dtype=float)
+        
+        for iz in range(len(self.z)):
+            r,re,p,pe = pek1dc._compute_res_phase(self.z[iz],zerr[iz],self.freq)
+            self.resistivity[iz] = r
+#            self.resistivity_err[iz] = re
+            self.phase[iz] = p
+#            self.phase_err[iz] = pe
+
+
 
         self.rotation_angle = rotation_angle
         
@@ -842,6 +893,42 @@ class Model_suite():
         self.median_misfit = np.median(model_misfits)
             
         
-        
-        
+def _compute_res_phase(z,zerr,freq):
+    """
+    calculates *resistivity*, *phase*, *resistivity_err*, *phase_err*
+    
+    values for resistivity are in in Ohm m and phase in degrees.
+
+    """ 
+
+    resistivity_err = np.zeros_like(zerr)
+    phase_err = np.zeros_like(zerr)
+
+    resistivity = np.zeros_like(z, dtype='float')
+    phase = np.zeros_like(z, dtype='float')
+
+    #calculate resistivity and phase
+    for idx_f in range(len(z)): 
+        for i in range(2):                        
+            for j in range(2):
+                resistivity[idx_f,i,j] = np.abs(z[idx_f,i,j])**2/\
+                                              freq[idx_f]*0.2
+                phase[idx_f,i,j] = math.degrees(cmath.phase(
+                                                z[idx_f,i,j]))
+            
+                if zerr is not None:
+                    
+                    r_err, phi_err = MTcc.zerror2r_phi_error(
+                                             np.real(z[idx_f,i,j]), 
+                                             zerr[idx_f,i,j], 
+                                             np.imag(z[idx_f,i,j]), 
+                                             zerr[idx_f,i,j])
+
+                    
+
+                    resistivity_err[idx_f,i,j] = \
+                                           0.4*np.abs(z[idx_f,i,j])/\
+                                           freq[idx_f]*r_err
+                    phase_err[idx_f,i,j] = phi_err        
+    return resistivity, resistivity_err, phase, phase_err
         
