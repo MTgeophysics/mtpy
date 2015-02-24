@@ -55,7 +55,7 @@ class Model():
         self.binsize_strike = 20.
         self.build_from_1d = False
         self.rotation = 0.
-        self.modelfile = 'model.dat'
+        self.modelfile = 'model'
         self.anisotropy_min_depth = 0.
         
         self.edifiles = []
@@ -114,26 +114,7 @@ class Model():
                 except IOError:
                     print("failed to find edi directory")
                     pass
-    
-#         
-#    def _get_inversion1d_dirdict(self):
-#        self.inversion1d_dirdict = {}
-#        for efile in self.edifiles:
-#            ss = os.path.basename(efile).strip().split('_')[0]
-#            for idir in os.listdir(self.inversion1d_masterdir):
-#                # first, check substring in efile:
-#                if ss in idir:
-#                    self.inversion1d_dirdict[ss] = op.join(self.inversion1d_masterdir,idir)
-#                    break
-#                else:
-#                    # break inversion dir into substrings and search
-#                    ss2 = os.path.basename(idir).strip().split('_')[0]
-#                    if ss2 in efile:
-#                        self.inversion1d_dirdict[ss] = op.join(self.inversion1d_masterdir,idir)
-#                    else:
-#                        print "couldn't find inversion dir for {}".format(efile)
-                            
-            
+                                  
     
     def build_model(self):
         """
@@ -159,7 +140,72 @@ class Model():
         outfile = open(op.join(self.working_directory,self.modelfile),'w')
         outfile.write(self.modelfilestring)
         outfile.close()
+ 
+ 
+    def read_model(self):
+        
+        # read model file
+        modelf = open(op.join(self.working_directory,self.modelfile))     
+        
+        # get nx, nz, and number of air cells nair
+        for i in range(3):
+            modelf.readline()
+        nx, nz, nair = [int(n) for n in modelf.readline().strip().split()]
+        
+        # get mesh cell sizes
+        meshx, meshz = [], []
+        while len(meshx) < nx-1:
+            meshx += [float(n) for n in modelf.readline().strip().split()]
+            print len(meshx)
+        while len(meshz) < nz-1:
+            meshz += [float(n) for n in modelf.readline().strip().split()]
+        self.meshblockwidths_x = np.array(meshx)
+        self.meshblockthicknesses_z = np.array(meshz)
+        self.meshlocations_x = np.array([sum(self.meshblockwidths_x[:i]) \
+                                         for i in range(len(self.meshblockwidths_x)+1)])      
+        self.meshlocations_z = np.array([sum(self.meshblockthicknesses_z[:i]) \
+                                         for i in range(len(self.meshblockthicknesses_z)+1)])            
+
+        # get model block numbers
+        modelblocks = []
+        while len(modelblocks) < nz-1:
+            modelblocks.append(modelf.readline().strip().split())
+        modelf.readline()
+        self.modelblocknums = np.array(modelblocks)
+
     
+        # get resistivitiy values for each model block number
+        resistivity_vals = []
+        while len(resistivity_vals) < len(np.unique(self.modelblocknums)):
+            resline = modelf.readline().strip().split()
+            for r in range(1,14):
+                
+                if (r==1) or (r>=8):
+                    resline[r] = int(resline[r])
+                else:
+                    resline[r] = float(resline[r])
+            resistivity_vals.append(resline)
+#            print resline,r,len(resistivity_vals),len(np.unique(modelblocks))
+        resistivity_vals.append(resline)
+    
+        # assign resistivities to model blocks
+        data = np.zeros(list(np.shape(self.modelblocknums))+[6])
+#        print np.shape(data)
+        for rv in resistivity_vals:
+            data[self.modelblocknums==rv[0]] = rv[2:8]
+        self.resistivity = data[:,:,:3]
+        self.sds = data[:,:,3:]
+    
+        # get column numbers of stations
+        modelf.readline()
+        nstations = int(modelf.readline().strip())
+        modelf.readline()
+        station_indices = []
+        while len(station_indices) <= nstations:
+            station_indices.append([int(n)-1 for n in modelf.readline().strip().split()])
+    
+    def read_outfile(self):
+        
     
     def build_modelfilestring(self):    
         # initialise a list containing info for model file
