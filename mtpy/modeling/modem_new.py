@@ -786,6 +786,10 @@ class Data(object):
             
         if fill_data == True:
             self.fill_data_array()
+        try:
+            self.get_relative_station_locations()
+        except:
+            print "couldn't get relative station locations"
         
         #reset the header string to be informational
         self._set_header_string()
@@ -822,16 +826,16 @@ class Data(object):
                         zz = self.data_array[ss][c_key][ff, z_ii, z_jj]
                         if zz.real != 0.0 and zz.imag != 0.0 and \
                            zz.real != 1e32 and zz.imag != 1e32:
-                            per = '{0:<12.5e}'.format(self.period_list[ff])
-                            sta = '{0:>7}'.format(self.data_array[ss]['station'])
-                            lat = '{0:> 9.3f}'.format(self.data_array[ss]['lat'])
-                            lon = '{0:> 9.3f}'.format(self.data_array[ss]['lon'])
-                            eas = '{0:> 12.3f}'.format(self.data_array[ss]['rel_east'])
-                            nor = '{0:> 12.3f}'.format(self.data_array[ss]['rel_north'])
-                            ele = '{0:> 12.3f}'.format(0)
-                            com = '{0:>4}'.format(comp.upper())
-                            rea = '{0:> 14.6e}'.format(zz.real)
-                            ima = '{0:> 14.6e}'.format(zz.imag)
+                            per = '{0:<14.5e}'.format(self.period_list[ff])
+                            sta = '{0:>14}'.format(self.data_array[ss]['station'])
+                            lat = '{0:> 14.6f}'.format(self.data_array[ss]['lat'])
+                            lon = '{0:> 14.6f}'.format(self.data_array[ss]['lon'])
+                            eas = '{0:> 14.3f}'.format(self.data_array[ss]['rel_east'])
+                            nor = '{0:> 14.3f}'.format(self.data_array[ss]['rel_north'])
+                            ele = '{0:> 14.3f}'.format(0)
+                            com = '{0:>8}'.format(comp.upper())
+                            rea = '{0:> 17.6e}'.format(zz.real)
+                            ima = '{0:> 17.6e}'.format(zz.imag)
                             
                             #compute relative error
                             if comp.find('t') == 0:
@@ -855,7 +859,7 @@ class Data(object):
                                 rel_err = 1e3
                                 print ('error at {0} is 0 for period {1}'.format(
                                         sta, per)+'set to 1e3')
-                            rel_err = '{0:> 14.6e}'.format(abs(rel_err))
+                            rel_err = '{0:> 12.6e}'.format(abs(rel_err))
                             #make sure that x==north, y==east, z==+down
                             dline = ''.join([per, sta, lat, lon, nor, eas, ele, 
                                              com, rea, ima, rel_err, '\n'])
