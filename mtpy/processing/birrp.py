@@ -1697,24 +1697,20 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
 
     #find the birrp-output j-file for the current station 
     #j_filename_list = [i for i in os.listdir(input_dir) if op.basename(i).upper() == ('%s.j'%stationname).upper() ]
+    #find the birrp-output j-file for the current station 
     j_filename_list = [i for i in os.listdir(input_dir) if i.lower().endswith('.j') ]
-
-    j_filename_list += [i for i in  j_filename_list if '{0}'.format(stationname.upper()) in op.basename(i).upper() ]
-
-    print j_filename_list
-    print    
+    j_filename_list = [i for i in  j_filename_list if '{0}'.format(stationname.upper()) in op.basename(i).upper() ]
     j_filename_list = [op.join(input_dir,i) for i in j_filename_list]
-    
-
-
     try:
-        j_filename = op.join(input_dir, j_filename_list[0])
+        j_filename = j_filename_list[0]
     except:
         print 'j-file for station %s not found in directory %s'%(stationname, input_dir)
         raise MTex.MTpyError_file_handling
     
     if len(j_filename_list) > 1:
         print 'Warning - more than one j-file found - taking the first one only: {0}'.format(j_filename)
+
+
 
     #Having now:
     # station_config_dict - contains information about station setup

@@ -207,7 +207,11 @@ def convert_degrees2dms_tuple(degrees):
     """
 
     deg = float(degrees)
+    dms_triple = np.zeros((3))
 
+    if deg == 0 :
+        return dms_triple
+        
     #take out sign for easier conversion:
     sign = deg/np.abs(deg)
     if deg < 0:
@@ -221,7 +225,6 @@ def convert_degrees2dms_tuple(degrees):
 
     seconds = 60 * (minutes - m)
 
-    dms_triple = np.zeros((3))
 
 
     dms_triple[0] = sign * d
