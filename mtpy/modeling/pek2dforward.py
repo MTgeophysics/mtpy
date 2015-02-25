@@ -56,6 +56,7 @@ class Model():
         self.build_from_1d = False
         self.rotation = 0.
         self.modelfile = 'model'
+        
         self.anisotropy_min_depth = 0.
         
         self.edifiles = []
@@ -147,16 +148,15 @@ class Model():
         # read model file
         modelf = open(op.join(self.working_directory,self.modelfile))     
         
-        # get nx, nz, and number of air cells nair
+        # get nx, nz, and number of air layers n_airlayers
         for i in range(3):
             modelf.readline()
-        nx, nz, nair = [int(n) for n in modelf.readline().strip().split()]
+        nx, nz, self.n_airlayers = [int(n) for n in modelf.readline().strip().split()]
         
         # get mesh cell sizes
         meshx, meshz = [], []
         while len(meshx) < nx-1:
             meshx += [float(n) for n in modelf.readline().strip().split()]
-            print len(meshx)
         while len(meshz) < nz-1:
             meshz += [float(n) for n in modelf.readline().strip().split()]
         self.meshblockwidths_x = np.array(meshx)
@@ -175,23 +175,22 @@ class Model():
 
     
         # get resistivitiy values for each model block number
-        resistivity_vals = []
-        while len(resistivity_vals) < len(np.unique(self.modelblocknums)):
+        modelfile_reslines = []
+        while len(modelfile_reslines) < len(np.unique(self.modelblocknums)):
             resline = modelf.readline().strip().split()
             for r in range(1,14):
-                
                 if (r==1) or (r>=8):
                     resline[r] = int(resline[r])
                 else:
                     resline[r] = float(resline[r])
-            resistivity_vals.append(resline)
-#            print resline,r,len(resistivity_vals),len(np.unique(modelblocks))
-        resistivity_vals.append(resline)
+            modelfile_reslines.append(resline)
+
+        self.modelfile_reslines = np.array(modelfile_reslines)
     
         # assign resistivities to model blocks
         data = np.zeros(list(np.shape(self.modelblocknums))+[6])
 #        print np.shape(data)
-        for rv in resistivity_vals:
+        for rv in self.modelfile_reslines:
             data[self.modelblocknums==rv[0]] = rv[2:8]
         self.resistivity = data[:,:,:3]
         self.sds = data[:,:,3:]
@@ -201,11 +200,12 @@ class Model():
         nstations = int(modelf.readline().strip())
         modelf.readline()
         station_indices = []
+
         while len(station_indices) <= nstations:
-            station_indices.append([int(n)-1 for n in modelf.readline().strip().split()])
+            station_indices+=[int(n)-1 for n in modelf.readline().strip().split()]
+        self.station_indices = station_indices
     
-    def read_outfile(self):
-        
+    
     
     def build_modelfilestring(self):    
         # initialise a list containing info for model file

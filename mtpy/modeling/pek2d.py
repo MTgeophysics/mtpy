@@ -130,7 +130,6 @@ class Model():
                 continue
 
         self.input_parameters = update_dict
-        print self.input_parameters
 
         if self.edifiles == []:
             if self.edi_directory is not None:
@@ -148,7 +147,79 @@ class Model():
         self.write_modelfile()
         self.write_datafiles()
         self.write_ctlfile()
-                
+         
+    def read_model(self):
+        """
+        use pek2d forward code to read the model
+        """
+        model = p2d.Model(working_directory = self.working_directory,
+                          **self.input_parameters)
+        model.read_model()
+        for attr in ['meshblockwidths_x', 'meshblockthicknesses_z', 
+                     'meshlocations_x', 'meshlocations_z', 
+                     'modelblocknums', 'resistivity', 'sds', 
+                     'station_indices','modelfile_reslines',
+                     'n_airlayers']:
+                         try:
+                             setattr(self,attr,getattr(model,attr))
+                         except:
+                             print "can't assign attribute {}".format(attr)
+         
+    def read_outfile(self,chunk=1750,linelength=52):
+        """
+        read the outfile from the reverse end and get out last iteration
+        """
+        # open outfile
+        outfile = open(op.join(self.working_directory,self.outfile))
+        
+        if not hasattr(self,'modelblocknums'):
+            self.read_model()
+        elif self.modelblocknums is None:
+            self.read_model()
+        mb = np.sum(self.modelfile_reslines[:,-6:].astype(int))
+
+
+        # read backwards from end of file, in chunks of 175, until a 4-column row is found
+        nn = 1
+        while True:
+            outfile.seek(-nn, 2)
+            outfile.readline()
+            line = outfile.readline().strip().split()
+            if len(line) == 4:
+                n = outfile.tell()
+                break
+            nn += chunk
+        print line
+        m = 0
+        while line[0] != '1':
+            outfile.seek(n-linelength*m)
+            line = outfile.readline().strip().split()
+            m += 1
+            
+        self.outfile_reslines = np.zeros([mb,4])
+        
+        for m in range(mb):
+            self.outfile_reslines[m] = [float(ll) for ll in line]
+            line = outfile.readline().strip().split()
+        
+        # iterate through resistivity and assign new values if they have been inverted for
+        n = 0
+        nair = self.n_airlayers
+        nx,nz = len(self.meshlocations_x), len(self.meshlocations_z)
+        for i in range(nz - nair):
+            for j in range(nx - 1):
+                for k in range(6):
+                    mfi = (nx - 1)*i + j + 1
+                    print n,i,j, self.modelfile_reslines[mfi]
+                    if self.modelfile_reslines[mfi,k+8] == '1':
+                        if k < 3:
+                            self.resistivity[i+nair-1,j,k] = self.outfile_reslines[n,1]
+                        else:
+                            self.sds[i+nair-1,j,k-3] = self.outfile_reslines[n,1]
+                        n += 1
+#                        print i,j,k,n
+        
+         
     def build_model(self):
         """
         build model file string
