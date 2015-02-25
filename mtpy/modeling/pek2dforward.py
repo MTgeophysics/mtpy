@@ -152,6 +152,7 @@ class Model():
         for i in range(3):
             modelf.readline()
         nx, nz, self.n_airlayers = [int(n) for n in modelf.readline().strip().split()]
+        self.n_airlayers -= 1
         
         # get mesh cell sizes
         meshx, meshz = [], []
@@ -162,10 +163,11 @@ class Model():
         self.meshblockwidths_x = np.array(meshx)
         self.meshblockthicknesses_z = np.array(meshz)
         self.meshlocations_x = np.array([sum(self.meshblockwidths_x[:i]) \
-                                         for i in range(len(self.meshblockwidths_x)+1)])      
+                                         for i in range(len(self.meshblockwidths_x)+1)])
         self.meshlocations_z = np.array([sum(self.meshblockthicknesses_z[:i]) \
                                          for i in range(len(self.meshblockthicknesses_z)+1)])            
-
+        self.meshlocations_x -= self.meshlocations_x[self.parameters_model['no_sideblockelements']]
+        self.meshlocations_z -= self.meshlocations_z[self.n_airlayers + 1] 
         # get model block numbers
         modelblocks = []
         while len(modelblocks) < nz-1:
@@ -220,7 +222,7 @@ class Model():
         # add string giving number of cells:
         modelfilestring.append(''.join(['%5i'%i for i in [len(self.meshlocations_x),
                                                          len(self.meshlocations_z)+self.n_airlayers,
-                                                         self.n_airlayers]]))
+                                                         self.n_airlayers+1]]))
 
         # add strings giving horizontal and vertical mesh steps
         
