@@ -86,10 +86,45 @@ class MT(object):
     write_edi_file        write an edi_file from the MT data
     remove_distortion     remove distortion from the data following 
                           Bibby et al. [2005]
+    interpolate           interpolates the impedance tensor and induction
+                          vectors onto a specified frequency array.
+    plot_mt_response      plots the MT response using mtpy.imaging.plotresponse
     ===================== =====================================================
     
-        
+
+    Examples
+    -------------------
     
+    * Plot MT response:
+
+        >>> import mtpy.core.mt as mt
+        >>> mt_obj = mt.MT(r"/home/edi_files/s01.edi")
+        >>> # plot all components of mt response and phase tensor
+        >>> plot_obj = mt_obj.plot_mt_response(plot_num=2, plot_pt='y')        
+        >>> # plot the tipper as well
+        >>> plot_obj.plot_tipper = 'yri'
+        >>> plot_obj.redraw_plot()
+      
+     * Remove Distortion:
+         
+        >>> import mtpy.core.mt as mt
+        >>> mt_obj = mt.MT(r"/home/edi_files/s01.edi")
+        >>> D, new_z = mt_obj.remove_distortion()
+        >>> print D
+        np.array([[0.1, .9],
+                  [0.98, .43]])
+        >>> # write a new edi file
+        >>> mt_obj.write_edi_file(new_Z=new_z)
+        wrote file to: /home/edi_files/s01_RW.edi
+        
+     * Interpolate:
+     
+        >>> import mtpy.core.mt as mt
+        >>> mt_obj = mt.MT(r"/home/edi_files/s01.edi")
+        >>> new_freq = np.logspace(-3, 3, num=24)
+        >>> new_z_obj, new_tipper_obj = mt_obj.interpolate(new_freq)
+        >>> mt_obj.write_edi_file(new_Z=new_z_obj, new_Tipper=new_tipper_obj)
+        wrote file to: /home/edi_files/s01_RW.edi
     """
     
     def __init__(self, fn=None, **kwargs):
