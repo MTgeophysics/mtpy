@@ -36,8 +36,8 @@ class Model():
         self.parameters_ctl['quadrants'] = '++--'
         self.parameters_ctl['orientation_string'] = '0  0.d0  0.d0'
         self.parameters_ctl['convergence_string'] = '1  6  1.d-4'
-        self.parameters_ctl['roughness_string'] = '2  10.0d0  10.0d0  0.d0'
-        self.parameters_ctl['anisotropy_penalty_string'] = '2  10.d0  0.d0'
+        self.parameters_ctl['roughness_string'] = '2  1000.0d0  1000.0d0  0.d0'
+        self.parameters_ctl['anisotropy_penalty_string'] = '2  1000.d0  0.d0'
         self.parameters_ctl['anisotropy_ctl_string'] = '1.d0  1.d0  1.d0'
 
 
