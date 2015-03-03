@@ -886,6 +886,7 @@ class Edi(object):
 
         for idx_freq  in range( self.n_freq()):
             r = np.zeros((2,2))
+            tmp_rho = np.zeros((2,2))
             phi = np.zeros((2,2))
             rerr = np.zeros((2,2))
             phierr = np.zeros((2,2))
@@ -897,6 +898,7 @@ class Edi(object):
                     r[idx_c/2,idx_c%2] = \
                                 np.sqrt(rhophi_dict['RHO'+comp][idx_freq] *\
                                 5 * self.freq[idx_freq])
+                    tmp_rho[idx_c/2,idx_c%2] = rhophi_dict['RHO'+comp][idx_freq]
                 except:
                     pass
                 try:
@@ -928,7 +930,7 @@ class Edi(object):
                                                     phi[idx_c/2,idx_c%2], 
                                                     phierr[idx_c/2,idx_c%2]))
 
-                z_array[idx_freq] = MTcc.rhophi2z(r, phi)
+                z_array[idx_freq] = MTcc.rhophi2z(tmp_rho, phi,self.freq[idx_freq])
 				
                 zerr_array[idx_freq] = zerr
 
