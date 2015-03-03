@@ -267,7 +267,6 @@ class Data(object):
         self.period_min = kwargs.pop('period_min', None)
         self.period_max = kwargs.pop('period_max', None)
         self.max_num_periods = kwargs.pop('max_num_periods', None)
-        self.ptol = kwargs.pop('ptol', .05)
         self.period_dict = None
         self.data_period_list = None
         
@@ -666,8 +665,8 @@ class Data(object):
                     jj = p_dict[per]
                 except KeyError:
                     try:
-                        jj = np.where(((1./mt_obj.Z.freq)*(1-self.ptol) <= per) & 
-                                      ((1./mt_obj.Z.freq)*(1+self.ptol) >= per))[0][0]
+                        jj = np.where(((1./mt_obj.Z.freq)*.95 <= per) & 
+                                      ((1./mt_obj.Z.freq) >= per))[0][0]
                     except IndexError:
                         print 'Could not find {0:<12.6f} in {1}'.format(per,
                                                                 mt_obj.station)
@@ -718,9 +717,9 @@ class Data(object):
         """
         if self.data_array is None:
             return None
-        
+            
         station_locations = self.data_array[['station', 'lat', 'lon', 
-                                             'north', 'east', 'elev', 'zone',
+                                             'north', 'east', 'elev',
                                              'rel_north', 'rel_east']]
         return station_locations
         
@@ -729,7 +728,7 @@ class Data(object):
                                   doc="""location of stations""") 
                 
     def write_data_file(self, save_path=None, fn_basename=None, 
-                        rotation_angle=None, fill_data=False):
+                        rotation_angle=None):
         """
         write data file for ModEM
         
@@ -780,16 +779,8 @@ class Data(object):
         if rotation_angle is not None:
             self.rotation_angle = rotation_angle
         
-        #be sure to fill in data array
-        if self.data_array is None:
-            self._fill_data_array()
-            
-        if fill_data == True:
-            self.fill_data_array()
-        try:
-            self.get_relative_station_locations()
-        except:
-            print "couldn't get relative station locations"
+        #be sure to fill in data array 
+        self._fill_data_array()
         
         #reset the header string to be informational
         self._set_header_string()
@@ -826,16 +817,16 @@ class Data(object):
                         zz = self.data_array[ss][c_key][ff, z_ii, z_jj]
                         if zz.real != 0.0 and zz.imag != 0.0 and \
                            zz.real != 1e32 and zz.imag != 1e32:
-                            per = '{0:<14.5e}'.format(self.period_list[ff])
-                            sta = '{0:>14}'.format(self.data_array[ss]['station'])
-                            lat = '{0:> 14.6f}'.format(self.data_array[ss]['lat'])
-                            lon = '{0:> 14.6f}'.format(self.data_array[ss]['lon'])
-                            eas = '{0:> 14.3f}'.format(self.data_array[ss]['rel_east'])
-                            nor = '{0:> 14.3f}'.format(self.data_array[ss]['rel_north'])
-                            ele = '{0:> 14.3f}'.format(0)
-                            com = '{0:>8}'.format(comp.upper())
-                            rea = '{0:> 17.6e}'.format(zz.real)
-                            ima = '{0:> 17.6e}'.format(zz.imag)
+                            per = '{0:<12.5e}'.format(self.period_list[ff])
+                            sta = '{0:>7}'.format(self.data_array[ss]['station'])
+                            lat = '{0:> 9.3f}'.format(self.data_array[ss]['lat'])
+                            lon = '{0:> 9.3f}'.format(self.data_array[ss]['lon'])
+                            eas = '{0:> 12.3f}'.format(self.data_array[ss]['rel_east'])
+                            nor = '{0:> 12.3f}'.format(self.data_array[ss]['rel_north'])
+                            ele = '{0:> 12.3f}'.format(0)
+                            com = '{0:>4}'.format(comp.upper())
+                            rea = '{0:> 14.6e}'.format(zz.real)
+                            ima = '{0:> 14.6e}'.format(zz.imag)
                             
                             #compute relative error
                             if comp.find('t') == 0:
@@ -859,7 +850,7 @@ class Data(object):
                                 rel_err = 1e3
                                 print ('error at {0} is 0 for period {1}'.format(
                                         sta, per)+'set to 1e3')
-                            rel_err = '{0:> 12.6e}'.format(abs(rel_err))
+                            rel_err = '{0:> 14.6e}'.format(abs(rel_err))
                             #make sure that x==north, y==east, z==+down
                             dline = ''.join([per, sta, lat, lon, nor, eas, ele, 
                                              com, rea, ima, rel_err, '\n'])
@@ -1130,7 +1121,7 @@ class Data(object):
         else:
             vtk_fn = os.path.join(vtk_save_path, vtk_fn_basename)
             
-        gridToVTK(vtk_fn, 
+        pointsToVTK(vtk_fn, 
                  self.station_locations['rel_north'], 
                  self.station_locations['rel_east'],
                  -self.station_locations['elev'],
@@ -1542,10 +1533,10 @@ class Model(object):
                                step=self.cell_size_east)
         
         #padding cells in the east-west direction
-        for ii in range(0, self.pad_east):
+        for ii in range(1, self.pad_east+1):
             east_0 = float(east_gridr[-1])
             west_0 = float(east_gridr[0])
-            add_size = np.round(self.cell_size_east*self.pad_stretch_h**ii, -2)
+            add_size = np.round(self.cell_size_east*self.pad_stretch_h*ii, -2)
             pad_w = west_0-add_size
             pad_e = east_0+add_size
             east_gridr = np.insert(east_gridr, 0, pad_w)
@@ -1571,10 +1562,10 @@ class Model(object):
                                 step=self.cell_size_north)
         
         #padding cells in the east-west direction
-        for ii in range(0, self.pad_north):
+        for ii in range(1, self.pad_north+1):
             south_0 = float(north_gridr[0]) 
             north_0 = float(north_gridr[-1])
-            add_size = np.round(self.cell_size_north*self.pad_stretch_h**ii, -2)
+            add_size = np.round(self.cell_size_north*self.pad_stretch_h*ii, -2)
             pad_s = south_0-add_size
             pad_n = north_0+add_size
             north_gridr = np.insert(north_gridr, 0, pad_s)
@@ -2205,10 +2196,14 @@ class Model(object):
         else:
             vtk_fn = os.path.join(vtk_save_path, vtk_fn_basename)
             
+        # grids need to be n+1 
+        vtk_east = np.append(self.grid_east, 1.5*self.grid_east[-1])
+        vtk_north = np.append(self.grid_north, 1.5*self.grid_north[-1])
+        vtk_z = np.append(self.grid_z, 1.5*self.grid_z[-1])
         gridToVTK(vtk_fn, 
-                 self.grid_north, 
-                 self.grid_east,
-                 self.grid_z,
+                 vtk_north, 
+                 vtk_east,
+                 vtk_z,
                  pointData={'resistivity':self.res_model}) 
         
         print 'Wrote file to {0}'.format(vtk_fn)
@@ -2553,15 +2548,15 @@ class Covariance(object):
         
         #--> smoothing in north direction        
         n_smooth_line = ''
-        for zz in range(self.grid_dimensions[0]):
+        for zz in range(self.grid_dimensions[2]):
             n_smooth_line += ' {0:<5.1f}'.format(self.smoothing_north)
         clines.append(n_smooth_line+'\n')
 
         #--> smoothing in east direction
         e_smooth_line = ''
-        for zz in range(self.grid_dimensions[1]):
+        for zz in range(self.grid_dimensions[2]):
             e_smooth_line += ' {0:<5.1f}'.format(self.smoothing_east)
-        clines.append(e_smooth_line+'\n')
+        clines.append(n_smooth_line+'\n')
         
         #--> smoothing in vertical direction
         clines.append(' {0:<5.1f}\n'.format(self.smoothing_z))
@@ -2757,12 +2752,12 @@ class ModelManipulator(Model):
         
         self.fdict = {'size':self.font_size+2, 'weight':'bold'}
         
-        self.subplot_wspace = .2
-        self.subplot_hspace = .0
-        self.subplot_right = .8
-        self.subplot_left = .01
-        self.subplot_top = .93
-        self.subplot_bottom = .1
+        self.subplot_wspace = kwargs.pop('subplot_wspace', .3)
+        self.subplot_hspace = kwargs.pop('subplot_hspace', .0)
+        self.subplot_right = kwargs.pop('subplot_right', .8)
+        self.subplot_left = kwargs.pop('subplot_left', .01)
+        self.subplot_top = kwargs.pop('subplot_top', .93)
+        self.subplot_bottom = kwargs.pop('subplot_bottom', .1)
 
         #plot on initialization
         self.plot_yn = kwargs.pop('plot_yn', 'y')
@@ -3338,8 +3333,8 @@ class PlotResponse(object):
             #color for data
             self.cted = kwargs.pop('cted', (0, 0, 0))
             self.ctmd = kwargs.pop('ctmd', (0, 0, 0))
-            self.mted = kwargs.pop('mted', '*')
-            self.mtmd = kwargs.pop('mtmd', 'v')
+            self.mted = kwargs.pop('mted', 's')
+            self.mtmd = kwargs.pop('mtmd', 'o')
             
             #color for occam2d model
             self.ctem = kwargs.pop('ctem', (0.6, 0.6, 0.6))
@@ -3354,14 +3349,15 @@ class PlotResponse(object):
         self.fig_size = kwargs.pop('fig_size', [6, 6])
         self.fig_dpi = kwargs.pop('dpi', 300)
         
-        self.subplot_wspace = .2
-        self.subplot_hspace = .0
-        self.subplot_right = .98
-        self.subplot_left = .08
-        self.subplot_top = .93
-        self.subplot_bottom = .1
+        self.subplot_wspace = kwargs.pop('subplot_wspace', .3)
+        self.subplot_hspace = kwargs.pop('subplot_hspace', .0)
+        self.subplot_right = kwargs.pop('subplot_right', .98)
+        self.subplot_left = kwargs.pop('subplot_left', .08)
+        self.subplot_top = kwargs.pop('subplot_top', .85)
+        self.subplot_bottom = kwargs.pop('subplot_bottom', .1)
         
-        self.legend_loc = 'upper left'
+        self.legend_loc = 'upper center'
+        self.legend_pos = (.5, 1.21)
         self.legend_marker_scale = 1
         self.legend_border_axes_pad = .01
         self.legend_label_spacing = 0.07
@@ -3487,14 +3483,15 @@ class PlotResponse(object):
             fig.suptitle(str(station), fontdict=fontdict)
             
             #set the grid of subplots
-            plot_tipper = t_obj.tipper.all() == 0.0
-            if plot_tipper == False:
+            tipper_zero = (np.round(abs(t_obj.tipper.mean()), 4) == 0.0)
+            if tipper_zero == False:
                 #makes more sense if plot_tipper is True to plot tipper
                 plot_tipper = True
             else:
                 plot_tipper = False
                 
             if plot_tipper == True:
+
                 gs = gridspec.GridSpec(2, 6,
                                    wspace=self.subplot_wspace,
                                    left=self.subplot_left,
@@ -3533,6 +3530,8 @@ class PlotResponse(object):
                         
                         axtr = fig.add_subplot(gs[0, 4:], sharex=axrxy)
                         axti = fig.add_subplot(gs[1, 4:], sharex=axrxy)
+                        axtr.set_ylim(-1.2, 1.2)
+                        axti.set_ylim(-1.2, 1.2)
                         
                         
                     if self.plot_z == False: 
@@ -3564,45 +3563,45 @@ class PlotResponse(object):
                         #plot real
                         erxy = mtplottools.plot_errorbar(axrxy, 
                                                   period[nzxy], 
-                                                  z_obj.z[nzxy,0,1].real, 
-                                                  z_obj.zerr[nzxy,0,1].real,
+                                                  abs(z_obj.z[nzxy,0,1].real), 
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axryx, 
                                                      period[nzyx], 
-                                                     z_obj.z[nzyx,1,0].real, 
-                                                     z_obj.zerr[nzyx,1,0].real,
+                                                     abs(z_obj.z[nzyx,1,0].real), 
+                                                     abs(z_obj.zerr[nzyx,1,0].real),
                                                      **kw_yy)
                         #plot phase                         
                         erxy = mtplottools.plot_errorbar(axpxy, 
                                                   period[nzxy], 
-                                                  z_obj.z[nzxy,0,1].imag, 
-                                                  z_obj.zerr[nzxy,0,1].imag,
+                                                  abs(z_obj.z[nzxy,0,1].imag), 
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axpyx, 
                                                   period[nzyx], 
-                                                  z_obj.z[nzyx,1,0].imag, 
-                                                  z_obj.zerr[nzyx,1,0].imag,
+                                                  abs(z_obj.z[nzyx,1,0].imag), 
+                                                  abs(z_obj.zerr[nzyx,1,0].real),
                                                   **kw_yy)
                     #plot tipper
                     if plot_tipper == True:
                         ertx = mtplottools.plot_errorbar(axtr, 
-                                                 period,
+                                                 period[ntx],
                                                  t_obj.tipper[ntx, 0, 0].real,
                                                  t_obj.tippererr[ntx, 0, 0],
                                                  **kw_xx)
                         erty = mtplottools.plot_errorbar(axtr, 
-                                                 period,
+                                                 period[nty],
                                                  t_obj.tipper[nty, 0, 1].real,
                                                  t_obj.tippererr[nty, 0, 1],
                                                  **kw_yy)
                                                  
                         ertx = mtplottools.plot_errorbar(axti, 
-                                                 period,
+                                                 period[ntx],
                                                  t_obj.tipper[ntx, 0, 0].imag,
                                                  t_obj.tippererr[ntx, 0, 0],
                                                  **kw_xx)
                         erty = mtplottools.plot_errorbar(axti, 
-                                                 period,
+                                                 period[nty],
                                                  t_obj.tipper[nty, 0, 1].imag,
                                                  t_obj.tippererr[nty, 0, 1],
                                                  **kw_yy)
@@ -3644,6 +3643,11 @@ class PlotResponse(object):
                         axtxi = fig.add_subplot(gs[1, 4], sharex=axrxx)
                         axtyr = fig.add_subplot(gs[0, 5], sharex=axrxx)
                         axtyi = fig.add_subplot(gs[1, 5], sharex=axrxx)
+                        
+                        axtxr.set_ylim(-1.2, 1.2)
+                        axtxi.set_ylim(-1.2, 1.2)
+                        axtyr.set_ylim(-1.2, 1.2)
+                        axtyi.set_ylim(-1.2, 1.2)
                     
                     if self.plot_z == False:
                         #plot resistivity
@@ -3692,66 +3696,66 @@ class PlotResponse(object):
                         #plot real
                         erxx = mtplottools.plot_errorbar(axrxx, 
                                                   period[nzxx], 
-                                                  z_obj.z[nzxx,0,0].real, 
-                                                  z_obj.zerr[nzxx,0,0].real,
+                                                  abs(z_obj.z[nzxx,0,0].real), 
+                                                  abs(z_obj.zerr[nzxx,0,0].real),
                                                   **kw_xx)
                         erxy = mtplottools.plot_errorbar(axrxy, 
                                                   period[nzxy], 
-                                                  z_obj.z[nzxy,0,1].real, 
-                                                  z_obj.zerr[nzxy,0,1].real,
+                                                  abs(z_obj.z[nzxy,0,1].real), 
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axryx, 
                                                   period[nzyx], 
-                                                  z_obj.z[nzyx,1,0].real, 
-                                                  z_obj.zerr[nzyx,1,0].real,
+                                                  abs(z_obj.z[nzyx,1,0].real), 
+                                                  abs(z_obj.zerr[nzyx,1,0].real),
                                                   **kw_yy)
                         eryy = mtplottools.plot_errorbar(axryy, 
                                                   period[nzyy], 
-                                                  z_obj.z[nzyy,1,1].real, 
-                                                  z_obj.zerr[nzyy,1,1].real,
+                                                  abs(z_obj.z[nzyy,1,1].real), 
+                                                  abs(z_obj.zerr[nzyy,1,1].real),
                                                   **kw_yy)
                         #plot phase                         
                         erxx = mtplottools.plot_errorbar(axpxx, 
                                                   period[nzxx], 
-                                                  z_obj.z[nzxx,0,0].imag, 
-                                                  z_obj.zerr[nzxx,0,0].imag,
+                                                  abs(z_obj.z[nzxx,0,0].imag), 
+                                                  abs(z_obj.zerr[nzxx,0,0].real),
                                                   **kw_xx)
                         erxy = mtplottools.plot_errorbar(axpxy, 
                                                   period[nzxy], 
-                                                  z_obj.z[nzxy,0,1].imag, 
-                                                  z_obj.zerr[nzxy,0,1].imag,
+                                                  abs(z_obj.z[nzxy,0,1].imag), 
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axpyx, 
                                                   period[nzyx], 
-                                                  z_obj.z[nzyx,1,0].imag, 
-                                                  z_obj.zerr[nzyx,1,0].imag,
+                                                  abs(z_obj.z[nzyx,1,0].imag), 
+                                                  abs(z_obj.zerr[nzyx,1,0].real),
                                                   **kw_yy)
                         eryy = mtplottools.plot_errorbar(axpyy, 
                                                   period[nzyy], 
-                                                  z_obj.z[nzyy,1,1].imag, 
-                                                  z_obj.zerr[nzyy,1,1].imag,
+                                                  abs(z_obj.z[nzyy,1,1].imag), 
+                                                  abs(z_obj.zerr[nzyy,1,1].real),
                                                   **kw_yy)
                                                   
                     #plot tipper
                     if plot_tipper == True:
                         ertx = mtplottools.plot_errorbar(axtxr, 
-                                                 period,
+                                                 period[ntx],
                                                  t_obj.tipper[ntx, 0, 0].real,
                                                  t_obj.tippererr[ntx, 0, 0],
                                                  **kw_xx)
                         erty = mtplottools.plot_errorbar(axtyr, 
-                                                 period,
+                                                 period[nty],
                                                  t_obj.tipper[nty, 0, 1].real,
                                                  t_obj.tippererr[nty, 0, 0],
                                                  **kw_yy)
                                                  
                         ertx = mtplottools.plot_errorbar(axtxi, 
-                                                 period,
+                                                 period[ntx],
                                                  t_obj.tipper[ntx, 0, 0].imag,
                                                  t_obj.tippererr[ntx, 0, 1],
                                                  **kw_xx)
                         erty = mtplottools.plot_errorbar(axtyi, 
-                                                 period,
+                                                 period[nty],
                                                  t_obj.tipper[nty, 0, 1].imag,
                                                  t_obj.tippererr[nty, 0, 1],
                                                  **kw_yy)
@@ -3775,16 +3779,81 @@ class PlotResponse(object):
                 #set axis properties
                 for aa, ax in enumerate(ax_list):
                     ax.tick_params(axis='y', pad=self.ylabel_pad)
-                    ylabels = ax.get_yticks().tolist()
-                    ylabels[-1] = ''
-                    ylabels[0] = ''
-                    ax.set_yticklabels(ylabels)
+#                    ylabels = ax.get_yticks().tolist()
+#                    ylabels[-1] = ''
+#                    ylabels[0] = ''
+#                    ax.set_yticklabels(ylabels)
+#                    print ylabels
                     
+#                    dy = abs(ax.yaxis.get_ticklocs()[1]-
+#                             ax.yaxis.get_ticklocs()[0])
+#                    ylim = ax.get_ylim()
+#                    ax.set_ylim(ylim[0]-.25*dy, ylim[1]+1.25*dy)
+#                    ax.yaxis.set_major_locator(MultipleLocator(dy))
+                    
+                    if len(ax_list) == 4:
+#                        ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+                        if self.plot_z == True:
+                            ax.set_yscale('log', nonposy='clip')
+                            ylim = ax.get_ylim()
+                            ylimits = (10**np.floor(np.log10(ylim[0])), 
+                                          10**np.ceil(np.log10(ylim[1])))
+                            ax.set_ylim(ylimits)
+                            ylabels = [' ']+\
+                                         [mtplottools.labeldict[ii] for ii 
+                                         in np.arange(np.log10(ylimits[0]), 
+                                                      np.log10(ylimits[1]), 1)]+\
+                                         [' ']
+                            ax.set_yticklabels(ylabels)
+                    if len(ax_list) == 6:
+                        if aa < 4:
+#                            ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+                            if self.plot_z == True:
+                                ax.set_yscale('log', nonposy='clip')
+                                ylim = ax.get_ylim()
+                                ylimits = (10**np.floor(np.log10(ylim[0])), 
+                                          10**np.ceil(np.log10(ylim[1])))
+                                ax.set_ylim(ylimits)
+                                ylabels = [' ']+\
+                                         [mtplottools.labeldict[ii] for ii 
+                                         in np.arange(np.log10(ylimits[0]), 
+                                                      np.log10(ylimits[1]), 1)]+\
+                                         [' ']
+                                ax.set_yticklabels(ylabels)
+                    if len(ax_list) == 8:
+#                        ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+                        if self.plot_z == True:
+                                ax.set_yscale('log', nonposy='clip')
+                                ylim = ax.get_ylim()
+                                ylimits = (10**np.floor(np.log10(ylim[0])), 
+                                          10**np.ceil(np.log10(ylim[1])))
+                                ax.set_ylim(ylimits)
+                                ylabels = [' ']+\
+                                         [mtplottools.labeldict[ii] for ii 
+                                         in np.arange(np.log10(ylimits[0]), 
+                                                      np.log10(ylimits[1]), 1)]+\
+                                         [' ']
+                                ax.set_yticklabels(ylabels)
+                    if len(ax_list) == 12:
+                        if aa < 8:
+#                            ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+                            if self.plot_z == True:
+                               ax.set_yscale('log', nonposy='clip')
+                               ylim = ax.get_ylim()
+                               ylimits = (10**np.floor(np.log10(ylim[0])), 
+                                          10**np.ceil(np.log10(ylim[1])))
+                               ax.set_ylim(ylimits)
+                               ylabels = [' ']+\
+                                         [mtplottools.labeldict[ii] for ii 
+                                         in np.arange(np.log10(ylimits[0]), 
+                                                      np.log10(ylimits[1]), 1)]+\
+                                         [' ']
+                               ax.set_yticklabels(ylabels)
                     if len(ax_list) == 4 or len(ax_list) == 6:
                         if aa < 2:
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
-                                ax.set_yscale('log')
+                                ax.set_yscale('log', nonposy='clip')
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
                         else:
@@ -3797,14 +3866,14 @@ class PlotResponse(object):
                                 ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
                                               fontdict=fontdict)
                             elif self.plot_z == True:
-                                ax.set_ylabel('Re[Z (mV/km nT)]',
+                                ax.set_ylabel('|Re[Z]| (mV/km nT)',
                                               fontdict=fontdict)
                         elif aa == 2:
                             if self.plot_z == False:
                                 ax.set_ylabel('Phase (deg)',
                                               fontdict=fontdict)
                             elif self.plot_z == True:
-                                ax.set_ylabel('Im[Z (mV/km nT)]',
+                                ax.set_ylabel('|Im[Z]| (mV/km nT)',
                                               fontdict=fontdict)
                             
                     elif len(ax_list) == 8 or len(ax_list) == 12:
@@ -3827,14 +3896,14 @@ class PlotResponse(object):
                                 ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
                                               fontdict=fontdict)
                             elif self.plot_z == True:
-                                ax.set_ylabel('Re[Z (mV/km nT)]',
+                                ax.set_ylabel('|Re[Z]| (mV/km nT)',
                                                fontdict=fontdict)
                         elif aa == 4:
                             if self.plot_z == False:
                                 ax.set_ylabel('Phase (deg)',
                                               fontdict=fontdict)
                             elif self.plot_z == True:
-                                ax.set_ylabel('Im[Z (mV/km nT)]',
+                                ax.set_ylabel('|Im[Z]| (mV/km nT)',
                                               fontdict=fontdict)
 
                     ax.set_xscale('log')
@@ -3881,24 +3950,24 @@ class PlotResponse(object):
                         #plot real
                         erxy = mtplottools.plot_errorbar(axrxy, 
                                                   period[nzxy], 
-                                                  z_obj.z[nzxy,0,1].real, 
-                                                  z_obj.zerr[nzxy,0,1].real,
+                                                  abs(z_obj.z[nzxy,0,1].real), 
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axrxy, 
                                                   period[nzxy], 
-                                                  z_obj.z[nzxy,1,0].real, 
-                                                  z_obj.zerr[nzxy,1,0].real,
+                                                  abs(z_obj.z[nzxy,1,0].real), 
+                                                  abs(z_obj.zerr[nzxy,1,0].real),
                                                   **kw_yy)
                         #plot phase                         
                         erxy = mtplottools.plot_errorbar(axpxy, 
                                                   period[nzxy], 
-                                                  z_obj.z[nzxy,0,1].imag, 
-                                                  z_obj.zerr[nzxy,0,1].imag,
+                                                  abs(z_obj.z[nzxy,0,1].imag), 
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axpxy, 
                                                   period[nzyx], 
-                                                  z_obj.z[nzyx,1,0].imag, 
-                                                  z_obj.zerr[nzyx,1,0].imag,
+                                                  abs(z_obj.z[nzyx,1,0].imag), 
+                                                  abs(z_obj.zerr[nzyx,1,0].real),
                                                   **kw_yy)
                     #plot tipper
                     if plot_tipper == True:
@@ -3999,65 +4068,65 @@ class PlotResponse(object):
                          #plot real
                         erxx = mtplottools.plot_errorbar(axrxx, 
                                                   period[nzxx], 
-                                                  z_obj.z[nzxx,0,0].real, 
-                                                  z_obj.zerr[nzxx,0,0].real,
+                                                  abs(z_obj.z[nzxx,0,0].real), 
+                                                  abs(z_obj.zerr[nzxx,0,0].real),
                                                   **kw_xx)
                         erxy = mtplottools.plot_errorbar(axrxy, 
                                                   period[nzxy], 
-                                                  z_obj.z[nzxy,0,1].real, 
-                                                  z_obj.zerr[nzxy,0,1].real,
+                                                  abs(z_obj.z[nzxy,0,1].real), 
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axrxy, 
                                                   period[nzyx], 
-                                                  z_obj.z[nzyx,1,0].real, 
-                                                  z_obj.zerr[nzyx,1,0].real,
+                                                  abs(z_obj.z[nzyx,1,0].real), 
+                                                  abs(z_obj.zerr[nzyx,1,0].real),
                                                   **kw_yy)
                         eryy = mtplottools.plot_errorbar(axrxx, 
                                                   period[nzyy], 
-                                                  z_obj.z[nzyy,1,1].real, 
-                                                  z_obj.zerr[nzyy,1,1].real,
+                                                  abs(z_obj.z[nzyy,1,1].real), 
+                                                  abs(z_obj.zerr[nzyy,1,1].real),
                                                   **kw_yy)
                         #plot phase                         
                         erxx = mtplottools.plot_errorbar(axpxx, 
                                                   period[nzxx], 
-                                                  z_obj.z[nzxx,0,0].imag, 
-                                                  z_obj.zerr[nzxx,0,0].imag,
+                                                  abs(z_obj.z[nzxx,0,0].imag), 
+                                                  abs(z_obj.zerr[nzxx,0,0].real),
                                                   **kw_xx)
                         erxy = mtplottools.plot_errorbar(axpxy, 
                                                   period[nzxy], 
-                                                  z_obj.z[nzxy,0,1].imag, 
-                                                  z_obj.zerr[nzxy,0,1].imag,
+                                                  abs(z_obj.z[nzxy,0,1].imag), 
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axpxy, 
                                                   period[nzyx], 
-                                                  z_obj.z[nzyx,1,0].imag, 
-                                                  z_obj.zerr[nzyx,1,0].imag,
+                                                  abs(z_obj.z[nzyx,1,0].imag), 
+                                                  abs(z_obj.zerr[nzyx,1,0].real),
                                                   **kw_yy)
                         eryy = mtplottools.plot_errorbar(axpxx, 
                                                   period[nzyy], 
-                                                  z_obj.z[nzyy,1,1].imag, 
-                                                  z_obj.zerr[nzyy,1,1].imag,
+                                                  abs(z_obj.z[nzyy,1,1].imag), 
+                                                  abs(z_obj.zerr[nzyy,1,1].real),
                                                   **kw_yy)
                     #plot tipper
                     if plot_tipper == True:
                         ertx = mtplottools.plot_errorbar(axtr, 
-                                                 period,
+                                                 period[ntx],
                                                  t_obj.tipper[ntx, 0, 0].real,
                                                  t_obj.tippererr[ntx, 0, 0],
                                                  **kw_xx)
                         erty = mtplottools.plot_errorbar(axtr, 
-                                                 period,
+                                                 period[nty],
                                                  t_obj.tipper[nty, 0, 1].real,
                                                  t_obj.tippererr[nty, 0, 1],
                                                  **kw_yy)
                                                  
                         ertx = mtplottools.plot_errorbar(axti, 
-                                                 period,
+                                                 period[ntx],
                                                  t_obj.tipper[ntx, 0, 0].imag,
                                                  t_obj.tippererr[ntx, 0, 0],
                                                  **kw_xx)
                         erty = mtplottools.plot_errorbar(axti, 
-                                                 period,
+                                                 period[nty],
                                                  t_obj.tipper[nty, 0, 1].imag,
                                                  t_obj.tippererr[nty, 0, 1],
                                                  **kw_yy)
@@ -4078,12 +4147,24 @@ class PlotResponse(object):
                 #set axis properties
                 for aa, ax in enumerate(ax_list):
                     ax.tick_params(axis='y', pad=self.ylabel_pad)
-                    ylabels = ax.get_yticks().tolist()
-                    ylabels[-1] = ''
-                    ylabels[0] = ''
-                    ax.set_yticklabels(ylabels)
+#                    ylabels = ax.get_yticks().tolist()
+#                    ylabels[-1] = ''
+#                    ylabels[0] = ''
+#                    ax.set_yticklabels(ylabels)
                     if len(ax_list) == 2:
                         ax.set_xlabel('Period (s)', fontdict=fontdict)
+                        if self.plot_z == True:
+                            ax.set_yscale('log')
+                            ylim = ax.get_ylim()
+                            ylimits = (10**np.floor(np.log10(ylim[0])), 
+                                          10**np.ceil(np.log10(ylim[1])))
+                            ax.set_ylim(ylimits)
+                            ylabels = [' ']+\
+                                         [mtplottools.labeldict[ii] for ii 
+                                         in np.arange(np.log10(ylimits[0]), 
+                                                      np.log10(ylimits[1]), 1)]+\
+                                         [' ']
+                            ax.set_yticklabels(ylabels)
                         if aa == 0:
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
@@ -4091,7 +4172,7 @@ class PlotResponse(object):
                                 ax.set_ylabel('App. Res. ($\mathbf{\Omega \cdot m}$)',
                                               fontdict=fontdict)
                             elif self.plot_z == True:
-                                ax.set_ylabel('Re[Impedance (m/s)]',
+                                ax.set_ylabel('|Re[Z (mV/km nT)]|',
                                                fontdict=fontdict)
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
@@ -4101,9 +4182,11 @@ class PlotResponse(object):
                                 ax.set_ylabel('Phase (deg)',
                                               fontdict=fontdict)
                             elif self.plot_z == True:
-                                ax.set_ylabel('Im[Impedance (m/s)]',
+                                ax.set_ylabel('|Im[Z (mV/km nT)]|',
                                               fontdict=fontdict)
                     elif len(ax_list) == 4 and plot_tipper == False:
+                        if self.plot_z == True:
+                            ax.set_yscale('log')
                         if aa < 2:
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
@@ -4127,7 +4210,8 @@ class PlotResponse(object):
                                               fontdict=fontdict)
                             elif self.plot_z == True:
                                 ax.set_ylabel('Im[Z (mV/km nT)]',
-                                              fontdict=fontdict)
+                                                  fontdict=fontdict)
+                        
                     elif len(ax_list) == 4 and plot_tipper == True:
                         if aa == 0 or aa == 2:
                             plt.setp(ax.get_xticklabels(), visible=False)
@@ -4152,6 +4236,10 @@ class PlotResponse(object):
                             elif self.plot_z == True:
                                 ax.set_ylabel('Im[Z (mV/km nT)]',
                                               fontdict=fontdict)
+                        if aa <= 2:
+                            ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+                            if self.plot_z == True:
+                                ax.set_yscale('log')
 #                        else:
 #                            plt.setp(ax.yaxis.get_ticklabels(), visible=False)
 
@@ -4166,13 +4254,15 @@ class PlotResponse(object):
                         cxy = (0,.4+float(rr)/(3*nr),0)
                         cyx = (.7+float(rr)/(4*nr),.13,.63-float(rr)/(4*nr))
                     elif self.color_mode == 'bw':
-                        cxy = (1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))                    
-                        cyx = (1-1.25/(rr+2.),1-1.25/(rr+2.),1-1.25/(rr+2.))
+                        cxy = tuple(3*[1-.5/(rr+1)])                    
+                        cyx = tuple(3*[1-.5/(rr+1)]) 
                     
                     resp_z_obj = self.resp_object[rr].mt_dict[station].Z
                     resp_z_err = np.nan_to_num((z_obj.z-resp_z_obj.z)/z_obj.zerr)
     
                     resp_t_obj = self.resp_object[rr].mt_dict[station].Tipper
+                    resp_t_err = np.nan_to_num((t_obj.tipper-resp_t_obj.tipper)/
+                                                t_obj.tippererr)
                     
                     rrp = mtplottools.ResPhase(resp_z_obj)
     
@@ -4181,12 +4271,16 @@ class PlotResponse(object):
                     rms_xy = resp_z_err[:, 0, 1].std()
                     rms_yx = resp_z_err[:, 1, 0].std()
                     rms_yy = resp_z_err[:, 1, 1].std()
+                    rms_tx = resp_t_err[:, 0, 0].std()
+                    rms_ty = resp_t_err[:, 0, 1].std()
                     print ' --- response {0} ---'.format(rr)
                     print '  RMS = {:.2f}'.format(rms)
                     print '      RMS_xx = {:.2f}'.format(rms_xx)
                     print '      RMS_xy = {:.2f}'.format(rms_xy)
                     print '      RMS_yx = {:.2f}'.format(rms_yx)
                     print '      RMS_yy = {:.2f}'.format(rms_yy)
+                    print '      RMS_Tx = {:.2f}'.format(rms_tx)
+                    print '      RMS_Ty = {:.2f}'.format(rms_ty)
                     
                     #--> make key word dictionaries for plotting
                     kw_xx = {'color':cxy,
@@ -4230,37 +4324,37 @@ class PlotResponse(object):
                                 #plot real
                                 rerxy = mtplottools.plot_errorbar(axrxy, 
                                                           period[nzxy], 
-                                                          resp_z_obj.z[nzxy,0,1].real, 
+                                                          abs(resp_z_obj.z[nzxy,0,1].real), 
                                                           **kw_xx)
                                 reryx = mtplottools.plot_errorbar(axryx, 
                                                           period[nzyx], 
-                                                          resp_z_obj.z[nzyx,1,0].real, 
+                                                          abs(resp_z_obj.z[nzyx,1,0].real), 
                                                           **kw_yy)
                                 #plot phase                         
                                 rerxy = mtplottools.plot_errorbar(axpxy, 
                                                           period[nzxy], 
-                                                          resp_z_obj.z[nzxy,0,1].imag, 
+                                                          abs(resp_z_obj.z[nzxy,0,1].imag), 
                                                           **kw_xx)
                                 reryx = mtplottools.plot_errorbar(axpyx, 
                                                           period[nzyx], 
-                                                          resp_z_obj.z[nzyx,1,0].imag, 
+                                                          abs(resp_z_obj.z[nzyx,1,0].imag), 
                                                           **kw_yy)
                             if plot_tipper == True:
                                 rertx = mtplottools.plot_errorbar(axtr, 
-                                             period,
+                                             period[ntx],
                                              resp_t_obj.tipper[ntx, 0, 0].real,
                                              **kw_xx)
                                 rerty = mtplottools.plot_errorbar(axtr, 
-                                             period,
+                                             period[nty],
                                              resp_t_obj.tipper[nty, 0, 1].real,
                                              **kw_yy)
                                                          
                                 rertx = mtplottools.plot_errorbar(axti, 
-                                             period,
+                                             period[ntx],
                                              resp_t_obj.tipper[ntx, 0, 0].imag,
                                              **kw_xx)
                                 rerty = mtplottools.plot_errorbar(axti, 
-                                             period,
+                                             period[nty],
                                              resp_t_obj.tipper[nty, 0, 1].imag,
                                              **kw_yy)
                             if plot_tipper == False:
@@ -4278,7 +4372,10 @@ class PlotResponse(object):
                                                    'rms={0:.2f}'.format(rms_xy)]
                                 label_list[1] += ['$Z^m_{yx}$ '+
                                                'rms={0:.2f}'.format(rms_yx)]
-                                label_list[2] += ['$T^m_{x}$', '$T^m_{y}$']
+                                label_list[2] += ['$T^m_{x}$'+
+                                                'rms={0:.2f}'.format(rms_tx),
+                                                 '$T^m_{y}$'+
+                                                 'rms={0:.2f}'.format(rms_ty)]
                         elif self.plot_component == 4:
                             if self.plot_z == False:
                                 #plot resistivity
@@ -4319,53 +4416,53 @@ class PlotResponse(object):
                                 #plot real
                                 rerxx = mtplottools.plot_errorbar(axrxx, 
                                                           period[nzxx], 
-                                                          resp_z_obj.z[nzxx,0,0].real, 
+                                                          abs(resp_z_obj.z[nzxx,0,0].real), 
                                                           **kw_xx)
                                 rerxy = mtplottools.plot_errorbar(axrxy, 
                                                           period[nzxy], 
-                                                          resp_z_obj.z[nzxy,0,1].real, 
+                                                          abs(resp_z_obj.z[nzxy,0,1].real), 
                                                           **kw_xx)
                                 reryx = mtplottools.plot_errorbar(axryx, 
                                                           period[nzyx], 
-                                                          resp_z_obj.z[nzyx,1,0].real, 
+                                                          abs(resp_z_obj.z[nzyx,1,0].real), 
                                                           **kw_yy)
                                 reryy = mtplottools.plot_errorbar(axryy, 
                                                           period[nzyy], 
-                                                          resp_z_obj.z[nzyy,1,1].real, 
+                                                          abs(resp_z_obj.z[nzyy,1,1].real), 
                                                           **kw_yy)
                                 #plot phase                         
                                 rerxx = mtplottools.plot_errorbar(axpxx, 
                                                           period[nzxx], 
-                                                          resp_z_obj.z[nzxx,0,0].imag, 
+                                                          abs(resp_z_obj.z[nzxx,0,0].imag), 
                                                           **kw_xx)
                                 rerxy = mtplottools.plot_errorbar(axpxy, 
                                                           period[nzxy], 
-                                                          resp_z_obj.z[nzxy,0,1].imag, 
+                                                          abs(resp_z_obj.z[nzxy,0,1].imag), 
                                                           **kw_xx)
                                 reryx = mtplottools.plot_errorbar(axpyx, 
                                                           period[nzyx], 
-                                                          resp_z_obj.z[nzyx,1,0].imag, 
+                                                          abs(resp_z_obj.z[nzyx,1,0].imag), 
                                                           **kw_yy)
                                 reryy = mtplottools.plot_errorbar(axpyy, 
                                                           period[nzyy], 
-                                                          resp_z_obj.z[nzyy,1,1].imag, 
+                                                          abs(resp_z_obj.z[nzyy,1,1].imag), 
                                                           **kw_yy)
                             if plot_tipper == True:
                                 rertx = mtplottools.plot_errorbar(axtxr, 
-                                             period,
+                                             period[ntx],
                                              resp_t_obj.tipper[ntx, 0, 0].real,
                                              **kw_xx)
                                 rerty = mtplottools.plot_errorbar(axtyr, 
-                                             period,
+                                             period[nty],
                                              resp_t_obj.tipper[nty, 0, 1].real,
                                              **kw_yy)
                                                          
                                 rertx = mtplottools.plot_errorbar(axtxi, 
-                                             period,
+                                             period[ntx],
                                              resp_t_obj.tipper[ntx, 0, 0].imag,
                                              **kw_xx)
                                 rerty = mtplottools.plot_errorbar(axtyi, 
-                                             period,
+                                             period[nty],
                                              resp_t_obj.tipper[nty, 0, 1].imag,
                                              **kw_yy)
                                              
@@ -4397,8 +4494,10 @@ class PlotResponse(object):
                                                'rms={0:.2f}'.format(rms_yx)]
                                 label_list[3] += ['$Z^m_{yy}$ '+
                                                'rms={0:.2f}'.format(rms_yy)]
-                                label_list[4] += ['$T^m_{x}$ ']
-                                label_list[5] += ['$T^m_{y}$']
+                                label_list[4] += ['$T^m_{x}$'+
+                                                'rms={0:.2f}'.format(rms_tx)]
+                                label_list[5] += ['$T^m_{y}$'+
+                                                'rms={0:.2f}'.format(rms_ty)]
                                            
                     elif self.plot_style == 2:
                         if self.plot_component == 2:
@@ -4425,37 +4524,37 @@ class PlotResponse(object):
                                 #plot real
                                 rerxy = mtplottools.plot_errorbar(axrxy, 
                                                           period[nzxy], 
-                                                          resp_z_obj.z[nzxy,0,1].real, 
+                                                          abs(resp_z_obj.z[nzxy,0,1].real), 
                                                           **kw_xx)
                                 reryx = mtplottools.plot_errorbar(axrxy, 
                                                           period[nzyx], 
-                                                          resp_z_obj.z[nzyx,1,0].real, 
+                                                          abs(resp_z_obj.z[nzyx,1,0].real), 
                                                           **kw_yy)
                                 #plot phase                         
                                 rerxy = mtplottools.plot_errorbar(axpxy, 
                                                           period[nzxy], 
-                                                          resp_z_obj.z[nzxy,0,1].imag, 
+                                                          abs(resp_z_obj.z[nzxy,0,1].imag), 
                                                           **kw_xx)
                                 reryx = mtplottools.plot_errorbar(axpxy, 
                                                           period[nzyx], 
-                                                          resp_z_obj.z[nzyx,1,0].imag, 
+                                                          abs(resp_z_obj.z[nzyx,1,0].imag), 
                                                           **kw_xx)
                             if plot_tipper == True:
                                 rertx = mtplottools.plot_errorbar(axtr, 
-                                             period,
+                                             period[ntx],
                                              resp_t_obj.tipper[ntx, 0, 0].real,
                                              **kw_xx)
                                 rerty = mtplottools.plot_errorbar(axtr, 
-                                             period,
+                                             period[nty],
                                              resp_t_obj.tipper[nty, 0, 1].real,
                                              **kw_yy)
                                                          
                                 rertx = mtplottools.plot_errorbar(axti, 
-                                             period,
+                                             period[ntx],
                                              resp_t_obj.tipper[ntx, 0, 0].imag,
                                              **kw_xx)
                                 rerty = mtplottools.plot_errorbar(axti, 
-                                             period,
+                                             period[nty],
                                              resp_t_obj.tipper[nty, 0, 1].imag,
                                              **kw_yy)
                                 
@@ -4472,7 +4571,10 @@ class PlotResponse(object):
                                                'rms={0:.2f}'.format(rms_xy),
                                                '$Z^m_{yx}$ '+
                                                'rms={0:.2f}'.format(rms_yx)]
-                                label_list[1] += ['$T^m_{x}$ ', '$T^m_{y}$']
+                                label_list[1] += ['$T^m_{x}$'+
+                                                  'rms={0:.2f}'.format(rms_tx),
+                                                 '$T^m_{y}$'+
+                                                 'rms={0:.2f}'.format(rms_ty)]
                                 
                         elif self.plot_component == 4:
                             if self.plot_z == False:
@@ -4514,54 +4616,54 @@ class PlotResponse(object):
                                 #plot real
                                 rerxx = mtplottools.plot_errorbar(axrxx, 
                                                           period[nzxx], 
-                                                          resp_z_obj.z[nzxx,0,0].real, 
+                                                          abs(resp_z_obj.z[nzxx,0,0].real), 
                                                           **kw_xx)
                                 rerxy = mtplottools.plot_errorbar(axrxy, 
                                                           period[nzxy], 
-                                                          resp_z_obj.z[nzxy,0,1].real, 
+                                                          abs(resp_z_obj.z[nzxy,0,1].real), 
                                                           **kw_xx)
                                 reryx = mtplottools.plot_errorbar(axrxy, 
                                                           period[nzyx], 
-                                                          resp_z_obj.z[nzyx,1,0].real, 
+                                                          abs(resp_z_obj.z[nzyx,1,0].real), 
                                                           **kw_yy)
                                 reryy = mtplottools.plot_errorbar(axrxx, 
                                                           period[nzyy], 
-                                                          resp_z_obj.z[nzyy,1,1].real, 
+                                                          abs(resp_z_obj.z[nzyy,1,1].real), 
                                                           **kw_yy)
                                 #plot phase                         
                                 rerxx = mtplottools.plot_errorbar(axpxx, 
                                                           period[nzxx], 
-                                                          resp_z_obj.z[nzxx,0,0].imag, 
+                                                          abs(resp_z_obj.z[nzxx,0,0].imag), 
                                                           **kw_xx)
                                 rerxy = mtplottools.plot_errorbar(axpxy, 
                                                           period[nzxy], 
-                                                          resp_z_obj.z[nzxy,0,1].imag, 
+                                                          abs(resp_z_obj.z[nzxy,0,1].imag), 
                                                           **kw_xx)
                                 reryx = mtplottools.plot_errorbar(axpxy, 
                                                           period[nzyx], 
-                                                          resp_z_obj.z[nzyx,1,0].imag, 
+                                                          abs(resp_z_obj.z[nzyx,1,0].imag), 
                                                           **kw_yy)
                                 reryy = mtplottools.plot_errorbar(axpxx, 
                                                           period[nzyy], 
-                                                          resp_z_obj.z[nzyy,1,1].imag, 
+                                                          abs(resp_z_obj.z[nzyy,1,1].imag), 
                                                           **kw_yy)
                                                           
                             if plot_tipper == True:
                                 rertx = mtplottools.plot_errorbar(axtr, 
-                                             period,
+                                             period[ntx],
                                              resp_t_obj.tipper[ntx, 0, 0].real,
                                              **kw_xx)
                                 rerty = mtplottools.plot_errorbar(axtr, 
-                                             period,
+                                             period[nty],
                                              resp_t_obj.tipper[nty, 0, 1].real,
                                              **kw_yy)
                                                          
                                 rertx = mtplottools.plot_errorbar(axti, 
-                                             period,
+                                             period[ntx],
                                              resp_t_obj.tipper[ntx, 0, 0].imag,
                                              **kw_xx)
                                 rerty = mtplottools.plot_errorbar(axti, 
-                                             period,
+                                             period[nty],
                                              resp_t_obj.tipper[nty, 0, 1].imag,
                                              **kw_yy)
                                              
@@ -4588,7 +4690,10 @@ class PlotResponse(object):
                                                    'rms={0:.2f}'.format(rms_xx),
                                                   '$Z^m_{yy}$ '+
                                                   'rms={0:.2f}'.format(rms_yy)]
-                                label_list[2] += ['$T^m_{x}$ ', '$T^m_{y}$']
+                                label_list[2] += ['$T^m_{x}$'+
+                                                 'rms={0:.2f}'.format(rms_tx), 
+                                                 '$T^m_{y}$'+
+                                                 'rms={0:.2f}'.format(rms_ty)]
                     
             #make legends
             if self.plot_style == 1:
@@ -4603,6 +4708,7 @@ class PlotResponse(object):
                     ax.legend(line_list[aa],
                               label_list[aa],
                               loc=self.legend_loc,
+                              bbox_to_anchor=self.legend_pos,
                               markerscale=self.legend_marker_scale,
                               borderaxespad=self.legend_border_axes_pad,
                               labelspacing=self.legend_label_spacing,
@@ -4618,6 +4724,7 @@ class PlotResponse(object):
                         ax.legend(line_list[aa],
                                   label_list[aa],
                                   loc=self.legend_loc,
+                                  bbox_to_anchor=self.legend_pos,
                                   markerscale=self.legend_marker_scale,
                                   borderaxespad=self.legend_border_axes_pad,
                                   labelspacing=self.legend_label_spacing,
@@ -4635,6 +4742,7 @@ class PlotResponse(object):
                         ax.legend(line_list[aa],
                                   label_list[aa],
                                   loc=self.legend_loc,
+                                  bbox_to_anchor=self.legend_pos,
                                   markerscale=self.legend_marker_scale,
                                   borderaxespad=self.legend_border_axes_pad,
                                   labelspacing=self.legend_label_spacing,
@@ -4711,23 +4819,24 @@ class PlotResponse(object):
             
         """
 
+        fig = plt.gcf()
         if fig_dpi == None:
             fig_dpi = self.fig_dpi
             
         if os.path.isdir(save_fn) == False:
             file_format = save_fn[-3:]
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
-                             orientation=orientation, bbox_inches='tight')
+            fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+                        orientation=orientation, bbox_inches='tight')
             
         else:
             save_fn = os.path.join(save_fn, '_L2.'+
                                     file_format)
-            self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
+            fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
                         orientation=orientation, bbox_inches='tight')
         
         if close_fig == 'y':
             plt.clf()
-            plt.close(self.fig)
+            plt.close(fig)
         
         else:
             pass
@@ -6899,7 +7008,7 @@ class Plot_RMS_Maps(object):
         if fig_close == True:
             plt.close('all')
             
-    def plot_loop(self):
+    def plot_loop(self, fig_format='png'):
         """
         loop over all periods and save figures accordingly
         """
@@ -6908,7 +7017,7 @@ class Plot_RMS_Maps(object):
         for f_index in range(self.residual.period_list.shape[0]):
             self.period_index = f_index
             self.plot()
-            self.save_figure()
+            self.save_figure(fig_format=fig_format)
             
 
 
