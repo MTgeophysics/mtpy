@@ -304,11 +304,12 @@ def read_survey_configfile(filename):
 
         """
 
+        if key in stationdict.keys():
+            return True, stationdict.get(key)
+
         if globaldict is None or len(globaldict) == 0:
             return False, None
 
-        if key in stationdict.keys():
-            return True, stationdict.get(key)
 
         if key in globaldict:
             stationdict[key] = globaldict[key]
@@ -335,6 +336,8 @@ def read_survey_configfile(filename):
 
             try:
                 found = False
+                #import ipdb
+                #ipdb.set_trace()
                 if fromglobals(req_keyword,stationdict,globaldict)[0] is False:
                     #try short form instead
                     found,value = fromglobals(shortform,stationdict,globaldict)
