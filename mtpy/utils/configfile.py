@@ -239,6 +239,7 @@ def read_survey_configfile(filename):
     try:
         configobject.read(filename)
     except:
+        raise
         raise MTex.MTpyError_inputarguments( 'File is not a '
                     'proper configuration file: {0}'.format(filename) )
 
