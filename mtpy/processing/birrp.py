@@ -47,6 +47,12 @@ reload(MTcf)
 reload(MTft)
 reload(MTfh)
 
+try:
+    import ipdb
+except:
+    pass
+
+
 #=================================================================
 #for time stamp differences:
 epsilon = 1e-5
@@ -2080,7 +2086,11 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
 
 
     if len(birrp_config_dict) !=0 :
-        sampling_rate = float(birrp_config_dict['sampling_rate'])
+        try:
+            sampling_rate = float(birrp_config_dict['sampling_rate'])
+        except:
+            sampling_rate = float(birrp_config_dict['sampling'])
+
         try:
             n_samples = int(birrp_config_dict['n_samples'])
         except ValueError:
@@ -2298,6 +2308,14 @@ def read_j_file(fn):
                             value = np.nan
                         tipper[idx_per,idx_z_entry,idx_comp] = value
 
+    
+    #NOTE: j files can contain periods that are NOT sorted increasingly, but random
+    indexorder = np.array([iii[0] for iii in periods]).argsort()
+    periods = periods[indexorder]
+    Z = Z[indexorder]
+    if tipper is not None:
+        tipper = tipper[indexorder]
+    
     periods,Z,tipper = _check_j_file_content(periods, Z, tipper)
 
     return periods, Z, tipper, processing_dict,sorting_dict
