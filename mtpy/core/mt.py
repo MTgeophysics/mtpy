@@ -133,7 +133,7 @@ class MT(object):
         self.station = kwargs.pop('station', None)
         self._lat = kwargs.pop('lat', None)
         self._lon = kwargs.pop('lon', None)
-        self.elev = kwargs.pop('elev', None)
+        self._elev = kwargs.pop('elev', None)
         self._Z = kwargs.pop('Z', MTz.Z())
         self._Tipper = kwargs.pop('Tipper', MTz.Tipper())
         self._utm_zone = kwargs.pop('utm_zone', None)
@@ -217,6 +217,14 @@ class MT(object):
         
         if self._lon is not None and self._lat is not None:
             self._get_utm()
+        
+        
+    def _set_elev(self, elevation):
+        """
+        set elevation, should be input as meters
+        """
+        
+        self._elev = elevation
         
     def _set_east(self, easting):
         """
@@ -314,6 +322,9 @@ class MT(object):
     def _get_lon(self):
         return self._lon
         
+    def _get_elev(self):
+        return self._elev
+        
     def _get_east(self):
         return self._east
         
@@ -342,6 +353,9 @@ class MT(object):
     
     lon = property(_get_lon, _set_lon, 
                    doc="longitude of station in decimal degrees")
+                   
+    elev = property(_get_elev, _set_elev, 
+                    doc="elevation in meters")
                    
     east = property(_get_east, _set_east,
                     doc="easting in meters of station location on UTM grid")
