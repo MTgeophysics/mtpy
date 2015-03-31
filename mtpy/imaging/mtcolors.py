@@ -139,6 +139,47 @@ ptcmapdict4 = {'red':  ((0.0, 0.0, 0.45),
                         (1.0, 0.45, 1.0))}
 mt_rd2gr2bl = colors.LinearSegmentedColormap('mt_rd2gr2bl', ptcmapdict4, 256)
 
+mtcmapdict2 = {'red':  ((0.0, 0.5, 0.2),
+                        (0.25, 1.0, 1.0),
+                        (0.55, 1.0, 1.0),
+                        (0.69, 0.9, 0.9),
+                        (0.88, 0.2, 0.2),
+                        (1.0, 0.2, 0.2)),
+
+               'green': ((0.0, 0.0, 0.0),
+                         (0.25, 0.3, 0.3),
+                         (0.55, 1.0, 1.0),
+                         (0.69, 0.9, 0.9),
+                         (0.88, 0.3, 0.3),
+                         (1.0, 0.3, 0.3)),
+
+               'blue':  ((0.0, 0.0, 0.0),
+                         (0.25, 0.0, 0.0),
+                         (0.55, 0.9, 0.9),
+                         (0.69, 1.0, 1.0),
+                         (0.88, 1.0, 1.0),
+                         (1.0, 0.4, 0.75))}
+mt_rd2wh2bl = colors.LinearSegmentedColormap('mt_rd2wh2bl', mtcmapdict2, 256)
+
+mtcmapdict3 = {'red':  ((0.0, 0.2, 0.2),
+                        (0.25, 0.2, 0.2),
+                        (0.5, 1.0, 1.0),
+                        (0.75, 1.0, 1.0),
+                        (1.0, 0.2, 0.5)),
+
+               'green': ((0.0, 0.3, 0.3),
+                         (0.25, 0.3, 0.3),
+                         (0.5, 1.0, 1.0),
+                         (0.75, 0.3, 0.3),
+                         (1.0, 0.0, 0.0)),
+
+               'blue':  ((0.0, 0.75, 0.45),
+                         (0.25, 0.85, 0.85),
+                         (0.5, 1.0, 1.0),
+                         (0.75, 0.0, 0.0),
+                         (1.0, 0.0, 0.0))}
+                         
+mt_rd2wh2bl_r = colors.LinearSegmentedColormap('mt_rd2wh2bl_r', mtcmapdict3, 256)
 
 cmapdict = {'mt_yl2rd' : mt_yl2rd,
             'mt_bl2yl2rd' : mt_bl2yl2rd,
@@ -148,7 +189,10 @@ cmapdict = {'mt_yl2rd' : mt_yl2rd,
             'mt_seg_bl2wh2rd' : mt_seg_bl2wh2rd,
             'mt_bl2gr2rd' : mt_bl2gr2rd,
             'mt_rd2gr2bl' : mt_rd2gr2bl,
-            'mt_wh2or' : mt_wh2or}
+            'mt_wh2or' : mt_wh2or,
+            'mt_rd2wh2bl': mt_rd2wh2bl,
+            'mt_rd2wh2bl_r': mt_rd2wh2bl_r,
+            }
             
 #make functions for getting the color from each map according to the variable
 #cvar
@@ -184,6 +228,14 @@ def get_color(cvar,cmap):
     
     elif cmap == 'mt_wh2or':
         plot_color = get_mt_wh2or(cvar)
+        return plot_color
+        
+    elif cmap == 'mt_rd2wh2bl':
+        plot_color = get_mt_rd2wh2bl(cvar)
+        return plot_color
+        
+    elif cmap == 'mt_rd2wh2bl_r':
+        plot_color = get_mt_rd2wh2bl_r(cvar)
         return plot_color
         
     else:
@@ -304,6 +356,47 @@ def get_mt_rd2gr2bl(cvar):
         
     return plot_color
     
+def get_mt_rd2wh2bl(cvar):
+    """
+    gets color for the color map that goes red to white to blue
+    
+    """
+    
+    if cvar < 0 and cvar > -1:
+        plot_color = (1, 1+cvar/3, 1+cvar)
+    elif cvar <= -1:
+        plot_color = (1, 0, 0)
+    elif cvar >= 0 and cvar < 1:
+        plot_color = (1-cvar, 1-cvar/3, 1)
+    elif cvar >= 1:
+        plot_color = (0, 0, 1)
+        
+    return plot_color
+    
+def get_mt_rd2wh2bl_r(cvar):
+    """
+    gets color for the color map that goes red to white to blue
+    
+    """
+    # blue
+    if cvar < -.5 and cvar > -1:
+        plot_color = (.2, .3, 1.5+cvar)
+    if cvar < 0 and cvar > -.5:
+        plot_color = (1.6*cvar+1, 1.4*cvar+1, .5*cvar+1)
+    elif cvar <= -1:
+        plot_color = (.2, .3, .5)
+    elif cvar >= 0 and cvar < .5:
+        plot_color = (1, -1.2*cvar+1, -2*cvar+1)
+    # red
+    elif cvar >= .5 and cvar < 1:
+        plot_color = (-cvar+1.5, -.6*cvar+.6, 0)
+    elif cvar >= 1:
+        plot_color = (.5, 0, 0)
+        
+    return plot_color
+    
+
+    
 def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
     """
     gets the color for the given compnent, color array and cmap
@@ -318,7 +411,8 @@ def get_plot_color(colorx, comp, cmap, ckmin=None, ckmax=None, bounds=None):
         
         cvar = (colorx-ckmin)/(ckmax-ckmin)
         if cmap == 'mt_bl2wh2rd' or cmap == 'mt_bl2yl2rd' or \
-           cmap == 'mt_bl2gr2rd' or cmap == 'mt_rd2gr2bl':
+           cmap == 'mt_bl2gr2rd' or cmap == 'mt_rd2gr2bl' or \
+           cmap == 'mt_rd2wh2bl' or cmap == 'mt_rd2wh2bl_r':
             cvar = 2*cvar-1
             
         return get_color(cvar, cmap)

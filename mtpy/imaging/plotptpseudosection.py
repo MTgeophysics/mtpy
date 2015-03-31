@@ -890,6 +890,10 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             self.cb.ax.yaxis.set_label_coords(1.5, .5)
             self.cb.ax.yaxis.tick_left()
             self.cb.ax.tick_params(axis='y', direction='in')
+          
+        # put the grid lines behind 
+#        [line.set_zorder(10000) for line in self.ax.lines]
+        self.ax.set_axisbelow(True)
         
         plt.show()
         
