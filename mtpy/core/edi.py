@@ -47,7 +47,11 @@ reload(MTex)
 reload(MTft)
 reload(MTcc)
 reload(MTz)
-#import ipdb
+
+# try:
+#     import ipdb
+# except:
+#     pass
 
 
 #=================================================================
@@ -2292,7 +2296,7 @@ def _generate_edifile_string(edidict,use_info_string=False):
                     edistring += '\tREFLONG={0}:{1}:{2:.2f}\n'.format(int(v[0]),int(v[1]),v[2])
                     continue
                 if k == 'REFELEV':
-                    edistring += '\tREFELEV={0:.1f}\n'.format(edidict['HEAD']['elev'])
+                    edistring += '\tREFELEV={0:.1f}\n'.format(float(edidict['HEAD']['elev']))
                     continue
 
                 if len(v) == 0  or len(v.split()) > 1:

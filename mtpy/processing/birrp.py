@@ -47,6 +47,12 @@ reload(MTcf)
 reload(MTft)
 reload(MTfh)
 
+try:
+    import ipdb
+except:
+    pass
+
+
 #=================================================================
 #for time stamp differences:
 epsilon = 1e-5
@@ -1925,7 +1931,7 @@ def convert2edi_incl_instrument_correction(stationname, in_dir,
 
     return out_fn
 
-     
+
 
 def _set_edi_data(lo_periods, Z_array, tipper_array):
     
@@ -1933,8 +1939,19 @@ def _set_edi_data(lo_periods, Z_array, tipper_array):
     periods = lo_periods
 
     datastring = ''
+    
+    datastring += '>ZROT // %i\n'%(len(periods))
+    for i,period in enumerate(periods):
+        freq = 1./period
+        datastring += '\t%E'%(0.)
+        if (i+1)%5 == 0 and (i != len(periods) - 1) and i > 0:
+            datastring += '\n'
+
+    datastring += '\n'
+
+
     #datastring += '>!****FREQUENCIES****!\n'
-    datastring += '>FREQ nfreq=%i // %i\n'%(len(periods),len(periods))
+    datastring += '>FREQ // %i\n'%(len(periods))
     for i,period in enumerate(periods):
         freq = 1./period
         datastring += '\t%E'%(freq)
@@ -1949,7 +1966,7 @@ def _set_edi_data(lo_periods, Z_array, tipper_array):
     
     for Z_comp in range(4):
         for entry in range(3):
-            datastring += '>%s%s // %i\n'%(compstrings[Z_comp], Z_entries[entry], len(periods))
+            datastring += '>%s%s ROT=ZROT // %i\n'%(compstrings[Z_comp], Z_entries[entry], len(periods))
             for i,period in enumerate(periods):
                 data = Z_array[i,entry,Z_comp]
                 #EDI files carries variances, not standard deviations:
@@ -1971,7 +1988,7 @@ def _set_edi_data(lo_periods, Z_array, tipper_array):
     
     for T_comp in range(2):
         for entry in range(3):
-            datastring += '>%s%s // %i\n'%(compstrings[T_comp], T_entries[entry], len(periods))
+            datastring += '>%s%s ROT=ZROT // %i\n'%(compstrings[T_comp], T_entries[entry], len(periods))
             for i,period in enumerate(periods):
                 if tipper_array != None :
                     data = tipper_array[i,entry,T_comp]
@@ -2069,7 +2086,11 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
 
 
     if len(birrp_config_dict) !=0 :
-        sampling_rate = float(birrp_config_dict['sampling_rate'])
+        try:
+            sampling_rate = float(birrp_config_dict['sampling_rate'])
+        except:
+            sampling_rate = float(birrp_config_dict['sampling'])
+
         try:
             n_samples = int(birrp_config_dict['n_samples'])
         except ValueError:
@@ -2109,9 +2130,14 @@ def _set_edi_head(station_config_dict,birrp_config_dict):
         location = station_config_dict.has_key('location')
     headstring += '\tloc="%s"\n'%(location)
 
-    headstring += '\tlat=%.5f\n'%station_config_dict['latitude']
-    headstring += '\tlong=%.5f\n'%station_config_dict['longitude']
-    headstring += '\telev=%.1f\n'%station_config_dict['elevation']
+    #headstring += '\tlat=%.5f\n'%float(station_config_dict['latitude'])
+    #headstring += '\tlong=%.5f\n'%float(station_config_dict['longitude'])
+
+    lattuple = MTft.convert_degrees2dms_tuple(float(station_config_dict['latitude']))
+    lontuple = MTft.convert_degrees2dms_tuple(float(station_config_dict['longitude']))
+    headstring += '\tlat=%s\n'%(MTft.convert_dms_tuple2string(lattuple))
+    headstring += '\tlong=%s\n'%(MTft.convert_dms_tuple2string(lontuple))
+    headstring += '\telev=%.1f\n'%float(station_config_dict['elevation'])
 
     headstring += '\n'
 
@@ -2131,9 +2157,11 @@ def _set_edi_defmeas(station_config_dict):
     #NOT necessary:
     #dmeasstring += '\tunits=m\n'
     #dmeasstring += '\treftype="WGS 84"\n'
-    #dmeasstring += '\treflat=%f\n'%station_config_dict['latitude']
-    #dmeasstring += '\treflong=%f\n'%station_config_dict['longitude']
-    #dmeasstring += '\trefelev=%.1f\n'%station_config_dict['elevation']
+    lattuple = MTft.convert_degrees2dms_tuple(float(station_config_dict['latitude']))
+    lontuple = MTft.convert_degrees2dms_tuple(float(station_config_dict['longitude']))    
+    dmeasstring += '\treflat=%s\n'%(MTft.convert_dms_tuple2string(lattuple))
+    dmeasstring += '\treflong=%s\n'%(MTft.convert_dms_tuple2string(lontuple))
+    dmeasstring += '\trefelev=%.1f\n'%float(station_config_dict['elevation'])
     
     dmeasstring += '\n'
     dmeasstring += '>HMEAS id=1001.001 chtype=hx x=0. y=0. azm=0.\n'
@@ -2280,6 +2308,14 @@ def read_j_file(fn):
                             value = np.nan
                         tipper[idx_per,idx_z_entry,idx_comp] = value
 
+    
+    #NOTE: j files can contain periods that are NOT sorted increasingly, but random
+    indexorder = np.array([iii[0] for iii in periods]).argsort()
+    periods = periods[indexorder]
+    Z = Z[indexorder]
+    if tipper is not None:
+        tipper = tipper[indexorder]
+    
     periods,Z,tipper = _check_j_file_content(periods, Z, tipper)
 
     return periods, Z, tipper, processing_dict,sorting_dict

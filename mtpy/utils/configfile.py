@@ -40,9 +40,16 @@ reload(ConfigParser)
 
 list_of_required_keywords = ['latitude',
                             'longitude',
+                            'elevation',
                             'sampling_interval',
                             'station_type'
                             ]
+list_of_required_keywords_short = ['lat',
+                                   'lon',
+                                   'elev',
+                                   'sampling',
+                                   'type'
+                                  ]
 
 list_of_keyword_defaults_general = [0.,
                                     0.,
@@ -98,7 +105,7 @@ dict_of_allowed_values_efield = {'E_logger_type':['edl','elogger', 'zen','qel'] 
                                                      'cu-cuso4 electrodes',
                                                      'cuso4_electrodes',
                                                      'pbcl2_electrodes'],
-                                'E_instrument_amplification':[1,10]
+                                'E_instrument_amplification':[1,10,11]
                                 }
 
 dict_of_allowed_values_bfield = {'B_logger_type':['edl', 'zen','qel_blogger'] ,
@@ -178,7 +185,7 @@ def read_survey_configfile(filename):
     - longitude (deg)
     - elevation (in meters)
     - sampling_interval (in seconds)
-    - station_type (MT, E, B)
+    - station_type (MT, (Q)E, (Q)B)
 
     Not mandatory, but recommended
     - declination (in degrees, positive to East) - this is set to '0.0', if omitted
@@ -269,12 +276,12 @@ def read_survey_configfile(filename):
     else:
         #set defaults for location
         globaldict={}
-    for i in ['latitude', 'longitude', 'elevation']:
-        #skip if values are present
-        if i in globaldict.keys() or i[:3] in globaldict.keys():
-            continue
-        #otherwise set defaults
-        globaldict[i] = 0
+    # for i in ['latitude', 'longitude', 'elevation']:
+    #     #skip if values are present
+    #     if i in globaldict.keys() or i[:3] in globaldict.keys():
+    #         continue
+    #     #otherwise set defaults
+    #     globaldict[i] = 0
         
 
     #remove other general sections to avoid redundancy
@@ -297,17 +304,18 @@ def read_survey_configfile(filename):
 
         """
 
-        if globaldict is None or len(globaldict) == 0:
-            return False
-
         if key in stationdict.keys():
-            return True
+            return True, stationdict.get(key)
+
+        if globaldict is None or len(globaldict) == 0:
+            return False, None
+
 
         if key in globaldict:
             stationdict[key] = globaldict[key]
-            return True
+            return True,globaldict.get(key)
 
-        return False
+        return False, None
 
     #============================================================
 
@@ -319,34 +327,25 @@ def read_survey_configfile(filename):
         
         stationdict =  config_dict[station]
         
-        #set default elevation 
-        if not fromglobals('elevation',stationdict,globaldict):
-            stationdict['elevation'] = 0
 
 
         #check for presence of all mandatory keywords for the current station
-        #case insensitive - allow for short forms 'lat', 'lon', and 'ele'
-        try:
-            for req_keyword in list_of_required_keywords:
+        #case insensitive - allow for short forms 'sampling', 'lat', 'lon', and 'elev'
+        for idx,req_keyword in enumerate(list_of_required_keywords):
+            shortform = list_of_required_keywords_short[idx]
+
+            try:
                 found = False
-                if not fromglobals(req_keyword,stationdict,globaldict):
-                    if req_keyword == 'sampling_interval':
-                    #check for just 'sampling'
-                        if fromglobals('sampling',stationdict,globaldict):
-                            stationdict[req_keyword] = stationdict['sampling']
-                            found = True
+                #import ipdb
+                #ipdb.set_trace()
+                if fromglobals(req_keyword,stationdict,globaldict)[0] is False:
+                    #try short form instead
+                    found,value = fromglobals(shortform,stationdict,globaldict)
+                    #print shortform,value
 
-                    if req_keyword in ['elevation','latitude', 'longitude']:
-                        if fromglobals(req_keyword[:3],stationdict,globaldict):
-                            #check if short forms exist
-                            stationdict[req_keyword] = stationdict[req_keyword[:3]]
-                            found = True
-
-                    if req_keyword == 'station_type':
-                        if fromglobals('type',stationdict,globaldict):
-                            stationdict[req_keyword] = stationdict['type']
-                            found = True
-                        
+                    if found is True:
+                        stationdict[req_keyword] = value
+  
                 else:  
                     found = True
 
@@ -354,32 +353,39 @@ def read_survey_configfile(filename):
                     print 'Station {0} - keyword {1} missing'.format(stationname,
                                                                      req_keyword)
                     error_counter += 1
-                    continue
+                    raise Exception
 
-            if req_keyword in ['elevation','latitude', 'longitude']:
-                #check format of lat/lon - convert to degrees, if given in 
-                #(deg,min,sec)-triple#assert correct format
-                value = stationdict[req_keyword]
-                try:
-                    new_value = MTft._assert_position_format(req_keyword,value)
-                except:
-                    raise MTex.MTpyError_config_file('Error - wrong '
-                            'coordinate format for station {0}'.format(stationname))
-                
-                stationdict[req_keyword] = new_value
+                if req_keyword in ['elevation','latitude', 'longitude']:
+                    #check format of lat/lon - convert to degrees, if given in 
+                    #(deg,min,sec)-triple#assert correct format
+                    value = stationdict[req_keyword]
+                    try:
+                        new_value = MTft._assert_position_format(req_keyword,value)
+                    except:
+                        raise MTex.MTpyError_config_file('Error - wrong '
+                                'coordinate format for station {0}'.format(stationname))
+                    
+                    stationdict[req_keyword] = new_value
 
 
-            if not stationdict['station_type'] in list_of_station_types:
-                raise MTex.MTpyError_config_file( 'Station type not valid' )
 
-        except:
-            raise
-            print 'Missing information on station {0} in config file - skipping'.format(
-                                                                        station)
-            continue
+            except:
+                raise
+                print 'Missing information on station {0} in config file'\
+                        ' - setting default (dummy) value'.format(station)
+                stationdict[req_keyword] = list_of_keyword_defaults_general[idx]
+            
+            #to avoid duplicates remove the now obsolete short form from 
+            #the station dictionary
+            dummy = stationdict.pop(shortform,None)
+
+
+        if not stationdict['station_type'] in list_of_station_types:
+            raise MTex.MTpyError_config_file( 'Station type not valid' )
+
 
         if stationdict['station_type'] in ['mt','e']:
-            #check for required electric field parameters
+            #check for required electric field parameters - not done for QEL loggers yet
             for req_keyword in list_of_efield_keywords:
                 if req_keyword.lower() in temp_dict_in.keys():
                     stationdict[req_keyword.lower()] = \
@@ -660,7 +666,7 @@ def read_survey_txt_file(survey_file, delimiter=None):
     skeys = [i.strip().replace(' ','_') for i in skeys]
        
     survey_dict = {}
-    print skeys, len(skeys)
+    #print skeys, len(skeys)
 
     for ss, sline in enumerate(slines[1:]):
 
@@ -672,12 +678,12 @@ def read_survey_txt_file(survey_file, delimiter=None):
             sstr = sstr.split(delimiter)
         else:
             sstr = sstr.split()
-        print sstr
+        #print sstr
         #get rid of quotations
         sstr = [i.replace('"','') for i in sstr]  
         #get rid of spaces
         sstr = [i.replace(' ','_') for i in sstr]  
-        print sstr,len(sstr)
+        #print sstr,len(sstr)
        
         if len(sstr) != len(skeys):
             print 'cannot read line {0} - wrong number of entries - need {2}\

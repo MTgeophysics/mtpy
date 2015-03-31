@@ -179,6 +179,7 @@ def convertbirrpoutput(stationname, datadir, survey_configfile,birrp_configfile=
                             birrp_configfile)
         
         except:
+            raise
             print 'Could not generate EDI file'
             edifn = None
     

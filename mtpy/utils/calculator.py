@@ -243,10 +243,10 @@ def zerror2r_phi_error(x,x_error,y, y_error):
     except:
         rel_error_rho = 0.
 
-    #if the relative error of the amplitude is >=50% that means that the relative 
-    #error of the resistivity is 100% - that is then equivalent to an uncertainty 
+    #if the relative error of the amplitude is >=100% that means that the relative 
+    #error of the resistivity is 200% - that is then equivalent to an uncertainty 
     #in the phase angle of 90 degrees:
-    if rel_error_rho > 0.5:
+    if rel_error_rho > 1.:
         phi_err = 90
     else:
         phi_err = np.degrees(np.arcsin( rel_error_rho))
@@ -319,11 +319,12 @@ def rotatematrix_incl_errors(inmatrix, angle, inmatrix_err = None) :
 
         # zerr_rot[idx_freq,1,1] = np.sqrt( (sphi**2 * zerr_orig[0,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[0,1])**2 + (zerr_orig[1,0])**2) + (cphi**2 * zerr_orig[1,1])**2) 
 
+        # standard propagation of errors:
 
-        errmat[0,0] = cphi**2 * err_orig[0,0] + np.abs(cphi * sphi) * (err_orig[0,1] + err_orig[1,0]) + sphi**2 * err_orig[1,1]
-        errmat[0,1] = cphi**2 * err_orig[0,1] + np.abs(cphi * sphi) * (err_orig[1,1] + err_orig[0,0]) + sphi**2 * err_orig[1,0]
-        errmat[1,0] = cphi**2 * err_orig[1,0] + np.abs(cphi * sphi) * (err_orig[1,1] + err_orig[0,0]) + sphi**2 * err_orig[0,1]
-        errmat[1,1] = cphi**2 * err_orig[1,1] + np.abs(cphi * sphi) * (err_orig[0,1] + err_orig[1,0]) + sphi**2 * err_orig[0,0] 
+        errmat[0,0] = np.sqrt( (cphi**2 * err_orig[0,0])**2 + (cphi * sphi * err_orig[0,1])**2 + (cphi * sphi * err_orig[1,0])**2 + (sphi**2 * err_orig[1,1])**2 )
+        errmat[0,1] = np.sqrt( (cphi**2 * err_orig[0,1])**2 + (cphi * sphi * err_orig[1,1])**2 + (cphi * sphi * err_orig[0,0])**2 + (sphi**2 * err_orig[1,0])**2 )
+        errmat[1,0] = np.sqrt( (cphi**2 * err_orig[1,0])**2 + (cphi * sphi * err_orig[1,1])**2 + (cphi * sphi * err_orig[0,0])**2 + (sphi**2 * err_orig[0,1])**2 )
+        errmat[1,1] = np.sqrt( (cphi**2 * err_orig[1,1])**2 + (cphi * sphi * err_orig[0,1])**2 + (cphi * sphi * err_orig[1,0])**2 + (sphi**2 * err_orig[0,0])**2 )
 
     return rotated_matrix, errmat
 

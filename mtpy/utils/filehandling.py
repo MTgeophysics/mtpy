@@ -1090,15 +1090,22 @@ def read_2c2_file(filename):
         try:
             freq.append(  float(coh_row[1]))
         except:
-            period.append(0.)
+            freq.append(0.)
         try:
             coh1.append(  float(coh_row[2]))
         except:
-            period.append(0.)
+            coh1.append(0.)
         try:
             zcoh1.append( float(coh_row[3]))
         except:
-            period.append(0.)
+            zcoh1.append(0.)
+
+    indexorder = np.array(period).argsort()
+
+    period = np.array(period)[indexorder]
+    freq = np.array(freq)[indexorder]
+    coh1 = np.array(coh1)[indexorder]
+    zcoh1 = np.array(zcoh1)[indexorder]
 
     return period, freq, coh1, zcoh1
 
