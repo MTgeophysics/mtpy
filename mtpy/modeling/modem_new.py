@@ -47,7 +47,13 @@ except ImportError:
 class Data(object):
     """
     Data will read and write .dat files for ModEM and convert a WS data file 
-    to ModEM format.  
+    to ModEM format.
+    
+    ..note: :: the data is interpolated onto the given periods such that all
+               stations invert for the same periods.  The interpolation is
+               a linear interpolation of each of the real and imaginary parts 
+               of the impedance tensor and induction tensor.    
+               See mtpy.core.mt.MT.interpolate for more details
     
     Arguments:
     ------------
@@ -267,7 +273,6 @@ class Data(object):
         self.period_min = kwargs.pop('period_min', None)
         self.period_max = kwargs.pop('period_max', None)
         self.max_num_periods = kwargs.pop('max_num_periods', None)
-        self.period_dict = None
         self.data_period_list = None
         
         self.fn_basename = kwargs.pop('fn_basename', 'ModEM_Data.dat')
@@ -278,7 +283,7 @@ class Data(object):
         
         
         self._station_locations = None
-        self.center_position = (0.0, 0.0, 0.0)
+        self.center_position = np.array([0.0, 0.0])
         self.data_array = None
         self.mt_dict = None
         
@@ -392,6 +397,10 @@ class Data(object):
         utm_zones_dict = {'M':9, 'L':8, 'K':7, 'J':6, 'H':5, 'G':4, 'F':3, 
                           'E':2, 'D':1, 'C':0, 'N':10, 'P':11, 'Q':12, 'R':13,
                           'S':14, 'T':15, 'U':16, 'V':17, 'W':18, 'X':19}
+        
+        # get center position of the stations in lat and lon                   
+        self.center_position[0] = self.data_array['lat'].mean()
+        self.center_position[1] = self.data_array['lon'].mean()
             
         #--> need to convert lat and lon to east and north
         for c_arr in self.data_array:
@@ -611,6 +620,10 @@ class Data(object):
         fill the data array from mt_dict
         
         """
+        
+        if self.period_list is None:
+            self.get_period_list()
+            
         ns = len(self.mt_dict.keys())
         nf = len(self.period_list)
 
@@ -651,35 +664,23 @@ class Data(object):
                     rel_distance = False
                 except AttributeError:
                     pass
-            
-            #make a dictionary for period as keys and values as index within
-            #each mt_obj
-            p_dict = dict([(np.round(per, 5), kk) for kk, per in 
-                            enumerate(1./mt_obj.Z.freq)])
                             
-            #search for period in given period list
-            for ff, per in enumerate(self.period_list):
-                per = np.round(per, 5)
-                jj = None
-                try:
-                    jj = p_dict[per]
-                except KeyError:
-                    try:
-                        jj = np.where(((1./mt_obj.Z.freq)*.95 <= per) & 
-                                      ((1./mt_obj.Z.freq) >= per))[0][0]
-                    except IndexError:
-                        print 'Could not find {0:<12.6f} in {1}'.format(per,
-                                                                mt_obj.station)
-                if jj is not None:
-                    self.data_array[ii]['z'][ff] = mt_obj.Z.z[jj, :, :]
-                    self.data_array[ii]['z_err'][ff] = mt_obj.Z.zerr[jj, :, :]
+            # interpolate each station onto the period list
+            # check bounds of period list
+            interp_periods = self.period_list[np.where(
+                                (self.period_list >= 1./mt_obj.Z.freq.max()) & 
+                                (self.period_list <= 1./mt_obj.Z.freq.min()))]
+                                
+            interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
+            for kk, ff in enumerate(interp_periods):
+                jj = np.where(self.period_list == ff)[0][0]
+                self.data_array[ii]['z'][jj] = interp_z.z[kk, :, :]
+                self.data_array[ii]['z_err'][jj] = interp_z.zerr[kk, :, :]
 
-                    if mt_obj.Tipper.tipper is not None:
-                        self.data_array[ii]['tip'][ff] = \
-                                        mt_obj.Tipper.tipper[jj, :, :]
-                        
-                        self.data_array[ii]['tip_err'][ff] = \
-                                        mt_obj.Tipper.tippererr[jj, :, :]
+                if mt_obj.Tipper.tipper is not None:
+                    self.data_array[ii]['tip'][jj] = interp_t.tipper[kk, :, :]
+                    self.data_array[ii]['tip_err'][jj] = \
+                                                interp_t.tippererr[kk, :, :]
         
         if rel_distance is False:
             self.get_relative_station_locations()
@@ -728,7 +729,7 @@ class Data(object):
                                   doc="""location of stations""") 
                 
     def write_data_file(self, save_path=None, fn_basename=None, 
-                        rotation_angle=None):
+                        rotation_angle=None, compute_error=True):
         """
         write data file for ModEM
         
@@ -823,35 +824,40 @@ class Data(object):
                             lon = '{0:> 9.3f}'.format(self.data_array[ss]['lon'])
                             eas = '{0:> 12.3f}'.format(self.data_array[ss]['rel_east'])
                             nor = '{0:> 12.3f}'.format(self.data_array[ss]['rel_north'])
-                            ele = '{0:> 12.3f}'.format(0)
+                            ele = '{0:> 12.3f}'.format(self.data_array[ss]['elev'])
                             com = '{0:>4}'.format(comp.upper())
                             rea = '{0:> 14.6e}'.format(zz.real)
                             ima = '{0:> 14.6e}'.format(zz.imag)
                             
-                            #compute relative error
-                            if comp.find('t') == 0:
-                                rel_err = self.error_tipper
-                            elif comp.find('z') == 0:
-                                if self.error_type == 'floor':
-                                    rel_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj]/\
-                                              abs(zz)
-                                    if rel_err < self.error_floor/100.:
-                                        rel_err = self.error_floor/100.*abs(zz)
-                                
-                                elif self.error_type == 'value':
-                                    rel_err = abs(zz)*self.error_value/100.
-                                
-                                elif self.error_type == 'egbert':
-                                    d_zxy = self.data_array[ss]['z'][ff, 0, 1]
-                                    d_zyx = self.data_array[ss]['z'][ff, 1, 0]
-                                    rel_err = np.sqrt(abs(d_zxy*d_zyx))*\
-                                              self.error_egbert/100.
-                            if rel_err == 0.0:
-                                rel_err = 1e3
-                                print ('error at {0} is 0 for period {1}'.format(
-                                        sta, per)+'set to 1e3')
+                            if compute_error == True:
+                                #compute relative error
+                                if comp.find('t') == 0:
+                                    rel_err = self.error_tipper
+                                elif comp.find('z') == 0:
+                                    if self.error_type == 'floor':
+                                        rel_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj]/\
+                                                  abs(zz)
+                                        if rel_err < self.error_floor/100.:
+                                            rel_err = self.error_floor/100.*abs(zz)
+                                    
+                                    elif self.error_type == 'value':
+                                        rel_err = abs(zz)*self.error_value/100.
+                                    
+                                    elif self.error_type == 'egbert':
+                                        d_zxy = self.data_array[ss]['z'][ff, 0, 1]
+                                        d_zyx = self.data_array[ss]['z'][ff, 1, 0]
+                                        rel_err = np.sqrt(abs(d_zxy*d_zyx))*\
+                                                  self.error_egbert/100.
+                                if rel_err == 0.0:
+                                    rel_err = 1e3
+                                    print ('error at {0} is 0 for period {1}'.format(
+                                            sta, per)+'set to 1e3')
+
+                            else: 
+                                rel_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj].real 
+                            
                             rel_err = '{0:> 14.6e}'.format(abs(rel_err))
-                            #make sure that x==north, y==east, z==+down
+                            #make sure that x==north, y==east, z==+down                            
                             dline = ''.join([per, sta, lat, lon, nor, eas, ele, 
                                              com, rea, ima, rel_err, '\n'])
                             dlines.append(dline)
