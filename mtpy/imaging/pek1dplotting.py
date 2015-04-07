@@ -150,7 +150,6 @@ class Plot_model():
             if 'aniso' in parameter:
                 if twin:
                     ax = make_twiny(twiny_offset)
-                
                 for modelvals in models_to_plot:           
                     p, = plt.plot(modelvals[:,3]/modelvals[:,2],modelvals[:,1],
                                   self.linedict['colour'][c%nlc],ls=ls,lw=lw)
@@ -372,7 +371,7 @@ class Plot_fit():
         self.Fit.read_fit()
         a = self.Fit.penalty_anisotropy
         s = self.Fit.penalty_structure
-        mis = self.Fit.misfit
+        mis = self.Fit.misfit_mean
         aa = [str(round(i,1)) for i in self.Fit.weight_anisotropy]
         ss = [str(round(i,1)) for i in self.Fit.weight_structure]
            
@@ -391,9 +390,9 @@ class Plot_fit():
                 rounding = int(np.ceil(np.abs(np.log10(contour_step))))
             else:
                 rounding = 0
-            levels = np.arange(round(np.amin(self.Fit.misfit),rounding),
-                   round(np.amax(self.Fit.misfit),rounding),
-                   contour_step)
+            levels = np.arange(round(np.amin(self.Fit.misfit_mean),rounding),
+                   round(np.amax(self.Fit.misfit_mean,rounding),
+                   contour_step))
             plt.contour(xi[:,:,0],
                         xi[:,:,1],
                         f1,cmap=cmap,
@@ -437,7 +436,7 @@ class Plot_fit():
         self.Fit.read_fit()
         a = self.Fit.penalty_anisotropy
         s = self.Fit.penalty_structure
-        mis = self.Fit.misfit
+        mis = self.Fit.misfit_mean
         aa = self.Fit.weight_anisotropy
         ss = self.Fit.weight_structure
 #        print aa
@@ -453,11 +452,7 @@ class Plot_fit():
             lx = ss[c]          
         y = mis[c]
         
-#        print mis
-#        print fixed_value
-#        print c
-#        print y
-        
+
         if self.normalise_misfit:
             y = 1.*y/np.amin(y)
         if self.normalise_x:
@@ -687,16 +682,16 @@ class Plot_map():
                                    lw=0.5) for i in range(len(x))]
         if self.scalebar:
             scalebar_size = round(max(scale))
-            sxy = np.array([plt.xlim()[0]+0.01,plt.ylim()[-1]-0.018])
+            sxy = np.array([plt.xlim()[0]+0.01,plt.ylim()[-1]-0.025])
             
             recs.append(mpatches.Rectangle(xy=sxy, 
                                            width = self.escale*scalebar_size,
                                            height = self.escale,
                                            angle=0,
                                            lw=0.5))
-            plt.text(sxy[0],sxy[1]+0.006,
-            r'${\frac{\phi_{max}}{\phi_{min}}}=%1i$'%scalebar_size,
-            fontsize=10)
+            plt.text(sxy[0],sxy[1]+0.007,
+            r'${\frac{\rho_{max}}{\rho_{min}}}=%1i$'%scalebar_size,
+            fontsize=11)
 
         ax1 = plt.gca()
         
