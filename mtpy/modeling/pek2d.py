@@ -54,8 +54,9 @@ class Model():
         self.parameters_data['strike'] = 0.
         self.parameters_data['errorfloor'] = dict(z=np.array([[0.05,0.05],
                                                               [0.05,0.05]]),
-                                                  tipper=np.array([0.01,0.01]))
-        self.parameters_data['max_no_frequencies'] = 80
+                                                  tipper=np.array([0.02,0.02]))
+        self.parameters_data['errorfloor_type'] = 'offdiagonals'# offdiagonals or relative                                   
+        self.parameters_data['max_no_frequencies'] = 50
         self.parameters_data['mode'] = [1,1,1,1,1,1]
         self.n_airlayers = 5
 
@@ -70,9 +71,10 @@ class Model():
         self.inversion1d_masterdir = '.'
         self.inversion1d_modelno = 0
         self.inversion1d_imethod = 'nearest'
+        self.idir_basename = 'aniso'
         self.binsize_resistivitylog10 = 1.
         self.binsize_strike = 20.
-        self.build_from_1d = True
+        self.build_from_1d = False
         self.rotation = 0.
         self.modelfile = 'model.dat'
         self.anisotropy_min_depth = 0.
@@ -130,31 +132,106 @@ class Model():
                 continue
 
         self.input_parameters = update_dict
-
+        print self.idir_basename
         if self.edifiles == []:
             if self.edi_directory is not None:
                 try:
-                    self.edifiles = os.listdir(self.edi_directory)
+                    self.edifiles = [op.join(self.edi_directory,
+                                             f) for f in os.listdir(self.edi_directory)]
                 except IOError:
                     print("failed to find edi directory")
                     pass
            
     def build_inputfiles(self):
-        self.inversiondir = fh.make_unique_folder(self.working_directory,basename='aniso')
-        os.mkdir(op.join(self.working_directory,self.inversiondir))
+        inversiondir = fh.make_unique_folder(self.working_directory,basename=self.idir_basename)
+        os.mkdir(op.join(self.working_directory,inversiondir))
+        self.working_directory = inversiondir
         self.build_model()
         self.write_modelfile()
         self.write_datafiles()
         self.write_ctlfile()
-                
+         
+    def read_model(self):
+        """
+        use pek2d forward python setup code to read the model
+        """
+        model = p2d.Model(working_directory = self.working_directory,
+                          **self.input_parameters)
+        model.read_model()
+        for attr in ['meshblockwidths_x', 'meshblockthicknesses_z', 
+                     'meshlocations_x', 'meshlocations_z', 
+                     'modelblocknums', 'resistivity', 'sds', 
+                     'station_indices','modelfile_reslines',
+                     'n_airlayers']:
+                         try:
+                             setattr(self,attr,getattr(model,attr))
+                         except:
+                             print "can't assign attribute {}".format(attr)
+         
+    def read_outfile(self,chunk=1750,linelength=52):
+        """
+        read the outfile from the reverse end and get out last iteration
+        """
+        # open outfile
+        outfile = open(op.join(self.working_directory,self.outfile))
+        
+        if not hasattr(self,'modelblocknums'):
+            self.read_model()
+        elif self.modelblocknums is None:
+            self.read_model()
+        mb = np.sum(self.modelfile_reslines[:,-6:].astype(int))
+
+
+        # read backwards from end of file, in chunks of 175, until a 4-column row is found
+        nn = 1
+        while True:
+            try:
+                outfile.seek(-nn, 2)
+                outfile.readline()
+                line = outfile.readline().strip().split()
+                n = outfile.tell()
+                if len(line) == 4:
+                    break
+                nn += chunk
+            except:
+                print "invalid outfile, cannot read resistivity values from outfile yet"
+                return
+        m = 0
+        while line[0] != '1':
+            outfile.seek(n-linelength*m)
+            line = outfile.readline().strip().split()
+            m += 1
+            
+        self.outfile_reslines = np.zeros([mb,4])
+        
+        for m in range(mb):
+            self.outfile_reslines[m] = [float(ll) for ll in line]
+            line = outfile.readline().strip().split()
+        
+        # iterate through resistivity and assign new values if they have been inverted for
+        n = 0
+        nair = self.n_airlayers + 1
+        nx,nz = len(self.meshlocations_x), len(self.meshlocations_z)
+        for i in range(nz - nair):
+            for j in range(nx - 1):
+                for k in range(6):
+                    mfi = (nx - 1)*i + j + 1
+                    if self.modelfile_reslines[mfi,k+8] == '1':
+                        if k < 3:
+                            self.resistivity[i+nair-1,j,k] = self.outfile_reslines[n,2]
+                        else:
+                            self.sds[i+nair-1,j,k-3] = self.outfile_reslines[n,2]
+                        n += 1
+#                        print i,j,k,n
+        
+         
     def build_model(self):
         """
         build model file string
         """
         # build a forward model object
         ro = p2d.Model(self.working_directory,**self.input_parameters)
-        ro.build_mesh()
-        ro.build_aircells()
+        ro.build_model()
 
 
         # assign relavent parameters to pek 2d inverse object
@@ -169,17 +246,22 @@ class Model():
 
         ro.get_station_meshblock_numbers()
         if ro.build_from_1d:
-            ro.get_1d_results()
-            ro.interpolate_1d_results()
-            for at in ['inversion1d_dirdict','inversion1d_modelno',
-                       'models1d','resistivity','stationlocations',
-                       'blockcentres_x','blockcentres_z']:
-                       attvalue = getattr(ro,at)
-                       setattr(self,at,attvalue)                           
+#            try:
+                ro.get_1d_results()
+                ro.interpolate_1d_results()
+                for at in ['inversion1d_dirdict','inversion1d_modelno',
+                           'models1d','resistivity','stationlocations',
+                           'blockcentres_x','blockcentres_z']:
+                           attvalue = getattr(ro,at)
+                           setattr(self,at,attvalue)
+#                except:
         else:
-            if not hasattr(ro,'resistivity'):
-                print "Cannot build model, please provide resistivity or a 1d"+\
-                " model to build resistivity from first"
+            for at in ['resistivity','stationlocations',
+                       'blockcentres_x','blockcentres_z']:
+                           setattr(self,at,getattr(ro,at))
+            for at in ['inversion1d_dirdict','inversion1d_modelno',
+                       'models1d']:
+                           setattr(self,at,None)
 
         ro.get_station_meshblock_numbers()
         self.stationblocknums=ro.stationblocknums
@@ -192,7 +274,6 @@ class Model():
         if not hasattr(self,'modelfilestring'):
             self.build_model()
         outfile = open(op.join(self.working_directory,
-                               self.inversiondir,
                                self.modelfile),'w')
         outfile.write(self.modelfilestring)
         outfile.close()
@@ -242,12 +323,12 @@ class Model():
                 rlist.insert(2,rlist[1])
                 # insert dip and slant (assumed zero)
                 rlist += [0.,0.]
-                if rlist[1]/rlist[0] == 1.:
-                    aniso = '   0'
-                    invert_key = ' 1 1 1 0 0 0'
-                else:
-                    aniso = '   1'
-                    invert_key = ' 1 1 1 1 1 0'
+#                if rlist[1]/rlist[0] == 1.:
+#                    aniso = '   0'
+#                    invert_key = ' 1 1 1 0 0 0'
+#                else:
+                aniso = '   1'
+                invert_key = ' 1 1 1 1 1 0'
                 modelfilestring.append(''.join(['%5i'%no,aniso]+['%10.2f'%i for i in rlist]+[invert_key]))
                 no += 1
         # append bathymetry index, at this stage only 0 allowed:
@@ -298,12 +379,12 @@ class Model():
 #        print periodlst
         # if number of periods still too long based on the number of frequencies set
         # then take out some frequencies
-        n = 1
-        while len(periodlst) > num_freq:
-            to_remove = int(float(len(periodlst))/num_freq*n)-n
-            periodlst = periodlst[:to_remove]+periodlst[to_remove+1:]
+        n = 2
+        new_periodlst = periodlst
+        while len(new_periodlst) > num_freq:
+            new_periodlst = [periodlst[int(p)] for p in range(len(periodlst)) if p%n == 0]
             n += 1
-#        print periodlst
+        periodlst = new_periodlst
 
         mode = self.parameters_data['mode']
         if type(mode) in [str]:
@@ -327,14 +408,24 @@ class Model():
             # set error floors
             efz = self.parameters_data['errorfloor']['z']
             eft = self.parameters_data['errorfloor']['tipper']
-            for i in range(2):
-                for j in range(2):
-                    ze_rel[ze_rel<efz[i,j]] = efz[i,j]
-                te_rel[te_rel<eft[i]] = eft[i]
-            zerr = ze_rel * np.abs(z)
-            terr = te_rel * np.abs(t)
-            terr[terr<0.02]=0.02
+            eftype = self.parameters_data['errorfloor_type']
+            
+            if eftype in ['relative','offdiagonals']:
+                for i in range(2):
+                    for j in range(2):
+                        ze_rel[ze_rel<efz[i,j]] = efz[i,j]
+                    te_rel[te_rel<eft[i]] = eft[i]
+                zerr = ze_rel * np.abs(z)
+                terr = te_rel * np.abs(t)
+            
+            if eftype == 'offdiagonals':
+                for i in range(2):
+                    for iz in range(len(z)):
+                        if zerr[iz,i,i] < zerr[iz,i,1-i]:
+                            zerr[iz,i,i] = zerr[iz,i,1-i]
+       
             zvar = zerr**2
+                
       
             # create interpolation functions to interpolate z and tipper values
             properties = dict(z_real=np.real(z),z_imag=np.imag(z),
@@ -365,11 +456,11 @@ class Model():
                 datlst = '{0:>12}'.format('%.06f'%(1./(self.freq[pv])))
                 for ii in range(2):
                     for jj in range(2):
-                        for pval in [k for k in self.datafile_data[dfile].keys() if 'z' in k]:
+                        for pval in ['z_real', 'z_imag', 'z_var']:
 #                            print self.datafile_data[dfile][pval][pv][ii,jj]
                             datlst += '{0:>12}'.format('%.06f'%self.datafile_data[dfile][pval][pv][ii,jj])
                 for ii in range(2):
-                    for pval in [k for k in self.datafile_data[dfile].keys() if 't' in k]:
+                    for pval in ['tipper_real', 'tipper_imag', 'tipper_err']:
                         datlst += '{0:>12}'.format('%.06f'%self.datafile_data[dfile][pval][pv][0,ii])
 
                 datfstr += ''.join(datlst)+'\n'
@@ -382,18 +473,18 @@ class Model():
         if not hasattr(self,'datafile_strings'):
             self.build_datafiles()
             
-        exlf = open(os.path.join(self.working_directory,self.inversiondir,self.exlfile),'w')
+        exlf = open(os.path.join(self.working_directory,self.working_directory,self.exlfile),'w')
         dfkeys=self.datafile_strings.keys()
         dfkeys.sort()
         for dfile in dfkeys:
-            f = open(op.join(self.working_directory,self.inversiondir,dfile),'w')
+            f = open(op.join(self.working_directory,self.working_directory,dfile),'w')
             f.write(self.datafile_strings[dfile])
             f.close()
             exlf.write(dfile+'\n')
         exlf.close()
 
     def write_ctlfile(self):
-        ctrf = open(op.join(self.working_directory,self.inversiondir,'pb.ctr'),'w')
+        ctrf = open(op.join(self.working_directory,self.working_directory,'pb.ctr'),'w')
         
         if type(self.parameters_data['mode']) == str:
             self.parameters_data['mode'] = self.parameters_data['mode'].split(',')
@@ -404,7 +495,7 @@ class Model():
         clist.append(self.exlfile)
         clist.append(self.parameters_ctl['ctl_string']+self.parameters_ctl['units_string']+self.parameters_ctl['quadrants'])
         clist.append(' '.join([str(i) for i in self.parameters_data['mode']]))
-        clist.append(' '.join([str(i) for i in ef]))
+        clist.append(' '.join(['0.00' for i in ef]))
         clist.append(self.parameters_ctl['orientation_string'])
         clist.append(self.modelfile)
         clist.append(self.resfile)

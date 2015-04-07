@@ -53,9 +53,10 @@ class Model():
         self.inversion1d_imethod = 'nearest'
         self.binsize_resistivitylog10 = 1.
         self.binsize_strike = 20.
-        self.build_from_1d = True
+        self.build_from_1d = False
         self.rotation = 0.
-        self.modelfile = 'model.dat'
+        self.modelfile = 'model'
+        
         self.anisotropy_min_depth = 0.
         
         self.edifiles = []
@@ -109,14 +110,12 @@ class Model():
         if self.edifiles == []:
             if self.edi_directory is not None:
                 try:
-                    self.edifiles = os.listdir(self.edi_directory)
+                    self.edifiles = [op.join(self.edi_directory,
+                                             f) for f in os.listdir(self.edi_directory)]
                 except IOError:
                     print("failed to find edi directory")
                     pass
-                
-                
-        
-        
+                                  
     
     def build_model(self):
         """
@@ -128,20 +127,86 @@ class Model():
         if self.build_from_1d:
             self.get_1d_results()
             self.interpolate_1d_results()
+            self.bin_resistivity_values()
         else:
-            if not hasattr(self,'resistivity'):
-                print "Cannot build model, please provide resistivity or a 1d"+\
-                " model to build resistivity from first"
-        self.bin_resistivity_values()
+            self.resistivity = np.ones([len(self.meshblockthicknesses_z),
+                                        len(self.meshblockwidths_x),3])*100
+        
         self.get_station_meshblock_numbers()
-        self.build_modelfilestring()
-        self.write_modelfile()
+        
         
         
     def write_modelfile(self):
+        self.build_modelfilestring()
         outfile = open(op.join(self.working_directory,self.modelfile),'w')
         outfile.write(self.modelfilestring)
         outfile.close()
+ 
+ 
+    def read_model(self):
+        
+        # read model file
+        modelf = open(op.join(self.working_directory,self.modelfile))     
+        
+        # get nx, nz, and number of air layers n_airlayers
+        for i in range(3):
+            modelf.readline()
+        nx, nz, self.n_airlayers = [int(n) for n in modelf.readline().strip().split()]
+        self.n_airlayers -= 1
+        
+        # get mesh cell sizes
+        meshx, meshz = [], []
+        while len(meshx) < nx-1:
+            meshx += [float(n) for n in modelf.readline().strip().split()]
+        while len(meshz) < nz-1:
+            meshz += [float(n) for n in modelf.readline().strip().split()]
+        self.meshblockwidths_x = np.array(meshx)
+        self.meshblockthicknesses_z = np.array(meshz)
+        self.meshlocations_x = np.array([sum(self.meshblockwidths_x[:i]) \
+                                         for i in range(len(self.meshblockwidths_x)+1)])
+        self.meshlocations_z = np.array([sum(self.meshblockthicknesses_z[:i]) \
+                                         for i in range(len(self.meshblockthicknesses_z)+1)])            
+        self.meshlocations_x -= self.meshlocations_x[self.parameters_model['no_sideblockelements']]
+        self.meshlocations_z -= self.meshlocations_z[self.n_airlayers + 1] 
+        # get model block numbers
+        modelblocks = []
+        while len(modelblocks) < nz-1:
+            modelblocks.append(modelf.readline().strip().split())
+        modelf.readline()
+        self.modelblocknums = np.array(modelblocks)
+
+    
+        # get resistivitiy values for each model block number
+        modelfile_reslines = []
+        while len(modelfile_reslines) < len(np.unique(self.modelblocknums)):
+            resline = modelf.readline().strip().split()
+            for r in range(1,14):
+                if (r==1) or (r>=8):
+                    resline[r] = int(resline[r])
+                else:
+                    resline[r] = float(resline[r])
+            modelfile_reslines.append(resline)
+
+        self.modelfile_reslines = np.array(modelfile_reslines)
+    
+        # assign resistivities to model blocks
+        data = np.zeros(list(np.shape(self.modelblocknums))+[6])
+#        print np.shape(data)
+        for rv in self.modelfile_reslines:
+            data[self.modelblocknums==rv[0]] = rv[2:8]
+        self.resistivity = data[:,:,:3]
+        self.sds = data[:,:,3:]
+    
+        # get column numbers of stations
+        modelf.readline()
+        nstations = int(modelf.readline().strip())
+        modelf.readline()
+        station_indices = []
+
+        while len(station_indices) <= nstations:
+            station_indices+=[int(n)-1 for n in modelf.readline().strip().split()]
+        self.station_indices = station_indices
+    
     
     
     def build_modelfilestring(self):    
@@ -157,7 +222,7 @@ class Model():
         # add string giving number of cells:
         modelfilestring.append(''.join(['%5i'%i for i in [len(self.meshlocations_x),
                                                          len(self.meshlocations_z)+self.n_airlayers,
-                                                         self.n_airlayers]]))
+                                                         self.n_airlayers+1]]))
 
         # add strings giving horizontal and vertical mesh steps
         
@@ -241,6 +306,13 @@ class Model():
             self.parameters_model[attribute] = so.parameters_inmodel[attribute]
             
         self.meshlocations_z = np.array([0.] + list(self.meshlocations_z))
+
+        # get block centres
+        self.blockcentres_x = [np.mean(self.meshlocations_x[i:i+2]) for i in \
+        range(len(self.meshlocations_x)-1)]
+        self.blockcentres_z = [np.mean(self.meshlocations_z[k:k+2]) for k in \
+        range(len(self.meshlocations_z)-1)]
+
         # remove small cells and construct meshlocations
 #        self.meshblockthicknesses_z = self.meshblockthicknesses_z\
 #        [self.meshblockthicknesses_z>0.005]
@@ -264,19 +336,17 @@ class Model():
         
         """
 
-        try:
-            ivals = []
-            ii = 2
-            for j in range(len(self.blockcentres_x[:-1])):
-                for sl in self.stationlocations:      
-                    if (sl>self.blockcentres_x[j])&(sl<=self.blockcentres_x[j+1]):
-                        ivals.append(ii)
-                ii += 1
-            self.stationblocknums = ivals
-        except AttributeError:
-            print "no stationlocations, please build mesh first"
-         
-                     
+#        try:
+        ivals = []
+        ii = 2
+        for j in range(len(self.blockcentres_x[:-1])):
+            for sl in self.stationlocations:      
+                if (sl>self.blockcentres_x[j])&(sl<=self.blockcentres_x[j+1]):
+                    ivals.append(ii)
+            ii += 1
+        self.stationblocknums = ivals
+#        except AttributeError:
+#            print "no stationlocations, please build mesh first"
 
         
     def get_1d_results(self,split='_'):
@@ -289,11 +359,13 @@ class Model():
         elif self.Data is None:
             self.build_mesh()
             fh.get_pathlist()
+        
         self.inversion1d_dirdict = \
         fh.get_pathlist(self.inversion1d_masterdir,
                         search_stringlist = self.Data.stations,
                         start_dict=self.inversion1d_dirdict,
-                        split=split)
+                        split=split,
+                        folder=True)
         models1d = {}
         
         for key in self.inversion1d_dirdict.keys():
@@ -317,22 +389,17 @@ class Model():
         self.resistivity = np.zeros([len(self.meshblockthicknesses_z),
                                      len(self.meshblockwidths_x),3])
         xvals = self.stationlocations
-        
         model_list = []
         
         
         for key in self.models1d.keys():
             model_list.append(self.models1d[key][:,2:])
+
         yvals = self.models1d[key][:,1]
         points = np.array(np.meshgrid(xvals,yvals)).T.reshape(len(xvals)*len(yvals),2)
 
         
-        # xi needs to be block centres, need to construct these
-        
-        self.blockcentres_x = [np.mean(self.meshlocations_x[i:i+2]) for i in \
-        range(len(self.meshlocations_x)-1)]
-        self.blockcentres_z = [np.mean(self.meshlocations_z[k:k+2]) for k in \
-        range(len(self.meshlocations_z)-1)]
+        # xi needs to be block centres
         xi = np.array(np.meshgrid(self.blockcentres_x,self.blockcentres_z)).T
 #        xishape = np.shape(xi)
 #        xi.reshape(np.product(xishape[:-1]),xishape[-1])
@@ -342,13 +409,7 @@ class Model():
             values = np.hstack([model[:,n] for model in model_list])
             if n < 2:
                 values = np.log10(values)
-#                f = si.interp2d(points[:,0],points[:,1],values)
-#                rvals = 10**(f(xi[:,:,0],xi[:,:,1]))
-#                self.resistivity[:,:,n] = rvals.reshape(xishape[:-1])
-                print "points",points
-                print "values",values
-                print "xi",xi
-                print si.griddata(points,values,xi,method=self.inversion1d_imethod).T
+#                print si.griddata(points,values,xi,method=self.inversion1d_imethod).T
                 self.resistivity[:,:,n] = 10**(si.griddata(points,values,xi,method=self.inversion1d_imethod).T)
 
             else:

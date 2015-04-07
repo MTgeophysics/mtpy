@@ -42,7 +42,7 @@ def parse_arguments(arguments):
                         help=efhelp,nargs='*',
                         type=float,default=0.1)
     parser.add_argument('-eft','--errorfloor_type',
-                        help='type of error floor, absolute or relative',
+                        help='type of error floor, absolute, relative or offdiagonals',
                         type=str,default='relative')
     parser.add_argument('-wd','--working_directory',
                         help='working directory',

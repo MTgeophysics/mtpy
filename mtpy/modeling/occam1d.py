@@ -35,7 +35,7 @@ Occam1D
         >>> import mtpy.modeling.occam1d as occam1d
         >>> #--> make a data file
         >>> d1 = occam1d.Data()
-        >>> d1.write_data_file(r'/home/MT/mt01.edi', res_err=10, phase_err=2.5,
+        >>> d1.write_data_file(edi_file=r'/home/MT/mt01.edi', res_err=10, phase_err=2.5,
         >>> ...                save_path=r"/home/occam1d/mt01/TE", mode='TE')
         >>> #--> make a model file
         >>> m1 = occam1d.Model()
@@ -109,7 +109,7 @@ class Data(object):
         >>> import mtpy.modeling.occam1d as occam1d
         >>> #--> make a data file for TE mode
         >>> d1 = occam1d.Data()
-        >>> d1.write_data_file(r'/home/MT/mt01.edi', res_err=10, phase_err=2.5,
+        >>> d1.write_data_file(edi_file=r'/home/MT/mt01.edi', res_err=10, phase_err=2.5,
         >>> ...                save_path=r"/home/occam1d/mt01/TE", mode='TE')
     
     """
@@ -186,7 +186,7 @@ class Data(object):
             >>> import mtpy.modeling.occam1d as occam1d
             >>> #--> make a data file
             >>> d1 = occam1d.Data()
-            >>> d1.write_data_file(r'/home/MT/mt01.edi', res_err=10, 
+            >>> d1.write_data_file(edi_file=r'/home/MT/mt01.edi', res_err=10, 
             >>> ...                phase_err=2.5, mode='TE',
             >>> ...                save_path=r"/home/occam1d/mt01/TE") 
         """    

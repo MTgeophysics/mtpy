@@ -112,6 +112,7 @@ def main():
 
         generate_ptcrossdata_file(edi_object, n_iterations, sigma_scaling, outdir, fn_out)
     except:
+        raise
         print '\n\tERROR - could not generate PT Cross Data file - check EDI file!\n'
 
 
@@ -143,7 +144,7 @@ def generate_ptcrossdata_file(edi_object, n_iterations, sigma_scaling, outdir,ou
     else:
         Fout.write('# {0}   {1:+010.6f}   {2:+011.6f} \t\t statistical evaluation of {3} realisations\n'.format(
                                                                             station,edi_object.lat,edi_object.lon,abs(int(n_iterations))))
-    headerstring = '# lat \t\t lon \t\t freq \t\t Phimin  sigma \t Phimax  sigma \t alpha  '\
+    headerstring = '# lat \t\t lon \t\t freq \t\t Pmin  sigma \t Pmax  sigma \t alpha  '\
                     'sigma \t beta  sigma \t ellipticity  \n'
     Fout.write(headerstring)
 
@@ -153,24 +154,27 @@ def generate_ptcrossdata_file(edi_object, n_iterations, sigma_scaling, outdir,ou
         
         pt = MTpt.PhaseTensor(z_object=edi_object.Z,freq=freqs)
 
-        ipdb.set_trace()
         a = pt.alpha
         b = pt.beta
-        pi1 = pt._pi1()[0]
-        pi2 = pt._pi2()[0]
-        pmin = pi2-pi1
-        pmax = pi2+pi1
+
+        phimin = pt.phimin[0]
+        phiminerr = pt.phimin[1]
+        phimax = pt.phimax[0]
+        phimaxerr = pt.phimax[1]
+
         #e = pt.ellipticity
-        e = (pmax-pmin)/(pmax+pmin)
+        #e = (pmax-pmin)/(pmax+pmin)
         
         for i,freq in enumerate(edi_object.freq):
             try:
-                vals = '{10:.4f}\t\t{11:.4f}\t\t{0:.4e}\t{1: 3.2f}\t{2:3.2f}\t{3: 3.2f}\t{4:3.2f}\t{5: 3.2f}\t{6:3.2f}'\
+                e = (phimax[i]-phimin[i])/(phimax[i]+phimin[i])
+                vals = '{10:.4f}\t{11:.4f}\t{0:.4e}\t{1: 3.2f}\t{2:3.2f}\t{3: 3.2f}\t{4:3.2f}\t{5: 3.2f}\t{6:3.2f}'\
                 '\t{7: 3.2f}\t{8:3.2f}\t{9:.3f}\n'.format(
-                    freq,pmin[0][i],pmin[1][i],pmax[0][i],pmax[1][i],a[0][i]%90,a[1][i]%90,
+                    freq,phimin[i],phiminerr[i],phimax[i], phimaxerr[i],a[0][i]%90,a[1][i]%90,
                     b[0][i],b[1][i],e,edi_object.lat,edi_object.lon)            
                 Fout.write(vals)
             except:
+                raise
                 continue
         
         Fout.close()
@@ -280,22 +284,26 @@ def generate_ptcrossdata_file(edi_object, n_iterations, sigma_scaling, outdir,ou
         b = np.mean(lo_betas)
         berr = np.std(lo_betas)
 
-        pmin = np.mean(lo_pmin)
-        pminerr = np.std(lo_pmin)
+        #ipdb.set_trace()
+
+        #convert to angles:
+        phimin = np.mean([np.degrees(np.arctan(i)) for i in lo_pmin])
+        phiminerr = np.std([np.degrees(np.arctan(i)) for i in lo_pmin])
         
-        pmax = np.mean(lo_pmax)
-        pmaxerr = np.std(lo_pmax)
+        phimax = np.mean([np.degrees(np.arctan(i)) for i in lo_pmax])
+        phimaxerr = np.std([np.degrees(np.arctan(i)) for i in lo_pmax])
 
         #e = np.mean(lo_ellipticities)
         #eerr = np.std(lo_ellipticities)
-        e = (pmax-pmin)/(pmax+pmin) 
+        e = (phimax-phimin)/(phimax+phimin) 
 
         try:
             vals = '{10:.4f}\t{11:.4f}\t{0:.4e}\t{1: 3.2f}\t{2:3.2f}\t{3: 3.2f}\t{4:3.2f}\t{5: 3.2f}\t{6:3.2f}'\
             '\t{7: 3.2f}\t{8:3.2f}\t{9:.3f}\n'.format(
-                f,pmin,pminerr,pmax,pmaxerr,a,aerr, b,berr,e,edi_object.lat,edi_object.lon)            
+                f,phimin,phiminerr,phimax, phimaxerr,a,aerr, b,berr,e,edi_object.lat,edi_object.lon)            
             Fout.write(vals)
         except:
+            raise
             continue
     
     Fout.close()
