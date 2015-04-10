@@ -129,10 +129,24 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.central_widget = QtGui.QWidget(MainWindow)
         self.central_widget.setWindowTitle("Plot MT Response")
         
-        #make a widget that will be the station list
+        #make a widget that will be the period list
         self.list_widget = QtGui.QListWidget()
         self.list_widget.itemClicked.connect(self.get_period)
         self.list_widget.setMaximumWidth(150)
+        
+        # make a depth text bar
+        self.depth_label = QtGui.QLabel('Depth (m):')
+        depth_font = QtGui.QFont()
+        depth_font.setBold = True
+        depth_font.setPointSize (16)
+        self.depth_label.setFont(depth_font)
+        
+        self.depth_text = QtGui.QLabel('0.0')
+        self.depth_text.setFont(depth_font)
+        self.depth_text.setAlignment(QtCore.Qt.AlignCenter)
+        depth_vbox = QtGui.QVBoxLayout()
+        depth_vbox.addWidget(self.depth_label)
+        depth_vbox.addWidget(self.depth_text)
 
         # this is the Canvas Widget that displays the `figure`
         # it takes the `figure` instance as a parameter to __init__
@@ -159,9 +173,13 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         mpl_vbox.addWidget(self.mpl_toolbar)
         mpl_vbox.addWidget(self.mpl_widget)
         
+        left_layout = QtGui.QVBoxLayout()
+        left_layout.addWidget(self.list_widget)
+        left_layout.addLayout(depth_vbox)
+        
         # set the layout the main window
         layout = QtGui.QHBoxLayout()
-        layout.addWidget(self.list_widget)
+        layout.addLayout(left_layout)
         layout.addLayout(mpl_vbox)
         self.central_widget.setLayout(layout)
 
@@ -301,7 +319,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
             
         self.plot_period = '{0:.5f}'.format(self.period_list[0])
         
-        self.get_depth()
+        self.get_depth_array()
             
     def get_model_fn(self):
         """
@@ -491,9 +509,11 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
             self.pt_resp_arr = model_pt_arr
             self.pt_resid_arr = res_pt_arr
             
-    def get_depth(self):
+    def get_depth_array(self):
         """
         estimate a niblett-bostick depth from the impedance tensors
+        
+        find the average depth for each station at each period
         """
         if self.modem_data.mt_dict is None:
             return
@@ -502,21 +522,24 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                               len(self.modem_data.mt_dict.keys())))
         d_arr_max = np.zeros((self.modem_data.period_list.shape[0],
                               len(self.modem_data.mt_dict.keys())))
-                              
+        print self.modem_data.mt_dict[self.modem_data.mt_dict.keys()[0]].Z.z                      
         for ii, mt_key in enumerate(sorted(self.modem_data.mt_dict.keys())):
             mt_obj = self.modem_data.mt_dict[mt_key]
-            d_arr = mtnb.calculate_depth_nb(z_array=mt_obj.Z.z,
-                                              periods=1./mt_obj.Z.freq)
+            d_arr = mtnb.calculate_depth_nb(z_object=mt_obj.Z)
             
             d_arr_min[:, ii] = d_arr['depth_min']
             d_arr_max[:, ii] = d_arr['depth_max']
         
+        # average only the non zero terms
         d_avg_min = np.array([d_arr_min[kk, np.nonzero(d_arr_min[kk, :])].mean()
-                              for kk in range(len(self.modem_data.period_list))])
+                              for kk in range(d_arr_min.shape[0])])
         d_avg_max = np.array([d_arr_max[kk, np.nonzero(d_arr_max[kk, :])].mean()
-                              for kk in range(len(self.modem_data.period_list))])
+                              for kk in range(d_arr_min.shape[0])])
+
+        # find the average and leave in meters cause grid_z is in meters
+        d_avg = np.nan_to_num(((d_avg_min+d_avg_max)/2.))
         
-        self.depth_array = ((d_avg_min+d_avg_max)/2)/self.dscale
+        self.depth_array = d_avg
                 
     def plot(self):
         """
@@ -588,11 +611,25 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         
         #plot model below the phase tensors
         if self.modem_model_fn is not None:
-            d_index = np.where(self.modem_model.grid_z >= 
-                                self.depth_array[data_ii])[0][0]
-                                
-            print 'Estimated depth for period {0:.5g} is {1:.2f} m'.format(
-                    float(self.plot_period, self.depth_array[data_ii]))
+            if self.depth_array[data_ii] == 0:
+                print 'Could not estimate depth for period {0:.5g}'.format(
+                    float(self.plot_period))
+                d_index = 0
+            else:
+                try:
+                    d_index = np.where(self.modem_model.grid_z >= 
+                                        self.depth_array[data_ii])[0][0]
+                                        
+                    print 'Estimated depth for period {0:.5g} is {1:.2f} m'.format(
+                            float(self.plot_period), self.depth_array[data_ii])
+                            
+                    self.depth_text.setText('{0:.5g}'.format(self.depth_array[data_ii]))
+                    
+                except IndexError:
+                    print 'Could not estimate depth for period {0:.2f}'.format(
+                            float(self.plot_period))
+                    d_index = 0
+            
             #need to add an extra row and column to east and north to make sure 
             #all is plotted see pcolor for details.
             plot_east = np.append(self.modem_model.grid_east, 
