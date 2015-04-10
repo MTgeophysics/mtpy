@@ -133,13 +133,13 @@ class Z(object):
         if z_array is not None:
             if len(z_array.shape) == 2 and z_array.shape == (2,2):
                 if z_array.dtype in ['complex', 'float','int']:
-                    self._z = np.zeros((1, 2, 2),'complex')
+                    self._z = np.zeros((1, 2, 2), 'complex')
                     self._z[0] = z_array            
 
         if zerr_array is not None:
             if len(zerr_array.shape) == 2 and zerr_array.shape == (2,2):
                 if zerr_array.dtype in ['complex', 'float','int']:
-                    self._zerr = np.zeros((1, 2, 2),'complex')
+                    self._zerr = np.zeros((1, 2, 2), 'complex')
                     self._zerr[0] = zerr_array            
 
         self.rotation_angle = 0.
@@ -686,7 +686,7 @@ class Z(object):
     
         #for consistency recalculate resistivity and phase
         self._compute_res_phase()
-
+        
     def no_ss(self, reduce_res_factor_x = 1., reduce_res_factor_y = 1.):
         """
         Remove the static shift by providing the respective correction factors
@@ -1788,14 +1788,15 @@ def z2resphi(z_array, periods, zerr_array = None):
     z_object = _read_z_array(z_array,zerr_array)
     z_object.freq= np.array(1./periods)
 
-    if len(np.shape(z_array)) == 3:
-        return z_object.res_phase
-    else:
-        try:
-            return z_object.res_phase[0][0],z_object.res_phase[1][0],\
-                z_object.res_phase[2][0],z_object.res_phase[3][0]
-        except:
-            return z_object.res_phase[0][0],z_object.res_phase[1][0],None,None
+#    if len(np.shape(z_array)) == 3:
+    return (z_object.resistivity, z_object.resistivity_err, 
+            z_object.phase, z_object.phase_err)
+#    else:
+#        try:
+#            return z_object.res_phase[0][0],z_object.res_phase[1][0],\
+#                z_object.res_phase[2][0],z_object.res_phase[3][0]
+#        except:
+#            return z_object.res_phase[0][0],z_object.res_phase[1][0],None,None
                 
 
 
