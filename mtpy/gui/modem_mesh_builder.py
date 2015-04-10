@@ -36,16 +36,20 @@ class MyStream(QtCore.QObject):
 
     def write(self, message):
         self.message.emit(str(message))
-        
 
-class Ui_Mesh_Window(QtGui.QMainWindow):
+class ModEM_Mesh_Window(QtGui.QMainWindow):
     """
     main window for building a mesh for ModEM
     
     """
     
     def __init__(self):
-        super(Ui_Mesh_Window, self).__init__()
+        super(ModEM_Mesh_Window, self).__init__()
+        
+        self.period_list = []
+        self.period_dict = {}
+        
+        self.modem_model = modem.Model()
         
         self.ui_setup()
         
@@ -85,12 +89,12 @@ class MeshWidget(QtGui.QWidget):
         
     def setup_ui(self):
         # get edi files
-        edi_button = QtGui.QPushButton('Get EDI Files')
-        edi_button.clicked.connect(self.get_edi_files)
+        self.edi_button = QtGui.QPushButton('Get EDI Files')
+        self.edi_button.clicked.connect(self.get_edi_files)
         
         self.list_widget = QtGui.QListWidget()
         self.list_widget.itemClicked.connect(self.select_station)
-        self.list_widget.setMaximumWidth(250)
+        self.list_widget.setMaximumWidth(200)
         
         self.plot_mesh_button = QtGui.QPushButton('Make Mesh')
         self.plot_mesh_button.clicked.connect(self.plot_mesh)
@@ -98,28 +102,33 @@ class MeshWidget(QtGui.QWidget):
         self.save_mesh_button = QtGui.QPushButton('Save Mesh')
         self.save_mesh_button.clicked.connect(self.save_mesh)
         
+        
         self.output_box = QtGui.QTextEdit()
         
         #make a label for the mesh parameters
-        parameters_label = QtGui.QLabel('Mesh Parameters')
+        self.parameters_label = QtGui.QLabel('Mesh Parameters')
         header_font = QtGui.QFont()
         header_font.setBold = True
         header_font.setPointSize (16)
-        parameters_label.setFont(header_font)
+        self.parameters_label.setFont(header_font)
 
         # cell size        
-        self.cell_size_label = QtGui.QLabel('Cell Size [E, N] (m)')
+        self.cell_size_label_east = QtGui.QLabel('Cell Size East (m)')
+        self.cell_size_label_north = QtGui.QLabel('Cell Size North (m)')
         
         self.cell_size_edit_east = QtGui.QLineEdit()
         self.cell_size_edit_east.setText('{0:.2f}'.format(self.model_obj.cell_size_east))
-        self.cell_size_edit_east.editingFinished.connect(self.set_cell_size_east_return)
+        self.cell_size_edit_east.editingFinished.connect(self.set_cell_size_east)
         
         self.cell_size_edit_north = QtGui.QLineEdit()
         self.cell_size_edit_north.setText('{0:.2f}'.format(self.model_obj.cell_size_north))
-        self.cell_size_edit_north.editingFinished.connect(self.set_cell_size_north_return)
+        self.cell_size_edit_north.editingFinished.connect(self.set_cell_size_north)
             
         # cell padding
-        self.cell_pad_label = QtGui.QLabel('# of Pad cells [E, N, V]')
+        self.cell_pad_label_east = QtGui.QLabel('# of Pad cells E')
+        self.cell_pad_label_north = QtGui.QLabel('# of Pad cells N')
+        self.cell_pad_label_z = QtGui.QLabel('# of Pad cells Z')
+        
         self.cell_pad_east_edit = QtGui.QLineEdit()
         self.cell_pad_east_edit.setText('{0:.0f}'.format(self.model_obj.pad_east))
         self.cell_pad_east_edit.editingFinished.connect(self.set_cell_pad_east)
@@ -132,7 +141,9 @@ class MeshWidget(QtGui.QWidget):
         self.cell_pad_z_edit.setText('{0:.0f}'.format(self.model_obj.pad_z))
         self.cell_pad_z_edit.editingFinished.connect(self.set_cell_pad_z)
         
-        self.pad_h_label = QtGui.QLabel('Padding Factor [H, V]')
+        self.pad_h_label = QtGui.QLabel('Horiz. Padding Factor')
+        self.pad_v_label = QtGui.QLabel('Vert. Padding Factor')
+        
         self.pad_h_edit = QtGui.QLineEdit()
         self.pad_h_edit.setText('{0:.2f}'.format(self.model_obj.pad_stretch_h))
         self.pad_h_edit.editingFinished.connect(self.set_pad_h)
@@ -163,59 +174,123 @@ class MeshWidget(QtGui.QWidget):
         self.z_bottom_edit.editingFinished.connect(self.set_z_bottom)
         
         # rotation angle
-        self.rot_ang_label = QtGui.QLabel('Station Rotation Angle (deg)')
+        self.rot_ang_label = QtGui.QLabel('Mesh Rotation (deg)')
         self.rot_ang_hint = QtGui.QLabel('[N=0, E=90]')
         self.rot_ang_edit = QtGui.QLineEdit()
         self.rot_ang_edit.setText('{0:.2f}'.format(self.model_obj.mesh_rotation_angle))
         self.rot_ang_edit.editingFinished.connect(self.set_rotation_angle)
         
+        # starting resistivity
+        self.rho_start_label = QtGui.QLabel('Starting rho (Ohmm)')
+        self.rho_start_edit = QtGui.QLineEdit()
+        self.rho_start_edit.setText('{0:.2f}'.format(100))
+        self.rho_start_edit.editingFinished.connect(self.set_rho)
         
         #--- Set the layout ----------
+        self.edi_grid = QtGui.QVBoxLayout()
+        self.edi_grid.addWidget(self.edi_button)
+        self.edi_grid.addWidget(self.list_widget)
+        
         self.grid_layout = QtGui.QGridLayout()
         
-        self.grid_layout.addWidget(edi_button, 1, 0)
-        self.grid_layout.addWidget(self.plot_mesh_button, 1, 1, 1, 2)
-        self.grid_layout.addWidget(self.save_mesh_button, 1, 3)
         
-        self.grid_layout.addWidget(self.list_widget, 2, 0)
-        self.grid_layout.addWidget(self.output_box, 2, 1, 1, 3)
+        self.grid_layout.addWidget(self.plot_mesh_button, 0, 0)
+        self.grid_layout.addWidget(self.save_mesh_button, 0, 1)
         
-        self.grid_layout.addWidget(parameters_label, 3, 0)
+        self.grid_layout.addWidget(self.parameters_label, 2, 0, 1, 2)
+
+        self.grid_layout.addWidget(self.cell_size_label_east, 3, 0)
+        self.grid_layout.addWidget(self.cell_size_edit_east, 3, 1)
         
-        self.grid_layout.addWidget(self.cell_size_label, 4, 0)
-        self.grid_layout.addWidget(self.cell_size_edit_east, 4, 1)
-        self.grid_layout.addWidget(self.cell_size_edit_north, 4, 2)
+        self.grid_layout.addWidget(self.cell_size_label_north, 4, 0)
+        self.grid_layout.addWidget(self.cell_size_edit_north, 4, 1)
         
-        self.grid_layout.addWidget(self.cell_pad_label, 5, 0)
+        self.grid_layout.addWidget(self.cell_pad_label_east, 5, 0)
         self.grid_layout.addWidget(self.cell_pad_east_edit, 5, 1)
-        self.grid_layout.addWidget(self.cell_pad_north_edit, 5, 2)
-        self.grid_layout.addWidget(self.cell_pad_z_edit, 5, 3)
         
-        self.grid_layout.addWidget(self.pad_h_label, 6, 0)
-        self.grid_layout.addWidget(self.pad_h_edit, 6, 1)
-        self.grid_layout.addWidget(self.pad_v_edit, 6, 2)
+        self.grid_layout.addWidget(self.cell_pad_label_north, 6, 0)
+        self.grid_layout.addWidget(self.cell_pad_north_edit, 6, 1)
         
-        self.grid_layout.addWidget(self.n_layers_label, 7, 0)
-        self.grid_layout.addWidget(self.n_layers_edit, 7, 1)
+        self.grid_layout.addWidget(self.cell_pad_label_z, 7, 0)
+        self.grid_layout.addWidget(self.cell_pad_z_edit, 7, 1)
         
-        self.grid_layout.addWidget(self.z1_layer_label, 8, 0)
-        self.grid_layout.addWidget(self.z1_layer_edit, 8, 1)
+        self.grid_layout.addWidget(self.pad_h_label, 8, 0)
+        self.grid_layout.addWidget(self.pad_h_edit, 8, 1)
         
-        self.grid_layout.addWidget(self.z_target_label, 9, 0)
-        self.grid_layout.addWidget(self.z_target_edit, 9, 1)
+        self.grid_layout.addWidget(self.pad_v_label, 9, 0 )
+        self.grid_layout.addWidget(self.pad_v_edit, 9, 1)
         
-        self.grid_layout.addWidget(self.z_bottom_label, 10, 0)
-        self.grid_layout.addWidget(self.z_bottom_edit, 10, 1)
+        self.grid_layout.addWidget(self.n_layers_label, 10, 0)
+        self.grid_layout.addWidget(self.n_layers_edit, 10, 1)
         
-        self.grid_layout.addWidget(self.rot_ang_label, 11, 0)
-        self.grid_layout.addWidget(self.rot_ang_edit, 11, 1)
-        self.grid_layout.addWidget(self.rot_ang_hint, 11, 2)
+        self.grid_layout.addWidget(self.z1_layer_label, 11, 0)
+        self.grid_layout.addWidget(self.z1_layer_edit, 11, 1)
+        
+        self.grid_layout.addWidget(self.z_target_label, 12, 0)
+        self.grid_layout.addWidget(self.z_target_edit, 12, 1)
+        
+        self.grid_layout.addWidget(self.z_bottom_label, 13, 0)
+        self.grid_layout.addWidget(self.z_bottom_edit, 13, 1)
+        
+        self.grid_layout.addWidget(self.rot_ang_label, 14, 0)
+        self.grid_layout.addWidget(self.rot_ang_edit, 14, 1)
+        self.grid_layout.addWidget(self.rot_ang_hint, 15, 1)
+        
+        self.grid_layout.addWidget(self.rho_start_label, 16, 0)
+        self.grid_layout.addWidget(self.rho_start_edit, 16, 1)
+#        self.grid_layout.addWidget(self.rot_ang_hint, 11, 2)
+        
+#        self.grid_layout.addWidget(self.edi_button, 1, 0)
+#        self.grid_layout.addWidget(self.plot_mesh_button, 1, 1, 1, 2)
+#        self.grid_layout.addWidget(self.save_mesh_button, 1, 3)
+#        
+#        self.grid_layout.addWidget(self.list_widget, 2, 0)
+#        self.grid_layout.addWidget(self.output_box, 2, 1, 1, 3)
+#        
+#        self.grid_layout.addWidget(self.parameters_label, 3, 0)
+#        
+#        self.grid_layout.addWidget(self.cell_size_label, 4, 0)
+#        self.grid_layout.addWidget(self.cell_size_edit_east, 4, 1)
+#        self.grid_layout.addWidget(self.cell_size_edit_north, 4, 2)
+#        
+#        self.grid_layout.addWidget(self.cell_pad_label, 5, 0)
+#        self.grid_layout.addWidget(self.cell_pad_east_edit, 5, 1)
+#        self.grid_layout.addWidget(self.cell_pad_north_edit, 5, 2)
+#        self.grid_layout.addWidget(self.cell_pad_z_edit, 5, 3)
+#        
+#        self.grid_layout.addWidget(self.pad_h_label, 6, 0)
+#        self.grid_layout.addWidget(self.pad_h_edit, 6, 1)
+#        self.grid_layout.addWidget(self.pad_v_edit, 6, 2)
+#        
+#        self.grid_layout.addWidget(self.n_layers_label, 7, 0)
+#        self.grid_layout.addWidget(self.n_layers_edit, 7, 1)
+#        
+#        self.grid_layout.addWidget(self.z1_layer_label, 8, 0)
+#        self.grid_layout.addWidget(self.z1_layer_edit, 8, 1)
+#        
+#        self.grid_layout.addWidget(self.z_target_label, 9, 0)
+#        self.grid_layout.addWidget(self.z_target_edit, 9, 1)
+#        
+#        self.grid_layout.addWidget(self.z_bottom_label, 10, 0)
+#        self.grid_layout.addWidget(self.z_bottom_edit, 10, 1)
+#        
+#        self.grid_layout.addWidget(self.rot_ang_label, 11, 0)
+#        self.grid_layout.addWidget(self.rot_ang_edit, 11, 1)
+#        self.grid_layout.addWidget(self.rot_ang_hint, 11, 2)
 
         self.h_layout = QtGui.QHBoxLayout()
+        self.h_layout.addLayout(self.edi_grid)
         self.h_layout.addLayout(self.grid_layout)
-        self.h_layout.addWidget(self.mpl_widget)
         
-        self.setLayout(self.h_layout)
+        self.v_layout = QtGui.QVBoxLayout()
+        self.v_layout.addLayout(self.h_layout)
+        self.v_layout.addWidget(self.output_box)
+        
+        self.full_layout = QtGui.QHBoxLayout()
+        self.full_layout.addLayout(self.v_layout)
+        self.full_layout.addWidget(self.mpl_widget)
+        
+        self.setLayout(self.full_layout)
         
     def get_edi_files(self):
         """
@@ -233,13 +308,14 @@ class MeshWidget(QtGui.QWidget):
             
         self.model_obj.edi_list = edi_list
          
-    def set_cell_size_east_return(self):
+    def set_cell_size_east(self):
         self.model_obj.cell_size_east = float(str(self.cell_size_edit_east.text()))
         self.cell_size_edit_east.setText('{0:.2f}'.format(self.model_obj.cell_size_east))
             
-    def set_cell_size_north_return(self):
+    def set_cell_size_north(self):
         self.model_obj.cell_size_north = float(str(self.cell_size_edit_north.text()))
         self.cell_size_edit_north.setText('{0:.2f}'.format(self.model_obj.cell_size_north))
+
         
     def set_cell_pad_east(self):
         self.model_obj.pad_east = int(str(self.cell_pad_east_edit.text()))
@@ -288,18 +364,27 @@ class MeshWidget(QtGui.QWidget):
         self.mpl_widget.plot_mesh(self.model_obj)
 
     def save_mesh(self):
-        fn = QtGui.QFileDialog.getOpenFileNames(self,
+        fn = str(QtGui.QFileDialog.getSaveFileName(self,
                                     caption='Choose Model File',
-                                    directory=os.getcwd())
+                                    directory=os.getcwd()))
                                     
         self.model_obj.write_model_file(save_path=os.path.dirname(fn),
                                         model_fn_basename=os.path.basename(fn))
                                         
-        
+    def set_rho(self):
+        if self.model_obj.res_model is None:
+            self.model_obj.res_model = np.zeros(self.model_obj.grid_north.shape[0],
+                                                self.model_obj.grid_east.shape[0],
+                                                self.model_obj.grid_z.shape[0])
+                                                
+        self.model_obj.res_model[:, :, :] = float(str(self.rho_start_edit.text()))
+        self.rho_start_edit.setText('{0:.2f}'.format(self.rho_start_edit.text()))
+    
     @QtCore.pyqtSlot(str)
     def normal_output(self, message):
         self.output_box.moveCursor(QtGui.QTextCursor.End)
         self.output_box.insertPlainText(message)
+        
         
 
         
@@ -385,13 +470,19 @@ class MeshPlot(QtGui.QWidget):
         cos_ang = 1
         sin_ang = 0
         
+        gs = gridspec.GridSpec(1, 2, width_ratios=[10, 1])
+        
         #--->plot map view    
-        ax1 = self.figure.add_subplot(1, 2, 1, aspect='equal')
+        ax1 = self.figure.add_subplot(gs[0], aspect='equal')
         
         
         #plot station locations
-        plot_east = model_obj.station_locations['rel_east']
-        plot_north = model_obj.station_locations['rel_north']
+        plot_east = model_obj.station_locations['rel_east']/1000.
+        plot_north = model_obj.station_locations['rel_north']/1000.
+        
+        plot_grid_east = model_obj.grid_east.copy()/1000.
+        plot_grid_north = model_obj.grid_north.copy()/1000.
+        plot_grid_z = model_obj.grid_z.copy()/1000.
         
         ax1.scatter(plot_east,
                     plot_north, 
@@ -402,9 +493,9 @@ class MeshPlot(QtGui.QWidget):
         
         east_line_xlist = []
         east_line_ylist = []   
-        north_min = model_obj.grid_north.min()         
-        north_max = model_obj.grid_north.max()         
-        for xx in model_obj.grid_east:
+        north_min = plot_grid_north.min()         
+        north_max = plot_grid_north.max()         
+        for xx in plot_grid_east:
             east_line_xlist.extend([xx*cos_ang+north_min*sin_ang, 
                                     xx*cos_ang+north_max*sin_ang])
             east_line_xlist.append(None)
@@ -418,9 +509,9 @@ class MeshPlot(QtGui.QWidget):
 
         north_line_xlist = []
         north_line_ylist = [] 
-        east_max = model_obj.grid_east.max()
-        east_min = model_obj.grid_east.min()
-        for yy in model_obj.grid_north:
+        east_max = plot_grid_east.max()
+        east_min = plot_grid_east.min()
+        for yy in plot_grid_north:
             north_line_xlist.extend([east_min*cos_ang+yy*sin_ang,
                                      east_max*cos_ang+yy*sin_ang])
             north_line_xlist.append(None)
@@ -433,34 +524,34 @@ class MeshPlot(QtGui.QWidget):
                       color=self.line_color)
         
         if east_limits == None:
-#            ax1.set_xlim(plot_east.min()-10*model_obj.cell_size_east,
-#                         plot_east.max()+10*model_obj.cell_size_east)
+            ax1.set_xlim(plot_grid_east.min(),
+                         plot_grid_east.max())
             pass
         else:
             ax1.set_xlim(east_limits)
         
         if north_limits == None:
-#            ax1.set_ylim(plot_north.min()-10*model_obj.cell_size_north,
-#                         plot_north.max()+ 10*model_obj.cell_size_east)
+            ax1.set_ylim(plot_grid_north.min(),
+                         plot_grid_north.max())
             pass
         else:
             ax1.set_ylim(north_limits)
             
-        ax1.set_ylabel('Northing (m)', fontdict={'size':12, 'weight':'bold'})
-        ax1.set_xlabel('Easting (m)', fontdict={'size':12, 'weight':'bold'})
+        ax1.set_ylabel('Northing (km)', fontdict={'size':12, 'weight':'bold'})
+        ax1.set_xlabel('Easting (km)', fontdict={'size':12, 'weight':'bold'})
         
         ##----plot depth view
-        ax2 = self.figure.add_subplot(1, 2, 2, aspect='auto')
+        ax2 = self.figure.add_subplot(gs[1], aspect='auto')
         
 
         #plot the grid 
         east_line_xlist = []
         east_line_ylist = []            
-        for xx in model_obj.grid_east:
+        for xx in plot_grid_east:
             east_line_xlist.extend([xx, xx])
             east_line_xlist.append(None)
             east_line_ylist.extend([0, 
-                                    model_obj.grid_z.max()])
+                                    plot_grid_z.max()])
             east_line_ylist.append(None)
         ax2.plot(east_line_xlist,
                  east_line_ylist,
@@ -469,9 +560,9 @@ class MeshPlot(QtGui.QWidget):
 
         z_line_xlist = []
         z_line_ylist = [] 
-        for zz in model_obj.grid_z:
-            z_line_xlist.extend([model_obj.grid_east.min(),
-                                     model_obj.grid_east.max()])
+        for zz in plot_grid_z:
+            z_line_xlist.extend([plot_grid_east.min(),
+                                     plot_grid_east.max()])
             z_line_xlist.append(None)
             z_line_ylist.extend([zz, zz])
             z_line_ylist.append(None)
@@ -490,32 +581,31 @@ class MeshPlot(QtGui.QWidget):
 
         
         if z_limits == None:
-            ax2.set_ylim(model_obj.z_target_depth, -200)
+            ax2.set_ylim(model_obj.z_target_depth/1000., -1)
         else:
             ax2.set_ylim(z_limits)
             
-        if east_limits == None:
-            ax2.set_xlim(plot_east.min()-10*model_obj.cell_size_east,
-                         plot_east.max()+10*model_obj.cell_size_east)
-        else:
-            ax2.set_xlim(east_limits)
+        ax2.set_xlim(-model_obj.cell_size_east/6000., 
+                     model_obj.cell_size_east/6000.)
+        plt.setp(ax2.xaxis.get_ticklabels(), visible=False)
             
-        ax2.set_ylabel('Depth (m)', fontdict={'size':9, 'weight':'bold'})
-        ax2.set_xlabel('Easting (m)', fontdict={'size':9, 'weight':'bold'})  
+        ax2.set_ylabel('Depth (km)', fontdict={'size':9, 'weight':'bold'})
+#        ax2.set_xlabel('Easting (m)', fontdict={'size':9, 'weight':'bold'})  
         
         self.mpl_widget.draw()
         
-    
+#==============================================================================
+#  DEFINE MAIN   
+#==============================================================================
 def main():
-#if __name__ == "__main__":
     import sys
     app = QtGui.QApplication(sys.argv)
-    ui = Ui_Mesh_Window()
+    ui = ModEM_Mesh_Window()
     ui.ui_setup()
     ui.show()
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
 
-    main()       
+    main()      
     
