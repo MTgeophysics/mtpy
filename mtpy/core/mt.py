@@ -28,6 +28,8 @@ import mtpy.imaging.plotresponse as plotresponse
 try:
     import scipy.interpolate as spi
     interp_import = True
+    print ('Note: need scipy version 0.14.0 or higher or interpolation '+\
+           'might not work.')
 except ImportError:
     print('Could not find scipy.interpolate, cannot use method interpolate'+\
           'check installation you can get scipy from scipy.org.' )
