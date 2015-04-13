@@ -171,9 +171,9 @@ class Data(object):
                                with keys being station names
     get_period_list            get a list of periods to invert for
     get_station_locations      get station locations and relative locations
-                               filling in coord_array
+                               filling in station_locations
     read_data_file             read in a ModEM data file and fill attributes
-                               data_array, coord_array, period_list, mt_dict
+                               data_array, station_locations, period_list, mt_dict
     write_data_file            write a ModEM data file 
     ========================== ================================================
     
@@ -243,7 +243,7 @@ class Data(object):
         >>> # all is good write the mesh file
         >>> mmesh.write_model_file(save_path=r"/home/modem/Inv1")
         >>> # create data file
-        >>> md = modem.Data(edi_list, coord_array=mmesh.station_locations)
+        >>> md = modem.Data(edi_list, station_locations=mmesh.station_locations)
         >>> md.write_data_file(save_path=r"/home/modem/Inv1")
         
     :Example 6 --> rotate data: ::
@@ -1169,7 +1169,7 @@ class Model(object):
         >>> # all is good write the mesh file
         >>> msmesh.write_model_file(save_path=r"/home/modem/Inv1")
         >>> # create data file
-        >>> md = modem.Data(edi_list, coord_array=mmesh.station_locations)
+        >>> md = modem.Data(edi_list, station_locations=mmesh.station_locations)
         >>> md.write_data_file(save_path=r"/home/modem/Inv1")
     
     :Example 2 --> create data file first then model file: ::
@@ -1187,7 +1187,7 @@ class Model(object):
         >>> #3) make a grid from the stations themselves with 200m cell spacing
         >>> mmesh = modem.Model(edi_list=edi_list, cell_size_east=200, 
                                 cell_size_north=200, 
-                                station_locations=md.coord_array)
+                                station_locations=md.station_locations)
         >>> mmesh.make_mesh()
         >>> # check to see if the mesh is what you think it should be
         >>> msmesh.plot_mesh()
@@ -2962,14 +2962,8 @@ def change_data_elevation(data_fn, model_fn, new_data_fn=None, res_air=1e12):
         z_index = np.where(m_obj.res_model[n_index, e_index, :] < res_air*.9)[0][0]
         s_index = np.where(d_obj.data_array['station']==key)[0][0]        
         d_obj.data_array[s_index]['elev'] = m_obj.grid_z[z_index]
-        
-        print '-'*30
-        print e_index, mt_obj.grid_east, m_obj.grid_east[e_index]
-        print n_index, mt_obj.grid_north, m_obj.grid_north[n_index]
-        print z_index, m_obj.grid_z[z_index]
                 
-        mt_obj.grid_elev = m_obj.grid_z[z_index]
-        print key, d_obj.data_array[s_index]['elev'], mt_obj.grid_elev 
+        mt_obj.grid_elev = m_obj.grid_z[z_index] 
         
     if new_data_fn is None:
         new_dfn = '{0}{1}'.format(data_fn[:-4], '_elev.dat')
@@ -6180,9 +6174,9 @@ class PlotDepthSlice(object):
             if os.path.isfile(self.data_fn) == True:
                 md_data = Data()
                 md_data.read_data_file(self.data_fn)
-                self.station_east = md_data.coord_array['rel_east']/self.dscale
-                self.station_north = md_data.coord_array['rel_north']/self.dscale
-                self.station_names = md_data.coord_array['station']
+                self.station_east = md_data.station_locations['rel_east']/self.dscale
+                self.station_north = md_data.station_locations['rel_north']/self.dscale
+                self.station_names = md_data.station_locations['station']
             else:
                 print 'Could not find data file {0}'.format(self.data_fn)
         
@@ -6602,9 +6596,9 @@ class PlotSlices(object):
             if os.path.isfile(self.data_fn) == True:
                 md_data = Data()
                 md_data.read_data_file(self.data_fn)
-                self.station_east = md_data.coord_array['rel_east']/self.dscale
-                self.station_north = md_data.coord_array['rel_north']/self.dscale
-                self.station_names = md_data.coord_array['station']
+                self.station_east = md_data.station_locations['rel_east']/self.dscale
+                self.station_north = md_data.station_locations['rel_north']/self.dscale
+                self.station_names = md_data.station_locations['station']
             else:
                 print 'Could not find data file {0}'.format(self.data_fn)
         
