@@ -10,19 +10,10 @@ import mtpy.modeling.modem_new as modem
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from matplotlib.figure import Figure
-from matplotlib.patches import Ellipse
-import mtpy.imaging.mtplottools as mtplottools
 import matplotlib.gridspec as gridspec
-import matplotlib.colors as colors
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import mtpy.analysis.pt as mtpt
-import mtpy.utils.exceptions as mtex
-from matplotlib.colors import Normalize
-import matplotlib.colorbar as mcb
-import mtpy.imaging.mtcolors as mtcl
-import mtpy.gui.get_edi_files as mt_get_edi_files
 import sys
 
 
