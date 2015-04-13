@@ -99,6 +99,23 @@ class PTShapeFile(object):
         self._proj_dict = {'WGS84':4326, 'NAD27':4267}
         
         self.utm_cs = None
+        self._rotation_angle = 0.0
+        
+    def _set_rotation_angle(self, rotation_angle):
+        """
+        rotate all mt_objs to rotation angle
+        """
+        
+        self._rotation_angle = float(rotation_angle)
+        
+        for mt_obj in self.mt_obj_list:
+            mt_obj.rotation_angle = float(self._rotation_angle)
+            
+    def _get_rotation_angle(self):
+        return self._rotation_angle
+        
+    rotation_angle = property(_set_rotation_angle, _get_rotation_angle,
+                              doc="rotation angle of Z and Tipper")
     
     def _get_plot_period(self):
         """
@@ -132,7 +149,10 @@ class PTShapeFile(object):
         key has a structured array that contains all the important information
         collected from each station.
         """
-        self.pt_dict = {}        
+        self.pt_dict = {}  
+        if self.plot_period is None:
+            self._get_plot_period()
+            
         for plot_per in self.plot_period:
             self.pt_dict[plot_per] = []
             for mt_obj in self.mt_obj_list:
@@ -295,21 +315,27 @@ class PTShapeFile(object):
             
             print 'Wrote shape file to {0}'.format(shape_fn)
             
-    def write_data_pt_shape_files_modem(self, modem_data_fn):
+    def write_data_pt_shape_files_modem(self, modem_data_fn, 
+                                        rotation_angle=0.0):
         """
         write pt files from a modem data file.
         
         """
-
+            
         modem_obj = modem.Data()
         modem_obj.read_data_file(modem_data_fn)
         
         self.plot_period = modem_obj.period_list.copy()
         self.mt_obj_list = [modem_obj.mt_dict[key] 
                             for key in modem_obj.mt_dict.keys()]
+                                
+        self._set_rotation_angle(rotation_angle)
+        
+        
         self.write_shape_files()
         
-    def write_resp_pt_shape_files_modem(self, modem_data_fn, modem_resp_fn):
+    def write_resp_pt_shape_files_modem(self, modem_data_fn, modem_resp_fn,
+                                        rotation_angle=0.0):
         """
         write pt files from a modem response file where ellipses are normalized
         by the data file.
@@ -324,9 +350,15 @@ class PTShapeFile(object):
         self.mt_obj_list = [modem_data_obj.mt_dict[key] 
                             for key in modem_data_obj.mt_dict.keys()]
         self._get_pt_array()
+        
+        self._set_rotation_angle(rotation_angle)
             
         modem_resp_obj = modem.Data()
         modem_resp_obj.read_data_file(modem_resp_fn)
+        
+        #rotate model response
+        for r_key in modem_resp_obj.mt_dict.keys():
+            modem_resp_obj.mt_dict[r_key].rotation_angle = float(rotation_angle)
             
         resp_pt_dict = {}        
         for p_index, plot_per in enumerate(self.plot_period):
@@ -345,14 +377,22 @@ class PTShapeFile(object):
                     east, north, elev = utm_point
                 
                 #get pt objects from data and model response
-                mpt = modem_resp_obj.mt_dict[key].pt
-            
-                pt_tuple = (mt_obj.station, east, north,
-                            mpt.phimin[0][p_index],
-                            mpt.phimax[0][p_index],
-                            mpt.azimuth[0][p_index],
-                            mpt.beta[0][p_index],
-                            2*mpt.beta[0][p_index])           
+                try:
+                    mpt = modem_resp_obj.mt_dict[key].pt
+                
+                    pt_tuple = (mt_obj.station, east, north,
+                                mpt.phimin[0][p_index],
+                                mpt.phimax[0][p_index],
+                                mpt.azimuth[0][p_index],
+                                mpt.beta[0][p_index],
+                                2*mpt.beta[0][p_index])
+                except KeyError:
+                    pt_tuple = (mt_obj.station, east, north,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0)
                 resp_pt_dict[plot_per].append(pt_tuple)
 
             #now make each period an array for writing to file    
@@ -476,7 +516,8 @@ class PTShapeFile(object):
             
             print 'Wrote shape file to {0}'.format(shape_fn)
         
-    def write_residual_pt_shape_files_modem(self, modem_data_fn, modem_resp_fn):
+    def write_residual_pt_shape_files_modem(self, modem_data_fn, modem_resp_fn,
+                                            rotation_angle=0.0):
         """
         write residual pt shape files from ModEM output
         
@@ -491,9 +532,15 @@ class PTShapeFile(object):
         self.mt_obj_list = [modem_data_obj.mt_dict[key] 
                             for key in modem_data_obj.mt_dict.keys()]
         self._get_pt_array()
+        
+        self._set_rotation_angle(rotation_angle)
             
         modem_resp_obj = modem.Data()
         modem_resp_obj.read_data_file(modem_resp_fn)
+        
+        #rotate model response
+        for r_key in modem_resp_obj.mt_dict.keys():
+            modem_resp_obj.mt_dict[r_key].rotation_angle = float(rotation_angle)
             
         residual_pt_dict = {}        
         for p_index, plot_per in enumerate(self.plot_period):
@@ -749,6 +796,23 @@ class TipperShapeFile(object):
             self._get_tip_array()
         
         self._proj_dict = {'WGS84':4326, 'NAD27':4267}
+        self._rotation_angle = 0.0
+        
+    def _set_rotation_angle(self, rotation_angle):
+        """
+        rotate all mt_objs to rotation angle
+        """
+        
+        self._rotation_angle = float(rotation_angle)
+        
+        for mt_obj in self.mt_obj_list:
+            mt_obj.rotation_angle = float(self._rotation_angle)
+            
+    def _get_rotation_angle(self):
+        return self._rotation_angle
+        
+    rotation_angle = property(_set_rotation_angle, _get_rotation_angle,
+                              doc="rotation angle of Z and Tipper")
     
     def _get_plot_period(self):
         """
@@ -785,6 +849,7 @@ class TipperShapeFile(object):
         for plot_per in self.plot_period:
             self.tip_dict[plot_per] = []
             for mt_obj in self.mt_obj_list:
+                mt_obj.Tipper._compute_mag_direction()
                 try:
                     p_index = [ff for ff, f2 in enumerate(1./mt_obj.Z.freq) 
                                if (f2 > plot_per*(1-self.ptol)) and
@@ -812,7 +877,15 @@ class TipperShapeFile(object):
                                         mt_obj.Tipper.angle_imag[p_index])           
                             self.tip_dict[plot_per].append(tp_tuple)
                         else:
-                            pass
+                            tp_tuple = (mt_obj.station, 
+                                        east,
+                                        north,
+                                        0,
+                                        0,
+                                        0,
+                                        0)
+                            self.tip_dict[plot_per].append(tp_tuple)
+                            
                 except IndexError:
                     pass
                 
@@ -1108,9 +1181,9 @@ class TipperShapeFile(object):
             
             print 'Wrote shape file to {0}'.format(shape_fn)
             
-    def write_tip_shape_files_modem(self, modem_data_fn):
+    def write_tip_shape_files_modem(self, modem_data_fn, rotation_angle=0.0):
         """
-        write pt files from a modem data file.
+        write tip files from a modem data file.
         
         """
 
@@ -1120,8 +1193,41 @@ class TipperShapeFile(object):
         self.plot_period = modem_obj.period_list.copy()
         self.mt_obj_list = [modem_obj.mt_dict[key] 
                             for key in modem_obj.mt_dict.keys()]
+                                
+        self._set_rotation_angle(rotation_angle)
+        
         self.write_imag_shape_files()
         self.write_real_shape_files()
+        
+    def write_tip_shape_files_modem_residual(self, modem_data_fn, 
+                                             modem_resp_fn,
+                                             rotation_angle):
+        """
+        write residual tipper files for modem
+        
+        """
+        modem_data_obj = modem.Data()
+        modem_data_obj.read_data_file(modem_data_fn)
+        
+        modem_resp_obj = modem.Data()
+        modem_resp_obj.read_data_file(modem_resp_fn)
+        
+
+        
+        self.plot_period = modem_data_obj.period_list.copy()
+        mt_keys = sorted(modem_data_obj.mt_dict.keys())
+        self.mt_obj_list = [modem_data_obj.mt_dict[key] 
+                            for key in mt_keys]
+                                
+        self._set_rotation_angle(rotation_angle)
+        
+        for mt_obj, key in zip(self.mt_obj_list, mt_keys):
+            resp_tipper = modem_resp_obj.mt_dict[key].Tipper.tipper
+            mt_obj.Tipper.tipper[:, :, :] -= resp_tipper[:, :, :]
+            
+        self.write_imag_shape_files()
+        self.write_real_shape_files()
+        
 
 #==============================================================================
 # reproject a layer DOESNT WORK YET
