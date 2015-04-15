@@ -811,7 +811,7 @@ class TipperShapeFile(object):
     def _get_rotation_angle(self):
         return self._rotation_angle
         
-    rotation_angle = property(_set_rotation_angle, _get_rotation_angle,
+    rotation_angle = property(_get_rotation_angle, _set_rotation_angle,
                               doc="rotation angle of Z and Tipper")
     
     def _get_plot_period(self):
