@@ -74,7 +74,7 @@ class Plot_model():
         self.output_filename = None
         self.rotation_angle = 0.
 
-        self.label_fontsize = 8
+        self.label_fontsize = 9
         self.title_fontsize = 12
         self.linedict = dict(style='-',width=1,
                               colour=['0.5','k']*2)
@@ -86,7 +86,7 @@ class Plot_model():
         for key in input_parameters.keys():
             if hasattr(self,key):
                 setattr(self,key,input_parameters[key]) 
-                
+#        print "label fontsize {}".format(self.label_fontsize)
 
     def _set_axis_params(self,ax,
                          parameter
