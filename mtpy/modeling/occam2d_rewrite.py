@@ -2423,8 +2423,7 @@ class Data(Profile):
                 #--> get te phase
                 phase_te = phi[f_index, 0, 1]
                 #be sure the phase is in the first quadrant
-                if phase_te > 180:
-                    phase_te -= 180
+                phase_te = phase_te % 180
                 self.data[s_index]['te_phase'][0, freq_num] =  phase_te
                 #compute error
                 #if phi[f_index, 0, 1] != 0.0:
@@ -2441,8 +2440,7 @@ class Data(Profile):
                 #--> get tm phase
                 phase_tm = phi[f_index, 1, 0]
                 #be sure the phase is in the first quadrant
-                if phase_tm > 180:
-                    phase_tm -= 180
+                phase_tm = phase_tm % 180
                 self.data[s_index]['tm_phase'][0, freq_num] =  phase_tm
                 #compute error
                 #if phi[f_index, 1, 0] != 0.0:

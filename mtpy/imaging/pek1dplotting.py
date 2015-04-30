@@ -88,6 +88,9 @@ class Plot_model():
                 setattr(self,key,input_parameters[key]) 
 #        print "label fontsize {}".format(self.label_fontsize)
 
+        if type(self.parameters) == str:
+            self.parameters = [self.parameters]
+
     def _set_axis_params(self,ax,
                          parameter
                          ):
@@ -191,115 +194,6 @@ class Plot_model():
             return axes
         except IndexError:
             print "station omitted"
-
-
-    def plot_parameter_old(self,parameter):
-        """
-        base function for plotting a single model
-        
-        **parameter** string or list containing 'model', 'inmodel' or both
-        tells the function whether to plot the model, inmodel (a priori), or both
-        
-        """
-        data_list = []
-        
-        if 'model' in self.modeltype:
-            if self.modeltype != 'inmodel':
-                self.Model.read_model()
-                data_list.append(self.Model.models[self.modelno-1])
-        
-        if 'inmodel' in self.modeltype:
-            self.Inmodel.read_inmodel()
-            data_list.append(self.Inmodel.inmodel)
-        
-        
-        # assess how many parameters
-        allowed_params = ['minmax','aniso','strike']
-        symbol = 'k-'
-        
-        if parameter not in allowed_params:
-            print "invalid parameter"
-            return
-        
-        for data in data_list:
-            
-            dep = data[:,1]
-            resmin = data[:,2]
-            resmax = data[:,3]
-            strike = data[:,4]%180
-               
-            axes_count = 1
-            ci = 0
-
-            if 'minmax' in parameter:
-                ls,lw = '-',1
-                twin = True
-                for modelvals in data_list:
-                    ci = 0
-                    plt.plot(modelvals[:,3],modelvals[:,1],self.linecolours[ci],ls=ls,lw=lw)
-                    ci += 1
-                    p, = plt.plot(modelvals[:,2],modelvals[:,1],self.linecolours[ci],ls=ls,lw=lw)
-                    ci += 1
-                    plt.xscale('log')
-                    lw*=0.5
-                    ax = self._set_axis_params(ax,'minmax')
-                axes.append([ax,p])
-
-            if 'aniso' in parameter:
-                ls,lw = '-',1
-                color = 'k'
-                if twin:
-                    ax = make_twiny()
-                    color = self.linecolours[ci]
-                    ci += 1
-                twin = True
-                for modelvals in data_list:
-                    
-                    p, = plt.plot(modelvals[:,3]/modelvals[:,2],modelvals[:,1],
-                    'k-',ls=ls,lw=lw)
-                    plt.xscale('log')  
-                    lw *= 0.5
-                    ax = self._set_axis_params(ax,'aniso')
-                axes.append([ax,p])
-            if 'strike' in parameter:
-                color,lw = 'k',1
-                ls = '-'
-                if twin:
-                    ax=make_twiny() 
-                    color,lw = self.linecolours[ci],0.5
-                    ci += 1
-                twin = True
-                for modelvals in data_list:
-                    p, = plt.plot(modelvals[:,4]%180,modelvals[:,1],color,ls=ls,lw=lw)
-                    
-                    lw *= 0.5
-                    ax = self._set_axis_params(ax,'strike')
-
-            
-            
-        plt.xlim(self.xlim[parameter][0],self.xlim[parameter][1])
-        plt.ylim(self.ylim[0],self.ylim[1])
-        plt.title(self.titles[parameter],fontsize=10)
-        plt.grid()
-        
-        
-    def plot(self):
-        """
-        plot 1 or more parameters in a model
-        
-        """
-        n_axes = len(self.parameters)   
-        
-        sp = 1
-        for parameter in self.parameters:
-            plt.subplot(n_axes,1,sp)
-            self.plot_parameter(parameter)
-            sp += 1
-        
-        if self.save:
-            if self.output_filename is None:
-                self.construct_filename()
-            plt.savefig(os.path.join(self.working_directory,self.output_filename))
                 
             
     def plot_section(self):
