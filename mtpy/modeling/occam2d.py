@@ -234,6 +234,7 @@ class Setup():
                 continue 
 
 
+
     def read_configfile(self, configfile):
 
         cf = op.abspath(configfile)
@@ -1425,7 +1426,7 @@ class Data():
         self.profile_origin = None
 
         self.phase_errorfloor = 5
-        self.rho_errorfloor = 10
+        self.rho_errorfloor = 5
         self.tipper_errorfloor = 5
 
         self.min_frequency = None
@@ -1450,7 +1451,8 @@ class Data():
         except:
             print 'cannot build data file'
             raise
-        print self.tipper_errorfloor
+
+       
 
     def readfile(self,fn):
         if not op.isfile(fn):
