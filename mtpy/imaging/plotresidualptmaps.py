@@ -1048,6 +1048,29 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
             self.cb.ax.yaxis.tick_left()
             self.cb.ax.tick_params(axis='y', direction='in')
             
+        #--> add reference ellipse
+        ref_ellip = patches.Ellipse((0, .0),
+                                       width=es,
+                                       height=es,
+                                       angle=0)
+        ref_ellip.set_facecolor((0, 0, 0))
+        ref_ax_loc = list(self.ax2.get_position().bounds)
+        ref_ax_loc[0] *= .95
+        ref_ax_loc[1] -= .17
+        ref_ax_loc[2] = .1
+        ref_ax_loc[3] = .1
+        self.ref_ax = self.fig.add_axes(ref_ax_loc, aspect='equal')
+        self.ref_ax.add_artist(ref_ellip)
+        self.ref_ax.set_xlim(-es/2.*1.05, es/2.*1.05)
+        self.ref_ax.set_ylim(-es/2.*1.05, es/2.*1.05)
+        plt.setp(self.ref_ax.xaxis.get_ticklabels(), visible=False)
+        plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
+        self.ref_ax.set_title(r'$\Delta \Phi$ = 1')
+          
+        # put the grid lines behind 
+#        [line.set_zorder(10000) for line in self.ax.lines]
+        self.ax.set_axisbelow(True)
+            
         plt.show()
 
     def save_figure(self, save_fn, file_format='pdf', 
