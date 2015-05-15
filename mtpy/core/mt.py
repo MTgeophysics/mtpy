@@ -43,7 +43,7 @@ class MT(object):
     including:
     
     ===================== =====================================================
-    **Attribute**         Description
+    Attribute             Description
     ===================== =====================================================
     name                  station name
     lat                   station latitude in decimal degrees
@@ -83,7 +83,7 @@ class MT(object):
             - tippererr       --> np.ndarray(n_freq, 1, 2)
         
     ===================== =====================================================
-    **methods**           Description
+    methods               Description
     ===================== =====================================================
     write_edi_file        write an edi_file from the MT data
     remove_distortion     remove distortion from the data following 
@@ -433,16 +433,16 @@ class MT(object):
         Similarly, the new function name does not change the MT objecte fn
         attribute but does change MT.edi_object.fn attribute.
         
-        **Arguments**:
-            
-            *new_fn* : string
-                       full path to new file name
+        Arguments
+        -----------------            
+            **new_fn** : string
+                         full path to new file name
                        
-            *new_Z* : mtpy.core.Z object
-                      a new impedance tensor object to be written
+            **new_Z** : mtpy.core.Z object
+                        a new impedance tensor object to be written
                       
-            *new_Tipper* : mtpy.core.Z.Tipper object
-                           a new Tipper object to be written
+            **new_Tipper** : mtpy.core.Z.Tipper object
+                             a new Tipper object to be written
         """
         
         if new_Z is not None:
@@ -494,6 +494,8 @@ class MT(object):
         if you want to write a new edi file with distortion removed you can 
         do this by:
         
+		Example
+		-------------
             >>> import mtpy.core.mt as mt
             >>> mt1 = mt.MT(fn=r"/home/mt/edi_files/mt01.edi")
             >>> D, new_z = mt1.remove_distortion()
@@ -509,25 +511,28 @@ class MT(object):
         """
         interpolate the impedance tensor onto different frequencies.
         
-        **Arguments**
+        Arguments
+		------------
         
-            *new_freq_array* : np.ndarray 
-                               a 1-d array of frequencies to interpolate on
-                               to.  Must be with in the bounds of the existing
-                               frequency range, anything outside and an error
-                               will occur.
+            **new_freq_array** : np.ndarray 
+                                 a 1-d array of frequencies to interpolate on
+                                 to.  Must be with in the bounds of the existing
+                                 frequency range, anything outside and an error
+                                 will occur.
                                
-        **Returns** :
-            *new_z_object* : mtpy.core.z.Z object
-                             a new impedance object with the corresponding
-                             frequencies and components.
+        Returns
+		----------
+            **new_z_object** : mtpy.core.z.Z object
+                               a new impedance object with the corresponding
+                               frequencies and components.
                              
-            *new_tipper_object* : mtpy.core.z.Tipper object
-                             a new tipper object with the corresponding
-                             frequencies and components.
+            **new_tipper_object** : mtpy.core.z.Tipper object
+                                   a new tipper object with the corresponding
+                                   frequencies and components.
                              
         
-        :Example: ::
+        Example
+		------------
             >>> # make a new edi file for interpolated frequencies 
             >>> import mtpy.core.mt as mt
             >>> edi_fn = r"/home/edi_files/mt_01.edi"
@@ -612,7 +617,8 @@ class MT(object):
         """ 
         returns a mtpy.imaging.plotresponse.PlotResponse object
         
-        :Example: ::
+        Example
+		------------
             >>> mt_obj = mt.MT(edi_file)
             >>> pr = mt.plot_mt_response()
             >>> # if you need more infor on plot_mt_response 
