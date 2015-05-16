@@ -1910,16 +1910,28 @@ def rotate_tipper(tipper_array, alpha, tippererr_array = None):
     """
 	Rotate a Tipper array
 
-	Input:
-	Tipper array : (1,2,2) or (2,2) shaped Numpy array
-	rotation angle (in degrees) for clockwise rotation
+		Arguments
+	------------
+		**tipper_array** : np.ndarray(num_freq, 2, 2) 
+					       tipper array
+		**alpha** : float
+					rotation angle in degrees clockwise 
+		**tippererr_array** : np.ndarray(tipper_array.shape)
+						  tipper error
+						  needs to be the same shape as
+						  tipper_array							  
 
-	Optional:
-	TipperError : (1,2,2) or (2,2) shaped Numpy array
+	Returns
+	-----------
+		**tipper_rot** : np.ndarray(z_array.shape)
+					rotated impedance tensor
+		**tipper_rot_err** : np.ndarray(z_array.shape)
+						rotated impedance tensor error
 
-	Output:
-	- rotated Tipper array
-	- rotated TipperError array (or None, if no error given)
+	Example
+	-------------
+		>>> import mtpy.core.z as mtz
+		>>> rot_tip = mtz.rotate_tipper(tipper_array, 45)
 
     """
 
@@ -1932,10 +1944,10 @@ def rotate_tipper(tipper_array, alpha, tippererr_array = None):
 
 def tipper2rhophi(tipper_array, tippererr_array = None):
     """
-        Return values for amplitude (rho) and argument (phi - in degrees).
+	Return values for amplitude (rho) and argument (phi - in degrees).
 
-        Output is a 4-tuple of arrays:
-        (Rho, Phi, RhoError, PhiError)
+	Output is a 4-tuple of arrays:
+	(Rho, Phi, RhoError, PhiError)
     """ 
      
     tipper_object = _read_tipper_array(tipper_array, tippererr_array )
@@ -1945,14 +1957,20 @@ def tipper2rhophi(tipper_array, tippererr_array = None):
 
 def _read_z_array(z_array, zerr_array = None):
     """
-        Read a Z array and return an instance of the Z class.
+	Read a Z array and return an instance of the Z class.
 
 
-        Input:
-        - Z array
+	Arguments
+	------------
+		**z_array** : np.ndarray (num_freq, 2, 2, dtype='complex')
+					  impedance tensor
+		**zerr_array** : np.ndarray(z_array.shape)
+		                 impedance tensor error, same shape as 
+						 z_array
 
-        Optional:
-        - Zerror array
+	Returns
+	-----------
+		**z_object** : mtpy.core.z.Z object
     """
 
 
@@ -1973,11 +1991,17 @@ def _read_tipper_array(tipper_array, tippererr_array = None):
         Read a Tipper array and return an instance of the Tipper class.
 
 
-        Input:
-        - Tipper array
+	Arguments
+	------------
+		**tipper_array** : np.ndarray (num_freq, 2, 2, dtype='complex')
+					       tipper tensor
+		**tippererr_array** : np.ndarray(z_array.shape)
+		                      tipper error, same shape as 
+							  tipper_array
 
-        Optional:
-        - TipperError array
+	Returns
+	-----------
+		**tipper_object** : mtpy.core.z.Tipper object
 
     """
 
@@ -2028,24 +2052,38 @@ def correct4sensor_orientation(Z_prime, Bx=0, By=90, Ex=0, Ey=90,
                  => Z = T * Z' * U^(-1)
 
 
-    Input:
-    - Z_prime - 2x2 complex valued Numpy array (impedance tensor)
-    - orientation of Bx-sensor (degrees) - default = 0
-    - orientation of By-sensor (degrees) - default = 90
-    - orientation of Ex-sensor (degrees) - default = 0
-    - orientation of Ey-sensor (degrees) - default = 90
+    Arguments
+	---------------
+		**Z_prime** : np.ndarray(num_freq, 2, 2, dtype='complex')
+					  impedance tensor to be adjusted
 
-    Optional:
-    - Z_prime_error - 2x2 real valued Numpy array (impedance tensor 
-    standard deviation)
+		**Bx** : float (angle in degrees)
+		         orientation of Bx relative to geographic north (0)
+				 *default* is 0		
+		**By** : float (angle in degrees)
+		         orientation of By relative to geographic north (0)
+				 *default* is 90
+		**Ex** : float (angle in degrees)
+		         orientation of Ex relative to geographic north (0)
+				 *default* is 0		
+		**Ey** : float (angle in degrees)
+		         orientation of Ey relative to geographic north (0)
+				 *default* is 90
+				 
+		Z_prime_error : np.ndarray(Z_prime.shape)
+		                impedance tensor error (std)
+						*default* is None
 
+	Returns
+	-------------
+		**Z** : np.ndarray(Z_prime.shape, dtype='complex')
+		        adjusted impedance tensor
+				
+		**Z_err** : np.ndarray(Z_prime.shape, dtype='real')
+		            impedance tensor standard deviation in 
+					default orientation
 
-    Output:
-    - Z - 2x2 complex valued Numpy array (impedance tensor) in default 
-    orientation
-    - Zerr - 2x2 real valued Numpy array (impedance tensor standard 
-    deviation) in default orientation
-
+	
     """
     try:
         if len(Z_prime.shape) != 2:
