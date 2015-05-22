@@ -337,10 +337,12 @@ class Metadata(object):
                 self.find_metadata = False
                     
         # make coil calibration and board calibration structured arrays
-        self.coil_cal = np.core.records.fromrecords(self.coil_cal, 
+        if len(self.coil_cal) > 0:
+            self.coil_cal = np.core.records.fromrecords(self.coil_cal, 
                                            names='frequency, amplitude, phase',
-                                           formats='f8, f8, f8')                
-        self.board_cal = np.core.records.fromrecords(self.board_cal, 
+                                           formats='f8, f8, f8')
+        if len(self.board_cal) > 0:  
+            self.board_cal = np.core.records.fromrecords(self.board_cal, 
                                    names='frequency, rate, amplitude, phase',
                                    formats='f8, f8, f8, f8')
         self.m_tell = self.fid.tell()
