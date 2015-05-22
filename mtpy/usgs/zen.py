@@ -32,7 +32,6 @@ import mtpy.utils.exceptions as mtex
 import mtpy.utils.configfile as mtcf
 import matplotlib.pyplot as plt
 import mtpy.imaging.plotspectrogram as plotspectrogram
-import tables
 
 try:
     import mtpy.utils.mseed as mtmseed
@@ -447,6 +446,7 @@ class Zen3D(object):
         read Z3D file out put by Zen
         
         """        
+        print '------- Reading {0} ---------'.format(self.fn)
         st = time.time()
         
         file_id = file(self.fn, 'rb')
@@ -525,6 +525,9 @@ class Zen3D(object):
         self.convert_gps_time()
         self.check_start_time()
         
+        print '    found {0} GPS time stamps'.format(self.gps_stamps.shape[0])
+        print '    found {0} data points'.format(self.time_series.size)
+        
     #=================================================
     def trim_data(self):
         """
@@ -565,7 +568,6 @@ class Zen3D(object):
         
         # estimate the time difference between the two                                               
         time_diff = time.mktime(zen_time)-time.mktime(schedule_time)
-        print '-'*60
         print '    Scheduled time was {0} (GPS time)'.format(s_start)
         print '    1st good stamp was {0} (GPS time)'.format(zen_start)
         print '    difference of {0:.2f} seconds'.format(time_diff)
