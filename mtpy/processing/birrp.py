@@ -744,14 +744,14 @@ def write_script_file(processing_dict, save_path=None):
     parameter          description
     ================== ======================================================== 
     station            station name
-    fn_lst             list of file names to be processed, this must be in 
+    fn_list             list of file names to be processed, this must be in 
                        the correct order [EX, EY, HZ, HX, HY] and if multiple
                        sections are to be processed at the same time then 
                        must be input as a nested loop 
                        [[EX1, EY1, HZ1, HX1, HY1], 
                        [EX2, EY2, HZ2, HX2, HY2], ...]
-    rrfn_lst           list of remote reference file names, similar to the 
-                       fn_lst [[HX1, HY1], [HX2, HY2], ...]
+    rrfn_list           list of remote reference file names, similar to the 
+                       fn_list [[HX1, HY1], [HX2, HY2], ...]
     ilev               processing mode 0 for basic and 1 for advanced RR-2 
                        stage
     nout               Number of Output time series (2 or 3-> for BZ)
@@ -829,7 +829,7 @@ def write_script_file(processing_dict, save_path=None):
         
         **save_path** : string (full path to directory to save script file)
                         if none saves as:
-                            os.path.join(os.path.dirname(fn_lst[0]),'BF')
+                            os.path.join(os.path.dirname(fn_list[0]),'BF')
         
     Outputs:
     --------
@@ -850,9 +850,9 @@ def write_script_file(processing_dict, save_path=None):
     pdict = dict(processing_dict)
     
     try:
-        fn_array = np.array(pdict['fn_lst'])
+        fn_array = np.array(pdict['fn_list'])
     except KeyError:
-        raise KeyError('fn_lst --> Need to input a list of files to process')
+        raise KeyError('fn_list --> Need to input a list of files to process')
     
     try:
         nds, ndf = fn_array.shape
@@ -861,10 +861,10 @@ def write_script_file(processing_dict, save_path=None):
         nds = 0
     if save_path is None:
         if nds == 0:
-            bfpath = os.path.join(os.path.dirname(pdict['fn_lst'][0]),
+            bfpath = os.path.join(os.path.dirname(pdict['fn_list'][0]),
                                  'BF')
         else:
-            bfpath = os.path.join(os.path.dirname(pdict['fn_lst'][0][0]),
+            bfpath = os.path.join(os.path.dirname(pdict['fn_list'][0][0]),
                                   'BF')
     else:
         bfpath = save_path
@@ -875,9 +875,9 @@ def write_script_file(processing_dict, save_path=None):
     elif nds==1:
         nds=0
         npcs=1
-        pdict['fn_lst'] = pdict['fn_lst'][0]
+        pdict['fn_list'] = pdict['fn_list'][0]
         try:
-            pdict['rrfn_lst'] = pdict['rrfn_lst'][0]  
+            pdict['rrfn_list'] = pdict['rrfn_list'][0]  
         except KeyError:
             pass
 
@@ -1111,10 +1111,10 @@ def write_script_file(processing_dict, save_path=None):
         fid.write('{0:d} \n'.format(ninp))
         fid.write('{0:d} \n'.format(nref))
         if nref>3:
-            nrrlst=np.array([len(rrlst) 
-                            for rrlst in pdict['rrfn_lst']])
-            nr3=len(np.where(nrrlst==3)[0])
-            nr2=len(np.where(nrrlst==2)[0])
+            nrrlist=np.array([len(rrlist) 
+                            for rrlist in pdict['rrfn_list']])
+            nr3=len(np.where(nrrlist==3)[0])
+            nr2=len(np.where(nrrlist==2)[0])
             fid.write('{0:d},{1:d} \n'.format(nr3,nr2))
         fid.write('{0:d} \n'.format(nrr))
         #if remote referencing
@@ -1188,7 +1188,7 @@ def write_script_file(processing_dict, save_path=None):
             fid.write(str(nread[0])+'\n')
             #--> write filenames to process with other information for first
             #    time section
-            for tt, tfile in enumerate(pdict['fn_lst'][0]):
+            for tt, tfile in enumerate(pdict['fn_list'][0]):
                 #write in calibration files if given
                 if tt == 2:
                     if hx_cal is not None:
@@ -1214,7 +1214,7 @@ def write_script_file(processing_dict, save_path=None):
                 fid.write(str(nskip[0])+'\n')
                 
             #--> write remote reference time series
-            for rr, rfile in enumerate(pdict['rrfn_lst'][0]):
+            for rr, rfile in enumerate(pdict['rrfn_list'][0]):
                 if rr == 0:
                     if rrhx_cal is not None:
                         fid.write('-2\n')
@@ -1236,17 +1236,17 @@ def write_script_file(processing_dict, save_path=None):
             for nn in range(1,npcs):
                 fid.write(str(nread[nn])+'\n')            
                 #write filenames
-                for tfile in pdict['fn_lst'][nn]:
+                for tfile in pdict['fn_list'][nn]:
                     fid.write(tfile+'\n')
                     fid.write(str(nskip[0])+'\n')
-                for rfile in pdict['rrfn_lst'][nn]:
+                for rfile in pdict['rrfn_list'][nn]:
                     fid.write(rfile+'\n')
                     fid.write(str(nskipr[nn])+'\n')
                     
         #--> if start and end time are give write in those
         elif jmode == 1:
             #write filenames
-            for tt, tfile in enumerate(pdict['fn_lst'][0]):
+            for tt, tfile in enumerate(pdict['fn_list'][0]):
                 #write in calibration files if given
                 if tt == 2:
                     if hx_cal is not None:
@@ -1274,7 +1274,7 @@ def write_script_file(processing_dict, save_path=None):
                 fid.write(wetim+'\n')
                 
             #--> write remote referenc information
-            for rr, rfile in enumerate(pdict['rrfn_lst'][0]):
+            for rr, rfile in enumerate(pdict['rrfn_list'][0]):
                 if rr == 0:
                     if rrhx_cal is not None:
                         fid.write('-2\n')
@@ -1296,12 +1296,12 @@ def write_script_file(processing_dict, save_path=None):
             for nn in range(1,npcs):
                 fid.write(str(nread[nn])+'\n')            
                 #write filenames
-                for tfile in pdict['fn_lst'][nn]:
+                for tfile in pdict['fn_list'][nn]:
                     fid.write(tfile+'\n')
                     fid.write(dstim+'\n')
                     fid.write(wstim+'\n')
                     fid.write(wetim+'\n')
-                for rfile in pdict['rrfn_lst'][nn]:
+                for rfile in pdict['rrfn_list'][nn]:
                     fid.write(rfile+'\n')
                     fid.write(dstim+'\n')
                     fid.write(wstim+'\n')
@@ -1314,7 +1314,7 @@ def write_script_file(processing_dict, save_path=None):
                 fid.write(str(nread)+'\n')
             #--> write filenames for first block
             if nds==0:
-                for tt, tfile in enumerate(pdict['fn_lst']):
+                for tt, tfile in enumerate(pdict['fn_list']):
                     if tt == 2:
                         if hx_cal is not None:
                             fid.write('-2\n')
@@ -1340,7 +1340,7 @@ def write_script_file(processing_dict, save_path=None):
                         fid.write(str(nskip[0])+'\n')
                     else:
                         fid.write(str(nskip)+'\n')
-                for rr, rfile in enumerate(pdict['rrfn_lst']):
+                for rr, rfile in enumerate(pdict['rrfn_list']):
                     if rr == 0:
                         if rrhx_cal is not None:
                             fid.write('-2\n')
@@ -1353,20 +1353,20 @@ def write_script_file(processing_dict, save_path=None):
                             fid.write(rrhy_cal+'\n')
                         else:
                             fid.write(str(nfil)+'\n')
-                        fid.write(rfile+'\n')
+                    fid.write(rfile+'\n')
                     if type(nskipr) is list:
                         fid.write(str(nskipr[0])+'\n')
                     else:
                         fid.write(str(nskipr)+'\n')
             else:
-                for tfile in pdict['fn_lst'][0]:
+                for tfile in pdict['fn_list'][0]:
                     fid.write(str(nfil)+'\n')
                     fid.write(tfile+'\n')
                     if type(nskip) is list:
                         fid.write(str(nskip[0])+'\n')
                     else:
                         fid.write(str(nskip)+'\n')
-                for rfile in pdict['rrfn_lst'][0]:
+                for rfile in pdict['rrfn_list'][0]:
                     fid.write(str(nfil)+'\n')
                     fid.write(rfile+'\n')
                     if type(nskipr) is list:
@@ -1377,7 +1377,7 @@ def write_script_file(processing_dict, save_path=None):
         elif jmode == 1:
             #write filenames
             if nds==0:
-                for tt, tfile in enumerate(pdict['fn_lst']):
+                for tt, tfile in enumerate(pdict['fn_list']):
                     if tt == 2:
                         if hx_cal is not None:
                             fid.write('-2\n')
@@ -1402,7 +1402,7 @@ def write_script_file(processing_dict, save_path=None):
                     fid.write(dstim+'\n')
                     fid.write(wstim+'\n')
                     fid.write(wetim+'\n')
-                for rr, rfile in enumerate(pdict['rrfn_lst']):
+                for rr, rfile in enumerate(pdict['rrfn_list']):
                     if rr == 0:
                         if rrhx_cal is not None:
                             fid.write('-2\n')
@@ -1420,7 +1420,7 @@ def write_script_file(processing_dict, save_path=None):
                     fid.write(wstim+'\n')
                     fid.write(wetim+'\n')
             else:
-                for tt, tfile in enumerate(pdict['fn_lst'][0]):
+                for tt, tfile in enumerate(pdict['fn_list'][0]):
                     if tt == 2:
                         if hx_cal is not None:
                             fid.write('-2\n')
@@ -1445,7 +1445,7 @@ def write_script_file(processing_dict, save_path=None):
                     fid.write(dstim+'\n')
                     fid.write(wstim+'\n')
                     fid.write(wetim+'\n')
-                for rr, rfile in enumerate(pdict['rrfn_lst'][0]):
+                for rr, rfile in enumerate(pdict['rrfn_list'][0]):
                     if rr == 0:
                         if rrhx_cal is not None:
                             fid.write('-2\n')

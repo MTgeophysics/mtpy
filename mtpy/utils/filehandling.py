@@ -1255,7 +1255,7 @@ def write_ts_file_from_tuple(outfile,ts_tuple, fmt='%.8e'):
         outF.write(header_string)
         np.savetxt(outF, data, fmt=fmt)
         outF.close()
-    except:
+    except ValueError:
         raise MTex.MTpyError_inputarguments('ERROR - could not write content'
                             ' of TS tuple to file : {0}'.format(outfilename))
 
