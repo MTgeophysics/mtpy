@@ -4017,6 +4017,8 @@ class Z3D_to_edi(object):
         self.survey_config = Survey_Config(save_path=self.station_dir)
         self.survey_config_fn = None
         self.birrp_config_fn = None
+        self.birrp_exe = r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts_big.exe"
+        self.coil_cal_path = r"d:\Peacock\MTData\Ant_calibrations"
 
         
     def make_survey_config_file(self, survey_config_dict=None):
@@ -4226,6 +4228,7 @@ class Z3D_to_edi(object):
             bf_path = os.path.join(save_path, '{0:.0f}'.format(skey))
             fn_birrp_arr = fn_birrp_dict[skey]
             pro_obj = BIRRP_processing()
+            pro_obj.calibration_path = self.coil_cal_path
             pro_obj.station = self.survey_config.station
             pro_obj.deltat = -float(skey)
             pro_dict = pro_obj.get_processing_dict(fn_birrp_arr, 
@@ -4249,8 +4252,7 @@ class Z3D_to_edi(object):
         
         return script_fn_list   
         
-    def run_birrp(self, script_fn_list=None, 
-                  birrp_exe=r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts_big.exe"):
+    def run_birrp(self, script_fn_list=None, birrp_exe=None):
         """
         run birrp given the specified files
         
@@ -4346,7 +4348,7 @@ class Z3D_to_edi(object):
                df_list = [df_list] 
         
         # make files into mtpy files
-        z3d_fn_list, log_lines = self.make_mtpy_ascii_files(df_list=list(df_list))
+        z3d_fn_list, log_lines = self.make_mtpy_ascii_files(df_list=df_list)
         
         # get all information from mtpy files
         schedule_dict = self.get_schedules_fn(z3d_fn_list)
