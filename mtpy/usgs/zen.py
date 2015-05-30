@@ -35,6 +35,9 @@ import matplotlib.pyplot as plt
 import mtpy.imaging.plotspectrogram as plotspectrogram
 import mtpy.imaging.plotnresponses as plotnresponses
 import mtpy.imaging.plotresponse as plotresponse
+from cStringIO import StringIO
+import sys
+import mtpy.processing.filter as mtfilt
 
 try:
     import mtpy.utils.mseed as mtmseed
@@ -42,11 +45,6 @@ except ImportError:
     print ('Can not convert data to mini seed format need to install Obspy, '
            'good luck! You can find information on Obspy at '
            'https://github.com/obspy/obspy/wiki') 
-
-try:
-    import mtpy.processing.filter as mtfilt
-except ImportError:
-    print 'no scipy.signal, its fucked thanks obspy'
     
 #==============================================================================
 datetime_fmt = '%Y-%m-%d,%H:%M:%S'
@@ -55,7 +53,7 @@ datetime_sec = '%Y-%m-%d %H:%M:%S'
 # 
 #==============================================================================
 
-class Header(object):
+class Z3D_Header(object):
     """
     class for z3d header
     """
@@ -77,7 +75,7 @@ class Header(object):
         self.channelserial = None
         self.duty = None
         self.fpga_buildnum = None
-        self.gpsweek = None
+        self.gpsweek = 1740
         self.lat = None
         self.logterminal = None
         self.long = None
@@ -142,7 +140,7 @@ class Header(object):
 #==============================================================================
 # meta data 
 #==============================================================================
-class Schedule_metadata(object):
+class Z3D_Schedule_metadata(object):
     """
     class object for metadata of Z3d file
     """
@@ -213,7 +211,7 @@ class Schedule_metadata(object):
 #==============================================================================
 #  Meta data class    
 #==============================================================================
-class Metadata(object):
+class Z3D_Metadata(object):
     """
     class for metadata from Z3d file
     """
@@ -360,14 +358,118 @@ class Zen3D(object):
     """
     Deals with the raw Z3D files output by zen.
     
+    Arguments
+    -----------
+        **fn** : string
+                 full path to .Z3D file to be read in
+                 
+    ======================== ================================ =================
+    Attributes               Description                      Default Value
+    ======================== ================================ =================
+    _block_len               length of data block to read in  65536
+                             as chunks faster reading
+    _counts_to_mv_conversion conversion factor to convert     9.53674316406e-10
+                             counts to mv                   
+    _gps_bytes               number of bytes for a gps stamp  16
+    _gps_dtype               data type for a gps stamp        see below
+    _gps_epoch               starting date of GPS time
+                             format is a tuple                (1980, 1, 6, 0, 
+                                                               0, 0, -1, -1, 0)
+ 
+    _gps_f0                  first gps flag in raw binary     
+    _gps_f1                  second gps flag in raw binary     
+    _gps_flag_0              first gps flag as an int32       2147483647       
+    _gps_flag_1              second gps flag as an int32      -2147483648  
+    _gps_stamp_length        bit length of gps stamp          64 
+    _leap_seconds            leap seconds, difference         16
+                             between UTC time and GPS 
+                             time.  GPS time is ahead 
+                             by this much
+    _week_len                week length in seconds           604800
+    df                       sampling rate of the data        256
+    fn                       Z3D file name                    None
+    gps_flag                 full gps flag                    _gps_f0+_gps_f1 
+    gps_stamps               np.ndarray of gps stamps         None
+    header                   Z3D_Header object                Z3D_Header                
+    metadata                 Z3D_Metadata                     Z3D_Metadata 
+    schedule                 Z3D_Schedule_metadata            Z3D_Schedule
+    time_series              np.ndarra(len_data)              None
+    units                    units in which the data is in    counts           
+    zen_schedule             time when zen was set to         None
+                             run
+    ======================== ================================ =================
+    
+    * gps_dtype is formated as np.dtype([('flag0', np.int32),
+                                        ('flag1', np.int32),
+                                        ('time', np.int32),
+                                        ('lat', np.float64),
+                                        ('lon', np.float64),
+                                        ('num_sat', np.int32),
+                                        ('gps_sens', np.int32),
+                                        ('temperature', np.float32),
+                                        ('voltage', np.float32),
+                                        ('num_fpga', np.int32),
+                                        ('num_adc', np.int32),
+                                        ('pps_count', np.int32),
+                                        ('dac_tune', np.int32),
+                                        ('block_len', np.int32)])    
+    
+    ============================ ==============================================
+    Methods                       Description
+    ============================ ==============================================
+    apply_addaptive_notch_filter apply a notch filter to the data, usually
+                                 to remove 60 Hz noise and harmonics 
+        
+    get_gps_time                 converts the gps counts to relative epoch 
+                                 seconds according to gps week.      
+    get_UTC_date_time            converts gps seconds into the actual date and
+                                 time in UTC.  Note this is different than GPS
+                                 time which is how the zen is scheduled, so 
+                                 the time will be off by the current amount of
+                                 leap seconds.
+    plot_timeseries              make a generic plot of the time series
+    plot_spectra                 plot a the spectra in loglog scales.
+    plot_spectrogram             plot the spectragram of the data.
+    read_z3d                      read 3D file making sure all the time stamps
+                                 are correctly spaced.  Returned time series 
+                                 starts at  the first stamp which has the 
+                                 correct amount of data points between it and 
+                                 the next time stamp.  Note there are usually
+                                 a few seconds at the end and maybe beginning 
+                                 that aren't correct because the internal 
+                                 computer is busy switchin sampling rate.
+    read_header                  read just the header data from the Z3D file
+    read_metadata                read just the metadata from the Z3D file
+    read_schedule                read just the schedule info from the Z3D file
+    validate_gps_time            make sure each time stamp is 1 second apart
+    validate_time_blocks         make sure that the size of each time block
+                                 between stamps is equal to the sampling rate
+    write_ascii_mt_file          write an mtpy ascii file of the data
+    ============================ ==============================================
+      
+      
+    Example
+    ----------------
+        >>> import mtpy.usgs.zen as zen
+        >>> zt = zen.Zen3D(r"/home/mt/mt00/mt00_20150522_080000_256_EX.Z3D")
+        >>> zt.read_z3d()
+        >>> ------- Reading /home/mt/mt00/mt00_20150522_080000_256_EX.Z3D -----
+            --> Reading data took: 0.322 seconds
+            Scheduled time was 2015-05-22,08:00:16 (GPS time)
+            1st good stamp was 2015-05-22,08:00:18 (GPS time)
+            difference of 2.00 seconds
+            found 6418 GPS time stamps
+            found 1642752 data points
+        >>> zt.plot_time_series()
+
     """
 
     def __init__(self, fn=None, **kwargs):
         self.fn = fn
 
-        self.header = Header(fn)
-        self.schedule = Schedule_metadata(fn)
-        self.metadata = Metadata(fn)
+        self.header = Z3D_Header(fn)
+        self.schedule = Z3D_Schedule_metadata(fn)
+        self.metadata = Z3D_Metadata(fn)
         
         self._gps_stamp_length = kwargs.pop('stamp_len', 64)
         self._gps_bytes = self._gps_stamp_length/4
@@ -397,26 +499,47 @@ class Zen3D(object):
                                      
         self._week_len = 604800
         self._gps_epoch = (1980, 1, 6, 0, 0, 0, -1, -1, 0)
-        self._gps_week = 1740
         self._leap_seconds = 16
         self._block_len = 2**16
         self.zen_schedule = None
-        
-        #seconds different between scheduling time and actual collection time
-        self._seconds_diff = 5 
-        
-        self.log_lines = []
-        self.verbose = True
-        self._skip_sample_tolerance = 5
         self._counts_to_mv_conversion = 9.5367431640625e-10
         self.units = 'counts'
         self.df = None
         
         self.time_series = None
         
+    #====================================== 
     def read_header(self, fn=None, fid=None):
         """
         read header information from Z3D file
+        
+        Arguments
+        ---------------
+            **fn** : string
+                     full path to Z3D file to read
+                     
+            **fid** : file object
+                      if the file is open give the file id object
+                      
+        Outputs:
+        ----------
+            * fills the Zen3ZD.header object's attributes
+            
+        Example with just a file name
+        ------------
+            >>> import mtpy.usgs.zen as zen
+            >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
+            >>> z3d_obj = zen.Zen3D()
+            >>> z3d_obj.read_header(fn)
+            
+        Example with file object
+        ------------
+            >>> import mtpy.usgs.zen as zen
+            >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
+            >>> z3d_fid = open(fn, 'rb')
+            >>> z3d_obj = zen.Zen3D()
+            >>> z3d_obj.read_header(fid=z3d_fid)
+            
         """
         
         if fn is not None:
@@ -425,9 +548,37 @@ class Zen3D(object):
         self.header.read_header(fn=self.fn, fid=fid)
         self.df = self.header.ad_rate
         
+    #====================================== 
     def read_schedule(self, fn=None, fid=None):
         """
         read schedule information from Z3D file
+        
+        Arguments
+        ---------------
+            **fn** : string
+                     full path to Z3D file to read
+                     
+            **fid** : file object
+                      if the file is open give the file id object
+                      
+        Outputs:
+        ----------
+            * fills the Zen3ZD.schedule object's attributes
+            
+        Example with just a file name
+        ------------
+            >>> import mtpy.usgs.zen as zen
+            >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
+            >>> z3d_obj = zen.Zen3D()
+            >>> z3d_obj.read_schedule(fn)
+            
+        Example with file object
+        ------------
+            >>> import mtpy.usgs.zen as zen
+            >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
+            >>> z3d_fid = open(fn, 'rb')
+            >>> z3d_obj = zen.Zen3D()
+            >>> z3d_obj.read_schedule(fid=z3d_fid)
         """
         
         if fn is not None:
@@ -437,29 +588,79 @@ class Zen3D(object):
         # set the zen schedule time
         self.zen_schedule = '{0},{1}'.format(self.schedule.Date, 
                                              self.schedule.Time)
-        
+    
+    #======================================     
     def read_metadata(self, fn=None, fid=None):
         """
         read header information from Z3D file
+        
+        Arguments
+        ---------------
+            **fn** : string
+                     full path to Z3D file to read
+                     
+            **fid** : file object
+                      if the file is open give the file id object
+                      
+        Outputs:
+        ----------
+            * fills the Zen3ZD.metadata object's attributes
+            
+        Example with just a file name
+        ------------
+            >>> import mtpy.usgs.zen as zen
+            >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
+            >>> z3d_obj = zen.Zen3D()
+            >>> z3d_obj.read_metadata(fn)
+            
+        Example with file object
+        ------------
+            >>> import mtpy.usgs.zen as zen
+            >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
+            >>> z3d_fid = open(fn, 'rb')
+            >>> z3d_obj = zen.Zen3D()
+            >>> z3d_obj.read_metadata(fid=z3d_fid)
         """
         
         if fn is not None:
             self.fn = fn
             
         self.metadata.read_metadata(fn=self.fn, fid=fid)
-        
+    
+    #======================================    
     def read_z3d(self):
         """
-        read a z3d file fast
+        read in z3d file and populate attributes accordingly
         
         read in the entire file as if everything but header and metadata are
         np.int32, then extract the gps stamps and convert accordingly
+        
+        Checks to make sure gps time stamps are 1 second apart and incrementing
+        as well as checking the number of data points between stamps is the
+        same as the sampling rate.  
+        
+        Converts gps_stamps['time'] to seconds relative to header.gps_week 
+        
+        We skip the first two gps stamps because there is something wrong with 
+        the data there due to some type of buffering.  
+        
+        Therefore the first GPS time is when the time series starts, so you
+        will notice that gps_stamps[0]['block_len'] = 0, this is because there
+        is nothing previous to this time stamp and so the 'block_len' measures
+        backwards from the corresponding time index.
+        
+        
         """
         
         print '------- Reading {0} ---------'.format(self.fn)
         st = time.time()
         
+        #get the file size to get an estimate of how many data points there are
         file_size = os.path.getsize(self.fn)
+        
+        # using the with statement works in Python versions 2.7 or higher
+        # the added benefit of the with statement is that it will close the
+        # file object upon reading completion.
         with open(self.fn, 'rb') as file_id:
         
             self.read_header(fid=file_id)
@@ -469,11 +670,13 @@ class Zen3D(object):
             # move the read value to where the end of the metadata is
             file_id.seek(self.metadata.m_tell)
             
+            # initalize a data array filled with zeros, everything goes into
+            # this array then we parse later
             data = np.zeros((file_size-512*(2+self.metadata.count))/4, 
                              dtype=np.int32)
+            # go over a while loop until the data cound exceed the file size
             data_count = 0
             while data_count+self.metadata.m_tell/4 < data.size:
-                
                 test_str = np.fromstring(file_id.read(self._block_len), 
                                          dtype=np.int32)
                 data[data_count:data_count+len(test_str)] = test_str
@@ -481,6 +684,7 @@ class Zen3D(object):
 
         # find the gps stamps
         gps_stamp_find = np.where(data==self._gps_flag_0)[0]
+        
         # skip the first two stamps and trim data
         data = data[gps_stamp_find[3]:]
         gps_stamp_find = np.where(data==self._gps_flag_0)[0]
@@ -513,10 +717,14 @@ class Zen3D(object):
         
         print '    found {0} GPS time stamps'.format(self.gps_stamps.shape[0])
         print '    found {0} data points'.format(self.time_series.size)
-        
+    
+    #=======================================    
     def read_z3d_slow(self):
         """
-        read Z3D file out put by Zen
+        read Z3D file out put by Zen, this a slow method but if you want to 
+        be sure the data is read in correctly, this method is the most 
+        correct way.  It will be deprecated as soon as I field test the 
+        read_z3d method
         
         """        
         print '------- Reading {0} ---------'.format(self.fn)
@@ -606,6 +814,8 @@ class Zen3D(object):
         """
         apparently need to skip the first 3 seconds of data because of 
         something to do with the SD buffer
+        
+        This method will be deprecated after field testing
         """ 
         # the block length is the number of data points before the time stamp
         # therefore the first block length is 0.  The indexing in python 
@@ -718,13 +928,13 @@ class Zen3D(object):
         
         return self.time_series/self._counts_to_mv_conversion
         
-        #==================================================        
+    #==================================================        
     def get_gps_time(self, gps_int, gps_week=0):
         """
         from the gps integer get the time in seconds.
         
-        Arguments:
-        ----------
+        Arguments
+        -------------
             **gps_int**: int
                          integer from the gps time stamp line
                          
@@ -733,7 +943,7 @@ class Zen3D(object):
                           larger than a week then a week is subtracted from 
                           the seconds and computed from gps_week += 1
                           
-        Returns:
+        Returns
         ---------
             **gps_time**: int
                           number of seconds from the beginning of the relative
@@ -762,8 +972,8 @@ class Zen3D(object):
         
         Note that GPS time is curently off by 16 seconds from actual UTC time.
         
-        Arguments:
-        ----------
+        Arguments
+        -------------
             **gps_week**: int
                           integer value of gps_week that the data was collected
             
@@ -774,8 +984,8 @@ class Zen3D(object):
                               number of seconds gps time is off from UTC time.
                               It is currently off by 16 seconds.
                               
-        Returns:
-        --------
+        Returns
+        ------------
             **date_time**: YYYY-MM-DD,HH:MM:SS
                            formated date and time from gps seconds.
         
@@ -819,6 +1029,13 @@ class Zen3D(object):
         
         see mtpy.processing.filter.adaptive_notch_filter
         
+        Arguments
+        -------------
+            **notch_dict** : dictionary
+                             dictionary of filter parameters.
+                             if an empty dictionary is input the filter looks
+                             for 60 Hz and harmonics to filter out.
+        
         
         """
         
@@ -827,7 +1044,7 @@ class Zen3D(object):
         except AttributeError:
             self.read_3d()
         
-        notches = notch_dict.pop('notches', list(np.arange(60,2048,60)))
+        notches = notch_dict.pop('notches', list(np.arange(60, 2048, 60)))
         notchradius = notch_dict.pop('notchradius', 0.5)
         freqrad = notch_dict.pop('freqrad', 0.5)
         rp = notch_dict.pop('rp', 0.1)
@@ -843,8 +1060,8 @@ class Zen3D(object):
         """
         write an mtpy time series data file
         
-        Arguments:
-        -----------
+        Arguments
+        -------------
             **save_fn** : full path to save file, if None file is saved as:
                           station_YYYYMMDD_hhmmss_df.component
                           
@@ -859,10 +1076,32 @@ class Zen3D(object):
                       format of data numbers output to ascii file.
                       *default* is '%.8e' for 8 significan figures in 
                       scientific notation.
+            **ex** : float
+                     scaling parameter of ex line, the length of the dipole
+                     be careful to not scale when creating an .edi file
+                     *default* is 1
+                     
+            **ey** : float
+                     scaling parameter of ey line, the length of the dipole
+                     be careful to not scale when creating an .edi file
+                     *default* is 1
+            **notch_dict** : dictionary
+                             dictionary of notch filter parameters
+                             *default* is None
+                             if an empty dictionary is input then the 
+                             filter looks for 60 Hz and harmonics to filter
                       
-        Output:
-        --------
+        Output
+        -------------
             **fn_mt_ascii** : full path to saved file
+            
+        Example
+        ------------
+            >>> import mtpy.usgs.zen as zen
+            >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
+            >>> z3d_obj = zen.Zen3D(fn)
+            >>> asc_fn = z3d.write_ascii_mt_file(save_station='mt', 
+                                                 notch_dict={})
         
         """
         if self.time_series is None:
@@ -1007,6 +1246,10 @@ class Zen3D(object):
         plt.show()
         
         return fig, ax
+        
+#==============================================================================
+#  for older Z3d files
+#==============================================================================
 class Zen3D_old(object):
     """
     Deal with the raw data output from the Zen box as Z3D files, which is in
@@ -2075,6 +2318,91 @@ class Zen3D_old(object):
 #==============================================================================
 # Cache files
 #==============================================================================
+class Cache_Metadata(object):
+    """ 
+    read .cac metadata    
+    
+    """
+    
+    def __init__(self, fn=None, **kwargs):
+        self.fn = fn
+        self.ch_adcardsn = None
+        self.ch_azimuth = None
+        self.ch_cmp = None
+        self.ch_cres = None
+        self.ch_factor = None
+        self.ch_gain = None
+        self.ch_gainfactor = None
+        self.ch_gdpslot = None
+        self.ch_length = None
+        self.ch_lowpass = None
+        self.ch_number = None
+        self.ch_numon = None
+        self.data_version = None
+        self.gdp_cardtype = None
+        self.gdp_date = None
+        self.gdp_operator = None
+        self.gdp_progver = None
+        self.gdp_time = None
+        self.gdp_type = None
+        self.gps_alt = None
+        self.gps_lat = None
+        self.gps_lon = None
+        self.gps_numsat = None
+        self.gps_sec = None
+        self.gps_utmzone = None
+        self.gps_week = None
+        self.header_type = None
+        self.job_by = None
+        self.job_for = None
+        self.job_name = None 
+        self.job_number = None
+        self.line_name = None
+        self.rx_aspace = None
+        self.rx_sspace = None
+        self.rx_utm0 = None
+        self.rx_utm1 = None
+        self.rx_utm2 = None
+        self.rx_xyz0 = None
+        self.rx_xyz1 = None
+        self.rx_xyz2 = None
+        self.survey_acqmethod = None
+        self.survey_type = None
+        self.ts_adfreq = None
+        self.ts_npnt = None
+        self.unit_length = None
+        
+        self._file_pointer_len = 10
+        
+
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+            
+    def read_metadata(self, fn=None):
+        """
+        read in metadata
+        """
+        if fn is not None:
+            self.fn = fn
+            
+        line_str_find = -1
+        with open(self.fn, 'rb') as fid:
+            # need to skip the file pointer pointer
+            fid.seek(self._file_pointer_len)
+            
+            while line_str_find == -1:
+                line_str = fid.readline().lower()
+                line_str_find = line_str.find('calibrate')
+                line_list = line_str.strip().split(',')
+                l_key = line_list[0].replace('.', '_')
+                l_value = line_list[1:]
+                if len(l_value) == 1:
+                    try:
+                        l_value = float(l_value[0])
+                    except ValueError:
+                        l_value = l_value[0]
+                setattr(self, l_key, l_value)
+
 class ZenCache(object):
     """
     deals with cache files or combined time series files.
@@ -4604,7 +4932,7 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
     save_path = os.path.join(save_path,station)
     if not os.path.exists(save_path):
         os.mkdir(save_path)
-    log_fid = file(os.path.join(save_path,'Log_file.log'),'w')
+    log_fid = file(os.path.join(save_path,'copy_from_sd.log'),'w')
     
     
     st_test = time.ctime()
@@ -5157,3 +5485,172 @@ def make_mtpy_ts_loop(station_path, station_list, survey_file=None,
                                                 ey_skip=ey_skip)
         log_fid.writelines(sfn_lines)
     log_fid.close()
+    
+#==============================================================================
+
+# this should capture all the print statements from zen
+class Capturing(list):
+    def __enter__(self):
+        self._stdout = sys.stdout
+        sys.stdout = self._stringio = StringIO()
+        return self
+    def __exit__(self, *args):
+        self.extend(self._stringio.getvalue().splitlines())
+        sys.stdout = self._stdout
+
+
+#==============================================================================
+def compute_mt_response(survey_dir, station='mt000', copy_date=None, 
+                        birrp_exe=r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts.exe", 
+                        ant_calibrations=r"c:\MT\Ant_calibrations",
+                        process_df_list=[256]):
+    """
+    This code will down load Z3D files from a Zen that is in SD Mode, 
+    convert the Z3D files to ascii format, then process them for each
+    sampling rate using Alan Chave's BIRRP code.  The outputs are then
+    converted to .edi files and plotted.
+    
+    You need 2 things to run this code:
+        * mtpy --> a Python package for MT and can be found at
+    	           https://github.com/geophysics/mtpy
+        * BIRRP executable --> you can get this from Alan Chave at WHOI 
+                               if you are using it for non-commercial projects.
+                               
+    ..note:: This code is quite specific to my setup, so let me know what
+             doesn't work for you so I can generalize it.
+    
+    Arguments
+    ----------------
+        **survey_dir** : string
+                         full path to the directory where you are storing 
+                         the station data.  ie. /home/MT/Survey_00
+                         
+        **station** : string
+                      name of the station you are down loading.
+                      *default* is 'mt000'
+                      
+        **copy_date** : string
+                        copy all files on and after this date
+                        format is YYYY-MM-DD
+                        *default* is None, which copies all files on the SD
+                        cards.
+                                  
+        **birrp_exe** : string
+                        full path to the BIRRP executable on your machine
+                        *default* is the location on my machine
+        
+        **ant_calibrations** : string
+                               full path to a folder that contains the coil
+                               calibration data.  These must be in seperate
+                               .csv files for each coil named by corresponding
+                               coil name. If you're coil is 2884, then you
+                               need a calibration file named Ant2884_cal.csv
+                               in which the data is freq,real,imaginary 
+                               
+        **process_df_list** : list
+                              list of sampling rates to process
+                              
+                               
+    Returns
+    -----------------
+        **rp_plot** : mtpy.imaging.plotnresponses object
+                      ploting object of data, if you want to change how the
+                      output is plot change the attributes of rp_plot
+                      
+    Outputs
+    -----------------
+        **copy_from_sd.log** : file
+                               contains information on how files were copied
+                               from the SD cards.
+                               
+        **processing.log** : file
+                             a log file of how the program ran
+        
+        **survey_dir/station/TS** : directory
+                                   contains the time series data in .ascii 
+                                   format
+                                   
+        **survey_dir/station/TS/BF** : directory
+                                       contains the processing results from
+                                       BIRRP for each sampling rate in the
+                                       data in subsequent directories
+                             
+        **survey_dir/station/TS/station.cfg** : file
+                                                configuration file of the
+                                                station parameters
+                                                
+        
+                             
+    Example
+    ------------------------
+        >>> import zen_processing_data as zpd
+        >>> zpd.compute_mt_response(r"/home/mt/survey_00", 
+                                    station='mt010',
+                                    copy_date='2015-05-22',
+                                    birrp_exe=r"/home/bin/birrp52.exe",
+                                    ant_calibrations=r"/home/ant_calibrations",
+                                    process_df_list=[1024, 256])
+    """
+                        
+    station_dir = os.path.join(survey_dir, station)
+               
+    st = time.time()
+    #--> Copy data from files
+    try:
+        if copy_date is None:
+            copy_from_sd(station, save_path=survey_dir)
+        else:
+            copy_from_sd(station, save_path=survey_dir, 
+                             copy_date=copy_date, copy_type='after')
+    except IOError:
+        print 'No files copied from SD cards'
+        print 'Looking in  {0} for Z3D files'.format(station_dir)
+    
+    #--> process data
+     
+    with Capturing() as output:
+        z2edi = Z3D_to_edi(station_dir)
+        z2edi.birrp_exe = birrp_exe
+        z2edi.coil_cal_path = ant_calibrations
+        try:
+            rp = z2edi.process_data(df_list=process_df_list)
+        except mtex.MTpyError_inputarguments:
+            print '==> Data not good!! Did not produce a proper .edi file' 
+            et = time.time()
+            print '--> took {0} seconds'.format(et-st)
+    
+    #--> write log file
+    log_fid = open(os.path.join(station_dir, 'Processing.log'), 'w')
+    log_fid.write('\n'.join(output))
+    log_fid.close()
+    
+    return rp
+
+#==============================================================================
+def rename_cac_files(station_dir, station='mt'):
+    """
+    rename and move .cac files to something more useful
+    """
+    fn_list = [os.path.join(station_dir, fn) for fn in os.listdir(station_dir)
+                if fn[-4:].lower() == '.cac']
+                    
+    if len(fn_list) == 0:
+        raise IOError('Could not find any .cac files')
+        
+    save_path = os.path.join(station_dir, 'Merged')
+    if not os.path.exists(save_path) :
+        os.mkdir(save_path)
+    
+    for fn in fn_list:
+        cac_obj = Cache_Metadata(fn)
+        cac_obj.read_metadata()
+        station_name = 'mt{0}'.format(cac_obj.rx_xyz0.split(':')[0])
+        station_date = cac_obj.gdp_date.replace('-', '')
+        station_time = cac_obj.gdp_time.replace(':', '')
+        new_fn = '{0}_{1}_{2}_{3:.0f}.cac'.format(station_name,
+                                                  station_date, 
+                                                  station_time,
+                                                  cac_obj.ts_adfreq)
+        new_fn = os.path.join(save_path, new_fn)
+        shutil.move(fn, new_fn)
+        print 'moved {0} to {1}'.format(fn, new_fn)
