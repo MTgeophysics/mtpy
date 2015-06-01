@@ -13,29 +13,14 @@ Helper functions for the handling of configuration files
 
 #=================================================================
 
-
-import numpy as np
 import sys
 import os
-import glob
 import os.path as op
-import glob
-import calendar
-import time
 import ConfigParser
-import fnmatch
-import shutil
 import copy
 import StringIO
-import mtpy.utils.calculator as MTcc
-import mtpy.processing.general as MTgn
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.format as MTft
-
-reload(MTgn)
-reload(MTcc)
-reload(MTex)
-reload(ConfigParser)
 #=================================================================
 
 list_of_required_keywords = ['latitude',

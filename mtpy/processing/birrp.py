@@ -21,17 +21,15 @@ This module contains functions for handling BIRRP software.
 #=================================================================
 
 import gc
-import StringIO
 import numpy as np
-import re
-import sys, os
-import glob
+import sys
+import os
 import os.path as op
 import subprocess
 import time
 import datetime 
 import fnmatch
-import math,cmath
+import math
 import scipy.signal as SS
 
 import mtpy.utils.exceptions as MTex
@@ -41,26 +39,15 @@ import mtpy.utils.configfile as MTcf
 import mtpy.utils.misc as MTmc
 import mtpy.utils.interpolation as MTip
 
-#import ipdb
-
-reload(MTcf)
-reload(MTft)
-reload(MTfh)
-
-try:
-    import ipdb
-except:
-    pass
-
-
 #=================================================================
 #for time stamp differences:
 epsilon = 1e-5
 #=================================================================
 
 def runbirrp_Nin2out_simple(birrp_exe, stationname, ts_directory, 
-                           coherence_threshold = 0.0, rr_station = None, output_channels= 2,
-                           output_dir = None, starttime = None, endtime = None):
+                           coherence_threshold=0.0, rr_station=None,
+                           output_channels=2, output_dir=None, 
+                           starttime=None, endtime=None):
 
 
     """
@@ -607,8 +594,8 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
                     data[:,idx_ch] = data_in[startindex:startindex+data_section_length]
                 else:
                     endindex = np.abs(ta - ta_file[-1]).argmin() +1 
-                    data_section_length = len(data[:endidx])
-                    data[:endidx,idx_ch] = data_in[startindex:]
+                    data_section_length = len(data[:endindex])
+                    data[:endindex,idx_ch] = data_in[startindex:]
 
 
 
@@ -661,8 +648,8 @@ def set_birrp_input_file_simple(stationname, rr_station, ts_directory,
                         data[:,idx_ch+2+output_channels] = data_in[startindex:startindex+data_section_length]
                     else:
                         endindex = np.abs(ta - ta_file[-1]).argmin() +1 
-                        data_section_length = len(data[:endidx])
-                        data[:endidx,idx_ch+2+output_channels] = data_in[startindex:]
+                        data_section_length = len(data[:endindex])
+                        data[:endindex,idx_ch+2+output_channels] = data_in[startindex:]
      
                 print 'file time section: ',ta_file[0],ta_file[-1], '(overall window: ', ta[0],ta[-1],')'
 
@@ -1661,7 +1648,7 @@ def convert2edi(stationname, in_dir, survey_configfile, birrp_configfile,
     if out_dir == None:
         output_dir = input_dir
     else:
-        output_dir = op.abspath(op.realpath(op.join(current_dir,out_dir)))
+        output_dir = op.abspath(op.realpath(op.join(os.getcwd(),out_dir)))
         if not op.isdir(output_dir):
             try:
                 os.makedirs(output_dir)
