@@ -55,7 +55,60 @@ datetime_sec = '%Y-%m-%d %H:%M:%S'
 
 class Z3D_Header(object):
     """
-    class for z3d header
+    class for z3d header.  This will read in the header information of a 
+    Z3D file and make each metadata entry an attirbute
+    
+    Arguments
+    ------------
+        **fn** : string
+                 full path to Z3D file
+                 
+        **fid** : file object
+                  ie. open(Z3D_file, 'rb')
+                  
+    ======================== ==================================================
+    Attributes               Definition    
+    ======================== ==================================================
+    _header_len              lenght of header in bits (512)
+    ad_gain                  gain of channel
+    ad_rate                  sampling rate in Hz 
+    alt                      altitude of the station (not reliable)
+    attenchannelsmask        not sure
+    box_number               ZEN box number
+    box_serial               ZEN box serial number  
+    channel                  channel number of the file 
+    channelserial            serial number of the channel board
+    duty                     duty cycle of the transmitter
+    fpga_buildnum            build number of one of the boards
+    gpsweek                  GPS week
+    header_str               full header string
+    lat                      latitude of station
+    logterminal              not sure
+    long                     longitude of the station
+    main_hex_buildnum        build number of the ZEN box in hexidecimal
+    numsats                  number of gps satelites
+    period                   period of the transmitter 
+    tx_duty                  transmitter duty cycle
+    tx_freq                  transmitter frequency
+    version                  version of the firmware
+    ======================== ==================================================
+    
+    
+    ======================== ==================================================
+    Methods                  Description
+    ======================== ==================================================
+    convert_values           convert the read in header metadata to 
+                             appropriate units and data types.
+    read_header              read in the header data from the given file
+    ======================== ==================================================
+    
+    Example
+    --------------
+        >>> import mtpy.usgs.zen as zen
+        >>> z3d_fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
+        >>> header_obj = zen.Z3d_Header()
+        >>> header_obj.read_header()
+    
     """
     
     def __init__(self, fn=None, fid=None, **kwargs):
@@ -142,13 +195,65 @@ class Z3D_Header(object):
 #==============================================================================
 class Z3D_Schedule_metadata(object):
     """
-    class object for metadata of Z3d file
+    class object for metadata of Z3d file.  This will read in the schedule
+    information of a Z3D file and make each metadata entry an attirbute.
+    The attributes are left in capitalization of the Z3D file.
+    
+    Arguments
+    ------------
+        **fn** : string
+                 full path to Z3D file
+                 
+        **fid** : file object
+                  ie. open(Z3D_file, 'rb')
+                  
+    ======================== ==================================================
+    Attributes               Definition    
+    ======================== ==================================================
+    AutoGain                 Auto gain for the channel  
+    Comment                  Any comments for the schedule
+    Date                     Date of when the schedule action was started
+                             YYYY-MM-DD  
+    Duty                     Duty cycle of the transmitter 
+    FFTStacks                FFT stacks from the transmitter
+    Filename                 Name of the file that the ZEN gives it
+    Gain                     Gain of the channel
+    Log                      Log the data [ Y | N ]
+    NewFile                  Create a new file [ Y | N ]
+    Period                   Period of the transmitter
+    RadioOn                  Turn on the radio [ Y | N ]
+    SR                       Sampling Rate in Hz
+    SamplesPerAcq            Samples per aquisition for transmitter 
+    Sleep                    Set the box to sleep [ Y | N ]
+    Sync                     Sync with GPS [ Y | N ]
+    Time                     Time the schedule action started
+                             HH:MM:SS (GPS time)
+    _header_len              length of header in bits (512)
+    _schedule_metadata_len   length of schedule metadata in bits (512)
+    fid                      file object of the file
+    fn                       file name to read in
+    meta_string              string of the schedule
+    ======================== ==================================================
+    
+    
+    ======================== ==================================================
+    Methods                  Description
+    ======================== ==================================================
+    read_schedule_metadata   read in the schedule information from the given
+                             file
+    ======================== ==================================================
+    
+    Example
+    --------------
+        >>> import mtpy.usgs.zen as zen
+        >>> z3d_fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
+        >>> header_obj = zen.Z3d_Schedule_metadata()
+        >>> header_obj.read_schedule_metadata()
     """
     def __init__(self, fn=None, fid=None, **kwargs):
         self.fn = fn
         self.fid = None
         self.meta_string = None
-
 
         self._schedule_metadata_len = 512
         self._header_len = 512 
@@ -213,7 +318,71 @@ class Z3D_Schedule_metadata(object):
 #==============================================================================
 class Z3D_Metadata(object):
     """
-    class for metadata from Z3d file
+    class object for metadata of Z3d file.  This will read in the metadata
+    information of a Z3D file and make each metadata entry an attirbute.
+    The attributes are left in capitalization of the Z3D file.
+    
+    Arguments
+    ------------
+        **fn** : string
+                 full path to Z3D file
+                 
+        **fid** : file object
+                  ie. open(Z3D_file, 'rb')
+                  
+    ======================== ==================================================
+    Attributes               Definition    
+    ======================== ==================================================
+    _header_length           length of header in bits (512)  
+    _metadata_length         length of metadata blocks (512) 
+    _schedule_metadata_len   length of schedule meta data (512)
+    board_cal                board calibration np.ndarray()
+    cal_ant                  antenna calibration
+    cal_board                board calibration
+    cal_ver                  calibration version
+    ch_azimuth               channel azimuth
+    ch_cmp                   channel component
+    ch_length                channel length (or # of coil)
+    ch_number                channel number on the ZEN board
+    ch_xyz1                  channel xyz location (not sure)
+    ch_xyz2                  channel xyz location (not sure)
+    coil_cal                 coil calibration np.ndarray (freq, amp, phase)
+    fid                      file object
+    find_metadata            boolean of finding metadata
+    fn                       full path to Z3D file
+    gdp_operator             operater of the survey
+    gdp_progver              program version
+    job_by                   job preformed by  
+    job_for                  job for 
+    job_name                 job name
+    job_number               job number
+    m_tell                   location in the file where the last metadata 
+                             block was found.
+    rx_aspace                electrode spacing
+    rx_sspace                not sure
+    rx_xazimuth              x azimuth of electrode
+    rx_xyz0                  not sure
+    rx_yazimuth              y azimuth of electrode
+    survey_type              type of survey 
+    unit_length              length units (m)
+    ======================== ==================================================
+    
+    
+    ======================== ==================================================
+    Methods                  Description
+    ======================== ==================================================
+    read_metadata            read in the metadata information from the given
+                             file
+    ======================== ==================================================
+    
+    Example
+    --------------
+        >>> import mtpy.usgs.zen as zen
+        >>> z3d_fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
+        >>> header_obj = zen.Z3d_Metadata()
+        >>> header_obj.read_metadata()
+    
+    
     """
 
     def __init__(self, fn=None, fid=None, **kwargs):
