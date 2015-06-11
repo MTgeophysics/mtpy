@@ -5297,8 +5297,7 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
                     zt.read_header()
                     zt.read_schedule()
                     zt.read_metadata()
-                    schedule_date = '{0},{1}'.format(zt.schedule.Date,
-                                                     zt.schedule.Time)
+                    schedule_date = '{0}'.format(zt.schedule.Date)
                     
                     if schedule_date is not None:
                         fn_find = True
@@ -5335,7 +5334,7 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
                             print 'copied {0} to {1}\n'.format(full_path_fn, 
                                                              full_path_sv)
                                                              
-                            log_fid.writelines(zt.log_lines)
+                            #log_fid.writelines(zt.log_lines)
                                                              
                             log_fid.write('copied {0} to \n'.format(full_path_fn)+\
                                           '       {0}\n'.format(full_path_sv))
@@ -5986,7 +5985,7 @@ def rename_cac_files(station_dir, station='mt'):
     
     for fn in fn_list:
         cac_obj = Cache_Metadata(fn)
-        cac_obj.read_metadata()
+        cac_obj.read_meta_string()
         station_name = 'mt{0}'.format(cac_obj.rx_xyz0.split(':')[0])
         station_date = cac_obj.gdp_date.replace('-', '')
         station_time = cac_obj.gdp_time.replace(':', '')
