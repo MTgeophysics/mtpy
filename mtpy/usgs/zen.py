@@ -5886,7 +5886,7 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
                                full path to a folder that contains the coil
                                calibration data.  These must be in seperate
                                .csv files for each coil named by corresponding
-                               coil name. If you're coil is 2884, then you
+                               coil name. If your coil is 2884, then you
                                need a calibration file named Ant2884_cal.csv
                                in which the data is freq,real,imaginary 
                                
@@ -5985,8 +5985,8 @@ def rename_cac_files(station_dir, station='mt'):
         os.mkdir(save_path)
     
     for fn in fn_list:
-        cac_obj = Cache_Metadata(fn)
-        cac_obj.read_metadata()
+        cac_obj = Cache(fn)
+        cac_obj.read_cache_metadata()
         station_name = 'mt{0}'.format(cac_obj.rx_xyz0.split(':')[0])
         station_date = cac_obj.gdp_date.replace('-', '')
         station_time = cac_obj.gdp_time.replace(':', '')
