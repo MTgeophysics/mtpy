@@ -3091,6 +3091,8 @@ class Model(Startup):
         r1 = Regularization()
         r1.read_regularization_file(self.model_fn)
         r1.model_rows = np.array(r1.model_rows)
+        self.model_rows = r1.model_rows
+        self.model_columns = r1.model_columns
 
         #read in mesh file
         r1.read_mesh_file(r1.mesh_fn)
@@ -4540,16 +4542,16 @@ class PlotModel(Model):
         #plot the regularization mesh
         if self.regmesh == 'on':
             line_list = []
-            for ii in range(len(self.rows)):
+            for ii in range(len(self.model_rows)):
                 #get the number of layers to combine
                 #this index will be the first index in the vertical direction
-                ny1 = self.rows[:ii,0].sum()
+                ny1 = self.model_rows[:ii,0].sum()
                 
                 #the second index  in the vertical direction
-                ny2 = ny1+self.rows[ii][0]
+                ny2 = ny1+self.model_rows[ii][0]
                 
                 #make the list of amalgamated columns an array for ease
-                lc = np.array(self.cols[ii])
+                lc = np.array(self.model_cols[ii])
                 yline = ax.plot([self.plot_x[0]/df,self.plot_x[-1]/df],
                                 [self.plot_z[-ny1]/df,
                                  self.plot_z[-ny1]/df],
@@ -4559,7 +4561,7 @@ class PlotModel(Model):
                 line_list.append(yline)
 
                 #loop over the number of amalgamated blocks
-                for jj in range(len(self.cols[ii])):
+                for jj in range(len(self.model_cols[ii])):
                     #get first in index in the horizontal direction
                     nx1 = lc[:jj].sum()
                     
@@ -4590,17 +4592,17 @@ class PlotModel(Model):
         ##plot regularization block numbers
         if self.blocknum == 'on':
             kk=1
-            for ii in range(len(self.rows)):
+            for ii in range(len(self.model_rows)):
                 #get the number of layers to combine
                 #this index will be the first index in the vertical direction
-                ny1 = self.rows[:ii,0].sum()
+                ny1 = self.model_rows[:ii,0].sum()
                 
                 #the second index  in the vertical direction
-                ny2 = ny1+self.rows[ii][0]
+                ny2 = ny1+self.model_rows[ii][0]
                 #make the list of amalgamated columns an array for ease
-                lc = np.array(self.cols[ii])
+                lc = np.array(self.model_cols[ii])
                 #loop over the number of amalgamated blocks
-                for jj in range(len(self.cols[ii])):
+                for jj in range(len(self.model_cols[ii])):
                     #get first in index in the horizontal direction
                     nx1 = lc[:jj].sum()
                     #get second index in horizontal direction

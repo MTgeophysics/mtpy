@@ -1426,7 +1426,7 @@ class Data():
         self.profile_origin = None
 
         self.phase_errorfloor = 5
-        self.rho_errorfloor = 5
+        self.rho_errorfloor = 10
         self.tipper_errorfloor = 5
 
         self.min_frequency = None
