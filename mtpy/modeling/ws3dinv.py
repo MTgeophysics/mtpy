@@ -350,14 +350,14 @@ class WSData(object):
 
                 # if an error floor is set.
                 if self.z_err_floor is not None:
-                    per_err = self.data[ss]['z_data_err'][ff, :]/\
-                              self.data[ss]['z_data'][ff, :]
+                    per_err = self.data[ss]['z_data_err'][jj, :]/\
+                              self.data[ss]['z_data'][jj, :]
                     per_err[np.where(per_err < self.z_err_floor)] = \
                                                 self.z_err_floor
-                    self.data[ss]['z_data_err'][ff, : ] = \
-                        self.data[ss]['z_data'][ff, :]*per_err
+                    self.data[ss]['z_data_err'][jj, : ] = \
+                        self.data[ss]['z_data'][jj, :]*per_err
                             
-                self.data[ss]['z_err_map'][ff] = np.reshape(self.z_err_map,
+                self.data[ss]['z_err_map'][jj] = np.reshape(self.z_err_map,
                                                             (2,2))
 #            for ff, f1 in enumerate(self.period_list):
 #                for kk,f2 in enumerate(z1.period):
