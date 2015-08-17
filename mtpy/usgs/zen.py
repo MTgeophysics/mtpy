@@ -453,6 +453,7 @@ class Z3D_Metadata(object):
             test_str = self.fid.read(self._metadata_length)
             if test_str.lower().find('metadata record') > 0:
                 self.count += 1
+                cal_find = False
                 test_str = test_str.strip().split('\n')[1] 
                 if test_str.count('|') > 1:
                     for t_str in test_str.split('|'):
@@ -1225,7 +1226,7 @@ class Zen3D(object):
         
     #==================================================
     def write_ascii_mt_file(self, save_fn=None, save_station='mb', fmt='%.8e',
-                            ex=1, ey=1, notch_dict=None):
+                            ex=100., ey=100., notch_dict=None):
         """
         write an mtpy time series data file
         
@@ -4568,7 +4569,7 @@ class BIRRP_processing(object):
             for fn in f_list:
                 key = fn[-2:]
                 sort_list[comp_dict[num_comps][key.upper()]] = fn
-        self.fn_list[ii] = sort_list
+            self.fn_list[ii] = sort_list
             
         # get remote reference file names, same as input, just hx and hy
         self.rrfn_list = []
@@ -4688,8 +4689,8 @@ class Z3D_to_edi(object):
         self.survey_config = Survey_Config(save_path=self.station_dir)
         self.survey_config_fn = None
         self.birrp_config_fn = None
-        self.birrp_exe = r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts_big.exe"
-        self.coil_cal_path = r"d:\Peacock\MTData\Ant_calibrations"
+        self.birrp_exe = r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts.exe"
+        self.coil_cal_path = r"c:\MT\Ant_calibrations"
 
         
     def make_survey_config_file(self, survey_config_dict=None):
@@ -4784,7 +4785,7 @@ class Z3D_to_edi(object):
         
     def make_mtpy_ascii_files(self, station_dir=None, fmt='%.8', 
                               station_name='mb', notch_dict={},
-                              df_list=None): 
+                              df_list=None, max_blocks=3, ex=100., ey=100.): 
         """
         makes mtpy_mt files from .Z3D files
         
@@ -4826,13 +4827,19 @@ class Z3D_to_edi(object):
                                  ('comp','|S2'),
                                  ('fn','|S100')])
         fn_lines = []
-                                 
+        z3d_count = 0             
         for ii, fn in enumerate(fn_list):
+            if z3d_count > len(df_list)*5*max_blocks-1:
+                   break
             if df_list is not None:
                zd = Zen3D(fn)
                zd.read_header()
+               
+               
                if zd.header.ad_rate in df_list:
                    zd.read_z3d()
+                   z3d_count += 1
+
                else:
                    continue
             else:
@@ -4858,7 +4865,7 @@ class Z3D_to_edi(object):
                 self.survey_config.box = int(zd.header.box_number)
             
             #write mtpy mt file
-            zd.write_ascii_mt_file(notch_dict=notch_dict)
+            zd.write_ascii_mt_file(notch_dict=notch_dict, ex=ex, ey=ey)
             
             #create lines to write to a log file                       
             station = zd.metadata.rx_xyz0.split(':')[0]
@@ -5005,7 +5012,7 @@ class Z3D_to_edi(object):
                                                          
         return resp_plot
  
-    def process_data(self, df_list=None):
+    def process_data(self, df_list=None, max_blocks=2):
         """
         from the input station directory, convert files to ascii, run through
         BIRRP, convert to .edi files and plot
@@ -5019,7 +5026,8 @@ class Z3D_to_edi(object):
                df_list = [df_list] 
         
         # make files into mtpy files
-        z3d_fn_list, log_lines = self.make_mtpy_ascii_files(df_list=df_list)
+        z3d_fn_list, log_lines = self.make_mtpy_ascii_files(df_list=df_list,
+                                                            max_blocks=max_blocks)
         
         # get all information from mtpy files
         schedule_dict = self.get_schedules_fn(z3d_fn_list)
@@ -5297,10 +5305,9 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
                     zt.read_header()
                     zt.read_schedule()
                     zt.read_metadata()
-                    schedule_date = '{0},{1}'.format(zt.schedule.Date,
-                                                     zt.schedule.Time)
+                    schedule_date = '{0}'.format(zt.schedule.Date)
                     
-                    if schedule_date is not None:
+                    if zt.metadata.rx_xyz0.find(station[2:]) >= 0:
                         fn_find = True
                         if copy_date is not None:
                             cp_date = int(''.join(copy_date.split('-')))
@@ -5335,7 +5342,7 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
                             print 'copied {0} to {1}\n'.format(full_path_fn, 
                                                              full_path_sv)
                                                              
-                            log_fid.writelines(zt.log_lines)
+                            #log_fid.writelines(zt.log_lines)
                                                              
                             log_fid.write('copied {0} to \n'.format(full_path_fn)+\
                                           '       {0}\n'.format(full_path_sv))
@@ -5886,7 +5893,7 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
                                full path to a folder that contains the coil
                                calibration data.  These must be in seperate
                                .csv files for each coil named by corresponding
-                               coil name. If your coil is 2884, then you
+                               coil name. If you're coil is 2884, then you
                                need a calibration file named Ant2884_cal.csv
                                in which the data is freq,real,imaginary 
                                
@@ -5961,6 +5968,7 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
             print '==> Data not good!! Did not produce a proper .edi file' 
             et = time.time()
             print '--> took {0} seconds'.format(et-st)
+            rp = None
     
     #--> write log file
     log_fid = open(os.path.join(station_dir, 'Processing.log'), 'w')
@@ -5968,9 +5976,10 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
     log_fid.close()
     
     return rp
+    
 
 #==============================================================================
-def rename_cac_files(station_dir, station='mt'):
+def rename_cac_files(station_dir, station='mb'):
     """
     rename and move .cac files to something more useful
     """
@@ -5987,13 +5996,13 @@ def rename_cac_files(station_dir, station='mt'):
     for fn in fn_list:
         cac_obj = Cache(fn)
         cac_obj.read_cache_metadata()
-        station_name = 'mt{0}'.format(cac_obj.rx_xyz0.split(':')[0])
-        station_date = cac_obj.gdp_date.replace('-', '')
-        station_time = cac_obj.gdp_time.replace(':', '')
+        station_name = '{0}{1}'.format(station, cac_obj.metadata.rx_xyz0.split(':')[0])
+        station_date = cac_obj.metadata.gdp_date.replace('-', '')
+        station_time = cac_obj.metadata.gdp_time.replace(':', '')
         new_fn = '{0}_{1}_{2}_{3:.0f}.cac'.format(station_name,
                                                   station_date, 
                                                   station_time,
-                                                  cac_obj.ts_adfreq)
+                                                  cac_obj.metadata.ts_adfreq)
         new_fn = os.path.join(save_path, new_fn)
         shutil.move(fn, new_fn)
         print 'moved {0} to {1}'.format(fn, new_fn)
