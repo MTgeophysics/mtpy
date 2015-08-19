@@ -2536,6 +2536,7 @@ class Cache_Metadata(object):
         self.ts_adfreq = None
         self.ts_npnt = None
         self.unit_length = None
+        self.station_number = None
         
 
         for key in kwargs.keys():
@@ -2560,6 +2561,21 @@ class Cache_Metadata(object):
                     except ValueError:
                         l_value = l_value[0]
                 setattr(self, l_key, l_value)
+            self._get_station_number()
+    
+    def _get_station_number(self):
+        """
+        get station name from metadata from all versions of .cac files
+        """
+        
+        try: 
+            self.station_number = str(int(self.rx_stn))
+        except AttributeError:
+            try:
+                self.station_number = self.rx_xyz0.split(':')[0]
+            except AttributeError:
+                print ('Could not find station number in rx.stn or rx.xyz0'
+                        ' setting station_number to 000')
                 
 class Board_Calibration(object):
     """
@@ -5996,7 +6012,7 @@ def rename_cac_files(station_dir, station='mb'):
     for fn in fn_list:
         cac_obj = Cache(fn)
         cac_obj.read_cache_metadata()
-        station_name = '{0}{1}'.format(station, cac_obj.metadata.rx_xyz0.split(':')[0])
+        station_name = '{0}{1}'.format(station, cac_obj.metadata.station_number)
         station_date = cac_obj.metadata.gdp_date.replace('-', '')
         station_time = cac_obj.metadata.gdp_time.replace(':', '')
         new_fn = '{0}_{1}_{2}_{3:.0f}.cac'.format(station_name,
