@@ -1739,6 +1739,7 @@ class ZongeMTAvg():
                 pass
             # read the data line.
             elif len(aline) > 2:
+                aline = aline.replace('*', '0.50')
                 alst = [aa.strip() for aa in aline.strip().split(',')]
                 for cc, ckey in enumerate(self.info_keys):
                     self.comp_dict[akey][ii][ckey.lower()] = alst[cc]
