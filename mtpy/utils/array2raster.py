@@ -37,6 +37,7 @@ class ModEM_to_Raster(object):
         self.save_path = kwargs.pop('save_path', os.getcwd())
         self.projection = kwargs.pop('projection', 'WGS84')
         self.lower_left_corner = kwargs.pop('lower_left_corner', None)
+        self.grid_center = kwargs.pop('gid_center', None)
         
         self.pad_east = None
         self.pad_north = None
