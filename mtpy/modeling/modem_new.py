@@ -2534,18 +2534,21 @@ class Covariance(object):
         write a covariance file
         """
         
+       
+
+        if model_fn is not None:
+            mod_obj = Model()
+            mod_obj.read_model_file(model_fn)
+            self.grid_dimensions = mod_obj.res_model.shape
+            self.mask_arr = np.ones_like(mod_obj.res_model)
+            self.mask_arr[np.where(mod_obj.res_model > air*.9)] = 0
+            self.mask_arr[np.where((mod_obj.res_model < sea_water*1.1) & 
+                              (mod_obj.res_model > sea_water*.9))] = 9
+            
+        
         if self.grid_dimensions is None and model_fn is None:
             raise ModEMError('Grid dimensions are None, input as (Nx, Ny, Nz)')
-
-        else:
-            if model_fn is not None:
-                mod_obj = Model()
-                mod_obj.read_model_file(model_fn)
-                self.grid_dimensions = mod_obj.res_model.shape
-                self.mask_arr = np.ones_like(mod_obj.res_model)
-                self.mask_arr[np.where(mod_obj.res_model > air*.9)] = 0
-                self.mask_arr[np.where((mod_obj.res_model < sea_water*1.1) & 
-                                  (mod_obj.res_model > sea_water*.9))] = 9
+        
         if cov_fn is not None:
             self.cov_fn = cov_fn
         else:
