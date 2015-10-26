@@ -2534,11 +2534,10 @@ class Covariance(object):
         write a covariance file
         """
         
-       
-
         if model_fn is not None:
             mod_obj = Model()
             mod_obj.read_model_file(model_fn)
+            print 'Reading {0}'.format(model_fn)
             self.grid_dimensions = mod_obj.res_model.shape
             self.mask_arr = np.ones_like(mod_obj.res_model)
             self.mask_arr[np.where(mod_obj.res_model > air*.9)] = 0
@@ -2546,7 +2545,7 @@ class Covariance(object):
                               (mod_obj.res_model > sea_water*.9))] = 9
             
         
-        if self.grid_dimensions is None and model_fn is None:
+        if self.grid_dimensions is None:
             raise ModEMError('Grid dimensions are None, input as (Nx, Ny, Nz)')
         
         if cov_fn is not None:
@@ -2753,7 +2752,8 @@ def interpolate_elevation(elev_east, elev_north, elevation, model_east,
                                elevation.ravel(),
                                (model_east[:, None], 
                                 model_north[None, :]),
-                                method='linear')
+                                method='linear',
+                                fill_value=elevation.mean())
                                 
     interp_elev[0:pad, pad:-pad] = interp_elev[pad, pad:-pad]
     interp_elev[-pad:, pad:-pad] = interp_elev[-pad-1, pad:-pad]
@@ -2835,9 +2835,11 @@ def make_elevation_model(interp_elev, model_nodes_z, elevation_cell=30,
     
     # find sea level if it is there
     if elev_min < 0:
-        sea_level_index = abs(int((elev_min)/elevation_cell))
+        sea_level_index = num_elev_cells-abs(int((elev_min)/elevation_cell))-1
     else:
-        sea_level_index = 0
+        sea_level_index = num_elev_cells-1
+        
+    print 'Sea level index is {0}'.format(sea_level_index)
     
     
     # make an array of just the elevation for the model
@@ -2851,14 +2853,16 @@ def make_elevation_model(interp_elev, model_nodes_z, elevation_cell=30,
     
          
     # fill in elevation model with air values.  Remeber Z is positive down, so
-    # the top of the model is the highest point                
+    # the top of the model is the highest point and index 0 is highest 
+    # elevation                
     for nn in range(interp_elev.shape[0]):
         for ee in range(interp_elev.shape[1]):
             # need to test for ocean
             if interp_elev[nn, ee] < 0:
                 # fill in from bottom to sea level, then rest with air
-                elevation_model[nn, ee, 0:sea_level_index] = res_sea
-                elevation_model[nn, ee, sea_level_index:] = res_air
+                elevation_model[nn, ee, 0:sea_level_index] = res_air
+                dz = sea_level_index+abs(int((interp_elev[nn, ee])/elevation_cell))+1
+                elevation_model[nn, ee, sea_level_index:dz] = res_sea
             else:
                 dz = int((elev_max-interp_elev[nn, ee])/elevation_cell)
                 elevation_model[nn, ee, 0:dz] = res_air
