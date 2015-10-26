@@ -475,10 +475,9 @@ class ResPhase(object):
         if self.phase_quadrant == 1:
             if self.phaseyx.mean() > 180:
                 self.phaseyx -= 180
-                self.phaseyy -= 180
             else:
                 self.phaseyx += 180
-                self.phaseyy += 180
+
         
         #calculate determinant values
         zdet = np.array([np.linalg.det(zz)**.5 for zz in self._Z.z])
@@ -785,6 +784,7 @@ class MTplot(object):
         #if a tipper object is input set it to _Tipper
         if tipper_object is not None:
             self._Tipper = tipper_object
+            
         else:
             self._Tipper = mtz.Tipper(tipper_array=tipper, 
                                       tippererr_array=tippererr,
@@ -934,10 +934,13 @@ class MTplot(object):
                 self._Z.zerr = self._Z.zerr.copy()[::-1]
                 self._Z.freq = self._freq.copy()
                 
-                if self._Tipper.tipper is not None:
-                    self._Tipper.tipper = self._Tipper.tipper.copy()[::-1]
-                    self._Tipper.tippererr = self._Tipper.tippererr.copy()[::-1]
-                    self._Tipper.freq = self._freq.copy()
+                try:
+                    if self._Tipper.tipper is not None:
+                        self._Tipper.tipper = self._Tipper.tipper.copy()[::-1]
+                        self._Tipper.tippererr = self._Tipper.tippererr.copy()[::-1]
+                        self._Tipper.freq = self._freq.copy()
+                except AttributeError:
+                    pass
 
         
     #==========================================================================
