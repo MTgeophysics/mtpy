@@ -2658,8 +2658,7 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
             elevation[:, -ii] = np.array(dline.strip().split(' '), dtype='float')
         else:
             break
-    # need to rotate cause I think I wrote the dem backwards
-    elevation = np.rot90(elevation, rot_90)
+
     dfid.close()
 
     # create lat and lon arrays from the dem fle
@@ -2697,6 +2696,9 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
     # are collocated.
     new_east = (new_east-new_east.mean())+shift_east
     new_north = (new_north-new_north.mean())+shift_north
+    
+    # need to rotate cause I think I wrote the dem backwards
+    elevation = np.rot90(elevation, rot_90)
     
     return new_east, new_north, elevation
 
