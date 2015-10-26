@@ -2763,7 +2763,7 @@ def interpolate_elevation(elev_east, elev_north, elevation, model_east,
     return interp_elev   
 
 def make_elevation_model(interp_elev, model_nodes_z, elevation_cell=30, 
-                         pad=3, res_air=1e12, fill_res=100):
+                         pad=3, res_air=1e12, fill_res=100, res_sea=0.3):
     """
     Take the elevation data of the interpolated elevation model and map that
     onto the resistivity model by adding elevation cells to the existing model.
@@ -2828,6 +2828,13 @@ def make_elevation_model(interp_elev, model_nodes_z, elevation_cell=30,
     num_elev_cells = int((elev_max-elev_min)/elevation_cell)
     print 'Number of elevation cells: {0}'.format(num_elev_cells)
     
+    # find sea level if it is there
+    if elev_min < 0:
+        sea_level_index = abs(int((elev_min)/elevation_cell))
+    else:
+        sea_level_index = 0
+    
+    
     # make an array of just the elevation for the model
     # north is first index, east is second, vertical is third
     elevation_model = np.ones((interp_elev.shape[0],
@@ -2835,16 +2842,23 @@ def make_elevation_model(interp_elev, model_nodes_z, elevation_cell=30,
                                num_elev_cells+model_nodes_z.shape[0]))
                                
     elevation_model[:, :, :] = fill_res
+    
+    
          
     # fill in elevation model with air values.  Remeber Z is positive down, so
     # the top of the model is the highest point                
     for nn in range(interp_elev.shape[0]):
         for ee in range(interp_elev.shape[1]):
-            dz = int((elev_max-interp_elev[nn, ee])/elevation_cell)
-            elevation_model[nn, ee, 0:dz] = res_air
+            # need to test for ocean
+            if interp_elev[nn, ee] < 0:
+                # fill in from bottom to sea level, then rest with air
+                elevation_model[nn, ee, 0:sea_level_index] = res_sea
+                elevation_model[nn, ee, sea_level_index:] = res_air
+            else:
+                dz = int((elev_max-interp_elev[nn, ee])/elevation_cell)
+                elevation_model[nn, ee, 0:dz] = res_air
     
-    
-    
+    # make new z nodes array    
     new_nodes_z = np.append(np.repeat(elevation_cell, num_elev_cells), 
                             model_nodes_z) 
                             
