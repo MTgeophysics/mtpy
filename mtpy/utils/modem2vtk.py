@@ -219,13 +219,13 @@ def main():
 
     f.close()
 
-    fn2 = VTKresist+'.csv'
-    F = open(fn2,'w')
-    F.write('X , Y , Down , Rho \n')
-    np.savetxt(F,arr,delimiter=',')
-    F.close()
+    #fn2 = VTKresist+'.csv'
+    #F = open(fn2,'w')
+    #F.write('X , Y , Down , Rho \n')
+    #np.savetxt(F,arr,delimiter=',')
+    #F.close()
 
-    print 'Created Resistivity Array: {0}.csv'.format(VTKresist)
+    #print 'Created Resistivity Array: {0}.csv'.format(VTKresist)
     print 'Created Resistivity VTK File: {0}.vtr'.format(VTKresist)
 
     try:
