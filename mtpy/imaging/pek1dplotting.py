@@ -82,11 +82,15 @@ class Plot_model():
                                      colour=['c','y','b','r','g','m'])
         self.horizon_list = None
         self.horizon_zscale = 'km'
+        self.plotyn = True
         
         for key in input_parameters.keys():
             if hasattr(self,key):
                 setattr(self,key,input_parameters[key]) 
 #        print "label fontsize {}".format(self.label_fontsize)
+                
+        if self.plotyn:
+            self.plot_parameter()
 
     def _set_axis_params(self,ax,
                          parameter

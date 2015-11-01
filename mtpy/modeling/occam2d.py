@@ -111,7 +111,8 @@ class Setup():
         self.parameters_inmodel['no_sideblockelements'] = 5
         self.parameters_inmodel['no_bottomlayerelements'] = 4
         self.parameters_inmodel['firstlayer_thickness'] = 100
-        
+        self.parameters_inmodel['no_mergedsideblockelements'] = 5
+        self.parameters_inmodel['sidepadding_increasefactor'] = 2.
         #model depth is in km!
         self.parameters_inmodel['model_depth'] = 100
         self.parameters_inmodel['no_layers'] = 25
@@ -119,8 +120,11 @@ class Setup():
 
         self.parameters_inmodel['model_name'] = 'Modelfile generated with MTpy'
         self.parameters_inmodel['block_merge_threshold'] = 0.75
+        # factor determining amount of increase with each bottom padding
+        self.parameters_inmodel['bottompadding_scalefactor'] = 1.
+        
         self.parameters_inmodel['roughness_exceptions'] = None
-        self.parameters_inmodel['interfaces'] = False
+        self.parameters_inmodel['build_roughness_exceptions'] = False
         self.parameters_inmodel['interface_dir'] = None
         self.parameters_inmodel['interface_filelist'] = None
         self.parameters_inmodel['elevation_filename'] = None
@@ -141,7 +145,14 @@ class Setup():
         self.parameters_data['max_no_frequencies'] = None
 
         self.parameters_mesh['mesh_title'] = 'Mesh file generated with MTpy'
-        self.prejudice_weight = 1.
+        
+        self.parameters_prejudice = {}
+        self.parameters_prejudice['constraints_type'] = 'interfaces'
+        self.parameters_prejudice['build_prejudice_file'] = False
+        self.parameters_prejudice['interfaces'] = None # list of arrays containing 2 columns, distance x along profile and depth z of interface
+        self.parameters_prejudice['interface_resistivity_values'] = None # 
+        self.parameters_prejudice['welldata'] = None        
+        self.parameters_prejudice['prejudice_weight'] = 1.
  
         self.mesh = None
         self.meshlocations_x = None
@@ -163,6 +174,7 @@ class Setup():
         self.edifiles = []
 
         self.Data = None
+        self.Prejudice = None
         self.datafile = 'occaminputdata.dat'
         self.meshfile = 'mesh'
         self.inmodelfile = 'inmodel'
@@ -202,7 +214,8 @@ class Setup():
         update_dict.update(input_parameters_nocase)
 
         for dictionary in [self.parameters_startup, self.parameters_inmodel, 
-                                    self.parameters_mesh, self.parameters_data]:
+                           self.parameters_mesh, self.parameters_data,
+                           self.parameters_prejudice]:
             for key in dictionary.keys():
                 if key in update_dict:
                     #check if entry exists:
@@ -438,9 +451,15 @@ class Setup():
 
         #number of padding mesh layers at the bottom 
         n_bottompadding = int(float(self.parameters_inmodel['no_bottomlayerelements']))
+        bottompadding_scalefactor = self.parameters_inmodel['bottompadding_scalefactor']
 
         #number of padding mesh columns to the sides
         n_sidepadding    = int(float(self.parameters_inmodel['no_sideblockelements']))
+        nmerge_sidepadding  = int(float(self.parameters_inmodel['no_mergedsideblockelements']))
+        
+        if (n_sidepadding-nmerge_sidepadding)%2 == 1:
+            nmerge_sidepadding += 1
+        sidepadding_increasefactor = float(self.parameters_inmodel['sidepadding_increasefactor'])
 
         #1. check, if inter-station spacing is smaller than the allowed max block size
         #if not, add dummy station locations
@@ -480,7 +499,7 @@ class Setup():
         print '\nadded {0} dummy stations'.format(no_dummys)
         totalstations = no_dummys+len(lo_sites)
         totalmeshblocknumber = 2*n_sidepadding+4+2*(totalstations)
-        totalmodelblocknumber = 4+totalstations
+        totalmodelblocknumber = 4+totalstations+(n_sidepadding - nmerge_sidepadding)/2
         print '{0} stations in total => \n\t{1} meshblocks and {2} modelblocks expected in top layer'.format(
                                     totalstations,totalmeshblocknumber, totalmodelblocknumber)
 
@@ -521,13 +540,17 @@ class Setup():
 
 
         #add 2 side padding blocks with expon. increasing width of N mesh cells
-        padding_absolute = 0 
+        padding_absolute = 0
+        padding_nmerge = 0
+        
         for p in range(n_sidepadding):
-            current_padding = 2**(p+1)*paddingwidth
-            if current_padding > 1000000:
-                current_padding = 1000000
+            current_padding = sidepadding_increasefactor**(p+1)*paddingwidth
+            if current_padding > 100000:
+                current_padding = 100000
 
             padding_absolute+=current_padding
+            if p < nmerge_sidepadding:
+                padding_nmerge += current_padding
             
             rightedge += current_padding
             meshnodelocations.append(rightedge)
@@ -552,12 +575,20 @@ class Setup():
         lo_modelblockwidths = [] 
         current_meshblock_index = 0
 
-        lo_columns_to_merge.append(n_sidepadding)
-        lo_modelblockwidths.append(padding_absolute)
-        current_meshblock_index += n_sidepadding
+        lo_columns_to_merge.append(nmerge_sidepadding)
+        lo_modelblockwidths.append(padding_nmerge)
+        current_meshblock_index += nmerge_sidepadding
 
+        # merge the extra padding cells that haven't been merged into a big block at the edge
+        for ii in range((n_sidepadding - nmerge_sidepadding)/2):
+            lo_columns_to_merge.append(2)
+            lo_modelblockwidths.append(lo_meshblockwidths[current_meshblock_index] 
+                                + lo_meshblockwidths[current_meshblock_index+1] )
+            current_meshblock_index += 2
+            
         #merge the extra column at the left:
         lo_columns_to_merge.append(2)
+        
         lo_modelblockwidths.append( lo_meshblockwidths[current_meshblock_index] 
                                 + lo_meshblockwidths[current_meshblock_index+1] )
         current_meshblock_index += 2
@@ -575,17 +606,25 @@ class Setup():
                                 + lo_meshblockwidths[current_meshblock_index+1] )
         current_meshblock_index += 2
 
+        # merge the extra padding cells that haven't been merged into a big block at the edge
+        for ii in range((n_sidepadding - nmerge_sidepadding)/2):
+            lo_columns_to_merge.append(2)
+            lo_modelblockwidths.append(lo_meshblockwidths[current_meshblock_index] 
+                                + lo_meshblockwidths[current_meshblock_index+1] )
+            current_meshblock_index += 2
+
+
         #merge the side padding columns on the right
-        lo_columns_to_merge.append(n_sidepadding)
+        lo_columns_to_merge.append(nmerge_sidepadding)
         lo_modelblockwidths.append(np.sum(padding_absolute))
-        current_meshblock_index += n_sidepadding
+        current_meshblock_index += nmerge_sidepadding
 
 
         #6.right side of left most model block - effectively the edge of the padding
         #given with resspect to location of the first station
         #idx of station 1 is n_sidepadding + 2(extra column) + 1 (half the block under the station)
         #binding_offset =  meshnodelocations[n_sidepadding+3] - meshnodelocations[n_sidepadding]
-        binding_offset =  meshnodelocations[n_sidepadding]
+        binding_offset =  meshnodelocations[nmerge_sidepadding]
 
         #should be identical!
         no_x_nodes = current_meshblock_index + 1
@@ -642,16 +681,16 @@ class Setup():
         max_thickness = np.max(lo_mesh_thicknesses)
         maxdepth = lo_mesh_depths[-1]
 
-
         for i in range(n_bottompadding):
             lo_mesh_thicknesses.append(max_thickness)
             lo_mesh_depths.append(maxdepth+max_thickness)
             maxdepth += max_thickness
+            max_thickness *= bottompadding_scalefactor
         
         lo_model_depths.append(lo_model_depths[-1]+n_bottompadding*max_thickness)
 
         #just to be safe!
-        #self.parameters_inmodel['no_layers'] = len(lo_model_depths)
+#        self.parameters_inmodel['no_layers'] = len(lo_model_depths)
 
         lo_model_thicknesses = []
         for idx,depth in enumerate(lo_model_depths):
@@ -885,7 +924,7 @@ class Setup():
             #model_outstring += "\n"
             
 
-        if self.parameters_inmodel['interfaces'] == True:
+        if self.parameters_inmodel['build_roughness_exceptions']:
             idir = self.parameters_inmodel['interface_dir']
             for interface in self.parameters_inmodel['interface_filelist']:
                 self.project_interface(idir,interface)
@@ -1096,32 +1135,40 @@ class Setup():
         Author: Alison Kirkby (2013)
         """
         blockmerges_x = [[int(val) for val in line.strip('\n').split()] for line in self.parameters_inmodel['lo_modelblockstrings']]
+        print blockmerges_x[0]
         blockmerges_z = self.parameters_inmodel['lo_merged_lines']
         meshlocations_z = np.array([0]+self.meshlocations_z)
 #        meshlocations_z.insert(0,0)
         num=1
-        block_nums,block_x,block_z = [],[],[]
+        block_nums,block_x,block_z = [],[],[self.meshlocations_z[0]]
+        block_nums_array = np.zeros((len(self.meshlocations_z)-1,len(self.meshlocations_x)-1))
         iz = 0
         for j,z in enumerate(blockmerges_z):
             ix = 0
-            block_z.append(np.median(meshlocations_z[iz:iz+z+1]))
-            iz += z
+            block_z.append(meshlocations_z[iz+z-1])
             tmp_lst = []
-            tmp_lst_pos = []
+            # list to contain x block locations for this row
+            tmp_lst_xpos = [self.meshlocations_x[0]]
             for i,x in enumerate(blockmerges_x[j]):
-                xpos = np.median(np.array(self.meshlocations_x[ix:ix+x+1]))
+                if ((x > 2) and (j==0)):
+                    print x,ix,self.meshlocations_x[ix:ix+x]
+#                xpos = np.mean(np.array(self.meshlocations_x[ix:ix+x]))
                 tmp_lst.append(num)
-                tmp_lst_pos.append(xpos)
+                # append next x location
+                tmp_lst_xpos.append(self.meshlocations_x[ix+x-1])
+                block_nums_array[iz:iz+z,ix:ix+x] = num
                 ix += x
                 num += 1
+            iz += z
             block_nums.append(np.array(tmp_lst))
-            block_x.append(np.array(tmp_lst_pos))
+            block_x.append(np.array(tmp_lst_xpos))
         self.modelblocklocations_x = np.array(block_x)
         self.modelblocklocations_z = np.array(block_z)
         self.block_nums = np.array(block_nums)
+        self.block_nums_array = np.array(block_nums_array)
 
 
-    def project_interface(self,intdir,fn,skiprows=1):
+    def project_interface(self,intdir,fn,skiprows=1,fmt='xy'):
         """
         project an interface (from an xyz text file) onto the profile.
         adds a numpy array of z locations (corresponding to x model block locations)
@@ -1129,7 +1176,8 @@ class Setup():
 
         intdir = directory where interface text files are held
         fn = filename of interface text file
-        skiprows = number of header rows to skip when reading file             
+        skiprows = number of header rows to skip when reading file  
+        fmt = xy (eastings, northings, depth) or l (length along profile, depth) with origin on first line       
         
         Author: Alison Kirkby (2013)
         """
@@ -1138,14 +1186,32 @@ class Setup():
         self.get_modelblock_info()
             
         az = np.deg2rad(90-self.Data.azimuth)
-                
+        xp0,yp0 = self.Data.profile_origin
+        
         xp = self.Data.profile_origin[0]+self.modelblocklocations_x[0]*np.cos(az)
         yp = self.Data.profile_origin[1]+self.modelblocklocations_x[0]*np.sin(az)
         
-        data = np.loadtxt(os.path.join(intdir,fn),skiprows=skiprows)
-        f = si.CloughTocher2DInterpolator(data[:,0:2],data[:,2])   
+        if fmt == 'xy':
+            data = np.loadtxt(os.path.join(intdir,fn),skiprows=skiprows)
+            f = si.CloughTocher2DInterpolator(data[:,0:2],data[:,2])
+            zp = np.array([f(xp[i],yp[i]) for i in range(len(xp))])
+        else:
+            # get data origin from the first line
+            ff = open(os.path.join(intdir,fn))
+            xd0,yd0 = [float(val) for val in ff.readline().strip().split()[-2:]]
+            # get length along profile and depth
+            ld,zd = np.loadtxt(os.path.join(intdir,fn),skiprows=skiprows,unpack = True)
 
-        zp = np.array([f(xp[i],yp[i]) for i in range(len(xp))])
+            # shift l so it aligns with the profile
+            shift = ((xd0-xp0)**2. + (yd0-yp0)**2.)**0.5
+
+            ld += shift
+            f = si.interp1d(ld,zd,bounds_error=False)
+            zp = f(self.modelblocklocations_x[0])
+
+        # search through blocks and if any of them have more than one interface point defined,
+        # use the median instead of an interpolated value
+        
         
         # check for any null values
         for i,z in enumerate(zp):
@@ -1192,8 +1258,10 @@ class Setup():
             print "nothing to build roughness exceptions from; please use project_interface to define interfaces first"
             return
         else:
-            block_z = self.modelblocklocations_z
-            block_x = self.modelblocklocations_x
+            # get block centres
+            block_z = (self.modelblocklocations_z[1:] + self.modelblocklocations_z[:-1])/2.
+            block_x = [(self.modelblocklocations_x[i][1:] + self.modelblocklocations_z[i][:-1])/2. \
+            for i in range(len(self.modelblocklocations_x))]
             x_vals = block_x[0]
             block_nums = self.block_nums
 
@@ -1276,8 +1344,52 @@ class Setup():
             distances.append((x**2.+y**2.)**(0.5))
         self.well_locations = distances
         
+    def setup_prejudice(self):
         
-    def prejudice_subsample_welldata(self):
+        for key in ['modelblocklocations_x','modelblocklocations_z',
+                    'block_nums','block_nums_array']:
+            if not hasattr(self,key):
+                self.get_modelblock_info()
+                break
+        
+        self.Prejudice = Prejudice(self,self.parameters_prejudice)
+                
+        
+
+class Prejudice():
+    def __init__(self,Setup,**input_parameters):
+        
+
+        self.constraints_type = 'interfaces'
+        self.interfaces = None # list (in order of increasing depth) of arrays containing 2 columns, 
+                               # distance x along profile and depth z of interface
+        self.interface_resistivity_values = None # list of prejudice resistivities, 1 longer than interfaces. in same order as interfaces
+        self.welldata = None
+
+        # transfer necessary parameters from setup object
+        for key in ['modelblocklocations_x','modelblocklocations_z',
+                      'block_nums','block_nums_array']:
+            if hasattr(Setup,key):
+                setattr(self,key,getattr(Setup,key)) 
+            else:
+                print "Can't build prejudice, need model block information from setup object"
+    
+        
+        for key in input_parameters.keys():
+            if hasattr(self,key):
+                setattr(self,key,input_parameters[key])
+    
+
+    def assign_interface_prejudice(self):
+        """
+        Need to have interfaces and interface resistivities defined to use this option
+        
+        """
+        if ((self.interfaces is None) or (self.interface_resistivity_values is None)):
+            
+        
+    
+    def subsample_welldata(self):
         """
         subsample a resistivity array by averaging
         input: 1-D array or list of 1-D arrays containing resistivity and depth data
@@ -1310,9 +1422,13 @@ class Setup():
                 if len(temp_res)>0:
                     self.prejudice_resistivity[-1].append(np.around(np.median(temp_res),1))
                     self.prejudice_indices_z[-1].append(i)                
+
+
+
+        
  
        
-    def prejudice_get_blocknums(self):
+    def get_blocknums_from_wells(self):
         """
         get block numbers for prejudice file
         requires prejudice_resistivity and prejudice_indices_z to be defined
@@ -2075,7 +2191,7 @@ class Model():
 
     Reading, writing, renaming,... of 'ITER' and 'RESP' files. 
     """
-
+    
 
 class Plot():
     """
