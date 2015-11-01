@@ -183,16 +183,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                           
         *fig_dpi*: int
                  dots-per-inch resolution, *default* is 300
-        
-
-        *legend_dict*: legend properties, default:
-                       {'loc':3,
-                        'markerscale':1,
-                        'borderaxespad':.01,
-                        'labelspacing':.07, 
-                        'handletextpad':.2, 
-                        'borderpad':.02}                     }            
-
+                    
                         
         :Example: ::
             
@@ -371,7 +362,6 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         res_phase_object = kwargs.pop('res_phase_object', None)
         self.phase_quadrant = kwargs.pop('phase_quadrant', 1)
         
-        
         #--> initialize an MTplot object
         if mt_object is None:
             self._mt = mtpl.MTplot(fn=fn, 
@@ -407,15 +397,6 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         self.plot_title = kwargs.pop('plot_title', None)
         self.fig_dpi = kwargs.pop('fig_dpi', 300)
         self.rot_z = kwargs.pop('rot_z', 0)
-        self.legend_dict = {'loc':3,'markerscale':1,'borderaxespad':.01,
-                            'labelspacing':.07,'handletextpad':.2,'borderpad':.02}
-        self.subplot_dict=dict(hspace=.05, wspace=.15, left=.1)
-        print self.subplot_dict
-        for dictname in ['legend_dict','subplot_dict']:
-            if dictname in kwargs.keys():
-                setattr(self,
-                        dictname,
-                        self._update_dict(getattr(self,dictname),kwargs[dictname]))
         
         #-->line properties
         #line style between points
@@ -452,7 +433,6 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         self.strike_limits = kwargs.pop('strike_limits', None)
         self.skew_limits = kwargs.pop('skew_limits', None)
         self.pt_limits = kwargs.pop('pt_limits', None)
-        self.set_diag_limits = kwargs.pop('set_diag_limits', False)
         
         #set font parameters
         self.font_size = kwargs.pop('font_size', 7)
@@ -517,17 +497,6 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         #plot on initializing
         if self.plot_yn == 'y':
             self.plot()
-
-    def _update_dict(self,old_dict,input_dict):
-        """
-        update dictionary from inputs
-        """
-
-        for key in input_dict:
-            if key in old_dict.keys():
-                old_dict[key] = input_dict[key]
-        
-        return old_dict
 
     def plot(self):
         """
@@ -617,7 +586,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             labelcoords = (-0.075, 0.5)
             
             #space out the subplots
-            gs.update(**self.subplot_dict)
+            gs.update(hspace=.05, wspace=.15, left=.1)
             
             #--> create the axes instances
             #apparent resistivity axis
@@ -634,7 +603,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             labelcoords = (-0.095, 0.5)            
             
             #space out the subplots
-            gs.update(**self.subplot_dict)
+            gs.update(hspace=.05, wspace=.15, left=.07)
             
             #--> create the axes instances
             #apparent resistivity axis
@@ -718,12 +687,12 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                       lw=.25)
         self.axr.legend((self.ebxyr[0], self.ebyxr[0]), 
                         ('$Z_{xy}$', '$Z_{yx}$'),
-                        loc=self.legend_dict['loc'], 
-                        markerscale=self.legend_dict['markerscale'], 
-                        borderaxespad=self.legend_dict['borderaxespad'],
-                        labelspacing=self.legend_dict['labelspacing'], 
-                        handletextpad=self.legend_dict['handletextpad'], 
-                        borderpad=self.legend_dict['borderpad'])
+                        loc=3, 
+                        markerscale=1, 
+                        borderaxespad=.01,
+                        labelspacing=.07, 
+                        handletextpad=.2, 
+                        borderpad=.02)
         
         #-----Plot the phase---------------------------------------------------
         #phase_xy
@@ -1002,7 +971,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                 try:
                     stmax = min(st_maxlist)
                 except ValueError:
-                    stmin = 89.99    
+                    stmax = 89.99    
                 if stmax+3 < 90:
                     stmax += 3
                 else:
@@ -1098,6 +1067,10 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             if self.ellipse_colorby == 'phiminang' or \
                self.ellipse_colorby == 'phimin':
                 colorarray = self.pt.phimin[0]
+                
+            elif self.ellipse_colorby == 'phimaxang' or \
+               self.ellipse_colorby == 'phimax':
+                colorarray = self.pt.phimax[0]
         
                                                
             elif self.ellipse_colorby == 'phidet':
@@ -1265,8 +1238,6 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             self.axr2.set_yscale('log')
             self.axr2.set_xscale('log')
             self.axr2.set_xlim(self.xlimits)
-            if self.set_diag_limits:
-                self.axr2.set_ylim(self.res_limits)
             self.axr2.grid(True, alpha=.25, 
                            which='both', 
                            color=(.25, .25, .25),
@@ -1274,12 +1245,11 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                            
             self.axr2.legend((self.ebxxr[0], self.ebyyr[0]), 
                             ('$Z_{xx}$','$Z_{yy}$'),
-                            loc=self.legend_dict['loc'], 
-                            markerscale=self.legend_dict['markerscale'], 
-                            borderaxespad=self.legend_dict['borderaxespad'],
-                            labelspacing=self.legend_dict['labelspacing'], 
-                            handletextpad=self.legend_dict['handletextpad'], 
-                            borderpad=self.legend_dict['borderpad'])
+                            loc=3, markerscale=1, 
+                            borderaxespad=.01,
+                            labelspacing=.07, 
+                            handletextpad=.2, 
+                            borderpad=.02)
             
             #-----Plot the phase-----------------------------------------------
             self.axp2 = self.fig.add_subplot(gs[1, 1], sharex=self.axr)

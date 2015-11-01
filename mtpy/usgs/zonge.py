@@ -20,6 +20,7 @@ import time
 import os
 import shutil
 import mtpy.core.z as mtz
+import mtpy.imaging.plotresponse as plotresponse
 import mtpy.utils.format as MTft
 import mtpy.utils.configfile as mtcf
 import mtpy.core.edi as mtedi
@@ -1646,6 +1647,8 @@ class ZongeMTAvg():
         self.Rx_GdpStn = 4
         self.Rx_Length = 100
         self.Rx_HPR = [90, 0, 0]
+        self.GPS_Lat = 0.0
+        self.GPS_Lon = 0.0
         self.Unit_Length = 'm'
         self.header_dict = {'Survey.Type':self.Survey_Type,
                             'Survey.Array':self.Survey_Array,
@@ -1658,6 +1661,8 @@ class ZongeMTAvg():
                             'Rx.GdpStn':self.Rx_GdpStn,
                             'Rx.Length':self.Rx_Length,
                             'Rx.HPR':self.Rx_HPR,
+                            'GPS.Lat':self.GPS_Lat,
+                            'GPS.Lon':self.GPS_Lon,
                             'Unit.Length':self.Unit_Length}
                             
         self.info_keys = ['Skp', 'Freq', 'E.mag', 'B.mag', 'Z.mag', 'Z.phz',
@@ -1703,11 +1708,13 @@ class ZongeMTAvg():
         self.comp_flag = {'zxx':False, 'zxy':False, 'zyx':False, 'zyy':False,
                           'tzx':False, 'tzy':False}
         
-        if not self.comp_dict:  
+        if not self.comp_dict:
+            # check to see if all 4 components are in the .avg file
             if len(alines) > 140:  
                 self.comp_dict = dict([(ckey, np.zeros(len(alines)/4, 
                                                        dtype=self.info_dtype))
                                         for ckey in self.comp_flag.keys()])
+            # if there are only 2
             else:
                 self.comp_dict = dict([(ckey, np.zeros(len(alines)/2, 
                                                        dtype=self.info_dtype))
@@ -1732,6 +1739,7 @@ class ZongeMTAvg():
                 pass
             # read the data line.
             elif len(aline) > 2:
+                aline = aline.replace('*', '0.50')
                 alst = [aa.strip() for aa in aline.strip().split(',')]
                 for cc, ckey in enumerate(self.info_keys):
                     self.comp_dict[akey][ii][ckey.lower()] = alst[cc]
@@ -2337,6 +2345,23 @@ class ZongeMTAvg():
             print 'Copied {0} to {1}'.format(edi_fn, copy_edi_fn)
         
         return edi_fn
+        
+    def plot_mt_response(self, avg_fn, **kwargs):
+        """
+        plot an mtv file
+        """
+        
+        if os.path.isfile(avg_fn) is False:
+            raise IOError('Could not find {0}, check path'.format(avg_fn))
+        
+        self.read_avg_file(avg_fn)
+        
+        plot_resp = plotresponse.PlotResponse(z_object=self.Z,
+                                              tipper_object=self.Tipper, 
+                                              plot_tipper='yri',
+                                              **kwargs)
+        
+        return plot_resp
         
         
         
