@@ -57,7 +57,6 @@ import mtpy.analysis.geometry as MTgy
 import mtpy.utils.exceptions as MTex
 import scipy.interpolate as si
 
-
 reload(MTcv)
 reload(MTcf)
 reload(MTedi)
@@ -149,8 +148,9 @@ class Setup():
         self.parameters_prejudice = {}
         self.parameters_prejudice['constraints_type'] = 'interfaces'
         self.parameters_prejudice['build_prejudice_file'] = False
-        self.parameters_prejudice['interfaces'] = None # list of arrays containing 2 columns, distance x along profile and depth z of interface
+        self.parameters_prejudice['interfaces'] = [] # list of arrays containing 2 columns, distance x along profile and depth z of interface
         self.parameters_prejudice['interface_resistivity_values'] = None # 
+        self.parameters_prejudice['interface_filelist'] = None
         self.parameters_prejudice['welldata'] = None        
         self.parameters_prejudice['prejudice_weight'] = 1.
  
@@ -517,9 +517,9 @@ class Setup():
         leftedge -= paddingwidth
         meshnodelocations.insert(0,leftedge)
 
-
             
         #3. split the inner station gaps into 2 mesh blocks each 
+        print lo_allsites
         for idx,station in enumerate(lo_allsites):
             meshnodelocations.append(station)
             if idx == len(lo_allsites)-1:
@@ -538,7 +538,7 @@ class Setup():
         rightedge += paddingwidth
         meshnodelocations.append(rightedge)
 
-
+        
         #add 2 side padding blocks with expon. increasing width of N mesh cells
         padding_absolute = 0
         padding_nmerge = 0
@@ -624,7 +624,8 @@ class Setup():
         #given with resspect to location of the first station
         #idx of station 1 is n_sidepadding + 2(extra column) + 1 (half the block under the station)
         #binding_offset =  meshnodelocations[n_sidepadding+3] - meshnodelocations[n_sidepadding]
-        binding_offset =  meshnodelocations[nmerge_sidepadding]
+        
+        binding_offset =  meshnodelocations[n_sidepadding]
 
         #should be identical!
         no_x_nodes = current_meshblock_index + 1
@@ -925,11 +926,10 @@ class Setup():
             
 
         if self.parameters_inmodel['build_roughness_exceptions']:
-            idir = self.parameters_inmodel['interface_dir']
             for interface in self.parameters_inmodel['interface_filelist']:
-                self.project_interface(idir,interface)
+                self.project_interface(interface)
             if self.parameters_inmodel['elevation_filename'] is not None:
-                self.subtract_elevation(idir,self.parameters_inmodel['elevation_filename'])
+                self.subtract_elevation(self.parameters_inmodel['elevation_filename'])
             self.build_roughness_exceptions()
             re = self.parameters_inmodel['roughness_exceptions']
             temptext = "Number Exceptions:{0}\n".format(-len(re))
@@ -1138,10 +1138,12 @@ class Setup():
         print blockmerges_x[0]
         blockmerges_z = self.parameters_inmodel['lo_merged_lines']
         meshlocations_z = np.array([0]+self.meshlocations_z)
+        
 #        meshlocations_z.insert(0,0)
         num=1
         block_nums,block_x,block_z = [],[],[self.meshlocations_z[0]]
         block_nums_array = np.zeros((len(self.meshlocations_z)-1,len(self.meshlocations_x)-1))
+        checkerbox = np.zeros_like(block_nums_array)
         iz = 0
         for j,z in enumerate(blockmerges_z):
             ix = 0
@@ -1150,13 +1152,14 @@ class Setup():
             # list to contain x block locations for this row
             tmp_lst_xpos = [self.meshlocations_x[0]]
             for i,x in enumerate(blockmerges_x[j]):
-                if ((x > 2) and (j==0)):
-                    print x,ix,self.meshlocations_x[ix:ix+x]
+#                if ((x > 2) and (j==0)):
+#                    print x,ix,self.meshlocations_x[ix:ix+x]
 #                xpos = np.mean(np.array(self.meshlocations_x[ix:ix+x]))
                 tmp_lst.append(num)
                 # append next x location
                 tmp_lst_xpos.append(self.meshlocations_x[ix+x-1])
                 block_nums_array[iz:iz+z,ix:ix+x] = num
+                checkerbox[iz:iz+z,ix:ix+x] = np.random.random()
                 ix += x
                 num += 1
             iz += z
@@ -1166,9 +1169,33 @@ class Setup():
         self.modelblocklocations_z = np.array(block_z)
         self.block_nums = np.array(block_nums)
         self.block_nums_array = np.array(block_nums_array)
+        self.checkerbox = checkerbox
 
+    
+    def read_2dinterfacefile(self,fn,skiprows=1):
+        
 
-    def project_interface(self,intdir,fn,skiprows=1,fmt='xy'):
+        # get origin of profile
+        if self.Data.profile_origin is None:
+            self.Data.get_profile_origin()
+        xp0,yp0 = self.Data.profile_origin
+        
+        # get origin for interface from the first line
+        ff = open(fn)
+        xd0,yd0 = [float(val) for val in ff.readline().strip().split()[-2:]]
+        # get length along profile and depth
+        ld,zd = np.loadtxt(fn,skiprows=skiprows,unpack = True)
+
+        # shift l so it aligns with the profile
+        shift = ((xd0-xp0)**2. + (yd0-yp0)**2.)**0.5
+
+        ld += shift
+        
+        if np.median(zd) < 0: zd = -zd
+        
+        return ld,zd
+
+    def project_interface(self,fn,skiprows=1,fmt='xy'):
         """
         project an interface (from an xyz text file) onto the profile.
         adds a numpy array of z locations (corresponding to x model block locations)
@@ -1192,25 +1219,15 @@ class Setup():
         yp = self.Data.profile_origin[1]+self.modelblocklocations_x[0]*np.sin(az)
         
         if fmt == 'xy':
-            data = np.loadtxt(os.path.join(intdir,fn),skiprows=skiprows)
+            data = np.loadtxt(fn,skiprows=skiprows)
             f = si.CloughTocher2DInterpolator(data[:,0:2],data[:,2])
             zp = np.array([f(xp[i],yp[i]) for i in range(len(xp))])
         else:
-            # get data origin from the first line
-            ff = open(os.path.join(intdir,fn))
-            xd0,yd0 = [float(val) for val in ff.readline().strip().split()[-2:]]
-            # get length along profile and depth
-            ld,zd = np.loadtxt(os.path.join(intdir,fn),skiprows=skiprows,unpack = True)
+            ld,zd = self.read_2dinterfacefile(fn)
 
-            # shift l so it aligns with the profile
-            shift = ((xd0-xp0)**2. + (yd0-yp0)**2.)**0.5
-
-            ld += shift
             f = si.interp1d(ld,zd,bounds_error=False)
             zp = f(self.modelblocklocations_x[0])
 
-        # search through blocks and if any of them have more than one interface point defined,
-        # use the median instead of an interpolated value
         
         
         # check for any null values
@@ -1236,7 +1253,7 @@ class Setup():
         Author: Alison Kirkby (2013)
         """
         if hasattr(self,'interfaces'):    
-            self.project_interface(intdir,elevfn) 
+            self.project_interface(elevfn) 
             
             for i in self.interfaces[:-1]:
                 i -= self.interfaces[-1]
@@ -1351,8 +1368,11 @@ class Setup():
             if not hasattr(self,key):
                 self.get_modelblock_info()
                 break
-        
-        self.Prejudice = Prejudice(self,self.parameters_prejudice)
+        if self.parameters_prejudice['interface_filelist'] is not None:
+            for intfile in self.parameters_prejudice['interface_filelist']:
+                ld,zd = self.read_2dinterfacefile(intfile)
+                self.parameters_prejudice['interfaces'].append(np.vstack([ld,zd]).T)
+        self.Prejudice = Prejudice(self,**self.parameters_prejudice)
                 
         
 
@@ -1368,16 +1388,20 @@ class Prejudice():
 
         # transfer necessary parameters from setup object
         for key in ['modelblocklocations_x','modelblocklocations_z',
-                      'block_nums','block_nums_array']:
+                    'block_nums','block_nums_array',
+#                    'interfaces','interface_resistivity_values',
+                    'meshlocations_x','meshlocations_z']:
             if hasattr(Setup,key):
                 setattr(self,key,getattr(Setup,key)) 
             else:
                 print "Can't build prejudice, need model block information from setup object"
     
-        
         for key in input_parameters.keys():
             if hasattr(self,key):
                 setattr(self,key,input_parameters[key])
+        
+        if self.constraints_type == 'interfaces':
+            self.assign_interface_prejudice()
     
 
     def assign_interface_prejudice(self):
@@ -1386,8 +1410,51 @@ class Prejudice():
         
         """
         if ((self.interfaces is None) or (self.interface_resistivity_values is None)):
-            
-        
+            print "Can't build prejudices, need to define interfaces"
+            return
+        else:
+            # remove zero and negative resistivities
+            self.interface_resistivity_values = [max(1e-6,rv) for rv in self.interface_resistivity_values]
+            # initialise a prejudice array. Starting resistivity is the value for the 1st layer then successively move down the model
+            prejudice_array = np.ones_like(self.block_nums_array)*self.interface_resistivity_values[0]
+#            blockx,blockz = self.modelblocklocations_x,self.modelblocklocations_z
+            meshx,meshz = np.meshgrid(self.meshlocations_x,self.meshlocations_z)
+            # get centres of mesh blocks
+            meshx = (meshx[1:,1:] + meshx[1:,:-1])/2.
+            meshz = (meshz[1:,1:] + meshz[:-1,1:])/2.
+#            print meshx[0]
+            for i in range(len(self.interfaces)):
+                ld,zd = self.interfaces[i].T
+                # create interpolation function to use if needed
+                f = si.interp1d(ld,zd,bounds_error=False)
+                # empty 1d array to contain depths
+                zline = np.zeros(len(meshx[0]))
+                for ii in range(len(meshx[0])-1):
+                    zvalues = zd[(ld>meshx[0][ii])&(ld<meshx[0][ii+1])]
+                    # if there are >2 z values, take the median
+                    if len(zvalues) > 2:
+                        zval = np.median(zvalues)
+                    # otherwise use the interpolation function to get value in centre of the block
+                    else:
+                        zval = f((meshx[0][ii] + meshx[0][ii+1])/2.)
+#                        print blockx[jj][ii],blockx[jj][ii+1]
+
+                    zline[ii] = zval
+
+                # assign all values below zval to the value for the next layer
+                prejudice_array[meshz > zline] = self.interface_resistivity_values[i+1]
+                
+            # now assign mesh values to block numbers
+            prejudice = self.block_nums.copy()*0.
+            for jj in range(len(prejudice)):
+                for ii in range(len(prejudice[jj])):
+#                    print prejudice[jj]
+#                    print self.block_nums[jj][ii],prejudice_array[self.block_nums_array==self.block_nums[jj][ii]]
+                    prejudice[jj][ii] = np.median(prejudice_array[self.block_nums_array==self.block_nums[jj][ii]])
+                    
+            self.prejudice = prejudice
+            self.prejudice_array = prejudice_array
+                                     
     
     def subsample_welldata(self):
         """
@@ -1408,8 +1475,7 @@ class Prejudice():
         
         if not hasattr(self,'prejudice_indices_z'):
             self.prejudice_indices_z = []
-            
-    
+                
         for w in range(len(self.welldata)):
             self.prejudice_resistivity.append([])
             self.prejudice_indices_z.append([])
