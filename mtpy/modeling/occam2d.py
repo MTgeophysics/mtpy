@@ -149,7 +149,8 @@ class Setup():
         self.parameters_prejudice['constraints_type'] = 'interfaces'
         self.parameters_prejudice['build_prejudice_file'] = False
         self.parameters_prejudice['interfaces'] = [] # list of arrays containing 2 columns, distance x along profile and depth z of interface
-        self.parameters_prejudice['interface_resistivity_values'] = None # 
+        self.parameters_prejudice['interface_resistivity_values'] = None
+        self.parameters_prejudice['interface_prejudice_weights'] = None# 
         self.parameters_prejudice['interface_filelist'] = None
         self.parameters_prejudice['welldata'] = None        
         self.parameters_prejudice['prejudice_weight'] = 1.
@@ -245,7 +246,9 @@ class Setup():
                                 setattr(self,key,None)
             except:
                 continue 
-
+        
+        if self.parameters_prejudice['build_prejudice_file']:
+            self.prejudicefile = 'prejudice'
 
 
     def read_configfile(self, configfile):
@@ -625,7 +628,7 @@ class Setup():
         #idx of station 1 is n_sidepadding + 2(extra column) + 1 (half the block under the station)
         #binding_offset =  meshnodelocations[n_sidepadding+3] - meshnodelocations[n_sidepadding]
         
-        binding_offset =  meshnodelocations[n_sidepadding]
+        binding_offset =  meshnodelocations[nmerge_sidepadding]
 
         #should be identical!
         no_x_nodes = current_meshblock_index + 1
@@ -1008,7 +1011,7 @@ class Setup():
         temptext = ""
         counter = 0 
 
-        if type(self.parameters_startup['halfspace_resistivity']) != list:
+        if type(self.parameters_startup['halfspace_resistivity']) not in [list,np.ndarray]:
             for l in range(self.no_parameters):
                 temptext += "{0:.1g}  ".format(np.log10(float(self.parameters_startup['halfspace_resistivity'])))
                 counter += 1
@@ -1361,6 +1364,7 @@ class Setup():
             distances.append((x**2.+y**2.)**(0.5))
         self.well_locations = distances
         
+        
     def setup_prejudice(self):
         
         for key in ['modelblocklocations_x','modelblocklocations_z',
@@ -1373,7 +1377,27 @@ class Setup():
                 ld,zd = self.read_2dinterfacefile(intfile)
                 self.parameters_prejudice['interfaces'].append(np.vstack([ld,zd]).T)
         self.Prejudice = Prejudice(self,**self.parameters_prejudice)
-                
+             
+             
+    def write_prejudicefile(self):
+        """
+        build a prejudice file
+        """
+        
+        self.setup_prejudice()
+        
+        header  = 'FORMAT:           OCCAM2MTPREJ_2.0\n'
+        
+        prejvals = np.hstack(self.Prejudice.prejudice)
+        weights = np.hstack(self.Prejudice.weights)
+        data = np.vstack([np.hstack(self.block_nums),np.log10(prejvals),weights]).T
+        header += 'NO. PARMS:        {}'.format(len(data))
+        
+        # assign prejudice values also as starting resistivities
+        self.parameters_startup['halfspace_resistivity'] = np.log10(prejvals)
+        self.write_startupfile()
+
+        np.savetxt(op.join(self.wd,self.prejudicefile),data,fmt=['%1i','%.3f','%.3f'],header=header,comments='')
         
 
 class Prejudice():
@@ -1384,12 +1408,13 @@ class Prejudice():
         self.interfaces = None # list (in order of increasing depth) of arrays containing 2 columns, 
                                # distance x along profile and depth z of interface
         self.interface_resistivity_values = None # list of prejudice resistivities, 1 longer than interfaces. in same order as interfaces
+        self.interface_prejudice_weights = None
         self.welldata = None
 
         # transfer necessary parameters from setup object
         for key in ['modelblocklocations_x','modelblocklocations_z',
                     'block_nums','block_nums_array',
-#                    'interfaces','interface_resistivity_values',
+#                    'interface_prejudice_weights','interface_resistivity_values',
                     'meshlocations_x','meshlocations_z']:
             if hasattr(Setup,key):
                 setattr(self,key,getattr(Setup,key)) 
@@ -1417,6 +1442,7 @@ class Prejudice():
             self.interface_resistivity_values = [max(1e-6,rv) for rv in self.interface_resistivity_values]
             # initialise a prejudice array. Starting resistivity is the value for the 1st layer then successively move down the model
             prejudice_array = np.ones_like(self.block_nums_array)*self.interface_resistivity_values[0]
+            weights_array = np.zeros_like(self.block_nums_array)
 #            blockx,blockz = self.modelblocklocations_x,self.modelblocklocations_z
             meshx,meshz = np.meshgrid(self.meshlocations_x,self.meshlocations_z)
             # get centres of mesh blocks
@@ -1429,32 +1455,51 @@ class Prejudice():
                 f = si.interp1d(ld,zd,bounds_error=False)
                 # empty 1d array to contain depths
                 zline = np.zeros(len(meshx[0]))
-                for ii in range(len(meshx[0])-1):
-                    zvalues = zd[(ld>meshx[0][ii])&(ld<meshx[0][ii+1])]
+                for ii in range(len(meshx[0])):
+
+                    if ii == 0:
+                        zc0 = meshx[0][ii]-10.
+                        zc1 = (meshx[0][ii]+meshx[0][ii+1])/2.
+                    elif ii == len(meshx[0])-1:
+                        zc1 = meshx[0][ii]+10.
+                        zc0 = (meshx[0][ii]+meshx[0][ii-1])/2.
+                    else:
+                        zc0 = (meshx[0][ii]+meshx[0][ii-1])/2.
+                        zc1 = (meshx[0][ii]+meshx[0][ii+1])/2.                        
+#                    print zc0,zc1
+                    zvalues = zd[(ld>zc0)&(ld<zc1)]
+                    
                     # if there are >2 z values, take the median
                     if len(zvalues) > 2:
                         zval = np.median(zvalues)
-                    # otherwise use the interpolation function to get value in centre of the block
+                    # otherwise use the interpolation function to get value at the mesh node
                     else:
-                        zval = f((meshx[0][ii] + meshx[0][ii+1])/2.)
+                        zval = f(meshx[0][ii])
 #                        print blockx[jj][ii],blockx[jj][ii+1]
 
                     zline[ii] = zval
+                    
+                    # deal with edges
+                    zline[(meshx[0]<=ld[0])] = zd[0]
+                    zline[(meshx[0]>=ld[-1])] = zd[-1]
 
                 # assign all values below zval to the value for the next layer
                 prejudice_array[meshz > zline] = self.interface_resistivity_values[i+1]
+                weights_array[meshz > zline] = self.interface_prejudice_weights[i+1]
                 
             # now assign mesh values to block numbers
             prejudice = self.block_nums.copy()*0.
+            weights = self.block_nums.copy()*0.
             for jj in range(len(prejudice)):
                 for ii in range(len(prejudice[jj])):
 #                    print prejudice[jj]
 #                    print self.block_nums[jj][ii],prejudice_array[self.block_nums_array==self.block_nums[jj][ii]]
                     prejudice[jj][ii] = np.median(prejudice_array[self.block_nums_array==self.block_nums[jj][ii]])
-                    
+                    weights[jj][ii] = np.median(weights_array[self.block_nums_array==self.block_nums[jj][ii]])
             self.prejudice = prejudice
             self.prejudice_array = prejudice_array
-                                     
+            self.weights = weights
+            self.weights_array = weights_array                                     
     
     def subsample_welldata(self):
         """
@@ -1534,7 +1579,7 @@ class Prejudice():
                                                          '%.03f'%np.log10(self.prejudice_resistivity[w][i]),
                                                          '%.01f'%self.prejudice_weight])+'\n')
 
-    def write_prejudicefile(self):
+    def build_prejudicefile_wells(self):
         """
         build model prejudices from well data and write to a file.
         
@@ -1561,10 +1606,13 @@ class Prejudice():
         self.prejudice_subsample_welldata()
         self.prejudice_get_blocknums()
         
-        
+    
         pf = open(os.path.join(self.wd,self.prejudicefile),'wb')
         pf.writelines(self.prejudice_fstrings)
         pf.close()
+
+
+
 
         
 #------------------------------------------------------------------------------
