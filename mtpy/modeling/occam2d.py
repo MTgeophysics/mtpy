@@ -1826,16 +1826,23 @@ class Data():
         lo_modes = []
         modes = self.mode.lower().strip()
         
+        # adding functionality to do log resistivity
+        if 'log' in modes:
+            rescode_te, rescode_tm = 1,5
+        else:
+            rescode_te, rescode_tm = 9,10
+        
         if 'both' in modes :
-            lo_modes.extend([9,10,2,6])  
+            lo_modes.extend([rescode_te, rescode_tm,2,6])  
         if 'te' in modes:
-            lo_modes.extend([9,2])
+            lo_modes.extend([rescode_te,2])
         if 'tm' in modes:
-            lo_modes.extend([10,6])
+            lo_modes.extend([rescode_tm,6])
         if ('tipper' in modes): 
             lo_modes.extend([3,4])
         if 'all' in modes :
-            lo_modes.extend([9,10,2,6,3,4])  
+            lo_modes.extend([rescode_te, rescode_tm,2,6,3,4])
+
 
         lo_modes = sorted(list(set(lo_modes))) 
 
@@ -1921,7 +1928,7 @@ class Data():
                 idx_f = np.abs(station_freqs-freq).argmin()
 
                 for mode in lo_modes:
-                    if mode in [9,2] :
+                    if mode in [9,2,1] :
                         raw_rho_value = rho[idx_f][0,1]
                         value = raw_rho_value
                         #value = np.log10(raw_rho_value)
@@ -1940,6 +1947,13 @@ class Data():
                             error = np.abs(relative_rho_error * raw_rho_value)   #relative_error/np.log(10.)
                             #error = np.abs(relative_rho_error/np.log(10.))
 
+                        elif mode == 1 :
+                            if self.rho_errorfloor is not None:
+                                if self.rho_errorfloor/100. > relative_rho_error:
+                                    relative_rho_error = self.rho_errorfloor/100.
+                            error = np.abs(relative_rho_error)/np.log(10)
+                            value = np.log10(value)
+
                         elif mode == 2 :
                             raw_phi_value = phi[idx_f][0,1]
                             if raw_phi_value >=180:
@@ -1953,7 +1967,7 @@ class Data():
                             else:
                                 error = np.degrees(np.arcsin(0.5*relative_rho_error))#relative_error*100.*0.285
                             
-                    if mode in [10,6] :
+                    if mode in [10,6,5] :
                         raw_rho_value = rho[idx_f][1,0]
                         value = raw_rho_value
                         #value = np.log10(raw_rho_value)
@@ -1970,6 +1984,13 @@ class Data():
                                     relative_rho_error = self.rho_errorfloor/100.
                             error = np.abs(relative_rho_error * raw_rho_value)   #relative_error/np.log(10.)
                             #error = np.abs(relative_rho_error /np.log(10.))
+
+                        elif mode == 5 :
+                            if self.rho_errorfloor is not None:
+                                if self.rho_errorfloor/100. > relative_rho_error:
+                                    relative_rho_error = self.rho_errorfloor/100.
+                            error = np.abs(relative_rho_error)/np.log(10)
+                            value = np.log10(value)
 
                         elif mode == 6 :
                             raw_phi_value = phi[idx_f][1,0]
