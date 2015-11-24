@@ -266,7 +266,8 @@ class Data(object):
         self.error_egbert = kwargs.pop('error_egbert', 3.0)
         self.error_tipper = kwargs.pop('error_tipper', .05)
         
-        self.wave_sign = kwargs.pop('wave_sign', '+')
+        self.wave_sign_impedance = kwargs.pop('wave_sign_impedance', '+')
+        self.wave_sign_tipper = kwargs.pop('wave_sign_tipper', '+')
         self.units = kwargs.pop('units', '[mV/km]/[nT]')
         self.inv_mode = kwargs.pop('inv_mode', '1')
         self.period_list = kwargs.pop('period_list', None)
@@ -792,10 +793,12 @@ class Data(object):
             dlines.append(self.header_strings[0])
             dlines.append(self.header_strings[1])
             dlines.append('> {0}\n'.format(inv_mode))
-            dlines.append('> exp({0}i\omega t)\n'.format(self.wave_sign))
+            
             if inv_mode.find('Impedance') > 0:
+                dlines.append('> exp({0}i\omega t)\n'.format(self.wave_sign_impedance))
                 dlines.append('> {0}\n'.format(self.units))
             elif inv_mode.find('Vertical') >=0:
+                dlines.append('> exp({0}i\omega t)\n'.format(self.wave_sign_tipper))
                 dlines.append('> []\n')
             dlines.append('> 0\n') #oriention, need to add at some point
             dlines.append('> {0: >7.3f} {1: >7.3f}\n'.format(
@@ -987,11 +990,24 @@ class Data(object):
         data_list = []
         period_list = []
         station_list = []
+        read_impedance = False
+        read_tipper = False
         for dline in dlines:
             if dline.find('#') == 0:
                 header_list.append(dline.strip())
             elif dline.find('>') == 0:
                 metadata_list.append(dline[1:].strip())
+                if dline.lower().find('vertical') > 0:
+                    read_tipper = True
+                    read_impedance = False
+                elif dline.lower().find('impedance') > 0:
+                    read_impedance = True
+                    read_tipper = False
+                if dline.find('exp') > 0:
+                    if read_impedance is True:
+                        self.wave_sign_impedance = dline[dline.find('(')+1]
+                    elif read_tipper is True:
+                        self.wave_sign_tipper = dline[dline.find('(')+1]
             else:
                 dline_list = dline.strip().split()
                 if len(dline_list) == 11:
@@ -1066,11 +1082,17 @@ class Data(object):
                 tf_dict[dd[1]] = True
             #fill in the impedance tensor with appropriate values
             if dd[7].find('Z') == 0:
-                data_dict[dd[1]].Z.z[p_index, ii, jj] = dd[8]+1j*dd[9]
+                if self.wave_sign_impedance == '+':
+                    data_dict[dd[1]].Z.z[p_index, ii, jj] = dd[8]+1j*dd[9]
+                elif self.wave_sign_impedance == '-':
+                    data_dict[dd[1]].Z.z[p_index, ii, jj] = dd[8]-1j*dd[9]
                 data_dict[dd[1]].Z.zerr[p_index, ii, jj] = dd[10]
             #fill in tipper with appropriate values
             elif dd[7].find('T') == 0:
-                data_dict[dd[1]].Tipper.tipper[p_index, ii, jj] = dd[8]+1j*dd[9]
+                if self.wave_sign_tipper == '+':
+                    data_dict[dd[1]].Tipper.tipper[p_index, ii, jj] = dd[8]+1j*dd[9]
+                elif self.wave_sign_tipper == '-':
+                    data_dict[dd[1]].Tipper.tipper[p_index, ii, jj] = dd[8]-1j*dd[9]
                 data_dict[dd[1]].Tipper.tippererr[p_index, ii, jj] = dd[10]
        
         #make mt_dict an attribute for easier manipulation later
@@ -1096,7 +1118,7 @@ class Data(object):
             self.data_array[ii]['lon'] = mt_obj.lon
             self.data_array[ii]['east'] = mt_obj.east
             self.data_array[ii]['north'] = mt_obj.north
-            self.data_array[ii]['elev'] = mt_obj.elev
+            self.data_array[ii]['elev'] = mt_obj.grid_elev
             self.data_array[ii]['rel_east'] = mt_obj.grid_east
             self.data_array[ii]['rel_north'] = mt_obj.grid_north
             
@@ -4689,7 +4711,7 @@ class PlotResponse(object):
                     
                     #--> make key word dictionaries for plotting
                     kw_xx = {'color':cxy,
-                             'marker':self.mted,
+                             'marker':self.mtem,
                              'ms':self.ms,
                              'ls':':',
                              'lw':self.lw,
@@ -4697,7 +4719,7 @@ class PlotResponse(object):
                              'e_capthick':self.e_capthick}        
                    
                     kw_yy = {'color':cyx,
-                             'marker':self.mtmd,
+                             'marker':self.mtmm,
                              'ms':self.ms,
                              'ls':':',
                              'lw':self.lw,
@@ -7371,7 +7393,7 @@ class Plot_RMS_Maps(object):
         
         
         #cb_ax = mcb.make_axes(ax, orientation='vertical', fraction=.1)
-        cb_ax = self.fig.add_axes([.925, .225, .02, .45])
+        cb_ax = self.fig.add_axes([self.subplot_right+.02, .225, .02, .45])
         color_bar = mcb.ColorbarBase(cb_ax, 
                                      cmap=self.rms_cmap, 
                                      norm=colors.Normalize(vmin=self.rms_min, 
