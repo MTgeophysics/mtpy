@@ -78,6 +78,7 @@ import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
 import mtpy.core.z as mtz
 import mtpy.core.edi as mtedi
+import mtpy.core.mt as mt
 import mtpy.imaging.mtplottools as mtplottools
 import matplotlib.widgets as widgets
 import matplotlib.colors as colors
@@ -323,37 +324,67 @@ class WSData(object):
             if not os.path.isfile(edi):
                 raise IOError('Could not find '+edi)
 
-            z1 = mtedi.Edi()
-            z1.readfile(edi)
+            mt_obj = mt.MT(edi)
             if self.rotation_angle is not None:
-                z1.rotate(self.rotation_angle)
-            print '{0}{1}{0}'.format('-'*20, z1.station) 
-            for ff, f1 in enumerate(self.period_list):
-                for kk,f2 in enumerate(z1.period):
-                    if f2 >= (1-self.ptol)*f1 and f2 <= (1+self.ptol)*f1:
-                        self.data[ss]['z_data'][ff, :] = \
-                                                   zconv*z1.Z.z[kk]
-                        #get errors 
-                        if self.z_err == 'data':
-                            self.data[ss]['z_data_err'][ff, :] = \
-                                                            zconv*z1.Z.zerr[kk]
-                        else:
-                            self.data[ss]['z_data_err'][ff, :] = \
-                                                    zconv*z1.Z.z[kk]*self.z_err
-                        # if an error floor is set.
-                        if self.z_err_floor is not None:
-                            per_err = self.data[ss]['z_data_err'][ff, :]/\
-                                      self.data[ss]['z_data'][ff, :]
-                            per_err[np.where(per_err < self.z_err_floor)] = \
-                                                        self.z_err_floor
-                            self.data[ss]['z_data_err'][ff, : ] = \
-                                self.data[ss]['z_data'][ff, :] * per_err
-                                    
-                        self.data[ss]['z_err_map'][ff] = \
-                                    np.reshape(self.z_err_map, (2,2))
-                        
-                        print '   Matched {0:.6g} to {1:.6g}'.format(f1, f2)
-                        break
+                mt_obj.rotation_angle = self.rotation_angle
+            print '{0}{1}{0}'.format('-'*20, mt_obj.station)
+            
+            # get only those periods that are within the station data
+            interp_periods = self.period_list[np.where(
+                                (self.period_list >= 1./mt_obj.Z.freq.max()) & 
+                                (self.period_list <= 1./mt_obj.Z.freq.min()))]
+            
+            #interpolate over those periods
+            interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
+            
+            for kk, ff in enumerate(interp_periods):
+                jj = np.where(self.period_list == ff)[0][0]
+                print '    {0:.6g} (s)'.format(ff)
+                
+                self.data[ss]['z_data'][jj, :] = interp_z.z[kk, :, :]*zconv
+                # get errors
+                if self.z_err == 'data':
+                    self.data[ss]['z_data_err'][jj, :] = interp_z.zerr[kk, :, :]*zconv
+                else:
+                    self.data[ss]['z_data_err'][jj, :] = interp_z.z[kk]*self.z_err*zconv 
+
+                # if an error floor is set.
+                if self.z_err_floor is not None:
+                    per_err = self.data[ss]['z_data_err'][jj, :]/\
+                              self.data[ss]['z_data'][jj, :]
+                    per_err[np.where(per_err < self.z_err_floor)] = \
+                                                self.z_err_floor
+                    self.data[ss]['z_data_err'][jj, : ] = \
+                        self.data[ss]['z_data'][jj, :]*per_err
+                            
+                self.data[ss]['z_err_map'][jj] = np.reshape(self.z_err_map,
+                                                            (2,2))
+#            for ff, f1 in enumerate(self.period_list):
+#                for kk,f2 in enumerate(z1.period):
+#                    if f2 >= (1-self.ptol)*f1 and f2 <= (1+self.ptol)*f1:
+#                        self.data[ss]['z_data'][ff, :] = \
+#                                                   zconv*z1.Z.z[kk]
+#                        #get errors 
+#                        if self.z_err == 'data':
+#                            self.data[ss]['z_data_err'][ff, :] = \
+#                                                            zconv*z1.Z.zerr[kk]
+#                        else:
+#                            self.data[ss]['z_data_err'][ff, :] = \
+#                                                    zconv*z1.Z.z[kk]*self.z_err
+#                        # if an error floor is set.
+#                        if self.z_err_floor is not None:
+#                            per_err = self.data[ss]['z_data_err'][ff, :]/\
+#                                      self.data[ss]['z_data'][ff, :]
+#                            per_err[np.where(per_err < self.z_err_floor)] = \
+#                                                        self.z_err_floor
+#                            self.data[ss]['z_data_err'][ff, : ] = \
+#                                self.data[ss]['z_data'][ff, :] * per_err
+#                                    
+#                        self.data[ss]['z_err_map'][ff] = \
+#                                    np.reshape(self.z_err_map, (2,2))
+#                        
+#                        print '   Matched {0:.6g} to {1:.6g}'.format(f1, f2)
+#                        break
         
     def write_data_file(self, **kwargs):
         """
@@ -1700,7 +1731,6 @@ class WSMesh(object):
                     while count_e < n_east:
                         #be sure the indes of res list starts at 0 not 1 as 
                         #in ws3dinv
-
                         self.res_model[count_n, count_e, l1:l2] =\
                                         self.res_list[int(iline[count_e])-1]
                         self.res_model_int[count_n, count_e, l1:l2] =\

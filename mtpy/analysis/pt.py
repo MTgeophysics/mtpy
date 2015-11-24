@@ -331,18 +331,18 @@ class PhaseTensor(object):
                         print 'Computed singular matrix'
                         print '  --> pt[{0}]=np.zeros((2,2))'.format(idx_f)
             
-            #--> if there is not error to the impedance tensor
-            else:
-                for idx_f in range(len(self._z)):
+        #--> if there is not error to the impedance tensor
+        else:
+            for idx_f in range(len(self._z)):
+                try:
+                    self._pt[idx_f] = z2pt(self._z[idx_f])[0]
+                except MTex.MTpyError_PT:
                     try:
-                        self._pt[idx_f] = z2pt(self._z[idx_f])[0]
-                    except MTex.MTpyError_PT:
-                        try:
-                            print 'Singular Matrix at {0:.5g}'.format(
-                                                       self._freq[idx_f])
-                        except AttributeError:
-                            print 'Computed singular matrix'
-                            print '  --> pt[{0}]=np.zeros((2,2))'.format(idx_f)
+                        print 'Singular Matrix at {0:.5g}'.format(
+                                                   self._freq[idx_f])
+                    except AttributeError:
+                        print 'Computed singular matrix'
+                        print '  --> pt[{0}]=np.zeros((2,2))'.format(idx_f)
 
         self.rotation_angle = z_object.rotation_angle
         
@@ -549,16 +549,18 @@ class PhaseTensor(object):
         if self.pt is None:
             return None, None
         
-        beta = np.degrees(0.5 * np.arctan2( self.skew[0], self.trace[0])  )
+        beta = np.degrees(0.5 * np.arctan2( self.pt[:,0,1] - self.pt[:,1,0],
+                                            self.pt[:,0,0] + self.pt[:,1,1]))
+
         betaerr = None
 
         if self.pterr is not None:
             betaerr = np.zeros_like(beta)
 
-            y = self.skew[0]
-            yerr = self.skew[1]
-            x = self.trace[0]
-            xerr = self.trace[1]
+            y = self.pt[:,0,1] - self.pt[:,1,0]
+            yerr = np.sqrt( self.pterr[:,0,1]**2 + self.pterr[:,1,0]**2  )
+            x = self.pt[:,0,0] + self.pt[:,1,1] 
+            xerr = np.sqrt( self.pterr[:,0,0]**2 + self.pterr[:,1,1]**2  )
 
             betaerr[:] = 0.5 / ( x**2 + y**2) * np.sqrt( y**2 * xerr**2 +\
                                                          x**2 * yerr**2 )

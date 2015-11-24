@@ -286,7 +286,6 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         res_object_list = kwargs.pop('res_object_list', None)
         
         #--> get the inputs into a list of mt objects
-        print fn_list,mt_object_list
         self.mt_list = mtpl.get_mtlist(fn_list=fn_list, 
                                      res_object_list=res_object_list,
                                      z_object_list=z_object_list, 
@@ -464,7 +463,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         self.plot_dict['tip'] = self._plot_tipper
         
     def _get_plot_tipper(self):
-        self._plot_tipper
+        return self._plot_tipper
         
     plot_tipper = property(fget=_get_plot_tipper, fset=_set_plot_tipper, 
                            doc="""string to plot tipper""")
@@ -480,7 +479,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
         self.plot_dict['pt'] = self._plot_pt
         
     def _get_plot_pt(self):
-        self._plot_pt
+        return self._plot_pt
         
     plot_pt = property(fget=_get_plot_pt, fset=_set_plot_pt, 
                        doc="""string to plot phase tensor ellipses""")
@@ -707,8 +706,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 
                 #--> plot tipper
                 try:
-                    axt = self.fig.add_subplot(gs[pdict['tip'], :], 
-                                               sharex=axr)
+                    axt = self.fig.add_subplot(gs[pdict['tip'], :])
                     axt.yaxis.set_label_coords(labelcoords[0], labelcoords[1])
                 except KeyError:
                     pass
@@ -878,14 +876,14 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     
                     tp = mt.get_Tipper()
                     
-                    txr = tp.mag_real*np.cos(tp.ang_real*np.pi/180+\
+                    txr = tp.mag_real*np.sin(tp.ang_real*np.pi/180+\
                                              np.pi*self.arrow_direction)
-                    tyr = tp.mag_real*np.sin(tp.ang_real*np.pi/180+\
+                    tyr = tp.mag_real*np.cos(tp.ang_real*np.pi/180+\
                                              np.pi*self.arrow_direction)
             
-                    txi = tp.mag_imag*np.cos(tp.ang_imag*np.pi/180+\
+                    txi = tp.mag_imag*np.sin(tp.ang_imag*np.pi/180+\
                                              np.pi*self.arrow_direction)
-                    tyi = tp.mag_imag*np.sin(tp.ang_imag*np.pi/180+\
+                    tyi = tp.mag_imag*np.cos(tp.ang_imag*np.pi/180+\
                                              np.pi*self.arrow_direction)
                     
                     nt = len(txr)
@@ -896,35 +894,19 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     for aa in range(nt):
                         xlenr = txr[aa]*mt.period[aa]
                         xleni = txi[aa]*mt.period[aa]
-                        
-                        #scale the arrow head height and width to fit in a
-                        #log scale
-                        if np.log10(mt.period[aa])<0:
-                            hwidth = self.arrow_head_width*\
-                                     10**(np.floor(np.log10(mt.period[aa])))
-                            hheight = self.arrow_head_height*\
-                                     10**(np.floor(np.log10(mt.period[aa])))
-                        else:
-                            hwidth = self.arrow_head_width/\
-                                    10**(np.floor(np.log10(mt.period[aa])))
-                            hheight = self.arrow_head_height/\
-                                    10**(np.floor(np.log10(mt.period[aa]))) 
-                        if np.log10(mt.period[aa])<0:
-                            alw = self.arrow_lw*mt.period[aa]
-                        else:
-                            alw = self.arrow_lw
+                         
                         #--> plot real arrows
-                        if self.plot_tipper.find('r')>0:
-                            axt.arrow(mt.period[aa],
-                                      0,
-                                      xlenr,
-                                      tyr[aa],
-                                      lw=alw,
-                                      facecolor=self.arrow_color_real,
-                                      edgecolor=self.arrow_color_real,
-                                      head_width=hwidth,
-                                      head_length=hheight,
-                                      length_includes_head=False)
+                        if self._plot_tipper.find('r')>0:
+                            axt.arrow(np.log10(mt.period[aa]),
+                                       0,
+                                       xlenr,
+                                       tyr[aa],
+                                       lw=self.arrow_lw,
+                                       facecolor=self.arrow_color_real,
+                                       edgecolor=self.arrow_color_real,
+                                       head_width=self.arrow_head_width,
+                                       head_length=self.arrow_head_length,
+                                       length_includes_head=False)
                             
                             if aa == 0:
                                 line1 = axt.plot(0, 0, self.arrow_color_real)
@@ -933,14 +915,16 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                            
                         #--> plot imaginary arrows
                         if self.plot_tipper.find('i')>0:               
-                            axt.arrow(mt.period[aa],
-                                      0,
-                                      xleni,
-                                      tyi[aa],
-                                      lw=alw,
-                                      facecolor=self.arrow_color_imag,
-                                      edgecolor=self.arrow_color_imag,
-                                      length_includes_head=False)
+                            axt.arrow(np.log10(mt.period[aa]),
+                                       0,
+                                       xleni,
+                                       tyi[aa],
+                                       facecolor=self.arrow_color_imag,
+                                       edgecolor=self.arrow_color_imag,
+                                       lw=self.arrow_lw,
+                                       head_width=self.arrow_head_width,
+                                       head_length=self.arrow_head_length,
+                                       length_includes_head=False)
                             if aa == 0:              
                                 line2 = axt.plot(0, 0, self.arrow_color_imag)
                                 tiplist.append(line2[0])
@@ -972,15 +956,13 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     
                     axt.set_xscale('log')
                     if self.tipper_limits is None:
-                        tmax = max([np.sqrt(txr.max()**2+tyr.max()**2),
-                                    np.sqrt(txi.max()**2+tyi.max()**2)])
+                        tmax = max([tyr.max(), tyi.max()])
                         if tmax > 1:
-                            tmax = .999
+                            tmax = .899
                                     
-                        tmin = -min([np.sqrt(txr.min()**2+tyr.min()**2),
-                                    np.sqrt(txi.min()**2+tyi.min()**2)])
+                        tmin = min([tyr.min(), tyi.min()])
                         if tmin < -1:
-                            tmin = -.999
+                            tmin = -.899
                                     
                         self.tipper_limits = (tmin-.1, tmax+.1)
                     
@@ -989,14 +971,21 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                              color=(.25,.25,.25),
                              lw=.25)
                              
-                    tklabels = [mtpl.labeldict[tt] 
-                                for tt in np.arange(np.log10(self.xlimits[0]),
-                                              np.log10(self.xlimits[1])+1)]
-                    tklabels[0] = ''
-                    tklabels[-1] = ''
-                
-                    axt.set_xticklabels(tklabels,
+                    tklabels = []
+                    xticks = []
+                    for tk in axt.get_xticks():
+                        try:
+                            tklabels.append(mtpl.labeldict[tk])
+                            xticks.append(tk)
+                        except KeyError:
+                            pass
+                    axt.set_xticks(xticks)
+                    axt.set_xticklabels(tklabels, 
                                         fontdict={'size':self.font_size})
+                    #need to reset the xlimits caouse they get reset when calling
+                    #set_ticks for some reason
+                    axt.set_xlim(np.log10(self.xlimits[0]),
+                                 np.log10(self.xlimits[1]))
                     
                 #------plot strike angles----------------------------------------------
                 if self._plot_strike.find('y') == 0:

@@ -11,19 +11,20 @@ except ImportError:
           'all the paths are correct')
 import numpy as np
 import mtpy.modeling.modem_new as modem
+import mtpy.modeling.ws3dinv as ws
 import os
 import scipy.interpolate as interpolate
 
 ogr.UseExceptions()
 
-class ModEM2Raster(object):
+class ModEM_to_Raster(object):
     """
     create a raster image of a model slice from a ModEM model
     
     :Example: ::
         >>> import mtpy.utils.array2raster as a2r
         >>> mfn = r"/home/ModEM/Inv1/Modular_NLCG_110.rho"
-        >>> m_obj = a2r.ModEM2Raster()
+        >>> m_obj = a2r.ModEM_to_Raster()
         >>> m_obj.model_fn = mfn
         >>> m_obj.lower_left_corner = (-119.11, 37.80)
         >>> m_obj.write_raster_files(save_path=r"/home/ModEM/Inv1/GIS_depth_slices")
@@ -36,12 +37,14 @@ class ModEM2Raster(object):
         self.save_path = kwargs.pop('save_path', os.getcwd())
         self.projection = kwargs.pop('projection', 'WGS84')
         self.lower_left_corner = kwargs.pop('lower_left_corner', None)
+        self.grid_center = kwargs.pop('gid_center', None)
         
         self.pad_east = None
         self.pad_north = None
         self.res_array = None
         self.cell_size_east = None
         self.cell_size_north = None
+        self.rotation_angle = 0
         
     def _get_model(self):
         """
@@ -85,12 +88,13 @@ class ModEM2Raster(object):
         
         if pad_east is not None:
             self.pad_east = pad_east
-        else:
+            
+        if self.pad_east is None:
             self.pad_east = np.where(model_obj.nodes_east[0:10] > 
                                      self.cell_size_east*1.1)[0][-1]
         if pad_north is not None:
             self.pad_north = pad_north
-        else:
+        if self.pad_north is None:
             self.pad_north = np.where(model_obj.nodes_north[0:10] > 
                                     self.cell_size_north*1.1)[0][-1]
         
@@ -117,46 +121,181 @@ class ModEM2Raster(object):
                                          res.ravel(), 
                                          (new_north[:, None], new_east[None, :]))
             
-#        #1) first need to make x, y, z have dimensions (nx, ny, nz), similar to res
-#        north, east, vert = np.broadcast_arrays(model_obj.grid_north[:, None, None], 
-#                                                model_obj.grid_east[None, :, None], 
-#                                                model_obj.grid_z[None, None, :])
-#        
-#        #2) next interpolate ont the new mesh
-#        new_res = interpolate.griddata((north.ravel(), 
-#                                        east.ravel(), 
-#                                        vert.ravel()),
-#                                        model_obj.res_model.ravel(),
-#                                        (new_north[:, None, None], 
-#                                         new_east[None, :, None], 
-#                                         model_obj.grid_z[None, None, :]),
-#                                         method='linear')
+
         self.res_array = new_res_arr
         
     def write_raster_files(self, save_path=None, pad_east=None, 
-                           pad_north=None, cell_size=None):
+                           pad_north=None, cell_size=None, rotation_angle=None):
         """
         write a raster file for each layer
         
         """
+        if rotation_angle is not None:
+            self.rotation_angle = float(rotation_angle)
+            
         if self.lower_left_corner is None:
             raise ValueError('Need to input an lower_left_corner as (lon, lat)')
         if save_path is not None:
             self.save_path = save_path
+            
+        if not os.path.exists(self.save_path):
+            os.mkdir(self.save_path)
             
         self.interpolate_grid(pad_east=pad_east, pad_north=pad_north, 
                               cell_size=cell_size)
         
         for ii in range(self.res_array.shape[2]):
             d = self.grid_z[ii]
-            raster_fn = os.path.join(save_path, 'Depth_{0:.2f}_{1}.tif'.format(d, 
+            raster_fn = os.path.join(self.save_path, 'Depth_{0:.2f}_{1}.tif'.format(d, 
                                      self.projection))
             array2raster(raster_fn, 
                          self.lower_left_corner, 
                          self.cell_size_east, 
                          self.cell_size_north, 
                          np.log10(self.res_array[:,:,ii]),
-                         self.projection)            
+                         projection=self.projection,
+                         rotation_angle=self.rotation_angle)   
+
+#==============================================================================
+#  WS3dInv to raster
+#==============================================================================
+class WS3D_to_Raster(object):
+    """
+    create a raster image of a model slice from a ModEM model
+    
+    :Example: ::
+        >>> import mtpy.utils.array2raster as a2r
+        >>> mfn = r"/home/ModEM/Inv1/Modular_NLCG_110.rho"
+        >>> m_obj = a2r.WS_to_Raster()
+        >>> m_obj.model_fn = mfn
+        >>> m_obj.lower_left_corner = (-119.11, 37.80)
+        >>> m_obj.write_raster_files(save_path=r"/home/WS3DINV/Inv1/GIS_depth_slices")
+
+    
+    """
+
+    def __init__(self, **kwargs):
+        self.model_fn = kwargs.pop('model_fn', None)
+        self.save_path = kwargs.pop('save_path', os.getcwd())
+        self.projection = kwargs.pop('projection', 'WGS84')
+        self.lower_left_corner = kwargs.pop('lower_left_corner', None)
+        
+        self.pad_east = None
+        self.pad_north = None
+        self.res_array = None
+        self.cell_size_east = None
+        self.cell_size_north = None
+        self.rotation_angle = 0
+        
+    def _get_model(self):
+        """
+        get model to put into array
+        """
+
+        model_obj = ws.WSModel()
+        model_obj.model_fn = self.model_fn
+        model_obj.read_model_file()
+        
+        self.cell_size_east = np.median(model_obj.nodes_east)
+        self.cell_size_north = np.median(model_obj.nodes_north)
+        
+        self.pad_east = np.where(model_obj.nodes_east[0:10] > 
+                                    self.cell_size_east*1.1)[0][-1]
+        self.pad_north = np.where(model_obj.nodes_north[0:10] > 
+                                    self.cell_size_north*1.1)[0][-1]
+        self.grid_z = model_obj.grid_z.copy()                                            
+        self.res_array = model_obj.res_model[self.pad_north:-self.pad_north,
+                                             self.pad_east:-self.pad_east,
+                                             :]
+                                             
+    def interpolate_grid(self, pad_east=None, pad_north=None, cell_size=None):
+        """
+        interpolate the irregular model grid onto a regular grid.
+        
+        """
+        
+        model_obj = ws.WSModel()
+        model_obj.model_fn = self.model_fn
+        model_obj.read_model_file()
+
+        self.grid_z = model_obj.grid_z.copy()                                            
+
+        if cell_size is not None:
+            self.cell_size_east = cell_size
+            self.cell_size_north = cell_size
+        else:
+            self.cell_size_east = np.median(model_obj.nodes_east)
+            self.cell_size_north = np.median(model_obj.nodes_north)
+        
+        if pad_east is not None:
+            self.pad_east = pad_east
+            
+        if self.pad_east is None:
+            self.pad_east = np.where(model_obj.nodes_east[0:10] > 
+                                     self.cell_size_east*1.1)[0][-1]
+        if pad_north is not None:
+            self.pad_north = pad_north
+        if self.pad_north is None:
+            self.pad_north = np.where(model_obj.nodes_north[0:10] > 
+                                    self.cell_size_north*1.1)[0][-1]
+        
+            
+        new_east = np.arange(model_obj.grid_east[self.pad_east],
+                             model_obj.grid_east[-self.pad_east-1],
+                             self.cell_size_east)
+        new_north = np.arange(model_obj.grid_north[self.pad_north],
+                             model_obj.grid_north[-self.pad_north-1],
+                             self.cell_size_north)
+            
+        model_n, model_e = np.broadcast_arrays(model_obj.grid_north[:, None], 
+                                                      model_obj.grid_east[None, :])
+
+                                             
+        new_res_arr = np.zeros((new_north.shape[0],
+                                new_east.shape[0],
+                                model_obj.grid_z.shape[0]))
+                                
+        for z_index in range(model_obj.grid_z.shape[0]):
+            res = model_obj.res_model[:, :, z_index]
+            new_res_arr[:, :, z_index] = interpolate.griddata(
+                                         (model_n.ravel(), model_e.ravel()),
+                                         res.ravel(), 
+                                         (new_north[:, None], new_east[None, :]))
+            
+
+        self.res_array = new_res_arr
+        
+    def write_raster_files(self, save_path=None, pad_east=None, 
+                           pad_north=None, cell_size=None, rotation_angle=None):
+        """
+        write a raster file for each layer
+        
+        """
+        if rotation_angle is not None:
+            self.rotation_angle = rotation_angle
+            
+        if self.lower_left_corner is None:
+            raise ValueError('Need to input an lower_left_corner as (lon, lat)')
+        if save_path is not None:
+            self.save_path = save_path
+            
+        if not os.path.exists(self.save_path):
+            os.mkdir(self.save_path)
+            
+        self.interpolate_grid(pad_east=pad_east, pad_north=pad_north, 
+                              cell_size=cell_size)
+        
+        for ii in range(self.res_array.shape[2]):
+            d = self.grid_z[ii]
+            raster_fn = os.path.join(self.save_path, 'Depth_{0:.2f}_{1}.tif'.format(d, 
+                                     self.projection))
+            array2raster(raster_fn, 
+                         self.lower_left_corner, 
+                         self.cell_size_east, 
+                         self.cell_size_north, 
+                         np.log10(self.res_array[:,:,ii]),
+                         projection=self.projection,
+                         rotation_angle=self.rotation_angle)            
         
         
 #==============================================================================
@@ -164,7 +303,7 @@ class ModEM2Raster(object):
 #==============================================================================
     
 def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
-                 projection='WGS84'):
+                 projection='WGS84', rotation_angle=0.0):
     """
     converts an array into a raster file that can be read into a GIS program.
     
@@ -188,12 +327,19 @@ def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
         **projection** : string
                         name of the projection datum
                         
+        **rotation_angle** : float
+                             angle in degrees to rotate grid.  
+                             Assuming N = 0 and E = 90, positive clockwise
+                        
     Output:
     ----------
         * creates a geotiff file projected into projection in UTM.  The 
           values are in log scale for coloring purposes.
     
     """
+    # convert rotation angle to radians
+    r_theta = np.deg2rad(rotation_angle)
+    
     res_array = np.flipud(res_array[::-1])
 
     ncols = res_array.shape[1]
@@ -209,8 +355,27 @@ def array2raster(raster_fn, origin, cell_width, cell_height, res_array,
 
     # make a raster with the shape of the array to be written    
     out_raster = driver.Create(raster_fn, ncols, nrows, 1, gdal.GDT_Float32)
-    out_raster.SetGeoTransform((origin_east, cell_width, 0, 
-                                origin_north, 0, cell_height))
+    
+    # geotransform:
+    # GeoTransform[0] = top left x 
+    # GeoTransform[1] = w-e pixel resolution 
+    # GeoTransform[2] = rotation, 0 if image is "north up" 
+    # GeoTransform[3] = top left y 
+    # GeoTransform[4] = rotation, 0 if image is "north up" 
+    # GeoTransform[5] = n-s pixel resolution 
+    
+    # padfTransform[0] = corner lon
+    # padfTransform[1] = cos(alpha)*(scaling)
+    # padfTransform[2] = -sin(alpha)*(scaling)
+    # padfTransform[3] = corner lat
+    # padfTransform[4] = sin(alpha)*(scaling)
+    # padfTransform[5] = cos(alpha)*(scaling)
+    out_raster.SetGeoTransform((origin_east, 
+                                np.cos(r_theta)*cell_width, 
+                                -np.sin(r_theta)*cell_width, 
+                                origin_north, 
+                                np.sin(r_theta)*cell_height,
+                                np.cos(r_theta)*cell_height))
 
     # create a band for the raster data to be put in
     outband = out_raster.GetRasterBand(1)

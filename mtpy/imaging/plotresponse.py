@@ -362,7 +362,6 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         res_phase_object = kwargs.pop('res_phase_object', None)
         self.phase_quadrant = kwargs.pop('phase_quadrant', 1)
         
-        
         #--> initialize an MTplot object
         if mt_object is None:
             self._mt = mtpl.MTplot(fn=fn, 
@@ -972,7 +971,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                 try:
                     stmax = min(st_maxlist)
                 except ValueError:
-                    stmin = 89.99    
+                    stmax = 89.99    
                 if stmax+3 < 90:
                     stmax += 3
                 else:
@@ -1068,6 +1067,10 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
             if self.ellipse_colorby == 'phiminang' or \
                self.ellipse_colorby == 'phimin':
                 colorarray = self.pt.phimin[0]
+                
+            elif self.ellipse_colorby == 'phimaxang' or \
+               self.ellipse_colorby == 'phimax':
+                colorarray = self.pt.phimax[0]
         
                                                
             elif self.ellipse_colorby == 'phidet':

@@ -7,6 +7,7 @@ Created on Fri Mar 14 10:21:05 2014
 """
 
 import os
+import os.path as op
 import mtpy.utils.filehandling as fh
 import mtpy.utils.elevation_data as mted
 import pek1dclasses as pek1dc
@@ -41,7 +42,7 @@ def parse_arguments(arguments):
                         help=efhelp,nargs='*',
                         type=float,default=0.1)
     parser.add_argument('-eft','--errorfloor_type',
-                        help='type of error floor, absolute or relative',
+                        help='type of error floor, absolute, relative or offdiagonals',
                         type=str,default='relative')
     parser.add_argument('-wd','--working_directory',
                         help='working directory',
@@ -176,7 +177,7 @@ def create_filelist(wd, subfolder_list = None, subfolder_identifier = None):
     if subfolder_list is None:
         subfolder_list = [folder for folder, sf, f in os.walk(wd) if folder != wd]
     if subfolder_identifier is not None:
-        subfolder_list = [f for f in subfolder_list if subfolder_identifier in f]
+        subfolder_list = [f for f in subfolder_list if subfolder_identifier == op.basename(f)]
     
     for subfolder in subfolder_list:
         #print subfolder
@@ -339,23 +340,29 @@ def build_run():
         try:
             build_inputs[key] = input_parameters[key]
         except:
-            print "problems with {}".format(key)
+            pass
     
     # make a master directory under the working directory to save all runs into
     master_directory = os.path.join(input_parameters['working_directory'],input_parameters['master_savepath'])
     if rank == 0:
         if not os.path.exists(master_directory):
             os.mkdir(master_directory)
+            
     build_inputs['master_savepath'] = master_directory
     # wait til master directory is made until progressing
+    print "waiting for directory"
     while not os.path.isdir(master_directory):
         time.sleep(1)
+        print '.',
 
     # build a model
     Data = generate_inputfiles(edi_list[rank],**build_inputs)
+    time.sleep(5)
     os.chdir(Data.working_directory)
 
     # run the model
+    print "running model on cpu number {} from directory {}".format(rank,Data.working_directory)
+    print "current directory, {}".format(os.getcwd())
     call([input_parameters['program_location']]+[Data.datafile]+[str(n) for n in input_parameters['run_input']])
 
 

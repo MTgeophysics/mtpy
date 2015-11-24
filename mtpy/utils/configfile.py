@@ -13,29 +13,14 @@ Helper functions for the handling of configuration files
 
 #=================================================================
 
-
-import numpy as np
 import sys
 import os
-import glob
 import os.path as op
-import glob
-import calendar
-import time
 import ConfigParser
-import fnmatch
-import shutil
 import copy
 import StringIO
-import mtpy.utils.calculator as MTcc
-import mtpy.processing.general as MTgn
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.format as MTft
-
-reload(MTgn)
-reload(MTcc)
-reload(MTex)
-reload(ConfigParser)
 #=================================================================
 
 list_of_required_keywords = ['latitude',
@@ -44,6 +29,12 @@ list_of_required_keywords = ['latitude',
                             'sampling_interval',
                             'station_type'
                             ]
+list_of_required_keywords_short = ['lat',
+                                   'lon',
+                                   'elev',
+                                   'sampling',
+                                   'type'
+                                  ]
 
 list_of_keyword_defaults_general = [0.,
                                     0.,
@@ -99,7 +90,7 @@ dict_of_allowed_values_efield = {'E_logger_type':['edl','elogger', 'zen','qel'] 
                                                      'cu-cuso4 electrodes',
                                                      'cuso4_electrodes',
                                                      'pbcl2_electrodes'],
-                                'E_instrument_amplification':[1,10]
+                                'E_instrument_amplification':[1,10,11]
                                 }
 
 dict_of_allowed_values_bfield = {'B_logger_type':['edl', 'zen','qel_blogger'] ,
@@ -109,7 +100,7 @@ dict_of_allowed_values_bfield = {'B_logger_type':['edl', 'zen','qel_blogger'] ,
                                 'B_instrument_type':['fluxgate', 'coil','coils']
                                 }
 
-list_of_station_types = ['mt','e','b']
+list_of_station_types = ['mt','e','b','qe','qb']
 
 
 #=================================================================
@@ -179,7 +170,7 @@ def read_survey_configfile(filename):
     - longitude (deg)
     - elevation (in meters)
     - sampling_interval (in seconds)
-    - station_type (MT, E, B)
+    - station_type (MT, (Q)E, (Q)B)
 
     Not mandatory, but recommended
     - declination (in degrees, positive to East) - this is set to '0.0', if omitted
@@ -205,6 +196,12 @@ def read_survey_configfile(filename):
     - B_instrument_amplification (applied amplification factor)
     - B_Xaxis_azimuth (degrees)
     - B_Yaxis_azimuth (degrees)
+
+
+    A global section can be used to include parameters for all stations.
+    The name of the section must be one of:
+
+        global/main/default/general 
 
     """
 
@@ -241,7 +238,7 @@ def read_survey_configfile(filename):
     for station in configobject_dict:
         #read in the sub-dictionary for the current station - bringing all keys
         #to lowercase!
-        temp_dict_in = dict((k.lower(),v) 
+        temp_dict_in = dict((k.lower(),v.lower()) 
                             for k, v in configobject_dict[station].items())
 
         #initialise output sub-directory for current station 
@@ -249,44 +246,131 @@ def read_survey_configfile(filename):
 
         #stationnames are uppercase in MTpy
         stationname = station.upper()
+        if stationname in ['GLOBAL','MAIN','DEFAULT','GENERAL']:
+            stationname = 'GLOBAL'
+
         stationdict['station'] = stationname
 
+        #add the station's sub-dictionary to the config dictionary
+        config_dict[stationname] = stationdict
+
+
+    # Check if a global section is present
+    if config_dict.has_key('GLOBAL'): 
+        globaldict = config_dict['GLOBAL']
+    else:
+        #set defaults for location
+        globaldict={}
+    # for i in ['latitude', 'longitude', 'elevation']:
+    #     #skip if values are present
+    #     if i in globaldict.keys() or i[:3] in globaldict.keys():
+    #         continue
+    #     #otherwise set defaults
+    #     globaldict[i] = 0
+        
+
+    #remove other general sections to avoid redundancy
+    for i in ['MAIN','DEFAULT','GENERAL']:
+        if config_dict.has_key(i):
+            dummy = config_dict.pop(i)
+
+    # RE-loop to check for each station if required keywords are present,
+    # if not if they can be pulled from the global section  
+    
+    #============================================================
+    # local function definition
+    def fromglobals(key,stationdict,globaldict):
+        """
+            Check if stationdict contains key. 
+            If not search for key in global dict and add it to station dict.
+
+            Return if global dict is not defined.
+            Return True if key was present in either dictionary, False if not.
+
+        """
+
+        if key in stationdict.keys():
+            return True, stationdict.get(key)
+
+        if globaldict is None or len(globaldict) == 0:
+            return False, None
+
+
+        if key in globaldict:
+            stationdict[key] = globaldict[key]
+            return True,globaldict.get(key)
+
+        return False, None
+
+    #============================================================
+
+
+    for station in sorted(config_dict):
+        #do not alter the global section
+        if station == 'GLOBAL':
+            continue
+        
+        stationdict =  config_dict[station]
+        
+
+
         #check for presence of all mandatory keywords for the current station
-        #case insensitive - allow for short forms 'lat', 'lon', and 'ele'
-        try:
-            for req_keyword in list_of_required_keywords:
-                if req_keyword.lower() in temp_dict_in.keys():
-                    stationdict[req_keyword.lower()] = \
-                                          temp_dict_in[req_keyword.lower()].lower()
-                elif req_keyword in ['latitude', 'longitude', 'elevation']:
-                    if req_keyword[:3] in temp_dict_in.keys():
-                        stationdict[req_keyword] = temp_dict_in[req_keyword[:3]]
+        #case insensitive - allow for short forms 'sampling', 'lat', 'lon', and 'elev'
+        for idx,req_keyword in enumerate(list_of_required_keywords):
+            shortform = list_of_required_keywords_short[idx]
+
+            try:
+                found = False
+                #import ipdb
+                #ipdb.set_trace()
+                if fromglobals(req_keyword,stationdict,globaldict)[0] is False:
+                    #try short form instead
+                    found,value = fromglobals(shortform,stationdict,globaldict)
+                    #print shortform,value
+
+                    if found is True:
+                        stationdict[req_keyword] = value
+  
                 else:  
+                    found = True
+
+                if found is False:
                     print 'Station {0} - keyword {1} missing'.format(stationname,
                                                                      req_keyword)
                     error_counter += 1
-                    continue
+                    raise Exception
 
-            #check format of lat/lon - convert to degrees, if given in 
-            #(deg,min,sec)-triple
-            for coordinate in ['latitude', 'longitude', 'elevation']:
-                value = stationdict[coordinate]
-                try:
-                    new_value = MTft._assert_position_format(coordinate,value)
-                except:
-                    raise MTex.MTpyError_config_file('Error - wrong '
-                            'coordinate format for station {0}'.format(stationname))
-                stationdict[coordinate] = new_value
+                if req_keyword in ['elevation','latitude', 'longitude']:
+                    #check format of lat/lon - convert to degrees, if given in 
+                    #(deg,min,sec)-triple#assert correct format
+                    value = stationdict[req_keyword]
+                    try:
+                        new_value = MTft._assert_position_format(req_keyword,value)
+                    except:
+                        raise MTex.MTpyError_config_file('Error - wrong '
+                                'coordinate format for station {0}'.format(stationname))
+                    
+                    stationdict[req_keyword] = new_value
 
-            if not stationdict['station_type'] in list_of_station_types:
-                raise MTex.MTpyError_config_file( 'Station type not valid' )
-        except:
-            print 'Missing information on station {0} in config file - skipping'.format(
-                                                                        station)
-            continue
+
+
+            except:
+                raise
+                print 'Missing information on station {0} in config file'\
+                        ' - setting default (dummy) value'.format(station)
+                stationdict[req_keyword] = list_of_keyword_defaults_general[idx]
+            
+            #to avoid duplicates remove the now obsolete short form from 
+            #the station dictionary
+            dummy = stationdict.pop(shortform,None)
+
+
+        if not stationdict['station_type'] in list_of_station_types:
+            raise MTex.MTpyError_config_file( 'Station type not valid' )
+
 
         if stationdict['station_type'] in ['mt','e']:
-            #check for required electric field parameters
+            #check for required electric field parameters - not done for QEL loggers yet
             for req_keyword in list_of_efield_keywords:
                 if req_keyword.lower() in temp_dict_in.keys():
                     stationdict[req_keyword.lower()] = \
@@ -315,8 +399,6 @@ def read_survey_configfile(filename):
             _validate_dictionary(stationdict,dict_of_allowed_values_bfield)
             
 
-        #add the station's sub-dictionary to the config dictionary
-        config_dict[stationname] = stationdict
 
     #re-loop for setting up correct remote reference station information :
     #if rem.ref. station key is present, its information must be contained 
@@ -569,7 +651,7 @@ def read_survey_txt_file(survey_file, delimiter=None):
     skeys = [i.strip().replace(' ','_') for i in skeys]
        
     survey_dict = {}
-    print skeys, len(skeys)
+    #print skeys, len(skeys)
 
     for ss, sline in enumerate(slines[1:]):
 
@@ -581,12 +663,12 @@ def read_survey_txt_file(survey_file, delimiter=None):
             sstr = sstr.split(delimiter)
         else:
             sstr = sstr.split()
-        print sstr
+        #print sstr
         #get rid of quotations
         sstr = [i.replace('"','') for i in sstr]  
         #get rid of spaces
         sstr = [i.replace(' ','_') for i in sstr]  
-        print sstr,len(sstr)
+        #print sstr,len(sstr)
        
         if len(sstr) != len(skeys):
             print 'cannot read line {0} - wrong number of entries - need {2}\

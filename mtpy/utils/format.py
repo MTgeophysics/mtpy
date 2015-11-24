@@ -153,6 +153,26 @@ def convert_dms_string2tuple(coordinatestring):
         return
 
 
+def convert_dms_tuple2string(dmstuple):
+
+    d = dmstuple[0]
+    m = dmstuple[1]
+    s = int(round(dmstuple[2],5))
+    try:
+        dms_string = "%i:%02i:%02i"%(d,m,int(s))
+        remainder = s - int(s)
+        remainder = round(remainder,5)
+        if remainder !=0:
+            print remainder
+            print round(remainder,5)*1e4
+            dms_string += '.%i'%(int(round(remainder,5)*1e4))
+        return dms_string
+
+    except:
+        print 'coordinate tuple invalid - must be of form "(deg,min,sec)"'
+        return
+
+
 def convert_dms_tuple2degrees(latlon_list):
 
     """
@@ -207,7 +227,11 @@ def convert_degrees2dms_tuple(degrees):
     """
 
     deg = float(degrees)
+    dms_triple = np.zeros((3))
 
+    if deg == 0 :
+        return dms_triple
+        
     #take out sign for easier conversion:
     sign = deg/np.abs(deg)
     if deg < 0:
@@ -219,9 +243,7 @@ def convert_degrees2dms_tuple(degrees):
 
     m = int(minutes)
 
-    seconds = 60 * (minutes - m)
-
-    dms_triple = np.zeros((3))
+    seconds = 60. * (minutes - m)
 
 
     dms_triple[0] = sign * d

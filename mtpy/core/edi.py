@@ -47,7 +47,11 @@ reload(MTex)
 reload(MTft)
 reload(MTcc)
 reload(MTz)
-#import ipdb
+
+# try:
+#     import ipdb
+# except:
+#     pass
 
 
 #=================================================================
@@ -833,7 +837,7 @@ class Edi(object):
         #errors are stddev, not VAR :
         self.Tipper.tippererr = np.sqrt(tippererr_array)
         self.Tipper.freq = self.freq
-
+        
     #--------------Read Resistivity and Phase---------------------------------
     def _read_res_phase(self, edistring):
         """
@@ -886,6 +890,7 @@ class Edi(object):
 
         for idx_freq  in range( self.n_freq()):
             r = np.zeros((2,2))
+            tmp_rho = np.zeros((2,2))
             phi = np.zeros((2,2))
             rerr = np.zeros((2,2))
             phierr = np.zeros((2,2))
@@ -897,6 +902,7 @@ class Edi(object):
                     r[idx_c/2,idx_c%2] = \
                                 np.sqrt(rhophi_dict['RHO'+comp][idx_freq] *\
                                 5 * self.freq[idx_freq])
+                    tmp_rho[idx_c/2,idx_c%2] = rhophi_dict['RHO'+comp][idx_freq]
                 except:
                     pass
                 try:
@@ -928,7 +934,7 @@ class Edi(object):
                                                     phi[idx_c/2,idx_c%2], 
                                                     phierr[idx_c/2,idx_c%2]))
 
-                z_array[idx_freq] = MTcc.rhophi2z(r, phi)
+                z_array[idx_freq] = MTcc.rhophi2z(tmp_rho, phi,self.freq[idx_freq])
 				
                 zerr_array[idx_freq] = zerr
 
@@ -948,7 +954,7 @@ class Edi(object):
         try:
             temp_string = _cut_sectionstring(edistring,'RHOROT')
         except:
-            lo_angles = list( np.zeros((self.n_freq())))
+            lo_angles = np.zeros((self.n_freq()))
             self.zrot = lo_angles
             self.Z.rotation_angle = self.zrot
             if self.Tipper.tipper is not None:
@@ -973,7 +979,7 @@ class Edi(object):
         if len(lo_angles) != self.n_freq():
             raise
 
-        self.zrot = lo_angles
+        self.zrot = np.array(lo_angles)
         self.Z.rotation_angle = self.zrot
         if self.Tipper.tipper is not None:
             self.Tipper.rotation_angle = self.zrot
@@ -1112,14 +1118,14 @@ class Edi(object):
         self._set_freq(self.Z.freq)
         self.Z.rotation_angle = np.array(lo_rots)
 
-        self.zrot = self.Z.rotation_angle
+        self.zrot = self.Z.rotation_angle.copy()
 
 
         if tipper_array is not None:
             self.Tipper = MTz.Tipper(tipper_array=tipper_array,
                                      tippererr_array= tippererr_array,
                                      freq=self.freq)
-            self.Tipper.rotation_angle = self.zrot
+            self.Tipper.rotation_angle = self.zrot.copy()
 
         for i,j in enumerate(id_list):
             s_dict[ id_comps[i] ] = j
@@ -1136,7 +1142,7 @@ class Edi(object):
         try:
             temp_string = _cut_sectionstring(edistring,'ZROT')
         except:
-            lo_angles = list( np.zeros((self.n_freq())) )
+            lo_angles = np.zeros((self.n_freq()))
             self.zrot = lo_angles
             self.Z.rotation_angle = self.zrot
             return
@@ -1157,10 +1163,10 @@ class Edi(object):
         if len(lo_angles) != self.n_freq():
             raise
 
-        self.zrot = lo_angles
-        self.Z.rotation_angle = self.zrot
+        self.zrot = np.array(lo_angles)
+        self.Z.rotation_angle = self.zrot.copy()
         if self.Tipper.tipper is not None:
-            self.Tipper.rotation_angle = self.zrot
+            self.Tipper.rotation_angle = self.zrot.copy()
 
 
     #--------------Write out file---------------------------------------------
@@ -1273,18 +1279,18 @@ class Edi(object):
 
         """
         if type(angle) in [float,int]:
-            angle = [float(angle)%360 for i in range(len(self.zrot))]
+            angle = np.array([float(angle)%360 for i in range(len(self.zrot))])
         else:
             try:
                 if type(angle) is str:
                     try:
                         angle = float(angle)
-                        angle = [float(angle)%360 for i in range(len(self.zrot))]
+                        angle = np.array([float(angle)%360 for i in range(len(self.zrot))])
                     except:
                         raise
                 elif len(angle) != len(self.zrot):
                     raise
-                angle = [float(i)%360 for i in angle]
+                angle = np.array([float(i)%360 for i in angle])
             except:
                 raise MTex.MTpyError_inputarguments('ERROR - "angle" must'+\
                                                     ' be a single numerical'+\
@@ -2290,7 +2296,7 @@ def _generate_edifile_string(edidict,use_info_string=False):
                     edistring += '\tREFLONG={0}:{1}:{2:.2f}\n'.format(int(v[0]),int(v[1]),v[2])
                     continue
                 if k == 'REFELEV':
-                    edistring += '\tREFELEV={0:.1f}\n'.format(edidict['HEAD']['elev'])
+                    edistring += '\tREFELEV={0:.1f}\n'.format(float(edidict['HEAD']['elev']))
                     continue
 
                 if len(v) == 0  or len(v.split()) > 1:

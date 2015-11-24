@@ -89,7 +89,7 @@ def convertbirrpoutput(stationname, datadir, survey_configfile,birrp_configfile=
         if not op.isfile(survey_configfile):
             raise
     except:
-        sys.exit('Survey config file not existing: {0}'.format(survey_configfile))
+        sys.exit('Survey config file does not exist: {0}'.format(survey_configfile))
 
     if birrp_configfile is not None:
         try:
@@ -104,11 +104,13 @@ def convertbirrpoutput(stationname, datadir, survey_configfile,birrp_configfile=
 
     if instr_response_file is not None:
         try:
+            
             ir_fn = op.abspath(instr_response_file)
+            #print irfn,instr_response_file
             if not op.isfile(ir_fn):
                 raise
         except:
-            sys.exit('Instrument response file not existing: {0}'.format(ir_fn))
+            sys.exit('Instrument response file does not exist: {0}'.format(ir_fn))
         try:
             instr_resp = np.loadtxt(ir_fn)
             if np.shape(instr_resp)[1] != 3:
@@ -140,6 +142,7 @@ def convertbirrpoutput(stationname, datadir, survey_configfile,birrp_configfile=
                                                         ir_fn)
 
         except:
+            raise
             try:
                 edifn = MTbp.convert2edi_incl_instrument_correction(stationname.upper(),\
                                                         datadir,\
@@ -176,6 +179,7 @@ def convertbirrpoutput(stationname, datadir, survey_configfile,birrp_configfile=
                             birrp_configfile)
         
         except:
+            raise
             print 'Could not generate EDI file'
             edifn = None
     

@@ -56,6 +56,43 @@ def read1columntext(textfile):
     
     return [ff.strip() for ff in open(textfile).readlines()]
 
+def read_stationdatafile(textfile,read_duplicates = True):
+    """
+    read a space delimited file containing station info of any sort - 
+    3 columns: station x, y, ... - to a dictionary - station:[x,y,...]
+    textfile = full path to text file
+    read_duplicates = True/False - if stations are listed more than once do you 
+                                   want to read all information or just the 
+                                   first occurrence, default True
+    
+    example:
+    import mtpy.utils.filehandling as fh
+    stationdict = fh.read_stationxyfile(textfile)
+    
+    
+    """
+    stationdict = {}
+    for line in open(textfile).readlines():
+        line = line.split()
+        for l in range(1,len(line)):
+            try:
+                line[l] = float(line[l])
+            except:
+                pass
+        sname = line[0]
+        if sname not in stationdict.keys():
+            stationdict[sname] = line[1:]
+        else:
+            if read_duplicates:
+                if len(line) <= 2:
+                    value = line[1]
+                else:
+                    value = line[1:]
+                stationdict[sname].append(value)
+
+            
+    return stationdict
+
 def make_unique_filename(infn):
 
     fn = op.abspath(infn)
@@ -82,6 +119,7 @@ def make_unique_folder(wd,basename = 'run'):
         svpath = svpath_str+'_%02i'%i
         
     savepath = op.join(wd,svpath)
+    os.mkdir(savepath)
         
     return savepath
 
@@ -140,7 +178,7 @@ def get_pathlist(masterdir, search_stringlist = None, search_stringfile = None,
         if (search_stringlist is None) or (len(search_stringlist)) == 0:
             search_stringlist = read1columntext(search_stringfile)
 
-    flist = [i for i in os.listdir(masterdir) if i[-len(extension):] == \
+    flist = [i for i in os.listdir(masterdir) if i[len(i)-len(extension):] == \
              extension]
     
     if folder:
@@ -160,7 +198,7 @@ def get_pathlist(masterdir, search_stringlist = None, search_stringfile = None,
                         append = True
             if append:
                 start_dict[s] = op.join(masterdir,d)
-    
+
     return start_dict
                 
 
@@ -1053,15 +1091,22 @@ def read_2c2_file(filename):
         try:
             freq.append(  float(coh_row[1]))
         except:
-            period.append(0.)
+            freq.append(0.)
         try:
             coh1.append(  float(coh_row[2]))
         except:
-            period.append(0.)
+            coh1.append(0.)
         try:
             zcoh1.append( float(coh_row[3]))
         except:
-            period.append(0.)
+            zcoh1.append(0.)
+
+    indexorder = np.array(period).argsort()
+
+    period = np.array(period)[indexorder]
+    freq = np.array(freq)[indexorder]
+    coh1 = np.array(coh1)[indexorder]
+    zcoh1 = np.array(zcoh1)[indexorder]
 
     return period, freq, coh1, zcoh1
 
@@ -1211,7 +1256,7 @@ def write_ts_file_from_tuple(outfile,ts_tuple, fmt='%.8e'):
         outF.write(header_string)
         np.savetxt(outF, data, fmt=fmt)
         outF.close()
-    except:
+    except ValueError:
         raise MTex.MTpyError_inputarguments('ERROR - could not write content'
                             ' of TS tuple to file : {0}'.format(outfilename))
 

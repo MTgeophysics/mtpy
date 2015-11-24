@@ -20,6 +20,7 @@ import time
 import os
 import shutil
 import mtpy.core.z as mtz
+import mtpy.imaging.plotresponse as plotresponse
 import mtpy.utils.format as MTft
 import mtpy.utils.configfile as mtcf
 import mtpy.core.edi as mtedi
@@ -163,7 +164,7 @@ class ZongeMTFT():
     def __init__(self):
         
         #--> standard MTFT meta data
-        self.MTFT_Version = '1.10v'
+        self.MTFT_Version = '1.12v'
         self.MTFT_MHAFreq = 3
         self.MTFT_WindowTaper = '4 Pi Prolate'
         self.MTFT_WindowLength = 64
@@ -172,7 +173,6 @@ class ZongeMTFT():
         self.MTFT_PWFilter = 'Auto-Regression'
         self.MTFT_NPWCoef = 5
         self.MTFT_DeTrend = 'Yes'
-        self.MTFT_T0OffsetMax = 1.5
         self.MTFT_Despike = 'Yes'
         self.MTFT_SpikePnt = 1
         self.MTFT_SpikeDev = 4
@@ -208,6 +208,7 @@ class ZongeMTFT():
         self.Chn_ID = ['2314', '2324', '2334', '1', '1']
         self.Chn_Gain = [1, 1, 1, 1, 1]
         self.Chn_Length = [100]*5
+        self.Chn_Azimuth = [0, 270, 90, 0, 270]
         self.Chn_dict = dict([(chkey, [cid, cg, cl]) for chkey, cid, cg, cl in 
                                zip(self.Chn_Cmp, self.Chn_ID, self.Chn_Gain,
                                    self.Chn_Length)])
@@ -218,6 +219,7 @@ class ZongeMTFT():
         self.Ant_FrqMax = 10240
         self.Rx_HPR = [0, 0, 180]
         self.Remote_Component = 'Hx,Hy'
+        self.Remote_HPR = [0, 0, 0]
         self.Remote_Rotation = 0
         self.Remote_Path = ''
         self.cache_path = None
@@ -244,7 +246,6 @@ class ZongeMTFT():
                           'MTFT.PWFilter',
                           'MTFT.NPWCoef',
                           'MTFT.DeTrend', 
-                          'MTFT.T0OffsetMax',
                           'MTFT.Despike',
                           'MTFT.SpikePnt',
                           'MTFT.SpikeDev',
@@ -273,11 +274,12 @@ class ZongeMTFT():
                            'Chn.Cmp',
                            'Chn.ID',
                            'Chn.Length',
+                           'Chn.Azimuth',
                            'Chn.Gain',
                            'Ant.FrqMin',
                            'Ant.FrqMax',
                            'Rx.HPR',
-                           'Remote.Component',
+                           'Remote.HPR',
                            'Remote.Rotation',
                            'Remote.Path']
                           
@@ -292,37 +294,38 @@ class ZongeMTFT():
         """
         make value dictionary with all the important information
         """
-        self.value_lst = [self.MTFT_Version, 
-                          self.MTFT_MHAFreq, 
-                          self.MTFT_WindowTaper,   
-                          self.MTFT_WindowLength,
-                          self.MTFT_WindowOverlap,    
-                          self.MTFT_NDecFlt, 
-                          self.MTFT_PWFilter, 
-                          self.MTFT_NPWCoef,   
-                          self.MTFT_DeTrend, 
-                          self.MTFT_T0OffsetMax,
-                          self.MTFT_Despike,   
-                          self.MTFT_SpikePnt, 
-                          self.MTFT_SpikeDev,
-                          self.MTFT_NotchFlt,  
-                          self.MTFT_NotchFrq, 
-                          self.MTFT_NotchWidth, 
-                          self.MTFT_StackFlt,  
-                          self.MTFT_StackTaper,
-                          self.MTFT_StackFrq,
-                          self.MTFT_SysCal,
-                          self.MTFT_BandFrq,
-                          self.MTFT_BandFrqMin,  
-                          self.MTFT_BandFrqMax, 
-                          self.MTFT_TSPlot_PntRange,  
-                          self.MTFT_TSPlot_ChnRange,
-                          self.Setup_Number,  
-                          self.TS_Number, 
-                          self.TS_FrqBand, 
-                          self.TS_T0Offset, 
-                          self.TS_T0Error,  
-                          self.setup_lst]
+        self.value_lst = [self.__dict__[key.replace('.', '_')] 
+                          for key in self.meta_keys]
+#        self.value_lst = [self.MTFT_Version, 
+#                          self.MTFT_MHAFreq, 
+#                          self.MTFT_WindowTaper,   
+#                          self.MTFT_WindowLength,
+#                          self.MTFT_WindowOverlap,    
+#                          self.MTFT_NDecFlt, 
+#                          self.MTFT_PWFilter, 
+#                          self.MTFT_NPWCoef,   
+#                          self.MTFT_DeTrend, 
+#                          self.MTFT_Despike,   
+#                          self.MTFT_SpikePnt, 
+#                          self.MTFT_SpikeDev,
+#                          self.MTFT_NotchFlt,  
+#                          self.MTFT_NotchFrq, 
+#                          self.MTFT_NotchWidth, 
+#                          self.MTFT_StackFlt,  
+#                          self.MTFT_StackTaper,
+#                          self.MTFT_StackFrq,
+#                          self.MTFT_SysCal,
+#                          self.MTFT_BandFrq,
+#                          self.MTFT_BandFrqMin,  
+#                          self.MTFT_BandFrqMax, 
+#                          self.MTFT_TSPlot_PntRange,  
+#                          self.MTFT_TSPlot_ChnRange,
+#                          self.Setup_Number,  
+#                          self.TS_Number, 
+#                          self.TS_FrqBand, 
+#                          self.TS_T0Offset, 
+#                          self.TS_T0Error,  
+#                          self.setup_lst]
                           
         self.meta_dict = dict([(mkey, mvalue) for mkey, mvalue in
                                zip(self.meta_keys, self.value_lst)])
@@ -332,37 +335,39 @@ class ZongeMTFT():
         from values in meta dict set attribute values
         
         """
-        self.MTFT_Version = self.meta_dict['MTFT.Version']
-        self.MTFT_MHAFreq = self.meta_dict['MTFT.MHAFreq'] 
-        self.MTFT_WindowTaper = self.meta_dict['MTFT.WindowTaper']   
-        self.MTFT_WindowLength = self.meta_dict['MTFT.WindowLength']
-        self.MTFT_WindowOverlap = self.meta_dict['MTFT.WindowOverlap']    
-        self.MTFT_NDecFlt = self.meta_dict['MTFT.NDecFlt'] 
-        self.MTFT_PWFilter = self.meta_dict['MTFT.PWFilter'] 
-        self.MTFT_NPWCoef = self.meta_dict['MTFT.NPWCoef']   
-        self.MTFT_DeTrend = self.meta_dict['MTFT.DeTrend'] 
-        self.MTFT_T0OffsetMax = self.meta_dict['MTFT.T0OffsetMax']
-        self.MTFT_Despike = self.meta_dict['MTFT.Despike']   
-        self.MTFT_SpikePnt = self.meta_dict['MTFT.SpikePnt'] 
-        self.MTFT_SpikeDev = self.meta_dict['MTFT.SpikeDev']
-        self.MTFT_NotchFlt = self.meta_dict['MTFT.NotchFlt']  
-        self.MTFT_NotchFrq = self.meta_dict['MTFT.NotchFrq'] 
-        self.MTFT_NotchWidth = self.meta_dict['MTFT.NotchWidth'] 
-        self.MTFT_StackFlt = self.meta_dict['MTFT.StackFlt']  
-        self.MTFT_StackTaper = self.meta_dict['MTFT.StackTaper']
-        self.MTFT_StackFrq = self.meta_dict['MTFT.StackFrq']
-        self.MTFT_SysCal = self.meta_dict['MTFT.SysCal']
-        self.MTFT_BandFrq = self.meta_dict['MTFT.BandFrq']
-        self.MTFT_BandFrqMin = self.meta_dict['MTFT.BandFrqMin']  
-        self.MTFT_BandFrqMax = self.meta_dict['MTFT.BandFrqMax'] 
-        self.MTFT_TSPlot_PntRange = self.meta_dict['MTFT.TSPlot.PntRange']  
-        self.MTFT_TSPlot_ChnRange = self.meta_dict['MTFT.TSPlot.ChnRange']
-        self.Setup_Number = self.meta_dict['Setup.Number']  
-        self.TS_Number = self.meta_dict['TS.Number'] 
-        self.TS_FrqBand = self.meta_dict['TS.FrqBand'] 
-        self.TS_T0Offset = self.meta_dict['TS.T0Offset'] 
-        self.TS_T0Error = self.meta_dict['TS.T0Error']  
-        self.setup_lst = self.meta_dict['setup_lst']
+        for key in self.meta_dict.keys():
+            setattr(self, key.replace('.', '_'), self.meta_dict[key])
+#        self.MTFT_Version = self.meta_dict['MTFT.Version']
+#        self.MTFT_MHAFreq = self.meta_dict['MTFT.MHAFreq'] 
+#        self.MTFT_WindowTaper = self.meta_dict['MTFT.WindowTaper']   
+#        self.MTFT_WindowLength = self.meta_dict['MTFT.WindowLength']
+#        self.MTFT_WindowOverlap = self.meta_dict['MTFT.WindowOverlap']    
+#        self.MTFT_NDecFlt = self.meta_dict['MTFT.NDecFlt'] 
+#        self.MTFT_PWFilter = self.meta_dict['MTFT.PWFilter'] 
+#        self.MTFT_NPWCoef = self.meta_dict['MTFT.NPWCoef']   
+#        self.MTFT_DeTrend = self.meta_dict['MTFT.DeTrend'] 
+#        self.MTFT_T0OffsetMax = self.meta_dict['MTFT.T0OffsetMax']
+#        self.MTFT_Despike = self.meta_dict['MTFT.Despike']   
+#        self.MTFT_SpikePnt = self.meta_dict['MTFT.SpikePnt'] 
+#        self.MTFT_SpikeDev = self.meta_dict['MTFT.SpikeDev']
+#        self.MTFT_NotchFlt = self.meta_dict['MTFT.NotchFlt']  
+#        self.MTFT_NotchFrq = self.meta_dict['MTFT.NotchFrq'] 
+#        self.MTFT_NotchWidth = self.meta_dict['MTFT.NotchWidth'] 
+#        self.MTFT_StackFlt = self.meta_dict['MTFT.StackFlt']  
+#        self.MTFT_StackTaper = self.meta_dict['MTFT.StackTaper']
+#        self.MTFT_StackFrq = self.meta_dict['MTFT.StackFrq']
+#        self.MTFT_SysCal = self.meta_dict['MTFT.SysCal']
+#        self.MTFT_BandFrq = self.meta_dict['MTFT.BandFrq']
+#        self.MTFT_BandFrqMin = self.meta_dict['MTFT.BandFrqMin']  
+#        self.MTFT_BandFrqMax = self.meta_dict['MTFT.BandFrqMax'] 
+#        self.MTFT_TSPlot_PntRange = self.meta_dict['MTFT.TSPlot.PntRange']  
+#        self.MTFT_TSPlot_ChnRange = self.meta_dict['MTFT.TSPlot.ChnRange']
+#        self.Setup_Number = self.meta_dict['Setup.Number']  
+#        self.TS_Number = self.meta_dict['TS.Number'] 
+#        self.TS_FrqBand = self.meta_dict['TS.FrqBand'] 
+#        self.TS_T0Offset = self.meta_dict['TS.T0Offset'] 
+#        self.TS_T0Error = self.meta_dict['TS.T0Error']  
+#        self.setup_lst = self.meta_dict['setup_lst']
     
     def sort_ts_lst(self):
         """
@@ -1642,6 +1647,8 @@ class ZongeMTAvg():
         self.Rx_GdpStn = 4
         self.Rx_Length = 100
         self.Rx_HPR = [90, 0, 0]
+        self.GPS_Lat = 0.0
+        self.GPS_Lon = 0.0
         self.Unit_Length = 'm'
         self.header_dict = {'Survey.Type':self.Survey_Type,
                             'Survey.Array':self.Survey_Array,
@@ -1654,6 +1661,8 @@ class ZongeMTAvg():
                             'Rx.GdpStn':self.Rx_GdpStn,
                             'Rx.Length':self.Rx_Length,
                             'Rx.HPR':self.Rx_HPR,
+                            'GPS.Lat':self.GPS_Lat,
+                            'GPS.Lon':self.GPS_Lon,
                             'Unit.Length':self.Unit_Length}
                             
         self.info_keys = ['Skp', 'Freq', 'E.mag', 'B.mag', 'Z.mag', 'Z.phz',
@@ -1699,11 +1708,13 @@ class ZongeMTAvg():
         self.comp_flag = {'zxx':False, 'zxy':False, 'zyx':False, 'zyy':False,
                           'tzx':False, 'tzy':False}
         
-        if not self.comp_dict:  
+        if not self.comp_dict:
+            # check to see if all 4 components are in the .avg file
             if len(alines) > 140:  
                 self.comp_dict = dict([(ckey, np.zeros(len(alines)/4, 
                                                        dtype=self.info_dtype))
                                         for ckey in self.comp_flag.keys()])
+            # if there are only 2
             else:
                 self.comp_dict = dict([(ckey, np.zeros(len(alines)/2, 
                                                        dtype=self.info_dtype))
@@ -1728,6 +1739,7 @@ class ZongeMTAvg():
                 pass
             # read the data line.
             elif len(aline) > 2:
+                aline = aline.replace('*', '0.50')
                 alst = [aa.strip() for aa in aline.strip().split(',')]
                 for cc, ckey in enumerate(self.info_keys):
                     self.comp_dict[akey][ii][ckey.lower()] = alst[cc]
@@ -2019,6 +2031,7 @@ class ZongeMTAvg():
         fnx = os.path.join(avg_dirpath, 
                            self.avg_dict['ex'],
                            self.avg_dict['ex']+avg_ext)
+        print fnx
         if os.path.isfile(fnx) == True:
             self.read_avg_file(fnx)
             self.edi.Z = self.Z
@@ -2041,14 +2054,18 @@ class ZongeMTAvg():
         try:
             survey_dict = sdict[station.upper()]
         except KeyError:
-            try:
-                survey_dict['station']
-            except KeyError:
+            if survey_dict is not None:
                 try:
-                    survey_dict['station_name']
+                    survey_dict['station']
                 except KeyError:
-                    raise KeyError('Could not find station information in'
-                                   ', check inputs')
+                    try:
+                        survey_dict['station_name']
+                    except KeyError:
+                        raise KeyError('Could not find station information in'
+                                       ', check inputs')
+            else:
+                raise KeyError('Could not find {0} in survey file'.format(
+                                station.upper()))
                                  
         #get remote reference information if desired
         if rrstation:
@@ -2328,6 +2345,23 @@ class ZongeMTAvg():
             print 'Copied {0} to {1}'.format(edi_fn, copy_edi_fn)
         
         return edi_fn
+        
+    def plot_mt_response(self, avg_fn, **kwargs):
+        """
+        plot an mtv file
+        """
+        
+        if os.path.isfile(avg_fn) is False:
+            raise IOError('Could not find {0}, check path'.format(avg_fn))
+        
+        self.read_avg_file(avg_fn)
+        
+        plot_resp = plotresponse.PlotResponse(z_object=self.Z,
+                                              tipper_object=self.Tipper, 
+                                              plot_tipper='yri',
+                                              **kwargs)
+        
+        return plot_resp
         
         
         

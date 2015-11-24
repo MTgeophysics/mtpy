@@ -28,7 +28,7 @@ import mtpy.utils.exceptions as mtex
 from matplotlib.colors import Normalize
 import matplotlib.colorbar as mcb
 import mtpy.imaging.mtcolors as mtcl
-import mtpy.modeling.ws3dinv as ws
+import mtpy.analysis.niblettbostick as mtnb
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -87,6 +87,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.pad_north = 2*self.ellipse_size
         
         self.plot_grid = 'n'
+        self.plot_stations = False
         
         
         self.xminorticks = 1000/self.dscale
@@ -128,10 +129,24 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.central_widget = QtGui.QWidget(MainWindow)
         self.central_widget.setWindowTitle("Plot MT Response")
         
-        #make a widget that will be the station list
+        #make a widget that will be the period list
         self.list_widget = QtGui.QListWidget()
         self.list_widget.itemClicked.connect(self.get_period)
         self.list_widget.setMaximumWidth(150)
+        
+        # make a depth text bar
+        self.depth_label = QtGui.QLabel('Depth (m):')
+        depth_font = QtGui.QFont()
+        depth_font.setBold = True
+        depth_font.setPointSize (16)
+        self.depth_label.setFont(depth_font)
+        
+        self.depth_text = QtGui.QLabel('0.0')
+        self.depth_text.setFont(depth_font)
+        self.depth_text.setAlignment(QtCore.Qt.AlignCenter)
+        depth_vbox = QtGui.QVBoxLayout()
+        depth_vbox.addWidget(self.depth_label)
+        depth_vbox.addWidget(self.depth_text)
 
         # this is the Canvas Widget that displays the `figure`
         # it takes the `figure` instance as a parameter to __init__
@@ -158,9 +173,13 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         mpl_vbox.addWidget(self.mpl_toolbar)
         mpl_vbox.addWidget(self.mpl_widget)
         
+        left_layout = QtGui.QVBoxLayout()
+        left_layout.addWidget(self.list_widget)
+        left_layout.addLayout(depth_vbox)
+        
         # set the layout the main window
         layout = QtGui.QHBoxLayout()
-        layout.addWidget(self.list_widget)
+        layout.addLayout(left_layout)
         layout.addLayout(mpl_vbox)
         self.central_widget.setLayout(layout)
 
@@ -254,6 +273,13 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.action_plot_settings.setText('Settings')
         self.action_plot_settings.triggered.connect(self.show_settings)
         self.menu_display.addAction(self.action_plot_settings)
+        
+        self.action_plot_stations = QtGui.QAction(MainWindow)
+        self.action_plot_stations.setText('Plot Stations')
+        self.action_plot_stations.setCheckable(True)
+        self.action_plot_stations.toggled.connect(self.set_plot_stations)
+        self.menu_display.addAction(self.action_plot_stations)
+        
         self.menubar.addAction(self.menu_display.menuAction())
         
 #        self.menuDisplay.addAction(self.menu_plot_style.menuAction())
@@ -279,6 +305,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.modem_data_fn = fn
         
         self.dir_path = os.path.dirname(fn)
+        print self.dir_path, os.path.abspath(self.dir_path)
         
         self.period_list = sorted(self.modem_data.period_list)
         self.period_dict = dict([('{0:.5f}'.format(key), value) for value, key
@@ -290,7 +317,9 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         for period in self.period_list:
             self.list_widget.addItem('{0:.5f}'.format(period))
             
-        self.plot_period = self.period_list[0]
+        self.plot_period = '{0:.5f}'.format(self.period_list[0])
+        
+        self.get_depth_array()
             
     def get_model_fn(self):
         """
@@ -298,9 +327,10 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         
         """        
 
-        fn_dialog = QtGui.QFileDialog(directory=self.dir_path)
+        fn_dialog = QtGui.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM model file',
-                                       filter='(*.rho);; (*.ws)'))
+                                           filter='(*.rho);; (*.ws)',
+                                           directory=self.dir_path))
                                    
         self.modem_model = modem.Model()
         self.modem_model.read_model_file(fn)
@@ -312,17 +342,18 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         """
         get the station name from the clicked station 
         """
-        self.plot_period = str(widget_item.text()) 
+        self.plot_period = '{0:.5f}'.format(float(str(widget_item.text()))) 
         self.plot()
         
     def get_resp_fn(self):
         """
         get response file name
         """
-        
-        fn_dialog = QtGui.QFileDialog(directory=self.dir_path)
+        print self.dir_path
+        fn_dialog = QtGui.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM response file',
-                                       filter='*.dat'))
+                                           filter='*.dat', 
+                                           directory=self.dir_path))
                                        
         self.modem_resp = modem.Data()
         self.modem_resp.read_data_file(fn)
@@ -346,6 +377,16 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
             setattr(self, attr, self.settings_window.__dict__[attr])
             
         self.plot()
+        
+    def set_plot_stations(self, toggled):
+        """
+        plot station names if desired
+        """
+        
+        self.plot_stations = toggled
+        
+        self.plot()
+            
         
     def _get_pt(self):
         """
@@ -437,8 +478,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                     rpt = mtpt.ResidualPhaseTensor(pt_object1=dpt, 
                                                    pt_object2=mpt)
                     rpt = rpt.residual_pt
-                    res_pt_arr[:, ii]['east'] = east
-                    res_pt_arr[:, ii]['north'] = north
+                    
                     res_pt_arr[:, ii]['phimin'] = rpt.phimin[0]
                     res_pt_arr[:, ii]['phimax'] = rpt.phimax[0]
                     res_pt_arr[:, ii]['azimuth'] = rpt.azimuth[0]
@@ -448,7 +488,10 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                                                                   
             
                 except mtex.MTpyError_PT:
-                    print key, dpt.pt.shape, mpt.pt.shape
+                    print 'Could not calculate residual PT for {0}'.format(key)
+                    
+                res_pt_arr[:, ii]['east'] = east
+                res_pt_arr[:, ii]['north'] = north
                     
                 res_pt_arr[:, ii]['txr'] = data_pt_arr[:, ii]['txr']-\
                                             model_pt_arr[:, ii]['txr']
@@ -465,6 +508,38 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         if self.modem_resp_fn is not None:
             self.pt_resp_arr = model_pt_arr
             self.pt_resid_arr = res_pt_arr
+            
+    def get_depth_array(self):
+        """
+        estimate a niblett-bostick depth from the impedance tensors
+        
+        find the average depth for each station at each period
+        """
+        if self.modem_data.mt_dict is None:
+            return
+            
+        d_arr_min = np.zeros((self.modem_data.period_list.shape[0],
+                              len(self.modem_data.mt_dict.keys())))
+        d_arr_max = np.zeros((self.modem_data.period_list.shape[0],
+                              len(self.modem_data.mt_dict.keys())))
+        print self.modem_data.mt_dict[self.modem_data.mt_dict.keys()[0]].Z.z                      
+        for ii, mt_key in enumerate(sorted(self.modem_data.mt_dict.keys())):
+            mt_obj = self.modem_data.mt_dict[mt_key]
+            d_arr = mtnb.calculate_depth_nb(z_object=mt_obj.Z)
+            
+            d_arr_min[:, ii] = d_arr['depth_min']
+            d_arr_max[:, ii] = d_arr['depth_max']
+        
+        # average only the non zero terms
+        d_avg_min = np.array([d_arr_min[kk, np.nonzero(d_arr_min[kk, :])].mean()
+                              for kk in range(d_arr_min.shape[0])])
+        d_avg_max = np.array([d_arr_max[kk, np.nonzero(d_arr_max[kk, :])].mean()
+                              for kk in range(d_arr_min.shape[0])])
+
+        # find the average and leave in meters cause grid_z is in meters
+        d_avg = np.nan_to_num(((d_avg_min+d_avg_max)/2.))
+        
+        self.depth_array = d_avg
                 
     def plot(self):
         """
@@ -479,7 +554,6 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         
         #make sure there is PT data
         if self.modem_data_fn is not None:
-            print self.modem_data_fn
             if self.pt_data_arr is None:
                 print 'data array is none'
                 self._get_pt()
@@ -537,10 +611,25 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         
         #plot model below the phase tensors
         if self.modem_model_fn is not None:
-            approx_depth, d_index = ws.estimate_skin_depth(self.modem_model.res_model.copy(),
-                                                        self.modem_model.grid_z.copy()/self.dscale, 
-                                                        float(self.plot_period), 
-                                                        dscale=self.dscale)  
+            if self.depth_array[data_ii] == 0:
+                print 'Could not estimate depth for period {0:.5g}'.format(
+                    float(self.plot_period))
+                d_index = 0
+            else:
+                try:
+                    d_index = np.where(self.modem_model.grid_z >= 
+                                        self.depth_array[data_ii])[0][0]
+                                        
+                    print 'Estimated depth for period {0:.5g} is {1:.2f} m'.format(
+                            float(self.plot_period), self.depth_array[data_ii])
+                            
+                    self.depth_text.setText('{0:.5g}'.format(self.depth_array[data_ii]))
+                    
+                except IndexError:
+                    print 'Could not estimate depth for period {0:.2f}'.format(
+                            float(self.plot_period))
+                    d_index = 0
+            
             #need to add an extra row and column to east and north to make sure 
             #all is plotted see pcolor for details.
             plot_east = np.append(self.modem_model.grid_east, 
@@ -568,35 +657,38 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
             
         #--> plot data phase tensors
         for pt in self.pt_data_arr[data_ii]:
-            eheight = pt['phimin']/\
-                      self.pt_data_arr[data_ii]['phimax'].max()*\
-                      self.ellipse_size
-            ewidth = pt['phimax']/\
-                      self.pt_data_arr[data_ii]['phimax'].max()*\
-                      self.ellipse_size
-                      
-            ellipse = Ellipse((pt['east'],
-                               pt['north']),
-                               width=ewidth,
-                               height=eheight,
-                               angle=90-pt['azimuth'])
-            
-            #get ellipse color
-            if self.ellipse_cmap.find('seg')>0:
-                ellipse.set_facecolor(mtcl.get_plot_color(pt[self.ellipse_colorby],
-                                                     self.ellipse_colorby,
-                                                     self.ellipse_cmap,
-                                                     ckmin,
-                                                     ckmax,
-                                                     bounds=bounds))
+            if pt['phimin'] == 0 and pt['phimax'] == 0:
+                pass
             else:
-                ellipse.set_facecolor(mtcl.get_plot_color(pt[self.ellipse_colorby],
-                                                     self.ellipse_colorby,
-                                                     self.ellipse_cmap,
-                                                     ckmin,
-                                                     ckmax))
-            
-            axd.add_artist(ellipse)
+                eheight = pt['phimin']/\
+                          self.pt_data_arr[data_ii]['phimax'].max()*\
+                          self.ellipse_size
+                ewidth = pt['phimax']/\
+                          self.pt_data_arr[data_ii]['phimax'].max()*\
+                          self.ellipse_size
+                          
+                ellipse = Ellipse((pt['east'],
+                                   pt['north']),
+                                   width=ewidth,
+                                   height=eheight,
+                                   angle=90-pt['azimuth'])
+                
+                #get ellipse color
+                if self.ellipse_cmap.find('seg')>0:
+                    ellipse.set_facecolor(mtcl.get_plot_color(pt[self.ellipse_colorby],
+                                                         self.ellipse_colorby,
+                                                         self.ellipse_cmap,
+                                                         ckmin,
+                                                         ckmax,
+                                                         bounds=bounds))
+                else:
+                    ellipse.set_facecolor(mtcl.get_plot_color(pt[self.ellipse_colorby],
+                                                         self.ellipse_colorby,
+                                                         self.ellipse_cmap,
+                                                         ckmin,
+                                                         ckmax))
+                
+                axd.add_artist(ellipse)
             
             #-----------Plot Induction Arrows---------------------------
             if pt['txr'] != 0.0:
@@ -638,35 +730,38 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
             rcmax = np.floor(self.pt_resid_arr['geometric_mean'].max())
             for mpt, rpt in zip(self.pt_resp_arr[data_ii], 
                                 self.pt_resid_arr[data_ii]):
-                eheight = mpt['phimin']/\
-                          self.pt_resp_arr[data_ii]['phimax'].max()*\
-                          self.ellipse_size
-                ewidth = mpt['phimax']/\
-                          self.pt_resp_arr[data_ii]['phimax'].max()*\
-                          self.ellipse_size
-                          
-                ellipsem = Ellipse((mpt['east'],
-                                   mpt['north']),
-                                   width=ewidth,
-                                   height=eheight,
-                                   angle=90-mpt['azimuth'])
-                
-                #get ellipse color
-                if self.ellipse_cmap.find('seg')>0:
-                    ellipsem.set_facecolor(mtcl.get_plot_color(mpt[self.ellipse_colorby],
-                                                         self.ellipse_colorby,
-                                                         self.ellipse_cmap,
-                                                         ckmin,
-                                                         ckmax,
-                                                         bounds=bounds))
+                if mpt['phimin'] == 0 and mpt['phimax'] == 0:
+                    pass
                 else:
-                    ellipsem.set_facecolor(mtcl.get_plot_color(mpt[self.ellipse_colorby],
-                                                         self.ellipse_colorby,
-                                                         self.ellipse_cmap,
-                                                         ckmin,
-                                                         ckmax))
-            
-                axm.add_artist(ellipsem)
+                    eheight = mpt['phimin']/\
+                              self.pt_resp_arr[data_ii]['phimax'].max()*\
+                              self.ellipse_size
+                    ewidth = mpt['phimax']/\
+                              self.pt_resp_arr[data_ii]['phimax'].max()*\
+                              self.ellipse_size
+                              
+                    ellipsem = Ellipse((mpt['east'],
+                                       mpt['north']),
+                                       width=ewidth,
+                                       height=eheight,
+                                       angle=90-mpt['azimuth'])
+                    
+                    #get ellipse color
+                    if self.ellipse_cmap.find('seg')>0:
+                        ellipsem.set_facecolor(mtcl.get_plot_color(mpt[self.ellipse_colorby],
+                                                             self.ellipse_colorby,
+                                                             self.ellipse_cmap,
+                                                             ckmin,
+                                                             ckmax,
+                                                             bounds=bounds))
+                    else:
+                        ellipsem.set_facecolor(mtcl.get_plot_color(mpt[self.ellipse_colorby],
+                                                             self.ellipse_colorby,
+                                                             self.ellipse_cmap,
+                                                             ckmin,
+                                                             ckmax))
+                
+                    axm.add_artist(ellipsem)
                 
                 #-----------Plot Induction Arrows---------------------------
                 if mpt['txr'] != 0.0:
@@ -703,37 +798,40 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                         pass
                 
                 #-----------plot residual phase tensors---------------
-                eheight = rpt['phimin']/\
-                          self.pt_resid_arr[data_ii]['phimax'].max()*\
-                          self.ellipse_size
-                ewidth = rpt['phimax']/\
-                          self.pt_resid_arr[data_ii]['phimax'].max()*\
-                          self.ellipse_size
-                          
-                ellipser = Ellipse((rpt['east'],
-                                   rpt['north']),
-                                   width=ewidth,
-                                   height=eheight,
-                                   angle=rpt['azimuth'])
-                
-                #get ellipse color
-                rpt_color = np.sqrt(abs(rpt['phimin']*rpt['phimax']))
-                if self.ellipse_cmap.find('seg')>0:
-                    ellipser.set_facecolor(mtcl.get_plot_color(rpt_color,
-                                                         'geometric_mean',
-                                                         self.residual_cmap,
-                                                         ckmin,
-                                                         ckmax,
-                                                         bounds=bounds))
+                if mpt['phimin'] == 0 and mpt['phimax'] == 0:
+                    pass
                 else:
-                    ellipser.set_facecolor(mtcl.get_plot_color(rpt_color,
-                                                         'geometric_mean',
-                                                         self.residual_cmap,
-                                                         ckmin,
-                                                         ckmax))
-                
-                
-                axr.add_artist(ellipser)
+                    eheight = rpt['phimin']/\
+                              self.pt_resid_arr[data_ii]['phimax'].max()*\
+                              self.ellipse_size
+                    ewidth = rpt['phimax']/\
+                              self.pt_resid_arr[data_ii]['phimax'].max()*\
+                              self.ellipse_size
+                              
+                    ellipser = Ellipse((rpt['east'],
+                                       rpt['north']),
+                                       width=ewidth,
+                                       height=eheight,
+                                       angle=rpt['azimuth'])
+                    
+                    #get ellipse color
+                    rpt_color = np.sqrt(abs(rpt['phimin']*rpt['phimax']))
+                    if self.ellipse_cmap.find('seg')>0:
+                        ellipser.set_facecolor(mtcl.get_plot_color(rpt_color,
+                                                             'geometric_mean',
+                                                             self.residual_cmap,
+                                                             ckmin,
+                                                             ckmax,
+                                                             bounds=bounds))
+                    else:
+                        ellipser.set_facecolor(mtcl.get_plot_color(rpt_color,
+                                                             'geometric_mean',
+                                                             self.residual_cmap,
+                                                             ckmin,
+                                                             ckmax))
+                    
+                    
+                    axr.add_artist(ellipser)
                 
                 #-----------Plot Induction Arrows---------------------------
                 if rpt['txr'] != 0.0:
@@ -924,6 +1022,17 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                                      np.ceil(self.res_limits[1]+1), 1)
                 cb.set_ticks(cb_ticks)
                 cb.set_ticklabels([mtplottools.labeldict[ctk] for ctk in cb_ticks])
+
+        if self.plot_stations == True:
+            for ax in ax_list:
+                for s_arr in self.modem_data.station_locations:
+                    ax.text(s_arr['rel_east']/self.dscale,
+                            s_arr['rel_north']/self.dscale,
+                            s_arr['station'],
+                            horizontalalignment='center',
+                            verticalalignment='baseline',
+                            fontdict={'size':self.font_size}) 
+                
 
         self.mpl_widget.draw()
         

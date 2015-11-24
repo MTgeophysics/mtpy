@@ -22,6 +22,23 @@ import mtpy.analysis.pt as MTpt
 import mtpy.analysis.zinvariants as MTinv
 import mtpy.analysis.distortion as MTdistortion
 import os
+import numpy as np
+import mtpy.imaging.plotresponse as plotresponse
+
+try:
+    import scipy
+    scipy_version = int(scipy.__version__.replace('.', ''))
+    
+    if scipy_version < 140:
+        print ('Note: need scipy version 0.14.0 or higher or interpolation '+\
+               'might not work.')
+    import scipy.interpolate as spi
+    interp_import = True
+    
+except ImportError:
+    print('Could not find scipy.interpolate, cannot use method interpolate'+\
+          'check installation you can get scipy from scipy.org.' )
+    interp_import = False
 
 #==============================================================================
 
@@ -76,10 +93,45 @@ class MT(object):
     write_edi_file        write an edi_file from the MT data
     remove_distortion     remove distortion from the data following 
                           Bibby et al. [2005]
+    interpolate           interpolates the impedance tensor and induction
+                          vectors onto a specified frequency array.
+    plot_mt_response      plots the MT response using mtpy.imaging.plotresponse
     ===================== =====================================================
     
-        
+
+    Examples
+    -------------------
     
+    * Plot MT response:
+
+        >>> import mtpy.core.mt as mt
+        >>> mt_obj = mt.MT(r"/home/edi_files/s01.edi")
+        >>> # plot all components of mt response and phase tensor
+        >>> plot_obj = mt_obj.plot_mt_response(plot_num=2, plot_pt='y')        
+        >>> # plot the tipper as well
+        >>> plot_obj.plot_tipper = 'yri'
+        >>> plot_obj.redraw_plot()
+      
+     * Remove Distortion:
+         
+        >>> import mtpy.core.mt as mt
+        >>> mt_obj = mt.MT(r"/home/edi_files/s01.edi")
+        >>> D, new_z = mt_obj.remove_distortion()
+        >>> print D
+        np.array([[0.1, .9],
+                  [0.98, .43]])
+        >>> # write a new edi file
+        >>> mt_obj.write_edi_file(new_Z=new_z)
+        wrote file to: /home/edi_files/s01_RW.edi
+        
+     * Interpolate:
+     
+        >>> import mtpy.core.mt as mt
+        >>> mt_obj = mt.MT(r"/home/edi_files/s01.edi")
+        >>> new_freq = np.logspace(-3, 3, num=24)
+        >>> new_z_obj, new_tipper_obj = mt_obj.interpolate(new_freq)
+        >>> mt_obj.write_edi_file(new_Z=new_z_obj, new_Tipper=new_tipper_obj)
+        wrote file to: /home/edi_files/s01_RW.edi
     """
     
     def __init__(self, fn=None, **kwargs):
@@ -88,9 +140,9 @@ class MT(object):
         self.station = kwargs.pop('station', None)
         self._lat = kwargs.pop('lat', None)
         self._lon = kwargs.pop('lon', None)
-        self.elev = kwargs.pop('elev', None)
+        self._elev = kwargs.pop('elev', None)
         self._Z = kwargs.pop('Z', MTz.Z())
-        self.Tipper = kwargs.pop('Tipper', MTz.Tipper())
+        self._Tipper = kwargs.pop('Tipper', MTz.Tipper())
         self._utm_zone = kwargs.pop('utm_zone', None)
         self._east = kwargs.pop('east', None)
         self._north = kwargs.pop('north', None)
@@ -108,16 +160,16 @@ class MT(object):
         
         if 'freq' in kwargs:
             self._Z.freq = kwargs['freq']
-            self.Tipper.freq = kwargs['freq']
+            self._Tipper.freq = kwargs['freq']
             
         if 'tipper_object' in kwargs:
-            self.Tipper = kwargs['tipper_object']
+            self._Tipper = kwargs['tipper_object']
             
         if 'tipper' in kwargs:
-            self.Tipper.tipper = kwargs['tipper']
+            self._Tipper.tipper = kwargs['tipper']
         
         if 'tippererr' in kwargs:
-            self.Tipper.tippererr = kwargs['tippererr']
+            self._Tipper.tippererr = kwargs['tippererr']
             
         if 'resisitivity' in kwargs:
             self._Z.resistivity = kwargs['resistivity']
@@ -172,6 +224,14 @@ class MT(object):
         
         if self._lon is not None and self._lat is not None:
             self._get_utm()
+        
+        
+    def _set_elev(self, elevation):
+        """
+        set elevation, should be input as meters
+        """
+        
+        self._elev = elevation
         
     def _set_east(self, easting):
         """
@@ -248,6 +308,18 @@ class MT(object):
         
         #--> compute invariants 
         self.zinv = MTinv.Zinvariants(z_object=self._Z) 
+        
+    def _set_Tipper(self, t_object):
+        """
+        set tipper object
+        
+        recalculate tipper angle and magnitude
+        """
+        
+        self._Tipper = t_object
+        self._Tipper._compute_amp_phase()
+        self._Tipper._compute_mag_direction()
+        
     #==========================================================================
     # get functions                         
     #==========================================================================    
@@ -256,6 +328,9 @@ class MT(object):
 
     def _get_lon(self):
         return self._lon
+        
+    def _get_elev(self):
+        return self._elev
         
     def _get_east(self):
         return self._east
@@ -275,6 +350,8 @@ class MT(object):
     def _get_Z(self):
         return self._Z
         
+    def _get_Tipper(self):
+        return self._Tipper
     #==========================================================================
     # set properties                          
     #==========================================================================
@@ -283,6 +360,9 @@ class MT(object):
     
     lon = property(_get_lon, _set_lon, 
                    doc="longitude of station in decimal degrees")
+                   
+    elev = property(_get_elev, _set_elev, 
+                    doc="elevation in meters")
                    
     east = property(_get_east, _set_east,
                     doc="easting in meters of station location on UTM grid")
@@ -299,6 +379,8 @@ class MT(object):
                               doc="rotation angle of Z and Tipper")
                               
     Z = property(_get_Z, _set_Z, doc="impedence tensor object")
+    
+    Tipper = property(_get_Tipper, _set_Tipper, doc="Tipper object")
     
     #--> conversion between utm and ll
     def _get_utm(self):
@@ -318,6 +400,7 @@ class MT(object):
                                            self.north, 
                                            self.east, 
                                            self.utm_zone)
+                                           
                                            
     #--> read in edi file                                                    
     def _read_edi_file(self):
@@ -347,16 +430,36 @@ class MT(object):
         self.zinv = MTinv.Zinvariants(z_object=self.Z)
         
     #--> write edi file 
-    def write_edi_file(self, new_fn=None, new_Z=None):
+    def write_edi_file(self, new_fn=None, new_Z=None, new_Tipper=None):
         """
-        write a new edi file if things have changed.
+        write a new edi file if things have changed.  Note if new_Z or
+        new_Tipper are not None, they are not changed in MT object, you
+        need to change them manually if you want them to be changed.
+        Similarly, the new function name does not change the MT objecte fn
+        attribute but does change MT.edi_object.fn attribute.
+        
+        **Arguments**:
+            
+            *new_fn* : string
+                       full path to new file name
+                       
+            *new_Z* : mtpy.core.Z object
+                      a new impedance tensor object to be written
+                      
+            *new_Tipper* : mtpy.core.Z.Tipper object
+                           a new Tipper object to be written
         """
         
         if new_Z is not None:
-            self.edi_object.Z = new_Z
+            self.edi_object.set_Z(new_Z)
         else:
-            self.edi_object.Z = self._Z
-        self.edi_object.Tipper = self.Tipper
+            self.edi_object.set_Z(self._Z)
+       
+        if new_Tipper is not None:
+            self.edi_object.set_Tipper(new_Tipper)
+        else:
+            self.edi_object.set_Tipper(self._Tipper)
+            
         self.edi_object.lat = self._lat
         self.edi_object.lon = self._lon
         self.edi_object.station = self.station
@@ -406,6 +509,127 @@ class MT(object):
         D, new_z_object = MTdistortion.remove_distortion(z_object=self.Z)
         
         return D, new_z_object
+        
+    def interpolate(self, new_freq_array):
+        """
+        interpolate the impedance tensor onto different frequencies.
+        
+        **Arguments**
+        
+            *new_freq_array* : np.ndarray 
+                               a 1-d array of frequencies to interpolate on
+                               to.  Must be with in the bounds of the existing
+                               frequency range, anything outside and an error
+                               will occur.
+                               
+        **Returns** :
+            *new_z_object* : mtpy.core.z.Z object
+                             a new impedance object with the corresponding
+                             frequencies and components.
+                             
+            *new_tipper_object* : mtpy.core.z.Tipper object
+                             a new tipper object with the corresponding
+                             frequencies and components.
+                             
+        
+        :Example: ::
+            >>> # make a new edi file for interpolated frequencies 
+            >>> import mtpy.core.mt as mt
+            >>> edi_fn = r"/home/edi_files/mt_01.edi"
+            >>> mt_obj = mt.MT(edi_fn)
+            >>> # create a new frequency range to interpolate onto
+            >>> new_freq = np.logspace(-3, 3, 24)
+            >>> new_z_object, new_tipper_obj = mt_obj.interpolate(new_freq)
+            >>> mt_obj.write_edi_file(new_fn=r"/home/edi_files/mt_01_interp.edi",
+            >>>                       new_Z=new_z_object,
+            >>>                       new_Tipper=new_tipper_object)
+            
+        """
+        # if the interpolation module has not been loaded return
+        if interp_import is False:
+            print('could not interpolate, need to install scipy')            
+            return
+        
+        #make sure the input is a numpy array
+        if type(new_freq_array) != np.ndarray:
+            new_freq_array = np.array(new_freq_array)
+
+        # check the bounds of the new frequency array
+        if self.Z.freq.min() > new_freq_array.min():
+            raise ValueError('New frequency minimum of {0:.5g}'.format(new_freq_array.min())+\
+                             ' is smaller than old frequency minimum of {0:.5g}'.format(self.Z.freq.min())+\
+                             '.  The new frequency range needs to be within the '+\
+                             'bounds of the old one.')
+        if self.Z.freq.max() < new_freq_array.max():
+            raise ValueError('New frequency maximum of {0:.5g}'.format(new_freq_array.max())+\
+                             'is smaller than old frequency maximum of {0:.5g}'.format(self.Z.freq.max())+\
+                             '.  The new frequency range needs to be within the '+\
+                             'bounds of the old one.')
+
+        # make a new Z object
+        new_Z = MTz.Z(z_array=np.zeros((new_freq_array.shape[0], 2, 2), 
+                                       dtype='complex'),
+                      zerr_array=np.zeros((new_freq_array.shape[0], 2, 2)), 
+                      freq=new_freq_array)
+                      
+        new_Tipper = MTz.Tipper(tipper_array=np.zeros((new_freq_array.shape[0], 1, 2), 
+                                             dtype='complex'),
+                      tippererr_array=np.zeros((new_freq_array.shape[0], 1, 2)), 
+                      freq=new_freq_array)
+        
+        # interpolate the impedance tensor
+        for ii in range(2):
+            for jj in range(2):
+                z_func_real = spi.interp1d(self.Z.freq, self.Z.z[:, ii, jj].real,
+                                           kind='slinear')
+                z_func_imag = spi.interp1d(self.Z.freq, self.Z.z[:, ii, jj].imag,
+                                           kind='slinear')
+                new_Z.z[:, ii, jj] = z_func_real(new_freq_array)+\
+                                     1j*z_func_imag(new_freq_array)
+                
+                z_func_err = spi.interp1d(self.Z.freq, self.Z.zerr[:, ii, jj],
+                                           kind='slinear')
+                new_Z.zerr[:, ii, jj] = z_func_err(new_freq_array)
+                
+        # if there is not tipper than skip
+        if self.Tipper.tipper is None:
+            return new_Z, None
+            
+        # interpolate the Tipper    
+        for jj in range(2):
+            t_func_real = spi.interp1d(self.Z.freq, 
+                                       self.Tipper.tipper[:, 0, jj].real,
+                                       kind='slinear')
+            t_func_imag = spi.interp1d(self.Z.freq, 
+                                       self.Tipper.tipper[:, 0, jj].imag,
+                                       kind='slinear')
+            new_Tipper.tipper[:, 0, jj] = t_func_real(new_freq_array)+\
+                                          1j*t_func_imag(new_freq_array)
+            
+            t_func_err = spi.interp1d(self.Z.freq, 
+                                      self.Tipper.tippererr[:, 0, jj],
+                                       kind='slinear')
+            new_Tipper.tippererr[:, 0, jj] = t_func_err(new_freq_array)
+        
+        return new_Z, new_Tipper
+        
+    def plot_mt_response(self, **kwargs):
+        """ 
+        returns a mtpy.imaging.plotresponse.PlotResponse object
+        
+        :Example: ::
+            >>> mt_obj = mt.MT(edi_file)
+            >>> pr = mt.plot_mt_response()
+            >>> # if you need more infor on plot_mt_response 
+            >>> help(pr)
+            
+        """
+        
+        plot_obj = plotresponse.PlotResponse(fn=self.fn, **kwargs)
+        
+        return plot_obj
+        
+        
         
     
         
