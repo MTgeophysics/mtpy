@@ -518,9 +518,6 @@ class MeshWidget(QtGui.QWidget):
         self.output_box.moveCursor(QtGui.QTextCursor.End)
         self.output_box.insertPlainText(message)
         
-        
-
-        
 #==============================================================================
 # Mesh Plot
 #==============================================================================
