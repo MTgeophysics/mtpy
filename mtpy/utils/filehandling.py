@@ -119,6 +119,7 @@ def make_unique_folder(wd,basename = 'run'):
         svpath = svpath_str+'_%02i'%i
         
     savepath = op.join(wd,svpath)
+    os.mkdir(savepath)
         
     return savepath
 
