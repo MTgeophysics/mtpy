@@ -134,6 +134,7 @@ class Setup():
         self.parameters_data['rho_errorfloor'] = 0.
         self.parameters_data['phase_errorfloor'] = 0.
         self.parameters_data['tipper_errorfloor'] = 0.
+        self.parameters_data['tipper_errorfloor_abs'] = 0.
         self.parameters_data['azimuth'] = 0
 
         self.parameters_data['mode'] = 'tetm'
@@ -1928,7 +1929,8 @@ class Data():
                 idx_f = np.abs(station_freqs-freq).argmin()
 
                 for mode in lo_modes:
-                    if mode in [9,2,1] :
+                    append = True
+                    if mode in [9,1,2] :
                         raw_rho_value = rho[idx_f][0,1]
                         value = raw_rho_value
                         #value = np.log10(raw_rho_value)
@@ -1939,6 +1941,11 @@ class Data():
                             relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
                         except:
                             relative_rho_error = 0.
+
+                        # can't have zero errors, occam crashes
+                        if relative_rho_error == 0:
+                            if self.rho_errorfloor is not None:
+                                relative_rho_error = self.rho_errorfloor/100.
 
                         if mode == 9 :
                             if self.rho_errorfloor is not None:
@@ -1959,6 +1966,9 @@ class Data():
                             if raw_phi_value >=180:
                                 raw_phi_value -= 180
                             value = raw_phi_value %180
+                            # phase needs to be between 0 and 90 for occam
+                            if value > 90:
+                                append = False
                             if self.phase_errorfloor is not None:
                                 if self.phase_errorfloor/100. > relative_rho_error:
                                     relative_rho_error = self.phase_errorfloor/100.
@@ -1966,18 +1976,28 @@ class Data():
                                 error = 180.
                             else:
                                 error = np.degrees(np.arcsin(0.5*relative_rho_error))#relative_error*100.*0.285
+                            # maximum possible error +/- 90 degrees 
+                            error = min(error,90.)
+                        
                             
-                    if mode in [10,6,5] :
+                    if mode in [10,5,6] :
                         raw_rho_value = rho[idx_f][1,0]
                         value = raw_rho_value
                         #value = np.log10(raw_rho_value)
                         absolute_rho_error = rho_err[idx_f][1,0]
+                        
                         try:
                             if raw_rho_value == 0:
                                 raise
                             relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
                         except:
                             relative_rho_error = 0.
+
+                        # can't have zero errors, occam crashes
+                        if relative_rho_error == 0:
+                            if self.rho_errorfloor is not None:
+                                relative_rho_error = self.rho_errorfloor/100.                       
+                            
                         if mode == 10 :
                             if self.rho_errorfloor is not None:
                                 if self.rho_errorfloor/100. > relative_rho_error:
@@ -1997,6 +2017,9 @@ class Data():
                             if raw_phi_value >=180:
                                 raw_phi_value -= 180
                             value = raw_phi_value %180
+                            # phase needs to be between 0 and 90 for occam
+                            if value > 90:
+                                append = False
                             if self.phase_errorfloor is not None:
                                 if self.phase_errorfloor/100. > relative_rho_error:
                                     relative_rho_error = self.phase_errorfloor/100.
@@ -2004,6 +2027,9 @@ class Data():
                                 error = 180.
                             else:
                                 error = np.degrees(np.arcsin(0.5*relative_rho_error))#relative_error*100.*0.285
+                            # maximum possible error +/- 90 degrees
+                            error = min(error,90.)
+                            
 
                     elif mode in [3,4] :
                         if T.tipper is None:
@@ -2024,26 +2050,27 @@ class Data():
                         if mode == 4 :
                             value = np.imag(tipper[0,1])
 
-
+                        # get tipper error if it exists
                         if tippererr is None:
                             raw_error = 0
                             if self.tipper_errorfloor is not None:
-                                raw_error = (self.tipper_errorfloor/100.)*value
+                                raw_error = np.abs((self.tipper_errorfloor/100.)*value)
                         else:
                             raw_error = tippererr[0,1] 
-                            
-                        if value == 0 :
-                            rel_error = 0 
-                        else:
-                            rel_error = raw_error
 
-                        error = raw_error/value
-                        if self.tipper_errorfloor is not None:                                
-                            if self.tipper_errorfloor/100. > rel_error:
-                                error = (self.tipper_errorfloor/100.)#*value
-                            
+                        error = raw_error
+                        
+                        # set error floor
+                        if self.tipper_errorfloor is not None:
+                            error = max(error,np.abs((self.tipper_errorfloor/100.)*value))
+                        
+                        # set an absolute minimum tipper error to apply when value is close to zero
+                        if self.tipper_errorfloor_abs is not None:
+                            error = max(error, self.tipper_errorfloor_abs)
+                    
+                    if append:
+                        self.data.append([station_number,frequency_number,mode,value,np.abs(error)])
 
-                    self.data.append([station_number,frequency_number,mode,value,np.abs(error)])
 
     def generate_profile(self):
         """
