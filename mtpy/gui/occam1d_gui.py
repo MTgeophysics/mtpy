@@ -16,7 +16,6 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from matplotlib.figure import Figure
 from matplotlib.ticker import MultipleLocator
-import mtpy.imaging.mtplottools as mtplottools
 import matplotlib.gridspec as gridspec
 import numpy as np
 import matplotlib.pyplot as plt
@@ -108,16 +107,21 @@ class OccamWidget(QtGui.QWidget):
         self.occam_data = occam1d.Data()
         self.occam_model = occam1d.Model()
         self.occam_startup = occam1d.Startup()
-        self.occam_exec = None
+        self.occam_exec = ''
         self.mpl_widget = OccamPlot() 
         
         self.l2_widget = PlotL2()
-        self.l2_widget.l2_widget.mpl_connect('pick event', self.l2_widget.on_click)
+        self.l2_widget.l2_widget.mpl_connect('pick event', self.on_click)
+        self.l2_widget.l2_widget.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.l2_widget.l2_widget.setFocus()        
         
         self.res_err = 10.
         self.phase_err = 5.
         self.data_mode = 'TE'
-        self.edi_fn = None
+        self.edi_fn = ''
+        
+        self.save_dir = None
+        self.station_dir = None
 
         self.setup_ui()
         
@@ -178,6 +182,7 @@ class OccamWidget(QtGui.QWidget):
         self.data_mode_combo.addItem('TE')
         self.data_mode_combo.addItem('TM')
         self.data_mode_combo.addItem('Det')
+        #self.data_mode_combo.addItem('Both')
         self.data_mode_combo.activated[str].connect(self.set_data_mode)
         
         # vertical layer parameters
@@ -233,6 +238,14 @@ class OccamWidget(QtGui.QWidget):
         self.start_lagrange_edit.setText('{0:.2f}'.format(self.occam_startup.start_lagrange))
         self.start_lagrange_edit.editingFinished.connect(self.set_start_lagrange)
         
+        self.iter_combo_label = QtGui.QLabel('Iteration')
+        self.iter_combo_edit = QtGui.QComboBox()
+        self.iter_combo_edit.addItem('1')
+        self.iter_combo_edit.activated[str].connect(self.set_iteration)
+        self.iter_combo_edit.setSizeAdjustPolicy(QtGui.QComboBox.AdjustToContents)
+        self.iter_combo_edit.setMinimumWidth(50)
+        
+        self.output_box = QtGui.QTextEdit()
         #---set the layout---------------
         path_layout = QtGui.QHBoxLayout()
         path_layout.addWidget(self.get_occam_path_button)
@@ -297,15 +310,18 @@ class OccamWidget(QtGui.QWidget):
         edit_layout.addLayout(data_grid)
         edit_layout.addLayout(model_grid)
         edit_layout.addLayout(startup_grid)
-        edit_layout.addWidget(self.l2_widget)
+        edit_layout.addWidget(self.output_box)
         edit_layout.addLayout(path_layout)
         edit_layout.addWidget(run_button)
         
-        self.output_box = QtGui.QTextEdit()
+        bottom_plot_layout = QtGui.QHBoxLayout()
+        bottom_plot_layout.addWidget(self.iter_combo_label)
+        bottom_plot_layout.addWidget(self.iter_combo_edit)
+        bottom_plot_layout.addWidget(self.l2_widget)
         
-        plot_layout = QtGui.QVBoxLayout()
-        plot_layout.addWidget(self.mpl_widget)
-        plot_layout.addWidget(self.output_box)
+        plot_layout = QtGui.QGridLayout()
+        plot_layout.addWidget(self.mpl_widget, 0, 0, 1, 1)
+        plot_layout.addLayout(bottom_plot_layout, 2, 0, 2, 1)
         
 #        window_layout = QtGui.QHBoxLayout()
 #        window_layout.addLayout(edit_layout)
@@ -335,20 +351,29 @@ class OccamWidget(QtGui.QWidget):
         """
         get edi file to invert
         """
-        
-        edi_dialog = QtGui.QFileDialog()
-        fn = str(edi_dialog.getOpenFileName(caption='Pick .edi file',
-                                            filter='*.edi'))
+        if self.edi_fn is not '':
+            edi_path = os.path.dirname(self.edi_fn)
+            edi_dialog = QtGui.QFileDialog()
+            fn = str(edi_dialog.getOpenFileName(caption='Pick .edi file',
+                                                filter='*.edi',
+                                                directory=edi_path))
+        else:
+            edi_dialog = QtGui.QFileDialog()
+            fn = str(edi_dialog.getOpenFileName(caption='Pick .edi file',
+                                                filter='*.edi'))
         self.edi_fn = fn
         self.get_edi_edit.setText(self.edi_fn)
         
-        self.save_dir = os.path.join(os.path.dirname(self.edi_fn),
-                                     self.data_mode)
+        station = os.path.basename(self.edi_fn)[:-4]
+        self.station_dir = os.path.join(os.path.dirname(self.edi_fn), 
+                                        station)
+        if not os.path.isdir(self.station_dir):
+            os.mkdir(self.station_dir)
+            print 'Made director {0}'.format(self.station_dir)
         
-        if not os.path.isdir(self.save_dir):
-            os.mkdir(self.save_dir)
-            print 'Made directory {0}'.format(self.save_dir)
+        self.save_dir = os.path.join(self.station_dir)
         
+        # make an initial data file
         self.occam_data.write_data_file(edi_file=self.edi_fn,
                                         save_path=self.save_dir,
                                         mode=self.data_mode,
@@ -360,12 +385,14 @@ class OccamWidget(QtGui.QWidget):
             
     def set_res_err(self):
         self.res_err = float(str(self.data_res_err_edit.text()))
+        self.data_res_err_edit.setText('{0:.2f}'.format(self.res_err))
         
     def set_phase_err(self):
         self.phase_err = float(str(self.data_phase_err_edit.text()))
+        self.data_phase_err_edit.setText('{0:.2f}'.format(self.phase_err))
         
     def set_data_mode(self, text):
-        self.data_mode = text
+        self.data_mode = str(text)
         
     def set_n_layers(self):
         self.occam_model.n_layers = int(str(self.n_layers_edit.text()))
@@ -403,10 +430,34 @@ class OccamWidget(QtGui.QWidget):
         self.occam_startup.start_lagrange = float(str(self.start_lagrange_edit.text()))
         self.start_lagrange_edit.setText('{0:.2f}'.format(self.occam_startup.start_lagrange))
 
+    def _get_inv_folder(self):
+        """
+        create an inversion folder for each run
+        """
+        dir_path = os.path.join(self.station_dir, self.data_mode)
+        if not os.path.isdir(dir_path):
+            os.mkdir(dir_path)
+            print 'Made directory {0}'.format(dir_path)
+        
+        dir_list = []
+        for roots, dirs, files in os.walk(dir_path):
+            dir_list.append(dirs)
+            
+        inv_num = len(dir_list[0])+1
+        
+        self.save_dir = os.path.join(self.station_dir, self.data_mode,
+                                     'Inv_{0:02}'.format(inv_num))
+        
     def run_occam(self):
         """
         write all the needed files and run occam then plot
         """
+        
+        self._get_inv_folder()
+        
+        if not os.path.isdir(self.save_dir):
+            os.mkdir(self.save_dir)
+            print 'Made directory {0}'.format(self.save_dir)
         
         # write data file
         self.occam_data.write_data_file(edi_file=self.edi_fn,
@@ -423,7 +474,14 @@ class OccamWidget(QtGui.QWidget):
         self.occam_startup.data_fn = self.occam_data.data_fn
         self.occam_startup.model_fn = self.occam_model.model_fn
         self.occam_startup.write_startup_file(save_path=self.save_dir)
-                                              
+        
+        warning_txt = '\n'.join(['Cannot find Occam1D executable. ',
+                                 'Looked for {0}'.format(self.occam_exec),
+                                 'Click Occam1D button and rerun.'])
+        if not os.path.isfile(self.occam_exec):
+            QtGui.QMessageBox.warning(self, "Warning", warning_txt)
+            return 
+                                   
         # run occam
         occam_run = occam1d.Run(startup_fn=self.occam_startup.startup_fn,
                                 occam_path=self.occam_exec,
@@ -441,12 +499,48 @@ class OccamWidget(QtGui.QWidget):
                                   iter_fn=ini_model_fn,
                                   model_fn=self.occam_model.model_fn)
                                   
+                                  
         self.l2_widget.plot_l2(dir_path=self.save_dir, 
                                model_fn=self.occam_model.model_fn)
+                               
+        # add iteration values to combo box 
+        for ii in range(self.iter_combo_edit.count()):
+            self.iter_combo_edit.removeItem(0)
+        for ii in range(1, self.l2_widget.rms_arr.shape[0]):
+            self.iter_combo_edit.addItem(str(ii))
+            
+        # resize the combo box to have width of max iteration
+            
+        self.iter_combo_edit.resize(self.iter_combo_edit.size())
+        self.iter_combo_edit.update()
+        self.iter_combo_edit.repaint()
+        
                                
     def on_click(self, event):
         data_point = event.artist
         iteration = data_point.get_xdata()[event.ind]
+        print 'Picked iteration {0}'.format(iteration)
+        ini_resp_fn = os.path.join(self.save_dir, 
+                                   '{0}_{1}.resp'.format(self.data_mode,
+                                                         iteration))
+        ini_model_fn = os.path.join(self.save_dir, 
+                                    '{0}_{1}.iter'.format(self.data_mode,
+                                                         iteration))
+
+        ini_resp_fn = os.path.abspath(ini_resp_fn)
+        ini_model_fn = os.path.abspath(ini_model_fn)                                            
+        self.mpl_widget.plot_data(data_fn=self.occam_data.data_fn,
+                                  resp_fn=ini_resp_fn,
+                                  iter_fn=ini_model_fn,
+                                  model_fn=self.occam_model.model_fn)
+                                  
+    def set_iteration(self, text):
+        iteration = text
+        rms = self.l2_widget.rms_arr['rms'][int(iteration)-1]
+        roughness = self.l2_widget.rms_arr['roughness'][int(iteration)-1]
+        print 'Iteration {0}, RMS={1:.2f}, Roughnes={2:.2f}'.format(
+                iteration, rms, roughness)
+        
         ini_resp_fn = os.path.join(self.save_dir, 
                                    '{0}_{1}.resp'.format(self.data_mode,
                                                          iteration))
@@ -478,7 +572,7 @@ class OccamPlot(QtGui.QWidget):
         super(OccamPlot, self).__init__()
         
         self.subplot_wspace = .15
-        self.subplot_hspace = .15
+        self.subplot_hspace = .2
         self.subplot_right = .90
         self.subplot_left = .085
         self.subplot_top = .93
@@ -495,18 +589,18 @@ class OccamPlot(QtGui.QWidget):
         self.depth_units = 'km'
         self.depth_limits = None
         
-        self.marker_data = 'o'
+        self.marker_data = 's'
         self.marker_data_color = 'k'
-        self.marker_resp = 's'
+        self.marker_resp = 'h'
         self.marker_resp_color = 'b'
-        self.marker_size =  3
+        self.marker_size =  2
         
         self.lw = .75
         self.ls = ':'
         self.e_capthick = .75
         self.e_capsize = 3
         
-        self.font_size = 10
+        self.font_size = 8
         
         self.setup_ui()
         
@@ -635,9 +729,8 @@ class OccamPlot(QtGui.QWidget):
             #--> TE mode data
             if len(pyx) > 0:
                 self.axp.errorbar(1./d1.freq[pyx],
-                                   d1.phase_te[0][pyx],
-                                   ls=self.ls,
-                                   yerr=d1.phase_te[1][pyx],
+                                   d1.phase_tm[0][pyx],
+                                   yerr=d1.phase_tm[1][pyx],
                                   **d_kwargs)
             else:
                 pass
@@ -655,7 +748,7 @@ class OccamPlot(QtGui.QWidget):
             if len(rxy) > 0:
                 rte = self.axr.errorbar(1./r1.freq[rxy],
                                         r1.res_te[2][rxy],
-                                        yerr=r1.res_te[3][rxy],
+                                        yerr=None,
                                         **r_kwargs)
                 #legend_marker_list_te.append(rte[0])
                 #legend_label_list_te.append('$Obs_{TE}$')
@@ -669,7 +762,7 @@ class OccamPlot(QtGui.QWidget):
             if len(ryx) > 0:
                 rtm = self.axr.errorbar(1./r1.freq[ryx],
                                         r1.res_tm[2][ryx],
-                                        yerr=r1.res_tm[3][ryx],
+                                        yerr=None,
                                         **r_kwargs)
                 #legend_marker_list_te.append(rte[0])
                 #legend_label_list_te.append('$Obs_{TE}$')
@@ -683,7 +776,7 @@ class OccamPlot(QtGui.QWidget):
             if len(pxy) > 0:
                 self.axp.errorbar(1./r1.freq[pxy],
                                    r1.phase_te[2][pxy],
-                                   yerr=r1.phase_te[3][pxy],
+                                   yerr=None,
                                    **r_kwargs)
             else:
                 pass
@@ -694,9 +787,8 @@ class OccamPlot(QtGui.QWidget):
             #--> TE mode data
             if len(pyx) > 0:
                 self.axp.errorbar(1./r1.freq[pyx],
-                                   r1.phase_te[2][pyx],
-                                   ls=self.ls,
-                                   yerr=r1.phase_te[3][pyx],
+                                   r1.phase_tm[2][pyx],
+                                   yerr=None,
                                   **r_kwargs)
             else:
                 pass
@@ -727,7 +819,9 @@ class OccamPlot(QtGui.QWidget):
         self.axp.set_xlabel('Period (s)',
                             fontdict={'size':self.font_size,'weight':'bold'})
         #plt.suptitle(self.title_str,fontsize=self.font_size+2,fontweight='bold')
-    
+        for ax in [self.axr, self.axp, self.axm]:
+            ax.tick_params(axis='both', which='major', 
+                           labelsize=self.font_size-2)
         
         #--> plot depth model--------------------------------------------------     
         if model_fn is not None:
@@ -747,15 +841,16 @@ class OccamPlot(QtGui.QWidget):
                               color='b', 
                               lw=self.lw)
                            
-            if self.depth_limits == None:
-                dmin = min(plot_depth)
-                if dmin == 0:
-                    dmin = 1
-                dmax = max(plot_depth)
-                self.depth_limits = (dmin, dmax)
-                
-                self.axm.set_ylim(ymin=max(self.depth_limits), 
-                                  ymax=min(self.depth_limits))
+            #if self.depth_limits == None:
+            dmin = min(plot_depth)
+            if dmin == 0:
+                dmin = 1
+            dmax = max(plot_depth)
+            self.depth_limits = (dmin, dmax)
+            
+            self.axm.set_ylim(ymin=max(self.depth_limits), 
+                              ymax=min(self.depth_limits))
+            
         if self.depth_scale == 'log':
             self.axm.set_yscale('log')
         self.axm.set_ylabel('Depth ({0})'.format(self.depth_units),
@@ -780,16 +875,14 @@ class PlotL2(QtGui.QWidget):
         super(PlotL2, self).__init__()
         self.dir_path = dir_path 
         self.model_fn = model_fn
-        
-        self.fig_num = 1
-        self.fig_size = [6, 6]
-        self.fig_dpi = 300
+
+        self.fig_dpi = 200
         self.font_size = 8
         
-        self.subplot_right = .98
+        self.subplot_right = .90
         self.subplot_left = .085
-        self.subplot_top = .91
-        self.subplot_bottom = .1
+        self.subplot_top = .86
+        self.subplot_bottom = .15
         
         self.rms_lw = 1
         self.rms_marker = 'd'
@@ -799,10 +892,10 @@ class PlotL2(QtGui.QWidget):
         self.rms_mean_color = 'orange'
         
         self.rough_lw = .75
-        self.rough_marker = 'o'
+        self.rough_marker = 's'
         self.rough_color = 'b'
-        self.rough_marker_size = 7
-        self.rough_font_size =  6
+        self.rough_marker_size = 3
+        self.rough_font_size =  8
         
         self.int = 1
         
@@ -868,6 +961,7 @@ class PlotL2(QtGui.QWidget):
         """
         plot l2 curve rms vs iteration
         """
+        self.figure.clf()
         
         if dir_path is not None:
             self.dir_path = dir_path
@@ -878,8 +972,8 @@ class PlotL2(QtGui.QWidget):
         self._get_iter_list()
         
         nr = self.rms_arr.shape[0]
-        med_rms = np.median(self.rms_arr['rms'])
-        mean_rms = np.mean(self.rms_arr['rms'])
+        med_rms = np.median(self.rms_arr['rms'][1:])
+        mean_rms = np.mean(self.rms_arr['rms'][1:])
         
         #set the dimesions of the figure
         plt.rcParams['font.size'] = self.font_size
@@ -902,70 +996,46 @@ class PlotL2(QtGui.QWidget):
                             ms=5,
                             picker=3)
         
-#        #plot the median of the RMS
-#        m1, = self.ax1.plot(self.rms_arr['iteration'],
-#                            np.repeat(med_rms, nr),
-#                            ls='--',
-#                            color=self.rms_median_color,
-#                            lw=self.rms_lw*.75)
-#        
-#        #plot the mean of the RMS
-#        m2, = self.ax1.plot(self.rms_arr['iteration'],
-#                            np.repeat(mean_rms, nr),
-#                            ls='--',
-#                            color=self.rms_mean_color,
-#                            lw=self.rms_lw*.75)
-#    
-#        #make subplot for RMS vs Roughness Plot
-#        self.ax2 = self.ax1.twiny()
-#        
-#        self.ax2.set_xlim(self.rms_arr['roughness'][1:].min(), 
-#                          self.rms_arr['roughness'][1:].max())
-            
-        self.ax1.set_ylim(0, self.rms_arr['rms'][1])
+        #plot the median of the RMS
+        m1, = self.ax1.plot(self.rms_arr['iteration'],
+                            np.repeat(med_rms, nr),
+                            ls='--',
+                            color=self.rms_median_color,
+                            lw=self.rms_lw*.75)
         
-#        #plot the rms vs roughness 
-#        l2, = self.ax2.plot(self.rms_arr['roughness'],
-#                            self.rms_arr['rms'],
-#                            ls='--',
-#                            color=self.rough_color,
-#                            lw=self.rough_lw,
-#                            marker=self.rough_marker,
-#                            ms=self.rough_marker_size,
-#                            mfc='white')
-       
-        #plot the iteration number inside the roughness marker                     
-#        for rms, ii, rough in zip(self.rms_arr['rms'], self.rms_arr['iteration'], 
-#                           self.rms_arr['roughness']):
-#            #need this because if the roughness is larger than this number
-#            #matplotlib puts the text out of bounds and a draw_text_image
-#            #error is raised and file cannot be saved, also the other 
-#            #numbers are not put in.
-#            if rough > 1e8:
-#                pass
-#            else:
-#                self.ax2.text(rough,
-#                              rms,
-#                              '{0}'.format(ii),
-#                              horizontalalignment='center',
-#                              verticalalignment='center',
-#                              fontdict={'size':self.rough_font_size,
-#                                        'weight':'bold',
-#                                        'color':self.rough_color})
-#        
-#        #make a legend
-#        self.ax1.legend([l1, l2, m1, m2],
-#                        ['RMS', 'Roughness',
-#                         'Median_RMS={0:.2f}'.format(med_rms),
-#                         'Mean_RMS={0:.2f}'.format(mean_rms)],
-#                         ncol=1,
-#                         loc='upper right',
-#                         columnspacing=.25,
-#                         markerscale=.75,
-#                         handletextpad=.15)
+        #plot the mean of the RMS
+        m2, = self.ax1.plot(self.rms_arr['iteration'],
+                            np.repeat(mean_rms, nr),
+                            ls='--',
+                            color=self.rms_mean_color,
+                            lw=self.rms_lw*.75)
+                            
+        self.ax2 = self.ax1.twinx()
+        l2, = self.ax2.plot(self.rms_arr['iteration'],
+                            self.rms_arr['roughness'],
+                            ls='-',
+                            color=self.rough_color,
+                            lw=self.rough_lw,
+                            marker=self.rough_marker,
+                            ms=self.rough_marker_size,
+                            mfc=self.rough_color) 
+    
+        
+        #make a legend
+        self.figure.legend([l1, l2, m1, m2],
+                        ['RMS', 'Roughness',
+                         'Median_RMS={0:.2f}'.format(med_rms),
+                         'Mean_RMS={0:.2f}'.format(mean_rms)],
+                         ncol=4,
+                         loc='upper center',
+                         columnspacing=.25,
+                         markerscale=.75,
+                         handletextpad=.15,
+                         borderaxespad=.02,
+                         prop={'size':self.font_size})
                     
         #set the axis properties for RMS vs iteration
-        self.ax1.yaxis.set_minor_locator(MultipleLocator(.1))
+#        self.ax1.yaxis.set_minor_locator(MultipleLocator(.1))
         self.ax1.xaxis.set_minor_locator(MultipleLocator(1))
         self.ax1.set_ylabel('RMS', 
                             fontdict={'size':self.font_size+2,
@@ -974,15 +1044,20 @@ class PlotL2(QtGui.QWidget):
                             fontdict={'size':self.font_size+2,
                                       'weight':'bold'})
         self.ax1.grid(alpha=.25, which='both', lw=self.rough_lw)
-#        self.ax2.set_xlabel('Roughness',
-#                            fontdict={'size':self.font_size+2,
-#                                      'weight':'bold',
-#                                      'color':self.rough_color})
+        self.ax2.set_ylabel('Roughness',
+                            fontdict={'size':self.font_size+2,
+                                      'weight':'bold',
+                                      'color':self.rough_color})
+                                      
+        self.ax1.set_ylim(np.floor(self.rms_arr['rms'][1:].min()), 
+                          np.ceil(self.rms_arr['rms'][1:].max()))
+        self.ax2.set_ylim(np.floor(self.rms_arr['roughness'][1:].min()),
+                          np.ceil(self.rms_arr['roughness'][1:].max()))
 
 
         
-#        for t2 in self.ax2.get_xticklabels():
-#            t2.set_color(self.rough_color)
+        for t2 in self.ax2.get_yticklabels():
+            t2.set_color(self.rough_color)
             
         self.l2_widget.draw()
         
