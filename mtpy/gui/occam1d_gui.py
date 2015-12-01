@@ -112,6 +112,7 @@ class OccamWidget(QtGui.QWidget):
         self.mpl_widget = OccamPlot() 
         
         self.l2_widget = PlotL2()
+        self.l2_widget.l2_widget.mpl_connect('pick event', self.on_click)
         
         self.res_err = 10.
         self.phase_err = 5.
@@ -442,6 +443,22 @@ class OccamWidget(QtGui.QWidget):
                                   
         self.l2_widget.plot_l2(dir_path=self.save_dir, 
                                model_fn=self.occam_model.model_fn)
+                               
+    def on_click(self, event):
+        print event.ind
+        ini_resp_fn = os.path.join(self.save_dir, 
+                                   '{0}_{1}.resp'.format(self.data_mode,
+                                                         event.ind))
+        ini_model_fn = os.path.join(self.save_dir, 
+                                    '{0}_{1}.iter'.format(self.data_mode,
+                                                         event.ind))
+
+        ini_resp_fn = os.path.abspath(ini_resp_fn)
+        ini_model_fn = os.path.abspath(ini_model_fn)                                            
+        self.mpl_widget.plot_data(data_fn=self.occam_data.data_fn,
+                                  resp_fn=ini_resp_fn,
+                                  iter_fn=ini_model_fn,
+                                  model_fn=self.occam_model.model_fn)
         
     @QtCore.pyqtSlot(str)
     def normal_output(self, message):
@@ -785,6 +802,8 @@ class PlotL2(QtGui.QWidget):
         self.rough_color = 'b'
         self.rough_marker_size = 7
         self.rough_font_size =  6
+        
+        self.int = 1
         
         self.setup_ui()
         
