@@ -84,6 +84,25 @@ class Occam1D_GUI(QtGui.QMainWindow):
         self.occam_widget = OccamWidget()
         self.central_widget = self.setCentralWidget(self.occam_widget)
 
+        ## menu bar
+        self.menu_bar = self.menuBar()
+        #self.menu_bar.setGeometry(QtCore.QRect(0, 0, 1920, 40))
+        
+        self.menu_help = self.menu_bar.addMenu('Help')
+        help_action = QtGui.QAction('help doc', self)
+        help_action.triggered.connect(self.display_help)
+        
+        
+        self.menu_help.addAction(help_action)
+        
+        #self.menu_model = QtGui.QMenu(self.menu_bar)
+        #self.menu_model.setTitle("Model")
+        
+        #self.menu_startup = QtGui.QMenu(self.menu_bar)
+        #self.menu_startup.setTitle('Startup')
+        
+        #self.setMenuBar(self.menu_bar)
+        #self.show()
         #--------------------------------------------------------
         # stream the output of occam 1D        
         self.my_stream = MyStream()
@@ -92,7 +111,31 @@ class Occam1D_GUI(QtGui.QMainWindow):
         sys.stdout = self.my_stream
         
         QtCore.QMetaObject.connectSlotsByName(self)
+        
+    def display_help(self):
+        ll = ['***Be sure you have a working executable of Occam1D first***\n',
+              'To begin: ',
+              '\t* select an edi file to invert by clicking the ',
+              '\t  "Get EDI File" button at the top left.',
+              '\t  The TE mode will be plotted meanint the file was read',
+              '\t* Change the parameters in the Data, Model, and Startup fields',
+              '\t* Locate Occam1D on your system by clicking "Occam1D Path"',
+              '\t* Hit the "Run" button to run an inversion.',
+              '\t  The first iteration will be plotted once it is finished.',
+              '',
+              'An L2 curve will be shown in the lower plot to give you an',
+              'idea of which iteration is the optimum. To change iterations',
+              'pick a number on the combination box labeled "Iteration".',
+              '',
+              'Change the parameters and try again.',
+              '',
+              'The output will be shown on the left handside.',
+              '',
+              'To save an image of the model and response click the disk icon']
             
+        help_string = '\n'.join(ll)        
+        
+        QtGui.QMessageBox.information(self.central_widget, 'Help', help_string)
 #==============================================================================
 # Occam 1D widget
 #==============================================================================
@@ -135,20 +178,6 @@ class OccamWidget(QtGui.QWidget):
         label_font.setPointSize (16)
         
         #---------------------------------------------------
-        # menu bar
-#        self.menu_bar = QtGui.QMenuBar(self)
-#        self.menu_bar.setGeometry(QtCore.QRect(0, 0, 1920, 40))
-#        
-#        self.menu_data = QtGui.QMenu(self.menu_bar)
-#        self.menu_data.setTitle("Data")
-#        
-#        self.menu_model = QtGui.QMenu(self.menu_bar)
-#        self.menu_model.setTitle("Model")
-#        
-#        self.menu_startup = QtGui.QMenu(self.menu_bar)
-#        self.menu_startup.setTitle('Startup')
-#        
-#        self.setMenuBar(self.menu_bar)
         
         self.get_occam_path_button = QtGui.QPushButton('Occam1D Path')
         self.get_occam_path_button.clicked.connect(self.get_occam_path)
