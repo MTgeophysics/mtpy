@@ -86,7 +86,12 @@ class Plot_model():
         
         for key in input_parameters.keys():
             if hasattr(self,key):
-                setattr(self,key,input_parameters[key]) 
+                if type(getattr(self,key)) == dict:
+                    getattr(self,key).update(input_parameters[key])
+                else:
+                    setattr(self,key,input_parameters[key])
+        
+        
 #        print "label fontsize {}".format(self.label_fontsize)
                 
         if self.plotyn:
@@ -166,12 +171,13 @@ class Plot_model():
                 axes.append([ax,p])
                 
             if 'strike' in parameter:
-                strike = modelvals[:,4]%180 + self.rotation_angle 
-#                if self.xlim['strike'][-1] == 180:
-                strike[strike < self.xlim['strike'][0]-45] += 180
+
                 if twin:
                     ax = make_twiny(twiny_offset)
                 for modelvals in models_to_plot:
+                    strike = modelvals[:,4]%180 + self.rotation_angle 
+    #                if self.xlim['strike'][-1] == 180:
+                    strike[strike < self.xlim['strike'][0]-45] += 180
                     p, = plt.plot(strike,modelvals[:,1],self.linedict['colour'][c%nlc],ls=ls,lw=lw)
                     ax = plt.gca()
                     twin = True
