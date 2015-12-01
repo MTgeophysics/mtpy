@@ -292,7 +292,7 @@ class Data(object):
                 if phase_err == 'data':
                     perr = phi_err[ii, 0, 1]
                 else:
-                    perr = phase_err/100*(180/np.pi) 
+                    perr = phase_err/100.*(180/np.pi) 
                 if rho[ii, 0, 1] != 0.0:
                     dlines.append(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
                                 '{0:{1}}'.format(rho[ii, 0, 1], self._string_fmt),
