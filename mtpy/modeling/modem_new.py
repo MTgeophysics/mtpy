@@ -279,6 +279,7 @@ class Data(object):
         
         self.fn_basename = kwargs.pop('fn_basename', 'ModEM_Data.dat')
         self.save_path = kwargs.pop('save_path', os.getcwd())
+        self.formatting = kwargs.pop('format', '1')
         
         self._rotation_angle = kwargs.pop('rotation_angle', 0.0)
         self._set_rotation_angle(self._rotation_angle)
@@ -787,6 +788,9 @@ class Data(object):
         
         #reset the header string to be informational
         self._set_header_string()
+        
+        # get relative station locations in grid coordinates
+        self.get_relative_station_locations()
 
         dlines = []        
         for inv_mode in self.inv_mode_dict[self.inv_mode]:
@@ -801,7 +805,7 @@ class Data(object):
                 dlines.append('> exp({0}i\omega t)\n'.format(self.wave_sign_tipper))
                 dlines.append('> []\n')
             dlines.append('> 0\n') #oriention, need to add at some point
-            dlines.append('> {0: >7.3f} {1: >7.3f}\n'.format(
+            dlines.append('> {0: >10.6f} {1:>10.6f}\n'.format(
                           self.center_position[0], self.center_position[1]))
             dlines.append('> {0} {1}\n'.format(self.data_array['z'].shape[1],
                                                self.data_array['z'].shape[0]))
@@ -821,19 +825,30 @@ class Data(object):
                         #get the value for that compenent at that frequency
                         zz = self.data_array[ss][c_key][ff, z_ii, z_jj]
                         if zz.real != 0.0 and zz.imag != 0.0 and \
-                           zz.real != 1e32 and zz.imag != 1e32:
-                            per = '{0:<12.5e}'.format(self.period_list[ff])
-                            sta = '{0:>7}'.format(self.data_array[ss]['station'])
-                            lat = '{0:> 9.3f}'.format(self.data_array[ss]['lat'])
-                            lon = '{0:> 9.3f}'.format(self.data_array[ss]['lon'])
-                            eas = '{0:> 12.3f}'.format(self.data_array[ss]['rel_east'])
-                            nor = '{0:> 12.3f}'.format(self.data_array[ss]['rel_north'])
-                            ele = '{0:> 12.3f}'.format(self.data_array[ss]['elev'])
-                            com = '{0:>4}'.format(comp.upper())
-                            rea = '{0:> 14.6e}'.format(zz.real)
-                            ima = '{0:> 14.6e}'.format(zz.imag)
-                            
-                            if compute_error == True:
+                            zz.real != 1e32 and zz.imag != 1e32:
+                            if self.formatting == '1':
+                                per = '{0:<12.5e}'.format(self.period_list[ff])
+                                sta = '{0:>7}'.format(self.data_array[ss]['station'])
+                                lat = '{0:> 9.3f}'.format(self.data_array[ss]['lat'])
+                                lon = '{0:> 9.3f}'.format(self.data_array[ss]['lon'])
+                                eas = '{0:> 12.3f}'.format(self.data_array[ss]['rel_east'])
+                                nor = '{0:> 12.3f}'.format(self.data_array[ss]['rel_north'])
+                                ele = '{0:> 12.3f}'.format(self.data_array[ss]['elev'])
+                                com = '{0:>4}'.format(comp.upper())
+                                rea = '{0:> 14.6e}'.format(zz.real)
+                                ima = '{0:> 14.6e}'.format(zz.imag)
+                            elif self.formatting == '2':
+                                per = '{0:<14.6e}'.format(self.period_list[ff])
+                                sta = '{0:<10}'.format(self.data_array[ss]['station'])
+                                lat = '{0:> 14.6f}'.format(self.data_array[ss]['lat'])
+                                lon = '{0:> 14.6f}'.format(self.data_array[ss]['lon'])
+                                eas = '{0:> 12.3f}'.format(self.data_array[ss]['rel_east'])
+                                nor = '{0:> 15.3f}'.format(self.data_array[ss]['rel_north'])
+                                ele = '{0:> 10.3f}'.format(self.data_array[ss]['elev'])
+                                com = '{0:>12}'.format(comp.upper())
+                                rea = '{0:> 17.6e}'.format(zz.real)
+                                ima = '{0:> 17.6e}'.format(zz.imag)                            
+                            if compute_error:
                                 #compute relative error
                                 if comp.find('t') == 0:
                                     rel_err = self.error_tipper
