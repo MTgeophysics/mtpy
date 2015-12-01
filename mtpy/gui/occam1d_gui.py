@@ -112,7 +112,7 @@ class OccamWidget(QtGui.QWidget):
         self.mpl_widget = OccamPlot() 
         
         self.l2_widget = PlotL2()
-        self.l2_widget.l2_widget.mpl_connect('pick event', self.on_click)
+        self.l2_widget.l2_widget.mpl_connect('pick event', self.l2_widget.on_click)
         
         self.res_err = 10.
         self.phase_err = 5.
@@ -445,13 +445,14 @@ class OccamWidget(QtGui.QWidget):
                                model_fn=self.occam_model.model_fn)
                                
     def on_click(self, event):
-        print event.ind
+        data_point = event.artist
+        iteration = data_point.get_xdata()[event.ind]
         ini_resp_fn = os.path.join(self.save_dir, 
                                    '{0}_{1}.resp'.format(self.data_mode,
-                                                         event.ind))
+                                                         iteration))
         ini_model_fn = os.path.join(self.save_dir, 
                                     '{0}_{1}.iter'.format(self.data_mode,
-                                                         event.ind))
+                                                         iteration))
 
         ini_resp_fn = os.path.abspath(ini_resp_fn)
         ini_model_fn = os.path.abspath(ini_model_fn)                                            
@@ -815,6 +816,8 @@ class PlotL2(QtGui.QWidget):
         self.figure = Figure(dpi=200)
         self.l2_widget = FigureCanvas(self.figure)
         
+        #self.l2_widget.mpl_connect('pick event', self.on_click)
+        
         self.figure.subplots_adjust(left=self.subplot_left,
                                     right=self.subplot_right,
                                     bottom=self.subplot_bottom,
@@ -896,69 +899,70 @@ class PlotL2(QtGui.QWidget):
                             '-k', 
                             lw=1,
                             marker='d',
-                            ms=5)
+                            ms=5,
+                            picker=3)
         
-        #plot the median of the RMS
-        m1, = self.ax1.plot(self.rms_arr['iteration'],
-                            np.repeat(med_rms, nr),
-                            ls='--',
-                            color=self.rms_median_color,
-                            lw=self.rms_lw*.75)
-        
-        #plot the mean of the RMS
-        m2, = self.ax1.plot(self.rms_arr['iteration'],
-                            np.repeat(mean_rms, nr),
-                            ls='--',
-                            color=self.rms_mean_color,
-                            lw=self.rms_lw*.75)
-    
-        #make subplot for RMS vs Roughness Plot
-        self.ax2 = self.ax1.twiny()
-        
-        self.ax2.set_xlim(self.rms_arr['roughness'][1:].min(), 
-                          self.rms_arr['roughness'][1:].max())
+#        #plot the median of the RMS
+#        m1, = self.ax1.plot(self.rms_arr['iteration'],
+#                            np.repeat(med_rms, nr),
+#                            ls='--',
+#                            color=self.rms_median_color,
+#                            lw=self.rms_lw*.75)
+#        
+#        #plot the mean of the RMS
+#        m2, = self.ax1.plot(self.rms_arr['iteration'],
+#                            np.repeat(mean_rms, nr),
+#                            ls='--',
+#                            color=self.rms_mean_color,
+#                            lw=self.rms_lw*.75)
+#    
+#        #make subplot for RMS vs Roughness Plot
+#        self.ax2 = self.ax1.twiny()
+#        
+#        self.ax2.set_xlim(self.rms_arr['roughness'][1:].min(), 
+#                          self.rms_arr['roughness'][1:].max())
             
         self.ax1.set_ylim(0, self.rms_arr['rms'][1])
         
-        #plot the rms vs roughness 
-        l2, = self.ax2.plot(self.rms_arr['roughness'],
-                            self.rms_arr['rms'],
-                            ls='--',
-                            color=self.rough_color,
-                            lw=self.rough_lw,
-                            marker=self.rough_marker,
-                            ms=self.rough_marker_size,
-                            mfc='white')
+#        #plot the rms vs roughness 
+#        l2, = self.ax2.plot(self.rms_arr['roughness'],
+#                            self.rms_arr['rms'],
+#                            ls='--',
+#                            color=self.rough_color,
+#                            lw=self.rough_lw,
+#                            marker=self.rough_marker,
+#                            ms=self.rough_marker_size,
+#                            mfc='white')
        
         #plot the iteration number inside the roughness marker                     
-        for rms, ii, rough in zip(self.rms_arr['rms'], self.rms_arr['iteration'], 
-                           self.rms_arr['roughness']):
-            #need this because if the roughness is larger than this number
-            #matplotlib puts the text out of bounds and a draw_text_image
-            #error is raised and file cannot be saved, also the other 
-            #numbers are not put in.
-            if rough > 1e8:
-                pass
-            else:
-                self.ax2.text(rough,
-                              rms,
-                              '{0}'.format(ii),
-                              horizontalalignment='center',
-                              verticalalignment='center',
-                              fontdict={'size':self.rough_font_size,
-                                        'weight':'bold',
-                                        'color':self.rough_color})
-        
-        #make a legend
-        self.ax1.legend([l1, l2, m1, m2],
-                        ['RMS', 'Roughness',
-                         'Median_RMS={0:.2f}'.format(med_rms),
-                         'Mean_RMS={0:.2f}'.format(mean_rms)],
-                         ncol=1,
-                         loc='upper right',
-                         columnspacing=.25,
-                         markerscale=.75,
-                         handletextpad=.15)
+#        for rms, ii, rough in zip(self.rms_arr['rms'], self.rms_arr['iteration'], 
+#                           self.rms_arr['roughness']):
+#            #need this because if the roughness is larger than this number
+#            #matplotlib puts the text out of bounds and a draw_text_image
+#            #error is raised and file cannot be saved, also the other 
+#            #numbers are not put in.
+#            if rough > 1e8:
+#                pass
+#            else:
+#                self.ax2.text(rough,
+#                              rms,
+#                              '{0}'.format(ii),
+#                              horizontalalignment='center',
+#                              verticalalignment='center',
+#                              fontdict={'size':self.rough_font_size,
+#                                        'weight':'bold',
+#                                        'color':self.rough_color})
+#        
+#        #make a legend
+#        self.ax1.legend([l1, l2, m1, m2],
+#                        ['RMS', 'Roughness',
+#                         'Median_RMS={0:.2f}'.format(med_rms),
+#                         'Mean_RMS={0:.2f}'.format(mean_rms)],
+#                         ncol=1,
+#                         loc='upper right',
+#                         columnspacing=.25,
+#                         markerscale=.75,
+#                         handletextpad=.15)
                     
         #set the axis properties for RMS vs iteration
         self.ax1.yaxis.set_minor_locator(MultipleLocator(.1))
@@ -970,17 +974,22 @@ class PlotL2(QtGui.QWidget):
                             fontdict={'size':self.font_size+2,
                                       'weight':'bold'})
         self.ax1.grid(alpha=.25, which='both', lw=self.rough_lw)
-        self.ax2.set_xlabel('Roughness',
-                            fontdict={'size':self.font_size+2,
-                                      'weight':'bold',
-                                      'color':self.rough_color})
+#        self.ax2.set_xlabel('Roughness',
+#                            fontdict={'size':self.font_size+2,
+#                                      'weight':'bold',
+#                                      'color':self.rough_color})
 
 
         
-        for t2 in self.ax2.get_xticklabels():
-            t2.set_color(self.rough_color)
+#        for t2 in self.ax2.get_xticklabels():
+#            t2.set_color(self.rough_color)
             
         self.l2_widget.draw()
+        
+    def on_click(self, event):
+        data_point = event.artist
+        iteration = data_point.get_xdata()[event.ind]        
+        print iteration
         
 #==============================================================================
 # Main execution        
