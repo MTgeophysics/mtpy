@@ -289,6 +289,7 @@ class Data(object):
         self.center_position = np.array([0.0, 0.0])
         self.data_array = None
         self.mt_dict = None
+        self.data_fn = kwargs.pop('data_fn','ModEM_Data.dat')
         
         self._z_shape = (1, 2, 2)
         self._t_shape = (1, 1, 2)
@@ -1259,13 +1260,13 @@ class Model(object):
     nodes_north          relative distance between nodes in north direction 
     nodes_z              relative distance between nodes in east direction 
     pad_east             number of cells for padding on E and W sides
-                         *default* is 5
+                         *default* is 7
     pad_north            number of cells for padding on S and N sides
-                         *default* is 5
+                         *default* is 7
     pad_root_east        padding cells E & W will be pad_root_east**(x)
     pad_root_north       padding cells N & S will be pad_root_north**(x) 
     pad_z                number of cells for padding at bottom
-                         *default* is 5
+                         *default* is 4
     res_list             list of resistivity values for starting model
     res_model            starting resistivity model
     mesh_rotation_angle  Angle to rotate the grid to. Angle is measured
