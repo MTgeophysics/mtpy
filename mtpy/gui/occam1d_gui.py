@@ -157,7 +157,7 @@ class OccamWidget(QtGui.QWidget):
         
         self.res_err = 10.
         self.phase_err = 5.
-        self.data_mode = 'TE'
+        self.data_mode = 'Det'
         self.edi_fn = ''
         
         self.save_dir = None
@@ -205,9 +205,10 @@ class OccamWidget(QtGui.QWidget):
         
         self.data_mode_label = QtGui.QLabel('Mode')
         self.data_mode_combo = QtGui.QComboBox()
+        self.data_mode_combo.addItem('Det')
         self.data_mode_combo.addItem('TE')
         self.data_mode_combo.addItem('TM')
-        self.data_mode_combo.addItem('Det')
+
         #self.data_mode_combo.addItem('Both')
         self.data_mode_combo.activated[str].connect(self.set_data_mode)
         
@@ -579,9 +580,6 @@ class OccamWidget(QtGui.QWidget):
         mod_phi_err[:, 0, 1] = self.mpl_widget.data_obj.phase_te[1]
         mod_phi_err[:, 1, 0] = self.mpl_widget.data_obj.phase_tm[1]
         
-        print mod_phi[:, 0, 1]
-        
-        
         mod_rp_tuple = (self.mpl_widget.data_obj.freq,
                         mod_rho, 
                         mod_rho_err, 
@@ -591,8 +589,8 @@ class OccamWidget(QtGui.QWidget):
         self.occam_data.write_data_file(rp_tuple=mod_rp_tuple,
                                         save_path=self.save_dir,
                                         mode=self.data_mode,
-                                        res_err=self.res_err,
-                                        phase_err=self.phase_err,
+                                        res_err='data',
+                                        phase_err='data',
                                         thetar=0)
                                         
         # write model file
@@ -1031,6 +1029,13 @@ class OccamPlot(QtGui.QWidget):
                 self.data_obj.res_te[1, p_index] = te_err+0.2*te_err
                 self.data_obj.res_tm[1, p_index] = tm_err+0.2*tm_err
                 
+                if self.data_obj.res_te[1, p_index] != 0:
+                    print 'Res err changed to: {0:.2f}'.format(
+                                            self.data_obj.res_te[1, p_index])
+                if self.data_obj.res_tm[1, p_index] != 0:
+                    print 'Res err changed to: {0:.2f}'.format(
+                                            self.data_obj.res_tm[1, p_index])
+
                 # make error bar array
                 eb = self._err_list[self._ax_index][2].get_paths()[p_index].vertices
                 
@@ -1064,8 +1069,14 @@ class OccamPlot(QtGui.QWidget):
                 tm_err = self.data_obj.phase_tm[1, p_index]
                 
                 self.data_obj.phase_te[1, p_index] = te_err+te_err*.05
-                self.data_obj.phase_tm[1, p_index] = te_err+te_err*.05
+                self.data_obj.phase_tm[1, p_index] = tm_err+tm_err*.05
             
+                if self.data_obj.phase_te[1, p_index] != 0:
+                    print 'Phase err changed to: {0:.2f}'.format(
+                                            self.data_obj.phase_te[1, p_index])
+                if self.data_obj.phase_tm[1, p_index] != 0:
+                    print 'Phase err changed to: {0:.2f}'.format(
+                                            self.data_obj.phase_tm[1, p_index])
                 # make error bar array
                 eb = self._err_list[self._ax_index][2].get_paths()[p_index].vertices
                 
