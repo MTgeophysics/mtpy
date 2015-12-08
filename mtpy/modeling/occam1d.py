@@ -216,12 +216,24 @@ class Data(object):
             
             freq = impz.freq
             nf = len(freq)
-        
+            
+            #get determinant resistivity and phase
+            if mode.lower() == 'det':
+                zdet, zdet_err = impz.det
+                rho = .2/freq*abs(zdet)
+                phi = np.rad2deg(np.arctan2(zdet.imag, zdet.real))
+
         if rp_tuple is not None:
             if len(rp_tuple) != 5:
                 raise IOError('Be sure rp_array is correctly formated\n'
                               'should be freq, res, res_err, phase, phase_err')
             freq, rho, rho_err, phi, phi_err = rp_tuple
+            
+            if mode.lower() == 'det':
+                rho = rho[:, 0, 1]
+                phi = phi[:, 0, 1]
+                rho_err = rho_err[:, 0, 1]
+                phi_err = phi_err[:, 0, 1]
             nf = len(freq)
             
         #make sure the savepath exists, if not create it
@@ -237,14 +249,6 @@ class Data(object):
             self._data_fn = os.path.basename(self.save_path)
         if not os.path.exists(self.save_path):
             os.mkdir(self.save_path)
-        
-        
-        
-        #get determinant resistivity and phase
-        if mode.lower() == 'det':
-            zdet, zdet_err = impz.det
-            rho = .2/freq*abs(zdet)**2
-            phi = np.rad2deg(np.arctan2(zdet.imag, zdet.real))
         
         
         self.data_fn = os.path.join(self.save_path, 
@@ -292,15 +296,19 @@ class Data(object):
                 if phase_err == 'data':
                     perr = phi_err[ii, 0, 1]
                 else:
-                    perr = phase_err/100*(180/np.pi) 
+                    perr = phase_err/100*(180/np.pi)
+                    
+                # write lines
                 if rho[ii, 0, 1] != 0.0:
                     dlines.append(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
                                 '{0:{1}}'.format(rho[ii, 0, 1], self._string_fmt),
                                 '{0:{1}}\n'.format(rerr, self._string_fmt)]))
+                    data_count += 1
+                if phi[ii, 0, 1] != 0.0:
                     dlines.append(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
                                 '{0:{1}}'.format(phi[ii, 0, 1]%90,self._string_fmt),
                                 '{0:{1}}\n'.format(perr, self._string_fmt)]))
-                    data_count += 2
+                    data_count += 1
                             
             elif mode.lower() == 'tm':
                 pol = 'yx'
@@ -313,39 +321,53 @@ class Data(object):
                     perr = phi_err[ii, 1, 0]
                 else:
                     perr = phase_err/100*(180/np.pi)
+                    
+                # write lines
                 if rho[ii, 1, 0] != 0.0:    
                     dlines.append(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
                                 '{0:{1}}'.format(rho[ii, 1, 0],self._string_fmt),
                                 '{0:{1}}\n'.format(rerr, self._string_fmt)]))
+                    data_count += 1
+                if phi[ii, 1, 0] != 0.0:
                     dlines.append(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
                                 '{0:{1}}'.format(phi[ii, 1, 0]%90,self._string_fmt),
                                 '{0:{1}}\n'.format(perr, self._string_fmt)]))
                     data_count += 2
             elif mode.lower() == 'det':
-                pol = 'det'
+                pol = 'xy'
                 if res_err == 'data':
-                    rerr, perr = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real, 
+                    if edi_file is not None:
+                        rerr, p_err = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real, 
                                                                zdet_err[ii],
                                                                zdet[ii].imag,
                                                                zdet_err[ii]) 
+                    else:
+                        rerr = rho_err[ii]
                 else:
-                    rerr = rho[ii, 1, 0]*res_err/100.
+                    rerr = rho[ii]*res_err/100.
                     
                 if phase_err == 'data':
-                    rerr, perr = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real, 
+                    if edi_file is not None:
+                        r_err, perr = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real, 
                                                                zdet_err[ii],
                                                                zdet[ii].imag,
                                                                zdet_err[ii])
+                    else:
+                        perr = phi_err[ii]
                 else:
                     perr = phase_err/100*(180/np.pi)
-                if rho[ii, 1, 0] != 0.0:    
+                
+                # write lines
+                if rho[ii] != 0.0:    
                     dlines.append(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
-                                '{0:{1}}'.format(rho[ii, 1, 0],self._string_fmt),
+                                '{0:{1}}'.format(rho[ii],self._string_fmt),
                                 '{0:{1}}\n'.format(rerr, self._string_fmt)]))
+                    data_count += 1
+                if phi[ii] != 0.0:
                     dlines.append(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
-                                '{0:{1}}'.format(phi[ii, 1, 0]%90,self._string_fmt),
+                                '{0:{1}}'.format(phi[ii]%90,self._string_fmt),
                                 '{0:{1}}\n'.format(perr, self._string_fmt)]))
-                    data_count += 2
+                    data_count += 1
         #--> write file
         dlines[num_data_line-1] = '# Data:{0}{1}\n'.format(self._ss, data_count)
         dfid = open(self.data_fn, 'w')
