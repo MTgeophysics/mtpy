@@ -524,8 +524,11 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                           'weight':'bold'}
 
         #--> set background image properties
+        self.image_extent = None
+        self.image_origin = 'lower'
+        self.image_file = None
         image_dict = kwargs.pop('image_dict', None)
-        if image_dict!=None:
+        if image_dict != None:
             # make sure there is a file
             try:
                 self.image_file = image_dict['file']
@@ -632,8 +635,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             self.ax.imshow(im, origin=self.image_origin, 
                            extent=self.image_extent, 
                            aspect='equal')
-        except AttributeError:
-            pass
+        except (AttributeError, TypeError):
+            print 'Could not plot image'
         
         #get the reference point
         refpoint = self.plot_reference_point

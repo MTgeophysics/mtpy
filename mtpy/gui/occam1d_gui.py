@@ -159,6 +159,7 @@ class OccamWidget(QtGui.QWidget):
         self.phase_err = 5.
         self.data_mode = 'Det'
         self.edi_fn = ''
+        self.ss = 1.0
         
         self.save_dir = None
         self.station_dir = None
@@ -208,9 +209,13 @@ class OccamWidget(QtGui.QWidget):
         self.data_mode_combo.addItem('Det')
         self.data_mode_combo.addItem('TE')
         self.data_mode_combo.addItem('TM')
-
-        #self.data_mode_combo.addItem('Both')
         self.data_mode_combo.activated[str].connect(self.set_data_mode)
+        
+        self.data_ss_button = QtGui.QPushButton('Apply Static Shift')
+        self.data_ss_button.clicked.connect(self.apply_ss)
+        self.data_ss_edit = QtGui.QLineEdit()
+        self.data_ss_edit.setText('{0:.2f}'.format(self.ss))
+        self.data_ss_edit.editingFinished.connect(self.set_ss)
         
         # vertical layer parameters
         self.model_label = QtGui.QLabel('Model Parameters')
@@ -290,6 +295,9 @@ class OccamWidget(QtGui.QWidget):
         
         data_grid.addWidget(self.data_mode_label, 3, 0)
         data_grid.addWidget(self.data_mode_combo, 3, 1)
+        
+        data_grid.addWidget(self.data_ss_button, 4, 0)
+        data_grid.addWidget(self.data_ss_edit, 4, 1)
         
         model_grid = QtGui.QGridLayout()
         model_grid.addWidget(self.model_label, 0, 0)
@@ -430,6 +438,19 @@ class OccamWidget(QtGui.QWidget):
     def set_data_mode(self, text):
         self.data_mode = str(text)
         
+    def set_ss(self):
+        self.ss = float(str(self.data_ss_edit.text()))
+        self.data_ss_edit.setText('{0:.2f}'.format(self.ss))
+        
+    def apply_ss(self):
+        self.mpl_widget.data_obj.res_te[0] /= 1./self.ss
+        self.mpl_widget.data_obj.res_tm[0] /= 1./self.ss
+        self.mpl_widget.data_obj.res_te[1] /= 1./self.ss
+        self.mpl_widget.data_obj.res_tm[1] /= 1./self.ss
+        
+        self.rewrite_data_file()
+        self.mpl_widget.plot_data(data_fn=self.occam_data.data_fn)
+        
     def set_n_layers(self):
         self.occam_model.n_layers = int(str(self.n_layers_edit.text()))
         self.n_layers_edit.setText('{0:.0f}'.format(self.occam_model.n_layers))
@@ -551,17 +572,7 @@ class OccamWidget(QtGui.QWidget):
         self.iter_combo_edit.update()
         self.iter_combo_edit.repaint()
         
-    def run_occam_edits(self):
-        """
-        write all the needed files and run occam then plot
-        """
-        
-        self._get_inv_folder()
-        
-        if not os.path.isdir(self.save_dir):
-            os.mkdir(self.save_dir)
-            print 'Made directory {0}'.format(self.save_dir)
-        
+    def rewrite_data_file(self):
         # write data file
         nf = self.mpl_widget.data_obj.freq.shape[0]
         mod_rho = np.zeros((nf, 2, 2))
@@ -592,6 +603,19 @@ class OccamWidget(QtGui.QWidget):
                                         res_err='data',
                                         phase_err='data',
                                         thetar=0)
+                                        
+    def run_occam_edits(self):
+        """
+        write all the needed files and run occam then plot
+        """
+        
+        self._get_inv_folder()
+        
+        if not os.path.isdir(self.save_dir):
+            os.mkdir(self.save_dir)
+            print 'Made directory {0}'.format(self.save_dir)
+        
+        self.rewrite_data_file()
                                         
         # write model file
         self.occam_model.write_model_file(save_path=self.save_dir)
