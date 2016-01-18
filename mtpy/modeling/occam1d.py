@@ -332,7 +332,7 @@ class Data(object):
                     dlines.append(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
                                 '{0:{1}}'.format(phi[ii, 1, 0]%90,self._string_fmt),
                                 '{0:{1}}\n'.format(perr, self._string_fmt)]))
-                    data_count += 2
+                    data_count += 1
             elif mode.lower() == 'det':
                 pol = 'xy'
                 if res_err == 'data':
