@@ -858,28 +858,36 @@ class Data(object):
                                         rel_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj]/\
                                                   abs(zz)
                                         if rel_err < self.error_floor/100.:
-                                            rel_err = self.error_floor/100.*abs(zz)
-                                    
+                                            rel_err = self.error_floor/100.
+                                        abs_err = rel_err*abs(zz)
                                     elif self.error_type == 'value':
-                                        rel_err = abs(zz)*self.error_value/100.
+                                        abs_err = abs(zz)*self.error_value/100.
                                     
                                     elif self.error_type == 'egbert':
                                         d_zxy = self.data_array[ss]['z'][ff, 0, 1]
                                         d_zyx = self.data_array[ss]['z'][ff, 1, 0]
-                                        rel_err = np.sqrt(abs(d_zxy*d_zyx))*\
+                                        abs_err = np.sqrt(abs(d_zxy*d_zyx))*\
                                                   self.error_egbert/100.
-                                if rel_err == 0.0:
-                                    rel_err = 1e3
+                                    elif self.error_type == 'floor_egbert':
+                                        abs_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj]
+                                        d_zxy = self.data_array[ss]['z'][ff, 0, 1]
+                                        d_zyx = self.data_array[ss]['z'][ff, 1, 0]
+                                        if abs_err < np.sqrt(abs(d_zxy*d_zyx))*self.error_egbert/100.:
+                                            abs_err = self.error_egbert/100.
+
+
+                                if abs_err == 0.0:
+                                    abs_err = 1e3
                                     print ('error at {0} is 0 for period {1}'.format(
                                             sta, per)+'set to 1e3')
 
                             else: 
-                                rel_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj].real 
+                                abs_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj].real 
                             
-                            rel_err = '{0:> 14.6e}'.format(abs(rel_err))
+                            abs_err = '{0:> 14.6e}'.format(abs(abs_err))
                             #make sure that x==north, y==east, z==+down                            
                             dline = ''.join([per, sta, lat, lon, nor, eas, ele, 
-                                             com, rea, ima, rel_err, '\n'])
+                                             com, rea, ima, abs_err, '\n'])
                             dlines.append(dline)
         
         dfid = file(self.data_fn, 'w')
@@ -1941,7 +1949,7 @@ class Model(object):
                         *default* is Model File written by MTpy.modeling.modem 
                         
             **res_model** : np.array((nx,ny,nz))
-                        Starting resistivity model. 
+                        Prior resistivity model. 
                         
                         .. note:: again that the modeling code 
                         assumes that the first row it reads in is the southern
@@ -1953,11 +1961,12 @@ class Model(object):
                             scale of resistivity.  In the ModEM code it 
                             converts everything to Loge, 
                             *default* is 'loge'
-
+                            
         """
         
         keys = ['nodes_east', 'nodes_north', 'nodes_z', 'title',
                 'res_model', 'save_path', 'model_fn', 'model_fn_basename']
+                
         for key in keys:
             try:
                 setattr(self, key, kwargs[key])
@@ -2024,8 +2033,10 @@ class Model(object):
         if self.res_scale.lower() == 'loge':
             write_res_model = np.log(self.res_model[::-1, :, :])
         elif self.res_scale.lower() == 'log' or \
-             self.res_scale.olower() == 'log10':
+             self.res_scale.lower() == 'log10':
             write_res_model = np.log10(self.res_model[::-1, :, :])
+        elif self.res_scale.lower() == 'linear':
+            write_res_model = self.res_model[::-1, :, :]
             
         #write out the layers from resmodel
         for zz in range(self.nodes_z.shape[0]):
