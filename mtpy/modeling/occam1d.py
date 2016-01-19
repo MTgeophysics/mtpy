@@ -2215,3 +2215,198 @@ class PlotL2():
         """
         
         return ("Plots RMS vs Iteration computed by Occam2D")   
+
+
+def parse_arguments(arguments):
+    """
+    takes list of command line arguments obtained by passing in sys.argv
+    reads these and returns a parser object
+    
+    author: Alison Kirkby (2016)
+    """
+    
+    import argparse
+    
+    parser = argparse.ArgumentParser(description = 'Set up and run a set of 1d anisotropic model runs')
+    parser.add_argument('-l','--program_location',
+                        help='path to the inversion program',
+                        type=str,default=r'/home/547/alk547/occam1d/OCCAM1DCSEM')    
+    parser.add_argument('-efr','--resistivity_errorfloor',
+                        help='error floor in resistivity, percent',nargs=1,
+                        type=float,default=5)
+    parser.add_argument('-efp','--phase_errorfloor',
+                        help='error floor in phase, percent',nargs=1,
+                        type=float,default=2)
+    parser.add_argument('-wd','--working_directory',
+                        help='working directory',
+                        type=str,default='.')
+    parser.add_argument('-ep','--edipath',
+                        help='folder containing edi files to use, full path or relative to working directory',
+                        type=str,default=None)
+    parser.add_argument('-m','--modes', nargs='*',
+                        help='modes to run, any or all of TE, TM, det (determinant)',
+                        type=str,default=['TE'])    
+    parser.add_argument('-itermax','--iteration_max',
+                        help='maximum number of iterations',
+                        type=int,default=100)
+    parser.add_argument('-rf','--rms_factor',
+                        help='factor to multiply the minimum possible rms by to get the target rms for the second run',
+                        type=float,default=1.05)
+    parser.add_argument('-nl','--n_layers',
+                        help='number of layers in the inversion',
+                        type=int,default=80)
+    parser.add_argument('-s','--master_savepath',
+                        help = 'master directory to save suite of runs into',
+                        default = 'inversion_suite')
+                        
+    args = parser.parse_args(arguments)
+    args.working_directory = os.path.abspath(args.working_directory)
+
+    return args
+    
+
+def update_inputs():
+    """
+    update input parameters from command line
+    
+    author: Alison Kirkby (2016)
+    """
+    from sys import argv
+    
+    args = parse_arguments(argv[1:])
+    cline_inputs = {}
+    cline_keys = [i for i in dir(args) if i[0] != '_']
+    
+    for key in cline_keys:
+        cline_inputs[key] = getattr(args,key)
+
+    return cline_inputs
+    
+
+def generate_inputfiles(**input_parameters):
+    
+    """
+    generate all the input files to run occam1d, return the path and the
+    startup files to run.
+    
+    author: Alison Kirkby (2016)
+    """
+    edipath = op.join(input_parameters['working_directory'],input_parameters['edipath'])
+    edilist = [ff for ff in os.listdir(edipath) if ff.endswith('.edi')]
+    
+    wkdir_master = op.join(input_parameters['working_directory'],
+                           input_parameters['master_savepath'])
+    if not os.path.exists(wkdir_master):
+        os.mkdir(wkdir_master)
+    
+    rundirs = {}
+    
+    for edifile in edilist:
+        # read the edi file to get the station name
+        eo = mtedi.Edi(op.join(edipath,edifile))
+        
+        # create a working directory to store the inversion files in
+        svpath = 'station'+eo.station
+        wd = op.join(wkdir_master,svpath)
+        if not os.path.exists(wd):
+            os.mkdir(wd)
+        rundirs[svpath] = []
+            
+        # create the model file
+        ocm = Model(n_layers=input_parameters['n_layers'],save_path=wd)
+        ocm.write_model_file()
+        
+        for mode in input_parameters['modes']:
+            # create a data file for each mode
+            ocd = Data()
+            ocd.write_data_file(
+                                res_errorfloor=input_parameters['resistivity_errorfloor'],
+                                phase_errorfloor=input_parameters['phase_errorfloor'],
+                                mode=mode,
+                                edi_file = op.join(edipath,edifile),
+                                save_path = wd)
+                        
+            ocs = Startup(data_fn = ocd.data_fn, 
+                          model_fn = ocm.model_fn)
+            startup_fn = 'OccamStartup1D'+mode
+            ocs.write_startup_file(save_path=wd,
+                                   startup_fn=op.join(wd,startup_fn),
+                                   target_rms=0.)
+            rundirs[svpath].append(startup_fn)
+    
+    return wkdir_master,rundirs
+
+
+def divide_inputs(work_to_do,size):
+    """
+    divide list of inputs into chunks to send to each processor
+    
+    """
+    chunks = [[] for _ in range(size)]
+    for i,d in enumerate(work_to_do):
+        chunks[i%size].append(d)
+
+    return chunks
+
+
+def build_run():
+    """
+    build input files and run a suite of models on a cluster
+    divides the models up onto as many clusters are available
+    
+    run Occam1d on each set of inputs.
+    Occam is run twice. First to get the lowest possible misfit.
+    we then set the target rms to a factor (default 1.05) times the minimum rms achieved
+    and run to get the smoothest model.
+    
+    author: Alison Kirkby (2016)
+    """
+    from mpi4py import MPI
+    
+    # get command line arguments as a dictionary
+    input_parameters = update_inputs()    
+    
+    # create the inputs and get the run directories
+    master_wkdir, run_directories = generate_inputfiles(**input_parameters)
+    
+    # sort out rank and size info
+    comm = MPI.COMM_WORLD
+    size = comm.Get_size()
+    rank = comm.Get_rank()
+    name = MPI.Get_processor_name()
+    print 'Hello! My name is {}. I am process {} of {}'.format(name,rank,size)
+    
+    # divide the inputs up into chunks
+    rundirs_divided = divide_inputs(run_directories.keys(),size)
+    
+    # run Occam1d on each set of inputs.
+    # Occam is run twice. First to get the lowest possible misfit.
+    # we then set the target rms to a factor (default 1.05) times the minimum rms achieved
+    # and run to get the smoothest model.
+    for rundir in rundirs_divided[rank]:
+        for startupfile in run_directories[rundir]:
+            # define some parameters
+            wd = op.join(master_wkdir,rundir)
+            mode = startupfile[14:]
+            iterstring = 'RMSmin'+ mode
+            # run for minimum rms
+            subprocess.call([input_parameters['program_location'],
+                             startupfile,
+                             iterstring])
+            # read the iter file to get minimum rms
+            iterfile = max([ff for ff in os.listdir(wd) if (ff.startswith(iterstring) and ff.endswith('.iter'))])
+            startup = Startup()
+            startup.read_startup_file(op.join(wd,iterfile))
+            # create a new startup file the same as the previous one but target rms is factor*minimum_rms
+            startupnew = Startup(data_fn=op.join(wd,startup.data_file),
+                                 model_fn=op.join(wd,startup.model_file),
+                                 target_rms=float(startup.misfit_value)*input_parameters['rms_factor'])
+            startupnew.write_startup_file(startup_fn=op.join(wd,startupfile),save_path=wd)
+            # run occam again
+            subprocess.call([input_parameters['program_location'],
+                             startupfile,
+                             'Smooth' + mode])
+                             
+                             
+if __name__ == '__main__':
+    build_run()

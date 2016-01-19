@@ -224,10 +224,10 @@ def zerror2r_phi_error(x,x_error,y, y_error):
                     (x - x_error, y + y_error) ]
 
 
-#    #check, if origin is within the box:
-#    origin_in_box = False
-#    if x_error >= np.abs(x) and y_error >= np.abs(y):
-#        origin_in_box = True
+    #check, if origin is within the box:
+    origin_in_box = False
+    if x_error >= np.abs(x) and y_error >= np.abs(y):
+        origin_in_box = True
 
     lo_polar_points = [ cmath.polar(np.complex(*i)) for i in lo_points ]
 
