@@ -64,10 +64,12 @@ Occam1D
 #------------------------------------------------------------------------------
 import numpy as np
 import os
+import os.path as op
 import time
 from matplotlib.ticker import MultipleLocator
 import matplotlib.gridspec as gridspec
 import mtpy.core.edi as mtedi
+import mtpy.utils.calculator as mtcc
 import matplotlib.pyplot as plt
 import subprocess
 #------------------------------------------------------------------------------
@@ -139,7 +141,9 @@ class Data(object):
         self.resp_fn = None
         
     def write_data_file(self, rp_tuple=None, edi_file=None, save_path=None,
-                        mode='TE', res_err='data', phase_err='data', thetar=0):
+                        mode='TE', res_err='data', phase_err='data', thetar=0,
+                        res_errorfloor = 0., phase_errorfloor = 0.,
+                        remove_outofquadrant=False):
         """
         make1Ddatafile will write a data file for Occam1D
     
@@ -180,6 +184,12 @@ class Data(object):
                 
                             - 'data' for errorbars from the data
                             - percent number ex. 10 for ten percent
+            **res_errorfloor**: float
+                                error floor for resistivity values
+                                in percent
+            **phase_errorfloor**: float
+                                  error floor for phase in degrees
+            
                 
         :Example: ::
             
@@ -221,7 +231,16 @@ class Data(object):
             if mode.lower() == 'det':
                 zdet, zdet_err = impz.det
                 rho = .2/freq*abs(zdet)
-                phi = np.rad2deg(np.arctan2(zdet.imag, zdet.real))
+                phi = np.rad2deg(np.arctan2((zdet**0.5).imag, (zdet**0.5).real))
+                # rho error - no square needed to convert to resistivity so relative error is the same
+                rho_err = rho*np.abs(zdet_err)/abs(zdet)
+                # phi error, calculate as usual        
+                phi_err = np.zeros_like(rho_err)
+                for ip in range(len(phi_err)):
+                    phi_err[ip] = mtcc.zerror2r_phi_error(np.real(zdet[ip]),
+                                                          zdet_err[ip]/2.**0.5,
+                                                          np.imag(zdet[ip]),
+                                                          zdet_err[ip]/2.**0.5)[1]
 
         if rp_tuple is not None:
             if len(rp_tuple) != 5:
@@ -235,6 +254,25 @@ class Data(object):
                 rho_err = rho_err[:, 0, 1]
                 phi_err = phi_err[:, 0, 1]
             nf = len(freq)
+
+        # remove data points with phase out of quadrant
+        if remove_outofquadrant:
+            if mode.lower() == 'det':
+                include = (phi%180 <= 90) & (phi%180 >= 0) & (phi%180 <= 90) & (phi%180 >= 0)
+            else:
+                include = (phi[:,0,1]%180 <= 90) & (phi[:,0,1]%180 >= 0) & (phi[:,1,0]%180 <= 90) & (phi[:,1,0]%180 >= 0)
+    
+            freq,rho,rho_err,phi,phi_err = [arr[include] for arr in [freq,rho,rho_err,phi,phi_err]]
+            nf = len(freq)
+        # fix any zero errors to 100% of the res value or 90 degrees
+        rho_err[rho_err==0] = rho[rho_err==0]
+        phi_err[phi_err==0] = 90
+            
+        # set error floors
+        if res_errorfloor > 0:
+            rho_err[rho_err/rho < res_errorfloor/100.] = rho[rho_err/rho < res_errorfloor/100.]*res_errorfloor/100.
+        if phase_errorfloor > 0:
+            phi_err[phi_err < phase_errorfloor] = phase_errorfloor
             
         #make sure the savepath exists, if not create it
         if save_path is not None:
@@ -333,6 +371,7 @@ class Data(object):
                                 '{0:{1}}'.format(phi[ii, 1, 0]%90,self._string_fmt),
                                 '{0:{1}}\n'.format(perr, self._string_fmt)]))
                     data_count += 1
+
             elif mode.lower() == 'det':
                 pol = 'xy'
                 if res_err == 'data':
@@ -365,9 +404,19 @@ class Data(object):
                     data_count += 1
                 if phi[ii] != 0.0:
                     dlines.append(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
-                                '{0:{1}}'.format(phi[ii]%90,self._string_fmt),
+                                '{0:{1}}'.format(phi[ii]%180,self._string_fmt),
                                 '{0:{1}}\n'.format(perr, self._string_fmt)]))
                     data_count += 1
+   
+        if mode.lower() == 'det':
+            self.res_det = rho
+            self.phase_det = phi
+        else:
+            self.res_te = rho[:,0,1]
+            self.phase_te = phi[:,0,1]
+            self.res_tm = rho[:,1,0]
+            self.phase_tm = phi[:,1,0]%180
+
         #--> write file
         dlines[num_data_line-1] = '# Data:{0}{1}\n'.format(self._ss, data_count)
         dfid = open(self.data_fn, 'w')
@@ -1094,7 +1143,7 @@ class Startup(object):
         self._startup_fn = os.path.basename(self.startup_fn)
         self.save_path = os.path.dirname(self.startup_fn)
             
-        infid = open(self.inputfn,'r')
+        infid = open(self.startup_fn,'r')
         ilines = infid.readlines()
         infid.close()
     
@@ -1104,7 +1153,7 @@ class Startup(object):
         #split the keys and values from the header information
         for iline in ilines:
             if iline.find(':') >= 0:
-                ikey = iline[0:20].strip()
+                ikey = iline[0:20].strip()[:-1]
                 ivalue = iline[20:].split('!')[0].strip()
                 if ikey.find('!') == 0:
                     pass
