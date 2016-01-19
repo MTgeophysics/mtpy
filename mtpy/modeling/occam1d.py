@@ -2227,22 +2227,23 @@ def parse_arguments(arguments):
     
     import argparse
     
-    parser = argparse.ArgumentParser(description = 'Set up and run a set of 1d anisotropic model runs')
+    parser = argparse.ArgumentParser(description = 'Set up and run a set of isotropic occam1d model runs')
+
+    parser.add_argument('edipath',
+                        help='folder containing edi files to use, full path or relative to working directory',
+                        type=str)
     parser.add_argument('-l','--program_location',
                         help='path to the inversion program',
                         type=str,default=r'/home/547/alk547/occam1d/OCCAM1DCSEM')    
     parser.add_argument('-efr','--resistivity_errorfloor',
-                        help='error floor in resistivity, percent',nargs=1,
-                        type=float,default=5)
+                        help='error floor in resistivity, percent',
+                        type=float,default=0)
     parser.add_argument('-efp','--phase_errorfloor',
-                        help='error floor in phase, percent',nargs=1,
-                        type=float,default=2)
+                        help='error floor in phase, degrees',
+                        type=float,default=0)
     parser.add_argument('-wd','--working_directory',
                         help='working directory',
                         type=str,default='.')
-    parser.add_argument('-ep','--edipath',
-                        help='folder containing edi files to use, full path or relative to working directory',
-                        type=str,default=None)
     parser.add_argument('-m','--modes', nargs='*',
                         help='modes to run, any or all of TE, TM, det (determinant)',
                         type=str,default=['TE'])    
@@ -2261,7 +2262,7 @@ def parse_arguments(arguments):
                         
     args = parser.parse_args(arguments)
     args.working_directory = os.path.abspath(args.working_directory)
-
+    
     return args
     
 
@@ -2296,8 +2297,8 @@ def generate_inputfiles(**input_parameters):
     
     wkdir_master = op.join(input_parameters['working_directory'],
                            input_parameters['master_savepath'])
-    if not os.path.exists(wkdir_master):
-        os.mkdir(wkdir_master)
+    #if not os.path.exists(wkdir_master):
+    #    os.mkdir(wkdir_master)
     
     rundirs = {}
     
@@ -2351,8 +2352,7 @@ def divide_inputs(work_to_do,size):
 
 def build_run():
     """
-    build input files and run a suite of models on a cluster
-    divides the models up onto as many clusters are available
+    build input files and run a suite of models in series (pretty quick so won't bother parallelise)
     
     run Occam1d on each set of inputs.
     Occam is run twice. First to get the lowest possible misfit.
@@ -2361,7 +2361,7 @@ def build_run():
     
     author: Alison Kirkby (2016)
     """
-    from mpi4py import MPI
+    #from mpi4py import MPI
     
     # get command line arguments as a dictionary
     input_parameters = update_inputs()    
@@ -2370,23 +2370,24 @@ def build_run():
     master_wkdir, run_directories = generate_inputfiles(**input_parameters)
     
     # sort out rank and size info
-    comm = MPI.COMM_WORLD
-    size = comm.Get_size()
-    rank = comm.Get_rank()
-    name = MPI.Get_processor_name()
-    print 'Hello! My name is {}. I am process {} of {}'.format(name,rank,size)
+    #comm = MPI.COMM_WORLD
+    #size = comm.Get_size()
+    #rank = comm.Get_rank()
+    #name = MPI.Get_processor_name()
+    #print 'Hello! My name is {}. I am process {} of {}'.format(name,rank,size)
     
     # divide the inputs up into chunks
-    rundirs_divided = divide_inputs(run_directories.keys(),size)
+    #rundirs_divided = divide_inputs(run_directories.keys(),size)
     
     # run Occam1d on each set of inputs.
     # Occam is run twice. First to get the lowest possible misfit.
     # we then set the target rms to a factor (default 1.05) times the minimum rms achieved
     # and run to get the smoothest model.
-    for rundir in rundirs_divided[rank]:
+    for rundir in run_directories.keys():
+        wd = op.join(master_wkdir,rundir)
+        os.chdir(wd)
         for startupfile in run_directories[rundir]:
             # define some parameters
-            wd = op.join(master_wkdir,rundir)
             mode = startupfile[14:]
             iterstring = 'RMSmin'+ mode
             # run for minimum rms
