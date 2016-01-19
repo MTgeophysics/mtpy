@@ -70,6 +70,8 @@ from matplotlib.ticker import MultipleLocator
 import matplotlib.gridspec as gridspec
 import mtpy.core.edi as mtedi
 import mtpy.utils.calculator as mtcc
+import mtpy.analysis.geometry as mtg
+import mtpy.analysis.pt as mtpt
 import matplotlib.pyplot as plt
 import subprocess
 #------------------------------------------------------------------------------
@@ -189,7 +191,12 @@ class Data(object):
                                 in percent
             **phase_errorfloor**: float
                                   error floor for phase in degrees
-            
+            **remove_outofquadrant**: True/False; option to remove the resistivity and
+                                      phase values for points with phases out 
+                                      of the 1st/3rd quadrant (occam requires
+                                      0 < phase < 90 degrees; phases in the 3rd
+                                      quadrant are shifted to the first by 
+                                      adding 180 degrees)
                 
         :Example: ::
             
@@ -211,7 +218,7 @@ class Data(object):
                 raise IOError('No edi file {0} exists, check path'.format(edi_file))
     
             #read in edifile
-            e1 = mtedi.Edi(edi_file)    
+            e1 = mtedi.Edi(edi_file)  
             impz = e1.Z
             
             #rotate if necessary
@@ -2247,6 +2254,12 @@ def parse_arguments(arguments):
     parser.add_argument('-m','--modes', nargs='*',
                         help='modes to run, any or all of TE, TM, det (determinant)',
                         type=str,default=['TE'])    
+    parser.add_argument('-r','--rotation_angle',
+                        help='angle to rotate the data by, in degrees or can define option "strike" to rotate to strike',
+                        type=str,default='0')
+    parser.add_argument('-sfr','--strike_period_range',nargs=2,
+                        help='period range to use for calculation of strike if rotating to strike, two floats',
+                        type=float,default=[1e-3,1e3])                        
     parser.add_argument('-itermax','--iteration_max',
                         help='maximum number of iterations',
                         type=int,default=100)
@@ -2262,7 +2275,12 @@ def parse_arguments(arguments):
                         
     args = parser.parse_args(arguments)
     args.working_directory = os.path.abspath(args.working_directory)
-    
+    if args.rotation_angle != 'strike':
+        try:
+            args.rotation_angle = float(args.rotation_angle)
+        except:
+            args.rotation_angle = 0.
+            
     return args
     
 
@@ -2283,6 +2301,31 @@ def update_inputs():
 
     return cline_inputs
     
+def get_strike(edi_object,fmin,fmax):
+    """
+    get the strike from the z array, choosing the strike angle that is closest
+    to the azimuth of the PT ellipse (PT strike).
+    
+    if there is not strike available from the z array use the PT strike.
+    
+    """
+        fselect = (eo.freq > fmin) & (eo.freq < fmax)
+        # get phase tensor strike
+        pto = mtpt.PhaseTensor(z_object=eo.Z)
+        # get phase tensor strike (azimuth) - need to correct to get angle east of north
+        ptstrike = np.nanmedian(90.-pto.azimuth[fselect])
+        # get Z strike
+        zstrike = np.nanmedian(mtg.strike_angle(z_object=eo.Z)[fselect],axis=0)
+        # choose closest value to phase tensor strike
+        zstrike = zstrike[np.abs(zstrike-ptstrike) - np.amin(np.abs(zstrike-ptstrike)) < 1e-3]
+        if zstrike = np.nan:
+            strike = ptstrike
+        else:
+            strike = zstrike
+            
+        return strike
+
+
 
 def generate_inputfiles(**input_parameters):
     
@@ -2305,6 +2348,11 @@ def generate_inputfiles(**input_parameters):
     for edifile in edilist:
         # read the edi file to get the station name
         eo = mtedi.Edi(op.join(edipath,edifile))
+        if input_parameters['rotation_angle'] = 'strike':
+            fmax,fmin = [1./pp for pp in input_parameters['strike_period_range']]
+            rotangle = (get_strike(eo,fmin,fmax) - 90.) % 180
+        else:
+            rotangle = input_parameters['rotation_angle']
         
         # create a working directory to store the inversion files in
         svpath = 'station'+eo.station
@@ -2320,11 +2368,13 @@ def generate_inputfiles(**input_parameters):
         for mode in input_parameters['modes']:
             # create a data file for each mode
             ocd = Data()
+            ocd._data_fn = 'Occam1d_DataFile_rot%03i'%rotangle
             ocd.write_data_file(
                                 res_errorfloor=input_parameters['resistivity_errorfloor'],
                                 phase_errorfloor=input_parameters['phase_errorfloor'],
                                 mode=mode,
                                 edi_file = op.join(edipath,edifile),
+                                thetar=rotangle,
                                 save_path = wd)
                         
             ocs = Startup(data_fn = ocd.data_fn, 
@@ -2369,16 +2419,7 @@ def build_run():
     
     # create the inputs and get the run directories
     master_wkdir, run_directories = generate_inputfiles(**input_parameters)
-    
-    # sort out rank and size info
-    #comm = MPI.COMM_WORLD
-    #size = comm.Get_size()
-    #rank = comm.Get_rank()
-    #name = MPI.Get_processor_name()
-    #print 'Hello! My name is {}. I am process {} of {}'.format(name,rank,size)
-    
-    # divide the inputs up into chunks
-    #rundirs_divided = divide_inputs(run_directories.keys(),size)
+
     
     # run Occam1d on each set of inputs.
     # Occam is run twice. First to get the lowest possible misfit.
