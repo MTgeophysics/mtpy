@@ -2297,8 +2297,8 @@ def generate_inputfiles(**input_parameters):
     
     wkdir_master = op.join(input_parameters['working_directory'],
                            input_parameters['master_savepath'])
-    #if not os.path.exists(wkdir_master):
-    #    os.mkdir(wkdir_master)
+    if not os.path.exists(wkdir_master):
+        os.mkdir(wkdir_master)
     
     rundirs = {}
     
@@ -2332,6 +2332,7 @@ def generate_inputfiles(**input_parameters):
             startup_fn = 'OccamStartup1D'+mode
             ocs.write_startup_file(save_path=wd,
                                    startup_fn=op.join(wd,startup_fn),
+                                   max_iter=input_parameters['iteration_max'],
                                    target_rms=0.)
             rundirs[svpath].append(startup_fn)
     
@@ -2401,6 +2402,7 @@ def build_run():
             # create a new startup file the same as the previous one but target rms is factor*minimum_rms
             startupnew = Startup(data_fn=op.join(wd,startup.data_file),
                                  model_fn=op.join(wd,startup.model_file),
+                                 max_iter=input_parameters['iteration_max'],
                                  target_rms=float(startup.misfit_value)*input_parameters['rms_factor'])
             startupnew.write_startup_file(startup_fn=op.join(wd,startupfile),save_path=wd)
             # run occam again
