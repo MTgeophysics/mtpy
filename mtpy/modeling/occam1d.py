@@ -2257,7 +2257,7 @@ def parse_arguments(arguments):
     parser.add_argument('-r','--rotation_angle',
                         help='angle to rotate the data by, in degrees or can define option "strike" to rotate to strike',
                         type=str,default='0')
-    parser.add_argument('-sfr','--strike_period_range',nargs=2,
+    parser.add_argument('-spr','--strike_period_range',nargs=2,
                         help='period range to use for calculation of strike if rotating to strike, two floats',
                         type=float,default=[1e-3,1e3])                        
     parser.add_argument('-itermax','--iteration_max',
@@ -2309,21 +2309,24 @@ def get_strike(edi_object,fmin,fmax):
     if there is not strike available from the z array use the PT strike.
     
     """
-        fselect = (eo.freq > fmin) & (eo.freq < fmax)
-        # get phase tensor strike
-        pto = mtpt.PhaseTensor(z_object=eo.Z)
-        # get phase tensor strike (azimuth) - need to correct to get angle east of north
-        ptstrike = np.nanmedian(90.-pto.azimuth[fselect])
-        # get Z strike
-        zstrike = np.nanmedian(mtg.strike_angle(z_object=eo.Z)[fselect],axis=0)
-        # choose closest value to phase tensor strike
-        zstrike = zstrike[np.abs(zstrike-ptstrike) - np.amin(np.abs(zstrike-ptstrike)) < 1e-3]
-        if zstrike = np.nan:
-            strike = ptstrike
-        else:
-            strike = zstrike
-            
-        return strike
+    fselect = (edi_object.freq > fmin) & (edi_object.freq < fmax)
+    # get phase tensor strike
+    pto = mtpt.PhaseTensor(z_object=edi_object.Z)
+    # get phase tensor strike (azimuth) - need to correct to get angle east of north
+    #print fselect,fmin,fmax,pto.azimuth
+    ptstrike = np.median(90.-pto.azimuth[0][fselect])
+    #print "ptstrike",ptstrike
+    # get Z strike
+    zstrike = mtg.strike_angle(z_object=edi_object.Z)[fselect]
+    zstrike = np.median(zstrike[np.isfinite(zstrike[:,0])],axis=0)
+    # choose closest value to phase tensor strike
+    zstrike = zstrike[np.abs(zstrike-ptstrike) - np.amin(np.abs(zstrike-ptstrike)) < 1e-3]
+    if len(zstrike) > 0:
+        strike = zstrike[0]
+    else:
+        strike = ptstrike
+
+    return strike
 
 
 
@@ -2348,9 +2351,11 @@ def generate_inputfiles(**input_parameters):
     for edifile in edilist:
         # read the edi file to get the station name
         eo = mtedi.Edi(op.join(edipath,edifile))
-        if input_parameters['rotation_angle'] = 'strike':
-            fmax,fmin = [1./pp for pp in input_parameters['strike_period_range']]
+        if input_parameters['rotation_angle'] == 'strike':
+            spr = input_parameters['strike_period_range']
+            fmax,fmin = [1./np.amin(spr),1./np.amax(spr)]
             rotangle = (get_strike(eo,fmin,fmax) - 90.) % 180
+            print "rotangle",rotangle
         else:
             rotangle = input_parameters['rotation_angle']
         
