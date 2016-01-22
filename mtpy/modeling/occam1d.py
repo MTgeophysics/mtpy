@@ -269,7 +269,7 @@ class Data(object):
         else:
             data1, data1_err = rho, rho_err
             data2, data2_err = phi, phi_err
-            dstring1,dstring2 = 'Rho','Phi'
+            dstring1,dstring2 = 'Rho','Phs'
 
 
         # remove data points with phase out of quadrant
@@ -294,16 +294,17 @@ class Data(object):
             else:
                 data2_err[data2_err==0] = 90
             
-            # set error floors
-            if 'z' in mode.lower():
-                if z_errorfloor > 0:
-                    data1_err[np.abs(data1_err/data1) < z_errorfloor/100.] = data1[np.abs(data1_err/data1) < z_errorfloor/100.]*z_errorfloor/100.
-                    data2_err[np.abs(data2_err/data2) < z_errorfloor/100.] = data2[np.abs(data2_err/data2) < z_errorfloor/100.]*z_errorfloor/100.
-            else:
-                if res_errorfloor > 0:
-                    data1_err[data1_err/data1 < res_errorfloor/100.] = data1[data1_err/data1 < res_errorfloor/100.]*res_errorfloor/100.
-                if phase_errorfloor > 0:
-                    data2_err[data2_err < phase_errorfloor] = phase_errorfloor
+        # set error floors
+        if 'z' in mode.lower():
+            if z_errorfloor > 0:
+                data1_err = np.abs(data1_err)
+                data1_err[data1_err/np.abs(data1+1j*data2) < z_errorfloor/100.] = np.abs(data1+1j*data2)[data1_err/np.abs(data1+1j*data2) < z_errorfloor/100.]*z_errorfloor/100.
+                data2_err = data1_err.copy()
+        else:
+            if res_errorfloor > 0:
+                data1_err[data1_err/data1 < res_errorfloor/100.] = data1[data1_err/data1 < res_errorfloor/100.]*res_errorfloor/100.
+            if phase_errorfloor > 0:
+                data2_err[data2_err < phase_errorfloor] = phase_errorfloor
             
         #make sure the savepath exists, if not create it
         if save_path is not None:
@@ -363,6 +364,8 @@ class Data(object):
                 pol = 'yx'
                 i1,i2 = 1,0
                 tetm = True
+                data1 *= -1
+                data2 *= -1
             else:
                 tetm = False
                 
@@ -2297,6 +2300,9 @@ def parse_arguments(arguments):
     parser.add_argument('-efp','--phase_errorfloor',
                         help='error floor in phase, degrees',
                         type=float,default=0)
+    parser.add_argument('-efz','--z_errorfloor',
+                        help='error floor in z, percent',
+                        type=float,default=0)
     parser.add_argument('-wd','--working_directory',
                         help='working directory',
                         type=str,default='.')
@@ -2312,6 +2318,9 @@ def parse_arguments(arguments):
     parser.add_argument('-sapp','--strike_approx',
                         help='approximate strike angle, the strike closest to this value is chosen',
                         type=float,default=0.)
+    parser.add_argument('-q','--remove_outofquadrant',
+                        help='whether or not to remove points outside of the first or third quadrant, True or False',
+                        type=bool,default=True)
     parser.add_argument('-itermax','--iteration_max',
                         help='maximum number of iterations',
                         type=int,default=100)
@@ -2426,6 +2435,8 @@ def generate_inputfiles(**input_parameters):
             ocd.write_data_file(
                                 res_errorfloor=input_parameters['resistivity_errorfloor'],
                                 phase_errorfloor=input_parameters['phase_errorfloor'],
+                                z_errorfloor=input_parameters['z_errorfloor'],
+                                remove_outofquadrant=input_parameters['remove_outofquadrant'],
                                 mode=mode,
                                 edi_file = op.join(edipath,edifile),
                                 thetar=rotangle,
