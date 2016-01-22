@@ -684,11 +684,11 @@ class Plot_map():
 
         
         if self.scaleby == 'resmin':
-            scale1 = 1./resmin
-            scale2 = 1./resmax
+            width = self.escale/resmin
+            height = self.escale/resmax
         else:
-            scale1 = aniso**self.anisotropy_display_factor
-            scale2 = np.ones_like(aniso)
+            width = self.escale*aniso**self.anisotropy_display_factor
+            height = self.escale*np.ones_like(aniso)
 
 #        x += np.sin(np.deg2rad(90.-strike))*scale1*self.escale*0.5
 #        y += np.cos(np.deg2rad(90.-strike))*scale1*self.escale*0.5
@@ -702,21 +702,27 @@ class Plot_map():
         colors /= np.amax(colors) - np.amin(colors)
         colors = plt.cm.get_cmap(cmap)(colors)[::-1]
 
+        # angle to shift the rectangle by so it's centred at the station location
+        angle = 90.-strike
+        angleshift = np.radians(angle) + np.arctan(height/width)
+        diagonal = (height**2.+width**2.)**0.5*0.5
+        # origin of the rectangle
+        xplot,yplot = x-diagonal*np.cos(angleshift),y-diagonal*np.sin(angleshift)
         # make rectangles
-        angles=90-strike
+#        angles=90-strike
         # shift the x and y location for the rectangle so it's centred on x,y
 #        xplot = x + self.escale*scale*np.sin(np.radians(angles))
 #        yplot = y + self.escale*scale*np.cos(np.radians(angles))
-        xplot,yplot=x,y
+#        xplot,yplot=x,y
         print scale
         recs = [mpatches.Rectangle(xy=np.array([xplot[i],yplot[i]]), 
-                                   width = self.escale*scale1[i],
-                                   height = self.escale*scale2[i],
+                                   width = width[i],
+                                   height = height[i],
                                    color=colors[i],#'k',#
-                                   angle=angles[i],
+                                   angle=angle[i],
                                    lw=0.5) for i in range(len(x))]
         if self.scalebar:
-            scalebar_size = round(max(scale1))
+            scalebar_size = round(np.percentile(width,90)/self.escale)
             sxy = np.array([plt.xlim()[0]+0.01,plt.ylim()[-1]-0.025])
             
             recs.append(mpatches.Rectangle(xy=sxy, 
@@ -783,7 +789,7 @@ class Plot_map():
             plt.ylim(self.ylim)
 
     def plot_xypoints(self,x,y,z,scale='km'):
-        plt.plot(x,y,'k.')#,ms=0.001)
+        plt.plot(x,y,'k.',ms=0.001)#)
 
         ax = plt.gca()
        

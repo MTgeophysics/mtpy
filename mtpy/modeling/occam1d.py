@@ -239,15 +239,6 @@ class Data(object):
                 zdet, zdet_err = impz.det
                 rho = .2/freq*abs(zdet)
                 phi = np.rad2deg(np.arctan2((zdet**0.5).imag, (zdet**0.5).real))
-                # rho error - no square needed to convert to resistivity so relative error is the same
-                rho_err = rho*np.abs(zdet_err)/abs(zdet)
-                # phi error, calculate as usual        
-                phi_err = np.zeros_like(rho_err)
-                for ip in range(len(phi_err)):
-                    phi_err[ip] = mtcc.zerror2r_phi_error(np.real(zdet[ip]),
-                                                          zdet_err[ip]/2.**0.5,
-                                                          np.imag(zdet[ip]),
-                                                          zdet_err[ip]/2.**0.5)[1]
 
         if rp_tuple is not None:
             if len(rp_tuple) != 5:
@@ -263,23 +254,22 @@ class Data(object):
             nf = len(freq)
 
         # remove data points with phase out of quadrant
-        if remove_outofquadrant:
-            if mode.lower() == 'det':
-                include = (phi%180 <= 90) & (phi%180 >= 0) & (phi%180 <= 90) & (phi%180 >= 0)
-            else:
+        
+        if mode.lower() != 'det':
+            if remove_outofquadrant:    
                 include = (phi[:,0,1]%180 <= 90) & (phi[:,0,1]%180 >= 0) & (phi[:,1,0]%180 <= 90) & (phi[:,1,0]%180 >= 0)
     
-            freq,rho,rho_err,phi,phi_err = [arr[include] for arr in [freq,rho,rho_err,phi,phi_err]]
-            nf = len(freq)
-        # fix any zero errors to 100% of the res value or 90 degrees
-        rho_err[rho_err==0] = rho[rho_err==0]
-        phi_err[phi_err==0] = 90
+                freq,rho,rho_err,phi,phi_err = [arr[include] for arr in [freq,rho,rho_err,phi,phi_err]]
+                nf = len(freq)
+            # fix any zero errors to 100% of the res value or 90 degrees
+            rho_err[rho_err==0] = rho[rho_err==0]
+            phi_err[phi_err==0] = 90
             
-        # set error floors
-        if res_errorfloor > 0:
-            rho_err[rho_err/rho < res_errorfloor/100.] = rho[rho_err/rho < res_errorfloor/100.]*res_errorfloor/100.
-        if phase_errorfloor > 0:
-            phi_err[phi_err < phase_errorfloor] = phase_errorfloor
+            # set error floors
+            if res_errorfloor > 0:
+                rho_err[rho_err/rho < res_errorfloor/100.] = rho[rho_err/rho < res_errorfloor/100.]*res_errorfloor/100.
+            if phase_errorfloor > 0:
+                phi_err[phi_err < phase_errorfloor] = phase_errorfloor
             
         #make sure the savepath exists, if not create it
         if save_path is not None:
@@ -2259,7 +2249,10 @@ def parse_arguments(arguments):
                         type=str,default='0')
     parser.add_argument('-spr','--strike_period_range',nargs=2,
                         help='period range to use for calculation of strike if rotating to strike, two floats',
-                        type=float,default=[1e-3,1e3])                        
+                        type=float,default=[1e-3,1e3])
+    parser.add_argument('-sapp','--strike_approx',
+                        help='approximate strike angle, the strike closest to this value is chosen',
+                        type=float,default=0.)
     parser.add_argument('-itermax','--iteration_max',
                         help='maximum number of iterations',
                         type=int,default=100)
@@ -2301,7 +2294,7 @@ def update_inputs():
 
     return cline_inputs
     
-def get_strike(edi_object,fmin,fmax):
+def get_strike(edi_object,fmin,fmax,strike_approx = 0):
     """
     get the strike from the z array, choosing the strike angle that is closest
     to the azimuth of the PT ellipse (PT strike).
@@ -2310,21 +2303,18 @@ def get_strike(edi_object,fmin,fmax):
     
     """
     fselect = (edi_object.freq > fmin) & (edi_object.freq < fmax)
-    # get phase tensor strike
-    pto = mtpt.PhaseTensor(z_object=edi_object.Z)
-    # get phase tensor strike (azimuth) - need to correct to get angle east of north
-    #print fselect,fmin,fmax,pto.azimuth
-    ptstrike = np.median(90.-pto.azimuth[0][fselect])
-    #print "ptstrike",ptstrike
-    # get Z strike
-    zstrike = mtg.strike_angle(z_object=edi_object.Z)[fselect]
+    
+    # get median strike angles for frequencies needed (two strike angles due to 90 degree ambiguity)
+    zstrike = mtg.strike_angle(z_object=edi_object.Z,eccentricity_threshold=0.0)[fselect]
     zstrike = np.median(zstrike[np.isfinite(zstrike[:,0])],axis=0)
-    # choose closest value to phase tensor strike
-    zstrike = zstrike[np.abs(zstrike-ptstrike) - np.amin(np.abs(zstrike-ptstrike)) < 1e-3]
+    
+    # choose closest value to approx_strike
+    zstrike = zstrike[np.abs(zstrike-strike_approx) - np.amin(np.abs(zstrike-strike_approx)) < 1e-3]
+
     if len(zstrike) > 0:
         strike = zstrike[0]
     else:
-        strike = ptstrike
+        strike = 0.
 
     return strike
 
@@ -2354,8 +2344,8 @@ def generate_inputfiles(**input_parameters):
         if input_parameters['rotation_angle'] == 'strike':
             spr = input_parameters['strike_period_range']
             fmax,fmin = [1./np.amin(spr),1./np.amax(spr)]
-            rotangle = (get_strike(eo,fmin,fmax) - 90.) % 180
-            print "rotangle",rotangle
+            rotangle = (get_strike(eo,fmin,fmax,
+                                   strike_approx = input_parameters['strike_approx']) - 90.) % 180
         else:
             rotangle = input_parameters['rotation_angle']
         
