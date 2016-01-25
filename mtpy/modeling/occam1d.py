@@ -263,8 +263,8 @@ class Data(object):
                 data1, data1_err = (zdet**0.5).real, zdet_err**0.5
                 data2, data2_err = (zdet**0.5).imag, zdet_err**0.5
             else:
-                data1, data1_err = impz.z.real, impz.zerr
-                data2, data2_err = impz.z.imag, impz.zerr
+                data1, data1_err = impz.z.real*np.pi*4e-4, impz.zerr*np.pi*4e-4
+                data2, data2_err = impz.z.imag*np.pi*4e-4, impz.zerr*np.pi*4e-4
             dstring1,dstring2 = 'Real','Imag'
         else:
             data1, data1_err = rho, rho_err
