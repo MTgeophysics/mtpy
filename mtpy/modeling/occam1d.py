@@ -551,6 +551,8 @@ class Data(object):
         #check to see if there is alread one, if not make a new one
         if self.data is None:
             self.data = {'freq':freq,
+                         'zxy':np.zeros((4,nfreq),dtype=complex),
+                         'zyx':np.zeros((4,nfreq),dtype=complex),
                           'resxy':np.zeros((4,nfreq)),
                           'resyx':np.zeros((4,nfreq)),
                           'phasexy':np.zeros((4,nfreq)),
@@ -569,18 +571,55 @@ class Data(object):
                     dvalue = float(dlst[4])
                     derr = float(dlst[5])
                     if dlst[0] == 'RhoZxy' or dlst[0] == '103':
+                        self.mode ='TE'
                         self.data['resxy'][0, jj] = dvalue
                         self.data['resxy'][1, jj] = derr
                     if dlst[0] == 'PhsZxy' or dlst[0] == '104':
+                        self.mode ='TE'
                         self.data['phasexy'][0, jj] = dvalue
                         self.data['phasexy'][1, jj] = derr
                     if dlst[0] == 'RhoZyx' or dlst[0] == '105':
+                        self.mode ='TM'
                         self.data['resyx'][0, jj] = dvalue
                         self.data['resyx'][1, jj] = derr
                     if dlst[0] == 'PhsZyx' or dlst[0] == '106':
+                        self.mode ='TM'
                         self.data['phaseyx'][0, jj] = dvalue
                         self.data['phaseyx'][1, jj] = derr
+                    if dlst[0] == 'RealZxy' or dlst[0] == '113':
+                        self.mode ='TEz'
+                        self.data['zxy'][0, jj] = dvalue/(np.pi*4e-4)
+                        self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
+                    if dlst[0] == 'ImagZxy' or dlst[0] == '114':
+                        self.mode ='TEz'
+                        self.data['zxy'][0, jj] += 1j*dvalue/(np.pi*4e-4)
+                        self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
+                    if dlst[0] == 'RealZyx' or dlst[0] == '115':
+                        self.mode ='TMz'
+                        self.data['zyx'][0, jj] = dvalue/(np.pi*4e-4)
+                        self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
+                    if dlst[0] == 'ImagZyx' or dlst[0] == '116':
+                        self.mode ='TMz'
+                        self.data['zyx'][0, jj] += 1j*dvalue/(np.pi*4e-4)
+                        self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
                         
+        if 'z' in self.mode:
+            if 'TE' in self.mode:
+                pol='xy'
+            elif 'TM' in self.mode:
+                pol='yx'
+            
+            self.data['res'+pol][0] = 0.2*np.abs(self.data['z'+pol][0])**2./freq
+            self.data['phase'+pol][0] = np.rad2deg(np.arctan(self.data['res'+pol][0].imag/self.data['res'+pol][0].real))
+            for jjj in range(len(freq)):
+                self.data['res'+pol][1,jjj],self.data['phase'+pol][1,jjj] =\
+                mtcc.zerror2r_phi_error(self.data['z'+pol][0,jjj].real,self.data['z'+pol][1,jjj],
+                                        self.data['z'+pol][0,jjj].imag,self.data['z'+pol][1,jjj])
+                
+                
+
+            self.data['resyx'][0] = 0.2*np.abs(self.data['zxy'][0])**2./freq
+            
         self.freq = freq
         self.res_te = self.data['resxy']
         self.res_tm = self.data['resyx']
@@ -681,6 +720,49 @@ class Data(object):
                         self.phase_tm[1,jj] = derr
                         self.phase_tm[2,jj] = rvalue
                         self.phase_tm[3,jj] = rerr
+                    if dlst[0] == 'RealZxy' or dlst[0] == '113':
+                        self.mode ='TEz'
+                        self.data['zxy'][0, jj] = dvalue/(np.pi*4e-4)
+                        self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
+                        self.data['zxy'][2, jj] = rvalue/(np.pi*4e-4)
+                        self.data['zxy'][3, jj] = rerr/(np.pi*4e-4)
+                    if dlst[0] == 'ImagZxy' or dlst[0] == '114':
+                        self.mode ='TEz'
+                        self.data['zxy'][0, jj] += 1j*dvalue/(np.pi*4e-4)
+                        self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
+                        self.data['zxy'][2, jj] += 1j*rvalue/(np.pi*4e-4)
+                        self.data['zxy'][3, jj] = rerr/(np.pi*4e-4)                       
+                    if dlst[0] == 'RealZyx' or dlst[0] == '115':
+                        self.mode ='TMz'
+                        self.data['zyx'][0, jj] = dvalue/(np.pi*4e-4)
+                        self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
+                        self.data['zyx'][2, jj] = rvalue/(np.pi*4e-4)
+                        self.data['zyx'][3, jj] = rerr/(np.pi*4e-4)
+                    if dlst[0] == 'ImagZyx' or dlst[0] == '116':
+                        self.mode ='TMz'
+                        self.data['zyx'][0, jj] += 1j*dvalue/(np.pi*4e-4)
+                        self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
+                        self.data['zyx'][2, jj] += 1j*rvalue/(np.pi*4e-4)
+                        self.data['zyx'][3, jj] = rerr/(np.pi*4e-4)                        
+        if 'z' in self.mode:
+            if 'TE' in self.mode:
+                pol='xy'
+            elif 'TM' in self.mode:
+                pol='yx'
+            for ii in [0,2]:
+                self.data['res'+pol][0+ii] = 0.2*np.abs(self.data['z'+pol][0+ii])**2./self.freq
+                self.data['phase'+pol][0+ii] = np.rad2deg(np.arctan(self.data['z'+pol][0+ii].imag/ self.data['z'+pol][0+ii].real))
+                for jjj in range(len(self.freq)):
+    
+                    self.data['res'+pol][1+ii,jjj],self.data['phase'+pol][1+ii,jjj] =\
+                    mtcc.zerror2r_phi_error(self.data['z'+pol][0+ii,jjj].real,self.data['z'+pol][1+ii,jjj],
+                                            self.data['z'+pol][0+ii,jjj].imag,self.data['z'+pol][1+ii,jjj])
+            if pol == 'xy':
+                self.res_te = self.data['resxy']
+                self.phase_te = self.data['phasexy']
+            elif pol == 'yx':
+                self.res_tm = self.data['resyx']
+                self.phase_tm = self.data['phaseyx']
                         
 class Model(object):
     """
