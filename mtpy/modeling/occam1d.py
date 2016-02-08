@@ -74,6 +74,7 @@ import mtpy.analysis.geometry as mtg
 import mtpy.analysis.pt as mtpt
 import matplotlib.pyplot as plt
 import subprocess
+import string
 #------------------------------------------------------------------------------
 
 class Data(object):
@@ -236,7 +237,7 @@ class Data(object):
             
             #get determinant resistivity and phase
             if 'det' in mode.lower():
-                zdet, zdet_err = impz.det
+                zdet, zdet_err = np.abs(impz.det)
                 zdet_err = np.abs(zdet_err)
                                    
                 rho = .2/freq*abs(zdet)
@@ -260,8 +261,8 @@ class Data(object):
         
         if 'z' in mode.lower():
             if 'det' in mode.lower():
-                data1, data1_err = (zdet**0.5).real, zdet_err**0.5
-                data2, data2_err = (zdet**0.5).imag, zdet_err**0.5
+                data1, data1_err = (zdet**0.5).real*np.pi*4e-4, zdet_err**0.5*np.pi*4e-4
+                data2, data2_err = (zdet**0.5).imag*np.pi*4e-4, zdet_err**0.5*np.pi*4e-4
             else:
                 data1, data1_err = impz.z.real*np.pi*4e-4, impz.zerr*np.pi*4e-4
                 data2, data2_err = impz.z.imag*np.pi*4e-4, impz.zerr*np.pi*4e-4
@@ -355,6 +356,10 @@ class Data(object):
         
         dlines.append(self._header_line)
         data_count = 0
+
+#        data1 = np.abs(data1)
+#        data2 = np.abs(data2)
+
         for ii in range(nf):
             if 'te' in mode.lower():
                 pol = 'xy'
@@ -364,8 +369,8 @@ class Data(object):
                 pol = 'yx'
                 i1,i2 = 1,0
                 tetm = True
-                data1 *= -1
-                data2 *= -1
+#                data1 *= -1
+#                data2 *= -1
             else:
                 tetm = False
                 
@@ -2392,8 +2397,11 @@ def parse_arguments(arguments):
                         help='modes to run, any or all of TE, TM, det (determinant)',
                         type=str,default=['TE'])    
     parser.add_argument('-r','--rotation_angle',
-                        help='angle to rotate the data by, in degrees or can define option "strike" to rotate to strike',
+                        help='angle to rotate the data by, in degrees or can define option "strike" to rotate to strike, or "file" to get rotation angle from file',
                         type=str,default='0')
+    parser.add_argument('-rfile','--rotation_angle_file',
+                        help='file containing rotation angles, first column is station name (must match edis) second column is rotation angle',
+                        type=str,default=None)
     parser.add_argument('-spr','--strike_period_range',nargs=2,
                         help='period range to use for calculation of strike if rotating to strike, two floats',
                         type=float,default=[1e-3,1e3])
@@ -2418,7 +2426,7 @@ def parse_arguments(arguments):
                         
     args = parser.parse_args(arguments)
     args.working_directory = os.path.abspath(args.working_directory)
-    if args.rotation_angle != 'strike':
+    if args.rotation_angle not in ['file','strike']:
         try:
             args.rotation_angle = float(args.rotation_angle)
         except:
@@ -2455,16 +2463,20 @@ def get_strike(edi_object,fmin,fmax,strike_approx = 0):
     fselect = (edi_object.freq > fmin) & (edi_object.freq < fmax)
     
     # get median strike angles for frequencies needed (two strike angles due to 90 degree ambiguity)
-    zstrike = mtg.strike_angle(z_object=edi_object.Z,eccentricity_threshold=0.0)[fselect]
+    zstrike = mtg.strike_angle(z_object=edi_object.Z)[fselect]
+    # put both strikes in the same quadrant for averaging
+    zstrike = zstrike % 90
     zstrike = np.median(zstrike[np.isfinite(zstrike[:,0])],axis=0)
-    
+    # add 90 to put one back in the other quadrant
+    zstrike[1] += 90
     # choose closest value to approx_strike
     zstrike = zstrike[np.abs(zstrike-strike_approx) - np.amin(np.abs(zstrike-strike_approx)) < 1e-3]
 
     if len(zstrike) > 0:
         strike = zstrike[0]
     else:
-        strike = 0.
+        # if the data are 1d set strike to 90 degrees (i.e. no rotation)
+        strike = 90.
 
     return strike
 
@@ -2491,14 +2503,25 @@ def generate_inputfiles(**input_parameters):
     for edifile in edilist:
         # read the edi file to get the station name
         eo = mtedi.Edi(op.join(edipath,edifile))
+        print input_parameters['rotation_angle'],input_parameters['working_directory'],input_parameters['rotation_angle_file']
         if input_parameters['rotation_angle'] == 'strike':
             spr = input_parameters['strike_period_range']
             fmax,fmin = [1./np.amin(spr),1./np.amax(spr)]
             rotangle = (get_strike(eo,fmin,fmax,
                                    strike_approx = input_parameters['strike_approx']) - 90.) % 180
+        elif input_parameters['rotation_angle'] == 'file':
+            with open(op.join(input_parameters['working_directory'],input_parameters['rotation_angle_file'])) as f:
+                line = f.readline().strip().split()
+                print line,eo.station
+                while string.upper(line[0]) != string.upper(eo.station):
+                    line = f.readline().strip().split()
+                    if len(line) == 0:
+                        line = ['','0.0']
+                        break
+            rotangle = float(line[1])
         else:
             rotangle = input_parameters['rotation_angle']
-        
+        print "rotation angle",rotangle    
         # create a working directory to store the inversion files in
         svpath = 'station'+eo.station
         wd = op.join(wkdir_master,svpath)
