@@ -757,11 +757,14 @@ class Data(object):
             for ii in [0,2]:
                 self.data['res'+pol][0+ii] = 0.2*np.abs(self.data['z'+pol][0+ii])**2./self.freq
                 self.data['phase'+pol][0+ii] = np.rad2deg(np.arctan(self.data['z'+pol][0+ii].imag/ self.data['z'+pol][0+ii].real))
+   
+                self.data['res'+pol][1+ii] = self.data['res'+pol][0+ii]*self.data['z'+pol][1+ii].real/np.abs(self.data['z'+pol][0+ii])
+                
                 for jjj in range(len(self.freq)):
     
-                    self.data['res'+pol][1+ii,jjj],self.data['phase'+pol][1+ii,jjj] =\
-                    mtcc.zerror2r_phi_error(self.data['z'+pol][0+ii,jjj].real,self.data['z'+pol][1+ii,jjj],
-                                            self.data['z'+pol][0+ii,jjj].imag,self.data['z'+pol][1+ii,jjj])
+                    self.data['phase'+pol][1+ii,jjj] =\
+                    mtcc.zerror2r_phi_error(self.data['z'+pol][0+ii,jjj].real,self.data['z'+pol][1+ii,jjj].real,
+                                            self.data['z'+pol][0+ii,jjj].imag,self.data['z'+pol][1+ii,jjj].real)[1]
             if pol == 'xy':
                 self.res_te = self.data['resxy']
                 self.phase_te = self.data['phasexy']
