@@ -2039,7 +2039,7 @@ class Model(object):
         if self.grid_center is None:
             #compute grid center
             center_east = -self.nodes_east.__abs__().sum()/2
-            center_north = -self.nodes_norths.__abs__().sum()/2
+            center_north = -self.nodes_north.__abs__().sum()/2
             center_z = 0
             self.grid_center = np.array([center_north, center_east, center_z])
             
