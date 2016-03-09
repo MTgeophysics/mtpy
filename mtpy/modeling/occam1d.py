@@ -64,12 +64,17 @@ Occam1D
 #------------------------------------------------------------------------------
 import numpy as np
 import os
+import os.path as op
 import time
 from matplotlib.ticker import MultipleLocator
 import matplotlib.gridspec as gridspec
 import mtpy.core.edi as mtedi
+import mtpy.utils.calculator as mtcc
+import mtpy.analysis.geometry as mtg
+import mtpy.analysis.pt as mtpt
 import matplotlib.pyplot as plt
 import subprocess
+import string
 #------------------------------------------------------------------------------
 
 class Data(object):
@@ -139,7 +144,9 @@ class Data(object):
         self.resp_fn = None
         
     def write_data_file(self, rp_tuple=None, edi_file=None, save_path=None,
-                        mode='TE', res_err='data', phase_err='data', thetar=0):
+                        mode='TE', res_err='data', phase_err='data', thetar=0,
+                        res_errorfloor = 0., phase_errorfloor = 0., z_errorfloor=0.,
+                        remove_outofquadrant=False):
         """
         make1Ddatafile will write a data file for Occam1D
     
@@ -180,6 +187,17 @@ class Data(object):
                 
                             - 'data' for errorbars from the data
                             - percent number ex. 10 for ten percent
+            **res_errorfloor**: float
+                                error floor for resistivity values
+                                in percent
+            **phase_errorfloor**: float
+                                  error floor for phase in degrees
+            **remove_outofquadrant**: True/False; option to remove the resistivity and
+                                      phase values for points with phases out 
+                                      of the 1st/3rd quadrant (occam requires
+                                      0 < phase < 90 degrees; phases in the 3rd
+                                      quadrant are shifted to the first by 
+                                      adding 180 degrees)
                 
         :Example: ::
             
@@ -201,7 +219,7 @@ class Data(object):
                 raise IOError('No edi file {0} exists, check path'.format(edi_file))
     
             #read in edifile
-            e1 = mtedi.Edi(edi_file)    
+            e1 = mtedi.Edi(edi_file)  
             impz = e1.Z
             
             #rotate if necessary
@@ -213,15 +231,19 @@ class Data(object):
             rho_err = impz.resistivity_err
             phi = impz.phase
             phi_err = impz.phase_err
-            
+
             freq = impz.freq
             nf = len(freq)
             
             #get determinant resistivity and phase
-            if mode.lower() == 'det':
-                zdet, zdet_err = impz.det
+            if 'det' in mode.lower():
+                zdet, zdet_err = np.abs(impz.det)
+                zdet_err = np.abs(zdet_err)
+                                   
                 rho = .2/freq*abs(zdet)
-                phi = np.rad2deg(np.arctan2(zdet.imag, zdet.real))
+                phi = np.rad2deg(np.arctan2((zdet**0.5).imag, (zdet**0.5).real))
+
+
 
         if rp_tuple is not None:
             if len(rp_tuple) != 5:
@@ -229,12 +251,61 @@ class Data(object):
                               'should be freq, res, res_err, phase, phase_err')
             freq, rho, rho_err, phi, phi_err = rp_tuple
             
-            if mode.lower() == 'det':
+            if 'det' in mode.lower():
                 rho = rho[:, 0, 1]
                 phi = phi[:, 0, 1]
                 rho_err = rho_err[:, 0, 1]
                 phi_err = phi_err[:, 0, 1]
             nf = len(freq)
+
+        
+        if 'z' in mode.lower():
+            if 'det' in mode.lower():
+                data1, data1_err = (zdet**0.5).real*np.pi*4e-4, zdet_err**0.5*np.pi*4e-4
+                data2, data2_err = (zdet**0.5).imag*np.pi*4e-4, zdet_err**0.5*np.pi*4e-4
+            else:
+                data1, data1_err = impz.z.real*np.pi*4e-4, impz.zerr*np.pi*4e-4
+                data2, data2_err = impz.z.imag*np.pi*4e-4, impz.zerr*np.pi*4e-4
+            dstring1,dstring2 = 'Real','Imag'
+        else:
+            data1, data1_err = rho, rho_err
+            data2, data2_err = phi, phi_err
+            dstring1,dstring2 = 'Rho','Phs'
+
+
+        # remove data points with phase out of quadrant
+        if remove_outofquadrant:
+            if 'det' in mode.lower():
+                if 'z' in mode.lower():
+                    include = (data1/data2 > 0) & (data1/data2 > 0)
+                else:
+                    include = (phi%180 <= 90) & (phi%180 >= 0) & (phi%180 <= 90) & (phi%180 >= 0)                
+            else:
+                if 'z' in mode.lower():
+                    include = (data1[:,0,1]/data2[:,0,1] > 0) & (data1[:,1,0]/data2[:,1,0] > 0)
+                else:
+                    include = (phi[:,0,1]%180 <= 90) & (phi[:,0,1]%180 >= 0) & (phi[:,1,0]%180 <= 90) & (phi[:,1,0]%180 >= 0)
+    
+                freq,data1,data1_err,data2,data2_err = [arr[include] for arr in [freq, data1, data1_err, data2, data2_err]]
+                nf = len(freq)
+            # fix any zero errors to 100% of the res value or 90 degrees for phase
+            data1_err[data1_err==0] = data1[data1_err==0]
+            if 'z' in mode.lower():
+                data2_err[data2_err==0] = data2[data2_err==0]
+            else:
+                data2_err[data2_err==0] = 90
+            
+        # set error floors
+        if 'z' in mode.lower():
+            if z_errorfloor > 0:
+                data1_err = np.abs(data1_err)
+                data1_err[data1_err/np.abs(data1+1j*data2) < z_errorfloor/100.] = np.abs(data1+1j*data2)[data1_err/np.abs(data1+1j*data2) < z_errorfloor/100.]*z_errorfloor/100.
+                data2_err = data1_err.copy()
+        else:
+            if res_errorfloor > 0:
+                data1_err[data1_err/data1 < res_errorfloor/100.] = data1[data1_err/data1 < res_errorfloor/100.]*res_errorfloor/100.
+            if phase_errorfloor > 0:
+                data2_err[data2_err < phase_errorfloor] = phase_errorfloor
             
         #make sure the savepath exists, if not create it
         if save_path is not None:
@@ -285,89 +356,131 @@ class Data(object):
         
         dlines.append(self._header_line)
         data_count = 0
+
+#        data1 = np.abs(data1)
+#        data2 = np.abs(data2)
+
         for ii in range(nf):
-            if mode.lower() == 'te':
+            if 'te' in mode.lower():
                 pol = 'xy'
-                if res_err == 'data':
-                    rerr = rho_err[ii, 0, 1] 
+                i1,i2 = 0,1
+                tetm = True
+            elif 'tm' in mode.lower():
+                pol = 'yx'
+                i1,i2 = 1,0
+                tetm = True
+#                data1 *= -1
+#                data2 *= -1
+            else:
+                tetm = False
+                
+            if tetm:
+                if 'z' in mode.lower():
+                    d1err,d2err = data1_err[ii, i1, i2],data2_err[ii, i1, i2]
                 else:
-                    rerr = rho[ii, 0, 1]*res_err/100.
-                    
-                if phase_err == 'data':
-                    perr = phi_err[ii, 0, 1]
-                else:
-                    perr = phase_err/100*(180/np.pi)
+                
+                    if res_err == 'data':
+                        d1err = data1_err[ii, i1, i2]
+                    else:
+                        d1err = data1[ii, i1, i2]*res_err/100.
+                        
+                    if phase_err == 'data':
+                        d2err = data2_err[ii, i1, i2]
+                    else:
+                        d2err = phase_err/100*(180/np.pi)
+
+
                     
                 # write lines
-                if rho[ii, 0, 1] != 0.0:
-                    dlines.append(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
-                                '{0:{1}}'.format(rho[ii, 0, 1], self._string_fmt),
-                                '{0:{1}}\n'.format(rerr, self._string_fmt)]))
+                if data1[ii, i1, i2] != 0.0:
+                    dlines.append(self._ss.join([dstring1+'Z'+pol, str(ii+1), '0', '1', 
+                                '{0:{1}}'.format(data1[ii, i1, i2], self._string_fmt),
+                                '{0:{1}}\n'.format(d1err, self._string_fmt)]))
                     data_count += 1
-                if phi[ii, 0, 1] != 0.0:
-                    dlines.append(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
-                                '{0:{1}}'.format(phi[ii, 0, 1]%90,self._string_fmt),
-                                '{0:{1}}\n'.format(perr, self._string_fmt)]))
+                if data2[ii, i1, i2] != 0.0:
+                    dlines.append(self._ss.join([dstring2+'Z'+pol, str(ii+1), '0', '1', 
+                                '{0:{1}}'.format(data2[ii, i1, i2],self._string_fmt),
+                                '{0:{1}}\n'.format(d2err, self._string_fmt)]))
                     data_count += 1
                             
-            elif mode.lower() == 'tm':
-                pol = 'yx'
-                if res_err == 'data':
-                    rerr = rho_err[ii, 1, 0] 
-                else:
-                    rerr = rho[ii, 1, 0]*res_err/100.
-                    
-                if phase_err == 'data':
-                    perr = phi_err[ii, 1, 0]
-                else:
-                    perr = phase_err/100*(180/np.pi)
-                    
-                # write lines
-                if rho[ii, 1, 0] != 0.0:    
-                    dlines.append(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
-                                '{0:{1}}'.format(rho[ii, 1, 0],self._string_fmt),
-                                '{0:{1}}\n'.format(rerr, self._string_fmt)]))
-                    data_count += 1
-                if phi[ii, 1, 0] != 0.0:
-                    dlines.append(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
-                                '{0:{1}}'.format(phi[ii, 1, 0]%90,self._string_fmt),
-                                '{0:{1}}\n'.format(perr, self._string_fmt)]))
-                    data_count += 2
-            elif mode.lower() == 'det':
-                pol = 'xy'
-                if res_err == 'data':
-                    if edi_file is not None:
-                        rerr, p_err = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real, 
-                                                               zdet_err[ii],
-                                                               zdet[ii].imag,
-                                                               zdet_err[ii]) 
+#            elif mode.lower() == 'tm':
+#                pol = 'yx'
+#                if res_err == 'data':
+#                    rerr = rho_err[ii, 1, 0] 
+#                else:
+#                    rerr = rho[ii, 1, 0]*res_err/100.
+#                    
+#                if phase_err == 'data':
+#                    perr = phi_err[ii, 1, 0]
+#                else:
+#                    perr = phase_err/100*(180/np.pi)
+#                    
+#                # write lines
+#                if rho[ii, 1, 0] != 0.0:    
+#                    dlines.append(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
+#                                '{0:{1}}'.format(rho[ii, 1, 0],self._string_fmt),
+#                                '{0:{1}}\n'.format(rerr, self._string_fmt)]))
+#                    data_count += 1
+#                if phi[ii, 1, 0] != 0.0:
+#                    dlines.append(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
+#                                '{0:{1}}'.format(phi[ii, 1, 0]%90,self._string_fmt),
+#                                '{0:{1}}\n'.format(perr, self._string_fmt)]))
+#                    data_count += 1
+            else:
+                if 'det' in mode.lower():
+                    pol = 'xy'
+                    if 'z' in mode.lower():
+                        d1err,d2err = data1_err[ii], data2_err[ii]
                     else:
-                        rerr = rho_err[ii]
-                else:
-                    rerr = rho[ii]*res_err/100.
-                    
-                if phase_err == 'data':
-                    if edi_file is not None:
-                        r_err, perr = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real, 
-                                                               zdet_err[ii],
-                                                               zdet[ii].imag,
-                                                               zdet_err[ii])
-                    else:
-                        perr = phi_err[ii]
-                else:
-                    perr = phase_err/100*(180/np.pi)
+                        if res_err == 'data':
+                            if edi_file is not None:
+                                d1err, d2err = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real, 
+                                                                       zdet_err[ii],
+                                                                       zdet[ii].imag,
+                                                                       zdet_err[ii]) 
+                            else:
+                                d1err = rho_err[ii]
+                        else:
+                            d1err = rho[ii]*res_err/100.
+                            
+                        if phase_err == 'data':
+                            if edi_file is not None:
+                                d1err, d2err = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real, 
+                                                                       zdet_err[ii],
+                                                                       zdet[ii].imag,
+                                                                       zdet_err[ii])
+                            else:
+                                d2err = phi_err[ii]
+                        else:
+                            d2err = phase_err/100*(180/np.pi)
+
+                        
+                    # write lines
+                    if rho[ii] != 0.0:    
+                        dlines.append(self._ss.join([dstring1+'Z'+pol, str(ii+1), '0', '1', 
+                                    '{0:{1}}'.format(data1[ii],self._string_fmt),
+                                    '{0:{1}}\n'.format(d1err, self._string_fmt)]))
+                        data_count += 1
+                    if phi[ii] != 0.0:
+                        dlines.append(self._ss.join([dstring2+'Z'+pol, str(ii+1), '0', '1', 
+                                    '{0:{1}}'.format(data2[ii]%180,self._string_fmt),
+                                    '{0:{1}}\n'.format(d2err, self._string_fmt)]))
+                        data_count += 1
+
+        if 'z' in mode.lower():
+            self.z, self.z_err = data1 + 1j*data2, data1_err
+        else:
+            if 'det' in mode.lower():
+                self.res_det = rho
+                self.phase_det = phi
+            else:
+                self.res_te = rho[:,0,1]
+                self.phase_te = phi[:,0,1]
+                self.res_tm = rho[:,1,0]
+                self.phase_tm = phi[:,1,0]%180
                 
-                # write lines
-                if rho[ii] != 0.0:    
-                    dlines.append(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
-                                '{0:{1}}'.format(rho[ii],self._string_fmt),
-                                '{0:{1}}\n'.format(rerr, self._string_fmt)]))
-                    data_count += 1
-                if phi[ii] != 0.0:
-                    dlines.append(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
-                                '{0:{1}}'.format(phi[ii]%90,self._string_fmt),
-                                '{0:{1}}\n'.format(perr, self._string_fmt)]))
-                    data_count += 1
+        self.freq = freq
+
         #--> write file
         dlines[num_data_line-1] = '# Data:{0}{1}\n'.format(self._ss, data_count)
         dfid = open(self.data_fn, 'w')
@@ -443,6 +556,8 @@ class Data(object):
         #check to see if there is alread one, if not make a new one
         if self.data is None:
             self.data = {'freq':freq,
+                         'zxy':np.zeros((4,nfreq),dtype=complex),
+                         'zyx':np.zeros((4,nfreq),dtype=complex),
                           'resxy':np.zeros((4,nfreq)),
                           'resyx':np.zeros((4,nfreq)),
                           'phasexy':np.zeros((4,nfreq)),
@@ -461,18 +576,55 @@ class Data(object):
                     dvalue = float(dlst[4])
                     derr = float(dlst[5])
                     if dlst[0] == 'RhoZxy' or dlst[0] == '103':
+                        self.mode ='TE'
                         self.data['resxy'][0, jj] = dvalue
                         self.data['resxy'][1, jj] = derr
                     if dlst[0] == 'PhsZxy' or dlst[0] == '104':
+                        self.mode ='TE'
                         self.data['phasexy'][0, jj] = dvalue
                         self.data['phasexy'][1, jj] = derr
                     if dlst[0] == 'RhoZyx' or dlst[0] == '105':
+                        self.mode ='TM'
                         self.data['resyx'][0, jj] = dvalue
                         self.data['resyx'][1, jj] = derr
                     if dlst[0] == 'PhsZyx' or dlst[0] == '106':
+                        self.mode ='TM'
                         self.data['phaseyx'][0, jj] = dvalue
                         self.data['phaseyx'][1, jj] = derr
+                    if dlst[0] == 'RealZxy' or dlst[0] == '113':
+                        self.mode ='TEz'
+                        self.data['zxy'][0, jj] = dvalue/(np.pi*4e-4)
+                        self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
+                    if dlst[0] == 'ImagZxy' or dlst[0] == '114':
+                        self.mode ='TEz'
+                        self.data['zxy'][0, jj] += 1j*dvalue/(np.pi*4e-4)
+                        self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
+                    if dlst[0] == 'RealZyx' or dlst[0] == '115':
+                        self.mode ='TMz'
+                        self.data['zyx'][0, jj] = dvalue/(np.pi*4e-4)
+                        self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
+                    if dlst[0] == 'ImagZyx' or dlst[0] == '116':
+                        self.mode ='TMz'
+                        self.data['zyx'][0, jj] += 1j*dvalue/(np.pi*4e-4)
+                        self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
                         
+        if 'z' in self.mode:
+            if 'TE' in self.mode:
+                pol='xy'
+            elif 'TM' in self.mode:
+                pol='yx'
+            
+            self.data['res'+pol][0] = 0.2*np.abs(self.data['z'+pol][0])**2./freq
+            self.data['phase'+pol][0] = np.rad2deg(np.arctan(self.data['res'+pol][0].imag/self.data['res'+pol][0].real))
+            for jjj in range(len(freq)):
+                self.data['res'+pol][1,jjj],self.data['phase'+pol][1,jjj] =\
+                mtcc.zerror2r_phi_error(self.data['z'+pol][0,jjj].real,self.data['z'+pol][1,jjj],
+                                        self.data['z'+pol][0,jjj].imag,self.data['z'+pol][1,jjj])
+                
+                
+
+            self.data['resyx'][0] = 0.2*np.abs(self.data['zxy'][0])**2./freq
+            
         self.freq = freq
         self.res_te = self.data['resxy']
         self.res_tm = self.data['resyx']
@@ -573,6 +725,52 @@ class Data(object):
                         self.phase_tm[1,jj] = derr
                         self.phase_tm[2,jj] = rvalue
                         self.phase_tm[3,jj] = rerr
+                    if dlst[0] == 'RealZxy' or dlst[0] == '113':
+                        self.mode ='TEz'
+                        self.data['zxy'][0, jj] = dvalue/(np.pi*4e-4)
+                        self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
+                        self.data['zxy'][2, jj] = rvalue/(np.pi*4e-4)
+                        self.data['zxy'][3, jj] = rerr/(np.pi*4e-4)
+                    if dlst[0] == 'ImagZxy' or dlst[0] == '114':
+                        self.mode ='TEz'
+                        self.data['zxy'][0, jj] += 1j*dvalue/(np.pi*4e-4)
+                        self.data['zxy'][1, jj] = derr/(np.pi*4e-4)
+                        self.data['zxy'][2, jj] += 1j*rvalue/(np.pi*4e-4)
+                        self.data['zxy'][3, jj] = rerr/(np.pi*4e-4)                       
+                    if dlst[0] == 'RealZyx' or dlst[0] == '115':
+                        self.mode ='TMz'
+                        self.data['zyx'][0, jj] = dvalue/(np.pi*4e-4)
+                        self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
+                        self.data['zyx'][2, jj] = rvalue/(np.pi*4e-4)
+                        self.data['zyx'][3, jj] = rerr/(np.pi*4e-4)
+                    if dlst[0] == 'ImagZyx' or dlst[0] == '116':
+                        self.mode ='TMz'
+                        self.data['zyx'][0, jj] += 1j*dvalue/(np.pi*4e-4)
+                        self.data['zyx'][1, jj] = derr/(np.pi*4e-4)
+                        self.data['zyx'][2, jj] += 1j*rvalue/(np.pi*4e-4)
+                        self.data['zyx'][3, jj] = rerr/(np.pi*4e-4)                        
+        if 'z' in self.mode:
+            if 'TE' in self.mode:
+                pol='xy'
+            elif 'TM' in self.mode:
+                pol='yx'
+            for ii in [0,2]:
+                self.data['res'+pol][0+ii] = 0.2*np.abs(self.data['z'+pol][0+ii])**2./self.freq
+                self.data['phase'+pol][0+ii] = np.rad2deg(np.arctan(self.data['z'+pol][0+ii].imag/ self.data['z'+pol][0+ii].real))
+   
+                self.data['res'+pol][1+ii] = self.data['res'+pol][0+ii]*self.data['z'+pol][1+ii].real/np.abs(self.data['z'+pol][0+ii])
+                
+                for jjj in range(len(self.freq)):
+    
+                    self.data['phase'+pol][1+ii,jjj] =\
+                    mtcc.zerror2r_phi_error(self.data['z'+pol][0+ii,jjj].real,self.data['z'+pol][1+ii,jjj].real,
+                                            self.data['z'+pol][0+ii,jjj].imag,self.data['z'+pol][1+ii,jjj].real)[1]
+            if pol == 'xy':
+                self.res_te = self.data['resxy']
+                self.phase_te = self.data['phasexy']
+            elif pol == 'yx':
+                self.res_tm = self.data['resyx']
+                self.phase_tm = self.data['phaseyx']
                         
 class Model(object):
     """
@@ -1094,7 +1292,7 @@ class Startup(object):
         self._startup_fn = os.path.basename(self.startup_fn)
         self.save_path = os.path.dirname(self.startup_fn)
             
-        infid = open(self.inputfn,'r')
+        infid = open(self.startup_fn,'r')
         ilines = infid.readlines()
         infid.close()
     
@@ -1104,7 +1302,7 @@ class Startup(object):
         #split the keys and values from the header information
         for iline in ilines:
             if iline.find(':') >= 0:
-                ikey = iline[0:20].strip()
+                ikey = iline[0:20].strip()[:-1]
                 ivalue = iline[20:].split('!')[0].strip()
                 if ikey.find('!') == 0:
                     pass
@@ -2166,3 +2364,266 @@ class PlotL2():
         """
         
         return ("Plots RMS vs Iteration computed by Occam2D")   
+
+
+def parse_arguments(arguments):
+    """
+    takes list of command line arguments obtained by passing in sys.argv
+    reads these and returns a parser object
+    
+    author: Alison Kirkby (2016)
+    """
+    
+    import argparse
+    
+    parser = argparse.ArgumentParser(description = 'Set up and run a set of isotropic occam1d model runs')
+
+    parser.add_argument('edipath',
+                        help='folder containing edi files to use, full path or relative to working directory',
+                        type=str)
+    parser.add_argument('-l','--program_location',
+                        help='path to the inversion program',
+                        type=str,default=r'/home/547/alk547/occam1d/OCCAM1DCSEM')    
+    parser.add_argument('-efr','--resistivity_errorfloor',
+                        help='error floor in resistivity, percent',
+                        type=float,default=0)
+    parser.add_argument('-efp','--phase_errorfloor',
+                        help='error floor in phase, degrees',
+                        type=float,default=0)
+    parser.add_argument('-efz','--z_errorfloor',
+                        help='error floor in z, percent',
+                        type=float,default=0)
+    parser.add_argument('-wd','--working_directory',
+                        help='working directory',
+                        type=str,default='.')
+    parser.add_argument('-m','--modes', nargs='*',
+                        help='modes to run, any or all of TE, TM, det (determinant)',
+                        type=str,default=['TE'])    
+    parser.add_argument('-r','--rotation_angle',
+                        help='angle to rotate the data by, in degrees or can define option "strike" to rotate to strike, or "file" to get rotation angle from file',
+                        type=str,default='0')
+    parser.add_argument('-rfile','--rotation_angle_file',
+                        help='file containing rotation angles, first column is station name (must match edis) second column is rotation angle',
+                        type=str,default=None)
+    parser.add_argument('-spr','--strike_period_range',nargs=2,
+                        help='period range to use for calculation of strike if rotating to strike, two floats',
+                        type=float,default=[1e-3,1e3])
+    parser.add_argument('-sapp','--strike_approx',
+                        help='approximate strike angle, the strike closest to this value is chosen',
+                        type=float,default=0.)
+    parser.add_argument('-q','--remove_outofquadrant',
+                        help='whether or not to remove points outside of the first or third quadrant, True or False',
+                        type=bool,default=True)
+    parser.add_argument('-itermax','--iteration_max',
+                        help='maximum number of iterations',
+                        type=int,default=100)
+    parser.add_argument('-rf','--rms_factor',
+                        help='factor to multiply the minimum possible rms by to get the target rms for the second run',
+                        type=float,default=1.05)
+    parser.add_argument('-nl','--n_layers',
+                        help='number of layers in the inversion',
+                        type=int,default=80)
+    parser.add_argument('-s','--master_savepath',
+                        help = 'master directory to save suite of runs into',
+                        default = 'inversion_suite')
+                        
+    args = parser.parse_args(arguments)
+    args.working_directory = os.path.abspath(args.working_directory)
+    if args.rotation_angle not in ['file','strike']:
+        try:
+            args.rotation_angle = float(args.rotation_angle)
+        except:
+            args.rotation_angle = 0.
+            
+    return args
+    
+
+def update_inputs():
+    """
+    update input parameters from command line
+    
+    author: Alison Kirkby (2016)
+    """
+    from sys import argv
+    
+    args = parse_arguments(argv[1:])
+    cline_inputs = {}
+    cline_keys = [i for i in dir(args) if i[0] != '_']
+    
+    for key in cline_keys:
+        cline_inputs[key] = getattr(args,key)
+
+    return cline_inputs
+    
+def get_strike(edi_object,fmin,fmax,strike_approx = 0):
+    """
+    get the strike from the z array, choosing the strike angle that is closest
+    to the azimuth of the PT ellipse (PT strike).
+    
+    if there is not strike available from the z array use the PT strike.
+    
+    """
+    fselect = (edi_object.freq > fmin) & (edi_object.freq < fmax)
+    
+    # get median strike angles for frequencies needed (two strike angles due to 90 degree ambiguity)
+    zstrike = mtg.strike_angle(z_object=edi_object.Z)[fselect]
+    # put both strikes in the same quadrant for averaging
+    zstrike = zstrike % 90
+    zstrike = np.median(zstrike[np.isfinite(zstrike[:,0])],axis=0)
+    # add 90 to put one back in the other quadrant
+    zstrike[1] += 90
+    # choose closest value to approx_strike
+    zstrike = zstrike[np.abs(zstrike-strike_approx) - np.amin(np.abs(zstrike-strike_approx)) < 1e-3]
+
+    if len(zstrike) > 0:
+        strike = zstrike[0]
+    else:
+        # if the data are 1d set strike to 90 degrees (i.e. no rotation)
+        strike = 90.
+
+    return strike
+
+
+
+def generate_inputfiles(**input_parameters):
+    
+    """
+    generate all the input files to run occam1d, return the path and the
+    startup files to run.
+    
+    author: Alison Kirkby (2016)
+    """
+    edipath = op.join(input_parameters['working_directory'],input_parameters['edipath'])
+    edilist = [ff for ff in os.listdir(edipath) if ff.endswith('.edi')]
+    
+    wkdir_master = op.join(input_parameters['working_directory'],
+                           input_parameters['master_savepath'])
+    if not os.path.exists(wkdir_master):
+        os.mkdir(wkdir_master)
+    
+    rundirs = {}
+    
+    for edifile in edilist:
+        # read the edi file to get the station name
+        eo = mtedi.Edi(op.join(edipath,edifile))
+        print input_parameters['rotation_angle'],input_parameters['working_directory'],input_parameters['rotation_angle_file']
+        if input_parameters['rotation_angle'] == 'strike':
+            spr = input_parameters['strike_period_range']
+            fmax,fmin = [1./np.amin(spr),1./np.amax(spr)]
+            rotangle = (get_strike(eo,fmin,fmax,
+                                   strike_approx = input_parameters['strike_approx']) - 90.) % 180
+        elif input_parameters['rotation_angle'] == 'file':
+            with open(op.join(input_parameters['working_directory'],input_parameters['rotation_angle_file'])) as f:
+                line = f.readline().strip().split()
+                print line,eo.station
+                while string.upper(line[0]) != string.upper(eo.station):
+                    line = f.readline().strip().split()
+                    if len(line) == 0:
+                        line = ['','0.0']
+                        break
+            rotangle = float(line[1])
+        else:
+            rotangle = input_parameters['rotation_angle']
+        print "rotation angle",rotangle    
+        # create a working directory to store the inversion files in
+        svpath = 'station'+eo.station
+        wd = op.join(wkdir_master,svpath)
+        if not os.path.exists(wd):
+            os.mkdir(wd)
+        rundirs[svpath] = []
+            
+        # create the model file
+        ocm = Model(n_layers=input_parameters['n_layers'],save_path=wd)
+        ocm.write_model_file()
+        
+        for mode in input_parameters['modes']:
+            # create a data file for each mode
+            ocd = Data()
+            ocd._data_fn = 'Occam1d_DataFile_rot%03i'%rotangle
+            ocd.write_data_file(
+                                res_errorfloor=input_parameters['resistivity_errorfloor'],
+                                phase_errorfloor=input_parameters['phase_errorfloor'],
+                                z_errorfloor=input_parameters['z_errorfloor'],
+                                remove_outofquadrant=input_parameters['remove_outofquadrant'],
+                                mode=mode,
+                                edi_file = op.join(edipath,edifile),
+                                thetar=rotangle,
+                                save_path = wd)
+                        
+            ocs = Startup(data_fn = ocd.data_fn, 
+                          model_fn = ocm.model_fn)
+            startup_fn = 'OccamStartup1D'+mode
+            ocs.write_startup_file(save_path=wd,
+                                   startup_fn=op.join(wd,startup_fn),
+                                   max_iter=input_parameters['iteration_max'],
+                                   target_rms=0.)
+            rundirs[svpath].append(startup_fn)
+    
+    return wkdir_master,rundirs
+
+
+def divide_inputs(work_to_do,size):
+    """
+    divide list of inputs into chunks to send to each processor
+    
+    """
+    chunks = [[] for _ in range(size)]
+    for i,d in enumerate(work_to_do):
+        chunks[i%size].append(d)
+
+    return chunks
+
+
+def build_run():
+    """
+    build input files and run a suite of models in series (pretty quick so won't bother parallelise)
+    
+    run Occam1d on each set of inputs.
+    Occam is run twice. First to get the lowest possible misfit.
+    we then set the target rms to a factor (default 1.05) times the minimum rms achieved
+    and run to get the smoothest model.
+    
+    author: Alison Kirkby (2016)
+    """
+    #from mpi4py import MPI
+    
+    # get command line arguments as a dictionary
+    input_parameters = update_inputs()    
+    
+    # create the inputs and get the run directories
+    master_wkdir, run_directories = generate_inputfiles(**input_parameters)
+
+    
+    # run Occam1d on each set of inputs.
+    # Occam is run twice. First to get the lowest possible misfit.
+    # we then set the target rms to a factor (default 1.05) times the minimum rms achieved
+    # and run to get the smoothest model.
+    for rundir in run_directories.keys():
+        wd = op.join(master_wkdir,rundir)
+        os.chdir(wd)
+        for startupfile in run_directories[rundir]:
+            # define some parameters
+            mode = startupfile[14:]
+            iterstring = 'RMSmin'+ mode
+            # run for minimum rms
+            subprocess.call([input_parameters['program_location'],
+                             startupfile,
+                             iterstring])
+            # read the iter file to get minimum rms
+            iterfile = max([ff for ff in os.listdir(wd) if (ff.startswith(iterstring) and ff.endswith('.iter'))])
+            startup = Startup()
+            startup.read_startup_file(op.join(wd,iterfile))
+            # create a new startup file the same as the previous one but target rms is factor*minimum_rms
+            startupnew = Startup(data_fn=op.join(wd,startup.data_file),
+                                 model_fn=op.join(wd,startup.model_file),
+                                 max_iter=input_parameters['iteration_max'],
+                                 target_rms=float(startup.misfit_value)*input_parameters['rms_factor'])
+            startupnew.write_startup_file(startup_fn=op.join(wd,startupfile),save_path=wd)
+            # run occam again
+            subprocess.call([input_parameters['program_location'],
+                             startupfile,
+                             'Smooth' + mode])
+                             
+                             
+if __name__ == '__main__':
+    build_run()

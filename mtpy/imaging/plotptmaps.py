@@ -419,8 +419,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                            'head_width':.005,
                                            'lw':.75})
         
-            self.xpad = .05
-            self.ypad = .05
+            self.xpad = kwargs.pop('xpad',.05)
+            self.ypad = kwargs.pop('xpad',.05)
         elif self.mapscale == 'm':
             self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':500})
             self._arrow_dict = kwargs.pop('arrow_dict', 
@@ -428,8 +428,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                            'head_length':50,
                                            'head_width':50,
                                            'lw':.75})
-            self.xpad = 500
-            self.ypad = 500
+            self.xpad = kwargs.pop('xpad',500)
+            self.ypad = kwargs.pop('xpad',500)
         elif self.mapscale == 'km':
             self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':.5})
             self._arrow_dict = kwargs.pop('arrow_dict', 
@@ -437,8 +437,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                            'head_length':.05,
                                            'head_width':.05,
                                            'lw':.75})
-            self.xpad = .5
-            self.ypad = .5
+            self.xpad = kwargs.pop('xpad',.5)
+            self.ypad = kwargs.pop('xpad',.5)
         self._read_ellipse_dict()
         self._read_arrow_dict()
             

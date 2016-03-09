@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as si
 import mtpy.modeling.pek1dclasses as pek1dc
+import mtpy.core.edi as mtedi
 import mtpy.utils.elevation_data as ed
 from matplotlib.font_manager import FontProperties
 
@@ -596,6 +597,8 @@ class Plot_map():
         for key in input_parameters.keys():
             if hasattr(self,str.lower(key)):
                 setattr(self,key,input_parameters[key]) 
+                
+        
             
         self.read_aniso_depth_data()
         if self.xyzfiles is not None:
@@ -644,21 +647,21 @@ class Plot_map():
         x,y,z,resmin,resmax,strike = [surface[:,i] for i in range(len(surface[0]))]
         aniso = resmax/resmin
         
-        for a,label in [[x,'x'],[y,'y'],[z,'z'],[resmin,'resmin'],
+        for a,label in [[x,'x'],[y,'y'],[z,'depth'],[resmin,'resmin'],
                         [resmax,'resmax'],[strike,'strike'],[aniso,'aniso']]:
             setattr(self,label,a)        
 
-    def plot_aniso_depth_map(self):
+    def plot_aniso_depth_map(self,interpolate=True,cmap='jet',colorby='depth'):
         """
         """
 
         import matplotlib.patches as mpatches
                                    
-        x,y,z,resmin = self.x,self.y,self.z,self.resmin
+        x,y,z,resmin = self.x,self.y,self.depth,self.resmin
         resmax,strike,aniso = self.resmax,self.strike,self.aniso
         
         if self.levels is None:
-            zmin,zmax = np.amin(self.z),np.amax(self.z)
+            zmin,zmax = np.amin(self.depth),np.amax(self.depth)
             self.levels = np.linspace(zmin,zmax,self.n_levels)
         
         
@@ -669,29 +672,57 @@ class Plot_map():
         cbar = self.plot_cbar
         self.plot_cbar = False
         
-        self.plot_interface(x,y,z,scale=scale)
+        if interpolate:
+            self.plot_interface(x,y,z,scale=scale)
+        else:
+            self.plot_xypoints(x,y,z,scale=scale)
         
-        if len(self.xyzfiles) == 0:
-            title = "Magnitude and depth of anisotropy\nfrom 1D anisotropic inversions"
-            self._update_axis_params(title,'xy')
+        if self.xyzfiles is not None:
+            if len(self.xyzfiles) == 0:
+                title = "Magnitude and depth of anisotropy\nfrom 1D anisotropic inversions"
+                self._update_axis_params(title,'xy')
 
         
         if self.scaleby == 'resmin':
-            scale = 1./resmin
+            width = self.escale/resmin
+            height = self.escale/resmax
         else:
-            scale = aniso**self.anisotropy_display_factor
+            width = self.escale*aniso**self.anisotropy_display_factor
+            height = self.escale*np.ones_like(aniso)
 
-        x += np.sin(np.deg2rad(strike-180.))*scale*self.escale*0.5
-        y += np.cos(np.deg2rad(strike-180.))*scale*self.escale*0.5
+#        x += np.sin(np.deg2rad(90.-strike))*scale1*self.escale*0.5
+#        y += np.cos(np.deg2rad(90.-strike))*scale1*self.escale*0.5
+        
+        # make colours for rectangles
+        if colorby == 'depth':
+            colors = self.depth - np.amin(self.depth)
+        elif colorby == 'aniso':
+            colors = np.log10(aniso) - np.amin(np.log10(aniso))
+            
+        colors /= np.amax(colors) - np.amin(colors)
+        colors = plt.cm.get_cmap(cmap)(colors)[::-1]
 
+        # angle to shift the rectangle by so it's centred at the station location
+        angle = 90.-strike
+        angleshift = np.radians(angle) + np.arctan(height/width)
+        diagonal = (height**2.+width**2.)**0.5*0.5
+        # origin of the rectangle
+        xplot,yplot = x-diagonal*np.cos(angleshift),y-diagonal*np.sin(angleshift)
         # make rectangles
-        recs = [mpatches.Rectangle(xy=np.array([x[i],y[i]]), 
-                                   width = self.escale*scale[i],
-                                   height = self.escale,
-                                   angle=90-strike[i],
+#        angles=90-strike
+        # shift the x and y location for the rectangle so it's centred on x,y
+#        xplot = x + self.escale*scale*np.sin(np.radians(angles))
+#        yplot = y + self.escale*scale*np.cos(np.radians(angles))
+#        xplot,yplot=x,y
+        print scale
+        recs = [mpatches.Rectangle(xy=np.array([xplot[i],yplot[i]]), 
+                                   width = width[i],
+                                   height = height[i],
+                                   color=colors[i],#'k',#
+                                   angle=angle[i],
                                    lw=0.5) for i in range(len(x))]
         if self.scalebar:
-            scalebar_size = round(max(scale))
+            scalebar_size = round(np.percentile(width,90)/self.escale)
             sxy = np.array([plt.xlim()[0]+0.01,plt.ylim()[-1]-0.025])
             
             recs.append(mpatches.Rectangle(xy=sxy, 
@@ -707,14 +738,17 @@ class Plot_map():
         
         for i,e in enumerate(recs):
             ax1.add_artist(e)
-            e.set_facecolor('k')
+            if interpolate:
+                e.set_facecolor('k')
+                e.set_edgecolor('k')
          
         self.add_ax_text(1)
         self.add_xy_data(1)
-            
-        if cbar:
-            self.add_cbar()
-        self.cbar = cbar
+          
+#        if interpolate:
+#            if cbar:
+#                self.add_cbar()
+#            self.cbar = cbar
         
     
     def plot_interface(self,x,y,z,scale='km'):
@@ -753,10 +787,19 @@ class Plot_map():
             plt.xlim(self.xlim)
         if self.ylim is not None:
             plt.ylim(self.ylim)
+
+    def plot_xypoints(self,x,y,z,scale='km'):
+        plt.plot(x,y,'k.',ms=0.001)#)
+
+        ax = plt.gca()
+       
+        ax.set_aspect('equal')        
+
+        if self.xlim is not None:
+            plt.xlim(self.xlim)
+        if self.ylim is not None:
+            plt.ylim(self.ylim)
             
-
-        
-
         
     def plot_aniso_and_interfaces(self,plot_aniso=True):
         """
@@ -796,8 +839,8 @@ class Plot_map():
         header_rows,scale = [[d[at] for d in [self.aniso_depth_file_dict,
                              self.xyzfiles_dict]] for at in ['header_rows','scale']]
                                                  
-        self.z = p1dp.update_scale(self.z,scale[0])
-        zmin,zmax = np.amin(self.z),np.amax(self.z)
+        self.depth = p1dp.update_scale(self.depth,scale[0])
+        zmin,zmax = np.amin(self.depth),np.amax(self.depth)
         
         for f in self.xyzfiles:
             z = p1dp.update_scale(np.loadtxt(f,skiprows=header_rows[1])[:,2],
@@ -1147,3 +1190,12 @@ class Plot_profile():
         for label in ax.get_xticklabels():
             label.set_fontproperties(font)        
         
+def get_station_xy(edipath,savepath=None,basename='stationxy.dat'):
+    edilst = [ff for ff in os.listdir(edipath) if ff.endswith('.edi')]
+    xylst = []
+    for edifile in edilst:
+        eo = mtedi.Edi(op.join(edipath,edifile))
+        xylst.append([eo.station,eo.lon,eo.lat])
+    with open(op.join(savepath,basename),'w') as xyfile:
+        xyfile.write('station x y\n')
+        xyfile.writelines(['{} {} {}\n'.format(*line) for line in xylst])
