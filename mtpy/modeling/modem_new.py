@@ -117,12 +117,16 @@ class Data(object):
                            this number will be set to error_floor. 
                            *default* is 10
     error_tipper           absolute tipper error, all tipper error will be 
-                           set to this value. *default* is .05 for 5%
+                           set to this value unless you specify error_type as 
+                           'floor' or 'floor_egbert'. 
+                           *default* is .05 for 5%
     error_type             [ 'floor' | 'value' | 'egbert' ]
                            *default* is 'egbert'
                                 * 'floor' sets the error floor to error_floor
                                 * 'value' sets error to error_value
                                 * 'egbert' sets error to  
+                                           error_egbert * sqrt(abs(zxy*zyx))
+                                * 'floor_egbert' sets error floor to 
                                            error_egbert * sqrt(abs(zxy*zyx))
                                            
     error_value            percentage to multiply Z by to set error
@@ -274,6 +278,7 @@ class Data(object):
         self.period_step = kwargs.pop('period_step', 1)
         self.period_min = kwargs.pop('period_min', None)
         self.period_max = kwargs.pop('period_max', None)
+        self.period_buffer = kwargs.pop('period_buffer', None)
         self.max_num_periods = kwargs.pop('max_num_periods', None)
         self.data_period_list = None
         
@@ -675,6 +680,18 @@ class Data(object):
                                 (self.period_list >= 1./mt_obj.Z.freq.max()) & 
                                 (self.period_list <= 1./mt_obj.Z.freq.min()))]
                                 
+            # if specified, apply a buffer so that interpolation doesn't stretch too far over periods
+            if type(self.period_buffer) in [float,int]:
+                interp_periods_new = []
+                dperiods = 1./mt_obj.Z.freq
+                for iperiod in interp_periods:
+                    # find nearest data period
+                    difference = np.abs(iperiod-dperiods)
+                    nearestdperiod = dperiods[difference == np.amin(difference)][0]
+                    if max(nearestdperiod/iperiod, iperiod/nearestdperiod) < self.period_buffer:
+                        interp_periods_new.append(iperiod)
+                interp_periods = np.array(interp_periods_new)
+            
             interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
             for kk, ff in enumerate(interp_periods):
                 jj = np.where(self.period_list == ff)[0][0]
@@ -733,7 +750,7 @@ class Data(object):
                                   doc="""location of stations""") 
                 
     def write_data_file(self, save_path=None, fn_basename=None, 
-                        rotation_angle=None, compute_error=True):
+                        rotation_angle=None, compute_error=True, fill=True):
         """
         write data file for ModEM
         
@@ -784,8 +801,9 @@ class Data(object):
         if rotation_angle is not None:
             self.rotation_angle = rotation_angle
         
-        #be sure to fill in data array 
-        self._fill_data_array()
+        #be sure to fill in data array
+        if fill:
+            self._fill_data_array()
         
         #reset the header string to be informational
         self._set_header_string()
@@ -852,7 +870,10 @@ class Data(object):
                             if compute_error:
                                 #compute relative error
                                 if comp.find('t') == 0:
-                                    rel_err = self.error_tipper
+                                    if 'floor' in self.error_type:
+                                        abs_err = max(self.error_tipper,self.data_array[ss]['tip_err'][ff,0,z_ii])
+                                    else:
+                                        abs_err = self.error_tipper
                                 elif comp.find('z') == 0:
                                     if self.error_type == 'floor':
                                         rel_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj]/\
@@ -883,7 +904,7 @@ class Data(object):
 
                             else: 
                                 abs_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj].real 
-                            
+
                             abs_err = '{0:> 14.6e}'.format(abs(abs_err))
                             #make sure that x==north, y==east, z==+down                            
                             dline = ''.join([per, sta, lat, lon, nor, eas, ele, 
