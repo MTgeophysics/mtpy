@@ -1076,7 +1076,7 @@ class Data(object):
             #fill in the impedance tensor with appropriate values
             if dd[7].find('Z') == 0:
                 if self.units.lower().find('ohm') >= 0:
-                    data_dict[dd[1]].Z.z[p_index, ii, jj] = dd[8]+1j*dd[9]*796
+                    data_dict[dd[1]].Z.z[p_index, ii, jj] = (dd[8]+1j*dd[9])*796
                     
                 else:
                     data_dict[dd[1]].Z.z[p_index, ii, jj] = dd[8]+1j*dd[9]
