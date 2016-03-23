@@ -827,7 +827,7 @@ class Data(object):
                             nor = '{0:> 12.3f}'.format(self.data_array[ss]['rel_north'])
                             ele = '{0:> 12.3f}'.format(self.data_array[ss]['elev'])
                             com = '{0:>4}'.format(comp.upper())
-                            if self.units.lower() == 'ohms':
+                            if self.units.lower().find('ohm') >= 0:
                                 rea = '{0:> 14.6e}'.format(zz.real)/796.
                                 ima = '{0:> 14.6e}'.format(zz.imag)/796.
                             else:
@@ -1075,7 +1075,7 @@ class Data(object):
                 tf_dict[dd[1]] = True
             #fill in the impedance tensor with appropriate values
             if dd[7].find('Z') == 0:
-                if self.units.lower() == 'ohms':
+                if self.units.lower().find('ohm') >= 0:
                     data_dict[dd[1]].Z.z[p_index, ii, jj] = dd[8]+1j*dd[9]*796
                     
                 else:
