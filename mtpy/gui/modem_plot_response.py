@@ -300,7 +300,10 @@ class Ui_MainWindow(object):
         
         #this will add the station name for each station to the qwidget list
         for station in station_list:
-            self.list_widget.addItem(station)
+#            try:
+#                self.list_widget.addItem('{0:.0f}'.format(station))
+#            except ValueError:
+            self.list_widget.addItem(str(station))
             
         self.station = station_list[0]
         self.plot()
@@ -321,7 +324,11 @@ class Ui_MainWindow(object):
         """
         get the station name from the clicked station 
         """
-        self.station = str(widget_item.text()) 
+        self.station = str(widget_item.text())
+        try:
+            self.station = float(self.station)
+        except ValueError:
+            pass
         self.plot()
         
     def get_resp_fn(self):
@@ -376,7 +383,7 @@ class Ui_MainWindow(object):
 
         if self.station is None:
             return
-            
+
         z_obj = self.modem_data.mt_dict[self.station].Z
         t_obj = self.modem_data.mt_dict[self.station].Tipper
         period = self.modem_data.period_list
