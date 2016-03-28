@@ -517,10 +517,15 @@ class PTShapeFile(object):
             print 'Wrote shape file to {0}'.format(shape_fn)
         
     def write_residual_pt_shape_files_modem(self, modem_data_fn, modem_resp_fn,
-                                            rotation_angle=0.0):
+                                            rotation_angle=0.0, normalize='1'):
         """
         write residual pt shape files from ModEM output
         
+        normalize [ '1' | 'all' ]
+                   * '1' to normalize the ellipse by itself, all ellipses are 
+                         normalized to phimax, thus one axis is of length 
+                         1*ellipse_size
+                   * 'all' to normalize each period by the largest phimax
         
         """
         
@@ -567,13 +572,19 @@ class PTShapeFile(object):
                     rpt = mtpt.ResidualPhaseTensor(pt_object1=dpt, 
                                                    pt_object2=mpt)
                     rpt = rpt.residual_pt
+                    rpt_mean = .25*np.linalg.norm(rpt.pt[p_index], ord='fro')
+#                    rpt_mean = .25*np.sqrt(abs(rpt.pt[p_index, 0, 0])**2+
+#                                          abs(rpt.pt[p_index, 0, 1])**2+
+#                                          abs(rpt.pt[p_index, 1, 0])**2+
+#                                          abs(rpt.pt[p_index, 1, 1])**2)
                     pt_tuple = (mt_obj.station, east, north,
                                 rpt.phimin[0][p_index],
                                 rpt.phimax[0][p_index],
                                 rpt.azimuth[0][p_index],
                                 rpt.beta[0][p_index],
-                                np.sqrt(abs(rpt.phimin[0][p_index]*
-                                            rpt.phimax[0][p_index])))           
+                                rpt_mean)
+#                                np.sqrt(abs(rpt.phimin[0][p_index]*
+#                                            rpt.phimax[0][p_index])))           
                     residual_pt_dict[plot_per].append(pt_tuple)
                 except mtpt.MTex.MTpyError_PT:
                     print key, dpt.pt.shape, mpt.pt.shape
@@ -639,8 +650,12 @@ class PTShapeFile(object):
             for pt_array in residual_pt_dict[plot_per]:
                 #need to make an ellipse first using the parametric equation
                 azimuth = -np.deg2rad(pt_array['azimuth'])
-                width = self.ellipse_size*(pt_array['phimax']/phimax)
-                height = self.ellipse_size*(pt_array['phimin']/phimax) 
+                if normalize == '1':
+                    width = self.ellipse_size*(pt_array['phimax']/pt_array['phimax'])
+                    height = self.ellipse_size*(pt_array['phimin']/pt_array['phimax']) 
+                elif normalize == 'all':
+                    width = self.ellipse_size*(pt_array['phimax']/phimax)
+                    height = self.ellipse_size*(pt_array['phimin']/phimax) 
                 x0 = pt_array['east']
                 y0 = pt_array['north']
                 

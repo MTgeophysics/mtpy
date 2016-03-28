@@ -350,7 +350,7 @@ class PlotStations(object):
                 if self.text_x_pad is None:
                     self.text_x_pad = .0009*self.mt_list.map_dict[key][0]
                 if self.text_y_pad is None:
-                    self.text_pad = .0009*self.mt_list.map_dict[key][1]
+                    self.text_y_pad = .0009*self.mt_list.map_dict[key][1]
                     
                 self.ax.text(self.mt_list.map_dict[key][0]+self.text_x_pad,
                              self.mt_list.map_dict[key][1]+self.text_y_pad*\

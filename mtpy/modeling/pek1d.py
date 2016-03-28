@@ -356,9 +356,11 @@ def build_run():
         print '.',
 
     # build a model
+    time.sleep(rank)
     Data = generate_inputfiles(edi_list[rank],**build_inputs)
     time.sleep(5)
     os.chdir(Data.working_directory)
+  
 
     # run the model
     print "running model on cpu number {} from directory {}".format(rank,Data.working_directory)

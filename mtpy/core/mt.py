@@ -60,6 +60,7 @@ class MT(object):
     east                  station location in UTM coordinates assuming WGS-84
     north                 station location in UTM coordinates assuming WGS-84 
     utm_zone              zone of UTM coordinates assuming WGS-84
+    data_type             | 'z' | 'spectra' | 'resphase' | 
     ===================== =====================================================
         
     .. note:: 
@@ -101,6 +102,11 @@ class MT(object):
 
     Examples
     -------------------
+    
+    * Read in Spectra data:
+        
+        >>> import mtpy.core.mt as mt
+        >>> mt_obj = mt.MT(r"/home/edi_files/mt_01.edi", data_type='spectra')
     
     * Plot MT response:
 
@@ -147,6 +153,7 @@ class MT(object):
         self._east = kwargs.pop('east', None)
         self._north = kwargs.pop('north', None)
         self._rotation_angle = kwargs.pop('rotation_angle', 0)
+        self._data_type = kwargs.pop('data_type', 'z')
         
         #provide key words to fill values if an edi file does not exist
         if 'z_object' in kwargs:
@@ -409,7 +416,7 @@ class MT(object):
         
         """
         
-        self.edi_object = MTedi.Edi(self.fn)
+        self.edi_object = MTedi.Edi(self.fn, datatype=self._data_type)
         self.lat = self.edi_object.lat
         self.lon = self.edi_object.lon
         self.elev = self.edi_object.elev
