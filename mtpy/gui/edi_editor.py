@@ -69,6 +69,12 @@ class EDI_Editor_Window(QtGui.QMainWindow):
         self.action_open_file = self.menu_file.addAction(self.tr("&Open"))
         self.action_open_file.triggered.connect(self.get_edi_file)
         
+        self.action_close_file = self.menu_file.addAction(self.tr("C&lose"))
+        self.action_close_file.triggered.connect(self.close_edi_file)
+        
+        self.action_save_file = self.menu_file.addAction(self.tr("&Save"))
+        self.action_save_file.triggered.connect(self.save_edi_file)
+        
         #self.my_stream = MyStream()
         #self.my_stream.message.connect(self.plot_widget.normal_output)
         
@@ -84,7 +90,14 @@ class EDI_Editor_Window(QtGui.QMainWindow):
         fn = str(fn_dialog.getOpenFileName(caption='Choose EDI file', 
                                            filter='*.edi'))
         
-        return fn                        
+        return fn 
+
+    def close_edi_file(self):
+        pass
+
+    def save_edi_file(self):
+        pass
+                       
 #==============================================================================
 # Plot Widget     
 #==============================================================================
