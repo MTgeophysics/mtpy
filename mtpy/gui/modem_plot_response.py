@@ -426,7 +426,7 @@ class Ui_MainWindow(object):
         self.figure.suptitle(str(self.station), fontdict=fontdict)
         
         #set the grid of subplots
-        if t_obj.tipper.all() == 0.0:
+        if np.all(t_obj.tipper == 0.0) is True:
             self.plot_tipper = False
         else:
             self.plot_tipper = True
