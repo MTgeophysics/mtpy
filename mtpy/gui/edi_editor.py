@@ -21,6 +21,7 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 import copy
 import sys
+import os
 
 #==============================================================================
 # UI
@@ -59,7 +60,8 @@ class EDI_Editor_Window(QtGui.QMainWindow):
         """
         
         self.setWindowTitle('EDI Editor')
-        self.resize(1920, 1080)
+#        self.resize(1920, 1080)
+        self.setWindowState(QtCore.Qt.WindowMaximized)
         
         self.plot_widget = PlotWidget()
         self.centralWidget = self.setCentralWidget(self.plot_widget)
@@ -84,20 +86,25 @@ class EDI_Editor_Window(QtGui.QMainWindow):
         self.action_edit_metadata.triggered.connect(self.edit_metadata)
         
         
-        #self.my_stream = MyStream()
-        #self.my_stream.message.connect(self.plot_widget.normal_output)
+        self.my_stream = MyStream()
+        self.my_stream.message.connect(self.plot_widget.normal_output)
         
-        #sys.stdout = self.my_stream
+        sys.stdout = self.my_stream
         
-        #QtCore.QMetaObject.connectSlotsByName(self)
+        QtCore.QMetaObject.connectSlotsByName(self)
         
     def get_edi_file(self):
         """
         get edi file
         """
         fn_dialog = QtGui.QFileDialog()
-        fn = str(fn_dialog.getOpenFileName(caption='Choose EDI file', 
+        fn = str(fn_dialog.getOpenFileName(caption='Choose EDI file',
+                                           directory=self.plot_widget.dir_path,
                                            filter='*.edi'))
+                                           
+        self.ui_setup()
+                                           
+        self.plot_widget.dir_path = os.path.dirname(fn)
                                            
         self.plot_widget.mt_obj = mt.MT(fn)
         self.plot_widget._mt_obj = copy.deepcopy(self.plot_widget.mt_obj)
@@ -139,6 +146,8 @@ class PlotWidget(QtGui.QWidget):
         self.static_shift_x = 1.0
         self.static_shift_y = 1.0
         self.plot_properties = PlotSettings(None)
+        self._edited = False
+        self.dir_path = os.getcwd()
         
         self.setup_ui()
         
@@ -154,7 +163,8 @@ class PlotWidget(QtGui.QWidget):
         
         # this will set the minimum width of the mpl plot, important to 
         # resize everything
-        self.mpl_widget.setMinimumWidth(1600)
+        screen = QtGui.QDesktopWidget().screenGeometry()
+        self.mpl_widget.setMinimumWidth(screen.width()*(1600./1920))
         
         # be able to edit the data
         self.mpl_widget.mpl_connect('pick_event', self.on_pick)
@@ -220,8 +230,18 @@ class PlotWidget(QtGui.QWidget):
         
         ## remove distortion 
         self.remove_distortion_button = QtGui.QPushButton()
-        self.remove_distortion_button.setText("Remove Distortion")
+        self.remove_distortion_button.setText("Remove Distortion [Bibby et al., 2005]")
         self.remove_distortion_button.pressed.connect(self.remove_distortion_apply)
+        
+        ## revert back to original data 
+        self.revert_button = QtGui.QPushButton()
+        self.revert_button.setText("Revert back to orginal data")
+        self.revert_button.pressed.connect(self.revert_back)
+        
+        ## save edits button
+        self.save_edits_button = QtGui.QPushButton()
+        self.save_edits_button.setText('Save Edits to new EDI file')
+        self.save_edits_button.pressed.connect(self.save_edi_file)
         
         
         ###--> layout ---------------------------------------------
@@ -261,7 +281,10 @@ class PlotWidget(QtGui.QWidget):
         info_layout = QtGui.QVBoxLayout()
         info_layout.addLayout(meta_layout)
         info_layout.addLayout(ss_layout)
+        
         info_layout.addWidget(self.remove_distortion_button)
+        info_layout.addWidget(self.revert_button)
+        info_layout.addWidget(self.save_edits_button)
         info_layout.addWidget(self.output_box)
             
         ## final layout
@@ -312,9 +335,14 @@ class PlotWidget(QtGui.QWidget):
         """
         shift apparent resistivity up or down
         """
-        # be sure to apply the static shift to the original data
-        new_z_obj = self._mt_obj.remove_static_shift(ss_x=self.static_shift_x,
-                                                ss_y=self.static_shift_y)
+        if self._edited == False:
+            # be sure to apply the static shift to the original data
+            new_z_obj = self._mt_obj.remove_static_shift(ss_x=self.static_shift_x,
+                                                         ss_y=self.static_shift_y)
+        else:
+            new_z_obj = self.mt_obj.remove_static_shift(ss_x=self.static_shift_x,
+                                                        ss_y=self.static_shift_y)
+        self._edited = True
                                                 
         self.mt_obj.Z = new_z_obj
         self.redraw_plot()
@@ -323,9 +351,12 @@ class PlotWidget(QtGui.QWidget):
         """
         remove distortion from the mt repsonse
         """
-        #dummy_mt_obj = copy.deepcopy(self._mt_obj)
-        distortion, new_z_object = self._mt_obj.remove_distortion()
+        if self._edited == False:
+            distortion, new_z_object = self._mt_obj.remove_distortion()
+        else:
+            distortion, new_z_object = self.mt_obj.remove_distortion()
 
+        self._edited = True
         self.mt_obj.Z = new_z_object
 
         print 'Distortion matrix = '
@@ -333,6 +364,30 @@ class PlotWidget(QtGui.QWidget):
         
         self.redraw_plot()
         
+    def revert_back(self):
+        """
+        revert back to original data
+        
+        """
+        
+        self.mt_obj = copy.deepcopy(self._mt_obj)
+        self.redraw_plot()
+        
+    def save_edi_file(self):
+        """
+        save edited edi file to the chosen file name.
+        """
+        
+        save_dialog = QtGui.QFileDialog()
+        save_fn = str(save_dialog.getSaveFileName(caption='Choose EDI file',
+                                                  directory=self.dir_path,
+                                                  filter='*.edi'))
+        self.mt_obj.write_edi_file(new_fn=save_fn)
+        
+    @QtCore.pyqtSlot(str)
+    def normal_output(self, message):
+        self.output_box.moveCursor(QtGui.QTextCursor.End)
+        self.output_box.insertPlainText(message)
         
     def plot(self):
         """
@@ -379,6 +434,7 @@ class PlotWidget(QtGui.QWidget):
                  'e_capsize':self.plot_properties.e_capsize,
                  'e_capthick':self.plot_properties.e_capthick,
                  'picker':3} 
+                 
         kw_xx_o = {'color':self.plot_properties.cteo,
                    'marker':self.plot_properties.mted,
                    'ms':self.plot_properties.ms,
@@ -432,27 +488,49 @@ class PlotWidget(QtGui.QWidget):
             self.ax_tip_i = self.figure.add_subplot(gs[2, 1])
         
         ## --> plot apparent resistivity, phase and tipper
-        ## plot orginal apparent resistivity                                 
-        orxx = mtplottools.plot_errorbar(self.ax_res_d, 
-                                         plot_period[nzxx],
-                                         self._mt_obj.Z.resistivity[nzxx, 0, 0],
-                                         self._mt_obj.Z.resistivity_err[nzxx, 0, 0],
-                                         **kw_xx_o)
-        orxy = mtplottools.plot_errorbar(self.ax_res_od, 
-                                         plot_period[nzxy],
-                                         self._mt_obj.Z.resistivity[nzxy, 0, 1],
-                                         self._mt_obj.Z.resistivity_err[nzxy, 0, 1],
-                                         **kw_xx_o)
-        oryx = mtplottools.plot_errorbar(self.ax_res_od, 
-                                         plot_period[nzyx],
-                                         self._mt_obj.Z.resistivity[nzyx, 1, 0],
-                                         self._mt_obj.Z.resistivity_err[nzyx, 1, 0],
-                                         **kw_yy_o)
-        oryy = mtplottools.plot_errorbar(self.ax_res_d, 
-                                         plot_period[nzyy],
-                                         self._mt_obj.Z.resistivity[nzyy, 1, 1],
-                                         self._mt_obj.Z.resistivity_err[nzyy, 1, 1],
-                                         **kw_yy_o)
+        ## plot orginal apparent resistivity
+        if self.plot_properties.plot_original_data == True:                                 
+            orxx = mtplottools.plot_errorbar(self.ax_res_d, 
+                                             plot_period[nzxx],
+                                             self._mt_obj.Z.resistivity[nzxx, 0, 0],
+                                             self._mt_obj.Z.resistivity_err[nzxx, 0, 0],
+                                             **kw_xx_o)
+            orxy = mtplottools.plot_errorbar(self.ax_res_od, 
+                                             plot_period[nzxy],
+                                             self._mt_obj.Z.resistivity[nzxy, 0, 1],
+                                             self._mt_obj.Z.resistivity_err[nzxy, 0, 1],
+                                             **kw_xx_o)
+            oryx = mtplottools.plot_errorbar(self.ax_res_od, 
+                                             plot_period[nzyx],
+                                             self._mt_obj.Z.resistivity[nzyx, 1, 0],
+                                             self._mt_obj.Z.resistivity_err[nzyx, 1, 0],
+                                             **kw_yy_o)
+            oryy = mtplottools.plot_errorbar(self.ax_res_d, 
+                                             plot_period[nzyy],
+                                             self._mt_obj.Z.resistivity[nzyy, 1, 1],
+                                             self._mt_obj.Z.resistivity_err[nzyy, 1, 1],
+                                             **kw_yy_o)
+            # plot original phase                                 
+            epxx = mtplottools.plot_errorbar(self.ax_phase_d, 
+                                             plot_period[nzxx],
+                                             self._mt_obj.Z.phase[nzxx, 0, 0],
+                                             self._mt_obj.Z.phase_err[nzxx, 0, 0],
+                                             **kw_xx_o)
+            epxy = mtplottools.plot_errorbar(self.ax_phase_od, 
+                                             plot_period[nzxy],
+                                             self._mt_obj.Z.phase[nzxy, 0, 1],
+                                             self._mt_obj.Z.phase_err[nzxy, 0, 1],
+                                             **kw_xx_o)
+            epyx = mtplottools.plot_errorbar(self.ax_phase_od, 
+                                             plot_period[nzyx],
+                                             self._mt_obj.Z.phase[nzyx, 1, 0]+180,
+                                             self._mt_obj.Z.phase_err[nzyx, 1, 0],
+                                             **kw_yy_o)
+            epyy = mtplottools.plot_errorbar(self.ax_phase_d, 
+                                             plot_period[nzyy],
+                                             self._mt_obj.Z.phase[nzyy, 1, 1],
+                                             self._mt_obj.Z.phase_err[nzyy, 1, 1],
+                                             **kw_yy_o)
                                          
         # plot manipulated data apparent resistivity
         erxx = mtplottools.plot_errorbar(self.ax_res_d, 
@@ -477,7 +555,7 @@ class PlotWidget(QtGui.QWidget):
                                          **kw_yy)
 
                                          
-        #--> set axes properties
+        #--> set axes properties for apparent resistivity
         for aa, ax in enumerate([self.ax_res_od, self.ax_res_d]):
             plt.setp(ax.get_xticklabels(), visible=False)
             if aa == 0:            
@@ -519,29 +597,7 @@ class PlotWidget(QtGui.QWidget):
         self.ax_res_d.set_ylim(self.plot_properties.res_limits_d)
         self.ax_res_od.set_ylim(self.plot_properties.res_limits_od)
         
-        ##--> plot phase
-        # plot orignal data phase                                 
-        epxx = mtplottools.plot_errorbar(self.ax_phase_d, 
-                                         plot_period[nzxx],
-                                         self._mt_obj.Z.phase[nzxx, 0, 0],
-                                         self._mt_obj.Z.phase_err[nzxx, 0, 0],
-                                         **kw_xx_o)
-        epxy = mtplottools.plot_errorbar(self.ax_phase_od, 
-                                         plot_period[nzxy],
-                                         self._mt_obj.Z.phase[nzxy, 0, 1],
-                                         self._mt_obj.Z.phase_err[nzxy, 0, 1],
-                                         **kw_xx_o)
-        epyx = mtplottools.plot_errorbar(self.ax_phase_od, 
-                                         plot_period[nzyx],
-                                         self._mt_obj.Z.phase[nzyx, 1, 0]+180,
-                                         self._mt_obj.Z.phase_err[nzyx, 1, 0],
-                                         **kw_yy_o)
-        epyy = mtplottools.plot_errorbar(self.ax_phase_d, 
-                                         plot_period[nzyy],
-                                         self._mt_obj.Z.phase[nzyy, 1, 1],
-                                         self._mt_obj.Z.phase_err[nzyy, 1, 1],
-                                         **kw_yy_o)
-        
+        ##--> plot phase                           
         # plot manipulated data                         
         epxx = mtplottools.plot_errorbar(self.ax_phase_d, 
                                          plot_period[nzxx],
@@ -571,8 +627,8 @@ class PlotWidget(QtGui.QWidget):
             ax.set_xscale('log')
             if aa == 0:
                 ax.set_ylabel('Phase (deg)', font_dict)
-                ax.yaxis.set_major_locator(MultipleLocator(15))
-                ax.yaxis.set_minor_locator(MultipleLocator(5))
+                #ax.yaxis.set_major_locator(MultipleLocator(15))
+                #ax.yaxis.set_minor_locator(MultipleLocator(5))
             ax.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
                           lw=.25)
         self.ax_phase_od.set_ylim(self.plot_properties.phase_limits_od)
@@ -652,11 +708,18 @@ class PlotWidget(QtGui.QWidget):
                 
                 #--> plot real arrows
                 # plot original data
-                self.ax_tip_r.arrow(np.log10(plot_period[aa]),
-                                    0,
-                                    xlenr_o,
-                                    tyr_o[aa],
-                                    **kw_tr_o)
+                if self.plot_properties.plot_original_data == True:
+                    self.ax_tip_r.arrow(np.log10(plot_period[aa]),
+                                        0,
+                                        xlenr_o,
+                                        tyr_o[aa],
+                                        **kw_tr_o)
+                                                
+                    self.ax_tip_i.arrow(np.log10(plot_period[aa]),
+                                        0,
+                                        xleni_o,
+                                        tyi_o[aa],
+                                        **kw_ti_o)
                 self.ax_tip_r.arrow(np.log10(plot_period[aa]),
                                     0,
                                     xlenr,
@@ -669,12 +732,8 @@ class PlotWidget(QtGui.QWidget):
                                           self.plot_properties.arrow_color_real)
                                    
                 #--> plot imaginary arrows 
-                # plot original data               
-                self.ax_tip_i.arrow(np.log10(plot_period[aa]),
-                               0,
-                               xleni_o,
-                               tyi_o[aa],
-                               **kw_ti_o)
+                # plot original data
+
                                
                 self.ax_tip_i.arrow(np.log10(plot_period[aa]),
                                0,
@@ -829,6 +888,7 @@ class PlotSettings(QtGui.QWidget):
         self.arrow_head_length = kwargs.pop('arrow_head_length', .05)
         
         self.plot_z = kwargs.pop('plot_z', False)
+        self.plot_original_data = kwargs.pop('plot_original_data', True)
         
         #self.setup_ui()
 
