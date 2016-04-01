@@ -2745,8 +2745,10 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
     d_east = abs(ll_en[1]-ur_en[1])/nx
     d_north = abs(ll_en[2]-ur_en[2])/ny
 
-    # calculate the number of new cells
-    num_cells = int(cell_size/np.mean([d_east, d_north]))
+    # calculate the number of new cells according to the given cell size
+    # if the given cell size and cs are similar int could make the value 0,
+    # hence the need to make it one if it is 0.
+    num_cells = max([1, int(cell_size/np.mean([d_east, d_north]))])
 
     # make easting and northing arrays in meters corresponding to lat and lon
     east = np.arange(ll_en[1], ur_en[1], d_east)
@@ -2770,9 +2772,13 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
     new_north = (new_north-new_north.mean())+shift_north
     
     # need to rotate cause I think I wrote the dem backwards
-    elevation = np.rot90(elevation, rot_90)
-    
-    return new_east, new_north, elevation
+    if rot_90 == 1 or rot_90 == 3:
+        elevation = np.rot90(elevation, rot_90)
+        return new_north, new_east, elevation
+    else:
+        elevation = np.rot90(elevation, rot_90)
+
+        return new_east, new_north, elevation
 
 def interpolate_elevation(elev_east, elev_north, elevation, model_east, 
                           model_north, pad=3):
@@ -2893,11 +2899,13 @@ def make_elevation_model(interp_elev, model_nodes_z, elevation_cell=30,
 
     # calculate the max elevation within survey area
     elev_max = interp_elev[pad:-pad, pad:-pad].max()
-    elev_min = interp_elev[pad:-pad, pad:-pad].min()
+	
+    # need to set sea level to 0 elevation
+    elev_min = max([0, interp_elev[pad:-pad, pad:-pad].min()])
     
     # scale the interpolated elevations to fit within elev_max, elev_min
     interp_elev[np.where(interp_elev > elev_max)] = elev_max
-    interp_elev[np.where(interp_elev < elev_min)] = elev_min
+    #interp_elev[np.where(interp_elev < elev_min)] = elev_min
     
     # calculate the number of elevation cells needed
     num_elev_cells = int((elev_max-elev_min)/elevation_cell)
@@ -4310,6 +4318,10 @@ class PlotResponse(object):
                                          [' ']
                                 ax.set_yticklabels(ylabels)
                     if len(ax_list) == 12:
+                        if aa < 4:
+                            ylabels = ax.get_yticks().tolist()
+                            ylabels[0] = ''
+                            ax.set_yticklabels(ylabels)
                         if aa < 8:
 #                            ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
                             if self.plot_z == True:
@@ -4356,6 +4368,15 @@ class PlotResponse(object):
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
                                 ax.set_yscale('log')
+                                ylim = ax.get_ylim()
+                                ylimits = (10**np.floor(np.log10(ylim[0])), 
+                                           10**np.ceil(np.log10(ylim[1])))
+                                ax.set_ylim(ylimits)
+                                ylabels = [' ', ' ']+\
+                                          [mtplottools.labeldict[ii] for ii 
+                                          in np.arange(np.log10(ylimits[0])+1, 
+                                                       np.log10(ylimits[1])+1, 1)]
+                                ax.set_yticklabels(ylabels)
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
                         else:
