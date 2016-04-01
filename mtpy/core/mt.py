@@ -512,10 +512,49 @@ class MT(object):
             >>> mt1.write_edi_file(new_fn=r"/home/mt/edi_files/mt01_dr.edi",\
                                    new_Z=new_z)
         """
-        
-        D, new_z_object = MTdistortion.remove_distortion(z_object=self.Z)
+        dummy_z_obj = MTz.copy.deepcopy(self.Z)
+        D, new_z_object = MTdistortion.remove_distortion(z_object=dummy_z_obj)
         
         return D, new_z_object
+        
+    def remove_static_shift(self, ss_x=1.0, ss_y =1.0):
+        """
+        Remove static shift from the apparent resistivity
+        
+        Assume the original observed tensor Z is built by a static shift S 
+        and an unperturbated "correct" Z0 :
+             
+             * Z = S * Z0
+            
+        therefore the correct Z will be :
+            * Z0 = S^(-1) * Z
+            
+        
+        **Arguments**
+        
+            *ss_x* : float
+                    correction factor for x component
+            
+            *ss_y* : float
+                   correction factor for y component
+                   
+        **Returns**
+           
+           *new_z* : new z array
+           
+        .. note:: The factors are in resistivity scale, so the
+                  entries of  the matrix "S" need to be given by their
+                  square-roots! 
+        """
+        
+        s_array, new_z = self.Z.no_ss(reduce_res_factor_x=ss_x,
+                                      reduce_res_factor_y=ss_y)
+                                      
+        new_z_obj = MTz.copy.deepcopy(self.Z)
+        new_z_obj.z = new_z
+        
+        return new_z_obj
+        
         
     def interpolate(self, new_freq_array):
         """
