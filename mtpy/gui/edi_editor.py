@@ -22,6 +22,7 @@ import numpy as np
 import copy
 import sys
 import os
+import mtpy.imaging.plotstrike2d as plotstrike2d
 
 #==============================================================================
 # UI
@@ -97,18 +98,20 @@ class EDI_Editor_Window(QtGui.QMainWindow):
         """
         get edi file
         """
+        
+        print '='*35
         fn_dialog = QtGui.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose EDI file',
                                            directory=self.plot_widget.dir_path,
                                            filter='*.edi'))
-                                           
-        self.ui_setup()
                                            
         self.plot_widget.dir_path = os.path.dirname(fn)
                                            
         self.plot_widget.mt_obj = mt.MT(fn)
         self.plot_widget._mt_obj = copy.deepcopy(self.plot_widget.mt_obj)
         self.plot_widget.fill_metadata()
+        self.plot_widget.reset_parameters()
+        self.plot_widget.plot_properties = PlotSettings(None)
         self.plot_widget.plot()
 
     def close_edi_file(self):
@@ -145,8 +148,13 @@ class PlotWidget(QtGui.QWidget):
         self._mt_obj = mt.MT()
         self.static_shift_x = 1.0
         self.static_shift_y = 1.0
+        self.rotate_z_angle = 0
+        self.rotate_tip_angle = 0
         self.plot_properties = PlotSettings(None)
-        self._edited = False
+        self._edited_ss = False
+        self._edited_dist = False
+        self._edited_rot = False
+        self._edited_mask = False
         self.dir_path = os.getcwd()
         
         self.setup_ui()
@@ -174,14 +182,16 @@ class PlotWidget(QtGui.QWidget):
 
         self.mpl_toolbar = NavigationToolbar(self.mpl_widget, self)
         
-        # output box for all notes from the program
-        self.output_box = QtGui.QTextEdit()
-        
-        # add side box to manipulate the data
+         # header label font
         header_font = QtGui.QFont()
         header_font.setBold = True
         header_font.setPointSize (16)
-
+        
+        # output box for all notes from the program
+        self.output_label = QtGui.QLabel("Output")
+        self.output_label.setFont(header_font)
+        self.output_box = QtGui.QTextEdit()
+    
         ## --> SET METADATA
         self.metadata_label = QtGui.QLabel('Metadata')
         self.metadata_label.setFont(header_font)
@@ -217,11 +227,11 @@ class PlotWidget(QtGui.QWidget):
         self.static_shift_label.setFont(header_font)
         
         self.static_shift_x_label = QtGui.QLabel("X")
-        self.static_shift_x_edit = QtGui.QLineEdit("1.0")
+        self.static_shift_x_edit = QtGui.QLineEdit("{0:.4g}".format(self.static_shift_x))
         self.static_shift_x_edit.editingFinished.connect(self.static_shift_set_x)
         
         self.static_shift_y_label = QtGui.QLabel("Y")
-        self.static_shift_y_edit = QtGui.QLineEdit("1.0")
+        self.static_shift_y_edit = QtGui.QLineEdit("{0:.4g}".format(self.static_shift_y))
         self.static_shift_y_edit.editingFinished.connect(self.static_shift_set_y)
         
         self.static_shift_apply_button = QtGui.QPushButton()
@@ -229,10 +239,36 @@ class PlotWidget(QtGui.QWidget):
         self.static_shift_apply_button.pressed.connect(self.static_shift_apply)
         
         ## remove distortion 
+        self.remove_distortion_label = QtGui.QLabel("Remove Distortion")
+        self.remove_distortion_label.setFont(header_font)
+        
         self.remove_distortion_button = QtGui.QPushButton()
         self.remove_distortion_button.setText("Remove Distortion [Bibby et al., 2005]")
         self.remove_distortion_button.pressed.connect(self.remove_distortion_apply)
         
+        ## rotate data
+        self.rotate_data_label = QtGui.QLabel("Rotate")
+        self.rotate_data_label.setFont(header_font)
+
+        self.rotate_explanation = QtGui.QLabel("Always rotating original data, assuming: N = 0, E = 90.")
+        self.rotate_angle_z_label = QtGui.QLabel("Rotate Z (deg)")
+        self.rotate_angle_z_edit = QtGui.QLineEdit("{0:.4g}".format(self.rotate_z_angle))
+        self.rotate_angle_z_edit.editingFinished.connect(self.rotate_set_z_angle) 
+        
+        self.rotate_angle_t_label = QtGui.QLabel("Rotate Tipper (deg)")
+        self.rotate_angle_t_edit = QtGui.QLineEdit("{0:.4g}".format(self.rotate_tip_angle))
+        self.rotate_angle_t_edit.editingFinished.connect(self.rotate_set_t_angle)        
+        
+        self.rotate_angle_button = QtGui.QPushButton("Apply")
+        self.rotate_angle_button.pressed.connect(self.rotate_data_apply)
+        
+        self.rotate_estimate_strike_button = QtGui.QPushButton("Estimate Strike")
+        self.rotate_estimate_strike_button.pressed.connect(self.rotate_estimate_strike)
+        
+        ## tools label
+        self.tools_label = QtGui.QLabel("Tools")
+        self.tools_label.setFont(header_font)
+       
         ## revert back to original data 
         self.revert_button = QtGui.QPushButton()
         self.revert_button.setText("Revert back to orginal data")
@@ -243,7 +279,15 @@ class PlotWidget(QtGui.QWidget):
         self.save_edits_button.setText('Save Edits to new EDI file')
         self.save_edits_button.pressed.connect(self.save_edi_file)
         
+        ## horizontal line
+        h_line = QtGui.QFrame(self)
+        h_line.setFrameShape(QtGui.QFrame.HLine)
+        h_line.setFrameShadow(QtGui.QFrame.Sunken)
         
+        ## vertical spacer
+        v_space = QtGui.QSpacerItem(20, 20, 
+                                    QtGui.QSizePolicy.Minimum,
+                                    QtGui.QSizePolicy.Maximum)
         ###--> layout ---------------------------------------------
         ## mpl plot --> right panel
         mpl_vbox = QtGui.QVBoxLayout()
@@ -275,16 +319,33 @@ class PlotWidget(QtGui.QWidget):
         ss_layout.addWidget(self.static_shift_x_label, 1, 0)
         ss_layout.addWidget(self.static_shift_x_edit, 1, 1)        
         ss_layout.addWidget(self.static_shift_y_label, 1, 2)
-        ss_layout.addWidget(self.static_shift_y_edit, 1, 3)        
+        ss_layout.addWidget(self.static_shift_y_edit, 1, 3) 
+        
+        ## rotation
+        rot_layout = QtGui.QGridLayout()
+        rot_layout.addWidget(self.rotate_data_label, 0, 0)
+        rot_layout.addWidget(self.rotate_angle_button, 0, 1)
+        rot_layout.addWidget(self.rotate_explanation, 1, 0, 1, 2)
+        rot_layout.addWidget(self.rotate_angle_z_label, 2, 0)
+        rot_layout.addWidget(self.rotate_angle_z_edit, 2, 1)
+        rot_layout.addWidget(self.rotate_angle_t_label, 3, 0)
+        rot_layout.addWidget(self.rotate_angle_t_edit, 3, 1)
+        rot_layout.addWidget(self.rotate_estimate_strike_button, 4, 0, 1, 2)
         
         ## left panel
         info_layout = QtGui.QVBoxLayout()
         info_layout.addLayout(meta_layout)
+        info_layout.addWidget(h_line)
         info_layout.addLayout(ss_layout)
-        
+        info_layout.addWidget(h_line)
+        info_layout.addWidget(self.remove_distortion_label)
         info_layout.addWidget(self.remove_distortion_button)
+        info_layout.addLayout(rot_layout)
+        info_layout.addWidget(self.tools_label)
         info_layout.addWidget(self.revert_button)
         info_layout.addWidget(self.save_edits_button)
+        info_layout.addItem(v_space)
+        info_layout.addWidget(self.output_label)
         info_layout.addWidget(self.output_box)
             
         ## final layout
@@ -325,24 +386,33 @@ class PlotWidget(QtGui.QWidget):
         
     def static_shift_set_x(self):
         self.static_shift_x = float(str(self.static_shift_x_edit.text()))
-        self.static_shift_x_edit.setText('{0:.2f}'.format(self.static_shift_x))
+        self.static_shift_x_edit.setText('{0:.4f}'.format(self.static_shift_x))
         
     def static_shift_set_y(self):
         self.static_shift_y = float(str(self.static_shift_y_edit.text()))
-        self.static_shift_y_edit.setText('{0:.2f}'.format(self.static_shift_y))
-        
+        self.static_shift_y_edit.setText('{0:.4f}'.format(self.static_shift_y))
+     
     def static_shift_apply(self):
         """
         shift apparent resistivity up or down
         """
-        if self._edited == False:
+        if self._edited_dist == False and self._edited_rot == False and \
+           self._edited_mask == False:
             # be sure to apply the static shift to the original data
             new_z_obj = self._mt_obj.remove_static_shift(ss_x=self.static_shift_x,
                                                          ss_y=self.static_shift_y)
+            # print the static shift applied 
+            print "\n    Static shift applied to original data:"
         else:
             new_z_obj = self.mt_obj.remove_static_shift(ss_x=self.static_shift_x,
                                                         ss_y=self.static_shift_y)
-        self._edited = True
+            # print the static shift applied 
+            print "\n    - Static shift applied to edited data:"
+        
+        # print the static shift applied
+        print "        x = {0:.4f}, y = {1:.4f}".format(self.static_shift_x,
+                                                        self.static_shift_y)          
+        self._edited_ss = True
                                                 
         self.mt_obj.Z = new_z_obj
         self.redraw_plot()
@@ -351,19 +421,100 @@ class PlotWidget(QtGui.QWidget):
         """
         remove distortion from the mt repsonse
         """
-        if self._edited == False:
+        if self._edited_dist == False and self._edited_rot == False and \
+           self._edited_mask == False:
+            # remove distortion from original data
             distortion, new_z_object = self._mt_obj.remove_distortion()
+            print '\n    - Removed distortion from original data'
+             
         else:
+            # remove distortion from edited data
             distortion, new_z_object = self.mt_obj.remove_distortion()
+            print '\n    - Removed distortion from edited data'
 
-        self._edited = True
+        self._edited_dist = True
         self.mt_obj.Z = new_z_object
 
-        print 'Distortion matrix = '
-        print distortion  
+        print '       Distortion matrix:'
+        print '          | {0:+.3f}  {1:+.3f} |'.format(distortion[0, 0],
+                                                        distortion[0, 1])
+        print '          | {0:+.3f}  {1:+.3f} |'.format(distortion[1, 0],
+                                                        distortion[1, 1]) 
         
         self.redraw_plot()
         
+    def rotate_set_z_angle(self):
+        """
+        set z rotation angle
+        
+        Always rotate original data otherwiswe can get messy
+        """
+        self.rotate_z_angle = float(str(self.rotate_angle_z_edit.text()))
+        self.rotate_angle_z_edit.setText("{0:.4f}".format(self.rotate_z_angle))
+        
+        self.rotate_tip_angle = float(self.rotate_z_angle)
+        self.rotate_angle_t_edit.setText("{0:.4f}".format(self.rotate_tip_angle))
+
+                                                         
+    def rotate_set_t_angle(self):
+        """
+        rotate tipper data assuming North is 0 and E is 90
+        
+        Always rotate original data otherwiswe can get messy
+        """
+        self.rotate_tip_angle = float(str(self.rotate_angle_t_edit.text()))
+        self.rotate_angle_t_edit.setText("{0:.4f}".format(self.rotate_tip_angle))
+
+    def rotate_data_apply(self):
+        """
+        rotate both Z and tipper original data by the input angles
+        """
+        
+        rot_z_obj = copy.deepcopy(self._mt_obj.Z)
+        rot_z_obj.rotate(self.rotate_z_angle)
+        
+        self.mt_obj.Z = rot_z_obj
+        
+        rot_t_obj = copy.deepcopy(self._mt_obj.Tipper)
+        rot_t_obj.rotate(self.rotate_tip_angle)
+        
+        self.mt_obj.Tipper = rot_t_obj
+        
+        if self._edited_ss == True:
+            self.static_shift_apply()
+        
+        if self._edited_dist == True:
+            self.remove_distortion_apply()
+        
+        self.redraw_plot()
+        
+        self._edited_rot = True
+        
+        print '\n   Rotated orginal data clockwise by:'
+        print '      Z = {0:.3g}'.format(self.rotate_z_angle)
+        print '      T = {0:.3g}'.format(self.rotate_tip_angle)
+        
+    def rotate_estimate_strike(self):
+        """
+        estimate strike from the invariants, phase tensor, and tipper if 
+        measured.
+        """
+        z_list = [copy.deepcopy(self.mt_obj.Z)]
+        t_list = [copy.deepcopy(self.mt_obj.Tipper)]
+        strike_plot = plotstrike2d.PlotStrike2D(z_object_list=z_list,
+                                                tipper_object_list=t_list,
+                                                plot_yn='n')
+        strike_plot.plot_type = 1
+        if np.any(self.mt_obj.Tipper.tipper == 0) == True:
+            strike_plot.plot_tipper = 'n'
+        elif np.any(self.mt_obj.Tipper.tipper == 0) == False:
+            strike_plot.plot_tipper = 'y'
+            
+        strike_plot.fold = False
+        strike_plot.plot_range = 'data'
+        strike_plot.plot()
+           
+          
     def revert_back(self):
         """
         revert back to original data
@@ -371,7 +522,27 @@ class PlotWidget(QtGui.QWidget):
         """
         
         self.mt_obj = copy.deepcopy(self._mt_obj)
+        self.reset_parameters()
         self.redraw_plot()
+        
+        print '\n'        
+        print '-'*35
+        print "Reverted back to original input data."
+        print "Reset editing parameters."
+        
+    def reset_parameters(self):
+        self.static_shift_x = 1.0
+        self.static_shift_y = 1.0
+        self.static_shift_x_edit.setText("{0:.4g}".format(self.static_shift_x))
+        self.static_shift_y_edit.setText("{0:.4g}".format(self.static_shift_y))
+        self.rotate_z_angle = 0.0
+        self.rotate_tip_angle = 0.0
+        self.rotate_angle_z_edit.setText("{0:.4g}".format(self.rotate_z_angle))
+        self.rotate_angle_t_edit.setText("{0:.4g}".format(self.rotate_tip_angle))
+        
+        self._edited_ss = False
+        self._edited_dist = False
+        self._edited_rot = False
         
     def save_edi_file(self):
         """
@@ -406,7 +577,7 @@ class PlotWidget(QtGui.QWidget):
         font_dict = {'size':self.plot_properties.fs+2, 'weight':'bold'}
         plot_period = 1./self.mt_obj.Z.freq
             
-        if np.all(self.mt_obj.Tipper.tipper == 0) is True:
+        if np.all(self.mt_obj.Tipper.tipper == 0) == True:
                 print 'No Tipper data for station {0}'.format(self.mt_obj.station)
                 self.plot_tipper = False
         else:
@@ -442,7 +613,7 @@ class PlotWidget(QtGui.QWidget):
                    'lw':self.plot_properties.lw,
                    'e_capsize':self.plot_properties.e_capsize,
                    'e_capthick':self.plot_properties.e_capthick,
-                   'picker':3}        
+                   'picker':None}        
        
         kw_yy_o = {'color':self.plot_properties.ctmo,
                    'marker':self.plot_properties.mtmd,
@@ -451,13 +622,10 @@ class PlotWidget(QtGui.QWidget):
                    'lw':self.plot_properties.lw,
                    'e_capsize':self.plot_properties.e_capsize,
                    'e_capthick':self.plot_properties.e_capthick,
-                   'picker':3} 
+                   'picker':None} 
         
         # create a grid of subplots
-        if self.plot_tipper == True:
-            gs = gridspec.GridSpec(3, 2, height_ratios=[2, 1.5, 1])
-        elif self.plot_tipper == False:
-            gs = gridspec.GridSpec(2, 2, height_ratios=[2, 1.5])
+        gs = gridspec.GridSpec(3, 2, height_ratios=[2, 1.5, 1])
         
         gs.update(hspace=self.plot_properties.subplot_hspace,
                   wspace=self.plot_properties.subplot_wspace,
@@ -471,6 +639,11 @@ class PlotWidget(QtGui.QWidget):
         nzxy = np.nonzero(self.mt_obj.Z.z[:, 0, 1])[0]
         nzyx = np.nonzero(self.mt_obj.Z.z[:, 1, 0])[0]
         nzyy = np.nonzero(self.mt_obj.Z.z[:, 1, 1])[0]
+        
+        nzxx_o = np.nonzero(self._mt_obj.Z.z[:, 0, 0])[0]
+        nzxy_o = np.nonzero(self._mt_obj.Z.z[:, 0, 1])[0]
+        nzyx_o = np.nonzero(self._mt_obj.Z.z[:, 1, 0])[0]
+        nzyy_o = np.nonzero(self._mt_obj.Z.z[:, 1, 1])[0]
                   
         # make axis od = off-diagonal, d = diagonal, share x axis across plots
         self.ax_res_od = self.figure.add_subplot(gs[0, 0])
@@ -482,54 +655,59 @@ class PlotWidget(QtGui.QWidget):
         self.ax_phase_d = self.figure.add_subplot(gs[1, 1], 
                                                 sharex=self.ax_res_od)
         
-        # include tipper, r = real, i = imaginary; can't share axis properly
-        if self.plot_tipper == True:
-            self.ax_tip_r = self.figure.add_subplot(gs[2, 0])
-            self.ax_tip_i = self.figure.add_subplot(gs[2, 1])
+        # include tipper, r = real, i = imaginary
+        self.ax_tip_m = self.figure.add_subplot(gs[2, 0], 
+                                                sharex=self.ax_res_od)
+        self.ax_tip_a = self.figure.add_subplot(gs[2, 1],
+                                                sharex=self.ax_res_od)
+        
+        self.ax_list = [self.ax_res_od, self.ax_res_d,
+                        self.ax_phase_od, self.ax_phase_d,
+                        self.ax_tip_m, self.ax_tip_a]
         
         ## --> plot apparent resistivity, phase and tipper
         ## plot orginal apparent resistivity
         if self.plot_properties.plot_original_data == True:                                 
             orxx = mtplottools.plot_errorbar(self.ax_res_d, 
-                                             plot_period[nzxx],
-                                             self._mt_obj.Z.resistivity[nzxx, 0, 0],
-                                             self._mt_obj.Z.resistivity_err[nzxx, 0, 0],
+                                             plot_period[nzxx_o],
+                                             self._mt_obj.Z.resistivity[nzxx_o, 0, 0],
+                                             self._mt_obj.Z.resistivity_err[nzxx_o, 0, 0],
                                              **kw_xx_o)
             orxy = mtplottools.plot_errorbar(self.ax_res_od, 
-                                             plot_period[nzxy],
-                                             self._mt_obj.Z.resistivity[nzxy, 0, 1],
-                                             self._mt_obj.Z.resistivity_err[nzxy, 0, 1],
+                                             plot_period[nzxy_o],
+                                             self._mt_obj.Z.resistivity[nzxy_o, 0, 1],
+                                             self._mt_obj.Z.resistivity_err[nzxy_o, 0, 1],
                                              **kw_xx_o)
             oryx = mtplottools.plot_errorbar(self.ax_res_od, 
-                                             plot_period[nzyx],
-                                             self._mt_obj.Z.resistivity[nzyx, 1, 0],
-                                             self._mt_obj.Z.resistivity_err[nzyx, 1, 0],
+                                             plot_period[nzyx_o],
+                                             self._mt_obj.Z.resistivity[nzyx_o, 1, 0],
+                                             self._mt_obj.Z.resistivity_err[nzyx_o, 1, 0],
                                              **kw_yy_o)
             oryy = mtplottools.plot_errorbar(self.ax_res_d, 
-                                             plot_period[nzyy],
-                                             self._mt_obj.Z.resistivity[nzyy, 1, 1],
-                                             self._mt_obj.Z.resistivity_err[nzyy, 1, 1],
+                                             plot_period[nzyy_o],
+                                             self._mt_obj.Z.resistivity[nzyy_o, 1, 1],
+                                             self._mt_obj.Z.resistivity_err[nzyy_o, 1, 1],
                                              **kw_yy_o)
             # plot original phase                                 
             epxx = mtplottools.plot_errorbar(self.ax_phase_d, 
-                                             plot_period[nzxx],
-                                             self._mt_obj.Z.phase[nzxx, 0, 0],
-                                             self._mt_obj.Z.phase_err[nzxx, 0, 0],
+                                             plot_period[nzxx_o],
+                                             self._mt_obj.Z.phase[nzxx_o, 0, 0],
+                                             self._mt_obj.Z.phase_err[nzxx_o, 0, 0],
                                              **kw_xx_o)
             epxy = mtplottools.plot_errorbar(self.ax_phase_od, 
-                                             plot_period[nzxy],
-                                             self._mt_obj.Z.phase[nzxy, 0, 1],
-                                             self._mt_obj.Z.phase_err[nzxy, 0, 1],
+                                             plot_period[nzxy_o],
+                                             self._mt_obj.Z.phase[nzxy_o, 0, 1],
+                                             self._mt_obj.Z.phase_err[nzxy_o, 0, 1],
                                              **kw_xx_o)
             epyx = mtplottools.plot_errorbar(self.ax_phase_od, 
-                                             plot_period[nzyx],
-                                             self._mt_obj.Z.phase[nzyx, 1, 0]+180,
-                                             self._mt_obj.Z.phase_err[nzyx, 1, 0],
+                                             plot_period[nzyx_o],
+                                             self._mt_obj.Z.phase[nzyx_o, 1, 0]+180,
+                                             self._mt_obj.Z.phase_err[nzyx_o, 1, 0],
                                              **kw_yy_o)
             epyy = mtplottools.plot_errorbar(self.ax_phase_d, 
-                                             plot_period[nzyy],
-                                             self._mt_obj.Z.phase[nzyy, 1, 1],
-                                             self._mt_obj.Z.phase_err[nzyy, 1, 1],
+                                             plot_period[nzyy_o],
+                                             self._mt_obj.Z.phase[nzyy_o, 1, 1],
+                                             self._mt_obj.Z.phase_err[nzyy_o, 1, 1],
                                              **kw_yy_o)
                                          
         # plot manipulated data apparent resistivity
@@ -633,182 +811,283 @@ class PlotWidget(QtGui.QWidget):
                           lw=.25)
         self.ax_phase_od.set_ylim(self.plot_properties.phase_limits_od)
         self.ax_phase_d.set_ylim(self.plot_properties.phase_limits_d)
+        
+        # set the last label to be an empty string for easier reading
+        for ax in [self.ax_phase_od, self.ax_phase_d]:
+            y_labels = ax.get_yticks().tolist()
+            y_labels[0] = ''
+            ax.set_yticklabels(y_labels)
 
         ## --> plot tipper                                 
-        if self.plot_tipper == True:
-            #set th xaxis tick labels to invisible
-            plt.setp(self.ax_phase_od.xaxis.get_ticklabels(), visible=False)
-            plt.setp(self.ax_phase_d.xaxis.get_ticklabels(), visible=False)
-            self.ax_phase_od.set_xlabel('')
-            self.ax_phase_d.set_xlabel('')
+        #set th xaxis tick labels to invisible
+        plt.setp(self.ax_phase_od.xaxis.get_ticklabels(), visible=False)
+        plt.setp(self.ax_phase_d.xaxis.get_ticklabels(), visible=False)
+        self.ax_phase_od.set_xlabel('')
+        self.ax_phase_d.set_xlabel('')
+        
+        kw_xx['color'] = self.plot_properties.arrow_color_real
+        kw_yy['color'] = self.plot_properties.arrow_color_imag
+        
+        # plot magnitude of real and imaginary induction vectors
+        if self.plot_properties.plot_original_data == True:
+            etro = mtplottools.plot_errorbar(self.ax_tip_m,
+                                             plot_period,
+                                             self._mt_obj.Tipper.mag_real,
+                                             self._mt_obj.Tipper.mag_err,
+                                             **kw_xx_o)
+            etio = mtplottools.plot_errorbar(self.ax_tip_m,
+                                             plot_period,
+                                             self._mt_obj.Tipper.mag_imag,
+                                             self._mt_obj.Tipper.mag_err,
+                                             **kw_yy_o) 
+            ## plot angle  of original data                                
+            etro = mtplottools.plot_errorbar(self.ax_tip_a,
+                                             plot_period,
+                                             self._mt_obj.Tipper.angle_real%360,
+                                             self._mt_obj.Tipper.angle_err,
+                                             **kw_xx_o)
+            etio = mtplottools.plot_errorbar(self.ax_tip_a,
+                                             plot_period,
+                                             self._mt_obj.Tipper.angle_imag%360,
+                                             self._mt_obj.Tipper.angle_err,
+                                             **kw_yy_o)
+        
+        # plot magnitude of edited induction vectors
+        etr = mtplottools.plot_errorbar(self.ax_tip_m,
+                                        plot_period,
+                                        self.mt_obj.Tipper.mag_real,
+                                        self.mt_obj.Tipper.mag_err,
+                                        **kw_xx) 
+        eti = mtplottools.plot_errorbar(self.ax_tip_m,
+                                        plot_period,
+                                        self.mt_obj.Tipper.mag_imag,
+                                        self.mt_obj.Tipper.mag_err,
+                                        **kw_yy) 
+        # plot angle of edited data
+        etr = mtplottools.plot_errorbar(self.ax_tip_a,
+                                        plot_period,
+                                        self.mt_obj.Tipper.angle_real%360,
+                                        self.mt_obj.Tipper.angle_err,
+                                        **kw_xx) 
+        eti = mtplottools.plot_errorbar(self.ax_tip_a,
+                                        plot_period,
+                                        self.mt_obj.Tipper.angle_imag%360,
+                                        self.mt_obj.Tipper.angle_err,
+                                        **kw_yy)
+                                        
+        #--> set axes properties for magnitude and angle of induction vectors
+        for aa, ax in enumerate([self.ax_tip_m, self.ax_tip_a]):
+            if aa == 0:            
+                ax.set_ylabel('Magnitude', fontdict=font_dict)
+#            elif aa == 1:
+#                ax.set_ylabel('Angle (deg)', fontdict=font_dict)
             
-            txr = self.mt_obj.Tipper.mag_real*\
-                                 np.sin(self.mt_obj.Tipper.angle_real*np.pi/180+\
-                                 np.pi*self.plot_properties.arrow_direction)
-            tyr = self.mt_obj.Tipper.mag_real*\
-                                 np.cos(self.mt_obj.Tipper.angle_real*np.pi/180+\
-                                 np.pi*self.plot_properties.arrow_direction)
-    
-            txi = self.mt_obj.Tipper.mag_imag*\
-                                 np.sin(self.mt_obj.Tipper.angle_imag*np.pi/180+\
-                                 np.pi*self.plot_properties.arrow_direction)
-            tyi = self.mt_obj.Tipper.mag_imag*\
-                                 np.cos(self.mt_obj.Tipper.angle_imag*np.pi/180+\
-                                 np.pi*self.plot_properties.arrow_direction)
+            ax.set_xlim(self.plot_properties.xlimits)
+            ax.set_xscale('log')
+            ax.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
+                          lw=.25)
             
-            ## original data tipper            
-            txr_o = self.mt_obj.Tipper.mag_real*\
-                                 np.sin(self._mt_obj.Tipper.angle_real*np.pi/180+\
-                                 np.pi*self.plot_properties.arrow_direction)
-            tyr_o = self.mt_obj.Tipper.mag_real*\
-                                 np.cos(self._mt_obj.Tipper.angle_real*np.pi/180+\
-                                 np.pi*self.plot_properties.arrow_direction)
-    
-            txi_o = self.mt_obj.Tipper.mag_imag*\
-                                 np.sin(self._mt_obj.Tipper.angle_imag*np.pi/180+\
-                                 np.pi*self.plot_properties.arrow_direction)
-            tyi_o = self.mt_obj.Tipper.mag_imag*\
-                                 np.cos(self._mt_obj.Tipper.angle_imag*np.pi/180+\
-                                 np.pi*self.plot_properties.arrow_direction)
-            
-            kw_tr = {'lw' : self.plot_properties.lw,
-                     'facecolor' : self.plot_properties.arrow_color_real,
-                     'edgecolor' : self.plot_properties.arrow_color_real,
-                     'head_length' : self.plot_properties.arrow_head_length,
-                     'head_width' : self.plot_properties.arrow_head_width,
-                     'length_includes_head' : False}
-            kw_ti = {'lw' : self.plot_properties.lw,
-                     'facecolor' : self.plot_properties.arrow_color_imag,
-                     'edgecolor' : self.plot_properties.arrow_color_imag,
-                     'head_length' : self.plot_properties.arrow_head_length,
-                     'head_width' : self.plot_properties.arrow_head_width,
-                     'length_includes_head' : False}
-                     
-            kw_tr_o = {'lw' : self.plot_properties.lw,
-                     'facecolor' : self.plot_properties.cteo,
-                     'edgecolor' : self.plot_properties.cteo,
-                     'head_length' : self.plot_properties.arrow_head_length,
-                     'head_width' : self.plot_properties.arrow_head_width,
-                     'length_includes_head' : False}
-            kw_ti_o = {'lw' : self.plot_properties.lw,
-                     'facecolor' : self.plot_properties.ctmo,
-                     'edgecolor' : self.plot_properties.ctmo,
-                     'head_length' : self.plot_properties.arrow_head_length,
-                     'head_width' : self.plot_properties.arrow_head_width,
-                     'length_includes_head' : False}
-                     
-            nt = len(txr)
-            
-            for aa in range(nt):
-                xlenr = txr[aa]*np.log10(plot_period[aa])
-                xleni = txi[aa]*np.log10(plot_period[aa])
-                
-                xlenr_o = txr_o[aa]*np.log10(plot_period[aa])
-                xleni_o = txi_o[aa]*np.log10(plot_period[aa])
-                
-                #--> plot real arrows
-                # plot original data
-                if self.plot_properties.plot_original_data == True:
-                    self.ax_tip_r.arrow(np.log10(plot_period[aa]),
-                                        0,
-                                        xlenr_o,
-                                        tyr_o[aa],
-                                        **kw_tr_o)
-                                                
-                    self.ax_tip_i.arrow(np.log10(plot_period[aa]),
-                                        0,
-                                        xleni_o,
-                                        tyi_o[aa],
-                                        **kw_ti_o)
-                self.ax_tip_r.arrow(np.log10(plot_period[aa]),
-                                    0,
-                                    xlenr,
-                                    tyr[aa],
-                                    **kw_tr)
-                
-                    
-                if aa == 0:
-                    t_real = self.ax_tip_r.plot(0, 0, 
-                                          self.plot_properties.arrow_color_real)
-                                   
-                #--> plot imaginary arrows 
-                # plot original data
-
-                               
-                self.ax_tip_i.arrow(np.log10(plot_period[aa]),
-                               0,
-                               xleni,
-                               tyi[aa],
-                               **kw_ti)
-                
-                if aa == 0:              
-                    t_imag = self.ax_tip_i.plot(0, 0, 
-                                          self.plot_properties.arrow_color_imag)
-                
-            #make a line at 0 for reference
-            self.ax_tip_r.plot(np.log10(plot_period), [0]*nt, 'k', lw=.5)
-            self.ax_tip_i.plot(np.log10(plot_period), [0]*nt, 'k', lw=.5)
-
-            #set axis properties 
-
-            for aa, ax in enumerate([self.ax_tip_r, self.ax_tip_i]): 
-                ax.set_xlim(np.log10(self.plot_properties.xlimits[0]),
-                            np.log10(self.plot_properties.xlimits[1]))
-                                   
-                tklabels = []
-                xticks = []
-    
-                for tt, tk in enumerate(ax.get_xticks()):
-                    try:
-                        tklabels.append(mtplottools.labeldict[tk])
-                        xticks.append(tk)
-                    except KeyError:
-                        pass
-                ax.set_xticks(xticks)
-                ax.set_xticklabels(tklabels, 
-                                   fontdict={'size':self.plot_properties.fs})
-                #need to reset the xlimits caouse they get reset when calling
-                #set_ticks for some reason
-                ax.set_xlim(np.log10(self.plot_properties.xlimits[0]),
-                            np.log10(self.plot_properties.xlimits[1]))
-                                   
-                ax.yaxis.set_major_locator(MultipleLocator(.2))               
-                ax.yaxis.set_minor_locator(MultipleLocator(.1))               
-                ax.set_xlabel('Period (s)', fontdict=font_dict)
-                if aa == 0:
-                    ax.legend([t_real[0]], 
-                              ['Real Tipper'],
-                                loc=3, 
-                                markerscale=1, 
-                                borderaxespad=.01, 
-                                handletextpad=.2, 
-                                borderpad=.02)
-    
-                if aa == 1:
-                    ax.legend([t_imag[0]], 
-                              ['Imag Tipper'],
-                                loc=3, 
+        self.ax_tip_m.legend((etr[0], eti[0]), 
+                              ('Re{T}', 'Im{T}'),
+                                loc=2,
                                 markerscale=1, 
                                 borderaxespad=.01,
+                                labelspacing=.07, 
                                 handletextpad=.2, 
-                                borderpad=.02)   
-                
-                #self.axt.set_xscale('log')
-                if self.plot_properties.tipper_limits is None:
-                    tmax = max([tyr.max(), tyi.max()])
-                    if tmax > 1:
-                        tmax = .899
+                                borderpad=.04)
+#        self.ax_tip_a.legend((etr[0], eti[0]), 
+#                              ('Ang (Re{T})', 'Ang (Im{T})'),
+#                                loc=2,
+#                                markerscale=1, 
+#                                borderaxespad=.02,
+#                                labelspacing=.02, 
+#                                handletextpad=.2, 
+#                                borderpad=.02)
                                 
-                    tmin = min([tyr.min(), tyi.min()])
-                    if tmin < -1:
-                        tmin = -.899
                                 
-                    self.plot_properties.tipper_limits = (tmin-.1, tmax+.1)
-                
-                ax.set_ylim(self.plot_properties.tipper_limits)
-                ax.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
-                              lw=.25)
-                              
+        self.ax_tip_m.set_ylim(self.plot_properties.tipper_mag_limits)
+        self.ax_tip_a.set_ylim(self.plot_properties.tipper_angle_limits)
+        
+        # set the last label to be an empty string for easier reading
+        for ax in [self.ax_tip_m, self.ax_tip_a]:
+            y_labels = ax.get_yticks().tolist()
+            y_labels[-1] = ''
+            ax.set_yticklabels(y_labels)
+
+        ## --> plot tipper                                 
+        #if self.plot_tipper == True:
+        #set th xaxis tick labels to invisible
+       
+        
+#        txr = self.mt_obj.Tipper.mag_real*\
+#                             np.sin(self.mt_obj.Tipper.angle_real*np.pi/180+\
+#                             np.pi*self.plot_properties.arrow_direction)
+#        tyr = self.mt_obj.Tipper.mag_real*\
+#                             np.cos(self.mt_obj.Tipper.angle_real*np.pi/180+\
+#                             np.pi*self.plot_properties.arrow_direction)
+#
+#        txi = self.mt_obj.Tipper.mag_imag*\
+#                             np.sin(self.mt_obj.Tipper.angle_imag*np.pi/180+\
+#                             np.pi*self.plot_properties.arrow_direction)
+#        tyi = self.mt_obj.Tipper.mag_imag*\
+#                             np.cos(self.mt_obj.Tipper.angle_imag*np.pi/180+\
+#                             np.pi*self.plot_properties.arrow_direction)
+#        
+#        ## original data tipper            
+#        txr_o = self.mt_obj.Tipper.mag_real*\
+#                             np.sin(self._mt_obj.Tipper.angle_real*np.pi/180+\
+#                             np.pi*self.plot_properties.arrow_direction)
+#        tyr_o = self.mt_obj.Tipper.mag_real*\
+#                             np.cos(self._mt_obj.Tipper.angle_real*np.pi/180+\
+#                             np.pi*self.plot_properties.arrow_direction)
+#
+#        txi_o = self.mt_obj.Tipper.mag_imag*\
+#                             np.sin(self._mt_obj.Tipper.angle_imag*np.pi/180+\
+#                             np.pi*self.plot_properties.arrow_direction)
+#        tyi_o = self.mt_obj.Tipper.mag_imag*\
+#                             np.cos(self._mt_obj.Tipper.angle_imag*np.pi/180+\
+#                             np.pi*self.plot_properties.arrow_direction)
+#        
+#        kw_tr = {'lw' : self.plot_properties.lw,
+#                 'facecolor' : self.plot_properties.arrow_color_real,
+#                 'edgecolor' : self.plot_properties.arrow_color_real,
+#                 'head_length' : self.plot_properties.arrow_head_length,
+#                 'head_width' : self.plot_properties.arrow_head_width,
+#                 'length_includes_head' : False,
+#                 'picker' : 3}
+#        kw_ti = {'lw' : self.plot_properties.lw,
+#                 'facecolor' : self.plot_properties.arrow_color_imag,
+#                 'edgecolor' : self.plot_properties.arrow_color_imag,
+#                 'head_length' : self.plot_properties.arrow_head_length,
+#                 'head_width' : self.plot_properties.arrow_head_width,
+#                 'length_includes_head' : False,
+#                 'picker' : 3}
+#                 
+#        kw_tr_o = {'lw' : self.plot_properties.lw,
+#                 'facecolor' : self.plot_properties.cteo,
+#                 'edgecolor' : self.plot_properties.cteo,
+#                 'head_length' : self.plot_properties.arrow_head_length,
+#                 'head_width' : self.plot_properties.arrow_head_width,
+#                 'length_includes_head' : False}
+#        kw_ti_o = {'lw' : self.plot_properties.lw,
+#                 'facecolor' : self.plot_properties.ctmo,
+#                 'edgecolor' : self.plot_properties.ctmo,
+#                 'head_length' : self.plot_properties.arrow_head_length,
+#                 'head_width' : self.plot_properties.arrow_head_width,
+#                 'length_includes_head' : False}
+#                 
+#        nt = len(txr)
+#        
+#        for aa in range(nt):
+#            xlenr = txr[aa]*np.log10(plot_period[aa])
+#            xleni = txi[aa]*np.log10(plot_period[aa])
+#            
+#            xlenr_o = txr_o[aa]*np.log10(plot_period[aa])
+#            xleni_o = txi_o[aa]*np.log10(plot_period[aa])
+#            
+#            #--> plot real arrows
+#            # plot original data
+#            if self.plot_properties.plot_original_data == True:
+#                self.ax_tip_r.arrow(np.log10(plot_period[aa]),
+#                                    0,
+#                                    xlenr_o,
+#                                    tyr_o[aa],
+#                                    **kw_tr_o)
+#                                            
+#                self.ax_tip_i.arrow(np.log10(plot_period[aa]),
+#                                    0,
+#                                    xleni_o,
+#                                    tyi_o[aa],
+#                                    **kw_ti_o)
+#            self.ax_tip_r.arrow(np.log10(plot_period[aa]),
+#                                0,
+#                                xlenr,
+#                                tyr[aa],
+#                                **kw_tr)
+#            
+#                
+#            if aa == 0:
+#                t_real = self.ax_tip_r.plot(0, 0, 
+#                                      self.plot_properties.arrow_color_real)
+#                               
+#            #--> plot imaginary arrows 
+#            # plot original data
+#
+#                           
+#            self.ax_tip_i.arrow(np.log10(plot_period[aa]),
+#                           0,
+#                           xleni,
+#                           tyi[aa],
+#                           **kw_ti)
+#            
+#            if aa == 0:              
+#                t_imag = self.ax_tip_i.plot(0, 0, 
+#                                      self.plot_properties.arrow_color_imag)
+#                
+#            #make a line at 0 for reference
+#            self.ax_tip_r.plot(np.log10(plot_period), [0]*nt, 'k', lw=.5)
+#            self.ax_tip_i.plot(np.log10(plot_period), [0]*nt, 'k', lw=.5)
+#
+#            #set axis properties 
+#
+#            for aa, ax in enumerate([self.ax_tip_r, self.ax_tip_i]): 
+#                ax.set_xlim(np.log10(self.plot_properties.xlimits[0]),
+#                            np.log10(self.plot_properties.xlimits[1]))
+#                                   
+#                tklabels = []
+#                xticks = []
+#    
+#                for tt, tk in enumerate(ax.get_xticks()):
+#                    try:
+#                        tklabels.append(mtplottools.labeldict[tk])
+#                        xticks.append(tk)
+#                    except KeyError:
+#                        pass
+#                ax.set_xticks(xticks)
+#                ax.set_xticklabels(tklabels, 
+#                                   fontdict={'size':self.plot_properties.fs})
+#                #need to reset the xlimits caouse they get reset when calling
+#                #set_ticks for some reason
+#                ax.set_xlim(np.log10(self.plot_properties.xlimits[0]),
+#                            np.log10(self.plot_properties.xlimits[1]))
+#                                   
+#                ax.yaxis.set_major_locator(MultipleLocator(.2))               
+#                ax.yaxis.set_minor_locator(MultipleLocator(.1))               
+#                ax.set_xlabel('Period (s)', fontdict=font_dict)
+#                if aa == 0:
+#                    ax.legend([t_real[0]], 
+#                              ['Real Tipper'],
+#                                loc=3, 
+#                                markerscale=1, 
+#                                borderaxespad=.01, 
+#                                handletextpad=.2, 
+#                                borderpad=.02)
+#    
+#                if aa == 1:
+#                    ax.legend([t_imag[0]], 
+#                              ['Imag Tipper'],
+#                                loc=3, 
+#                                markerscale=1, 
+#                                borderaxespad=.01,
+#                                handletextpad=.2, 
+#                                borderpad=.02)   
+#                
+#                #self.axt.set_xscale('log')
+#                if self.plot_properties.tipper_limits is None:
+#                    tmax = max([tyr.max(), tyi.max()])
+#                    if tmax > 1:
+#                        tmax = .899
+#                                
+#                    tmin = min([tyr.min(), tyi.min()])
+#                    if tmin < -1:
+#                        tmin = -.899
+#                                
+#                    self.plot_properties.tipper_limits = (tmin-.1, tmax+.1)
+#                
+#                ax.set_ylim(self.plot_properties.tipper_limits)
+#                ax.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
+#                              lw=.25)
+#                              
         
         ## --> need to be sure to draw the figure        
         self.mpl_widget.draw()
@@ -818,17 +1097,125 @@ class PlotWidget(QtGui.QWidget):
         self.plot()
         
     def on_pick(self, event):
-        pass
+        """
+        mask a data point when it is clicked on.  
+        """         
+        data_point = event.artist
+        data_period = data_point.get_xdata()[event.ind]
+        data_value = data_point.get_ydata()[event.ind]
+        
+        mask_kw = {'color' : self.plot_properties.mask_color,
+                   'marker' : self.plot_properties.mask_marker,
+                   'ms' : self.plot_properties.mask_ms,
+                   'mew' : self.plot_properties.mask_mew}
+        
+        # modify Z
+        if event.mouseevent.button == 1:
+            self._edited_mask = True
+            if self._ax_index < 2:
+                d_index = np.where(self.mt_obj.Z.resistivity == data_value)
+                comp_ii = d_index[0][0]
+                comp_jj = d_index[1][0]
+                comp_kk = d_index[2][0]
+                
+                # mask point in impedance object
+                self.mt_obj.Z.z[d_index] = 0.0+0.0*1j            
+                
+                self._ax.plot(data_period, data_value, **mask_kw)
+                
+                # mask phase as well
+                if self._ax_index == 0:
+                    if comp_jj == 1 and comp_kk == 0:
+                        self.ax_phase_od.plot(data_period, 
+                                              self.mt_obj.Z.phase[d_index]+180,
+                                              **mask_kw)
+                    else:
+                        self.ax_phase_od.plot(data_period, 
+                                              self.mt_obj.Z.phase[d_index],
+                                              **mask_kw)
+                elif self._ax_index == 1:
+                    self.ax_phase_d.plot(data_period, 
+                                          self.mt_obj.Z.phase[d_index],
+                                          **mask_kw)
+                self._ax.figure.canvas.draw()
+#        if event.mouseevent.button == 1:
+#            # mask the point in the edited data
+#            if self._ax_index < 4:
+#                pass
+#            # plot the point as masked
+#            self._ax.plot(data_period, data_value, color=(.7, .7, .7),
+#                          marker=self.mted, ms=self.ms)
+#        
+#        # Increase error bars
+#        if event.mouseevent.button == 3:
+#            # make sure just checking the top plots            
+#            ax_index = self._ax_index%len(self._err_list)
+#            
+#            #put the new error into the error array
+#            if len(self.ax_list) == 8:
+#                err = self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
+#                        self._comp_index_x, self._comp_index_y]
+#                err = err+abs(err)*.05
+#                print err
+#                self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
+#                        self._comp_index_x, self._comp_index_y] = err
+#            elif len(self.ax_list) == 12:
+#                if self._ax_index == 4 or self._ax_index == 5 or \
+#                   self._ax_index == 10 or self._ax_index == 11:
+#                    err = self.modem_data.mt_dict[self.station].Tipper.tippererr[p_index, 
+#                                self._comp_index_x, self._comp_index_y] 
+#                    self.modem_data.mt_dict[self.station].Tipper.tippererr[p_index, 
+#                                self._comp_index_x, self._comp_index_y] += abs(err)*.05
+#                else:
+#                    err = self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
+#                        self._comp_index_x, self._comp_index_y] 
+#                    self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
+#                        self._comp_index_x, self._comp_index_y] += abs(err)*.05
+#            
+#            # make error bar array
+#            eb = self._err_list[ax_index][2].get_paths()[p_index].vertices
+#            
+#            # make ecap array
+#            ecap_l = self._err_list[ax_index][0].get_data()[1][p_index]
+#            ecap_u = self._err_list[ax_index][1].get_data()[1][p_index]
+#            
+#            # change apparent resistivity error
+#            neb_u = eb[0,1]-.025*abs(eb[0,1])
+#            neb_l = eb[1,1]+.025*abs(eb[1,1])
+#            ecap_l = ecap_l-.025*abs(ecap_l)
+#            ecap_u = ecap_u+.025*abs(ecap_u)
+#                
+#            #set the new error bar values
+#            eb[0,1] = neb_u
+#            eb[1,1] = neb_l
+#            
+#            #reset the error bars and caps
+#            ncap_l = self._err_list[ax_index][0].get_data()
+#            ncap_u = self._err_list[ax_index][1].get_data()
+#            ncap_l[1][p_index] = ecap_l
+#            ncap_u[1][p_index] = ecap_u
+#            
+#            #set the values 
+#            self._err_list[ax_index][0].set_data(ncap_l)
+#            self._err_list[ax_index][1].set_data(ncap_u)
+#            self._err_list[ax_index][2].get_paths()[p_index].vertices = eb
+#                                       
+#        # need to redraw the figure
+#        self._ax.figure.canvas.draw()
     
     def in_axes(self, event):
-        pass
+        """
+        check to see which axis the mouse is in
+        """
         
+        self._ax = event.inaxes
         
-    #@QtCore.pyqtSlot(str)
-    #def normal_output(self, message):
-    #    self.output_box.moveCursor(QtGui.QTextCursor.End)
-    #    self.output_box.insertPlainText(message)
-    
+        # find the component index so that it can be masked
+        for ax_index, ax in enumerate(self.ax_list):
+            if ax == event.inaxes:
+                self._ax_index = ax_index
+        
+
 #==============================================================================
 #  Plot setting        
 #==============================================================================
@@ -864,7 +1251,8 @@ class PlotSettings(QtGui.QWidget):
         self.phase_limits_od = kwargs.pop('phase_limits_od', None)   
         self.phase_limits_d = kwargs.pop('phase_limits_d', None)  
         
-        self.tipper_limits = kwargs.pop('tipper_limits', None)
+        self.tipper_mag_limits = kwargs.pop('tipper_mag_limits', None)
+        self.tipper_angle_limits = kwargs.pop('tipper_angle_limits', None)
         
         self.subplot_wspace = kwargs.pop('subplot_wspace', .15)
         self.subplot_hspace = kwargs.pop('subplot_hspace', .00)
@@ -882,13 +1270,18 @@ class PlotSettings(QtGui.QWidget):
         self.legend_border_pad = kwargs.pop('legend_border_pad', .15)
         
         self.arrow_direction = kwargs.pop('arrow_direction', 0)
-        self.arrow_color_real = kwargs.pop('arrow_color_real', 'k')
-        self.arrow_color_imag = kwargs.pop('arrow_color_imag', 'b')
+        self.arrow_color_real = kwargs.pop('arrow_color_real', (.4, 0, .2))
+        self.arrow_color_imag = kwargs.pop('arrow_color_imag',  (0, .9, .9))
         self.arrow_head_width = kwargs.pop('arrow_head_width', .05)
         self.arrow_head_length = kwargs.pop('arrow_head_length', .05)
         
         self.plot_z = kwargs.pop('plot_z', False)
         self.plot_original_data = kwargs.pop('plot_original_data', True)
+        
+        self.mask_marker = kwargs.pop('mask_marker', 'x')
+        self.mask_ms = kwargs.pop('mask_ms', 10)
+        self.mask_mew = kwargs.pop('mask_mew', 3)
+        self.mask_color = kwargs.pop('mask_color', 'k')
         
         #self.setup_ui()
 
