@@ -432,8 +432,11 @@ class PlotStrike2D(object):
                     
                     #set color of the bars according to the number in that bin
                     #tipper goes from dark blue (low) to light blue (high)                        
-                    for cc,bar in enumerate(bartr):
-                        fc=float(trhist[0][cc])/trhist[0].max()*.9
+                    for cc, bar in enumerate(bartr):
+                        try:
+                            fc = float(trhist[0][cc])/trhist[0].max()*.9
+                        except ZeroDivisionError:
+                            fc = 1.0
                         bar.set_facecolor((0, 1-fc/2, fc))
                             
                 
@@ -450,7 +453,10 @@ class PlotStrike2D(object):
                 #set the color of the bars according to the number in that bin
                 #pt goes from green (low) to orange (high)
                 for cc,bar in enumerate(self.barpt):
-                    fc=float(pthist[0][cc])/pthist[0].max()*.8
+                    try:
+                        fc = float(pthist[0][cc])/pthist[0].max()*.8
+                    except ZeroDivisionError:
+                        fc = 1.0
                     bar.set_facecolor((fc,1-fc,0))
                     
                 #make axis look correct with N to the top at 90.
