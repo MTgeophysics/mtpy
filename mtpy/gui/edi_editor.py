@@ -269,6 +269,11 @@ class PlotWidget(QtGui.QWidget):
         self.tools_label = QtGui.QLabel("Tools")
         self.tools_label.setFont(header_font)
        
+        ## apply edits button
+        self.edits_apply_button = QtGui.QPushButton()
+        self.edits_apply_button.setText("Apply Edits")
+        self.edits_apply_button.pressed.connect(self.edits_apply)
+       
         ## revert back to original data 
         self.revert_button = QtGui.QPushButton()
         self.revert_button.setText("Revert back to orginal data")
@@ -342,6 +347,7 @@ class PlotWidget(QtGui.QWidget):
         info_layout.addWidget(self.remove_distortion_button)
         info_layout.addLayout(rot_layout)
         info_layout.addWidget(self.tools_label)
+        info_layout.addWidget(self.edits_apply_button)
         info_layout.addWidget(self.revert_button)
         info_layout.addWidget(self.save_edits_button)
         info_layout.addItem(v_space)
@@ -513,6 +519,14 @@ class PlotWidget(QtGui.QWidget):
         strike_plot.fold = False
         strike_plot.plot_range = 'data'
         strike_plot.plot()
+        
+    def edits_apply(self):
+        """
+        apply edits, well edits are already made, but replot without edited
+        points
+        """
+        
+        self.redraw_plot()
            
           
     def revert_back(self):
@@ -832,48 +846,48 @@ class PlotWidget(QtGui.QWidget):
         if self.plot_properties.plot_original_data == True:
             etro = mtplottools.plot_errorbar(self.ax_tip_m,
                                              plot_period,
-                                             self._mt_obj.Tipper.mag_real,
-                                             self._mt_obj.Tipper.mag_err,
+                                             self._mt_obj.Tipper.amplitude[:, 0, 0],
+                                             self._mt_obj.Tipper.amplitude_err[:, 0, 0],
                                              **kw_xx_o)
-            etio = mtplottools.plot_errorbar(self.ax_tip_m,
-                                             plot_period,
-                                             self._mt_obj.Tipper.mag_imag,
-                                             self._mt_obj.Tipper.mag_err,
-                                             **kw_yy_o) 
+#            etio = mtplottools.plot_errorbar(self.ax_tip_m,
+#                                             plot_period,
+#                                             self._mt_obj.Tipper.tipper[:, 0, 0].imag,
+#                                             self._mt_obj.Tipper.tippererr[:, 0, 0],
+#                                             **kw_yy_o) 
             ## plot angle  of original data                                
             etro = mtplottools.plot_errorbar(self.ax_tip_a,
                                              plot_period,
-                                             self._mt_obj.Tipper.angle_real%360,
-                                             self._mt_obj.Tipper.angle_err,
+                                             self._mt_obj.Tipper.amplitude[:, 0, 1],
+                                             self._mt_obj.Tipper.amplitude_err[:, 0, 1],
                                              **kw_xx_o)
-            etio = mtplottools.plot_errorbar(self.ax_tip_a,
-                                             plot_period,
-                                             self._mt_obj.Tipper.angle_imag%360,
-                                             self._mt_obj.Tipper.angle_err,
-                                             **kw_yy_o)
-        
+#            etio = mtplottools.plot_errorbar(self.ax_tip_a,
+#                                             plot_period,
+#                                             self._mt_obj.Tipper.tipper[:, 0, 1].imag,
+#                                             self._mt_obj.Tipper.tippererr[:, 0, 1],
+#                                             **kw_yy_o)
+#        
         # plot magnitude of edited induction vectors
         etr = mtplottools.plot_errorbar(self.ax_tip_m,
                                         plot_period,
-                                        self.mt_obj.Tipper.mag_real,
-                                        self.mt_obj.Tipper.mag_err,
+                                        self.mt_obj.Tipper.amplitude[:, 0, 0],
+                                        self.mt_obj.Tipper.amplitude_err[:, 0, 0],
                                         **kw_xx) 
-        eti = mtplottools.plot_errorbar(self.ax_tip_m,
-                                        plot_period,
-                                        self.mt_obj.Tipper.mag_imag,
-                                        self.mt_obj.Tipper.mag_err,
-                                        **kw_yy) 
-        # plot angle of edited data
+#        eti = mtplottools.plot_errorbar(self.ax_tip_m,
+#                                        plot_period,
+#                                        self.mt_obj.Tipper.tipper[:, 0, 0].imag,
+#                                        self.mt_obj.Tipper.tippererr[:, 0, 0],
+#                                        **kw_yy) 
+#        # plot angle of edited data
         etr = mtplottools.plot_errorbar(self.ax_tip_a,
                                         plot_period,
-                                        self.mt_obj.Tipper.angle_real%360,
-                                        self.mt_obj.Tipper.angle_err,
+                                        self.mt_obj.Tipper.amplitude[:, 0, 1],
+                                        self.mt_obj.Tipper.amplitude_err[:, 0, 1],
                                         **kw_xx) 
-        eti = mtplottools.plot_errorbar(self.ax_tip_a,
-                                        plot_period,
-                                        self.mt_obj.Tipper.angle_imag%360,
-                                        self.mt_obj.Tipper.angle_err,
-                                        **kw_yy)
+#        eti = mtplottools.plot_errorbar(self.ax_tip_a,
+#                                        plot_period,
+#                                        self.mt_obj.Tipper.tipper[:, 0, 1].imag,
+#                                        self.mt_obj.Tipper.tippererr[:, 0, 1],
+#                                        **kw_yy)
                                         
         #--> set axes properties for magnitude and angle of induction vectors
         for aa, ax in enumerate([self.ax_tip_m, self.ax_tip_a]):
@@ -887,22 +901,14 @@ class PlotWidget(QtGui.QWidget):
             ax.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
                           lw=.25)
             
-        self.ax_tip_m.legend((etr[0], eti[0]), 
-                              ('Re{T}', 'Im{T}'),
-                                loc=2,
-                                markerscale=1, 
-                                borderaxespad=.01,
-                                labelspacing=.07, 
-                                handletextpad=.2, 
-                                borderpad=.04)
-#        self.ax_tip_a.legend((etr[0], eti[0]), 
-#                              ('Ang (Re{T})', 'Ang (Im{T})'),
+#        self.ax_tip_m.legend((etr[0], eti[0]), 
+#                              ('Re{T}', 'Im{T}'),
 #                                loc=2,
 #                                markerscale=1, 
-#                                borderaxespad=.02,
-#                                labelspacing=.02, 
+#                                borderaxespad=.01,
+#                                labelspacing=.07, 
 #                                handletextpad=.2, 
-#                                borderpad=.02)
+#                                borderpad=.04)
                                 
                                 
         self.ax_tip_m.set_ylim(self.plot_properties.tipper_mag_limits)
@@ -912,182 +918,7 @@ class PlotWidget(QtGui.QWidget):
         for ax in [self.ax_tip_m, self.ax_tip_a]:
             y_labels = ax.get_yticks().tolist()
             y_labels[-1] = ''
-            ax.set_yticklabels(y_labels)
-
-        ## --> plot tipper                                 
-        #if self.plot_tipper == True:
-        #set th xaxis tick labels to invisible
-       
-        
-#        txr = self.mt_obj.Tipper.mag_real*\
-#                             np.sin(self.mt_obj.Tipper.angle_real*np.pi/180+\
-#                             np.pi*self.plot_properties.arrow_direction)
-#        tyr = self.mt_obj.Tipper.mag_real*\
-#                             np.cos(self.mt_obj.Tipper.angle_real*np.pi/180+\
-#                             np.pi*self.plot_properties.arrow_direction)
-#
-#        txi = self.mt_obj.Tipper.mag_imag*\
-#                             np.sin(self.mt_obj.Tipper.angle_imag*np.pi/180+\
-#                             np.pi*self.plot_properties.arrow_direction)
-#        tyi = self.mt_obj.Tipper.mag_imag*\
-#                             np.cos(self.mt_obj.Tipper.angle_imag*np.pi/180+\
-#                             np.pi*self.plot_properties.arrow_direction)
-#        
-#        ## original data tipper            
-#        txr_o = self.mt_obj.Tipper.mag_real*\
-#                             np.sin(self._mt_obj.Tipper.angle_real*np.pi/180+\
-#                             np.pi*self.plot_properties.arrow_direction)
-#        tyr_o = self.mt_obj.Tipper.mag_real*\
-#                             np.cos(self._mt_obj.Tipper.angle_real*np.pi/180+\
-#                             np.pi*self.plot_properties.arrow_direction)
-#
-#        txi_o = self.mt_obj.Tipper.mag_imag*\
-#                             np.sin(self._mt_obj.Tipper.angle_imag*np.pi/180+\
-#                             np.pi*self.plot_properties.arrow_direction)
-#        tyi_o = self.mt_obj.Tipper.mag_imag*\
-#                             np.cos(self._mt_obj.Tipper.angle_imag*np.pi/180+\
-#                             np.pi*self.plot_properties.arrow_direction)
-#        
-#        kw_tr = {'lw' : self.plot_properties.lw,
-#                 'facecolor' : self.plot_properties.arrow_color_real,
-#                 'edgecolor' : self.plot_properties.arrow_color_real,
-#                 'head_length' : self.plot_properties.arrow_head_length,
-#                 'head_width' : self.plot_properties.arrow_head_width,
-#                 'length_includes_head' : False,
-#                 'picker' : 3}
-#        kw_ti = {'lw' : self.plot_properties.lw,
-#                 'facecolor' : self.plot_properties.arrow_color_imag,
-#                 'edgecolor' : self.plot_properties.arrow_color_imag,
-#                 'head_length' : self.plot_properties.arrow_head_length,
-#                 'head_width' : self.plot_properties.arrow_head_width,
-#                 'length_includes_head' : False,
-#                 'picker' : 3}
-#                 
-#        kw_tr_o = {'lw' : self.plot_properties.lw,
-#                 'facecolor' : self.plot_properties.cteo,
-#                 'edgecolor' : self.plot_properties.cteo,
-#                 'head_length' : self.plot_properties.arrow_head_length,
-#                 'head_width' : self.plot_properties.arrow_head_width,
-#                 'length_includes_head' : False}
-#        kw_ti_o = {'lw' : self.plot_properties.lw,
-#                 'facecolor' : self.plot_properties.ctmo,
-#                 'edgecolor' : self.plot_properties.ctmo,
-#                 'head_length' : self.plot_properties.arrow_head_length,
-#                 'head_width' : self.plot_properties.arrow_head_width,
-#                 'length_includes_head' : False}
-#                 
-#        nt = len(txr)
-#        
-#        for aa in range(nt):
-#            xlenr = txr[aa]*np.log10(plot_period[aa])
-#            xleni = txi[aa]*np.log10(plot_period[aa])
-#            
-#            xlenr_o = txr_o[aa]*np.log10(plot_period[aa])
-#            xleni_o = txi_o[aa]*np.log10(plot_period[aa])
-#            
-#            #--> plot real arrows
-#            # plot original data
-#            if self.plot_properties.plot_original_data == True:
-#                self.ax_tip_r.arrow(np.log10(plot_period[aa]),
-#                                    0,
-#                                    xlenr_o,
-#                                    tyr_o[aa],
-#                                    **kw_tr_o)
-#                                            
-#                self.ax_tip_i.arrow(np.log10(plot_period[aa]),
-#                                    0,
-#                                    xleni_o,
-#                                    tyi_o[aa],
-#                                    **kw_ti_o)
-#            self.ax_tip_r.arrow(np.log10(plot_period[aa]),
-#                                0,
-#                                xlenr,
-#                                tyr[aa],
-#                                **kw_tr)
-#            
-#                
-#            if aa == 0:
-#                t_real = self.ax_tip_r.plot(0, 0, 
-#                                      self.plot_properties.arrow_color_real)
-#                               
-#            #--> plot imaginary arrows 
-#            # plot original data
-#
-#                           
-#            self.ax_tip_i.arrow(np.log10(plot_period[aa]),
-#                           0,
-#                           xleni,
-#                           tyi[aa],
-#                           **kw_ti)
-#            
-#            if aa == 0:              
-#                t_imag = self.ax_tip_i.plot(0, 0, 
-#                                      self.plot_properties.arrow_color_imag)
-#                
-#            #make a line at 0 for reference
-#            self.ax_tip_r.plot(np.log10(plot_period), [0]*nt, 'k', lw=.5)
-#            self.ax_tip_i.plot(np.log10(plot_period), [0]*nt, 'k', lw=.5)
-#
-#            #set axis properties 
-#
-#            for aa, ax in enumerate([self.ax_tip_r, self.ax_tip_i]): 
-#                ax.set_xlim(np.log10(self.plot_properties.xlimits[0]),
-#                            np.log10(self.plot_properties.xlimits[1]))
-#                                   
-#                tklabels = []
-#                xticks = []
-#    
-#                for tt, tk in enumerate(ax.get_xticks()):
-#                    try:
-#                        tklabels.append(mtplottools.labeldict[tk])
-#                        xticks.append(tk)
-#                    except KeyError:
-#                        pass
-#                ax.set_xticks(xticks)
-#                ax.set_xticklabels(tklabels, 
-#                                   fontdict={'size':self.plot_properties.fs})
-#                #need to reset the xlimits caouse they get reset when calling
-#                #set_ticks for some reason
-#                ax.set_xlim(np.log10(self.plot_properties.xlimits[0]),
-#                            np.log10(self.plot_properties.xlimits[1]))
-#                                   
-#                ax.yaxis.set_major_locator(MultipleLocator(.2))               
-#                ax.yaxis.set_minor_locator(MultipleLocator(.1))               
-#                ax.set_xlabel('Period (s)', fontdict=font_dict)
-#                if aa == 0:
-#                    ax.legend([t_real[0]], 
-#                              ['Real Tipper'],
-#                                loc=3, 
-#                                markerscale=1, 
-#                                borderaxespad=.01, 
-#                                handletextpad=.2, 
-#                                borderpad=.02)
-#    
-#                if aa == 1:
-#                    ax.legend([t_imag[0]], 
-#                              ['Imag Tipper'],
-#                                loc=3, 
-#                                markerscale=1, 
-#                                borderaxespad=.01,
-#                                handletextpad=.2, 
-#                                borderpad=.02)   
-#                
-#                #self.axt.set_xscale('log')
-#                if self.plot_properties.tipper_limits is None:
-#                    tmax = max([tyr.max(), tyi.max()])
-#                    if tmax > 1:
-#                        tmax = .899
-#                                
-#                    tmin = min([tyr.min(), tyi.min()])
-#                    if tmin < -1:
-#                        tmin = -.899
-#                                
-#                    self.plot_properties.tipper_limits = (tmin-.1, tmax+.1)
-#                
-#                ax.set_ylim(self.plot_properties.tipper_limits)
-#                ax.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
-#                              lw=.25)
-#                              
+            ax.set_yticklabels(y_labels)                             
         
         ## --> need to be sure to draw the figure        
         self.mpl_widget.draw()
@@ -1112,7 +943,7 @@ class PlotWidget(QtGui.QWidget):
         # modify Z
         if event.mouseevent.button == 1:
             self._edited_mask = True
-            if self._ax_index < 2:
+            if self._ax_index == 0 or self._ax_index == 1:
                 d_index = np.where(self.mt_obj.Z.resistivity == data_value)
                 comp_ii = d_index[0][0]
                 comp_jj = d_index[1][0]
@@ -1138,71 +969,80 @@ class PlotWidget(QtGui.QWidget):
                                           self.mt_obj.Z.phase[d_index],
                                           **mask_kw)
                 self._ax.figure.canvas.draw()
-#        if event.mouseevent.button == 1:
-#            # mask the point in the edited data
-#            if self._ax_index < 4:
-#                pass
-#            # plot the point as masked
-#            self._ax.plot(data_period, data_value, color=(.7, .7, .7),
-#                          marker=self.mted, ms=self.ms)
-#        
-#        # Increase error bars
-#        if event.mouseevent.button == 3:
-#            # make sure just checking the top plots            
-#            ax_index = self._ax_index%len(self._err_list)
-#            
-#            #put the new error into the error array
-#            if len(self.ax_list) == 8:
-#                err = self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
-#                        self._comp_index_x, self._comp_index_y]
-#                err = err+abs(err)*.05
-#                print err
-#                self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
-#                        self._comp_index_x, self._comp_index_y] = err
-#            elif len(self.ax_list) == 12:
-#                if self._ax_index == 4 or self._ax_index == 5 or \
-#                   self._ax_index == 10 or self._ax_index == 11:
-#                    err = self.modem_data.mt_dict[self.station].Tipper.tippererr[p_index, 
-#                                self._comp_index_x, self._comp_index_y] 
-#                    self.modem_data.mt_dict[self.station].Tipper.tippererr[p_index, 
-#                                self._comp_index_x, self._comp_index_y] += abs(err)*.05
-#                else:
-#                    err = self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
-#                        self._comp_index_x, self._comp_index_y] 
-#                    self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
-#                        self._comp_index_x, self._comp_index_y] += abs(err)*.05
-#            
-#            # make error bar array
-#            eb = self._err_list[ax_index][2].get_paths()[p_index].vertices
-#            
-#            # make ecap array
-#            ecap_l = self._err_list[ax_index][0].get_data()[1][p_index]
-#            ecap_u = self._err_list[ax_index][1].get_data()[1][p_index]
-#            
-#            # change apparent resistivity error
-#            neb_u = eb[0,1]-.025*abs(eb[0,1])
-#            neb_l = eb[1,1]+.025*abs(eb[1,1])
-#            ecap_l = ecap_l-.025*abs(ecap_l)
-#            ecap_u = ecap_u+.025*abs(ecap_u)
+                
+            # mask phase points
+            elif self._ax_index == 2 or self._ax_index == 3:
+                try:
+                    d_index = np.where(self.mt_obj.Z.phase == data_value)
+                    comp_ii = d_index[0][0]
+                    comp_jj = d_index[1][0]
+                    comp_kk = d_index[2][0]
+                except IndexError:
+                    d_index = np.where(self.mt_obj.Z.phase == data_value-180)
+                    comp_ii = d_index[0][0]
+                    comp_jj = d_index[1][0]
+                    comp_kk = d_index[2][0]    
+                
+                # mask point in impedance object
+                self.mt_obj.Z.z[d_index] = 0.0+0.0*1j            
+                
+                # mask the point in the axis selected
+                self._ax.plot(data_period, data_value, **mask_kw)
+                
+                # mask resistivity as well
+                if self._ax_index == 2:
+                    self.ax_res_od.plot(data_period, 
+                                        self.mt_obj.Z.resistivity[d_index],
+                                        **mask_kw)
+                elif self._ax_index == 3:
+                    self.ax_res_d.plot(data_period, 
+                                       self.mt_obj.Z.resistivity[d_index],
+                                       **mask_kw)
+                self._ax.figure.canvas.draw()
+            
+#            # mask tipper points
+#            elif self._ax_index == 4:
+#                data_value = np.round(data_value, 8)
+#                # the tipper is only rank on so jj will always be 0
+#                comp_jj = 0
+#
+#                # find the tipper magnitude just picked, need to test for both
+#                # real and imaginary, then real again incase imaginary is
+#                # picked, probably a better way to do this.
+#                try:
+#                    d_index = np.where(np.round(self.mt_obj.Tipper.mag_real, 
+#                                                8) == data_value)
+#                    comp_ii = d_index[0][0]
+#                    comp_kk = 0
+#                except IndexError:
+#                    try:
+#                        d_index = np.where(np.round(self.mt_obj.Tipper.mag_imag,
+#                                                    8) == data_value)
+#                        comp_ii = d_index[0][0]
+#                        comp_kk = 1
+#                    except IndexError:
+#                        d_index = np.where(np.round(self.mt_obj.Tipper.mag_real,
+#                                                    8) == data_value)
+#                        comp_ii = d_index[0][0]
+#                        comp_kk = 0
 #                
-#            #set the new error bar values
-#            eb[0,1] = neb_u
-#            eb[1,1] = neb_l
 #            
-#            #reset the error bars and caps
-#            ncap_l = self._err_list[ax_index][0].get_data()
-#            ncap_u = self._err_list[ax_index][1].get_data()
-#            ncap_l[1][p_index] = ecap_l
-#            ncap_u[1][p_index] = ecap_u
-#            
-#            #set the values 
-#            self._err_list[ax_index][0].set_data(ncap_l)
-#            self._err_list[ax_index][1].set_data(ncap_u)
-#            self._err_list[ax_index][2].get_paths()[p_index].vertices = eb
-#                                       
-#        # need to redraw the figure
-#        self._ax.figure.canvas.draw()
-    
+#                
+#                self._ax.plot(data_period, data_value, **mask_kw)
+#                
+#                #plot in cooresponding direction mode
+#                if comp_kk == 0:
+#                    plot_angle =  self.mt_obj.Tipper.angle_real[comp_ii]%360
+#                elif comp_kk == 1:
+#                    plot_angle =  self.mt_obj.Tipper.angle_imag[comp_ii]%360
+#                self.ax_tip_a.plot(data_period, plot_angle, **mask_kw)
+#                
+#                self._ax.figure.canvas.draw()
+#                
+#                # mask the point
+#                self.mt_obj.Tipper.tipper[comp_ii, comp_jj, comp_kk] = 0.0+0.0j                
+#                self.mt_obj.Tipper._compute_mag_direction()
+                
     def in_axes(self, event):
         """
         check to see which axis the mouse is in
