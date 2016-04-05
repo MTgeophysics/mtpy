@@ -15,7 +15,7 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from matplotlib.figure import Figure
 from matplotlib.ticker import MultipleLocator
-import mtpy.imaging.mtplottools as mtplottools
+import mtpy.imaging.mtplottools as mtplt
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import numpy as np
@@ -157,6 +157,10 @@ class PlotWidget(QtGui.QWidget):
         self._edited_mask = False
         self.dir_path = os.getcwd()
         
+        self.interp_period_min = .001
+        self.interp_period_max = 1000.
+        self.interp_period_num = 24
+        
         self.setup_ui()
         
         
@@ -265,6 +269,27 @@ class PlotWidget(QtGui.QWidget):
         self.rotate_estimate_strike_button = QtGui.QPushButton("Estimate Strike")
         self.rotate_estimate_strike_button.pressed.connect(self.rotate_estimate_strike)
         
+        
+        ## interpolate data 
+        self.interp_label = QtGui.QLabel("Interpolate Periods")
+        self.interp_label.setFont(header_font)
+        
+        self.interp_apply_button = QtGui.QPushButton()
+        self.interp_apply_button.setText("Apply")
+        self.interp_apply_button.pressed.connect(self.interp_apply)        
+        
+        self.interp_min_label = QtGui.QLabel("Min")
+        self.interp_min_edit = QtGui.QLineEdit("{0:.4e}".format(self.interp_period_min))
+        self.interp_min_edit.editingFinished.connect(self.interp_set_min)
+        
+        self.interp_max_label = QtGui.QLabel("Max")
+        self.interp_max_edit = QtGui.QLineEdit("{0:.4e}".format(self.interp_period_max))
+        self.interp_max_edit.editingFinished.connect(self.interp_set_max)
+        
+        self.interp_num_label = QtGui.QLabel("Num")
+        self.interp_num_edit = QtGui.QLineEdit("{0:.0f}".format(self.interp_period_num))
+        self.interp_num_edit.editingFinished.connect(self.interp_set_num)
+        
         ## tools label
         self.tools_label = QtGui.QLabel("Tools")
         self.tools_label.setFont(header_font)
@@ -285,9 +310,25 @@ class PlotWidget(QtGui.QWidget):
         self.save_edits_button.pressed.connect(self.save_edi_file)
         
         ## horizontal line
-        h_line = QtGui.QFrame(self)
-        h_line.setFrameShape(QtGui.QFrame.HLine)
-        h_line.setFrameShadow(QtGui.QFrame.Sunken)
+        h_line_01 = QtGui.QFrame(self)
+        h_line_01.setFrameShape(QtGui.QFrame.HLine)
+        h_line_01.setFrameShadow(QtGui.QFrame.Sunken)
+        
+        h_line_02 = QtGui.QFrame(self)
+        h_line_02.setFrameShape(QtGui.QFrame.HLine)
+        h_line_02.setFrameShadow(QtGui.QFrame.Sunken)
+        
+        h_line_03 = QtGui.QFrame(self)
+        h_line_03.setFrameShape(QtGui.QFrame.HLine)
+        h_line_03.setFrameShadow(QtGui.QFrame.Sunken)
+        
+        h_line_04 = QtGui.QFrame(self)
+        h_line_04.setFrameShape(QtGui.QFrame.HLine)
+        h_line_04.setFrameShadow(QtGui.QFrame.Sunken)
+        
+        h_line_05 = QtGui.QFrame(self)
+        h_line_05.setFrameShape(QtGui.QFrame.HLine)
+        h_line_05.setFrameShadow(QtGui.QFrame.Sunken)
         
         ## vertical spacer
         v_space = QtGui.QSpacerItem(20, 20, 
@@ -337,15 +378,31 @@ class PlotWidget(QtGui.QWidget):
         rot_layout.addWidget(self.rotate_angle_t_edit, 3, 1)
         rot_layout.addWidget(self.rotate_estimate_strike_button, 4, 0, 1, 2)
         
+        ## interpolate 
+        interp_layout = QtGui.QGridLayout()
+        interp_layout.addWidget(self.interp_label, 0, 0)
+        interp_layout.addWidget(self.interp_apply_button, 0, 1)
+        interp_layout.addWidget(self.interp_min_label, 1, 0)
+        interp_layout.addWidget(self.interp_min_edit, 1, 1)
+        interp_layout.addWidget(self.interp_max_label, 2, 0)
+        interp_layout.addWidget(self.interp_max_edit, 2, 1)
+        interp_layout.addWidget(self.interp_num_label, 3, 0)
+        interp_layout.addWidget(self.interp_num_edit, 3, 1)
+        
         ## left panel
         info_layout = QtGui.QVBoxLayout()
         info_layout.addLayout(meta_layout)
-        info_layout.addWidget(h_line)
-        info_layout.addLayout(ss_layout)
-        info_layout.addWidget(h_line)
+
+        info_layout.addWidget(h_line_01)
         info_layout.addWidget(self.remove_distortion_label)
         info_layout.addWidget(self.remove_distortion_button)
+        info_layout.addWidget(h_line_02)
+        info_layout.addLayout(ss_layout)
+        info_layout.addWidget(h_line_03)
         info_layout.addLayout(rot_layout)
+        info_layout.addWidget(h_line_04)
+        info_layout.addLayout(interp_layout)
+        info_layout.addWidget(h_line_05)
         info_layout.addWidget(self.tools_label)
         info_layout.addWidget(self.edits_apply_button)
         info_layout.addWidget(self.revert_button)
@@ -520,6 +577,46 @@ class PlotWidget(QtGui.QWidget):
         strike_plot.plot_range = 'data'
         strike_plot.plot()
         
+    def interp_set_min(self):
+        self.interp_period_min = float(str(self.interp_min_edit.text()))
+        self.interp_min_edit.setText('{0:.4e}'.format(self.interp_period_min))
+        
+    def interp_set_max(self):
+        self.interp_period_max = float(str(self.interp_max_edit.text()))
+        self.interp_max_edit.setText('{0:.4e}'.format(self.interp_period_max))
+    
+    def interp_set_num(self):
+        self.interp_period_num = int(str(self.interp_num_edit.text()))
+        self.interp_num_edit.setText('{0:.0f}'.format(self.interp_period_num))
+        
+    def interp_apply(self):
+        """
+        interpolate data on to a new period list that is equally spaced in 
+        log space.
+        """
+        
+        new_period = np.logspace(np.log10(self.interp_period_min),
+                                 np.log10(self.interp_period_max),
+                                 num=self.interp_period_num)
+                                 
+        if self._edited_dist == True or self._edited_mask == True or \
+           self._edited_rot == True or self._edited_ss == True:
+            new_z, new_tip = self.mt_obj.interpolate(1./new_period)
+            self.mt_obj.Z = new_z
+            self.mt_obj.Tipper = new_tip
+            
+        else:
+            new_z, new_tip = self._mt_obj.interpolate(1./new_period)
+            self.mt_obj.Z = new_z
+            self.mt_obj.Tipper = new_tip
+            
+        self.redraw_plot()
+        
+        print 'Interpolated data onto periods:'
+        for ff in new_period:
+            print '    {0:.6e}'.format(ff)
+        
+        
     def edits_apply(self):
         """
         apply edits, well edits are already made, but replot without edited
@@ -590,6 +687,7 @@ class PlotWidget(QtGui.QWidget):
         # make some useful internal variabls
         font_dict = {'size':self.plot_properties.fs+2, 'weight':'bold'}
         plot_period = 1./self.mt_obj.Z.freq
+        plot_period_o = 1./self._mt_obj.Z.freq
             
         if np.all(self.mt_obj.Tipper.tipper == 0) == True:
                 print 'No Tipper data for station {0}'.format(self.mt_obj.station)
@@ -598,8 +696,8 @@ class PlotWidget(QtGui.QWidget):
             self.plot_tipper = True
             
         #set x-axis limits from short period to long period
-        self.plot_properties.xlimits = (10**(np.floor(np.log10(plot_period.min()))),
-                                        10**(np.ceil(np.log10((plot_period.max())))))
+        self.plot_properties.xlimits = (10**(np.floor(np.log10(plot_period_o.min()))),
+                                        10**(np.ceil(np.log10((plot_period_o.max())))))
         
         #--> make key word dictionaries for plotting
         kw_xx = {'color':self.plot_properties.cted,
@@ -670,84 +768,88 @@ class PlotWidget(QtGui.QWidget):
                                                 sharex=self.ax_res_od)
         
         # include tipper, r = real, i = imaginary
-        self.ax_tip_m = self.figure.add_subplot(gs[2, 0], 
+        self.ax_tip_x = self.figure.add_subplot(gs[2, 0], 
                                                 sharex=self.ax_res_od)
-        self.ax_tip_a = self.figure.add_subplot(gs[2, 1],
+        self.ax_tip_y = self.figure.add_subplot(gs[2, 1],
                                                 sharex=self.ax_res_od)
         
         self.ax_list = [self.ax_res_od, self.ax_res_d,
                         self.ax_phase_od, self.ax_phase_d,
-                        self.ax_tip_m, self.ax_tip_a]
+                        self.ax_tip_x, self.ax_tip_y]
         
         ## --> plot apparent resistivity, phase and tipper
         ## plot orginal apparent resistivity
         if self.plot_properties.plot_original_data == True:                                 
-            orxx = mtplottools.plot_errorbar(self.ax_res_d, 
-                                             plot_period[nzxx_o],
-                                             self._mt_obj.Z.resistivity[nzxx_o, 0, 0],
-                                             self._mt_obj.Z.resistivity_err[nzxx_o, 0, 0],
-                                             **kw_xx_o)
-            orxy = mtplottools.plot_errorbar(self.ax_res_od, 
-                                             plot_period[nzxy_o],
-                                             self._mt_obj.Z.resistivity[nzxy_o, 0, 1],
-                                             self._mt_obj.Z.resistivity_err[nzxy_o, 0, 1],
-                                             **kw_xx_o)
-            oryx = mtplottools.plot_errorbar(self.ax_res_od, 
-                                             plot_period[nzyx_o],
-                                             self._mt_obj.Z.resistivity[nzyx_o, 1, 0],
-                                             self._mt_obj.Z.resistivity_err[nzyx_o, 1, 0],
-                                             **kw_yy_o)
-            oryy = mtplottools.plot_errorbar(self.ax_res_d, 
-                                             plot_period[nzyy_o],
-                                             self._mt_obj.Z.resistivity[nzyy_o, 1, 1],
-                                             self._mt_obj.Z.resistivity_err[nzyy_o, 1, 1],
-                                             **kw_yy_o)
+            orxx = mtplt.plot_errorbar(self.ax_res_d, 
+                                       plot_period_o[nzxx_o],
+                                       self._mt_obj.Z.resistivity[nzxx_o, 0, 0],
+                                       self._mt_obj.Z.resistivity_err[nzxx_o, 0, 0],
+                                       **kw_xx_o)
+            orxy = mtplt.plot_errorbar(self.ax_res_od, 
+                                       plot_period_o[nzxy_o],
+                                       self._mt_obj.Z.resistivity[nzxy_o, 0, 1],
+                                       self._mt_obj.Z.resistivity_err[nzxy_o, 0, 1],
+                                       **kw_xx_o)
+            oryx = mtplt.plot_errorbar(self.ax_res_od, 
+                                       plot_period_o[nzyx_o],
+                                       self._mt_obj.Z.resistivity[nzyx_o, 1, 0],
+                                       self._mt_obj.Z.resistivity_err[nzyx_o, 1, 0],
+                                       **kw_yy_o)
+            oryy = mtplt.plot_errorbar(self.ax_res_d, 
+                                       plot_period_o[nzyy_o],
+                                       self._mt_obj.Z.resistivity[nzyy_o, 1, 1],
+                                       self._mt_obj.Z.resistivity_err[nzyy_o, 1, 1],
+                                       **kw_yy_o)
             # plot original phase                                 
-            epxx = mtplottools.plot_errorbar(self.ax_phase_d, 
-                                             plot_period[nzxx_o],
-                                             self._mt_obj.Z.phase[nzxx_o, 0, 0],
-                                             self._mt_obj.Z.phase_err[nzxx_o, 0, 0],
-                                             **kw_xx_o)
-            epxy = mtplottools.plot_errorbar(self.ax_phase_od, 
-                                             plot_period[nzxy_o],
-                                             self._mt_obj.Z.phase[nzxy_o, 0, 1],
-                                             self._mt_obj.Z.phase_err[nzxy_o, 0, 1],
-                                             **kw_xx_o)
-            epyx = mtplottools.plot_errorbar(self.ax_phase_od, 
-                                             plot_period[nzyx_o],
-                                             self._mt_obj.Z.phase[nzyx_o, 1, 0]+180,
-                                             self._mt_obj.Z.phase_err[nzyx_o, 1, 0],
-                                             **kw_yy_o)
-            epyy = mtplottools.plot_errorbar(self.ax_phase_d, 
-                                             plot_period[nzyy_o],
-                                             self._mt_obj.Z.phase[nzyy_o, 1, 1],
-                                             self._mt_obj.Z.phase_err[nzyy_o, 1, 1],
-                                             **kw_yy_o)
+            epxx = mtplt.plot_errorbar(self.ax_phase_d, 
+                                       plot_period_o[nzxx_o],
+                                       self._mt_obj.Z.phase[nzxx_o, 0, 0],
+                                       self._mt_obj.Z.phase_err[nzxx_o, 0, 0],
+                                       **kw_xx_o)
+            epxy = mtplt.plot_errorbar(self.ax_phase_od, 
+                                       plot_period_o[nzxy_o],
+                                       self._mt_obj.Z.phase[nzxy_o, 0, 1],
+                                       self._mt_obj.Z.phase_err[nzxy_o, 0, 1],
+                                       **kw_xx_o)
+            epyx = mtplt.plot_errorbar(self.ax_phase_od, 
+                                       plot_period_o[nzyx_o],
+                                       self._mt_obj.Z.phase[nzyx_o, 1, 0]+180,
+                                       self._mt_obj.Z.phase_err[nzyx_o, 1, 0],
+                                       **kw_yy_o)
+            epyy = mtplt.plot_errorbar(self.ax_phase_d, 
+                                       plot_period_o[nzyy_o],
+                                       self._mt_obj.Z.phase[nzyy_o, 1, 1],
+                                       self._mt_obj.Z.phase_err[nzyy_o, 1, 1],
+                                       **kw_yy_o)
                                          
         # plot manipulated data apparent resistivity
-        erxx = mtplottools.plot_errorbar(self.ax_res_d, 
-                                         plot_period[nzxx],
-                                         self.mt_obj.Z.resistivity[nzxx, 0, 0],
-                                         self.mt_obj.Z.resistivity_err[nzxx, 0, 0],
-                                         **kw_xx)
-        erxy = mtplottools.plot_errorbar(self.ax_res_od, 
-                                         plot_period[nzxy],
-                                         self.mt_obj.Z.resistivity[nzxy, 0, 1],
-                                         self.mt_obj.Z.resistivity_err[nzxy, 0, 1],
-                                         **kw_xx)
-        eryx = mtplottools.plot_errorbar(self.ax_res_od, 
-                                         plot_period[nzyx],
-                                         self.mt_obj.Z.resistivity[nzyx, 1, 0],
-                                         self.mt_obj.Z.resistivity_err[nzyx, 1, 0],
-                                         **kw_yy)
-        eryy = mtplottools.plot_errorbar(self.ax_res_d, 
-                                         plot_period[nzyy],
-                                         self.mt_obj.Z.resistivity[nzyy, 1, 1],
-                                         self.mt_obj.Z.resistivity_err[nzyy, 1, 1],
-                                         **kw_yy)
+        erxx = mtplt.plot_errorbar(self.ax_res_d, 
+                                   plot_period[nzxx],
+                                   self.mt_obj.Z.resistivity[nzxx, 0, 0],
+                                   self.mt_obj.Z.resistivity_err[nzxx, 0, 0],
+                                   **kw_xx)
+        erxy = mtplt.plot_errorbar(self.ax_res_od, 
+                                   plot_period[nzxy],
+                                   self.mt_obj.Z.resistivity[nzxy, 0, 1],
+                                   self.mt_obj.Z.resistivity_err[nzxy, 0, 1],
+                                   **kw_xx)
+        eryx = mtplt.plot_errorbar(self.ax_res_od, 
+                                   plot_period[nzyx],
+                                   self.mt_obj.Z.resistivity[nzyx, 1, 0],
+                                   self.mt_obj.Z.resistivity_err[nzyx, 1, 0],
+                                   **kw_yy)
+        eryy = mtplt.plot_errorbar(self.ax_res_d, 
+                                   plot_period[nzyy],
+                                   self.mt_obj.Z.resistivity[nzyy, 1, 1],
+                                   self.mt_obj.Z.resistivity_err[nzyy, 1, 1],
+                                   **kw_yy)
 
                                          
         #--> set axes properties for apparent resistivity
+        if self.plot_properties.res_limits_d != None:
+            self.ax_res_d.set_ylim(self.plot_properties.res_limits_d)
+        if self.plot_properties.res_limits_od != None:
+            self.ax_res_od.set_ylim(self.plot_properties.res_limits_od)
         for aa, ax in enumerate([self.ax_res_od, self.ax_res_d]):
             plt.setp(ax.get_xticklabels(), visible=False)
             if aa == 0:            
@@ -765,7 +867,7 @@ class PlotWidget(QtGui.QWidget):
                       10**np.ceil(np.log10(ylim[1])))
             ax.set_ylim(ylimits)
             ylabels = [' ', ' ']+\
-                     [mtplottools.labeldict[ii] for ii 
+                     [mtplt.labeldict[ii] for ii 
                      in np.arange(np.log10(ylimits[0])+1, 
                                   np.log10(ylimits[1])+1, 1)]
             ax.set_yticklabels(ylabels)
@@ -786,34 +888,37 @@ class PlotWidget(QtGui.QWidget):
                                 labelspacing=.07, 
                                 handletextpad=.2, 
                                 borderpad=.02)
-        self.ax_res_d.set_ylim(self.plot_properties.res_limits_d)
-        self.ax_res_od.set_ylim(self.plot_properties.res_limits_od)
+
         
         ##--> plot phase                           
         # plot manipulated data                         
-        epxx = mtplottools.plot_errorbar(self.ax_phase_d, 
-                                         plot_period[nzxx],
-                                         self.mt_obj.Z.phase[nzxx, 0, 0],
-                                         self.mt_obj.Z.phase_err[nzxx, 0, 0],
-                                         **kw_xx)
-        epxy = mtplottools.plot_errorbar(self.ax_phase_od, 
-                                         plot_period[nzxy],
-                                         self.mt_obj.Z.phase[nzxy, 0, 1],
-                                         self.mt_obj.Z.phase_err[nzxy, 0, 1],
-                                         **kw_xx)
-        epyx = mtplottools.plot_errorbar(self.ax_phase_od, 
-                                         plot_period[nzyx],
-                                         self.mt_obj.Z.phase[nzyx, 1, 0]+180,
-                                         self.mt_obj.Z.phase_err[nzyx, 1, 0],
-                                         **kw_yy)
-        epyy = mtplottools.plot_errorbar(self.ax_phase_d, 
-                                         plot_period[nzyy],
-                                         self.mt_obj.Z.phase[nzyy, 1, 1],
-                                         self.mt_obj.Z.phase_err[nzyy, 1, 1],
-                                         **kw_yy)
+        epxx = mtplt.plot_errorbar(self.ax_phase_d, 
+                                   plot_period[nzxx],
+                                   self.mt_obj.Z.phase[nzxx, 0, 0],
+                                   self.mt_obj.Z.phase_err[nzxx, 0, 0],
+                                   **kw_xx)
+        epxy = mtplt.plot_errorbar(self.ax_phase_od, 
+                                   plot_period[nzxy],
+                                   self.mt_obj.Z.phase[nzxy, 0, 1],
+                                   self.mt_obj.Z.phase_err[nzxy, 0, 1],
+                                   **kw_xx)
+        epyx = mtplt.plot_errorbar(self.ax_phase_od, 
+                                   plot_period[nzyx],
+                                   self.mt_obj.Z.phase[nzyx, 1, 0]+180,
+                                   self.mt_obj.Z.phase_err[nzyx, 1, 0],
+                                   **kw_yy)
+        epyy = mtplt.plot_errorbar(self.ax_phase_d, 
+                                   plot_period[nzyy],
+                                   self.mt_obj.Z.phase[nzyy, 1, 1],
+                                   self.mt_obj.Z.phase_err[nzyy, 1, 1],
+                                   **kw_yy)
         
                                          
         #--> set axes properties
+        if self.plot_properties.phase_limits_od != None:
+            self.ax_phase_od.set_ylim(self.plot_properties.phase_limits_od)
+        if self.plot_properties.phase_limits_d != None:
+            self.ax_phase_d.set_ylim(self.plot_properties.phase_limits_d)
         for aa, ax in enumerate([self.ax_phase_od, self.ax_phase_d]):
             ax.set_xlabel('Period (s)', font_dict)
             ax.set_xscale('log')
@@ -823,8 +928,7 @@ class PlotWidget(QtGui.QWidget):
                 #ax.yaxis.set_minor_locator(MultipleLocator(5))
             ax.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
                           lw=.25)
-        self.ax_phase_od.set_ylim(self.plot_properties.phase_limits_od)
-        self.ax_phase_d.set_ylim(self.plot_properties.phase_limits_d)
+
         
         # set the last label to be an empty string for easier reading
         for ax in [self.ax_phase_od, self.ax_phase_d]:
@@ -839,92 +943,86 @@ class PlotWidget(QtGui.QWidget):
         self.ax_phase_od.set_xlabel('')
         self.ax_phase_d.set_xlabel('')
         
-        kw_xx['color'] = self.plot_properties.arrow_color_real
-        kw_yy['color'] = self.plot_properties.arrow_color_imag
+        # make sure there is tipper data to plot
+        if self.plot_tipper == True:
         
-        # plot magnitude of real and imaginary induction vectors
-        if self.plot_properties.plot_original_data == True:
-            etro = mtplottools.plot_errorbar(self.ax_tip_m,
-                                             plot_period,
-                                             self._mt_obj.Tipper.amplitude[:, 0, 0],
-                                             self._mt_obj.Tipper.amplitude_err[:, 0, 0],
-                                             **kw_xx_o)
-#            etio = mtplottools.plot_errorbar(self.ax_tip_m,
-#                                             plot_period,
-#                                             self._mt_obj.Tipper.tipper[:, 0, 0].imag,
-#                                             self._mt_obj.Tipper.tippererr[:, 0, 0],
-#                                             **kw_yy_o) 
-            ## plot angle  of original data                                
-            etro = mtplottools.plot_errorbar(self.ax_tip_a,
-                                             plot_period,
-                                             self._mt_obj.Tipper.amplitude[:, 0, 1],
-                                             self._mt_obj.Tipper.amplitude_err[:, 0, 1],
-                                             **kw_xx_o)
-#            etio = mtplottools.plot_errorbar(self.ax_tip_a,
-#                                             plot_period,
-#                                             self._mt_obj.Tipper.tipper[:, 0, 1].imag,
-#                                             self._mt_obj.Tipper.tippererr[:, 0, 1],
-#                                             **kw_yy_o)
-#        
-        # plot magnitude of edited induction vectors
-        etr = mtplottools.plot_errorbar(self.ax_tip_m,
-                                        plot_period,
-                                        self.mt_obj.Tipper.amplitude[:, 0, 0],
-                                        self.mt_obj.Tipper.amplitude_err[:, 0, 0],
-                                        **kw_xx) 
-#        eti = mtplottools.plot_errorbar(self.ax_tip_m,
-#                                        plot_period,
-#                                        self.mt_obj.Tipper.tipper[:, 0, 0].imag,
-#                                        self.mt_obj.Tipper.tippererr[:, 0, 0],
-#                                        **kw_yy) 
-#        # plot angle of edited data
-        etr = mtplottools.plot_errorbar(self.ax_tip_a,
-                                        plot_period,
-                                        self.mt_obj.Tipper.amplitude[:, 0, 1],
-                                        self.mt_obj.Tipper.amplitude_err[:, 0, 1],
-                                        **kw_xx) 
-#        eti = mtplottools.plot_errorbar(self.ax_tip_a,
-#                                        plot_period,
-#                                        self.mt_obj.Tipper.tipper[:, 0, 1].imag,
-#                                        self.mt_obj.Tipper.tippererr[:, 0, 1],
-#                                        **kw_yy)
-                                        
+            kw_tx = dict(kw_xx)
+            kw_ty = dict(kw_yy)
+            kw_tx['color'] = self.plot_properties.tipper_x_color
+            kw_ty['color'] = self.plot_properties.tipper_y_color
+            
+            ntx = np.nonzero(self.mt_obj.Tipper.amplitude[:, 0, 0])[0]
+            nty = np.nonzero(self.mt_obj.Tipper.amplitude[:, 0, 1])[0]
+            ntx_o = np.nonzero(self._mt_obj.Tipper.amplitude[:, 0, 0])[0]
+            nty_o = np.nonzero(self._mt_obj.Tipper.amplitude[:, 0, 1])[0]
+            
+            # plot magnitude of real and imaginary induction vectors
+            if self.plot_properties.plot_original_data == True:
+                etxo = mtplt.plot_errorbar(self.ax_tip_x,
+                                           plot_period_o[ntx_o],
+                                           self._mt_obj.Tipper.amplitude[ntx_o, 0, 0],
+                                           self._mt_obj.Tipper.amplitude_err[ntx_o, 0, 0],
+                                           **kw_xx_o)
+                                  
+                etyo = mtplt.plot_errorbar(self.ax_tip_y,
+                                          plot_period_o[nty_o],
+                                          self._mt_obj.Tipper.amplitude[nty_o, 0, 1],
+                                          self._mt_obj.Tipper.amplitude_err[nty_o, 0, 1],
+                                          **kw_yy_o)
+            
+            # plot magnitude of edited induction vectors
+            etx = mtplt.plot_errorbar(self.ax_tip_x,
+                                      plot_period[ntx],
+                                      self.mt_obj.Tipper.amplitude[ntx, 0, 0],
+                                      self.mt_obj.Tipper.amplitude_err[ntx, 0, 0],
+                                      **kw_tx) 
+    
+            ety = mtplt.plot_errorbar(self.ax_tip_y,
+                                      plot_period[nty],
+                                      self.mt_obj.Tipper.amplitude[nty, 0, 1],
+                                      self.mt_obj.Tipper.amplitude_err[nty, 0, 1],
+                                      **kw_ty) 
+                                      
+            self.ax_tip_x.legend([etx[0]], 
+                                  ['|Re{T}|'],
+                                    loc=2,
+                                    markerscale=1, 
+                                    borderaxespad=.01,
+                                    handletextpad=.2, 
+                                    borderpad=.05)
+            self.ax_tip_y.legend([ety[0]], 
+                                  ['|Im{T}|'],
+                                    loc=2,
+                                    markerscale=1, 
+                                    borderaxespad=.01,
+                                    handletextpad=.2, 
+                                    borderpad=.05)
+                                            
         #--> set axes properties for magnitude and angle of induction vectors
-        for aa, ax in enumerate([self.ax_tip_m, self.ax_tip_a]):
+        if self.plot_properties.tipper_x_limits != None:
+            self.ax_tip_x.set_ylim(self.plot_properties.tipper_x_limits)
+        if self.plot_properties.tipper_y_limits != None:
+            self.ax_tip_y.set_ylim(self.plot_properties.tipper_y_limits)
+        for aa, ax in enumerate([self.ax_tip_x, self.ax_tip_y]):
             if aa == 0:            
                 ax.set_ylabel('Magnitude', fontdict=font_dict)
-#            elif aa == 1:
-#                ax.set_ylabel('Angle (deg)', fontdict=font_dict)
             
-            ax.set_xlim(self.plot_properties.xlimits)
             ax.set_xscale('log')
             ax.grid(True, alpha=.25, which='both', color=(.25, .25, .25),
                           lw=.25)
-            
-#        self.ax_tip_m.legend((etr[0], eti[0]), 
-#                              ('Re{T}', 'Im{T}'),
-#                                loc=2,
-#                                markerscale=1, 
-#                                borderaxespad=.01,
-#                                labelspacing=.07, 
-#                                handletextpad=.2, 
-#                                borderpad=.04)
-                                
-                                
-        self.ax_tip_m.set_ylim(self.plot_properties.tipper_mag_limits)
-        self.ax_tip_a.set_ylim(self.plot_properties.tipper_angle_limits)
+  
+
         
         # set the last label to be an empty string for easier reading
-        for ax in [self.ax_tip_m, self.ax_tip_a]:
+        for ax in [self.ax_tip_x, self.ax_tip_y]:
             y_labels = ax.get_yticks().tolist()
             y_labels[-1] = ''
             ax.set_yticklabels(y_labels)                             
-        
+    
         ## --> need to be sure to draw the figure        
         self.mpl_widget.draw()
         
     def redraw_plot(self):
-        self.figure.clf()
         self.plot()
         
     def on_pick(self, event):
@@ -945,7 +1043,6 @@ class PlotWidget(QtGui.QWidget):
             self._edited_mask = True
             if self._ax_index == 0 or self._ax_index == 1:
                 d_index = np.where(self.mt_obj.Z.resistivity == data_value)
-                comp_ii = d_index[0][0]
                 comp_jj = d_index[1][0]
                 comp_kk = d_index[2][0]
                 
@@ -968,20 +1065,13 @@ class PlotWidget(QtGui.QWidget):
                     self.ax_phase_d.plot(data_period, 
                                           self.mt_obj.Z.phase[d_index],
                                           **mask_kw)
-                self._ax.figure.canvas.draw()
                 
             # mask phase points
             elif self._ax_index == 2 or self._ax_index == 3:
                 try:
                     d_index = np.where(self.mt_obj.Z.phase == data_value)
-                    comp_ii = d_index[0][0]
-                    comp_jj = d_index[1][0]
-                    comp_kk = d_index[2][0]
                 except IndexError:
-                    d_index = np.where(self.mt_obj.Z.phase == data_value-180)
-                    comp_ii = d_index[0][0]
-                    comp_jj = d_index[1][0]
-                    comp_kk = d_index[2][0]    
+                    d_index = np.where(self.mt_obj.Z.phase == data_value-180)    
                 
                 # mask point in impedance object
                 self.mt_obj.Z.z[d_index] = 0.0+0.0*1j            
@@ -998,50 +1088,25 @@ class PlotWidget(QtGui.QWidget):
                     self.ax_res_d.plot(data_period, 
                                        self.mt_obj.Z.resistivity[d_index],
                                        **mask_kw)
-                self._ax.figure.canvas.draw()
             
-#            # mask tipper points
-#            elif self._ax_index == 4:
-#                data_value = np.round(data_value, 8)
-#                # the tipper is only rank on so jj will always be 0
-#                comp_jj = 0
-#
-#                # find the tipper magnitude just picked, need to test for both
-#                # real and imaginary, then real again incase imaginary is
-#                # picked, probably a better way to do this.
-#                try:
-#                    d_index = np.where(np.round(self.mt_obj.Tipper.mag_real, 
-#                                                8) == data_value)
-#                    comp_ii = d_index[0][0]
-#                    comp_kk = 0
-#                except IndexError:
-#                    try:
-#                        d_index = np.where(np.round(self.mt_obj.Tipper.mag_imag,
-#                                                    8) == data_value)
-#                        comp_ii = d_index[0][0]
-#                        comp_kk = 1
-#                    except IndexError:
-#                        d_index = np.where(np.round(self.mt_obj.Tipper.mag_real,
-#                                                    8) == data_value)
-#                        comp_ii = d_index[0][0]
-#                        comp_kk = 0
-#                
-#            
-#                
-#                self._ax.plot(data_period, data_value, **mask_kw)
-#                
-#                #plot in cooresponding direction mode
-#                if comp_kk == 0:
-#                    plot_angle =  self.mt_obj.Tipper.angle_real[comp_ii]%360
-#                elif comp_kk == 1:
-#                    plot_angle =  self.mt_obj.Tipper.angle_imag[comp_ii]%360
-#                self.ax_tip_a.plot(data_period, plot_angle, **mask_kw)
-#                
-#                self._ax.figure.canvas.draw()
-#                
-#                # mask the point
-#                self.mt_obj.Tipper.tipper[comp_ii, comp_jj, comp_kk] = 0.0+0.0j                
-#                self.mt_obj.Tipper._compute_mag_direction()
+            # mask tipper Tx
+            elif self._ax_index == 4 or self._ax_index == 5:
+                data_value = np.round(data_value, 8)
+                d_index = np.where(np.round(self.mt_obj.Tipper.amplitude,
+                                            8) == data_value)
+                                            
+                print d_index
+                                            
+                # mask point
+                self._ax.plot(data_period, data_value, **mask_kw)
+                
+                # set tipper data to 0
+                self.mt_obj.Tipper.tipper[d_index] = 0.0+0.0j
+                self.mt_obj.Tipper.tippererr[d_index] = 0.0
+                
+                self.mt_obj.Tipper._compute_amp_phase()
+                
+            self._ax.figure.canvas.draw()
                 
     def in_axes(self, event):
         """
@@ -1071,28 +1136,38 @@ class PlotSettings(QtGui.QWidget):
         self.e_capthick = kwargs.pop('e_capthick', 1)
         self.e_capsize =  kwargs.pop('e_capsize', 4)
 
-        #color mode
         self.cted = kwargs.pop('cted', (0, 0, .65))
         self.ctmd = kwargs.pop('ctmd', (.65, 0, 0))
         self.cteo = kwargs.pop('cted', (.5, .5, .5))
         self.ctmo = kwargs.pop('ctmd', (.75, .75, .75))
+        
         self.mted = kwargs.pop('mted', 's')
         self.mtmd = kwargs.pop('mtmd', 'o')
-        
-        #color for occam2d model
-        self.ctem = kwargs.pop('ctem', (0, .6, .3))
-        self.ctmm = kwargs.pop('ctmm', (.9, 0, .8))
-        self.mtem = kwargs.pop('mtem', '+')
-        self.mtmm = kwargs.pop('mtmm', '+')
          
         self.res_limits_od = kwargs.pop('res_limits_od', None)   
         self.res_limits_d = kwargs.pop('res_limits_d', None)   
         
-        self.phase_limits_od = kwargs.pop('phase_limits_od', None)   
-        self.phase_limits_d = kwargs.pop('phase_limits_d', None)  
+        self._res_limits_od_min = None
+        self._res_limits_od_max = None
+        self._res_limits_d_min = None
+        self._res_limits_d_max = None
         
-        self.tipper_mag_limits = kwargs.pop('tipper_mag_limits', None)
-        self.tipper_angle_limits = kwargs.pop('tipper_angle_limits', None)
+        self.phase_limits_od = kwargs.pop('phase_limits_od', None)   
+        self.phase_limits_d = kwargs.pop('phase_limits_d', None)
+        
+        self._phase_limits_od_min = None
+        self._phase_limits_od_max = None
+        self._phase_limits_d_min = None
+        self._phase_limits_d_max = None
+        
+        self.tipper_x_limits = kwargs.pop('tipper_x_limits', None)
+        self.tipper_y_limits = kwargs.pop('tipper_y_limits', None)
+        
+        self._tip_x_limits_min = None
+        self._tip_x_limits_max = None
+        self._tip_y_limits_min = None
+        self._tip_y_limits_max = None
+
         
         self.subplot_wspace = kwargs.pop('subplot_wspace', .15)
         self.subplot_hspace = kwargs.pop('subplot_hspace', .00)
@@ -1101,21 +1176,9 @@ class PlotSettings(QtGui.QWidget):
         self.subplot_top = kwargs.pop('subplot_top', .93)
         self.subplot_bottom = kwargs.pop('subplot_bottom', .08)
         
-        self.legend_loc = kwargs.pop('legend_loc', 'upper center')
-        self.legend_pos = kwargs.pop('legend_pos', (.5, 1.11))
-        self.legend_marker_scale = kwargs.pop('legend_marker_scale', 1)
-        self.legend_border_axes_pad = kwargs.pop('legend_border_axes_pad', .01)
-        self.legend_label_spacing = kwargs.pop('legend_label_spacing', 0.07)
-        self.legend_handle_text_pad = kwargs.pop('legend_handle_text_pad', .2)
-        self.legend_border_pad = kwargs.pop('legend_border_pad', .15)
+        self.tipper_x_color = kwargs.pop('tipper_x_color', (.4, 0, .2))
+        self.tipper_y_color = kwargs.pop('tipper_y_color',  (0, .9, .9))
         
-        self.arrow_direction = kwargs.pop('arrow_direction', 0)
-        self.arrow_color_real = kwargs.pop('arrow_color_real', (.4, 0, .2))
-        self.arrow_color_imag = kwargs.pop('arrow_color_imag',  (0, .9, .9))
-        self.arrow_head_width = kwargs.pop('arrow_head_width', .05)
-        self.arrow_head_length = kwargs.pop('arrow_head_length', .05)
-        
-        self.plot_z = kwargs.pop('plot_z', False)
         self.plot_original_data = kwargs.pop('plot_original_data', True)
         
         self.mask_marker = kwargs.pop('mask_marker', 'x')
@@ -1126,391 +1189,377 @@ class PlotSettings(QtGui.QWidget):
         #self.setup_ui()
 
     def setup_ui(self):
-        #--> line properties
-        fs_label = QtGui.QLabel('Font Size')
-        fs_edit = QtGui.QLineEdit()
-        fs_edit.setText('{0:.1f}'.format(self.fs))
-        fs_edit.textChanged[str].connect(self.set_text_fs)
+        """
+        setup the user interface
+        """        
         
-        lw_label = QtGui.QLabel('Line Width')
-        lw_edit = QtGui.QLineEdit()
-        lw_edit.setText('{0:.1f}'.format(self.lw))
-        lw_edit.textChanged[str].connect(self.set_text_lw)
+        self.fs_label = QtGui.QLabel("Font Size")
+        self.fs_edit = QtGui.QLineEdit("{0:.2f}".format(self.fs))
+        self.fs_edit.editingFinished.connect(self.set_fs)
         
-        e_capthick_label = QtGui.QLabel('Error cap thickness')
-        e_capthick_edit = QtGui.QLineEdit()
-        e_capthick_edit.setText('{0:.1f}'.format(self.e_capthick))
-        e_capthick_edit.textChanged[str].connect(self.set_text_e_capthick)
+        self.lw_label = QtGui.QLabel("Line Width")
+        self.lw_edit = QtGui.QLineEdit("{0:.2f}".format(self.lw))
+        self.lw_edit.editingFinished.connect(self.set_lw)
         
-        e_capsize_label = QtGui.QLabel('Error cap size')
-        e_capsize_edit = QtGui.QLineEdit()
-        e_capsize_edit.setText('{0:.1f}'.format(self.e_capsize))
-        e_capsize_edit.textChanged[str].connect(self.set_text_e_capsize)
+        self.ms_label = QtGui.QLabel("Marker Size")
+        self.ms_edit = QtGui.QLineEdit("{0:.2f}".format(self.ms))
+        self.ms_edit.editingFinished.connect(self.set_ms)
         
-        grid_line = QtGui.QGridLayout()
-        grid_line.setSpacing(10)
+        self.mted_label = QtGui.QLabel("Marker x components")
+        self.mted_combo = QtGui.QComboBox()
+        self.mted_combo.addItem(self.mted)
+        self.mted_combo.addItem('.')
+        self.mted_combo.addItem(',')
+        self.mted_combo.addItem('o')
+        self.mted_combo.addItem('v')
+        self.mted_combo.addItem('^')
+        self.mted_combo.addItem('<')
+        self.mted_combo.addItem('>')
+        self.mted_combo.addItem('s')
+        self.mted_combo.addItem('p')
+        self.mted_combo.addItem('*')
+        self.mted_combo.addItem('h')
+        self.mted_combo.addItem('H')
+        self.mted_combo.addItem('+')
+        self.mted_combo.addItem('x')
+        self.mted_combo.addItem('D')
+        self.mted_combo.addItem('d')
+        self.mted_combo.addItem('|')
+        self.mted_combo.addItem('_')
+        self.mted_combo.activated[str].connect(self.set_mted)
         
-        grid_line.addWidget(fs_label, 1, 0)
-        grid_line.addWidget(fs_edit, 1, 1)
+        self.mtmd_label = QtGui.QLabel("Marker y components")
+        self.mtmd_combo = QtGui.QComboBox()
+        self.mtmd_combo.addItem(self.mtmd)
+        self.mtmd_combo.addItem('.')
+        self.mtmd_combo.addItem(',')
+        self.mtmd_combo.addItem('o')
+        self.mtmd_combo.addItem('v')
+        self.mtmd_combo.addItem('^')
+        self.mtmd_combo.addItem('<')
+        self.mtmd_combo.addItem('>')
+        self.mtmd_combo.addItem('s')
+        self.mtmd_combo.addItem('p')
+        self.mtmd_combo.addItem('*')
+        self.mtmd_combo.addItem('h')
+        self.mtmd_combo.addItem('H')
+        self.mtmd_combo.addItem('+')
+        self.mtmd_combo.addItem('x')
+        self.mtmd_combo.addItem('D')
+        self.mtmd_combo.addItem('d')
+        self.mtmd_combo.addItem('|')
+        self.mtmd_combo.addItem('_')
+        self.mtmd_combo.activated[str].connect(self.set_mtmd)
         
-        grid_line.addWidget(lw_label, 1, 2)
-        grid_line.addWidget(lw_edit, 1, 3)
+        self.e_capsize_label = QtGui.QLabel("Error bar cap size")
+        self.e_capsize_edit = QtGui.QLineEdit("{0:.2f}".format(self.e_capsize))
+        self.e_capsize_edit.editingFinished.connect(self.set_e_capsize)
         
-        grid_line.addWidget(e_capthick_label, 1, 4)
-        grid_line.addWidget(e_capthick_edit, 1, 5)
+        self.e_capthick_label = QtGui.QLabel("Error bar cap thickness")
+        self.e_capthick_edit = QtGui.QLineEdit("{0:.2f}".format(self.e_capthick))
+        self.e_capthick_edit.editingFinished.connect(self.set_e_capthick)
         
-        grid_line.addWidget(e_capsize_label, 1, 6)
-        grid_line.addWidget(e_capsize_edit, 1, 7)
+        self.cted_button = QtGui.QPushButton("Set Z_xi Color")
+        self.cted_button.pressed.connect(self.set_cted)
         
-        #--> marker properties
-        ms_label = QtGui.QLabel('Marker Size')
-        ms_edit = QtGui.QLineEdit()
-        ms_edit.setText('{0:.1f}'.format(self.ms))
-        ms_edit.textChanged[str].connect(self.set_text_ms)
+        self.ctmd_button = QtGui.QPushButton("Set Z_yi Color")
+        self.ctmd_button.pressed.connect(self.set_ctmd)
         
-        dcxy_label = QtGui.QLabel('Data Color xy')
-        dcxy_edit = QtGui.QLineEdit()
-        dcxy_edit.setText('{0}'.format(self.cted))
-        dcxy_edit.textChanged[str].connect(self.set_text_cted)
+        self.ctx_button = QtGui.QPushButton("Set T_x Color")
+        self.ctx_button.pressed.connect(self.set_ctx)
         
-        dcyx_label = QtGui.QLabel('Data Color yx')
-        dcyx_edit = QtGui.QLineEdit()
-        dcyx_edit.setText('{0}'.format(self.ctmd))
-        dcyx_edit.textChanged[str].connect(self.set_text_ctmd)
+        self.cty_button = QtGui.QPushButton("Set T_y Color")
+        self.cty_button.pressed.connect(self.set_cty)
         
-        dmxy_label = QtGui.QLabel('Data Marker xy')
-        dmxy_edit = QtGui.QLineEdit()
-        dmxy_edit.setText('{0}'.format(self.mted))
-        dmxy_edit.textChanged[str].connect(self.set_text_mted)
+        self.cteo_button = QtGui.QPushButton("Set Original Data_xi Color")
+        self.cteo_button.pressed.connect(self.set_cteo)
         
-        dmyx_label = QtGui.QLabel('Data Marker yx')
-        dmyx_edit = QtGui.QLineEdit()
-        dmyx_edit.setText('{0}'.format(self.mtmd))
-        dmyx_edit.textChanged[str].connect(self.set_text_mtmd)
+        self.ctmo_button = QtGui.QPushButton("Set Original Data_yi Color")
+        self.ctmo_button.pressed.connect(self.set_ctmo)
         
-        mcxy_label = QtGui.QLabel('Model Color xy')
-        mcxy_edit = QtGui.QLineEdit()
-        mcxy_edit.setText('{0}'.format(self.ctem))
-        mcxy_edit.textChanged[str].connect(self.set_text_ctem)
+        self.resod_limits_label = QtGui.QLabel("Off Diagonal Res. Limits (min, max)")
         
-        mcyx_label = QtGui.QLabel('Model Color yx')
-        mcyx_edit = QtGui.QLineEdit()
-        mcyx_edit.setText('{0}'.format(self.ctmm))
-        mcyx_edit.textChanged[str].connect(self.set_text_ctmm)
+        self.resod_limits_min_edit = QtGui.QLineEdit()
+        self.resod_limits_min_edit.editingFinished.connect(self.set_resod_min)        
         
-        mmxy_label = QtGui.QLabel('Model Marker xy')
-        mmxy_edit = QtGui.QLineEdit()
-        mmxy_edit.setText('{0}'.format(self.mtem))
-        mmxy_edit.textChanged[str].connect(self.set_text_mtem)
-    
-        mmyx_label = QtGui.QLabel('Model Marker yx')
-        mmyx_edit = QtGui.QLineEdit()
-        mmyx_edit.setText('{0}'.format(self.mtmm))
-        mmyx_edit.textChanged[str].connect(self.set_text_mtmm)
+        self.resod_limits_max_edit = QtGui.QLineEdit()
+        self.resod_limits_max_edit.editingFinished.connect(self.set_resod_max)        
+        
+        self.resd_limits_label = QtGui.QLabel("Diagonal Res. Limits (min, max)")
+        
+        self.resd_limits_min_edit = QtGui.QLineEdit()
+        self.resd_limits_min_edit.editingFinished.connect(self.set_resd_min)        
+        
+        self.resd_limits_max_edit = QtGui.QLineEdit()
+        self.resd_limits_max_edit.editingFinished.connect(self.set_resd_max)  
+        
+        self.phaseod_limits_label = QtGui.QLabel("Off Diagonal phase. Limits (min, max)")
+        
+        self.phaseod_limits_min_edit = QtGui.QLineEdit()
+        self.phaseod_limits_min_edit.editingFinished.connect(self.set_phaseod_min)        
+        
+        self.phaseod_limits_max_edit = QtGui.QLineEdit()
+        self.phaseod_limits_max_edit.editingFinished.connect(self.set_phaseod_max)        
+        
+        self.phased_limits_label = QtGui.QLabel("Diagonal phase. Limits (min, max)")
+        
+        self.phased_limits_min_edit = QtGui.QLineEdit()
+        self.phased_limits_min_edit.editingFinished.connect(self.set_phased_min)        
+        
+        self.phased_limits_max_edit = QtGui.QLineEdit()
+        self.phased_limits_max_edit.editingFinished.connect(self.set_phased_max)        
+        
+        self.tip_x_limits_label = QtGui.QLabel("T_x limits (min, max)")
+        
+        self.tip_x_limits_min_edit = QtGui.QLineEdit()
+        self.tip_x_limits_min_edit.editingFinished.connect(self.set_tip_x_min)        
+        
+        self.tip_x_limits_max_edit = QtGui.QLineEdit()
+        self.tip_x_limits_max_edit.editingFinished.connect(self.set_tip_x_max)        
+        
+        self.tip_y_limits_label = QtGui.QLabel("T_y limits (min, max)")
+        
+        self.tip_y_limits_min_edit = QtGui.QLineEdit()
+        self.tip_y_limits_min_edit.editingFinished.connect(self.set_tip_y_min)        
+        
+        self.tip_y_limits_max_edit = QtGui.QLineEdit()
+        self.tip_y_limits_max_edit.editingFinished.connect(self.set_tip_y_max)        
+        
+        self.update_button = QtGui.QPushButton("Update Settings")
+        self.update_button.pressed.connect(self.update_settings)
 
-        marker_label = QtGui.QLabel('Maker Properties:')
+        ## --> layout        
+        grid = QtGui.QGridLayout()
         
-        marker_grid = QtGui.QGridLayout()
-        marker_grid.setSpacing(10)
-                
-        marker_grid.addWidget(marker_label, 1, 0)
-        marker_grid.addWidget(ms_label, 1, 2)
-        marker_grid.addWidget(ms_edit, 1, 3)
+        grid.addWidget(self.fs_label, 0, 0)
+        grid.addWidget(self.fs_edit, 0, 1)
+        grid.addWidget(self.lw_label, 0, 2)
+        grid.addWidget(self.lw_edit, 0, 3)
+        grid.addWidget(self.ms_label, 1, 0)
+        grid.addWidget(self.ms_edit, 1, 1)
+        grid.addWidget(self.mted_label, 1, 2)
+        grid.addWidget(self.mted_combo, 1, 3)
+        grid.addWidget(self.mtmd_label, 1, 4)
+        grid.addWidget(self.mtmd_combo, 1, 5)
+        grid.addWidget(self.cted_button, 2, 0, 1, 3)
+        grid.addWidget(self.ctmd_button, 2, 3, 1, 3)
+        grid.addWidget(self.cteo_button, 3, 0, 1, 3)
+        grid.addWidget(self.ctmo_button, 3, 3, 1, 3)
+        grid.addWidget(self.ctx_button, 4, 0, 1, 3)
+        grid.addWidget(self.cty_button, 4, 3, 1, 3)
+        grid.addWidget(self.resod_limits_label, 5, 0)
+        grid.addWidget(self.resod_limits_min_edit, 5, 1)
+        grid.addWidget(self.resod_limits_max_edit, 5, 2)
+        grid.addWidget(self.resd_limits_label, 5, 3)
+        grid.addWidget(self.resd_limits_min_edit, 5, 4)
+        grid.addWidget(self.resd_limits_max_edit, 5, 5)
+        grid.addWidget(self.phaseod_limits_label, 6, 0)
+        grid.addWidget(self.phaseod_limits_min_edit, 6, 1)
+        grid.addWidget(self.phaseod_limits_max_edit, 6, 2)
+        grid.addWidget(self.phased_limits_label, 6, 3)
+        grid.addWidget(self.phased_limits_min_edit, 6, 4)
+        grid.addWidget(self.phased_limits_max_edit, 6, 5)
+        grid.addWidget(self.tip_x_limits_label, 7, 0)
+        grid.addWidget(self.tip_x_limits_min_edit, 7, 1)
+        grid.addWidget(self.tip_x_limits_max_edit, 7, 2)
+        grid.addWidget(self.tip_y_limits_label, 7, 3)
+        grid.addWidget(self.tip_y_limits_min_edit, 7, 4)
+        grid.addWidget(self.tip_y_limits_max_edit, 7, 5)
+        grid.addWidget(self.update_button, 10, 0, 1, 6)
         
-        marker_grid.addWidget(dcxy_label, 2, 0)
-        marker_grid.addWidget(dcxy_edit, 2, 1)
-        
-        marker_grid.addWidget(dcyx_label, 2, 2)
-        marker_grid.addWidget(dcyx_edit, 2, 3)
-        
-        marker_grid.addWidget(dmxy_label, 2, 4)
-        marker_grid.addWidget(dmxy_edit, 2, 5)
-        
-        marker_grid.addWidget(dmyx_label, 2, 6)
-        marker_grid.addWidget(dmyx_edit, 2, 7)
-        
-        marker_grid.addWidget(mcxy_label, 3, 0)
-        marker_grid.addWidget(mcxy_edit, 3, 1)
-        
-        marker_grid.addWidget(mcyx_label, 3, 2)
-        marker_grid.addWidget(mcyx_edit, 3, 3)
-        
-        marker_grid.addWidget(mmxy_label, 3, 4)
-        marker_grid.addWidget(mmxy_edit, 3, 5)
-        
-        marker_grid.addWidget(mmyx_label, 3, 6)
-        marker_grid.addWidget(mmyx_edit, 3, 7)
-        
-        #--> plot limits
-        ylimr_od_label = QtGui.QLabel('Res_od')
-        ylimr_od_edit = QtGui.QLineEdit()
-        ylimr_od_edit.setText('{0}'.format(self.res_limits_od))
-        ylimr_od_edit.textChanged[str].connect(self.set_text_res_od) 
-        
-        ylimr_d_label = QtGui.QLabel('Res_d')
-        ylimr_d_edit = QtGui.QLineEdit()
-        ylimr_d_edit.setText('{0}'.format(self.res_limits_d))
-        ylimr_d_edit.textChanged[str].connect(self.set_text_res_d)  
-        
-        ylimp_od_label = QtGui.QLabel('phase_od')
-        ylimp_od_edit = QtGui.QLineEdit()
-        ylimp_od_edit.setText('{0}'.format(self.phase_limits_od))
-        ylimp_od_edit.textChanged[str].connect(self.set_text_phase_od) 
-        
-        ylimp_d_label = QtGui.QLabel('phase_d')
-        ylimp_d_edit = QtGui.QLineEdit()
-        ylimp_d_edit.setText('{0}'.format(self.phase_limits_d))
-        ylimp_d_edit.textChanged[str].connect(self.set_text_phase_d) 
-        
-        limits_grid = QtGui.QGridLayout()
-        limits_grid.setSpacing(10)
-        
-        limits_label = QtGui.QLabel('Plot Limits: (Res=Real, Phase=Imaginary)'
-                                    ' --> input on a linear scale')
-        
-        limits_grid.addWidget(limits_label, 1, 0, 1, 7)
-        
-        limits_grid.addWidget(ylimr_od_label, 2, 0)
-        limits_grid.addWidget(ylimr_od_edit, 2, 1)
-        limits_grid.addWidget(ylimr_d_label, 2, 2)
-        limits_grid.addWidget(ylimr_d_edit, 2, 3)
-        
-        limits_grid.addWidget(ylimp_od_label, 3, 0)
-        limits_grid.addWidget(ylimp_od_edit, 3, 1)
-        limits_grid.addWidget(ylimp_d_label, 3, 2)
-        limits_grid.addWidget(ylimp_d_edit, 3, 3)
-        
-        #--> legend properties
-        legend_pos_label = QtGui.QLabel('Legend Position')
-        legend_pos_edit = QtGui.QLineEdit()
-        legend_pos_edit.setText('{0}'.format(self.legend_pos))
-        legend_pos_edit.textChanged[str].connect(self.set_text_legend_pos)
-        
-        legend_grid = QtGui.QGridLayout()
-        legend_grid.setSpacing(10)
-        
-        legend_grid.addWidget(QtGui.QLabel('Legend Properties:'), 1, 0)
-        legend_grid.addWidget(legend_pos_label, 1, 2,)
-        legend_grid.addWidget(legend_pos_edit, 1, 3)
-        
-        update_button = QtGui.QPushButton('Update')
-        update_button.clicked.connect(self.update_settings)        
-        
-        vbox = QtGui.QVBoxLayout()
-        vbox.addLayout(grid_line)
-        vbox.addLayout(marker_grid)
-        vbox.addLayout(limits_grid)
-        vbox.addLayout(legend_grid)
-        vbox.addWidget(update_button)
-        
-        self.setLayout(vbox) 
-        
-        self.setGeometry(300, 300, 350, 300)
-        self.resize(1350, 500)
-        self.setWindowTitle('Plot Settings')    
+        self.setLayout(grid)
+        self.setWindowTitle("Plot Settings")
         self.show()
-
-    def set_text_fs(self, text):
+        
+        
+    def convert_color_to_qt(self, color):
+        """
+        convert decimal tuple to QColor object
+        """
+        r = int(color[0]*255)
+        g = int(color[1]*255)
+        b = int(color[2]*255)
+        
+        return QtGui.QColor(r, g, b)
+        
+    def set_fs(self):
+        self.fs = float(str(self.fs_edit.text()))
+        self.fs_edit.setText("{0:.2f}".format(self.fs))
+        
+    def set_lw(self):
+        self.lw = float(str(self.lw_edit.text()))
+        self.lw_edit.setText("{0:.2f}".format(self.lw))
+        
+    def set_ms(self):
+        self.ms = float(str(self.ms_edit.text()))
+        self.ms_edit.setText("{0:.2f}".format(self.ms))
+        
+    def set_e_capsize(self):
+        self.e_capsize = float(str(self.e_capsize_edit.text()))
+        self.e_capsize_edit.setText("{0:.2f}".format(self.e_capsize))
+        
+    def set_e_capthick(self):
+        self.e_capthick = float(str(self.e_capthick_edit.text()))
+        self.e_capthick_edit.setText("{0:.2f}".format(self.e_capthick))
+        
+    def set_mted(self, text):
+        self.mted = text
+        
+    def set_mtmd(self, text):
+        self.mtmd = text
+        
+    def set_resod_min(self):
         try:
-            self.fs = float(text)
+            self._res_limits_od_min = float(str(self.resod_limits_min_edit.text()))
         except ValueError:
-            print "Enter a float point number"
-            
-    def set_text_e_capthick(self, text):
+            self._res_limits_od_min = None           
+    def set_resod_max(self):
         try:
-            self.e_capthick = float(text)
+            self._res_limits_od_max = float(str(self.resod_limits_max_edit.text()))
         except ValueError:
-            print "Enter a float point number"
-            
-    def set_text_e_capsize(self, text):
+            self._res_limits_od_max = None
+           
+    def set_resd_min(self):
         try:
-            self.e_capsize = float(text)
+            self._res_limits_d_min = float(str(self.resd_limits_min_edit.text()))
         except ValueError:
-            print "Enter a float point number"
-
-    
-    def set_text_lw(self, text):
+            self._res_limits_d_min = None            
+    def set_resd_max(self):
         try:
-            self.lw = float(text)
+            self._res_limits_d_max = float(str(self.resd_limits_max_edit.text()))
         except ValueError:
-            print "Enter a float point number"
+            self._res_limits_d_max = None   
             
-    def set_text_ms(self, text):
+    def set_phaseod_min(self):
         try:
-            self.ms = float(text)
+            self._phase_limits_od_min = float(str(self.phaseod_limits_min_edit.text()))
         except ValueError:
-            print "Enter a float point number"
-            
-    def set_text_cted(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 3:
-            print 'enter as (r, g, b)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 3:
-            self.cted = tuple(l_list)
-            
-    def set_text_ctmd(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 3:
-            print 'enter as (r, g, b)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 3:
-            self.ctmd = tuple(l_list)
-            
-    def set_text_mted(self, text):
+            self._phase_limits_od_min = None           
+    def set_phaseod_max(self):
         try:
-            self.mted = str(text)
+            self._phase_limits_od_max = float(str(self.phaseod_limits_max_edit.text()))
         except ValueError:
-            print "Enter a string"
-            
-    def set_text_mtmd(self, text):
+            self._phase_limits_od_max = None
+           
+    def set_phased_min(self):
         try:
-            self.mtmd = str(text)
+            self._phase_limits_d_min = float(str(self.phased_limits_min_edit.text()))
         except ValueError:
-            print "Enter a string"
-            
-    def set_text_ctem(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 3:
-            print 'enter as (r, g, b)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 3:
-            self.ctem = tuple(l_list)
-    
-    def set_text_ctmm(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 3:
-            print 'enter as (r, g, b)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 3:
-            self.ctmm = tuple(l_list)
-            
-    def set_text_mtem(self, text):
+            self._phase_limits_d_min = None            
+    def set_phased_max(self):
         try:
-            self.mtem = str(text)
+            self._phase_limits_d_max = float(str(self.phased_limits_max_edit.text()))
         except ValueError:
-            print "Enter a string"
+            self._phase_limits_d_max = None
             
-    def set_text_mtmm(self, text):
+    def set_tip_x_min(self):
         try:
-            self.mtmm = str(text)
+            self._tip_x_limits_min = float(str(self.tip_x_limits_min_edit.text()))
         except ValueError:
-            print "Enter a string"
-            
-    def set_text_res_od(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 2:
-            print 'enter as (min, max)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 2:
-            self.res_limits_od = tuple(l_list)
-            
-    def set_text_res_d(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 2:
-            print 'enter as (min, max)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 2:
-            self.res_limits_d = tuple(l_list)
-            
-    def set_text_phase_od(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 2:
-            print 'enter as (min, max)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 2:
-            self.phase_limits_od = tuple(l_list)
-            
-    def set_text_phase_d(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 2:
-            print 'enter as (min, max)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 2:
-            self.phase_limits_d = tuple(l_list)
-            
-            
-    def set_text_legend_pos(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 2:
-            print 'enter as (min, max)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 2:
-            self.legend_pos = tuple(l_list)
-            
+            self._tip_x_limits_min = None           
+    def set_tip_x_max(self):
+        try:
+            self._tip_x_limits_max = float(str(self.tip_x_limits_max_edit.text()))
+        except ValueError:
+            self._tip_x_limits_max = None
+           
+    def set_tip_y_min(self):
+        try:
+            self._tip_y_limits_min = float(str(self.tip_y_limits_min_edit.text()))
+        except ValueError:
+            self._tip_y_limits_min = None            
+    def set_tip_y_max(self):
+        try:
+            self._tip_y_limits_max = float(str(self.tip_y_limits_max_edit.text()))
+        except ValueError:
+            self._tip_y_limits_max = None           
+        
+        
+    def set_cted(self):
+        initial_color = self.convert_color_to_qt(self.cted)
+        new_color = QtGui.QColorDialog.getColor(initial_color)
+        
+        r,g,b,a = new_color.getRgbF()
+        
+        self.cted = (r, g, b)
+        
+    def set_ctmd(self):
+        initial_color = self.convert_color_to_qt(self.ctmd)
+        new_color = QtGui.QColorDialog.getColor(initial_color)
+        
+        r,g,b,a = new_color.getRgbF()
+        
+        self.ctmd = (r, g, b)
+        
+    def set_ctx(self):
+        initial_color = self.convert_color_to_qt(self.tipper_x_color)
+        new_color = QtGui.QColorDialog.getColor(initial_color)
+        
+        r,g,b,a = new_color.getRgbF()
+        
+        self.tipper_x_color = (r, g, b)
+        
+    def set_cty(self):
+        initial_color = self.convert_color_to_qt(self.tipper_y_color)
+        new_color = QtGui.QColorDialog.getColor(initial_color)
+        
+        r,g,b,a = new_color.getRgbF()
+        
+        self.tipper_y_color = (r, g, b)
+        
+    def set_cteo(self):
+        initial_color = self.convert_color_to_qt(self.cteo)
+        new_color = QtGui.QColorDialog.getColor(initial_color)
+        
+        r,g,b,a = new_color.getRgbF()
+        
+        self.cteo = (r, g, b)
+        
+    def set_ctmo(self):
+        initial_color = self.convert_color_to_qt(self.ctmo)
+        new_color = QtGui.QColorDialog.getColor(initial_color)
+        
+        r,g,b,a = new_color.getRgbF()
+        
+        self.ctmo = (r, g, b)
+      
     def update_settings(self):
+        if self._res_limits_od_min != None and self._res_limits_od_max != None:
+            self.res_limits_od = (self._res_limits_od_min,
+                                  self._res_limits_od_max)
+        else:
+            self.res_limits_od = None
+            
+        if self._res_limits_d_min != None and self._res_limits_d_max != None:
+            self.res_limits_d = (self._res_limits_d_min,
+                                 self._res_limits_d_max)
+        else:
+            self.res_limits_d = None
+            
+        if self._phase_limits_od_min != None and self._phase_limits_od_max != None:
+            self.phase_limits_od = (self._phase_limits_od_min,
+                                  self._phase_limits_od_max)
+        else:
+            self.phase_limits_od = None
+            
+        if self._phase_limits_d_min != None and self._phase_limits_d_max != None:
+            self.phase_limits_d = (self._phase_limits_d_min,
+                                 self._phase_limits_d_max)
+        else:
+            self.phase_limits_d = None
+            
+        if self._tip_x_limits_min != None and self._tip_x_limits_max != None:
+            self.tipper_x_limits = (self._tip_x_limits_min,
+                                    self._tip_x_limits_max)
+        else:
+            self.tipper_x_limits = None
+            
+        if self._tip_y_limits_min != None and self._tip_y_limits_max != None:
+            self.tipper_y_limits = (self._tip_y_limits_min,
+                                    self._tip_y_limits_max)
+        else:
+            self.tipper_y_limits = None
+            
         self.settings_updated.emit()
         
 #==============================================================================
