@@ -130,7 +130,7 @@ class EDI_Editor_Window(QtGui.QMainWindow):
         self.plot_widget.redraw_plot()
     
     def edit_metadata(self):
-        pass
+        self.edi_txt_editor = EDITextEditor(None)
                        
 #==============================================================================
 # Plot Widget     
@@ -1562,6 +1562,45 @@ class PlotSettings(QtGui.QWidget):
             
         self.settings_updated.emit()
         
+#==============================================================================
+# edi text editor
+#==============================================================================
+class EDITextEditor(QtGui.QWidget):
+    """
+    class to edit the text of an .edi file
+    """
+    
+    def __init__(self, edi_object):
+        super(EDITextEditor, self).__init__()
+        
+        self.edi_obj = edi_object
+        
+        self.setup_ui()
+        
+    def setup_ui(self):
+        
+        self.setWindowTitle("EDI Text Editor")
+        
+        # header label font
+        header_font = QtGui.QFont()
+        header_font.setBold = True
+        header_font.setPointSize (16)
+        
+        self.header_label = QtGui.QLabel("Header Information")
+        self.header_label.setFont(header_font)
+        
+        self.header_edit = QtGui.QTextEdit()
+        
+        header_layout = QtGui.QVBoxLayout()
+        header_layout.addWidget(self.header_label)
+        header_layout.addWidget(self.header_edit)
+        
+        self.setLayout(header_layout)
+        
+        self.show()
+        
+        
+
 #==============================================================================
 # Def Main
 #==============================================================================
