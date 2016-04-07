@@ -279,7 +279,7 @@ class MeshWidget(QtGui.QWidget):
         menu_model.addAction(action_model_open)
         menu_bar.addAction(menu_model.menuAction())
         
-        self.setMenuBar(menu_bar)
+        #self.setMenuBar(menu_bar)
         
         #------------------Layout of main window------------------------------
         #need to have a central widget 
@@ -424,7 +424,7 @@ class MeshWidget(QtGui.QWidget):
         """
         self.plot_period = str(widget_item.text())
         
-    def load_edi_files(self):
+    def get_edi_files(self):
         edi_obj = Get_EDI_Files()
         self.edi_list = edi_obj.edi_list
         
@@ -549,7 +549,7 @@ class MeshPlot(QtGui.QWidget):
         
     def setup_ui(self):
         
-        self.figure = Figure(dpi=150)
+        self.figure = Figure(dpi=300)
         self.mpl_widget = FigureCanvas(self.figure)
         
         self.figure.subplots_adjust(left=self.subplot_left,

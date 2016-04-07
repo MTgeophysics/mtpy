@@ -97,7 +97,7 @@ class Ui_MainWindow(object):
         
     def setupUi(self, MainWindow):
         MainWindow.setWindowTitle("Plot ModEM MT Response")
-        MainWindow.resize(1920, 1080)
+        MainWindow.setWindowState(QtCore.Qt.WindowMaximized)
         
         #make a central widget that everything is tied to.
         self.central_widget = QtGui.QWidget(MainWindow)
@@ -426,7 +426,7 @@ class Ui_MainWindow(object):
         self.figure.suptitle(str(self.station), fontdict=fontdict)
         
         #set the grid of subplots
-        if t_obj.tipper.all() == 0.0:
+        if np.all(t_obj.tipper == 0.0) == True:
             self.plot_tipper = False
         else:
             self.plot_tipper = True
@@ -573,23 +573,23 @@ class Ui_MainWindow(object):
         #plot tipper
         if self.plot_tipper == True:
             ertx = mtplottools.plot_errorbar(axtxr, 
-                                     period,
+                                     period[ntx],
                                      t_obj.tipper[ntx, 0, 0].real,
                                      t_obj.tippererr[ntx, 0, 0],
                                      **kw_xx)
             erty = mtplottools.plot_errorbar(axtyr, 
-                                     period,
+                                     period[nty],
                                      t_obj.tipper[nty, 0, 1].real,
                                      t_obj.tippererr[nty, 0, 0],
                                      **kw_yy)
                                      
             eptx = mtplottools.plot_errorbar(axtxi, 
-                                     period,
+                                     period[ntx],
                                      t_obj.tipper[ntx, 0, 0].imag,
                                      t_obj.tippererr[ntx, 0, 1],
                                      **kw_xx)
             epty = mtplottools.plot_errorbar(axtyi, 
-                                     period,
+                                     period[nty],
                                      t_obj.tipper[nty, 0, 1].imag,
                                      t_obj.tippererr[nty, 0, 1],
                                      **kw_yy)

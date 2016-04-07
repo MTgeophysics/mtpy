@@ -105,7 +105,11 @@ class Occam1D_GUI(QtGui.QMainWindow):
         
         #self.setMenuBar(self.menu_bar)
         #self.show()
+<<<<<<< HEAD
 >>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
+=======
+>>>>>>> a99e84edafbd1ce411b4e09b68a1f74f7b362fa3
+>>>>>>> fdb88b7b1352dd3519c7cca9844034a6fcd4799e
         #--------------------------------------------------------
         # stream the output of occam 1D        
         self.my_stream = MyStream()
@@ -142,7 +146,11 @@ class Occam1D_GUI(QtGui.QMainWindow):
         help_string = '\n'.join(ll)        
         
         QtGui.QMessageBox.information(self.central_widget, 'Help', help_string)
+<<<<<<< HEAD
 >>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
+=======
+>>>>>>> a99e84edafbd1ce411b4e09b68a1f74f7b362fa3
+>>>>>>> fdb88b7b1352dd3519c7cca9844034a6fcd4799e
 #==============================================================================
 # Occam 1D widget
 #==============================================================================
@@ -165,14 +173,24 @@ class OccamWidget(QtGui.QWidget):
         self.l2_widget.l2_widget.mpl_connect('pick event', self.on_click)
         self.l2_widget.l2_widget.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.l2_widget.l2_widget.setFocus()        
-=======
-        self.l2_widget = PlotL2()      
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
         
         self.res_err = 10.
         self.phase_err = 5.
         self.data_mode = 'TE'
         self.edi_fn = ''
+=======
+        self.l2_widget = PlotL2()      
+<<<<<<< HEAD
+>>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
+=======
+>>>>>>> fdb88b7b1352dd3519c7cca9844034a6fcd4799e
+        
+        self.res_err = 10.
+        self.phase_err = 5.
+        self.data_mode = 'Det'
+        self.edi_fn = ''
+        self.ss = 1.0
+>>>>>>> a99e84edafbd1ce411b4e09b68a1f74f7b362fa3
         
         self.save_dir = None
         self.station_dir = None
@@ -205,7 +223,11 @@ class OccamWidget(QtGui.QWidget):
 #        
 #        self.setMenuBar(self.menu_bar)
 =======
+<<<<<<< HEAD
 >>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
+=======
+>>>>>>> a99e84edafbd1ce411b4e09b68a1f74f7b362fa3
+>>>>>>> fdb88b7b1352dd3519c7cca9844034a6fcd4799e
         
         self.get_occam_path_button = QtGui.QPushButton('Occam1D Path')
         self.get_occam_path_button.clicked.connect(self.get_occam_path)
@@ -236,12 +258,26 @@ class OccamWidget(QtGui.QWidget):
         
         self.data_mode_label = QtGui.QLabel('Mode')
         self.data_mode_combo = QtGui.QComboBox()
+<<<<<<< HEAD
         self.data_mode_combo.addItem('TE')
         self.data_mode_combo.addItem('TM')
         self.data_mode_combo.addItem('Det')
         #self.data_mode_combo.addItem('Both')
         self.data_mode_combo.activated[str].connect(self.set_data_mode)
         
+=======
+        self.data_mode_combo.addItem('Det')
+        self.data_mode_combo.addItem('TE')
+        self.data_mode_combo.addItem('TM')
+        self.data_mode_combo.activated[str].connect(self.set_data_mode)
+        
+        self.data_ss_button = QtGui.QPushButton('Apply Static Shift')
+        self.data_ss_button.clicked.connect(self.apply_ss)
+        self.data_ss_edit = QtGui.QLineEdit()
+        self.data_ss_edit.setText('{0:.2f}'.format(self.ss))
+        self.data_ss_edit.editingFinished.connect(self.set_ss)
+        
+>>>>>>> a99e84edafbd1ce411b4e09b68a1f74f7b362fa3
         # vertical layer parameters
         self.model_label = QtGui.QLabel('Model Parameters')
         self.model_label.setFont(label_font)
@@ -306,7 +342,11 @@ class OccamWidget(QtGui.QWidget):
 <<<<<<< HEAD
 =======
         
+<<<<<<< HEAD
 >>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
+=======
+>>>>>>> a99e84edafbd1ce411b4e09b68a1f74f7b362fa3
+>>>>>>> fdb88b7b1352dd3519c7cca9844034a6fcd4799e
         #---set the layout---------------
         path_layout = QtGui.QHBoxLayout()
         path_layout.addWidget(self.get_occam_path_button)
@@ -324,6 +364,12 @@ class OccamWidget(QtGui.QWidget):
         data_grid.addWidget(self.data_mode_label, 3, 0)
         data_grid.addWidget(self.data_mode_combo, 3, 1)
         
+<<<<<<< HEAD
+=======
+        data_grid.addWidget(self.data_ss_button, 4, 0)
+        data_grid.addWidget(self.data_ss_edit, 4, 1)
+        
+>>>>>>> a99e84edafbd1ce411b4e09b68a1f74f7b362fa3
         model_grid = QtGui.QGridLayout()
         model_grid.addWidget(self.model_label, 0, 0)
         
@@ -362,8 +408,6 @@ class OccamWidget(QtGui.QWidget):
         run_button.setText('Run')
         run_button.clicked.connect(self.run_occam)
         
-<<<<<<< HEAD
-=======
         run_button_edits = QtGui.QPushButton()
         run_button_edits.setText('Run Edits')
         run_button_edits.clicked.connect(self.run_occam_edits)
@@ -372,7 +416,6 @@ class OccamWidget(QtGui.QWidget):
         run_layout.addWidget(run_button)
         run_layout.addWidget(run_button_edits)
         
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
         edi_layout = QtGui.QHBoxLayout()
         edi_layout.addWidget(self.get_edi_button)
         edi_layout.addWidget(self.get_edi_edit)
@@ -384,11 +427,7 @@ class OccamWidget(QtGui.QWidget):
         edit_layout.addLayout(startup_grid)
         edit_layout.addWidget(self.output_box)
         edit_layout.addLayout(path_layout)
-<<<<<<< HEAD
-        edit_layout.addWidget(run_button)
-=======
         edit_layout.addLayout(run_layout)
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
         
         bottom_plot_layout = QtGui.QHBoxLayout()
         bottom_plot_layout.addWidget(self.iter_combo_label)
@@ -469,6 +508,19 @@ class OccamWidget(QtGui.QWidget):
         
     def set_data_mode(self, text):
         self.data_mode = str(text)
+
+    def set_ss(self):
+        self.ss = float(str(self.data_ss_edit.text()))
+        self.data_ss_edit.setText('{0:.2f}'.format(self.ss))
+        
+    def apply_ss(self):
+        self.mpl_widget.data_obj.res_te[0] /= 1./self.ss
+        self.mpl_widget.data_obj.res_tm[0] /= 1./self.ss
+        self.mpl_widget.data_obj.res_te[1] /= 1./self.ss
+        self.mpl_widget.data_obj.res_tm[1] /= 1./self.ss
+        
+        self.rewrite_data_file()
+        self.mpl_widget.plot_data(data_fn=self.occam_data.data_fn)
         
     def set_n_layers(self):
         self.occam_model.n_layers = int(str(self.n_layers_edit.text()))
@@ -590,8 +642,6 @@ class OccamWidget(QtGui.QWidget):
         self.iter_combo_edit.resize(self.iter_combo_edit.size())
         self.iter_combo_edit.update()
         self.iter_combo_edit.repaint()
-        
-<<<<<<< HEAD
                                
     def on_click(self, event):
         data_point = event.artist
@@ -603,18 +653,8 @@ class OccamWidget(QtGui.QWidget):
         ini_model_fn = os.path.join(self.save_dir, 
                                     '{0}_{1}.iter'.format(self.data_mode,
                                                          iteration))
-=======
-    def run_occam_edits(self):
-        """
-        write all the needed files and run occam then plot
-        """
-        
-        self._get_inv_folder()
-        
-        if not os.path.isdir(self.save_dir):
-            os.mkdir(self.save_dir)
-            print 'Made directory {0}'.format(self.save_dir)
-        
+
+    def rewrite_data_file(self):
         # write data file
         nf = self.mpl_widget.data_obj.freq.shape[0]
         mod_rho = np.zeros((nf, 2, 2))
@@ -633,9 +673,6 @@ class OccamWidget(QtGui.QWidget):
         mod_phi_err[:, 0, 1] = self.mpl_widget.data_obj.phase_te[1]
         mod_phi_err[:, 1, 0] = self.mpl_widget.data_obj.phase_tm[1]
         
-        print mod_phi[:, 0, 1]
-        
-        
         mod_rp_tuple = (self.mpl_widget.data_obj.freq,
                         mod_rho, 
                         mod_rho_err, 
@@ -645,9 +682,22 @@ class OccamWidget(QtGui.QWidget):
         self.occam_data.write_data_file(rp_tuple=mod_rp_tuple,
                                         save_path=self.save_dir,
                                         mode=self.data_mode,
-                                        res_err=self.res_err,
-                                        phase_err=self.phase_err,
+                                        res_err='data',
+                                        phase_err='data',
                                         thetar=0)
+                                        
+    def run_occam_edits(self):
+        """
+        write all the needed files and run occam then plot
+        """
+        
+        self._get_inv_folder()
+        
+        if not os.path.isdir(self.save_dir):
+            os.mkdir(self.save_dir)
+            print 'Made directory {0}'.format(self.save_dir)
+        
+        self.rewrite_data_file()
                                         
         # write model file
         self.occam_model.write_model_file(save_path=self.save_dir)
@@ -673,7 +723,6 @@ class OccamWidget(QtGui.QWidget):
                                    '{0}_{1}.resp'.format(self.data_mode, 1))
         ini_model_fn = os.path.join(self.save_dir, 
                                     '{0}_{1}.iter'.format(self.data_mode, 1))
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
 
         ini_resp_fn = os.path.abspath(ini_resp_fn)
         ini_model_fn = os.path.abspath(ini_model_fn)                                            
@@ -681,9 +730,6 @@ class OccamWidget(QtGui.QWidget):
                                   resp_fn=ini_resp_fn,
                                   iter_fn=ini_model_fn,
                                   model_fn=self.occam_model.model_fn)
-                                  
-<<<<<<< HEAD
-=======
                                   
         self.l2_widget.plot_l2(dir_path=self.save_dir, 
                                model_fn=self.occam_model.model_fn)
@@ -699,9 +745,7 @@ class OccamWidget(QtGui.QWidget):
         self.iter_combo_edit.resize(self.iter_combo_edit.size())
         self.iter_combo_edit.update()
         self.iter_combo_edit.repaint()
-        
-                                                             
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
+
     def set_iteration(self, text):
         iteration = text
         rms = self.l2_widget.rms_arr['rms'][int(iteration)-1]
@@ -769,9 +813,7 @@ class OccamPlot(QtGui.QWidget):
         self.e_capsize = 3
         
         self.font_size = 8
-        
-<<<<<<< HEAD
-=======
+
         self.data_obj = None
         self.resp_obj = None
         self.model_obj = None
@@ -780,15 +822,12 @@ class OccamPlot(QtGui.QWidget):
         self._ax_index = None
         self._err_list = []
         
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
         self.setup_ui()
         
     def setup_ui(self):
         
         self.figure = Figure(dpi=200)
         self.mpl_widget = FigureCanvas(self.figure)
-<<<<<<< HEAD
-=======
         #self.mpl_widget.setParent(self.central_widget)
         self.mpl_widget.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.mpl_widget.setFocus()
@@ -796,7 +835,6 @@ class OccamPlot(QtGui.QWidget):
         # be able to edit the data
         self.mpl_widget.mpl_connect('pick_event', self.on_pick)
         self.mpl_widget.mpl_connect('axes_enter_event', self.in_axes)
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
         
         self.figure.subplots_adjust(left=self.subplot_left,
                                     right=self.subplot_right,
@@ -869,7 +907,6 @@ class OccamPlot(QtGui.QWidget):
         #-----------------------------------------------------------------
         #--> plot data apparent resistivity and phase-------------------------
         if data_fn is not None:
-<<<<<<< HEAD
             d1 = occam1d.Data()
             d1.read_data_file(data_fn)
             
@@ -924,7 +961,6 @@ class OccamPlot(QtGui.QWidget):
                                   **d_kwargs)
             else:
                 pass
-=======
             self.data_obj = occam1d.Data()
             self.data_obj.read_data_file(data_fn)
             
@@ -988,12 +1024,11 @@ class OccamPlot(QtGui.QWidget):
             else:
                 pass
                 #self._err_list.append([None, None, None])
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
             
         #-----------------------------------------------------------------
         #--> plot data apparent resistivity and phase-------------------------
         if resp_fn is not None:
-<<<<<<< HEAD
+
             r1 = occam1d.Data()
             r1.read_resp_file(resp_fn, data_fn=data_fn)
             
@@ -1004,7 +1039,8 @@ class OccamPlot(QtGui.QWidget):
             if len(rxy) > 0:
                 rte = self.axr.errorbar(1./r1.freq[rxy],
                                         r1.res_te[2][rxy],
-=======
+										yerr=None,
+                                        **r_kwargs))
             self.resp_obj = occam1d.Data()
             self.resp_obj.read_resp_file(resp_fn, data_fn=data_fn)
             
@@ -1015,84 +1051,47 @@ class OccamPlot(QtGui.QWidget):
             if len(rxy) > 0:
                 rter = self.axr.errorbar(1./self.resp_obj.freq[rxy],
                                         self.resp_obj.res_te[2][rxy],
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
-                                        yerr=None,
-                                        **r_kwargs)
-                #legend_marker_list_te.append(rte[0])
-                #legend_label_list_te.append('$Obs_{TE}$')
+
             else:
                 pass
             
             #--> cut out missing data
-<<<<<<< HEAD
-            ryx = np.where(r1.res_tm[2] != 0)[0]
-            
-            #--> TE mode Data 
-            if len(ryx) > 0:
-                rtm = self.axr.errorbar(1./r1.freq[ryx],
-                                        r1.res_tm[2][ryx],
-=======
             ryx = np.where(self.resp_obj.res_tm[2] != 0)[0]
             
             #--> TE mode Data 
             if len(ryx) > 0:
                 rtmr = self.axr.errorbar(1./self.resp_obj.freq[ryx],
                                         self.resp_obj.res_tm[2][ryx],
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
                                         yerr=None,
                                         **r_kwargs)
-                #legend_marker_list_te.append(rte[0])
-                #legend_label_list_te.append('$Obs_{TE}$')
+
             else:
                 pass
             #--------------------plot phase--------------------------------
             #cut out missing data points first
-<<<<<<< HEAD
-            pxy = np.where(r1.phase_te[2]!=0)[0]
-            
-            #--> TE mode data
-            if len(pxy) > 0:
-                self.axp.errorbar(1./r1.freq[pxy],
-                                   r1.phase_te[2][pxy],
-=======
             pxy = np.where(self.resp_obj.phase_te[2]!=0)[0]
             
             #--> TE mode data
             if len(pxy) > 0:
                 self.axp.errorbar(1./self.resp_obj.freq[pxy],
                                    self.resp_obj.phase_te[2][pxy],
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
                                    yerr=None,
                                    **r_kwargs)
             else:
                 pass
             
             #cut out missing data points first
-<<<<<<< HEAD
-            pyx = np.where(r1.phase_tm[2]!=0)[0]
-            
-            #--> TE mode data
-            if len(pyx) > 0:
-                self.axp.errorbar(1./r1.freq[pyx],
-                                   r1.phase_tm[2][pyx],
-=======
             pyx = np.where(self.resp_obj.phase_tm[2]!=0)[0]
             
             #--> TE mode data
             if len(pyx) > 0:
                 self.axp.errorbar(1./self.resp_obj.freq[pyx],
                                    self.resp_obj.phase_tm[2][pyx],
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
                                    yerr=None,
                                   **r_kwargs)
             else:
                 pass
-<<<<<<< HEAD
-        
-        
-=======
 
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
         #--> set axis properties-----------------------------------------------
         self.axr.set_xscale('log')
         self.axp.set_xscale('log')
@@ -1130,17 +1129,11 @@ class OccamPlot(QtGui.QWidget):
                 dscale = 1.
             
             #--> plot te models
-<<<<<<< HEAD
-            m1 = occam1d.Model()
-            m1.read_iter_file(iter_fn, model_fn)
-            plot_depth = m1.model_depth[1:]/dscale
-            plot_model = abs(10**m1.model_res[1:,1])
-=======
             self.model_obj = occam1d.Model()
             self.model_obj.read_iter_file(iter_fn, model_fn)
             plot_depth = self.model_obj.model_depth[1:]/dscale
             plot_model = abs(10**self.model_obj.model_res[1:,1])
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
+
             self.axm.semilogx(plot_model[::-1],
                               plot_depth[::-1],
                               ls='steps-',
@@ -1168,9 +1161,7 @@ class OccamPlot(QtGui.QWidget):
         self.axm.yaxis.tick_right()
             
         self.mpl_widget.draw()
-        
-<<<<<<< HEAD
-=======
+
     def on_pick(self, event):
         """
         edit data
@@ -1206,6 +1197,13 @@ class OccamPlot(QtGui.QWidget):
                 self.data_obj.res_te[1, p_index] = te_err+0.2*te_err
                 self.data_obj.res_tm[1, p_index] = tm_err+0.2*tm_err
                 
+                if self.data_obj.res_te[1, p_index] != 0:
+                    print 'Res err changed to: {0:.2f}'.format(
+                                            self.data_obj.res_te[1, p_index])
+                if self.data_obj.res_tm[1, p_index] != 0:
+                    print 'Res err changed to: {0:.2f}'.format(
+                                            self.data_obj.res_tm[1, p_index])
+
                 # make error bar array
                 eb = self._err_list[self._ax_index][2].get_paths()[p_index].vertices
                 
@@ -1239,8 +1237,14 @@ class OccamPlot(QtGui.QWidget):
                 tm_err = self.data_obj.phase_tm[1, p_index]
                 
                 self.data_obj.phase_te[1, p_index] = te_err+te_err*.05
-                self.data_obj.phase_tm[1, p_index] = te_err+te_err*.05
+                self.data_obj.phase_tm[1, p_index] = tm_err+tm_err*.05
             
+                if self.data_obj.phase_te[1, p_index] != 0:
+                    print 'Phase err changed to: {0:.2f}'.format(
+                                            self.data_obj.phase_te[1, p_index])
+                if self.data_obj.phase_tm[1, p_index] != 0:
+                    print 'Phase err changed to: {0:.2f}'.format(
+                                            self.data_obj.phase_tm[1, p_index])
                 # make error bar array
                 eb = self._err_list[self._ax_index][2].get_paths()[p_index].vertices
                 
@@ -1277,8 +1281,7 @@ class OccamPlot(QtGui.QWidget):
             if event.inaxes == ax:
                 self._ax_index = ax_index
                 self._ax = ax
-        
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
+ 
 #==============================================================================
 # plot L2
 #==============================================================================

@@ -117,12 +117,16 @@ class Data(object):
                            this number will be set to error_floor. 
                            *default* is 10
     error_tipper           absolute tipper error, all tipper error will be 
-                           set to this value. *default* is .05 for 5%
+                           set to this value unless you specify error_type as 
+                           'floor' or 'floor_egbert'. 
+                           *default* is .05 for 5%
     error_type             [ 'floor' | 'value' | 'egbert' ]
                            *default* is 'egbert'
                                 * 'floor' sets the error floor to error_floor
                                 * 'value' sets error to error_value
                                 * 'egbert' sets error to  
+                                           error_egbert * sqrt(abs(zxy*zyx))
+                                * 'floor_egbert' sets error floor to 
                                            error_egbert * sqrt(abs(zxy*zyx))
                                            
     error_value            percentage to multiply Z by to set error
@@ -274,6 +278,7 @@ class Data(object):
         self.period_step = kwargs.pop('period_step', 1)
         self.period_min = kwargs.pop('period_min', None)
         self.period_max = kwargs.pop('period_max', None)
+        self.period_buffer = kwargs.pop('period_buffer', None)
         self.max_num_periods = kwargs.pop('max_num_periods', None)
         self.data_period_list = None
         
@@ -289,6 +294,7 @@ class Data(object):
         self.center_position = np.array([0.0, 0.0])
         self.data_array = None
         self.mt_dict = None
+        self.data_fn = kwargs.pop('data_fn','ModEM_Data.dat')
         
         self._z_shape = (1, 2, 2)
         self._t_shape = (1, 1, 2)
@@ -674,6 +680,18 @@ class Data(object):
                                 (self.period_list >= 1./mt_obj.Z.freq.max()) & 
                                 (self.period_list <= 1./mt_obj.Z.freq.min()))]
                                 
+            # if specified, apply a buffer so that interpolation doesn't stretch too far over periods
+            if type(self.period_buffer) in [float,int]:
+                interp_periods_new = []
+                dperiods = 1./mt_obj.Z.freq
+                for iperiod in interp_periods:
+                    # find nearest data period
+                    difference = np.abs(iperiod-dperiods)
+                    nearestdperiod = dperiods[difference == np.amin(difference)][0]
+                    if max(nearestdperiod/iperiod, iperiod/nearestdperiod) < self.period_buffer:
+                        interp_periods_new.append(iperiod)
+                interp_periods = np.array(interp_periods_new)
+            
             interp_z, interp_t = mt_obj.interpolate(1./interp_periods)
             for kk, ff in enumerate(interp_periods):
                 jj = np.where(self.period_list == ff)[0][0]
@@ -732,7 +750,7 @@ class Data(object):
                                   doc="""location of stations""") 
                 
     def write_data_file(self, save_path=None, fn_basename=None, 
-                        rotation_angle=None, compute_error=True):
+                        rotation_angle=None, compute_error=True, fill=True):
         """
         write data file for ModEM
         
@@ -783,8 +801,9 @@ class Data(object):
         if rotation_angle is not None:
             self.rotation_angle = rotation_angle
         
-        #be sure to fill in data array 
-        self._fill_data_array()
+        #be sure to fill in data array
+        if fill:
+            self._fill_data_array()
         
         #reset the header string to be informational
         self._set_header_string()
@@ -851,34 +870,45 @@ class Data(object):
                             if compute_error:
                                 #compute relative error
                                 if comp.find('t') == 0:
-                                    rel_err = self.error_tipper
+                                    if 'floor' in self.error_type:
+                                        abs_err = max(self.error_tipper,self.data_array[ss]['tip_err'][ff,0,z_ii])
+                                    else:
+                                        abs_err = self.error_tipper
                                 elif comp.find('z') == 0:
                                     if self.error_type == 'floor':
                                         rel_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj]/\
                                                   abs(zz)
                                         if rel_err < self.error_floor/100.:
-                                            rel_err = self.error_floor/100.*abs(zz)
-                                    
+                                            rel_err = self.error_floor/100.
+                                        abs_err = rel_err*abs(zz)
                                     elif self.error_type == 'value':
-                                        rel_err = abs(zz)*self.error_value/100.
+                                        abs_err = abs(zz)*self.error_value/100.
                                     
                                     elif self.error_type == 'egbert':
                                         d_zxy = self.data_array[ss]['z'][ff, 0, 1]
                                         d_zyx = self.data_array[ss]['z'][ff, 1, 0]
-                                        rel_err = np.sqrt(abs(d_zxy*d_zyx))*\
+                                        abs_err = np.sqrt(abs(d_zxy*d_zyx))*\
                                                   self.error_egbert/100.
-                                if rel_err == 0.0:
-                                    rel_err = 1e3
+                                    elif self.error_type == 'floor_egbert':
+                                        abs_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj]
+                                        d_zxy = self.data_array[ss]['z'][ff, 0, 1]
+                                        d_zyx = self.data_array[ss]['z'][ff, 1, 0]
+                                        if abs_err < np.sqrt(abs(d_zxy*d_zyx))*self.error_egbert/100.:
+                                            abs_err = np.sqrt(abs(d_zxy*d_zyx))*self.error_egbert/100.
+
+
+                                if abs_err == 0.0:
+                                    abs_err = 1e3
                                     print ('error at {0} is 0 for period {1}'.format(
                                             sta, per)+'set to 1e3')
 
                             else: 
-                                rel_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj].real 
-                            
-                            rel_err = '{0:> 14.6e}'.format(abs(rel_err))
+                                abs_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj].real 
+
+                            abs_err = '{0:> 14.6e}'.format(abs(abs_err))
                             #make sure that x==north, y==east, z==+down                            
                             dline = ''.join([per, sta, lat, lon, nor, eas, ele, 
-                                             com, rea, ima, rel_err, '\n'])
+                                             com, rea, ima, abs_err, '\n'])
                             dlines.append(dline)
         
         dfid = file(self.data_fn, 'w')
@@ -1259,13 +1289,13 @@ class Model(object):
     nodes_north          relative distance between nodes in north direction 
     nodes_z              relative distance between nodes in east direction 
     pad_east             number of cells for padding on E and W sides
-                         *default* is 5
+                         *default* is 7
     pad_north            number of cells for padding on S and N sides
-                         *default* is 5
+                         *default* is 7
     pad_root_east        padding cells E & W will be pad_root_east**(x)
     pad_root_north       padding cells N & S will be pad_root_north**(x) 
     pad_z                number of cells for padding at bottom
-                         *default* is 5
+                         *default* is 4
     res_list             list of resistivity values for starting model
     res_model            starting resistivity model
     mesh_rotation_angle  Angle to rotate the grid to. Angle is measured
@@ -1940,7 +1970,7 @@ class Model(object):
                         *default* is Model File written by MTpy.modeling.modem 
                         
             **res_model** : np.array((nx,ny,nz))
-                        Starting resistivity model. 
+                        Prior resistivity model. 
                         
                         .. note:: again that the modeling code 
                         assumes that the first row it reads in is the southern
@@ -1952,11 +1982,12 @@ class Model(object):
                             scale of resistivity.  In the ModEM code it 
                             converts everything to Loge, 
                             *default* is 'loge'
-
+                            
         """
         
         keys = ['nodes_east', 'nodes_north', 'nodes_z', 'title',
                 'res_model', 'save_path', 'model_fn', 'model_fn_basename']
+                
         for key in keys:
             try:
                 setattr(self, key, kwargs[key])
@@ -2023,8 +2054,10 @@ class Model(object):
         if self.res_scale.lower() == 'loge':
             write_res_model = np.log(self.res_model[::-1, :, :])
         elif self.res_scale.lower() == 'log' or \
-             self.res_scale.olower() == 'log10':
+             self.res_scale.lower() == 'log10':
             write_res_model = np.log10(self.res_model[::-1, :, :])
+        elif self.res_scale.lower() == 'linear':
+            write_res_model = self.res_model[::-1, :, :]
             
         #write out the layers from resmodel
         for zz in range(self.nodes_z.shape[0]):
@@ -2038,7 +2071,7 @@ class Model(object):
         if self.grid_center is None:
             #compute grid center
             center_east = -self.nodes_east.__abs__().sum()/2
-            center_north = -self.nodes_norths.__abs__().sum()/2
+            center_north = -self.nodes_north.__abs__().sum()/2
             center_z = 0
             self.grid_center = np.array([center_north, center_east, center_z])
             
@@ -2712,8 +2745,10 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
     d_east = abs(ll_en[1]-ur_en[1])/nx
     d_north = abs(ll_en[2]-ur_en[2])/ny
 
-    # calculate the number of new cells
-    num_cells = int(cell_size/np.mean([d_east, d_north]))
+    # calculate the number of new cells according to the given cell size
+    # if the given cell size and cs are similar int could make the value 0,
+    # hence the need to make it one if it is 0.
+    num_cells = max([1, int(cell_size/np.mean([d_east, d_north]))])
 
     # make easting and northing arrays in meters corresponding to lat and lon
     east = np.arange(ll_en[1], ur_en[1], d_east)
@@ -2737,9 +2772,13 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
     new_north = (new_north-new_north.mean())+shift_north
     
     # need to rotate cause I think I wrote the dem backwards
-    elevation = np.rot90(elevation, rot_90)
-    
-    return new_east, new_north, elevation
+    if rot_90 == 1 or rot_90 == 3:
+        elevation = np.rot90(elevation, rot_90)
+        return new_north, new_east, elevation
+    else:
+        elevation = np.rot90(elevation, rot_90)
+
+        return new_east, new_north, elevation
 
 def interpolate_elevation(elev_east, elev_north, elevation, model_east, 
                           model_north, pad=3):
@@ -2860,11 +2899,13 @@ def make_elevation_model(interp_elev, model_nodes_z, elevation_cell=30,
 
     # calculate the max elevation within survey area
     elev_max = interp_elev[pad:-pad, pad:-pad].max()
-    elev_min = interp_elev[pad:-pad, pad:-pad].min()
+	
+    # need to set sea level to 0 elevation
+    elev_min = max([0, interp_elev[pad:-pad, pad:-pad].min()])
     
     # scale the interpolated elevations to fit within elev_max, elev_min
     interp_elev[np.where(interp_elev > elev_max)] = elev_max
-    interp_elev[np.where(interp_elev < elev_min)] = elev_min
+    #interp_elev[np.where(interp_elev < elev_min)] = elev_min
     
     # calculate the number of elevation cells needed
     num_elev_cells = int((elev_max-elev_min)/elevation_cell)
@@ -4277,6 +4318,10 @@ class PlotResponse(object):
                                          [' ']
                                 ax.set_yticklabels(ylabels)
                     if len(ax_list) == 12:
+                        if aa < 4:
+                            ylabels = ax.get_yticks().tolist()
+                            ylabels[0] = ''
+                            ax.set_yticklabels(ylabels)
                         if aa < 8:
 #                            ax.yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
                             if self.plot_z == True:
@@ -4323,6 +4368,15 @@ class PlotResponse(object):
                             plt.setp(ax.get_xticklabels(), visible=False)
                             if self.plot_z == False:
                                 ax.set_yscale('log')
+                                ylim = ax.get_ylim()
+                                ylimits = (10**np.floor(np.log10(ylim[0])), 
+                                           10**np.ceil(np.log10(ylim[1])))
+                                ax.set_ylim(ylimits)
+                                ylabels = [' ', ' ']+\
+                                          [mtplottools.labeldict[ii] for ii 
+                                          in np.arange(np.log10(ylimits[0])+1, 
+                                                       np.log10(ylimits[1])+1, 1)]
+                                ax.set_yticklabels(ylabels)
                             if self.res_limits is not None:
                                 ax.set_ylim(self.res_limits)
                         else:
