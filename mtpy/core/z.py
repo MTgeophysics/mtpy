@@ -1626,8 +1626,18 @@ class Tipper(object):
         self.angle_real = np.rad2deg(np.arctan2(-self.tipper[:,0,1].real,
                                               -self.tipper[:,0,0].real))
                                        
-        self.angle_imag=np.rad2deg(np.arctan2(-self.tipper[:,0,1].imag,
-                                              -self.tipper[:,0,0].imag))
+        self.angle_imag = np.rad2deg(np.arctan2(-self.tipper[:,0,1].imag,
+                                                -self.tipper[:,0,0].imag))
+        
+        ## estimate error: THIS MAYBE A HACK                                        
+        if self.tippererr is not None:
+            self.mag_err = np.sqrt(self.tippererr[:, 0, 0]**2+ \
+                                   self.tippererr[:, 0, 1]**2)
+            self.angle_err = np.rad2deg(np.arctan2(self.tippererr[:, 0, 0],
+                                                   self.tippererr[:, 0, 1]))%45
+        else:
+            self.mag_err = None
+            self.angle_err = None
         
     def set_mag_direction(self, mag_real, ang_real, mag_imag, ang_imag):
         """
