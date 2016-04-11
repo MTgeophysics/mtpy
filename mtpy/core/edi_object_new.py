@@ -7,7 +7,6 @@ Created on Tue Dec 22 16:03:31 2015
 
 import os
 import numpy as np
-import time
 import datetime
 
 import mtpy.utils.format as MTft
@@ -26,16 +25,62 @@ class Edi(object):
     def __init__(self, edi_fn=None, **kwargs):
         
         self.edi_fn = edi_fn
+        self.header = Header()
+        self.info = Information()
+        self.define_measurement = DefineMeasurement()
+        self.data_sect = DataSection()
+        self.Z = MTz.Z()
+        self.Tipper = MTz.Tipper()
+        
+        self._z_labels = [['zxxr', 'zxxi', 'zxx.var'],
+                          ['zxyr', 'zxyi', 'zxy.var'],
+                          ['zyxr', 'zyxi', 'zyx.var'],
+                          ['zyyr', 'zyyi', 'zyy.var']]
+                         
+        self._t_labels = [['txr.exp', 'txi.exp', 'txvar.exp'],
+                          ['tyr.exp', 'tyi.exp', 'tyvar.exp']]
+                          
+        self._data_header_str = '!****{0}****!\n'
+                          
+        self._num_format = ' 15.6e'
+        self._block_len = 6
+        
+        if self.edi_fn is not None:
+            self.read_edi_file()
+            
+    def read_edi_file(self, edi_fn=None):
+        """
+        read in an edi file
+        """
+        
+        if edi_fn is not None:
+            self.edi_fn = edi_fn
+            
+        if self.edi_fn is None:
+            raise MTex.MTpyError_EDI("No edi file input, check edi_fn")
+            
+        if os.path.isfile(self.edi_fn) is False:
+            raise MTex.MTpyError_EDI("Could not find {0}, check path".format(self.edi_fn))
+        
+        
         self.header = Header(edi_fn=self.edi_fn)
         self.info = Information(edi_fn=self.edi_fn)
         self.define_measurement = DefineMeasurement(edi_fn=self.edi_fn)
         self.data_sect = DataSection(edi_fn=self.edi_fn)
-        self.Z = MTz.Z()
-        self.Tipper = MTz.Tipper()
         
-        if self.edi_fn is not None:
-            self.read_data()
+        self.read_data()
         
+        if self.header.lat is None:
+            self.header.lat = self.define_measurement.reflat
+            print 'Got latitude from reflat for {0}'.format(self.header.dataid)
+        if self.header.lon is None:
+            self.header.lon = self.define_measurement.reflon
+            print 'Got longitude from reflon for {0}'.format(self.header.dataid)
+        if self.header.elev is None:
+            self.header.elev = self.define_measurement.refelev
+            print 'Got elevation from refelev for {0}'.format(self.header.dataid)
+        
+        print "Read in edi file for station {0}".format(self.header.dataid)
         
     def read_data(self):
         """
@@ -135,6 +180,132 @@ class Edi(object):
         """
         
         data_dict = {}
+        
+    def write_edi(self, new_edi_fn=None):
+        """
+        write a new edi file
+        """
+        
+        if new_edi_fn is None:
+            if self.edi_fn is not None:
+                new_edi_fn = self.edi_fn
+            else:
+                new_edi_fn = os.path.join(os.getcwd(), 
+                                          '{0}.edi'.format(self.header.dataid))
+        new_edi_fn = MTfh.make_unique_filename(new_edi_fn)
+            
+        if self.header.dataid is None:
+            self.read_edi_file()
+            
+        # write lines
+        header_lines = self.header.write_header()
+        info_lines = self.info.write_info()
+        define_lines = self.define_measurement.write_define_measurement()
+        dsect_lines = self.data_sect.write_data_sect()
+        
+        # write out frequencies
+        freq_lines = [self._data_header_str.format('frequencies'.upper())]
+        freq_lines += self._write_data_block(self.Z.freq, 'freq')
+        
+        # write out rotation angles
+        zrot_lines = [self._data_header_str.format('impedance rotation angles'.upper())]
+        zrot_lines += self._write_data_block(self.Z.rotation_angle, 'zrot')
+        
+        # write out data only impedance and tipper
+        z_data_lines = [self._data_header_str.format('impedances'.upper())]
+        for ii in range(2):
+            for jj in range(2):
+                z_lines_real = self._write_data_block(self.Z.z[:, ii, jj].real, 
+                                                      self._z_labels[2*ii+jj][0])
+                z_lines_imag = self._write_data_block(self.Z.z[:, ii, jj].imag, 
+                                                      self._z_labels[2*ii+jj][1])
+                z_lines_var = self._write_data_block(self.Z.zerr[:, ii, jj], 
+                                                     self._z_labels[2*ii+jj][2])
+                                           
+                z_data_lines += z_lines_real
+                z_data_lines += z_lines_imag
+                z_data_lines += z_lines_var
+                
+        # write out rotation angles
+        trot_lines = [self._data_header_str.format('tipper rotation angles'.upper())]
+        if type(self.Tipper.rotation_angle) is float:
+            trot = np.repeat(self.Tipper.rotation_angle, self.Tipper.freq.size)
+        else:
+            trot = self.Tipper.rotation_angle
+        trot_lines += self._write_data_block(trot, 'trot')
+                
+        # write out tipper lines       
+        t_data_lines = [self._data_header_str.format('tipper'.upper())]        
+        for jj in range(2):
+            t_lines_real = self._write_data_block(self.Tipper.tipper[:, 0, jj].real, 
+                                                  self._t_labels[jj][0])
+            t_lines_imag = self._write_data_block(self.Tipper.tipper[:, 0, jj].imag, 
+                                                  self._t_labels[jj][1])
+            t_lines_var = self._write_data_block(self.Tipper.tippererr[:, 0, jj], 
+                                                 self._t_labels[jj][2])
+                                       
+            t_data_lines += t_lines_real
+            t_data_lines += t_lines_imag
+            t_data_lines += t_lines_var
+            
+        edi_lines = header_lines+\
+                    info_lines+\
+                    define_lines+\
+                    dsect_lines+\
+                    freq_lines+\
+                    zrot_lines+\
+                    z_data_lines+\
+                    trot_lines+\
+                    t_data_lines+['>END']
+                    
+        with open(new_edi_fn, 'w') as fid:
+            fid.write(''.join(edi_lines))
+
+        print 'Wrote {0}'.format(new_edi_fn)            
+        return new_edi_fn
+        
+    def _write_data_block(self, data_comp_arr, data_key):
+        """
+        write a data block 
+        
+        return a list of strings
+        """
+        if data_key.lower().find('z') >= 0 and \
+            data_key.lower() not in ['zrot', 'trot']:
+            block_lines = ['>{0} ROT=ZROT // {1:.0f}\n'.format(data_key.upper(), 
+                          data_comp_arr.size)]        
+        elif data_key.lower().find('t') >= 0 and \
+            data_key.lower() not in ['zrot', 'trot']:
+            block_lines = ['>{0} ROT=TROT // {1:.0f}\n'.format(data_key.upper(), 
+                          data_comp_arr.size)]
+        elif data_key.lower() == 'freq':
+            block_lines = ['>{0} // {1:.0f}\n'.format(data_key.upper(), 
+                          data_comp_arr.size)]
+                          
+        elif data_key.lower() in ['zrot', 'trot']:
+             block_lines = ['>{0} // {1:.0f}\n'.format(data_key.upper(), 
+                          data_comp_arr.size)]
+                          
+        else:
+            raise MTex.MTpyError_EDI('Cannot write block for {0}'.format(data_key))
+        
+        for d_index, d_comp in enumerate(data_comp_arr, 1):
+            if d_comp == 0.0 and data_key.lower() not in ['zrot', 'trot']:
+                d_comp = float(self.header.empty)
+            # write the string in the specified format    
+            num_str = '{0:{1}}'.format(d_comp, self._num_format)
+            
+            # check to see if a new line is needed
+            if d_index%self._block_len == 0:
+                num_str += '\n'
+            # at the end of the block add a return
+            if d_index == data_comp_arr.size:
+                num_str += '\n'
+    
+            block_lines.append(num_str)
+            
+        return block_lines
+        
         
         
                         
@@ -621,7 +792,6 @@ class DefineMeasurement(object):
                 
                 m_list = ['>{0}'.format(head.upper())]
                 for mkey, mfmt in zip(m_obj._kw_list, m_obj._fmt_list):
-                    print mkey, mfmt, getattr(m_obj, mkey)
                     m_list.append(' {0}={1:{2}}'.format(mkey.upper(),
                                                         getattr(m_obj, mkey),
                                                         mfmt))
@@ -780,6 +950,8 @@ class DataSection(object):
                                                          key, 
                                                          getattr(self, key)))
         
+        data_sect_lines.append('\n')
+        
         return data_sect_lines
                         
 
@@ -787,7 +959,8 @@ class DataSection(object):
 # Test            
 #==============================================================================
 #fn = r"d:\Peacock\MTData\EDI_Files\mb018.edi"
-fn = r"c:\Users\jpeacock\Documents\ShanesBugs\Jess\EDI_files\104A.edi"
+#fn = r"c:\Users\jpeacock\Documents\ShanesBugs\Jess\EDI_files\104A.edi"
+fn = r"C:\Users\jrpeacock\Documents\Test_Data\Faults\par28ew.edi"
 #fn = r"c:\Users\jpeacock\Documents\SaudiArabia\edi_files_fixed_lon\101_rr.edi"
 #h = Header(edi_fn=fn)
 #h.read_header()
