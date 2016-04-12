@@ -977,16 +977,6 @@ class OccamPlot(QtGui.QWidget):
             self.resp_obj = occam1d.Data()
             self.resp_obj.read_resp_file(resp_fn, data_fn=data_fn)
             
-            #--> cut out missing data
-            rxy = np.where(self.resp_obj.res_te[2] != 0)[0]
-            
-            #--> TE mode Data 
-            if len(rxy) > 0:
-                rter = self.axr.errorbar(1./self.resp_obj.freq[rxy],
-                                        self.resp_obj.res_te[2][rxy],
-
-            else:
-                pass
             
             #--> cut out missing data
             ryx = np.where(self.resp_obj.res_tm[2] != 0)[0]
@@ -998,8 +988,6 @@ class OccamPlot(QtGui.QWidget):
                                         yerr=None,
                                         **r_kwargs)
 
-            else:
-                pass
             #--------------------plot phase--------------------------------
             #cut out missing data points first
             pxy = np.where(self.resp_obj.phase_te[2]!=0)[0]
