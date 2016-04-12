@@ -1038,7 +1038,7 @@ class DefineMeasurement(object):
         self.measurement_list = []
         meas_find = False
         count = 0
-        with open(fn, 'r') as fid:
+        with open(self.edi_fn, 'r') as fid:
             for line in fid:
                 if line.find('>=') == 0:
                     count += 1
