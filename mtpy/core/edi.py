@@ -366,7 +366,7 @@ class Edi(object):
             trot = np.repeat(self.Tipper.rotation_angle, self.Tipper.freq.size)
         else:
             trot = self.Tipper.rotation_angle
-        trot_lines += self._write_data_block(trot, 'trot')
+        trot_lines += self._write_data_block(np.array(trot), 'trot')
                 
         # write out tipper lines       
         t_data_lines = [self._data_header_str.format('tipper'.upper())]        

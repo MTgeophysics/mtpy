@@ -129,7 +129,7 @@ class EDI_Editor_Window(QtGui.QMainWindow):
         self.plot_widget.redraw_plot()
     
     def edit_metadata(self):
-        self.edi_txt_editor = EDITextEditor(None)
+        self.edi_txt_editor = EDITextEditor(self.plot_widget.mt_obj.edi_object)
                        
 #==============================================================================
 # Plot Widget     
@@ -216,6 +216,10 @@ class PlotWidget(QtGui.QWidget):
         self.meta_elev_label = QtGui.QLabel("Elev (m)")
         self.meta_elev_edit = QtGui.QLineEdit('{0:.3f}'.format(0.0))
         self.meta_elev_edit.editingFinished.connect(self.meta_edit_elev)
+        
+        self.meta_loc_label = QtGui.QLabel("Location")
+        self.meta_loc_edit = QtGui.QLineEdit("None")
+        self.meta_loc_edit.editingFinished.connect(self.meta_edit_loc)
         
         self.meta_date_label = QtGui.QLabel("Date Acq")
         self.meta_date_edit = QtGui.QLineEdit("YYYY-MM-DD")
@@ -352,10 +356,12 @@ class PlotWidget(QtGui.QWidget):
         meta_layout.addWidget(self.meta_lon_edit, 3, 1)
         meta_layout.addWidget(self.meta_elev_label, 4, 0)
         meta_layout.addWidget(self.meta_elev_edit, 4, 1)
-        meta_layout.addWidget(self.meta_date_label, 5, 0)
-        meta_layout.addWidget(self.meta_date_edit, 5, 1)
-        meta_layout.addWidget(self.meta_acq_label, 6, 0)
-        meta_layout.addWidget(self.meta_acq_edit, 6, 1)
+        meta_layout.addWidget(self.meta_loc_label, 5, 0)
+        meta_layout.addWidget(self.meta_loc_edit, 5, 1)
+        meta_layout.addWidget(self.meta_date_label, 6, 0)
+        meta_layout.addWidget(self.meta_date_edit, 6, 1)
+        meta_layout.addWidget(self.meta_acq_label, 7, 0)
+        meta_layout.addWidget(self.meta_acq_edit, 7, 1)
         
         ## static shift
         ss_layout = QtGui.QGridLayout()
@@ -434,12 +440,17 @@ class PlotWidget(QtGui.QWidget):
         self.mt_obj.elev = float(str(self.meta_elev_edit.text()))
         self.meta_elev_edit.setText('{0:.6f}'.format(self.mt_obj.elev))
         
-    def meta_edit_date(self):
-        self.mt_obj.edi_object.Header.filedate = str(self.meta_edit_date.text())
+    def meta_edit_loc(self):
+        self.mt_obj.edi_object.Header.loc = (str(self.meta_loc_edit.text()))
+        self.meta_loc_edit.setText('{0}'.format(self.mt_obj.edi_object.Header.loc))
         
+    def meta_edit_date(self):
+        self.mt_obj.edi_object.Header.filedate = str(self.meta_date_edit.text())
+        self.meta_date_edit.setText(self.mt_obj.edi_object.Header.filedate) 
     
     def meta_edit_acq(self):
-        pass
+        self.mt_obj.edi_object.Header.acqby = str(self.meta_acq_edit.text())
+        
         
     def fill_metadata(self):
         self.meta_station_name_edit.setText(self.mt_obj.station)
@@ -1590,15 +1601,42 @@ class EDITextEditor(QtGui.QWidget):
         self.header_label = QtGui.QLabel("Header Information")
         self.header_label.setFont(header_font)
         
-        self.header_edit = QtGui.QTextEdit()
+        self.header_acqby_label = QtGui.QLabel("Acquired By")
+        self.header_acqby_edit = QtGui.QLineEdit(self.edi_obj.Header.acqby)
+        self.header_acqby_edit.editingFinished.connect(self.header_set_acqby)
         
-        header_layout = QtGui.QVBoxLayout()
-        header_layout.addWidget(self.header_label)
-        header_layout.addWidget(self.header_edit)
+        self.header_acqdate_label = QtGui.QLabel("Acquired Date (YYYY-MM-DD)")
+        self.header_acqdate_edit = QtGui.QLineEdit(self.edi_obj.Header.acqdate)
+        self.header_acqdate_edit.editingFinished.connect(self.header_set_acqdate)
+        
+        self.header_dataid_label = QtGui.QLabel("Station Name")
+        self.header_dataid_edit = QtGui.QLineEdit(self.edi_obj.Header.dataid)
+        self.header_dataid_edit.editingFinished.connect(self.header_set_dataid)
+        
+        header_layout = QtGui.QGridLayout()
+        header_layout.addWidget(self.header_label, 0, 0)
+        header_layout.addWidget(self.header_acqby_label, 1, 0)
+        header_layout.addWidget(self.header_acqby_edit, 1, 1)
+        header_layout.addWidget(self.header_acqdate_label, 2, 0)
+        header_layout.addWidget(self.header_acqdate_edit, 2, 1)
+        header_layout.addWidget(self.header_dataid_label, 3, 0)
+        header_layout.addWidget(self.header_dataid_edit, 3, 1)
         
         self.setLayout(header_layout)
         
         self.show()
+        
+    def header_set_acqby(self):
+        self.edi_obj.Header.acqby = str(self.header_acqby_edit.text())
+        self.header_acqby_edit.setText(self.edi_obj.Header.acqby)
+        
+    def header_set_acqdate(self):
+        self.edi_obj.Header.acqdate = str(self.header_acqdate_edit.text())
+        self.header_acqdate_edit.setText(self.edi_obj.Header.acqdate)
+        
+    def header_set_dataid(self):
+        self.edi_obj.Header.dataid = str(self.header_dataid_edit.text())
+        self.header_dataid_edit.setText(self.edi_obj.Header.dataid)
         
         
 
