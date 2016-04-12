@@ -242,6 +242,7 @@ class Edi(object):
         self.Z.freq = freq_arr.copy()
         self.Z.z = np.zeros((self.Data_sect.nfreq, 2, 2), dtype=np.complex)
         self.Z.zerr = np.zeros((self.Data_sect.nfreq, 2, 2), dtype=np.float)
+        self.Z.rotation_angle = data_dict['zrot']
         
         self.Z.z[:, 0, 0] = np.array(data_dict['zxxr'])+\
                              np.array(data_dict['zxxi'])*1j
@@ -264,6 +265,10 @@ class Edi(object):
         self.Tipper.tippererr = np.zeros((self.Data_sect.nfreq, 1, 2),
                                          dtype=np.float) 
         self.Tipper.freq = freq_arr.copy()
+        try:
+            self.Tipper.rotation_angle = data_dict['trot']
+        except KeyError:
+            self.Tipper.rotation_angle = data_dict['zrot']
 
         if 'txr.exp' in data_dict.keys():
             self.Tipper.tipper[:, 0, 0] = np.array(data_dict['txr.exp'])+\
