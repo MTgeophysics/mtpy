@@ -729,7 +729,7 @@ class OccamPlot(QtGui.QWidget):
         self.axm = None
         
         self.res_limits = None
-        self.phase_limits = (-5, 95)
+        self.phase_limits = None
         self.depth_scale = 'log'
         self.depth_units = 'km'
         self.depth_limits = None
@@ -1014,16 +1014,21 @@ class OccamPlot(QtGui.QWidget):
                 pass
 
         #--> set axis properties-----------------------------------------------
+        x_limits = (10**np.floor(np.log10(1./self.data_obj.freq.max())), 
+                    10**np.ceil(np.log10(1./self.data_obj.freq.min())))
+                                    
         self.axr.set_xscale('log')
         self.axp.set_xscale('log')
-        self.axr.set_yscale('log')        
+        self.axr.set_yscale('log')
+        self.axr.set_xlim(x_limits)        
+        self.axp.set_xlim(x_limits)        
         self.axr.grid(True, alpha=.75, which='both', 
                       color=(.75, .75, .75))
         plt.setp(self.axr.xaxis.get_ticklabels(),visible=False)
         self.axp.grid(True, alpha=.75, which='both', 
                       color=(.75, .75, .75))
-        self.axp.yaxis.set_major_locator(MultipleLocator(15))
-        self.axp.yaxis.set_minor_locator(MultipleLocator(3))
+        #self.axp.yaxis.set_major_locator(MultipleLocator(15))
+        #self.axp.yaxis.set_minor_locator(MultipleLocator(3))
         
         if self.res_limits is not None:
             self.axr.set_ylim(self.res_limits)
