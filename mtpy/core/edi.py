@@ -242,7 +242,10 @@ class Edi(object):
         self.Z.freq = freq_arr.copy()
         self.Z.z = np.zeros((self.Data_sect.nfreq, 2, 2), dtype=np.complex)
         self.Z.zerr = np.zeros((self.Data_sect.nfreq, 2, 2), dtype=np.float)
-        self.Z.rotation_angle = data_dict['zrot']
+        try:
+            self.Z.rotation_angle = data_dict['zrot']
+        except KeyError:
+            self.Z.rotation_angle = 0.0
         
         self.Z.z[:, 0, 0] = np.array(data_dict['zxxr'])+\
                              np.array(data_dict['zxxi'])*1j
