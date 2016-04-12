@@ -419,7 +419,7 @@ class MT(object):
         
         """
         
-        self.edi_object = MTedi.Edi(self.fn)
+        self.edi_object = MTedi.Edi(edi_fn=self.fn)
         self.lat = self.edi_object.lat
         self.lon = self.edi_object.lon
         self.elev = self.edi_object.elev
