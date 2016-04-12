@@ -363,7 +363,6 @@ class Data(object):
         for ii in range(nf):
             if 'te' in mode.lower():
                 pol = 'xy'
-<<<<<<< HEAD
                 if res_err == 'data':
                     rerr = rho_err[ii, 0, 1] 
                 else:
@@ -382,12 +381,7 @@ class Data(object):
                                 '{0:{1}}\n'.format(perr, self._string_fmt)]))
                     data_count += 2
                             
-            elif mode.lower() == 'tm':
-=======
-                i1,i2 = 0,1
-                tetm = True
             elif 'tm' in mode.lower():
->>>>>>> a99e84edafbd1ce411b4e09b68a1f74f7b362fa3
                 pol = 'yx'
                 i1,i2 = 1,0
                 tetm = True
