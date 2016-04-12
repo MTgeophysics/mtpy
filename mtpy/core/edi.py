@@ -271,7 +271,10 @@ class Edi(object):
         try:
             self.Tipper.rotation_angle = data_dict['trot']
         except KeyError:
-            self.Tipper.rotation_angle = data_dict['zrot']
+            try:
+                self.Tipper.rotation_angle = data_dict['zrot']
+            except KeyError:
+                self.Tipper.rotation_angle = 0.0
 
         if 'txr.exp' in data_dict.keys():
             self.Tipper.tipper[:, 0, 0] = np.array(data_dict['txr.exp'])+\

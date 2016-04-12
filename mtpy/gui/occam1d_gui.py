@@ -79,7 +79,7 @@ class Occam1D_GUI(QtGui.QMainWindow):
         """
         
         self.setWindowTitle("Run Occam 1D")
-        self.resize(1920, 1080)
+        self.setWindowState(QtCore.Qt.WindowMaximized)
         
         self.occam_widget = OccamWidget()
         self.central_widget = self.setCentralWidget(self.occam_widget)
