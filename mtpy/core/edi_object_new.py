@@ -19,16 +19,90 @@ tab = ' '*4
 
 class Edi(object):
     """
+    This class is for .edi files, mainly reading and writing.  Has been tested
+    on Winglink and Phoenix output .edi's, which are meant to follow the 
+    archaic EDI format put forward by SEG. Can read impedance, Tipper and/or
+    spectra data.  
     
+    The Edi class contains a class for each major section of the .edi file.
+    
+    Arguments
+    ---------------
+        
+        **edi_fn** : string
+                     full path to .edi file to be read in. 
+                     *default* is None. If an .edi file is input, it is 
+                     automatically read in and attributes of Edi are filled
+       
+    
+    Methods
+    ---------------
+    ===================== =====================================================
+    Methods               Description  
+    ===================== =====================================================
+    read_edi_file         Reads in an edi file and populates the associated
+                          classes and attributes. 
+    write_edi_file        Writes an .edi file following the EDI format given
+                          the apporpriate attributes are filled.  Writes out
+                          in impedance and Tipper format.
+    _read_data            Reads in the impedance and Tipper blocks, if the 
+                          .edi file is in 'spectra' format, read_data converts
+                          the data to impedance and Tipper.
+    _read_mt              Reads impedance and tipper data from the appropriate
+                          blocks of the .edi file.
+    _read_spectra         Reads in spectra data and converts it to impedance 
+                          and Tipper data.                     
+    ===================== =====================================================
+    
+    Attributes
+    ---------------
+        
+    ===================== ========================================== ==========
+    Attributes            Description                                default
+    ===================== ========================================== ==========    
+    Data_sect             DataSection class, contains basin 
+                          information on the data collected and in
+                          whether the data is in impedance or 
+                          spectra.
+    Define_measurement    DefineMeasurement class, contains 
+                          information on how the data was 
+                          collected.
+    edi_fn                full path to edi file read in              None
+    Header                Header class, contains metadata on 
+                          where, when, and who collected the data
+    Info                  Information class, contains information 
+                          on how the data was processed and how the
+                          transfer functions where estimated.
+    Tipper                mtpy.core.z.Tipper class, contains the
+                          tipper data
+    Z                     mtpy.core.z.Z class, contains the
+                          impedance data
+    _block_len            number of data in one line.                6  
+    _data_header_str      header string for each of the data         '!****{0}****!'
+                          section   
+    _num_format           string format of data.                     ' 15.6e'
+    _t_labels             labels for tipper blocks                 
+    _z_labels             labels for impedance blocks
+    ===================== ========================================== ========== 
+    
+    Examples
+    ---------------------
+    :Change Latitude: ::
+        
+        >>> import mtpy.core.edi as mtedi
+        >>> edi_obj = mtedi.Edi(edi_fn=r"/home/mt/mt01.edi")
+        >>> # change the latitude
+        >>> edi_obj.header.lat = 45.7869
+        >>> new_edi_fn = edi_obj.write_edi_file()
     """
 
-    def __init__(self, edi_fn=None, **kwargs):
+    def __init__(self, edi_fn=None):
         
         self.edi_fn = edi_fn
-        self.header = Header()
-        self.info = Information()
-        self.define_measurement = DefineMeasurement()
-        self.data_sect = DataSection()
+        self.Header = Header()
+        self.Info = Information()
+        self.Define_measurement = DefineMeasurement()
+        self.Data_sect = DataSection()
         self.Z = MTz.Z()
         self.Tipper = MTz.Tipper()
         
@@ -50,7 +124,36 @@ class Edi(object):
             
     def read_edi_file(self, edi_fn=None):
         """
-        read in an edi file
+        Read in an edi file and fill attributes of each section's classes. 
+        Including: 
+            * Header
+            * Info
+            * Define_measurement
+            * Data_sect
+            * Z
+            * Tipper
+            
+            .. note:: Automatically detects if data is in spectra format.  All
+                  data read in is converted to impedance and Tipper.
+        
+        Arguments
+        -------------
+        
+            **edi_fn** : string
+                         full path to .edi file to be read in
+                         *default* is None
+                         
+        
+                  
+        Examples
+        -------------
+        
+        :Read edi: ::
+        
+            >>> import mtpy.core.Edi as mtedi
+            >>> edi_obj = mtedi.Edi()
+            >>> edi_obj.read_edi_file(edi_fn=r"/home/mt/mt01.edi")
+                         
         """
         
         if edi_fn is not None:
@@ -63,26 +166,26 @@ class Edi(object):
             raise MTex.MTpyError_EDI("Could not find {0}, check path".format(self.edi_fn))
         
         
-        self.header = Header(edi_fn=self.edi_fn)
-        self.info = Information(edi_fn=self.edi_fn)
-        self.define_measurement = DefineMeasurement(edi_fn=self.edi_fn)
-        self.data_sect = DataSection(edi_fn=self.edi_fn)
+        self.Header = Header(edi_fn=self.edi_fn)
+        self.Info = Information(edi_fn=self.edi_fn)
+        self.Define_measurement = DefineMeasurement(edi_fn=self.edi_fn)
+        self.Data_sect = DataSection(edi_fn=self.edi_fn)
         
-        self.read_data()
+        self._read_data()
         
-        if self.header.lat is None:
-            self.header.lat = self.define_measurement.reflat
-            print 'Got latitude from reflat for {0}'.format(self.header.dataid)
-        if self.header.lon is None:
-            self.header.lon = self.define_measurement.reflon
-            print 'Got longitude from reflon for {0}'.format(self.header.dataid)
-        if self.header.elev is None:
-            self.header.elev = self.define_measurement.refelev
-            print 'Got elevation from refelev for {0}'.format(self.header.dataid)
+        if self.Header.lat is None:
+            self.Header.lat = self.Define_measurement.reflat
+            print 'Got latitude from reflat for {0}'.format(self.Header.dataid)
+        if self.Header.lon is None:
+            self.Header.lon = self.Define_measurement.reflon
+            print 'Got longitude from reflon for {0}'.format(self.Header.dataid)
+        if self.Header.elev is None:
+            self.Header.elev = self.Define_measurement.refelev
+            print 'Got elevation from refelev for {0}'.format(self.Header.dataid)
         
-        print "Read in edi file for station {0}".format(self.header.dataid)
+        print "Read in edi file for station {0}".format(self.Header.dataid)
         
-    def read_data(self):
+    def _read_data(self):
         """
         read either impedance or spectra data
         """
@@ -93,12 +196,12 @@ class Edi(object):
             raise MTex.MTpyError_EDI('No edi file input, check edi_fn')
             
         with open(self.edi_fn, 'r') as fid:
-            lines = fid.readlines()[self.data_sect.line_num+2:]
+            lines = fid.readlines()[self.Data_sect.line_num+2:]
         
-        if self.data_sect.data_type == 'spectra':
+        if self.Data_sect.data_type == 'spectra':
             self._read_spectra(lines)
         
-        elif self.data_sect.data_type == 'z':
+        elif self.Data_sect.data_type == 'z':
             self._read_mt(lines)
             
     def _read_mt(self, data_lines):
@@ -137,8 +240,8 @@ class Edi(object):
         
         ## fill impedance tensor
         self.Z.freq = freq_arr.copy()
-        self.Z.z = np.zeros((self.data_sect.nfreq, 2, 2), dtype=np.complex)
-        self.Z.zerr = np.zeros((self.data_sect.nfreq, 2, 2), dtype=np.float)
+        self.Z.z = np.zeros((self.Data_sect.nfreq, 2, 2), dtype=np.complex)
+        self.Z.zerr = np.zeros((self.Data_sect.nfreq, 2, 2), dtype=np.float)
         
         self.Z.z[:, 0, 0] = np.array(data_dict['zxxr'])+\
                              np.array(data_dict['zxxi'])*1j
@@ -156,9 +259,9 @@ class Edi(object):
 
         
         ## fill tipper data if there it exists
-        self.Tipper.tipper = np.zeros((self.data_sect.nfreq, 1, 2), 
+        self.Tipper.tipper = np.zeros((self.Data_sect.nfreq, 1, 2), 
                                       dtype=np.complex) 
-        self.Tipper.tippererr = np.zeros((self.data_sect.nfreq, 1, 2),
+        self.Tipper.tippererr = np.zeros((self.Data_sect.nfreq, 1, 2),
                                          dtype=np.float) 
         self.Tipper.freq = freq_arr.copy()
 
@@ -181,9 +284,29 @@ class Edi(object):
         
         data_dict = {}
         
-    def write_edi(self, new_edi_fn=None):
+    def write_edi_file(self, new_edi_fn=None):
         """
-        write a new edi file
+        Write a new edi file from either an existing .edi file or from data
+        input by the user into the attributes of Edi.
+        
+        Arguments
+        -----------
+        
+            **new_edi_fn** : string
+                             full path to new edi file.
+                             *default* is None, which will write to the same
+                             file as the input .edi with as:
+                             r"/home/mt/mt01_1.edi"
+                             
+        Examples
+        -----------
+        
+        :Write EDI file: ::
+            
+            >>> import mtpy.core.edi as mtedi
+            >>> edi_obj = mtedi.Edi(edi_fn=r"/home/mt/mt01/edi")
+            >>> edi_obj.Header.dataid = 'mt01_rr'
+            >>> edi_obj.write_edi_file() 
         """
         
         if new_edi_fn is None:
@@ -191,17 +314,17 @@ class Edi(object):
                 new_edi_fn = self.edi_fn
             else:
                 new_edi_fn = os.path.join(os.getcwd(), 
-                                          '{0}.edi'.format(self.header.dataid))
+                                          '{0}.edi'.format(self.Header.dataid))
         new_edi_fn = MTfh.make_unique_filename(new_edi_fn)
             
-        if self.header.dataid is None:
+        if self.Header.dataid is None:
             self.read_edi_file()
             
         # write lines
-        header_lines = self.header.write_header()
-        info_lines = self.info.write_info()
-        define_lines = self.define_measurement.write_define_measurement()
-        dsect_lines = self.data_sect.write_data_sect()
+        header_lines = self.Header.write_header()
+        info_lines = self.Info.write_info()
+        define_lines = self.Define_measurement.write_define_measurement()
+        dsect_lines = self.Data_sect.write_data_sect()
         
         # write out frequencies
         freq_lines = [self._data_header_str.format('frequencies'.upper())]
@@ -291,7 +414,7 @@ class Edi(object):
         
         for d_index, d_comp in enumerate(data_comp_arr, 1):
             if d_comp == 0.0 and data_key.lower() not in ['zrot', 'trot']:
-                d_comp = float(self.header.empty)
+                d_comp = float(self.Header.empty)
             # write the string in the specified format    
             num_str = '{0:{1}}'.format(d_comp, self._num_format)
             
@@ -305,17 +428,163 @@ class Edi(object):
             block_lines.append(num_str)
             
         return block_lines
-        
-        
-        
+    
+    #----------------------------------------------------------------------- 
+    # set a few important properties  
+    # --> Latitude    
+    def _get_lat(self):
+         """ 
+         get latitude
+         """
+         
+         return self.Header.lat
                         
-
+    def _set_lat(self, input_lat):
+        """
+        set latitude and make sure it is converted to a float
+        """
+        
+        self.Header.lat = MTft._assert_position_format('lat', input_lat)
+        print 'Converted input latitude to decimal degrees: {0: .6f}'.format(
+                                                               self.Header.lat)
+        
+    lat = property(fget=_get_lat, fset=_set_lat, 
+                   doc='Latitude in decimal degrees')
+    
+    # --> Longitude               
+    def _get_lon(self):
+         return self.Header.lon
+                        
+    def _set_lon(self, input_lon):
+        self.Header.lon = MTft._assert_position_format('lon', input_lon)
+        print 'Converted input longitude to decimal degrees: {0: .6f}'.format(
+                                                               self.Header.lon)
+        
+    lon = property(fget=_get_lon, fset=_set_lon, 
+                   doc='Longitude in decimal degrees')
+                   
+    # --> Elevation               
+    def _get_elev(self):
+         return self.Header.elev
+                        
+    def _set_elev(self, input_elev):
+        self.Header.elev = MTft._assert_position_format('elev', input_elev)
+        
+    elev = property(fget=_get_elev, fset=_set_elev, 
+                   doc='Elevation in meters')
+                   
+    # --> station
+    def _get_station(self):
+        return self.Header.dataid
+        
+    def _set_station(self, new_station):
+        if type(new_station) is not str:
+            new_station = '{0}'.format(new_station)
+        self.Header.dataid = new_station
+        self.Data_sect.sectid = new_station
+    
+    station = property(fget=_get_station, fset=_set_station, 
+                       doc="station name")
 #==============================================================================
 #  Header object        
 #==============================================================================
 class Header(object):
     """
-    Header object
+    Header class contains all the information in the header section of the .edi
+    file. A typical header block looks like::
+        
+        >HEAD
+
+            ACQBY=None
+            ACQDATE=None
+            DATAID=par28ew
+            ELEV=0.000
+            EMPTY=1e+32
+            FILEBY=WG3DForward
+            FILEDATE=2016/04/11 19:37:37 UTC
+            LAT=-30:12:49
+            LOC=None
+            LON=139:47:50
+            PROGDATE=2002-04-22
+            PROGVERS=WINGLINK EDI 1.0.22
+    
+    Arguments
+    -------------
+    
+        **edi_fn** : string
+                     full path to .edi file to be read in. 
+                     *default* is None. If an .edi file is input, it is 
+                     automatically read in and attributes of Header are filled
+                     
+    Attributes
+    -------------
+
+    Many of the attributes are needed in the .edi file.  They are marked with
+    a yes for 'In .edi'
+
+    ============== ======================================= ======== ===========
+    Attributes     Description                             Default  In .edi     
+    ============== ======================================= ======== ===========
+    acqby          Acquired by                             None     yes
+    acqdate        Acquired date (YYYY-MM-DD)              None     yes
+    dataid         Station name, should be a string        None     yes
+    edi_fn         Full path to .edi file                  None     no
+    elev           Elevation of station (m)                None     yes
+    empty          Value for missing data                  1e32     yes
+    fileby         File written by                         None     yes   
+    filedate       Date the file is written (YYYY-MM-DD)   None     yes
+    header_list    List of header lines                    None     no 
+    lat            Latitude of station [1]_                None     yes
+    loc            Location name where station was         None     yes 
+                   collected
+    lon            Longitude of station [1]_               None     yes
+    phoenix_edi    [ True | False ] if phoenix .edi format False    no
+    progdate       Date of program version to write .edi   None     yes
+    progvers       Version of program writing .edi         None     yes  
+    stdvers        Standard version                        None     yes
+    units          Units of distance                       m        yes
+    _header_keys   list of metadata input into .edi        [2]_ 
+                   header block.                                    no
+    ============== ======================================= ======== ===========
+    
+    .. rubric:: footnotes
+    .. [1] Internally everything is converted to decimal degrees.  Output is
+          written as HH:MM:SS.ss so Winglink can read them in. 
+    .. [2] If you want to change what metadata is written into the .edi file
+           change the items in _header_keys.  Default attributes are:
+               * acqby 
+               * acqdate
+               * dataid
+               * elev
+               * fileby
+               * lat
+               * loc
+               * lon
+               * filedate
+               * empty
+               * progdate
+               * progvers
+          
+    Methods
+    -------------
+    
+    ====================== ====================================================
+    Methods                Description
+    ====================== ====================================================
+    get_header_list        get header lines from edi file
+    read_header            read in header information from header_lines
+    write_header           write header lines, returns a list of lines to write
+    ====================== ====================================================
+          
+
+    Examples
+    --------------    
+    
+    :Read Header: ::
+    
+        >>> import mtpy.core.edi as mtedi
+        >>> header_obj = mtedi.Header(edi_fn=r"/home/mt/mt01.edi")
+        
     """
     
     def __init__(self, edi_fn=None, **kwargs):
@@ -392,7 +661,27 @@ class Header(object):
     
     def read_header(self, header_list=None):
         """
-        read a header information
+        read a header information from either edi file or a list of lines
+        containing header information.
+        
+        Arguments
+        -----------
+        
+            **header_list** : list
+                              should be read from an .edi file or input as
+                              ['key_01=value_01', 'key_02=value_02']
+                              
+        Examples
+        ----------
+        
+        :Input header_list: ::
+        
+            >>> h_list = ['lat=36.7898', 'lon=120.73532', 'elev=120.0', ...
+            >>>           'dataid=mt01']
+            >>> import mtpy.core.edi as mtedi
+            >>> header = mtedi.Header()
+            >>> header.read_header(h_list)
+            
         """
 
         if header_list is not None:
@@ -445,7 +734,26 @@ class Header(object):
             
     def write_header(self, header_list=None):
         """
-        write header information to a list of lines
+        Write header information to a list of lines.
+        
+        Arguments
+        -------------
+        
+            **header_list** : list
+                              should be read from an .edi file or input as
+                              ['key_01=value_01', 'key_02=value_02']
+            
+        Returns
+        ---------------
+            
+            **header_lines** : list
+                               list of lines containing header information
+                               will be of the form
+                               ['>HEAD\n',
+                                '    key_01=value_01\n']
+                                if None is input then reads from input .edi 
+                                file or uses attribute information to write
+                                metadata.
         """
 
         if header_list is not None:
@@ -509,7 +817,8 @@ class Information(object):
     
     not much to really do here, but just keep it in the same format that it is
     read in as, except if it is in phoenix format then split the two paragraphs
-    up
+    up so they are sequential.
+    
     """
     
     def __init__(self, edi_fn=None):
@@ -616,7 +925,78 @@ class Information(object):
 #==============================================================================
 class DefineMeasurement(object):
     """
-    hold information about the measurement
+    DefineMeasurement class holds information about the measurement.  This 
+    includes how each channel was setup.  The main block contains information 
+    on the reference location for the station.  This is a bit of an archaic 
+    part and was meant for a multiple station .edi file.  This section is also
+    important if you did any forward modeling with Winglink cause it only gives
+    the station location in this section.  The other parts are how each channel
+    was collected.  An example define measurement section looks like::
+    
+        >=DEFINEMEAS
+        
+            MAXRUN=999
+            MAXMEAS=9999
+            UNITS=M
+            REFTYPE=CART
+            REFLOC="par28ew"
+            REFLAT=-30:12:49.4693
+            REFLONG=139:47:50.87
+            REFELEV=0
+            
+        >HMEAS ID=1001.001 CHTYPE=HX X=0.0 Y=0.0 Z=0.0 AZM=0.0 
+        >HMEAS ID=1002.001 CHTYPE=HY X=0.0 Y=0.0 Z=0.0 AZM=90.0 
+        >HMEAS ID=1003.001 CHTYPE=HZ X=0.0 Y=0.0 Z=0.0 AZM=0.0 
+        >EMEAS ID=1004.001 CHTYPE=EX X=0.0 Y=0.0 Z=0.0 X2=0.0 Y2=0.0 
+        >EMEAS ID=1005.001 CHTYPE=EY X=0.0 Y=0.0 Z=0.0 X2=0.0 Y2=0.0 
+        >HMEAS ID=1006.001 CHTYPE=HX X=0.0 Y=0.0 Z=0.0 AZM=0.0 
+        >HMEAS ID=1007.001 CHTYPE=HY X=0.0 Y=0.0 Z=0.0 AZM=90.0 
+    
+    Arguments
+    -------------
+    
+        **edi_fn** : string
+                     full path to .edi file to read in.
+                     
+    Attributes
+    -------------
+    
+    ================= ==================================== ======== ===========
+    Attributes        Description                          Default  In .edi     
+    ================= ==================================== ======== ===========
+    edi_fn            Full path to edi file read in        None     no
+    maxchan           Maximum number of channels measured  None     yes 
+    maxmeas           Maximum number of measurements       9999     yes
+    maxrun            Maximum number of measurement runs   999      yes
+    meas_####         HMeasurement or EMEasurment object   None     yes
+                      defining the measurement made [1]_
+    refelev           Reference elevation (m)              None     yes  
+    reflat            Reference latitude [2]_              None     yes  
+    refloc            Reference location                   None     yes
+    reflon            Reference longituted [2]_            None     yes  
+    reftype           Reference coordinate system          'cart'   yes
+    units             Units of length                      m        yes 
+    _define_meas_keys Keys to include in define_measurment [3]_     no
+                      section.          
+    ================= ==================================== ======== ===========                
+    
+    .. rubric:: footnotes
+    .. [1] Each channel with have its own define measurement and depending on
+           whether it is an E or H channel the metadata will be different.  
+           the #### correspond to the channel number.
+    .. [2] Internally everything is converted to decimal degrees.  Output is
+          written as HH:MM:SS.ss so Winglink can read them in. 
+    .. [3] If you want to change what metadata is written into the .edi file
+           change the items in _header_keys.  Default attributes are:
+               * maxchan
+               * maxrun
+               * maxmeas
+               * reflat
+               * reflon
+               * refelev
+               * reftype
+               * units
+
     """
     
     def __init__(self, edi_fn=None):
@@ -805,7 +1185,31 @@ class DefineMeasurement(object):
 #==============================================================================
 class HMeasurement(object):
     """
-    class to put the MT measurements in
+    HMeasurement contains metadata for a magnetic field measurement
+    
+    Attributes
+    ------------
+    
+    ====================== ====================================================
+    Attributes             Description
+    ====================== ====================================================
+    id                     Channel number
+    chtype                 [ HX | HY | HZ | RHX | RHY ]
+    x                      x (m) north from reference point (station)
+    y                      y (m) east from reference point (station)  
+    azm                    angle of sensor relative to north = 0
+    acqchan                name of the channel acquired usually same as chtype
+    ====================== ====================================================
+    
+    Example
+    ------------
+    
+    :Fill Metadata: ::
+    
+        >>> import mtpy.core.edi as mtedi
+        >>> h_dict = {'id': '1', 'chtype':'hx', 'x':0, 'y':0, 'azm':0}
+        >>> h_dict['acqchn'] = 'hx'
+        >>> hmeas = mtedi.HMeasurement(**h_dict)
     """
     
     def __init__(self, **kwargs):
@@ -826,7 +1230,36 @@ class HMeasurement(object):
 #==============================================================================
 class EMeasurement(object):
     """
-    class to put the MT measurements in
+    EMeasurement contains metadata for an electric field measurement
+    
+    Attributes
+    ------------
+    
+    ====================== ====================================================
+    Attributes             Description
+    ====================== ====================================================
+    id                     Channel number
+    chtype                 [ EX | EY ]
+    x                      x (m) north from reference point (station) of one 
+                           electrode of the dipole
+    y                      y (m) east from reference point (station) of one 
+                           electrode of the dipole
+    x2                     x (m) north from reference point (station) of the 
+                           other electrode of the dipole
+    y2                     y (m) north from reference point (station) of the 
+                           other electrode of the dipole
+    acqchan                name of the channel acquired usually same as chtype
+    ====================== ====================================================
+    
+    Example
+    ------------
+    
+    :Fill Metadata: ::
+    
+        >>> import mtpy.core.edi as mtedi
+        >>> e_dict = {'id': '1', 'chtype':'ex', 'x':0, 'y':0, 'x2':50, 'y2':50}
+        >>> e_dict['acqchn'] = 'ex'
+        >>> emeas = mtedi.EMeasurement(**e_dict)
     """
     
     def __init__(self, **kwargs):
@@ -849,7 +1282,47 @@ class EMeasurement(object):
 #==============================================================================
 class DataSection(object):
     """
-    read the data section (XSECT part)
+    DataSection contains the small metadata block that describes which channel
+    is which.  A typical block looks like::
+        
+        >=MTSECT
+        
+            ex=1004.001
+            ey=1005.001
+            hx=1001.001
+            hy=1002.001
+            hz=1003.001
+            nfreq=14
+            sectid=par28ew
+            nchan=None
+            maxblks=None
+            
+    Arguments
+    -------------
+        **edi_fn** : string
+                     full path to .edi file to read in.
+                     
+    Attributes
+    -------------
+    
+    ================= ==================================== ======== ===========
+    Attributes        Description                          Default  In .edi     
+    ================= ==================================== ======== ===========
+    ex                ex channel id number                 None     yes  
+    ey                ey channel id number                 None     yes
+    hx                hx channel id number                 None     yes
+    hy                hy channel id number                 None     yes
+    hz                hz channel id number                 None     yes
+    nfreq             number of frequencies                None     yes
+    sectid            section id, should be the same
+                      as the station name -> Header.dataid None     yes 
+    maxblks           maximum number of data blocks        None     yes
+    nchan             number of channels                   None     yes
+    _kw_list          list of key words to put in metadata [1]_     no 
+    ================= ==================================== ======== ===========
+        
+    .. rubric:: Footnotes
+    .. [1] Changes these values to change what is written to edi file    
     """
     def __init__(self, edi_fn=None):
         self.edi_fn = edi_fn
