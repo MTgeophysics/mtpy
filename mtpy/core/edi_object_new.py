@@ -1427,24 +1427,4 @@ class DataSection(object):
         
         return data_sect_lines
                         
-
-#==============================================================================
-# Test            
-#==============================================================================
-#fn = r"d:\Peacock\MTData\EDI_Files\mb018.edi"
-#fn = r"c:\Users\jpeacock\Documents\ShanesBugs\Jess\EDI_files\104A.edi"
-fn = r"C:\Users\jrpeacock\Documents\Test_Data\Faults\par28ew.edi"
-#fn = r"c:\Users\jpeacock\Documents\SaudiArabia\edi_files_fixed_lon\101_rr.edi"
-#h = Header(edi_fn=fn)
-#h.read_header()
-
-#m = DefineMeasurement(edi_fn=fn)
-#
-#print ''.join(m.write_define_measurement())
-
-edi_obj = Edi(edi_fn=fn)
-
-#d = DataSection(edi_fn=fn)
-#for key in sorted(h.__dict__.keys()):
-#    print key, h.__dict__[key]
     
