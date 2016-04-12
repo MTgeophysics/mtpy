@@ -84,8 +84,6 @@ class Occam1D_GUI(QtGui.QMainWindow):
         self.occam_widget = OccamWidget()
         self.central_widget = self.setCentralWidget(self.occam_widget)
 
-<<<<<<< HEAD
-=======
         ## menu bar
         self.menu_bar = self.menuBar()
         #self.menu_bar.setGeometry(QtCore.QRect(0, 0, 1920, 40))
@@ -105,11 +103,6 @@ class Occam1D_GUI(QtGui.QMainWindow):
         
         #self.setMenuBar(self.menu_bar)
         #self.show()
-<<<<<<< HEAD
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
-=======
->>>>>>> a99e84edafbd1ce411b4e09b68a1f74f7b362fa3
->>>>>>> fdb88b7b1352dd3519c7cca9844034a6fcd4799e
         #--------------------------------------------------------
         # stream the output of occam 1D        
         self.my_stream = MyStream()
@@ -118,9 +111,6 @@ class Occam1D_GUI(QtGui.QMainWindow):
         sys.stdout = self.my_stream
         
         QtCore.QMetaObject.connectSlotsByName(self)
-<<<<<<< HEAD
-            
-=======
         
     def display_help(self):
         ll = ['***Be sure you have a working executable of Occam1D first***\n',
@@ -146,11 +136,6 @@ class Occam1D_GUI(QtGui.QMainWindow):
         help_string = '\n'.join(ll)        
         
         QtGui.QMessageBox.information(self.central_widget, 'Help', help_string)
-<<<<<<< HEAD
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
-=======
->>>>>>> a99e84edafbd1ce411b4e09b68a1f74f7b362fa3
->>>>>>> fdb88b7b1352dd3519c7cca9844034a6fcd4799e
 #==============================================================================
 # Occam 1D widget
 #==============================================================================
@@ -168,7 +153,6 @@ class OccamWidget(QtGui.QWidget):
         self.occam_exec = ''
         self.mpl_widget = OccamPlot() 
         
-<<<<<<< HEAD
         self.l2_widget = PlotL2()
         self.l2_widget.l2_widget.mpl_connect('pick event', self.on_click)
         self.l2_widget.l2_widget.setFocusPolicy(QtCore.Qt.ClickFocus)
@@ -176,21 +160,9 @@ class OccamWidget(QtGui.QWidget):
         
         self.res_err = 10.
         self.phase_err = 5.
-        self.data_mode = 'TE'
-        self.edi_fn = ''
-=======
-        self.l2_widget = PlotL2()      
-<<<<<<< HEAD
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
-=======
->>>>>>> fdb88b7b1352dd3519c7cca9844034a6fcd4799e
-        
-        self.res_err = 10.
-        self.phase_err = 5.
         self.data_mode = 'Det'
         self.edi_fn = ''
         self.ss = 1.0
->>>>>>> a99e84edafbd1ce411b4e09b68a1f74f7b362fa3
         
         self.save_dir = None
         self.station_dir = None
@@ -207,27 +179,6 @@ class OccamWidget(QtGui.QWidget):
         label_font.setPointSize (16)
         
         #---------------------------------------------------
-<<<<<<< HEAD
-        # menu bar
-#        self.menu_bar = QtGui.QMenuBar(self)
-#        self.menu_bar.setGeometry(QtCore.QRect(0, 0, 1920, 40))
-#        
-#        self.menu_data = QtGui.QMenu(self.menu_bar)
-#        self.menu_data.setTitle("Data")
-#        
-#        self.menu_model = QtGui.QMenu(self.menu_bar)
-#        self.menu_model.setTitle("Model")
-#        
-#        self.menu_startup = QtGui.QMenu(self.menu_bar)
-#        self.menu_startup.setTitle('Startup')
-#        
-#        self.setMenuBar(self.menu_bar)
-=======
-<<<<<<< HEAD
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
-=======
->>>>>>> a99e84edafbd1ce411b4e09b68a1f74f7b362fa3
->>>>>>> fdb88b7b1352dd3519c7cca9844034a6fcd4799e
         
         self.get_occam_path_button = QtGui.QPushButton('Occam1D Path')
         self.get_occam_path_button.clicked.connect(self.get_occam_path)
@@ -258,14 +209,7 @@ class OccamWidget(QtGui.QWidget):
         
         self.data_mode_label = QtGui.QLabel('Mode')
         self.data_mode_combo = QtGui.QComboBox()
-<<<<<<< HEAD
-        self.data_mode_combo.addItem('TE')
-        self.data_mode_combo.addItem('TM')
-        self.data_mode_combo.addItem('Det')
-        #self.data_mode_combo.addItem('Both')
-        self.data_mode_combo.activated[str].connect(self.set_data_mode)
-        
-=======
+
         self.data_mode_combo.addItem('Det')
         self.data_mode_combo.addItem('TE')
         self.data_mode_combo.addItem('TM')
@@ -277,7 +221,6 @@ class OccamWidget(QtGui.QWidget):
         self.data_ss_edit.setText('{0:.2f}'.format(self.ss))
         self.data_ss_edit.editingFinished.connect(self.set_ss)
         
->>>>>>> a99e84edafbd1ce411b4e09b68a1f74f7b362fa3
         # vertical layer parameters
         self.model_label = QtGui.QLabel('Model Parameters')
         self.model_label.setFont(label_font)
@@ -339,14 +282,7 @@ class OccamWidget(QtGui.QWidget):
         self.iter_combo_edit.setMinimumWidth(50)
         
         self.output_box = QtGui.QTextEdit()
-<<<<<<< HEAD
-=======
-        
-<<<<<<< HEAD
->>>>>>> 25c182d0d6e41e01d66b435fe9b8ffce7fe89287
-=======
->>>>>>> a99e84edafbd1ce411b4e09b68a1f74f7b362fa3
->>>>>>> fdb88b7b1352dd3519c7cca9844034a6fcd4799e
+
         #---set the layout---------------
         path_layout = QtGui.QHBoxLayout()
         path_layout.addWidget(self.get_occam_path_button)
@@ -364,12 +300,9 @@ class OccamWidget(QtGui.QWidget):
         data_grid.addWidget(self.data_mode_label, 3, 0)
         data_grid.addWidget(self.data_mode_combo, 3, 1)
         
-<<<<<<< HEAD
-=======
         data_grid.addWidget(self.data_ss_button, 4, 0)
         data_grid.addWidget(self.data_ss_edit, 4, 1)
         
->>>>>>> a99e84edafbd1ce411b4e09b68a1f74f7b362fa3
         model_grid = QtGui.QGridLayout()
         model_grid.addWidget(self.model_label, 0, 0)
         
