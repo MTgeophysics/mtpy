@@ -972,8 +972,8 @@ class OccamPlot(QtGui.QWidget):
             if len(rxy) > 0:
                 rte = self.axr.errorbar(1./r1.freq[rxy],
                                         r1.res_te[2][rxy],
-										yerr=None,
-                                        **r_kwargs))
+                										yerr=None,
+                                        **r_kwargs)
             self.resp_obj = occam1d.Data()
             self.resp_obj.read_resp_file(resp_fn, data_fn=data_fn)
             
