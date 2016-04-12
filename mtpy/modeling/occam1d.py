@@ -71,7 +71,6 @@ import matplotlib.gridspec as gridspec
 import mtpy.core.edi as mtedi
 import mtpy.utils.calculator as mtcc
 import mtpy.analysis.geometry as mtg
-import mtpy.analysis.pt as mtpt
 import matplotlib.pyplot as plt
 import subprocess
 import string
