@@ -245,7 +245,7 @@ class Edi(object):
         try:
             self.Z.rotation_angle = data_dict['zrot']
         except KeyError:
-            self.Z.rotation_angle = 0.0
+            self.Z.rotation_angle = np.zeros_like(freq_arr)
         
         self.Z.z[:, 0, 0] = np.array(data_dict['zxxr'])+\
                              np.array(data_dict['zxxi'])*1j
@@ -274,7 +274,7 @@ class Edi(object):
             try:
                 self.Tipper.rotation_angle = data_dict['zrot']
             except KeyError:
-                self.Tipper.rotation_angle = 0.0
+                self.Tipper.rotation_angle = np.zeros_like(freq_arr)
 
         if 'txr.exp' in data_dict.keys():
             self.Tipper.tipper[:, 0, 0] = np.array(data_dict['txr.exp'])+\
@@ -946,11 +946,11 @@ class DefineMeasurement(object):
     
         >=DEFINEMEAS
         
+            MAXCHAN=7
             MAXRUN=999
             MAXMEAS=9999
             UNITS=M
             REFTYPE=CART
-            REFLOC="par28ew"
             REFLAT=-30:12:49.4693
             REFLONG=139:47:50.87
             REFELEV=0

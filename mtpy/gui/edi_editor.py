@@ -129,7 +129,16 @@ class EDI_Editor_Window(QtGui.QMainWindow):
         self.plot_widget.redraw_plot()
     
     def edit_metadata(self):
-        self.edi_txt_editor = EDITextEditor(self.plot_widget.mt_obj.edi_object)
+        self.edi_text_editor = EDITextEditor(self.plot_widget.mt_obj.edi_object)
+        self.edi_text_editor.metadata_updated.connect(self.update_edi_metadata)
+        
+    def update_edi_metadata(self):
+        self.plot_widget.mt_obj.edi_object = copy.deepcopy(self.edi_text_editor.edi_obj)
+        self.plot_widget.mt_obj.station = self.plot_widget.mt_obj.edi_object.station         
+        self.plot_widget.mt_obj.elev = self.plot_widget.mt_obj.edi_object.elev         
+        self.plot_widget.mt_obj.lat = self.plot_widget.mt_obj.edi_object.lat         
+        self.plot_widget.mt_obj.lon = self.plot_widget.mt_obj.edi_object.lon         
+        self.plot_widget.fill_metadata()        
                        
 #==============================================================================
 # Plot Widget     
@@ -450,14 +459,16 @@ class PlotWidget(QtGui.QWidget):
     
     def meta_edit_acq(self):
         self.mt_obj.edi_object.Header.acqby = str(self.meta_acq_edit.text())
-        
-        
+        self.meta_acq_edit.setText(self.mt_obj.edi_object.Header.acqby)    
+   
     def fill_metadata(self):
         self.meta_station_name_edit.setText(self.mt_obj.station)
         self.meta_lat_edit.setText('{0:.6f}'.format(self.mt_obj.lat))
         self.meta_lon_edit.setText('{0:.6f}'.format(self.mt_obj.lon))
         self.meta_elev_edit.setText('{0:.6f}'.format(self.mt_obj.elev))
         self.meta_date_edit.setText('{0}'.format(self.mt_obj.edi_object.Header.filedate))
+        self.meta_loc_edit.setText('{0}'.format(self.mt_obj.edi_object.Header.loc))
+        self.meta_acq_edit.setText('{0}'.format(self.mt_obj.edi_object.Header.acqby))
         
     def static_shift_set_x(self):
         self.static_shift_x = float(str(self.static_shift_x_edit.text()))
@@ -1581,6 +1592,7 @@ class EDITextEditor(QtGui.QWidget):
     """
     class to edit the text of an .edi file
     """
+    metadata_updated = QtCore.pyqtSignal()
     
     def __init__(self, edi_object):
         super(EDITextEditor, self).__init__()
@@ -1598,6 +1610,7 @@ class EDITextEditor(QtGui.QWidget):
         header_font.setBold = True
         header_font.setPointSize (16)
         
+        ##--> header information
         self.header_label = QtGui.QLabel("Header Information")
         self.header_label.setFont(header_font)
         
@@ -1613,6 +1626,148 @@ class EDITextEditor(QtGui.QWidget):
         self.header_dataid_edit = QtGui.QLineEdit(self.edi_obj.Header.dataid)
         self.header_dataid_edit.editingFinished.connect(self.header_set_dataid)
         
+        self.header_elev_label = QtGui.QLabel("Elevation (m)")
+        self.header_elev_edit = QtGui.QLineEdit()
+        if self.edi_obj.elev is None:
+            self.header_elev_edit.setText('0.0')
+        else:
+            self.header_elev_edit.setText('{0:.1f}'.format(self.edi_obj.elev))
+        
+        self.header_elev_edit.editingFinished.connect(self.header_set_elev)
+        
+        self.header_empty_label = QtGui.QLabel("Empty Value")
+        self.header_empty_edit = QtGui.QLineEdit('{0}'.format(self.edi_obj.Header.empty))
+        self.header_empty_edit.editingFinished.connect(self.header_set_empty)
+  
+        self.header_fileby_label = QtGui.QLabel("File By")
+        self.header_fileby_edit = QtGui.QLineEdit(self.edi_obj.Header.fileby)
+        self.header_fileby_edit.editingFinished.connect(self.header_set_fileby)
+  
+        self.header_filedate_label = QtGui.QLabel("File Date (YYY-MM-DD)")
+        self.header_filedate_edit = QtGui.QLineEdit(self.edi_obj.Header.filedate)
+        self.header_filedate_edit.editingFinished.connect(self.header_set_filedate)
+        
+        self.header_lat_label = QtGui.QLabel("Latitude (decimal degrees)")
+        self.header_lat_edit = QtGui.QLineEdit()
+        if self.edi_obj.lat is None:
+            self.header_lat_edit.setText('0.000000')
+        else:
+            self.header_lat_edit.setText('{0:.5f}'.format(self.edi_obj.lat))
+        self.header_lat_edit.editingFinished.connect(self.header_set_lat)
+        
+        self.header_lon_label = QtGui.QLabel("Longitude (decimal degrees)")
+        self.header_lon_edit = QtGui.QLineEdit()
+        if self.edi_obj.lon is None:
+            self.header_lon_edit.setText('0.000000')
+        else:
+            self.header_lon_edit.setText('{0:.5f}'.format(self.edi_obj.lon))
+        self.header_lon_edit.editingFinished.connect(self.header_set_lon)
+
+        self.header_loc_label = QtGui.QLabel("Location")
+        self.header_loc_edit = QtGui.QLineEdit(self.edi_obj.Header.loc)
+        self.header_loc_edit.editingFinished.connect(self.header_set_loc)
+
+        self.header_progdate_label = QtGui.QLabel("Program Date")
+        self.header_progdate_edit = QtGui.QLineEdit(self.edi_obj.Header.progdate)
+        self.header_progdate_edit.editingFinished.connect(self.header_set_progdate)
+        
+
+        self.header_progvers_label = QtGui.QLabel("Program Version")
+        self.header_progvers_edit = QtGui.QLineEdit(self.edi_obj.Header.progvers)
+        self.header_progvers_edit.editingFinished.connect(self.header_set_progvers)
+        
+        ##--> Info
+        self.info_label = QtGui.QLabel("Information Section")
+        self.info_label.setFont(header_font)
+        
+        self.info_edit = QtGui.QTextEdit()
+        self.info_edit.setMinimumWidth(500)
+        try:
+            info_str = ''.join(self.edi_obj.Info.write_info())
+        except TypeError:
+            info_str = ''
+        self.info_edit.setText(info_str)
+        self.info_edit.textChanged.connect(self.info_set_text)
+        
+        ##--> define measurement
+        self.define_label = QtGui.QLabel('Define Measurement')
+        self.define_label.setFont(header_font)
+
+        self.define_maxchan_label = QtGui.QLabel('Maximum Channels')
+        self.define_maxchan_edit = QtGui.QLineEdit('{0}'.format(self.edi_obj.Define_measurement.maxchan))        
+        self.define_maxchan_edit.editingFinished.connect(self.define_set_maxchan)
+        
+        self.define_maxrun_label = QtGui.QLabel('Maximum Runs')
+        self.define_maxrun_edit = QtGui.QLineEdit('{0}'.format(self.edi_obj.Define_measurement.maxrun))        
+        self.define_maxrun_edit.editingFinished.connect(self.define_set_maxrun)
+        
+        self.define_maxmeas_label = QtGui.QLabel('Maximum Measurements')
+        self.define_maxmeas_edit = QtGui.QLineEdit('{0}'.format(self.edi_obj.Define_measurement.maxmeas))        
+        self.define_maxmeas_edit.editingFinished.connect(self.define_set_maxmeas)
+        
+        self.define_refelev_label = QtGui.QLabel('Reference Elevation (m)')
+        self.define_refelev_edit = QtGui.QLineEdit()
+        if self.edi_obj.Define_measurement.refelev is None:
+            self.define_refelev_edit.setText('0.0')
+        else:
+            self.define_refelev_edit.setText('{0:.5f}'.format(self.edi_obj.Define_measurement.refelev))        
+        self.define_refelev_edit.editingFinished.connect(self.define_set_refelev)
+        
+        self.define_reflat_label = QtGui.QLabel('Reference Latitude (dec. deg)')
+        self.define_reflat_edit = QtGui.QLineEdit()
+        if self.edi_obj.Define_measurement.refelev is None:
+            self.define_reflat_edit.setText('0.0000000')
+        else:
+            self.define_reflat_edit.setText('{0:.5f}'.format(self.edi_obj.Define_measurement.reflat))         
+        self.define_reflat_edit.editingFinished.connect(self.define_set_reflat)
+        
+        self.define_reflon_label = QtGui.QLabel('Reference Longitude (dec. deg)')
+        self.define_reflon_edit = QtGui.QLineEdit()
+        if self.edi_obj.Define_measurement.reflon is None:
+            self.define_reflon_edit.setText('0.000000')
+        else:
+            self.define_reflon_edit.setText('{0:.5f}'.format(self.edi_obj.Define_measurement.reflon)) 
+        self.define_reflon_edit.editingFinished.connect(self.define_set_reflon)
+        
+        #self.define_refloc_label = QtGui.QLabel('Reference Location')
+        #self.define_refloc_edit = QtGui.QLineEdit('{0}'.format(self.edi_obj.Define_measurement.refloc))        
+        #self.define_refloc_edit.editingFinished.connect(self.define_set_refloc)
+        
+        self.define_reftype_label = QtGui.QLabel('Reference Type')
+        self.define_reftype_edit = QtGui.QLineEdit('{0}'.format(self.edi_obj.Define_measurement.reftype))        
+        self.define_reftype_edit.editingFinished.connect(self.define_set_reftype)
+
+        self.define_units_label = QtGui.QLabel('Distance Units')
+        self.define_units_edit = QtGui.QLineEdit('{0}'.format(self.edi_obj.Define_measurement.units))        
+        self.define_units_edit.editingFinished.connect(self.define_set_units)
+
+        self.meas_help = QtGui.QLabel()
+        self.meas_help.setText('Assume x is northing (m), y is easting (m), North = 0 deg, East = 90 deg')
+        ch_list = ['EX', 'EY', 'HX', 'HY', 'HZ', 'RHX', 'RHY', 'EZ']        
+        self.meas_h01_label = QtGui.QLabel("HMEAS")
+        self.meas_h01_id_label = QtGui.QLabel("ID")
+        self.meas_h01_id_edit = QtGui.QLineEdit()
+        self.meas_h01_ct_label = QtGui.QLabel("CHTYPE")
+        self.meas_h01_ct_combo = QtGui.QComboBox()
+        for ch in ch_list:
+            self.meas_h01_ct_combo.addItem(ch)
+        self.meas_h01_x_label = QtGui.QLabel("X (m)")
+        self.meas_h01_x_edit = QtGui.QLineEdit()
+        self.meas_h01_y_label = QtGui.QLabel("Y (m)")
+        self.meas_h01_y_edit = QtGui.QLineEdit()
+        self.meas_h01_azm_label = QtGui.QLabel("Azimtuh (deg)")
+        self.meas_h01_azm_edit = QtGui.QLineEdit()
+        self.meas_h01_acqchn_label = QtGui.QLabel("Acq. Channel")
+        self.meas_h01_acqchn_combo = QtGui.QComboBox()
+        for ch in ch_list:
+            self.meas_h01_acqchn_combo.addItem(ch)
+        
+    
+        ##--> Update button
+        self.update_button = QtGui.QPushButton('Update')
+        self.update_button.pressed.connect(self.update_metadata)
+        
+        ## --> Layout    
         header_layout = QtGui.QGridLayout()
         header_layout.addWidget(self.header_label, 0, 0)
         header_layout.addWidget(self.header_acqby_label, 1, 0)
@@ -1621,8 +1776,80 @@ class EDITextEditor(QtGui.QWidget):
         header_layout.addWidget(self.header_acqdate_edit, 2, 1)
         header_layout.addWidget(self.header_dataid_label, 3, 0)
         header_layout.addWidget(self.header_dataid_edit, 3, 1)
+        header_layout.addWidget(self.header_elev_label, 4, 0)
+        header_layout.addWidget(self.header_elev_edit, 4, 1)
+        header_layout.addWidget(self.header_empty_label, 5, 0)
+        header_layout.addWidget(self.header_empty_edit, 5, 1)
+        header_layout.addWidget(self.header_fileby_label, 6, 0)
+        header_layout.addWidget(self.header_fileby_edit, 6, 1)
+        header_layout.addWidget(self.header_filedate_label, 7, 0)
+        header_layout.addWidget(self.header_filedate_edit, 7, 1)
+        header_layout.addWidget(self.header_lat_label, 8, 0)
+        header_layout.addWidget(self.header_lat_edit, 8, 1)
+        header_layout.addWidget(self.header_lon_label, 9, 0)
+        header_layout.addWidget(self.header_lon_edit, 9, 1)
+        header_layout.addWidget(self.header_loc_label, 10, 0)
+        header_layout.addWidget(self.header_loc_edit, 10, 1)
+        header_layout.addWidget(self.header_progdate_label, 11, 0)
+        header_layout.addWidget(self.header_progdate_edit, 11, 1)
+        header_layout.addWidget(self.header_progvers_label, 12, 0)
+        header_layout.addWidget(self.header_progvers_edit, 12, 1)
         
-        self.setLayout(header_layout)
+        info_layout = QtGui.QVBoxLayout()
+        info_layout.addWidget(self.info_label)
+        info_layout.addWidget(self.info_edit)
+        
+        define_layout = QtGui.QGridLayout()
+        define_layout.addWidget(self.define_label, 0, 0)
+        define_layout.addWidget(self.define_maxchan_label, 1, 0)
+        define_layout.addWidget(self.define_maxchan_edit, 1, 1)
+        define_layout.addWidget(self.define_maxmeas_label, 2, 0)
+        define_layout.addWidget(self.define_maxmeas_edit, 2, 1)
+        define_layout.addWidget(self.define_maxrun_label, 3, 0)
+        define_layout.addWidget(self.define_maxrun_edit, 3, 1)
+        define_layout.addWidget(self.define_refelev_label, 4, 0)
+        define_layout.addWidget(self.define_refelev_edit, 4, 1)
+        define_layout.addWidget(self.define_reflat_label, 5, 0)
+        define_layout.addWidget(self.define_reflat_edit, 5, 1)
+        define_layout.addWidget(self.define_reflon_label, 6, 0)
+        define_layout.addWidget(self.define_reflon_edit, 6, 1)
+        define_layout.addWidget(self.define_reftype_label, 7, 0)
+        define_layout.addWidget(self.define_reftype_edit, 7, 1)
+        define_layout.addWidget(self.define_units_label, 8, 0)
+        define_layout.addWidget(self.define_units_edit, 8, 1)
+        #define_layout.addWidget(self.define_refloc_label, 7, 0)
+        #define_layout.addWidget(self.define_refloc_edit, 7, 1)
+        
+        meas_layout = QtGui.QGridLayout()
+        meas_layout.addWidget(self.meas_help, 0, 0, 1, 10)
+        meas_layout.addWidget(self.meas_h01_label, 1, 0)
+        meas_layout.addWidget(self.meas_h01_id_label, 1, 1)
+        meas_layout.addWidget(self.meas_h01_id_edit, 1, 2)
+        meas_layout.addWidget(self.meas_h01_ct_label, 1, 3)
+        meas_layout.addWidget(self.meas_h01_ct_combo, 1, 4)
+        meas_layout.addWidget(self.meas_h01_x_label, 1, 5)
+        meas_layout.addWidget(self.meas_h01_x_edit, 1, 6)
+        meas_layout.addWidget(self.meas_h01_y_label, 1, 7)
+        meas_layout.addWidget(self.meas_h01_y_edit, 1, 8)
+        meas_layout.addWidget(self.meas_h01_azm_label, 1, 9)
+        meas_layout.addWidget(self.meas_h01_azm_edit, 1, 10)
+        meas_layout.addWidget(self.meas_h01_acqchn_label, 1, 11)
+        meas_layout.addWidget(self.meas_h01_acqchn_combo, 1, 12)
+        
+        v_layout = QtGui.QVBoxLayout()
+        v_layout.addLayout(header_layout)        
+        v_layout.addLayout(define_layout)        
+        
+        h_layout = QtGui.QHBoxLayout()
+        h_layout.addLayout(v_layout)
+        h_layout.addLayout(info_layout)
+        
+        final_layout = QtGui.QVBoxLayout()
+        final_layout.addLayout(h_layout)
+        final_layout.addLayout(meas_layout)
+        final_layout.addWidget(self.update_button)
+        
+        self.setLayout(final_layout)
         
         self.show()
         
@@ -1638,8 +1865,94 @@ class EDITextEditor(QtGui.QWidget):
         self.edi_obj.Header.dataid = str(self.header_dataid_edit.text())
         self.header_dataid_edit.setText(self.edi_obj.Header.dataid)
         
+    def header_set_elev(self):
+        self.edi_obj.elev = float(str(self.header_elev_edit.text()))
+        self.header_elev_edit.setText('{0:.1f}'.format(self.edi_obj.elev))
+        
+    def header_set_empty(self):
+        self.edi_obj.Header.empty = float(str(self.header_elev_edit.text()))
+        self.header_empty_edit.setText('{0:.2e}'.format(self.edi_obj.Header.empty))
+        
+    def header_set_fileby(self):
+        self.edi_obj.Header.fileby = str(self.header_fileby_edit.text())
+        self.header_fileby_edit.setText('{0}'.format(self.edi_obj.Header.fileby))
+    
+    def header_set_filedate(self):
+        self.edi_obj.Header.filedate = str(self.header_filedate_edit.text())
+        self.header_filedate_edit.setText('{0}'.format(self.edi_obj.Header.filedate))
+        
+    def header_set_lat(self):
+        self.edi_obj.lat = str(self.header_lat_edit.text())
+        self.header_lat_edit.setText('{0:.5f}'.format(self.edi_obj.lat))
+        
+    def header_set_lon(self):
+        self.edi_obj.lon = str(self.header_lon_edit.text())
+        self.header_lon_edit.setText('{0:.5f}'.format(self.edi_obj.lon))
+    
+    def header_set_loc(self):
+        self.edi_obj.Header.loc = str(self.header_loc_edit.text())
+        self.header_loc_edit.setText('{0}'.format(self.edi_obj.Header.loc))
+    
+    def header_set_progdate(self):
+        self.edi_obj.Header.progdate = str(self.header_progdate_edit.text())
+        self.header_progdate_edit.setText('{0}'.format(self.edi_obj.Header.progdate))
+        
+    def header_set_progvers(self):
+        self.edi_obj.Header.progvers = str(self.header_progvers_edit.text())
+        self.header_progvers_edit.setText('{0}'.format(self.edi_obj.Header.progvers))
+        
+    def info_set_text(self):
+        new_info_str = self.info_edit.toPlainText()
+        new_info_list = new_info_str.split('\n') 
+        self.edi_obj.Info.info_lines = self.edi_obj.Info._validate_info_list(new_info_list)
+
+    def define_set_maxchan(self):
+        self.edi_obj.Define_measurement.maxchan = int(str(self.define_maxchan_edit.text()))
+        self.define_maxchan_edit.setText('{0}'.format(self.edi_obj.Define_measurement.maxchan))
+        
+    def define_set_maxrun(self):
+        self.edi_obj.Define_measurement.maxrun = int(str(self.define_maxrun_edit.text()))
+        self.define_maxrun_edit.setText('{0}'.format(self.edi_obj.Define_measurement.maxrun))
+        
+    def define_set_maxmeas(self):
+        self.edi_obj.Define_measurement.maxmeas = int(str(self.define_maxmeas_edit.text()))
+        self.define_maxmeas_edit.setText('{0}'.format(self.edi_obj.Define_measurement.maxmeas))
+        
+    def define_set_refelev(self):
+        value = mt.MTedi.MTft._assert_position_format('elev', 
+                                                      str(self.define_refelev_edit.text()))
+        self.edi_obj.Define_measurement.refelev = value
+        self.define_refelev_edit.setText('{0:.2f}'.format(value))
+        
+    def define_set_reflat(self):
+        value = mt.MTedi.MTft._assert_position_format('lat', 
+                                                      str(self.define_reflat_edit.text()))
+        self.edi_obj.Define_measurement.reflat = value
+        self.define_reflat_edit.setText('{0:.5f}'.format(value))
+        
+    def define_set_reflon(self):
+        value = mt.MTedi.MTft._assert_position_format('lon', 
+                                                      str(self.define_reflon_edit.text()))
+        self.edi_obj.Define_measurement.reflon = value
+        self.define_reflon_edit.setText('{0:.5f}'.format(value))
+
+#    def define_set_refloc(self):
+#        self.edi_obj.Define_measurement.refloc = str(self.define_refloc_edit.text())
+#        self.define_refloc_edit.setText('{0}'.format(self.edi_obj.Define_measurement.refloc))
+#        
+    def define_set_reftype(self):
+        self.edi_obj.Define_measurement.reftype = str(self.define_reftype_edit.text())
+        self.define_reftype_edit.setText('{0}'.format(self.edi_obj.Define_measurement.reftype))
+        
+    def define_set_units(self):
+        self.edi_obj.Define_measurement.units = str(self.define_units_edit.text())
+        self.define_units_edit.setText('{0}'.format(self.edi_obj.Define_measurement.units))
+        
         
 
+    def update_metadata(self):
+        self.metadata_updated.emit()
+        
 #==============================================================================
 # Def Main
 #==============================================================================
