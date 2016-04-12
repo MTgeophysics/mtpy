@@ -13,7 +13,7 @@ Created on Tue Jan 07 12:42:34 2014
 """
 
 #==============================================================================
-import mtpy.core.edi as MTedi
+import mtpy.core.edi_object_new as MTedi
 import mtpy.core.z as MTz
 import mtpy.utils.latlongutmconversion as MTutm
 import mtpy.utils.exceptions as MTex
@@ -45,10 +45,12 @@ except ImportError:
 class MT(object):
     """
     Basic object containing all information necessary for a single MT station
-    including:
+    including
     
+    Attributes
+    ------------
     ===================== =====================================================
-    **Attribute**         Description
+    Attribute             Description
     ===================== =====================================================
     name                  station name
     lat                   station latitude in decimal degrees
@@ -88,8 +90,10 @@ class MT(object):
             - tipper          --> np.ndarray(n_freq, 1, 2, dtype='complex') 
             - tippererr       --> np.ndarray(n_freq, 1, 2)
         
+    Methods
+    ------------
     ===================== =====================================================
-    **methods**           Description
+    Methods               Description
     ===================== =====================================================
     write_edi_file        write an edi_file from the MT data
     remove_distortion     remove distortion from the data following 
@@ -103,12 +107,12 @@ class MT(object):
     Examples
     -------------------
     
-    * Read in Spectra data:
+    * Read in Spectra data::
         
         >>> import mtpy.core.mt as mt
         >>> mt_obj = mt.MT(r"/home/edi_files/mt_01.edi", data_type='spectra')
     
-    * Plot MT response:
+    * Plot MT response::
 
         >>> import mtpy.core.mt as mt
         >>> mt_obj = mt.MT(r"/home/edi_files/s01.edi")
@@ -118,7 +122,7 @@ class MT(object):
         >>> plot_obj.plot_tipper = 'yri'
         >>> plot_obj.redraw_plot()
       
-     * Remove Distortion:
+     * Remove Distortion::
          
         >>> import mtpy.core.mt as mt
         >>> mt_obj = mt.MT(r"/home/edi_files/s01.edi")
@@ -130,7 +134,7 @@ class MT(object):
         >>> mt_obj.write_edi_file(new_Z=new_z)
         wrote file to: /home/edi_files/s01_RW.edi
         
-     * Interpolate:
+     * Interpolate::
      
         >>> import mtpy.core.mt as mt
         >>> mt_obj = mt.MT(r"/home/edi_files/s01.edi")
@@ -458,14 +462,14 @@ class MT(object):
         """
         
         if new_Z is not None:
-            self.edi_object.set_Z(new_Z)
+            self.edi_object.Z = new_Z
         else:
-            self.edi_object.set_Z(self._Z)
+            self.edi_object.Z = self._Z
        
         if new_Tipper is not None:
-            self.edi_object.set_Tipper(new_Tipper)
+            self.edi_object.Tipper = new_Tipper
         else:
-            self.edi_object.set_Tipper(self._Tipper)
+            self.edi_object.Tipper = self._Tipper
             
         self.edi_object.lat = self._lat
         self.edi_object.lon = self._lon
@@ -475,7 +479,7 @@ class MT(object):
         if new_fn is None:
             new_fn = self.fn[:-4]+'_RW'+'.edi'
             
-        self.edi_object.writefile(new_fn)
+        self.edi_object.write_edi_file(new_edi_fn=new_fn)
         
         
     #--> check the order of frequencies
