@@ -1420,7 +1420,7 @@ class DataSection(object):
             data_sect_lines = ['\n>=mtsect\n'.upper()]
         for key in self._kw_list:
             data_sect_lines.append('{0}{1}={2}\n'.format(tab, 
-                                                         key, 
+                                                         key.upper(), 
                                                          getattr(self, key)))
         
         data_sect_lines.append('\n')
