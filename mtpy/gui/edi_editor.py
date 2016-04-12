@@ -14,7 +14,6 @@ import mtpy.core.mt as mt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from matplotlib.figure import Figure
-from matplotlib.ticker import MultipleLocator
 import mtpy.imaging.mtplottools as mtplt
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -436,7 +435,8 @@ class PlotWidget(QtGui.QWidget):
         self.meta_elev_edit.setText('{0:.6f}'.format(self.mt_obj.elev))
         
     def meta_edit_date(self):
-        pass
+        self.mt_obj.edi_object.Header.filedate = str(self.meta_edit_date.text())
+        
     
     def meta_edit_acq(self):
         pass
@@ -446,6 +446,7 @@ class PlotWidget(QtGui.QWidget):
         self.meta_lat_edit.setText('{0:.6f}'.format(self.mt_obj.lat))
         self.meta_lon_edit.setText('{0:.6f}'.format(self.mt_obj.lon))
         self.meta_elev_edit.setText('{0:.6f}'.format(self.mt_obj.elev))
+        self.meta_date_edit.setText('{0}'.format(self.mt_obj.edi_object.Header.filedate))
         
     def static_shift_set_x(self):
         self.static_shift_x = float(str(self.static_shift_x_edit.text()))
