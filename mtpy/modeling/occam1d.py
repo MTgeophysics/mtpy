@@ -240,7 +240,8 @@ class Data(object):
                 zdet_err = np.abs(zdet_err)
                                    
                 rho = .2/freq*abs(zdet)
-                phi = np.rad2deg(np.arctan2((zdet**0.5).imag, (zdet**0.5).real))
+                phi = np.rad2deg(np.arctan2((zdet**0.5).imag, 
+                                            (zdet**0.5).real))
 
 
 
@@ -380,29 +381,29 @@ class Data(object):
                                 '{0:{1}}\n'.format(perr, self._string_fmt)]))
                     data_count += 2
                             
-                elif mode.lower() == 'tm':
-                    pol = 'yx'
-                    if res_err == 'data':
-                        rerr = rho_err[ii, 1, 0] 
-                    else:
-                        rerr = rho[ii, 1, 0]*res_err/100.
-                        
-                    if phase_err == 'data':
-                        perr = phi_err[ii, 1, 0]
-                    else:
-                        perr = phase_err/100*(180/np.pi)
-                        
-                    # write lines
-                    if rho[ii, 1, 0] != 0.0:    
-                        dlines.append(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
-                                    '{0:{1}}'.format(rho[ii, 1, 0],self._string_fmt),
-                                    '{0:{1}}\n'.format(rerr, self._string_fmt)]))
-                        data_count += 1
-                    if phi[ii, 1, 0] != 0.0:
-                        dlines.append(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
-                                    '{0:{1}}'.format(phi[ii, 1, 0]%90,self._string_fmt),
-                                    '{0:{1}}\n'.format(perr, self._string_fmt)]))
-                        data_count += 1
+            elif mode.lower() == 'tm':
+                pol = 'yx'
+                if res_err == 'data':
+                    rerr = rho_err[ii, 1, 0] 
+                else:
+                    rerr = rho[ii, 1, 0]*res_err/100.
+                    
+                if phase_err == 'data':
+                    perr = phi_err[ii, 1, 0]
+                else:
+                    perr = phase_err/100*(180/np.pi)
+                    
+                # write lines
+                if rho[ii, 1, 0] != 0.0:    
+                    dlines.append(self._ss.join(['RhoZ'+pol, str(ii+1), '0', '1', 
+                                '{0:{1}}'.format(rho[ii, 1, 0],self._string_fmt),
+                                '{0:{1}}\n'.format(rerr, self._string_fmt)]))
+                    data_count += 1
+                if phi[ii, 1, 0] != 0.0:
+                    dlines.append(self._ss.join(['PhsZ'+pol, str(ii+1), '0', '1', 
+                                '{0:{1}}'.format(phi[ii, 1, 0]%90,self._string_fmt),
+                                '{0:{1}}\n'.format(perr, self._string_fmt)]))
+                    data_count += 1
             else:
                 tetm = False
                 
