@@ -274,10 +274,10 @@ class Data(object):
                 data_1_err = np.zeros_like(data_1, dtype=np.float)                               
                 data_2_err = np.zeros_like(data_2, dtype=np.float)
                 for zd, ze, ii in zip(zdet, zdet_err, range(len(zdet))):                               
-                    de1, de2 = mtcc.zerror2r_phi_error(zd[ii].real, 
-                                                       ze[ii],
-                                                       zd[ii].imag,
-                                                       ze[ii])
+                    de1, de2 = mtcc.zerror2r_phi_error(zd.real, 
+                                                       ze,
+                                                       zd.imag,
+                                                       ze)
                     data_1_err[ii] = de1
                     data_2_err[ii] = de2
                 
