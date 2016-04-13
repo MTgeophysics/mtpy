@@ -56,7 +56,7 @@ class Data(object):
                of the impedance tensor and induction tensor.    
                See mtpy.core.mt.MT.interpolate for more details
     
-    Arguments:
+    Arguments
     ------------
         **edi_list** : list 
                        list of full paths to .edi files you want to invert for

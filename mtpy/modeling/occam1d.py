@@ -90,7 +90,7 @@ class Data(object):
     data                  array of data 
     data_fn               full path to data file
     freq                  frequency array of data
-    mode                  mode to invert for [ 'TE' | 'TM' ]
+    mode                  mode to invert for [ 'TE' | 'TM' | 'det' ]
     phase_te              array of TE phase
     phase_tm              array of TM phase 
     res_te                array of TE apparent resistivity
@@ -132,7 +132,7 @@ class Data(object):
         self._header_line = '!{0}\n'.format('      '.join(['Type','Freq#',
                                                            'TX#', 'Rx#','Data',
                                                            'Std_Error']))
-        self.mode = 'TE'
+        self.mode = 'det'
         self.data = None
                                 
         self.freq = None
@@ -143,7 +143,7 @@ class Data(object):
         self.resp_fn = None
         
     def write_data_file(self, rp_tuple=None, edi_file=None, save_path=None,
-                        mode='TE', res_err='data', phase_err='data', thetar=0,
+                        mode='det', res_err='data', phase_err='data', thetar=0,
                         res_errorfloor = 0., phase_errorfloor = 0., z_errorfloor=0.,
                         remove_outofquadrant=False):
         """
@@ -236,11 +236,13 @@ class Data(object):
             
             #get determinant resistivity and phase
             if 'det' in mode.lower():
-                zdet, zdet_err = np.abs(impz.det)
+                zdet, zdet_err = impz.det
                 zdet_err = np.abs(zdet_err)
                                    
                 rho = .2/freq*abs(zdet)
-                phi = np.rad2deg(np.arctan2((zdet**0.5).imag, (zdet**0.5).real))
+                phi = np.rad2deg(np.arctan2((zdet**0.5).imag, 
+                                            (zdet**0.5).real))
+                                            
 
 
 
