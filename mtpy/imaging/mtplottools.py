@@ -814,37 +814,37 @@ class MTplot(object):
         read in an .edi file using mtpy.core.edi
         """
         
-        edi1 = mtedi.Edi(self._fn)
+        edi_obj = mtedi.Edi(self._fn)
         
         #--> set the attributes accordingly
         # impedance tensor and error
-        self._Z = edi1.Z
+        self._Z = edi_obj.Z
         
         # tipper and error
-        if edi1.Tipper.tipper == None:
+        if edi_obj.Tipper.tipper == None:
             self._set_tipper(np.zeros((self._Z.z.shape[0], 1, 2),
                                      dtype='complex'))
             self._set_tippererr(np.zeros((self._Z.z.shape[0], 1, 2)))
-            self._Tipper.rotation_angle=np.zeros(self._Z.z.shape[0])
-            self._Tipper.freq = edi1.freq
+            self._Tipper.rotation_angle = np.zeros(self._Z.z.shape[0])
+            self._Tipper.freq = edi_obj.Z.freq
             
         else:
-            self._Tipper = edi1.Tipper
+            self._Tipper = edi_obj.Tipper
             
         # station name
         try:
-            self.station = edi1.head['dataid']
+            self.station = edi_obj.station
         except KeyError:
             print 'Could not get station name set to MT01'
             self.station = 'MT01'
             
         # period
-        self.freq = edi1.freq.copy()
+        self.freq = edi_obj.Z.freq.copy()
         
         # lat, lon and elevation
-        self.lat = edi1.lat
-        self.lon = edi1.lon
-        self.elev = edi1.elev
+        self.lat = edi_obj.lat
+        self.lon = edi_obj.lon
+        self.elev = edi_obj.elev
         
         
     # don't really like this way of programming but I'll do it anyway
