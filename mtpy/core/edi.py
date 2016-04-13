@@ -14,6 +14,13 @@ import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
 import mtpy.core.z as MTz
+try:
+    import scipy.stats.distributions as ssd 
+    ssd_test = True
+except ImportError:
+    print 'Need scipy.stats.distributions to compute spectra errors'
+    print 'Could not find scipy.stats.distributions, check distribution'
+    ssd_test = False
 
 tab = ' '*4
 
@@ -199,6 +206,9 @@ class Edi(object):
             lines = fid.readlines()[self.Data_sect.line_num+2:]
         
         if self.Data_sect.data_type == 'spectra':
+            print 'Converting Spectra to Impedance and Tipper'
+            print 'Check to make sure input channel list is correct if'
+            print ' the data looks incorrect.'
             self._read_spectra(lines)
         
         elif self.Data_sect.data_type == 'z':
@@ -288,12 +298,164 @@ class Edi(object):
         else:
             print 'Could not find any Tipper data.'
             
-    def _read_spectra(self, data_lines):
+    def _read_spectra(self, data_lines, 
+                      comp_list=['hx', 'hy', 'hz', 'ex', 'ey', 'rhx', 'rhy']):
         """
         read in spectra data
         """
-        
+                    
         data_dict = {}
+        avgt_dict = {}
+        data_find = False
+        for line in data_lines:
+            if line.lower().find('>spectra') == 0 and line.find('!') == -1:
+                line_list = line[1:].strip().split()
+                data_find = True
+                
+                # frequency will be the key
+                try:
+                    key = float(line_list[1].split('=')[1])
+                    data_dict[key] = []
+                    avgt_dict[key] = float(line_list[4].split('=')[1])
+                except ValueError:
+                    print 'did not find frequency key'
+        
+            elif data_find == True and line.find('>') == -1 and \
+                line.find('!') == -1:
+                data_dict[key] += [float(ll) for ll in line.strip().split()]
+            
+            elif line.find('>spectra') == -1:
+                data_find = False
+                
+        ## get an object that contains the indices for each component         
+        cc = index_locator(comp_list) 
+        
+        freq_arr = np.array(sorted(data_dict.keys(), reverse=True))
+        
+        z_arr = np.zeros((len(data_dict.keys()), 2, 2), dtype=np.complex)
+        t_arr = np.zeros((len(data_dict.keys()), 1, 2), dtype=np.complex)
+        
+        z_err_arr = np.zeros_like(z_arr, dtype=np.float)
+        t_err_arr = np.zeros_like(t_arr, dtype=np.float)
+                
+        for kk, key in enumerate(freq_arr):
+            spectra_arr = np.reshape(np.array(data_dict[key]), 
+                                     (len(comp_list), len(comp_list)))
+                                     
+            # compute cross powers
+            s_arr = np.zeros_like(spectra_arr, dtype=np.complex)
+            for ii in range(s_arr.shape[0]):
+                for jj in range(ii, s_arr.shape[0]):
+                    if ii == jj:
+                        s_arr[ii, jj] = (spectra_arr[ii, jj])
+                    else:
+                        # minus sign for complex conjugation
+                        # original spectra data are of form <A,B*>, but we need 
+                        # the order <B,A*>...
+                        # this is achieved by complex conjugation of the original entries
+                        s_arr[ii, jj] = np.complex(spectra_arr[jj, ii],
+                                                   -spectra_arr[ii, jj])
+                        # keep complex conjugated entries in the lower
+                        # triangular matrix:
+                        s_arr[jj, ii] = np.complex(spectra_arr[jj, ii],
+                                                   spectra_arr[ii, jj])
+                                                   
+            # use formulas from Bahr/Simpson to convert the Spectra into Z
+            # the entries of S are sorted like
+            # <X,X*>  <X,Y*>  <X,Z*>  <X,En*>  <X,Ee*>  <X,Rx*>  <X,Ry*>
+            #         <Y,Y*>  <Y,Z*>  <Y,En*>  <Y,Ee*>  <Y,Rx*>  <Y,Ry*> 
+            # .....
+        
+            z_arr[kk, 0, 0] = s_arr[cc.ex, cc.rhx]*s_arr[cc.hy, cc.rhy]-\
+                                    s_arr[cc.ex, cc.rhy]*s_arr[cc.hy, cc.rhx] 
+            z_arr[kk, 0, 1] = s_arr[cc.ex, cc.rhy]*s_arr[cc.hx, cc.rhx]-\
+                                    s_arr[cc.ex, cc.rhx]*s_arr[cc.hx, cc.rhy] 
+            z_arr[kk, 1, 0] = s_arr[cc.ey, cc.rhx]*s_arr[cc.hy, cc.rhy]-\
+                                    s_arr[cc.ey, cc.rhy]*s_arr[cc.hy, cc.rhx] 
+            z_arr[kk, 1, 1] = s_arr[cc.ey, cc.rhy]*s_arr[cc.hx, cc.rhx]-\
+                                    s_arr[cc.ey, cc.rhx]*s_arr[cc.hx, cc.rhy]
+        
+            z_arr[kk] /= (s_arr[cc.hx, cc.rhx]*s_arr[cc.hy, cc.rhy]-\
+                                    s_arr[cc.hx, cc.rhy]*s_arr[cc.hy, cc.rhx])
+            
+            # compute error only if scipy package exists
+            if ssd_test is True:
+                # 68% Quantil of the Fisher distribution:
+                z_det = np.real(s_arr[cc.hx, cc.hx]*s_arr[cc.hy, cc.hy]-\
+                                    np.abs(s_arr[cc.hx, cc.hy]**2))
+            
+                sigma_quantil = ssd.f.ppf(0.68, 4, avgt_dict[key]-4)
+                
+                ## 1) Ex
+                a =  s_arr[cc.ex, cc.hx]*s_arr[cc.hy, cc.hy]-\
+                            s_arr[cc.ex, cc.hy]*s_arr[cc.hy, cc.hx]  
+                b =  s_arr[cc.ex, cc.hy]*s_arr[cc.hx, cc.hx]- \
+                            s_arr[cc.ex, cc.hx]*s_arr[cc.hx, cc.hy]
+                a /= z_det
+                b /= z_det  
+            
+                psi_squared = np.real(1./s_arr[cc.ex, cc.ex].real*\
+                                (a*s_arr[cc.hx, cc.ex]+b*s_arr[cc.hy, cc.ex]))
+                epsilon_squared = 1.-psi_squared
+            
+                scaling = sigma_quantil*4/(avgt_dict[key]-4.)*\
+                            epsilon_squared/z_det*s_arr[cc.ex, cc.ex].real
+                z_err_arr[kk, 0, 0] = np.sqrt(scaling*s_arr[cc.hy, cc.hy].real)
+                z_err_arr[kk, 0, 1] = np.sqrt(scaling*s_arr[cc.hx, cc.hx].real)
+            
+                ## 2) EY
+                a =  s_arr[cc.ey, cc.hx]*s_arr[cc.hy, cc.hy]-\
+                s_arr[cc.ey, cc.hy]*s_arr[cc.hy, cc.hx]  
+                b =  s_arr[cc.ey, cc.hy]*s_arr[cc.hx, cc.hx]- \
+                            s_arr[cc.ey, cc.hx]*s_arr[cc.hx, cc.hy]
+                a /= z_det
+                b /= z_det  
+            
+                psi_squared = np.real(1./np.real(s_arr[cc.ey, cc.ey])*\
+                                (a*s_arr[cc.hx, cc.ey]+b*s_arr[cc.hy, cc.ey]))
+                epsilon_squared = 1.-psi_squared
+            
+                scaling = sigma_quantil*4/(avgt_dict[key]-4.)*\
+                            epsilon_squared/z_det*s_arr[cc.ey, cc.ey].real
+                z_err_arr[kk, 1, 0] = np.sqrt(scaling*s_arr[cc.hy, cc.hy].real)
+                z_err_arr[kk, 1, 1] = np.sqrt(scaling*s_arr[cc.hx, cc.hx].real)
+            
+            #if HZ information is present:
+            if len(comp_list) > 5:
+                t_arr[kk, 0, 0] = s_arr[cc.hz, cc.rhx]*s_arr[cc.hy, cc.rhy]-\
+                                    s_arr[cc.hz, cc.rhy]*s_arr[cc.hy, cc.rhx] 
+                t_arr[kk, 0, 1] = s_arr[cc.hz, cc.rhy]*s_arr[cc.hx, cc.rhx]-\
+                                    s_arr[cc.hz, cc.rhx]*s_arr[cc.hx, cc.rhy] 
+        
+                t_arr[kk] /= (s_arr[cc.hx, cc.rhx]*s_arr[cc.hy, cc.rhy]-\
+                                    s_arr[cc.hx, cc.rhy]*s_arr[cc.hy, cc.rhx])
+                
+                if ssd_test is True:
+                    a =  s_arr[cc.hz, cc.hx]*s_arr[cc.hy, cc.hy]-\
+                            s_arr[cc.hz, cc.hy]*s_arr[cc.hy, cc.hx]  
+                    b =  s_arr[cc.hz, cc.hy]*s_arr[cc.hx, cc.hx]- \
+                                s_arr[cc.hz, cc.hx]*s_arr[cc.hx, cc.hy]
+                    a /= z_det
+                    b /= z_det  
+                
+                    psi_squared = np.real(1./s_arr[cc.hz, cc.hz].real*\
+                                 (a*s_arr[cc.hx, cc.hz]+b*s_arr[cc.hy, cc.hz]))
+                    epsilon_squared = 1.-psi_squared
+                
+                    scaling = sigma_quantil*4/(avgt_dict[key]-4.)*\
+                                epsilon_squared/z_det*s_arr[cc.hz, cc.hz].real
+                    t_err_arr[kk, 0, 0] = np.sqrt(scaling*s_arr[cc.hy, cc.hy].real)
+                    t_err_arr[kk, 0, 1] = np.sqrt(scaling*s_arr[cc.hx, cc.hx].real)
+                    
+        
+        # be sure to fill attributes
+        self.Z.z = z_arr
+        self.Z.zerr = z_err_arr
+        self.Z.freq = freq_arr 
+        
+        self.Tipper.tipper = t_arr
+        self.Tipper.tippererr = t_err_arr
+        self.Tipper.freq = freq_arr 
         
     def write_edi_file(self, new_edi_fn=None):
         """
@@ -496,6 +658,15 @@ class Edi(object):
     
     station = property(fget=_get_station, fset=_set_station, 
                        doc="station name")
+                       
+#==============================================================================
+# Index finder
+#==============================================================================
+class index_locator(object):
+    def __init__(self, component_list):
+        for ii, comp in enumerate(component_list):
+            setattr(self, comp, ii)
+
 #==============================================================================
 #  Header object        
 #==============================================================================
