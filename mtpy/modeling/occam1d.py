@@ -250,14 +250,14 @@ class Data(object):
             #rotate if necessary
             if thetar != 0:
                 z_obj.rotate(thetar)
-                
+            
+            # be sure to compute resistivity and phase
             z_obj._compute_res_phase()
                 
             # get the data requested by the given mode
             if self.mode == 'te':
                 data_1 = z_obj.resistivity[:, 0, 1]
                 data_1_err = z_obj.resistivity_err[:, 0, 1]
-                print data_1
                 
                 data_2 = z_obj.phase[:, 0, 1]
                 data_2_err = z_obj.phase_err[:, 0, 1]
