@@ -354,7 +354,6 @@ class Data(object):
                 data_1_err = data_1*res_err/100.
             if phase_err != 'data':
                 data_2_err = np.repeat(phase_err/100.*(180/np.pi), nf)
-                print data_2_err
             
         # --> write file    
         #make sure the savepath exists, if not create it

@@ -441,6 +441,14 @@ class OccamWidget(QtGui.QWidget):
         
     def set_data_mode(self, text):
         self.data_mode = str(text)
+        self.occam_data.write_data_file(edi_file=self.edi_fn,
+                                        save_path=self.save_dir,
+                                        mode=self.data_mode,
+                                        res_err=self.res_err,
+                                        phase_err=self.phase_err,
+                                        thetar=0)
+        self.mpl_widget.plot_data(data_fn=self.occam_data.data_fn)
+        
 
     def set_ss(self):
         self.ss = float(str(self.data_ss_edit.text()))
