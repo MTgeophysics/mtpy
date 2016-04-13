@@ -10,7 +10,6 @@ import numpy as np
 import datetime
 
 import mtpy.utils.format as MTft
-import mtpy.utils.calculator as MTcc
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
 import mtpy.core.z as MTz
@@ -451,11 +450,13 @@ class Edi(object):
         # be sure to fill attributes
         self.Z.z = z_arr
         self.Z.zerr = z_err_arr
-        self.Z.freq = freq_arr 
+        self.Z.freq = freq_arr
+        self.Z.rotation_angle = np.zeros_like(freq_arr)
         
         self.Tipper.tipper = t_arr
         self.Tipper.tippererr = t_err_arr
         self.Tipper.freq = freq_arr 
+        self.Tipper.rotation_angle = np.zeros_like(freq_arr)
         
     def write_edi_file(self, new_edi_fn=None):
         """
