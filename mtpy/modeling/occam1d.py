@@ -142,6 +142,9 @@ class Data(object):
         self.phase_tm = None
         self.resp_fn = None
         
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+        
     def write_data_file(self, rp_tuple=None, edi_file=None, save_path=None,
                         mode='det', res_err='data', phase_err='data', thetar=0,
                         res_errorfloor = 0., phase_errorfloor = 0., z_errorfloor=0.,
@@ -251,6 +254,7 @@ class Data(object):
             if self.mode == 'te':
                 data_1 = z_obj.resistivity[:, 0, 1]
                 data_1_err = z_obj.resistivity_err[:, 0, 1]
+                print data_1
                 
                 data_2 = z_obj.phase[:, 0, 1]
                 data_2_err = z_obj.phase_err[:, 0, 1]
@@ -288,12 +292,19 @@ class Data(object):
                 data_2 = (zdet**0.5).imag*np.pi*4e-4 
                 data_2_err =  zdet_err**0.5*np.pi*4e-4
                 
-            elif self.mode == 'z':
-                data_1 = z_obj.z.real*np.pi*4e-4 
-                data_1_err = z_obj.zerr*np.pi*4e-4
+            elif self.mode == 'tez':
+                data_1 = z_obj.z[:, 0, 1].real*np.pi*4e-4 
+                data_1_err = z_obj.zerr[:, 0, 1]*np.pi*4e-4
                 
-                data_2 = z_obj.z.imag*np.pi*4e-4
-                data_2_err =  z_obj.zerr*np.pi*4e-4
+                data_2 = z_obj.z[:, 0, 1].imag*np.pi*4e-4
+                data_2_err =  z_obj.zerr[:, 0, 1]*np.pi*4e-4
+                
+            elif self.mode == 'tmz':
+                data_1 = z_obj.z[:, 1, 0].real*np.pi*4e-4 
+                data_1_err = z_obj.zerr[:, 1, 0]*np.pi*4e-4
+                
+                data_2 = z_obj.z[:, 1, 0].imag*np.pi*4e-4
+                data_2_err =  z_obj.zerr[:, 1, 0]*np.pi*4e-4
 
             else:
                 raise IOError('Mode {0} is not supported.'.format(self.mode))
