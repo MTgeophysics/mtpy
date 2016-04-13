@@ -241,6 +241,7 @@ class Data(object):
             #read in edifile
             edi_obj = mtedi.Edi(edi_file)  
             z_obj = edi_obj.Z
+            z_obj._compute_res_phase()
             
             # get frequencies to invert
             freq = z_obj.freq
@@ -249,6 +250,8 @@ class Data(object):
             #rotate if necessary
             if thetar != 0:
                 z_obj.rotate(thetar)
+                
+            z_obj._compute_res_phase()
                 
             # get the data requested by the given mode
             if self.mode == 'te':
