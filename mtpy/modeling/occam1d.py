@@ -353,7 +353,8 @@ class Data(object):
             if res_err != 'data':
                 data_1_err = data_1*res_err/100.
             if phase_err != 'data':
-                data_2_err = np.repeat(phase_err/100*(180/np.pi), nf)
+                data_2_err = np.repeat(phase_err/100.*(180/np.pi), nf)
+                print data_2_err
             
         # --> write file    
         #make sure the savepath exists, if not create it
@@ -430,6 +431,8 @@ class Data(object):
             dfid.writelines(dlines)
 
         print 'Wrote Data File to : {0}'.format(self.data_fn)
+        
+        #--> set attributes
         
         if 'z' in mode.lower():
             self.z = data_1 + 1j*data_2
