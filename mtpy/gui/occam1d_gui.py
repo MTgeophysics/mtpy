@@ -151,7 +151,8 @@ class OccamWidget(QtGui.QWidget):
         self.occam_model = occam1d.Model()
         self.occam_startup = occam1d.Startup()
         self.occam_exec = ''
-        self.mpl_widget = OccamPlot() 
+        self.mpl_widget = OccamPlot()
+        self.mpl_widget.depth_limits = (0, self.occam_model.target_depth)
         
         self.l2_widget = PlotL2()
         self.l2_widget.l2_widget.mpl_connect('pick event', self.on_click)
@@ -163,6 +164,7 @@ class OccamWidget(QtGui.QWidget):
         self.data_mode = 'Det'
         self.edi_fn = ''
         self.ss = 1.0
+        self.rotation_angle = 0.0
         
         self.save_dir = None
         self.station_dir = None
@@ -221,6 +223,10 @@ class OccamWidget(QtGui.QWidget):
         self.data_ss_edit.setText('{0:.2f}'.format(self.ss))
         self.data_ss_edit.editingFinished.connect(self.set_ss)
         
+        self.data_rotate_label = QtGui.QLabel("Rotation Angle (N=0, E=90)")
+        self.data_rotate_edit = QtGui.QLineEdit('{0:.2f}'.format(self.rotation_angle))
+        self.data_rotate_edit.editingFinished.connect(self.set_rotation_angle)
+        
         # vertical layer parameters
         self.model_label = QtGui.QLabel('Model Parameters')
         self.model_label.setFont(label_font)
@@ -274,7 +280,7 @@ class OccamWidget(QtGui.QWidget):
         self.start_lagrange_edit.setText('{0:.2f}'.format(self.occam_startup.start_lagrange))
         self.start_lagrange_edit.editingFinished.connect(self.set_start_lagrange)
         
-        self.iter_combo_label = QtGui.QLabel('Iteration')
+        self.iter_combo_label = QtGui.QLabel('Plot Iteration')
         self.iter_combo_edit = QtGui.QComboBox()
         self.iter_combo_edit.addItem('1')
         self.iter_combo_edit.activated[str].connect(self.set_iteration)
@@ -302,6 +308,9 @@ class OccamWidget(QtGui.QWidget):
         
         data_grid.addWidget(self.data_ss_button, 4, 0)
         data_grid.addWidget(self.data_ss_edit, 4, 1)
+        
+        data_grid.addWidget(self.data_rotate_label, 5, 0)
+        data_grid.addWidget(self.data_rotate_edit, 5, 1)
         
         model_grid = QtGui.QGridLayout()
         model_grid.addWidget(self.model_label, 0, 0)
@@ -348,6 +357,8 @@ class OccamWidget(QtGui.QWidget):
         run_layout = QtGui.QHBoxLayout()
         run_layout.addWidget(run_button)
         run_layout.addWidget(run_button_edits)
+        run_layout.addWidget(self.iter_combo_label)
+        run_layout.addWidget(self.iter_combo_edit)
         
         edi_layout = QtGui.QHBoxLayout()
         edi_layout.addWidget(self.get_edi_button)
@@ -363,8 +374,8 @@ class OccamWidget(QtGui.QWidget):
         edit_layout.addLayout(run_layout)
         
         bottom_plot_layout = QtGui.QHBoxLayout()
-        bottom_plot_layout.addWidget(self.iter_combo_label)
-        bottom_plot_layout.addWidget(self.iter_combo_edit)
+#        bottom_plot_layout.addWidget(self.iter_combo_label)
+#        bottom_plot_layout.addWidget(self.iter_combo_edit)
         bottom_plot_layout.addWidget(self.l2_widget)
         
         plot_layout = QtGui.QGridLayout()
@@ -427,7 +438,7 @@ class OccamWidget(QtGui.QWidget):
                                         mode=self.data_mode,
                                         res_err=self.res_err,
                                         phase_err=self.phase_err,
-                                        thetar=0)
+                                        thetar=self.rotation_angle)
         
         self.mpl_widget.plot_data(data_fn=self.occam_data.data_fn)
             
@@ -446,7 +457,7 @@ class OccamWidget(QtGui.QWidget):
                                         mode=self.data_mode,
                                         res_err=self.res_err,
                                         phase_err=self.phase_err,
-                                        thetar=0)
+                                        thetar=self.rotation_angle)
         self.mpl_widget.plot_data(data_fn=self.occam_data.data_fn)
         
 
@@ -463,6 +474,19 @@ class OccamWidget(QtGui.QWidget):
         self.rewrite_data_file()
         self.mpl_widget.plot_data(data_fn=self.occam_data.data_fn)
         
+    def set_rotation_angle(self):
+        self.rotation_angle = float(str(self.data_rotate_edit.text()))
+        self.data_rotate_edit.setText('{0:.2f}'.format(self.rotation_angle))
+        
+        self.occam_data.write_data_file(edi_file=self.edi_fn,
+                                        save_path=self.save_dir,
+                                        mode=self.data_mode,
+                                        res_err=self.res_err,
+                                        phase_err=self.phase_err,
+                                        thetar=self.rotation_angle)
+                                        
+        self.mpl_widget.plot_data(data_fn=self.occam_data.data_fn)
+        
     def set_n_layers(self):
         self.occam_model.n_layers = int(str(self.n_layers_edit.text()))
         self.n_layers_edit.setText('{0:.0f}'.format(self.occam_model.n_layers))
@@ -474,6 +498,7 @@ class OccamWidget(QtGui.QWidget):
     def set_z_target(self):
         self.occam_model.target_depth = float(str(self.z_target_edit.text()))
         self.z_target_edit.setText('{0:.2f}'.format(self.occam_model.target_depth))
+        self.mpl_widget.depth_limits = (0, self.occam_model.target_depth)
         
     def set_z_bottom(self):
         self.occam_model.bottom_layer = float(str(self.z_bottom_edit.text()))
@@ -534,7 +559,7 @@ class OccamWidget(QtGui.QWidget):
                                         mode=self.data_mode,
                                         res_err=self.res_err,
                                         phase_err=self.phase_err,
-                                        thetar=0)
+                                        thetar=self.rotation_angle)
                                         
         # write model file
         self.occam_model.write_model_file(save_path=self.save_dir)
@@ -738,7 +763,7 @@ class OccamPlot(QtGui.QWidget):
         
         self.res_limits = None
         self.phase_limits = None
-        self.depth_scale = 'log'
+        self.depth_scale = 'linear'
         self.depth_units = 'km'
         self.depth_limits = None
         
@@ -1074,15 +1099,27 @@ class OccamPlot(QtGui.QWidget):
                               color='b', 
                               lw=self.lw)
                            
-            #if self.depth_limits == None:
-            dmin = min(plot_depth)
-            if dmin == 0:
-                dmin = 1
-            dmax = max(plot_depth)
-            self.depth_limits = (dmin, dmax)
-            
-            self.axm.set_ylim(ymin=max(self.depth_limits), 
-                              ymax=min(self.depth_limits))
+            if self.depth_limits == None:
+                dmin = min(plot_depth)
+                if dmin == 0:
+                    dmin = 1
+                dmax = max(plot_depth)
+                self.depth_limits = (dmin, dmax)
+                
+            if max(self.depth_limits) > plot_depth.max():
+                if self.depth_scale == 'log':
+                    self.axm.set_ylim(ymin=max(self.depth_limits)/dscale, 
+                                      ymax=max([1, min(self.depth_limits)/dscale]))
+                else:
+                    self.axm.set_ylim(ymin=max(self.depth_limits)/dscale, 
+                                      ymax=min(self.depth_limits)/dscale)
+            else:
+                if self.depth_scale == 'log':
+                    self.axm.set_ylim(ymin=max(self.depth_limits), 
+                                      ymax=max([1, min(self.depth_limits)]))
+                else:
+                    self.axm.set_ylim(ymin=max(self.depth_limits), 
+                                      ymax=min(self.depth_limits))
             
         if self.depth_scale == 'log':
             self.axm.set_yscale('log')
