@@ -1046,8 +1046,7 @@ class WSMesh(object):
                                                      ('elev', np.float)])
             #get station locations in meters
             for ii, edi in enumerate(self.edi_list):
-                zz = mtedi.Edi()
-                zz.readfile(edi)
+                zz = mtedi.Edi(edi)
                 zone, east, north = ll2utm.LLtoUTM(23, zz.lat, zz.lon)
                 self.station_locations[ii]['station'] = zz.station
                 self.station_locations[ii]['east'] = east

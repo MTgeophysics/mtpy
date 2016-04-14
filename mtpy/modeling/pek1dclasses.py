@@ -216,15 +216,13 @@ class Data():
         """
         
         # read edi file to edi object
-        eo = mtedi.Edi()
-        eo.readfile(self.edipath)
-        self.edi_object = eo
+        self.edi_object = mtedi.Edi(self.edipath)
         
         # define z
-        zr = np.real(eo.Z.z)
+        zr = np.real(self.edi_object.Z.z)
         # sign of imaginary component needs to be reversed for the pek1d inversion code
-        zi = -np.imag(eo.Z.z)
-        ze = eo.Z.zerr
+        zi = -np.imag(self.edi_object.Z.z)
+        ze = self.edi_object.Z.zerr
         z = zr + 1j*zi
         
         # set errorfloors
