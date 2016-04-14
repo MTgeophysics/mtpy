@@ -49,7 +49,7 @@ class ModEM_Mesh_Window(QtGui.QMainWindow):
         self.period_list = []
         self.period_dict = {}
         
-        self.modem_model = modem.Model()
+        #self.model_obj = modem.Model()
         
         self.ui_setup()
         
@@ -58,17 +58,77 @@ class ModEM_Mesh_Window(QtGui.QMainWindow):
         set up the user interface
         """
         self.setWindowTitle("Build a mesh for ModEM")
-        self.resize(1920, 1080)
+        self.setWindowState(QtCore.Qt.WindowMaximized)
         
         self.mesh_widget = MeshWidget()
         self.central_widget = self.setCentralWidget(self.mesh_widget)
-        #self.central_widget.setLayout(self.v_layout)
+
+        #-------------- MENU BAR ---------------------------------
+        # add a menu bar to the top of the window        
+        self.menu_data_file = self.menuBar().addMenu("Data &File")
+        self.menu_data_open_action = self.menu_data_file.addAction("Open")
+        self.menu_data_open_action.triggered.connect(self.get_data_fn)
+        
+        self.menu_model_file = self.menuBar().addMenu("&Model File")
+        self.menu_model_open_action = self.menu_model_file.addAction("Open")
+        self.menu_model_open_action.triggered.connect(self.get_model_fn)
+        
+        self.menu_model_save_action = self.menu_model_file.addAction("Save")
+        self.menu_model_save_action.triggered.connect(self.save_model_fn)
+        
+        #------------Output stream box-------------------------------------
         self.my_stream = MyStream()
         self.my_stream.message.connect(self.mesh_widget.normal_output)
         
         sys.stdout = self.my_stream
         
         QtCore.QMetaObject.connectSlotsByName(self)
+        
+    def get_data_fn(self):
+        """
+        get the filename from a file dialogue
+        
+        """        
+
+        fn_dialog = QtGui.QFileDialog()
+        fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM data file',
+                                       filter='(*.dat);; (*.data)'))
+                                       
+        self.mesh_widget.modem_data = modem.Data()
+        self.mesh_widget.modem_data.read_data_file(fn)
+        self.mesh_widget.modem_data_fn = fn
+        
+        self.mesh_widget.dir_path = os.path.dirname(fn)
+        
+        
+    def get_model_fn(self):
+        """ 
+        read in an existing model file
+        """
+
+        fn_dialog = QtGui.QFileDialog() 
+        fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM model file',
+                                       filter='*.rho'))
+                                       
+        self.mesh_widget.model_obj = modem.Model()
+        self.mesh_widget.model_obj.read_model_file(fn)
+
+        self.mesh_widget.dir_path = os.path.dirname(fn)
+        
+    def save_model_fn(self):
+        """
+        save the current mesh settings to a file
+        """
+        
+        fn_dialog = QtGui.QFileDialog()
+        save_fn = str(fn_dialog.getSaveFileName(
+                                    caption='Choose ModEM model file',
+                                    filter='*.rho'))
+                                    
+        sv_path = os.path.dirname(save_fn)
+        sv_basename = os.path.basename(save_fn)
+        self.mesh_widget.model_obj.write_model_file(save_path=sv_path,
+                                                    model_fn_basename=sv_basename)
 
 #==============================================================================
 # Mesh widget        
@@ -90,18 +150,13 @@ class MeshWidget(QtGui.QWidget):
     def setup_ui(self):
         # get edi files
         self.edi_button = QtGui.QPushButton('Get EDI Files')
-        self.edi_button.clicked.connect(self.get_edi_files)
-        
-        self.list_widget = QtGui.QListWidget()
-        self.list_widget.itemClicked.connect(self.select_station)
-        self.list_widget.setMaximumWidth(200)
+        self.edi_button.clicked.connect(self.load_edi_files)
         
         self.plot_mesh_button = QtGui.QPushButton('Make Mesh')
         self.plot_mesh_button.clicked.connect(self.plot_mesh)
         
         self.save_mesh_button = QtGui.QPushButton('Save Mesh')
         self.save_mesh_button.clicked.connect(self.save_mesh)
-        
         
         self.output_box = QtGui.QTextEdit()
         
@@ -187,173 +242,81 @@ class MeshWidget(QtGui.QWidget):
         self.rho_start_edit.editingFinished.connect(self.set_rho)
         
         #--- Set the layout ----------
-        self.edi_grid = QtGui.QVBoxLayout()
-        self.edi_grid.addWidget(self.edi_button)
-        self.edi_grid.addWidget(self.list_widget)
-        
-        self.grid_layout = QtGui.QGridLayout()
-        
-        
-        self.grid_layout.addWidget(self.plot_mesh_button, 0, 0)
-        self.grid_layout.addWidget(self.save_mesh_button, 0, 1)
-        
-        self.grid_layout.addWidget(self.parameters_label, 2, 0, 1, 2)
-
-        self.grid_layout.addWidget(self.cell_size_label_east, 3, 0)
-        self.grid_layout.addWidget(self.cell_size_edit_east, 3, 1)
-        
-        self.grid_layout.addWidget(self.cell_size_label_north, 4, 0)
-        self.grid_layout.addWidget(self.cell_size_edit_north, 4, 1)
-        
-        self.grid_layout.addWidget(self.cell_pad_label_east, 5, 0)
-        self.grid_layout.addWidget(self.cell_pad_east_edit, 5, 1)
-        
-        self.grid_layout.addWidget(self.cell_pad_label_north, 6, 0)
-        self.grid_layout.addWidget(self.cell_pad_north_edit, 6, 1)
-        
-        self.grid_layout.addWidget(self.cell_pad_label_z, 7, 0)
-        self.grid_layout.addWidget(self.cell_pad_z_edit, 7, 1)
-        
-        self.grid_layout.addWidget(self.pad_h_label, 8, 0)
-        self.grid_layout.addWidget(self.pad_h_edit, 8, 1)
-        
-        self.grid_layout.addWidget(self.pad_v_label, 9, 0 )
-        self.grid_layout.addWidget(self.pad_v_edit, 9, 1)
-        
-        self.grid_layout.addWidget(self.n_layers_label, 10, 0)
-        self.grid_layout.addWidget(self.n_layers_edit, 10, 1)
-        
-        self.grid_layout.addWidget(self.z1_layer_label, 11, 0)
-        self.grid_layout.addWidget(self.z1_layer_edit, 11, 1)
-        
-        self.grid_layout.addWidget(self.z_target_label, 12, 0)
-        self.grid_layout.addWidget(self.z_target_edit, 12, 1)
-        
-        self.grid_layout.addWidget(self.z_bottom_label, 13, 0)
-        self.grid_layout.addWidget(self.z_bottom_edit, 13, 1)
-        
-        self.grid_layout.addWidget(self.rot_ang_label, 14, 0)
-        self.grid_layout.addWidget(self.rot_ang_edit, 14, 1)
-        self.grid_layout.addWidget(self.rot_ang_hint, 15, 1)
-        
-        self.grid_layout.addWidget(self.rho_start_label, 16, 0)
-        self.grid_layout.addWidget(self.rho_start_edit, 16, 1)
-#        self.grid_layout.addWidget(self.rot_ang_hint, 11, 2)
-
-        self.setWindowTitle('Make ModEM Mesh')
-        self.resize(1920, 1080)
-
-        #-------------- MENU BAR ---------------------------------
-        # add a menu bar to the top of the window        
-        menu_bar = QtGui.QMenuBar(self)
-        menu_bar.setGeometry(QtCore.QRect(0, 0, 1920, 38))
-        menu_bar.setObjectName("menu_bar")
-        
-        # --> Data
-        menu_data = QtGui.QMenu(menu_bar)
-        menu_data.setTitle("Data File")
-        
-        # create an action to the data tab
-        action_data_open = QtGui.QAction(self)
-        action_data_open.setText('Open')
-        action_data_open.triggered.connect(self.get_data_fn)
-
-        # add the action to the data tap
-        menu_data.addAction(action_data_open)
-        menu_bar.addAction(menu_data.menuAction())
-        
-        #----------> Model -------------------------------------
-        menu_model = QtGui.QMenu(menu_bar)
-        menu_model.setTitle("Model File")
-        
-        # create an action to the model tab
-        action_model_open = QtGui.QAction(self)
-        action_model_open.setText('Open')
-        action_model_open.triggered.connect(self.get_model_fn)
-        
-        action_model_save = QtGui.QAction(self)
-        action_model_save.setText('Save')
-        action_model_save.triggered.connect(self.save_model_fn)
-
-        # add the action to the model tap
-        menu_model.addAction(action_model_open)
-        menu_bar.addAction(menu_model.menuAction())
-        
-        #self.setMenuBar(menu_bar)
-        
-        #------------------Layout of main window------------------------------
-        #need to have a central widget 
-        self.central_widget = QtGui.QWidget()
-        self.setCentralWidget(self.central_widget)
-        
-        #--> list widget
-        self.list_qmodel = QtGui.QStandardItemModel()
-        # make a widget that will be the station list
-        self.list_widget = QtGui.QListWidget()
-        self.list_widget.itemSelectionChanged
-        self.list_widget.itemClicked.connect(self.locate_station)
-        self.list_widget.setMaximumWidth(150)  
-        
-        #Load edi button
-        load_edi_button = QtGui.QPushButton('Load .edi Files')
-        load_edi_button.clicked.connect(self.load_edi_files)
-        
         edi_layout = QtGui.QVBoxLayout()
-        edi_layout.addWidget(self.list_widget)
-        edi_layout.addWidget(load_edi_button)
+        edi_layout.addWidget(self.edi_button)
         
-        #add edit fields for mesh properties
-        cell_size_label = QtGui.QLabel('Cell Size [East, North] (m)')
-        cell_size_east_edit = QtGui.QLineEdit()
-        cell_size_east_edit.setText('{0:.2f}'.format(self.modem_model.cell_size_east))
-        cell_size_east_edit.textChanged[str].connect(self.set_cell_size_east)
+        param_layout = QtGui.QGridLayout()
         
-        cell_size_north_edit = QtGui.QLineEdit()
-        cell_size_north_edit.setText('{0:.2f}'.format(self.modem_model.cell_size_north))
-        cell_size_north_edit.textChanged[str].connect(self.set_cell_size_north)
         
-        cell_size_grid = QtGui.QHBoxLayout()
-        cell_size_grid.addWidget(cell_size_label)
-        cell_size_grid.addWidget(cell_size_east_edit)
-        cell_size_grid.addWidget(cell_size_north_edit)
+        param_layout.addWidget(self.plot_mesh_button, 0, 0)
+        param_layout.addWidget(self.save_mesh_button, 0, 1)
+        
+        param_layout.addWidget(self.parameters_label, 2, 0, 1, 2)
+
+        param_layout.addWidget(self.cell_size_label_east, 3, 0)
+        param_layout.addWidget(self.cell_size_edit_east, 3, 1)
+        
+        param_layout.addWidget(self.cell_size_label_north, 4, 0)
+        param_layout.addWidget(self.cell_size_edit_north, 4, 1)
+        
+        param_layout.addWidget(self.cell_pad_label_east, 5, 0)
+        param_layout.addWidget(self.cell_pad_east_edit, 5, 1)
+        
+        param_layout.addWidget(self.cell_pad_label_north, 6, 0)
+        param_layout.addWidget(self.cell_pad_north_edit, 6, 1)
+        
+        param_layout.addWidget(self.cell_pad_label_z, 7, 0)
+        param_layout.addWidget(self.cell_pad_z_edit, 7, 1)
+        
+        param_layout.addWidget(self.pad_h_label, 8, 0)
+        param_layout.addWidget(self.pad_h_edit, 8, 1)
+        
+        param_layout.addWidget(self.pad_v_label, 9, 0 )
+        param_layout.addWidget(self.pad_v_edit, 9, 1)
+        
+        param_layout.addWidget(self.n_layers_label, 10, 0)
+        param_layout.addWidget(self.n_layers_edit, 10, 1)
+        
+        param_layout.addWidget(self.z1_layer_label, 11, 0)
+        param_layout.addWidget(self.z1_layer_edit, 11, 1)
+        
+        param_layout.addWidget(self.z_target_label, 12, 0)
+        param_layout.addWidget(self.z_target_edit, 12, 1)
+        
+        param_layout.addWidget(self.z_bottom_label, 13, 0)
+        param_layout.addWidget(self.z_bottom_edit, 13, 1)
+        
+        param_layout.addWidget(self.rot_ang_label, 14, 0)
+        param_layout.addWidget(self.rot_ang_edit, 14, 1)
+        param_layout.addWidget(self.rot_ang_hint, 15, 1)
+        
+        param_layout.addWidget(self.rho_start_label, 16, 0)
+        param_layout.addWidget(self.rho_start_edit, 16, 1)
+
         # this is the Canvas Widget that displays the `figure`
         # it takes the `figure` instance as a parameter to __init__
-        self.figure = Figure(dpi=150)
-        self.mpl_widget = FigureCanvas(self.figure)
+        self.mpl_widget = MeshPlot()
         
-#        self.figure.subplots_adjust(left=self.subplot_left,
-#                                    right=self.subplot_right,
-#                                    bottom=self.subplot_bottom,
-#                                    top=self.subplot_top,
-#                                    hspace=self.subplot_hspace,
-#                                    wspace=self.subplot_wspace)
-        
-        #make sure the figure takes up the entire plottable space
-        self.mpl_widget.setSizePolicy(QtGui.QSizePolicy.Expanding,
-                                     QtGui.QSizePolicy.Expanding)
-
-        # this is the Navigation widget
-        # it takes the Canvas widget and a parent
-        self.mpl_toolbar = NavigationToolbar(self.mpl_widget, self)
-         
-        # set the layout for the plot
-        mpl_vbox = QtGui.QVBoxLayout()
-        mpl_vbox.addWidget(self.mpl_toolbar)
-        mpl_vbox.addWidget(self.mpl_widget)
-        mpl_vbox.addLayout(cell_size_grid)
+        left_layout = QtGui.QVBoxLayout()
+        left_layout.addLayout(edi_layout)
+        left_layout.addLayout(param_layout)
+        left_layout.addWidget(self.output_box)
         
         # set the layout the main window
         layout = QtGui.QHBoxLayout()
-        layout.addLayout(edi_layout)
-        layout.addLayout(mpl_vbox)
-        self.central_widget.setLayout(layout)
+        layout.addLayout(left_layout)
+        layout.addWidget(self.mpl_widget)
+        self.setLayout(layout)
 
         #set the geometry of each widget        
-        self.list_widget.setObjectName("listWidget")
-        self.mpl_widget.setObjectName("mpl_widget")
         self.mpl_widget.updateGeometry()
         
         QtCore.QMetaObject.connectSlotsByName(self)
+        
+    @QtCore.pyqtSlot(str)
+    def normal_output(self, message):
+        self.output_box.moveCursor(QtGui.QTextCursor.End)
+        self.output_box.insertPlainText(message)
         
     def get_data_fn(self):
         """
@@ -394,8 +357,8 @@ class MeshWidget(QtGui.QWidget):
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM model file',
                                        filter='*.rho'))
                                        
-        self.modem_model = modem.Model()
-        self.modem_model.read_model_file(fn)
+        self.model_obj = modem.Model()
+        self.model_obj.read_model_file(fn)
 
         self.dir_path = os.path.dirname(fn)
         
@@ -411,7 +374,7 @@ class MeshWidget(QtGui.QWidget):
                                     
         sv_path = os.path.dirname(save_fn)
         sv_basename = os.path.basename(save_fn)
-        self.modem_model.write_model_file(save_path=sv_path,
+        self.model_obj.write_model_file(save_path=sv_path,
                                           model_fn_basename=sv_basename)
         
         
@@ -424,22 +387,28 @@ class MeshWidget(QtGui.QWidget):
         """
         self.plot_period = str(widget_item.text())
         
-    def get_edi_files(self):
-        edi_obj = Get_EDI_Files()
-        self.edi_list = edi_obj.edi_list
+    def load_edi_files(self):
+        fn_list = QtGui.QFileDialog().getOpenFileNames(
+                                                    caption='Choose EDI Files',
+                                                    filter='*.edi')
+        self.edi_list = []                                    
+        for fn in fn_list:
+            self.edi_list.append(str(fn))
         
-        self.modem_model = modem.Model(edi_list=self.edi_list)
+        self.model_obj = modem.Model(edi_list=self.edi_list)
         
-        self.modem_model.get_station_locations()
+        self.model_obj.get_station_locations()
         
-        #self.make_checkable_list(self.modem_model.station_locations['station'])
+        self.mpl_widget.plot_mesh(self.model_obj)
         
-        for station in self.modem_model.station_locations['station']:
-            item = QtGui.QListWidgetItem()
-            item.setText(station)
-            item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
-            item.setCheckState(QtCore.Qt.Checked)
-            self.list_widget.addItem(item)
+#        #self.make_checkable_list(self.model_obj.station_locations['station'])
+#        
+#        for station in self.model_obj.station_locations['station']:
+#            item = QtGui.QListWidgetItem()
+#            item.setText(station)
+#            item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
+#            item.setCheckState(QtCore.Qt.Checked)
+#            self.list_widget.addItem(item)
 
     def set_cell_size_east(self):
         self.model_obj.cell_size_east = float(str(self.cell_size_edit_east.text()))
@@ -545,35 +514,92 @@ class MeshPlot(QtGui.QWidget):
         
         self.fs = 10
         
+        self.line_mode = 'add_h'
+        
         self.setup_ui()
         
     def setup_ui(self):
+               
         
-        self.figure = Figure(dpi=300)
-        self.mpl_widget = FigureCanvas(self.figure)
-        
+        self.figure = Figure(dpi=150)
         self.figure.subplots_adjust(left=self.subplot_left,
                                     right=self.subplot_right,
                                     bottom=self.subplot_bottom,
                                     top=self.subplot_top,
                                     hspace=self.subplot_hspace,
                                     wspace=self.subplot_wspace)
-                                    
-        #make sure the figure takes up the entire plottable space
+        
+        
+        self.mpl_widget = FigureCanvas(self.figure)
+
+        self.mpl_widget.mpl_connect('pick_event', self.on_pick)
+        self.mpl_widget.mpl_connect('axes_enter_event', self.in_axes)
+                                     
         self.mpl_widget.setSizePolicy(QtGui.QSizePolicy.Expanding,
                                      QtGui.QSizePolicy.Expanding)
+        screen = QtGui.QDesktopWidget().screenGeometry()
+        self.mpl_widget.setMinimumWidth(screen.width()*(1600./1920))
 
-        # this is the Navigation widget
-        # it takes the Canvas widget and a parent
         self.mpl_toolbar = NavigationToolbar(self.mpl_widget, self)
+        
+        
+        ## --> buttons for removing, adding lines
+        self.line_add_h_button = QtGui.QPushButton("Add Horizontal Line")
+        self.line_add_h_button.pressed.connect(self.line_set_add_h)
+        
+        self.line_add_v_button = QtGui.QPushButton("Add Vertical Line")
+        self.line_add_v_button.pressed.connect(self.line_set_add_v)
+        
+        self.line_del_h_button = QtGui.QPushButton("Remove Horizontal Line")
+        self.line_del_h_button.pressed.connect(self.line_set_del_h)
+        
+        self.line_del_v_button = QtGui.QPushButton("Remove Vertical Line")
+        self.line_del_v_button.pressed.connect(self.line_set_del_v)
+        
         # set the layout for the plot
+        line_layout = QtGui.QHBoxLayout()
+        line_layout.addWidget(self.line_add_h_button)
+        line_layout.addWidget(self.line_add_v_button)
+        line_layout.addWidget(self.line_del_h_button)
+        line_layout.addWidget(self.line_del_v_button)
+        
         mpl_vbox = QtGui.QVBoxLayout()
         mpl_vbox.addWidget(self.mpl_toolbar)
         mpl_vbox.addWidget(self.mpl_widget)
+        mpl_vbox.addLayout(line_layout)
         
         self.setLayout(mpl_vbox)
         
         self.mpl_widget.updateGeometry()
+        
+    def line_set_add_h(self):
+        self.line_mode = 'add_h'
+        self.line_add_h_button.setStyleSheet("background-color: red")
+        self.line_add_v_button.setStyleSheet("background-color: None")
+        self.line_del_h_button.setStyleSheet("background-color: None")
+        self.line_del_v_button.setStyleSheet("background-color: None")
+    
+    def line_set_add_v(self):
+        self.line_mode = 'add_v'
+        self.line_add_h_button.setStyleSheet("background-color: None")
+        self.line_add_v_button.setStyleSheet("background-color: red")
+        self.line_del_h_button.setStyleSheet("background-color: None")
+        self.line_del_v_button.setStyleSheet("background-color: None")
+    
+    def line_set_del_h(self):
+        self.line_mode = 'del_h'
+        self.line_add_h_button.setStyleSheet("background-color: None")
+        self.line_add_v_button.setStyleSheet("background-color: None")
+        self.line_del_h_button.setStyleSheet("background-color: red")
+        self.line_del_v_button.setStyleSheet("background-color: None")
+    
+    def line_set_del_v(self):
+        self.line_mode = 'del_v'
+        self.line_add_h_button.setStyleSheet("background-color: None")
+        self.line_add_v_button.setStyleSheet("background-color: None")
+        self.line_del_h_button.setStyleSheet("background-color: None")
+        self.line_del_v_button.setStyleSheet("background-color: red")
+        
     
     def plot_mesh(self, model_obj, east_limits=None, north_limits=None, 
                   z_limits=None):
@@ -724,6 +750,11 @@ class MeshPlot(QtGui.QWidget):
         
         self.mpl_widget.draw()
         
+    def on_pick(self):
+        pass
+
+    def in_axes(self):
+        pass        
 #==============================================================================
 #  DEFINE MAIN   
 #==============================================================================
@@ -731,7 +762,6 @@ def main():
     import sys
     app = QtGui.QApplication(sys.argv)
     ui = ModEM_Mesh_Window()
-    ui.ui_setup()
     ui.show()
     sys.exit(app.exec_())
 
