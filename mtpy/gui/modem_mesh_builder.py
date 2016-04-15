@@ -515,6 +515,7 @@ class MeshPlot(QtGui.QWidget):
         self.fs = 10
         
         self.line_mode = 'add_h'
+        self._ax = None
         
         self.setup_ui()
         
@@ -629,132 +630,158 @@ class MeshPlot(QtGui.QWidget):
         gs = gridspec.GridSpec(1, 2, width_ratios=[10, 1])
         
         #--->plot map view    
-        ax1 = self.figure.add_subplot(gs[0], aspect='equal')
+        self.ax_map = self.figure.add_subplot(gs[0], aspect='equal')
         
         
         #plot station locations
         plot_east = model_obj.station_locations['rel_east']/1000.
         plot_north = model_obj.station_locations['rel_north']/1000.
         
-        plot_grid_east = model_obj.grid_east.copy()/1000.
-        plot_grid_north = model_obj.grid_north.copy()/1000.
-        plot_grid_z = model_obj.grid_z.copy()/1000.
+        self.plot_grid_east = model_obj.grid_east.copy()/1000.
+        self.plot_grid_north = model_obj.grid_north.copy()/1000.
+        self.plot_grid_z = model_obj.grid_z.copy()/1000.
         
-        ax1.scatter(plot_east,
-                    plot_north, 
-                    marker=self.station_marker,
-                    c=self.marker_color,
-                    s=self.marker_size)
+        self.ax_map.scatter(plot_east,
+                            plot_north, 
+                            marker=self.station_marker,
+                            c=self.marker_color,
+                            s=self.marker_size,
+                            picker=3)
                                 
         
+        # plot vertical lines
         east_line_xlist = []
         east_line_ylist = []   
-        north_min = plot_grid_north.min()         
-        north_max = plot_grid_north.max()         
-        for xx in plot_grid_east:
+        north_min = self.plot_grid_north.min()         
+        north_max = self.plot_grid_north.max()         
+        for xx in self.plot_grid_east:
             east_line_xlist.extend([xx*cos_ang+north_min*sin_ang, 
                                     xx*cos_ang+north_max*sin_ang])
             east_line_xlist.append(None)
             east_line_ylist.extend([-xx*sin_ang+north_min*cos_ang, 
                                     -xx*sin_ang+north_max*cos_ang])
             east_line_ylist.append(None)
-        ax1.plot(east_line_xlist,
-                      east_line_ylist,
-                      lw=self.line_width,
-                      color=self.line_color)
+        self.ax_map.plot(east_line_xlist,
+                         east_line_ylist,
+                         lw=self.line_width,
+                         color=self.line_color,
+                         picker=3)
 
         north_line_xlist = []
         north_line_ylist = [] 
-        east_max = plot_grid_east.max()
-        east_min = plot_grid_east.min()
-        for yy in plot_grid_north:
+        east_max = self.plot_grid_east.max()
+        east_min = self.plot_grid_east.min()
+        for yy in self.plot_grid_north:
             north_line_xlist.extend([east_min*cos_ang+yy*sin_ang,
                                      east_max*cos_ang+yy*sin_ang])
             north_line_xlist.append(None)
             north_line_ylist.extend([-east_min*sin_ang+yy*cos_ang, 
                                      -east_max*sin_ang+yy*cos_ang])
             north_line_ylist.append(None)
-        ax1.plot(north_line_xlist,
-                      north_line_ylist,
-                      lw=self.line_width,
-                      color=self.line_color)
+        self.ax_map.plot(north_line_xlist,
+                         north_line_ylist,
+                         lw=self.line_width,
+                         color=self.line_color,
+                         picker=3)
         
         if east_limits == None:
-            ax1.set_xlim(plot_grid_east.min(),
-                         plot_grid_east.max())
+            self.ax_map.set_xlim(self.plot_grid_east.min(),
+                                 self.plot_grid_east.max())
             pass
         else:
-            ax1.set_xlim(east_limits)
+            self.ax_map.set_xlim(east_limits)
         
         if north_limits == None:
-            ax1.set_ylim(plot_grid_north.min(),
-                         plot_grid_north.max())
+            self.ax_map.set_ylim(self.plot_grid_north.min(),
+                                 self.plot_grid_north.max())
             pass
         else:
-            ax1.set_ylim(north_limits)
+            self.ax_map.set_ylim(north_limits)
             
-        ax1.set_ylabel('Northing (km)', fontdict={'size':12, 'weight':'bold'})
-        ax1.set_xlabel('Easting (km)', fontdict={'size':12, 'weight':'bold'})
+        self.ax_map.set_ylabel('Northing (km)', fontdict={'size':12, 'weight':'bold'})
+        self.ax_map.set_xlabel('Easting (km)', fontdict={'size':12, 'weight':'bold'})
         
         ##----plot depth view
-        ax2 = self.figure.add_subplot(gs[1], aspect='auto')
+        self.ax_depth = self.figure.add_subplot(gs[1], aspect='auto')
         
 
         #plot the grid 
         east_line_xlist = []
         east_line_ylist = []            
-        for xx in plot_grid_east:
+        for xx in self.plot_grid_east:
             east_line_xlist.extend([xx, xx])
             east_line_xlist.append(None)
             east_line_ylist.extend([0, 
-                                    plot_grid_z.max()])
+                                    self.plot_grid_z.max()])
             east_line_ylist.append(None)
-        ax2.plot(east_line_xlist,
+        self.ax_depth.plot(east_line_xlist,
                  east_line_ylist,
                  lw=self.line_width,
                  color=self.line_color)
 
         z_line_xlist = []
         z_line_ylist = [] 
-        for zz in plot_grid_z:
-            z_line_xlist.extend([plot_grid_east.min(),
-                                     plot_grid_east.max()])
+        for zz in self.plot_grid_z:
+            z_line_xlist.extend([self.plot_grid_east.min(),
+                                 self.plot_grid_east.max()])
             z_line_xlist.append(None)
             z_line_ylist.extend([zz, zz])
             z_line_ylist.append(None)
-        ax2.plot(z_line_xlist,
-                 z_line_ylist,
-                 lw=self.line_width,
-                 color=self.line_color)
+        self.ax_depth.plot(z_line_xlist,
+                           z_line_ylist,
+                           lw=self.line_width,
+                           color=self.line_color,
+                           picker=3)
                       
         
         #--> plot stations
-        ax2.scatter(plot_east,
-                    [0]*model_obj.station_locations.shape[0],
-                    marker=self.station_marker,
-                    c=self.marker_color,
-                    s=self.marker_size)
+        self.ax_depth.scatter(plot_east,
+                              [0]*model_obj.station_locations.shape[0],
+                                marker=self.station_marker,
+                                c=self.marker_color,
+                                s=self.marker_size,
+                                picker=3)
 
         
         if z_limits == None:
-            ax2.set_ylim(model_obj.z_target_depth/1000., -1)
+            self.ax_depth.set_ylim(model_obj.z_target_depth/1000., -1)
         else:
-            ax2.set_ylim(z_limits)
+            self.ax_depth.set_ylim(z_limits)
             
-        ax2.set_xlim(-model_obj.cell_size_east/6000., 
-                     model_obj.cell_size_east/6000.)
-        plt.setp(ax2.xaxis.get_ticklabels(), visible=False)
+        self.ax_depth.set_xlim(-model_obj.cell_size_east/1000*.75, 
+                               model_obj.cell_size_east/1000*.75)
+        plt.setp(self.ax_depth.xaxis.get_ticklabels(), visible=False)
             
-        ax2.set_ylabel('Depth (km)', fontdict={'size':9, 'weight':'bold'})
-#        ax2.set_xlabel('Easting (m)', fontdict={'size':9, 'weight':'bold'})  
+        self.ax_depth.set_ylabel('Depth (km)', fontdict={'size':9, 'weight':'bold'})
+#        self.ax_depth.set_xlabel('Easting (m)', fontdict={'size':9, 'weight':'bold'})  
         
         self.mpl_widget.draw()
         
-    def on_pick(self):
-        pass
+    def on_pick(self, event):
+        """
+        mask a data point when it is clicked on.  
+        """         
+        data_point = event.mouseevent
 
-    def in_axes(self):
-        pass        
+        east = float(data_point.xdata)
+        north = float(data_point.ydata)
+        
+#        for ii in dir(event.mouseevent):
+#            print ii
+        if event.mouseevent.button == 1:
+            if self.line_mode == 'add_h' and self._ax == self.ax_map:
+                print 'drawing line at {0:.2f}, {1:.2f}'.format(east, north)
+                self.ax_map.plot([self.plot_grid_east.min(), 
+                                  self.plot_grid_east.max()],
+                                 [north, north],
+                                 lw=self.line_width,
+                                 color='r',
+                                 picker=3)
+        
+        self._ax.figure.canvas.draw()
+
+    def in_axes(self, event):
+        self._ax = event.inaxes       
 #==============================================================================
 #  DEFINE MAIN   
 #==============================================================================
