@@ -200,14 +200,9 @@ class MT(object):
         self.zinv = None
         self._utm_ellipsoid = 23
 
-        #--> read in the edi file if its given
+        #--> read in the file name given
         if self._fn is not None:
-            if self._fn[-3:] == 'edi':
-                self._read_edi_file()
-            else:
-                not_fn = self._fn[os.path.basename(self._fn).find['.']:]
-                raise MTex.MTpyError_file_handling('File '+\
-                          'type {0} not supported yet.'.format(not_fn))
+            self._set_fn(fn)
     
     #==========================================================================
     # set functions                        
@@ -411,6 +406,7 @@ class MT(object):
                                            self.north, 
                                            self.east, 
                                            self.utm_zone)
+                                           
                                            
                                            
     #--> read in edi file                                                    
@@ -704,8 +700,6 @@ class MT(object):
         plot_obj = plotresponse.PlotResponse(fn=self.fn, **kwargs)
         
         return plot_obj
-        
-        
         
     
         
