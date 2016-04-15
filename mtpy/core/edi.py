@@ -1241,7 +1241,7 @@ class DefineMeasurement(object):
                     if line.find('!') > 0:
                         pass
                     else:
-                        line_list = line.strip().split()
+                        line_list = line.replace('= ', '=').strip().split()
                         m_dict = {}
                         for ll in line_list[1:]:
                             ll_list = ll.split('=')
@@ -1609,5 +1609,9 @@ class DataSection(object):
         data_sect_lines.append('\n')
         
         return data_sect_lines
-                        
-    
+      
+#==============================================================================
+# Test                  
+#==============================================================================
+edi_fn = r"c:\Users\jrpeacock\Downloads\2_LF_z.edi"
+edi_obj = Edi(edi_fn)   
