@@ -1610,8 +1610,4 @@ class DataSection(object):
         
         return data_sect_lines
       
-#==============================================================================
-# Test                  
-#==============================================================================
-edi_fn = r"c:\Users\jrpeacock\Downloads\2_LF_z.edi"
-edi_obj = Edi(edi_fn)   
+   
