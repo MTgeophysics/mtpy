@@ -33,14 +33,14 @@ Functions:
 import numpy as np
 import scipy as sp
 from scipy.stats import mode
-import sys
+#import sys
 import os
 import os.path as op
-import subprocess
-import shutil
-import fnmatch
-import datetime
-from operator import itemgetter
+#import subprocess
+#import shutil
+#import fnmatch
+#import datetime
+#from operator import itemgetter
 import time
 import matplotlib.colorbar as mcb
 from matplotlib.colors import Normalize
@@ -49,22 +49,10 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import scipy.interpolate as spi
 
-import mtpy.core.edi as MTedi
 import mtpy.core.mt as mt
 import mtpy.modeling.winglinktools as MTwl
-import mtpy.utils.conversions as MTcv
-import mtpy.utils.filehandling as MTfh
-import mtpy.utils.configfile as MTcf
 import mtpy.analysis.geometry as MTgy
-import mtpy.utils.exceptions as MTex
-import scipy.interpolate as si
 from mtpy.imaging.mtplottools import plot_errorbar
-
-
-reload(MTcv)
-reload(MTcf)
-reload(MTedi)
-reload(MTex)
 
 #==============================================================================
 
