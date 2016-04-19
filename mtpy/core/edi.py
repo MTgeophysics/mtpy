@@ -308,14 +308,17 @@ class Edi(object):
         data_find = False
         for line in data_lines:
             if line.lower().find('>spectra') == 0 and line.find('!') == -1:
-                line_list = line[1:].strip().split()
+                line_list = _validate_str_with_equals(line)
                 data_find = True
                 
                 # frequency will be the key
                 try:
-                    key = float(line_list[1].split('=')[1])
+                    key = float([ss.split('=')[1] for ss in line_list
+                                  if ss.lower().find('freq')==0][0])
                     data_dict[key] = []
-                    avgt_dict[key] = float(line_list[4].split('=')[1])
+                    avgt = float([ss.split('=')[1] for ss in line_list
+                                  if ss.lower().find('avgt')==0][0])
+                    avgt_dict[key] = avgt
                 except ValueError:
                     print 'did not find frequency key'
         
@@ -1241,9 +1244,9 @@ class DefineMeasurement(object):
                     if line.find('!') > 0:
                         pass
                     else:
-                        line_list = line.replace('= ', '=').strip().split()
+                        line_list = _validate_str_with_equals(line)
                         m_dict = {}
-                        for ll in line_list[1:]:
+                        for ll in line_list:
                             ll_list = ll.split('=')
                             key = ll_list[0].lower()
                             value = ll_list[1]
@@ -1610,4 +1613,40 @@ class DataSection(object):
         
         return data_sect_lines
       
-   
+def _validate_str_with_equals(input_string):
+    """
+    make sure an input string is of the format {0}={1} {2}={3} {4}={5} ...
+    Some software programs put spaces after the equals sign and that's not 
+    cool.  So we make the string into a readable format
+    """
+    # remove the first >XXXXX 
+    if input_string.find('>') == 0:
+        input_string = input_string[input_string.find(' '):]
+        
+    # check if there is a // at the end of the line
+    if input_string.find('//') > 0:
+        input_string = input_string[0:input_string.find('//')]
+        
+    # split the line by =
+    l_list = input_string.strip().split('=')
+    
+    # split the remaining strings    
+    str_list = []
+    for line in l_list:
+        s_list = line.strip().split()
+        for l_str in s_list:
+            str_list.append(l_str.strip())
+    
+    # probably not a good return        
+    if len(str_list)%2 != 0:
+        print 'The number of entries in {0} is not even'.format(str_list)
+        return str_list
+    
+    line_list = ['{0}={1}'.format(str_list[ii], str_list[ii+1]) for ii in 
+                range(0, len(str_list), 2)]
+    
+    return line_list
+            
+    
+
+    
