@@ -698,8 +698,10 @@ class MeshPlot(QtGui.QWidget):
         else:
             self.ax_map.set_ylim(north_limits)
             
-        self.ax_map.set_ylabel('Northing (km)', fontdict={'size':12, 'weight':'bold'})
-        self.ax_map.set_xlabel('Easting (km)', fontdict={'size':12, 'weight':'bold'})
+        self.ax_map.set_ylabel('Northing (km)', 
+                               fontdict={'size':12, 'weight':'bold'})
+        self.ax_map.set_xlabel('Easting (km)', 
+                               fontdict={'size':12, 'weight':'bold'})
         
         ##----plot depth view
         self.ax_depth = self.figure.add_subplot(gs[1], aspect='auto')
@@ -761,15 +763,17 @@ class MeshPlot(QtGui.QWidget):
         """
         mask a data point when it is clicked on.  
         """         
-        data_point = event.mouseevent
 
-        east = float(data_point.xdata)
-        north = float(data_point.ydata)
         
 #        for ii in dir(event.mouseevent):
 #            print ii
         if event.mouseevent.button == 1:
             if self.line_mode == 'add_h' and self._ax == self.ax_map:
+                data_point = event.mouseevent
+
+                east = float(data_point.xdata)
+                north = float(data_point.ydata)
+                
                 print 'drawing line at {0:.2f}, {1:.2f}'.format(east, north)
                 self.ax_map.plot([self.plot_grid_east.min(), 
                                   self.plot_grid_east.max()],
