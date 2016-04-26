@@ -1291,7 +1291,7 @@ class DefineMeasurement(object):
             if type(line) is str:
                 line_list = line.split('=')
                 key = line_list[0].lower()
-                value = line_list[1]
+                value = line_list[1].strip()
                 if key in 'reflatitude':
                     key = 'reflat'
                     value = MTft._assert_position_format('lat', value)
