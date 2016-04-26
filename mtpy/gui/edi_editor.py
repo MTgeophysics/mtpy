@@ -1123,7 +1123,6 @@ class PlotWidget(QtGui.QWidget):
                 d_index = np.where(np.round(self.mt_obj.Tipper.amplitude,
                                             8) == data_value)
                                             
-                print d_index
                                             
                 # mask point
                 self._ax.plot(data_period, data_value, **mask_kw)
@@ -2075,7 +2074,7 @@ class EDITextEditor(QtGui.QWidget):
         self.header_elev_edit.setText('{0:.1f}'.format(self.edi_obj.elev))
         
     def header_set_empty(self):
-        self.edi_obj.Header.empty = float(str(self.header_elev_edit.text()))
+        self.edi_obj.Header.empty = float(str(self.header_empty_edit.text()))
         self.header_empty_edit.setText('{0:.2e}'.format(self.edi_obj.Header.empty))
         
     def header_set_fileby(self):
@@ -2109,7 +2108,7 @@ class EDITextEditor(QtGui.QWidget):
     def info_set_text(self):
         new_info_str = self.info_edit.toPlainText()
         new_info_list = [str(nn) for nn in new_info_str.split('\n')]
-        self.edi_obj.Info.info_lines = self.edi_obj.Info._validate_info_list(new_info_list)
+        self.edi_obj.Info.info_list = self.edi_obj.Info._validate_info_list(new_info_list)
 
     def define_set_maxchan(self):
         self.edi_obj.Define_measurement.maxchan = int(str(self.define_maxchan_edit.text()))
