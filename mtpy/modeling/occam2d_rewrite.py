@@ -2287,6 +2287,9 @@ class Data(Profile):
                            *default* is None and will use the data to find num
         """
 
+        if self.freq is not None:
+            return
+            
         #get all frequencies from all edi files
         lo_all_freqs = []
         for edi in self.edi_list:
@@ -2372,6 +2375,9 @@ class Data(Profile):
         #loop over mt object in edi_list and use a counter starting at 1 
         #because that is what occam starts at.
         for s_index, edi in enumerate(self.edi_list):
+            station_freq = edi.Z.freq
+            # interpolate data onto given frequency list
+            z_interp, t_interp = edi.interpolate()
             rho = edi.Z.resistivity
             phi = edi.Z.phase
             rho_err = edi.Z.resistivity_err
