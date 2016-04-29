@@ -882,7 +882,7 @@ class Header(object):
         for h_line in self.header_list:
             h_list = h_line.split('=')
             key = h_list[0].lower()
-            value = h_list[1].replace('"', '')
+            value = h_list[1].replace('"', '').strip()
             
             if key in 'latitude':
                 key = 'lat'
@@ -1291,7 +1291,7 @@ class DefineMeasurement(object):
             if type(line) is str:
                 line_list = line.split('=')
                 key = line_list[0].lower()
-                value = line_list[1]
+                value = line_list[1].strip()
                 if key in 'reflatitude':
                     key = 'reflat'
                     value = MTft._assert_position_format('lat', value)
@@ -1328,7 +1328,7 @@ class DefineMeasurement(object):
         if measurement_list is not None:
             self.read_define_measurement(measurement_list=measurement_list)
             
-        measurement_lines = ['>=DEFINEMEAS\n\n']
+        measurement_lines = ['\n>=DEFINEMEAS\n\n']
         for key in self._define_meas_keys:
             value = getattr(self, key)
             if key == 'reflat' or key == 'reflon':

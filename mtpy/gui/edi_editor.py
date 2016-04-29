@@ -117,7 +117,12 @@ class EDI_Editor_Window(QtGui.QMainWindow):
         pass
 
     def save_edi_file(self):
-        pass
+        save_fn_dialog = QtGui.QFileDialog()
+        save_fn = str(save_fn_dialog.getSaveFileName(caption='Choose EDI File',
+                                                     directory=self.plot_widget.dir_path,
+                                                     filter='*.edi'))
+        
+        self.plot_widget.mt_obj.write_edi_file(new_fn=save_fn)
     
     def edit_plot_properties(self):
         self.plot_widget.plot_properties.setup_ui()
@@ -133,7 +138,7 @@ class EDI_Editor_Window(QtGui.QMainWindow):
         self.edi_text_editor.metadata_updated.connect(self.update_edi_metadata)
         
     def update_edi_metadata(self):
-        self.plot_widget.mt_obj.edi_object = copy.deepcopy(self.edi_text_editor.edi_obj)
+        self.plot_widget.mt_obj.edi_object = copy.deepcopy(self.edi_text_editor.edi_obj)      
         self.plot_widget.mt_obj.station = self.plot_widget.mt_obj.edi_object.station         
         self.plot_widget.mt_obj.elev = self.plot_widget.mt_obj.edi_object.elev         
         self.plot_widget.mt_obj.lat = self.plot_widget.mt_obj.edi_object.lat         
@@ -1118,7 +1123,6 @@ class PlotWidget(QtGui.QWidget):
                 d_index = np.where(np.round(self.mt_obj.Tipper.amplitude,
                                             8) == data_value)
                                             
-                print d_index
                                             
                 # mask point
                 self._ax.plot(data_period, data_value, **mask_kw)
@@ -1743,13 +1747,13 @@ class EDITextEditor(QtGui.QWidget):
 
         self.meas_help = QtGui.QLabel()
         self.meas_help.setText('Assume x is northing (m), y is easting (m), North = 0 deg, East = 90 deg')
-        ch_list = ['EX', 'EY', 'HX', 'HY', 'HZ', 'RHX', 'RHY', 'EZ']        
+        h_ch_list = ['HX', 'HY', 'HZ', 'RHX', 'RHY']        
         self.meas_h01_label = QtGui.QLabel("HMEAS")
         self.meas_h01_id_label = QtGui.QLabel("ID")
         self.meas_h01_id_edit = QtGui.QLineEdit()
         self.meas_h01_ct_label = QtGui.QLabel("CHTYPE")
         self.meas_h01_ct_combo = QtGui.QComboBox()
-        for ch in ch_list:
+        for ch in h_ch_list:
             self.meas_h01_ct_combo.addItem(ch)
         self.meas_h01_x_label = QtGui.QLabel("X (m)")
         self.meas_h01_x_edit = QtGui.QLineEdit()
@@ -1759,9 +1763,121 @@ class EDITextEditor(QtGui.QWidget):
         self.meas_h01_azm_edit = QtGui.QLineEdit()
         self.meas_h01_acqchn_label = QtGui.QLabel("Acq. Channel")
         self.meas_h01_acqchn_combo = QtGui.QComboBox()
-        for ch in ch_list:
+        for ch in h_ch_list:
             self.meas_h01_acqchn_combo.addItem(ch)
         
+        self.meas_h02_label = QtGui.QLabel("HMEAS")
+        self.meas_h02_id_label = QtGui.QLabel("ID")
+        self.meas_h02_id_edit = QtGui.QLineEdit()
+        self.meas_h02_ct_label = QtGui.QLabel("CHTYPE")
+        self.meas_h02_ct_combo = QtGui.QComboBox()
+        for ch in h_ch_list:
+            self.meas_h02_ct_combo.addItem(ch)
+        self.meas_h02_x_label = QtGui.QLabel("X (m)")
+        self.meas_h02_x_edit = QtGui.QLineEdit()
+        self.meas_h02_y_label = QtGui.QLabel("Y (m)")
+        self.meas_h02_y_edit = QtGui.QLineEdit()
+        self.meas_h02_azm_label = QtGui.QLabel("Azimtuh (deg)")
+        self.meas_h02_azm_edit = QtGui.QLineEdit()
+        self.meas_h02_acqchn_label = QtGui.QLabel("Acq. Channel")
+        self.meas_h02_acqchn_combo = QtGui.QComboBox()
+        for ch in h_ch_list:
+            self.meas_h02_acqchn_combo.addItem(ch)
+        
+        self.meas_h03_label = QtGui.QLabel("HMEAS")
+        self.meas_h03_id_label = QtGui.QLabel("ID")
+        self.meas_h03_id_edit = QtGui.QLineEdit()
+        self.meas_h03_ct_label = QtGui.QLabel("CHTYPE")
+        self.meas_h03_ct_combo = QtGui.QComboBox()
+        for ch in h_ch_list:
+            self.meas_h03_ct_combo.addItem(ch)
+        self.meas_h03_x_label = QtGui.QLabel("X (m)")
+        self.meas_h03_x_edit = QtGui.QLineEdit()
+        self.meas_h03_y_label = QtGui.QLabel("Y (m)")
+        self.meas_h03_y_edit = QtGui.QLineEdit()
+        self.meas_h03_azm_label = QtGui.QLabel("Azimtuh (deg)")
+        self.meas_h03_azm_edit = QtGui.QLineEdit()
+        self.meas_h03_acqchn_label = QtGui.QLabel("Acq. Channel")
+        self.meas_h03_acqchn_combo = QtGui.QComboBox()
+        for ch in h_ch_list:
+            self.meas_h03_acqchn_combo.addItem(ch)
+        
+        self.meas_hr1_label = QtGui.QLabel("HMEAS")
+        self.meas_hr1_id_label = QtGui.QLabel("ID")
+        self.meas_hr1_id_edit = QtGui.QLineEdit()
+        self.meas_hr1_ct_label = QtGui.QLabel("CHTYPE")
+        self.meas_hr1_ct_combo = QtGui.QComboBox()
+        for ch in h_ch_list:
+            self.meas_hr1_ct_combo.addItem(ch)
+        self.meas_hr1_x_label = QtGui.QLabel("X (m)")
+        self.meas_hr1_x_edit = QtGui.QLineEdit()
+        self.meas_hr1_y_label = QtGui.QLabel("Y (m)")
+        self.meas_hr1_y_edit = QtGui.QLineEdit()
+        self.meas_hr1_azm_label = QtGui.QLabel("Azimtuh (deg)")
+        self.meas_hr1_azm_edit = QtGui.QLineEdit()
+        self.meas_hr1_acqchn_label = QtGui.QLabel("Acq. Channel")
+        self.meas_hr1_acqchn_combo = QtGui.QComboBox()
+        for ch in h_ch_list:
+            self.meas_hr1_acqchn_combo.addItem(ch)
+        
+        self.meas_hr2_label = QtGui.QLabel("HMEAS")
+        self.meas_hr2_id_label = QtGui.QLabel("ID")
+        self.meas_hr2_id_edit = QtGui.QLineEdit()
+        self.meas_hr2_ct_label = QtGui.QLabel("CHTYPE")
+        self.meas_hr2_ct_combo = QtGui.QComboBox()
+        for ch in h_ch_list:
+            self.meas_hr2_ct_combo.addItem(ch)
+        self.meas_hr2_x_label = QtGui.QLabel("X (m)")
+        self.meas_hr2_x_edit = QtGui.QLineEdit()
+        self.meas_hr2_y_label = QtGui.QLabel("Y (m)")
+        self.meas_hr2_y_edit = QtGui.QLineEdit()
+        self.meas_hr2_azm_label = QtGui.QLabel("Azimtuh (deg)")
+        self.meas_hr2_azm_edit = QtGui.QLineEdit()
+        self.meas_hr2_acqchn_label = QtGui.QLabel("Acq. Channel")
+        self.meas_hr2_acqchn_combo = QtGui.QComboBox()
+        for ch in h_ch_list:
+            self.meas_hr2_acqchn_combo.addItem(ch)
+        
+        e_ch_list = ['EX', 'EY', 'EZ']
+        self.meas_e01_label = QtGui.QLabel("EMEAS")
+        self.meas_e01_id_label = QtGui.QLabel("ID")
+        self.meas_e01_id_edit = QtGui.QLineEdit()
+        self.meas_e01_ct_label = QtGui.QLabel("CHTYPE")
+        self.meas_e01_ct_combo = QtGui.QComboBox()
+        for ch in e_ch_list:
+            self.meas_e01_ct_combo.addItem(ch)
+        self.meas_e01_x_label = QtGui.QLabel("X (m)")
+        self.meas_e01_x_edit = QtGui.QLineEdit()
+        self.meas_e01_y_label = QtGui.QLabel("Y (m)")
+        self.meas_e01_y_edit = QtGui.QLineEdit()
+        self.meas_e01_x2_label = QtGui.QLabel("X2 (m)")
+        self.meas_e01_x2_edit = QtGui.QLineEdit()
+        self.meas_e01_y2_label = QtGui.QLabel("Y2 (m)")
+        self.meas_e01_y2_edit = QtGui.QLineEdit()
+        self.meas_e01_acqchn_label = QtGui.QLabel("Acq. Channel")
+        self.meas_e01_acqchn_combo = QtGui.QComboBox()
+        for ch in e_ch_list:
+            self.meas_e01_acqchn_combo.addItem(ch)
+        
+        self.meas_e02_label = QtGui.QLabel("EMEAS")
+        self.meas_e02_id_label = QtGui.QLabel("ID")
+        self.meas_e02_id_edit = QtGui.QLineEdit()
+        self.meas_e02_ct_label = QtGui.QLabel("CHTYPE")
+        self.meas_e02_ct_combo = QtGui.QComboBox()
+        for ch in e_ch_list:
+            self.meas_e02_ct_combo.addItem(ch)
+        self.meas_e02_x_label = QtGui.QLabel("X (m)")
+        self.meas_e02_x_edit = QtGui.QLineEdit()
+        self.meas_e02_y_label = QtGui.QLabel("Y (m)")
+        self.meas_e02_y_edit = QtGui.QLineEdit()
+        self.meas_e02_x2_label = QtGui.QLabel("X2 (m)")
+        self.meas_e02_x2_edit = QtGui.QLineEdit()
+        self.meas_e02_y2_label = QtGui.QLabel("Y2 (m)")
+        self.meas_e02_y2_edit = QtGui.QLineEdit()
+        self.meas_e02_acqchn_label = QtGui.QLabel("Acq. Channel")
+        self.meas_e02_acqchn_combo = QtGui.QComboBox()
+        for ch in e_ch_list:
+            self.meas_e02_acqchn_combo.addItem(ch)
     
         ##--> Update button
         self.update_button = QtGui.QPushButton('Update')
@@ -1833,8 +1949,96 @@ class EDITextEditor(QtGui.QWidget):
         meas_layout.addWidget(self.meas_h01_y_edit, 1, 8)
         meas_layout.addWidget(self.meas_h01_azm_label, 1, 9)
         meas_layout.addWidget(self.meas_h01_azm_edit, 1, 10)
-        meas_layout.addWidget(self.meas_h01_acqchn_label, 1, 11)
-        meas_layout.addWidget(self.meas_h01_acqchn_combo, 1, 12)
+        meas_layout.addWidget(self.meas_h01_acqchn_label, 1, 13)
+        meas_layout.addWidget(self.meas_h01_acqchn_combo, 1, 14)
+        
+        meas_layout.addWidget(self.meas_h02_label, 2, 0)
+        meas_layout.addWidget(self.meas_h02_id_label, 2, 1)
+        meas_layout.addWidget(self.meas_h02_id_edit, 2, 2)
+        meas_layout.addWidget(self.meas_h02_ct_label, 2, 3)
+        meas_layout.addWidget(self.meas_h02_ct_combo, 2, 4)
+        meas_layout.addWidget(self.meas_h02_x_label, 2, 5)
+        meas_layout.addWidget(self.meas_h02_x_edit, 2, 6)
+        meas_layout.addWidget(self.meas_h02_y_label, 2, 7)
+        meas_layout.addWidget(self.meas_h02_y_edit, 2, 8)
+        meas_layout.addWidget(self.meas_h02_azm_label, 2, 9)
+        meas_layout.addWidget(self.meas_h02_azm_edit, 2, 10)
+        meas_layout.addWidget(self.meas_h02_acqchn_label, 2, 13)
+        meas_layout.addWidget(self.meas_h02_acqchn_combo, 2, 14)
+        
+        meas_layout.addWidget(self.meas_h03_label, 3, 0)
+        meas_layout.addWidget(self.meas_h03_id_label, 3, 1)
+        meas_layout.addWidget(self.meas_h03_id_edit, 3, 2)
+        meas_layout.addWidget(self.meas_h03_ct_label, 3, 3)
+        meas_layout.addWidget(self.meas_h03_ct_combo, 3, 4)
+        meas_layout.addWidget(self.meas_h03_x_label, 3, 5)
+        meas_layout.addWidget(self.meas_h03_x_edit, 3, 6)
+        meas_layout.addWidget(self.meas_h03_y_label, 3, 7)
+        meas_layout.addWidget(self.meas_h03_y_edit, 3, 8)
+        meas_layout.addWidget(self.meas_h03_azm_label, 3, 9)
+        meas_layout.addWidget(self.meas_h03_azm_edit, 3, 10)
+        meas_layout.addWidget(self.meas_h03_acqchn_label, 3, 13)
+        meas_layout.addWidget(self.meas_h03_acqchn_combo, 3, 14)
+        
+        meas_layout.addWidget(self.meas_hr1_label, 4, 0)
+        meas_layout.addWidget(self.meas_hr1_id_label, 4, 1)
+        meas_layout.addWidget(self.meas_hr1_id_edit, 4, 2)
+        meas_layout.addWidget(self.meas_hr1_ct_label, 4, 3)
+        meas_layout.addWidget(self.meas_hr1_ct_combo, 4, 4)
+        meas_layout.addWidget(self.meas_hr1_x_label, 4, 5)
+        meas_layout.addWidget(self.meas_hr1_x_edit, 4, 6)
+        meas_layout.addWidget(self.meas_hr1_y_label, 4, 7)
+        meas_layout.addWidget(self.meas_hr1_y_edit, 4, 8)
+        meas_layout.addWidget(self.meas_hr1_azm_label, 4, 9)
+        meas_layout.addWidget(self.meas_hr1_azm_edit, 4, 10)
+        meas_layout.addWidget(self.meas_hr1_acqchn_label, 4, 13)
+        meas_layout.addWidget(self.meas_hr1_acqchn_combo, 4, 14)
+        
+        meas_layout.addWidget(self.meas_hr2_label, 5, 0)
+        meas_layout.addWidget(self.meas_hr2_id_label, 5, 1)
+        meas_layout.addWidget(self.meas_hr2_id_edit, 5, 2)
+        meas_layout.addWidget(self.meas_hr2_ct_label, 5, 3)
+        meas_layout.addWidget(self.meas_hr2_ct_combo, 5, 4)
+        meas_layout.addWidget(self.meas_hr2_x_label, 5, 5)
+        meas_layout.addWidget(self.meas_hr2_x_edit, 5, 6)
+        meas_layout.addWidget(self.meas_hr2_y_label, 5, 7)
+        meas_layout.addWidget(self.meas_hr2_y_edit, 5, 8)
+        meas_layout.addWidget(self.meas_hr2_azm_label, 5, 9)
+        meas_layout.addWidget(self.meas_hr2_azm_edit, 5, 10)
+        meas_layout.addWidget(self.meas_hr2_acqchn_label, 5, 13)
+        meas_layout.addWidget(self.meas_hr2_acqchn_combo, 5, 14)
+        
+        meas_layout.addWidget(self.meas_e01_label, 6, 0)
+        meas_layout.addWidget(self.meas_e01_id_label, 6, 1)
+        meas_layout.addWidget(self.meas_e01_id_edit, 6, 2)
+        meas_layout.addWidget(self.meas_e01_ct_label, 6, 3)
+        meas_layout.addWidget(self.meas_e01_ct_combo, 6, 4)
+        meas_layout.addWidget(self.meas_e01_x_label, 6, 5)
+        meas_layout.addWidget(self.meas_e01_x_edit, 6, 6)
+        meas_layout.addWidget(self.meas_e01_y_label, 6, 7)
+        meas_layout.addWidget(self.meas_e01_y_edit, 6, 8)
+        meas_layout.addWidget(self.meas_e01_x2_label, 6, 9)
+        meas_layout.addWidget(self.meas_e01_x2_edit, 6, 10)
+        meas_layout.addWidget(self.meas_e01_y2_label, 6, 11)
+        meas_layout.addWidget(self.meas_e01_y2_edit, 6, 12)
+        meas_layout.addWidget(self.meas_e01_acqchn_label, 6, 13)
+        meas_layout.addWidget(self.meas_e01_acqchn_combo, 6, 14)
+        
+        meas_layout.addWidget(self.meas_e02_label, 7, 0)
+        meas_layout.addWidget(self.meas_e02_id_label, 7, 1)
+        meas_layout.addWidget(self.meas_e02_id_edit, 7, 2)
+        meas_layout.addWidget(self.meas_e02_ct_label, 7, 3)
+        meas_layout.addWidget(self.meas_e02_ct_combo, 7, 4)
+        meas_layout.addWidget(self.meas_e02_x_label, 7, 5)
+        meas_layout.addWidget(self.meas_e02_x_edit, 7, 6)
+        meas_layout.addWidget(self.meas_e02_y_label, 7, 7)
+        meas_layout.addWidget(self.meas_e02_y_edit, 7, 8)
+        meas_layout.addWidget(self.meas_e02_x2_label, 7, 9)
+        meas_layout.addWidget(self.meas_e02_x2_edit, 7, 10)
+        meas_layout.addWidget(self.meas_e02_y2_label, 7, 11)
+        meas_layout.addWidget(self.meas_e02_y2_edit, 7, 12)
+        meas_layout.addWidget(self.meas_e02_acqchn_label, 7, 13)
+        meas_layout.addWidget(self.meas_e02_acqchn_combo, 7, 14)
         
         v_layout = QtGui.QVBoxLayout()
         v_layout.addLayout(header_layout)        
@@ -1870,7 +2074,7 @@ class EDITextEditor(QtGui.QWidget):
         self.header_elev_edit.setText('{0:.1f}'.format(self.edi_obj.elev))
         
     def header_set_empty(self):
-        self.edi_obj.Header.empty = float(str(self.header_elev_edit.text()))
+        self.edi_obj.Header.empty = float(str(self.header_empty_edit.text()))
         self.header_empty_edit.setText('{0:.2e}'.format(self.edi_obj.Header.empty))
         
     def header_set_fileby(self):
@@ -1903,8 +2107,8 @@ class EDITextEditor(QtGui.QWidget):
         
     def info_set_text(self):
         new_info_str = self.info_edit.toPlainText()
-        new_info_list = new_info_str.split('\n') 
-        self.edi_obj.Info.info_lines = self.edi_obj.Info._validate_info_list(new_info_list)
+        new_info_list = [str(nn) for nn in new_info_str.split('\n')]
+        self.edi_obj.Info.info_list = self.edi_obj.Info._validate_info_list(new_info_list)
 
     def define_set_maxchan(self):
         self.edi_obj.Define_measurement.maxchan = int(str(self.define_maxchan_edit.text()))
