@@ -1076,6 +1076,7 @@ class PlotWidget(QtGui.QWidget):
                 
                 # mask point in impedance object
                 self.mt_obj.Z.z[d_index] = 0.0+0.0*1j            
+                self.mt_obj.Z.zerr[d_index] = 0.0            
                 
                 self._ax.plot(data_period, data_value, **mask_kw)
                 
@@ -1103,6 +1104,7 @@ class PlotWidget(QtGui.QWidget):
                 
                 # mask point in impedance object
                 self.mt_obj.Z.z[d_index] = 0.0+0.0*1j            
+                self.mt_obj.Z.zerr[d_index] = 0.0            
                 
                 # mask the point in the axis selected
                 self._ax.plot(data_period, data_value, **mask_kw)
