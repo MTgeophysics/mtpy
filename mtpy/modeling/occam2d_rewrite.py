@@ -2287,6 +2287,9 @@ class Data(Profile):
                            *default* is None and will use the data to find num
         """
 
+        if self.freq is not None:
+            return
+            
         #get all frequencies from all edi files
         lo_all_freqs = []
         for edi in self.edi_list:
@@ -2372,23 +2375,29 @@ class Data(Profile):
         #loop over mt object in edi_list and use a counter starting at 1 
         #because that is what occam starts at.
         for s_index, edi in enumerate(self.edi_list):
-            rho = edi.Z.resistivity
-            phi = edi.Z.phase
-            rho_err = edi.Z.resistivity_err
-            station_freqs = edi.Z.freq
-            tipper = edi.Tipper.tipper
-            tipper_err = edi.Tipper.tippererr
+            station_freq = edi.Z.freq
+            interp_freq = station_freq[np.where((station_freq >= self.freq.min()) &
+                                           (station_freq <= self.freq.max()))]
+            # interpolate data onto given frequency list
+            z_interp, t_interp = edi.interpolate(interp_freq)
+            z_interp._compute_res_phase()
+            
+            rho = z_interp.resistivity
+            phi = z_interp.phase
+            rho_err = z_interp.resistivity_err
+            tipper = t_interp.tipper
+            tipper_err = t_interp.tippererr
             
             self.data[s_index]['station'] = edi.station
             self.data[s_index]['offset'] = edi.offset
 
             for freq_num, frequency in enumerate(self.freq):
                 #skip, if the listed frequency is not available for the station
-                if not (frequency in station_freqs):
+                if not (frequency in interp_freq):
                     continue
 
                 #find the respective frequency index for the station     
-                f_index = np.abs(station_freqs-frequency).argmin()
+                f_index = np.abs(station_freq-frequency).argmin()
 
                 #--> get te resistivity
                 self.data[s_index]['te_res'][0, freq_num] = rho[f_index, 0, 1]
