@@ -2385,8 +2385,12 @@ class Data(Profile):
             rho = z_interp.resistivity
             phi = z_interp.phase
             rho_err = z_interp.resistivity_err
-            tipper = t_interp.tipper
-            tipper_err = t_interp.tippererr
+            if t_interp is not None:
+                tipper = t_interp.tipper
+                tipper_err = t_interp.tippererr
+            else:
+                tipper = None
+                tipper_err = None
             
             self.data[s_index]['station'] = edi.station
             self.data[s_index]['offset'] = edi.offset
