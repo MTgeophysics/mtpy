@@ -2376,8 +2376,8 @@ class Data(Profile):
         #because that is what occam starts at.
         for s_index, edi in enumerate(self.edi_list):
             station_freq = edi.Z.freq
-            interp_freq = station_freq[np.where((station_freq >= self.freq.min()) &
-                                           (station_freq <= self.freq.max()))]
+            interp_freq = self.freq[np.where((self.freq >= station_freq.min()) &
+                                           (self.freq <= station_freq.max())]
             # interpolate data onto given frequency list
             z_interp, t_interp = edi.interpolate(interp_freq)
             z_interp._compute_res_phase()
@@ -2651,7 +2651,7 @@ class Data(Profile):
         data_lines.append('{0:<18}{1}\n'.format('FREQUENCIES:', 
                                                 self.freq.shape[0]))
         for ff in self.freq:
-            data_lines.append('   {0:<10.6g}\n'.format(ff))
+            data_lines.append('   {0:<10.6e}\n'.format(ff))
             
         #--> data
         data_lines.append('{0:<18}{1}\n'.format('DATA BLOCKS:', 
