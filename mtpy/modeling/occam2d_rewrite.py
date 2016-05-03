@@ -1121,7 +1121,7 @@ class Profile():
             print '='*72
             print ('Rotated Z and Tipper to be perpendicular  with '
                    '{0:+.2f} profile angle'.format((self.profile_angle-90)%180)) 
-            print ('Profile angle is'
+            print ('Profile angle is '
                    '{0:+.2f} degrees E of N'.format(self.profile_angle))        
             print '='*72
         
