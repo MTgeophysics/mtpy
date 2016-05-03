@@ -2377,7 +2377,7 @@ class Data(Profile):
         for s_index, edi in enumerate(self.edi_list):
             station_freq = edi.Z.freq
             interp_freq = self.freq[np.where((self.freq >= station_freq.min()) &
-                                           (self.freq <= station_freq.max())]
+                                           (self.freq <= station_freq.max()))]
             # interpolate data onto given frequency list
             z_interp, t_interp = edi.interpolate(interp_freq)
             z_interp._compute_res_phase()
