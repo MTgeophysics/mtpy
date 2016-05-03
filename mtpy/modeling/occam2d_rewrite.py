@@ -2401,7 +2401,7 @@ class Data(Profile):
                     continue
 
                 #find the respective frequency index for the station     
-                f_index = np.abs(station_freq-frequency).argmin()
+                f_index = np.abs(interp_freq-frequency).argmin()
 
                 #--> get te resistivity
                 self.data[s_index]['te_res'][0, freq_num] = rho[f_index, 0, 1]
