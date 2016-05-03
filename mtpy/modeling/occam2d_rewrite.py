@@ -2651,7 +2651,7 @@ class Data(Profile):
         data_lines.append('{0:<18}{1}\n'.format('FREQUENCIES:', 
                                                 self.freq.shape[0]))
         for ff in self.freq:
-            data_lines.append('   {0:.6f}\n'.format(ff))
+            data_lines.append('   {0:<10.6g}\n'.format(ff))
             
         #--> data
         data_lines.append('{0:<18}{1}\n'.format('DATA BLOCKS:', 
