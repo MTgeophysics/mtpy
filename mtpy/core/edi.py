@@ -1365,7 +1365,19 @@ class DefineMeasurement(object):
                 measurement_lines.append(''.join(m_list))
         
         return measurement_lines
+        
+    def get_measurement_dict(self):
+        """
+        get a dictionary for the xmeas parts
+        """
+        meas_dict = {}        
+        for key in self.__dict__.keys():
+            if key.find('meas_') == 0:
+                meas_attr = getattr(self, key)
+                meas_key = meas_attr.chtype
+                meas_dict[meas_key] =meas_attr
             
+        return meas_dict
 #==============================================================================
 # magnetic measurements
 #==============================================================================
