@@ -269,6 +269,9 @@ class Edi(object):
         self.Z.zerr[:, 0, 1] = np.array(data_dict['zxy.var'])
         self.Z.zerr[:, 1, 0] = np.array(data_dict['zyx.var'])
         self.Z.zerr[:, 1, 1] = np.array(data_dict['zyy.var'])
+        
+        # compute resistivity and phase
+        self.Z._compute_res_phase()
 
         
         ## fill tipper data if there it exists
@@ -293,6 +296,9 @@ class Edi(object):
             
             self.Tipper.tippererr[:, 0, 0] = np.array(data_dict['txvar.exp'])    
             self.Tipper.tippererr[:, 0, 1] = np.array(data_dict['tyvar.exp'])
+            
+            self.Tipper._compute_amp_phase()
+            self.Tipper._compute_mag_direction()
               
         else:
             print 'Could not find any Tipper data.'
@@ -455,11 +461,14 @@ class Edi(object):
         self.Z.zerr = z_err_arr
         self.Z.freq = freq_arr
         self.Z.rotation_angle = np.zeros_like(freq_arr)
+        self.Z._compute_res_phase()
         
         self.Tipper.tipper = t_arr
         self.Tipper.tippererr = t_err_arr
         self.Tipper.freq = freq_arr 
         self.Tipper.rotation_angle = np.zeros_like(freq_arr)
+        self.Tipper._compute_amp_phase()
+        self.Tipper._compute_mag_direction()
         
     def write_edi_file(self, new_edi_fn=None):
         """
@@ -1310,13 +1319,10 @@ class DefineMeasurement(object):
                 setattr(self, key, value)
         
             elif type(line) is dict:
-                try:
-                    key = 'meas_{0:02.0f}'.format(float(line['id']))
-                except KeyError:
-                    key = 'meas_{0:02}'.format(m_count)
-                if line['chtype'].lower().find('h') >= 0:
+                key = 'meas_{0:02}'.format(line['chtype'].lower())
+                if key.find('h') >= 0:
                     value = HMeasurement(**line)
-                elif line['chtype'].lower().find('e') >= 0:
+                elif key.find('e') >= 0:
                     value = EMeasurement(**line)
                 setattr(self, key, value)
                 
