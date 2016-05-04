@@ -1315,6 +1315,9 @@ class DefineMeasurement(object):
                 elif key in 'maxmeasurements':
                     key = 'maxmeas'
                     value = int(value)
+                elif key in 'maxruns':
+                    key = 'maxrun'
+                    value = int(value)
                 setattr(self, key, value)
         
             elif type(line) is dict:
@@ -1663,7 +1666,4 @@ def _validate_str_with_equals(input_string):
                 range(0, len(str_list), 2)]
     
     return line_list
-            
-    
-
     
