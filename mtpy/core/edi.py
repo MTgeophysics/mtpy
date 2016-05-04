@@ -1294,8 +1294,7 @@ class DefineMeasurement(object):
         if self.measurement_list is None and self.edi_fn is None:
             print 'Nothing to read, check edi_fn or measurement_list attributes'
             return
-       
-        m_count = 1    
+   
         for line in self.measurement_list:
             if type(line) is str:
                 line_list = line.split('=')
@@ -1319,10 +1318,10 @@ class DefineMeasurement(object):
                 setattr(self, key, value)
         
             elif type(line) is dict:
-                key = 'meas_{0:02}'.format(line['chtype'].lower())
-                if key.find('h') >= 0:
+                key = 'meas_{0}'.format(line['chtype'].lower())
+                if key[4:].find('h') >= 0:
                     value = HMeasurement(**line)
-                elif key.find('e') >= 0:
+                elif key[4:].find('e') >= 0:
                     value = EMeasurement(**line)
                 setattr(self, key, value)
                 
