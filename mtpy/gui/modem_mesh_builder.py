@@ -24,6 +24,7 @@ import matplotlib.colorbar as mcb
 import mtpy.imaging.mtcolors as mtcl
 from mtpy.gui.get_edi_files import Get_EDI_Files
 import sys
+import copy
 
 
 class MyStream(QtCore.QObject):
@@ -517,6 +518,8 @@ class MeshPlot(QtGui.QWidget):
         self.line_mode = 'add_h'
         self._ax = None
         
+        self.model_obj = None
+        
         self.setup_ui()
         
     def setup_ui(self):
@@ -605,8 +608,10 @@ class MeshPlot(QtGui.QWidget):
     def plot_mesh(self, model_obj, east_limits=None, north_limits=None, 
                   z_limits=None):
                       
+        self.model_obj = copy.deepcopy(model_obj)
+                      
         try:
-            model_obj.make_mesh()
+            self.model_obj.make_mesh()
         except AttributeError:
             QtGui.QMessageBox.warning(self,
                                       'Cannot Make Mesh -- Need EDI Files',
@@ -634,15 +639,15 @@ class MeshPlot(QtGui.QWidget):
         
         
         #plot station locations
-        plot_east = model_obj.station_locations['rel_east']/1000.
-        plot_north = model_obj.station_locations['rel_north']/1000.
+        station_plot_east = self.model_obj.station_locations['rel_east']/1000.
+        station_plot_north = self.model_obj.station_locations['rel_north']/1000.
         
-        self.plot_grid_east = model_obj.grid_east.copy()/1000.
-        self.plot_grid_north = model_obj.grid_north.copy()/1000.
-        self.plot_grid_z = model_obj.grid_z.copy()/1000.
+        self.plot_grid_east = self.model_obj.grid_east.copy()/1000.
+        self.plot_grid_north = self.model_obj.grid_north.copy()/1000.
+        self.plot_grid_z = self.model_obj.grid_z.copy()/1000.
         
-        self.ax_map.scatter(plot_east,
-                            plot_north, 
+        self.ax_map.scatter(station_plot_east,
+                            station_plot_north, 
                             marker=self.station_marker,
                             c=self.marker_color,
                             s=self.marker_size,
@@ -737,7 +742,7 @@ class MeshPlot(QtGui.QWidget):
                       
         
         #--> plot stations
-        self.ax_depth.scatter(plot_east,
+        self.ax_depth.scatter(station_plot_east,
                               [0]*model_obj.station_locations.shape[0],
                                 marker=self.station_marker,
                                 c=self.marker_color,
@@ -771,13 +776,27 @@ class MeshPlot(QtGui.QWidget):
             if self.line_mode == 'add_h' and self._ax == self.ax_map:
                 data_point = event.mouseevent
 
-                east = float(data_point.xdata)
                 north = float(data_point.ydata)
                 
-                print 'drawing line at {0:.2f}, {1:.2f}'.format(east, north)
+                self.model_obj.grid_north = np.append(self.model_obj.grid_north, north)
+                self.model_obj.grid_north.sort()
                 self.ax_map.plot([self.plot_grid_east.min(), 
                                   self.plot_grid_east.max()],
                                  [north, north],
+                                 lw=self.line_width,
+                                 color='r',
+                                 picker=3)
+                                 
+            elif self.line_mode == 'add_v' and self._ax == self.ax_map:
+                data_point = event.mouseevent
+
+                east = float(data_point.xdata)
+                
+                self.model_obj.grid_east = np.append(self.model_obj.grid_east, east)
+                self.model_obj.grid_east.sort()
+                self.ax_map.plot([east,east],
+                                 [self.plot_grid_north.min(),
+                                  self.plot_grid_north.max()],
                                  lw=self.line_width,
                                  color='r',
                                  picker=3)
