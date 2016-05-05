@@ -1311,13 +1311,22 @@ class DefineMeasurement(object):
                     value = MTft._assert_position_format('elev', value)
                 elif key in 'maxchannels':
                     key = 'maxchan'
-                    value = int(value)
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        value = 0
                 elif key in 'maxmeasurements':
                     key = 'maxmeas'
-                    value = int(value)
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        value = 0
                 elif key in 'maxruns':
                     key = 'maxrun'
-                    value = int(value)
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        value = 0
                 setattr(self, key, value)
         
             elif type(line) is dict:
