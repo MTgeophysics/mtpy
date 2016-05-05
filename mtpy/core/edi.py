@@ -249,8 +249,8 @@ class Edi(object):
         
         ## fill impedance tensor
         self.Z.freq = freq_arr.copy()
-        self.Z.z = np.zeros((self.Data_sect.nfreq, 2, 2), dtype=np.complex)
-        self.Z.zerr = np.zeros((self.Data_sect.nfreq, 2, 2), dtype=np.float)
+        self.Z.z = np.zeros((freq_arr.size, 2, 2), dtype=np.complex)
+        self.Z.zerr = np.zeros((freq_arr.size, 2, 2), dtype=np.float)
         try:
             self.Z.rotation_angle = data_dict['zrot']
         except KeyError:
@@ -275,9 +275,9 @@ class Edi(object):
 
         
         ## fill tipper data if there it exists
-        self.Tipper.tipper = np.zeros((self.Data_sect.nfreq, 1, 2), 
+        self.Tipper.tipper = np.zeros((freq_arr.size, 1, 2), 
                                       dtype=np.complex) 
-        self.Tipper.tippererr = np.zeros((self.Data_sect.nfreq, 1, 2),
+        self.Tipper.tippererr = np.zeros((freq_arr.size, 1, 2),
                                          dtype=np.float) 
         self.Tipper.freq = freq_arr.copy()
         try:
