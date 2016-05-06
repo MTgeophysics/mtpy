@@ -802,14 +802,13 @@ class Data(object):
             self.rotation_angle = rotation_angle
         
         #be sure to fill in data array
-        if fill:
+        if fill is True:
             self._fill_data_array()
+            # get relative station locations in grid coordinates
+            self.get_relative_station_locations()
         
         #reset the header string to be informational
         self._set_header_string()
-        
-        # get relative station locations in grid coordinates
-        self.get_relative_station_locations()
 
         dlines = []        
         for inv_mode in self.inv_mode_dict[self.inv_mode]:
@@ -2166,27 +2165,6 @@ class Model(object):
 
         self.res_model = np.zeros((n_north, n_east, n_z))
         
-        #put the grids into coordinates relative to the center of the grid
-        self.grid_north = self.nodes_north.copy()
-        self.grid_north[:int(n_north/2)] =\
-                        -np.array([self.nodes_north[ii:int(n_north/2)].sum() 
-                                   for ii in range(int(n_north/2))])
-        self.grid_north[int(n_north/2):] = \
-                        np.array([self.nodes_north[int(n_north/2):ii+1].sum() 
-                                 for ii in range(int(n_north/2), n_north)])-\
-                                 self.nodes_north[int(n_north/2)]
-                                
-        self.grid_east = self.nodes_east.copy()
-        self.grid_east[:int(n_east/2)] = \
-                            -np.array([self.nodes_east[ii:int(n_east/2)].sum() 
-                                       for ii in range(int(n_east/2))])
-        self.grid_east[int(n_east/2):] = \
-                            np.array([self.nodes_east[int(n_east/2):ii+1].sum() 
-                                     for ii in range(int(n_east/2),n_east)])-\
-                                     self.nodes_east[int(n_east/2)]
-                                
-        self.grid_z = np.array([self.nodes_z[:ii+1].sum() for ii in range(n_z)])
-        
         #get model
         count_z = 0
         line_index= 6 
@@ -2230,6 +2208,22 @@ class Model(object):
             self.res_model = np.e**self.res_model
         elif log_yn.lower() == 'log' or log_yn.lower() == 'log10':
             self.res_model = 10**self.res_model
+            
+        #put the grids into coordinates relative to the center of the grid
+        self.grid_north = np.array([self.nodes_north[0:ii].sum() 
+                                   for ii in range(n_north)])
+        self.grid_east = np.array([self.nodes_east[0:ii].sum() 
+                                   for ii in range(n_east)])
+                                
+        self.grid_z = np.array([self.nodes_z[:ii+1].sum() 
+                                for ii in range(n_z)])
+        
+        # center the grids
+        if self.grid_center is not None:
+            self.grid_north += self.grid_center[0]
+            self.grid_east += self.grid_center[1]
+            self.grid_z += self.grid_center[2]
+            
             
     def read_ws_model_file(self, ws_model_fn):
         """
@@ -3073,7 +3067,8 @@ def change_data_elevation(data_fn, model_fn, new_data_fn=None, res_air=1e12):
         
     d_obj.write_data_file(save_path=os.path.dirname(new_dfn), 
                           fn_basename=os.path.basename(new_dfn),
-                          compute_error=False)
+                          compute_error=False,
+                          fill=False)
          
     return new_dfn
 
@@ -7350,15 +7345,16 @@ class Plot_RMS_Maps(object):
                                     self.residual.data_array['lat'].min())/5, 2)
                                     
             if x_locator > y_locator:
-                tick_locator = x_locator
+                self.tick_locator = x_locator
             
             elif x_locator < y_locator:
-                tick_locator = y_locator
+                self.tick_locator = y_locator
+                
             
         if self.pad_x is None:
-            self.pad_x = tick_locator/2
+            self.pad_x = self.tick_locator/2
         if self.pad_y is None:
-            self.pad_y = tick_locator/2
+            self.pad_y = self.tick_locator/2
         
         
         plt.rcParams['font.size'] = self.font_size
@@ -7454,8 +7450,8 @@ class Plot_RMS_Maps(object):
             ax.set_ylim(self.residual.data_array['lat'].min()-self.pad_y, 
                         self.residual.data_array['lat'].max()+self.pad_y)
             
-            ax.xaxis.set_major_locator(MultipleLocator(tick_locator))
-            ax.yaxis.set_major_locator(MultipleLocator(tick_locator))
+            ax.xaxis.set_major_locator(MultipleLocator(self.tick_locator))
+            ax.yaxis.set_major_locator(MultipleLocator(self.tick_locator))
             ax.xaxis.set_major_formatter(FormatStrFormatter('%2.2f'))
             ax.yaxis.set_major_formatter(FormatStrFormatter('%2.2f'))
             

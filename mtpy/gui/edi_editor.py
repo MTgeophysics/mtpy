@@ -1611,6 +1611,8 @@ class EDITextEditor(QtGui.QWidget):
         
         self.setWindowTitle("EDI Text Editor")
         
+
+                
         # header label font
         header_font = QtGui.QFont()
         header_font.setBold = True
@@ -2047,6 +2049,17 @@ class EDITextEditor(QtGui.QWidget):
         
         self.show()
         
+        #center the window, needs to go after show()
+        self.center_window()
+
+    def center_window(self):
+        screen_center = QtGui.QDesktopWidget().availableGeometry().center()
+        widget_size = self.frameGeometry()
+        
+        widget_size.moveCenter(screen_center)
+        
+        self.move(widget_size.topLeft())
+
     def header_set_acqby(self):
         self.edi_obj.Header.acqby = str(self.header_acqby_edit.text())
         self.header_acqby_edit.setText(self.edi_obj.Header.acqby)
@@ -2204,6 +2217,7 @@ class EDITextEditor(QtGui.QWidget):
 
     def update_metadata(self):
         self.metadata_updated.emit()
+        self.close()
         
 #==============================================================================
 # Def Main
