@@ -811,20 +811,20 @@ class Ui_MainWindow(object):
                                           **kw_yy)
             if self.plot_tipper == True:
                 rertx = mtplottools.plot_errorbar(axtxr, 
-                             period,
+                             period[ntx],
                              resp_t_obj.tipper[ntx, 0, 0].real,
                              **kw_xx)
                 rerty = mtplottools.plot_errorbar(axtyr, 
-                             period,
+                             period[nty],
                              resp_t_obj.tipper[nty, 0, 1].real,
                              **kw_yy)
                                          
                 rertx = mtplottools.plot_errorbar(axtxi, 
-                             period,
+                             period[ntx],
                              resp_t_obj.tipper[ntx, 0, 0].imag,
                              **kw_xx)
                 rerty = mtplottools.plot_errorbar(axtyi, 
-                             period,
+                             period[nty],
                              resp_t_obj.tipper[nty, 0, 1].imag,
                              **kw_yy)
                              
