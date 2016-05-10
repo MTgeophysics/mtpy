@@ -1041,6 +1041,10 @@ class Data(object):
                 header_list.append(dline.strip())
             elif dline.find('>') == 0:
                 metadata_list.append(dline[1:].strip())
+                if dline.lower().find('ohm') > 0:
+                    self.units = 'ohm'
+                if dline.lower().find('mv') > 0:
+                    self.units =' [mV/km]/[nT]'
                 if dline.lower().find('vertical') > 0:
                     read_tipper = True
                     read_impedance = False
@@ -1056,10 +1060,14 @@ class Data(object):
                 dline_list = dline.strip().split()
                 if len(dline_list) == 11:
                     for ii, d_str in enumerate(dline_list):
-                        try:
-                            dline_list[ii] = float(d_str.strip())
-                        except ValueError:
-                            pass
+                        if ii != 1:
+                            try:
+                                dline_list[ii] = float(d_str.strip())
+                            except ValueError:
+                                pass
+                        # be sure the station name is a string
+                        else:
+                            dline_list[ii] = d_str.strip()
                     period_list.append(dline_list[0])
                     station_list.append(dline_list[1])
                     
@@ -1127,9 +1135,14 @@ class Data(object):
             #fill in the impedance tensor with appropriate values
             if dd[7].find('Z') == 0:
                 if self.wave_sign_impedance == '+':
-                    data_dict[dd[1]].Z.z[p_index, ii, jj] = dd[8]+1j*dd[9]
+                    z_value = dd[8]+1j*dd[9]
                 elif self.wave_sign_impedance == '-':
-                    data_dict[dd[1]].Z.z[p_index, ii, jj] = dd[8]-1j*dd[9]
+                    z_value = dd[8]-1j*dd[9]
+                    
+                if self.units == 'ohm':
+                    z_value *= 796.
+                    
+                data_dict[dd[1]].Z.z[p_index, ii, jj] = z_value
                 data_dict[dd[1]].Z.zerr[p_index, ii, jj] = dd[10]
             #fill in tipper with appropriate values
             elif dd[7].find('T') == 0:
