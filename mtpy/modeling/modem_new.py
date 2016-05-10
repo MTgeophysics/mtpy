@@ -853,8 +853,14 @@ class Data(object):
                                 nor = '{0:> 12.3f}'.format(self.data_array[ss]['rel_north'])
                                 ele = '{0:> 12.3f}'.format(self.data_array[ss]['elev'])
                                 com = '{0:>4}'.format(comp.upper())
-                                rea = '{0:> 14.6e}'.format(zz.real)
-                                ima = '{0:> 14.6e}'.format(zz.imag)
+                                if self.units == 'ohm':
+                                    rea = '{0:> 14.6e}'.format(zz.real/796.)
+                                    ima = '{0:> 14.6e}'.format(zz.imag/796.)
+                                else:
+                                    rea = '{0:> 14.6e}'.format(zz.real)
+                                    ima = '{0:> 14.6e}'.format(zz.imag)
+                                
+
                             elif self.formatting == '2':
                                 per = '{0:<14.6e}'.format(self.period_list[ff])
                                 sta = '{0:<10}'.format(self.data_array[ss]['station'])
@@ -864,13 +870,18 @@ class Data(object):
                                 nor = '{0:> 15.3f}'.format(self.data_array[ss]['rel_north'])
                                 ele = '{0:> 10.3f}'.format(self.data_array[ss]['elev'])
                                 com = '{0:>12}'.format(comp.upper())
-                                rea = '{0:> 17.6e}'.format(zz.real)
-                                ima = '{0:> 17.6e}'.format(zz.imag)                            
+                                if self.units == 'ohm':
+                                    rea = '{0:> 17.6e}'.format(zz.real/796.)
+                                    ima = '{0:> 17.6e}'.format(zz.imag/796.)
+                                else:
+                                    rea = '{0:> 17.6e}'.format(zz.real)
+                                    ima = '{0:> 17.6e}'.format(zz.imag)
                             if compute_error:
                                 #compute relative error
                                 if comp.find('t') == 0:
                                     if 'floor' in self.error_type:
-                                        abs_err = max(self.error_tipper,self.data_array[ss]['tip_err'][ff,0,z_ii])
+                                        abs_err = max(self.error_tipper, 
+                                                      self.data_array[ss]['tip_err'][ff,0,z_ii])
                                     else:
                                         abs_err = self.error_tipper
                                 elif comp.find('z') == 0:
@@ -900,10 +911,14 @@ class Data(object):
                                     abs_err = 1e3
                                     print ('error at {0} is 0 for period {1}'.format(
                                             sta, per)+'set to 1e3')
+                                    if self.units == 'ohm':
+                                        abs_err /= 796.
 
                             else: 
                                 abs_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj].real 
-
+                                if c_key.find('z') >= 0 and self.units == 'ohm':
+                                    abs_err /= 796.
+                                    
                             abs_err = '{0:> 14.6e}'.format(abs(abs_err))
                             #make sure that x==north, y==east, z==+down                            
                             dline = ''.join([per, sta, lat, lon, nor, eas, ele, 
@@ -1134,6 +1149,7 @@ class Data(object):
                 tf_dict[dd[1]] = True
             #fill in the impedance tensor with appropriate values
             if dd[7].find('Z') == 0:
+                z_err = dd[10]
                 if self.wave_sign_impedance == '+':
                     z_value = dd[8]+1j*dd[9]
                 elif self.wave_sign_impedance == '-':
@@ -1141,9 +1157,10 @@ class Data(object):
                     
                 if self.units == 'ohm':
                     z_value *= 796.
+                    z_err *= 796.
                     
                 data_dict[dd[1]].Z.z[p_index, ii, jj] = z_value
-                data_dict[dd[1]].Z.zerr[p_index, ii, jj] = dd[10]
+                data_dict[dd[1]].Z.zerr[p_index, ii, jj] = z_err
             #fill in tipper with appropriate values
             elif dd[7].find('T') == 0:
                 if self.wave_sign_tipper == '+':

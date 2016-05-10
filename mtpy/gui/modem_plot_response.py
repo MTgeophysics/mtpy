@@ -315,7 +315,8 @@ class Ui_MainWindow(object):
         
         self.modem_data.write_data_file(save_path=os.path.dirname(save_fn),
                                         fn_basename=os.path.basename(save_fn),
-                                        compute_error=False)
+                                        compute_error=False,
+                                        fill=False)
         
     def get_station(self, widget_item):
         """
@@ -886,18 +887,25 @@ class Ui_MainWindow(object):
         data_period = data_point.get_xdata()[event.ind]
         data_value = data_point.get_ydata()[event.ind]
         p_index = np.where(self.modem_data.period_list==data_period)[0][0]
+        s_index = np.where(self.modem_data.data_array['station']==self.station)[0][0]
         
         if event.mouseevent.button == 1:
             # mask the point in the data mt_dict
             if len(self.ax_list) == 8:
+                self.modem_data.data_array[s_index]['z'][p_index, 
+                                self._comp_index_x, self._comp_index_y] = 0+0j
                 self.modem_data.mt_dict[self.station].Z.z[p_index, 
                                 self._comp_index_x, self._comp_index_y] = 0+0j
             elif len(self.ax_list) == 12:
                 if self._ax_index == 4 or self._ax_index == 5 or \
                    self._ax_index == 10 or self._ax_index == 11:
+                    self.modem_data.data_array[s_index]['tip'][p_index, 
+                                self._comp_index_x, self._comp_index_y] = 0+0j
                     self.modem_data.mt_dict[self.station].Tipper.tipper[p_index, 
                                 self._comp_index_x, self._comp_index_y] = 0+0j
                 else:
+                    self.modem_data.data_array[s_index]['z'][p_index, 
+                                self._comp_index_x, self._comp_index_y] = 0+0j
                     self.modem_data.mt_dict[self.station].Z.z[p_index, 
                                 self._comp_index_x, self._comp_index_y] = 0+0j
             # plot the point as masked
