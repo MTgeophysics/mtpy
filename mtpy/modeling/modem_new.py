@@ -2041,9 +2041,9 @@ class Model(object):
                 
         if self.res_model is None or type(self.res_model) is float or\
             type(self.res_model) is int:
-            res_model = np.zeros((self.grid_north.shape[0],
-                                  self.grid_east.shape[0],
-                                  self.grid_z.shape[0]))
+            res_model = np.zeros((self.nodes_north.shape[0],
+                                  self.nodes_east.shape[0],
+                                  self.nodes_z.shape[0]))
                                           
             if self.res_model is None:
                 res_model[:, :, :] = 100.0
