@@ -377,9 +377,11 @@ class MeshWidget(QtGui.QWidget):
         sv_basename = os.path.basename(save_fn)
 
         # be sure to change the grid into nodes
-        east_nodes = self._grid_to_nodes(self.model_obj.grid_east)       
-        north_nodes = self._grid_to_nodes(self.model_obj.grid_north)       
-        z_nodes = self._grid_to_nodes(self.model_obj.grid_z)       
+        east_nodes = self._grid_to_nodes(self.mpl_widget.model_obj.grid_east)       
+        north_nodes = self._grid_to_nodes(self.mpl_widget.model_obj.grid_north)       
+        z_nodes = self._grid_to_nodes(self.mpl_widget.model_obj.grid_z)  
+        
+        print east_nodes
         
         self.model_obj.write_model_file(save_path=sv_path,
                                         model_fn_basename=sv_basename,
@@ -486,12 +488,26 @@ class MeshWidget(QtGui.QWidget):
         self.mpl_widget.plot_mesh(self.model_obj)
 
     def save_mesh(self):
-        fn = str(QtGui.QFileDialog.getSaveFileName(self,
-                                    caption='Choose Model File',
-                                    directory=os.getcwd()))
+        fn_dialog = QtGui.QFileDialog()
+        save_fn = str(fn_dialog.getSaveFileName(
+                        caption='Choose ModEM model file',
+                        filter='*.rho'))
                                     
-        self.model_obj.write_model_file(save_path=os.path.dirname(fn),
-                                        model_fn_basename=os.path.basename(fn))
+        sv_path = os.path.dirname(save_fn)
+        sv_basename = os.path.basename(save_fn)
+
+        # be sure to change the grid into nodes
+        east_nodes = self._grid_to_nodes(self.mpl_widget.model_obj.grid_east)       
+        north_nodes = self._grid_to_nodes(self.mpl_widget.model_obj.grid_north)       
+        z_nodes = self._grid_to_nodes(self.mpl_widget.model_obj.grid_z)  
+        
+        print east_nodes
+        
+        self.model_obj.write_model_file(save_path=sv_path,
+                                        model_fn_basename=sv_basename,
+                                        nodes_east=east_nodes,
+                                        nodes_north=north_nodes,
+                                        nodes_z=z_nodes)
                                         
     def set_rho(self):
         if self.model_obj.res_model is None:
@@ -795,13 +811,16 @@ class MeshPlot(QtGui.QWidget):
             if self.line_mode == 'add_h' and self._ax == self.ax_map:
                 data_point = event.mouseevent
 
-                north = float(data_point.ydata)
+                north = np.round(float(data_point.ydata)*1000., -2)
                 
-                self.model_obj.grid_north = np.append(self.model_obj.grid_north, north)
+                print north
+                self.model_obj.grid_north = np.append(self.model_obj.grid_north,
+                                                      north)
                 self.model_obj.grid_north.sort()
+                print self.model_obj.grid_north
                 self.ax_map.plot([self.plot_grid_east.min(), 
                                   self.plot_grid_east.max()],
-                                 [north, north],
+                                 [north/1000., north/1000.],
                                  lw=self.line_width,
                                  color='r',
                                  picker=3)
@@ -809,11 +828,12 @@ class MeshPlot(QtGui.QWidget):
             elif self.line_mode == 'add_v' and self._ax == self.ax_map:
                 data_point = event.mouseevent
 
-                east = float(data_point.xdata)
+                east = np.round(float(data_point.xdata)*1000, -2)
                 
-                self.model_obj.grid_east = np.append(self.model_obj.grid_east, east)
+                self.model_obj.grid_east = np.append(self.model_obj.grid_east,
+                                                     east)
                 self.model_obj.grid_east.sort()
-                self.ax_map.plot([east,east],
+                self.ax_map.plot([east/1000., east/1000.],
                                  [self.plot_grid_north.min(),
                                   self.plot_grid_north.max()],
                                  lw=self.line_width,
