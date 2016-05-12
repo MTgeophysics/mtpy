@@ -375,8 +375,27 @@ class MeshWidget(QtGui.QWidget):
                                     
         sv_path = os.path.dirname(save_fn)
         sv_basename = os.path.basename(save_fn)
+
+        # be sure to change the grid into nodes
+        east_nodes = self._grid_to_nodes(self.model_obj.grid_east)       
+        north_nodes = self._grid_to_nodes(self.model_obj.grid_north)       
+        z_nodes = self._grid_to_nodes(self.model_obj.grid_z)       
+        
         self.model_obj.write_model_file(save_path=sv_path,
-                                          model_fn_basename=sv_basename)
+                                        model_fn_basename=sv_basename,
+                                        nodes_east=east_nodes,
+                                        nodes_north=north_nodes,
+                                        nodes_z=z_nodes)
+                                        
+    def _grid_to_nodes(self, grid_array):
+        nodes_array = grid_array.copy()    
+        nx = grid_array.shape[0]
+        nodes_array[:nx/2] = np.array([abs(grid_array[ii]-grid_array[ii+1]) 
+                                          for ii in range(int(nx/2))])
+        nodes_array[nx/2:] = np.array([abs(grid_array[ii]-grid_array[ii+1]) 
+                                          for ii in range(int(nx/2)-1, nx-1)])
+        return nodes_array
+        
         
         
     def locate_station(self):
