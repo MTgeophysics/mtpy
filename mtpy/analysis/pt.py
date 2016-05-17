@@ -982,39 +982,46 @@ class ResidualPhaseTensor():
 
         #--> compute residual phase tensor
         if pt1 is not None and pt2 is not None:
-            try:
-                if pt1.dtype not in [float,int]:
-                    raise
-                if pt2.dtype not in [float,int]:
-                    raise
-                if not pt1.shape == pt2.shape:
-                    raise
-                if (not len(pt1.shape) in [2,3]) :
-                    raise
+            if pt1.dtype not in [float,int]:
+                raise ValueError
+            if pt2.dtype not in [float,int]:
+                raise ValueError
+            if not pt1.shape == pt2.shape:
+                raise MTex.MTpyError_PT('PT arrays not the same shape')
+            if (not len(pt1.shape) in [2,3]) :
+                raise MTex.MTpyError_PT('PT array is not a valid shape') 
 
-                if len(pt1.shape) == 3:
-                    self.rpt = np.zeros_like(pt1)
+            if len(pt1.shape) == 3:
+                self.rpt = np.zeros_like(pt1)
 
-                    for idx in range(len(pt1)):
+                for idx in range(len(pt1)):
+                    try:
                         self.rpt[idx] = np.eye(2)-np.dot(np.matrix(pt1[idx]).I,
                                                          np.matrix(pt2[idx]))
-                 
-                    self._pt1 = pt1  
-                    self._pt2 = pt2  
+                    except np.linalg.LinAlgError:
+                        print 'Singular matrix at index {0}, frequency {1:.5g}'.format(idx, self.freq[idx])
+                        print 'Setting residual PT to zeros. '                       
+                        self.rpt[idx] = np.zeros((2, 2))
+             
+                self._pt1 = pt1  
+                self._pt2 = pt2  
 
-                else:
-                    self.rpt = np.zeros((1,2,2)) 
-                    self.rpt[0] = np.eye(2)-np.dot(np.matrix(pt1).I, 
-                                                   np.matrix(pt2))
-                    
-                    self._pt1 =  np.zeros((1,2,2))  
-                    self._pt1[0] = pt1 
-                    self._pt2 =  np.zeros((1,2,2))  
-                    self._pt2[0] = pt2 
+            else:
+                self.rpt = np.zeros((1,2,2)) 
+                try:
+                    self.rpt[idx] = np.eye(2)-np.dot(np.matrix(pt1).I,
+                                                     np.matrix(pt2))
+                except np.linalg.LinAlgError:
+                    print 'Singular matrix at frequency {0:.5g}'.format(self.freq)
+                    print 'Setting residual PT to zeros. '
+                self.rpt[0] = np.eye(2)-np.dot(np.matrix(pt1).I, 
+                                               np.matrix(pt2))
+                
+                self._pt1 =  np.zeros((1,2,2))  
+                self._pt1[0] = pt1 
+                self._pt2 =  np.zeros((1,2,2))  
+                self._pt2[0] = pt2 
 
-            except:
-                raise MTex.MTpyError_PT('ERROR - both PhaseTensor objects must'
-                                  ' contain valid PT arrays of the same shape')
 
         else:
             print  ('Could not determine ResPT - both PhaseTensor objects must'

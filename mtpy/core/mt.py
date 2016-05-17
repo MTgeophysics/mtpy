@@ -500,7 +500,7 @@ class MT(object):
                 self.Tipper.tippererr = self.Tipper.tippererr.copy()[::-1]
                 self.Tipper.freq = self.Tipper.freq.copy()[::-1]
                 
-    def remove_distortion(self):
+    def remove_distortion(self, num_freq=None):
         """
         remove distortion following Bibby et al. [2005].
         
@@ -515,7 +515,8 @@ class MT(object):
             >>>                    new_Z=new_z)
         """
         dummy_z_obj = MTz.copy.deepcopy(self.Z)
-        D, new_z_object = MTdistortion.remove_distortion(z_object=dummy_z_obj)
+        D, new_z_object = MTdistortion.remove_distortion(z_object=dummy_z_obj,
+                                                         num_freq=num_freq)
         
         return D, new_z_object
         

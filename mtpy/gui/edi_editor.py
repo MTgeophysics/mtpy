@@ -173,6 +173,7 @@ class PlotWidget(QtGui.QWidget):
         self.interp_period_min = .001
         self.interp_period_max = 1000.
         self.interp_period_num = 24
+        self.num_freq = None
         
         self.setup_ui()
         
@@ -267,6 +268,11 @@ class PlotWidget(QtGui.QWidget):
         self.remove_distortion_button.setText("Remove Distortion [Bibby et al., 2005]")
         self.remove_distortion_button.pressed.connect(self.remove_distortion_apply)
         
+        self.remove_distortion_num_freq_label = QtGui.QLabel("Number of Frequencies")
+        self.remove_distortion_num_freq_edit = QtGui.QLineEdit()
+        if self.mt_obj.Z.freq is not None:
+            self.remove_distortion_num_freq_edit.setText('{0:.0f}'.format(self.mt_obj.Z.freq.size))
+        self.remove_distortion_num_freq_edit.editingFinished.connect(self.remove_distortion_set_num_freq)
         ## rotate data
         self.rotate_data_label = QtGui.QLabel("Rotate")
         self.rotate_data_label.setFont(header_font)
@@ -408,6 +414,10 @@ class PlotWidget(QtGui.QWidget):
         interp_layout.addWidget(self.interp_num_label, 3, 0)
         interp_layout.addWidget(self.interp_num_edit, 3, 1)
         
+        dis_hbox = QtGui.QHBoxLayout()
+        dis_hbox.addWidget(self.remove_distortion_num_freq_label)
+        dis_hbox.addWidget(self.remove_distortion_num_freq_edit)
+        
         ## left panel
         info_layout = QtGui.QVBoxLayout()
         info_layout.addLayout(meta_layout)
@@ -415,6 +425,7 @@ class PlotWidget(QtGui.QWidget):
         info_layout.addWidget(h_line_01)
         info_layout.addWidget(self.remove_distortion_label)
         info_layout.addWidget(self.remove_distortion_button)
+        info_layout.addLayout(dis_hbox)
         info_layout.addWidget(h_line_02)
         info_layout.addLayout(ss_layout)
         info_layout.addWidget(h_line_03)
@@ -508,6 +519,17 @@ class PlotWidget(QtGui.QWidget):
         self.mt_obj.Z = new_z_obj
         self.redraw_plot()
         
+    def remove_distortion_set_num_freq(self):
+        """
+        set number of frequencies to remove distortion from
+        """
+        
+        try:
+            self.num_freq = int(str(self.remove_distortion_num_freq_edit.text()))
+            self.remove_distortion_num_freq_edit.setText('{0:.0f}'.format(self.num_freq))
+        except ValueError:
+            self.num_freq = None
+        
     def remove_distortion_apply(self):
         """
         remove distortion from the mt repsonse
@@ -515,12 +537,12 @@ class PlotWidget(QtGui.QWidget):
         if self._edited_dist == False and self._edited_rot == False and \
            self._edited_mask == False:
             # remove distortion from original data
-            distortion, new_z_object = self._mt_obj.remove_distortion()
+            distortion, new_z_object = self._mt_obj.remove_distortion(num_freq=self.num_freq)
             print '\n    - Removed distortion from original data'
              
         else:
             # remove distortion from edited data
-            distortion, new_z_object = self.mt_obj.remove_distortion()
+            distortion, new_z_object = self.mt_obj.remove_distortion(num_freq=self.num_freq)
             print '\n    - Removed distortion from edited data'
 
         self._edited_dist = True
