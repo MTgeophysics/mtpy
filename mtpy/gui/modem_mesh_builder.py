@@ -496,18 +496,19 @@ class MeshWidget(QtGui.QWidget):
         sv_path = os.path.dirname(save_fn)
         sv_basename = os.path.basename(save_fn)
 
+        print self.model_obj.nodes_east.shape
+        print self.model_obj.nodes_north.shape
         # be sure to change the grid into nodes
-        east_nodes = self._grid_to_nodes(self.mpl_widget.model_obj.grid_east)       
-        north_nodes = self._grid_to_nodes(self.mpl_widget.model_obj.grid_north)       
-        z_nodes = self._grid_to_nodes(self.mpl_widget.model_obj.grid_z)  
+        self.model_obj.nodes_east = self._grid_to_nodes(self.mpl_widget.model_obj.grid_east)       
+        self.model_obj.nodes_north = self._grid_to_nodes(self.mpl_widget.model_obj.grid_north)       
+        self.model_obj.nodes_z = self._grid_to_nodes(self.mpl_widget.model_obj.grid_z)  
+        print self.model_obj.nodes_east.shape
+        print self.model_obj.nodes_north.shape
         
-        print east_nodes
+        self.set_rho()
         
         self.model_obj.write_model_file(save_path=sv_path,
-                                        model_fn_basename=sv_basename,
-                                        nodes_east=east_nodes,
-                                        nodes_north=north_nodes,
-                                        nodes_z=z_nodes)
+                                        model_fn_basename=sv_basename)
                                         
     def set_rho(self):
         if self.model_obj.res_model is None:
@@ -817,7 +818,6 @@ class MeshPlot(QtGui.QWidget):
                 self.model_obj.grid_north = np.append(self.model_obj.grid_north,
                                                       north)
                 self.model_obj.grid_north.sort()
-                print self.model_obj.grid_north
                 self.ax_map.plot([self.plot_grid_east.min(), 
                                   self.plot_grid_east.max()],
                                  [north/1000., north/1000.],
@@ -839,6 +839,20 @@ class MeshPlot(QtGui.QWidget):
                                  lw=self.line_width,
                                  color='r',
                                  picker=3)
+                                 
+            elif self.line_mode == 'del_h' and self._ax == self.ax_map:
+                data_point = event.artist
+                east = data_point.get_xdata()[event.ind]*1000.
+                north = data_point.get_ydata()[event.ind]*1000.
+                
+                new_ii = np.where(self.model_obj.grid_east != east)
+                self.model_obj.grid_east = self.model_obj.grid_east[new_ii]
+                self.ax_map.plot([self.plot_grid_east.min(), 
+                                  self.plot_grid_east.max()],
+                                 [north/1000., north/1000.],
+                                 lw=self.line_width,
+                                 color='w',
+                                 picker=3) 
         
         self._ax.figure.canvas.draw()
 
