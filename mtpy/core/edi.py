@@ -456,6 +456,13 @@ class Edi(object):
                     t_err_arr[kk, 0, 1] = np.sqrt(scaling*s_arr[cc.hx, cc.hx].real)
                     
         
+        # check for nans
+        z_err_arr = np.nan_to_num(z_err_arr)
+        t_err_arr = np.nan_to_num(t_err_arr)
+        
+        z_err_arr[np.where(z_err_arr==0.0)] = 1.0
+        t_err_arr[np.where(t_err_arr==0.0)] = 1.0
+        
         # be sure to fill attributes
         self.Z.z = z_arr
         self.Z.zerr = z_err_arr
@@ -1628,11 +1635,10 @@ class DataSection(object):
         if data_sect_list is not None:
             self.read_data_sect(data_sect_list)
             
-        if self.data_type == 'spectra':
-            data_sect_lines = ['\n>=spectrasect\n'.upper()]
+        self.data_type = 'z'
+        print 'Writing out data a impedances'
             
-        if self.data_type == 'z':
-            data_sect_lines = ['\n>=mtsect\n'.upper()]
+        data_sect_lines = ['\n>=mtsect\n'.upper()]
         for key in self._kw_list:
             data_sect_lines.append('{0}{1}={2}\n'.format(tab, 
                                                          key.upper(), 

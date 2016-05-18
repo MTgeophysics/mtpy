@@ -99,6 +99,11 @@ def find_distortion(z_object, g = 'det', num_freq=None, lo_dims = None):
     
     rot_mat = np.matrix([[0, -1], [1, 0]])
     for idx, dim in enumerate(dim_arr):
+        if np.any(z_obj.z[idx] == 0.0+0.0j) == True:
+            dis[idx] = np.identity(2)
+            print 'Found a zero in z at {0}, skipping'.format(idx)
+            continue
+
         if dim == 1:
     
             if g in ['01', '10']:
@@ -228,11 +233,12 @@ def find_distortion(z_object, g = 'det', num_freq=None, lo_dims = None):
     
     nonzero_idx = np.array(list(set(np.nonzero(dis)[0])))
     
-    dis_avg, dis_avg_err = np.average(dis[nonzero_idx], 
+    dis_avg, weights_sum = np.average(dis[nonzero_idx], 
                                       axis=0, 
                                       weights=(1./dis_err[nonzero_idx])**2, 
                                       returned=True)
 
+    dis_avg_err = np.sqrt(1./weights_sum)
 
     return dis_avg, dis_avg_err
 
@@ -306,18 +312,24 @@ def remove_distortion(z_array=None, z_object=None, num_freq=None):
     
     elif z_object is not None:
         z_obj = z_object
+        
+    zero_idx = np.where(z_obj.z == 0+0j)
 
     #0. generate a Z object
     #1. find distortion via function above, 
     #2. remove distortion via method of z object
 
-    dis, diserr = find_distortion(z_obj, num_freq=num_freq)
+    dis, dis_err = find_distortion(z_obj, num_freq=num_freq)
 
     try:
         distortion_tensor, zd, zd_err = z_obj.no_distortion(dis, 
-                                                distortion_err_tensor=diserr)
+                                                distortion_err_tensor=dis_err)
+                                                
+        zd_err = np.nan_to_num(zd_err)
+        zd_err[np.where(zd_err == 0.0)] = 1.0
         distortion_z_obj = z_obj
         distortion_z_obj.z = zd
+        distortion_z_obj.z[zero_idx] = 0.0+0.0j
         distortion_z_obj.zerr = zd_err 
 
         return distortion_tensor, distortion_z_obj

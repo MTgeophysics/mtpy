@@ -22,6 +22,8 @@ import copy
 import sys
 import os
 import mtpy.imaging.plotstrike2d as plotstrike2d
+import mtpy.analysis.staticshift as staticshift
+import matplotlib.widgets as mplwidgets
 
 #==============================================================================
 # UI
@@ -131,6 +133,10 @@ class EDI_Editor_Window(QtGui.QMainWindow):
         
     def update_plot(self):
         
+        self.mask_kw = {'color' : self.plot_properties.mask_color,
+                        'marker' : self.plot_properties.mask_marker,
+                        'ms' : self.plot_properties.mask_ms,
+                        'mew' : self.plot_properties.mask_mew}
         self.plot_widget.redraw_plot()
     
     def edit_metadata(self):
@@ -168,12 +174,20 @@ class PlotWidget(QtGui.QWidget):
         self._edited_dist = False
         self._edited_rot = False
         self._edited_mask = False
+        self._ax = None
         self.dir_path = os.getcwd()
+        self.edits_mode = 'both'
         
         self.interp_period_min = .001
         self.interp_period_max = 1000.
         self.interp_period_num = 24
         self.num_freq = None
+        self.static_shift_med_rad = 2000.
+        self.static_shift_med_num_freq = 24
+        self.mask_kw = {'color' : self.plot_properties.mask_color,
+                        'marker' : self.plot_properties.mask_marker,
+                        'ms' : self.plot_properties.mask_ms,
+                        'mew' : self.plot_properties.mask_mew}
         
         self.setup_ui()
         
@@ -248,17 +262,30 @@ class PlotWidget(QtGui.QWidget):
         self.static_shift_label = QtGui.QLabel("Static Shift")
         self.static_shift_label.setFont(header_font)
         
-        self.static_shift_x_label = QtGui.QLabel("X")
+        self.static_shift_x_label = QtGui.QLabel("Shift X")
         self.static_shift_x_edit = QtGui.QLineEdit("{0:.4g}".format(self.static_shift_x))
         self.static_shift_x_edit.editingFinished.connect(self.static_shift_set_x)
         
-        self.static_shift_y_label = QtGui.QLabel("Y")
+        self.static_shift_y_label = QtGui.QLabel("Shift Y")
         self.static_shift_y_edit = QtGui.QLineEdit("{0:.4g}".format(self.static_shift_y))
         self.static_shift_y_edit.editingFinished.connect(self.static_shift_set_y)
         
         self.static_shift_apply_button = QtGui.QPushButton()
         self.static_shift_apply_button.setText("Apply")
         self.static_shift_apply_button.pressed.connect(self.static_shift_apply)
+        
+        self.static_shift_med_filt_button = QtGui.QPushButton()
+        self.static_shift_med_filt_button.setText("Estimate Spatial Median Static Shift")
+        self.static_shift_med_filt_button.pressed.connect(self.static_shift_med_filt_estimate)
+        
+        self.static_shift_med_rad_label = QtGui.QLabel("Spatial Radius (m)")
+        self.static_shift_med_rad_edit = QtGui.QLineEdit('{0:.2f}'.format(self.static_shift_med_rad))
+        self.static_shift_med_rad_edit.editingFinished.connect(self.static_shift_med_rad_set)
+        
+        self.static_shift_med_num_freq_label = QtGui.QLabel("Number of Frequencies")
+        self.static_shift_med_num_freq_edit = QtGui.QLineEdit()
+        self.static_shift_med_num_freq_edit.setText('{0}'.format(self.static_shift_med_num_freq))
+        self.static_shift_med_num_freq_edit.editingFinished.connect(self.static_shift_med_num_freq_set)
         
         ## remove distortion 
         self.remove_distortion_label = QtGui.QLabel("Remove Distortion")
@@ -314,8 +341,14 @@ class PlotWidget(QtGui.QWidget):
         self.interp_num_edit.editingFinished.connect(self.interp_set_num)
         
         ## tools label
-        self.tools_label = QtGui.QLabel("Tools")
+        self.tools_label = QtGui.QLabel("Editing Tools")
         self.tools_label.setFont(header_font)
+        
+        ## edit x, y or both
+        self.edits_mode_label = QtGui.QLabel("Mode To Edit")
+        self.edits_combo = QtGui.QComboBox()
+        self.edits_combo.addItems(['Both', 'X', 'Y'])
+        self.edits_combo.currentIndexChanged.connect(self.edits_set)
        
         ## apply edits button
         self.edits_apply_button = QtGui.QPushButton()
@@ -390,7 +423,12 @@ class PlotWidget(QtGui.QWidget):
         ss_layout.addWidget(self.static_shift_x_label, 1, 0)
         ss_layout.addWidget(self.static_shift_x_edit, 1, 1)        
         ss_layout.addWidget(self.static_shift_y_label, 1, 2)
-        ss_layout.addWidget(self.static_shift_y_edit, 1, 3) 
+        ss_layout.addWidget(self.static_shift_y_edit, 1, 3)
+        ss_layout.addWidget(self.static_shift_med_rad_label, 2, 0)
+        ss_layout.addWidget(self.static_shift_med_rad_edit, 2, 1)
+        ss_layout.addWidget(self.static_shift_med_num_freq_label, 2, 2)
+        ss_layout.addWidget(self.static_shift_med_num_freq_edit, 2, 3)
+        ss_layout.addWidget(self.static_shift_med_filt_button, 3, 0, 1, 4)
         
         ## rotation
         rot_layout = QtGui.QGridLayout()
@@ -418,6 +456,15 @@ class PlotWidget(QtGui.QWidget):
         dis_hbox.addWidget(self.remove_distortion_num_freq_label)
         dis_hbox.addWidget(self.remove_distortion_num_freq_edit)
         
+        edit_layout = QtGui.QGridLayout()
+        edit_layout.addWidget(self.tools_label, 0, 0, 1, 2)
+        edit_layout.addWidget(self.edits_mode_label, 1, 0)
+        edit_layout.addWidget(self.edits_combo, 1, 1)
+        edit_layout.addWidget(self.edits_apply_button, 2, 0, 1, 2)
+        edit_layout.addWidget(self.revert_button, 3, 0, 1, 2)
+        edit_layout.addWidget(self.save_edits_button, 4, 0, 1, 2)
+        
+        
         ## left panel
         info_layout = QtGui.QVBoxLayout()
         info_layout.addLayout(meta_layout)
@@ -433,10 +480,7 @@ class PlotWidget(QtGui.QWidget):
         info_layout.addWidget(h_line_04)
         info_layout.addLayout(interp_layout)
         info_layout.addWidget(h_line_05)
-        info_layout.addWidget(self.tools_label)
-        info_layout.addWidget(self.edits_apply_button)
-        info_layout.addWidget(self.revert_button)
-        info_layout.addWidget(self.save_edits_button)
+        info_layout.addLayout(edit_layout)
         info_layout.addItem(v_space)
         info_layout.addWidget(self.output_label)
         info_layout.addWidget(self.output_box)
@@ -485,6 +529,7 @@ class PlotWidget(QtGui.QWidget):
         self.meta_date_edit.setText('{0}'.format(self.mt_obj.edi_object.Header.filedate))
         self.meta_loc_edit.setText('{0}'.format(self.mt_obj.edi_object.Header.loc))
         self.meta_acq_edit.setText('{0}'.format(self.mt_obj.edi_object.Header.acqby))
+        self.remove_distortion_num_freq_edit.setText('{0:.0f}'.format(self.mt_obj.Z.freq.size))
         
     def static_shift_set_x(self):
         self.static_shift_x = float(str(self.static_shift_x_edit.text()))
@@ -519,6 +564,26 @@ class PlotWidget(QtGui.QWidget):
         self.mt_obj.Z = new_z_obj
         self.redraw_plot()
         
+    def static_shift_med_rad_set(self):
+        self.static_shift_med_rad = float(str(self.static_shift_med_rad_edit.text()))
+        self.static_shift_med_rad_edit.setText('{0:.2f}'.format(self.static_shift_med_rad))
+        
+    def static_shift_med_num_freq_set(self):
+        self.static_shift_med_num_freq = float(str(self.static_shift_med_num_freq_edit.text()))
+        self.static_shift_med_num_freq_edit.setText('{0:.0f}'.format(self.static_shift_med_num_freq))
+        
+    def static_shift_med_filt_estimate(self):
+
+        ss_x, ss_y = staticshift.estimate_static_spatial_median(self.mt_obj.fn,
+                                                                radius=self.static_shift_med_rad,
+                                                                num_freq=self.static_shift_med_num_freq)
+        
+        self.static_shift_x = ss_x
+        self.static_shift_y = ss_y
+        
+        self.static_shift_x_edit.setText('{0:.2f}'.format(ss_x))
+        self.static_shift_y_edit.setText('{0:.2f}'.format(ss_y))
+        
     def remove_distortion_set_num_freq(self):
         """
         set number of frequencies to remove distortion from
@@ -535,7 +600,7 @@ class PlotWidget(QtGui.QWidget):
         remove distortion from the mt repsonse
         """
         if self._edited_dist == False and self._edited_rot == False and \
-           self._edited_mask == False:
+           self._edited_mask == False and self._edited_ss == False:
             # remove distortion from original data
             distortion, new_z_object = self._mt_obj.remove_distortion(num_freq=self.num_freq)
             print '\n    - Removed distortion from original data'
@@ -665,6 +730,10 @@ class PlotWidget(QtGui.QWidget):
         print 'Interpolated data onto periods:'
         for ff in new_period:
             print '    {0:.6e}'.format(ff)
+        
+    def edits_set(self, selected_item):
+        modes_list = ['Both', 'X', 'Y']
+        self.edits_mode = modes_list[selected_item] 
         
         
     def edits_apply(self):
@@ -826,6 +895,8 @@ class PlotWidget(QtGui.QWidget):
         self.ax_list = [self.ax_res_od, self.ax_res_d,
                         self.ax_phase_od, self.ax_phase_d,
                         self.ax_tip_x, self.ax_tip_y]
+                        
+        self._ax = self.ax_res_od
         
         ## --> plot apparent resistivity, phase and tipper
         ## plot orginal apparent resistivity
@@ -1067,7 +1138,33 @@ class PlotWidget(QtGui.QWidget):
         for ax in [self.ax_tip_x, self.ax_tip_y]:
             y_labels = ax.get_yticks().tolist()
             y_labels[-1] = ''
-            ax.set_yticklabels(y_labels)                             
+            ax.set_yticklabels(y_labels) 
+
+        ## --> make a rectangluar picker box
+        self.rs_od_res = mplwidgets.RectangleSelector(self.ax_res_od,
+                                                      self.rect_onselect_od,
+                                                      drawtype='box',
+                                                      useblit=True)                    
+        self.rs_d_res = mplwidgets.RectangleSelector(self.ax_res_d,
+                                                      self.rect_onselect_d,
+                                                      drawtype='box',
+                                                      useblit=True)                    
+        self.rs_od_phs = mplwidgets.RectangleSelector(self.ax_phase_od,
+                                                      self.rect_onselect_od,
+                                                      drawtype='box',
+                                                      useblit=True)                    
+        self.rs_d_phs = mplwidgets.RectangleSelector(self.ax_phase_d,
+                                                      self.rect_onselect_d,
+                                                      drawtype='box',
+                                                      useblit=True)                    
+        self.rs_tr = mplwidgets.RectangleSelector(self.ax_tip_x,
+                                                      self.rect_onselect_tr,
+                                                      drawtype='box',
+                                                      useblit=True)                    
+        self.rs_ti = mplwidgets.RectangleSelector(self.ax_tip_y,
+                                                      self.rect_onselect_ti,
+                                                      drawtype='box',
+                                                      useblit=True)                    
     
         ## --> need to be sure to draw the figure        
         self.mpl_widget.draw()
@@ -1083,11 +1180,6 @@ class PlotWidget(QtGui.QWidget):
         data_period = data_point.get_xdata()[event.ind]
         data_value = data_point.get_ydata()[event.ind]
         
-        mask_kw = {'color' : self.plot_properties.mask_color,
-                   'marker' : self.plot_properties.mask_marker,
-                   'ms' : self.plot_properties.mask_ms,
-                   'mew' : self.plot_properties.mask_mew}
-        
         # modify Z
         if event.mouseevent.button == 1:
             self._edited_mask = True
@@ -1100,22 +1192,22 @@ class PlotWidget(QtGui.QWidget):
                 self.mt_obj.Z.z[d_index] = 0.0+0.0*1j            
                 self.mt_obj.Z.zerr[d_index] = 0.0            
                 
-                self._ax.plot(data_period, data_value, **mask_kw)
+                self._ax.plot(data_period, data_value, **self.mask_kw)
                 
                 # mask phase as well
                 if self._ax_index == 0:
                     if comp_jj == 1 and comp_kk == 0:
                         self.ax_phase_od.plot(data_period, 
                                               self.mt_obj.Z.phase[d_index]+180,
-                                              **mask_kw)
+                                              **self.mask_kw)
                     else:
                         self.ax_phase_od.plot(data_period, 
                                               self.mt_obj.Z.phase[d_index],
-                                              **mask_kw)
+                                              **self.mask_kw)
                 elif self._ax_index == 1:
                     self.ax_phase_d.plot(data_period, 
                                           self.mt_obj.Z.phase[d_index],
-                                          **mask_kw)
+                                          **self.mask_kw)
                 
             # mask phase points
             elif self._ax_index == 2 or self._ax_index == 3:
@@ -1129,17 +1221,17 @@ class PlotWidget(QtGui.QWidget):
                 self.mt_obj.Z.zerr[d_index] = 0.0            
                 
                 # mask the point in the axis selected
-                self._ax.plot(data_period, data_value, **mask_kw)
+                self._ax.plot(data_period, data_value, **self.mask_kw)
                 
                 # mask resistivity as well
                 if self._ax_index == 2:
                     self.ax_res_od.plot(data_period, 
                                         self.mt_obj.Z.resistivity[d_index],
-                                        **mask_kw)
+                                        **self.mask_kw)
                 elif self._ax_index == 3:
                     self.ax_res_d.plot(data_period, 
                                        self.mt_obj.Z.resistivity[d_index],
-                                       **mask_kw)
+                                       **self.mask_kw)
             
             # mask tipper Tx
             elif self._ax_index == 4 or self._ax_index == 5:
@@ -1149,7 +1241,7 @@ class PlotWidget(QtGui.QWidget):
                                             
                                             
                 # mask point
-                self._ax.plot(data_period, data_value, **mask_kw)
+                self._ax.plot(data_period, data_value, **self.mask_kw)
                 
                 # set tipper data to 0
                 self.mt_obj.Tipper.tipper[d_index] = 0.0+0.0j
@@ -1166,11 +1258,125 @@ class PlotWidget(QtGui.QWidget):
         
         self._ax = event.inaxes
         
+        
         # find the component index so that it can be masked
         for ax_index, ax in enumerate(self.ax_list):
             if ax == event.inaxes:
                 self._ax_index = ax_index
+                
+    def _get_frequency_range(self, period_01, period_02):
         
+        fmin = min([1./period_01, 1./period_02])
+        fmax = max([1./period_01, 1./period_02])
+        prange = np.where((self.mt_obj.Z.freq >= fmin) & 
+                          (self.mt_obj.Z.freq <= fmax))
+                          
+        return prange
+                
+    def rect_onselect_od(self, eclick, erelease):
+        x1 = eclick.xdata
+        x2 = erelease.xdata
+        
+        f_idx = self._get_frequency_range(x1, x2)
+        
+        for ff in f_idx:
+            data_period = 1./self.mt_obj.Z.freq[ff]
+            if self.edits_mode == 'Both' or self.edits_mode == 'X': 
+                self.ax_res_od.plot(data_period, 
+                                   self.mt_obj.Z.resistivity[ff, 0, 1],
+                                   **self.mask_kw)
+                self.ax_phase_od.plot(data_period, 
+                                  self.mt_obj.Z.phase[ff, 0, 1],
+                               **self.mask_kw)
+                self.mt_obj.Z.z[ff, 0, 1] = 0.0+0.0*1j            
+                self.mt_obj.Z.zerr[ff, 0, 1] = 0.0 
+                
+            if self.edits_mode == 'Both' or self.edits_mode == 'Y': 
+                self.ax_res_od.plot(data_period, 
+                                   self.mt_obj.Z.resistivity[ff, 1, 0],
+                                   **self.mask_kw)
+                
+                self.ax_phase_od.plot(data_period, 
+                                      self.mt_obj.Z.phase[ff, 1, 0]+180,
+                                       **self.mask_kw)
+
+                self.mt_obj.Z.z[ff, 1, 0] = 0.0+0.0*1j            
+                self.mt_obj.Z.zerr[ff, 1, 0] = 0.0  
+                               
+        self.ax_res_od.figure.canvas.draw()
+        self.ax_phase_od.figure.canvas.draw()
+        
+    def rect_onselect_d(self, eclick, erelease):
+        x1 = eclick.xdata
+        x2 = erelease.xdata
+        
+        f_idx = self._get_frequency_range(x1, x2)
+        
+        for ff in f_idx:
+            data_period = 1./self.mt_obj.Z.freq[ff]
+            if self.edits_mode == 'Both' or self.edits_mode == 'X': 
+                self.ax_res_d.plot(data_period, 
+                                   self.mt_obj.Z.resistivity[ff, 0, 0],
+                                   **self.mask_kw)
+                self.ax_phase_d.plot(data_period, 
+                                  self.mt_obj.Z.phase[ff, 0, 0],
+                               **self.mask_kw)
+                self.mt_obj.Z.z[ff, 0, 0] = 0.0+0.0*1j            
+                self.mt_obj.Z.zerr[ff, 0, 0] = 0.0 
+                
+            if self.edits_mode == 'Both' or self.edits_mode == 'Y': 
+                self.ax_res_d.plot(data_period, 
+                                   self.mt_obj.Z.resistivity[ff, 1, 1],
+                                   **self.mask_kw)
+                
+                self.ax_phase_d.plot(data_period, 
+                                      self.mt_obj.Z.phase[ff, 1, 1],
+                                       **self.mask_kw)
+
+                self.mt_obj.Z.z[ff, 1, 1] = 0.0+0.0*1j            
+                self.mt_obj.Z.zerr[ff, 1, 1] = 0.0  
+                               
+        self.ax_res_od.figure.canvas.draw()
+        self.ax_phase_od.figure.canvas.draw()
+        
+    def rect_onselect_tr(self, eclick, erelease):
+        x1 = eclick.xdata
+        x2 = erelease.xdata
+        
+        f_idx = self._get_frequency_range(x1, x2)
+        
+        for ff in f_idx:
+            data_period = 1./self.mt_obj.Z.freq[ff]
+            self.ax_tip_x.plot(data_period, 
+                               self.mt_obj.Tipper.amplitude[ff, 0, 0],
+                               **self.mask_kw)
+                               
+            self.mt_obj.Tipper.tipper[ff, 0, 0] = 0.0+0.0*1j            
+            self.mt_obj.Tipper.tippererr[ff, 0, 0] = 0.0
+            
+        self.mt_obj.Tipper._compute_amp_phase()
+ 
+        self.ax_tip_x.figure.canvas.draw()
+        
+    def rect_onselect_ti(self, eclick, erelease):
+        x1 = eclick.xdata
+        x2 = erelease.xdata
+        
+        f_idx = self._get_frequency_range(x1, x2)
+        
+        for ff in f_idx:
+            data_period = 1./self.mt_obj.Z.freq[ff]
+            self.ax_tip_y.plot(data_period, 
+                               self.mt_obj.Tipper.amplitude[ff, 0, 1],
+                               **self.mask_kw)
+                               
+            self.mt_obj.Tipper.tipper[ff, 0, 1] = 0.0+0.0*1j            
+            self.mt_obj.Tipper.tippererr[ff, 0, 1] = 0.0  
+ 
+        self.mt_obj.Tipper._compute_amp_phase()
+        
+        self.ax_tip_y.figure.canvas.draw()
+
 
 #==============================================================================
 #  Plot setting        
