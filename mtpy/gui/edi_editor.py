@@ -283,6 +283,7 @@ class PlotWidget(QtGui.QWidget):
         self.static_shift_med_filt_button = QtGui.QPushButton()
         self.static_shift_med_filt_button.setText("Estimate Spatial Median Static Shift")
         self.static_shift_med_filt_button.setFont(button_font)
+        self.static_shift_med_filt_button.setStyleSheet("background-color: #f9d7db")
         self.static_shift_med_filt_button.pressed.connect(self.static_shift_med_filt_estimate)
         
         self.static_shift_med_rad_label = QtGui.QLabel("Spatial Radius (m)")
@@ -300,6 +301,7 @@ class PlotWidget(QtGui.QWidget):
         
         self.remove_distortion_button = QtGui.QPushButton()
         self.remove_distortion_button.setText("Remove Distortion [Bibby et al., 2005]")
+        self.remove_distortion_button.setStyleSheet("background-color: #b8c3f5")
         self.remove_distortion_button.setFont(button_font)
         self.remove_distortion_button.pressed.connect(self.remove_distortion_apply)
         
@@ -360,6 +362,7 @@ class PlotWidget(QtGui.QWidget):
         self.edits_mode_label = QtGui.QLabel("Mode To Edit")
         self.edits_combo = QtGui.QComboBox()
         self.edits_combo.addItems(['Both', 'X', 'Y'])
+        self.edits_combo.setFont(button_font)
         self.edits_combo.currentIndexChanged.connect(self.edits_set)
        
         ## apply edits button
@@ -753,23 +756,45 @@ class PlotWidget(QtGui.QWidget):
         new_period = np.logspace(np.log10(self.interp_period_min),
                                  np.log10(self.interp_period_max),
                                  num=self.interp_period_num)
+        interp_freq = 1./new_period                         
+        interp_idx = np.where((interp_freq >= self.mt_obj.Z.freq.min()) &
+                              (interp_freq <= self.mt_obj.Z.freq.max()))
+        
+        interp_freq = interp_freq[interp_idx]
+        if len(interp_idx) != len(new_period):
+            
+            info =['Cannot interpolate over periods not represented in the data.',
+                   'Data min = {0:<8.3e} s'.format(1./self.mt_obj.Z.freq.max()),
+                   'Data max = {0:<8.3e} s'.format(1./self.mt_obj.Z.freq.min()),
+                   '',                    
+                   'Given period range:',
+                   '     min = {0:<8.3e} s'.format(new_period.min()),
+                   '     max = {0:<8.3e} s'.format(new_period.max()),
+                   '',
+                   'Setting interpolation frequency bounds to:',
+                   '     min = {0:<8.3e} s'.format(1./interp_freq.max()),
+                   '     max = {0:<8.3e} s'.format(1./interp_freq.min())] 
+            msg_box = QtGui.QMessageBox()
+            msg_box.setText('\n'.join(info))
+            msg_box.setWindowTitle('Interpolation Bounds')
+            msg_box.exec_()
                                  
         if self._edited_dist == True or self._edited_mask == True or \
            self._edited_rot == True or self._edited_ss == True:
-            new_z, new_tip = self.mt_obj.interpolate(1./new_period)
+            new_z, new_tip = self.mt_obj.interpolate(interp_freq)
             self.mt_obj.Z = new_z
             self.mt_obj.Tipper = new_tip
             
         else:
-            new_z, new_tip = self._mt_obj.interpolate(1./new_period)
+            new_z, new_tip = self._mt_obj.interpolate(interp_freq)
             self.mt_obj.Z = new_z
             self.mt_obj.Tipper = new_tip
             
         self.redraw_plot()
         
         print 'Interpolated data onto periods:'
-        for ff in new_period:
-            print '    {0:.6e}'.format(ff)
+        for ff in interp_freq:
+            print '    {0:.6e}'.format(1./ff)
         
     def edits_set(self, selected_item):
         modes_list = ['Both', 'X', 'Y']
@@ -1093,9 +1118,8 @@ class PlotWidget(QtGui.QWidget):
         
         # set the last label to be an empty string for easier reading
         for ax in [self.ax_phase_od, self.ax_phase_d]:
-            y_labels = ax.get_yticks().tolist()
-            y_labels[0] = ''
-            ax.set_yticklabels(y_labels)
+            for label in [ax.get_yticklabels()[0], ax.get_yticklabels()[-1]]:
+                label.set_visible(False)
 
         ## --> plot tipper                                 
         #set th xaxis tick labels to invisible
@@ -1176,9 +1200,8 @@ class PlotWidget(QtGui.QWidget):
         
         # set the last label to be an empty string for easier reading
         for ax in [self.ax_tip_x, self.ax_tip_y]:
-            y_labels = ax.get_yticks().tolist()
-            y_labels[-1] = ''
-            ax.set_yticklabels(y_labels)
+            for label in [ax.get_yticklabels()[-1]]:
+                label.set_visible(False)
             
         #gs.tight_layout(self.figure, h_pad=0)
 
