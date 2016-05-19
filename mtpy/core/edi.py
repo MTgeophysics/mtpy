@@ -1,5 +1,14 @@
 # -*- coding: utf-8 -*-
 """
+===========
+EDI Class
+===========
+
+The Edi class can read and write an .edi file, the 'standard format' of
+magnetotellurics.  Each section of the .edi file is given its own class, 
+so the elements of each section are attributes for easy access.
+
+
 Created on Tue Dec 22 16:03:31 2015
 
 @author: jpeacock
