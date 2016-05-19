@@ -102,14 +102,13 @@ def estimate_static_spatial_median(edi_fn, radius=1000., num_freq=20,
     print 'These stations are within the given {0} m radius:'.format(radius)
     for kk, mt_obj_kk in enumerate(mt_obj_list):
         print '\t{0} --> {1:.1f} m'.format(mt_obj_kk.station, mt_obj_kk.delta_d)
-        interp_idx = np.where((mt_obj_kk.Z.freq >= interp_freq.min()) &
-                               mt_obj_kk.Z.freq <= interp_freq.max())
-        min_idx = mt_obj_kk.Z.freq >= interp_freq.min()
+        interp_idx = np.where((interp_freq >= mt_obj_kk.Z.freq.min()) &
+                              (interp_freq <= mt_obj_kk.Z.freq.max()))
         
         interp_freq_kk = interp_freq[interp_idx]
         Z_interp, Tip_interp = mt_obj_kk.interpolate(interp_freq_kk)
         Z_interp._compute_res_phase()
-        res_array[kk, interp_idx, :, :] = Z_interp.resistivity[min_idx:len(interp_freq_kk), :, :]
+        res_array[kk, interp_idx, :, :] = Z_interp.resistivity[0:len(interp_freq_kk), :, :]
     
     #compute the static shift of x-components
     static_shift_x = mt_obj.Z.resistivity[freq_skip:num_freq+freq_skip, 0, 1]/\
