@@ -62,12 +62,47 @@ import copy
 
 
 
-def find_distortion(z_object, g = 'det', num_freq=None, lo_dims = None):
+def find_distortion(z_object, g = 'det', num_freq=None, lo_dims=None):
     """
     find optimal distortion tensor from z object
 
     automatically determine the dimensionality over all frequencies, then find
     the appropriate distortion tensor D
+    
+    Arguments
+    -------------
+    
+        **z_object** : mtpy.core.z object
+                       
+        **g** : [ 'det' | '01' | '10 ]
+                type of distortion correction
+                *default* is 'det'
+                
+        **num_freq** : int
+                       number of frequencies to look for distortion from 
+                       the index 0
+                       *default* is None, meaning all frequencies are used
+                       
+        **lo_dims** : list
+                      list of dimensions for each frequency
+                      *default* is None, meaning calculated from data
+                      
+    Returns
+    ---------
+    
+        **distortion** : np.ndarray(2, 2)
+                         distortion array all real values
+        
+        **distortion_err** : np.ndarray(2, 2)
+                             distortion error array
+                             
+    Example:
+    ---------
+        :Estimate Distortion: ::
+        
+            >>> import mtpy.analysis.distortion as distortion
+            >>> dis, dis_err = distortion.find_distortion(z_obj, num_freq=12)
+            
     """
 
     z_obj = copy.deepcopy(z_object)
@@ -305,7 +340,46 @@ def find_2d_distortion(z_object, include_non2d=False):
 
     return  find_distortion(z_obj, lo_dims = lo_dims)
 
-def remove_distortion(z_array=None, z_object=None, num_freq=None):
+def remove_distortion(z_array=None, z_object=None, num_freq=None, g='det'): 
+    """
+    remove distortion from an impedance tensor using the method outlined by 
+    Bibby et al., [2005].
+    
+    Arguments
+    -----------
+    
+        **z_array** : np.ndarray((nf, 2, 2))
+                      numpy array of impedance tensor
+                      *default* is None
+                      
+        **z_object** : mtpy.core.z object
+                       *default* is None
+
+        **num_freq** : int
+                       number of frequecies to look for distortion
+                       *default* is None, meaning look over all frequencies
+
+        **g** : [ 'det' | '01' | '10 ]
+                type of distortion to look for
+                *default* is 'det'
+
+    Returns
+    ------------
+
+        **distortion** : np.ndarray (2, 2)
+                         distortion array
+
+        **new_z_obj** : mtpy.core.z
+                        z object with distortion removed and error calculated
+
+    Examples
+    -------------
+
+        :Remove Distortion: ::
+
+            >>> import mtpy.analysis.distortion as distortion
+            >>> d, new_z = distortion.remove_distortion(z_object=z_obj)                         
+    """
 
     if z_array is not None:
         z_obj = MTz.Z(z_array=z_array)
@@ -319,7 +393,7 @@ def remove_distortion(z_array=None, z_object=None, num_freq=None):
     #1. find distortion via function above, 
     #2. remove distortion via method of z object
 
-    dis, dis_err = find_distortion(z_obj, num_freq=num_freq)
+    dis, dis_err = find_distortion(z_obj, num_freq=num_freq, g=g)
 
     try:
         distortion_tensor, zd, zd_err = z_obj.no_distortion(dis, 
