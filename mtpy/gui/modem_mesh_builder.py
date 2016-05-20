@@ -767,10 +767,12 @@ class MeshPlot(QtGui.QWidget):
             east_line_ylist.extend([0, 
                                     self.plot_grid_z.max()])
             east_line_ylist.append(None)
+            
         self.ax_depth.plot(east_line_xlist,
-                 east_line_ylist,
-                 lw=self.line_width,
-                 color=self.line_color)
+                           east_line_ylist,
+                           lw=self.line_width,
+                           color=self.line_color,
+                           picker=5)
 
         z_line_xlist = []
         z_line_ylist = [] 
@@ -780,6 +782,7 @@ class MeshPlot(QtGui.QWidget):
             z_line_xlist.append(None)
             z_line_ylist.extend([zz, zz])
             z_line_ylist.append(None)
+            
         self.ax_depth.plot(z_line_xlist,
                            z_line_ylist,
                            lw=self.line_width,
@@ -823,14 +826,28 @@ class MeshPlot(QtGui.QWidget):
                 data_point = event.mouseevent
 
                 north = np.round(float(data_point.ydata)*1000., -2)
-                
-                print north
+
                 self.model_obj.grid_north = np.append(self.model_obj.grid_north,
                                                       north)
                 self.model_obj.grid_north.sort()
                 self.ax_map.plot([self.plot_grid_east.min(), 
                                   self.plot_grid_east.max()],
                                  [north/1000., north/1000.],
+                                 lw=self.line_width,
+                                 color='r',
+                                 picker=3)
+                                 
+            elif self.line_mode == 'add_h' and self._ax == self.ax_depth:
+                data_point = event.mouseevent
+
+                depth = np.round(float(data_point.ydata)*1000., -2)
+
+                self.model_obj.grid_z = np.append(self.model_obj.grid_z,
+                                                  depth)
+                self.model_obj.grid_z.sort()
+                self.ax_depth.plot([self.plot_grid_east.min(), 
+                                   self.plot_grid_east.max()],
+                                 [depth/1000., depth/1000.],
                                  lw=self.line_width,
                                  color='r',
                                  picker=3)
@@ -860,6 +877,34 @@ class MeshPlot(QtGui.QWidget):
                 self.ax_map.plot([self.plot_grid_east.min(), 
                                   self.plot_grid_east.max()],
                                  [north/1000., north/1000.],
+                                 lw=self.line_width,
+                                 color='w',
+                                 picker=3) 
+                                 
+            elif self.line_mode == 'del_v' and self._ax == self.ax_depth:
+                data_point = event.artist
+                east = data_point.get_xdata()[event.ind]*1000.
+                depth = data_point.get_ydata()[event.ind]*1000.
+                
+                new_ii = np.where(self.model_obj.grid_z != depth)
+                self.model_obj.grid_z = self.model_obj.grid_z[new_ii]
+                self.ax_map.plot([self.plot_grid_east.min(), 
+                                  self.plot_grid_east.max()],
+                                 [depth/1000., depth/1000.],
+                                 lw=self.line_width,
+                                 color='w',
+                                 picker=3) 
+                                 
+            elif self.line_mode == 'del_v' and self._ax == self.ax_map:
+                data_point = event.artist
+                east = data_point.get_xdata()[event.ind]*1000.
+                north = data_point.get_ydata()[event.ind]*1000.
+                
+                new_ii = np.where(self.model_obj.grid_north != north)
+                self.model_obj.grid_north = self.model_obj.grid_north[new_ii]
+                self.ax_map.plot([east/1000., east/1000.],
+                                 [self.plot_grid_north.min(),
+                                  self.plot_grid_north.max()],
                                  lw=self.line_width,
                                  color='w',
                                  picker=3) 

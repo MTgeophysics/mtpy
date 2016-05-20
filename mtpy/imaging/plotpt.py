@@ -421,7 +421,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
         #---------------plotStrikeAngle-----------------------------------
         self.ax2 = self.fig.add_subplot(3, 2, 3)
         az = self.pt.azimuth[0]
-        azerr = self.pt.azimuth[1]
+        az_err = self.pt.azimuth[1]
         
         #put the strike into a coordinate system that goes from -90 to 90
         az[np.where(az > 90)] -= 180
@@ -439,7 +439,7 @@ class PlotPhaseTensor(mtpl.MTEllipse):
                                 mec=self.strike_pt_color, 
                                 mew=self.marker_lw,
                                 ls='none', 
-                                yerr=azerr, 
+                                yerr=az_err, 
                                 ecolor=self.strike_pt_color,
                                 capsize=self.marker_size,
                                 elinewidth=self.marker_lw)

@@ -81,7 +81,7 @@ def find_distortion(z_object, g = 'det', num_freq=None, lo_dims = None):
         num_freq = z_obj.freq.size
         
     z_obj.z = z_obj.z[0:num_freq]
-    z_obj.zerr = z_obj.zerr[0:num_freq]
+    z_obj.z_err = z_obj.z_err[0:num_freq]
     z_obj.freq = z_obj.freq[0:num_freq]
     
     
@@ -119,13 +119,13 @@ def find_distortion(z_object, g = 'det', num_freq=None, lo_dims = None):
                                                       rot_mat))]),
                                 axis=0)  
     
-            if z_obj.zerr is not None:
+            if z_obj.z_err is not None:
                 #find errors of entries for calculating weights
     
-                gr_err = 1./gr*np.abs(z_obj.zerr[idx])
+                gr_err = 1./gr*np.abs(z_obj.z_err[idx])
                 gr_err[np.where(gr_err == 0.0)] = 1.0 
                 
-                gi_err = 1./gi*np.abs(z_obj.zerr[idx])
+                gi_err = 1./gi*np.abs(z_obj.z_err[idx])
                 gi_err[np.where(gi_err == 0.0)] = 1.0 
                 
                 dis_err[idx] = np.mean(np.array([gi_err, gr_err]), 
@@ -137,8 +137,8 @@ def find_distortion(z_object, g = 'det', num_freq=None, lo_dims = None):
             if np.isnan(strike_ang):
                 strike_ang = 0.0
             
-            if z_obj.zerr is not None:
-                err_arr = z_obj.zerr[idx]
+            if z_obj.z_err is not None:
+                err_arr = z_obj.z_err[idx]
                 err_arr[np.where(err_arr == 0.0)] = 1.0
             else:
                 err_arr = None
@@ -330,7 +330,7 @@ def remove_distortion(z_array=None, z_object=None, num_freq=None):
         distortion_z_obj = z_obj
         distortion_z_obj.z = zd
         distortion_z_obj.z[zero_idx] = 0.0+0.0j
-        distortion_z_obj.zerr = zd_err 
+        distortion_z_obj.z_err = zd_err 
 
         return distortion_tensor, distortion_z_obj
         

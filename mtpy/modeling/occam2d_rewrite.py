@@ -2387,7 +2387,7 @@ class Data(Profile):
             rho_err = z_interp.resistivity_err
             if t_interp is not None:
                 tipper = t_interp.tipper
-                tipper_err = t_interp.tippererr
+                tipper_err = t_interp.tipper_err
             else:
                 tipper = None
                 tipper_err = None

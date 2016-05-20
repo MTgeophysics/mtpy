@@ -188,17 +188,17 @@ def generate_ptcrossdata_file(edi_object, n_iterations, sigma_scaling, outdir,ou
     for idx,f in enumerate(freqs):
     
         z = edi_object.Z.z
-        zerr = edi_object.Z.zerr
+        z_err = edi_object.Z.z_err
         
         lo_pts = []
         lo_ptserr = []
 
         cur_z = z[idx]
-        cur_zerr = zerr[idx]
+        cur_z_err = z_err[idx]
 
-        #crude check for 'bad' values in zerr:
+        #crude check for 'bad' values in z_err:
         for i in np.arange(4):
-            a = cur_zerr[i/2,i%2]
+            a = cur_z_err[i/2,i%2]
             val = cur_z[i/2,i%2]
 
             try:
@@ -211,23 +211,23 @@ def generate_ptcrossdata_file(edi_object, n_iterations, sigma_scaling, outdir,ou
                 rel_errs=[]
                 if idx+1 != len(freqs):
                     next_z = z[idx+1][i/2,i%2]
-                    next_zerr = zerr[idx+1][i/2,i%2]
-                    rel_err = next_zerr/abs(next_z)
+                    next_z_err = z_err[idx+1][i/2,i%2]
+                    rel_err = next_z_err/abs(next_z)
                     rel_errs.append(rel_err)
                 if idx != 0:
                     last_z = z[idx-1][i/2,i%2]
-                    last_zerr = zerr[idx-1][i/2,i%2]
-                    rel_err = last_zerr/abs(last_z)
+                    last_z_err = z_err[idx-1][i/2,i%2]
+                    rel_err = last_z_err/abs(last_z)
                     rel_errs.append(rel_err)
                 rel_err_final = np.mean(rel_errs)
                 err = rel_err_final * abs(val)
-                cur_zerr[i/2,i%2] = err
+                cur_z_err[i/2,i%2] = err
                 #print err
 
         #calculate random numbers: 
         lo_rands = []
         for k in np.arange(4):     
-            randnums = sigma_scaling*cur_zerr[k/2,k%2]*np.random.randn(2*abs(int(n_iterations)))
+            randnums = sigma_scaling*cur_z_err[k/2,k%2]*np.random.randn(2*abs(int(n_iterations)))
             lo_rands.append(randnums)
 
         #Loop over |n_iterations| random realisations: 

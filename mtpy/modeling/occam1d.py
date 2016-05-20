@@ -281,7 +281,7 @@ class Data(object):
                 data_1_err = np.zeros_like(data_1, dtype=np.float)                               
                 data_2_err = np.zeros_like(data_2, dtype=np.float)
                 for zd, ze, ii in zip(zdet, zdet_err, range(len(zdet))):                               
-                    de1, de2 = mtcc.zerror2r_phi_error(zd.real, 
+                    de1, de2 = mtcc.z_error2r_phi_error(zd.real, 
                                                        ze,
                                                        zd.imag,
                                                        ze)
@@ -297,17 +297,17 @@ class Data(object):
                 
             elif self.mode == 'tez':
                 data_1 = z_obj.z[:, 0, 1].real*np.pi*4e-4 
-                data_1_err = z_obj.zerr[:, 0, 1]*np.pi*4e-4
+                data_1_err = z_obj.z_err[:, 0, 1]*np.pi*4e-4
                 
                 data_2 = z_obj.z[:, 0, 1].imag*np.pi*4e-4
-                data_2_err =  z_obj.zerr[:, 0, 1]*np.pi*4e-4
+                data_2_err =  z_obj.z_err[:, 0, 1]*np.pi*4e-4
                 
             elif self.mode == 'tmz':
                 data_1 = z_obj.z[:, 1, 0].real*np.pi*4e-4 
-                data_1_err = z_obj.zerr[:, 1, 0]*np.pi*4e-4
+                data_1_err = z_obj.z_err[:, 1, 0]*np.pi*4e-4
                 
                 data_2 = z_obj.z[:, 1, 0].imag*np.pi*4e-4
-                data_2_err =  z_obj.zerr[:, 1, 0]*np.pi*4e-4
+                data_2_err =  z_obj.z_err[:, 1, 0]*np.pi*4e-4
 
             else:
                 raise IOError('Mode {0} is not supported.'.format(self.mode))
@@ -614,7 +614,7 @@ class Data(object):
             self.data['phase'+pol][0] = np.rad2deg(np.arctan(self.data['res'+pol][0].imag/self.data['res'+pol][0].real))
             for jjj in range(len(freq)):
                 self.data['res'+pol][1,jjj],self.data['phase'+pol][1,jjj] =\
-                mtcc.zerror2r_phi_error(self.data['z'+pol][0,jjj].real,self.data['z'+pol][1,jjj],
+                mtcc.z_error2r_phi_error(self.data['z'+pol][0,jjj].real,self.data['z'+pol][1,jjj],
                                         self.data['z'+pol][0,jjj].imag,self.data['z'+pol][1,jjj])
                 
                 
@@ -759,7 +759,7 @@ class Data(object):
                 for jjj in range(len(self.freq)):
     
                     self.data['phase'+pol][1+ii,jjj] =\
-                    mtcc.zerror2r_phi_error(self.data['z'+pol][0+ii,jjj].real,self.data['z'+pol][1+ii,jjj].real,
+                    mtcc.z_error2r_phi_error(self.data['z'+pol][0+ii,jjj].real,self.data['z'+pol][1+ii,jjj].real,
                                             self.data['z'+pol][0+ii,jjj].imag,self.data['z'+pol][1+ii,jjj].real)[1]
             if pol == 'xy':
                 self.res_te = self.data['resxy']

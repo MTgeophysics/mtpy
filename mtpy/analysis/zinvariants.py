@@ -21,7 +21,7 @@ class Zinvariants:
                        needs to have attributes:
                            *z --> np.array((nf, 2, 2), dtype='complex')
                            
-                           *zerr --> np.array((nf, 2, 2), dtype='real')
+                           *z_err --> np.array((nf, 2, 2), dtype='real')
                            
                            *freq --> np.array(nf)
                            
@@ -261,7 +261,7 @@ class Zinvariants:
         those as well.        
         """
         
-        self._Z.zerr = z_err_array
+        self._Z.z_err = z_err_array
         
         # --> update the invariants
         self.compute_invariants()

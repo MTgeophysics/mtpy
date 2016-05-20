@@ -1255,7 +1255,7 @@ class PlotWidget(QtGui.QWidget):
                 
                 # mask point in impedance object
                 self.mt_obj.Z.z[d_index] = 0.0+0.0*1j            
-                self.mt_obj.Z.zerr[d_index] = 0.0            
+                self.mt_obj.Z.z_err[d_index] = 0.0            
                 
                 self._ax.plot(data_period, data_value, **self.mask_kw)
                 
@@ -1283,7 +1283,7 @@ class PlotWidget(QtGui.QWidget):
                 
                 # mask point in impedance object
                 self.mt_obj.Z.z[d_index] = 0.0+0.0*1j            
-                self.mt_obj.Z.zerr[d_index] = 0.0            
+                self.mt_obj.Z.z_err[d_index] = 0.0            
                 
                 # mask the point in the axis selected
                 self._ax.plot(data_period, data_value, **self.mask_kw)
@@ -1310,7 +1310,7 @@ class PlotWidget(QtGui.QWidget):
                 
                 # set tipper data to 0
                 self.mt_obj.Tipper.tipper[d_index] = 0.0+0.0j
-                self.mt_obj.Tipper.tippererr[d_index] = 0.0
+                self.mt_obj.Tipper.tipper_err[d_index] = 0.0
                 
                 self.mt_obj.Tipper._compute_amp_phase()
                 
@@ -1354,7 +1354,7 @@ class PlotWidget(QtGui.QWidget):
                                   self.mt_obj.Z.phase[ff, 0, 1],
                                **self.mask_kw)
                 self.mt_obj.Z.z[ff, 0, 1] = 0.0+0.0*1j            
-                self.mt_obj.Z.zerr[ff, 0, 1] = 0.0 
+                self.mt_obj.Z.z_err[ff, 0, 1] = 0.0 
                 
             if self.edits_mode == 'Both' or self.edits_mode == 'Y': 
                 self.ax_res_od.plot(data_period, 
@@ -1366,7 +1366,7 @@ class PlotWidget(QtGui.QWidget):
                                        **self.mask_kw)
 
                 self.mt_obj.Z.z[ff, 1, 0] = 0.0+0.0*1j            
-                self.mt_obj.Z.zerr[ff, 1, 0] = 0.0  
+                self.mt_obj.Z.z_err[ff, 1, 0] = 0.0  
                                
         self.ax_res_od.figure.canvas.draw()
         self.ax_phase_od.figure.canvas.draw()
@@ -1387,7 +1387,7 @@ class PlotWidget(QtGui.QWidget):
                                   self.mt_obj.Z.phase[ff, 0, 0],
                                **self.mask_kw)
                 self.mt_obj.Z.z[ff, 0, 0] = 0.0+0.0*1j            
-                self.mt_obj.Z.zerr[ff, 0, 0] = 0.0 
+                self.mt_obj.Z.z_err[ff, 0, 0] = 0.0 
                 
             if self.edits_mode == 'Both' or self.edits_mode == 'Y': 
                 self.ax_res_d.plot(data_period, 
@@ -1399,7 +1399,7 @@ class PlotWidget(QtGui.QWidget):
                                        **self.mask_kw)
 
                 self.mt_obj.Z.z[ff, 1, 1] = 0.0+0.0*1j            
-                self.mt_obj.Z.zerr[ff, 1, 1] = 0.0  
+                self.mt_obj.Z.z_err[ff, 1, 1] = 0.0  
                                
         self.ax_res_od.figure.canvas.draw()
         self.ax_phase_od.figure.canvas.draw()
@@ -1417,7 +1417,7 @@ class PlotWidget(QtGui.QWidget):
                                **self.mask_kw)
                                
             self.mt_obj.Tipper.tipper[ff, 0, 0] = 0.0+0.0*1j            
-            self.mt_obj.Tipper.tippererr[ff, 0, 0] = 0.0
+            self.mt_obj.Tipper.tipper_err[ff, 0, 0] = 0.0
             
         self.mt_obj.Tipper._compute_amp_phase()
  
@@ -1436,7 +1436,7 @@ class PlotWidget(QtGui.QWidget):
                                **self.mask_kw)
                                
             self.mt_obj.Tipper.tipper[ff, 0, 1] = 0.0+0.0*1j            
-            self.mt_obj.Tipper.tippererr[ff, 0, 1] = 0.0  
+            self.mt_obj.Tipper.tipper_err[ff, 0, 1] = 0.0  
  
         self.mt_obj.Tipper._compute_amp_phase()
         

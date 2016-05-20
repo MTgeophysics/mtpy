@@ -331,14 +331,14 @@ class PlotStrike(object):
             #------------get strike from phase tensor strike angle---------------
             pt = mt.get_PhaseTensor()
             az = 90-pt.azimuth[0]
-            azerr = pt.azimuth[1]
+            az_err = pt.azimuth[1]
             
             #need to add 90 because pt assumes 0 is north and 
             #negative because measures clockwise.
             
             #put an error max on the estimation of strike angle
             if self.pt_error_floor:
-                az[np.where(azerr>self.pt_error_floor)] = 0.0
+                az[np.where(az_err>self.pt_error_floor)] = 0.0
             
             #fold so the angle goes from 0 to 180
             if self.fold == True:

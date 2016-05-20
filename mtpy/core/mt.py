@@ -79,7 +79,7 @@ class MT(object):
         * can input the following key words to fill values in Z and Tipper:
             - z_object        --> mtpy.core.z.Z object
             - z_array         --> np.ndarray(n_freq, 2, 2, dtype='complex')
-            - zerr_array      --> np.ndarray(n_freq, 2, 2)
+            - z_err_array      --> np.ndarray(n_freq, 2, 2)
             - freq            --> np.ndarray(n_freq)
             - resistivity     --> np.ndarray(n_freq, 2, 2) (linear scale)
             - resistivity_err --> np.ndarray(n_freq, 2, 2) 
@@ -87,7 +87,7 @@ class MT(object):
             - phase_err       --> np.ndarray(n_freq, 2, 2) 
             - tipper_object   --> mtpy.core.z.Tipper object
             - tipper          --> np.ndarray(n_freq, 1, 2, dtype='complex') 
-            - tippererr       --> np.ndarray(n_freq, 1, 2)
+            - tipper_err       --> np.ndarray(n_freq, 1, 2)
         
     Methods
     ------------
@@ -166,8 +166,8 @@ class MT(object):
         if 'z_array' in kwargs:
             self._Z.z = kwargs['z_array']
         
-        if 'zerr_array' in kwargs:
-            self._Z.zerr = kwargs['zerr_array']
+        if 'z_err_array' in kwargs:
+            self._Z.z_err = kwargs['z_err_array']
         
         if 'freq' in kwargs:
             self._Z.freq = kwargs['freq']
@@ -179,8 +179,8 @@ class MT(object):
         if 'tipper' in kwargs:
             self._Tipper.tipper = kwargs['tipper']
         
-        if 'tippererr' in kwargs:
-            self._Tipper.tippererr = kwargs['tippererr']
+        if 'tipper_err' in kwargs:
+            self._Tipper.tipper_err = kwargs['tipper_err']
             
         if 'resisitivity' in kwargs:
             self._Z.resistivity = kwargs['resistivity']
@@ -491,13 +491,13 @@ class MT(object):
         if self.Z.freq[0] < self.Z.freq[1]:
             print 'Flipping arrays to be ordered from short period to long'
             self.Z.z = self.Z.z.copy()[::-1]
-            self.Z.zerr = self.Z.zerr.copy()[::-1]
+            self.Z.z_err = self.Z.z_err.copy()[::-1]
             self.Z.freq = self.Z.freq.copy()[::-1]
             
         if self.Tipper.tipper is not None:
             if self.Tipper.freq[0] < self.Tipper.freq[1]:
                 self.Tipper.tipper = self.Tipper.tipper.copy()[::-1]
-                self.Tipper.tippererr = self.Tipper.tippererr.copy()[::-1]
+                self.Tipper.tipper_err = self.Tipper.tipper_err.copy()[::-1]
                 self.Tipper.freq = self.Tipper.freq.copy()[::-1]
                 
     def remove_distortion(self, num_freq=None):
@@ -639,12 +639,12 @@ class MT(object):
         # make a new Z object
         new_Z = MTz.Z(z_array=np.zeros((new_freq_array.shape[0], 2, 2), 
                                        dtype='complex'),
-                      zerr_array=np.zeros((new_freq_array.shape[0], 2, 2)), 
+                      z_err_array=np.zeros((new_freq_array.shape[0], 2, 2)), 
                       freq=new_freq_array)
                       
         new_Tipper = MTz.Tipper(tipper_array=np.zeros((new_freq_array.shape[0], 1, 2), 
                                              dtype='complex'),
-                      tippererr_array=np.zeros((new_freq_array.shape[0], 1, 2)), 
+                      tipper_err_array=np.zeros((new_freq_array.shape[0], 1, 2)), 
                       freq=new_freq_array)
         
         # interpolate the impedance tensor
@@ -657,9 +657,9 @@ class MT(object):
                 new_Z.z[:, ii, jj] = z_func_real(new_freq_array)+\
                                      1j*z_func_imag(new_freq_array)
                 
-                z_func_err = spi.interp1d(self.Z.freq, self.Z.zerr[:, ii, jj],
+                z_func_err = spi.interp1d(self.Z.freq, self.Z.z_err[:, ii, jj],
                                            kind='slinear')
-                new_Z.zerr[:, ii, jj] = z_func_err(new_freq_array)
+                new_Z.z_err[:, ii, jj] = z_func_err(new_freq_array)
                 
         # if there is not tipper than skip
         if self.Tipper.tipper is None:
@@ -677,9 +677,9 @@ class MT(object):
                                           1j*t_func_imag(new_freq_array)
             
             t_func_err = spi.interp1d(self.Z.freq, 
-                                      self.Tipper.tippererr[:, 0, jj],
+                                      self.Tipper.tipper_err[:, 0, jj],
                                        kind='slinear')
-            new_Tipper.tippererr[:, 0, jj] = t_func_err(new_freq_array)
+            new_Tipper.tipper_err[:, 0, jj] = t_func_err(new_freq_array)
         
         return new_Z, new_Tipper
         
