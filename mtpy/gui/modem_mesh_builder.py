@@ -376,18 +376,18 @@ class MeshWidget(QtGui.QWidget):
         sv_path = os.path.dirname(save_fn)
         sv_basename = os.path.basename(save_fn)
 
+        setattr(self, 'model_obj', self.mpl_widget.model_obj)
         # be sure to change the grid into nodes
-        east_nodes = self._grid_to_nodes(self.mpl_widget.model_obj.grid_east)       
-        north_nodes = self._grid_to_nodes(self.mpl_widget.model_obj.grid_north)       
-        z_nodes = self._grid_to_nodes(self.mpl_widget.model_obj.grid_z)  
+        self.model_obj.nodes_east = self._grid_to_nodes(self.model_obj.grid_east)       
+        self.model_obj.nodes_north = self._grid_to_nodes(self.model_obj.grid_north)       
+        self.model_obj.nodes_z = self._grid_to_nodes(self.model_obj.grid_z)
         
-        print east_nodes
+        # need to reset the and reshape the resistivity model
+        self.model_obj.res_model = None
+        self.set_rho()
         
         self.model_obj.write_model_file(save_path=sv_path,
-                                        model_fn_basename=sv_basename,
-                                        nodes_east=east_nodes,
-                                        nodes_north=north_nodes,
-                                        nodes_z=z_nodes)
+                                        model_fn_basename=sv_basename)
                                         
     def _grid_to_nodes(self, grid_array):
         nodes_array = grid_array.copy()    
@@ -496,28 +496,39 @@ class MeshWidget(QtGui.QWidget):
         sv_path = os.path.dirname(save_fn)
         sv_basename = os.path.basename(save_fn)
 
-        print self.model_obj.nodes_east.shape
-        print self.model_obj.nodes_north.shape
         # be sure to change the grid into nodes
         self.model_obj.nodes_east = self._grid_to_nodes(self.mpl_widget.model_obj.grid_east)       
         self.model_obj.nodes_north = self._grid_to_nodes(self.mpl_widget.model_obj.grid_north)       
         self.model_obj.nodes_z = self._grid_to_nodes(self.mpl_widget.model_obj.grid_z)  
-        print self.model_obj.nodes_east.shape
-        print self.model_obj.nodes_north.shape
         
         self.set_rho()
         
         self.model_obj.write_model_file(save_path=sv_path,
                                         model_fn_basename=sv_basename)
                                         
+                #--> print out useful information                    
+        print '-'*15
+        print '   Number of stations = {0}'.format(len(self.model_obj.station_locations))
+        print '   Dimensions: '
+        print '      e-w = {0}'.format(self.model_obj.grid_east.shape[0])
+        print '      n-s = {0}'.format(self.model_obj.grid_north.shape[0])
+        print '       z  = {0} (without 7 air layers)'.format(self.model_obj.grid_z.shape[0])
+        print '   Extensions: '
+        print '      e-w = {0:.1f} (m)'.format(self.model_obj.nodes_east.__abs__().sum())
+        print '      n-s = {0:.1f} (m)'.format(self.model_obj.nodes_north.__abs__().sum())
+        print '      0-z = {0:.1f} (m)'.format(self.model_obj.nodes_z.__abs__().sum())
+        
+        print '  Stations rotated by: {0:.1f} deg clockwise positive from N'.format(self.model_obj.mesh_rotation_angle)
+        print ''
+                                        
     def set_rho(self):
         if self.model_obj.res_model is None:
-            self.model_obj.res_model = np.zeros(self.model_obj.grid_north.shape[0],
+            self.model_obj.res_model = np.zeros((self.model_obj.grid_north.shape[0],
                                                 self.model_obj.grid_east.shape[0],
-                                                self.model_obj.grid_z.shape[0])
+                                                self.model_obj.grid_z.shape[0]))
                                                 
         self.model_obj.res_model[:, :, :] = float(str(self.rho_start_edit.text()))
-        self.rho_start_edit.setText('{0:.2f}'.format(self.rho_start_edit.text()))
+        self.rho_start_edit.setText('{0:.2f}'.format(float(str(self.rho_start_edit.text()))))
     
     @QtCore.pyqtSlot(str)
     def normal_output(self, message):
@@ -644,7 +655,7 @@ class MeshPlot(QtGui.QWidget):
     def plot_mesh(self, model_obj, east_limits=None, north_limits=None, 
                   z_limits=None):
                       
-        self.model_obj = copy.deepcopy(model_obj)
+        self.model_obj = model_obj
                       
         try:
             self.model_obj.make_mesh()
@@ -652,8 +663,7 @@ class MeshPlot(QtGui.QWidget):
             QtGui.QMessageBox.warning(self,
                                       'Cannot Make Mesh -- Need EDI Files',
                                       "Please press the 'Get EDI Files' button to get files", 
-                                      QtGui.QMessageBox.Cancel,
-                                      )
+                                      QtGui.QMessageBox.Cancel)
             return
             
         
