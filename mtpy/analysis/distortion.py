@@ -17,12 +17,10 @@ constraints depend on the application, the actual place for further functions
  is in an independent, personalised module.
 
 
-
-    Functions:
-
-
 @UofA, 2013
 (LK)
+
+Edited by JP, 2016
 
 """
 
@@ -62,7 +60,7 @@ import copy
 
 
 
-def find_distortion(z_object, g = 'det', num_freq=None, lo_dims=None):
+def find_distortion(z_object, g ='det', num_freq=None, lo_dims=None):
     """
     find optimal distortion tensor from z object
 

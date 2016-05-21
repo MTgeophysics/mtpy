@@ -34,7 +34,7 @@ class PlotStrike(object):
     strike determined from the tipper, which is orthogonal to the induction
     arrow direction.  
     
-    Arguments:
+    Arguments
     ----------
         **fn_list** : list of strings
                           full paths to .edi files to plot
@@ -115,7 +115,7 @@ class PlotStrike(object):
         >>> strike.save_plot(r"/home/Figures")
         'Figure saved to /home/Figures/StrikeAnalysis_.pdf'
         
-    Attributes:
+    Attributes
     -----------
         
         -axhinv            matplotlib.axes instance for invariant strike
@@ -151,7 +151,7 @@ class PlotStrike(object):
         -text_size         font size of text labeling the mode of the histogram
         -title_dict        title dictionary 
         
-    Methods:
+    Methods
     --------
 
         -plot                 plots the pseudo section
@@ -890,16 +890,16 @@ class PlotStrike(object):
         """
         save_plot will save the figure to save_fn.
         
-        Arguments:
+        Arguments
         -----------
         
             **save_fn** : string
                           full path to save figure to, can be input as
-                          * directory path -> the directory path to save to
+                          - directory path -> the directory path to save to
                             in which the file will be saved as 
                             save_fn/station_name_ResPhase.file_format
                             
-                          * full path -> file will be save to the given 
+                          - full path -> file will be save to the given 
                             path.  If you use this option then the format
                             will be assumed to be provided by the path
                             
@@ -917,9 +917,12 @@ class PlotStrike(object):
                           it can be larger than dpi of the figure.
                           
             **close_plot** : [ y | n ]
-                             * 'y' will close the plot after saving.
-                             * 'n' will leave plot open
-                          
+                             -'y' will close the plot after saving.
+                             -'n' will leave plot open
+          
+        Examples
+        ---------
+                
         :Example: ::
             
             >>> # to save plot as jpg

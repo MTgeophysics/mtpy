@@ -1,54 +1,13 @@
 #!/usr/bin/env python
 
 """
-mtpy/mtpy/analysis/pt.py
+======================
+Phase Tensor
+======================
 
-Contains classes and functions for handling Phase Tensor analysis of given impedance tensors (Z). 
- 
-    Class:
-    "PhaseTensor" contains information about a Phase tensor PT. 
+Following Caldwell et al, 2004
 
-        Methods:
-
-        - set_pt
-        - set_pterr
-        - set_freq
-        - read_edi_file
-        - read_edi
-        - read_z
-        - read_z_array
-        - invariants
-        - trace
-        - alpha
-        - beta
-        - skew
-        - det
-        - _pi1
-        - _pi2
-        - phimin
-        - phimax
-        - rotate
-        - only1d
-        - only2d
-
-    Class:
-    "ResidualPhaseTensor" contains information about a REsidual Phase tensor ResPT.
-
-        Methods:
-
-        - read_pt_objects
-        - read_pts
-        - set_rpt
-        - set_rpterr
-
-
-    Functions:
-
-    - z2pt
-    - z_object2pt
-    - edi_object2pt
-    - edi_file2pt
-
+Residual Phase Tensor following Heise et al., [2008]
 
 @UofA, 2013
 (LK)
@@ -68,44 +27,44 @@ import mtpy.utils.calculator as MTcc
 
 class PhaseTensor(object):
     """
-        PhaseTensor class - generates a Phase Tensor (PT) object.
+    PhaseTensor class - generates a Phase Tensor (PT) object.
 
-        Methods  include reading and writing from and to edi-objects, rotations
-        combinations of Z instances, as well as 
-        calculation of invariants, inverse, amplitude/phase,...
+    Methods  include reading and writing from and to edi-objects, rotations
+    combinations of Z instances, as well as 
+    calculation of invariants, inverse, amplitude/phase,...
 
-        
-        PT is a complex array of the form (n_freq, 2, 2), 
-        with indices in the following order: 
-            PTxx: (0,0) - PTxy: (0,1) - PTyx: (1,0) - PTyy: (1,1)   
+    
+    PT is a complex array of the form (n_freq, 2, 2), 
+    with indices in the following order: 
+        PTxx: (0,0) - PTxy: (0,1) - PTyx: (1,0) - PTyy: (1,1)   
 
-        All internal methods are based on (Caldwell et al.,2004) and 
-		(Bibby et al.,2005), in which they use the canonical cartesian 2D 
-            reference (x1, x2). However, all components, coordinates, 
-            and angles for in- and outputs are given in the geographical 
-            reference frame:
+    All internal methods are based on (Caldwell et al.,2004) and 
+	 (Bibby et al.,2005), in which they use the canonical cartesian 2D 
+    reference (x1, x2). However, all components, coordinates, 
+    and angles for in- and outputs are given in the geographical 
+    reference frame:
                 x-axis = North ; y-axis = East (; z-axis = Down) 
-            
-            Therefore, all results from using those methods are consistent 
-			(angles are referenced from North rather than x1).
+        
+    Therefore, all results from using those methods are consistent 
+	 (angles are referenced from North rather than x1).
+  
+    ====================== ====================================================
+    Attributes             Description    
+    ====================== ====================================================
+    freq                   array of frequencies associated with elements of 
+                           impedance tensor.
+    pt                     phase tensor array
+    pterr                  phase tensor error
+    z                      impedance tensor
+    z_err                  impedance error
+    rotation_angle         rotation angle in degrees  
+    ====================== ====================================================
 
     """
 
-    def __init__(self, pt_array = None, pterr_array = None, z_array = None, 
-			z_err_array = None, z_object = None, freq=None, pt_rot=0.0):
-        """
-            Initialise an instance of the PhaseTensor class.
+    def __init__(self, pt_array=None, pterr_array=None, z_array=None, 
+                 z_err_array=None, z_object=None, freq=None, pt_rot=0.0):
 
-            Optional input:
-            pt_array : Numpy array containing Phase-Tensor values
-            pterr_array : Numpy array containing Phase-Tensor-error values
-            z_array : Numpy array containing Z values
-            z_err_array : Numpy array containing Z-error values (NOT variance, but stddev!)
-            z_object: MTpy core.z Z class instance
-            freq : numpy array containing freq values
-
-            (Initialise attributes with None)
-        """
 
         self._pt = pt_array
         self._pterr = pterr_array
