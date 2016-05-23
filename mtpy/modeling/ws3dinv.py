@@ -77,7 +77,6 @@ from matplotlib.colors import Normalize
 import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
 import mtpy.core.z as mtz
-import mtpy.core.edi as mtedi
 import mtpy.core.mt as mt
 import mtpy.imaging.mtplottools as mtplottools
 import matplotlib.widgets as widgets
@@ -87,8 +86,6 @@ import mtpy.modeling.winglink as wl
 import mtpy.utils.exceptions as mtex
 import mtpy.analysis.pt as mtpt
 import mtpy.imaging.mtcolors as mtcl
-
-import mtpy.utils.latlongutmconversion as ll2utm
 
 try:
     from evtk.hl import gridToVTK, pointsToVTK
@@ -1046,12 +1043,11 @@ class WSMesh(object):
                                                      ('elev', np.float)])
             #get station locations in meters
             for ii, edi in enumerate(self.edi_list):
-                zz = mtedi.Edi(edi)
-                zone, east, north = ll2utm.LLtoUTM(23, zz.lat, zz.lon)
-                self.station_locations[ii]['station'] = zz.station
-                self.station_locations[ii]['east'] = east
-                self.station_locations[ii]['north'] = north
-                self.station_locations[ii]['elev'] = zz.elev
+                mt_obj = mt.MT(edi)
+                self.station_locations[ii]['station'] = mt_obj.station
+                self.station_locations[ii]['east'] = mt_obj.east
+                self.station_locations[ii]['north'] = mt_obj.north
+                self.station_locations[ii]['elev'] = mt_obj.elev
              
             #remove the average distance to get coordinates in a relative space
             self.station_locations['east'] -= self.station_locations['east'].mean()
