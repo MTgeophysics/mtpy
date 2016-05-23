@@ -68,7 +68,7 @@ import os.path as op
 import time
 from matplotlib.ticker import MultipleLocator
 import matplotlib.gridspec as gridspec
-import mtpy.core.edi as mtedi
+import mtpy.core.mt as mt
 import mtpy.utils.calculator as mtcc
 import mtpy.analysis.geometry as mtg
 import matplotlib.pyplot as plt
@@ -239,8 +239,8 @@ class Data(object):
         if edi_file is not None:
     
             #read in edifile
-            edi_obj = mtedi.Edi(edi_file)  
-            z_obj = edi_obj.Z
+            mt_obj = mt.MT(edi_file)  
+            z_obj = mt_obj.Z
             z_obj._compute_res_phase()
             
             # get frequencies to invert
@@ -2451,7 +2451,7 @@ def update_inputs():
 
     return cline_inputs
     
-def get_strike(edi_object,fmin,fmax,strike_approx = 0):
+def get_strike(mt_object, fmin, fmax, strike_approx=0):
     """
     get the strike from the z array, choosing the strike angle that is closest
     to the azimuth of the PT ellipse (PT strike).
@@ -2459,10 +2459,10 @@ def get_strike(edi_object,fmin,fmax,strike_approx = 0):
     if there is not strike available from the z array use the PT strike.
     
     """
-    fselect = (edi_object.freq > fmin) & (edi_object.freq < fmax)
+    fselect = (mt_object.Z.freq > fmin) & (mt_object.Z.freq < fmax)
     
     # get median strike angles for frequencies needed (two strike angles due to 90 degree ambiguity)
-    zstrike = mtg.strike_angle(z_object=edi_object.Z)[fselect]
+    zstrike = mtg.strike_angle(z_object=mt_object.Z)[fselect]
     # put both strikes in the same quadrant for averaging
     zstrike = zstrike % 90
     zstrike = np.median(zstrike[np.isfinite(zstrike[:,0])],axis=0)
@@ -2501,17 +2501,17 @@ def generate_inputfiles(**input_parameters):
     
     for edifile in edilist:
         # read the edi file to get the station name
-        eo = mtedi.Edi(op.join(edipath,edifile))
+        eo = mt.MT(op.join(edipath,edifile))
         print input_parameters['rotation_angle'],input_parameters['working_directory'],input_parameters['rotation_angle_file']
         if input_parameters['rotation_angle'] == 'strike':
             spr = input_parameters['strike_period_range']
-            fmax,fmin = [1./np.amin(spr),1./np.amax(spr)]
+            fmax,fmin = [1./np.amin(spr), 1./np.amax(spr)]
             rotangle = (get_strike(eo,fmin,fmax,
-                                   strike_approx = input_parameters['strike_approx']) - 90.) % 180
+                                   strike_approx=input_parameters['strike_approx'])-90.)%180
         elif input_parameters['rotation_angle'] == 'file':
-            with open(op.join(input_parameters['working_directory'],input_parameters['rotation_angle_file'])) as f:
+            with open(op.join(input_parameters['working_directory'], input_parameters['rotation_angle_file'])) as f:
                 line = f.readline().strip().split()
-                print line,eo.station
+                print line, eo.station
                 while string.upper(line[0]) != string.upper(eo.station):
                     line = f.readline().strip().split()
                     if len(line) == 0:
