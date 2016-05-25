@@ -1041,7 +1041,7 @@ class Profile():
         if self.geoelectric_strike is None:
             try:
                 #might try mode here instead of mean
-                self.geoelectric_strike = np.median(np.nonzero(strike_angles))
+                self.geoelectric_strike = np.median(strike_angles[np.nonzero(strike_angles)])
             except:
                 #empty list or so....
                 #can happen, if everyhing is just 1D
