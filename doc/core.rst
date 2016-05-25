@@ -2,18 +2,18 @@
 Core: 
 *********
 
-.. **Module z**
-.. =============
+**Module z**
+=============
 .. automodule:: mtpy.core.z
 
-.. **Class Z**
-.. ------------
-.. .. autoclass:: mtpy.core.z.Z
+**Class Z**
+------------
+.. autoclass:: mtpy.core.z.Z
     :members:
 
-.. **Class Tipper**
-.. -----------------
-.. .. autoclass:: mtpy.core.z.Tipper
+**Class Tipper**
+-----------------
+.. autoclass:: mtpy.core.z.Tipper
     :members:
 	
 **Module edi**
@@ -22,6 +22,15 @@ Core:
 **Class Edi**
 --------------
 .. automodule:: mtpy.core.edi
+    :members:
+	
+**Module MT**
+===============
+
+**Class MT**
+-------------
+.. automodule:: mtpy.core.mt
+    :members:
 	
 
 

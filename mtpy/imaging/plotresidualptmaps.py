@@ -601,10 +601,10 @@ class PlotResidualPTMaps(mtpl.MTEllipse):
                     
                     #create new Z objects that have similar frequencies                                              
                     new_z1 = mtpl.mtz.Z(z_array=mt1.z[index_1],
-                                        zerr_array=mt1.z_err[index_1],
+                                        z_err_array=mt1.z_err[index_1],
                                         freq=mt1.freq[index_1])
                     new_z2 = mtpl.mtz.Z(z_array=mt2.z[index_2],
-                                        zerr_array=mt2.z_err[index_2],
+                                        z_err_array=mt2.z_err[index_2],
                                         freq=mt2.freq[index_2])
                                         
                     #make new phase tensor objects

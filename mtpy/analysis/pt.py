@@ -1,54 +1,13 @@
 #!/usr/bin/env python
 
 """
-mtpy/mtpy/analysis/pt.py
+======================
+Phase Tensor
+======================
 
-Contains classes and functions for handling Phase Tensor analysis of given impedance tensors (Z). 
- 
-    Class:
-    "PhaseTensor" contains information about a Phase tensor PT. 
+Following Caldwell et al, 2004
 
-        Methods:
-
-        - set_pt
-        - set_pterr
-        - set_freq
-        - read_edi_file
-        - read_edi
-        - read_z
-        - read_z_array
-        - invariants
-        - trace
-        - alpha
-        - beta
-        - skew
-        - det
-        - _pi1
-        - _pi2
-        - phimin
-        - phimax
-        - rotate
-        - only1d
-        - only2d
-
-    Class:
-    "ResidualPhaseTensor" contains information about a REsidual Phase tensor ResPT.
-
-        Methods:
-
-        - read_pt_objects
-        - read_pts
-        - set_rpt
-        - set_rpterr
-
-
-    Functions:
-
-    - z2pt
-    - z_object2pt
-    - edi_object2pt
-    - edi_file2pt
-
+Residual Phase Tensor following Heise et al., [2008]
 
 @UofA, 2013
 (LK)
@@ -68,49 +27,49 @@ import mtpy.utils.calculator as MTcc
 
 class PhaseTensor(object):
     """
-        PhaseTensor class - generates a Phase Tensor (PT) object.
+    PhaseTensor class - generates a Phase Tensor (PT) object.
 
-        Methods  include reading and writing from and to edi-objects, rotations
-        combinations of Z instances, as well as 
-        calculation of invariants, inverse, amplitude/phase,...
+    Methods  include reading and writing from and to edi-objects, rotations
+    combinations of Z instances, as well as 
+    calculation of invariants, inverse, amplitude/phase,...
 
-        
-        PT is a complex array of the form (n_freq, 2, 2), 
-        with indices in the following order: 
-            PTxx: (0,0) - PTxy: (0,1) - PTyx: (1,0) - PTyy: (1,1)   
+    
+    PT is a complex array of the form (n_freq, 2, 2), 
+    with indices in the following order: 
+        PTxx: (0,0) - PTxy: (0,1) - PTyx: (1,0) - PTyy: (1,1)   
 
-        All internal methods are based on (Caldwell et al.,2004) and 
-		(Bibby et al.,2005), in which they use the canonical cartesian 2D 
-            reference (x1, x2). However, all components, coordinates, 
-            and angles for in- and outputs are given in the geographical 
-            reference frame:
+    All internal methods are based on (Caldwell et al.,2004) and 
+	 (Bibby et al.,2005), in which they use the canonical cartesian 2D 
+    reference (x1, x2). However, all components, coordinates, 
+    and angles for in- and outputs are given in the geographical 
+    reference frame:
                 x-axis = North ; y-axis = East (; z-axis = Down) 
-            
-            Therefore, all results from using those methods are consistent 
-			(angles are referenced from North rather than x1).
+        
+    Therefore, all results from using those methods are consistent 
+	 (angles are referenced from North rather than x1).
+  
+    ====================== ====================================================
+    Attributes             Description    
+    ====================== ====================================================
+    freq                   array of frequencies associated with elements of 
+                           impedance tensor.
+    pt                     phase tensor array
+    pterr                  phase tensor error
+    z                      impedance tensor
+    z_err                  impedance error
+    rotation_angle         rotation angle in degrees  
+    ====================== ====================================================
 
     """
 
-    def __init__(self, pt_array = None, pterr_array = None, z_array = None, 
-			zerr_array = None, z_object = None, freq=None, pt_rot=0.0):
-        """
-            Initialise an instance of the PhaseTensor class.
+    def __init__(self, pt_array=None, pterr_array=None, z_array=None, 
+                 z_err_array=None, z_object=None, freq=None, pt_rot=0.0):
 
-            Optional input:
-            pt_array : Numpy array containing Phase-Tensor values
-            pterr_array : Numpy array containing Phase-Tensor-error values
-            z_array : Numpy array containing Z values
-            zerr_array : Numpy array containing Z-error values (NOT variance, but stddev!)
-            z_object: MTpy core.z Z class instance
-            freq : numpy array containing freq values
-
-            (Initialise attributes with None)
-        """
 
         self._pt = pt_array
         self._pterr = pterr_array
         self._z = z_array
-        self._z_err = zerr_array
+        self._z_err = z_err_array
         self._freq = freq
         self.rotation_angle = pt_rot
         
@@ -133,11 +92,11 @@ class PhaseTensor(object):
                 self._z_err = None
                 print 'Can not calculate pt from z==None'
 
-            if zerr_array is not None:
+            if z_err_array is not None:
                 
                 try:
-                    self._set_z_err(zerr_array)
-                    if z_array.shape != zerr_array.shape:
+                    self._set_z_err(z_err_array)
+                    if z_array.shape != z_err_array.shape:
                         self._set_z_err(None)
                 except:
                     pass
@@ -313,7 +272,7 @@ class PhaseTensor(object):
         """
         
         self._z = z_object.z
-        self._z_err = z_object.zerr
+        self._z_err = z_object.z_err
         self._freq = z_object.freq
         self._pt = np.zeros_like(self._z, dtype=np.float)
         self._pterr = np.zeros_like(self._z, dtype=np.float)
@@ -347,7 +306,7 @@ class PhaseTensor(object):
         self.rotation_angle = z_object.rotation_angle
         
     # def _get_z_object(self):
-    #     z_object = MTz.Z(z_array=self._z, zerr_array=self._z_err)
+    #     z_object = MTz.Z(z_array=self._z, z_err_array=self._z_err)
     #     z_object.freq = self._freq
     #     z_object.rotation_angle = self.rotation_angle
         
@@ -1183,7 +1142,7 @@ class ResidualPhaseTensor():
 
 #=======================================================================
 
-def z2pt(z_array, zerr_array = None):
+def z2pt(z_array, z_err_array = None):
     """
         Calculate Phase Tensor from Z array (incl. uncertainties)
 
@@ -1210,19 +1169,19 @@ def z2pt(z_array, zerr_array = None):
             raise MTex.MTpyError_PT('Error - incorrect z array: %s;%s instead of (N,2,2);complex'%(str(z_array.shape), str(z_array.dtype)))    
 
 
-    if zerr_array is not None:
+    if z_err_array is not None:
         try:
-            if not  len(zerr_array.shape) in [2,3]:
+            if not  len(z_err_array.shape) in [2,3]:
                 raise
-            if not zerr_array.shape[-2:] == (2,2):
+            if not z_err_array.shape[-2:] == (2,2):
                 raise
-            if not zerr_array.dtype in ['float']:
+            if not z_err_array.dtype in ['float']:
                 raise
         except:
-            raise MTex.MTpyError_PT('Error - incorrect z-err-array: %s;%s instead of (N,2,2);real'%(str(zerr_array.shape), str(zerr_array.dtype)))
+            raise MTex.MTpyError_PT('Error - incorrect z-err-array: %s;%s instead of (N,2,2);real'%(str(z_err_array.shape), str(z_err_array.dtype)))
 
-        if not z_array.shape == zerr_array.shape:
-            raise MTex.MTpyError_PT('Error - z-array and z-err-array have different shape: %s;%s'%(str(z_array.shape), str(zerr_array.shape)))
+        if not z_array.shape == z_err_array.shape:
+            raise MTex.MTpyError_PT('Error - z-array and z-err-array have different shape: %s;%s'%(str(z_array.shape), str(z_err_array.shape)))
 
     #for a single matrix as input:
     if len(z_array.shape) == 2:
@@ -1236,7 +1195,7 @@ def z2pt(z_array, zerr_array = None):
         if detreal == 0 :
             if np.linalg.norm(realz) == 0 and np.linalg.norm(imagz) == 0:
                 pterr_array = np.zeros_like(pt_array)
-                if zerr_array is None:
+                if z_err_array is None:
                     pterr_array = None                
                 return pt_array, pterr_array
 
@@ -1252,41 +1211,41 @@ def z2pt(z_array, zerr_array = None):
 
         pt_array /= detreal
 
-        if zerr_array is None:
+        if z_err_array is None:
             return pt_array, None
 
         pterr_array = np.zeros_like(pt_array)
 
         #Z entries are independent -> use Gaussian error propagation (squared sums/2-norm)
-        pterr_array[0,0] = 1/np.abs(detreal) * np.sqrt(np.sum([np.abs(-pt_array[0,0] * realz[1,1] * zerr_array[0,0])**2,
-                                                                np.abs( pt_array[0,0] * realz[0,1] * zerr_array[1,0])**2,
-                                                                np.abs(((imagz[0,0] * realz[1,0] - realz[0,0] * imagz[1,0]) / np.abs(detreal) * realz[0,0] ) * zerr_array[0,1])**2, 
-                                                                np.abs(((imagz[1,0] * realz[0,0] - realz[1,0] * imagz[1,1]) / np.abs(detreal) * realz[0,1] ) * zerr_array[1,1])**2,
-                                                                np.abs(realz[1,1] * zerr_array[0,0])**2,
-                                                                np.abs(realz[0,1] * zerr_array[1,0])**2 ]))
+        pterr_array[0,0] = 1/np.abs(detreal) * np.sqrt(np.sum([np.abs(-pt_array[0,0] * realz[1,1] * z_err_array[0,0])**2,
+                                                                np.abs( pt_array[0,0] * realz[0,1] * z_err_array[1,0])**2,
+                                                                np.abs(((imagz[0,0] * realz[1,0] - realz[0,0] * imagz[1,0]) / np.abs(detreal) * realz[0,0] ) * z_err_array[0,1])**2, 
+                                                                np.abs(((imagz[1,0] * realz[0,0] - realz[1,0] * imagz[1,1]) / np.abs(detreal) * realz[0,1] ) * z_err_array[1,1])**2,
+                                                                np.abs(realz[1,1] * z_err_array[0,0])**2,
+                                                                np.abs(realz[0,1] * z_err_array[1,0])**2 ]))
 
 
-        pterr_array[0,1] = 1/np.abs(detreal) * np.sqrt( np.sum([np.abs( -pt_array[0,1] * realz[1,1] * zerr_array[0,0])**2,
-                                                                np.abs(  pt_array[0,1] * realz[0,1] * zerr_array[1,0])**2,
-                                                                np.abs(  ( (imagz[0,1] * realz[1,0] - realz[0,0] * imagz[1,1]) / np.abs(detreal) * realz[1,1] ) * zerr_array[0,1])**2, 
-                                                                np.abs(  ( (imagz[1,1] * realz[0,0] - realz[0,1] * imagz[1,0]) / np.abs(detreal) * realz[0,1] ) * zerr_array[1,1])**2,
-                                                                np.abs(  realz[1,1] * zerr_array[0,1])**2,
-                                                                np.abs( realz[0,1] * zerr_array[1,1])**2 ]))
+        pterr_array[0,1] = 1/np.abs(detreal) * np.sqrt( np.sum([np.abs( -pt_array[0,1] * realz[1,1] * z_err_array[0,0])**2,
+                                                                np.abs(  pt_array[0,1] * realz[0,1] * z_err_array[1,0])**2,
+                                                                np.abs(  ( (imagz[0,1] * realz[1,0] - realz[0,0] * imagz[1,1]) / np.abs(detreal) * realz[1,1] ) * z_err_array[0,1])**2, 
+                                                                np.abs(  ( (imagz[1,1] * realz[0,0] - realz[0,1] * imagz[1,0]) / np.abs(detreal) * realz[0,1] ) * z_err_array[1,1])**2,
+                                                                np.abs(  realz[1,1] * z_err_array[0,1])**2,
+                                                                np.abs( realz[0,1] * z_err_array[1,1])**2 ]))
 
-        pterr_array[1,0] = 1/np.abs(detreal) * np.sqrt( np.sum([np.abs(  pt_array[1,0] * realz[1,0] * zerr_array[0,1])**2,
-                                                                np.abs( -pt_array[1,0] * realz[0,0] * zerr_array[1,1])**2,
-                                                                np.abs(  ( (imagz[0,0] * realz[1,1] - realz[0,1] * imagz[1,1]) / np.abs(detreal) * realz[1,0] ) * zerr_array[0,0])**2, 
-                                                                np.abs(  ( (imagz[1,0] * realz[0,1] - realz[1,1] * imagz[0,0]) / np.abs(detreal) * realz[0,0] ) * zerr_array[0,1])**2,
-                                                                np.abs(  realz[1,0] * zerr_array[0,0])**2,
-                                                                np.abs( realz[0,0] * zerr_array[1,0])**2 ]))
+        pterr_array[1,0] = 1/np.abs(detreal) * np.sqrt( np.sum([np.abs(  pt_array[1,0] * realz[1,0] * z_err_array[0,1])**2,
+                                                                np.abs( -pt_array[1,0] * realz[0,0] * z_err_array[1,1])**2,
+                                                                np.abs(  ( (imagz[0,0] * realz[1,1] - realz[0,1] * imagz[1,1]) / np.abs(detreal) * realz[1,0] ) * z_err_array[0,0])**2, 
+                                                                np.abs(  ( (imagz[1,0] * realz[0,1] - realz[1,1] * imagz[0,0]) / np.abs(detreal) * realz[0,0] ) * z_err_array[0,1])**2,
+                                                                np.abs(  realz[1,0] * z_err_array[0,0])**2,
+                                                                np.abs( realz[0,0] * z_err_array[1,0])**2 ]))
 
 
-        pterr_array[1,1] = 1/np.abs(detreal) * np.sqrt( np.sum([np.abs(  pt_array[1,1] * realz[1,0] * zerr_array[0,1])**2,
-                                                                np.abs( -pt_array[1,1] * realz[0,0] * zerr_array[1,1])**2,
-                                                                np.abs(  ( (imagz[0,1] * realz[1,1] - realz[0,1] * imagz[1,1]) / np.abs(detreal) * realz[1,0] ) * zerr_array[0,0])**2, 
-                                                                np.abs(  ( (imagz[1,1] * realz[0,1] - realz[1,1] * imagz[0,1]) / np.abs(detreal) * realz[0,0] ) * zerr_array[0,1])**2,
-                                                                np.abs( - realz[1,0] * zerr_array[0,1])**2,
-                                                                np.abs( realz[0,0] * zerr_array[1,1])**2 ]))
+        pterr_array[1,1] = 1/np.abs(detreal) * np.sqrt( np.sum([np.abs(  pt_array[1,1] * realz[1,0] * z_err_array[0,1])**2,
+                                                                np.abs( -pt_array[1,1] * realz[0,0] * z_err_array[1,1])**2,
+                                                                np.abs(  ( (imagz[0,1] * realz[1,1] - realz[0,1] * imagz[1,1]) / np.abs(detreal) * realz[1,0] ) * z_err_array[0,0])**2, 
+                                                                np.abs(  ( (imagz[1,1] * realz[0,1] - realz[1,1] * imagz[0,1]) / np.abs(detreal) * realz[0,0] ) * z_err_array[0,1])**2,
+                                                                np.abs( - realz[1,0] * z_err_array[0,1])**2,
+                                                                np.abs( realz[0,0] * z_err_array[1,1])**2 ]))
 
 
         return pt_array, pterr_array
@@ -1311,33 +1270,33 @@ def z2pt(z_array, zerr_array = None):
 
         pt_array /= detreal
 
-        if zerr_array is None:
+        if z_err_array is None:
             return pt_array, pterr_array
 
         pterr_array = np.zeros_like(pt_array)
-        pterr_array[idx_f,0,0] = 1/detreal * (np.abs( -pt_array[idx_f,0,0] * realz[1,1] * zerr_array[0,0]) + \
-                                        np.abs(  pt_array[idx_f,0,0] * realz[0,1] * zerr_array[1,0]) + \
-                                        np.abs(  (imagz[0,0] - pt_array[idx_f,0,0] * realz[0,0] ) * zerr_array[1,1]) +\
-                                        np.abs(  (-imagz[1,0]+ pt_array[idx_f,0,0] * realz[1,0] ) * zerr_array[0,1]) + \
-                                        np.abs(  realz[1,1] * zerr_array[0,0]) + np.abs( realz[0,1] * zerr_array[1,0]) )
+        pterr_array[idx_f,0,0] = 1/detreal * (np.abs( -pt_array[idx_f,0,0] * realz[1,1] * z_err_array[0,0]) + \
+                                        np.abs(  pt_array[idx_f,0,0] * realz[0,1] * z_err_array[1,0]) + \
+                                        np.abs(  (imagz[0,0] - pt_array[idx_f,0,0] * realz[0,0] ) * z_err_array[1,1]) +\
+                                        np.abs(  (-imagz[1,0]+ pt_array[idx_f,0,0] * realz[1,0] ) * z_err_array[0,1]) + \
+                                        np.abs(  realz[1,1] * z_err_array[0,0]) + np.abs( realz[0,1] * z_err_array[1,0]) )
 
-        pterr_array[idx_f,0,1] = 1/detreal * (np.abs( -pt_array[idx_f,0,1] * realz[1,1] * zerr_array[0,0]) + \
-                                        np.abs(  pt_array[idx_f,0,1] * realz[0,1] * zerr_array[1,0]) + \
-                                        np.abs(  (imagz[0,1] - pt_array[idx_f,0,1] * realz[0,0] ) * zerr_array[1,1]) +\
-                                        np.abs(  (-imagz[1,1]+ pt_array[idx_f,0,1] * realz[1,0] ) * zerr_array[0,1]) + \
-                                        np.abs(  realz[1,1] * zerr_array[0,1]) + np.abs( realz[0,1] * zerr_array[1,1]) )
+        pterr_array[idx_f,0,1] = 1/detreal * (np.abs( -pt_array[idx_f,0,1] * realz[1,1] * z_err_array[0,0]) + \
+                                        np.abs(  pt_array[idx_f,0,1] * realz[0,1] * z_err_array[1,0]) + \
+                                        np.abs(  (imagz[0,1] - pt_array[idx_f,0,1] * realz[0,0] ) * z_err_array[1,1]) +\
+                                        np.abs(  (-imagz[1,1]+ pt_array[idx_f,0,1] * realz[1,0] ) * z_err_array[0,1]) + \
+                                        np.abs(  realz[1,1] * z_err_array[0,1]) + np.abs( realz[0,1] * z_err_array[1,1]) )
 
-        pterr_array[idx_f,1,0] = 1/detreal * (np.abs(  (imagz[1,0] - pt_array[idx_f,1,0] * realz[1,1] ) * zerr_array[0,0]) +\
-                                        np.abs( pt_array[idx_f,1,0] * realz[1,0] * zerr_array[0,1]) + \
-                                        np.abs(  (-imagz[0,0] + pt_array[idx_f,1,0] * realz[0,1] ) * zerr_array[1,0]) + \
-                                        np.abs( -pt_array[idx_f,1,0] * realz[0,0] * zerr_array[1,1]) + \
-                                        np.abs(  realz[0,0] * zerr_array[1,0]) + np.abs( -realz[1,0] * zerr_array[0,0]) )
+        pterr_array[idx_f,1,0] = 1/detreal * (np.abs(  (imagz[1,0] - pt_array[idx_f,1,0] * realz[1,1] ) * z_err_array[0,0]) +\
+                                        np.abs( pt_array[idx_f,1,0] * realz[1,0] * z_err_array[0,1]) + \
+                                        np.abs(  (-imagz[0,0] + pt_array[idx_f,1,0] * realz[0,1] ) * z_err_array[1,0]) + \
+                                        np.abs( -pt_array[idx_f,1,0] * realz[0,0] * z_err_array[1,1]) + \
+                                        np.abs(  realz[0,0] * z_err_array[1,0]) + np.abs( -realz[1,0] * z_err_array[0,0]) )
 
-        pterr_array[idx_f,1,1] = 1/detreal * (np.abs(  (imagz[1,1] - pt_array[idx_f,1,1] * realz[1,1] ) * zerr_array[0,0]) +\
-                                        np.abs( pt_array[idx_f,1,1] * realz[1,0] * zerr_array[0,1]) + \
-                                        np.abs(  (-imagz[0,1] + pt_array[idx_f,1,1] * realz[0,1] ) * zerr_array[1,0]) + \
-                                        np.abs( -pt_array[idx_f,1,1] * realz[0,0] * zerr_array[1,1]) + \
-                                        np.abs(  realz[0,0] * zerr_array[1,1]) + np.abs( -realz[1,0] * zerr_array[0,1]) )
+        pterr_array[idx_f,1,1] = 1/detreal * (np.abs(  (imagz[1,1] - pt_array[idx_f,1,1] * realz[1,1] ) * z_err_array[0,0]) +\
+                                        np.abs( pt_array[idx_f,1,1] * realz[1,0] * z_err_array[0,1]) + \
+                                        np.abs(  (-imagz[0,1] + pt_array[idx_f,1,1] * realz[0,1] ) * z_err_array[1,0]) + \
+                                        np.abs( -pt_array[idx_f,1,1] * realz[0,0] * z_err_array[1,1]) + \
+                                        np.abs(  realz[0,0] * z_err_array[1,1]) + np.abs( -realz[1,0] * z_err_array[0,1]) )
 
     return pt_array, pterr_array
 

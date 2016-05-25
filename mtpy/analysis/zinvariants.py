@@ -15,13 +15,13 @@ class Zinvariants:
     calculates invariants from Weaver et al. [2000, 2003].  At the moment it 
     does not calculate the error for each invariant, only the strike.
     
-    Arguments:
+    Arguments
     ----------
         **z_object** : type mtpy.core.z
                        needs to have attributes:
                            *z --> np.array((nf, 2, 2), dtype='complex')
                            
-                           *zerr --> np.array((nf, 2, 2), dtype='real')
+                           *z_err --> np.array((nf, 2, 2), dtype='real')
                            
                            *freq --> np.array(nf)
                            
@@ -35,7 +35,7 @@ class Zinvariants:
                           array of freq cooresponding to the impedance 
                           tensor elements.
                           
-    Attributes:
+    Attributes
     -----------
         **inv1**       : real off diaganol part normalizing factor
         
@@ -58,7 +58,7 @@ class Zinvariants:
         **q**          : dependent variable suggesting dimensionality
         
         
-    Further reading:
+    Further reading
     ----------------
         Weaver, J. T., Agarwal, A. K., Lilley, F. E. M., 2000,
            Characterization of the magnetotelluric tensor in terms of its 
@@ -261,7 +261,7 @@ class Zinvariants:
         those as well.        
         """
         
-        self._Z.zerr = z_err_array
+        self._Z.z_err = z_err_array
         
         # --> update the invariants
         self.compute_invariants()

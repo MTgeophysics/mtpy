@@ -153,7 +153,7 @@ for idx_edi, edi in enumerate(lo_ediobjs):
     periods=1/freq2
     periods = [round(i,5) for i in periods]
 
-    zerr=edi.Z.zerr
+    z_err=edi.Z.z_err
     zval=edi.Z.z
 
     northing = rel_coords[idx_edi,1]
@@ -198,7 +198,7 @@ for idx_edi, edi in enumerate(lo_ediobjs):
                 
 
         Z = zval[p]
-        Zerr = zerr[p] * (1.+merge_error)
+        Zerr = z_err[p] * (1.+merge_error)
 
         period_impstring = ''
 
@@ -267,7 +267,7 @@ for idx_edi, edi in enumerate(lo_ediobjs):
     freq2 = edi.freq
     periods=1/freq2
 
-    tippererr=edi.Tipper.tippererr
+    tipper_err=edi.Tipper.tipper_err
     tipperval=edi.Tipper.tipper
 
     northing = rel_coords[idx_edi,1]
@@ -283,7 +283,7 @@ for idx_edi, edi in enumerate(lo_ediobjs):
         except:
             continue
         try:
-            Terr = tippererr[i][0]
+            Terr = tipper_err[i][0]
         except:
             Terr = np.zeros_like(T,'float')
 

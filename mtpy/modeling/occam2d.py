@@ -1913,7 +1913,7 @@ class Data():
             rho_err = Z.resistivity_err
             phi_err = Z.phase_err
             z_array = Z.z
-            zerr_array = Z.zerr
+            z_err_array = Z.z_err
 
             for freq_num,freq in enumerate(self.frequencies):
 
@@ -2038,10 +2038,10 @@ class Data():
 
                         tipper = T.tipper[idx_f]
                         try: 
-                            tippererr = T.tippererr[idx_f]
+                            tipper_err = T.tipper_err[idx_f]
                         except:
                             #print 'no Tipper error for station {0}/frequency {1}'.format(station_number,frequency_number)
-                            tippererr = None
+                            tipper_err = None
 
 
                         if mode == 3 :
@@ -2051,12 +2051,12 @@ class Data():
                             value = np.imag(tipper[0,1])
 
                         # get tipper error if it exists
-                        if tippererr is None:
+                        if tipper_err is None:
                             raw_error = 0
                             if self.tipper_errorfloor is not None:
                                 raw_error = np.abs((self.tipper_errorfloor/100.)*value)
                         else:
-                            raw_error = tippererr[0,1] 
+                            raw_error = tipper_err[0,1] 
 
                         error = raw_error
                         

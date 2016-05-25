@@ -1,5 +1,14 @@
 # -*- coding: utf-8 -*-
 """
+===========
+EDI Class
+===========
+
+The Edi class can read and write an .edi file, the 'standard format' of
+magnetotellurics.  Each section of the .edi file is given its own class, 
+so the elements of each section are attributes for easy access.
+
+
 Created on Tue Dec 22 16:03:31 2015
 
 @author: jpeacock
@@ -250,7 +259,7 @@ class Edi(object):
         ## fill impedance tensor
         self.Z.freq = freq_arr.copy()
         self.Z.z = np.zeros((freq_arr.size, 2, 2), dtype=np.complex)
-        self.Z.zerr = np.zeros((freq_arr.size, 2, 2), dtype=np.float)
+        self.Z.z_err = np.zeros((freq_arr.size, 2, 2), dtype=np.float)
         try:
             self.Z.rotation_angle = data_dict['zrot']
         except KeyError:
@@ -265,10 +274,10 @@ class Edi(object):
         self.Z.z[:, 1, 1] = np.array(data_dict['zyyr'])+\
                             np.array(data_dict['zyyi'])*1j
         
-        self.Z.zerr[:, 0, 0] = np.array(data_dict['zxx.var'])
-        self.Z.zerr[:, 0, 1] = np.array(data_dict['zxy.var'])
-        self.Z.zerr[:, 1, 0] = np.array(data_dict['zyx.var'])
-        self.Z.zerr[:, 1, 1] = np.array(data_dict['zyy.var'])
+        self.Z.z_err[:, 0, 0] = np.array(data_dict['zxx.var'])
+        self.Z.z_err[:, 0, 1] = np.array(data_dict['zxy.var'])
+        self.Z.z_err[:, 1, 0] = np.array(data_dict['zyx.var'])
+        self.Z.z_err[:, 1, 1] = np.array(data_dict['zyy.var'])
         
         # compute resistivity and phase
         self.Z._compute_res_phase()
@@ -277,7 +286,7 @@ class Edi(object):
         ## fill tipper data if there it exists
         self.Tipper.tipper = np.zeros((freq_arr.size, 1, 2), 
                                       dtype=np.complex) 
-        self.Tipper.tippererr = np.zeros((freq_arr.size, 1, 2),
+        self.Tipper.tipper_err = np.zeros((freq_arr.size, 1, 2),
                                          dtype=np.float) 
         self.Tipper.freq = freq_arr.copy()
         try:
@@ -294,8 +303,8 @@ class Edi(object):
             self.Tipper.tipper[:, 0, 1] = np.array(data_dict['tyr.exp'])+\
                                             np.array(data_dict['tyi.exp'])*1j
             
-            self.Tipper.tippererr[:, 0, 0] = np.array(data_dict['txvar.exp'])    
-            self.Tipper.tippererr[:, 0, 1] = np.array(data_dict['tyvar.exp'])
+            self.Tipper.tipper_err[:, 0, 0] = np.array(data_dict['txvar.exp'])    
+            self.Tipper.tipper_err[:, 0, 1] = np.array(data_dict['tyvar.exp'])
             
             self.Tipper._compute_amp_phase()
             self.Tipper._compute_mag_direction()
@@ -465,13 +474,13 @@ class Edi(object):
         
         # be sure to fill attributes
         self.Z.z = z_arr
-        self.Z.zerr = z_err_arr
+        self.Z.z_err = z_err_arr
         self.Z.freq = freq_arr
         self.Z.rotation_angle = np.zeros_like(freq_arr)
         self.Z._compute_res_phase()
         
         self.Tipper.tipper = t_arr
-        self.Tipper.tippererr = t_err_arr
+        self.Tipper.tipper_err = t_err_arr
         self.Tipper.freq = freq_arr 
         self.Tipper.rotation_angle = np.zeros_like(freq_arr)
         self.Tipper._compute_amp_phase()
@@ -535,7 +544,7 @@ class Edi(object):
                                                       self._z_labels[2*ii+jj][0])
                 z_lines_imag = self._write_data_block(self.Z.z[:, ii, jj].imag, 
                                                       self._z_labels[2*ii+jj][1])
-                z_lines_var = self._write_data_block(self.Z.zerr[:, ii, jj], 
+                z_lines_var = self._write_data_block(self.Z.z_err[:, ii, jj], 
                                                      self._z_labels[2*ii+jj][2])
                                            
                 z_data_lines += z_lines_real
@@ -557,7 +566,7 @@ class Edi(object):
                                                   self._t_labels[jj][0])
             t_lines_imag = self._write_data_block(self.Tipper.tipper[:, 0, jj].imag, 
                                                   self._t_labels[jj][1])
-            t_lines_var = self._write_data_block(self.Tipper.tippererr[:, 0, jj], 
+            t_lines_var = self._write_data_block(self.Tipper.tipper_err[:, 0, jj], 
                                                  self._t_labels[jj][2])
                                        
             t_data_lines += t_lines_real

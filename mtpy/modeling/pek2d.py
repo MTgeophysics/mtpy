@@ -397,11 +397,11 @@ class Model():
             datfn = str(self.stationblocknums[ee])+'_'+self.Data.stations[ee]+'.dat'
 
 
-            zerr = zo.zerr
+            z_err = zo.z_err
             z = zo.z
-            ze_rel = zerr/np.abs(z)
+            ze_rel = z_err/np.abs(z)
             
-            terr = to.tippererr
+            terr = to.tipper_err
             t = to.tipper
             te_rel = terr/np.abs(t)
             
@@ -415,16 +415,16 @@ class Model():
                     for j in range(2):
                         ze_rel[ze_rel<efz[i,j]] = efz[i,j]
                     te_rel[te_rel<eft[i]] = eft[i]
-                zerr = ze_rel * np.abs(z)
+                z_err = ze_rel * np.abs(z)
                 terr = te_rel * np.abs(t)
             
             if eftype == 'offdiagonals':
                 for i in range(2):
                     for iz in range(len(z)):
-                        if zerr[iz,i,i] < zerr[iz,i,1-i]:
-                            zerr[iz,i,i] = zerr[iz,i,1-i]
+                        if z_err[iz,i,i] < z_err[iz,i,1-i]:
+                            z_err[iz,i,i] = z_err[iz,i,1-i]
        
-            zvar = zerr**2
+            zvar = z_err**2
                 
       
             # create interpolation functions to interpolate z and tipper values

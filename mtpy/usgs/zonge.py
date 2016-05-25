@@ -1812,7 +1812,7 @@ class ZongeMTAvg():
             #fill z according to index values
             new_Z = mtz.Z()
             new_Z.z = np.zeros((new_nz, 2, 2), dtype='complex')
-            new_Z.zerr = np.ones((new_nz, 2, 2))
+            new_Z.z_err = np.ones((new_nz, 2, 2))
             nzx, nzy, nzz = self.Z.z.shape
             
             self.freq_dict = new_freq_dict
@@ -1834,7 +1834,7 @@ class ZongeMTAvg():
                             mm = self.freq_dict_x[self.comp_dict[ikey]['freq'][kk]]
 
                             new_Z.z[ll] = self.Z.z[mm]
-                            new_Z.zerr[ll] = self.Z.zerr[mm]
+                            new_Z.z_err[ll] = self.Z.z_err[mm]
                         except KeyError:
                             pass
                         
@@ -1850,7 +1850,7 @@ class ZongeMTAvg():
                         new_Z.z[ll, ii, jj] = -1*(zzr+zzi*1j)
                     else:
                         new_Z.z[ll, ii, jj] = zzr+zzi*1j
-                    new_Z.zerr[ll,ii, jj] = \
+                    new_Z.z_err[ll,ii, jj] = \
                                 self.comp_dict[ikey]['ares.%err'][kk]*.005
                 
             new_Z.freq = sorted(self.freq_dict.keys())
@@ -1862,7 +1862,7 @@ class ZongeMTAvg():
             self.freq_dict_x = dict([(ff, nn) for nn, ff in enumerate(freq)])
             #fill z with values
             z = np.zeros((nz, 2, 2), dtype='complex')
-            zerr = np.ones((nz, 2, 2))
+            z_err = np.ones((nz, 2, 2))
             
             for ikey in self.comp_lst_z:
                 ii, jj = self.comp_index[ikey]
@@ -1875,14 +1875,14 @@ class ZongeMTAvg():
                 else:
                     z[:, ii, jj] = zr+zi*1j
 
-                zerr[:,ii, jj] = self.comp_dict[ikey]['ares.%err'][:nz]*.005 
+                z_err[:,ii, jj] = self.comp_dict[ikey]['ares.%err'][:nz]*.005 
                     
             self.Z.z = z
-            self.Z.zerr = zerr
+            self.Z.z_err = z_err
             self.Z.freq = freq
             
         self.Z.z = np.nan_to_num(self.Z.z)
-        self.Z.zerr = np.nan_to_num(self.Z.zerr)
+        self.Z.z_err = np.nan_to_num(self.Z.z_err)
                 
                 
     def fill_Tipper(self):
@@ -1908,7 +1908,7 @@ class ZongeMTAvg():
             #fill z according to index values
             new_Tipper = mtz.Tipper()
             new_Tipper.tipper = np.zeros((new_nz, 1, 2), dtype='complex')
-            new_Tipper.tippererr = np.ones((new_nz, 1, 2))
+            new_Tipper.tipper_err = np.ones((new_nz, 1, 2))
             
             self.freq_dict = new_freq_dict
             
@@ -1926,7 +1926,7 @@ class ZongeMTAvg():
                             mm = self.freq_dict_x[self.comp_dict[ikey]['freq'][kk]]
 
                             new_Tipper.tipper[ll] = self.Tipper.tipper[mm]
-                            new_Tipper.tippererr[ll] = self.Tipper.tippererr[mm]
+                            new_Tipper.tipper_err[ll] = self.Tipper.tipper_err[mm]
                         except KeyError:
                             pass
 
@@ -1945,7 +1945,7 @@ class ZongeMTAvg():
                     else:
                         new_Tipper.tipper[ll, ii, jj] = tzr+tzi*1j
                     #error estimation
-                    new_Tipper.tippererr[ll,ii, jj] += \
+                    new_Tipper.tipper_err[ll,ii, jj] += \
                                 self.comp_dict[ikey]['ares.%err'][kk]*\
                                                 .05*np.sqrt(tzr**2+tzi**2)
                 
@@ -1957,7 +1957,7 @@ class ZongeMTAvg():
             self.freq_dict_x = dict([(ff, nn) for nn, ff in enumerate(freq)])
             #fill z with values
             tipper = np.zeros((nz, 1, 2), dtype='complex')
-            tippererr = np.ones((nz, 1, 2))
+            tipper_err = np.ones((nz, 1, 2))
             
             for ikey in self.comp_lst_tip:
                 ii, jj = self.comp_index[ikey]
@@ -1969,15 +1969,15 @@ class ZongeMTAvg():
                     tipper[:, ii, jj] = -1*(tzr+tzi*1j)
                 else:
                     tipper[:, ii, jj] = tzr+tzi*1j
-                tippererr[:, ii, jj] = self.comp_dict[ikey]['ares.%err'][:nz]*\
+                tipper_err[:, ii, jj] = self.comp_dict[ikey]['ares.%err'][:nz]*\
                                                      .05*np.sqrt(tzr**2+tzi**2)
                     
             self.Tipper.tipper = tipper
-            self.Tipper.tippererr = tippererr
+            self.Tipper.tipper_err = tipper_err
             self.Tipper.freq = sorted(self.freq_dict_x.keys())
             
         self.Tipper.tipper = np.nan_to_num(self.Tipper.tipper)
-        self.Tipper.tippererr = np.nan_to_num(self.Tipper.tippererr)
+        self.Tipper.tipper_err = np.nan_to_num(self.Tipper.tipper_err)
         
     def write_edi(self, avg_dirpath, station, survey_dict=None, 
                   survey_cfg_file=None,  mtft_cfg_file=None, 

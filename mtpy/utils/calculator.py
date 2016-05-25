@@ -190,7 +190,7 @@ def propagate_error_rect2polar(x,x_error,y, y_error):
 
 
 
-def zerror2r_phi_error(x,x_error,y, y_error):
+def z_error2r_phi_error(x,x_error,y, y_error):
     """
         Error estimation from rect to polar, but with small variation needed for 
         MT: the so called 'relative phase error' is NOT the relative phase error,
@@ -311,13 +311,13 @@ def rotatematrix_incl_errors(inmatrix, angle, inmatrix_err = None) :
         errmat = np.zeros_like(inmatrix_err)
 
         # squared propagation of errors
-        # zerr_rot[idx_freq,0,0] = np.sqrt( (cphi**2 * zerr_orig[0,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[0,1])**2 + (zerr_orig[1,0])**2) + (sphi**2 * zerr_orig[1,1])**2)
+        # z_err_rot[idx_freq,0,0] = np.sqrt( (cphi**2 * z_err_orig[0,0])**2 + cphi**2 * sphi**2 * ( (z_err_orig[0,1])**2 + (z_err_orig[1,0])**2) + (sphi**2 * z_err_orig[1,1])**2)
 
-        # zerr_rot[idx_freq,0,1] = np.sqrt( (cphi**2 * zerr_orig[0,1])**2 + cphi**2 * sphi**2 * ( (zerr_orig[1,1])**2 + (zerr_orig[0,0])**2) + (sphi**2 * zerr_orig[1,0])**2) 
+        # z_err_rot[idx_freq,0,1] = np.sqrt( (cphi**2 * z_err_orig[0,1])**2 + cphi**2 * sphi**2 * ( (z_err_orig[1,1])**2 + (z_err_orig[0,0])**2) + (sphi**2 * z_err_orig[1,0])**2) 
 
-        # zerr_rot[idx_freq,1,0] = np.sqrt( (cphi**2 * zerr_orig[1,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[1,1])**2 + (zerr_orig[0,0])**2) + (sphi**2 * zerr_orig[0,1])**2) 
+        # z_err_rot[idx_freq,1,0] = np.sqrt( (cphi**2 * z_err_orig[1,0])**2 + cphi**2 * sphi**2 * ( (z_err_orig[1,1])**2 + (z_err_orig[0,0])**2) + (sphi**2 * z_err_orig[0,1])**2) 
 
-        # zerr_rot[idx_freq,1,1] = np.sqrt( (sphi**2 * zerr_orig[0,0])**2 + cphi**2 * sphi**2 * ( (zerr_orig[0,1])**2 + (zerr_orig[1,0])**2) + (cphi**2 * zerr_orig[1,1])**2) 
+        # z_err_rot[idx_freq,1,1] = np.sqrt( (sphi**2 * z_err_orig[0,0])**2 + cphi**2 * sphi**2 * ( (z_err_orig[0,1])**2 + (z_err_orig[1,0])**2) + (cphi**2 * z_err_orig[1,1])**2) 
 
         # standard propagation of errors:
 
