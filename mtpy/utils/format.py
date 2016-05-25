@@ -244,8 +244,11 @@ def convert_degrees2dms_tuple(degrees):
     m = int(minutes)
 
     seconds = 60. * (minutes - m)
-
-
+    
+    if np.abs(seconds - 60.) < 1e-10:
+        m += 1
+        seconds = 0.0
+    
     dms_triple[0] = sign * d
     dms_triple[1] = m
     dms_triple[2] = seconds

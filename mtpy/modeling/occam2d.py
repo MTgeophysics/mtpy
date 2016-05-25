@@ -1659,6 +1659,7 @@ class Data():
         self.phase_errorfloor = 5
         self.rho_errorfloor = 10
         self.tipper_errorfloor = 5
+        self.tipper_errorfloor_abs = None
 
         self.min_frequency = None
         self.max_frequency = None
