@@ -696,12 +696,12 @@ class Data(object):
             for kk, ff in enumerate(interp_periods):
                 jj = np.where(self.period_list == ff)[0][0]
                 self.data_array[ii]['z'][jj] = interp_z.z[kk, :, :]
-                self.data_array[ii]['z_err'][jj] = interp_z.z_err[kk, :, :]
+                self.data_array[ii]['z_err'][jj] = interp_z.zerr[kk, :, :]
 
                 if mt_obj.Tipper.tipper is not None:
                     self.data_array[ii]['tip'][jj] = interp_t.tipper[kk, :, :]
                     self.data_array[ii]['tip_err'][jj] = \
-                                                interp_t.tipper_err[kk, :, :]
+                                                interp_t.tippererr[kk, :, :]
         
         if rel_distance is False:
             self.get_relative_station_locations()
@@ -1122,10 +1122,10 @@ class Data(object):
         for station in station_list:
             data_dict[station] = mt.MT()
             data_dict[station].Z = mtz.Z(z_array=z_dummy.copy(), 
-                                        z_err_array=z_dummy.copy().real, 
+                                        zerr_array=z_dummy.copy().real, 
                                         freq=1./self.period_list)
             data_dict[station].Tipper = mtz.Tipper(tipper_array=t_dummy.copy(), 
-                                                   tipper_err_array=t_dummy.copy().real, 
+                                                   tippererr_array=t_dummy.copy().real, 
                                                    freq=1./self.period_list)
             #make sure that the station data starts out with false to fill
             #the data later
@@ -1160,14 +1160,14 @@ class Data(object):
                     z_err *= 796.
                     
                 data_dict[dd[1]].Z.z[p_index, ii, jj] = z_value
-                data_dict[dd[1]].Z.z_err[p_index, ii, jj] = z_err
+                data_dict[dd[1]].Z.zerr[p_index, ii, jj] = z_err
             #fill in tipper with appropriate values
             elif dd[7].find('T') == 0:
                 if self.wave_sign_tipper == '+':
                     data_dict[dd[1]].Tipper.tipper[p_index, ii, jj] = dd[8]+1j*dd[9]
                 elif self.wave_sign_tipper == '-':
                     data_dict[dd[1]].Tipper.tipper[p_index, ii, jj] = dd[8]-1j*dd[9]
-                data_dict[dd[1]].Tipper.tipper_err[p_index, ii, jj] = dd[10]
+                data_dict[dd[1]].Tipper.tippererr[p_index, ii, jj] = dd[10]
        
         #make mt_dict an attribute for easier manipulation later
         self.mt_dict = data_dict
@@ -1197,10 +1197,10 @@ class Data(object):
             self.data_array[ii]['rel_north'] = mt_obj.grid_north
             
             self.data_array[ii]['z'][:] = mt_obj.Z.z
-            self.data_array[ii]['z_err'][:] = mt_obj.Z.z_err
+            self.data_array[ii]['z_err'][:] = mt_obj.Z.zerr
             
             self.data_array[ii]['tip'][:] = mt_obj.Tipper.tipper
-            self.data_array[ii]['tip_err'][:] = mt_obj.Tipper.tipper_err
+            self.data_array[ii]['tip_err'][:] = mt_obj.Tipper.tippererr
             
     def write_vtk_station_file(self, vtk_save_path=None, 
                                vtk_fn_basename='ModEM_stations'):
@@ -4072,46 +4072,46 @@ class PlotResponse(object):
                         erxy = mtplottools.plot_errorbar(axrxy, 
                                                   period[nzxy], 
                                                   abs(z_obj.z[nzxy,0,1].real), 
-                                                  abs(z_obj.z_err[nzxy,0,1].real),
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axryx, 
                                                      period[nzyx], 
                                                      abs(z_obj.z[nzyx,1,0].real), 
-                                                     abs(z_obj.z_err[nzyx,1,0].real),
+                                                     abs(z_obj.zerr[nzyx,1,0].real),
                                                      **kw_yy)
                         #plot phase                         
                         erxy = mtplottools.plot_errorbar(axpxy, 
                                                   period[nzxy], 
                                                   abs(z_obj.z[nzxy,0,1].imag), 
-                                                  abs(z_obj.z_err[nzxy,0,1].real),
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axpyx, 
                                                   period[nzyx], 
                                                   abs(z_obj.z[nzyx,1,0].imag), 
-                                                  abs(z_obj.z_err[nzyx,1,0].real),
+                                                  abs(z_obj.zerr[nzyx,1,0].real),
                                                   **kw_yy)
                     #plot tipper
                     if plot_tipper == True:
                         ertx = mtplottools.plot_errorbar(axtr, 
                                                  period[ntx],
                                                  t_obj.tipper[ntx, 0, 0].real,
-                                                 t_obj.tipper_err[ntx, 0, 0],
+                                                 t_obj.tippererr[ntx, 0, 0],
                                                  **kw_xx)
                         erty = mtplottools.plot_errorbar(axtr, 
                                                  period[nty],
                                                  t_obj.tipper[nty, 0, 1].real,
-                                                 t_obj.tipper_err[nty, 0, 1],
+                                                 t_obj.tippererr[nty, 0, 1],
                                                  **kw_yy)
                                                  
                         ertx = mtplottools.plot_errorbar(axti, 
                                                  period[ntx],
                                                  t_obj.tipper[ntx, 0, 0].imag,
-                                                 t_obj.tipper_err[ntx, 0, 0],
+                                                 t_obj.tippererr[ntx, 0, 0],
                                                  **kw_xx)
                         erty = mtplottools.plot_errorbar(axti, 
                                                  period[nty],
                                                  t_obj.tipper[nty, 0, 1].imag,
-                                                 t_obj.tipper_err[nty, 0, 1],
+                                                 t_obj.tippererr[nty, 0, 1],
                                                  **kw_yy)
                     
                     if plot_tipper == False:                          
@@ -4205,43 +4205,43 @@ class PlotResponse(object):
                         erxx = mtplottools.plot_errorbar(axrxx, 
                                                   period[nzxx], 
                                                   abs(z_obj.z[nzxx,0,0].real), 
-                                                  abs(z_obj.z_err[nzxx,0,0].real),
+                                                  abs(z_obj.zerr[nzxx,0,0].real),
                                                   **kw_xx)
                         erxy = mtplottools.plot_errorbar(axrxy, 
                                                   period[nzxy], 
                                                   abs(z_obj.z[nzxy,0,1].real), 
-                                                  abs(z_obj.z_err[nzxy,0,1].real),
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axryx, 
                                                   period[nzyx], 
                                                   abs(z_obj.z[nzyx,1,0].real), 
-                                                  abs(z_obj.z_err[nzyx,1,0].real),
+                                                  abs(z_obj.zerr[nzyx,1,0].real),
                                                   **kw_yy)
                         eryy = mtplottools.plot_errorbar(axryy, 
                                                   period[nzyy], 
                                                   abs(z_obj.z[nzyy,1,1].real), 
-                                                  abs(z_obj.z_err[nzyy,1,1].real),
+                                                  abs(z_obj.zerr[nzyy,1,1].real),
                                                   **kw_yy)
                         #plot phase                         
                         erxx = mtplottools.plot_errorbar(axpxx, 
                                                   period[nzxx], 
                                                   abs(z_obj.z[nzxx,0,0].imag), 
-                                                  abs(z_obj.z_err[nzxx,0,0].real),
+                                                  abs(z_obj.zerr[nzxx,0,0].real),
                                                   **kw_xx)
                         erxy = mtplottools.plot_errorbar(axpxy, 
                                                   period[nzxy], 
                                                   abs(z_obj.z[nzxy,0,1].imag), 
-                                                  abs(z_obj.z_err[nzxy,0,1].real),
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axpyx, 
                                                   period[nzyx], 
                                                   abs(z_obj.z[nzyx,1,0].imag), 
-                                                  abs(z_obj.z_err[nzyx,1,0].real),
+                                                  abs(z_obj.zerr[nzyx,1,0].real),
                                                   **kw_yy)
                         eryy = mtplottools.plot_errorbar(axpyy, 
                                                   period[nzyy], 
                                                   abs(z_obj.z[nzyy,1,1].imag), 
-                                                  abs(z_obj.z_err[nzyy,1,1].real),
+                                                  abs(z_obj.zerr[nzyy,1,1].real),
                                                   **kw_yy)
                                                   
                     #plot tipper
@@ -4249,23 +4249,23 @@ class PlotResponse(object):
                         ertx = mtplottools.plot_errorbar(axtxr, 
                                                  period[ntx],
                                                  t_obj.tipper[ntx, 0, 0].real,
-                                                 t_obj.tipper_err[ntx, 0, 0],
+                                                 t_obj.tippererr[ntx, 0, 0],
                                                  **kw_xx)
                         erty = mtplottools.plot_errorbar(axtyr, 
                                                  period[nty],
                                                  t_obj.tipper[nty, 0, 1].real,
-                                                 t_obj.tipper_err[nty, 0, 0],
+                                                 t_obj.tippererr[nty, 0, 0],
                                                  **kw_yy)
                                                  
                         ertx = mtplottools.plot_errorbar(axtxi, 
                                                  period[ntx],
                                                  t_obj.tipper[ntx, 0, 0].imag,
-                                                 t_obj.tipper_err[ntx, 0, 1],
+                                                 t_obj.tippererr[ntx, 0, 1],
                                                  **kw_xx)
                         erty = mtplottools.plot_errorbar(axtyi, 
                                                  period[nty],
                                                  t_obj.tipper[nty, 0, 1].imag,
-                                                 t_obj.tipper_err[nty, 0, 1],
+                                                 t_obj.tippererr[nty, 0, 1],
                                                  **kw_yy)
                     if plot_tipper == False:                    
                         ax_list = [axrxx, axrxy, axryx, axryy, 
@@ -4472,46 +4472,46 @@ class PlotResponse(object):
                         erxy = mtplottools.plot_errorbar(axrxy, 
                                                   period[nzxy], 
                                                   abs(z_obj.z[nzxy,0,1].real), 
-                                                  abs(z_obj.z_err[nzxy,0,1].real),
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axrxy, 
                                                   period[nzxy], 
                                                   abs(z_obj.z[nzxy,1,0].real), 
-                                                  abs(z_obj.z_err[nzxy,1,0].real),
+                                                  abs(z_obj.zerr[nzxy,1,0].real),
                                                   **kw_yy)
                         #plot phase                         
                         erxy = mtplottools.plot_errorbar(axpxy, 
                                                   period[nzxy], 
                                                   abs(z_obj.z[nzxy,0,1].imag), 
-                                                  abs(z_obj.z_err[nzxy,0,1].real),
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axpxy, 
                                                   period[nzyx], 
                                                   abs(z_obj.z[nzyx,1,0].imag), 
-                                                  abs(z_obj.z_err[nzyx,1,0].real),
+                                                  abs(z_obj.zerr[nzyx,1,0].real),
                                                   **kw_yy)
                     #plot tipper
                     if plot_tipper == True:
                         ertx = mtplottools.plot_errorbar(axtr, 
                                                  period,
                                                  t_obj.tipper[ntx, 0, 0].real,
-                                                 t_obj.tipper_err[ntx, 0, 0],
+                                                 t_obj.tippererr[ntx, 0, 0],
                                                  **kw_xx)
                         erty = mtplottools.plot_errorbar(axtr, 
                                                  period,
                                                  t_obj.tipper[nty, 0, 1].real,
-                                                 t_obj.tipper_err[nty, 0, 1],
+                                                 t_obj.tippererr[nty, 0, 1],
                                                  **kw_yy)
                                                  
                         ertx = mtplottools.plot_errorbar(axti, 
                                                  period,
                                                  t_obj.tipper[ntx, 0, 0].imag,
-                                                 t_obj.tipper_err[ntx, 0, 0],
+                                                 t_obj.tippererr[ntx, 0, 0],
                                                  **kw_xx)
                         erty = mtplottools.plot_errorbar(axti, 
                                                  period,
                                                  t_obj.tipper[nty, 0, 1].imag,
-                                                 t_obj.tipper_err[nty, 0, 1],
+                                                 t_obj.tippererr[nty, 0, 1],
                                                  **kw_yy)
                     
                     if plot_tipper == False:    
@@ -4590,66 +4590,66 @@ class PlotResponse(object):
                         erxx = mtplottools.plot_errorbar(axrxx, 
                                                   period[nzxx], 
                                                   abs(z_obj.z[nzxx,0,0].real), 
-                                                  abs(z_obj.z_err[nzxx,0,0].real),
+                                                  abs(z_obj.zerr[nzxx,0,0].real),
                                                   **kw_xx)
                         erxy = mtplottools.plot_errorbar(axrxy, 
                                                   period[nzxy], 
                                                   abs(z_obj.z[nzxy,0,1].real), 
-                                                  abs(z_obj.z_err[nzxy,0,1].real),
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axrxy, 
                                                   period[nzyx], 
                                                   abs(z_obj.z[nzyx,1,0].real), 
-                                                  abs(z_obj.z_err[nzyx,1,0].real),
+                                                  abs(z_obj.zerr[nzyx,1,0].real),
                                                   **kw_yy)
                         eryy = mtplottools.plot_errorbar(axrxx, 
                                                   period[nzyy], 
                                                   abs(z_obj.z[nzyy,1,1].real), 
-                                                  abs(z_obj.z_err[nzyy,1,1].real),
+                                                  abs(z_obj.zerr[nzyy,1,1].real),
                                                   **kw_yy)
                         #plot phase                         
                         erxx = mtplottools.plot_errorbar(axpxx, 
                                                   period[nzxx], 
                                                   abs(z_obj.z[nzxx,0,0].imag), 
-                                                  abs(z_obj.z_err[nzxx,0,0].real),
+                                                  abs(z_obj.zerr[nzxx,0,0].real),
                                                   **kw_xx)
                         erxy = mtplottools.plot_errorbar(axpxy, 
                                                   period[nzxy], 
                                                   abs(z_obj.z[nzxy,0,1].imag), 
-                                                  abs(z_obj.z_err[nzxy,0,1].real),
+                                                  abs(z_obj.zerr[nzxy,0,1].real),
                                                   **kw_xx)
                         eryx = mtplottools.plot_errorbar(axpxy, 
                                                   period[nzyx], 
                                                   abs(z_obj.z[nzyx,1,0].imag), 
-                                                  abs(z_obj.z_err[nzyx,1,0].real),
+                                                  abs(z_obj.zerr[nzyx,1,0].real),
                                                   **kw_yy)
                         eryy = mtplottools.plot_errorbar(axpxx, 
                                                   period[nzyy], 
                                                   abs(z_obj.z[nzyy,1,1].imag), 
-                                                  abs(z_obj.z_err[nzyy,1,1].real),
+                                                  abs(z_obj.zerr[nzyy,1,1].real),
                                                   **kw_yy)
                     #plot tipper
                     if plot_tipper == True:
                         ertx = mtplottools.plot_errorbar(axtr, 
                                                  period[ntx],
                                                  t_obj.tipper[ntx, 0, 0].real,
-                                                 t_obj.tipper_err[ntx, 0, 0],
+                                                 t_obj.tippererr[ntx, 0, 0],
                                                  **kw_xx)
                         erty = mtplottools.plot_errorbar(axtr, 
                                                  period[nty],
                                                  t_obj.tipper[nty, 0, 1].real,
-                                                 t_obj.tipper_err[nty, 0, 1],
+                                                 t_obj.tippererr[nty, 0, 1],
                                                  **kw_yy)
                                                  
                         ertx = mtplottools.plot_errorbar(axti, 
                                                  period[ntx],
                                                  t_obj.tipper[ntx, 0, 0].imag,
-                                                 t_obj.tipper_err[ntx, 0, 0],
+                                                 t_obj.tippererr[ntx, 0, 0],
                                                  **kw_xx)
                         erty = mtplottools.plot_errorbar(axti, 
                                                  period[nty],
                                                  t_obj.tipper[nty, 0, 1].imag,
-                                                 t_obj.tipper_err[nty, 0, 1],
+                                                 t_obj.tippererr[nty, 0, 1],
                                                  **kw_yy)
                     
                     if plot_tipper == False:
@@ -4779,11 +4779,11 @@ class PlotResponse(object):
                         cyx = tuple(3*[1-.5/(rr+1)]) 
                     
                     resp_z_obj = self.resp_object[rr].mt_dict[station].Z
-                    resp_z_err = np.nan_to_num((z_obj.z-resp_z_obj.z)/z_obj.z_err)
+                    resp_z_err = np.nan_to_num((z_obj.z-resp_z_obj.z)/z_obj.zerr)
     
                     resp_t_obj = self.resp_object[rr].mt_dict[station].Tipper
                     resp_t_err = np.nan_to_num((t_obj.tipper-resp_t_obj.tipper)/
-                                                t_obj.tipper_err)
+                                                t_obj.tippererr)
                     
                     rrp = mtplottools.ResPhase(resp_z_obj)
     
