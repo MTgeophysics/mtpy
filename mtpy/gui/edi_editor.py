@@ -133,10 +133,10 @@ class EDI_Editor_Window(QtGui.QMainWindow):
         
     def update_plot(self):
         
-        self.mask_kw = {'color' : self.plot_properties.mask_color,
-                        'marker' : self.plot_properties.mask_marker,
-                        'ms' : self.plot_properties.mask_ms,
-                        'mew' : self.plot_properties.mask_mew}
+        self.mask_kw = {'color' : self.plot_widget.plot_properties.mask_color,
+                        'marker' : self.plot_widget.plot_properties.mask_marker,
+                        'ms' : self.plot_widget.plot_properties.mask_ms,
+                        'mew' : self.plot_widget.plot_properties.mask_mew}
         self.plot_widget.redraw_plot()
     
     def edit_metadata(self):

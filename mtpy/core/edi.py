@@ -229,7 +229,7 @@ class Edi(object):
         data_dict = {}
         data_find = False
         for line in data_lines:
-            if line.find('>') == 0 and line.find('!') == -1:
+            if line.find('>') >= 0 and line.find('!') == -1:
                 line_list = line[1:].strip().split()
                 key = line_list[0].lower()
                 if key[0] == 'z' or key[0] == 't' or key == 'freq':
