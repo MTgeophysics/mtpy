@@ -4707,6 +4707,7 @@ class Z3D_to_edi(object):
         self.birrp_config_fn = None
         self.birrp_exe = r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts.exe"
         self.coil_cal_path = r"c:\MT\Ant_calibrations"
+        self.num_comp = 5
 
         
     def make_survey_config_file(self, survey_config_dict=None):
@@ -4801,7 +4802,7 @@ class Z3D_to_edi(object):
         
     def make_mtpy_ascii_files(self, station_dir=None, fmt='%.8', 
                               station_name='mb', notch_dict={},
-                              df_list=None, max_blocks=3, ex=100., ey=100.): 
+                              df_list=None, max_blocks=3, ex=100., ey=100.,): 
         """
         makes mtpy_mt files from .Z3D files
         
@@ -4845,7 +4846,7 @@ class Z3D_to_edi(object):
         fn_lines = []
         z3d_count = 0             
         for ii, fn in enumerate(fn_list):
-            if z3d_count > len(df_list)*5*max_blocks-1:
+            if z3d_count > len(df_list)*self.num_comp*max_blocks-1:
                    break
             if df_list is not None:
                zd = Zen3D(fn)
@@ -5028,13 +5029,14 @@ class Z3D_to_edi(object):
                                                          
         return resp_plot
  
-    def process_data(self, df_list=None, max_blocks=2):
+    def process_data(self, df_list=None, max_blocks=2, num_comp=5):
         """
         from the input station directory, convert files to ascii, run through
         BIRRP, convert to .edi files and plot
         """
         
         st = time.time()
+        self.num_comp = num_comp
         
         if df_list is not None:
             if type(df_list) is float or type(df_list) is int or\
@@ -5563,7 +5565,7 @@ def delete_files_from_sd(delete_date=None, delete_type=None,
             if fn[-4:].lower() == '.Z3D'.lower():
                 full_path_fn = os.path.normpath(os.path.join(dr, fn))
                 zt = Zen3D(full_path_fn)
-                zt.get_info()
+                #zt.get_info()
                 if delete_type == 'all' or delete_date is None:
                     if delete_folder is None:
                         os.remove(full_path_fn)
@@ -5869,7 +5871,8 @@ class Capturing(list):
 def compute_mt_response(survey_dir, station='mt000', copy_date=None, 
                         birrp_exe=r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts.exe", 
                         ant_calibrations=r"c:\MT\Ant_calibrations",
-                        process_df_list=[256]):
+                        process_df_list=[256],
+                        num_comp=5):
     """
     This code will down load Z3D files from a Zen that is in SD Mode, 
     convert the Z3D files to ascii format, then process them for each
@@ -5979,7 +5982,7 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
         z2edi.birrp_exe = birrp_exe
         z2edi.coil_cal_path = ant_calibrations
         try:
-            rp = z2edi.process_data(df_list=process_df_list)
+            rp = z2edi.process_data(df_list=process_df_list, num_comp=num_comp)
         except mtex.MTpyError_inputarguments:
             print '==> Data not good!! Did not produce a proper .edi file' 
             et = time.time()
@@ -6012,8 +6015,8 @@ def rename_cac_files(station_dir, station='mb'):
     for fn in fn_list:
         cac_obj = Cache(fn)
         cac_obj.read_cache_metadata()
-
-        station_name = '{0}{1}'.format(station, cac_obj.metadata.station_number)
+        station_name = '{0}{1}'.format(station, 
+                                       cac_obj.metadata.station_number)
         station_date = cac_obj.metadata.gdp_date.replace('-', '')
         station_time = cac_obj.metadata.gdp_time.replace(':', '')
         new_fn = '{0}_{1}_{2}_{3:.0f}.cac'.format(station_name,
