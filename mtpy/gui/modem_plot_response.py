@@ -66,6 +66,7 @@ class Ui_MainWindow(object):
         self.phase_xy_limits = None 
         self.phase_yx_limits = None 
         self.phase_yy_limits = None 
+        self.tipper_limits = None
  
         
         self.subplot_wspace = .25
@@ -706,7 +707,10 @@ class Ui_MainWindow(object):
                        ax.set_ylabel('Im[Z (mV/km nT)]',
                                       fontdict=fontdict)
             if aa > 7:
-                ax.set_ylim(-1.1, 1.1)
+                if self.tipper_limits is not None:
+                    ax.set_ylim(self.tipper_limits)
+                else:
+                    ax.set_ylim(-1.1, 1.1)
 
             ax.set_xscale('log')
             ax.set_xlim(xmin=10**(np.floor(np.log10(period[0])))*1.01,
@@ -1047,7 +1051,9 @@ class PlotSettings(QtGui.QWidget):
         self.phase_xx_limits = kwargs.pop('phase_xx_limits', None)   
         self.phase_xy_limits = kwargs.pop('phase_xy_limits', None)   
         self.phase_yx_limits = kwargs.pop('phase_yx_limits', None)   
-        self.phase_yy_limits = kwargs.pop('phase_yy_limits', None)   
+        self.phase_yy_limits = kwargs.pop('phase_yy_limits', None) 
+        
+        self.tipper_limits = kwargs.pop('tipper_limits', None)
         
         self.subplot_wspace = kwargs.pop('subplot_wspace', .2)
         self.subplot_hspace = kwargs.pop('subplot_hspace', .0)
@@ -1295,7 +1301,12 @@ class PlotSettings(QtGui.QWidget):
         self.ylimp_yy_label = QtGui.QLabel('phase_yy')
         self.ylimp_yy_edit = QtGui.QLineEdit()
         self.ylimp_yy_edit.setText('{0}'.format(self.phase_yy_limits))
-        self.ylimp_yy_edit.editingFinished.connect(self.set_text_phase_yy)        
+        self.ylimp_yy_edit.editingFinished.connect(self.set_text_phase_yy)  
+        
+        self.ytlim_label = QtGui.QLabel('tipper')
+        self.ytlim_edit = QtGui.QLineEdit()
+        self.ytlim_edit.setText('{0}'.format(self.tipper_limits))
+        self.ytlim_edit.editingFinished.connect(self.set_text_tipper_lim)        
         
         limits_grid = QtGui.QGridLayout()
         
@@ -1321,6 +1332,9 @@ class PlotSettings(QtGui.QWidget):
         limits_grid.addWidget(self.ylimp_yx_edit, 3, 5)
         limits_grid.addWidget(self.ylimp_yy_label, 3, 6)
         limits_grid.addWidget(self.ylimp_yy_edit, 3, 7)
+        
+        limits_grid.addWidget(self.ytlim_label, 4, 0)
+        limits_grid.addWidget(self.ytlim_edit, 4, 1)
         
         #--> legend properties
         self.legend_pos_label = QtGui.QLabel('Legend Position')
@@ -1571,6 +1585,23 @@ class PlotSettings(QtGui.QWidget):
                 pass
         if len(l_list) == 2:
             self.phase_yy_limits = tuple(l_list)
+            
+    def set_text_tipper_lim(self, text):
+        text = self.ytlim_yy_edit.text()
+        if text =='None':
+            return
+        text = text.replace('(', '').replace(')', '')
+        t_list = text.split(',')
+        if len(t_list) != 2:
+            print 'enter as (min, max)'
+        l_list = []
+        for txt in t_list:
+            try: 
+                l_list.append(float(txt))
+            except ValueError:
+                pass
+        if len(l_list) == 2:
+            self.tipper_limits = tuple(l_list)
             
     def set_text_legend_pos(self):
         text = self.legend_pos_edit.text()

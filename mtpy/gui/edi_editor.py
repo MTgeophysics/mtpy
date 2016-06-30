@@ -1313,8 +1313,10 @@ class PlotWidget(QtGui.QWidget):
                 self.mt_obj.Tipper.tipper_err[d_index] = 0.0
                 
                 self.mt_obj.Tipper._compute_amp_phase()
-                
-            self._ax.figure.canvas.draw()
+            
+#            self._ax.figure.canvas.repaint()
+            self._ax.figure.canvas.update()
+            self._ax.figure.canvas.flush_events()
                 
     def in_axes(self, event):
         """
