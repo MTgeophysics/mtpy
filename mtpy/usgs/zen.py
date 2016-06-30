@@ -5984,15 +5984,15 @@ def rename_cac_files(station_dir, station='mt'):
         os.mkdir(save_path)
     
     for fn in fn_list:
-        cac_obj = Cache_Metadata(fn)
-        cac_obj.read_meta_string()
-        station_name = 'mt{0}'.format(cac_obj.rx_xyz0.split(':')[0])
-        station_date = cac_obj.gdp_date.replace('-', '')
-        station_time = cac_obj.gdp_time.replace(':', '')
+        cac_obj = Cache(fn)
+        cac_obj.read_cache_metadata()
+        station_name = 'mt{0}'.format(cac_obj.metadata.rx_xyz0.split(':')[0])
+        station_date = cac_obj.metadata.gdp_date.replace('-', '')
+        station_time = cac_obj.metadata.gdp_time.replace(':', '')
         new_fn = '{0}_{1}_{2}_{3:.0f}.cac'.format(station_name,
                                                   station_date, 
                                                   station_time,
-                                                  cac_obj.ts_adfreq)
+                                                  cac_obj.metadata.ts_adfreq)
         new_fn = os.path.join(save_path, new_fn)
         shutil.move(fn, new_fn)
         print 'moved {0} to {1}'.format(fn, new_fn)
