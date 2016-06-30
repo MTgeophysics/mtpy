@@ -2086,6 +2086,7 @@ class Data(Profile):
         self.freq_min = kwargs.pop('freq_min', None)
         self.freq_max = kwargs.pop('freq_max', None)
         self.freq_num = kwargs.pop('freq_num', None)
+        self.freq_tol = kwargs.pop('freq_tol', None)
 
         self.occam_format = 'OCCAM2MTDATA_1.0'
         self.title = 'MTpy-OccamDatafile'
@@ -2368,34 +2369,53 @@ class Data(Profile):
         #loop over mt object in edi_list and use a counter starting at 1 
         #because that is what occam starts at.
         for s_index, edi in enumerate(self.edi_list):
-            station_freq = edi.Z.freq
-            interp_freq = self.freq[np.where((self.freq >= station_freq.min()) &
-                                           (self.freq <= station_freq.max()))]
-            # interpolate data onto given frequency list
-            z_interp, t_interp = edi.interpolate(interp_freq)
-            z_interp._compute_res_phase()
             
-            rho = z_interp.resistivity
-            phi = z_interp.phase
-            rho_err = z_interp.resistivity_err
-            if t_interp is not None:
-                tipper = t_interp.tipper
-                tipper_err = t_interp.tipper_err
+            if self.freq_tol is None:
+                station_freq = edi.Z.freq
+                interp_freq = self.freq[np.where((self.freq >= station_freq.min()) &
+                                               (self.freq <= station_freq.max()))]
+                # interpolate data onto given frequency list
+                z_interp, t_interp = edi.interpolate(interp_freq)
+                z_interp._compute_res_phase()
+                
+                rho = z_interp.resistivity
+                phi = z_interp.phase
+                rho_err = z_interp.resistivity_err
+                if t_interp is not None:
+                    tipper = t_interp.tipper
+                    tipper_err = t_interp.tipper_err
+                else:
+                    tipper = None
+                    tipper_err = None
             else:
-                tipper = None
-                tipper_err = None
+                station_freq = edi.Z.freq
+                rho = edi.Z.resistivity
+                phi = edi.Z.phase
+                tipper = edi.Tipper.tipper
+                tipper_err = edi.Tipper.tipper_err
             
             self.data[s_index]['station'] = edi.station
             self.data[s_index]['offset'] = edi.offset
 
             for freq_num, frequency in enumerate(self.freq):
-                #skip, if the listed frequency is not available for the station
-                if not (frequency in interp_freq):
+                if self.freq_tol is not None:
+                    try:
+                        f_index = np.where((station_freq >= frequency*(1-self.freq_tol)) &
+                                           (station_freq <= frequency*(1+self.freq_tol)))[0][0] 
+                                           
+                    except IndexError:
+                        f_index = None
+                else:
+                    #skip, if the listed frequency is not available for the station
+                    if (frequency in interp_freq):
+                        #find the respective frequency index for the station     
+                        f_index = np.abs(interp_freq-frequency).argmin()
+                    else:
+                        f_index = None
+
+                if f_index == None:
                     continue
-
-                #find the respective frequency index for the station     
-                f_index = np.abs(interp_freq-frequency).argmin()
-
+                
                 #--> get te resistivity
                 self.data[s_index]['te_res'][0, freq_num] = rho[f_index, 0, 1]
                 #compute error                
