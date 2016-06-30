@@ -39,21 +39,7 @@ ckdict = {'phiminang' : r'$\Phi_{min}$ (deg)',
           'geometric_mean' : r'$\sqrt{\Phi_{min} \cdot \Phi_{max}}$' }
           
 
-            
-labeldict = {6:'$10^{6}$',
-             5:'$10^{5}$',
-             4:'$10^{4}$',
-             3:'$10^{3}$',
-             2:'$10^{2}$',
-             1:'$10^{1}$',
-             0:'$10^{0}$',
-             -1:'$10^{-1}$',
-             -2:'$10^{-2}$',
-             -3:'$10^{-3}$',
-             -4:'$10^{-4}$',
-             -5:'$10^{-5}$',
-             -6:'$10^{-6}$',
-             -7:'$10^{-7}$',}
+labeldict = dict([(ii, '$10^{'+str(ii)+'}$') for ii in range(-20, 21)])            
 
 #==============================================================================
 # Arrows properties for induction vectors               
@@ -475,10 +461,9 @@ class ResPhase(object):
         if self.phase_quadrant == 1:
             if self.phaseyx.mean() > 180:
                 self.phaseyx -= 180
-                self.phaseyy -= 180
             else:
                 self.phaseyx += 180
-                self.phaseyy += 180
+
         
         #calculate determinant values
         zdet = np.array([np.linalg.det(zz)**.5 for zz in self._Z.z])
@@ -785,6 +770,7 @@ class MTplot(object):
         #if a tipper object is input set it to _Tipper
         if tipper_object is not None:
             self._Tipper = tipper_object
+            
         else:
             self._Tipper = mtz.Tipper(tipper_array=tipper, 
                                       tippererr_array=tippererr,
@@ -934,10 +920,13 @@ class MTplot(object):
                 self._Z.zerr = self._Z.zerr.copy()[::-1]
                 self._Z.freq = self._freq.copy()
                 
-                if self._Tipper.tipper is not None:
-                    self._Tipper.tipper = self._Tipper.tipper.copy()[::-1]
-                    self._Tipper.tippererr = self._Tipper.tippererr.copy()[::-1]
-                    self._Tipper.freq = self._freq.copy()
+                try:
+                    if self._Tipper.tipper is not None:
+                        self._Tipper.tipper = self._Tipper.tipper.copy()[::-1]
+                        self._Tipper.tippererr = self._Tipper.tippererr.copy()[::-1]
+                        self._Tipper.freq = self._freq.copy()
+                except AttributeError:
+                    pass
 
         
     #==========================================================================
@@ -1357,52 +1346,84 @@ def get_mtlist(fn_list=None, res_object_list=None, z_object_list=None,
     """
     
     #first need to find something to loop over
-    try:
+    
+    if fn_list is not None:
         ns = len(fn_list)
         mt_list = [MTplot(fn=fn) for fn in fn_list]
         print 'Reading {0} stations'.format(ns)
         return mt_list
-    except TypeError:
+    
+    elif mt_object_list is not None:
+        return mt_object_list
+        
+    elif z_object_list is not None:
+        ns = len(z_object_list)
+        mt_list = [MTplot(z_object=z_obj) for z_obj in z_object_list]
         try:
-            ns = len(res_object_list)
-            mt_list = [MTplot(res_phase_object=res_obj) 
-                        for res_obj in res_object_list]
-            try:
-                nt = len(tipper_object_list)
-                if nt != ns:
-                    raise mtex.MTpyError_inputarguments('length '+\
-                          ' of z_list is not equal to tip_list'+\
-                          '; nz={0}, nt={1}'.format(ns, nt))
-                for mt,tip_obj in zip(mt_list,tipper_object_list):
-                    mt._Tipper = tip_obj 
-            except TypeError:
-                pass
-            print 'Reading {0} stations'.format(ns)
-            return mt_list
+            nt = len(tipper_object_list)
+            if nt != ns:
+                raise mtex.MTpyError_inputarguments('length '+\
+                      ' of z_list is not equal to tip_list'+\
+                      '; nz={0}, nt={1}'.format(ns, nt))
+            for mt,tip_obj in zip(mt_list,tipper_object_list):
+                mt._Tipper = tip_obj 
         except TypeError:
-            try: 
-                ns = len(z_object_list)
-                mt_list = [MTplot(z_object=z_obj) for z_obj in z_object_list]
-                try:
-                    nt = len(tipper_object_list)
-                    if nt != ns:
-                        raise mtex.MTpyError_inputarguments('length '+\
-                              ' of z_list is not equal to tip_list'+\
-                              '; nz={0}, nt={1}'.format(ns, nt))
-                    for mt,tip_obj in zip(mt_list,tipper_object_list):
-                        mt._Tipper = tip_obj 
-                except TypeError:
-                    pass
-                print 'Reading {0} stations'.format(ns)
-                return mt_list
-                
-            except TypeError:
-                try:
-                    ns = len(mt_object_list)
-                    print 'Reading {0} stations'.format(ns)
-                    return mt_list
-                except TypeError:
-                    raise IOError('Need to input an iteratable list')
+            pass
+        print 'Reading {0} stations'.format(ns)
+        return mt_list
+        
+#    elif tipper_object_list is not None:
+#        
+#    elif type(fn_list[0]) is MTplot:
+#        return mt_list
+#        
+#    else:
+#        try:
+#            ns = len(fn_list)
+#            mt_list = [MTplot(fn=fn) for fn in fn_list]
+#            print 'Reading {0} stations'.format(ns)
+#            return mt_list
+#        except TypeError:
+#            try:
+#                ns = len(res_object_list)
+#                mt_list = [MTplot(res_phase_object=res_obj) 
+#                            for res_obj in res_object_list]
+#                try:
+#                    nt = len(tipper_object_list)
+#                    if nt != ns:
+#                        raise mtex.MTpyError_inputarguments('length '+\
+#                              ' of z_list is not equal to tip_list'+\
+#                              '; nz={0}, nt={1}'.format(ns, nt))
+#                    for mt,tip_obj in zip(mt_list,tipper_object_list):
+#                        mt._Tipper = tip_obj 
+#                except TypeError:
+#                    pass
+#                print 'Reading {0} stations'.format(ns)
+#                return mt_list
+#            except TypeError:
+#                try: 
+#                    ns = len(z_object_list)
+#                    mt_list = [MTplot(z_object=z_obj) for z_obj in z_object_list]
+#                    try:
+#                        nt = len(tipper_object_list)
+#                        if nt != ns:
+#                            raise mtex.MTpyError_inputarguments('length '+\
+#                                  ' of z_list is not equal to tip_list'+\
+#                                  '; nz={0}, nt={1}'.format(ns, nt))
+#                        for mt,tip_obj in zip(mt_list,tipper_object_list):
+#                            mt._Tipper = tip_obj 
+#                    except TypeError:
+#                        pass
+#                    print 'Reading {0} stations'.format(ns)
+#                    return mt_list
+#                    
+#                except TypeError:
+#                    try:
+#                        ns = len(mt_object_list)
+#                        print 'Reading {0} stations'.format(ns)
+#                        return mt_list
+#                    except TypeError:
+#                        raise IOError('Need to input an iteratable list')
 
 #==============================================================================
 # sort an mt_list by offset values in a particular direction                  
@@ -2063,7 +2084,7 @@ def _make_value_str(value, value_list=None, spacing='{0:^8}',
 #==============================================================================
 def plot_errorbar(ax, x_array, y_array, y_error=None, x_error=None,
                   color='k', marker='x', ms=2, ls=':', lw=1, e_capsize=2, 
-                  e_capthick=.5):
+                  e_capthick=.5, picker=None):
     """
     convinience function to make an error bar instance
     
@@ -2105,6 +2126,9 @@ def plot_errorbar(ax, x_array, y_array, y_error=None, x_error=None,
         **e_capthick** : float
                          thickness of error bar cap
         
+        **picker** : float
+                     radius in points to be able to pick a point. 
+        
         
     Returns:
     ---------
@@ -2143,7 +2167,7 @@ def plot_errorbar(ax, x_array, y_array, y_error=None, x_error=None,
                                   yerr=y_err, 
                                   ecolor=color,   
                                   color=color,
-                                  picker=2,
+                                  picker=picker,
                                   lw=lw,
                                   elinewidth=lw,
                                   capsize=e_capsize,

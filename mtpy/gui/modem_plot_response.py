@@ -112,6 +112,13 @@ class Ui_MainWindow(object):
         # it takes the `figure` instance as a parameter to __init__
         self.figure = Figure(dpi=150)
         self.mpl_widget = FigureCanvas(self.figure)
+        self.mpl_widget.setParent(self.central_widget)
+        self.mpl_widget.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.mpl_widget.setFocus()
+        
+        # be able to edit the data
+        self.mpl_widget.mpl_connect('pick_event', self.on_pick)
+        self.mpl_widget.mpl_connect('axes_enter_event', self.in_axes)
         
         #make sure the figure takes up the entire plottable space
         self.mpl_widget.setSizePolicy(QtGui.QSizePolicy.Expanding,
@@ -155,6 +162,10 @@ class Ui_MainWindow(object):
         # add a tab for chaning the display
         self.menuDisplay = QtGui.QMenu(self.menubar)
         self.menuDisplay.setTitle("Display")
+        
+        # add a tab for help
+        self.menuHelp = QtGui.QMenu(self.menubar)
+        self.menuHelp.setTitle("Help")
 
         MainWindow.setMenuBar(self.menubar)
 
@@ -167,7 +178,7 @@ class Ui_MainWindow(object):
         # set an open option that on click opens a modem file
         self.actionOpen = QtGui.QAction(MainWindow)
         self.actionOpen.setText("Open")
-        self.actionOpen.triggered.connect(self.get_filename)
+        self.actionOpen.triggered.connect(self.get_data_file)
 
         # set a close that closes the main window
         self.actionClose = QtGui.QAction(MainWindow)
@@ -176,7 +187,8 @@ class Ui_MainWindow(object):
 
         # set a save option that will eventually save the masked data
         self.actionSave = QtGui.QAction(MainWindow)
-        self.actionSave.setText("Save")
+        self.actionSave.setText("Save Edits")
+        self.actionSave.triggered.connect(self.save_edits)
 
         # add the action on the menu tab
         self.menuFile.addAction(self.actionOpen)
@@ -215,8 +227,20 @@ class Ui_MainWindow(object):
         self.menuDisplay.addAction(self.action_plot_settings)
         self.menubar.addAction(self.menuDisplay.menuAction())
         
+#        self.action_edit_settings = QtGui.QAction(MainWindow)
+#        self.action_edit_settings.setText('Editing Settings')
+#        self.action_edit_settings.triggered.connect(self.show_edit_settings)
+        
+        
 #        self.menuDisplay.addAction(self.menu_plot_style.menuAction())
         self.menuDisplay.addAction(self.menu_plot_type.menuAction())
+        
+        self.action_help = QtGui.QAction(MainWindow)
+        self.action_help.setText('help doc')
+        self.action_help.triggered.connect(self.disp_help)
+        self.menuHelp.addAction(self.action_help)
+        self.menubar.addAction(self.menuHelp.menuAction())
+        
     
         #self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -255,7 +279,7 @@ class Ui_MainWindow(object):
         self.plot()
                 
         
-    def get_filename(self):
+    def get_data_file(self):
         """
         get the filename from a file dialogue
         
@@ -276,14 +300,35 @@ class Ui_MainWindow(object):
         
         #this will add the station name for each station to the qwidget list
         for station in station_list:
-            self.list_widget.addItem(station)
+#            try:
+#                self.list_widget.addItem('{0:.0f}'.format(station))
+#            except ValueError:
+            self.list_widget.addItem(str(station))
+            
+        self.station = station_list[0]
+        self.plot()
         
+    def save_edits(self):
+        """
+        save edits to another file
+        """
+        fn_dialog = QtGui.QFileDialog()
+        save_fn = str(fn_dialog.getSaveFileName(caption='Choose File to save',
+                                                filter='*.dat'))
+        
+        self.modem_data.write_data_file(save_path=os.path.dirname(save_fn),
+                                        fn_basename=os.path.basename(save_fn),
+                                        compute_error=False)
         
     def get_station(self, widget_item):
         """
         get the station name from the clicked station 
         """
-        self.station = str(widget_item.text()) 
+        self.station = str(widget_item.text())
+        try:
+            self.station = float(self.station)
+        except ValueError:
+            pass
         self.plot()
         
     def get_resp_fn(self):
@@ -300,12 +345,6 @@ class Ui_MainWindow(object):
         self.plot()
         
     def show_settings(self):
-#        kw_dict = {'fs':self.fs,
-#                   'lw':self.lw,
-#                   'ms':self.ms,
-#                   'e_capthick':self.e_capthick,
-#                   'e_capsize':self.e_capsize,
-#                   'cted':self.cted}
         self.settings_window = PlotSettings(None, **self.__dict__)
         self.settings_window.show()
         self.settings_window.settings_updated.connect(self.update_settings)
@@ -316,6 +355,26 @@ class Ui_MainWindow(object):
             setattr(self, attr, self.settings_window.__dict__[attr])
             
         self.plot()
+        
+    def disp_help(self):
+        """
+        display a help dialogue
+        """
+        ll = ['This GUI will allow you to edit your data by masking points',
+              'and adding error bars to dodgy data points.  Only the top row',
+              'row is editable for now. However, all edits to the top row ',
+              'are applied to the bottom row (real and imaginary parts).\n',
+              '   * Left-Click the mouse to mask a point this will mask both',
+              '     the real and imaginary part of that component.\n',
+              '   * Right-Click the mouse to add error bars to the data point',
+              '     again this will apply to both real and imaginary parts of',
+              '     the selected component. Current it goes up by 5%\n',
+              '   * To save your masking, go to Data File -> Save Edits' ]
+        
+        help_string = '\n'.join(ll)        
+        
+        help_popup = QtGui.QMessageBox.information(self.central_widget, 'Help', 
+                                                   help_string)
                 
     def plot(self):
         """
@@ -324,7 +383,7 @@ class Ui_MainWindow(object):
 
         if self.station is None:
             return
-            
+
         z_obj = self.modem_data.mt_dict[self.station].Z
         t_obj = self.modem_data.mt_dict[self.station].Tipper
         period = self.modem_data.period_list
@@ -344,7 +403,8 @@ class Ui_MainWindow(object):
                  'ls':':',
                  'lw':self.lw,
                  'e_capsize':self.e_capsize,
-                 'e_capthick':self.e_capthick}        
+                 'e_capthick':self.e_capthick,
+                 'picker':3}        
        
         kw_yy = {'color':self.ctmd,
                  'marker':self.mtmd,
@@ -352,7 +412,8 @@ class Ui_MainWindow(object):
                  'ls':':',
                  'lw':self.lw,
                  'e_capsize':self.e_capsize,
-                 'e_capthick':self.e_capthick} 
+                 'e_capthick':self.e_capthick,
+                 'picker':3} 
                  
         
                  
@@ -406,6 +467,9 @@ class Ui_MainWindow(object):
             axpxy = self.figure.add_subplot(gs[1, 1], sharex=axrxx)
             axpyx = self.figure.add_subplot(gs[1, 2], sharex=axrxx)
             axpyy = self.figure.add_subplot(gs[1, 3], sharex=axrxx)
+            
+            self.ax_list = [axrxx, axrxy, axryx, axryy,
+                            axpxx, axpxy, axpyx, axpyy]
         else:
             axrxx = self.figure.add_subplot(gs[0, 0])
             axrxy = self.figure.add_subplot(gs[0, 1], sharex=axrxx)
@@ -421,10 +485,14 @@ class Ui_MainWindow(object):
             axtxi = self.figure.add_subplot(gs[1, 4], sharex=axrxx)
             axtyr = self.figure.add_subplot(gs[0, 5], sharex=axrxx)
             axtyi = self.figure.add_subplot(gs[1, 5], sharex=axrxx)
+            
+            self.ax_list = [axrxx, axrxy, axryx, axryy,
+                            axpxx, axpxy, axpyx, axpyy,
+                            axtxr, axtxi, axtyr, axtyi]
         
         if self.plot_z == False:
             #plot resistivity
-            erxx= mtplottools.plot_errorbar(axrxx, 
+            erxx = mtplottools.plot_errorbar(axrxx, 
                                       period[nzxx], 
                                       rp.resxx[nzxx], 
                                       rp.resxx_err[nzxx],
@@ -445,22 +513,22 @@ class Ui_MainWindow(object):
                                       rp.resyy_err[nzyy],
                                       **kw_yy)
             #plot phase                         
-            erxx= mtplottools.plot_errorbar(axpxx, 
+            epxx = mtplottools.plot_errorbar(axpxx, 
                                       period[nzxx], 
                                       rp.phasexx[nzxx], 
                                       rp.phasexx_err[nzxx],
                                       **kw_xx)
-            erxy = mtplottools.plot_errorbar(axpxy, 
+            epxy = mtplottools.plot_errorbar(axpxy, 
                                       period[nzxy], 
                                       rp.phasexy[nzxy], 
                                       rp.phasexy_err[nzxy],
                                       **kw_xx)
-            eryx = mtplottools.plot_errorbar(axpyx, 
+            epyx = mtplottools.plot_errorbar(axpyx, 
                                       period[nzyx], 
                                       rp.phaseyx[nzyx], 
                                       rp.phaseyx_err[nzyx],
                                       **kw_yy)
-            eryy = mtplottools.plot_errorbar(axpyy, 
+            epyy = mtplottools.plot_errorbar(axpyy, 
                                       period[nzyy], 
                                       rp.phaseyy[nzyy], 
                                       rp.phaseyy_err[nzyy],
@@ -488,22 +556,22 @@ class Ui_MainWindow(object):
                                       z_obj.zerr[nzyy,1,1].real,
                                       **kw_yy)
             #plot phase                         
-            erxx = mtplottools.plot_errorbar(axpxx, 
+            epxx = mtplottools.plot_errorbar(axpxx, 
                                       period[nzxx], 
                                       z_obj.z[nzxx,0,0].imag, 
                                       z_obj.zerr[nzxx,0,0].imag,
                                       **kw_xx)
-            erxy = mtplottools.plot_errorbar(axpxy, 
+            epxy = mtplottools.plot_errorbar(axpxy, 
                                       period[nzxy], 
                                       z_obj.z[nzxy,0,1].imag, 
                                       z_obj.zerr[nzxy,0,1].imag,
                                       **kw_xx)
-            eryx = mtplottools.plot_errorbar(axpyx, 
+            epyx = mtplottools.plot_errorbar(axpyx, 
                                       period[nzyx], 
                                       z_obj.z[nzyx,1,0].imag, 
                                       z_obj.zerr[nzyx,1,0].imag,
                                       **kw_yy)
-            eryy = mtplottools.plot_errorbar(axpyy, 
+            epyy = mtplottools.plot_errorbar(axpyy, 
                                       period[nzyy], 
                                       z_obj.z[nzyy,1,1].imag, 
                                       z_obj.zerr[nzyy,1,1].imag,
@@ -522,29 +590,28 @@ class Ui_MainWindow(object):
                                      t_obj.tippererr[nty, 0, 0],
                                      **kw_yy)
                                      
-            ertx = mtplottools.plot_errorbar(axtxi, 
+            eptx = mtplottools.plot_errorbar(axtxi, 
                                      period,
                                      t_obj.tipper[ntx, 0, 0].imag,
                                      t_obj.tippererr[ntx, 0, 1],
                                      **kw_xx)
-            erty = mtplottools.plot_errorbar(axtyi, 
+            epty = mtplottools.plot_errorbar(axtyi, 
                                      period,
                                      t_obj.tipper[nty, 0, 1].imag,
                                      t_obj.tippererr[nty, 0, 1],
                                      **kw_yy)
         if self.plot_tipper == False:                    
-            ax_list = [axrxx, axrxy, axryx, axryy, 
-                       axpxx, axpxy, axpyx, axpyy]
             line_list = [[erxx[0]], [erxy[0]], [eryx[0]], [eryy[0]]]
             label_list = [['$Z_{xx}$'], ['$Z_{xy}$'], 
                           ['$Z_{yx}$'], ['$Z_{yy}$']]
-            for ax, label in zip(ax_list, label_list):
+            for ax, label in zip(self.ax_list, label_list):
                 ax.set_title(label[0],fontdict={'size':self.fs+2, 
                                               'weight':'bold'})
+            self._err_list = [[erxx[1][0],erxx[1][1],erxx[2][0]],
+                              [erxy[1][0],erxy[1][1],erxy[2][0]],
+                              [eryx[1][0],eryx[1][1],eryx[2][0]],
+                              [eryy[1][0],eryy[1][1],eryy[2][0]]]
         else:                    
-            ax_list = [axrxx, axrxy, axryx, axryy, 
-                       axpxx, axpxy, axpyx, axpyy, 
-                       axtxr, axtxi, axtyr, axtyi]
             line_list = [[erxx[0]], [erxy[0]], 
                          [eryx[0]], [eryy[0]],
                          [ertx[0]], [erty[0]]]
@@ -555,6 +622,13 @@ class Ui_MainWindow(object):
                                  label_list):
                 ax.set_title(label[0], fontdict={'size':self.fs+2, 
                                               'weight':'bold'})
+                                              
+            self._err_list = [[erxx[1][0],erxx[1][1],erxx[2][0]],
+                              [erxy[1][0],erxy[1][1],erxy[2][0]],
+                              [eryx[1][0],eryx[1][1],eryx[2][0]],
+                              [eryy[1][0],eryy[1][1],eryy[2][0]],
+                              [ertx[1][0],ertx[1][1],ertx[2][0]],
+                              [erty[1][0],erty[1][1],erty[2][0]]]
                           
         #--> set limits if input
         if self.res_xx_limits is not None:
@@ -576,7 +650,7 @@ class Ui_MainWindow(object):
             axpyy.set_ylim(self.phase_yy_limits) 
     
         #set axis properties
-        for aa, ax in enumerate(ax_list):
+        for aa, ax in enumerate(self.ax_list):
             ax.tick_params(axis='y', pad=self.ylabel_pad)
             ylabels = ax.get_yticks().tolist()
             if aa < 8:
@@ -584,7 +658,7 @@ class Ui_MainWindow(object):
                 ylabels[0] = ''
                 ax.set_yticklabels(ylabels)
             
-            if len(ax_list) == 4 or len(ax_list) == 6:
+            if len(self.ax_list) == 4 or len(self.ax_list) == 6:
                 if aa < 2:
                     plt.setp(ax.get_xticklabels(), visible=False)
                     if self.plot_z == False:
@@ -608,7 +682,7 @@ class Ui_MainWindow(object):
                         ax.set_ylabel('Im[Z (mV/km nT)]',
                                       fontdict=fontdict)
                     
-            elif len(ax_list) == 8 or len(ax_list) == 12:
+            elif len(self.ax_list) == 8 or len(self.ax_list) == 12:
                 if aa < 4:
                     plt.setp(ax.get_xticklabels(), visible=False)
                     if self.plot_z == False:
@@ -644,8 +718,6 @@ class Ui_MainWindow(object):
             
         #plot model response
         if self.modem_resp is not None:
-            cxy = (0, .7, 0)
-            cyx = (.7, .4, 0)
             resp_z_obj = self.modem_resp.mt_dict[self.station].Z
             resp_z_err = np.nan_to_num((z_obj.z-resp_z_obj.z)/z_obj.zerr)
 
@@ -653,7 +725,6 @@ class Ui_MainWindow(object):
             
             rrp = mtplottools.ResPhase(resp_z_obj)
 
-            rms = resp_z_err.std()
             rms_xx = resp_z_err[:, 0, 0].std()
             rms_xy = resp_z_err[:, 0, 1].std()
             rms_yx = resp_z_err[:, 1, 0].std()
@@ -795,10 +866,10 @@ class Ui_MainWindow(object):
                 label_list[4] += ['$T^m_{x}$ ']
                 label_list[5] += ['$T^m_{y}$']
             
-            legend_ax_list = ax_list[0:self.plot_component]
+            legend_ax_list = self.ax_list[0:self.plot_component]
             if self.plot_tipper == True:
-                legend_ax_list.append(ax_list[8])
-                legend_ax_list.append(ax_list[10])
+                legend_ax_list.append(self.ax_list[8])
+                legend_ax_list.append(self.ax_list[10])
                 
             for aa, ax in enumerate(legend_ax_list):
                 ax.legend(line_list[aa],
@@ -814,6 +885,127 @@ class Ui_MainWindow(object):
         
         self.mpl_widget.draw()
         
+    def on_pick(self, event):
+        """
+        mask a data point when it is clicked on.  
+        """         
+        data_point = event.artist
+        data_period = data_point.get_xdata()[event.ind]
+        data_value = data_point.get_ydata()[event.ind]
+        p_index = np.where(self.modem_data.period_list==data_period)[0][0]
+        
+        if event.mouseevent.button == 1:
+            # mask the point in the data mt_dict
+            if len(self.ax_list) == 8:
+                self.modem_data.mt_dict[self.station].Z.z[p_index, 
+                                self._comp_index_x, self._comp_index_y] = 0+0j
+            elif len(self.ax_list) == 12:
+                if self._ax_index == 4 or self._ax_index == 5 or \
+                   self._ax_index == 10 or self._ax_index == 11:
+                    self.modem_data.mt_dict[self.station].Tipper.tipper[p_index, 
+                                self._comp_index_x, self._comp_index_y] = 0+0j
+                else:
+                    self.modem_data.mt_dict[self.station].Z.z[p_index, 
+                                self._comp_index_x, self._comp_index_y] = 0+0j
+            # plot the point as masked
+            self._ax.plot(data_period, data_value, color=(.7, .7, .7),
+                          marker=self.mted, ms=self.ms)
+        
+        # Increase error bars
+        if event.mouseevent.button == 3:
+            # make sure just checking the top plots            
+            ax_index = self._ax_index%len(self._err_list)
+            
+            #put the new error into the error array
+            if len(self.ax_list) == 8:
+                err = self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
+                        self._comp_index_x, self._comp_index_y]
+                err = err+abs(err)*.05
+                print err
+                self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
+                        self._comp_index_x, self._comp_index_y] = err
+            elif len(self.ax_list) == 12:
+                if self._ax_index == 4 or self._ax_index == 5 or \
+                   self._ax_index == 10 or self._ax_index == 11:
+                    err = self.modem_data.mt_dict[self.station].Tipper.tippererr[p_index, 
+                                self._comp_index_x, self._comp_index_y] 
+                    self.modem_data.mt_dict[self.station].Tipper.tippererr[p_index, 
+                                self._comp_index_x, self._comp_index_y] += abs(err)*.05
+                else:
+                    err = self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
+                        self._comp_index_x, self._comp_index_y] 
+                    self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
+                        self._comp_index_x, self._comp_index_y] += abs(err)*.05
+            
+            # make error bar array
+            eb = self._err_list[ax_index][2].get_paths()[p_index].vertices
+            
+            # make ecap array
+            ecap_l = self._err_list[ax_index][0].get_data()[1][p_index]
+            ecap_u = self._err_list[ax_index][1].get_data()[1][p_index]
+            
+            # change apparent resistivity error
+            neb_u = eb[0,1]-.025*abs(eb[0,1])
+            neb_l = eb[1,1]+.025*abs(eb[1,1])
+            ecap_l = ecap_l-.025*abs(ecap_l)
+            ecap_u = ecap_u+.025*abs(ecap_u)
+                
+            #set the new error bar values
+            eb[0,1] = neb_u
+            eb[1,1] = neb_l
+            
+            #reset the error bars and caps
+            ncap_l = self._err_list[ax_index][0].get_data()
+            ncap_u = self._err_list[ax_index][1].get_data()
+            ncap_l[1][p_index] = ecap_l
+            ncap_u[1][p_index] = ecap_u
+            
+            #set the values 
+            self._err_list[ax_index][0].set_data(ncap_l)
+            self._err_list[ax_index][1].set_data(ncap_u)
+            self._err_list[ax_index][2].get_paths()[p_index].vertices = eb
+                                       
+        # need to redraw the figure
+        self._ax.figure.canvas.draw()
+                          
+    def in_axes(self, event):
+        """
+        figure out which axes you just chose the point from
+        """
+        if len(self.ax_list) == 8:
+            ax_index_dict = {0:(0, 0),
+                             1:(0, 1),
+                             2:(1, 0),
+                             3:(1, 1),
+                             4:(0, 0),
+                             5:(0, 1),
+                             6:(1, 0),
+                             7:(1, 1)}
+        if len(self.ax_list) == 12:
+            ax_index_dict = {0:(0, 0),
+                             1:(0, 1),
+                             2:(1, 0),
+                             3:(1, 1),
+                             4:(0, 0),
+                             5:(0, 1),
+                             6:(1, 0),
+                             7:(1, 1),
+                             8:(0, 0),
+                             9:(0, 1),
+                             10:(0, 0),
+                             11:(0, 1)} 
+        # make the axis an attribute
+        self._ax = event.inaxes
+        
+        # find the component index so that it can be masked
+        for ax_index, ax in enumerate(self.ax_list):
+            if ax == event.inaxes:
+                self._comp_index_x, self._comp_index_y = ax_index_dict[ax_index]
+                self._ax_index = ax_index
+        
+#==============================================================================
+#  Plot setting        
+#==============================================================================
 class PlotSettings(QtGui.QWidget):
     settings_updated = QtCore.pyqtSignal()
     def __init__(self, parent, **kwargs):

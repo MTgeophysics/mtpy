@@ -259,7 +259,8 @@ class PlotStations(object):
         self.text_ha = kwargs.pop('text_ha', 'center')
         self.text_va = kwargs.pop('text_va', 'baseline')
         self.text_angle = kwargs.pop('text_angle', 0)
-        self.text_pad = kwargs.pop('text_pad', None)
+        self.text_x_pad = kwargs.pop('text_x_pad', None)
+        self.text_y_pad = kwargs.pop('text_y_pad', None)
         
         self.image_file = kwargs.pop('image_file', None)
         self.image_extent = kwargs.pop('image_extent', None)
@@ -346,11 +347,13 @@ class PlotStations(object):
                             s=self.marker_size)
                             
             if self.plot_names == True:
-                if self.text_pad is None:
-                    self.text_pad = .0009*self.mt_list.map_dict[key][1]
+                if self.text_x_pad is None:
+                    self.text_x_pad = .0009*self.mt_list.map_dict[key][0]
+                if self.text_y_pad is None:
+                    self.text_y_pad = .0009*self.mt_list.map_dict[key][1]
                     
-                self.ax.text(self.mt_list.map_dict[key][0],
-                             self.mt_list.map_dict[key][1]+self.text_pad*\
+                self.ax.text(self.mt_list.map_dict[key][0]+self.text_x_pad,
+                             self.mt_list.map_dict[key][1]+self.text_y_pad*\
                                  np.sign(self.mt_list.map_dict[key][1]),
                              key[self.stationid[0]:self.stationid[1]], 
                              verticalalignment=self.text_va,

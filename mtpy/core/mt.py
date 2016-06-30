@@ -26,10 +26,15 @@ import numpy as np
 import mtpy.imaging.plotresponse as plotresponse
 
 try:
+    import scipy
+    scipy_version = int(scipy.__version__.replace('.', ''))
+    
+    if scipy_version < 140:
+        print ('Note: need scipy version 0.14.0 or higher or interpolation '+\
+               'might not work.')
     import scipy.interpolate as spi
     interp_import = True
-    print ('Note: need scipy version 0.14.0 or higher or interpolation '+\
-           'might not work.')
+    
 except ImportError:
     print('Could not find scipy.interpolate, cannot use method interpolate'+\
           'check installation you can get scipy from scipy.org.' )
@@ -43,7 +48,7 @@ class MT(object):
     including:
     
     ===================== =====================================================
-    Attribute             Description
+    **Attribute**         Description
     ===================== =====================================================
     name                  station name
     lat                   station latitude in decimal degrees
@@ -55,6 +60,7 @@ class MT(object):
     east                  station location in UTM coordinates assuming WGS-84
     north                 station location in UTM coordinates assuming WGS-84 
     utm_zone              zone of UTM coordinates assuming WGS-84
+    data_type             | 'z' | 'spectra' | 'resphase' | 
     ===================== =====================================================
         
     .. note:: 
@@ -83,7 +89,7 @@ class MT(object):
             - tippererr       --> np.ndarray(n_freq, 1, 2)
         
     ===================== =====================================================
-    methods               Description
+    **methods**           Description
     ===================== =====================================================
     write_edi_file        write an edi_file from the MT data
     remove_distortion     remove distortion from the data following 
@@ -96,6 +102,11 @@ class MT(object):
 
     Examples
     -------------------
+    
+    * Read in Spectra data:
+        
+        >>> import mtpy.core.mt as mt
+        >>> mt_obj = mt.MT(r"/home/edi_files/mt_01.edi", data_type='spectra')
     
     * Plot MT response:
 
@@ -142,6 +153,7 @@ class MT(object):
         self._east = kwargs.pop('east', None)
         self._north = kwargs.pop('north', None)
         self._rotation_angle = kwargs.pop('rotation_angle', 0)
+        self._data_type = kwargs.pop('data_type', 'z')
         
         #provide key words to fill values if an edi file does not exist
         if 'z_object' in kwargs:
@@ -404,7 +416,7 @@ class MT(object):
         
         """
         
-        self.edi_object = MTedi.Edi(self.fn)
+        self.edi_object = MTedi.Edi(self.fn, datatype=self._data_type)
         self.lat = self.edi_object.lat
         self.lon = self.edi_object.lon
         self.elev = self.edi_object.elev
@@ -433,16 +445,16 @@ class MT(object):
         Similarly, the new function name does not change the MT objecte fn
         attribute but does change MT.edi_object.fn attribute.
         
-        Arguments
-        -----------------            
-            **new_fn** : string
-                         full path to new file name
+        **Arguments**:
+            
+            *new_fn* : string
+                       full path to new file name
                        
-            **new_Z** : mtpy.core.Z object
-                        a new impedance tensor object to be written
+            *new_Z* : mtpy.core.Z object
+                      a new impedance tensor object to be written
                       
-            **new_Tipper** : mtpy.core.Z.Tipper object
-                             a new Tipper object to be written
+            *new_Tipper* : mtpy.core.Z.Tipper object
+                           a new Tipper object to be written
         """
         
         if new_Z is not None:
@@ -494,45 +506,79 @@ class MT(object):
         if you want to write a new edi file with distortion removed you can 
         do this by:
         
-		Example
-		-------------
             >>> import mtpy.core.mt as mt
             >>> mt1 = mt.MT(fn=r"/home/mt/edi_files/mt01.edi")
             >>> D, new_z = mt1.remove_distortion()
             >>> mt1.write_edi_file(new_fn=r"/home/mt/edi_files/mt01_dr.edi",\
                                    new_Z=new_z)
         """
-        
-        D, new_z_object = MTdistortion.remove_distortion(z_object=self.Z)
+        dummy_z_obj = MTz.copy.deepcopy(self.Z)
+        D, new_z_object = MTdistortion.remove_distortion(z_object=dummy_z_obj)
         
         return D, new_z_object
+        
+    def remove_static_shift(self, ss_x=1.0, ss_y =1.0):
+        """
+        Remove static shift from the apparent resistivity
+        
+        Assume the original observed tensor Z is built by a static shift S 
+        and an unperturbated "correct" Z0 :
+             
+             * Z = S * Z0
+            
+        therefore the correct Z will be :
+            * Z0 = S^(-1) * Z
+            
+        
+        **Arguments**
+        
+            *ss_x* : float
+                    correction factor for x component
+            
+            *ss_y* : float
+                   correction factor for y component
+                   
+        **Returns**
+           
+           *new_z* : new z array
+           
+        .. note:: The factors are in resistivity scale, so the
+                  entries of  the matrix "S" need to be given by their
+                  square-roots! 
+        """
+        
+        s_array, new_z = self.Z.no_ss(reduce_res_factor_x=ss_x,
+                                      reduce_res_factor_y=ss_y)
+                                      
+        new_z_obj = MTz.copy.deepcopy(self.Z)
+        new_z_obj.z = new_z
+        
+        return new_z_obj
+        
         
     def interpolate(self, new_freq_array):
         """
         interpolate the impedance tensor onto different frequencies.
         
-        Arguments
-		------------
+        **Arguments**
         
-            **new_freq_array** : np.ndarray 
-                                 a 1-d array of frequencies to interpolate on
-                                 to.  Must be with in the bounds of the existing
-                                 frequency range, anything outside and an error
-                                 will occur.
+            *new_freq_array* : np.ndarray 
+                               a 1-d array of frequencies to interpolate on
+                               to.  Must be with in the bounds of the existing
+                               frequency range, anything outside and an error
+                               will occur.
                                
-        Returns
-		----------
-            **new_z_object** : mtpy.core.z.Z object
-                               a new impedance object with the corresponding
-                               frequencies and components.
+        **Returns** :
+            *new_z_object* : mtpy.core.z.Z object
+                             a new impedance object with the corresponding
+                             frequencies and components.
                              
-            **new_tipper_object** : mtpy.core.z.Tipper object
-                                   a new tipper object with the corresponding
-                                   frequencies and components.
+            *new_tipper_object* : mtpy.core.z.Tipper object
+                             a new tipper object with the corresponding
+                             frequencies and components.
                              
         
-        Example
-		------------
+        :Example: ::
             >>> # make a new edi file for interpolated frequencies 
             >>> import mtpy.core.mt as mt
             >>> edi_fn = r"/home/edi_files/mt_01.edi"
@@ -617,8 +663,7 @@ class MT(object):
         """ 
         returns a mtpy.imaging.plotresponse.PlotResponse object
         
-        Example
-		------------
+        :Example: ::
             >>> mt_obj = mt.MT(edi_file)
             >>> pr = mt.plot_mt_response()
             >>> # if you need more infor on plot_mt_response 

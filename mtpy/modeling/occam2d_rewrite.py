@@ -1041,7 +1041,7 @@ class Profile():
         if self.geoelectric_strike is None:
             try:
                 #might try mode here instead of mean
-                self.geoelectric_strike = np.median(np.nonzero(strike_angles))
+                self.geoelectric_strike = np.median(strike_angles[np.nonzero(strike_angles)])
             except:
                 #empty list or so....
                 #can happen, if everyhing is just 1D
@@ -1106,8 +1106,12 @@ class Profile():
             for edi in self.edi_list:
                 edi.Z.rotate(self.geoelectric_strike-edi.Z.rotation_angle)
                 # rotate tipper to profile azimuth, not strike.
-                edi.Tipper.rotate((self.profile_angle-90)%180-
-                                    edi.Tipper.rotation_angle.mean())
+                try:
+                    edi.Tipper.rotate((self.profile_angle-90)%180-
+                                       edi.Tipper.rotation_angle.mean())
+                except AttributeError:
+                    edi.Tipper.rotate((self.profile_angle-90)%180-
+                                       edi.Tipper.rotation_angle)
            
             print '='*72
             print ('Rotated Z and Tipper to align with '
@@ -1119,8 +1123,12 @@ class Profile():
             for edi in self.edi_list:
                 edi.Z.rotate((self.profile_angle-90)%180-edi.Z.rotation_angle)
                 # rotate tipper to profile azimuth, not strike.
-                edi.Tipper.rotate((self.profile_angle-90)%180-
-                                   edi.Tipper.rotation_angle.mean())
+                try:
+                    edi.Tipper.rotate((self.profile_angle-90)%180-
+                                       edi.Tipper.rotation_angle.mean())
+                except AttributeError:
+                    edi.Tipper.rotate((self.profile_angle-90)%180-
+                                       edi.Tipper.rotation_angle)
            
             print '='*72
             print ('Rotated Z and Tipper to be perpendicular  with '
@@ -2438,11 +2446,9 @@ class Data(Profile):
                     self.data[s_index]['te_phase'][1, freq_num] = \
                         (self.phase_te_err/100.)*57./2.
                             
-                #--> get tm phase
-                phase_tm = phi[f_index, 1, 0]
-                #be sure the phase is in the first quadrant
-                if phase_tm > 180:
-                    phase_tm -= 180
+                #--> get tm phase and be sure its in the first quadrant
+                phase_tm = phi[f_index, 1, 0]%180
+                
                 self.data[s_index]['tm_phase'][0, freq_num] =  phase_tm
                 #compute error
                 #if phi[f_index, 1, 0] != 0.0:
@@ -3646,6 +3652,7 @@ class PlotResponse():
            
             #------------------- plot model response --------------------------
             if self.resp_fn is not None:
+                num_resp = len(self.resp_fn)
                 for rr, rfn in enumerate(self.resp_fn):
                     resp_obj = Response()
                     resp_obj.read_response_file(rfn)
@@ -3653,8 +3660,12 @@ class PlotResponse():
                     rp = resp_obj.resp
                     # create colors for different responses
                     if self.color_mode == 'color':   
-                        cxy = (0, .4+float(rr)/(3*nr), 0)
-                        cyx = (.7+float(rr)/(4*nr), .13, .63-float(rr)/(4*nr))
+                        cxy = (0, 
+                               .4+float(rr)/(3*num_resp),
+                               0)
+                        cyx = (.7+float(rr)/(4*num_resp), 
+                               .13, 
+                               .63-float(rr)/(4*num_resp))
                     elif self.color_mode == 'bw':
                         cxy = (1-1.25/(rr+2.), 1-1.25/(rr+2.), 1-1.25/(rr+2.))                    
                         cyx = (1-1.25/(rr+2.), 1-1.25/(rr+2.), 1-1.25/(rr+2.))
@@ -3677,11 +3688,6 @@ class PlotResponse():
     
                     #--> TE mode Model Response
                     if len(mrxy) > 0:
-                        if self.plot_model_error == 'y':
-                            mte_err = rp[jj]['te_res'][1, mrxy]*\
-                                      rp[jj]['te_res'][0, mrxy]
-                        else:
-                            mte_err = None
                         r3 = plot_errorbar(axrte,
                                             period[mrxy],
                                             rp[jj]['te_res'][0, mrxy],
@@ -3689,7 +3695,7 @@ class PlotResponse():
                                             marker=self.mtem,
                                             ms=self.ms,
                                             color=cxy,
-                                            y_error=mte_err,
+                                            y_error=None,
                                             lw=self.lw,
                                             e_capsize=self.e_capsize,
                                             e_capthick=self.e_capthick)
@@ -3701,11 +3707,6 @@ class PlotResponse():
     
                     #--> TM mode model response
                     if len(mryx)>0:
-                        if self.plot_model_error == 'y':
-                            mtm_err= rp[jj]['tm_res'][1, mryx]*\
-                                     rp[jj]['tm_res'][0, mryx]
-                        else:
-                            mtm_err = None
                         r4 = plot_errorbar(axrtm, 
                                             period[mryx],
                                             rp[jj]['tm_res'][0, mryx],
@@ -3713,7 +3714,7 @@ class PlotResponse():
                                             marker=self.mtmm,
                                             ms=self.ms,
                                             color=cyx,
-                                            y_error=mtm_err,
+                                            y_error=None,
                                             lw=self.lw,
                                             e_capsize=self.e_capsize,
                                             e_capthick=self.e_capthick)
@@ -3730,17 +3731,13 @@ class PlotResponse():
                     
                     #--> TE mode response
                     if len(mpxy) > 0:
-                        if self.plot_model_error == 'y':
-                            mte_err = rp[jj]['te_phase'][1, mpxy]
-                        else:
-                            mte_err = None
                         p3 = plot_errorbar(axpte, 
                                            period[mpxy],
                                            rp[jj]['te_phase'][0, mpxy],
                                            ls='--',
                                            ms=self.ms,
                                            color=cxy,
-                                           y_error=mte_err,
+                                           y_error=None,
                                            lw=self.lw,
                                            e_capsize=self.e_capsize,
                                            e_capthick=self.e_capthick)
@@ -3750,10 +3747,6 @@ class PlotResponse():
     
                     #--> TM mode response
                     if len(mpyx) > 0:
-                        if self.plot_model_error == 'y':
-                            mtm_err = rp[jj]['tm_phase'][1, mpyx]
-                        else:
-                            mtm_err = None
                         p4 = plot_errorbar(axptm,
                                            period[mpyx],
                                            rp[jj]['tm_phase'][0, mpyx],
@@ -3761,7 +3754,7 @@ class PlotResponse():
                                            marker=self.mtmm,
                                            ms=self.ms,
                                            color=cyx,
-                                           y_error=mtm_err,
+                                           y_error=None,
                                            lw=self.lw,
                                            e_capsize=self.e_capsize,
                                            e_capthick=self.e_capthick)
@@ -4211,7 +4204,8 @@ class PlotModel(Model):
                         location and format
     =================== ======================================================
     
-    :Example: ::
+    :Example: 
+    ---------------
         >>> import mtpy.modeling.occam2d as occam2d
         >>> model_plot = occam2d.PlotModel(r"/home/occam/Inv1/mt_01.iter")
         >>> # change the color limits
@@ -6768,6 +6762,8 @@ class Mask(Data):
     Allow masking of points from data file (effectively commenting them out, 
     so the process is reversable). Inheriting from Data class.
     """
+    
+    
 
 class OccamInputError(Exception):
     pass

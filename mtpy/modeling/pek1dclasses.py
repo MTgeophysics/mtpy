@@ -188,8 +188,8 @@ class Data():
     and reading a data file afterwards to compare with inversion responses
     
     """    
-    def __init__(self, **input_parameters):
-        self.working_directory = None
+    def __init__(self, working_directory, **input_parameters):
+        self.working_directory = working_directory
         self.respfile = 'ai1dat.dat'
         self.datafile = None
         self.errorfloor = np.ones([2,2])*0.1

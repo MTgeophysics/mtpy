@@ -57,7 +57,6 @@ import mtpy.analysis.geometry as MTgy
 import mtpy.utils.exceptions as MTex
 import scipy.interpolate as si
 
-
 reload(MTcv)
 reload(MTcf)
 reload(MTedi)
@@ -111,7 +110,8 @@ class Setup():
         self.parameters_inmodel['no_sideblockelements'] = 5
         self.parameters_inmodel['no_bottomlayerelements'] = 4
         self.parameters_inmodel['firstlayer_thickness'] = 100
-        
+        self.parameters_inmodel['no_mergedsideblockelements'] = 5
+        self.parameters_inmodel['sidepadding_increasefactor'] = 2.
         #model depth is in km!
         self.parameters_inmodel['model_depth'] = 100
         self.parameters_inmodel['no_layers'] = 25
@@ -119,8 +119,11 @@ class Setup():
 
         self.parameters_inmodel['model_name'] = 'Modelfile generated with MTpy'
         self.parameters_inmodel['block_merge_threshold'] = 0.75
+        # factor determining amount of increase with each bottom padding
+        self.parameters_inmodel['bottompadding_scalefactor'] = 1.
+        
         self.parameters_inmodel['roughness_exceptions'] = None
-        self.parameters_inmodel['interfaces'] = False
+        self.parameters_inmodel['build_roughness_exceptions'] = False
         self.parameters_inmodel['interface_dir'] = None
         self.parameters_inmodel['interface_filelist'] = None
         self.parameters_inmodel['elevation_filename'] = None
@@ -131,6 +134,7 @@ class Setup():
         self.parameters_data['rho_errorfloor'] = 0.
         self.parameters_data['phase_errorfloor'] = 0.
         self.parameters_data['tipper_errorfloor'] = 0.
+        self.parameters_data['tipper_errorfloor_abs'] = 0.
         self.parameters_data['azimuth'] = 0
 
         self.parameters_data['mode'] = 'tetm'
@@ -141,7 +145,16 @@ class Setup():
         self.parameters_data['max_no_frequencies'] = None
 
         self.parameters_mesh['mesh_title'] = 'Mesh file generated with MTpy'
-        self.prejudice_weight = 1.
+        
+        self.parameters_prejudice = {}
+        self.parameters_prejudice['constraints_type'] = 'interfaces'
+        self.parameters_prejudice['build_prejudice_file'] = False
+        self.parameters_prejudice['interfaces'] = [] # list of arrays containing 2 columns, distance x along profile and depth z of interface
+        self.parameters_prejudice['interface_resistivity_values'] = None
+        self.parameters_prejudice['interface_prejudice_weights'] = None# 
+        self.parameters_prejudice['interface_filelist'] = None
+        self.parameters_prejudice['welldata'] = None        
+        self.parameters_prejudice['prejudice_weight'] = 1.
  
         self.mesh = None
         self.meshlocations_x = None
@@ -163,6 +176,7 @@ class Setup():
         self.edifiles = []
 
         self.Data = None
+        self.Prejudice = None
         self.datafile = 'occaminputdata.dat'
         self.meshfile = 'mesh'
         self.inmodelfile = 'inmodel'
@@ -202,7 +216,8 @@ class Setup():
         update_dict.update(input_parameters_nocase)
 
         for dictionary in [self.parameters_startup, self.parameters_inmodel, 
-                                    self.parameters_mesh, self.parameters_data]:
+                           self.parameters_mesh, self.parameters_data,
+                           self.parameters_prejudice]:
             for key in dictionary.keys():
                 if key in update_dict:
                     #check if entry exists:
@@ -232,7 +247,9 @@ class Setup():
                                 setattr(self,key,None)
             except:
                 continue 
-
+        
+        if self.parameters_prejudice['build_prejudice_file']:
+            self.prejudicefile = 'prejudice'
 
 
     def read_configfile(self, configfile):
@@ -438,9 +455,15 @@ class Setup():
 
         #number of padding mesh layers at the bottom 
         n_bottompadding = int(float(self.parameters_inmodel['no_bottomlayerelements']))
+        bottompadding_scalefactor = self.parameters_inmodel['bottompadding_scalefactor']
 
         #number of padding mesh columns to the sides
         n_sidepadding    = int(float(self.parameters_inmodel['no_sideblockelements']))
+        nmerge_sidepadding  = int(float(self.parameters_inmodel['no_mergedsideblockelements']))
+        
+        if (n_sidepadding-nmerge_sidepadding)%2 == 1:
+            nmerge_sidepadding += 1
+        sidepadding_increasefactor = float(self.parameters_inmodel['sidepadding_increasefactor'])
 
         #1. check, if inter-station spacing is smaller than the allowed max block size
         #if not, add dummy station locations
@@ -480,7 +503,7 @@ class Setup():
         print '\nadded {0} dummy stations'.format(no_dummys)
         totalstations = no_dummys+len(lo_sites)
         totalmeshblocknumber = 2*n_sidepadding+4+2*(totalstations)
-        totalmodelblocknumber = 4+totalstations
+        totalmodelblocknumber = 4+totalstations+(n_sidepadding - nmerge_sidepadding)/2
         print '{0} stations in total => \n\t{1} meshblocks and {2} modelblocks expected in top layer'.format(
                                     totalstations,totalmeshblocknumber, totalmodelblocknumber)
 
@@ -498,9 +521,9 @@ class Setup():
         leftedge -= paddingwidth
         meshnodelocations.insert(0,leftedge)
 
-
             
         #3. split the inner station gaps into 2 mesh blocks each 
+        print lo_allsites
         for idx,station in enumerate(lo_allsites):
             meshnodelocations.append(station)
             if idx == len(lo_allsites)-1:
@@ -519,15 +542,19 @@ class Setup():
         rightedge += paddingwidth
         meshnodelocations.append(rightedge)
 
-
+        
         #add 2 side padding blocks with expon. increasing width of N mesh cells
-        padding_absolute = 0 
+        padding_absolute = 0
+        padding_nmerge = 0
+        
         for p in range(n_sidepadding):
-            current_padding = 2**(p+1)*paddingwidth
-            if current_padding > 1000000:
-                current_padding = 1000000
+            current_padding = sidepadding_increasefactor**(p+1)*paddingwidth
+            if current_padding > 100000:
+                current_padding = 100000
 
             padding_absolute+=current_padding
+            if p < nmerge_sidepadding:
+                padding_nmerge += current_padding
             
             rightedge += current_padding
             meshnodelocations.append(rightedge)
@@ -552,12 +579,20 @@ class Setup():
         lo_modelblockwidths = [] 
         current_meshblock_index = 0
 
-        lo_columns_to_merge.append(n_sidepadding)
-        lo_modelblockwidths.append(padding_absolute)
-        current_meshblock_index += n_sidepadding
+        lo_columns_to_merge.append(nmerge_sidepadding)
+        lo_modelblockwidths.append(padding_nmerge)
+        current_meshblock_index += nmerge_sidepadding
 
+        # merge the extra padding cells that haven't been merged into a big block at the edge
+        for ii in range((n_sidepadding - nmerge_sidepadding)/2):
+            lo_columns_to_merge.append(2)
+            lo_modelblockwidths.append(lo_meshblockwidths[current_meshblock_index] 
+                                + lo_meshblockwidths[current_meshblock_index+1] )
+            current_meshblock_index += 2
+            
         #merge the extra column at the left:
         lo_columns_to_merge.append(2)
+        
         lo_modelblockwidths.append( lo_meshblockwidths[current_meshblock_index] 
                                 + lo_meshblockwidths[current_meshblock_index+1] )
         current_meshblock_index += 2
@@ -575,17 +610,26 @@ class Setup():
                                 + lo_meshblockwidths[current_meshblock_index+1] )
         current_meshblock_index += 2
 
+        # merge the extra padding cells that haven't been merged into a big block at the edge
+        for ii in range((n_sidepadding - nmerge_sidepadding)/2):
+            lo_columns_to_merge.append(2)
+            lo_modelblockwidths.append(lo_meshblockwidths[current_meshblock_index] 
+                                + lo_meshblockwidths[current_meshblock_index+1] )
+            current_meshblock_index += 2
+
+
         #merge the side padding columns on the right
-        lo_columns_to_merge.append(n_sidepadding)
+        lo_columns_to_merge.append(nmerge_sidepadding)
         lo_modelblockwidths.append(np.sum(padding_absolute))
-        current_meshblock_index += n_sidepadding
+        current_meshblock_index += nmerge_sidepadding
 
 
         #6.right side of left most model block - effectively the edge of the padding
         #given with resspect to location of the first station
         #idx of station 1 is n_sidepadding + 2(extra column) + 1 (half the block under the station)
         #binding_offset =  meshnodelocations[n_sidepadding+3] - meshnodelocations[n_sidepadding]
-        binding_offset =  meshnodelocations[n_sidepadding]
+        
+        binding_offset =  meshnodelocations[nmerge_sidepadding]
 
         #should be identical!
         no_x_nodes = current_meshblock_index + 1
@@ -642,16 +686,16 @@ class Setup():
         max_thickness = np.max(lo_mesh_thicknesses)
         maxdepth = lo_mesh_depths[-1]
 
-
         for i in range(n_bottompadding):
             lo_mesh_thicknesses.append(max_thickness)
             lo_mesh_depths.append(maxdepth+max_thickness)
             maxdepth += max_thickness
+            max_thickness *= bottompadding_scalefactor
         
         lo_model_depths.append(lo_model_depths[-1]+n_bottompadding*max_thickness)
 
         #just to be safe!
-        #self.parameters_inmodel['no_layers'] = len(lo_model_depths)
+#        self.parameters_inmodel['no_layers'] = len(lo_model_depths)
 
         lo_model_thicknesses = []
         for idx,depth in enumerate(lo_model_depths):
@@ -885,12 +929,11 @@ class Setup():
             #model_outstring += "\n"
             
 
-        if self.parameters_inmodel['interfaces'] == True:
-            idir = self.parameters_inmodel['interface_dir']
+        if self.parameters_inmodel['build_roughness_exceptions']:
             for interface in self.parameters_inmodel['interface_filelist']:
-                self.project_interface(idir,interface)
+                self.project_interface(interface)
             if self.parameters_inmodel['elevation_filename'] is not None:
-                self.subtract_elevation(idir,self.parameters_inmodel['elevation_filename'])
+                self.subtract_elevation(self.parameters_inmodel['elevation_filename'])
             self.build_roughness_exceptions()
             re = self.parameters_inmodel['roughness_exceptions']
             temptext = "Number Exceptions:{0}\n".format(-len(re))
@@ -969,7 +1012,7 @@ class Setup():
         temptext = ""
         counter = 0 
 
-        if type(self.parameters_startup['halfspace_resistivity']) != list:
+        if type(self.parameters_startup['halfspace_resistivity']) not in [list,np.ndarray]:
             for l in range(self.no_parameters):
                 temptext += "{0:.1g}  ".format(np.log10(float(self.parameters_startup['halfspace_resistivity'])))
                 counter += 1
@@ -1096,32 +1139,67 @@ class Setup():
         Author: Alison Kirkby (2013)
         """
         blockmerges_x = [[int(val) for val in line.strip('\n').split()] for line in self.parameters_inmodel['lo_modelblockstrings']]
+        print blockmerges_x[0]
         blockmerges_z = self.parameters_inmodel['lo_merged_lines']
         meshlocations_z = np.array([0]+self.meshlocations_z)
+        
 #        meshlocations_z.insert(0,0)
         num=1
-        block_nums,block_x,block_z = [],[],[]
+        block_nums,block_x,block_z = [],[],[self.meshlocations_z[0]]
+        block_nums_array = np.zeros((len(self.meshlocations_z)-1,len(self.meshlocations_x)-1))
+        checkerbox = np.zeros_like(block_nums_array)
         iz = 0
         for j,z in enumerate(blockmerges_z):
             ix = 0
-            block_z.append(np.median(meshlocations_z[iz:iz+z+1]))
-            iz += z
+            block_z.append(meshlocations_z[iz+z-1])
             tmp_lst = []
-            tmp_lst_pos = []
+            # list to contain x block locations for this row
+            tmp_lst_xpos = [self.meshlocations_x[0]]
             for i,x in enumerate(blockmerges_x[j]):
-                xpos = np.median(np.array(self.meshlocations_x[ix:ix+x+1]))
+#                if ((x > 2) and (j==0)):
+#                    print x,ix,self.meshlocations_x[ix:ix+x]
+#                xpos = np.mean(np.array(self.meshlocations_x[ix:ix+x]))
                 tmp_lst.append(num)
-                tmp_lst_pos.append(xpos)
+                # append next x location
+                tmp_lst_xpos.append(self.meshlocations_x[ix+x-1])
+                block_nums_array[iz:iz+z,ix:ix+x] = num
+                checkerbox[iz:iz+z,ix:ix+x] = np.random.random()
                 ix += x
                 num += 1
+            iz += z
             block_nums.append(np.array(tmp_lst))
-            block_x.append(np.array(tmp_lst_pos))
+            block_x.append(np.array(tmp_lst_xpos))
         self.modelblocklocations_x = np.array(block_x)
         self.modelblocklocations_z = np.array(block_z)
         self.block_nums = np.array(block_nums)
+        self.block_nums_array = np.array(block_nums_array)
+        self.checkerbox = checkerbox
 
+    
+    def read_2dinterfacefile(self,fn,skiprows=1):
+        
 
-    def project_interface(self,intdir,fn,skiprows=1):
+        # get origin of profile
+        if self.Data.profile_origin is None:
+            self.Data.get_profile_origin()
+        xp0,yp0 = self.Data.profile_origin
+        
+        # get origin for interface from the first line
+        ff = open(fn)
+        xd0,yd0 = [float(val) for val in ff.readline().strip().split()[-2:]]
+        # get length along profile and depth
+        ld,zd = np.loadtxt(fn,skiprows=skiprows,unpack = True)
+
+        # shift l so it aligns with the profile
+        shift = ((xd0-xp0)**2. + (yd0-yp0)**2.)**0.5
+
+        ld += shift
+        
+        if np.median(zd) < 0: zd = -zd
+        
+        return ld,zd
+
+    def project_interface(self,fn,skiprows=1,fmt='xy'):
         """
         project an interface (from an xyz text file) onto the profile.
         adds a numpy array of z locations (corresponding to x model block locations)
@@ -1129,7 +1207,8 @@ class Setup():
 
         intdir = directory where interface text files are held
         fn = filename of interface text file
-        skiprows = number of header rows to skip when reading file             
+        skiprows = number of header rows to skip when reading file  
+        fmt = xy (eastings, northings, depth) or l (length along profile, depth) with origin on first line       
         
         Author: Alison Kirkby (2013)
         """
@@ -1138,14 +1217,22 @@ class Setup():
         self.get_modelblock_info()
             
         az = np.deg2rad(90-self.Data.azimuth)
-                
+        xp0,yp0 = self.Data.profile_origin
+        
         xp = self.Data.profile_origin[0]+self.modelblocklocations_x[0]*np.cos(az)
         yp = self.Data.profile_origin[1]+self.modelblocklocations_x[0]*np.sin(az)
         
-        data = np.loadtxt(os.path.join(intdir,fn),skiprows=skiprows)
-        f = si.CloughTocher2DInterpolator(data[:,0:2],data[:,2])   
+        if fmt == 'xy':
+            data = np.loadtxt(fn,skiprows=skiprows)
+            f = si.CloughTocher2DInterpolator(data[:,0:2],data[:,2])
+            zp = np.array([f(xp[i],yp[i]) for i in range(len(xp))])
+        else:
+            ld,zd = self.read_2dinterfacefile(fn)
 
-        zp = np.array([f(xp[i],yp[i]) for i in range(len(xp))])
+            f = si.interp1d(ld,zd,bounds_error=False)
+            zp = f(self.modelblocklocations_x[0])
+
+        
         
         # check for any null values
         for i,z in enumerate(zp):
@@ -1170,7 +1257,7 @@ class Setup():
         Author: Alison Kirkby (2013)
         """
         if hasattr(self,'interfaces'):    
-            self.project_interface(intdir,elevfn) 
+            self.project_interface(elevfn) 
             
             for i in self.interfaces[:-1]:
                 i -= self.interfaces[-1]
@@ -1192,8 +1279,10 @@ class Setup():
             print "nothing to build roughness exceptions from; please use project_interface to define interfaces first"
             return
         else:
-            block_z = self.modelblocklocations_z
-            block_x = self.modelblocklocations_x
+            # get block centres
+            block_z = (self.modelblocklocations_z[1:] + self.modelblocklocations_z[:-1])/2.
+            block_x = [(self.modelblocklocations_x[i][1:] + self.modelblocklocations_z[i][:-1])/2. \
+            for i in range(len(self.modelblocklocations_x))]
             x_vals = block_x[0]
             block_nums = self.block_nums
 
@@ -1277,7 +1366,143 @@ class Setup():
         self.well_locations = distances
         
         
-    def prejudice_subsample_welldata(self):
+    def setup_prejudice(self):
+        
+        for key in ['modelblocklocations_x','modelblocklocations_z',
+                    'block_nums','block_nums_array']:
+            if not hasattr(self,key):
+                self.get_modelblock_info()
+                break
+        if self.parameters_prejudice['interface_filelist'] is not None:
+            for intfile in self.parameters_prejudice['interface_filelist']:
+                ld,zd = self.read_2dinterfacefile(intfile)
+                self.parameters_prejudice['interfaces'].append(np.vstack([ld,zd]).T)
+        self.Prejudice = Prejudice(self,**self.parameters_prejudice)
+             
+             
+    def write_prejudicefile(self):
+        """
+        build a prejudice file
+        """
+        
+        self.setup_prejudice()
+        
+        header  = 'FORMAT:           OCCAM2MTPREJ_2.0\n'
+        
+        prejvals = np.hstack(self.Prejudice.prejudice)
+        weights = np.hstack(self.Prejudice.weights)
+        data = np.vstack([np.hstack(self.block_nums),np.log10(prejvals),weights]).T
+        header += 'NO. PARMS:        {}'.format(len(data))
+        
+        # assign prejudice values also as starting resistivities
+        self.parameters_startup['halfspace_resistivity'] = np.log10(prejvals)
+        self.write_startupfile()
+
+        np.savetxt(op.join(self.wd,self.prejudicefile),data,fmt=['%1i','%.3f','%.3f'],header=header,comments='')
+        
+
+class Prejudice():
+    def __init__(self,Setup,**input_parameters):
+        
+
+        self.constraints_type = 'interfaces'
+        self.interfaces = None # list (in order of increasing depth) of arrays containing 2 columns, 
+                               # distance x along profile and depth z of interface
+        self.interface_resistivity_values = None # list of prejudice resistivities, 1 longer than interfaces. in same order as interfaces
+        self.interface_prejudice_weights = None
+        self.welldata = None
+
+        # transfer necessary parameters from setup object
+        for key in ['modelblocklocations_x','modelblocklocations_z',
+                    'block_nums','block_nums_array',
+#                    'interface_prejudice_weights','interface_resistivity_values',
+                    'meshlocations_x','meshlocations_z']:
+            if hasattr(Setup,key):
+                setattr(self,key,getattr(Setup,key)) 
+            else:
+                print "Can't build prejudice, need model block information from setup object"
+    
+        for key in input_parameters.keys():
+            if hasattr(self,key):
+                setattr(self,key,input_parameters[key])
+        
+        if self.constraints_type == 'interfaces':
+            self.assign_interface_prejudice()
+    
+
+    def assign_interface_prejudice(self):
+        """
+        Need to have interfaces and interface resistivities defined to use this option
+        
+        """
+        if ((self.interfaces is None) or (self.interface_resistivity_values is None)):
+            print "Can't build prejudices, need to define interfaces"
+            return
+        else:
+            # remove zero and negative resistivities
+            self.interface_resistivity_values = [max(1e-6,rv) for rv in self.interface_resistivity_values]
+            # initialise a prejudice array. Starting resistivity is the value for the 1st layer then successively move down the model
+            prejudice_array = np.ones_like(self.block_nums_array)*self.interface_resistivity_values[0]
+            weights_array = np.zeros_like(self.block_nums_array)
+#            blockx,blockz = self.modelblocklocations_x,self.modelblocklocations_z
+            meshx,meshz = np.meshgrid(self.meshlocations_x,self.meshlocations_z)
+            # get centres of mesh blocks
+            meshx = (meshx[1:,1:] + meshx[1:,:-1])/2.
+            meshz = (meshz[1:,1:] + meshz[:-1,1:])/2.
+#            print meshx[0]
+            for i in range(len(self.interfaces)):
+                ld,zd = self.interfaces[i].T
+                # create interpolation function to use if needed
+                f = si.interp1d(ld,zd,bounds_error=False)
+                # empty 1d array to contain depths
+                zline = np.zeros(len(meshx[0]))
+                for ii in range(len(meshx[0])):
+
+                    if ii == 0:
+                        zc0 = meshx[0][ii]-10.
+                        zc1 = (meshx[0][ii]+meshx[0][ii+1])/2.
+                    elif ii == len(meshx[0])-1:
+                        zc1 = meshx[0][ii]+10.
+                        zc0 = (meshx[0][ii]+meshx[0][ii-1])/2.
+                    else:
+                        zc0 = (meshx[0][ii]+meshx[0][ii-1])/2.
+                        zc1 = (meshx[0][ii]+meshx[0][ii+1])/2.                        
+#                    print zc0,zc1
+                    zvalues = zd[(ld>zc0)&(ld<zc1)]
+                    
+                    # if there are >2 z values, take the median
+                    if len(zvalues) > 2:
+                        zval = np.median(zvalues)
+                    # otherwise use the interpolation function to get value at the mesh node
+                    else:
+                        zval = f(meshx[0][ii])
+#                        print blockx[jj][ii],blockx[jj][ii+1]
+
+                    zline[ii] = zval
+                    
+                    # deal with edges
+                    zline[(meshx[0]<=ld[0])] = zd[0]
+                    zline[(meshx[0]>=ld[-1])] = zd[-1]
+
+                # assign all values below zval to the value for the next layer
+                prejudice_array[meshz > zline] = self.interface_resistivity_values[i+1]
+                weights_array[meshz > zline] = self.interface_prejudice_weights[i+1]
+                
+            # now assign mesh values to block numbers
+            prejudice = self.block_nums.copy()*0.
+            weights = self.block_nums.copy()*0.
+            for jj in range(len(prejudice)):
+                for ii in range(len(prejudice[jj])):
+#                    print prejudice[jj]
+#                    print self.block_nums[jj][ii],prejudice_array[self.block_nums_array==self.block_nums[jj][ii]]
+                    prejudice[jj][ii] = np.median(prejudice_array[self.block_nums_array==self.block_nums[jj][ii]])
+                    weights[jj][ii] = np.median(weights_array[self.block_nums_array==self.block_nums[jj][ii]])
+            self.prejudice = prejudice
+            self.prejudice_array = prejudice_array
+            self.weights = weights
+            self.weights_array = weights_array                                     
+    
+    def subsample_welldata(self):
         """
         subsample a resistivity array by averaging
         input: 1-D array or list of 1-D arrays containing resistivity and depth data
@@ -1296,8 +1521,7 @@ class Setup():
         
         if not hasattr(self,'prejudice_indices_z'):
             self.prejudice_indices_z = []
-            
-    
+                
         for w in range(len(self.welldata)):
             self.prejudice_resistivity.append([])
             self.prejudice_indices_z.append([])
@@ -1310,9 +1534,13 @@ class Setup():
                 if len(temp_res)>0:
                     self.prejudice_resistivity[-1].append(np.around(np.median(temp_res),1))
                     self.prejudice_indices_z[-1].append(i)                
+
+
+
+        
  
        
-    def prejudice_get_blocknums(self):
+    def get_blocknums_from_wells(self):
         """
         get block numbers for prejudice file
         requires prejudice_resistivity and prejudice_indices_z to be defined
@@ -1352,7 +1580,7 @@ class Setup():
                                                          '%.03f'%np.log10(self.prejudice_resistivity[w][i]),
                                                          '%.01f'%self.prejudice_weight])+'\n')
 
-    def write_prejudicefile(self):
+    def build_prejudicefile_wells(self):
         """
         build model prejudices from well data and write to a file.
         
@@ -1379,10 +1607,13 @@ class Setup():
         self.prejudice_subsample_welldata()
         self.prejudice_get_blocknums()
         
-        
+    
         pf = open(os.path.join(self.wd,self.prejudicefile),'wb')
         pf.writelines(self.prejudice_fstrings)
         pf.close()
+
+
+
 
         
 #------------------------------------------------------------------------------
@@ -1428,6 +1659,7 @@ class Data():
         self.phase_errorfloor = 5
         self.rho_errorfloor = 10
         self.tipper_errorfloor = 5
+        self.tipper_errorfloor_abs = None
 
         self.min_frequency = None
         self.max_frequency = None
@@ -1596,16 +1828,23 @@ class Data():
         lo_modes = []
         modes = self.mode.lower().strip()
         
+        # adding functionality to do log resistivity
+        if 'log' in modes:
+            rescode_te, rescode_tm = 1,5
+        else:
+            rescode_te, rescode_tm = 9,10
+        
         if 'both' in modes :
-            lo_modes.extend([9,10,2,6])  
+            lo_modes.extend([rescode_te, rescode_tm,2,6])  
         if 'te' in modes:
-            lo_modes.extend([9,2])
+            lo_modes.extend([rescode_te,2])
         if 'tm' in modes:
-            lo_modes.extend([10,6])
+            lo_modes.extend([rescode_tm,6])
         if ('tipper' in modes): 
             lo_modes.extend([3,4])
         if 'all' in modes :
-            lo_modes.extend([9,10,2,6,3,4])  
+            lo_modes.extend([rescode_te, rescode_tm,2,6,3,4])
+
 
         lo_modes = sorted(list(set(lo_modes))) 
 
@@ -1691,7 +1930,8 @@ class Data():
                 idx_f = np.abs(station_freqs-freq).argmin()
 
                 for mode in lo_modes:
-                    if mode in [9,2] :
+                    append = True
+                    if mode in [9,1,2] :
                         raw_rho_value = rho[idx_f][0,1]
                         value = raw_rho_value
                         #value = np.log10(raw_rho_value)
@@ -1703,6 +1943,11 @@ class Data():
                         except:
                             relative_rho_error = 0.
 
+                        # can't have zero errors, occam crashes
+                        if relative_rho_error == 0:
+                            if self.rho_errorfloor is not None:
+                                relative_rho_error = self.rho_errorfloor/100.
+
                         if mode == 9 :
                             if self.rho_errorfloor is not None:
                                 if self.rho_errorfloor/100. > relative_rho_error:
@@ -1710,11 +1955,21 @@ class Data():
                             error = np.abs(relative_rho_error * raw_rho_value)   #relative_error/np.log(10.)
                             #error = np.abs(relative_rho_error/np.log(10.))
 
+                        elif mode == 1 :
+                            if self.rho_errorfloor is not None:
+                                if self.rho_errorfloor/100. > relative_rho_error:
+                                    relative_rho_error = self.rho_errorfloor/100.
+                            error = np.abs(relative_rho_error)/np.log(10)
+                            value = np.log10(value)
+
                         elif mode == 2 :
                             raw_phi_value = phi[idx_f][0,1]
                             if raw_phi_value >=180:
                                 raw_phi_value -= 180
                             value = raw_phi_value %180
+                            # phase needs to be between 0 and 90 for occam
+                            if value > 90:
+                                append = False
                             if self.phase_errorfloor is not None:
                                 if self.phase_errorfloor/100. > relative_rho_error:
                                     relative_rho_error = self.phase_errorfloor/100.
@@ -1722,18 +1977,28 @@ class Data():
                                 error = 180.
                             else:
                                 error = np.degrees(np.arcsin(0.5*relative_rho_error))#relative_error*100.*0.285
+                            # maximum possible error +/- 90 degrees 
+                            error = min(error,90.)
+                        
                             
-                    if mode in [10,6] :
+                    if mode in [10,5,6] :
                         raw_rho_value = rho[idx_f][1,0]
                         value = raw_rho_value
                         #value = np.log10(raw_rho_value)
                         absolute_rho_error = rho_err[idx_f][1,0]
+                        
                         try:
                             if raw_rho_value == 0:
                                 raise
                             relative_rho_error = np.abs(absolute_rho_error/raw_rho_value)
                         except:
                             relative_rho_error = 0.
+
+                        # can't have zero errors, occam crashes
+                        if relative_rho_error == 0:
+                            if self.rho_errorfloor is not None:
+                                relative_rho_error = self.rho_errorfloor/100.                       
+                            
                         if mode == 10 :
                             if self.rho_errorfloor is not None:
                                 if self.rho_errorfloor/100. > relative_rho_error:
@@ -1741,11 +2006,21 @@ class Data():
                             error = np.abs(relative_rho_error * raw_rho_value)   #relative_error/np.log(10.)
                             #error = np.abs(relative_rho_error /np.log(10.))
 
+                        elif mode == 5 :
+                            if self.rho_errorfloor is not None:
+                                if self.rho_errorfloor/100. > relative_rho_error:
+                                    relative_rho_error = self.rho_errorfloor/100.
+                            error = np.abs(relative_rho_error)/np.log(10)
+                            value = np.log10(value)
+
                         elif mode == 6 :
                             raw_phi_value = phi[idx_f][1,0]
                             if raw_phi_value >=180:
                                 raw_phi_value -= 180
                             value = raw_phi_value %180
+                            # phase needs to be between 0 and 90 for occam
+                            if value > 90:
+                                append = False
                             if self.phase_errorfloor is not None:
                                 if self.phase_errorfloor/100. > relative_rho_error:
                                     relative_rho_error = self.phase_errorfloor/100.
@@ -1753,6 +2028,9 @@ class Data():
                                 error = 180.
                             else:
                                 error = np.degrees(np.arcsin(0.5*relative_rho_error))#relative_error*100.*0.285
+                            # maximum possible error +/- 90 degrees
+                            error = min(error,90.)
+                            
 
                     elif mode in [3,4] :
                         if T.tipper is None:
@@ -1773,26 +2051,27 @@ class Data():
                         if mode == 4 :
                             value = np.imag(tipper[0,1])
 
-
+                        # get tipper error if it exists
                         if tippererr is None:
                             raw_error = 0
                             if self.tipper_errorfloor is not None:
-                                raw_error = (self.tipper_errorfloor/100.)*value
+                                raw_error = np.abs((self.tipper_errorfloor/100.)*value)
                         else:
                             raw_error = tippererr[0,1] 
-                            
-                        if value == 0 :
-                            rel_error = 0 
-                        else:
-                            rel_error = raw_error
 
-                        error = raw_error/value
-                        if self.tipper_errorfloor is not None:                                
-                            if self.tipper_errorfloor/100. > rel_error:
-                                error = (self.tipper_errorfloor/100.)#*value
-                            
+                        error = raw_error
+                        
+                        # set error floor
+                        if self.tipper_errorfloor is not None:
+                            error = max(error,np.abs((self.tipper_errorfloor/100.)*value))
+                        
+                        # set an absolute minimum tipper error to apply when value is close to zero
+                        if self.tipper_errorfloor_abs is not None:
+                            error = max(error, self.tipper_errorfloor_abs)
+                    
+                    if append:
+                        self.data.append([station_number,frequency_number,mode,value,np.abs(error)])
 
-                    self.data.append([station_number,frequency_number,mode,value,np.abs(error)])
 
     def generate_profile(self):
         """
@@ -2075,7 +2354,7 @@ class Model():
 
     Reading, writing, renaming,... of 'ITER' and 'RESP' files. 
     """
-
+    
 
 class Plot():
     """
