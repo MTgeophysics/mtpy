@@ -2241,12 +2241,12 @@ class Model(object):
             
         #put the grids into coordinates relative to the center of the grid
         self.grid_north = np.array([self.nodes_north[0:ii].sum() 
-                                   for ii in range(n_north)])
+                                   for ii in range(n_north+1)])
         self.grid_east = np.array([self.nodes_east[0:ii].sum() 
-                                   for ii in range(n_east)])
+                                   for ii in range(n_east+1)])
                                 
         self.grid_z = np.array([self.nodes_z[:ii+1].sum() 
-                                for ii in range(n_z)])
+                                for ii in range(n_z+1)])
         
         # center the grids
         if self.grid_center is not None:
@@ -2633,11 +2633,16 @@ class Covariance(object):
             mod_obj.read_model_file(model_fn)
             print 'Reading {0}'.format(model_fn)
             self.grid_dimensions = mod_obj.res_model.shape
-            self.mask_arr = np.ones_like(mod_obj.res_model)
-            self.mask_arr[np.where(mod_obj.res_model > air*.9)] = 0
-            self.mask_arr[np.where((mod_obj.res_model < sea_water*1.1) & 
-                              (mod_obj.res_model > sea_water*.9))] = 9
-            
+            if self.mask_arr is None:
+                self.mask_arr = np.ones_like(mod_obj.res_model)
+                self.mask_arr[np.where(mod_obj.res_model > air*.9)] = 0
+                self.mask_arr[np.where((mod_obj.res_model < sea_water*1.1) & 
+                                  (mod_obj.res_model > sea_water*.9))] = 9
+        else:
+            if self.mask_arr is None:
+                self.mask_arr = np.ones((self.grid_dimensions[0],
+                                         self.grid_dimensions[1],
+                                         self.grid_dimensions[2]))            
         
         if self.grid_dimensions is None:
             raise ModEMError('Grid dimensions are None, input as (Nx, Ny, Nz)')
@@ -2689,10 +2694,6 @@ class Covariance(object):
         clines.append('\n')
         clines.append('\n')
         #--> mask array
-        if self.mask_arr is None:
-            self.mask_arr = np.ones((self.grid_dimensions[0],
-                                     self.grid_dimensions[1],
-                                     self.grid_dimensions[2]))
         for zz in range(self.mask_arr.shape[2]):
             clines.append(' {0:<8.0f}{0:<8.0f}\n'.format(zz+1))
             for nn in range(self.mask_arr.shape[0]):
