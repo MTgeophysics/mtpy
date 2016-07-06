@@ -1734,10 +1734,16 @@ class Model(object):
                                             for ii in range(int(ny/2),ny)])-\
                                             north_nodes[int(ny/2)]
         
+        
+        
         #compute grid center
         center_east = -east_nodes.__abs__().sum()/2
         center_north = -north_nodes.__abs__().sum()/2
         center_z = 0
+        
+        
+#        center_east +=  center_east%self.cell_size_east
+#        center_north += center_north%self.cell_size_north
         self.grid_center = np.array([center_north, center_east, center_z])
         
         #make nodes attributes
@@ -1747,6 +1753,13 @@ class Model(object):
         self.grid_east = east_grid
         self.grid_north = north_grid
         self.grid_z = z_grid
+
+        # temporary fix to amend grid locations based on nodes
+        # need to go back and fix this so it does it right the first time
+        self.grid_east = np.array([np.sum(self.nodes_east[:i]) for i in range(len(self.nodes_east)+1)] + self.grid_center[1])
+        self.grid_north = np.array([np.sum(self.nodes_north[:i]) for i in range(len(self.nodes_north)+1)] + self.grid_center[0])
+        self.grid_z = np.array([np.sum(self.nodes_z[:i]) for i in range(len(self.nodes_z)+1)] + self.grid_center[2])
+
             
         #--> print out useful information                    
         print '-'*15
@@ -2696,7 +2709,9 @@ class Covariance(object):
         #--> mask array
         for zz in range(self.mask_arr.shape[2]):
             clines.append(' {0:<8.0f}{0:<8.0f}\n'.format(zz+1))
-            for nn in range(self.mask_arr.shape[0]):
+
+            
+            for nn in range(self.mask_arr.shape[0]):    
                 cline = ''
                 for ee in range(self.mask_arr.shape[1]):
                     cline += '{0:^3.0f}'.format(self.mask_arr[nn, ee, zz])
