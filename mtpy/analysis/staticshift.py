@@ -136,6 +136,8 @@ def remove_static_shift_spatial_filter(edi_fn, radius=1000, num_freq=20,
     
     mt_obj.Z.z = z_ss
     new_edi_fn = os.path.join(edi_path, 'SS', '{0}_ss.edi'.format(mt_obj.station)) 
+    if not os.path.exists(os.path.dirname(new_edi_fn)):
+        os.mkdir(os.path.dirname(new_edi_fn))
     mt_obj.write_edi_file(new_fn=new_edi_fn)
     
     if plot == True:
