@@ -627,9 +627,9 @@ class MT(object):
         for ii in range(2):
             for jj in range(2):
                 z_func_real = spi.interp1d(self.Z.freq, self.Z.z[:, ii, jj].real,
-                                           kind='slinear')
+                                           kind='slinear',bounds_error=False,fill_value=0.)
                 z_func_imag = spi.interp1d(self.Z.freq, self.Z.z[:, ii, jj].imag,
-                                           kind='slinear')
+                                           kind='slinear',bounds_error=False,fill_value=0.)
                 new_Z.z[:, ii, jj] = z_func_real(new_freq_array)+\
                                      1j*z_func_imag(new_freq_array)
                 
