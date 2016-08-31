@@ -3,9 +3,9 @@ MTpy
 
 A Python toolbox for standard MT data processing
 
-For an updated version of MTpy with more features and 
+*For an updated version of MTpy with more features and 
 less clutter, but probably more buggy, checkout 
-the beta version.
+the beta version.*
 
 Installation
 ------------
