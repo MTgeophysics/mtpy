@@ -72,9 +72,8 @@ class Z(object):
     det                  calculates determinant of z with errors
     invariants           calculates the invariants of z
     inverse              calculates the inverse of z
-    no_distortion        removes distortion given a distortion matrix
-    no_ss                removes static shift by assumin Z = S * Z_0
-    no_ss_no_distortion  not implemented yet
+    remove_distortion    removes distortion given a distortion matrix
+    remove_ss            removes static shift by assumin Z = S * Z_0
     norm                 calculates the norm of Z
     only1d               zeros diagonal components and computes
                          the absolute valued mean of the off-diagonal
@@ -89,14 +88,14 @@ class Z(object):
     =================== =======================================================
 
     Example
-	-----------
+    -----------
 
         >>> import mtpy.core.z as mtz
         >>> import numpy as np
         >>> z_test = np.array([[0+0j, 1+1j], [-1-1j, 0+0j]])
         >>> z_object = mtz.Z(z_array=z_test, freq=[1])
         >>> z_object.rotate(45)
-        >>> z_object.res_phase
+        >>> z_object.resistivity
 
 
     """
@@ -123,13 +122,15 @@ class Z(object):
 
         self._z = z_array
         self._z_err = z_err_array
-
         self._freq = freq
+        
         if z_array is not None:
             if len(z_array.shape) == 2 and z_array.shape == (2, 2):
                 if z_array.dtype in ['complex', 'float', 'int']:
                     self._z = np.zeros((1, 2, 2), 'complex')
                     self._z[0] = z_array
+                    
+            
 
         if z_err_array is not None:
             if len(z_err_array.shape) == 2 and z_err_array.shape == (2, 2):
@@ -147,9 +148,8 @@ class Z(object):
 
         self._phase = None
         self._phase_err = None
-        if self._freq is not None:
-            if self._z is not None:
-                self._compute_res_phase()
+        
+        self._compute_res_phase()
 
     #---frequency-------------------------------------------------------------
     def _set_freq(self, lo_freq):
@@ -399,8 +399,6 @@ class Z(object):
             print 'Z array is None - cannot calculate Res/Phase'
             return
 
-
-
         self._resistivity_err = None
         self._phase_err = None
         if self.z_err is not None:
@@ -592,8 +590,6 @@ class Z(object):
         self._compute_res_phase()
 
 
-
-
     def _get_inverse(self):
         """
             Return the inverse of Z.
@@ -705,7 +701,7 @@ class Z(object):
         #for consistency recalculate resistivity and phase
         self._compute_res_phase()
 
-    def no_ss(self, reduce_res_factor_x=1., reduce_res_factor_y=1.):
+    def remove_ss(self, reduce_res_factor_x=1., reduce_res_factor_y=1.):
         """
         Remove the static shift by providing the respective correction factors
         for the resistivity in the x and y components.
@@ -828,7 +824,7 @@ class Z(object):
 
 
 
-    def no_distortion(self, distortion_tensor, distortion_err_tensor=None):
+    def remove_distortion(self, distortion_tensor, distortion_err_tensor=None):
         """
         Remove distortion D form an observed impedance tensor Z to obtain
         the uperturbed "correct" Z0:
@@ -858,7 +854,7 @@ class Z(object):
 		----------
 			>>> import mtpy.core.z as mtz
 			>>> distortion = np.array([[1.2, .5],[.35, 2.1]])
-			>>> d, new_z, new_z_err = z_obj.no_distortion(distortion)
+			>>> d, new_z, new_z_err = z_obj.remove_distortion(distortion)
         """
 
         if distortion_err_tensor is None:
