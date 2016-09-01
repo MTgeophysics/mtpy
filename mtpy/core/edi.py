@@ -184,16 +184,11 @@ class Edi(object):
             
             with open(self.edi_fn, 'r') as fid:
                 self._edi_lines = fid.readlines()
-        
-        
-        self.Header = Header(edi_fn=self.edi_fn)
-        self.Info = Information(edi_fn=self.edi_fn)
-        self.Define_measurement = DefineMeasurement(edi_fn=self.edi_fn)
-        self.Data_sect = DataSection(edi_fn=self.edi_fn)
-#        self.Header = Header(edi_lines=self._edi_lines)
-#        self.Info = Information(edi_lines=self.Header.edi_lines)
-#        self.Define_measurement = DefineMeasurement(edi_lines=self.Info.edi_lines)
-#        self.Data_sect = DataSection(edi_lines=self.Define_measurement.edi_lines)
+
+        self.Header = Header(edi_lines=self._edi_lines)
+        self.Info = Information(edi_lines=self.Header.edi_lines)
+        self.Define_measurement = DefineMeasurement(edi_lines=self.Info.edi_lines)
+        self.Data_sect = DataSection(edi_lines=self.Define_measurement.edi_lines)
         
         self._read_data()
         
@@ -949,7 +944,7 @@ class Header(object):
         for h_line in self.header_list:
             h_list = h_line.split('=')
             key = h_list[0].lower()
-            value = h_list[1].title()
+            value = h_list[1]
             
             if key in 'latitude':
                 key = 'lat'

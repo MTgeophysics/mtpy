@@ -199,10 +199,12 @@ class MT(object):
         self.pt = None
         self.zinv = None
         self._utm_ellipsoid = 23
-
+        
         #--> read in the file name given
         if self._fn is not None:
             self._set_fn(fn)
+
+        
     
     #==========================================================================
     # set functions                        
@@ -417,11 +419,11 @@ class MT(object):
         """
         
         self.edi_object = MTedi.Edi(edi_fn=self.fn)
-        self.lat = self.edi_object.lat
-        self.lon = self.edi_object.lon
-        self.elev = self.edi_object.elev
-        self.Z = self.edi_object.Z
-        self.Tipper = self.edi_object.Tipper
+        self._lat = self.edi_object.lat
+        self._lon = self.edi_object.lon
+        self._elev = self.edi_object.elev
+        self._Z = self.edi_object.Z
+        self._Tipper = self.edi_object.Tipper
         self.station = self.edi_object.station
         
         #--> get utm coordinates from lat and lon        
@@ -564,8 +566,8 @@ class MT(object):
             >>> ...                   new_Z=new_z_obj)
         """
         
-        s_array, new_z = self.Z.no_ss(reduce_res_factor_x=ss_x,
-                                      reduce_res_factor_y=ss_y)
+        s_array, new_z = self.Z.remove_ss(reduce_res_factor_x=ss_x,
+                                          reduce_res_factor_y=ss_y)
                                       
         new_z_obj = MTz.copy.deepcopy(self.Z)
         new_z_obj.z = new_z
