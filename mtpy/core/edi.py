@@ -184,10 +184,14 @@ class Edi(object):
             raise MTex.MTpyError_EDI("Could not find {0}, check path".format(self.edi_fn))
         
         
-        self.Header = Header(edi_fn=self.edi_fn)
-        self.Info = Information(edi_fn=self.edi_fn)
-        self.Define_measurement = DefineMeasurement(edi_fn=self.edi_fn)
-        self.Data_sect = DataSection(edi_fn=self.edi_fn)
+#        self.Header = Header(edi_fn=self.edi_fn)
+#        self.Info = Information(edi_fn=self.edi_fn)
+#        self.Define_measurement = DefineMeasurement(edi_fn=self.edi_fn)
+#        self.Data_sect = DataSection(edi_fn=self.edi_fn)
+        self.Header = Header(edi_lines=self._edi_lines)
+        self.Info = Information(edi_lines=self.Header.edi_lines)
+        self.Define_measurement = DefineMeasurement(edi_lines=self.Info.edi_lines)
+        self.Data_sect = DataSection(edi_lines=self.Define_measurement.edi_lines)
         
         self._read_data()
         
@@ -1089,9 +1093,6 @@ class Information(object):
         if self.edi_fn is None and self.edi_lines is None:
             print 'no edi file input, check edi_fn attribute'            
             return
-        if self.edi_fn is not None and os.path.isfile(self.edi_fn) is False:
-            print 'Could not find {0}, check path'.format(self.edi_fn)
-            return
             
         self.info_list = []
         info_find = False
@@ -1100,6 +1101,10 @@ class Information(object):
         count = 0
         
         if self.edi_fn is not None:
+            if os.path.isfile(self.edi_fn) is False:
+                print 'Could not find {0}, check path'.format(self.edi_fn)
+                return
+                
             with open(self.edi_fn, 'r') as fid:
                 for line in fid:
                     if line.find('>') == 0:
@@ -1119,6 +1124,28 @@ class Information(object):
                         else:
                             if len(line.strip()) > 1:
                                 self.info_list.append(line.strip())
+                                
+        elif self.edi_lines is not None:
+            for ii, line in enumerate(self.edi_lines):
+                if line.find('>') == 0:
+                    count += 1
+                    if line.lower().find('info') > 0:
+                        info_find = True
+                    else:
+                        info_find = False
+                    if count > 2 and info_find == False:
+                        break
+                elif count > 1 and line.find('>') != 0 and info_find == True:
+                    if line.lower().find('run information') >= 0:
+                        phoenix_file = True
+                    if phoenix_file == True and len(line) > 40:
+                        self.info_list.append(line[0:37].strip())
+                        phoenix_list_02.append(line[38:].strip())
+                    else:
+                        if len(line.strip()) > 1:
+                            self.info_list.append(line.strip())
+                            
+            self.edi_lines = self.edi_lines[ii:]
                         
         self.info_list += phoenix_list_02
         # validate the information list
@@ -1132,7 +1159,7 @@ class Information(object):
         if info_list is not None:
             self.info_list = self._validate_info_list(info_list)
             
-        if self.edi_fn is not None and self.info_list is None:
+        elif self.edi_fn is not None or self.edi_lines is not None:
             self.get_info_list()
             
         if self.info_list is None:
@@ -1141,7 +1168,7 @@ class Information(object):
             
     def write_info(self, info_list=None):
         """
-        
+        write out information
         """
         
         if info_list is not None:
@@ -1254,8 +1281,9 @@ class DefineMeasurement(object):
 
     """
     
-    def __init__(self, edi_fn=None):
+    def __init__(self, edi_fn=None, edi_lines=None):
         self.edi_fn = edi_fn
+        self.edi_lines = edi_lines
         self.measurement_list = None
         
         self.maxchan = None
@@ -1276,25 +1304,57 @@ class DefineMeasurement(object):
                                   'reftype',
                                   'units']
                                   
-        if self.edi_fn is not None:
+        if self.edi_fn is not None or self.edi_lines is not None:
             self.read_define_measurement()
         
     def get_measurement_lists(self):
         """
         get measurement list including measurement setup
         """
-        if self.edi_fn is None:
+        if self.edi_fn is None and self.edi_lines is None:
             print 'No edi file input, check edi_fn attribute'
             return 
-            
-        if os.path.isfile(self.edi_fn) is False:
-            print 'Could not find {0}, check path'.format(self.edi_fn)
             
         self.measurement_list = []
         meas_find = False
         count = 0
-        with open(self.edi_fn, 'r') as fid:
-            for line in fid:
+             
+        if self.edi_fn is not None:
+            if os.path.isfile(self.edi_fn) is False:
+                print 'Could not find {0}, check path'.format(self.edi_fn)
+                return
+            
+            with open(self.edi_fn, 'r') as fid:
+                for line in fid:
+                    if line.find('>=') == 0:
+                        count += 1
+                        if line.lower().find('definemeas') > 0:
+                            meas_find = True
+                        else:
+                            meas_find = False
+                        if count == 2 and meas_find == False:
+                            break
+                    elif count == 1 and line.find('>') != 0 and meas_find == True:
+                        line = line.strip()
+                        if len(line) > 2:
+                            self.measurement_list.append(line.strip())
+                    
+                    # look for the >XMEAS parts
+                    elif count == 1 and line.find('>') == 0 and meas_find == True:
+                        if line.find('!') > 0:
+                            pass
+                        else:
+                            line_list = _validate_str_with_equals(line)
+                            m_dict = {}
+                            for ll in line_list:
+                                ll_list = ll.split('=')
+                                key = ll_list[0].lower()
+                                value = ll_list[1]
+                                m_dict[key] = value
+                            self.measurement_list.append(m_dict)
+                        
+        elif self.edi_lines is not None:
+            for ii, line in enumerate(self.edi_lines):
                 if line.find('>=') == 0:
                     count += 1
                     if line.lower().find('definemeas') > 0:
@@ -1322,6 +1382,8 @@ class DefineMeasurement(object):
                             m_dict[key] = value
                         self.measurement_list.append(m_dict)
                         
+            self.edi_lines = self.edi_lines[ii:]
+                        
     def read_define_measurement(self, measurement_list=None):
         """
         read the define measurment section of the edi file
@@ -1348,10 +1410,10 @@ class DefineMeasurement(object):
         if measurement_list is not None:
             self.measurement_list = measurement_list
             
-        if self.measurement_list is None and self.edi_fn is not None:
+        elif self.edi_fn is not None or self.edi_list is not None:
             self.get_measurement_lists()
             
-        if self.measurement_list is None and self.edi_fn is None:
+        if self.measurement_list is None:
             print 'Nothing to read, check edi_fn or measurement_list attributes'
             return
    
@@ -1599,8 +1661,9 @@ class DataSection(object):
     .. rubric:: Footnotes
     .. [1] Changes these values to change what is written to edi file    
     """
-    def __init__(self, edi_fn=None):
+    def __init__(self, edi_fn=None, edi_lines=None):
         self.edi_fn = edi_fn
+        self.edi_lines = edi_lines
         
         self.data_type = 'z'
         self.line_num = 0
@@ -1619,7 +1682,7 @@ class DataSection(object):
         for key in self._kw_list:
             setattr(self, key, None)
             
-        if self.edi_fn is not None:
+        if self.edi_fn is not None or self.edi_lines is not None:
             self.read_data_sect()
         
         
@@ -1632,19 +1695,43 @@ class DataSection(object):
         if self.edi_fn is None:
             raise MTex.MTpyError_EDI('No edi file to read. Check edi_fn')
             
-        if os.path.isfile(self.edi_fn) is False:
-            raise MTex.MTpyError_EDI('Could not find {0}. Check path'.format(self.edi_fn))
+        
+            
         
         self.data_sect_list = []
         data_sect_find = False
         count = 0
-        with open(self.edi_fn) as fid:
-            for ii, line in enumerate(fid):
+        
+        if self.edi_fn is not None:
+            with open(self.edi_fn) as fid:
+                if os.path.isfile(self.edi_fn) is False:
+                    raise MTex.MTpyError_EDI('Could not find {0}. Check path'.format(self.edi_fn))
+                
+                for ii, line in enumerate(fid):
+                    if line.find('>=') == 0:
+                        count += 1
+                        if line.lower().find('sect') > 0:
+                            data_sect_find = True
+                            self.line_num = ii
+                            if line.lower().find('spect') > 0:
+                                self.data_type = 'spectra'
+                            elif line.lower().find('mt') > 0:
+                                self.data_type = 'z'
+                        else:
+                            data_sect_find = False
+                        if count > 2 and data_sect_find == False:
+                            break
+                    elif count == 2 and line.find('>') != 0 and \
+                        data_sect_find == True:
+                        if len(line.strip()) > 2:
+                            self.data_sect_list.append(line.strip())
+                            
+        elif self.edi_lines is not None:
+            for ii, line in enumerate(self.edi_lines):
                 if line.find('>=') == 0:
                     count += 1
                     if line.lower().find('sect') > 0:
                         data_sect_find = True
-                        self.line_num = ii
                         if line.lower().find('spect') > 0:
                             self.data_type = 'spectra'
                         elif line.lower().find('mt') > 0:
@@ -1657,6 +1744,9 @@ class DataSection(object):
                     data_sect_find == True:
                     if len(line.strip()) > 2:
                         self.data_sect_list.append(line.strip())
+                        
+            self.line_num = 0
+            self.edi_lines = self.edi_lines[ii:]
                         
     def read_data_sect(self, data_sect_list=None):
         """
