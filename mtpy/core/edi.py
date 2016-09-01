@@ -114,6 +114,7 @@ class Edi(object):
     def __init__(self, edi_fn=None):
         
         self.edi_fn = edi_fn
+        self._edi_lines = None
         self.Header = Header()
         self.Info = Information()
         self.Define_measurement = DefineMeasurement()
@@ -173,6 +174,8 @@ class Edi(object):
         
         if edi_fn is not None:
             self.edi_fn = edi_fn
+            with open(self.edi_fn, 'r') as fid:
+                self._edi_lines = fid.readlines()
             
         if self.edi_fn is None:
             raise MTex.MTpyError_EDI("No edi file input, check edi_fn")
@@ -800,6 +803,7 @@ class Header(object):
     
     def __init__(self, edi_fn=None, **kwargs):
         self.edi_fn = edi_fn
+        self.edi_lines = None
         self.dataid = None
         self.acqby = None
         self.fileby = None
@@ -837,23 +841,51 @@ class Header(object):
         if self.edi_fn is not None:
             self.read_header()
             
+        if self.edi_lines is not None:
+            self.read_header()
+            
     def get_header_list(self):
         """
         Get the header information from the .edi file in the form of a list,
         where each item is a line in the header section.
         """
        
-        if self.edi_fn == None:
-            print 'No edi file to read'
+        if self.edi_fn == None and self.edi_lines == None:
+            print 'No edi file to read.'
             return
-        if os.path.isfile(self.edi_fn) == False:
-            print 'Could not find {0}, check path'.format(self.edi_fn)
+        if self.edi_fn != None:
+            if os.path.isfile(self.edi_fn) == False:
+                print 'Could not find {0}, check path'.format(self.edi_fn)
             
         self.header_list = []
         head_find = False
         count = 0
-        with open(self.edi_fn, 'r') as fid:
-            for line in fid:
+        
+        # read in file line by line
+        if self.edi_lines is None and self.edi_fn is not None:
+            with open(self.edi_fn, 'r') as fid:
+                for line in fid:
+                    if line.find('>') == 0:
+                        count += 1
+                        if line.lower().find('head') > 0:
+                            head_find = True
+                        else:
+                            head_find = False
+                        if count == 2 and head_find == False:
+                            break
+                    elif count == 1 and line.find('>') != 0 and head_find == True:
+                        # skip any blank lines
+                        if len(line.strip()) > 2:
+                            line = line.strip().replace('"', '')
+                            h_list = line.split('=')
+                            if len(h_list) == 2:
+                                key = h_list[0].strip()
+                                value = h_list[1].strip()
+                                self.header_list.append('{0}={1}'.format(key, value))
+        
+        # read in list line by line and then truncate
+        elif self.edi_lines is not None:
+            for ii, line in enumerate(self.edi_lines):
                 if line.find('>') == 0:
                     count += 1
                     if line.lower().find('head') > 0:
@@ -863,12 +895,19 @@ class Header(object):
                     if count == 2 and head_find == False:
                         break
                 elif count == 1 and line.find('>') != 0 and head_find == True:
-                    line = line.strip()
                     # skip any blank lines
-                    if len(line) > 2:
-                        self.header_list.append(line.strip())
-                        
-        self.header_list = self._validate_header_list(self.header_list)
+                    if len(line.strip()) > 2:
+                        line = line.strip().replace('"', '')
+                        h_list = line.split('=')
+                        if len(h_list) == 2:
+                            key = h_list[0].strip()
+                            value = h_list[1].strip()
+                            self.header_list.append('{0}={1}'.format(key, value))
+                                
+            # truncate edi_lines so the next block doesn't have to read
+            # the entire list.
+            self.edi_lines = self.edi_lines[ii:]
+        #self.header_list = self._validate_header_list(self.header_list)
     
     def read_header(self, header_list=None):
         """
@@ -898,16 +937,18 @@ class Header(object):
         if header_list is not None:
             self.header_list = self._validate_header_list(header_list)
             
-        if self.header_list is None and self.edi_fn is None:
+        if self.header_list is None and self.edi_fn is None and \
+           self.edi_lines is None:
             print 'Nothing to read. header_list and edi_fn are None'
             
-        if self.header_list is None and self.edi_fn is not None:
+        if self.header_list is None and self.edi_fn is not None or \
+           self.edi_lines is not None:
             self.get_header_list()
         
         for h_line in self.header_list:
             h_list = h_line.split('=')
-            key = h_list[0].lower()
-            value = h_list[1].replace('"', '').strip()
+            key = h_list[0]
+            value = h_list[1]
             
             if key in 'latitude':
                 key = 'lat'
@@ -1013,8 +1054,8 @@ class Header(object):
             if len(h_line) > 1:
                 h_list = h_line.split('=')
                 if len(h_list) == 2:
-                    key = h_list[0]
-                    value = h_list[1]
+                    key = h_list[0].strip().lower()
+                    value = h_list[1].strip()
                     new_header_list.append('{0}={1}'.format(key, value))
         
         return new_header_list
@@ -1032,8 +1073,9 @@ class Information(object):
     
     """
     
-    def __init__(self, edi_fn=None):
+    def __init__(self, edi_fn=None, edi_lines=None):
         self.edi_fn = edi_fn
+        self.edi_lines = edi_lines
         self.info_list = None
         
         if self.edi_fn is not None:
@@ -1044,10 +1086,10 @@ class Information(object):
         get a list of lines from the info section
         """
         
-        if self.edi_fn is None:
+        if self.edi_fn is None and self.edi_lines is None:
             print 'no edi file input, check edi_fn attribute'            
             return
-        if os.path.isfile(self.edi_fn) is False:
+        if self.edi_fn is not None and os.path.isfile(self.edi_fn) is False:
             print 'Could not find {0}, check path'.format(self.edi_fn)
             return
             
@@ -1056,25 +1098,27 @@ class Information(object):
         phoenix_file = False
         phoenix_list_02 = []
         count = 0
-        with open(self.edi_fn, 'r') as fid:
-            for line in fid:
-                if line.find('>') == 0:
-                    count += 1
-                    if line.lower().find('info') > 0:
-                        info_find = True
-                    else:
-                        info_find = False
-                    if count > 2 and info_find == False:
-                        break
-                elif count > 1 and line.find('>') != 0 and info_find == True:
-                    if line.lower().find('run information') >= 0:
-                        phoenix_file = True
-                    if phoenix_file == True and len(line) > 40:
-                        self.info_list.append(line[0:37].strip())
-                        phoenix_list_02.append(line[38:].strip())
-                    else:
-                        if len(line.strip()) > 1:
-                            self.info_list.append(line.strip())
+        
+        if self.edi_fn is not None:
+            with open(self.edi_fn, 'r') as fid:
+                for line in fid:
+                    if line.find('>') == 0:
+                        count += 1
+                        if line.lower().find('info') > 0:
+                            info_find = True
+                        else:
+                            info_find = False
+                        if count > 2 and info_find == False:
+                            break
+                    elif count > 1 and line.find('>') != 0 and info_find == True:
+                        if line.lower().find('run information') >= 0:
+                            phoenix_file = True
+                        if phoenix_file == True and len(line) > 40:
+                            self.info_list.append(line[0:37].strip())
+                            phoenix_list_02.append(line[38:].strip())
+                        else:
+                            if len(line.strip()) > 1:
+                                self.info_list.append(line.strip())
                         
         self.info_list += phoenix_list_02
         # validate the information list
