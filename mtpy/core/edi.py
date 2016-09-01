@@ -174,24 +174,26 @@ class Edi(object):
         
         if edi_fn is not None:
             self.edi_fn = edi_fn
-            with open(self.edi_fn, 'r') as fid:
-                self._edi_lines = fid.readlines()
-            
+   
         if self.edi_fn is None:
             raise MTex.MTpyError_EDI("No edi file input, check edi_fn")
+        
+        if self.edi_fn is not None:
+            if os.path.isfile(self.edi_fn) is False:
+                raise MTex.MTpyError_EDI("Could not find {0}, check path".format(self.edi_fn))
             
-        if os.path.isfile(self.edi_fn) is False:
-            raise MTex.MTpyError_EDI("Could not find {0}, check path".format(self.edi_fn))
+            with open(self.edi_fn, 'r') as fid:
+                self._edi_lines = fid.readlines()
         
         
-#        self.Header = Header(edi_fn=self.edi_fn)
-#        self.Info = Information(edi_fn=self.edi_fn)
-#        self.Define_measurement = DefineMeasurement(edi_fn=self.edi_fn)
-#        self.Data_sect = DataSection(edi_fn=self.edi_fn)
-        self.Header = Header(edi_lines=self._edi_lines)
-        self.Info = Information(edi_lines=self.Header.edi_lines)
-        self.Define_measurement = DefineMeasurement(edi_lines=self.Info.edi_lines)
-        self.Data_sect = DataSection(edi_lines=self.Define_measurement.edi_lines)
+        self.Header = Header(edi_fn=self.edi_fn)
+        self.Info = Information(edi_fn=self.edi_fn)
+        self.Define_measurement = DefineMeasurement(edi_fn=self.edi_fn)
+        self.Data_sect = DataSection(edi_fn=self.edi_fn)
+#        self.Header = Header(edi_lines=self._edi_lines)
+#        self.Info = Information(edi_lines=self.Header.edi_lines)
+#        self.Define_measurement = DefineMeasurement(edi_lines=self.Info.edi_lines)
+#        self.Data_sect = DataSection(edi_lines=self.Define_measurement.edi_lines)
         
         self._read_data()
         
@@ -842,10 +844,7 @@ class Header(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
             
-        if self.edi_fn is not None:
-            self.read_header()
-            
-        if self.edi_lines is not None:
+        if self.edi_fn is not None or self.edi_lines is not None:
             self.read_header()
             
     def get_header_list(self):
@@ -857,16 +856,15 @@ class Header(object):
         if self.edi_fn == None and self.edi_lines == None:
             print 'No edi file to read.'
             return
-        if self.edi_fn != None:
-            if os.path.isfile(self.edi_fn) == False:
-                print 'Could not find {0}, check path'.format(self.edi_fn)
-            
+             
         self.header_list = []
         head_find = False
         count = 0
         
         # read in file line by line
-        if self.edi_lines is None and self.edi_fn is not None:
+        if self.edi_fn is not None:
+            if os.path.isfile(self.edi_fn) == False:
+                print 'Could not find {0}, check path'.format(self.edi_fn)
             with open(self.edi_fn, 'r') as fid:
                 for line in fid:
                     if line.find('>') == 0:
@@ -945,14 +943,13 @@ class Header(object):
            self.edi_lines is None:
             print 'Nothing to read. header_list and edi_fn are None'
             
-        if self.header_list is None and self.edi_fn is not None or \
-           self.edi_lines is not None:
+        elif self.edi_fn is not None or self.edi_lines is not None:
             self.get_header_list()
         
         for h_line in self.header_list:
             h_list = h_line.split('=')
-            key = h_list[0]
-            value = h_list[1]
+            key = h_list[0].lower()
+            value = h_list[1].title()
             
             if key in 'latitude':
                 key = 'lat'
@@ -1410,7 +1407,7 @@ class DefineMeasurement(object):
         if measurement_list is not None:
             self.measurement_list = measurement_list
             
-        elif self.edi_fn is not None or self.edi_list is not None:
+        elif self.edi_fn is not None or self.edi_lines is not None:
             self.get_measurement_lists()
             
         if self.measurement_list is None:
@@ -1692,12 +1689,9 @@ class DataSection(object):
         impedance.
         """
         
-        if self.edi_fn is None:
+        if self.edi_fn is None and self.edi_lines is None:
             raise MTex.MTpyError_EDI('No edi file to read. Check edi_fn')
-            
-        
-            
-        
+
         self.data_sect_list = []
         data_sect_find = False
         count = 0
@@ -1756,7 +1750,7 @@ class DataSection(object):
         if data_sect_list is not None:
             self.data_sect_list = data_sect_list
             
-        if self.edi_fn is not None and self.data_sect_list is None:
+        elif self.edi_fn is not None or self.edi_lines is not None:
             self.get_data_sect()
             
         for d_line in self.data_sect_list:
