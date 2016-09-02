@@ -68,10 +68,10 @@ class Zinvariants:
             the phase tensor of Caldwell, Bibby and Brown, 
             presented at 3D Electromagnetics III, ASEG, paper 43.
            
-        Lilley, F. E. M, 1998, Magnetotelluric tenosr dcomposition: 1: Theory
+        Lilley, F. E. M, 1998, Magnetotelluric tensor dcomposition: 1: Theory
             for a basic procedure, Geophysics, 63, 1885--1897.
            
-        Lilley, F. E. M, 1998, Magnetotelluric tenosr dcomposition: 2: Examples
+        Lilley, F. E. M, 1998, Magnetotelluric tensor dcomposition: 2: Examples
             of a basic procedure, Geophysics, 63, 1898--1907.
            
         Szarka, L. and Menvielle, M., 1997, Analysis of rotational invariants 
