@@ -529,11 +529,6 @@ class MeshWidget(QtGui.QWidget):
                                                 
         self.model_obj.res_model[:, :, :] = float(str(self.rho_start_edit.text()))
         self.rho_start_edit.setText('{0:.2f}'.format(float(str(self.rho_start_edit.text()))))
-    
-    @QtCore.pyqtSlot(str)
-    def normal_output(self, message):
-        self.output_box.moveCursor(QtGui.QTextCursor.End)
-        self.output_box.insertPlainText(message)
         
 #==============================================================================
 # Mesh Plot
