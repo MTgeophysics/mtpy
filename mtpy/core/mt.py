@@ -627,14 +627,14 @@ class MT(object):
         for ii in range(2):
             for jj in range(2):
                 z_func_real = spi.interp1d(self.Z.freq, self.Z.z[:, ii, jj].real,
-                                           kind='slinear')
+                                           kind='slinear',bounds_error=False,fill_value=0.)
                 z_func_imag = spi.interp1d(self.Z.freq, self.Z.z[:, ii, jj].imag,
-                                           kind='slinear')
+                                           kind='slinear',bounds_error=False,fill_value=0.)
                 new_Z.z[:, ii, jj] = z_func_real(new_freq_array)+\
                                      1j*z_func_imag(new_freq_array)
                 
                 z_func_err = spi.interp1d(self.Z.freq, self.Z.zerr[:, ii, jj],
-                                           kind='slinear')
+                                           kind='slinear',bounds_error=False,fill_value=0.)
                 new_Z.zerr[:, ii, jj] = z_func_err(new_freq_array)
                 
         # if there is not tipper than skip
@@ -645,16 +645,16 @@ class MT(object):
         for jj in range(2):
             t_func_real = spi.interp1d(self.Z.freq, 
                                        self.Tipper.tipper[:, 0, jj].real,
-                                       kind='slinear')
+                                       kind='slinear',bounds_error=False,fill_value=0.)
             t_func_imag = spi.interp1d(self.Z.freq, 
                                        self.Tipper.tipper[:, 0, jj].imag,
-                                       kind='slinear')
+                                       kind='slinear',bounds_error=False,fill_value=0.)
             new_Tipper.tipper[:, 0, jj] = t_func_real(new_freq_array)+\
                                           1j*t_func_imag(new_freq_array)
             
             t_func_err = spi.interp1d(self.Z.freq, 
                                       self.Tipper.tippererr[:, 0, jj],
-                                       kind='slinear')
+                                       kind='slinear',bounds_error=False,fill_value=0.)
             new_Tipper.tippererr[:, 0, jj] = t_func_err(new_freq_array)
         
         return new_Z, new_Tipper
