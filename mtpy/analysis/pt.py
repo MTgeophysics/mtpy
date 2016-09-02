@@ -17,11 +17,8 @@ Residual Phase Tensor following Heise et al., [2008]
 #=================================================================
 import numpy as np
 import copy
-
-import mtpy.core.edi as MTedi 
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.calculator as MTcc
-
 
 #=================================================================
 
