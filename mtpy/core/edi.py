@@ -230,6 +230,7 @@ class Edi(object):
         """
         read in impedance and tipper data if its there
         """
+        flip = False
         data_dict = {}
         data_find = False
         for line in data_lines:
@@ -259,40 +260,52 @@ class Edi(object):
         
         ## fill useful arrays
         freq_arr = np.array(data_dict['freq'], dtype=np.float)
+        z_arr = np.zeros((freq_arr.size, 2, 2), dtype=np.complex)
+        z_err_arr = np.zeros((freq_arr.size, 2, 2), dtype=np.float)
         
         ## fill impedance tensor
-        self.Z.freq = freq_arr.copy()
-        self.Z.z = np.zeros((freq_arr.size, 2, 2), dtype=np.complex)
-        self.Z.z_err = np.zeros((freq_arr.size, 2, 2), dtype=np.float)
+        z_arr[:, 0, 0] = np.array(data_dict['zxxr'])+\
+                             np.array(data_dict['zxxi'])*1j
+        z_arr[:, 0, 1] = np.array(data_dict['zxyr'])+\
+                            np.array(data_dict['zxyi'])*1j
+        z_arr[:, 1, 0] = np.array(data_dict['zyxr'])+\
+                            np.array(data_dict['zyxi'])*1j
+        z_arr[:, 1, 1] = np.array(data_dict['zyyr'])+\
+                            np.array(data_dict['zyyi'])*1j
+        
+        z_err_arr[:, 0, 0] = np.array(data_dict['zxx.var'])
+        z_err_arr[:, 0, 1] = np.array(data_dict['zxy.var'])
+        z_err_arr[:, 1, 0] = np.array(data_dict['zyx.var'])
+        z_err_arr[:, 1, 1] = np.array(data_dict['zyy.var'])
+        
+        
+        # check for order of frequency, we want high to low
+        if freq_arr[0] < freq_arr[1]:
+            print 'Ordered arrays to be arranged from high to low frequency'
+            freq_arr = freq_arr[::-1]
+            z_arr = z_arr[::-1]
+            z_err_arr = z_err_arr[::-1]
+            flip = True
+            
+        # set the attributes as private variables to avoid redundant estimation
+        # of res and phase
+        self.Z._freq = freq_arr
+        self.Z._z = z_arr
+        self.Z._z_err = z_err_arr
+        
         try:
             self.Z.rotation_angle = data_dict['zrot']
         except KeyError:
             self.Z.rotation_angle = np.zeros_like(freq_arr)
-        
-        self.Z.z[:, 0, 0] = np.array(data_dict['zxxr'])+\
-                             np.array(data_dict['zxxi'])*1j
-        self.Z.z[:, 0, 1] = np.array(data_dict['zxyr'])+\
-                            np.array(data_dict['zxyi'])*1j
-        self.Z.z[:, 1, 0] = np.array(data_dict['zyxr'])+\
-                            np.array(data_dict['zyxi'])*1j
-        self.Z.z[:, 1, 1] = np.array(data_dict['zyyr'])+\
-                            np.array(data_dict['zyyi'])*1j
-        
-        self.Z.z_err[:, 0, 0] = np.array(data_dict['zxx.var'])
-        self.Z.z_err[:, 0, 1] = np.array(data_dict['zxy.var'])
-        self.Z.z_err[:, 1, 0] = np.array(data_dict['zyx.var'])
-        self.Z.z_err[:, 1, 1] = np.array(data_dict['zyy.var'])
         
         # compute resistivity and phase
         self.Z._compute_res_phase()
 
         
         ## fill tipper data if there it exists
-        self.Tipper.tipper = np.zeros((freq_arr.size, 1, 2), 
-                                      dtype=np.complex) 
-        self.Tipper.tipper_err = np.zeros((freq_arr.size, 1, 2),
-                                         dtype=np.float) 
-        self.Tipper.freq = freq_arr.copy()
+        tipper_arr = np.zeros((freq_arr.size, 1, 2), dtype=np.complex) 
+        tipper_err_arr = np.zeros((freq_arr.size, 1, 2), dtype=np.float) 
+
         try:
             self.Tipper.rotation_angle = data_dict['trot']
         except KeyError:
@@ -302,20 +315,30 @@ class Edi(object):
                 self.Tipper.rotation_angle = np.zeros_like(freq_arr)
 
         if 'txr.exp' in data_dict.keys():
-            self.Tipper.tipper[:, 0, 0] = np.array(data_dict['txr.exp'])+\
+            tipper_arr[:, 0, 0] = np.array(data_dict['txr.exp'])+\
                                             np.array(data_dict['txi.exp'])*1j
-            self.Tipper.tipper[:, 0, 1] = np.array(data_dict['tyr.exp'])+\
+            tipper_arr[:, 0, 1] = np.array(data_dict['tyr.exp'])+\
                                             np.array(data_dict['tyi.exp'])*1j
             
-            self.Tipper.tipper_err[:, 0, 0] = np.array(data_dict['txvar.exp'])    
-            self.Tipper.tipper_err[:, 0, 1] = np.array(data_dict['tyvar.exp'])
+            tipper_err_arr[:, 0, 0] = np.array(data_dict['txvar.exp'])    
+            tipper_err_arr[:, 0, 1] = np.array(data_dict['tyvar.exp'])
             
-            self.Tipper._compute_amp_phase()
-            self.Tipper._compute_mag_direction()
+            if flip == True:
+                tipper_arr = tipper_arr[::-1]
+                tipper_err_arr = tipper_err_arr[::-1]
+                
+
+
               
         else:
             print 'Could not find any Tipper data.'
             
+        self.Tipper._freq = freq_arr
+        self.Tipper._tipper = tipper_arr
+        self.Tipper._tipper_err = tipper_err_arr
+        self.Tipper._compute_amp_phase()
+        self.Tipper._compute_mag_direction()
+        
     def _read_spectra(self, data_lines, 
                       comp_list=['hx', 'hy', 'hz', 'ex', 'ey', 'rhx', 'rhy']):
         """
