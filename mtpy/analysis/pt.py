@@ -12,6 +12,8 @@ Residual Phase Tensor following Heise et al., [2008]
 @UofA, 2013
 (LK)
 
+Revised by Peacock, 2016
+
 """
 
 #=================================================================
