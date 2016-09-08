@@ -38,6 +38,7 @@ import mtpy.imaging.plotresponse as plotresponse
 from cStringIO import StringIO
 import sys
 import mtpy.processing.filter as mtfilt
+import mtpy.core.edi as mtedi
 
 try:
     import mtpy.utils.mseed as mtmseed
@@ -1226,7 +1227,7 @@ class Zen3D(object):
         
     #==================================================
     def write_ascii_mt_file(self, save_fn=None, save_station='mb', fmt='%.8e',
-                            ex=100., ey=100., notch_dict=None):
+                            ex=100., ey=100., notch_dict=None, dec=1):
         """
         write an mtpy time series data file
         
@@ -1255,11 +1256,16 @@ class Zen3D(object):
                      scaling parameter of ey line, the length of the dipole
                      be careful to not scale when creating an .edi file
                      *default* is 1
+                     
             **notch_dict** : dictionary
                              dictionary of notch filter parameters
                              *default* is None
                              if an empty dictionary is input then the 
                              filter looks for 60 Hz and harmonics to filter
+            
+            **dec** : int
+                      decimation factor
+                      *default* is 1
                       
         Output
         -------------
@@ -1270,14 +1276,16 @@ class Zen3D(object):
             >>> import mtpy.usgs.zen as zen
             >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
             >>> z3d_obj = zen.Zen3D(fn)
-            >>> asc_fn = z3d.write_ascii_mt_file(save_station='mt', 
-                                                 notch_dict={})
+            >>> asc_fn = z3d_obj.write_ascii_mt_file(save_station='mt', notch_dict={})
         
         """
-        if self.time_series is None:
-            self.read_3d()
-            
-        time_series = self.convert_counts()
+        if self.metadata.rx_xyz0 is None:
+            self.read_metadata()
+
+        if dec > 1:
+            print 'Decimating data by factor of {0}'.format(dec)
+            self.df = self.df/dec
+        
         if save_fn is None:
             svfn_directory = os.path.join(os.path.dirname(self.fn), 'TS')
             if not os.path.exists(svfn_directory):
@@ -1292,6 +1300,28 @@ class Zen3D(object):
                                                    svfn_time,
                                                    int(self.df),
                                                    self.metadata.ch_cmp.upper()))
+        if os.path.isfile(save_fn) == True:
+            self.fn_mt_ascii = save_fn
+            print '    mtpy file already exists for {0} --> {1}'.format(self.fn,
+                                                                    self.fn_mt_ascii)            
+            print '    skipping\n****'
+            if dec > 1:
+                self.time_series = mtfh.read_ts_file(self.fn_mt_ascii)[-1]
+            return
+        
+        # read in time series data if haven't yet.
+        if self.time_series is None:
+            self.read_3d()
+            
+        # decimate the data.  try resample at first, see how that goes
+        # make the attribute time series equal to the decimated data.
+        if dec > 1:
+            self.time_series = sps.resample(self.time_series, 
+                                            self.time_series.size/dec, 
+                                            window='hanning')
+
+        
+        time_series = self.convert_counts()
         #calibrate electric channels 
         if self.metadata.ch_cmp == 'ex':
             time_series /= ex
@@ -4344,10 +4374,17 @@ class ZenBIRRP():
             
         
         #if jmode == 0 for number of points
-        if self.processing_dict['jmode'] == 0:
-            self.processing_dict['nread'] = [fnlist['npts'].min() 
+        if self.processing_dict['jmode'] == 0: 
+            # need to test for maximum number of points
+            # for now its 16000000
+            self.processing_dict['nread'] = [min(fnlist['npts'].min(), 16000000) 
                                   for fnlist in fn_list]
-        
+                                      
+            
+            if sum(self.processing_dict['nread']) > 16000000:
+                self.processing_dict[-1] = 16000000-sum(self.processing_dict[0:-1]) 
+                
+            print 'processing {0} points'.format(sum(self.processing_dict['nread']))
         #if jmode == 1 for entering start and end times
         elif self.processing_dict['jmode'] == 1:
             self.processing_dict['dstim'] = [fnlist['start_dt'] 
@@ -4597,7 +4634,15 @@ class BIRRP_processing(object):
                    rr_list[rr_comp_dict[key]] = fn
             self.rrfn_list.append(rr_list)
 
-        self.nread = [fn_list['npts'].min() for fn_list in fn_birrp_list] 
+        # need to check for the number of points to be read in, there is 
+        # a memory max, for this computer the max is 16000000
+        self.nread = [min(16000000, fn_list['npts'].min()) 
+                      for fn_list in fn_birrp_list]
+        
+        if sum(self.nread) > 16000000:
+            self.nread[-1] = 16000000-sum(self.nread[0:-1])
+            print 'processing {0} points'.format(sum(self.nread))
+            
         self.mcomps = len(fn_birrp_list[0])
         
         if self.mcomps == 5:
@@ -4707,6 +4752,7 @@ class Z3D_to_edi(object):
         self.birrp_config_fn = None
         self.birrp_exe = r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts.exe"
         self.coil_cal_path = r"c:\MT\Ant_calibrations"
+        self.num_comp = 5
 
         
     def make_survey_config_file(self, survey_config_dict=None):
@@ -4780,7 +4826,8 @@ class Z3D_to_edi(object):
             # find startind dates for sampling rate
             s_dates = set(fn_arr['start_dt'][np.where(fn_arr['df']==df)])
             for sdate in s_dates:
-                s_fn_arr = fn_arr[np.where(fn_arr['start_dt']==sdate)]
+                s_fn_arr = fn_arr[np.where((fn_arr['start_dt']==sdate) &
+                                            (fn_arr['df']==df))]
                 s_fn_birrp_arr = np.zeros(len(s_fn_arr), 
                                           dtype=[('fn','|S100'),
                                                  ('npts',np.int),
@@ -4801,7 +4848,8 @@ class Z3D_to_edi(object):
         
     def make_mtpy_ascii_files(self, station_dir=None, fmt='%.8', 
                               station_name='mb', notch_dict={},
-                              df_list=None, max_blocks=3, ex=100., ey=100.): 
+                              df_list=[4096, 1024, 256], max_blocks=3,
+                              ex=100., ey=100.,): 
         """
         makes mtpy_mt files from .Z3D files
         
@@ -4835,7 +4883,7 @@ class Z3D_to_edi(object):
                             self.station_dir))
                             
         # make an array that has all the information about each file
-        fn_arr = np.zeros(len(fn_list), 
+        fn_arr = np.zeros(len(fn_list)*2, 
                           dtype=[('station','|S6'), 
                                  ('npts',np.int), 
                                  ('df', np.int),
@@ -4845,22 +4893,48 @@ class Z3D_to_edi(object):
         fn_lines = []
         z3d_count = 0             
         for ii, fn in enumerate(fn_list):
-            if z3d_count > len(df_list)*5*max_blocks-1:
-                   break
-            if df_list is not None:
-               zd = Zen3D(fn)
-               zd.read_header()
+            if z3d_count > len(df_list)*self.num_comp*max_blocks-1:
+                break
+           
+            zd = Zen3D(fn)
+            zd.read_header()
                
-               
-               if zd.header.ad_rate in df_list:
-                   zd.read_z3d()
-                   z3d_count += 1
-
-               else:
-                   continue
-            else:
-                zd = Zen3D(fn)
+            if zd.header.ad_rate in df_list:
                 zd.read_z3d()
+                z3d_count += 1
+               
+                # account for decimation, need to make a new instance
+                # so as to include the original file as well
+                if zd.header.ad_rate == 256 and 16 in df_list:
+                    zdec = Zen3D(fn)
+                    zdec.read_z3d()
+                    z3d_count += 1
+                    #write mtpy mt file
+                    zdec.write_ascii_mt_file(notch_dict=notch_dict, 
+                                             ex=ex, ey=ey, dec=16)
+                    
+                    #create lines to write to a log file                       
+                    station = zdec.metadata.rx_xyz0.split(':')[0]
+                    jj = len(fn_list)+ii
+                    fn_arr[jj]['station'] = '{0}{1}'.format(station_name, 
+                                                            station)
+                    fn_arr[jj]['npts'] = zdec.time_series.shape[0]
+                    fn_arr[jj]['df'] = zdec.df
+                    fn_arr[jj]['start_dt'] = zdec.zen_schedule
+                    fn_arr[jj]['comp'] = zdec.metadata.ch_cmp.lower()
+                    fn_arr[jj]['fn'] = zdec.fn_mt_ascii
+                    fn_lines.append(''.join(['--> station: {0}{1}\n'.format(station_name, station),
+                                             '    ts_len = {0}\n'.format(zdec.time_series.shape[0]),
+                                             '    df = {0}\n'.format(zdec.df),
+                                             '    start_dt = {0}\n'.format(zdec.zen_schedule),
+                                             '    comp = {0}\n'.format(zdec.metadata.ch_cmp),
+                                             '    fn = {0}\n'.format(zdec.fn),
+                                             '    decimated to 16 samples/s']))
+               
+        
+
+            else:
+                continue
             
             if zd.metadata.ch_cmp.lower() == 'hx':
                 self.survey_config.hx = zd.metadata.ch_number
@@ -4922,6 +4996,9 @@ class Z3D_to_edi(object):
             bf_path = os.path.join(save_path, '{0:.0f}'.format(skey))
             fn_birrp_arr = fn_birrp_dict[skey]
             pro_obj = BIRRP_processing()
+            if skey == 16:
+                pro_obj.nfft = 2**16
+                pro_obj.nsctmax = 11
             pro_obj.calibration_path = self.coil_cal_path
             pro_obj.station = self.survey_config.station
             pro_obj.deltat = -float(skey)
@@ -4992,6 +5069,7 @@ class Z3D_to_edi(object):
                     if fn[-4:] == '.cfg':
                         self.survey_config_fn = os.path.join(ts_dir, fn)
         
+        # TODO: need to change this to confrom with new edi class
         edi_fn = birrp.convert2edi(self.survey_config.station, 
                                    birrp_output_path, 
                                    self.survey_config_fn, 
@@ -5028,13 +5106,14 @@ class Z3D_to_edi(object):
                                                          
         return resp_plot
  
-    def process_data(self, df_list=None, max_blocks=2):
+    def process_data(self, df_list=None, max_blocks=2, num_comp=5):
         """
         from the input station directory, convert files to ascii, run through
         BIRRP, convert to .edi files and plot
         """
         
         st = time.time()
+        self.num_comp = num_comp
         
         if df_list is not None:
             if type(df_list) is float or type(df_list) is int or\
@@ -5061,6 +5140,50 @@ class Z3D_to_edi(object):
         print 'took {0} seconds'.format(et-st)
         
         return r_plot
+        
+    def combine_edi_files(edi_fn_list, 
+                          sr_dict={4096:(1000., 2),
+                                   1024:(2., 4.),
+                                   256:(4, .04), 
+                                   16:(.04, .0001)}):
+        """
+        combine the different edi files that are computed for each sampling 
+        rate.
+        
+        for now just a simple cutoff
+        """
+        data_dict = {}
+        for edi_fn in edi_fn_list:
+            edi_obj = mtedi.Edi(edi_fn)
+            # get sampling rate from directory path
+            for fkey in sorted(sr_dict.keys(), reverse=True):
+                if str(fkey) in edi_fn:
+                    # locate frequency range
+                    f_index = np.where((edi_obj.Z.freq > sr_dict[fkey][1]) & 
+                                       (edi_obj.Z.freq < sr_dict[fkey][0]))
+                    new_z = edi_obj.Z.z[f_index]
+                    new_z_err = edi_obj.Z.z_err[f_index]
+                    new_f = edi_obj.Z.freq[f_index]
+                    
+                    new_Z = mtedi.mtz.Z(new_z, new_z_err, new_f)
+                    
+                    
+                    if edi_obj.Tipper.tipper is not None:
+                        new_t = edi_obj.Tipper.tipper[f_index]
+                        new_t_err = edi_obj.Tipper.tippererr[f_index]
+                        new_T = mtedi.mtz.Tipper(new_t, new_t_err, new_f)
+                        
+                    else:
+                        new_T = None
+                    
+                    data_dict[fkey] = [new_Z, new_T]
+                
+                
+            
+            
+            
+        
+        
 
 
 #==============================================================================
@@ -5563,7 +5686,7 @@ def delete_files_from_sd(delete_date=None, delete_type=None,
             if fn[-4:].lower() == '.Z3D'.lower():
                 full_path_fn = os.path.normpath(os.path.join(dr, fn))
                 zt = Zen3D(full_path_fn)
-                zt.get_info()
+                #zt.get_info()
                 if delete_type == 'all' or delete_date is None:
                     if delete_folder is None:
                         os.remove(full_path_fn)
@@ -5869,7 +5992,8 @@ class Capturing(list):
 def compute_mt_response(survey_dir, station='mt000', copy_date=None, 
                         birrp_exe=r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts.exe", 
                         ant_calibrations=r"c:\MT\Ant_calibrations",
-                        process_df_list=[256]):
+                        process_df_list=[256],
+                        num_comp=5, max_blocks=2):
     """
     This code will down load Z3D files from a Zen that is in SD Mode, 
     convert the Z3D files to ascii format, then process them for each
@@ -5979,7 +6103,9 @@ def compute_mt_response(survey_dir, station='mt000', copy_date=None,
         z2edi.birrp_exe = birrp_exe
         z2edi.coil_cal_path = ant_calibrations
         try:
-            rp = z2edi.process_data(df_list=process_df_list)
+            rp = z2edi.process_data(df_list=process_df_list, 
+                                    num_comp=num_comp, 
+                                    max_blocks=max_blocks)
         except mtex.MTpyError_inputarguments:
             print '==> Data not good!! Did not produce a proper .edi file' 
             et = time.time()
@@ -6012,7 +6138,8 @@ def rename_cac_files(station_dir, station='mb'):
     for fn in fn_list:
         cac_obj = Cache(fn)
         cac_obj.read_cache_metadata()
-        station_name = '{0}{1}'.format(station, cac_obj.metadata.station_number)
+        station_name = '{0}{1}'.format(station, 
+                                       cac_obj.metadata.station_number)
         station_date = cac_obj.metadata.gdp_date.replace('-', '')
         station_time = cac_obj.metadata.gdp_time.replace(':', '')
         new_fn = '{0}_{1}_{2}_{3:.0f}.cac'.format(station_name,
