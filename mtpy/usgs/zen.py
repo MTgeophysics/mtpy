@@ -4699,7 +4699,7 @@ class Survey_Config(object):
         self.box = 24
         self.date = '01/01/00'
         self.e_instrument_amplification = 1
-        self.e_instrument_type = 'Cu-CuSO4 electrodes'
+        self.e_instrument_type = 'Ag-Agcl electrodes'
         self.e_logger_gain = 1
         self.e_logger_type = 'zen'
         self.e_xaxis_azimuth = 0
@@ -4909,8 +4909,10 @@ class Z3D_to_edi(object):
                     zdec = Zen3D(fn)
                     zdec.read_z3d()
                     z3d_count += 1
+                    ex = zdec.metadata.ch_length
+                    ey = zdec.metadata.ch_length
                     #write mtpy mt file
-                    zdec.write_ascii_mt_file(notch_dict=notch_dict, 
+                    zdec.write_ascii_mt_file(notch_dict=None, 
                                              ex=ex, ey=ey, dec=16)
                     
                     #create lines to write to a log file                       
@@ -4936,16 +4938,19 @@ class Z3D_to_edi(object):
             else:
                 continue
             
+            
             if zd.metadata.ch_cmp.lower() == 'hx':
                 self.survey_config.hx = zd.metadata.ch_number
-            if zd.metadata.ch_cmp.lower() == 'hy':
+            elif zd.metadata.ch_cmp.lower() == 'hy':
                 self.survey_config.hy = zd.metadata.ch_number
-            if zd.metadata.ch_cmp.lower() == 'hz':
+            elif zd.metadata.ch_cmp.lower() == 'hz':
                 self.survey_config.hz = zd.metadata.ch_number
-            if zd.metadata.ch_cmp.lower() == 'ex':
+            elif zd.metadata.ch_cmp.lower() == 'ex':
                 self.survey_config.e_xaxis_length = zd.metadata.ch_length
-            if zd.metadata.ch_cmp.lower() == 'ey':
+                ex =zd.metadata.ch_length
+            elif zd.metadata.ch_cmp.lower() == 'ey':
                 self.survey_config.e_yaxis_length = zd.metadata.ch_length
+                ey = zd.metadata.ch_length
 
             # get station configuration from the first Z3D file            
             if ii == 0:
@@ -4953,6 +4958,7 @@ class Z3D_to_edi(object):
                 self.survey_config.lon = zd.header.long
                 self.survey_config.date = zd.schedule.Date.replace('-','/')
                 self.survey_config.box = int(zd.header.box_number)
+                self.survey_config.station = zd.metadata.rx_xyz0.split(':')[0]
             
             #write mtpy mt file
             zd.write_ascii_mt_file(notch_dict=notch_dict, ex=ex, ey=ey)
@@ -5133,54 +5139,99 @@ class Z3D_to_edi(object):
         # run birrp
         self.run_birrp(sfn_list)
         
+        # combine edi files
+        comb_edi_fn = self.combine_edi_files(self.edi_fn)
+        
+        self.edi_fn.append(comb_edi_fn)
+        
         # plot the output
         r_plot = self.plot_responses()
         
         et = time.time()
         print 'took {0} seconds'.format(et-st)
         
-        return r_plot
+        return r_plot, comb_edi_fn
         
-    def combine_edi_files(edi_fn_list, 
-                          sr_dict={4096:(1000., 2),
-                                   1024:(2., 4.),
-                                   256:(4, .04), 
-                                   16:(.04, .0001)}):
+    def combine_edi_files(self, edi_fn_list, 
+                          sr_dict={4096:(1000., 4),
+                                   1024:(3.99, 1.),
+                                   256:(.99, .04), 
+                                   16:(.0399, .0001)}):
         """
         combine the different edi files that are computed for each sampling 
         rate.
         
         for now just a simple cutoff
         """
-        data_dict = {}
+        
+        if type(edi_fn_list) is str:
+            print 'Only one edi file, skipping combining'
+            return
+            
+        if type(edi_fn_list) is list and len(edi_fn_list) == 1:
+            print 'Only one edi file, skipping combining'
+            return
+            
+        data_arr = np.zeros(100, 
+                            dtype=[('freq', np.float),
+                                   ('z', (np.complex, (2, 2))),
+                                   ('z_err', (np.float, (2, 2))), 
+                                   ('tipper', (np.complex, (2, 2))),
+                                   ('tipper_err', (np.float, (2, 2)))])
+                                   
+        count = 0
         for edi_fn in edi_fn_list:
             edi_obj = mtedi.Edi(edi_fn)
             # get sampling rate from directory path
             for fkey in sorted(sr_dict.keys(), reverse=True):
                 if str(fkey) in edi_fn:
                     # locate frequency range
-                    f_index = np.where((edi_obj.Z.freq > sr_dict[fkey][1]) & 
-                                       (edi_obj.Z.freq < sr_dict[fkey][0]))
-                    new_z = edi_obj.Z.z[f_index]
-                    new_z_err = edi_obj.Z.z_err[f_index]
-                    new_f = edi_obj.Z.freq[f_index]
+                    f_index = np.where((edi_obj.Z.freq >= sr_dict[fkey][1]) & 
+                                       (edi_obj.Z.freq <= sr_dict[fkey][0]))
+                                       
+                                       
+                    data_arr['freq'][count:count+len(f_index[0])] = edi_obj.Z.freq[f_index]
+                    data_arr['z'][count:count+len(f_index[0])] = edi_obj.Z.z[f_index]
+                    data_arr['z_err'][count:count+len(f_index[0])] = edi_obj.Z.z_err[f_index]
+                    if edi_obj.Tipper.tipper is not None:                    
+                        data_arr['tipper'][count:count+len(f_index[0])] = edi_obj.Tipper.tipper[f_index]
+                        data_arr['tipper_err'][count:count+len(f_index[0])] = edi_obj.Tipper.tipper_err[f_index]
+        
+                    count += len(f_index[0])
                     
-                    new_Z = mtedi.mtz.Z(new_z, new_z_err, new_f)
-                    
-                    
-                    if edi_obj.Tipper.tipper is not None:
-                        new_t = edi_obj.Tipper.tipper[f_index]
-                        new_t_err = edi_obj.Tipper.tippererr[f_index]
-                        new_T = mtedi.mtz.Tipper(new_t, new_t_err, new_f)
-                        
-                    else:
-                        new_T = None
-                    
-                    data_dict[fkey] = [new_Z, new_T]
-                
-                
+        # now replace
+        data_arr = data_arr[np.nonzero(data_arr['freq'])]
+        sort_index = np.argsort(data_arr['freq'])
+        
+        # check to see if the sorted indexes are descending or ascending,
+        # make sure that frequency is descending
+        if data_arr['freq'][0] > data_arr['freq'][1]:
+            sort_index = sort_index[::-1]
             
+        data_arr = data_arr[sort_index]
+        new_z = mtedi.MTz.Z(data_arr['z'],
+                            data_arr['z_err'],
+                            data_arr['freq'])
+                            
+        if np.all(data_arr['tipper'] != 0.0) == True:
+            new_t = mtedi.MTz.Tipper(data_arr['tipper'], 
+                                     data_arr['tipper_err'],
+                                     data_arr['freq'])
+                         
+        else:
+            new_t = mtedi.MTz.Tipper()
             
+        edi_obj = mtedi.Edi(edi_fn_list[0])
+        edi_obj.Z = new_z
+        edi_obj.Tipper = new_t
+
+        n_edi_fn = os.path.join(self.station_dir, 
+                                '{0}_comb.edi'.format(os.path.basename(self.station_dir)))        
+        edi_obj.write_edi_file(new_edi_fn=n_edi_fn)
+        
+        return n_edi_fn
+                
+
             
         
         
