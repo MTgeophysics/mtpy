@@ -186,9 +186,9 @@ class Edi(object):
                 self._edi_lines = fid.readlines()
 
         self.Header = Header(edi_lines=self._edi_lines)
-        self.Info = Information(edi_lines=self.Header.edi_lines)
-        self.Define_measurement = DefineMeasurement(edi_lines=self.Info.edi_lines)
-        self.Data_sect = DataSection(edi_lines=self.Define_measurement.edi_lines)
+        self.Info = Information(edi_lines=self._edi_lines)
+        self.Define_measurement = DefineMeasurement(edi_lines=self._edi_lines)
+        self.Data_sect = DataSection(edi_lines=self._edi_lines)
         
         self._read_data()
         
@@ -1097,7 +1097,7 @@ class Information(object):
         self.edi_lines = edi_lines
         self.info_list = None
         
-        if self.edi_fn is not None:
+        if self.edi_fn is not None or self.edi_lines is not None:
             self.read_info()
             
     def get_info_list(self):
