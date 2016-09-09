@@ -923,11 +923,6 @@ class Header(object):
                             key = h_list[0].strip()
                             value = h_list[1].strip()
                             self.header_list.append('{0}={1}'.format(key, value))
-                                
-            # truncate edi_lines so the next block doesn't have to read
-            # the entire list.
-            self.edi_lines = self.edi_lines[ii:]
-        #self.header_list = self._validate_header_list(self.header_list)
     
     def read_header(self, header_list=None):
         """
@@ -1159,8 +1154,6 @@ class Information(object):
                     else:
                         if len(line.strip()) > 1:
                             self.info_list.append(line.strip())
-                            
-            self.edi_lines = self.edi_lines[ii:]
                         
         self.info_list += phoenix_list_02
         # validate the information list
@@ -1396,8 +1389,6 @@ class DefineMeasurement(object):
                             value = ll_list[1]
                             m_dict[key] = value
                         self.measurement_list.append(m_dict)
-                        
-            self.edi_lines = self.edi_lines[ii:]
                         
     def read_define_measurement(self, measurement_list=None):
         """
@@ -1744,6 +1735,7 @@ class DataSection(object):
                     count += 1
                     if line.lower().find('sect') > 0:
                         data_sect_find = True
+                        self.line_num = ii
                         if line.lower().find('spect') > 0:
                             self.data_type = 'spectra'
                         elif line.lower().find('mt') > 0:
@@ -1756,9 +1748,7 @@ class DataSection(object):
                     data_sect_find == True:
                     if len(line.strip()) > 2:
                         self.data_sect_list.append(line.strip())
-                        
-            self.line_num = 0
-            self.edi_lines = self.edi_lines[ii:]
+
                         
     def read_data_sect(self, data_sect_list=None):
         """
