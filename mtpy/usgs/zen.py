@@ -1209,7 +1209,8 @@ class Zen3D(object):
         
         
         """
-        
+        if notch_dict == None:
+            return
         try:
             self.time_series
         except AttributeError:
@@ -1316,9 +1317,8 @@ class Zen3D(object):
         # decimate the data.  try resample at first, see how that goes
         # make the attribute time series equal to the decimated data.
         if dec > 1:
-            self.time_series = sps.resample(self.time_series, 
-                                            self.time_series.size/dec, 
-                                            window='hanning')
+            self.time_series = sps.decimate(self.time_series, 
+                                            dec, n=8)
 
         
         time_series = self.convert_counts()
@@ -4909,10 +4909,10 @@ class Z3D_to_edi(object):
                     zdec = Zen3D(fn)
                     zdec.read_z3d()
                     z3d_count += 1
-                    ex = zdec.metadata.ch_length
-                    ey = zdec.metadata.ch_length
+                    ex = float(zdec.metadata.ch_length)
+                    ey = float(zdec.metadata.ch_length)
                     #write mtpy mt file
-                    zdec.write_ascii_mt_file(notch_dict=None, 
+                    zdec.write_ascii_mt_file(notch_dict=notch_dict, 
                                              ex=ex, ey=ey, dec=16)
                     
                     #create lines to write to a log file                       
@@ -4947,10 +4947,10 @@ class Z3D_to_edi(object):
                 self.survey_config.hz = zd.metadata.ch_number
             elif zd.metadata.ch_cmp.lower() == 'ex':
                 self.survey_config.e_xaxis_length = zd.metadata.ch_length
-                ex =zd.metadata.ch_length
+                ex = float(zd.metadata.ch_length)
             elif zd.metadata.ch_cmp.lower() == 'ey':
                 self.survey_config.e_yaxis_length = zd.metadata.ch_length
-                ey = zd.metadata.ch_length
+                ey = float(zd.metadata.ch_length)
 
             # get station configuration from the first Z3D file            
             if ii == 0:
