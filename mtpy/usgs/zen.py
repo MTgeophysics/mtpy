@@ -678,9 +678,10 @@ class Zen3D(object):
         self.df = None
         
         self.time_series = None
+        self.time_series_len = None
         
     #====================================== 
-    def read_header(self, fn=None, fid=None):
+    def _read_header(self, fn=None, fid=None):
         """
         read header information from Z3D file
         
@@ -720,7 +721,7 @@ class Zen3D(object):
         self.df = self.header.ad_rate
         
     #====================================== 
-    def read_schedule(self, fn=None, fid=None):
+    def _read_schedule(self, fn=None, fid=None):
         """
         read schedule information from Z3D file
         
@@ -761,7 +762,7 @@ class Zen3D(object):
                                              self.schedule.Time)
     
     #======================================     
-    def read_metadata(self, fn=None, fid=None):
+    def _read_metadata(self, fn=None, fid=None):
         """
         read header information from Z3D file
         
@@ -798,6 +799,17 @@ class Zen3D(object):
             
         self.metadata.read_metadata(fn=self.fn, fid=fid)
     
+    #=====================================    
+    def read_all_info(self):
+        """
+        Read header, schedule, and metadata
+        """
+        with open(self.fn, 'rb') as file_id:
+        
+            self._read_header(fid=file_id)
+            self._read_schedule(fid=file_id)
+            self._read_metadata(fid=file_id)        
+        
     #======================================    
     def read_z3d(self):
         """
@@ -834,9 +846,9 @@ class Zen3D(object):
         # file object upon reading completion.
         with open(self.fn, 'rb') as file_id:
         
-            self.read_header(fid=file_id)
-            self.read_schedule(fid=file_id)
-            self.read_metadata(fid=file_id)
+            self._read_header(fid=file_id)
+            self._read_schedule(fid=file_id)
+            self._read_metadata(fid=file_id)
             
             # move the read value to where the end of the metadata is
             file_id.seek(self.metadata.m_tell)
@@ -877,6 +889,7 @@ class Zen3D(object):
 
         # trim the data after taking out the gps stamps
         self.time_series = data[np.nonzero(data)]
+        self.time_series_len = self.time_series.size
         
         # time it
         et = time.time()
@@ -887,7 +900,7 @@ class Zen3D(object):
         self.check_start_time()
         
         print '    found {0} GPS time stamps'.format(self.gps_stamps.shape[0])
-        print '    found {0} data points'.format(self.time_series.size)
+        print '    found {0} data points'.format(self.time_series_len)
     
     #=======================================    
     def read_z3d_slow(self):
@@ -1281,12 +1294,14 @@ class Zen3D(object):
         
         """
         if self.metadata.rx_xyz0 is None:
-            self.read_metadata()
+            self.read_all_info()
+            
 
         if dec > 1:
             print 'Decimating data by factor of {0}'.format(dec)
             self.df = self.df/dec
         
+        # make a new file name to save to that includes the meta information
         if save_fn is None:
             svfn_directory = os.path.join(os.path.dirname(self.fn), 'TS')
             if not os.path.exists(svfn_directory):
@@ -1301,24 +1316,28 @@ class Zen3D(object):
                                                    svfn_time,
                                                    int(self.df),
                                                    self.metadata.ch_cmp.upper()))
+        # if the file already exists skip it
         if os.path.isfile(save_fn) == True:
             self.fn_mt_ascii = save_fn
             print '    mtpy file already exists for {0} --> {1}'.format(self.fn,
                                                                     self.fn_mt_ascii)            
             print '    skipping\n****'
-            if dec > 1:
-                self.time_series = mtfh.read_ts_file(self.fn_mt_ascii)[-1]
+            # if there is a decimation factor need to read in the time
+            # series data to get the length.
+            self.time_series_len = mtfh.read_ts_header(self.fn_mt_ascii)['nsamples']
             return
         
         # read in time series data if haven't yet.
         if self.time_series is None:
-            self.read_3d()
+            self.read_z3d()
             
         # decimate the data.  try resample at first, see how that goes
         # make the attribute time series equal to the decimated data.
         if dec > 1:
             self.time_series = sps.decimate(self.time_series, 
                                             dec, n=8)
+                                            
+            self.time_series_len = self.time_series.size
 
         
         time_series = self.convert_counts()
@@ -4617,10 +4636,16 @@ class BIRRP_processing(object):
         # need to sort the fn list so that the files are in the correct
         # order for input and output as defined by birrp
         for ii, f_list in enumerate(self.fn_list):
+            # make a copy of the input list
             sort_list = list(f_list)
+            # get the number of components (4 or 5)
             num_comps = len(f_list)
+            # loop over the file names with in each block of files
             for fn in f_list:
+                # figure out which component the file is
                 key = fn[-2:]
+                # put that file in the correct place in the sorted list
+                # according to birrp.
                 sort_list[comp_dict[num_comps][key.upper()]] = fn
             self.fn_list[ii] = sort_list
             
@@ -4740,7 +4765,7 @@ class Survey_Config(object):
 
 class Z3D_to_edi(object):
     """
-    go from z3d files to .edi
+    go from z3d files to .edi using BIRRP as the processing code
     """
     
     def __init__(self, station_dir=None, **kwargs):
@@ -4762,27 +4787,37 @@ class Z3D_to_edi(object):
         
         self.survey_config_fn = self.survey_config.write_survey_config_file()
         
-    def get_schedules_fn_from_dir(self, station_ts_dir):
+    def get_schedules_fn_from_dir(self, station_ts_dir=None, rr_ts_dir=None):
         """
         get the birrp fn list from a directory of TS files
         """
         
-        self.station_dir = station_ts_dir
+        if station_ts_dir is not None:
+            self.station_dir = station_ts_dir
         
-        fn_arr = np.zeros(len(os.listdir(station_ts_dir)),
+        if rr_ts_dir is not None:
+            self.rr_station_dir = rr_ts_dir
+            
+        if not os.path.isdir(self.station_dir):
+            print '{0} is not a valid directory, check path.'.format(self.station_dir) 
+            return None
+            
+        fn_arr = np.zeros(len(os.listdir(self.station_dir)),
                           dtype=[('fn','|S100'),
-                                 ('npts',np.int),
-                                 ('start_dt','|S19'),
-                                 ('end_dt','|S19'),
-                                 ('df', np.float)])
+                                 ('npts', np.int),
+                                 ('start_dt', '|S19'),
+                                 ('end_dt', '|S19'),
+                                 ('df', np.float),
+                                 ('comp', '|S4')])
         fn_count = 0
-        for fn in os.listdir(station_ts_dir):
-            fn = os.path.join(station_ts_dir, fn)
+        for fn in os.listdir(self.station_dir):
+            fn = os.path.join(self.station_dir, fn)
             try:
                 header_dict = mtfh.read_ts_header(fn)
                 fn_arr[fn_count]['fn'] = fn
                 fn_arr[fn_count]['npts'] = header_dict['nsamples']
                 fn_arr[fn_count]['df'] = header_dict['samplingrate']
+                fn_arr[fn_count]['comp'] = header_dict['channel']
                 start_sec = header_dict['t_min']
                 num_sec = float(header_dict['nsamples'])/\
                                                    header_dict['samplingrate']
@@ -4796,14 +4831,54 @@ class Z3D_to_edi(object):
                 print '  Skipped {0}'.format(fn)
             except mtex.MTpyError_inputarguments:
                 print '  Skipped {0}'.format(fn)
-        
         # be sure to trim the array
-        fn_arr = fn_arr[np.nonzero(fn_arr['npts'])]
+        fn_arr = fn_arr[np.nonzero(fn_arr['npts'])]   
         
-        return self.get_schedules_fn(fn_arr)
+        # get remote reference filenames
+        if rr_ts_dir is not None:
+            if not os.path.isdir(self.rr_station_dir):
+                print '{0} is not a valid directory, check path.'.format(self.rr_station_dir) 
+                return fn_arr[np.nonzero(fn_arr['npts'])]
+            rr_fn_arr = np.zeros(len(os.listdir(self.station_dir)),
+                                  dtype=[('fn','|S100'),
+                                         ('npts', np.int),
+                                         ('start_dt', '|S19'),
+                                         ('end_dt', '|S19'),
+                                         ('df', np.float),
+                                         ('comp', '|S4')])  
+            rr_fn_count = 0
+            for rr_fn in os.listdir(self.rr_station_dir):
+                rr_fn = os.path.join(self.rr_station_dir, rr_fn)
+                try:
+                    # only get the hx and hy channels                    
+                    header_dict = mtfh.read_ts_header(rr_fn)                    
+                    if header_dict['channel'].lower() in ['hx', 'hy']:
+                        rr_fn_arr[fn_count]['fn'] = rr_fn
+                        rr_fn_arr[fn_count]['npts'] = header_dict['nsamples']
+                        rr_fn_arr[fn_count]['df'] = header_dict['samplingrate']
+                        rr_fn_arr[fn_count]['comp'] = 'rr{0}'.format(header_dict['channel'])
+                        start_sec = header_dict['t_min']
+                        num_sec = float(header_dict['nsamples'])/\
+                                                           header_dict['samplingrate']
+                        rr_fn_arr[fn_count]['start_dt'] = time.strftime(datetime_fmt, 
+                                                        time.localtime(start_sec)) 
+                        rr_fn_arr[fn_count]['end_dt'] = time.strftime(datetime_fmt, 
+                                                        time.localtime(start_sec+\
+                                                        num_sec))
+                        rr_fn_count += 1
+                except mtex.MTpyError_ts_data:
+                    print '  Skipped {0}'.format(rr_fn)
+                except mtex.MTpyError_inputarguments:
+                    print '  Skipped {0}'.format(rr_fn) 
+            rr_fn_arr = rr_fn_arr[np.nonzero(rr_fn_arr['npts'])]
+        else:
+            rr_fn_arr = None
+        
+        
+        return self.get_schedules_fn(fn_arr, rr_fn_arr)
             
         
-    def get_schedules_fn(self, fn_arr):
+    def get_schedules_fn(self, fn_arr, rr_fn_arr=None):
         """
         seperate out the different schedule blocks and frequencies so the
         can be processed
@@ -4832,10 +4907,12 @@ class Z3D_to_edi(object):
                                           dtype=[('fn','|S100'),
                                                  ('npts',np.int),
                                                  ('start_dt','|S19'),
-                                                 ('end_dt','|S19')])
+                                                 ('end_dt','|S19'),
+                                                 ('comp', '|S4')])
                 s_fn_birrp_arr['fn'] = s_fn_arr['fn']
                 s_fn_birrp_arr['npts'][:] = s_fn_arr['npts'].min()
                 s_fn_birrp_arr['start_dt'][:] = sdate
+                s_fn_birrp_arr['comp'] = s_fn_arr['comp']
                 start_seconds = time.mktime(time.strptime(sdate, 
                                                           datetime_fmt))
  
@@ -4897,17 +4974,16 @@ class Z3D_to_edi(object):
                 break
            
             zd = Zen3D(fn)
-            zd.read_header()
+            zd.read_all_info()
                
             if zd.header.ad_rate in df_list:
-                zd.read_z3d()
                 z3d_count += 1
                
                 # account for decimation, need to make a new instance
                 # so as to include the original file as well
                 if zd.header.ad_rate == 256 and 16 in df_list:
                     zdec = Zen3D(fn)
-                    zdec.read_z3d()
+                    zdec.read_all_info()
                     z3d_count += 1
                     ex = float(zdec.metadata.ch_length)
                     ey = float(zdec.metadata.ch_length)
@@ -4920,13 +4996,13 @@ class Z3D_to_edi(object):
                     jj = len(fn_list)+ii
                     fn_arr[jj]['station'] = '{0}{1}'.format(station_name, 
                                                             station)
-                    fn_arr[jj]['npts'] = zdec.time_series.shape[0]
+                    fn_arr[jj]['npts'] = zdec.time_series_len
                     fn_arr[jj]['df'] = zdec.df
                     fn_arr[jj]['start_dt'] = zdec.zen_schedule
                     fn_arr[jj]['comp'] = zdec.metadata.ch_cmp.lower()
                     fn_arr[jj]['fn'] = zdec.fn_mt_ascii
                     fn_lines.append(''.join(['--> station: {0}{1}\n'.format(station_name, station),
-                                             '    ts_len = {0}\n'.format(zdec.time_series.shape[0]),
+                                             '    ts_len = {0}\n'.format(zdec.time_series_len),
                                              '    df = {0}\n'.format(zdec.df),
                                              '    start_dt = {0}\n'.format(zdec.zen_schedule),
                                              '    comp = {0}\n'.format(zdec.metadata.ch_cmp),
@@ -4966,13 +5042,13 @@ class Z3D_to_edi(object):
             #create lines to write to a log file                       
             station = zd.metadata.rx_xyz0.split(':')[0]
             fn_arr[ii]['station'] = '{0}{1}'.format(station_name, station)
-            fn_arr[ii]['npts'] = zd.time_series.shape[0]
+            fn_arr[ii]['npts'] = zd.time_series_len
             fn_arr[ii]['df'] = zd.df
             fn_arr[ii]['start_dt'] = zd.zen_schedule
             fn_arr[ii]['comp'] = zd.metadata.ch_cmp.lower()
             fn_arr[ii]['fn'] = zd.fn_mt_ascii
             fn_lines.append(''.join(['--> station: {0}{1}\n'.format(station_name, station),
-                                     '    ts_len = {0}\n'.format(zd.time_series.shape[0]),
+                                     '    ts_len = {0}\n'.format(zd.time_series_len),
                                      '    df = {0}\n'.format(zd.df),
                                      '    start_dt = {0}\n'.format(zd.zen_schedule),
                                      '    comp = {0}\n'.format(zd.metadata.ch_cmp),
