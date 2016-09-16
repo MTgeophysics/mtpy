@@ -901,97 +901,6 @@ class Zen3D(object):
         
         print '    found {0} GPS time stamps'.format(self.gps_stamps.shape[0])
         print '    found {0} data points'.format(self.time_series_len)
-    
-    #=======================================    
-    def read_z3d_slow(self):
-        """
-        read Z3D file out put by Zen, this a slow method but if you want to 
-        be sure the data is read in correctly, this method is the most 
-        correct way.  It will be deprecated as soon as I field test the 
-        read_z3d method
-        
-        """        
-        print '------- Reading {0} ---------'.format(self.fn)
-        st = time.time()
-        
-        file_id = file(self.fn, 'rb')
-        
-        self.read_header(fid=file_id)
-        self.read_schedule(fid=file_id)
-        self.read_metadata(fid=file_id)
-        
-        file_id.seek(self.metadata.m_tell)
-        f_str = file_id.read()
-        
-        
-       # find number of gps stamps from the data string
-        num_gps_stamps = int(f_str.count(self.gps_flag))
-        #num_data = int(num_gps_stamps*header.ad_rate)
-        #df = int(header.ad_rate)
-        
-        # make and empty array for gps time stamps in the appropriate format
-        self.gps_stamps = np.zeros(num_gps_stamps, dtype=self._gps_dtype)
-        
-        #--> find first time stamp
-        find_0 = f_str.find(self.gps_flag)
-        
-        gps_stamp_str = f_str[find_0:find_0+self._gps_stamp_length]
-        gps_stamp = np.fromstring(gps_stamp_str, dtype=self._gps_dtype)
-        gps_stamp['block_len'] = 0
-        self.gps_stamps[0] = gps_stamp
-        
-        # make the input string start from the end of the first GPS stamp
-        f_str = f_str[find_0+self._gps_stamp_length:]
-        
-        # make an empty list to append each time block, this is relatively quick
-        # though might get caught up in large data files.  But this is the safest
-        # to avoid misplacing the time series data into a predefined array
-        # aslo insures sequential time series data
-        ts_string_list = []
-        
-        # this loop starts from the end of the first time stamp and searches for the
-        # next time stamp.  It will convert the time stamp and append the time series
-        # bintary string between the time stamps to ts_string_list to insure
-        # the time series is sequential.
-        # boolean for testing whether a gps time stamp is found or not
-        stamp_count = 1
-        while stamp_count < num_gps_stamps:
-            # get the index of the next gps stamp
-            stamp_index = f_str.find(self.gps_flag)
-        
-            # get the gps string and convert it according to the format
-            gps_stamp_str = f_str[stamp_index:stamp_index+self._gps_stamp_length]
-            gps_stamp = np.fromstring(gps_stamp_str, dtype=self._gps_dtype)
-            
-            # get length between time stamp and put it in the empty slot of the 
-            # gps time stamp
-            gps_stamp['block_len'] = len(f_str[0:stamp_index])/4
-            self.gps_stamps[stamp_count] = gps_stamp
-            
-            # append the time series binary string to the list, this is faster 
-            # than string concatenation
-            ts_string_list.append(f_str[0:stamp_index])
-        
-            # remove the found time stamp and time series data and start the 
-            # data binary string from the end of the found time stamp.
-            f_str = f_str[stamp_index+self._gps_stamp_length:]
-            stamp_count += 1
-        
-        # convert the time series data into int32 format
-        self.time_series = np.fromstring(''.join(ts_string_list), 
-                                         dtype=np.int32)
-        
-        # time it
-        et = time.time()
-        print '--> Reading data took: {0:.3f} seconds'.format(et-st)
-        
-        self.trim_data()
-        self.validate_time_blocks()
-        self.convert_gps_time()
-        self.check_start_time()
-        
-        print '    found {0} GPS time stamps'.format(self.gps_stamps.shape[0])
-        print '    found {0} data points'.format(self.time_series.size)
         
     #=================================================
     def trim_data(self):
@@ -1324,7 +1233,10 @@ class Zen3D(object):
             print '    skipping\n****'
             # if there is a decimation factor need to read in the time
             # series data to get the length.
-            self.time_series_len = mtfh.read_ts_header(self.fn_mt_ascii)['nsamples']
+            header_dict = mtfh.read_ts_header(self.fn_mt_ascii) 
+            self.time_series_len = header_dict['nsamples']
+            self.zen_schedule = time.mktime(header_dict['t_min'],
+                                            datetime_fmt)
             return
         
         # read in time series data if haven't yet.
@@ -1342,13 +1254,15 @@ class Zen3D(object):
 
         
         time_series = self.convert_counts()
-        #calibrate electric channels 
-        if self.metadata.ch_cmp == 'ex':
-            time_series /= ex
-        elif self.metadata.ch_cmp == 'ey':
-            time_series /= ey
+        # calibrate electric channels, this should make the output be in 
+        # mV/km/nT, not really sure where these numbers come from, but they
+        # match what mtedit outputs, so must be right, right?
+        if self.metadata.ch_cmp.lower() == 'ex':
+            time_series /= (ex/100.)*(2*np.pi) 
+        elif self.metadata.ch_cmp.lower() == 'ey':
+            time_series /= (ey/100.)*(2*np.pi) 
 
-        #apply notch filter if desired
+        # apply notch filter if desired
         if notch_dict is not None:
             self.apply_adaptive_notch_filter(notch_dict)
             print 'Filtered notches: '
@@ -1362,7 +1276,7 @@ class Zen3D(object):
                         time.mktime(time.strptime(self.zen_schedule,
                                                   datetime_fmt )), 
                         time_series.shape[0], 
-                        'mV', 
+                        'mV/km', 
                         '{0:.3f}'.format(np.median(np.rad2deg(self.gps_stamps['lat']))), 
                         '{0:.3f}'.format(np.median(np.rad2deg(self.gps_stamps['lon']))), 
                         0.0, 
@@ -3963,575 +3877,7 @@ class ZenSchedule(object):
         t_seconds = t_list[0]*3600+t_list[1]*60+t_list[2]
         
         return t_seconds
-                                                   
-                                                  
-#==============================================================================
-# interface with birrp                        
-#==============================================================================
-class ZenBIRRP():
-    """
-    class to deal with Birrp from Zen outputs
-    
-    survey file is .cfg file
-    
-    Need to create a processing file which has information on how to 
-    process the data.  See read_processing_file and BIRRP documentation
-    for details.
-    
-    The program will run BIRRP from python and convert the outputs into 
-    an .edi file.  
-    
-    Arguments:
-    ------------
-        **station_path** : string   
-                           full path to station data that will be processed
-                           
-        **station** : string
-                      name of station to be processes.  
-                      *default* is os.path.basename(station_path) 
-                      
-        **birrp_exe** : string
-                        full path to BIRRP executable.
-                        
-        **calibration_path** : string
-                               full path to calibration file directory
-                               In this directory should be the calibration
-                               files for the coils named by the coil number.
-                               You need to make these files from the 
-                               amtant.cal, basically it into individual files
-                               which are seperated by commas (csv) files.
-                               ex: Ant2344_cal.csv
-                           
-        **processing_fn** : string
-                            full path to processing file, see BIRRP 
-                            documentation and mtpy.zen.read_processing_file 
-                            for more details on the structure and key words.
-       
-       **survey_config_fn** : string
-                               full path to survey configuration file.
-                               This file contains all the important information
-                               on how the data was collected. For more see
-                               mtpy.utils.configfile.read_survey_configfile
-      
-        **df** : float
-                 sampling rate in Hz of the data being processed.  
-
-        **rr_path** : string
-                      full path to remote reference data.
-
-        **rr_station** : string
-                         name of remote reference station
-                         *default* is os.path.basename(rr_path)
-                    
-    ======================== ==================================================
-      Attributes               Description    
-    ======================== ==================================================
-    birrp_config_fn          configuration file written once BIRRP runs for
-                             convenience if you want to rember what you did.  
-    birrp_exe                full path to the BIRRP executable 
-    birrp_dict               dictionary of birrp parameters, *default* is None 
-    calibration_path         full path to where calibration files exist
-    calibration_list         list of coils numbers used in the measurement
-    calibration_dict         dictionary of calibration values with keys
-                             as coil numbers and values as calbration values.
-    df                       sampling frequency (Hz))
-    output_path              path to put BIRRP output files
-                             *default* is station_path/BF
-    processing_dict          dictionary of porcessing information from 
-                             processin_fn  
-    processing_fn            full path to processing file.  This contains the
-                             the information BIRRP needs to process the 
-                             station.  For more details on what key words and
-                             values would be useful see BIRRP documentation and
-                             mtpy.zen.read_processing_file  
-    rr_path                  full path to remote reference station /home/mt/rr
-    rr_station               name of remote reference station
-    rr_survey_dict           dictionary of survey parameters from 
-                             survey_config_fn for remote reference 
-    script_file              full path to script file used to process BIRRP
-    station                  name of station to process
-    station_path             full path to station directory ex. /home/mt/mt01
-    survey_config_fn         full path to survey cofiguration file which 
-                             contains all the important information about how 
-                             the data was collected. For more details see on
-                             what key words and values to put in see
-                             mtpy.utils.configfile.read_survey_configfile
-    survey_dict              dictionary with information about survey 
-                             parameters from survey_config_fn
-    ======================== ==================================================
-    
-    ======================== ==================================================
-     Methods                  Description
-    ======================== ==================================================
-    get_birrp_parameters     gets the birrp parameters from processing_fn
-    get_calibrations         reads in the files in calibration_path and gets
-                             data for coil numbers in calibration_list
-    get_survey_parameters    get the survey info from survey_config_fn
-    set_remote_reference_path     set the remote refernce station and get 
-                             survey information
-    get_fn_list               get filenames of data files to process
-    run_birrp                writes a script file, run's BIRRP from Python
-                             and then converts the outputs of BIRRP to .edi
-    write_edi_file           writes and .edi file from the outputs of BIRRP
-    write_script_file        writes a script file to control how BIRRP 
-                             processes the data    
-    ======================== ==================================================
-    
-    
-    :Example: ::
-        
-        >>> import mtpy.usgs.zen as zen
-        >>> zen_bp = zen.ZenBIRRP(r"/home/mt/mt01")
-        >>> zen.processing_fn = r"/home/mt/mt01/processing.txt"
-        >>> zen.survey_config_fn = r"/home/mt/survey.cfg"
-        >>> zen.df = 256
-        >>> zen_bp.birrp_exe = r"/home/bin/birrp.exe"
-        >>> zen.calibration_list = ['2234', '2244', '2254']
-        >>> zen.calibration_path = r"/home/zonge/ant_calibrations"
-        >>> zen.rr_path = r"/home/mt/rr01"
-        >>> zen.run_birrp()
-        
-    """              
-
-    def __init__(self, station_path, **kwargs):
-        
-        self.station_path = station_path
-        self.rr_path = kwargs.pop('rr_path', None)
-        self.survey_config_fn = kwargs.pop('survey_config_fn', None)
-        self.processing_fn = kwargs.pop('processing_fn', None)
-        self.calibration_path = kwargs.pop('calibration_path', 
-                                         r"d:\Peacock\MTData\Ant_calibrations")
-        self.calibration_list = ['2254', '2264', '2274', '2284', '2294',
-                                '2304', '2314', '2324', '2334', '2344']
-        self.birrp_dict = kwargs.pop('birrp_dict', None)
-        self.station = kwargs.pop('station', 
-                        os.path.basename(os.path.dirname(self.station_path)))
-        self.rr_station = None
-        self.rr_survey_dict = None
-        self.df = kwargs.pop('df', 256)
-        self.processing_dict = kwargs.pop('processing_dict', None)
-        self.survey_dict = kwargs.pop('survey_dict', None)
-        self.birrp_exe = r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts_big.exe"
-        self.script_file = None
-        self.output_path = None
-        self.birrp_config_fn = None
-        
-        self.calibration_dict = {}
-        
-    def write_processing_fn(self, station_path=None, **kwargs):
-        """
-        write a processing station file from the data files
-        """
-        pass 
-        
-        
-    def get_calibrations(self):
-        """
-        get coil calibrations
-        """
-        for cal_fn in os.listdir(self.calibration_path):
-            for cal_num in self.calibration_list:
-                if cal_num in cal_fn:
-                    self.calibration_dict[cal_num] = \
-                                    os.path.join(self.calibration_path, cal_fn)
-                    break
-            
-        
-    def get_birrp_parameters(self, processing_fn=None):
-        """
-        get parameters to put into birrp from file
-        
-        """
-        if processing_fn is not None:
-            self.processing_fn = processing_fn
-        if self.processing_fn is None:
-            raise IOError('Need to input a processing file')
-            
-        processing_list = read_processing_fn(self.processing_fn)
-        for pdict in processing_list:
-            if pdict['station'] == self.station and \
-                                        float(pdict['df']) == self.df:
-                return pdict
-
-    
-    def get_survey_parameters(self, survey_config_fn=None, rr_station=None):
-        """
-        get survey parameters from file
-        
-        """
-        if survey_config_fn is not None:
-            self.survey_config_fn = survey_config_fn
-        if self.survey_config_fn is None:
-            raise IOError('Need to input a survey config file')
-            
-        survey_dict_list = mtcf.read_survey_configfile(self.survey_config_fn)
-        
-        try:
-            self.survey_dict = survey_dict_list[self.station.upper()]
-        except KeyError:
-            print 'Did not find station information in {0}'.format(
-                                                        self.survey_config_fn)
-        
-        if self.rr_station is not None:                                                
-            try:
-                self.rr_survey_dict = survey_dict_list[self.rr_station.upper()]
-            except KeyError:
-                print 'Did not find remote station information in {0}'.format(
-                                                      self.survey_config_fn)
-                    
-    def set_remote_reference_path(self, rr_station, rr_path=None):
-        """
-        set remote reference station and find survey information and filenames
-        """ 
-        self.rr_station = rr_station
-        
-        if rr_path is not None:
-            self.rr_path = rr_path
-            return
-        
-        # look for path if none is given
-        if self.rr_station is not self.station:
-            rr_path = self.station_path
-            kk = 0
-            while os.path.basename(rr_path) != self.station and kk < 5:
-                rr_path = os.path.dirname(rr_path)
-                kk += 1
-            self.rr_path = os.path.join(os.path.dirname(rr_path), 
-                                        self.rr_station, 'TS')
-            if not os.path.exists(self.rr_path):
-                raise IOError('Need to input rrpath, could not find it')
-        else:
-            self.rr_path = self.station_path
-              
-        self.get_survey_parameters()
-                    
-                
-    def get_fn_list(self, df=None, start_dt=None, end_dt=None, ncomps=5):
-        """
-        get the file name list to process
-        
-        """
-        if df is not None:
-            self.df = df
-            
-        comp_dict = dict([(cc, ii) 
-                          for ii, cc in enumerate(['ex','ey','hz','hx','hy'])])
-        rrcomp_dict = dict([(cc, ii) 
-                          for ii, cc in enumerate(['hx','hy'])])
-                              
-        if start_dt is not None:
-            start_seconds = time.mktime(time.strptime(start_dt, datetime_fmt))
-        else:
-            start_seconds = 0
-        if end_dt is not None:
-            end_seconds = time.mktime(time.strptime(end_dt, datetime_fmt))
-        else:
-            end_seconds = 10E11
-            
-        if self.rr_path is None:
-            self.rr_path = self.station_path
-            
-        fn_list = []
-        ii = 0
-        for fn in os.listdir(self.station_path):
-            try:
-                if np.remainder(ii, ncomps) == 0:
-                    tarr = np.zeros(ncomps, dtype=[('fn','|S100'),
-                                                   ('npts',np.int),
-                                                   ('start_dt','|S19'),
-                                                   ('end_dt','|S19')])
-                header_dict = \
-                        mtfh.read_ts_header(os.path.join(self.station_path,fn))
-                if header_dict['t_min'] >= start_seconds and \
-                   header_dict['t_min'] <= end_seconds and \
-                   header_dict['samplingrate'] == float(self.df):
-                       
-                    kk = comp_dict[header_dict['channel'].lower()]
-                    tarr[kk]['fn'] = os.path.join(self.station_path,fn)
-                    tarr[kk]['npts'] = int(header_dict['nsamples'])
-                    ts_start_dt = time.strftime(datetime_fmt.replace(',',' '), 
-                                                time.localtime(header_dict['t_min']))
-                    tarr[kk]['start_dt'] = ts_start_dt
-                    ts_end_seconds = header_dict['t_min']+\
-                         float(header_dict['nsamples']/header_dict['samplingrate'])
-                    tarr[kk]['end_dt'] = time.strftime(datetime_fmt.replace(',',' '),
-                                                time.localtime(ts_end_seconds))
-                    
-                    
-                    ii += 1
-                if ii == ncomps:
-                    fn_list.append(tarr)
-                    ii = 0
-            except mtex.MTpyError_ts_data:
-                pass
-            except mtex.MTpyError_inputarguments:
-                pass
-        
-        #get remote reference time series
-        rrfn_list = []
-        ii = 0
-        for fn in os.listdir(self.rr_path):
-            try:
-                if np.remainder(ii, 2) == 0:
-                    tarr = np.zeros(2, dtype=[('fn','|S100'),
-                                               ('npts',np.int),
-                                               ('start_dt','|S19'),
-                                               ('end_dt','|S19')])
-                header_dict = \
-                        mtfh.read_ts_header(os.path.join(self.rr_path,fn))
-                        
-                if header_dict['t_min'] >= start_seconds and \
-                   header_dict['t_min'] <= end_seconds and \
-                   header_dict['samplingrate'] == float(self.df):
-                    
-                    try:
-                        kk = rrcomp_dict[header_dict['channel'].lower()]
-                        tarr[kk]['fn'] = os.path.join(self.rr_path,fn)
-                        tarr[kk]['npts'] = int(header_dict['nsamples'])
-                        ts_start_dt = time.strftime(datetime_fmt.replace(',',' '), 
-                                                    time.localtime(header_dict['t_min']))
-                        tarr[kk]['start_dt'] = ts_start_dt
-                        ts_end_seconds = header_dict['t_min']+\
-                             float(header_dict['nsamples']/header_dict['samplingrate'])
-                        tarr[kk]['end_dt'] = time.strftime(datetime_fmt.replace(',',' '),
-                                                    time.localtime(ts_end_seconds))
-                        
-                        
-                        ii += 1
-                    except KeyError:
-                        pass
-                if ii == 2:
-                    rrfn_list.append(tarr)
-                    ii = 0
-            except mtex.MTpyError_ts_data:
-                print 'MTpyError_ts_data'
-            except mtex.MTpyError_inputarguments:
-                print 'MTpyError_inputarguments'
-            
-        if len(fn_list) > 3:
-            fn_list = fn_list[0:3]
-            
-        if len(rrfn_list) > 3:
-            rrfn_list = rrfn_list[0:3]
-        
-        return fn_list, rrfn_list
-                                    
-    def write_script_file(self, df=None, processing_fn=None,
-                          processing_dict=None, start_dt=None, end_dt=None,
-                          ncomps=5, jmode=0, survey_config_fn=None):
-        """
-        write a script file to guide birrp
-        
-        """       
-        self.get_calibrations()
-        
-        if df is not None:
-            self.df = df
-        
-        #--> get survey parameters
-        if survey_config_fn is not None:
-            self.survey_config_fn = survey_config_fn
-            self.get_survey_parameters()
-        elif self.survey_dict is None:
-            self.get_survey_parameters()
-            
-        #--> get processing dictionary 
-        if processing_fn is not None:
-            self.processing_fn = processing_fn
-        
-        self.processing_dict = self.get_birrp_parameters()
-        
-        if processing_dict is not None:
-            self.processing_dict = processing_dict
-            
-        if self.processing_fn is None and self.processing_dict is None:
-            raise IOError('Need to input a processing file')
-        
-        #--> set jmode (how files are read in) as points
-        try:
-            self.processing_dict['jmode']
-        except KeyError:
-            self.processing_dict['jmode'] = jmode
-            
-        #make sure that deltat is set to sampling rate    
-        self.processing_dict['deltat'] = -self.df
-        
-        #get start and end date and time if available
-        try:
-            start_dt = self.processing_dict['start_dt']
-        except KeyError:
-            pass
-        try:
-            end_dt = self.processing_dict['stop_dt']
-        except KeyError:
-            pass
-        
-        try:
-            self.set_remote_reference_path(self.processing_dict['rrstation'])
-        except KeyError:
-            self.set_remote_reference_path(self.station)
-        
-        #get list of files to process from the station folder
-        fn_list, rrfn_list = self.get_fn_list(self.df, 
-                                           start_dt=start_dt, 
-                                           end_dt=end_dt, 
-                                           ncomps=ncomps)
-        
-        
-        self.processing_dict['fn_list'] = [fnlist['fn'] for fnlist in fn_list]
-        self.processing_dict['rrfn_list'] = [rrfnlist['fn'] 
-                             for rrfnlist in rrfn_list]
-        
-        #need to skip the header string                         
-        try:
-            self.processing_dict['nskip']
-        except KeyError:
-            self.processing_dict['nskip'] = 1
-        try:
-            self.processing_dict['nskipr']
-        except KeyError:
-            self.processing_dict['nskipr'] = 1
-            
-        
-        #if jmode == 0 for number of points
-        if self.processing_dict['jmode'] == 0: 
-            # need to test for maximum number of points
-            # for now its 16000000
-            self.processing_dict['nread'] = [min(fnlist['npts'].min(), self._max_nread) 
-                                  for fnlist in fn_list]
-                                      
-            
-            if sum(self.processing_dict['nread']) > self._max_nread:
-                self.processing_dict[-1] = self._max_nread-sum(self.processing_dict[0:-1]) 
-                
-            print 'processing {0} points'.format(sum(self.processing_dict['nread']))
-        #if jmode == 1 for entering start and end times
-        elif self.processing_dict['jmode'] == 1:
-            self.processing_dict['dstim'] = [fnlist['start_dt'] 
-                                             for fnlist in fn_list]
-            self.processing_dict['wstim'] = [fnlist['start_dt'] 
-                                             for fnlist in fn_list]
-            self.processing_dict['wetim'] = [fnlist['end_dt'] 
-                                             for fnlist in fn_list]
-                                                 
-        #get calibration files
-        #--> HX                                                 
-        try:
-            self.processing_dict['hx_cal'] = \
-                                self.calibration_dict[self.survey_dict['hx']]
-        except KeyError:
-            print 'Did not find HX calibration in {0}'.format(
-                                                    self.survey_config_fn)
-            self.processing_dict['hx_cal'] = self.calibration_dict['2284'] 
-            print 'Setting calibration coil number to 2284 as default.'            
-            
-        #--> HY
-        try:
-            self.processing_dict['hy_cal'] = \
-                                self.calibration_dict[self.survey_dict['hy']]
-        except KeyError:
-            print 'Did not find HZ calibration in {0}'.format(
-                                                    self.survey_config_fn)
-            self.processing_dict['hy_cal'] = self.calibration_dict['2284']
-            print 'Setting calibration coil number to 2284 as default.' 
-            
-        #--> HZ
-        try:
-            self.processing_dict['hz_cal'] = \
-                                self.calibration_dict[self.survey_dict['hz']]
-        except KeyError:
-            print 'Did not find HZ calibration in {0}'.format(
-                                                    self.survey_config_fn)
-            self.processing_dict['hz_cal'] = self.calibration_dict['2284']
-            print 'Setting calibration coil number to 2284 as default.' 
-            
-        if self.rr_survey_dict is not None:
-            try:
-                self.processing_dict['rrhx_cal'] = \
-                                self.calibration_dict[self.rr_survey_dict['hx']]
-            except KeyError:
-                print 'Did not find RRHX calibration in {0}'.format(
-                                                    self.survey_config_fn)
-                self.processing_dict['rrhx_cal'] = \
-                                            self.calibration_dict['2284']
-                print 'Setting calibration coil number to 2284 as default.' 
-                
-            try:
-                self.processing_dict['rrhy_cal'] = \
-                                self.calibration_dict[self.rr_survey_dict['hy']]
-            except KeyError:
-                print 'Did not find RRHY calibration in {0}'.format(
-                                                        self.survey_config_fn)
-                self.processing_dict['rrhy_cal'] = \
-                                            self.calibration_dict['2284']
-                print 'Setting calibration coil number to 2284 as default.' 
-        
-        #set the save path to include the sampling rate
-        self.output_path = os.path.join(os.path.dirname(
-                                        self.processing_dict['fn_list'][0][0]), 
-                                        'BF_{0}'.format(self.df))
-        #write script file using mtpy.processing.birrp    
-        script_file, birrp_dict = birrp.write_script_file(dict(self.processing_dict),
-                                                    save_path=self.output_path)
-        
-        cfg_fn = mtfh.make_unique_filename('{0}_birrp_params.cfg'.format(
-                                                             script_file[:-7]))
-                                                             
-        mtcf.write_dict_to_configfile(birrp_dict, cfg_fn)
-        print 'Wrote BIRRP config file for edi file to {0}'.format(cfg_fn)
-        
-        self.birrp_config_fn = cfg_fn
-        self.script_file = script_file
-        self.birrp_dict = birrp_dict
-        
-    def run_birrp(self, script_file=None, birrp_exe=None):
-        """
-        run birrp given the specified files
-        
-        """
-        if script_file is not None:
-            self.script_file = script_file
-        if self.script_file is None:
-            self.write_script_file()
-        
-        if birrp_exe is not None:
-            self.birrp_exe = birrp_exe
-            
-        birrp.run(self.birrp_exe, self.script_file)
-        
-        self.edi_fn = self.write_edi_file(self.output_path, 
-                                          self.survey_config_fn,
-                                          self.birrp_config_fn)
-        
-    def write_edi_file(self, birrp_output_path=None, survey_config_fn=None, 
-                       birrp_config_fn=None):
-        """
-        write an edi file from outputs of birrp
-        """
-        
-        if birrp_output_path is not None and self.output_path is None:
-            self.run_birrp()
-        elif birrp_output_path is not None:
-            self.output_path = birrp_output_path
-            
-        if survey_config_fn is None and self.survey_config_fn is None:
-            self.get_survey_parameters()
-        elif survey_config_fn is not None:
-            self.survey_config_fn = survey_config_fn
-        
-        if self.birrp_config_fn is None and birrp_config_fn is None:
-            self.write_script_file()
-        elif birrp_config_fn is not None:
-            self.birrp_config_fn = birrp_config_fn
-           
-            
-        edi_fn = birrp.convert2edi(self.station, 
-                                   self.output_path, 
-                                   self.survey_config_fn, 
-                                   self.birrp_config_fn)
-        
-        return edi_fn
-                                                  
+                                                
 #==============================================================================
 #  Error instances for Zen
 #==============================================================================
@@ -4608,6 +3954,9 @@ class BIRRP_processing(object):
         self._max_nread = 16000000 
         self.deltat = 256
         
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+        
     def get_calibrations(self, calibration_path=None):
         """
         get coil calibrations
@@ -4662,17 +4011,22 @@ class BIRRP_processing(object):
                 s_dt_list = np.array([time.mktime(time.strptime(sdt, datetime_fmt))
                                       for sdt in start_dt_list])
                 
+                # get the latest starting time
                 start_dt = s_dt_list.max()
-                
+            
+            # get the ending time
             if len(end_dt_list) == 1:
                 end_dt = time.mktime(time.strptime(end_dt_list[0],
                                                    datetime_fmt)) 
             else:
-                e_dt_list = np.array([time.mktime(time.strptime(edt, 
-                                                                  datetime_fmt))
-                                       for edt in end_dt_list])
+                e_dt_list = np.array([time.mktime(time.strptime(edt, datetime_fmt))
+                                      for edt in end_dt_list])
+                                          
+                # get the earliest ending time
                 end_dt = e_dt_list.min()
             
+            # calculate the number of data points to skip for the station
+            # data and the remote reference data
             nskip = 0
             nskipr = 0
             for fn_arr in block_arr:
@@ -4688,6 +4042,8 @@ class BIRRP_processing(object):
                     if comp in ['hx', 'hy']:
                         r_list[comp_dict['rr{0}'.format(comp)]] = fn_arr['fn']
                     
+                    # calculate the number of points to skip given the 
+                    # start time
                     nskip_ii = (start_dt-st_time)*abs(self.deltat) 
                     if nskip_ii > nskip:
                         nskip = nskip_ii
@@ -4696,32 +4052,38 @@ class BIRRP_processing(object):
                     nskipr_ii = (start_dt-st_time)*abs(self.deltat)
                     if nskipr_ii > nskipr:
                         nskipr = nskipr_ii
-                        
-            self.nskip.append(1+int(nskip))
-            self.nskipr.append(1+int(nskipr))
-            self.nread.append(min(self._max_nread, 
-                                  int(end_dt-start_dt)*abs(self.deltat)))
-
-            # append file names appropriately removing any empty names
-            self.fn_list.append(list(s_list[np.where(s_list != '')]))
-            if len(r_list[np.where(r_list != '')])  > 0:
-                self.rrfn_list.append(list(r_list[np.where(r_list != '')]))
-
-        # if there are no remote reference time series make remote fn list None        
-        if len(self.rrfn_list) == 0:
-            self.rrfn_list = None
+            
+            nread_ii = min(self._max_nread, 
+                           int((end_dt-start_dt)*abs(self.deltat)))
+            print st_time, nread_ii, self.nfft*2
+                           
+            if nread_ii > self.nfft*2:
+                # need to add a 1 in to skip the header line            
+                self.nskip.append(1+int(nskip))
+                self.nskipr.append(1+int(nskipr))
+                self.nread.append(nread_ii)
+    
+                # append file names appropriately removing any empty names
+                self.fn_list.append(list(s_list[np.where(s_list != '')]))
+                if len(r_list[np.where(r_list != '')]) > 0:
+                    self.rrfn_list.append(list(r_list[np.where(r_list != '')]))
+                    
+            else:
+                print('Not enough points {0}'.format(nread_ii))
+                print('skipping time block {0} for sampling rate {1}'.format(
+                      time.mktime(start_dt, datetime_fmt), self.deltat))
 
         # need to check for the number of points to be read in, there is 
-        # a memory max, for this computer the max is self._max_nread
-        self.nread = [min(self._max_nread, fn_list['npts'].min()) 
-                      for fn_list in fn_birrp_list]
-        
+        # a memory max, for this computer the max is self._max_nread        
         if sum(self.nread) > self._max_nread:
             self.nread[-1] = self._max_nread-sum(self.nread[0:-1])
             print 'processing {0} points'.format(sum(self.nread))
-            
-        self.mcomps = len(self.fn_list[0])
         
+        try:
+            self.mcomps = len(self.fn_list[0])
+        except IndexError:
+            raise IOError('''Time blocks are not long enough to process, 
+                             consider changing BIRRP parameters''')
         if self.mcomps == 5:
             self.magori = "HZ,HX,HY"
             
@@ -4831,6 +4193,9 @@ class Z3D_to_edi(object):
         self.birrp_exe = r"c:\MinGW32-xy\Peacock\birrp52\birrp52_3pcs6e9pts.exe"
         self.coil_cal_path = r"c:\MT\Ant_calibrations"
         self.num_comp = 5
+        
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
 
         
     def make_survey_config_file(self, survey_config_dict=None):
@@ -5009,23 +4374,27 @@ class Z3D_to_edi(object):
                             # absolute value of the time difference and 
                             # assuming the smallest one is the closest                                                          
                             t_diff[ii] = abs(s_sec-rr_sec)
-                            print sdate, rr_date, s_sec-rr_sec
                         
-                        # find the index where the minimum is 
-                        rr_date = rr_dates[np.where(t_diff==t_diff.min())[0]]
-                        print 'Using remote reference time series starting on {0}'.format(rr_date)
-                        print 'For station time series starting on            {0}'.format(sdate)
-                        s_rr_arr = rr_fn_arr[np.where((rr_fn_arr['start_dt']==rr_date) &
-                                            (rr_fn_arr['df']==df))]
-                        s_fn_birrp_arr['fn'][num_comp:] = s_rr_arr['fn']
-                        s_fn_birrp_arr['npts'][num_comp:] = s_rr_arr['npts'].min()
-                        s_fn_birrp_arr['start_dt'][num_comp:] = rr_date
-                        s_fn_birrp_arr['comp'][num_comp:] = s_rr_arr['comp']
-                        start_seconds = time.mktime(time.strptime(rr_date, 
-                                                          datetime_fmt))
-                        end_seconds = start_seconds+s_rr_arr['npts'].min()/float(df)
-                        s_fn_birrp_arr['end_dt'][num_comp:] = time.strftime(datetime_fmt,
-                                                        time.localtime(end_seconds))
+                        # find the index where the minimum is
+                        try:
+                            rr_date = rr_dates[np.where(t_diff==t_diff.min())[0]]
+                            print 'Using remote reference time series starting on {0}'.format(rr_date)
+                            print 'For station time series starting on            {0}'.format(sdate)
+                            
+                            s_rr_arr = rr_fn_arr[np.where((rr_fn_arr['start_dt']==rr_date) &
+                                                (rr_fn_arr['df']==df))]
+                            s_fn_birrp_arr['fn'][num_comp:] = s_rr_arr['fn']
+                            s_fn_birrp_arr['npts'][num_comp:] = s_rr_arr['npts'].min()
+                            s_fn_birrp_arr['start_dt'][num_comp:] = rr_date
+                            s_fn_birrp_arr['comp'][num_comp:] = s_rr_arr['comp']
+                            start_seconds = time.mktime(time.strptime(rr_date, 
+                                                              datetime_fmt))
+                            end_seconds = start_seconds+s_rr_arr['npts'].min()/float(df)
+                            s_fn_birrp_arr['end_dt'][num_comp:] = time.strftime(datetime_fmt,
+                                                            time.localtime(end_seconds))
+                        except ValueError:
+                            pass
+                        
                         
                         
                 
@@ -5120,56 +4489,166 @@ class Z3D_to_edi(object):
                
         
 
-            else:
-                continue
-            
-            
-            if zd.metadata.ch_cmp.lower() == 'hx':
-                self.survey_config.hx = zd.metadata.ch_number
-            elif zd.metadata.ch_cmp.lower() == 'hy':
-                self.survey_config.hy = zd.metadata.ch_number
-            elif zd.metadata.ch_cmp.lower() == 'hz':
-                self.survey_config.hz = zd.metadata.ch_number
-            elif zd.metadata.ch_cmp.lower() == 'ex':
-                self.survey_config.e_xaxis_length = zd.metadata.ch_length
-                ex = float(zd.metadata.ch_length)
-            elif zd.metadata.ch_cmp.lower() == 'ey':
-                self.survey_config.e_yaxis_length = zd.metadata.ch_length
-                ey = float(zd.metadata.ch_length)
-
-            # get station configuration from the first Z3D file            
-            if ii == 0:
-                self.survey_config.lat = zd.header.lat
-                self.survey_config.lon = zd.header.long
-                self.survey_config.date = zd.schedule.Date.replace('-','/')
-                self.survey_config.box = int(zd.header.box_number)
-                self.survey_config.station = zd.metadata.rx_xyz0.split(':')[0]
-            
-            #write mtpy mt file
-            zd.write_ascii_mt_file(notch_dict=notch_dict, ex=ex, ey=ey)
-            
-            #create lines to write to a log file                       
-            station = zd.metadata.rx_xyz0.split(':')[0]
-            fn_arr[ii]['station'] = '{0}{1}'.format(station_name, station)
-            fn_arr[ii]['npts'] = zd.time_series_len
-            fn_arr[ii]['df'] = zd.df
-            fn_arr[ii]['start_dt'] = zd.zen_schedule
-            fn_arr[ii]['comp'] = zd.metadata.ch_cmp.lower()
-            fn_arr[ii]['fn'] = zd.fn_mt_ascii
-            fn_lines.append(''.join(['--> station: {0}{1}\n'.format(station_name, station),
-                                     '    ts_len = {0}\n'.format(zd.time_series_len),
-                                     '    df = {0}\n'.format(zd.df),
-                                     '    start_dt = {0}\n'.format(zd.zen_schedule),
-                                     '    comp = {0}\n'.format(zd.metadata.ch_cmp),
-                                     '    fn = {0}\n'.format(zd.fn)]))
+                else:
+                    pass
+                
+                #write mtpy mt file
+                zd.write_ascii_mt_file(notch_dict=notch_dict, ex=ex, ey=ey)
+                
+                # get metadata information about the channel to put into 
+                # survey configuration file
+                if zd.metadata.ch_cmp.lower() == 'hx':
+                    self.survey_config.hx = zd.metadata.ch_number
+                elif zd.metadata.ch_cmp.lower() == 'hy':
+                    self.survey_config.hy = zd.metadata.ch_number
+                elif zd.metadata.ch_cmp.lower() == 'hz':
+                    self.survey_config.hz = zd.metadata.ch_number
+                elif zd.metadata.ch_cmp.lower() == 'ex':
+                    self.survey_config.e_xaxis_length = zd.metadata.ch_length
+                    ex = float(zd.metadata.ch_length)
+                elif zd.metadata.ch_cmp.lower() == 'ey':
+                    self.survey_config.e_yaxis_length = zd.metadata.ch_length
+                    ey = float(zd.metadata.ch_length)
+    
+                # get station configuration from the first Z3D file            
+                if z3d_count == 2:
+                    self.survey_config.lat = zd.header.lat
+                    self.survey_config.lon = zd.header.long
+                    self.survey_config.date = zd.schedule.Date.replace('-','/')
+                    self.survey_config.box = int(zd.header.box_number)
+                    self.survey_config.station = zd.metadata.rx_xyz0.split(':')[0]
+ 
+                #create lines to write to a log file                       
+                station = zd.metadata.rx_xyz0.split(':')[0]
+                fn_arr[ii]['station'] = '{0}{1}'.format(station_name, station)
+                fn_arr[ii]['npts'] = zd.time_series_len
+                fn_arr[ii]['df'] = zd.df
+                fn_arr[ii]['start_dt'] = zd.zen_schedule
+                fn_arr[ii]['comp'] = zd.metadata.ch_cmp.lower()
+                fn_arr[ii]['fn'] = zd.fn_mt_ascii
+                fn_lines.append(''.join(['--> station: {0}{1}\n'.format(station_name, station),
+                                         '    ts_len = {0}\n'.format(zd.time_series_len),
+                                         '    df = {0}\n'.format(zd.df),
+                                         '    start_dt = {0}\n'.format(zd.zen_schedule),
+                                         '    comp = {0}\n'.format(zd.metadata.ch_cmp),
+                                         '    fn = {0}\n'.format(zd.fn)]))
                                      
+        #-------------------------------
+        # Remote Reference
+        #-------------------------------          
+        if rr_station_dir is not None:
+            self.rr_station_dir = rr_station_dir
+        
+        if self.rr_station_dir is not None:
+            rr_fn_list = [os.path.join(self.rr_station_dir, fn) 
+                          for fn in os.listdir(self.rr_station_dir) 
+                          if fn.endswith('.Z3D')]
+            if len(rr_fn_list) == 0:
+                raise IOError('Could not find any .Z3D files in {0}'.format(
+                                self.rr_station_dir))
+                                
+            # make an array that has all the information about each file
+            rr_fn_arr = np.zeros(len(rr_fn_list)*2, 
+                              dtype=[('station','|S6'), 
+                                     ('npts',np.int), 
+                                     ('df', np.int),
+                                     ('start_dt', '|S22'), 
+                                     ('comp','|S4'),
+                                     ('fn','|S100')])
+            rr_z3d_count = 0             
+            for ii, fn in enumerate(rr_fn_list):
+                if rr_z3d_count > len(df_list)*2*max_blocks-1:
+                    break
+               
+                zd = Zen3D(fn)
+                zd.read_all_info()
+                
+                # check to see if the sampling rate is in the desired list
+                # and check to see if its only the hx or hy channel
+                if zd.header.ad_rate in df_list and \
+                   zd.metadata.ch_cmp.lower() in ['hx', 'hy']:
+                    rr_z3d_count += 1
+                   
+                    # account for decimation, need to make a new instance
+                    # so as to include the original file as well
+                    if zd.header.ad_rate == 256 and 16 in df_list:
+                        zdec = Zen3D(fn)
+                        zdec.read_all_info()
+                        rr_z3d_count += 1
+                        #write mtpy mt file
+                        zdec.write_ascii_mt_file(notch_dict=notch_dict, dec=16)
+                        
+                        #create lines to write to a log file                       
+                        rr_station = zdec.metadata.rx_xyz0.split(':')[0]
+                        jj = len(rr_fn_list)+ii
+                        rr_fn_arr[jj]['station'] = '{0}{1}'.format(station_name, 
+                                                                   rr_station)
+                        rr_fn_arr[jj]['npts'] = zdec.time_series_len
+                        rr_fn_arr[jj]['df'] = zdec.df
+                        rr_fn_arr[jj]['start_dt'] = zdec.zen_schedule
+                        rr_fn_arr[jj]['comp'] = 'rr{0}'.format(zdec.metadata.ch_cmp.lower())
+                        rr_fn_arr[jj]['fn'] = zdec.fn_mt_ascii
+                        fn_lines.append(''.join(['--> rr_station: {0}{1}\n'.format(station_name, rr_station),
+                                                 '    ts_len = {0}\n'.format(zdec.time_series_len),
+                                                 '    df = {0}\n'.format(zdec.df),
+                                                 '    start_dt = {0}\n'.format(zdec.zen_schedule),
+                                                 '    comp = rr{0}\n'.format(zdec.metadata.ch_cmp),
+                                                 '    fn = {0}\n'.format(zdec.fn),
+                                                 '    decimated to 16 samples/s']))
+        
+                    else:
+                        pass
+        
+                
+                    #write mtpy mt file
+                    zd.write_ascii_mt_file(notch_dict=notch_dict)
+                    
+                    #create lines to write to a log file                       
+                    rr_station = zd.metadata.rx_xyz0.split(':')[0]
+                    rr_fn_arr[ii]['station'] = '{0}{1}'.format(station_name, rr_station)
+                    rr_fn_arr[ii]['npts'] = zd.time_series_len
+                    rr_fn_arr[ii]['df'] = zd.df
+                    rr_fn_arr[ii]['start_dt'] = zd.zen_schedule
+                    rr_fn_arr[ii]['comp'] = 'rr{0}'.format(zd.metadata.ch_cmp.lower())
+                    rr_fn_arr[ii]['fn'] = zd.fn_mt_ascii
+                    fn_lines.append(''.join(['--> station: {0}{1}\n'.format(station_name, rr_station),
+                                             '    ts_len = {0}\n'.format(zd.time_series_len),
+                                             '    df = {0}\n'.format(zd.df),
+                                             '    start_dt = {0}\n'.format(zd.zen_schedule),
+                                             '    comp = rr{0}\n'.format(zd.metadata.ch_cmp),
+                                             '    fn = {0}\n'.format(zd.fn)]))
+            
+                    # get metadata information about the channel to put into 
+                    # survey configuration file
+                    if zd.metadata.ch_cmp.lower() == 'hx':
+                        self.survey_config.rr_hx = zd.metadata.ch_number
+                    elif zd.metadata.ch_cmp.lower() == 'hy':
+                        self.survey_config.rr_hy = zd.metadata.ch_number
+                    
+                    # input remote reference information into survey file
+                    if rr_z3d_count == 2:
+                        self.survey_config.rr_station = rr_station
+                        self.survey_config.rr_lat = zd.header.lat
+                        self.survey_config.rr_lon = zd.header.long
+                        self.survey_config.rr_date = zd.schedule.Date.replace('-','/')
+                        self.survey_config.rr_box = int(zd.header.box_number)
+            
+            # change the time series directory to reflect where the time series
+            # are.
+            self.rr_station_dir = os.path.join(self.rr_station_dir, 'TS')
+            
+            # get only the non-empty time series
+            rr_fn_arr = rr_fn_arr[np.nonzero(rr_fn_arr['npts'])]
+        else:
+            rr_fn_arr = None
+        # change directories to be associated with where the mtpy ts are
         self.station_dir = os.path.join(self.station_dir, 'TS')
         self.survey_config.save_path = self.station_dir
+        
         # write survey configuration file
         self.survey_config.write_survey_config_file()
-        
-            
-        return fn_arr[np.nonzero(fn_arr['npts'])], fn_lines
+ 
+        return fn_arr[np.nonzero(fn_arr['npts'])], rr_fn_arr, fn_lines
         
     def write_script_files(self, fn_birrp_dict, save_path=None):
         """
@@ -5193,12 +4672,12 @@ class Z3D_to_edi(object):
             pro_obj.calibration_path = self.coil_cal_path
             pro_obj.station = self.survey_config.station
             pro_obj.deltat = -float(df)
+            if self.rr_station_dir is not None:
+                pro_obj.ilev = 1
             pro_dict = pro_obj.get_processing_dict(fn_birrp_arr, 
                                                    hx=self.survey_config.hx,
                                                    hy=self.survey_config.hy,
                                                    hz=self.survey_config.hz)
-                                                   
-            print pro_dict
             
             #write script file using mtpy.processing.birrp    
             script_fn, birrp_dict = birrp.write_script_file(pro_dict,
@@ -5299,7 +4778,8 @@ class Z3D_to_edi(object):
                                                          
         return resp_plot
  
-    def process_data(self, df_list=None, max_blocks=2, num_comp=5):
+    def process_data(self, df_list=None, max_blocks=2, num_comp=5,
+                     notch_dict={}):
         """
         from the input station directory, convert files to ascii, run through
         BIRRP, convert to .edi files and plot
@@ -5314,11 +4794,13 @@ class Z3D_to_edi(object):
                df_list = [df_list] 
         
         # make files into mtpy files
-        z3d_fn_list, log_lines = self.make_mtpy_ascii_files(df_list=df_list,
-                                                            max_blocks=max_blocks)
+        z3d_fn_list, rr_fn_list, log_lines = self.make_mtpy_ascii_files(df_list=df_list,
+                                                            max_blocks=max_blocks,
+                                                            notch_dict=notch_dict)
         
         # get all information from mtpy files
         schedule_dict = self.get_schedules_fn_from_dir()
+        #schedule_dict = self.get_schedules_fn(z3d_fn_list, rr_fn_list)
             
         # write script files for birrp
         sfn_list = self.write_script_files(schedule_dict)
@@ -5329,7 +4811,8 @@ class Z3D_to_edi(object):
         # combine edi files
         comb_edi_fn = self.combine_edi_files(self.edi_fn)
         
-        self.edi_fn.append(comb_edi_fn)
+        if comb_edi_fn is not None:
+            self.edi_fn.append(comb_edi_fn)
         
         # plot the output
         r_plot = self.plot_responses()
