@@ -858,10 +858,10 @@ def write_script_file(processing_dict, save_path=None):
     
     
     if nds == 0:
-        npcs=1
-    elif nds==1:
-        nds=0
-        npcs=1
+        npcs = 1
+    elif nds == 1:
+        nds = 0
+        npcs = 1
         pdict['fn_list'] = pdict['fn_list'][0]
         try:
             pdict['rrfn_list'] = pdict['rrfn_list'][0]  
@@ -869,7 +869,7 @@ def write_script_file(processing_dict, save_path=None):
             pass
 
     else:
-        npcs=int(nds)
+        npcs = int(nds)
         
     #make a directory to put BIRRP Files (BF)
     if not os.path.exists(bfpath):
@@ -1225,7 +1225,7 @@ def write_script_file(processing_dict, save_path=None):
                 #write filenames
                 for tfile in pdict['fn_list'][nn]:
                     fid.write(tfile+'\n')
-                    fid.write(str(nskip[0])+'\n')
+                    fid.write(str(nskip[nn])+'\n')
                 for rfile in pdict['rrfn_list'][nn]:
                     fid.write(rfile+'\n')
                     fid.write(str(nskipr[nn])+'\n')
@@ -1577,7 +1577,8 @@ def run(birrp_exe, script_file):
     
     logfile.close()
 
-    print 'logfile closed: {0} at {1}'.format(logfile.name, time.ctime())
+    print 'logfile closed:               {0} at {1}'.format(logfile.name, 
+                                                           time.ctime())
  
     print 'Outputs: {0}'.format(out)
     print 'Errors: {0}'.format(err)
