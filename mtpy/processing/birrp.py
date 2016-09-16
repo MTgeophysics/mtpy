@@ -1566,7 +1566,7 @@ def run(birrp_exe, script_file):
     #open a log file to catch process and errors of BIRRP executable
     logfile = open('birrp_logfile.log','w')
 
-    print 'starting Birrp processing at {0}...'.format(time.ctime())
+    print 'Starting Birrp processing at {0}...'.format(time.ctime())
 
     birrpprocess = subprocess.Popen(birrp_exe, 
                                     stdin=subprocess.PIPE, 
@@ -1577,8 +1577,8 @@ def run(birrp_exe, script_file):
     
     logfile.close()
 
-    print 'logfile closed:               {0} at {1}'.format(logfile.name, 
-                                                           time.ctime())
+    print 'Ending Birrp processing at   {0}...'.format(time.ctime())
+    print 'Closed logfile: {0}'.format(logfile.name)
  
     print 'Outputs: {0}'.format(out)
     print 'Errors: {0}'.format(err)

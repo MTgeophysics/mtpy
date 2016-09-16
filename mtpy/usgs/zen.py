@@ -4888,7 +4888,7 @@ class Z3D_to_edi(object):
         fn_arr = fn_arr[np.nonzero(fn_arr['npts'])]   
         
         # get remote reference filenames
-        if rr_ts_dir is not None:
+        if self.rr_station_dir is not None:
             if not os.path.isdir(self.rr_station_dir):
                 print '{0} is not a valid directory, check path.'.format(self.rr_station_dir) 
                 return fn_arr[np.nonzero(fn_arr['npts'])]
