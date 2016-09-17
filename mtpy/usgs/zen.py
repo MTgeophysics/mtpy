@@ -1235,8 +1235,8 @@ class Zen3D(object):
             # series data to get the length.
             header_dict = mtfh.read_ts_header(self.fn_mt_ascii) 
             self.time_series_len = header_dict['nsamples']
-            self.zen_schedule = time.mktime(header_dict['t_min'],
-                                            datetime_fmt)
+            self.zen_schedule = time.strftime(datetime_fmt, 
+                                              time.gmtime(header_dict['t_min']))
             return
         
         # read in time series data if haven't yet.
