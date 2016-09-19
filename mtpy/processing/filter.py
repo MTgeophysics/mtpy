@@ -132,7 +132,12 @@ def zero_pad(input_array, power=2, pad_fill=0):
         npow = np.ceil(np.log2(len_array))
     if power == 10:
         npow = np.ceil(np.log10(len_array))
+    
+    if npow > 32:
+        print 'Exceeding memory allocation inherent in your computer 2**32'
+        print 'Limiting the zero pad to 2**32'
         
+    
     pad_array = np.zeros(power**npow)
     if pad_fill is not 0:
         pad_array[:] = pad_fill
@@ -143,7 +148,7 @@ def zero_pad(input_array, power=2, pad_fill=0):
     
     
 
-def adaptive_notch_filter(bx, df=100, notches=[50,100], notchradius=.5, 
+def adaptive_notch_filter(bx, df=100, notches=[50, 100], notchradius=.5, 
                           freqrad=.9, rp=.1, dbstop_limit=5.0):
     """
     adaptive_notch_filter(bx, df, notches=[50,100], notchradius=.3, freqrad=.9)

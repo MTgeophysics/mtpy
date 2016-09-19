@@ -313,7 +313,10 @@ class Z3D_Schedule_metadata(object):
                 m_key = m_key.replace('/', '')
                 m_value = m_list[1].strip()
                 setattr(self, m_key, m_value)
-
+                
+        # the first good GPS stamp is on the 3rd, so need to add 2 seconds
+        self.Time = '{0}{1}'.format(self.Time[0:6],
+                                    int(self.Time[6:])+2)
 #==============================================================================
 #  Meta data class    
 #==============================================================================
@@ -1010,7 +1013,7 @@ class Zen3D(object):
 
         """
         
-        return self.time_series*self._counts_to_mv_conversion
+        return self.time_series.astype(np.float32)*self._counts_to_mv_conversion
     
     #==================================================    
     def convert_mV(self):
@@ -1225,12 +1228,14 @@ class Zen3D(object):
                                                    svfn_time,
                                                    int(self.df),
                                                    self.metadata.ch_cmp.upper()))
+        self.fn_mt_ascii = save_fn
         # if the file already exists skip it
-        if os.path.isfile(save_fn) == True:
-            self.fn_mt_ascii = save_fn
+        if os.path.isfile(self.fn_mt_ascii) == True:
+            print '   ************'
             print '    mtpy file already exists for {0} --> {1}'.format(self.fn,
                                                                     self.fn_mt_ascii)            
-            print '    skipping\n****'
+            print '    skipping'
+            print '   ************'
             # if there is a decimation factor need to read in the time
             # series data to get the length.
             header_dict = mtfh.read_ts_header(self.fn_mt_ascii) 
@@ -1242,6 +1247,15 @@ class Zen3D(object):
         # read in time series data if haven't yet.
         if self.time_series is None:
             self.read_z3d()
+            svfn_date = ''.join(self.schedule.Date.split('-'))
+            svfn_time = ''.join(self.schedule.Time.split(':'))
+            svfn_station = save_station+self.metadata.rx_xyz0.split(':')[0]
+            self.save_fn = os.path.join(svfn_directory, 
+                                   '{0}_{1}_{2}_{3}.{4}'.format(svfn_station,
+                                                   svfn_date,
+                                                   svfn_time,
+                                                   int(self.df),
+                                                   self.metadata.ch_cmp.upper()))
             
         # decimate the data.  try resample at first, see how that goes
         # make the attribute time series equal to the decimated data.
@@ -1261,6 +1275,8 @@ class Zen3D(object):
             time_series /= (ex/100.)*(2*np.pi) 
         elif self.metadata.ch_cmp.lower() == 'ey':
             time_series /= (ey/100.)*(2*np.pi) 
+            
+        print 'Using scales EX = {0} and EY = {1}'.format(ex, ey)
 
         # apply notch filter if desired
         if notch_dict is not None:
@@ -1270,19 +1286,34 @@ class Zen3D(object):
                 if type(nfilt[0]) != str:
                     print '{0}{1:.2f} Hz'.format(' '*4, nfilt[0])
                                                    
-        header_tuple = (save_station+self.metadata.rx_xyz0.split(':')[0], 
+        header_tuple = ('# {0}{1}'.format(save_station,
+                                          self.metadata.rx_xyz0.split(':')[0]), 
                         self.metadata.ch_cmp.lower(), 
-                        self.df,
-                        time.mktime(time.strptime(self.zen_schedule,
-                                                  datetime_fmt )), 
-                        time_series.shape[0], 
+                        '{0:.1f}'.format(self.df),
+                        '{0:.1f}'.format(time.mktime(time.strptime(self.zen_schedule,
+                                                  datetime_fmt ))), 
+                        '{0:.0f}'.format(time_series.shape[0]), 
                         'mV/km', 
-                        '{0:.3f}'.format(np.median(np.rad2deg(self.gps_stamps['lat']))), 
-                        '{0:.3f}'.format(np.median(np.rad2deg(self.gps_stamps['lon']))), 
-                        0.0, 
-                        time_series)                
-        self.fn_mt_ascii = mtfh.write_ts_file_from_tuple(save_fn, header_tuple,
-                                                         fmt=fmt)
+                        '{0:.5f}'.format(np.median(np.rad2deg(self.gps_stamps['lat']))), 
+                        '{0:.5f}'.format(np.median(np.rad2deg(self.gps_stamps['lon']))), 
+                        '{0:.3f}\n'.format(self.header.alt)) 
+                        
+                        
+        #-->  this is a much faster way to write the ascii files (~4x)
+        # first make the time series strings, this conversion is basic, there
+        # is no formatting of the string, just a conversion from float to str
+        # this is only really valid for numbers with significan digits with
+        # in a few decimal places of 0.
+        ts = time_series.astype('S14')
+        ts_str = '\n'.join(ts)
+        ts_str = ts_str.replace('e', '')
+        # write the file
+        with open(self.fn_mt_ascii, 'w') as fid:
+            fid.write(' '.join(list(header_tuple)))
+            fid.write(ts_str)
+            
+        #self.fn_mt_ascii = mtfh.write_ts_file_from_tuple(save_fn, header_tuple,
+        #                                                 fmt=fmt)
         
         print 'Wrote mtpy timeseries file to {0}'.format(self.fn_mt_ascii)
     
