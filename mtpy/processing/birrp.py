@@ -2586,3 +2586,284 @@ def convert2coh(stationname, birrp_output_directory):
     F_out.close()
 
     return out_fn
+    
+class JFile(object):
+    """
+    be able to read and write a j-file
+    """
+    
+    def __init__(self, j_fn=None):
+        self.j_fn = j_fn
+        
+    def _get_j_lines(self, j_fn=None):
+        """
+        read in the j_file as a list of lines, put the lines in attribute
+        _j_lines
+        """
+        if j_fn is not None:
+            self.j_fn = j_fn
+            
+        if os.path.isfile(os.path.abspath(self.j_fn)) is False:
+            raise IOError('Could not find {0}, check path'.format(self.j_fn))
+            
+        with open(self.j_fn, 'r') as fid:
+            self._j_lines = fid.readlines()
+        
+    def read_header(self, j_lines=None, j_fn=None):
+        """
+        Parsing the header lines of a j-file to extract processing information.
+    
+        Input:
+        - j-file as list of lines (output of readlines())
+    
+        Output:
+        - Dictionary with all parameters found
+    
+        !TODO!
+        
+        """
+        if j_lines is not None:
+            self._j_lines = j_lines
+            
+        if j_fn is not None:
+            self.j_fn = j_fn
+            
+        if self._j_lines is None:
+            self._get_j_lines()
+            
+        header_dict = {}
+        sorting_dict = {}
+        tuples = []
+    
+        for line in j_lines:
+            if not '=' in line: continue
+            if not '#' in line: continue
+            line = line.strip().replace('#','')
+            line=[i.strip() for i in line.split('=')]
+            no_keys = len(line)-1
+            elements = [line[0]]
+            for i in np.arange(no_keys-1)+1:
+                elements.extend(line[i].split())
+            elements.append(line[-1])
+    
+            for i in np.arange(no_keys)*2:
+                tuples.append([elements[i],elements[i+1]])
+    
+            #print elements
+        #print tuples 
+    
+        for dict_idx,pair in enumerate(tuples):
+            k= pair[0]
+            v= pair[1]
+            if len(v) == 0:
+                continue
+            try:
+                v = float(v)
+                try:
+                    if v%1 ==0:
+                        v = int(v)
+                except:
+                    pass
+            except:
+                pass
+            if k=='deltat':
+                header_dict['sampling_rate'] = 1./v
+            if k=='nread':
+                header_dict['n_samples']=v
+    
+            idx = 2
+            if k in header_dict.keys():
+                knew = k
+                while knew in header_dict.keys():
+                    knew = '{0}_{1}'.format(k,idx)
+                    idx += 1
+                k = knew
+            header_dict[k] = v
+    
+            sorting_dict[dict_idx+1]=k
+
+
+    return header_dict,sorting_dict
+        
+    def _check_content(self, period_array=None, z_array=None, t_array=None):
+        """ 
+        Check the content of j file.
+        
+        If 'nan' appears at any part for some period, the respective period must be 
+        deleted together with all respective entries of the Z_array and tipper_array.
+        Additionally, check the entries of the period array. This should have fully 
+        redundant entries. If this is not the case for at least one period for at 
+        least one component, the period and all respective entries of the arrays 
+        have to be deleted.
+        """
+        period_epsilon = 1E-7
+        lo_periods = []
+    
+        lo_all_periods_raw = list(set(periods_array.flatten()))
+        lo_all_periods_raw = [ii for ii in lo_all_periods_raw if not np.isnan(ii)]
+        #print lo_all_periods_raw
+        #lo_all_periods_raw.sort()
+        lo_all_periods = np.array(sorted(lo_all_periods_raw))
+    
+    
+        n_period_entries = period_array.shape[1]
+    
+        for idx_period, period in enumerate(lo_all_periods):
+            tmp_lo_period_idxs = []
+            foundnan = 0
+            for i in range(n_period_entries):
+                #loop over all 4/6 components of Z and tipper
+                
+                #check, where the current period appears for the current component
+                coinc = np.where(period == periods_array[:,i])[0]
+    
+                #check, if period is found exactly once for this component
+                if len(coinc) == 1:
+                    #check all components for NaN:
+                    for j in range(3):
+                        #only Z:
+                        if i < 4:
+                            if math.isnan(Z_array[coinc[0], j, i]):
+                                foundnan = 1
+                        else:
+                            if math.isnan(tipper_array[coinc[0], j, i - 4]):
+                                foundnan = 1
+                    if foundnan == 0:
+                        tmp_lo_period_idxs.append(coinc[0])
+    
+            if len(tmp_lo_period_idxs) == n_period_entries:
+                lo_periods.append( (period,tuple(tmp_lo_period_idxs)) )
+    
+        Z_array_out = np.zeros((len(lo_periods),3,4))
+        tipper_array_out = None
+        if n_period_entries == 6:
+            tipper_array_out = np.zeros((len(lo_periods),3,2))
+    
+        lo_periods_out = []
+    
+        for idx in range(len(lo_periods)):
+            lo_periods_out.append(lo_periods[idx][0])
+            idx_tuple = lo_periods[idx][1]
+            for j in range(4):
+                Z_array_out[idx,:,j] = Z_array[idx_tuple[j],:,j]
+    
+            if n_period_entries == 6:
+                for k in range(2):
+                    tipper_array_out[idx,:,k] = tipper_array[idx_tuple[k+4],:,k]
+    
+     
+    
+        return np.array(lo_periods_out), Z_array_out, tipper_array_out  
+        
+    def read_j_file(fn):
+        """
+        read_j_file will read in a *.j file output by BIRRP (better than reading lots of *.<k>r<l>.rf files)
+    
+        Input:
+        j-filename
+    
+        Output: 4-tuple
+        - periods : N-array
+        - Z_array : 2-tuple - values and errors
+        - tipper_array : 2-tuple - values and errors
+        - processing_dict : parsed processing parameters from j-file header
+    
+        """   
+    
+        j_fn = op.abspath(fn)
+        if not op.isfile(j_fn):
+            raise MTex.MTpyError_inputarguments('Cannot read j-file %s - file is not existing'%(j_fn))
+    
+        
+        
+        with open(j_fn,'r') as F_in:
+            j_lines = F_in.readlines()
+    
+        processing_dict, sorting_dict = parse_jfile_header(j_lines)
+    
+        
+        Z_start_row = None
+        tipper_start_row = None
+        tipper = None
+    
+        for idx_jline,j_line in enumerate(j_lines):
+    
+            if 'ZXX' == j_line.upper().strip()[:3]:
+                Z_start_row = idx_jline
+            if 'TZX' == j_line.upper().strip()[:3]:
+                tipper_start_row = idx_jline 
+    
+        try:
+            n_periods = int(float(j_lines[Z_start_row + 1] ))
+        except:
+            raise MTex.MTpyError_inputarguments('File is not a proper j-file: %s'%(j_fn))
+    
+        Z = np.zeros((n_periods,3,4))
+        periods = np.zeros((n_periods,4))
+        if not tipper_start_row == None:
+            tipper = np.zeros((n_periods,3,2))
+            periods = np.zeros((n_periods,6))
+    
+    
+        for idx_comp in range(4):
+            starting_row = Z_start_row + 2 + ((n_periods +2)* idx_comp)
+            for idx_per in range(n_periods):
+                idx_row = starting_row + idx_per
+                cur_row = j_lines[idx_row]
+                #print idx_row, cur_row
+                row_entries = cur_row.strip().split()
+                try:
+                    periods[idx_per,idx_comp] = float(row_entries[0])
+                except:
+                    periods[idx_per,idx_comp] = np.nan
+    
+                if periods[idx_per,idx_comp] == -999:
+                    periods[idx_per,idx_comp] = np.nan
+    
+                for idx_z_entry in range(3):
+                    raw_value = row_entries[idx_z_entry + 1]
+                    try:
+                        value = float(raw_value)
+                    except:
+                        value = np.nan
+                    if value == -999:
+                        value = np.nan
+    
+    
+                    Z[idx_per,idx_z_entry,idx_comp] = value
+    
+        if tipper != None :
+                for idx_comp in range(2):
+                    starting_row = tipper_start_row+2+((n_periods +2)*idx_comp)
+                    for idx_per in range(n_periods):
+                        idx_row = starting_row + idx_per
+                        cur_row = j_lines[idx_row]
+                        row_entries = cur_row.strip().split()
+                        try:
+                            periods[idx_per,idx_comp+4] = float(row_entries[0])
+                        except:
+                            periods[idx_per,idx_comp+4] = np.nan
+                        if periods[idx_per,idx_comp+4] == -999:
+                            periods[idx_per,idx_comp+4] = np.nan
+    
+                        for idx_z_entry in range(3):
+                            raw_value = row_entries[idx_z_entry + 1]
+                            try:
+                                value = float(raw_value)
+                            except:
+                                value = np.nan
+                            if value == -999:
+                                value = np.nan
+                            tipper[idx_per,idx_z_entry,idx_comp] = value
+    
+        
+        #NOTE: j files can contain periods that are NOT sorted increasingly, but random
+        indexorder = np.array([iii[0] for iii in periods]).argsort()
+        periods = periods[indexorder]
+        Z = Z[indexorder]
+        if tipper is not None:
+            tipper = tipper[indexorder]
+        
+        periods,Z,tipper = _check_j_file_content(periods, Z, tipper)
+    
+        return periods, Z, tipper, processing_dict,sorting_dict

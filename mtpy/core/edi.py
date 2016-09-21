@@ -206,7 +206,8 @@ class Edi(object):
         
     def _read_data(self):
         """
-        read either impedance or spectra data
+        read either impedance or spectra data depending on what the type is
+        in the data section.
         """
         
         if self.edi_fn is None:
