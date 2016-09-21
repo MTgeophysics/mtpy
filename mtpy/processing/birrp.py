@@ -2683,7 +2683,7 @@ class JFile(object):
             sorting_dict[dict_idx+1]=k
 
 
-    return header_dict,sorting_dict
+        return header_dict,sorting_dict
         
     def _check_content(self, period_array=None, z_array=None, t_array=None):
         """ 

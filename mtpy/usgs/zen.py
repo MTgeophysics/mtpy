@@ -315,7 +315,7 @@ class Z3D_Schedule_metadata(object):
                 setattr(self, m_key, m_value)
                 
         # the first good GPS stamp is on the 3rd, so need to add 2 seconds
-        self.Time = '{0}{1}'.format(self.Time[0:6],
+        self.Time = '{0}{1:02}'.format(self.Time[0:6],
                                     int(self.Time[6:])+2)
 #==============================================================================
 #  Meta data class    
