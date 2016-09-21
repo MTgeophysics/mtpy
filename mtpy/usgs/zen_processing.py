@@ -353,7 +353,8 @@ class Z3D_to_edi(object):
         
         self.survey_config_fn = self.survey_config.write_survey_config_file()
         
-    def get_schedules_fn_from_dir(self, station_ts_dir=None, rr_ts_dir=None):
+    def get_schedules_fn_from_dir(self, station_ts_dir=None, rr_ts_dir=None,
+                                  df_list=[4096, 256, 16]):
         """
         get the birrp fn list from a directory of TS files
         """
@@ -441,11 +442,11 @@ class Z3D_to_edi(object):
             rr_fn_arr = None
         
         
-        return self.get_schedules_fn(fn_arr, rr_fn_arr)
+        return self.get_schedules_fn(fn_arr, rr_fn_arr, df_list)
 #        return (fn_arr, rr_fn_arr)
             
         
-    def get_schedules_fn(self, fn_arr, rr_fn_arr=None):
+    def get_schedules_fn(self, fn_arr, rr_fn_arr=None, df_list=[4096, 256, 16]):
         """
         seperate out the different schedule blocks and frequencies so the
         can be processed
@@ -458,7 +459,7 @@ class Z3D_to_edi(object):
                                    block up to 3 blocks
         """
         # get the sampling rates used
-        s_keys = set(fn_arr['df'])
+        s_keys = set(df_list)
         
         # make a dictionary with keys as the sampling rates 
         s_dict = dict([(skey, []) for skey in s_keys])
@@ -984,8 +985,8 @@ class Z3D_to_edi(object):
     def combine_edi_files(self, edi_fn_list, 
                           sr_dict={4096:(1000., 4),
                                    1024:(3.99, 1.),
-                                   256:(3.99, .04), 
-                                   16:(.0399, .0001)}):
+                                   256:(3.99, .126), 
+                                   16:(.125, .0001)}):
         """
         combine the different edi files that are computed for each sampling 
         rate.
