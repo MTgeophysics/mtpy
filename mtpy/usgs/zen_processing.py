@@ -768,8 +768,8 @@ class Z3D_to_edi(object):
                     # input remote reference information into survey file
                     if rr_z3d_count == 2:
                         self.survey_config.rr_station = rr_station
-                        self.survey_config.rr_lat = zd.header.lat
-                        self.survey_config.rr_lon = zd.header.long
+                        self.survey_config.rr_latitude = zd.header.lat
+                        self.survey_config.rr_longitude = zd.header.long
                         self.survey_config.rr_date = zd.schedule.Date.replace('-','/')
                         self.survey_config.rr_box = int(zd.header.box_number)
             

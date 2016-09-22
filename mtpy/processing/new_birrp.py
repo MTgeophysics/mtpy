@@ -14,6 +14,7 @@ import numpy as np
 import os
 import subprocess
 import time
+from datetime import datetime
 
 
 import mtpy.core.z as mtz
@@ -1352,10 +1353,21 @@ class JFile(object):
                     z_dict[d_key][d_value_list[0]] = d_value_list[1:4]
                 elif d_key in t_index_dict.keys():
                     t_dict[d_key][d_value_list[0]] = d_value_list[1:4]
-                    
-        # now we need to get the set of periods for all components
-        all_periods = sorted(list(set(np.array([z_dict[z_key].keys() for z_key in z_index_dict.keys()]+\
-                                    [t_dict[t_key].keys() for t_key in t_index_dict.keys()]).flatten())))
+        
+        # --> now we need to get the set of periods for all components  
+        # check to see if there is any tipper data output          
+        if len(t_dict['tzx'].keys()) == 0:
+            print 'Could not find any Tipper data in {0}'.format(self.j_fn)
+            find_tipper = False
+            all_periods = sorted(list(set(np.array([z_dict[z_key].keys() 
+                                for z_key in z_index_dict.keys()]).flatten())))
+        else:
+            # now we need to get the set of periods for all components
+            all_periods = sorted(list(set(np.array([z_dict[z_key].keys() 
+                            for z_key in z_index_dict.keys()]+\
+                            [t_dict[t_key].keys() 
+                            for t_key in t_index_dict.keys()]).flatten())))
+            find_tipper = True
         
         num_per = len(all_periods)
         
@@ -1370,15 +1382,24 @@ class JFile(object):
             for z_key in sorted(z_index_dict.keys()):
                 kk = z_index_dict[z_key][0]
                 ll = z_index_dict[z_key][1]
-                z_value = z_dict[z_key][per][0]+1j*z_dict[z_key][per][1]
-                z_arr[p_index, kk, ll] = z_value
-                z_err_arr[p_index, kk, ll] = z_dict[z_key][per][2]
-            for t_key in sorted(t_index_dict.keys()):
-                kk = t_index_dict[t_key][0]
-                ll = t_index_dict[t_key][1]
-                t_value = t_dict[t_key][per][0]+1j*t_dict[t_key][per][1]
-                t_arr[p_index, kk, ll] = t_value
-                t_err_arr[p_index, kk, ll] = t_dict[t_key][per][2]
+                try:
+                    z_value = z_dict[z_key][per][0]+1j*z_dict[z_key][per][1]
+                    z_arr[p_index, kk, ll] = z_value
+                    z_err_arr[p_index, kk, ll] = z_dict[z_key][per][2]
+                except KeyError:
+                    print 'No value found for period {0:.4g}'.format(per)
+                    print 'For component {0}'.format(z_key)
+            if find_tipper is True:
+                for t_key in sorted(t_index_dict.keys()):
+                    kk = t_index_dict[t_key][0]
+                    ll = t_index_dict[t_key][1]
+                    try:
+                        t_value = t_dict[t_key][per][0]+1j*t_dict[t_key][per][1]
+                        t_arr[p_index, kk, ll] = t_value
+                        t_err_arr[p_index, kk, ll] = t_dict[t_key][per][2]
+                    except KeyError:
+                        print 'No value found for period {0:.4g}'.format(per)
+                        print 'For component {0}'.format(t_key)
         
         # put the results into mtpy objects
         freq = 1./np.array(all_periods)    
@@ -1401,9 +1422,12 @@ class J_To_Edi(object):
         self.birrp_dict = None
         
         self.survey_config_fn = None
-        self.surve_config_dict = None
+        self.survey_config_dict = None
     
         self.station = None
+        self.j_fn = None
+        self.j_obj = None
+        self.edi_obj = None
                 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -1415,11 +1439,11 @@ class J_To_Edi(object):
         if survey_config_fn is not None:
             self.surve_config_fn = survey_config_fn
             
-        if not os.path.isfile(survey_config_fn):
+        if not os.path.isfile(self.survey_config_fn):
             raise mtex.MTpyError_inputarguments('Could not find {0}, check path'.format(survey_config_fn)) 
     
         # read in survey information        
-        self.survey_config_dict = mtcfg.read_survey_configfile(self.survey_config_fn)
+        self.survey_config_dict = mtcfg.read_survey_configfile(self.survey_config_fn)[self.station]
     
     def get_birrp_config_fn(self):
         """
@@ -1428,8 +1452,20 @@ class J_To_Edi(object):
     
         if self.birrp_dir is None:
             print 'Could not get birrp_config_fn because no birrp directory specified'
-            return None            
+            self.birrp_config_fn = None            
+            return  
         
+        try:
+            self.birrp_config_fn = [os.path.join(self.birrp_dir, fn)
+                                    for fn in os.listdir(self.birrp_dir)
+                                    if fn.find('birrp_params') > 0][-1]
+            print 'Found {0}'.format(self.birrp_config_fn)
+            
+        except IndexError:
+            print 'Could not find a birrp_params config file in {0}'.format(self.birrp_dir)
+            self.birrp_config_fn = None     
+            return 
+            
     def read_birrp_config_fn(self, birrp_config_fn=None):
         """
         read in birrp configuration file
@@ -1440,9 +1476,35 @@ class J_To_Edi(object):
             
         if self.birrp_config_fn is None:
             self.get_birrp_config_fn()
+            if self.birrp_config_fn is None:
+                self.birrp_dict = None
+                return
+                
+        self.birrp_dict = mtcfg.read_configfile(self.birrp_config_fn)
+        
+    def get_j_file(self, birrp_dir=None):
+        """
+        get .j file output by birrp
+        
+        """
+        
+        if birrp_dir is not None:
+            self.birrp_dir = birrp_dir
+            
+        if self.birrp_dir is None or not os.path.exists(self.birrp_dir):
+            raise mtex.MTpyError_inputarguments('No birrp directory input,'
+                                                'check path {0}'.format(self.birrp_dir))
+        try:
+            self.j_fn = [os.path.join(self.birrp_dir, fn) 
+                         for fn in os.listdir(self.birrp_dir)
+                         if fn.endswith('.j')][0]
+        except IndexError:
+            print 'Could not find a .j file in {0}, check path.'.format(self.birrp_dir)
+            self.j_fn = None
     
-    def write_edi_file_from_birrp(station, birrp_dir, survey_config_fn, 
-                                  birrp_config_fn=None, copy_path=None):
+    def write_edi_file(self, station=None, birrp_dir=None, 
+                       survey_config_fn=None, birrp_config_fn=None,
+                       copy_path=None):
                                       
         """
         Read in BIRRP out puts, in this case the .j file and convert that into
@@ -1528,46 +1590,177 @@ class J_To_Edi(object):
             
         """
         # check to make sure all the files exist
-        if not os.path.isdir(birrp_dir):
+        if station is not None:
+            self.station = station
+            
+        if self.station is None:
+            raise mtex.MTpyError_inputarguments('Need to input the station name')
+        
+        # birrp directory
+        if birrp_dir is not None:
+            self.birrp_dir = birrp_dir
+        
+        if not os.path.isdir(self.birrp_dir):
             raise mtex.MTpyError_inputarguments('Could not find {0}, check path'.format(birrp_dir))
             
-       
-            
-        if birrp_config_fn is not None:
-            if not os.path.isfile(birrp_config_fn):
-                raise mtex.MTpyError_inputarguments('Could not find {0}, check path'.format(birrp_config_fn))
-                
-        else:
-            birrp_config_fn = os.path.join(birrp_dir, 
-                                           '{0}_birrp_params.cfg'.format(station))
-            if not os.path.isfile(birrp_config_fn):
-                print 'Could not find birrp_config_fn'
-                birrp_config_fn = None
-                
-        # locate the .j file that is output by birrp
-        try:
-            j_fn = [os.path.join(birrp_dir, fn) for fn in os.listdir(birrp_dir)
-                    if fn.endswith('.j')][0]
-        except IndexError:
-            raise mtex.MTpyError_file_handling('Could not find .j file in {0}'.format(birrp_dir))
-            
-                
-        # read in survey information        
-        survey_cfg_dict = mtcfg.read_survey_configfile(survey_config_fn)
+        # survey configuratrion
+        if survey_config_fn is not None:
+            self.survey_config_fn = survey_config_fn
+        self.read_survey_config_fn()
         
-        if not station in survey_cfg_dict:
-            raise mtex.MTpyError_config_file('Could not find information for {0} in {1}'.format(station, survey_config_fn))
-                                           
-        # read in birrp parameters
+        # birrp configuration file
         if birrp_config_fn is not None:
-            bp_obj = BIRRP_Parameters()
-            bp_obj.read_config_file(birrp_config_fn)
-        else:
-            bp_obj = None
+            self.birrp_config_fn = birrp_config_fn
+        self.read_birrp_config_fn()  
+        
+        # get .j file first
+        self.get_j_file()
             
         # read in .j file
-        j_obj = JFile(j_fn)
-        j_obj.read_j_file()
-    
-    
+        self.j_obj = JFile(self.j_fn)
+        self.j_obj.read_j_file()
+        
+        # get birrp parameters from .j file if birrp dictionary is None
+        if self.birrp_dict is None:
+            self.birrp_dict = self.j_obj.header_dict
+            for b_key in self.birrp_dict.keys():
+                if 'filnam' in b_key:
+                    self.birrp_dict.pop(b_key)
+                    
+        #--> make edi file
+        self.edi_obj = mtedi.Edi()
+        
+        # fill in header information from survey dict
+        self.edi_obj.Header.lat = self.survey_config_dict['latitude']
+        self.edi_obj.Header.lon = self.survey_config_dict['longitude']
+        self.edi_obj.Header.acqdate = self.survey_config_dict['date']
+        self.edi_obj.Header.loc = self.survey_config_dict['location']
+        self.edi_obj.Header.dataid = self.survey_config_dict['station']
+        self.edi_obj.Header.elev = self.survey_config_dict['elevation']
+        self.edi_obj.Header.filedate = datetime.utcnow().strftime('%Y-%m-%d')
+        self.edi_obj.Header.acqby = self.survey_config_dict['network']
+
+        # fill in information section
+        self.edi_obj.Info.info_list = ['    edi file generated with MTpy',
+                                       '    Processing done with BIRRP 5.2',
+                                       '    Z units = km/s']
+        self.edi_obj.Info.info_list.append('Station Parameters')
+        for key in sorted(self.survey_config_dict.keys()):
+            self.edi_obj.Info.info_list.append('    {0}: {1}'.format(key.lower(), 
+                                               self.survey_config_dict[key]))
+        self.edi_obj.Info.info_list.append('\nBIRRP Parameters')
+        for key in sorted(self.birrp_dict.keys()):
+            self.edi_obj.Info.info_list.append('    {0}: {1}'.format(key.lower(),
+                                               self.birrp_dict[key]))
+                                               
+        # fill in define measurement
+        self.edi_obj.Define_measurement.reflat = self.survey_config_dict['latitude'] 
+        self.edi_obj.Define_measurement.reflon = self.survey_config_dict['longitude'] 
+        self.edi_obj.Define_measurement.refelev = self.survey_config_dict['elevation']
+
+        # --> hx        
+        self.edi_obj.Define_measurement.meas_hx = mtedi.HMeasurement()
+        self.edi_obj.Define_measurement.meas_hx.id = 1
+        self.edi_obj.Define_measurement.meas_hx.chtype = 'hx'
+        self.edi_obj.Define_measurement.meas_hx.x = 0
+        self.edi_obj.Define_measurement.meas_hx.y = 0
+        self.edi_obj.Define_measurement.meas_hx.azm = float(self.survey_config_dict['b_xaxis_azimuth'])
+        self.edi_obj.Define_measurement.meas_hx.acqchan = self.survey_config_dict['hx']
+        
+        
+        #--> hy
+        self.edi_obj.Define_measurement.meas_hy = mtedi.HMeasurement()
+        self.edi_obj.Define_measurement.meas_hy.id = 2
+        self.edi_obj.Define_measurement.meas_hy.chtype = 'hy'
+        self.edi_obj.Define_measurement.meas_hy.x = 0
+        self.edi_obj.Define_measurement.meas_hy.y = 0
+        self.edi_obj.Define_measurement.meas_hy.azm = float(self.survey_config_dict['b_yaxis_azimuth']) 
+        self.edi_obj.Define_measurement.meas_hy.acqchan = self.survey_config_dict['hy']
+        
+        ch_count = 2
+        #--> hz
+        try:
+            int(self.survey_config_dict['hz'])
+            self.edi_obj.Define_measurement.meas_hz = mtedi.HMeasurement()
+            self.edi_obj.Define_measurement.meas_hz.id = 3
+            self.edi_obj.Define_measurement.meas_hz.chtype = 'hy'
+            self.edi_obj.Define_measurement.meas_hz.x = 0
+            self.edi_obj.Define_measurement.meas_hz.y = 0
+            self.edi_obj.Define_measurement.meas_hz.azm = 90 
+            self.edi_obj.Define_measurement.meas_hz.acqchan = self.survey_config_dict['hz']
+            ch_count += 1
+        except ValueError:
+            pass
+        
+        #--> ex
+        self.edi_obj.Define_measurement.meas_ex = mtedi.EMeasurement()
+        self.edi_obj.Define_measurement.meas_ex.id = ch_count+1
+        self.edi_obj.Define_measurement.meas_ex.chtype = 'hy'
+        self.edi_obj.Define_measurement.meas_ex.x = 0
+        self.edi_obj.Define_measurement.meas_ex.y = 0
+        self.edi_obj.Define_measurement.meas_ex.x2 = float(self.survey_config_dict['e_xaxis_length'])
+        self.edi_obj.Define_measurement.meas_ex.y2 = 0
+        self.edi_obj.Define_measurement.meas_ex.azm = float(self.survey_config_dict['e_xaxis_azimuth'])
+        self.edi_obj.Define_measurement.meas_ex.acqchan = ch_count+1
+        
+        #--> ex
+        self.edi_obj.Define_measurement.meas_ey = mtedi.EMeasurement()
+        self.edi_obj.Define_measurement.meas_ey.id = ch_count+2
+        self.edi_obj.Define_measurement.meas_ey.chtype = 'hy'
+        self.edi_obj.Define_measurement.meas_ey.x = 0
+        self.edi_obj.Define_measurement.meas_ey.y = 0
+        self.edi_obj.Define_measurement.meas_ey.x2 = 0
+        self.edi_obj.Define_measurement.meas_ey.y2 = float(self.survey_config_dict['e_yaxis_length'])
+        self.edi_obj.Define_measurement.meas_ey.azm = float(self.survey_config_dict['e_yaxis_azimuth']) 
+        self.edi_obj.Define_measurement.meas_ey.acqchan = ch_count+2
+
+        #--> rhx
+        ch_count += 2
+        try:
+            self.edi_obj.Define_measurement.meas_rhx = mtedi.HMeasurement()
+            self.edi_obj.Define_measurement.meas_rhx.id = ch_count+1
+            self.edi_obj.Define_measurement.meas_rhx.chtype = 'rhx'
+            self.edi_obj.Define_measurement.meas_rhx.x = 0
+            self.edi_obj.Define_measurement.meas_rhx.y = 0
+            self.edi_obj.Define_measurement.meas_rhx.azm = 0 
+            self.edi_obj.Define_measurement.meas_rhx.acqchan = self.survey_config_dict['rr_hx']
+            ch_count += 1
+        except KeyError:
+            pass
+        
+        #--> rhy
+        try:
+            self.edi_obj.Define_measurement.meas_rhy = mtedi.HMeasurement()
+            self.edi_obj.Define_measurement.meas_rhy.id = ch_count+1
+            self.edi_obj.Define_measurement.meas_rhy.chtype = 'rhy'
+            self.edi_obj.Define_measurement.meas_rhy.x = 0
+            self.edi_obj.Define_measurement.meas_rhy.y = 0
+            self.edi_obj.Define_measurement.meas_rhy.azm = 90 
+            self.edi_obj.Define_measurement.meas_rhy.acqchan = self.survey_config_dict['rr_hy']
+            ch_count += 1
+        except KeyError:
+            pass
+        
+        self.edi_obj.Define_measurement.maxchan = ch_count
+            
+        #-->  data section
+        self.edi_obj.Data_sect.hx = 1    
+        self.edi_obj.Data_sect.hy = 2    
+        self.edi_obj.Data_sect.hz = 3
+        self.edi_obj.Data_sect.ex = 4
+        self.edi_obj.Data_sect.ey = 5
+        self.edi_obj.Data_sect.rhx = 6
+        self.edi_obj.Data_sect.rhy = 7
+        self.edi_obj.Data_sect.nfreq = self.j_obj.Z.freq.size
+        self.edi_obj.Data_sect.sectid = self.station
+        self.edi_obj.Data_sect.maxblks = 999
+        
+        #--> Z and Tipper
+        self.edi_obj.Z = self.j_obj.Z
+        self.edi_obj.Tipper = self.j_obj.Tipper
+        
+        edi_fn = mtfh.make_unique_filename(os.path.join(self.birrp_dir,
+                                                        '{0}.edi'.format(self.station)))
+                                                        
+        self.edi_obj.write_edi_file(new_edi_fn=edi_fn)
     
