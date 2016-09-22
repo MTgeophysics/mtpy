@@ -14,28 +14,17 @@ Created on Fri Sep 16 14:29:43 2016
 """
 #==============================================================================
 import numpy as np
-import scipy.signal as sps
 import time
 import datetime
 import os
-import struct
-import string
-import win32api
-import shutil
-from collections import Counter
+
 import mtpy.utils.filehandling as mtfh
-import mtpy.processing.birrp as birrp
+import mtpy.processing.new_birrp as birrp
 import mtpy.utils.configfile as mtcfg
 import mtpy.utils.exceptions as mtex
-import mtpy.utils.configfile as mtcf
-import matplotlib.pyplot as plt
-import mtpy.imaging.plotspectrogram as plotspectrogram
 import mtpy.imaging.plotnresponses as plotnresponses
 import mtpy.imaging.plotresponse as plotresponse
 import mtpy.usgs.zen as zen
-from cStringIO import StringIO
-import sys
-import mtpy.processing.filter as mtfilt
 import mtpy.core.edi as mtedi
 
 import matplotlib.pyplot as plt
@@ -53,7 +42,7 @@ datetime_sec = '%Y-%m-%d %H:%M:%S'
 #==============================================================================
 # make a class to deal with birrp inputs
 #==============================================================================
-class BIRRP_processing(object):
+class BIRRP_processing(birrp.BIRRP_Parameters):
     """
     configuration file for birrp processing
     
@@ -72,30 +61,16 @@ class BIRRP_processing(object):
     """
     
     def __init__(self, **kwargs):
-        self.jmode = 0
-        self.nskip = 1
-        self.nskipr = 1
+
+        self.deltat = 256
+        super(BIRRP_processing, self).__init__(**kwargs)
+
         self.calibration_path = kwargs.pop('calibration_path', 
                                          r"d:\Peacock\MTData\Ant_calibrations")
         self.calibration_list = ['2254', '2264', '2274', '2284', '2294',
                                 '2304', '2314', '2324', '2334', '2344']
                                 
-        self.mcomps = 5
-        self.elecori = "EX,EY"
-        self.tbw = 2
-        self.ainuin = .9999
-        self.magtype = 'bb'
-        self.nfft = 2**18
-        self.nsctmax = 14
-        self.ilev = 0
-        self.nar = 5
-        self.nrr = 0
-        self.c2thresb = 0.45
-        self._max_nread = 16000000 
-        self.deltat = 256
-        
-        for key in kwargs:
-            setattr(self, key, kwargs[key])
+ 
         
     def get_calibrations(self, calibration_path=None):
         """
@@ -268,9 +243,19 @@ class BIRRP_processing(object):
         except KeyError:
             print 'Did not find HX calibration for {0}'.format(hz)
             self.hz_cal = cal_dict['2284'] 
-            print 'Setting calibration coil number to 2284 as default.'            
-        
+            print 'Setting calibration coil number to 2284 as default.'
+            
         return self.__dict__
+                        
+    def read_config_file(self, birrp_config_fn):
+        """
+        read in a configuration file and fill in the appropriate parameters
+        """
+        
+        birrp_dict = mtcfg.read_configfile(birrp_config_fn)
+        
+        for birrp_key in birrp_dict.keys():
+            setattr(self, birrp_key, birrp_dict[birrp_key])
         
 #==============================================================================
 # Survey configuration file
