@@ -20,6 +20,7 @@ import mtpy.core.z as mtz
 import mtpy.utils.configfile as mtcfg
 import mtpy.utils.filehandling as mtfh
 import mtpy.utils.exceptions as mtex
+import mtpy.core.edi as mtedi
 
 #==============================================================================
 class BIRRP_Parameters(object):
@@ -1153,6 +1154,7 @@ class JFile(object):
         self._j_lines = None
         self.Z = None
         self.Tipper = None
+
         
     def _get_j_lines(self, j_fn=None):
         """
@@ -1386,114 +1388,186 @@ class JFile(object):
 #==============================================================================
 # Write edi file from birrp outputs
 #==============================================================================
-def write_edi_file_from_birrp(station, birrp_dir, survey_config_fn, 
-                              birrp_config_fn=None, copy_path=None):
-                                  
+class J_To_Edi(object):
     """
     Read in BIRRP out puts, in this case the .j file and convert that into
     an .edi file using the survey_config_fn parameters. 
-    
-    Arguments
-    -------------
-    
-        **station** : string
-                      name of station
-                      
-        **birrp_dir** : string
-                        full path to output directory for BIRRP
-                        
-        **survey_config_fn** : string
-                              full path to survey configuration file
-                              
-        **birrp_config_fn** : string
-                              full path to birrp configuration file
-                              *default* is none and is looked for in the 
-                              birrp_dir
-                              
-        **copy_path** : string
-                        full path to directory to copy the edi file to
-                        
-    Outputs
-    -------------
-    
-        **edi_fn** : string
-                     full path to edi file
-                     
-    .. note::
-    
-    The survey_config_fn is a file that has the structure:
-        [station]
-            b_instrument_amplification = 1
-            b_instrument_type = coil
-            b_logger_gain = 1
-            b_logger_type = zen
-            b_xaxis_azimuth = 0
-            b_yaxis_azimuth = 90
-            box = 26
-            date = 2015/06/09
-            e_instrument_amplification = 1
-            e_instrument_type = Ag-Agcl electrodes
-            e_logger_gain = 1
-            e_logger_type = zen
-            e_xaxis_azimuth = 0
-            e_xaxis_length = 100
-            e_yaxis_azimuth = 90
-            e_yaxis_length = 100
-            elevation = 2113.2
-            hx = 2274
-            hy = 2284
-            hz = 2254
-            lat = 37.7074236995
-            location = Earth
-            lon = -118.999542099
-            network = USGS
-            notes = Generic config file
-            rr_box = 25
-            rr_date = 2015/06/09
-            rr_hx = 2334
-            rr_hy = 2324
-            rr_lat = 37.6909139779
-            rr_lon = -119.028707542
-            rr_station = 302
-            sampling_interval = all
-            save_path = \home\mtdata\survey_01\mt_01
-            station = 300
-            station_type = mt
-        
-    This file can be written using mtpy.utils.configfile::
-    
-        >>> import mtpy.utils.configfile as mtcfg
-        >>> station_dict = {}
-        >>> station_dict['lat'] = 21.346
-        >>> station_dict['lon'] = 122.45654
-        >>> station_dict['elev'] = 123.43
-        >>> cfg_fn = r"\home\mtdata\survey_01"
-        >>> mtcfg.write_dict_to_configfile({station: station_dict}, cfg_fn)
-        
-        
     """
-    # check to make sure all the files exist
-    if not os.path.isdir(birrp_dir):
-        raise mtex.MTpyError_inputarguments('Could not find {0}, check path'.format(birrp_dir))
+
+    def __init__(self, **kwargs):
         
-    if not os.path.isfile(survey_config_fn):
-        raise mtex.MTpyError_inputarguments('Could not find {0}, check path'.format(survey_config_fn))
+        self.birrp_dir = None
+        self.birrp_config_fn = None
+        self.birrp_dict = None
         
-    if birrp_config_fn is not None:
-        if not os.path.isfile(birrp_config_fn):
-            raise mtex.MTpyError_inputarguments('Could not find {0}, check path'.format(birrp_config_fn))
-            
-    else:
-        birrp_config_fn = os.path.join(birrp_dir, 
-                                       '{0}_birrp_params.cfg'.format(station))
-        if not os.path.isfile(birrp_config_fn):
-            print 'Could not find birrp_config_fn'
-            birrp_config_fn = None
-            
-    # read in survey information        
-    survey_cfg_dict = mtcfg.read_survey_configfile(survey_config_fn)
+        self.survey_config_fn = None
+        self.surve_config_dict = None
     
-    if not station in survey_cfg_dict:
-        raise mtex.MTpyError_config_file('Could not find information for {0} in {1}'.format(station, survey_config_fn))
-                                       
+        self.station = None
+                
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+            
+    def read_survey_config_fn(self, survey_config_fn=None):
+        """
+        read in survey configuration file and output into a useful dictionary
+        """
+        if survey_config_fn is not None:
+            self.surve_config_fn = survey_config_fn
+            
+        if not os.path.isfile(survey_config_fn):
+            raise mtex.MTpyError_inputarguments('Could not find {0}, check path'.format(survey_config_fn)) 
+    
+        # read in survey information        
+        self.survey_config_dict = mtcfg.read_survey_configfile(self.survey_config_fn)
+    
+    def get_birrp_config_fn(self):
+        """
+        get birrp configuration file from birrp directory
+        """
+    
+        if self.birrp_dir is None:
+            print 'Could not get birrp_config_fn because no birrp directory specified'
+            return None            
         
+    def read_birrp_config_fn(self, birrp_config_fn=None):
+        """
+        read in birrp configuration file
+        """
+        
+        if birrp_config_fn is not None:
+            self.birrp_config_fn = birrp_config_fn
+            
+        if self.birrp_config_fn is None:
+            self.get_birrp_config_fn()
+    
+    def write_edi_file_from_birrp(station, birrp_dir, survey_config_fn, 
+                                  birrp_config_fn=None, copy_path=None):
+                                      
+        """
+        Read in BIRRP out puts, in this case the .j file and convert that into
+        an .edi file using the survey_config_fn parameters. 
+        
+        Arguments
+        -------------
+        
+            **station** : string
+                          name of station
+                          
+            **birrp_dir** : string
+                            full path to output directory for BIRRP
+                            
+            **survey_config_fn** : string
+                                  full path to survey configuration file
+                                  
+            **birrp_config_fn** : string
+                                  full path to birrp configuration file
+                                  *default* is none and is looked for in the 
+                                  birrp_dir
+                                  
+            **copy_path** : string
+                            full path to directory to copy the edi file to
+                            
+        Outputs
+        -------------
+        
+            **edi_fn** : string
+                         full path to edi file
+                         
+        .. note::
+        
+        The survey_config_fn is a file that has the structure:
+            [station]
+                b_instrument_amplification = 1
+                b_instrument_type = coil
+                b_logger_gain = 1
+                b_logger_type = zen
+                b_xaxis_azimuth = 0
+                b_yaxis_azimuth = 90
+                box = 26
+                date = 2015/06/09
+                e_instrument_amplification = 1
+                e_instrument_type = Ag-Agcl electrodes
+                e_logger_gain = 1
+                e_logger_type = zen
+                e_xaxis_azimuth = 0
+                e_xaxis_length = 100
+                e_yaxis_azimuth = 90
+                e_yaxis_length = 100
+                elevation = 2113.2
+                hx = 2274
+                hy = 2284
+                hz = 2254
+                lat = 37.7074236995
+                location = Earth
+                lon = -118.999542099
+                network = USGS
+                notes = Generic config file
+                rr_box = 25
+                rr_date = 2015/06/09
+                rr_hx = 2334
+                rr_hy = 2324
+                rr_lat = 37.6909139779
+                rr_lon = -119.028707542
+                rr_station = 302
+                sampling_interval = all
+                save_path = \home\mtdata\survey_01\mt_01
+                station = 300
+                station_type = mt
+            
+        This file can be written using mtpy.utils.configfile::
+        
+            >>> import mtpy.utils.configfile as mtcfg
+            >>> station_dict = {}
+            >>> station_dict['lat'] = 21.346
+            >>> station_dict['lon'] = 122.45654
+            >>> station_dict['elev'] = 123.43
+            >>> cfg_fn = r"\home\mtdata\survey_01"
+            >>> mtcfg.write_dict_to_configfile({station: station_dict}, cfg_fn)
+            
+            
+        """
+        # check to make sure all the files exist
+        if not os.path.isdir(birrp_dir):
+            raise mtex.MTpyError_inputarguments('Could not find {0}, check path'.format(birrp_dir))
+            
+       
+            
+        if birrp_config_fn is not None:
+            if not os.path.isfile(birrp_config_fn):
+                raise mtex.MTpyError_inputarguments('Could not find {0}, check path'.format(birrp_config_fn))
+                
+        else:
+            birrp_config_fn = os.path.join(birrp_dir, 
+                                           '{0}_birrp_params.cfg'.format(station))
+            if not os.path.isfile(birrp_config_fn):
+                print 'Could not find birrp_config_fn'
+                birrp_config_fn = None
+                
+        # locate the .j file that is output by birrp
+        try:
+            j_fn = [os.path.join(birrp_dir, fn) for fn in os.listdir(birrp_dir)
+                    if fn.endswith('.j')][0]
+        except IndexError:
+            raise mtex.MTpyError_file_handling('Could not find .j file in {0}'.format(birrp_dir))
+            
+                
+        # read in survey information        
+        survey_cfg_dict = mtcfg.read_survey_configfile(survey_config_fn)
+        
+        if not station in survey_cfg_dict:
+            raise mtex.MTpyError_config_file('Could not find information for {0} in {1}'.format(station, survey_config_fn))
+                                           
+        # read in birrp parameters
+        if birrp_config_fn is not None:
+            bp_obj = BIRRP_Parameters()
+            bp_obj.read_config_file(birrp_config_fn)
+        else:
+            bp_obj = None
+            
+        # read in .j file
+        j_obj = JFile(j_fn)
+        j_obj.read_j_file()
+    
+    
+    
