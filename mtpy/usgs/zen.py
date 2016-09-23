@@ -315,7 +315,7 @@ class Z3D_Schedule_metadata(object):
                 setattr(self, m_key, m_value)
                 
         # the first good GPS stamp is on the 3rd, so need to add 2 seconds
-        self.Time = '{0}{1}'.format(self.Time[0:6],
+        self.Time = '{0}{1:02}'.format(self.Time[0:6],
                                     int(self.Time[6:])+2)
 #==============================================================================
 #  Meta data class    
@@ -1303,14 +1303,15 @@ class Zen3D(object):
         # first make the time series strings, this conversion is basic, there
         # is no formatting of the string, just a conversion from float to str
         # this is only really valid for numbers with significan digits with
-        # in a few decimal places of 0.
-        ts = time_series.astype('S14')
-        ts_str = '\n'.join(ts)
-        ts_str = ts_str.replace('e', '')
+        # in a few decimal places of 0.  need to a string of length 18 to be
+        # sure that all exponential numbers are accounted for, makes files a 
+        # little bit bigger, but still much faster than np.savetxt
+        ts = time_series.astype('S18')
+
         # write the file
         with open(self.fn_mt_ascii, 'w') as fid:
             fid.write(' '.join(list(header_tuple)))
-            fid.write(ts_str)
+            fid.write('\n'.join(list(ts)))
             
         #self.fn_mt_ascii = mtfh.write_ts_file_from_tuple(save_fn, header_tuple,
         #                                                 fmt=fmt)

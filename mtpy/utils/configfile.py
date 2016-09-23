@@ -409,57 +409,54 @@ def read_survey_configfile(filename):
             continue
 
         #stationdict['rr_station'] = None
-        stationdict['rr_station_latitude'] = None
-        stationdict['rr_station_longitude'] = None
-        stationdict['rr_station_elevation'] = None
+        stationdict['rr_latitude'] = None
+        stationdict['rr_longitude'] = None
+        stationdict['rr_elevation'] = None
 
 
         rem_station = stationdict['rr_station'] 
         try:
             #check, if values are contained in dict 
-            float(stationdict['rr_station_latitude'] )
-            float(stationdict['rr_station_longitude'])
-            float(stationdict['rr_station_elevation'])
+            float(stationdict['rr_latitude'] )
+            float(stationdict['rr_longitude'])
+            float(stationdict['rr_elevation'])
         except:
             try:
                 #check for shortened form
-                stationdict['rr_station_latitude']  = float(
-                                        stationdict['rr_station_lat'] )
-                stationdict['rr_station_longitude'] = float(
-                                        stationdict['rr_station_lon'] )
-                stationdict['rr_station_elevation'] = float(
-                                        stationdict['rr_station_ele'] )                 
+                stationdict['rr_latitude']  = float(stationdict['rr_lat'] )
+                stationdict['rr_longitude'] = float(stationdict['rr_lon'] )
+                stationdict['rr_elevation'] = float(stationdict['rr_elev'] )                 
 
             except:
                 try:
                     #read from other config dict entry
-                    stationdict['rr_station_latitude'] = \
+                    stationdict['rr_latitude'] = \
                                       config_dict[rem_station]['latitude']
-                    stationdict['rr_station_longitude'] = \
+                    stationdict['rr_longitude'] = \
                                      config_dict[rem_station]['longitude']
-                    stationdict['rr_station_elevation'] = \
+                    stationdict['rr_elevation'] = \
                                      config_dict[rem_station]['elevation']
 
                 except:
                     #if finally failed to read rr_station info,\
                     #set rr_station back to None
                     stationdict['rr_station'] = None
-                    stationdict['rr_station_latitude'] = None
-                    stationdict['rr_station_longitude'] = None
-                    stationdict['rr_station_elevation'] = None
+                    stationdict['rr_latitude'] = None
+                    stationdict['rr_longitude'] = None
+                    stationdict['rr_elevation'] = None
 
         #check consistency of coordinates, if rr_station is present
         if stationdict['rr_station'] != None:
             try:
-                stationdict['rr_station_latitude'] = \
+                stationdict['rr_latitude'] = \
                             MTft._assert_position_format(
-                                'latitude',stationdict['rr_station_latitude'])
-                stationdict['rr_station_longitude'] = \
+                                'latitude',stationdict['rr_latitude'])
+                stationdict['rr_longitude'] = \
                             MTft._assert_position_format(
-                                'longitude',stationdict['rr_station_longitude'])
-                stationdict['rr_station_elevation'] = \
+                                'longitude',stationdict['rr_longitude'])
+                stationdict['rr_elevation'] = \
                             MTft._assert_position_format(
-                                'elevation',stationdict['rr_station_elevation'])
+                                'elevation',stationdict['rr_elevation'])
 
             except:
                 print 'Problem with remote reference station ({0}) -'
@@ -468,9 +465,9 @@ def read_survey_configfile(filename):
                                                        stationdict['rr_station'])
 
                 stationdict['rr_station'] = None
-                stationdict['rr_station_latitude'] = None
-                stationdict['rr_station_longitude'] = None
-                stationdict['rr_station_elevation'] = None
+                stationdict['rr_latitude'] = None
+                stationdict['rr_longitude'] = None
+                stationdict['rr_elevation'] = None
 
 
     if error_counter != 0:

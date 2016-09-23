@@ -38,6 +38,7 @@ import mtpy.utils.filehandling as MTfh
 import mtpy.utils.configfile as MTcf
 import mtpy.utils.misc as MTmc
 import mtpy.utils.interpolation as MTip
+import mtpy.core.z as mtz
 
 #=================================================================
 #for time stamp differences:
@@ -2594,6 +2595,11 @@ class JFile(object):
     
     def __init__(self, j_fn=None):
         self.j_fn = j_fn
+        self.header_dict = None
+        self.metadata_dict = None
+        self._j_lines = None
+        self.Z = None
+        self.Tipper = None
         
     def _get_j_lines(self, j_fn=None):
         """
@@ -2618,9 +2624,7 @@ class JFile(object):
     
         Output:
         - Dictionary with all parameters found
-    
-        !TODO!
-        
+
         """
         if j_lines is not None:
             self._j_lines = j_lines
@@ -2631,131 +2635,90 @@ class JFile(object):
         if self._j_lines is None:
             self._get_j_lines()
             
-        header_dict = {}
-        sorting_dict = {}
-        tuples = []
-    
-        for line in j_lines:
-            if not '=' in line: continue
-            if not '#' in line: continue
-            line = line.strip().replace('#','')
-            line=[i.strip() for i in line.split('=')]
-            no_keys = len(line)-1
-            elements = [line[0]]
-            for i in np.arange(no_keys-1)+1:
-                elements.extend(line[i].split())
-            elements.append(line[-1])
-    
-            for i in np.arange(no_keys)*2:
-                tuples.append([elements[i],elements[i+1]])
-    
-            #print elements
-        #print tuples 
-    
-        for dict_idx,pair in enumerate(tuples):
-            k= pair[0]
-            v= pair[1]
-            if len(v) == 0:
+        header_lines = [j_line for j_line in self._j_lines if '#' in j_line]
+        header_dict = {'title':header_lines[0][1:].strip()}
+        
+        fn_count = 0
+        theta_count = 0
+        # put the information into a dictionary 
+        for h_line in header_lines[1:]:
+            # replace '=' with a ' ' to be sure that when split is called there is a
+            # split, especially with filenames
+            h_list = h_line[1:].strip().replace('=', ' ').split()
+            # skip if there is only one element in the list
+            if len(h_list) == 1:
                 continue
-            try:
-                v = float(v)
-                try:
-                    if v%1 ==0:
-                        v = int(v)
-                except:
-                    pass
-            except:
-                pass
-            if k=='deltat':
-                header_dict['sampling_rate'] = 1./v
-            if k=='nread':
-                header_dict['n_samples']=v
-    
-            idx = 2
-            if k in header_dict.keys():
-                knew = k
-                while knew in header_dict.keys():
-                    knew = '{0}_{1}'.format(k,idx)
-                    idx += 1
-                k = knew
-            header_dict[k] = v
-    
-            sorting_dict[dict_idx+1]=k
-
-
-    return header_dict,sorting_dict
+            # get the key and value for each parameter in the given line
+            for h_index in range(0, len(h_list), 2):
+                h_key = h_list[h_index]
+                # if its the file name, make the dictionary value be a list so that 
+                # we can append nread and nskip to it, and make the name unique by
+                # adding a counter on the end
+                if h_key == 'filnam':
+                    h_key = '{0}_{1:02}'.format(h_key, fn_count)
+                    fn_count += 1
+                    h_value = [h_list[h_index+1]]
+                    header_dict[h_key] = h_value
+                    continue
+                elif h_key == 'nskip' or h_key == 'nread':
+                    h_key = 'filnam_{0:02}'.format(fn_count-1)
+                    h_value = int(h_list[h_index+1])
+                    header_dict[h_key].append(h_value)
+                    
+                # if its the line of angles, put them all in a list with a unique key
+                elif h_key == 'theta1':
+                    h_key = '{0}_{1:02}'.format(h_key, theta_count)
+                    theta_count += 1
+                    h_value = float(h_list[h_index+1])
+                    header_dict[h_key] = [h_value]
+                elif h_key == 'theta2' or h_key == 'phi':
+                    h_key = '{0}_{1:02}'.format('theta1', theta_count-1)
+                    h_value = float(h_list[h_index+1])
+                    header_dict[h_key].append(h_value)
+                    
+                else:
+                    try:
+                        h_value = float(h_list[h_index+1])
+                    except ValueError:
+                        h_value = h_list[h_index+1]
+                    
+                    header_dict[h_key] = h_value
+            
+        self.header_dict = header_dict
         
-    def _check_content(self, period_array=None, z_array=None, t_array=None):
-        """ 
-        Check the content of j file.
-        
-        If 'nan' appears at any part for some period, the respective period must be 
-        deleted together with all respective entries of the Z_array and tipper_array.
-        Additionally, check the entries of the period array. This should have fully 
-        redundant entries. If this is not the case for at least one period for at 
-        least one component, the period and all respective entries of the arrays 
-        have to be deleted.
+    def read_metadata(self, j_lines=None, j_fn=None):
         """
-        period_epsilon = 1E-7
-        lo_periods = []
-    
-        lo_all_periods_raw = list(set(periods_array.flatten()))
-        lo_all_periods_raw = [ii for ii in lo_all_periods_raw if not np.isnan(ii)]
-        #print lo_all_periods_raw
-        #lo_all_periods_raw.sort()
-        lo_all_periods = np.array(sorted(lo_all_periods_raw))
-    
-    
-        n_period_entries = period_array.shape[1]
-    
-        for idx_period, period in enumerate(lo_all_periods):
-            tmp_lo_period_idxs = []
-            foundnan = 0
-            for i in range(n_period_entries):
-                #loop over all 4/6 components of Z and tipper
-                
-                #check, where the current period appears for the current component
-                coinc = np.where(period == periods_array[:,i])[0]
-    
-                #check, if period is found exactly once for this component
-                if len(coinc) == 1:
-                    #check all components for NaN:
-                    for j in range(3):
-                        #only Z:
-                        if i < 4:
-                            if math.isnan(Z_array[coinc[0], j, i]):
-                                foundnan = 1
-                        else:
-                            if math.isnan(tipper_array[coinc[0], j, i - 4]):
-                                foundnan = 1
-                    if foundnan == 0:
-                        tmp_lo_period_idxs.append(coinc[0])
-    
-            if len(tmp_lo_period_idxs) == n_period_entries:
-                lo_periods.append( (period,tuple(tmp_lo_period_idxs)) )
-    
-        Z_array_out = np.zeros((len(lo_periods),3,4))
-        tipper_array_out = None
-        if n_period_entries == 6:
-            tipper_array_out = np.zeros((len(lo_periods),3,2))
-    
-        lo_periods_out = []
-    
-        for idx in range(len(lo_periods)):
-            lo_periods_out.append(lo_periods[idx][0])
-            idx_tuple = lo_periods[idx][1]
-            for j in range(4):
-                Z_array_out[idx,:,j] = Z_array[idx_tuple[j],:,j]
-    
-            if n_period_entries == 6:
-                for k in range(2):
-                    tipper_array_out[idx,:,k] = tipper_array[idx_tuple[k+4],:,k]
-    
-     
-    
-        return np.array(lo_periods_out), Z_array_out, tipper_array_out  
+        read in the metadata of the station, or information of station 
+        logistics like: lat, lon, elevation
         
-    def read_j_file(fn):
+        Not really needed for a birrp output since all values are nan's
+        """
+        
+        if j_lines is not None:
+            self._j_lines = j_lines
+            
+        if j_fn is not None:
+            self.j_fn = j_fn
+            
+        if self._j_lines is None:
+            self._get_j_lines()
+        
+        metadata_lines = [j_line for j_line in self._j_lines if '>' in j_line]
+    
+        metadata_dict = {}
+        for m_line in metadata_lines:
+            m_list = m_line.strip().split('=')
+            m_key = m_list[0][1:].strip().lower()
+            try:
+                m_value = float(m_list[0].strip())
+            except ValueError:
+                m_value = 0.0
+                
+            metadata_dict[m_key] = m_value
+            
+        self.metadata_dict = metadata_dict
+        
+    def read_j_file(self, j_lines=None, j_fn=None):
         """
         read_j_file will read in a *.j file output by BIRRP (better than reading lots of *.<k>r<l>.rf files)
     
@@ -2770,100 +2733,99 @@ class JFile(object):
     
         """   
     
-        j_fn = op.abspath(fn)
-        if not op.isfile(j_fn):
-            raise MTex.MTpyError_inputarguments('Cannot read j-file %s - file is not existing'%(j_fn))
-    
+        # read data
+        z_index_dict = {'zxx':(0, 0),
+                        'zxy':(0, 1),
+                        'zyx':(1, 0),
+                        'zyy':(1, 1)}
+        t_index_dict = {'tzx':(0, 0),
+                        'tzy':(0, 1)}
+                        
+        if j_lines is not None:
+            self._j_lines = j_lines
+            
+        if j_fn is not None:
+            self.j_fn = j_fn
+            
+        if self._j_lines is None:
+            self._get_j_lines()
+            
+        self.header_dict = self.read_header()
+        self.metadata_dict = self.read_metadata()
         
+        data_lines = [j_line for j_line in self._j_lines 
+                      if not '>' in j_line and not '#' in j_line][1:]
+                
+        # sometimes birrp outputs some missing periods, so the best way to deal with 
+        # this that I could come up with was to get things into dictionaries with 
+        # key words that are the period values, then fill in Z and T from there
+        # leaving any missing values as 0
         
-        with open(j_fn,'r') as F_in:
-            j_lines = F_in.readlines()
-    
-        processing_dict, sorting_dict = parse_jfile_header(j_lines)
-    
-        
-        Z_start_row = None
-        tipper_start_row = None
-        tipper = None
-    
-        for idx_jline,j_line in enumerate(j_lines):
-    
-            if 'ZXX' == j_line.upper().strip()[:3]:
-                Z_start_row = idx_jline
-            if 'TZX' == j_line.upper().strip()[:3]:
-                tipper_start_row = idx_jline 
-    
-        try:
-            n_periods = int(float(j_lines[Z_start_row + 1] ))
-        except:
-            raise MTex.MTpyError_inputarguments('File is not a proper j-file: %s'%(j_fn))
-    
-        Z = np.zeros((n_periods,3,4))
-        periods = np.zeros((n_periods,4))
-        if not tipper_start_row == None:
-            tipper = np.zeros((n_periods,3,2))
-            periods = np.zeros((n_periods,6))
-    
-    
-        for idx_comp in range(4):
-            starting_row = Z_start_row + 2 + ((n_periods +2)* idx_comp)
-            for idx_per in range(n_periods):
-                idx_row = starting_row + idx_per
-                cur_row = j_lines[idx_row]
-                #print idx_row, cur_row
-                row_entries = cur_row.strip().split()
-                try:
-                    periods[idx_per,idx_comp] = float(row_entries[0])
-                except:
-                    periods[idx_per,idx_comp] = np.nan
-    
-                if periods[idx_per,idx_comp] == -999:
-                    periods[idx_per,idx_comp] = np.nan
-    
-                for idx_z_entry in range(3):
-                    raw_value = row_entries[idx_z_entry + 1]
+        # make empty dictionary that have keys as the component 
+        z_dict = dict([(z_key, {}) for z_key in z_index_dict.keys()])
+        t_dict = dict([(t_key, {}) for t_key in t_index_dict.keys()])
+        for d_line in data_lines:
+            # check to see if we are at the beginning of a component block, if so 
+            # set the dictionary key to that value
+            if 'z' in d_line.lower():
+                d_key = d_line.strip().split()[0].lower()
+            
+            # if we are at the number of periods line, skip it
+            elif len(d_line.strip().split()) == 1:
+                continue
+            # get the numbers into the correct dictionary with a key as period and
+            # for now we will leave the numbers as a list, which we will parse later
+            else:
+                # split the line up into each number
+                d_list = d_line.strip().split()
+                
+                # make a copy of the list to be sure we don't rewrite any values,
+                # not sure if this is necessary at the moment
+                d_value_list = list(d_list)
+                for d_index, d_value in enumerate(d_list):
+                    # check to see if the column number can be converted into a float
+                    # if it can't, then it will be set to 0, which is assumed to be
+                    # a masked number when writing to an .edi file
                     try:
-                        value = float(raw_value)
-                    except:
-                        value = np.nan
-                    if value == -999:
-                        value = np.nan
-    
-    
-                    Z[idx_per,idx_z_entry,idx_comp] = value
-    
-        if tipper != None :
-                for idx_comp in range(2):
-                    starting_row = tipper_start_row+2+((n_periods +2)*idx_comp)
-                    for idx_per in range(n_periods):
-                        idx_row = starting_row + idx_per
-                        cur_row = j_lines[idx_row]
-                        row_entries = cur_row.strip().split()
-                        try:
-                            periods[idx_per,idx_comp+4] = float(row_entries[0])
-                        except:
-                            periods[idx_per,idx_comp+4] = np.nan
-                        if periods[idx_per,idx_comp+4] == -999:
-                            periods[idx_per,idx_comp+4] = np.nan
-    
-                        for idx_z_entry in range(3):
-                            raw_value = row_entries[idx_z_entry + 1]
-                            try:
-                                value = float(raw_value)
-                            except:
-                                value = np.nan
-                            if value == -999:
-                                value = np.nan
-                            tipper[idx_per,idx_z_entry,idx_comp] = value
-    
+                        d_value_list[d_index] = float(d_value)
+                    except ValueError:
+                        d_value_list[d_index] = 0.0
+                
+                # put the numbers in the correct dictionary as:
+                # key = period, value = [real, imaginary, error]
+                if d_key in z_index_dict.keys():
+                    z_dict[d_key][d_value_list[0]] = d_value_list[1:4]
+                elif d_key in t_index_dict.keys():
+                    t_dict[d_key][d_value_list[0]] = d_value_list[1:4]
+                    
+        # now we need to get the set of periods for all components
+        all_periods = sorted(list(set(np.array([z_dict[z_key].keys() for z_key in z_index_dict.keys()]+\
+                                    [t_dict[t_key].keys() for t_key in t_index_dict.keys()]).flatten())))
         
-        #NOTE: j files can contain periods that are NOT sorted increasingly, but random
-        indexorder = np.array([iii[0] for iii in periods]).argsort()
-        periods = periods[indexorder]
-        Z = Z[indexorder]
-        if tipper is not None:
-            tipper = tipper[indexorder]
+        num_per = len(all_periods)
         
-        periods,Z,tipper = _check_j_file_content(periods, Z, tipper)
-    
-        return periods, Z, tipper, processing_dict,sorting_dict
+        # fill arrays using the period key from all_periods
+        z_arr = np.zeros((num_per, 2, 2), dtype=np.complex)
+        z_err_arr = np.zeros((num_per, 2, 2), dtype=np.float)
+        
+        t_arr = np.zeros((num_per, 1, 2), dtype=np.complex)
+        t_err_arr = np.zeros((num_per, 1, 2), dtype=np.float)
+        
+        for p_index, per in enumerate(all_periods):
+            for z_key in sorted(z_index_dict.keys()):
+                kk = z_index_dict[z_key][0]
+                ll = z_index_dict[z_key][1]
+                z_value = z_dict[z_key][per][0]+1j*z_dict[z_key][per][1]
+                z_arr[p_index, kk, ll] = z_value
+                z_err_arr[p_index, kk, ll] = z_dict[z_key][per][2]
+            for t_key in sorted(t_index_dict.keys()):
+                kk = t_index_dict[t_key][0]
+                ll = t_index_dict[t_key][1]
+                t_value = t_dict[t_key][per][0]+1j*t_dict[t_key][per][1]
+                t_arr[p_index, kk, ll] = t_value
+                t_err_arr[p_index, kk, ll] = t_dict[t_key][per][2]
+        
+        # put the results into mtpy objects
+        freq = 1./np.array(all_periods)    
+        self.Z = mtz.Z(z_arr, z_err_arr, freq)
+        self.Tipper = mtz.Tipper(t_arr, t_err_arr, freq)    

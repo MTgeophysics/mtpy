@@ -14,29 +14,22 @@ Created on Fri Sep 16 14:29:43 2016
 """
 #==============================================================================
 import numpy as np
-import scipy.signal as sps
 import time
 import datetime
 import os
-import struct
-import string
-import win32api
-import shutil
-from collections import Counter
+
 import mtpy.utils.filehandling as mtfh
-import mtpy.processing.birrp as birrp
+import mtpy.processing.new_birrp as birrp
 import mtpy.utils.configfile as mtcfg
 import mtpy.utils.exceptions as mtex
-import mtpy.utils.configfile as mtcf
-import matplotlib.pyplot as plt
-import mtpy.imaging.plotspectrogram as plotspectrogram
 import mtpy.imaging.plotnresponses as plotnresponses
 import mtpy.imaging.plotresponse as plotresponse
 import mtpy.usgs.zen as zen
-from cStringIO import StringIO
-import sys
-import mtpy.processing.filter as mtfilt
 import mtpy.core.edi as mtedi
+
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from matplotlib.ticker import MultipleLocator
 
 #==============================================================================
 
@@ -49,7 +42,7 @@ datetime_sec = '%Y-%m-%d %H:%M:%S'
 #==============================================================================
 # make a class to deal with birrp inputs
 #==============================================================================
-class BIRRP_processing(object):
+class BIRRP_processing(birrp.BIRRP_Parameters):
     """
     configuration file for birrp processing
     
@@ -68,30 +61,16 @@ class BIRRP_processing(object):
     """
     
     def __init__(self, **kwargs):
-        self.jmode = 0
-        self.nskip = 1
-        self.nskipr = 1
+
+        self.deltat = 256
+        super(BIRRP_processing, self).__init__(**kwargs)
+
         self.calibration_path = kwargs.pop('calibration_path', 
                                          r"d:\Peacock\MTData\Ant_calibrations")
         self.calibration_list = ['2254', '2264', '2274', '2284', '2294',
                                 '2304', '2314', '2324', '2334', '2344']
                                 
-        self.mcomps = 5
-        self.elecori = "EX,EY"
-        self.tbw = 2
-        self.ainuin = .9999
-        self.magtype = 'bb'
-        self.nfft = 2**18
-        self.nsctmax = 14
-        self.ilev = 0
-        self.nar = 5
-        self.nrr = 0
-        self.c2thresb = 0.45
-        self._max_nread = 16000000 
-        self.deltat = 256
-        
-        for key in kwargs:
-            setattr(self, key, kwargs[key])
+ 
         
     def get_calibrations(self, calibration_path=None):
         """
@@ -264,9 +243,19 @@ class BIRRP_processing(object):
         except KeyError:
             print 'Did not find HX calibration for {0}'.format(hz)
             self.hz_cal = cal_dict['2284'] 
-            print 'Setting calibration coil number to 2284 as default.'            
-        
+            print 'Setting calibration coil number to 2284 as default.'
+            
         return self.__dict__
+                        
+    def read_config_file(self, birrp_config_fn):
+        """
+        read in a configuration file and fill in the appropriate parameters
+        """
+        
+        birrp_dict = mtcfg.read_configfile(birrp_config_fn)
+        
+        for birrp_key in birrp_dict.keys():
+            setattr(self, birrp_key, birrp_dict[birrp_key])
         
 #==============================================================================
 # Survey configuration file
@@ -353,7 +342,8 @@ class Z3D_to_edi(object):
         
         self.survey_config_fn = self.survey_config.write_survey_config_file()
         
-    def get_schedules_fn_from_dir(self, station_ts_dir=None, rr_ts_dir=None):
+    def get_schedules_fn_from_dir(self, station_ts_dir=None, rr_ts_dir=None,
+                                  df_list=[4096, 256, 16]):
         """
         get the birrp fn list from a directory of TS files
         """
@@ -441,11 +431,11 @@ class Z3D_to_edi(object):
             rr_fn_arr = None
         
         
-        return self.get_schedules_fn(fn_arr, rr_fn_arr)
+        return self.get_schedules_fn(fn_arr, rr_fn_arr, df_list)
 #        return (fn_arr, rr_fn_arr)
             
         
-    def get_schedules_fn(self, fn_arr, rr_fn_arr=None):
+    def get_schedules_fn(self, fn_arr, rr_fn_arr=None, df_list=[4096, 256, 16]):
         """
         seperate out the different schedule blocks and frequencies so the
         can be processed
@@ -458,7 +448,7 @@ class Z3D_to_edi(object):
                                    block up to 3 blocks
         """
         # get the sampling rates used
-        s_keys = set(fn_arr['df'])
+        s_keys = set(df_list)
         
         # make a dictionary with keys as the sampling rates 
         s_dict = dict([(skey, []) for skey in s_keys])
@@ -778,8 +768,8 @@ class Z3D_to_edi(object):
                     # input remote reference information into survey file
                     if rr_z3d_count == 2:
                         self.survey_config.rr_station = rr_station
-                        self.survey_config.rr_lat = zd.header.lat
-                        self.survey_config.rr_lon = zd.header.long
+                        self.survey_config.rr_latitude = zd.header.lat
+                        self.survey_config.rr_longitude = zd.header.long
                         self.survey_config.rr_date = zd.schedule.Date.replace('-','/')
                         self.survey_config.rr_box = int(zd.header.box_number)
             
@@ -984,8 +974,8 @@ class Z3D_to_edi(object):
     def combine_edi_files(self, edi_fn_list, 
                           sr_dict={4096:(1000., 4),
                                    1024:(3.99, 1.),
-                                   256:(3.99, .04), 
-                                   16:(.0399, .0001)}):
+                                   256:(3.99, .126), 
+                                   16:(.125, .0001)}):
         """
         combine the different edi files that are computed for each sampling 
         rate.
@@ -1060,7 +1050,132 @@ class Z3D_to_edi(object):
         
         return n_edi_fn
                 
-
+def get_remote_reference_schedule(survey_path, plot=True):
+    """
+    Get a detailed list of which stations recorded at the same time, just from
+    the raw Z3D files.
+    
+    Arguments
+    ----------------
+        **survey_path** : string
+                          full path to the survey directory
+                          
+        **plot** : [ True | False]
+                   True to plot the schedules as line bars. 
+                   *default* is True
+                   
+    Outputs
+    -----------------
+        **station_path\Remote_Reference_List.txt** : file with a list of
+                                                     dates with station
+                                                     and sampling rate
+                                                     
+        **plot** if plot is True.
+        
+    :Example: ..
+    
+        >>> import mtpy.usgs.zen_processing as zp
+        >>> zp.get_remote_reference_schedule(r"\home\MT_Data\Survey_01")
+    """
+    date_dict = {}
+    rr_dict = {}
+    for station in os.listdir(survey_path):
+        station_path = os.path.join(survey_path, station)
+        if os.path.isdir(station_path) is True:
+            fn_list = [os.path.join(station_path, fn) 
+                       for fn in os.listdir(station_path)
+                       if fn.lower().endswith('ex.z3d')]
             
+            if len(fn_list) == 0:
+                print 'No Z3D files found in folder: {0} '.format(station)
+                continue
+    
+            station_date_arr = np.zeros(len(fn_list), dtype=[('df', np.float),
+                                                             ('start_dt', '|S20')])
+            for f_index, fn in enumerate(fn_list):
+                zd = zen.Zen3D(fn)
+                zd.read_all_info()
+                station_date_arr[f_index]['df'] = zd.df
+                station_date_arr[f_index]['start_dt'] = zd.zen_schedule
+                try:
+                    rr_dict[zd.zen_schedule]    
+                except KeyError:
+                    rr_dict[zd.zen_schedule] = []
+                    
+                rr_dict[zd.zen_schedule].append((station, zd.df))
+                    
+            if len(np.nonzero(station_date_arr)[0]) != 0:
+                date_dict[station] = station_date_arr[np.nonzero(station_date_arr['df'])]
+    
+    #---------------------------------------------
+    # print out in a useful way
+    
+    lines = []
+    for key in sorted(rr_dict.keys()):
+        k_list = key.split(',')    
+        k_date = k_list[0]
+        k_time = k_list[1]
+        lines.append('Date: {0}, Time: {1}'.format(k_date, k_time))
+        lines.append('-'*60)
+        for k_tuple in rr_dict[key]:
+            lines.append('\tStation: {0}, Sampling Rate: {1:.0f}'.format(k_tuple[0],
+                         k_tuple[1]))
+                         
+        lines.append('='*60)
+    with open(os.path.join(survey_path, 'Remote_Reference_List.txt'), 'w') as fid:
+        fid.write('\n'.join(lines))
+    
+    
+    
+    #-------------------------------------
+    
+    if plot is True:
+        plt.rcParams['font.size'] = 14
+        
+        datetime_display = '%m-%d, %H:%M:%S'
+        
+        df_dict = {4096:(.7, .1, 0), 1024:(.5, .5, 0), 256:(0, .2, .8)}                       
+        # plot the results is a compeling graph
+        fig = plt.figure(2, [12, 10])
+        ax = fig.add_subplot(1, 1, 1)
+        y_labels = ['', '']
+        
+        for k_index, key in enumerate(sorted(date_dict.keys())):
+            y_labels.append(key)
+            for ii, k_arr in enumerate(date_dict[key]):
+                x_date_0 = datetime.datetime.strptime(k_arr['start_dt'], datetime_fmt)
+                try:
+                    x_date_1 = datetime.datetime.strptime(date_dict[key]['start_dt'][ii+1],
+                                                          datetime_fmt)
+                except IndexError:
+                    x_date_1 = x_date_0
+                
+                y_values = [k_index, k_index]
+                
+                l1, = ax.plot([x_date_0, x_date_1], y_values,
+                              lw=8, color=df_dict[k_arr['df']])
+        
+        fig.autofmt_xdate(rotation=60)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter(datetime_display))
+        ax.xaxis.set_major_locator(MultipleLocator((1)))
+        ax.xaxis.set_minor_locator(MultipleLocator((.25)))
+        ax.xaxis.set_tick_params(width=2, size=5)
+       
+        ax.yaxis.set_major_locator(MultipleLocator(1))
+        ax.yaxis.set_ticklabels(y_labels)
+        ax.yaxis.set_tick_params(width=2, size=5)
+        ax.set_ylim(-1, len(y_labels)-2)
+        
+        ax.grid(which='major', linestyle='--', color=(.7, .7, .7)) 
+        ax.set_axisbelow(True)
+        
+        l_4096 = plt.Line2D([0, 1], [0, 0], lw=8, color=df_dict[4096])
+        l_1024 = plt.Line2D([0, 1], [0, 0], lw=8, color=df_dict[1024])
+        l_256 = plt.Line2D([0, 1], [0, 0], lw=8, color=df_dict[256])
+      
+        fig.legend([l_4096, l_1024, l_256], ['4096', '1024', '256'], ncol=3,
+                   loc='upper center')
+                             
+        plt.show()            
         
         
