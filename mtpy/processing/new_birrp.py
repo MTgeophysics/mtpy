@@ -24,7 +24,7 @@ class BIRRP_Parameters(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
             
-        self._validate_parametrs()
+        self._validate_parameters()
         
     def _get_parameters(self):
         """
@@ -96,7 +96,7 @@ class BIRRP_Parameters(object):
             self.thetab = [0, 90, 0]
             self.thetaf = [0, 90, 0]
             
-    def _validate_parametrs(self):
+    def _validate_parameters(self):
         """
         check to make sure the parameters are legit.
         """
