@@ -1501,6 +1501,145 @@ class J_To_Edi(object):
         except IndexError:
             print 'Could not find a .j file in {0}, check path.'.format(self.birrp_dir)
             self.j_fn = None
+            
+    def _fill_header(self):
+        """
+        fill header data
+        """
+        self.edi_obj.Header.lat = self.survey_config_dict['latitude']
+        self.edi_obj.Header.lon = self.survey_config_dict['longitude']
+        self.edi_obj.Header.acqdate = self.survey_config_dict['date']
+        self.edi_obj.Header.loc = self.survey_config_dict['location']
+        self.edi_obj.Header.dataid = self.survey_config_dict['station']
+        self.edi_obj.Header.elev = self.survey_config_dict['elevation']
+        self.edi_obj.Header.filedate = datetime.utcnow().strftime('%Y-%m-%d')
+        self.edi_obj.Header.acqby = self.survey_config_dict['network']
+        
+    def _fill_info(self):
+        """
+        fill information section
+        """
+        self.edi_obj.Info.info_list = ['    edi file generated with MTpy',
+                                       '    Processing done with BIRRP 5.2',
+                                       '    Z units = km/s']
+        self.edi_obj.Info.info_list.append('Station Parameters')
+        for key in sorted(self.survey_config_dict.keys()):
+            self.edi_obj.Info.info_list.append('    {0}: {1}'.format(key.lower(), 
+                                               self.survey_config_dict[key]))
+        self.edi_obj.Info.info_list.append('\nBIRRP Parameters')
+        for key in sorted(self.birrp_dict.keys()):
+            self.edi_obj.Info.info_list.append('    {0}: {1}'.format(key.lower(),
+                                               self.birrp_dict[key]))
+            
+    def _fill_define_meas(self):
+        """
+        get define measurement blocks
+        """
+        
+        # fill in define measurement
+        self.edi_obj.Define_measurement.reflat = self.survey_config_dict['latitude'] 
+        self.edi_obj.Define_measurement.reflon = self.survey_config_dict['longitude'] 
+        self.edi_obj.Define_measurement.refelev = self.survey_config_dict['elevation']
+
+        # --> hx        
+        self.edi_obj.Define_measurement.meas_hx = mtedi.HMeasurement()
+        self.edi_obj.Define_measurement.meas_hx.id = 1
+        self.edi_obj.Define_measurement.meas_hx.chtype = 'hx'
+        self.edi_obj.Define_measurement.meas_hx.x = 0
+        self.edi_obj.Define_measurement.meas_hx.y = 0
+        self.edi_obj.Define_measurement.meas_hx.azm = float(self.survey_config_dict['b_xaxis_azimuth'])
+        self.edi_obj.Define_measurement.meas_hx.acqchan = self.survey_config_dict['hx']
+        
+        
+        #--> hy
+        self.edi_obj.Define_measurement.meas_hy = mtedi.HMeasurement()
+        self.edi_obj.Define_measurement.meas_hy.id = 2
+        self.edi_obj.Define_measurement.meas_hy.chtype = 'hy'
+        self.edi_obj.Define_measurement.meas_hy.x = 0
+        self.edi_obj.Define_measurement.meas_hy.y = 0
+        self.edi_obj.Define_measurement.meas_hy.azm = float(self.survey_config_dict['b_yaxis_azimuth']) 
+        self.edi_obj.Define_measurement.meas_hy.acqchan = self.survey_config_dict['hy']
+        
+        ch_count = 2
+        #--> hz
+        try:
+            int(self.survey_config_dict['hz'])
+            self.edi_obj.Define_measurement.meas_hz = mtedi.HMeasurement()
+            self.edi_obj.Define_measurement.meas_hz.id = 3
+            self.edi_obj.Define_measurement.meas_hz.chtype = 'hy'
+            self.edi_obj.Define_measurement.meas_hz.x = 0
+            self.edi_obj.Define_measurement.meas_hz.y = 0
+            self.edi_obj.Define_measurement.meas_hz.azm = 90 
+            self.edi_obj.Define_measurement.meas_hz.acqchan = self.survey_config_dict['hz']
+            ch_count += 1
+        except ValueError:
+            pass
+        
+        #--> ex
+        self.edi_obj.Define_measurement.meas_ex = mtedi.EMeasurement()
+        self.edi_obj.Define_measurement.meas_ex.id = ch_count+1
+        self.edi_obj.Define_measurement.meas_ex.chtype = 'hy'
+        self.edi_obj.Define_measurement.meas_ex.x = 0
+        self.edi_obj.Define_measurement.meas_ex.y = 0
+        self.edi_obj.Define_measurement.meas_ex.x2 = float(self.survey_config_dict['e_xaxis_length'])
+        self.edi_obj.Define_measurement.meas_ex.y2 = 0
+        self.edi_obj.Define_measurement.meas_ex.azm = float(self.survey_config_dict['e_xaxis_azimuth'])
+        self.edi_obj.Define_measurement.meas_ex.acqchan = ch_count+1
+        
+        #--> ex
+        self.edi_obj.Define_measurement.meas_ey = mtedi.EMeasurement()
+        self.edi_obj.Define_measurement.meas_ey.id = ch_count+2
+        self.edi_obj.Define_measurement.meas_ey.chtype = 'hy'
+        self.edi_obj.Define_measurement.meas_ey.x = 0
+        self.edi_obj.Define_measurement.meas_ey.y = 0
+        self.edi_obj.Define_measurement.meas_ey.x2 = 0
+        self.edi_obj.Define_measurement.meas_ey.y2 = float(self.survey_config_dict['e_yaxis_length'])
+        self.edi_obj.Define_measurement.meas_ey.azm = float(self.survey_config_dict['e_yaxis_azimuth']) 
+        self.edi_obj.Define_measurement.meas_ey.acqchan = ch_count+2
+
+        #--> rhx
+        ch_count += 2
+        try:
+            self.edi_obj.Define_measurement.meas_rhx = mtedi.HMeasurement()
+            self.edi_obj.Define_measurement.meas_rhx.id = ch_count+1
+            self.edi_obj.Define_measurement.meas_rhx.chtype = 'rhx'
+            self.edi_obj.Define_measurement.meas_rhx.x = 0
+            self.edi_obj.Define_measurement.meas_rhx.y = 0
+            self.edi_obj.Define_measurement.meas_rhx.azm = 0 
+            self.edi_obj.Define_measurement.meas_rhx.acqchan = self.survey_config_dict['rr_hx']
+            ch_count += 1
+        except KeyError:
+            pass
+        
+        #--> rhy
+        try:
+            self.edi_obj.Define_measurement.meas_rhy = mtedi.HMeasurement()
+            self.edi_obj.Define_measurement.meas_rhy.id = ch_count+1
+            self.edi_obj.Define_measurement.meas_rhy.chtype = 'rhy'
+            self.edi_obj.Define_measurement.meas_rhy.x = 0
+            self.edi_obj.Define_measurement.meas_rhy.y = 0
+            self.edi_obj.Define_measurement.meas_rhy.azm = 90 
+            self.edi_obj.Define_measurement.meas_rhy.acqchan = self.survey_config_dict['rr_hy']
+            ch_count += 1
+        except KeyError:
+            pass
+        
+        self.edi_obj.Define_measurement.maxchan = ch_count
+        
+    def _fill_data_sect(self):
+        """
+        fill in data sect block
+        """
+        self.edi_obj.Data_sect.hx = 1    
+        self.edi_obj.Data_sect.hy = 2    
+        self.edi_obj.Data_sect.hz = 3
+        self.edi_obj.Data_sect.ex = 4
+        self.edi_obj.Data_sect.ey = 5
+        self.edi_obj.Data_sect.rhx = 6
+        self.edi_obj.Data_sect.rhy = 7
+        self.edi_obj.Data_sect.nfreq = self.j_obj.Z.freq.size
+        self.edi_obj.Data_sect.sectid = self.station
+        self.edi_obj.Data_sect.maxblks = 999
     
     def write_edi_file(self, station=None, birrp_dir=None, 
                        survey_config_fn=None, birrp_config_fn=None,
@@ -1630,131 +1769,12 @@ class J_To_Edi(object):
         #--> make edi file
         self.edi_obj = mtedi.Edi()
         
-        # fill in header information from survey dict
-        self.edi_obj.Header.lat = self.survey_config_dict['latitude']
-        self.edi_obj.Header.lon = self.survey_config_dict['longitude']
-        self.edi_obj.Header.acqdate = self.survey_config_dict['date']
-        self.edi_obj.Header.loc = self.survey_config_dict['location']
-        self.edi_obj.Header.dataid = self.survey_config_dict['station']
-        self.edi_obj.Header.elev = self.survey_config_dict['elevation']
-        self.edi_obj.Header.filedate = datetime.utcnow().strftime('%Y-%m-%d')
-        self.edi_obj.Header.acqby = self.survey_config_dict['network']
+        # fill in different blocks of the edi file
+        self._fill_header()
+        self._fill_info()
+        self._fill_define_meas()
+        self._fill_data_sect()                                                  
 
-        # fill in information section
-        self.edi_obj.Info.info_list = ['    edi file generated with MTpy',
-                                       '    Processing done with BIRRP 5.2',
-                                       '    Z units = km/s']
-        self.edi_obj.Info.info_list.append('Station Parameters')
-        for key in sorted(self.survey_config_dict.keys()):
-            self.edi_obj.Info.info_list.append('    {0}: {1}'.format(key.lower(), 
-                                               self.survey_config_dict[key]))
-        self.edi_obj.Info.info_list.append('\nBIRRP Parameters')
-        for key in sorted(self.birrp_dict.keys()):
-            self.edi_obj.Info.info_list.append('    {0}: {1}'.format(key.lower(),
-                                               self.birrp_dict[key]))
-                                               
-        # fill in define measurement
-        self.edi_obj.Define_measurement.reflat = self.survey_config_dict['latitude'] 
-        self.edi_obj.Define_measurement.reflon = self.survey_config_dict['longitude'] 
-        self.edi_obj.Define_measurement.refelev = self.survey_config_dict['elevation']
-
-        # --> hx        
-        self.edi_obj.Define_measurement.meas_hx = mtedi.HMeasurement()
-        self.edi_obj.Define_measurement.meas_hx.id = 1
-        self.edi_obj.Define_measurement.meas_hx.chtype = 'hx'
-        self.edi_obj.Define_measurement.meas_hx.x = 0
-        self.edi_obj.Define_measurement.meas_hx.y = 0
-        self.edi_obj.Define_measurement.meas_hx.azm = float(self.survey_config_dict['b_xaxis_azimuth'])
-        self.edi_obj.Define_measurement.meas_hx.acqchan = self.survey_config_dict['hx']
-        
-        
-        #--> hy
-        self.edi_obj.Define_measurement.meas_hy = mtedi.HMeasurement()
-        self.edi_obj.Define_measurement.meas_hy.id = 2
-        self.edi_obj.Define_measurement.meas_hy.chtype = 'hy'
-        self.edi_obj.Define_measurement.meas_hy.x = 0
-        self.edi_obj.Define_measurement.meas_hy.y = 0
-        self.edi_obj.Define_measurement.meas_hy.azm = float(self.survey_config_dict['b_yaxis_azimuth']) 
-        self.edi_obj.Define_measurement.meas_hy.acqchan = self.survey_config_dict['hy']
-        
-        ch_count = 2
-        #--> hz
-        try:
-            int(self.survey_config_dict['hz'])
-            self.edi_obj.Define_measurement.meas_hz = mtedi.HMeasurement()
-            self.edi_obj.Define_measurement.meas_hz.id = 3
-            self.edi_obj.Define_measurement.meas_hz.chtype = 'hy'
-            self.edi_obj.Define_measurement.meas_hz.x = 0
-            self.edi_obj.Define_measurement.meas_hz.y = 0
-            self.edi_obj.Define_measurement.meas_hz.azm = 90 
-            self.edi_obj.Define_measurement.meas_hz.acqchan = self.survey_config_dict['hz']
-            ch_count += 1
-        except ValueError:
-            pass
-        
-        #--> ex
-        self.edi_obj.Define_measurement.meas_ex = mtedi.EMeasurement()
-        self.edi_obj.Define_measurement.meas_ex.id = ch_count+1
-        self.edi_obj.Define_measurement.meas_ex.chtype = 'hy'
-        self.edi_obj.Define_measurement.meas_ex.x = 0
-        self.edi_obj.Define_measurement.meas_ex.y = 0
-        self.edi_obj.Define_measurement.meas_ex.x2 = float(self.survey_config_dict['e_xaxis_length'])
-        self.edi_obj.Define_measurement.meas_ex.y2 = 0
-        self.edi_obj.Define_measurement.meas_ex.azm = float(self.survey_config_dict['e_xaxis_azimuth'])
-        self.edi_obj.Define_measurement.meas_ex.acqchan = ch_count+1
-        
-        #--> ex
-        self.edi_obj.Define_measurement.meas_ey = mtedi.EMeasurement()
-        self.edi_obj.Define_measurement.meas_ey.id = ch_count+2
-        self.edi_obj.Define_measurement.meas_ey.chtype = 'hy'
-        self.edi_obj.Define_measurement.meas_ey.x = 0
-        self.edi_obj.Define_measurement.meas_ey.y = 0
-        self.edi_obj.Define_measurement.meas_ey.x2 = 0
-        self.edi_obj.Define_measurement.meas_ey.y2 = float(self.survey_config_dict['e_yaxis_length'])
-        self.edi_obj.Define_measurement.meas_ey.azm = float(self.survey_config_dict['e_yaxis_azimuth']) 
-        self.edi_obj.Define_measurement.meas_ey.acqchan = ch_count+2
-
-        #--> rhx
-        ch_count += 2
-        try:
-            self.edi_obj.Define_measurement.meas_rhx = mtedi.HMeasurement()
-            self.edi_obj.Define_measurement.meas_rhx.id = ch_count+1
-            self.edi_obj.Define_measurement.meas_rhx.chtype = 'rhx'
-            self.edi_obj.Define_measurement.meas_rhx.x = 0
-            self.edi_obj.Define_measurement.meas_rhx.y = 0
-            self.edi_obj.Define_measurement.meas_rhx.azm = 0 
-            self.edi_obj.Define_measurement.meas_rhx.acqchan = self.survey_config_dict['rr_hx']
-            ch_count += 1
-        except KeyError:
-            pass
-        
-        #--> rhy
-        try:
-            self.edi_obj.Define_measurement.meas_rhy = mtedi.HMeasurement()
-            self.edi_obj.Define_measurement.meas_rhy.id = ch_count+1
-            self.edi_obj.Define_measurement.meas_rhy.chtype = 'rhy'
-            self.edi_obj.Define_measurement.meas_rhy.x = 0
-            self.edi_obj.Define_measurement.meas_rhy.y = 0
-            self.edi_obj.Define_measurement.meas_rhy.azm = 90 
-            self.edi_obj.Define_measurement.meas_rhy.acqchan = self.survey_config_dict['rr_hy']
-            ch_count += 1
-        except KeyError:
-            pass
-        
-        self.edi_obj.Define_measurement.maxchan = ch_count
-            
-        #-->  data section
-        self.edi_obj.Data_sect.hx = 1    
-        self.edi_obj.Data_sect.hy = 2    
-        self.edi_obj.Data_sect.hz = 3
-        self.edi_obj.Data_sect.ex = 4
-        self.edi_obj.Data_sect.ey = 5
-        self.edi_obj.Data_sect.rhx = 6
-        self.edi_obj.Data_sect.rhy = 7
-        self.edi_obj.Data_sect.nfreq = self.j_obj.Z.freq.size
-        self.edi_obj.Data_sect.sectid = self.station
-        self.edi_obj.Data_sect.maxblks = 999
-        
         #--> Z and Tipper
         self.edi_obj.Z = self.j_obj.Z
         self.edi_obj.Tipper = self.j_obj.Tipper
