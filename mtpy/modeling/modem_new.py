@@ -232,7 +232,7 @@ class Data(object):
     :Example 5 --> create mesh first then data file: ::
     
         >>> import mtpy.modeling.modem as modem
-        >>> import os
+        >>> import osself.data_array = np.zeros(ns, dtype=self._dtype)
         >>> #1) make a list of all .edi files that will be inverted for 
         >>> edi_path = r"/home/EDI_Files"
         >>> edi_list = [os.path.join(edi_path, edi) 
@@ -623,7 +623,48 @@ class Data(object):
     rotation_angle = property(fget=_get_rotation_angle, 
                               fset=_set_rotation_angle,
                               doc="""Rotate data assuming N=0, E=90""")
-                              
+    
+    def _initialise_empty_data_array(self,stationlocations,period_list,
+                                     location_type='LL',stationnames=None):
+        """
+        create an empty data array to create input files for forward modelling
+        station locations is an array containing x,y coordinates of each station
+        (shape = (number_of_stations,2))
+        period_list = list of periods to model
+        location_type = 'LL' or 'EN' - longitude/latitude or easting/northing
+        
+        """
+        self.period_list = period_list
+        nf = len(self.period_list)
+        self._set_dtype((nf, 2, 2), (nf, 1, 2))
+        self.data_array = np.zeros(len(stationlocations), dtype=self._dtype)
+        if location_type == 'LL':
+            self.data_array['lon'] = stationlocations[:,0]
+            self.data_array['lat'] = stationlocations[:,1]
+        else:
+            self.data_array['east'] = stationlocations[:,0]
+            self.data_array['north'] = stationlocations[:,1]   
+            
+        # set non-zero values to array (as zeros will be deleted)
+        if self.inv_mode in '12':
+            self.data_array['z'][:] = 100.+100j
+            self.data_array['z_err'][:] = 1e15
+        if self.inv_mode == '1':
+            self.data_array['tip'][:] = 0.1 + 0.1j
+            self.data_array['tip_err'][:] = 1e15
+            
+        # set station names
+        if stationnames is not None:
+            if len(stationnames) != len(stationnames):
+                stationnames = None
+                
+        if stationnames is None:
+            stationnames = ['st%03i'%ss for ss in range(len(stationlocations))]
+        self.data_array['station'] = stationnames
+        
+        self.get_relative_station_locations()
+
+            
     def _fill_data_array(self):
         """
         fill the data array from mt_dict
@@ -741,7 +782,7 @@ class Data(object):
             return None
             
         station_locations = self.data_array[['station', 'lat', 'lon', 
-                                             'north', 'east', 'elev',
+                                             'north', 'east', 'elev','zone',
                                              'rel_north', 'rel_east']]
         return station_locations
         
@@ -750,7 +791,8 @@ class Data(object):
                                   doc="""location of stations""") 
                 
     def write_data_file(self, save_path=None, fn_basename=None, 
-                        rotation_angle=None, compute_error=True, fill=True):
+                        rotation_angle=None, compute_error=True, 
+                        fill=True):
         """
         write data file for ModEM
         
@@ -795,14 +837,15 @@ class Data(object):
             
         self.data_fn = os.path.join(self.save_path, self.fn_basename)
         
-        self.get_period_list()
+        if fill:
+            self.get_period_list()
         
         #rotate data if desired
         if rotation_angle is not None:
             self.rotation_angle = rotation_angle
         
         #be sure to fill in data array
-        if fill is True:
+        if fill:
             self._fill_data_array()
             # get relative station locations in grid coordinates
             self.get_relative_station_locations()
@@ -2258,7 +2301,7 @@ class Model(object):
         self.grid_east = np.array([self.nodes_east[0:ii].sum() 
                                    for ii in range(n_east+1)])
                                 
-        self.grid_z = np.array([self.nodes_z[:ii+1].sum() 
+        self.grid_z = np.array([self.nodes_z[:ii].sum() 
                                 for ii in range(n_z+1)])
         
         # center the grids

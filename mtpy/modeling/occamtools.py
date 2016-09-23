@@ -5857,8 +5857,8 @@ class Occam2DModel(Occam2DData):
         nh=int(mlines[1].strip().split()[1])-1
         nv=int(mlines[1].strip().split()[2])-1
         
-        hnodes=np.zeros(nh)
-        vnodes=np.zeros(nv)
+        hnodes=np.zeros(nh+1)
+        vnodes=np.zeros(nv+1)
         mdata=np.zeros((nh,nv,4),dtype=str)    
         
         #get horizontal nodes
@@ -5868,6 +5868,7 @@ class Occam2DModel(Occam2DData):
             hline=mlines[jj].strip().split()
             for mm in hline:
                 hnodes[ii]=float(mm)
+                print ii,hnodes
                 ii+=1
             jj+=1
         
