@@ -1488,12 +1488,15 @@ class DefineMeasurement(object):
                                                            value))
         measurement_lines.append('\n')
                                                            
-        ## need to write the >XMEAS type
-        m_key_list = [kk for kk in self.__dict__.keys() if kk.find('meas_')==0]
+        ## need to write the >XMEAS type, but sort by channel number
+        m_key_list = [(kk, self.__dict__[kk].id) for kk in self.__dict__.keys()
+                      if kk.find('meas_')==0]
         if len(m_key_list) == 0:
             print 'No XMEAS information.'
         else:
-            for key in sorted(m_key_list):
+            # need to sort the dictionary by chanel id
+            for key in sorted(m_key_list, key=lambda x: x[1]):
+                key = key[0]
                 m_obj = getattr(self, key)
                 if m_obj.chtype.lower().find('h') >= 0:
                     head = 'hmeas'
@@ -1676,15 +1679,15 @@ class DataSection(object):
         self.line_num = 0
         self.data_sect_list = None
         
-        self._kw_list = ['ex', 
+        self._kw_list = ['nfreq',
+                         'sectid',
+                         'nchan',
+                         'maxblks',
+                         'ex', 
                          'ey',
                          'hx',
                          'hy',
-                         'hz',
-                         'nfreq',
-                         'sectid',
-                         'nchan',
-                         'maxblks']
+                         'hz']
                          
         for key in self._kw_list:
             setattr(self, key, None)
@@ -1785,10 +1788,21 @@ class DataSection(object):
         print 'Writing out data a impedances'
             
         data_sect_lines = ['\n>=mtsect\n'.upper()]
-        for key in self._kw_list:
+        
+        for key in self._kw_list[0:4]:
             data_sect_lines.append('{0}{1}={2}\n'.format(tab, 
                                                          key.upper(), 
                                                          getattr(self, key)))
+        
+        # need to sort the list so it is descending order by channel number
+        ch_list = [(key.upper(), getattr(self, key)) 
+                    for key in self._kw_list[4:]]
+        ch_list = sorted(ch_list, key=lambda x: x[1])
+
+        for ch in ch_list:
+            data_sect_lines.append('{0}{1}={2}\n'.format(tab, 
+                                                         ch[0], 
+                                                         ch[1]))
         
         data_sect_lines.append('\n')
         
