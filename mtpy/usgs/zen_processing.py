@@ -830,7 +830,7 @@ class Z3D_to_edi(object):
             
             #write script file using mtpy.processing.birrp    
             script_fn, birrp_dict = birrp.write_script_file(pro_dict,
-                                                        save_path=bf_path)
+                                                            save_path=bf_path)
                                                         
             script_fn_list.append(script_fn)
             
@@ -891,10 +891,12 @@ class Z3D_to_edi(object):
                         self.survey_config_fn = os.path.join(ts_dir, fn)
         
         # TODO: need to change this to confrom with new edi class
-        edi_fn = birrp.convert2edi(self.survey_config.station, 
-                                   birrp_output_path, 
-                                   self.survey_config_fn, 
-                                   self.birrp_config_fn)
+        j2edi_obj = birrp.J_To_Edi(self.survey_config.station,
+                                   survey_config_fn=self.survey_config_fn,
+                                   birrp_dir=birrp_output_path,
+                                   birrp_config_fn=self.birrp_config_fn)
+                    
+        edi_fn = j2edi_obj.write_edi_file()
         
         return edi_fn
         

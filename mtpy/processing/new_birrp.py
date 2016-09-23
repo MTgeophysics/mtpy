@@ -1782,5 +1782,7 @@ class J_To_Edi(object):
         edi_fn = mtfh.make_unique_filename(os.path.join(self.birrp_dir,
                                                         '{0}.edi'.format(self.station)))
                                                         
-        self.edi_obj.write_edi_file(new_edi_fn=edi_fn)
+        out_edi_fn = self.edi_obj.write_edi_file(new_edi_fn=edi_fn)
+        
+        return out_edi_fn
     
