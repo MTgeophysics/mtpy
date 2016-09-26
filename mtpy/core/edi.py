@@ -580,26 +580,30 @@ class Edi(object):
                 z_data_lines += z_lines_var
                 
         # write out rotation angles
-        trot_lines = [self._data_header_str.format('tipper rotation angles'.upper())]
-        if type(self.Tipper.rotation_angle) is float:
-            trot = np.repeat(self.Tipper.rotation_angle, self.Tipper.freq.size)
-        else:
-            trot = self.Tipper.rotation_angle
-        trot_lines += self._write_data_block(np.array(trot), 'trot')
-                
-        # write out tipper lines       
-        t_data_lines = [self._data_header_str.format('tipper'.upper())]        
-        for jj in range(2):
-            t_lines_real = self._write_data_block(self.Tipper.tipper[:, 0, jj].real, 
-                                                  self._t_labels[jj][0])
-            t_lines_imag = self._write_data_block(self.Tipper.tipper[:, 0, jj].imag, 
-                                                  self._t_labels[jj][1])
-            t_lines_var = self._write_data_block(self.Tipper.tipper_err[:, 0, jj], 
-                                                 self._t_labels[jj][2])
-                                       
-            t_data_lines += t_lines_real
-            t_data_lines += t_lines_imag
-            t_data_lines += t_lines_var
+        try:
+            trot_lines = [self._data_header_str.format('tipper rotation angles'.upper())]
+            if type(self.Tipper.rotation_angle) is float:
+                trot = np.repeat(self.Tipper.rotation_angle, self.Tipper.freq.size)
+            else:
+                trot = self.Tipper.rotation_angle
+            trot_lines += self._write_data_block(np.array(trot), 'trot')
+                    
+            # write out tipper lines       
+            t_data_lines = [self._data_header_str.format('tipper'.upper())]        
+            for jj in range(2):
+                t_lines_real = self._write_data_block(self.Tipper.tipper[:, 0, jj].real, 
+                                                      self._t_labels[jj][0])
+                t_lines_imag = self._write_data_block(self.Tipper.tipper[:, 0, jj].imag, 
+                                                      self._t_labels[jj][1])
+                t_lines_var = self._write_data_block(self.Tipper.tipper_err[:, 0, jj], 
+                                                     self._t_labels[jj][2])
+                                           
+                t_data_lines += t_lines_real
+                t_data_lines += t_lines_imag
+                t_data_lines += t_lines_var
+        except AttributeError:
+            trot_lines = ['']
+            t_data_lines = ['']
             
         edi_lines = header_lines+\
                     info_lines+\

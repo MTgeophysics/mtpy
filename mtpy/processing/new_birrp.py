@@ -975,9 +975,9 @@ def write_script_file(processing_dict, save_path=None):
                     s_lines.append(wetim)
                     
     #write rotation angles
-    s_lines.append(thetae.replace(',',' '))
-    s_lines.append(thetab.replace(',',' '))
-    s_lines.append(thetaf.replace(',',' '))    
+    s_lines.append(' '.join(['{0:.0f}'.format(theta) for theta in thetae]))
+    s_lines.append(' '.join(['{0:.0f}'.format(theta) for theta in thetab]))
+    s_lines.append(' '.join(['{0:.0f}'.format(theta) for theta in thetaf]))    
     
     with open(script_fn, 'w') as fid:
         fid.write('\n'.join(s_lines))
@@ -1763,4 +1763,6 @@ class J_To_Edi(object):
                                                         '{0}.edi'.format(self.station)))
                                                         
         self.edi_obj.write_edi_file(new_edi_fn=edi_fn)
+        
+        return edi_fn
     

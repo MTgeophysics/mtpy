@@ -69,6 +69,7 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
                                          r"d:\Peacock\MTData\Ant_calibrations")
         self.calibration_list = ['2254', '2264', '2274', '2284', '2294',
                                 '2304', '2314', '2324', '2334', '2344']
+        self._max_nread = 16000000
                                 
  
         
@@ -95,8 +96,6 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
         
         fn_birrp_list = fn_birrp_arr[df]
         """
-        comp_dict = {'ex':0, 'ey':1, 'hz':2, 'hx':3, 'hy':4, 
-                     'rrhx':0, 'rrhy':1}
         
         self.fn_list = []
         self.rrfn_list = []
@@ -109,7 +108,15 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
         for block_arr in fn_birrp_list:
             s_list = np.zeros(len(block_arr), dtype='|S100')
             r_list = np.zeros(2, dtype='|S100')
-
+            print len(block_arr), block_arr
+            if len(block_arr) == 5 or len(block_arr) == 7:
+                comp_dict = {'ex':0, 'ey':1, 'hz':2, 'hx':3, 'hy':4, 
+                             'rrhx':0, 'rrhy':1}
+                self.nout = 3
+            elif len(block_arr) == 4 or len(block_arr) == 6:
+                comp_dict = {'ex':0, 'ey':1, 'hx':2, 'hy':3, 
+                             'rrhx':0, 'rrhy':1}
+                self.nout = 2
             # get the time to start, number of points to read for each
             # segment.
             start_dt_list = sorted(list(set(block_arr['start_dt'])))
@@ -891,10 +898,16 @@ class Z3D_to_edi(object):
                         self.survey_config_fn = os.path.join(ts_dir, fn)
         
         # TODO: need to change this to confrom with new edi class
-        edi_fn = birrp.convert2edi(self.survey_config.station, 
-                                   birrp_output_path, 
-                                   self.survey_config_fn, 
-                                   self.birrp_config_fn)
+        j_obj = birrp.J_To_Edi(station=self.survey_config.station.upper(),
+                                survey_config_fn=self.survey_config_fn,
+                                birrp_config_fn=self.birrp_config_fn,
+                                birrp_dir=birrp_output_path)
+
+        edi_fn = j_obj.write_edi_file()
+#        edi_fn = birrp.convert2edi(self.survey_config.station, 
+#                                   birrp_output_path, 
+#                                   self.survey_config_fn, 
+#                                   self.birrp_config_fn)
         
         return edi_fn
         
@@ -1046,7 +1059,7 @@ class Z3D_to_edi(object):
 
         n_edi_fn = os.path.join(self.station_dir, 
                                 '{0}_comb.edi'.format(os.path.basename(self.station_dir)))        
-        edi_obj.write_edi_file(new_edi_fn=n_edi_fn)
+        n_edi_fn = edi_obj.write_edi_file(new_edi_fn=n_edi_fn)
         
         return n_edi_fn
                 
