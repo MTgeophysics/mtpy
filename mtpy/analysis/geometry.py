@@ -5,21 +5,16 @@ mtpy/mtpy/analysis/geometry.py
 
 Contains classes and functions for handling geometry analysis of impedance tensors:
 
-dimensionality, strike directions, alphas/betas/...
+dimensionality, strike directions, alphas/skews/...
  
-
-
-    Class:
-
-        Methods:
-
-
-
-    Functions:
-
+    * 1d - 2d : excentricity of ellipses
+    * 2d - 3d : skew < threshold (to be given as argument)
+    * strike: frequency - depending angle (incl. 90degree ambiguity)
 
 @UofA, 2013
 (LK)
+
+Edited by JP, 2016
 
 """
 
@@ -30,29 +25,63 @@ import mtpy.core.z as MTz
 import mtpy.analysis.pt as MTpt 
 import mtpy.utils.exceptions as MTex
 
-# reload(MTex)
-# reload(MTz)
-reload(MTpt)
-
-
 #=================================================================
 
-
-# 1d - 2d : excentricity of ellipses
-# 2d - 3d : beta < threshold (to be given as argument)
-# strike: frequency - depending angle (incl. 90degree ambiguity)
-# input: PT object, Z object (,edi object) 
-
-
-
 def dimensionality(z_array = None, z_object = None, pt_array= None, 
-                    pt_object = None, beta_threshold = 5, 
+                    pt_object = None, skew_threshold = 5, 
                     eccentricity_threshold = 0.1):
     """
-    beta_threshold: angle in degrees - if beta is smaller than this, it's 2d
+    Esitmate dimensionality of an impedance tensor, frequency by frequency.
+
+    Dimensionality is estimated from the phase tensor given the threshold
+    criteria on the skew angle and eccentricity following Bibby et al., 2005
+    and Booker, 2014.
     
-    eccentricity_threshold: fraction of eccentricity (0: circle - 1: line) -
-    if eccentricity (ellipticity) is small than this, it's a 1D geometry.
+    Arguments
+    ------------
+    
+        **z_array** : np.ndarray(nf, 2, 2)
+                      numpy array of impedance elements
+                      *default* is None
+                      
+        **z_object** : mtpy.core.z.Z 
+                       z_object
+                       *default* is None
+                       
+        **pt_array** : np.ndarray(nf, 2, 2)
+                       numpy array of phase tensor elements
+                       *default* is None
+                       
+        **pt_object** : mtpy.analysis.pt.PT
+                        phase tensor object
+                        *default* is None
+                        
+        **skew_threshold** : float
+                             threshold on the skew angle in degrees, anything
+                             above this value is 3-D or azimuthally anisotropic
+                             *default* is 5 degrees
+                             
+        **eccentricity_threshold** : float
+                                     threshold on eccentricty in dimensionaless
+                                     units, anything below this value is 1-D
+                                     *default* is 0.1
+                                     
+    Returns
+    ----------
+    
+        **dimensions** : np.ndarray(nf, dtype=int)
+                         an array of dimesions for each frequency
+                         the values are [ 1 | 2 | 3 ]
+                         
+                         
+    Examples
+    ----------
+        :Estimate Dimesions: ::
+        
+            >>> import mtpy.analysis.geometry as geometry
+            >>> dim = geometry.dimensionality(z_object=z_obj, 
+            >>>                               skew_threshold=3)
+    
 
     """
 
@@ -72,12 +101,13 @@ def dimensionality(z_array = None, z_object = None, pt_array= None,
         pt_obj = pt_object
     
 
-    #use criteria from Bibby et al. 2005 for determining the dimensionality for each frequency of the pt/z array:
+    # use criteria from Bibby et al. 2005 for determining the dimensionality 
+    # for each frequency of the pt/z array:
     for idx_f in range(len(pt_obj.pt)):
-        #1. determine beta value...
-        beta = pt_obj.beta[0][idx_f]
+        #1. determine skew value...
+        skew = pt_obj.beta[0][idx_f]
             #compare with threshold for 3D
-        if beta > beta_threshold:
+        if skew > skew_threshold:
             lo_dimensionality.append(3)
         else:
             #2.check for eccentricity:
@@ -92,8 +122,60 @@ def dimensionality(z_array = None, z_object = None, pt_array= None,
 
 
 def strike_angle(z_array = None, z_object = None, pt_array= None, 
-                    pt_object = None, beta_threshold = 5, 
+                    pt_object = None, skew_threshold = 5, 
                     eccentricity_threshold = 0.1):
+                        
+    """
+    Estimate strike angle from 2D parts of the impedance tensor given the 
+    skew and eccentricity thresholds
+    
+        Arguments
+    ------------
+    
+        **z_array** : np.ndarray(nf, 2, 2)
+                      numpy array of impedance elements
+                      *default* is None
+                      
+        **z_object** : mtpy.core.z.Z 
+                       z_object
+                       *default* is None
+                       
+        **pt_array** : np.ndarray(nf, 2, 2)
+                       numpy array of phase tensor elements
+                       *default* is None
+                       
+        **pt_object** : mtpy.analysis.pt.PT
+                        phase tensor object
+                        *default* is None
+                        
+        **skew_threshold** : float
+                             threshold on the skew angle in degrees, anything
+                             above this value is 3-D or azimuthally anisotropic
+                             *default* is 5 degrees
+                             
+        **eccentricity_threshold** : float
+                                     threshold on eccentricty in dimensionaless
+                                     units, anything below this value is 1-D
+                                     *default* is 0.1
+                                     
+    Returns
+    ----------
+    
+        **strike** : np.ndarray(nf)
+                         an array of strike angles in degrees for each frequency
+                         assuming 0 is north, and e is 90.  There is a 90 
+                         degree ambiguity in the angle.
+                         
+                         
+    Examples
+    ----------
+        :Estimate Dimesions: ::
+        
+            >>> import mtpy.analysis.geometry as geometry
+            >>> strike = geometry.strike_angle(z_object=z_obj, 
+            >>>                                skew_threshold=3)
+    
+    """
 
     if z_array is not None:
         pt_obj = MTpt.PhaseTensor(z_array = z_array)
@@ -109,7 +191,9 @@ def strike_angle(z_array = None, z_object = None, pt_array= None,
             raise MTex.MTpyError_PT('Input argument is not an instance of the PhaseTensor class')
         pt_obj = pt_object
 
-    lo_dims =  dimensionality(pt_object = pt_obj, beta_threshold =beta_threshold , eccentricity_threshold = eccentricity_threshold )
+    lo_dims =  dimensionality(pt_object = pt_obj, 
+                              skew_threshold=skew_threshold, 
+                              eccentricity_threshold=eccentricity_threshold )
 
     lo_strikes = []
 
@@ -138,7 +222,48 @@ def strike_angle(z_array = None, z_object = None, pt_array= None,
 
 
 
-def eccentricity(z_array = None, z_object = None, pt_array= None, pt_object = None):
+def eccentricity(z_array=None, z_object=None, pt_array=None, pt_object=None):
+    """
+    Estimate eccentricy of a given impedance or phase tensor object
+    
+    
+    Arguments
+    ------------
+    
+        **z_array** : np.ndarray(nf, 2, 2)
+                      numpy array of impedance elements
+                      *default* is None
+                      
+        **z_object** : mtpy.core.z.Z 
+                       z_object
+                       *default* is None
+                       
+        **pt_array** : np.ndarray(nf, 2, 2)
+                       numpy array of phase tensor elements
+                       *default* is None
+                       
+        **pt_object** : mtpy.analysis.pt.PT
+                        phase tensor object
+                        *default* is None
+
+                                     
+    Returns
+    ----------
+    
+        **eccentricity** : np.ndarray(nf)
+        
+        
+        **eccentricity_err** : np.ndarray(nf)
+                            
+                         
+                         
+    Examples
+    ----------
+        :Estimate Dimesions: ::
+        
+            >>> import mtpy.analysis.geometry as geometry
+            >>> ec, ec_err= geometry.eccentricity(z_object=z_obj)
+    """
 
 
     if z_array is not None:

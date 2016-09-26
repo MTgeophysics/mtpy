@@ -1734,7 +1734,14 @@ class ZongeMTAvg():
                         self.comp_lst_tip.append(akey)
                     ii = 0
                 else:
-                    self.header_dict[alst[0][1:]] = alst[1]
+                    akey = alst[0][1:].replace('.', '_')
+                    if akey.lower().find('length'):
+                        alst[1] = alst[1][0:-1]
+                    try:
+                        self.__dict__[akey] = float(alst[1])
+                    except ValueError:
+                        self.__dict__[akey] = alst[1]
+                    #self.header_dict[alst[0][1:]] = alst[1]
             elif aline[0] == 'S':
                 pass
             # read the data line.
@@ -1805,7 +1812,7 @@ class ZongeMTAvg():
             #fill z according to index values
             new_Z = mtz.Z()
             new_Z.z = np.zeros((new_nz, 2, 2), dtype='complex')
-            new_Z.zerr = np.ones((new_nz, 2, 2))
+            new_Z.z_err = np.ones((new_nz, 2, 2))
             nzx, nzy, nzz = self.Z.z.shape
             
             self.freq_dict = new_freq_dict
@@ -1827,7 +1834,7 @@ class ZongeMTAvg():
                             mm = self.freq_dict_x[self.comp_dict[ikey]['freq'][kk]]
 
                             new_Z.z[ll] = self.Z.z[mm]
-                            new_Z.zerr[ll] = self.Z.zerr[mm]
+                            new_Z.z_err[ll] = self.Z.z_err[mm]
                         except KeyError:
                             pass
                         
@@ -1843,7 +1850,7 @@ class ZongeMTAvg():
                         new_Z.z[ll, ii, jj] = -1*(zzr+zzi*1j)
                     else:
                         new_Z.z[ll, ii, jj] = zzr+zzi*1j
-                    new_Z.zerr[ll,ii, jj] = \
+                    new_Z.z_err[ll,ii, jj] = \
                                 self.comp_dict[ikey]['ares.%err'][kk]*.005
                 
             new_Z.freq = sorted(self.freq_dict.keys())
@@ -1855,7 +1862,7 @@ class ZongeMTAvg():
             self.freq_dict_x = dict([(ff, nn) for nn, ff in enumerate(freq)])
             #fill z with values
             z = np.zeros((nz, 2, 2), dtype='complex')
-            zerr = np.ones((nz, 2, 2))
+            z_err = np.ones((nz, 2, 2))
             
             for ikey in self.comp_lst_z:
                 ii, jj = self.comp_index[ikey]
@@ -1868,14 +1875,14 @@ class ZongeMTAvg():
                 else:
                     z[:, ii, jj] = zr+zi*1j
 
-                zerr[:,ii, jj] = self.comp_dict[ikey]['ares.%err'][:nz]*.005 
+                z_err[:,ii, jj] = self.comp_dict[ikey]['ares.%err'][:nz]*.005 
                     
             self.Z.z = z
-            self.Z.zerr = zerr
+            self.Z.z_err = z_err
             self.Z.freq = freq
             
         self.Z.z = np.nan_to_num(self.Z.z)
-        self.Z.zerr = np.nan_to_num(self.Z.zerr)
+        self.Z.z_err = np.nan_to_num(self.Z.z_err)
                 
                 
     def fill_Tipper(self):
@@ -1901,7 +1908,7 @@ class ZongeMTAvg():
             #fill z according to index values
             new_Tipper = mtz.Tipper()
             new_Tipper.tipper = np.zeros((new_nz, 1, 2), dtype='complex')
-            new_Tipper.tippererr = np.ones((new_nz, 1, 2))
+            new_Tipper.tipper_err = np.ones((new_nz, 1, 2))
             
             self.freq_dict = new_freq_dict
             
@@ -1919,7 +1926,7 @@ class ZongeMTAvg():
                             mm = self.freq_dict_x[self.comp_dict[ikey]['freq'][kk]]
 
                             new_Tipper.tipper[ll] = self.Tipper.tipper[mm]
-                            new_Tipper.tippererr[ll] = self.Tipper.tippererr[mm]
+                            new_Tipper.tipper_err[ll] = self.Tipper.tipper_err[mm]
                         except KeyError:
                             pass
 
@@ -1938,7 +1945,7 @@ class ZongeMTAvg():
                     else:
                         new_Tipper.tipper[ll, ii, jj] = tzr+tzi*1j
                     #error estimation
-                    new_Tipper.tippererr[ll,ii, jj] += \
+                    new_Tipper.tipper_err[ll,ii, jj] += \
                                 self.comp_dict[ikey]['ares.%err'][kk]*\
                                                 .05*np.sqrt(tzr**2+tzi**2)
                 
@@ -1950,7 +1957,7 @@ class ZongeMTAvg():
             self.freq_dict_x = dict([(ff, nn) for nn, ff in enumerate(freq)])
             #fill z with values
             tipper = np.zeros((nz, 1, 2), dtype='complex')
-            tippererr = np.ones((nz, 1, 2))
+            tipper_err = np.ones((nz, 1, 2))
             
             for ikey in self.comp_lst_tip:
                 ii, jj = self.comp_index[ikey]
@@ -1962,15 +1969,15 @@ class ZongeMTAvg():
                     tipper[:, ii, jj] = -1*(tzr+tzi*1j)
                 else:
                     tipper[:, ii, jj] = tzr+tzi*1j
-                tippererr[:, ii, jj] = self.comp_dict[ikey]['ares.%err'][:nz]*\
+                tipper_err[:, ii, jj] = self.comp_dict[ikey]['ares.%err'][:nz]*\
                                                      .05*np.sqrt(tzr**2+tzi**2)
                     
             self.Tipper.tipper = tipper
-            self.Tipper.tippererr = tippererr
+            self.Tipper.tipper_err = tipper_err
             self.Tipper.freq = sorted(self.freq_dict_x.keys())
             
         self.Tipper.tipper = np.nan_to_num(self.Tipper.tipper)
-        self.Tipper.tippererr = np.nan_to_num(self.Tipper.tippererr)
+        self.Tipper.tipper_err = np.nan_to_num(self.Tipper.tipper_err)
         
     def write_edi(self, avg_dirpath, station, survey_dict=None, 
                   survey_cfg_file=None,  mtft_cfg_file=None, 
@@ -2364,6 +2371,366 @@ class ZongeMTAvg():
         return plot_resp
         
         
+    def write_edi_from_avg(self, avg_fn, station, survey_dict=None, 
+                  survey_cfg_file=None,  mtft_cfg_file=None, 
+                  mtedit_cfg_file=r"c:\MinGW32-xy\Peacock\zen\bin\mtedit.cfg", 
+                  save_path=None, rrstation=None, 
+                  copy_path=r"d:\Peacock\MTData\EDI_Files", avg_ext='.avg'):
+        """
+        write an edi file from the .avg files
+        
+        Arguments:
+        ----------
+            **fnx** : string (full path to electric north file)
+                      file for Zxx, Zxy
+                      
+            **fny** : string (full path to electric east file)
+                      file for Zyx, Zyy
+            
+            **survey_dict** : dictionary
+                              dictionary containing the survey parameters
+                              such as lat, lon, elevation, date, etc.
+                              
+            **survey_cfg_file** : string (full path to survey file)
+                              file contains all the important information 
+                              about the setup of the station, input file if
+                              survey_dict is None.  This is created by 
+                              mtpy.configfile
+                              
+            **mtft_cfg_file** : string (full path to mtft24.cfg file)
+                               this file contains information on how the
+                               Fourier coefficients were calculated
+                               
+            **mtedit_cfg_file** : string (full path to MTEdit.cfg file)
+                                  this file contains information on how 
+                                  the transfer functions were estimated
+            
+            **save_path** : string (full path or directory to where .edi file 
+                                    will be saved)
+                                    
+        Outputs:
+        ---------
+            **edi_fn** : string (full path to .edi file)
+                      
+                      
+                      
+        """
+        
+        if save_path is None:
+            save_dir = os.path.dirname(avg_fn)
+            save_path = os.path.join(save_dir, station+'.edi')
+        
+        #create an mtedi instance
+        self.edi = mtedi.Edi()
+        self.edi.Z = self.Z
+        self.edi.Tipper = self.Tipper
+        
+        if os.path.isfile(avg_fn) == True:
+            self.read_avg_file(avg_fn)
+            self.edi.Z = self.Z
+            self.edi.Tipper = self.Tipper
+
+        #read in survey file
+        survey_dict = {}
+        survey_dict['latitude'] = MTft._assert_position_format('lat', self.GPS_Lat)
+        survey_dict['longitude'] = MTft._assert_position_format('lon', self.GPS_Lon)
+        survey_dict['elevation'] = self.Rx_Length
+        survey_dict['station'] = station
+        if survey_cfg_file is not None:
+            sdict = mtcf.read_survey_configfile(survey_cfg_file)
+            
+            try:
+                survey_dict = sdict[station.upper()]
+            except KeyError:
+                if survey_dict is not None:
+                    try:
+                        survey_dict['station']
+                    except KeyError:
+                        try:
+                            survey_dict['station_name']
+                        except KeyError:
+                            print('Could not find station information in'
+                                           ', check inputs')
+                                 
+        #get remote reference information if desired
+        if rrstation:
+            try:
+                rrsurvey_dict = sdict[rrstation.upper()]
+                survey_dict['rr_station'] = rrsurvey_dict['station']
+                survey_dict['rr_station_elevation'] = rrsurvey_dict['elevation']
+                survey_dict['rr_station_latitude'] = \
+                                        MTft._assert_position_format('lat',
+                                               rrsurvey_dict.pop('latitude',0.0))
+                survey_dict['rr_station_longitude'] = \
+                                        MTft._assert_position_format('lon',
+                                               rrsurvey_dict.pop('longitude',0.0))
+            except KeyError:
+                print 'Could not find station information for remote reference'
+        else:
+            rrsurvey_dict = None
+            
+        #read in mtft24.cfg file
+        if mtft_cfg_file is None:
+            try:
+                mtft_cfg_file = os.path.join(save_dir, 'mtft24.cfg')
+                zmtft = ZongeMTFT()
+                zmtft.read_cfg(mtft_cfg_file)
+                mtft_dict = zmtft.meta_dict
+            except:
+                mtft_dict = None
+        else:
+            zmtft = ZongeMTFT()
+            zmtft.read_cfg(mtft_cfg_file)
+            mtft_dict = zmtft.meta_dict
+            
+        #read in mtedit.cfg file
+        if mtedit_cfg_file:
+            zmtedit = ZongeMTEdit()
+            zmtedit.read_config(mtedit_cfg_file)
+            mtedit_dict = zmtedit.meta_dict
+        else:
+            mtedit_dict = None
+            
+        #----------------HEAD BLOCK------------------
+        #from survey dict get information
+        head_dict = {}
+
+        #--> data id
+        try:
+            head_dict['dataid'] = survey_dict['station']
+        except KeyError:
+            head_dict['dataid'] = station
+            
+        #--> acquired by
+        head_dict['acqby'] = survey_dict.pop('network','')
+        
+        #--> file by
+        head_dict['fileby'] = survey_dict.pop('network','')
+        
+        #--> acquired date
+        head_dict['acqdate'] = survey_dict.pop('date', 
+                                    time.strftime('%Y-%m-%d',time.localtime()))
+        
+        #--> prospect
+        head_dict['loc'] = survey_dict.pop('location', '')
+        
+        #--> latitude
+        head_dict['lat'] = MTft._assert_position_format('lat',
+                                        survey_dict.pop('latitude',
+                                                        0.0))
+        
+        #--> longitude
+        head_dict['long'] = MTft._assert_position_format('lon',
+                                         survey_dict.pop('longitude',0.0))
+        
+        #--> elevation
+        head_dict['elev'] = survey_dict.pop('elevation', 0.0)
+        
+        #--> set header dict as attribute of edi
+        self.edi.head = head_dict
+       
+       #-----------------INFO BLOCK---------------------------
+        info_dict = {}
+        info_dict['max lines'] = 1000
+        
+        #--> put the rest of the survey parameters in the info block
+        for skey in survey_dict.keys():
+            info_dict[skey] = survey_dict[skey]
+        
+        #--> put parameters about how fourier coefficients were found
+        if mtft_dict:
+            for mkey in mtft_dict.keys():
+                if mkey == 'setup_lst' or \
+                   mkey.lower() == 'mtft.tsplot.chnrange':
+                    pass
+                else:
+                    info_dict[mkey] = mtft_dict[mkey]
+        
+        #--> put parameters about how transfer function was found
+        if mtedit_dict:
+            for mkey in mtedit_dict.keys():
+                info_dict[mkey] = mtedit_dict[mkey]
+        
+        #--> set info dict as attribute of edi
+        self.edi.info_dict = info_dict
+                
+        #----------------DEFINE MEASUREMENT BLOCK------------------
+        definemeas_dict = {}
+        
+        definemeas_dict['maxchan'] = 5
+        definemeas_dict['maxrun'] = 999
+        definemeas_dict['maxmeas'] = 99999
+        try:
+            definemeas_dict['units'] = mtedit_dict['unit.length']
+        except (TypeError, KeyError):
+            definemeas_dict['units'] = 'm'
+        definemeas_dict['reftypy'] = 'cartesian'
+        definemeas_dict['reflat'] = head_dict['lat']
+        definemeas_dict['reflon'] = head_dict['long']
+        definemeas_dict['refelev'] = head_dict['elev']
+        
+        #--> set definemeas as attribure of edi
+        self.edi.definemeas = definemeas_dict
+        
+        #------------------HMEAS_EMEAS BLOCK--------------------------
+        hemeas_lst = []
+        if mtft_dict:
+            chn_lst = mtft_dict['setup_lst'][0]['Chn.Cmp'].split(',')
+            chn_id = mtft_dict['setup_lst'][0]['Chn.ID'].split(',')
+            chn_len_lst = mtft_dict['setup_lst'][0]['Chn.Length'].split(',')
+            
+        else:
+            chn_lst = ['hx', 'hy', 'hz', 'ex', 'ey']
+            chn_id = [1, 2, 3, 4, 5]
+            chn_len_lst = [100]*5
+            
+        chn_id_dict = dict([(comp.lower(), (comp.lower(), cid, clen)) 
+                            for comp, cid, clen in zip(chn_lst, chn_id, 
+                                                       chn_len_lst)])
+        
+        #--> hx component                
+        try:
+            hxazm = survey_dict['b_xaxis_azimuth']
+        except KeyError:
+            hxazm = 0
+        try:
+            hemeas_lst.append(['HMEAS', 
+                               'ID={0}'.format(chn_id_dict['hx'][1]), 
+                               'CHTYPE={0}'.format(chn_id_dict['hx'][0].upper()), 
+                               'X=0', 
+                               'Y=0', 
+                               'AZM={0}'.format(hxazm),
+                               ''])
+        except KeyError:
+            hemeas_lst.append(['HMEAS', 
+                               'ID={0}'.format(1), 
+                               'CHTYPE={0}'.format('HX'), 
+                               'X=0', 
+                               'Y=0', 
+                               'AZM={0}'.format(hxazm),
+                               ''])
+            
+        #--> hy component
+        try:
+            hyazm = survey_dict['b_yaxis_azimuth']
+        except KeyError:
+            hyazm = 90
+        try:
+            hemeas_lst.append(['HMEAS', 
+                               'ID={0}'.format(chn_id_dict['hy'][1]), 
+                               'CHTYPE={0}'.format(chn_id_dict['hy'][0].upper()), 
+                               'X=0', 
+                               'Y=0', 
+                               'AZM={0}'.format(hxazm),
+                               ''])
+        except KeyError:
+            hemeas_lst.append(['HMEAS', 
+                               'ID={0}'.format(1), 
+                               'CHTYPE={0}'.format('HY'), 
+                               'X=0', 
+                               'Y=0', 
+                               'AZM={0}'.format(hxazm),
+                               ''])
+        #--> ex component
+        try:
+            hemeas_lst.append(['EMEAS', 
+                               'ID={0}'.format(chn_id_dict['ex'][1]), 
+                               'CHTYPE={0}'.format(chn_id_dict['ex'][0].upper()), 
+                               'X=0', 
+                               'Y=0', 
+                               'X2={0}'.format(chn_id_dict['ex'][2]),
+                               'Y2=0'])
+        except KeyError:
+            hemeas_lst.append(['EMEAS', 
+                               'ID={0}'.format(1), 
+                               'CHTYPE={0}'.format('EX'), 
+                               'X=0', 
+                               'Y=0', 
+                               'X2={0}'.format(100),
+                               'Y2=0'])
+                           
+        #--> ey component
+        try:
+            hemeas_lst.append(['EMEAS', 
+                               'ID={0}'.format(chn_id_dict['ey'][1]), 
+                               'CHTYPE={0}'.format(chn_id_dict['ey'][0].upper()), 
+                               'X=0', 
+                               'Y=0', 
+                               'X2=0',
+                               'Y2={0}'.format(chn_id_dict['ey'][2])])
+        except KeyError:
+            hemeas_lst.append(['EMEAS', 
+                               'ID={0}'.format(1), 
+                               'CHTYPE={0}'.format('EY'), 
+                               'X=0', 
+                               'Y=0', 
+                               'X2=0',
+                               'Y2={0}'.format(100)])
+                           
+        #--> remote reference 
+        if rrsurvey_dict:
+            hxid = rrsurvey_dict.pop('hx', 6)
+            hyid = rrsurvey_dict.pop('hy', 7)
+            hxazm = rrsurvey_dict.pop('b_xaxis_azimuth', 0)
+            hyazm = rrsurvey_dict.pop('b_xaxis_azimuth', 90)
+        else:
+            hxid =  6
+            hyid =  7
+            hxazm = 0
+            hyazm = 90
+                
+        #--> rhx component
+        hemeas_lst.append(['HMEAS', 
+                           'ID={0}'.format(hxid), 
+                           'CHTYPE={0}'.format('rhx'.upper()), 
+                           'X=0', 
+                           'Y=0', 
+                           'AZM={0}'.format(hxazm),
+                           ''])
+        #--> rhy component
+        hemeas_lst.append(['HMEAS', 
+                           'ID={0}'.format(hyid), 
+                           'CHTYPE={0}'.format('rhy'.upper()), 
+                           'X=0', 
+                           'Y=0', 
+                           'AZM={0}'.format(hyazm),
+                           ''])
+        hmstring_lst = []
+        for hm in hemeas_lst:
+            hmstring_lst.append(' '.join(hm))
+        #--> set hemeas as attribute of edi
+        self.edi.hmeas_emeas = hmstring_lst
+        
+        #----------------------MTSECT-----------------------------------------
+        mtsect_dict = {}
+        mtsect_dict['sectid'] = station
+        mtsect_dict['nfreq'] = len(self.Z.freq)
+        for chn, chnid in zip(chn_lst, chn_id):
+            mtsect_dict[chn] = chnid
+        
+        #--> set mtsect as attribure of edi
+        self.edi.mtsect = mtsect_dict
+        
+        #----------------------ZROT BLOCK--------------------------------------
+        self.edi.zrot = np.zeros(len(self.edi.Z.z))
+        
+        #----------------------FREQUENCY BLOCK---------------------------------
+        self.edi.freq = self.Z.freq
+        
+            
+        #============ WRITE EDI FILE ==========================================
+        edi_fn = self.edi.writefile(save_path)
+        
+        print 'Wrote .edi file to {0}'.format(edi_fn)
+        
+        if copy_path is not None:
+            copy_edi_fn = os.path.join(copy_path, os.path.basename(edi_fn))
+            if not os.path.exists(copy_path):
+                os.mkdir(copy_path)
+            shutil.copy(edi_fn, copy_edi_fn)
+            print 'Copied {0} to {1}'.format(edi_fn, copy_edi_fn)
+        
+        return edi_fn
         
             
             

@@ -97,7 +97,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         **tipper_array**: np.ndarray((nf, 1, 2), dtype='complex')
                            array of tipper values for tx, ty. *default* is None
                            
-        **tippererr_array**: np.ndarray((nf, 1, 2))
+        **tipper_err_array**: np.ndarray((nf, 1, 2))
                                array of tipper error estimates, same shape as
                                tipper_array. *default* is None
                                
@@ -355,7 +355,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
         res_array = kwargs.pop('res_array', None)
         res_err_array = kwargs.pop('res__err_array', None)
         tipper_array = kwargs.pop('tipper_array', None)
-        tippererr_array = kwargs.pop('tippererr_array', None)
+        tipper_err_array = kwargs.pop('tipper_err_array', None)
         tipper_object = kwargs.pop('tipper_object', None)
         mt_object = kwargs.pop('mt_object', None)
         period = kwargs.pop('period', None)
@@ -373,7 +373,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                                    phase_err_array=phase_err_array,
                                    res_err_array=res_err_array,
                                    tipper=tipper_array, 
-                                   tippererr=tippererr_array,
+                                   tipper_err=tipper_err_array,
                                    tipper_object=tipper_object,
                                    period=period)
                               

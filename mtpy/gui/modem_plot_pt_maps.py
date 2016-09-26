@@ -123,7 +123,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         
     def setupUi(self, MainWindow):
         MainWindow.setWindowTitle("Plot ModEM MT Response as PT Maps")
-        MainWindow.resize(1920, 1080)
+        MainWindow.setWindowState(QtCore.Qt.WindowMaximized)
         
         #make a central widget that everything is tied to.
         self.central_widget = QtGui.QWidget(MainWindow)
@@ -522,7 +522,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                               len(self.modem_data.mt_dict.keys())))
         d_arr_max = np.zeros((self.modem_data.period_list.shape[0],
                               len(self.modem_data.mt_dict.keys())))
-        print self.modem_data.mt_dict[self.modem_data.mt_dict.keys()[0]].Z.z                      
+#        print self.modem_data.mt_dict[self.modem_data.mt_dict.keys()[0]].Z.z                      
         for ii, mt_key in enumerate(sorted(self.modem_data.mt_dict.keys())):
             mt_obj = self.modem_data.mt_dict[mt_key]
             d_arr = mtnb.calculate_depth_nb(z_object=mt_obj.Z)
@@ -611,6 +611,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         
         #plot model below the phase tensors
         if self.modem_model_fn is not None:
+            self.get_depth_array()
             if self.depth_array[data_ii] == 0:
                 print 'Could not estimate depth for period {0:.5g}'.format(
                     float(self.plot_period))

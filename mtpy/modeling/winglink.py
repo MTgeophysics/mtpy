@@ -2,7 +2,9 @@
 """
 Created on Mon Aug 22 15:19:30 2011
 
-@author: a1185872
+deal with output files from winglink.
+
+@author: jp
 """
 
 import numpy as np
@@ -12,6 +14,10 @@ import matplotlib.gridspec as gridspec
 from matplotlib.ticker import MultipleLocator
 import matplotlib.colorbar as mcb
 from matplotlib.colors import Normalize
+
+#------------------------------------------------------------------------------
+class WLInputError(Exception):
+    pass
 
 def read_output_file(output_fn):
     """
@@ -42,7 +48,7 @@ def read_output_file(output_fn):
                   index is the data and the second index is the model response
     """
     if os.path.isfile(output_fn) is False:
-        raise WLInuputError('Cannot find {0}, check path'.format(output_fn))
+        raise WLInputError('Cannot find {0}, check path'.format(output_fn))
     ofid = open(output_fn, 'r')
     lines = ofid.readlines()
     
@@ -153,9 +159,7 @@ def read_model_file(model_fn):
     rho = rho[np.nonzero[rho]]
     return X, Y, Z, rho
     
-#------------------------------------------------------------------------------
-class WLInputError(Exception):
-    pass
+
 
 #==============================================================================
 # plot the MT and model responses            

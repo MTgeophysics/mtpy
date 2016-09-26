@@ -8,20 +8,19 @@ Interpreted from matlab code written by Stephan Thiel 2005
 """
 
 import numpy as np
-import mtpy.core.z as mtz
 
 class Zinvariants:
     """
     calculates invariants from Weaver et al. [2000, 2003].  At the moment it 
     does not calculate the error for each invariant, only the strike.
     
-    Arguments:
+    Arguments
     ----------
         **z_object** : type mtpy.core.z
                        needs to have attributes:
                            *z --> np.array((nf, 2, 2), dtype='complex')
                            
-                           *zerr --> np.array((nf, 2, 2), dtype='real')
+                           *z_err --> np.array((nf, 2, 2), dtype='real')
                            
                            *freq --> np.array(nf)
                            
@@ -35,7 +34,7 @@ class Zinvariants:
                           array of freq cooresponding to the impedance 
                           tensor elements.
                           
-    Attributes:
+    Attributes
     -----------
         **inv1**       : real off diaganol part normalizing factor
         
@@ -58,7 +57,7 @@ class Zinvariants:
         **q**          : dependent variable suggesting dimensionality
         
         
-    Further reading:
+    Further reading
     ----------------
         Weaver, J. T., Agarwal, A. K., Lilley, F. E. M., 2000,
            Characterization of the magnetotelluric tensor in terms of its 
@@ -69,10 +68,10 @@ class Zinvariants:
             the phase tensor of Caldwell, Bibby and Brown, 
             presented at 3D Electromagnetics III, ASEG, paper 43.
            
-        Lilley, F. E. M, 1998, Magnetotelluric tenosr dcomposition: 1: Theory
+        Lilley, F. E. M, 1998, Magnetotelluric tensor dcomposition: 1: Theory
             for a basic procedure, Geophysics, 63, 1885--1897.
            
-        Lilley, F. E. M, 1998, Magnetotelluric tenosr dcomposition: 2: Examples
+        Lilley, F. E. M, 1998, Magnetotelluric tensor dcomposition: 2: Examples
             of a basic procedure, Geophysics, 63, 1898--1907.
            
         Szarka, L. and Menvielle, M., 1997, Analysis of rotational invariants 
@@ -84,7 +83,6 @@ class Zinvariants:
     def __init__(self,z_object=None,z_array=None,z_err_array=None, 
                  freq=None, rot_z=0):
         
-        
         #--> read in z_object
         if z_object is not None:
             if z_object.freq==None:
@@ -92,19 +90,31 @@ class Zinvariants:
                                      'freq filled')
             
             #--> make the z_object an attribute    
-            self._Z = z_object
+            self.z = z_object.z
+            self.freq = z_object.freq
+            self.z_err = z_object.z_err
+            
+        if freq is not None:
+            self.freq = freq
             
         #--> if an array is input read it in and make it a z_object
         if z_array is not None:
-            if freq is None:
-                raise IOError('freq needs to be input')
                 
-            self._Z = mtz.Z(z_array, z_err_array)
+            self.z = z_array.copy()
             
-            assert len(freq)==len(self._Z.z), \
+            assert len(freq)==len(self.z), \
                     'length of freq is not the same as z'
+        #--> if an array is input read it in and make it a z_object
+        if z_err_array is not None:
+                
+            self.z_err = z_err_array.copy()
             
-            self._Z.freq = freq
+            assert len(freq)==len(self.z), \
+                    'length of freq is not the same as z'
+
+        if self.freq is None:
+            raise AttributeError('z_object needs to have attrtibute'+\
+                                     'freq filled')
             
         #--> rotate data if desired
         self.rotate(rot_z)
@@ -144,7 +154,7 @@ class Zinvariants:
         """  
 
         # get the length of z to initialize some empty arrays           
-        nz = self._Z.z.shape[0]
+        nz = self.z.shape[0]
         
         # set some empty arrays to put stuff into
         self.inv1 = np.zeros(nz)
@@ -158,20 +168,20 @@ class Zinvariants:
         self.strike = np.zeros(nz)
         self.strike_err = np.zeros(nz)
         
-        c_tf = self._Z.z.all() == 0.0
+        c_tf = self.z.all() == 0.0
         if c_tf == True:
             return
         # loop over each freq
         for ii in range(nz):
             #compute the mathematical invariants
-            x1 = .5 * (self._Z.z[ii,0,0].real + self._Z.z[ii,1,1].real) #trace
-            x2 = .5 * (self._Z.z[ii,0,1].real + self._Z.z[ii,1,0].real)
-            x3 = .5 * (self._Z.z[ii,0,0].real - self._Z.z[ii,1,1].real)
-            x4 = .5 * (self._Z.z[ii,0,1].real - self._Z.z[ii,1,0].real) #berd
-            e1 = .5 * (self._Z.z[ii,0,0].imag + self._Z.z[ii,1,1].imag) #trace
-            e2 = .5 * (self._Z.z[ii,0,1].imag + self._Z.z[ii,1,0].imag)
-            e3 = .5 * (self._Z.z[ii,0,0].imag - self._Z.z[ii,1,1].imag)
-            e4 = .5 * (self._Z.z[ii,0,1].imag - self._Z.z[ii,1,0].imag) #berd
+            x1 = .5 * (self.z[ii,0,0].real + self.z[ii,1,1].real) #trace
+            x2 = .5 * (self.z[ii,0,1].real + self.z[ii,1,0].real)
+            x3 = .5 * (self.z[ii,0,0].real - self.z[ii,1,1].real)
+            x4 = .5 * (self.z[ii,0,1].real - self.z[ii,1,0].real) #berd
+            e1 = .5 * (self.z[ii,0,0].imag + self.z[ii,1,1].imag) #trace
+            e2 = .5 * (self.z[ii,0,1].imag + self.z[ii,1,0].imag)
+            e3 = .5 * (self.z[ii,0,0].imag - self.z[ii,1,1].imag)
+            e4 = .5 * (self.z[ii,0,1].imag - self.z[ii,1,0].imag) #berd
             ex = x1 * e1 - x2 * e2 - x3 * e3 + x4 * e4
             
             if ex == 0.0:
@@ -234,7 +244,7 @@ class Zinvariants:
 
         self.rot_z = rot_z
         # rotate the data
-        self._Z.rotate(self.rot_z)
+        #self._Z.rotate(self.rot_z)
         
         #--> update the invariants (though they should be rotationally 
         # invariant except for the strike angle)
@@ -248,7 +258,7 @@ class Zinvariants:
         those as well.        
         """
         
-        self._Z.z = z_array
+        self.z = z_array
         
         # --> update the invariants
         self.compute_invariants()
@@ -261,7 +271,7 @@ class Zinvariants:
         those as well.        
         """
         
-        self._Z.zerr = z_err_array
+        self.z_err = z_err_array
         
         # --> update the invariants
         self.compute_invariants()
