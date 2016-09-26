@@ -108,7 +108,6 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
         for block_arr in fn_birrp_list:
             s_list = np.zeros(len(block_arr), dtype='|S100')
             r_list = np.zeros(2, dtype='|S100')
-            print len(block_arr), block_arr
             if len(block_arr) == 5 or len(block_arr) == 7:
                 comp_dict = {'ex':0, 'ey':1, 'hz':2, 'hx':3, 'hy':4, 
                              'rrhx':0, 'rrhy':1}
@@ -823,12 +822,15 @@ class Z3D_to_edi(object):
             # for advanced processing
             if self.rr_station_dir is not None:
                 pro_obj.ilev = 1
-                pro_obj.tbw = 2
-                pro_obj.nar = 5
-                pro_obj.c2thresb = .45
-                pro_obj.nf1 = 3
+                pro_obj.tbw = 3
+                pro_obj.nar = 9
+                pro_obj.c2threshb = .45
+                pro_obj.c2threshe = .45
+                pro_obj.c2threshe1 = .45
+                pro_obj.nf1 = 4
+                pro_obj.nfinc = 2
                 pro_obj.nsctinc = 2
-                pro_obj.nfsect = 3
+                pro_obj.nfsect = 2
                 pro_obj.ainlin = .0001
             pro_dict = pro_obj.get_processing_dict(fn_birrp_arr, 
                                                    hx=self.survey_config.hx,
@@ -941,7 +943,10 @@ class Z3D_to_edi(object):
         return resp_plot
  
     def process_data(self, df_list=None, max_blocks=2, num_comp=5,
-                     notch_dict={}):
+                     notch_dict={}, sr_dict={4096:(1000., 4),
+                                             1024:(3.99, 1.),
+                                             256:(3.99, .126), 
+                                             16:(.125, .0001)}):
         """
         from the input station directory, convert files to ascii, run through
         BIRRP, convert to .edi files and plot
@@ -971,7 +976,7 @@ class Z3D_to_edi(object):
         self.run_birrp(sfn_list)
         
         # combine edi files
-        comb_edi_fn = self.combine_edi_files(self.edi_fn)
+        comb_edi_fn = self.combine_edi_files(self.edi_fn, sr_dict)
         
         if comb_edi_fn is not None:
             self.edi_fn.append(comb_edi_fn)
