@@ -703,6 +703,7 @@ class Mesh():
         mesh_lines.append('MESH FILE Created by mtpy.modeling.occam2d\n')
         mesh_lines.append("   {0}  {1}  {2}  {0}  {0}  {3}\n".format(0, nx,
                           nz, 2))
+
         
         #--> write horizontal nodes
         node_str = ''
