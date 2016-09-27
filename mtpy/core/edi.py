@@ -295,7 +295,7 @@ class Edi(object):
         self.Z._z_err = z_err_arr
         
         try:
-            self.Z.rotation_angle = data_dict['zrot']
+            self.Z.rotation_angle = np.array(data_dict['zrot'])
         except KeyError:
             self.Z.rotation_angle = np.zeros_like(freq_arr)
         
@@ -308,10 +308,10 @@ class Edi(object):
         tipper_err_arr = np.zeros((freq_arr.size, 1, 2), dtype=np.float) 
 
         try:
-            self.Tipper.rotation_angle = data_dict['trot']
+            self.Tipper.rotation_angle = np.array(data_dict['trot'])
         except KeyError:
             try:
-                self.Tipper.rotation_angle = data_dict['zrot']
+                self.Tipper.rotation_angle = np.array(data_dict['zrot'])
             except KeyError:
                 self.Tipper.rotation_angle = np.zeros_like(freq_arr)
 
@@ -580,26 +580,30 @@ class Edi(object):
                 z_data_lines += z_lines_var
                 
         # write out rotation angles
-        trot_lines = [self._data_header_str.format('tipper rotation angles'.upper())]
-        if type(self.Tipper.rotation_angle) is float:
-            trot = np.repeat(self.Tipper.rotation_angle, self.Tipper.freq.size)
-        else:
-            trot = self.Tipper.rotation_angle
-        trot_lines += self._write_data_block(np.array(trot), 'trot')
-                
-        # write out tipper lines       
-        t_data_lines = [self._data_header_str.format('tipper'.upper())]        
-        for jj in range(2):
-            t_lines_real = self._write_data_block(self.Tipper.tipper[:, 0, jj].real, 
-                                                  self._t_labels[jj][0])
-            t_lines_imag = self._write_data_block(self.Tipper.tipper[:, 0, jj].imag, 
-                                                  self._t_labels[jj][1])
-            t_lines_var = self._write_data_block(self.Tipper.tipper_err[:, 0, jj], 
-                                                 self._t_labels[jj][2])
-                                       
-            t_data_lines += t_lines_real
-            t_data_lines += t_lines_imag
-            t_data_lines += t_lines_var
+        try:
+            trot_lines = [self._data_header_str.format('tipper rotation angles'.upper())]
+            if type(self.Tipper.rotation_angle) is float:
+                trot = np.repeat(self.Tipper.rotation_angle, self.Tipper.freq.size)
+            else:
+                trot = self.Tipper.rotation_angle
+            trot_lines += self._write_data_block(np.array(trot), 'trot')
+                    
+            # write out tipper lines       
+            t_data_lines = [self._data_header_str.format('tipper'.upper())]        
+            for jj in range(2):
+                t_lines_real = self._write_data_block(self.Tipper.tipper[:, 0, jj].real, 
+                                                      self._t_labels[jj][0])
+                t_lines_imag = self._write_data_block(self.Tipper.tipper[:, 0, jj].imag, 
+                                                      self._t_labels[jj][1])
+                t_lines_var = self._write_data_block(self.Tipper.tipper_err[:, 0, jj], 
+                                                     self._t_labels[jj][2])
+                                           
+                t_data_lines += t_lines_real
+                t_data_lines += t_lines_imag
+                t_data_lines += t_lines_var
+        except AttributeError:
+            trot_lines = ['']
+            t_data_lines = ['']
             
         edi_lines = header_lines+\
                     info_lines+\

@@ -23,7 +23,6 @@ import datetime
 import os
 import struct
 import string
-import win32api
 import shutil
 from collections import Counter
 import mtpy.utils.filehandling as mtfh
