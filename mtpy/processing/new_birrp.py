@@ -1342,8 +1342,15 @@ class JFile(object):
                     # check to see if the column number can be converted into a float
                     # if it can't, then it will be set to 0, which is assumed to be
                     # a masked number when writing to an .edi file
+                                       
                     try:
-                        d_value_list[d_index] = float(d_value)
+                        d_value = float(d_value)
+                        # need to check for masked points represented by
+                        # birrp as -999, apparently
+                        if d_value == -999:
+                            d_value_list[d_index] = 0.0
+                        else:
+                            d_value_list[d_index] = d_value
                     except ValueError:
                         d_value_list[d_index] = 0.0
                 
@@ -1356,19 +1363,24 @@ class JFile(object):
         
         # --> now we need to get the set of periods for all components  
         # check to see if there is any tipper data output          
+
+        all_periods = []            
+        for z_key in z_index_dict.keys():
+            for f_key in z_dict[z_key].keys():
+                all_periods.append(f_key)
+        
         if len(t_dict['tzx'].keys()) == 0:
             print 'Could not find any Tipper data in {0}'.format(self.j_fn)
             find_tipper = False
-            all_periods = sorted(list(set(np.array([z_dict[z_key].keys() 
-                                for z_key in z_index_dict.keys()]).flatten())))
+  
         else:
-            # now we need to get the set of periods for all components
-            all_periods = sorted(list(set(np.array([z_dict[z_key].keys() 
-                            for z_key in z_index_dict.keys()]+\
-                            [t_dict[t_key].keys() 
-                            for t_key in t_index_dict.keys()]).flatten())))
+            for t_key in t_index_dict.keys():
+                for f_key in t_dict[t_key].keys():
+                    all_periods.append(f_key)
             find_tipper = True
         
+        all_periods = np.array(sorted(list(set(all_periods))))
+        all_periods = all_periods[np.nonzero(all_periods)]
         num_per = len(all_periods)
         
         # fill arrays using the period key from all_periods
@@ -1402,7 +1414,7 @@ class JFile(object):
                         print 'For component {0}'.format(t_key)
         
         # put the results into mtpy objects
-        freq = 1./np.array(all_periods)    
+        freq = 1./all_periods    
         self.Z = mtz.Z(z_arr, z_err_arr, freq)
         self.Tipper = mtz.Tipper(t_arr, t_err_arr, freq)    
 

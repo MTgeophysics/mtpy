@@ -266,7 +266,7 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
 #==============================================================================
 # Survey configuration file
 #==============================================================================
-class (object):
+class Survey_Config(object):
     """
     survey config class
     
