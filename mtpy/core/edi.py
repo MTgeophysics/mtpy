@@ -295,7 +295,7 @@ class Edi(object):
         self.Z._z_err = z_err_arr
         
         try:
-            self.Z.rotation_angle = data_dict['zrot']
+            self.Z.rotation_angle = np.array(data_dict['zrot'])
         except KeyError:
             self.Z.rotation_angle = np.zeros_like(freq_arr)
         
@@ -308,10 +308,10 @@ class Edi(object):
         tipper_err_arr = np.zeros((freq_arr.size, 1, 2), dtype=np.float) 
 
         try:
-            self.Tipper.rotation_angle = data_dict['trot']
+            self.Tipper.rotation_angle = np.array(data_dict['trot'])
         except KeyError:
             try:
-                self.Tipper.rotation_angle = data_dict['zrot']
+                self.Tipper.rotation_angle = np.array(data_dict['zrot'])
             except KeyError:
                 self.Tipper.rotation_angle = np.zeros_like(freq_arr)
 
