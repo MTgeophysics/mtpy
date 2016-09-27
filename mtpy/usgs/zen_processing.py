@@ -260,9 +260,49 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
 #==============================================================================
 # Survey configuration file
 #==============================================================================
-class Survey_Config(object):
+class (object):
     """
     survey config class
+    
+    will setup a survey configuration file that has the form of:
+    
+    [station]
+        b_instrument_amplification = 1
+        b_instrument_type = coil
+        b_logger_gain = 1
+        b_logger_type = zen
+        b_xaxis_azimuth = 0
+        b_yaxis_azimuth = 90
+        box = 26
+        date = 2015/06/09
+        e_instrument_amplification = 1
+        e_instrument_type = Ag-Agcl electrodes
+        e_logger_gain = 1
+        e_logger_type = zen
+        e_xaxis_azimuth = 0
+        e_xaxis_length = 100
+        e_yaxis_azimuth = 90
+        e_yaxis_length = 100
+        elevation = 2113.2
+        hx = 2274
+        hy = 2284
+        hz = 2254
+        lat = 37.7074236995
+        location = Earth
+        lon = -118.999542099
+        network = USGS
+        notes = Generic config file
+        rr_box = 25
+        rr_date = 2015/06/09
+        rr_hx = 2334
+        rr_hy = 2324
+        rr_lat = 37.6909139779
+        rr_lon = -119.028707542
+        rr_station = 302
+        sampling_interval = all
+        save_path = \home\mtdata\survey_01\mt_01
+        station = 300
+        station_type = mt
     """
     def __init__(self, **kwargs):
         self.b_instrument_amplification = 1
@@ -318,6 +358,23 @@ class Survey_Config(object):
 class Z3D_to_edi(object):
     """
     go from z3d files to .edi using BIRRP as the processing code
+    
+    Arguments
+    ---------------
+    
+        **station_dir** : string
+                          full path to station directory where the Z3D files
+                          to be processed are.
+                          
+        **rr_station_dir** : string
+                            full path to remote reference directory where 
+                            Z3D files exist.
+                            
+        **birrp_exe** : string
+                        full path to birrp executable
+                        
+        **coil_cal_path** : string
+                             
     """
     
     def __init__(self, station_dir=None, **kwargs):
