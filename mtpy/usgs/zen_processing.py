@@ -393,7 +393,8 @@ class Z3D_to_edi(object):
         return fn_block_dict
         
     def make_mtpy_ascii_files(self, station_dir=None, rr_station_dir=None, 
-                              fmt='%.8', station_name='mb', notch_dict={},
+                              fmt='%.8', station_name='mb', 
+                              notch_dict={4096:{}, 256:None, 1024:None}, 
                               df_list=[4096, 1024, 256], max_blocks=3,
                               ex=100., ey=100.,): 
         """
@@ -465,7 +466,7 @@ class Z3D_to_edi(object):
                         ex = float(zdec.metadata.ch_length)
                         ey = float(zdec.metadata.ch_length)
                         #write mtpy mt file
-                        zdec.write_ascii_mt_file(notch_dict=notch_dict, 
+                        zdec.write_ascii_mt_file(notch_dict=notch_dict[df_key], 
                                                  ex=ex, ey=ey, dec=16)
                         
                         #create lines to write to a log file                       
@@ -674,19 +675,22 @@ class Z3D_to_edi(object):
             fn = os.path.join(self.station_dir, fn)
             try:
                 header_dict = mtfh.read_ts_header(fn)
-                fn_arr[fn_count]['fn'] = fn
-                fn_arr[fn_count]['npts'] = header_dict['nsamples']
-                fn_arr[fn_count]['df'] = header_dict['samplingrate']
-                fn_arr[fn_count]['comp'] = header_dict['channel']
-                start_sec = header_dict['t_min']
-                num_sec = float(header_dict['nsamples'])/\
-                                                   header_dict['samplingrate']
-                fn_arr[fn_count]['start_dt'] = time.strftime(datetime_fmt, 
-                                                time.localtime(start_sec)) 
-                fn_arr[fn_count]['end_dt'] = time.strftime(datetime_fmt, 
-                                                time.localtime(start_sec+\
-                                                num_sec))
-                fn_count += 1
+                if header_dict['samplingrate'] in df_list:
+                    fn_arr[fn_count]['fn'] = fn
+                    fn_arr[fn_count]['npts'] = header_dict['nsamples']
+                    fn_arr[fn_count]['df'] = header_dict['samplingrate']
+                    fn_arr[fn_count]['comp'] = header_dict['channel']
+                    start_sec = header_dict['t_min']
+                    num_sec = float(header_dict['nsamples'])/\
+                                                       header_dict['samplingrate']
+                    fn_arr[fn_count]['start_dt'] = time.strftime(datetime_fmt, 
+                                                    time.localtime(start_sec)) 
+                    fn_arr[fn_count]['end_dt'] = time.strftime(datetime_fmt, 
+                                                    time.localtime(start_sec+\
+                                                    num_sec))
+                    fn_count += 1
+                else:
+                    pass
             except mtex.MTpyError_ts_data:
                 print '  Skipped {0}'.format(fn)
             except mtex.MTpyError_inputarguments:
@@ -712,7 +716,8 @@ class Z3D_to_edi(object):
                 try:
                     # only get the hx and hy channels                    
                     header_dict = mtfh.read_ts_header(rr_fn)                    
-                    if header_dict['channel'].lower() in ['hx', 'hy']:
+                    if header_dict['channel'].lower() in ['hx', 'hy'] and\
+                       header_dict['samplingrate'] in df_list:
                         rr_fn_arr[rr_fn_count]['fn'] = rr_fn
                         rr_fn_arr[rr_fn_count]['npts'] = header_dict['nsamples']
                         rr_fn_arr[rr_fn_count]['df'] = header_dict['samplingrate']
@@ -1015,8 +1020,7 @@ class Z3D_to_edi(object):
                                                             notch_dict=notch_dict)
         
         # get all information from mtpy files
-        schedule_dict = self.get_schedules_fn_from_dir()
-        #schedule_dict = self.get_schedules_fn(z3d_fn_list, rr_fn_list)
+        schedule_dict = self.get_schedules_fn_from_dir(df_list=df_list)
             
         # write script files for birrp
         sfn_list = self.write_script_files(schedule_dict)
