@@ -507,7 +507,8 @@ class Z3D_to_edi(object):
                         ey = float(zd.metadata.ch_length)
                         
                     #write mtpy mt file
-                    zd.write_ascii_mt_file(notch_dict=notch_dict, ex=ex, ey=ey)
+                    zd.write_ascii_mt_file(notch_dict=notch_dict[df_key],
+                                           ex=ex, ey=ey)
         
                     # get station configuration from the first Z3D file            
                     if jj == 1:
@@ -575,7 +576,8 @@ class Z3D_to_edi(object):
                             zdec.read_all_info()
                             
                             #write mtpy mt file
-                            zdec.write_ascii_mt_file(notch_dict=notch_dict, dec=16)
+                            zdec.write_ascii_mt_file(notch_dict=notch_dict[df_key],
+                                                     dec=16)
                             
                             #create lines to write to a log file                       
                             rr_station = zdec.metadata.rx_xyz0.split(':')[0]
@@ -598,7 +600,7 @@ class Z3D_to_edi(object):
             
                     
                         #write mtpy mt file
-                        zd.write_ascii_mt_file(notch_dict=notch_dict)
+                        zd.write_ascii_mt_file(notch_dict=notch_dict[df_key])
                         
                         #create lines to write to a log file                       
                         rr_station = zd.metadata.rx_xyz0.split(':')[0]
