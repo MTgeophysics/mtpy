@@ -1059,7 +1059,7 @@ class Z3D_to_edi(object):
                     if fn[-4:] == '.cfg':
                         self.survey_config_fn = os.path.join(ts_dir, fn)
         
-        j2edi_obj = birrp.J_To_Edi(self.survey_config.station,
+        j2edi_obj = birrp.J_To_Edi(station=self.survey_config.station,
                                    survey_config_fn=self.survey_config_fn,
                                    birrp_dir=birrp_output_path,
                                    birrp_config_fn=self.birrp_config_fn)
