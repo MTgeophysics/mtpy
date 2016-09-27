@@ -984,9 +984,9 @@ class Z3D_to_edi(object):
                 pro_obj.ilev = 1
                 pro_obj.tbw = 3
                 pro_obj.nar = 9
-                pro_obj.c2threshb = .45
-                pro_obj.c2threshe = .45
-                pro_obj.c2threshe1 = .45
+                pro_obj.c2threshb = .40
+                pro_obj.c2threshe = .40
+                pro_obj.c2threshe1 = .40
                 pro_obj.nf1 = 4
                 pro_obj.nfinc = 2
                 pro_obj.nsctinc = 2

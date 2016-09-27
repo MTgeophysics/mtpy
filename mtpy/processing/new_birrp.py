@@ -1626,7 +1626,7 @@ class J_To_Edi(object):
             int(self.survey_config_dict['hz'])
             self.edi_obj.Define_measurement.meas_hz = mtedi.HMeasurement()
             self.edi_obj.Define_measurement.meas_hz.id = 3
-            self.edi_obj.Define_measurement.meas_hz.chtype = 'hy'
+            self.edi_obj.Define_measurement.meas_hz.chtype = 'hz'
             self.edi_obj.Define_measurement.meas_hz.x = 0
             self.edi_obj.Define_measurement.meas_hz.y = 0
             self.edi_obj.Define_measurement.meas_hz.azm = 90 
@@ -1638,7 +1638,7 @@ class J_To_Edi(object):
         #--> ex
         self.edi_obj.Define_measurement.meas_ex = mtedi.EMeasurement()
         self.edi_obj.Define_measurement.meas_ex.id = ch_count+1
-        self.edi_obj.Define_measurement.meas_ex.chtype = 'hy'
+        self.edi_obj.Define_measurement.meas_ex.chtype = 'ex'
         self.edi_obj.Define_measurement.meas_ex.x = 0
         self.edi_obj.Define_measurement.meas_ex.y = 0
         self.edi_obj.Define_measurement.meas_ex.x2 = float(self.survey_config_dict['e_xaxis_length'])
@@ -1649,7 +1649,7 @@ class J_To_Edi(object):
         #--> ex
         self.edi_obj.Define_measurement.meas_ey = mtedi.EMeasurement()
         self.edi_obj.Define_measurement.meas_ey.id = ch_count+2
-        self.edi_obj.Define_measurement.meas_ey.chtype = 'hy'
+        self.edi_obj.Define_measurement.meas_ey.chtype = 'ey'
         self.edi_obj.Define_measurement.meas_ey.x = 0
         self.edi_obj.Define_measurement.meas_ey.y = 0
         self.edi_obj.Define_measurement.meas_ey.x2 = 0
