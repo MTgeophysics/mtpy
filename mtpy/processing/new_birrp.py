@@ -1413,6 +1413,54 @@ class J_To_Edi(object):
     """
     Read in BIRRP out puts, in this case the .j file and convert that into
     an .edi file using the survey_config_fn parameters. 
+    
+    Key Word Arguments
+    ----------------------
+    
+        **birrp_dir** : string
+                        full path to directory where birrp outputs are
+                        
+        **station** : string
+                      station name
+                      
+        **survey_config_fn** : string
+                               full path to survey configuration file with
+                               information on location and site setup
+                               must have a key that is the same as station.
+                        
+        **birrp_config_fn** : string
+                              full path to configuration file that was used to
+                              process with (all the birrp parameters used).  If
+                              None is input, the file is searched for, if it
+                              is not found, the processing parameters are 
+                              used from the .j file.
+                              
+        **j_fn** : string
+                   full path to j file.  If none is input the .j file is 
+                   searched for in birrp_dir.
+                   
+    
+    ============================ ==============================================
+    Methods                      Description   
+    ============================ ==============================================
+    read_survey_config_fn        read in survey configuration file 
+    get_birrp_config_fn          get the birrp_config_fn in birrp_dir
+    read_birrp_config_fn         read in birrp_config_fn
+    get_j_file                   find .j file in birrp_dir
+    write_edi_file               write an .edi file fro all the provided 
+                                 information.
+    ============================ ==============================================
+    
+    Example
+    -------------
+
+        >>> import mtpy.proceessing.birrp as birrp
+        >>> j2edi_obj = birrp.J_To_Edi()
+        >>> j2edi_obj.birrp_dir = r"/home/data/mt01/BF/256"
+        >>> j2edi_obj.station = 'mt01'
+        >>> j2edi_obj.survey_config_fn = r"/home/data/2016_survey.cfg"
+        >>> j2edi_obj.write_edi_file()               
+                   
     """
 
     def __init__(self, **kwargs):

@@ -380,7 +380,54 @@ class Z3D_to_edi(object):
                         full path to birrp executable
                         
         **coil_cal_path** : string
-                             
+        
+    Methods
+    ----------
+    
+        **make_survey_config_file : make a survey configuration file from
+                                    a dictionary of information
+        
+        **get_z3d_fn_blocks** : get z3d files in blocks of sampling rate and 
+                                date
+                                
+        **make_mtpy_ascii_files** : make mtpy ascii files from given blocks 
+                                    of file names
+                                    
+        **get_schedules_fn_from_dir** : get mtpy ascii file names in blocks
+                                        by sampling rate and date from a TS 
+                                        directory.
+                                        
+        **get_schedules_fn** : get mtpy ascii file names in blocks
+                               by sampling rate and date from an array.
+                               
+        **write_script_files** : write birrp script files for each sampling
+                                 rate schedule block
+                                 
+        **run_birrp** : run birrp from a script file and write an .edi file
+        
+        **write_edi_file** : write edi file from birrp outputs and given 
+                            survey parameters.
+                            
+        **plot_responses** : plots all edi files output from each sampling rate
+        
+        **process_data** : a convinience function to go from Z3D files to 
+                           edi files.
+                           
+        **combine_edi_files** : combine all edi files from each sampling rate
+                                given a frequency range for each.
+                                
+    Example
+    ------------
+    
+        >>> import mtpy.usgs.zen_processing as zp
+        >>> zp_obj = zp.Z3D_to_edi()
+        >>> zp_obj.station_dir = r"/home/data/mt01"
+        >>> zp_obj.rr_station_dir = r"/home/data/mt02"
+        >>> zp_obj.birrp_exe = r"/home/bin/birrp52"
+        >>> zp_obj.coil_cal_path = r"/home/data/ant_calibration"
+        >>> plot_obj, comb_edi = zp_obj.process_data(df_list=[4096, 256, 16])
+                                        
+        
     """
     
     def __init__(self, station_dir=None, **kwargs):
@@ -1192,7 +1239,7 @@ def get_remote_reference_schedule(survey_path, plot=True):
                    
     Outputs
     -----------------
-        **station_path\Remote_Reference_List.txt** : file with a list of
+        **station_path/Remote_Reference_List.txt** : file with a list of
                                                      dates with station
                                                      and sampling rate
                                                      
