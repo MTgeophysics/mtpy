@@ -347,6 +347,304 @@ class Z3D_to_edi(object):
         """
         
         self.survey_config_fn = self.survey_config.write_survey_config_file()
+    
+    def get_z3d_fn_blocks(self, station_dir=None, remote=False,
+                          df_list=[4096, 1024, 256], max_blocks=3):
+        """
+        get z3d file names in an array of blocks
+        """
+
+        fn_block_dict = dict([(df, {}) for df in df_list])
+        fn_count = 0
+        for fn in os.listdir(station_dir):
+            if fn.lower().endswith('.z3d'):
+            
+                z3d_fn = os.path.join(station_dir, fn)
+                z3d_obj = zen.Zen3D(z3d_fn)
+                z3d_obj.read_all_info()
+                if remote is True:
+                    if not z3d_obj.metadata.ch_cmp.lower() in ['hx', 'hy']:
+                        continue
+                if z3d_obj.df in df_list:
+                    fn_count += 1
+                    try:
+                        fn_block_dict[z3d_obj.df][z3d_obj.zen_schedule].append(z3d_fn)
+                    except KeyError:
+                        fn_block_dict[z3d_obj.df][z3d_obj.zen_schedule] = [z3d_fn]
+
+
+        if fn_count == 0:
+            raise ValueError('No Z3D files found for in {1}'.format(station_dir))
+        else:
+            print 'Found {0} Z3D files in {1}'.format(fn_count, station_dir)
+        
+        # check for maximum number of blocks
+        for df_key in fn_block_dict.keys():
+            date_dict = fn_block_dict[df_key]
+            dates = sorted(date_dict.keys())
+            if len(dates) == 0:
+                print 'No Z3D files found for {0} in {1}'.format(str(df_key),
+                                                                station_dir)
+
+            if len(dates) > max_blocks:
+                for pop_date in dates[-(len(dates)-max_blocks):]:
+                    fn_block_dict[df_key].pop(pop_date)
+        
+        return fn_block_dict
+        
+    def make_mtpy_ascii_files(self, station_dir=None, rr_station_dir=None, 
+                              fmt='%.8', station_name='mb', notch_dict={},
+                              df_list=[4096, 1024, 256], max_blocks=3,
+                              ex=100., ey=100.,): 
+        """
+        makes mtpy_mt files from .Z3D files
+        
+        Arguments:
+        -----------
+            **dirpath** : full path to .Z3D files
+            
+            **station_name** : prefix for station names
+            
+            **fmt** : format of data numbers for mt_files
+            
+        Outputs:
+        --------
+            **fn_arr** : np.ndarray(file, length, df, start_dt)
+            
+        :Example: ::
+        
+            >>> import mtpy.usgs.zen as zen
+            >>> fn_list = zen.copy_from_sd('mt01')
+            >>> mtpy_fn = zen.make_mtpy_files(fn_list, station_name='mt')
+        """
+        
+        if station_dir is not None:
+            self.station_dir = station_dir
+            
+        fn_dict = self.get_z3d_fn_blocks(self.station_dir,
+                                         df_list=df_list,
+                                         max_blocks=max_blocks)
+        
+        num_files = 0
+        num_comp = []
+        for df_key in fn_dict.keys(): 
+            for date_key in fn_dict[df_key].keys():
+                # in case there is decimation, then we need to double the
+                # number of 256 files
+                if df_key == 256 and 16 in df_list:
+                    num_files += len(fn_dict[df_key][date_key])*2
+                else:
+                    num_files += len(fn_dict[df_key][date_key])
+                num_comp.append(len(fn_dict[df_key][date_key]))
+                
+        self.num_comp = int(np.mean(np.array(num_comp)))
+        print ' --> processing {0} components'.format(self.num_comp)
+                    
+        # make an array that has all the information about each file
+        fn_arr = np.zeros(num_files, 
+                          dtype=[('station','|S6'), 
+                                 ('npts',np.int), 
+                                 ('df', np.int),
+                                 ('start_dt', '|S22'), 
+                                 ('comp','|S2'),
+                                 ('fn','|S100')])
+        fn_lines = []
+        jj = 0  # index for fn_array            
+        for df_key in df_list: 
+            for date_key in fn_dict[df_key].keys():
+                for fn in fn_dict[df_key][date_key]:
+                    zd = zen.Zen3D(fn)
+                    zd.read_all_info()
+               
+                    # account for decimation, need to make a new instance
+                    # so as to include the original file as well
+                    if zd.header.ad_rate == 256 and 16 in df_list:
+                        zdec = zen.Zen3D(fn)
+                        zdec.read_all_info()
+
+                        ex = float(zdec.metadata.ch_length)
+                        ey = float(zdec.metadata.ch_length)
+                        #write mtpy mt file
+                        zdec.write_ascii_mt_file(notch_dict=notch_dict, 
+                                                 ex=ex, ey=ey, dec=16)
+                        
+                        #create lines to write to a log file                       
+                        station = zdec.metadata.rx_xyz0.split(':')[0]
+                        fn_arr[jj]['station'] = '{0}{1}'.format(station_name, 
+                                                                station)
+                        fn_arr[jj]['npts'] = zdec.time_series_len
+                        fn_arr[jj]['df'] = zdec.df
+                        fn_arr[jj]['start_dt'] = zdec.zen_schedule
+                        fn_arr[jj]['comp'] = zdec.metadata.ch_cmp.lower()
+                        fn_arr[jj]['fn'] = zdec.fn_mt_ascii
+                        fn_lines.append(''.join(['--> station: {0}{1}\n'.format(station_name, station),
+                                                 '    ts_len = {0}\n'.format(zdec.time_series_len),
+                                                 '    df = {0}\n'.format(zdec.df),
+                                                 '    start_dt = {0}\n'.format(zdec.zen_schedule),
+                                                 '    comp = {0}\n'.format(zdec.metadata.ch_cmp),
+                                                 '    fn = {0}\n'.format(zdec.fn),
+                                                 '    decimated to 16 samples/s']))
+                   
+        
+                        jj += 1
+                
+                
+                
+                    # get metadata information about the channel to put into 
+                    # survey configuration file
+                    if zd.metadata.ch_cmp.lower() == 'hx':
+                        self.survey_config.hx = zd.metadata.ch_number
+                    elif zd.metadata.ch_cmp.lower() == 'hy':
+                        self.survey_config.hy = zd.metadata.ch_number
+                    elif zd.metadata.ch_cmp.lower() == 'hz':
+                        self.survey_config.hz = zd.metadata.ch_number
+                    elif zd.metadata.ch_cmp.lower() == 'ex':
+                        self.survey_config.e_xaxis_length = zd.metadata.ch_length
+                        ex = float(zd.metadata.ch_length)
+                    elif zd.metadata.ch_cmp.lower() == 'ey':
+                        self.survey_config.e_yaxis_length = zd.metadata.ch_length
+                        ey = float(zd.metadata.ch_length)
+                        
+                    #write mtpy mt file
+                    zd.write_ascii_mt_file(notch_dict=notch_dict, ex=ex, ey=ey)
+        
+                    # get station configuration from the first Z3D file            
+                    if jj == 1:
+                        self.survey_config.lat = zd.header.lat
+                        self.survey_config.lon = zd.header.long
+                        self.survey_config.date = zd.schedule.Date.replace('-','/')
+                        self.survey_config.box = int(zd.header.box_number)
+                        self.survey_config.station = zd.metadata.rx_xyz0.split(':')[0]
+     
+                    #create lines to write to a log file                       
+                    station = zd.metadata.rx_xyz0.split(':')[0]
+                    fn_arr[jj]['station'] = '{0}{1}'.format(station_name, station)
+                    fn_arr[jj]['npts'] = zd.time_series_len
+                    fn_arr[jj]['df'] = zd.df
+                    fn_arr[jj]['start_dt'] = zd.zen_schedule
+                    fn_arr[jj]['comp'] = zd.metadata.ch_cmp.lower()
+                    fn_arr[jj]['fn'] = zd.fn_mt_ascii
+                    fn_lines.append(''.join(['--> station: {0}{1}\n'.format(station_name, station),
+                                             '    ts_len = {0}\n'.format(zd.time_series_len),
+                                             '    df = {0}\n'.format(zd.df),
+                                             '    start_dt = {0}\n'.format(zd.zen_schedule),
+                                             '    comp = {0}\n'.format(zd.metadata.ch_cmp),
+                                             '    fn = {0}\n'.format(zd.fn)]))
+                    jj += 1               
+        #-------------------------------
+        # Remote Reference
+        #-------------------------------          
+        if rr_station_dir is not None:
+            self.rr_station_dir = rr_station_dir
+        
+            rr_fn_dict = self.get_z3d_fn_blocks(self.station_dir,
+                                                df_list=df_list,
+                                                max_blocks=max_blocks)
+            
+            num_files = 0
+            for df_key in rr_fn_dict.keys(): 
+                for date_key in rr_fn_dict[df_key].keys():
+                    # in case there is decimation, then we need to double the
+                    # number of 256 files
+                    if df_key == 256 and 16 in df_list:
+                        num_files += len(rr_fn_dict[df_key][date_key])*2
+                    else:
+                        num_files += len(rr_fn_dict[df_key][date_key])
+       
+            # make an array that has all the information about each file
+            rr_fn_arr = np.zeros(num_files, 
+                                  dtype=[('station','|S6'), 
+                                         ('npts',np.int), 
+                                         ('df', np.int),
+                                         ('start_dt', '|S22'), 
+                                         ('comp','|S2'),
+                                         ('fn','|S100')])
+            fn_lines = []
+            jj = 0  # index for fn_array            
+            for df_key in df_list: 
+                for date_key in fn_dict[df_key].keys():
+                    for fn in fn_dict[df_key][date_key]:
+                        zd = zen.Zen3D(fn)
+                        zd.read_all_info()
+                    
+                        # account for decimation, need to make a new instance
+                        # so as to include the original file as well
+                        if zd.header.ad_rate == 256 and 16 in df_list:
+                            zdec = zen.Zen3D(fn)
+                            zdec.read_all_info()
+                            
+                            #write mtpy mt file
+                            zdec.write_ascii_mt_file(notch_dict=notch_dict, dec=16)
+                            
+                            #create lines to write to a log file                       
+                            rr_station = zdec.metadata.rx_xyz0.split(':')[0]
+                            rr_fn_arr[jj]['station'] = '{0}{1}'.format(station_name, 
+                                                                       rr_station)
+                            rr_fn_arr[jj]['npts'] = zdec.time_series_len
+                            rr_fn_arr[jj]['df'] = zdec.df
+                            rr_fn_arr[jj]['start_dt'] = zdec.zen_schedule
+                            rr_fn_arr[jj]['comp'] = 'rr{0}'.format(zdec.metadata.ch_cmp.lower())
+                            rr_fn_arr[jj]['fn'] = zdec.fn_mt_ascii
+                            fn_lines.append(''.join(['--> rr_station: {0}{1}\n'.format(station_name, rr_station),
+                                                     '    ts_len = {0}\n'.format(zdec.time_series_len),
+                                                     '    df = {0}\n'.format(zdec.df),
+                                                     '    start_dt = {0}\n'.format(zdec.zen_schedule),
+                                                     '    comp = rr{0}\n'.format(zdec.metadata.ch_cmp),
+                                                     '    fn = {0}\n'.format(zdec.fn),
+                                                     '    decimated to 16 samples/s']))
+            
+                            jj += 1
+            
+                    
+                        #write mtpy mt file
+                        zd.write_ascii_mt_file(notch_dict=notch_dict)
+                        
+                        #create lines to write to a log file                       
+                        rr_station = zd.metadata.rx_xyz0.split(':')[0]
+                        rr_fn_arr[jj]['station'] = '{0}{1}'.format(station_name, rr_station)
+                        rr_fn_arr[jj]['npts'] = zd.time_series_len
+                        rr_fn_arr[jj]['df'] = zd.df
+                        rr_fn_arr[jj]['start_dt'] = zd.zen_schedule
+                        rr_fn_arr[jj]['comp'] = 'rr{0}'.format(zd.metadata.ch_cmp.lower())
+                        rr_fn_arr[jj]['fn'] = zd.fn_mt_ascii
+                        fn_lines.append(''.join(['--> station: {0}{1}\n'.format(station_name, rr_station),
+                                                 '    ts_len = {0}\n'.format(zd.time_series_len),
+                                                 '    df = {0}\n'.format(zd.df),
+                                                 '    start_dt = {0}\n'.format(zd.zen_schedule),
+                                                 '    comp = rr{0}\n'.format(zd.metadata.ch_cmp),
+                                                 '    fn = {0}\n'.format(zd.fn)]))
+                
+                        # get metadata information about the channel to put into 
+                        # survey configuration file
+                        if zd.metadata.ch_cmp.lower() == 'hx':
+                            self.survey_config.rr_hx = zd.metadata.ch_number
+                        elif zd.metadata.ch_cmp.lower() == 'hy':
+                            self.survey_config.rr_hy = zd.metadata.ch_number
+                        
+                        # input remote reference information into survey file
+                        if jj == 1:
+                            self.survey_config.rr_station = rr_station
+                            self.survey_config.rr_latitude = zd.header.lat
+                            self.survey_config.rr_longitude = zd.header.long
+                            self.survey_config.rr_date = zd.schedule.Date.replace('-','/')
+                            self.survey_config.rr_box = int(zd.header.box_number)
+                
+            # change the time series directory to reflect where the time series
+            # are.
+            self.rr_station_dir = os.path.join(self.rr_station_dir, 'TS')
+            
+            # get only the non-empty time series
+            rr_fn_arr = rr_fn_arr[np.nonzero(rr_fn_arr['npts'])]
+        else:
+            rr_fn_arr = None
+        # change directories to be associated with where the mtpy ts are
+        self.station_dir = os.path.join(self.station_dir, 'TS')
+        self.survey_config.save_path = self.station_dir
+        
+        # write survey configuration file
+        self.survey_config.write_survey_config_file()
+ 
+        return fn_arr[np.nonzero(fn_arr['npts'])], rr_fn_arr, fn_lines
         
     def get_schedules_fn_from_dir(self, station_ts_dir=None, rr_ts_dir=None,
                                   df_list=[4096, 256, 16]):
@@ -545,256 +843,7 @@ class Z3D_to_edi(object):
                 s_dict[df].append(s_fn_birrp_arr[np.nonzero(s_fn_birrp_arr['npts'])])
         return s_dict
         
-    def make_mtpy_ascii_files(self, station_dir=None, rr_station_dir=None, 
-                              fmt='%.8', station_name='mb', notch_dict={},
-                              df_list=[4096, 1024, 256], max_blocks=3,
-                              ex=100., ey=100.,): 
-        """
-        makes mtpy_mt files from .Z3D files
-        
-        Arguments:
-        -----------
-            **dirpath** : full path to .Z3D files
-            
-            **station_name** : prefix for station names
-            
-            **fmt** : format of data numbers for mt_files
-            
-        Outputs:
-        --------
-            **fn_arr** : np.ndarray(file, length, df, start_dt)
-            
-        :Example: ::
-        
-            >>> import mtpy.usgs.zen as zen
-            >>> fn_list = zen.copy_from_sd('mt01')
-            >>> mtpy_fn = zen.make_mtpy_files(fn_list, station_name='mt')
-        """
-        
-        if station_dir is not None:
-            self.station_dir = station_dir
-            
-        fn_list = [os.path.join(self.station_dir, fn) 
-                    for fn in os.listdir(self.station_dir) 
-                    if fn[-4:] == '.Z3D']
-        if len(fn_list) == 0:
-            raise IOError('Could not find any .Z3D files in {0}'.format(
-                            self.station_dir))
-                            
-        # make an array that has all the information about each file
-        fn_arr = np.zeros(len(fn_list)*2, 
-                          dtype=[('station','|S6'), 
-                                 ('npts',np.int), 
-                                 ('df', np.int),
-                                 ('start_dt', '|S22'), 
-                                 ('comp','|S2'),
-                                 ('fn','|S100')])
-        fn_lines = []
-        z3d_count = 0             
-        for ii, fn in enumerate(fn_list):
-            if z3d_count > len(df_list)*self.num_comp*max_blocks-1:
-                break
-           
-            zd = zen.Zen3D(fn)
-            zd.read_all_info()
-               
-            if zd.header.ad_rate in df_list:
-                z3d_count += 1
-               
-                # account for decimation, need to make a new instance
-                # so as to include the original file as well
-                if zd.header.ad_rate == 256 and 16 in df_list:
-                    zdec = zen.Zen3D(fn)
-                    zdec.read_all_info()
-                    z3d_count += 1
-                    ex = float(zdec.metadata.ch_length)
-                    ey = float(zdec.metadata.ch_length)
-                    #write mtpy mt file
-                    zdec.write_ascii_mt_file(notch_dict=notch_dict, 
-                                             ex=ex, ey=ey, dec=16)
-                    
-                    #create lines to write to a log file                       
-                    station = zdec.metadata.rx_xyz0.split(':')[0]
-                    jj = len(fn_list)+ii
-                    fn_arr[jj]['station'] = '{0}{1}'.format(station_name, 
-                                                            station)
-                    fn_arr[jj]['npts'] = zdec.time_series_len
-                    fn_arr[jj]['df'] = zdec.df
-                    fn_arr[jj]['start_dt'] = zdec.zen_schedule
-                    fn_arr[jj]['comp'] = zdec.metadata.ch_cmp.lower()
-                    fn_arr[jj]['fn'] = zdec.fn_mt_ascii
-                    fn_lines.append(''.join(['--> station: {0}{1}\n'.format(station_name, station),
-                                             '    ts_len = {0}\n'.format(zdec.time_series_len),
-                                             '    df = {0}\n'.format(zdec.df),
-                                             '    start_dt = {0}\n'.format(zdec.zen_schedule),
-                                             '    comp = {0}\n'.format(zdec.metadata.ch_cmp),
-                                             '    fn = {0}\n'.format(zdec.fn),
-                                             '    decimated to 16 samples/s']))
-               
-        
-
-                else:
-                    pass
-                
-                
-                
-                # get metadata information about the channel to put into 
-                # survey configuration file
-                if zd.metadata.ch_cmp.lower() == 'hx':
-                    self.survey_config.hx = zd.metadata.ch_number
-                elif zd.metadata.ch_cmp.lower() == 'hy':
-                    self.survey_config.hy = zd.metadata.ch_number
-                elif zd.metadata.ch_cmp.lower() == 'hz':
-                    self.survey_config.hz = zd.metadata.ch_number
-                elif zd.metadata.ch_cmp.lower() == 'ex':
-                    self.survey_config.e_xaxis_length = zd.metadata.ch_length
-                    ex = float(zd.metadata.ch_length)
-                elif zd.metadata.ch_cmp.lower() == 'ey':
-                    self.survey_config.e_yaxis_length = zd.metadata.ch_length
-                    ey = float(zd.metadata.ch_length)
-                    
-                #write mtpy mt file
-                zd.write_ascii_mt_file(notch_dict=notch_dict, ex=ex, ey=ey)
     
-                # get station configuration from the first Z3D file            
-                if z3d_count == 2:
-                    self.survey_config.lat = zd.header.lat
-                    self.survey_config.lon = zd.header.long
-                    self.survey_config.date = zd.schedule.Date.replace('-','/')
-                    self.survey_config.box = int(zd.header.box_number)
-                    self.survey_config.station = zd.metadata.rx_xyz0.split(':')[0]
- 
-                #create lines to write to a log file                       
-                station = zd.metadata.rx_xyz0.split(':')[0]
-                fn_arr[ii]['station'] = '{0}{1}'.format(station_name, station)
-                fn_arr[ii]['npts'] = zd.time_series_len
-                fn_arr[ii]['df'] = zd.df
-                fn_arr[ii]['start_dt'] = zd.zen_schedule
-                fn_arr[ii]['comp'] = zd.metadata.ch_cmp.lower()
-                fn_arr[ii]['fn'] = zd.fn_mt_ascii
-                fn_lines.append(''.join(['--> station: {0}{1}\n'.format(station_name, station),
-                                         '    ts_len = {0}\n'.format(zd.time_series_len),
-                                         '    df = {0}\n'.format(zd.df),
-                                         '    start_dt = {0}\n'.format(zd.zen_schedule),
-                                         '    comp = {0}\n'.format(zd.metadata.ch_cmp),
-                                         '    fn = {0}\n'.format(zd.fn)]))
-                                     
-        #-------------------------------
-        # Remote Reference
-        #-------------------------------          
-        if rr_station_dir is not None:
-            self.rr_station_dir = rr_station_dir
-        
-        if self.rr_station_dir is not None:
-            rr_fn_list = [os.path.join(self.rr_station_dir, fn) 
-                          for fn in os.listdir(self.rr_station_dir) 
-                          if fn.endswith('.Z3D')]
-            if len(rr_fn_list) == 0:
-                raise IOError('Could not find any .Z3D files in {0}'.format(
-                                self.rr_station_dir))
-                                
-            # make an array that has all the information about each file
-            rr_fn_arr = np.zeros(len(rr_fn_list)*2, 
-                              dtype=[('station','|S6'), 
-                                     ('npts',np.int), 
-                                     ('df', np.int),
-                                     ('start_dt', '|S22'), 
-                                     ('comp','|S4'),
-                                     ('fn','|S100')])
-            rr_z3d_count = 0             
-            for ii, fn in enumerate(rr_fn_list):
-                if rr_z3d_count > len(df_list)*2*max_blocks-1:
-                    break
-               
-                zd = zen.Zen3D(fn)
-                zd.read_all_info()
-                
-                # check to see if the sampling rate is in the desired list
-                # and check to see if its only the hx or hy channel
-                if zd.header.ad_rate in df_list and \
-                   zd.metadata.ch_cmp.lower() in ['hx', 'hy']:
-                    rr_z3d_count += 1
-                   
-                    # account for decimation, need to make a new instance
-                    # so as to include the original file as well
-                    if zd.header.ad_rate == 256 and 16 in df_list:
-                        zdec = zen.Zen3D(fn)
-                        zdec.read_all_info()
-                        rr_z3d_count += 1
-                        #write mtpy mt file
-                        zdec.write_ascii_mt_file(notch_dict=notch_dict, dec=16)
-                        
-                        #create lines to write to a log file                       
-                        rr_station = zdec.metadata.rx_xyz0.split(':')[0]
-                        jj = len(rr_fn_list)+ii
-                        rr_fn_arr[jj]['station'] = '{0}{1}'.format(station_name, 
-                                                                   rr_station)
-                        rr_fn_arr[jj]['npts'] = zdec.time_series_len
-                        rr_fn_arr[jj]['df'] = zdec.df
-                        rr_fn_arr[jj]['start_dt'] = zdec.zen_schedule
-                        rr_fn_arr[jj]['comp'] = 'rr{0}'.format(zdec.metadata.ch_cmp.lower())
-                        rr_fn_arr[jj]['fn'] = zdec.fn_mt_ascii
-                        fn_lines.append(''.join(['--> rr_station: {0}{1}\n'.format(station_name, rr_station),
-                                                 '    ts_len = {0}\n'.format(zdec.time_series_len),
-                                                 '    df = {0}\n'.format(zdec.df),
-                                                 '    start_dt = {0}\n'.format(zdec.zen_schedule),
-                                                 '    comp = rr{0}\n'.format(zdec.metadata.ch_cmp),
-                                                 '    fn = {0}\n'.format(zdec.fn),
-                                                 '    decimated to 16 samples/s']))
-        
-                    else:
-                        pass
-        
-                
-                    #write mtpy mt file
-                    zd.write_ascii_mt_file(notch_dict=notch_dict)
-                    
-                    #create lines to write to a log file                       
-                    rr_station = zd.metadata.rx_xyz0.split(':')[0]
-                    rr_fn_arr[ii]['station'] = '{0}{1}'.format(station_name, rr_station)
-                    rr_fn_arr[ii]['npts'] = zd.time_series_len
-                    rr_fn_arr[ii]['df'] = zd.df
-                    rr_fn_arr[ii]['start_dt'] = zd.zen_schedule
-                    rr_fn_arr[ii]['comp'] = 'rr{0}'.format(zd.metadata.ch_cmp.lower())
-                    rr_fn_arr[ii]['fn'] = zd.fn_mt_ascii
-                    fn_lines.append(''.join(['--> station: {0}{1}\n'.format(station_name, rr_station),
-                                             '    ts_len = {0}\n'.format(zd.time_series_len),
-                                             '    df = {0}\n'.format(zd.df),
-                                             '    start_dt = {0}\n'.format(zd.zen_schedule),
-                                             '    comp = rr{0}\n'.format(zd.metadata.ch_cmp),
-                                             '    fn = {0}\n'.format(zd.fn)]))
-            
-                    # get metadata information about the channel to put into 
-                    # survey configuration file
-                    if zd.metadata.ch_cmp.lower() == 'hx':
-                        self.survey_config.rr_hx = zd.metadata.ch_number
-                    elif zd.metadata.ch_cmp.lower() == 'hy':
-                        self.survey_config.rr_hy = zd.metadata.ch_number
-                    
-                    # input remote reference information into survey file
-                    if rr_z3d_count == 2:
-                        self.survey_config.rr_station = rr_station
-                        self.survey_config.rr_latitude = zd.header.lat
-                        self.survey_config.rr_longitude = zd.header.long
-                        self.survey_config.rr_date = zd.schedule.Date.replace('-','/')
-                        self.survey_config.rr_box = int(zd.header.box_number)
-            
-            # change the time series directory to reflect where the time series
-            # are.
-            self.rr_station_dir = os.path.join(self.rr_station_dir, 'TS')
-            
-            # get only the non-empty time series
-            rr_fn_arr = rr_fn_arr[np.nonzero(rr_fn_arr['npts'])]
-        else:
-            rr_fn_arr = None
-        # change directories to be associated with where the mtpy ts are
-        self.station_dir = os.path.join(self.station_dir, 'TS')
-        self.survey_config.save_path = self.station_dir
-        
-        # write survey configuration file
-        self.survey_config.write_survey_config_file()
- 
-        return fn_arr[np.nonzero(fn_arr['npts'])], rr_fn_arr, fn_lines
         
     def write_script_files(self, fn_birrp_dict, save_path=None):
         """
