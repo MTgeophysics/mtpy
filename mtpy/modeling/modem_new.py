@@ -232,7 +232,7 @@ class Data(object):
     :Example 5 --> create mesh first then data file: ::
     
         >>> import mtpy.modeling.modem as modem
-        >>> import osself.data_array = np.zeros(ns, dtype=self._dtype)
+        >>> import os
         >>> #1) make a list of all .edi files that will be inverted for 
         >>> edi_path = r"/home/EDI_Files"
         >>> edi_list = [os.path.join(edi_path, edi) 
