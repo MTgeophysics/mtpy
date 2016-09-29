@@ -43,6 +43,131 @@ except ImportError:
            '    python setup.py build -compiler=mingw32  or \n'
            '    python setup.py build -compiler=cygwin')
 
+
+def project_sites(obj,fill_array):
+    
+    """
+    function to project sites from lat/long to eastings/northing. 
+    no dependency on external projection modules (e.g. pyproj) but
+    limited flexibility for projection.
+    
+    """
+
+    utm_zones_dict = {'M':9, 'L':8, 'K':7, 'J':6, 'H':5, 'G':4, 'F':3, 
+                      'E':2, 'D':1, 'C':0, 'N':10, 'P':11, 'Q':12, 'R':13,
+                      'S':14, 'T':15, 'U':16, 'V':17, 'W':18, 'X':19}
+    
+        
+    #--> need to convert lat and lon to east and north
+    for c_arr in fill_array:
+        if c_arr['lat'] != 0.0 and c_arr['lon'] != 0.0:
+            c_arr['zone'], c_arr['east'], c_arr['north'] = \
+                                      utm2ll.LLtoUTM(obj._utm_ellipsoid,
+                                                     c_arr['lat'],
+                                                     c_arr['lon'])
+        
+    #--> need to check to see if all stations are in the same zone
+    utm_zone_list = list(set(fill_array['zone']))
+    
+    #if there are more than one zone, figure out which zone is the odd ball
+    utm_zone_dict = dict([(utmzone, 0) for utmzone in utm_zone_list])        
+    
+    if len(utm_zone_list) != 1:
+        obj._utm_cross = True
+        for c_arr in fill_array:
+            utm_zone_dict[c_arr['zone']] += 1
+        
+        #flip keys and values so the key is the number of zones and 
+        # the value is the utm zone
+        utm_zone_dict = dict([(utm_zone_dict[key], key) 
+                              for key in utm_zone_dict.keys()])
+        
+        #get the main utm zone as the one with the most stations in it
+        main_utm_zone = utm_zone_dict[max(utm_zone_dict.keys())]
+        
+        #Get a list of index values where utm zones are not the 
+        #same as the main zone
+        diff_zones = np.where(fill_array['zone'] != main_utm_zone)[0]
+        for c_index in diff_zones:
+            c_arr = fill_array[c_index]
+            c_utm_zone = c_arr['zone']
+           
+            print '{0} utm_zone is {1} and does not match {2}'.format(
+                   c_arr['station'], c_arr['zone'], main_utm_zone)
+                   
+            zone_shift = 1-abs(utm_zones_dict[c_utm_zone[-1]]-\
+                                  utm_zones_dict[main_utm_zone[-1]]) 
+                   
+            #--> check to see if the zone is in the same latitude
+            #if odd ball zone is north of main zone, add 888960 m
+            if zone_shift > 1:
+                north_shift = obj._utm_grid_size_north*zone_shift
+                print ('--> adding {0:.2f}'.format(north_shift)+\
+                      ' meters N to place station in ' +\
+                      'proper coordinates relative to all other ' +\
+                       'staions.')
+                c_arr['north'] += north_shift
+            
+            #if odd ball zone is south of main zone, subtract 88960 m 
+            elif zone_shift < -1:
+                north_shift = obj._utm_grid_size_north*zone_shift
+                print ('--> subtracting {0:.2f}'.format(north_shift)+\
+                      ' meters N to place station in ' +\
+                      'proper coordinates relative to all other ' +\
+                       'staions.')
+                c_arr['north'] -= north_shift
+            
+            #--> if zone is shifted east or west
+            if int(c_utm_zone[0:-1]) > int(main_utm_zone[0:-1]):
+                east_shift = obj._utm_grid_size_east*\
+                       abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
+                print ('--> adding {0:.2f}'.format(east_shift)+\
+                      ' meters E to place station in ' +\
+                      'proper coordinates relative to all other ' +\
+                       'staions.')
+                c_arr['east'] += east_shift
+            elif int(c_utm_zone[0:-1]) < int(main_utm_zone[0:-1]):
+                east_shift = obj._utm_grid_size_east*\
+                       abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
+                print ('--> subtracting {0:.2f}'.format(east_shift)+\
+                      ' meters E to place station in ' +\
+                      'proper coordinates relative to all other ' +\
+                       'staions.')
+                c_arr['east'] -= east_shift
+
+
+def project_sites2(obj,fill_array):   
+    import pyproj
+
+        
+    epsg_dict = {28350:['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',50],
+                 28351:['+proj=utm +zone=51 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',51],
+                 28352:['+proj=utm +zone=52 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',52],
+                 28353:['+proj=utm +zone=53 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',53],
+                 28354:['+proj=utm +zone=54 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',54],
+                 28355:['+proj=utm +zone=55 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',55],
+                 28356:['+proj=utm +zone=56 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',56],
+                 3112:['+proj=lcc +lat_1=-18 +lat_2=-36 +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',0],
+                 4326:['+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs',0]}
+
+    
+    if obj.epsg not in epsg_dict.keys():
+        obj.epsg = None
+    
+    if obj.epsg is None:
+        return
+        
+    p1 = pyproj.Proj(epsg_dict[4326][0])
+    p2 = pyproj.Proj(epsg_dict[obj.epsg][0])
+    
+    for c_arr in fill_array:
+        if c_arr['lat'] != 0.0 and c_arr['lon'] != 0.0:
+            c_arr['zone'] = epsg_dict[obj.epsg][0]
+            c_arr['east'], c_arr['north'] = \
+                pyproj.transform(p1,p2,
+                                 c_arr['lon'],c_arr['lat'])
+                
+
 #==============================================================================
 
 class Data(object):
@@ -292,6 +417,8 @@ class Data(object):
         
         self._station_locations = None
         self.center_position = np.array([0.0, 0.0])
+        self.epsg = kwargs.pop('epsg',None)        
+        
         self.data_array = None
         self.mt_dict = None
         self.data_fn = kwargs.pop('data_fn','ModEM_Data.dat')
@@ -399,100 +526,53 @@ class Data(object):
             mt_obj = mt.MT(edi)
             self.mt_dict[mt_obj.station] = mt_obj
         
+
+
+    
+
+        
+        
     def get_relative_station_locations(self):
         """
         get station locations from edi files
         """
-        utm_zones_dict = {'M':9, 'L':8, 'K':7, 'J':6, 'H':5, 'G':4, 'F':3, 
-                          'E':2, 'D':1, 'C':0, 'N':10, 'P':11, 'Q':12, 'R':13,
-                          'S':14, 'T':15, 'U':16, 'V':17, 'W':18, 'X':19}
-        
         # get center position of the stations in lat and lon                   
         self.center_position[0] = self.data_array['lat'].mean()
         self.center_position[1] = self.data_array['lon'].mean()
-            
-        #--> need to convert lat and lon to east and north
-        for c_arr in self.data_array:
-            if c_arr['lat'] != 0.0 and c_arr['lon'] != 0.0:
-                c_arr['zone'], c_arr['east'], c_arr['north'] = \
-                                          utm2ll.LLtoUTM(self._utm_ellipsoid,
-                                                         c_arr['lat'],
-                                                         c_arr['lon'])
-            
-        #--> need to check to see if all stations are in the same zone
-        utm_zone_list = list(set(self.data_array['zone']))
         
-        #if there are more than one zone, figure out which zone is the odd ball
-        utm_zone_dict = dict([(utmzone, 0) for utmzone in utm_zone_list])        
+        # try to use pyproj if desired, if not then have to use inbuilt
+        # projection module but may give bad results if crossing more than one zone
         
-        if len(utm_zone_list) != 1:
-            self._utm_cross = True
-            for c_arr in self.data_array:
-                utm_zone_dict[c_arr['zone']] += 1
+        if self.epsg is not None:
+            use_pyproj=True
+        else:
+            use_pyproj=False            
+
+        if use_pyproj:
+            try:
+                project_sites2(self,self.data_array)
+            except ImportError:
+                use_pyproj=False
+                errormessage = "Error loading pyproj"
+            if self.epsg is None:
+                use_pyproj=False
+                errormessage = "Couldn't find epsg, please define manually"
+            # warning message
+            if not use_pyproj:
+                print errormessage
+
+
+        
+        if not use_pyproj:
+            project_sites(self,self.data_array)
             
-            #flip keys and values so the key is the number of zones and 
-            # the value is the utm zone
-            utm_zone_dict = dict([(utm_zone_dict[key], key) 
-                                  for key in utm_zone_dict.keys()])
-            
-            #get the main utm zone as the one with the most stations in it
-            main_utm_zone = utm_zone_dict[max(utm_zone_dict.keys())]
-            
-            #Get a list of index values where utm zones are not the 
-            #same as the main zone
-            diff_zones = np.where(self.data_array['zone'] != main_utm_zone)[0]
-            for c_index in diff_zones:
-                c_arr = self.data_array[c_index]
-                c_utm_zone = c_arr['zone']
-               
-                print '{0} utm_zone is {1} and does not match {2}'.format(
-                       c_arr['station'], c_arr['zone'], main_utm_zone)
-                       
-                zone_shift = 1-abs(utm_zones_dict[c_utm_zone[-1]]-\
-                                      utm_zones_dict[main_utm_zone[-1]]) 
-                       
-                #--> check to see if the zone is in the same latitude
-                #if odd ball zone is north of main zone, add 888960 m
-                if zone_shift > 1:
-                    north_shift = self._utm_grid_size_north*zone_shift
-                    print ('--> adding {0:.2f}'.format(north_shift)+\
-                          ' meters N to place station in ' +\
-                          'proper coordinates relative to all other ' +\
-                           'staions.')
-                    c_arr['north'] += north_shift
-                
-                #if odd ball zone is south of main zone, subtract 88960 m 
-                elif zone_shift < -1:
-                    north_shift = self._utm_grid_size_north*zone_shift
-                    print ('--> subtracting {0:.2f}'.format(north_shift)+\
-                          ' meters N to place station in ' +\
-                          'proper coordinates relative to all other ' +\
-                           'staions.')
-                    c_arr['north'] -= north_shift
-                
-                #--> if zone is shifted east or west
-                if int(c_utm_zone[0:-1]) > int(main_utm_zone[0:-1]):
-                    east_shift = self._utm_grid_size_east*\
-                           abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
-                    print ('--> adding {0:.2f}'.format(east_shift)+\
-                          ' meters E to place station in ' +\
-                          'proper coordinates relative to all other ' +\
-                           'staions.')
-                    c_arr['east'] += east_shift
-                elif int(c_utm_zone[0:-1]) < int(main_utm_zone[0:-1]):
-                    east_shift = self._utm_grid_size_east*\
-                           abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
-                    print ('--> subtracting {0:.2f}'.format(east_shift)+\
-                          ' meters E to place station in ' +\
-                          'proper coordinates relative to all other ' +\
-                           'staions.')
-                    c_arr['east'] -= east_shift
 
         #remove the average distance to get coordinates in a relative space
         self.data_array['rel_east'] = self.data_array['east']-\
                                              self.data_array['east'].mean()
         self.data_array['rel_north'] = self.data_array['north']-\
                                               self.data_array['north'].mean()
+
         
         #--> rotate grid if necessary
         #to do this rotate the station locations because ModEM assumes the
@@ -1451,6 +1531,7 @@ class Model(object):
         self._utm_grid_size_east = 640000.0
         self._utm_cross = False
         self._utm_ellipsoid = 23
+        self.epsg = kwargs.pop('epsg',None)
         
         #resistivity model
         self.res_model = None
@@ -1473,9 +1554,6 @@ class Model(object):
         """
         get the station locations from lats and lons
         """
-        utm_zones_dict = {'M':9, 'L':8, 'K':7, 'J':6, 'H':5, 'G':4, 'F':3, 
-                          'E':2, 'D':1, 'C':0, 'N':10, 'P':11, 'Q':12, 'R':13,
-                          'S':14, 'T':15, 'U':16, 'V':17, 'W':18, 'X':19}
                        
         #if station locations are not input read from the edi files
         if self.station_locations is None:
@@ -1511,82 +1589,31 @@ class Model(object):
                 self.station_locations[ii]['elev'] = mt_obj.elev
                 self.station_locations[ii]['zone'] = mt_obj.utm_zone
                 
-        #--> need to convert lat and lon to east and north
-        for c_arr in self.station_locations:
-            if c_arr['lat'] != 0.0 and c_arr['lon'] != 0.0:
-                c_arr['zone'], c_arr['east'], c_arr['north'] = \
-                                          utm2ll.LLtoUTM(self._utm_ellipsoid,
-                                                         c_arr['lat'],
-                                                         c_arr['lon'])
-            
-        #--> need to check to see if all stations are in the same zone
-        utm_zone_list = list(set(self.station_locations['zone']))
+
+        # try to use pyproj if desired, if not then have to use inbuilt
+        # projection module but may give bad results if crossing more than one zone
+        if self.epsg is not None:
+            use_pyproj=True
+        else:
+            use_pyproj=False
+
+        if use_pyproj:
+            try:
+                project_sites2(self,self.station_locations)
+            except ImportError:
+                use_pyproj=False
+                errormessage = "Error loading pyproj"
+            if self.epsg is None:
+                use_pyproj=False
+                errormessage = "Couldn't find epsg, please define manually"
+            # warning message
+            if not use_pyproj:
+                print errormessage
+
+
         
-        #if there are more than one zone, figure out which zone is the odd ball
-        utm_zone_dict = dict([(utmzone, 0) for utmzone in utm_zone_list])        
-        
-        if len(utm_zone_list) != 1:
-            self._utm_cross = True
-            for c_arr in self.station_locations:
-                utm_zone_dict[c_arr['zone']] += 1
-            
-            #flip keys and values so the key is the number of zones and 
-            # the value is the utm zone
-            utm_zone_dict = dict([(utm_zone_dict[key], key) 
-                                  for key in utm_zone_dict.keys()])
-            
-            #get the main utm zone as the one with the most stations in it
-            main_utm_zone = utm_zone_dict[max(utm_zone_dict.keys())]
-            
-            #Get a list of index values where utm zones are not the 
-            #same as the main zone
-            diff_zones = np.where(self.station_locations['zone'] != main_utm_zone)[0]
-            for c_index in diff_zones:
-                c_arr = self.station_locations[c_index]
-                c_utm_zone = c_arr['zone']
-               
-                print '{0} utm_zone is {1} and does not match {2}'.format(
-                       c_arr['station'], c_arr['zone'], main_utm_zone)
-                       
-                zone_shift = 1-abs(utm_zones_dict[c_utm_zone[-1]]-\
-                                      utm_zones_dict[main_utm_zone[-1]]) 
-                       
-                #--> check to see if the zone is in the same latitude
-                #if odd ball zone is north of main zone, add 888960 m
-                if zone_shift > 1:
-                    north_shift = self._utm_grid_size_north*zone_shift
-                    print ('--> adding {0:.2f}'.format(north_shift)+\
-                          ' meters N to place station in ' +\
-                          'proper coordinates relative to all other ' +\
-                           'staions.')
-                    c_arr['north'] += north_shift
-                
-                #if odd ball zone is south of main zone, subtract 88960 m 
-                elif zone_shift < -1:
-                    north_shift = self._utm_grid_size_north*zone_shift
-                    print ('--> subtracting {0:.2f}'.format(north_shift)+\
-                          ' meters N to place station in ' +\
-                          'proper coordinates relative to all other ' +\
-                           'staions.')
-                    c_arr['north'] -= north_shift
-                
-                #--> if zone is shifted east or west
-                if int(c_utm_zone[0:-1]) > int(main_utm_zone[0:-1]):
-                    east_shift = self._utm_grid_size_east*\
-                           abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
-                    print ('--> adding {0:.2f}'.format(east_shift)+\
-                          ' meters E to place station in ' +\
-                          'proper coordinates relative to all other ' +\
-                           'staions.')
-                    c_arr['east'] += east_shift
-                elif int(c_utm_zone[0:-1]) < int(main_utm_zone[0:-1]):
-                    east_shift = self._utm_grid_size_east*\
-                           abs(int(c_utm_zone[0:-1])-int(main_utm_zone[0:-1]))
-                    print ('--> subtracting {0:.2f}'.format(east_shift)+\
-                          ' meters E to place station in ' +\
-                          'proper coordinates relative to all other ' +\
-                           'staions.')
-                    c_arr['east'] -= east_shift
+        if not use_pyproj:
+            project_sites(self,self.station_locations)        
                     
        
                                                     
