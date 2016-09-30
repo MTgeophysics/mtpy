@@ -14,7 +14,7 @@ JP 2014
 from PyQt4 import QtCore, QtGui
 import mtpy.modeling.modem_new as modem
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from matplotlib.patches import Ellipse
 import mtpy.imaging.mtplottools as mtplottools
@@ -305,7 +305,6 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.modem_data_fn = fn
         
         self.dir_path = os.path.dirname(fn)
-        print self.dir_path, os.path.abspath(self.dir_path)
         
         self.period_list = sorted(self.modem_data.period_list)
         self.period_dict = dict([('{0:.5f}'.format(key), value) for value, key
@@ -318,6 +317,8 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
             self.list_widget.addItem('{0:.5f}'.format(period))
             
         self.plot_period = '{0:.5f}'.format(self.period_list[0])
+        
+        self._get_pt()
         
         self.get_depth_array()
             
@@ -392,7 +393,6 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         """
         put pt parameters into something useful for plotting
         """
-        
         ns = len(self.modem_data.mt_dict.keys())
         nf = len(self.modem_data.period_list)
         
@@ -432,7 +432,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                                                 
         for ii, key in enumerate(self.modem_data.mt_dict.keys()):
             east = self.modem_data.mt_dict[key].grid_east/self.dscale
-            north = self.modem_data.mt_dict[key].grid_north/self.dscale
+            north = self.modem_data.mt_dict[key].grid_north/self.dscale            
             dpt = self.modem_data.mt_dict[key].pt
             data_pt_arr[:, ii]['east'] = east
             data_pt_arr[:, ii]['north'] = north
@@ -505,6 +505,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                 
         #make these attributes        
         self.pt_data_arr = data_pt_arr
+        
         if self.modem_resp_fn is not None:
             self.pt_resp_arr = model_pt_arr
             self.pt_resid_arr = res_pt_arr
@@ -594,6 +595,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
             self.ns_limits = (north_min, north_max)
         #-------------plot phase tensors------------------------------------                    
         data_ii = self.period_dict[self.plot_period]
+        print 'Ploting period {0}'.format(data_ii)
         
         self.figure.clf()
                          
@@ -1034,7 +1036,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                             verticalalignment='baseline',
                             fontdict={'size':self.font_size}) 
                 
-
+        # draw plot
         self.mpl_widget.draw()
         
 class PlotSettings(QtGui.QWidget):

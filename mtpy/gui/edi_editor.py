@@ -1209,27 +1209,39 @@ class PlotWidget(QtGui.QWidget):
         self.rs_od_res = mplwidgets.RectangleSelector(self.ax_res_od,
                                                       self.rect_onselect_od,
                                                       drawtype='box',
-                                                      useblit=True)                    
+                                                      useblit=True,
+                                                      interactive=True,
+                                                      button=[1])                    
         self.rs_d_res = mplwidgets.RectangleSelector(self.ax_res_d,
                                                       self.rect_onselect_d,
                                                       drawtype='box',
-                                                      useblit=True)                    
+                                                      useblit=True,
+                                                      interactive=True,
+                                                      button=[1])                    
         self.rs_od_phs = mplwidgets.RectangleSelector(self.ax_phase_od,
                                                       self.rect_onselect_od,
                                                       drawtype='box',
-                                                      useblit=True)                    
+                                                      useblit=True,
+                                                      interactive=True,
+                                                      button=[1])                    
         self.rs_d_phs = mplwidgets.RectangleSelector(self.ax_phase_d,
                                                       self.rect_onselect_d,
                                                       drawtype='box',
-                                                      useblit=True)                    
+                                                      useblit=True,
+                                                      interactive=True,
+                                                      button=[1])                    
         self.rs_tr = mplwidgets.RectangleSelector(self.ax_tip_x,
                                                       self.rect_onselect_tr,
                                                       drawtype='box',
-                                                      useblit=True)                    
+                                                      useblit=True,
+                                                      interactive=True,
+                                                      button=[1])                    
         self.rs_ti = mplwidgets.RectangleSelector(self.ax_tip_y,
                                                       self.rect_onselect_ti,
                                                       drawtype='box',
-                                                      useblit=True)                    
+                                                      useblit=True,
+                                                      interactive=True,
+                                                      button=[1])                    
     
         ## --> need to be sure to draw the figure        
         self.mpl_widget.draw()
@@ -1246,7 +1258,7 @@ class PlotWidget(QtGui.QWidget):
         data_value = data_point.get_ydata()[event.ind]
         
         # modify Z
-        if event.mouseevent.button == 1:
+        if event.mouseevent.button == 3:
             self._edited_mask = True
             if self._ax_index == 0 or self._ax_index == 1:
                 d_index = np.where(self.mt_obj.Z.resistivity == data_value)
@@ -1315,8 +1327,9 @@ class PlotWidget(QtGui.QWidget):
                 self.mt_obj.Tipper._compute_amp_phase()
             
 #            self._ax.figure.canvas.repaint()
-            self._ax.figure.canvas.update()
-            self._ax.figure.canvas.flush_events()
+#            self._ax.figure.canvas.update()
+#            self._ax.figure.canvas.flush_events()
+            self._ax.figure.canvas.draw()
                 
     def in_axes(self, event):
         """
@@ -1353,8 +1366,8 @@ class PlotWidget(QtGui.QWidget):
                                    self.mt_obj.Z.resistivity[ff, 0, 1],
                                    **self.mask_kw)
                 self.ax_phase_od.plot(data_period, 
-                                  self.mt_obj.Z.phase[ff, 0, 1],
-                               **self.mask_kw)
+                                      self.mt_obj.Z.phase[ff, 0, 1],
+                                       **self.mask_kw)
                 self.mt_obj.Z.z[ff, 0, 1] = 0.0+0.0*1j            
                 self.mt_obj.Z.z_err[ff, 0, 1] = 0.0 
                 
@@ -1487,10 +1500,10 @@ class PlotSettings(QtGui.QWidget):
         self.tipper_x_limits = kwargs.pop('tipper_x_limits', None)
         self.tipper_y_limits = kwargs.pop('tipper_y_limits', None)
         
-        self._tip_x_limits_min = None
-        self._tip_x_limits_max = None
-        self._tip_y_limits_min = None
-        self._tip_y_limits_max = None
+        self._tip_x_limits_min = -1
+        self._tip_x_limits_max = 1
+        self._tip_y_limits_min = -1
+        self._tip_y_limits_max = 1
 
         
         self.subplot_wspace = kwargs.pop('subplot_wspace', .15)
