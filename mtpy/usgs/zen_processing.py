@@ -478,7 +478,7 @@ class Z3D_to_edi(object):
 
 
         if fn_count == 0:
-            raise ValueError('No Z3D files found for in {1}'.format(station_dir))
+            raise ValueError('No Z3D files found for in {0}'.format(station_dir))
         else:
             print 'Found {0} Z3D files in {1}'.format(fn_count, station_dir)
         
@@ -754,7 +754,7 @@ class Z3D_to_edi(object):
         return fn_arr[np.nonzero(fn_arr['npts'])], rr_fn_arr, fn_lines
         
     def get_schedules_fn_from_dir(self, station_ts_dir=None, rr_ts_dir=None,
-                                  df_list=[4096, 256, 16]):
+                                  df_list=[4096, 256, 16], max_blocks=4):
         """
         get the birrp fn list from a directory of TS files
         """
@@ -846,11 +846,13 @@ class Z3D_to_edi(object):
             rr_fn_arr = None
         
         
-        return self.get_schedules_fn(fn_arr, rr_fn_arr, df_list)
+        return self.get_schedules_fn(fn_arr, rr_fn_arr, df_list,
+                                     max_blocks=max_blocks)
 #        return (fn_arr, rr_fn_arr)
             
         
-    def get_schedules_fn(self, fn_arr, rr_fn_arr=None, df_list=[4096, 256, 16]):
+    def get_schedules_fn(self, fn_arr, rr_fn_arr=None, df_list=[4096, 256, 16],
+                         max_blocks=4):
         """
         seperate out the different schedule blocks and frequencies so the
         can be processed
@@ -871,8 +873,8 @@ class Z3D_to_edi(object):
         # loop over the sampling rates and find the schedule blocks
         for df in s_keys:
             # find startind dates for sampling rate
-            s_dates = set(fn_arr['start_dt'][np.where(fn_arr['df']==df)])
-            for sdate in s_dates:
+            s_dates = sorted(list(set(fn_arr['start_dt'][np.where(fn_arr['df']==df)])))
+            for sdate in s_dates[0:max_blocks]:
                 s_fn_arr = fn_arr[np.where((fn_arr['start_dt']==sdate) &
                                             (fn_arr['df']==df))]
                 num_comp = len(s_fn_arr) 
@@ -896,7 +898,6 @@ class Z3D_to_edi(object):
                 
                 # get remote reference information if input
                 if rr_fn_arr is not None:
-                    
                     # need to find the date closest to the station date
                     if sdate in set(rr_fn_arr['start_dt']):
                         s_rr_arr = rr_fn_arr[np.where((rr_fn_arr['start_dt']==sdate) &
@@ -984,9 +985,9 @@ class Z3D_to_edi(object):
                 pro_obj.ilev = 1
                 pro_obj.tbw = 3
                 pro_obj.nar = 9
-                pro_obj.c2threshb = .40
-                pro_obj.c2threshe = .40
-                pro_obj.c2threshe1 = .40
+                pro_obj.c2threshb = .45
+                pro_obj.c2threshe = .45
+                pro_obj.c2threshe1 = .45
                 pro_obj.nf1 = 4
                 pro_obj.nfinc = 2
                 pro_obj.nsctinc = 2
@@ -1122,7 +1123,8 @@ class Z3D_to_edi(object):
                                                             notch_dict=notch_dict)
         
         # get all information from mtpy files
-        schedule_dict = self.get_schedules_fn_from_dir(df_list=df_list)
+        schedule_dict = self.get_schedules_fn_from_dir(df_list=df_list,
+                                                       max_blocks=max_blocks)
             
         # write script files for birrp
         sfn_list = self.write_script_files(schedule_dict)
