@@ -259,6 +259,8 @@ class WSData(object):
         if self.units == 'mv':
             zconv = 1./796.
             
+        self.period_list = np.array(self.period_list)
+            
         #define some lengths
         n_stations = len(self.edi_list)
         n_periods = len(self.period_list)
@@ -1065,10 +1067,10 @@ class WSMesh(object):
         
         #pickout the furtherst south and west locations 
         #and put that station as the bottom left corner of the main grid
-        west = self.station_locations['east'].min()-self.cell_size_east/2
-        east = self.station_locations['east'].max()+self.cell_size_east/2
-        south = self.station_locations['north'].min()-self.cell_size_north/2
-        north = self.station_locations['north'].max()+self.cell_size_north/2
+        west = self.station_locations['east'].min()-(1.5*self.cell_size_east)
+        east = self.station_locations['east'].max()+(1.5*self.cell_size_east)
+        south = self.station_locations['north'].min()-(1.5*self.cell_size_north)
+        north = self.station_locations['north'].max()+(1.5*self.cell_size_north)
 
         #make sure the variable n_stations is initialized        
         try:
@@ -1079,7 +1081,8 @@ class WSMesh(object):
         #-------make a grid around the stations from the parameters above------
         #--> make grid in east-west direction
         #cells within station area
-        midxgrid = np.arange(start=west, stop=east+self.cell_size_east,
+        midxgrid = np.arange(start=west,
+                             stop=east+self.cell_size_east,
                              step=self.cell_size_east)
         
         #padding cells on the west side
@@ -1098,7 +1101,8 @@ class WSMesh(object):
         
         #--> make grid in north-south direction 
         #N-S cells with in station area
-        midygrid = np.arange(start=south, stop=north+self.cell_size_north, 
+        midygrid = np.arange(start=south,
+                             stop=north+self.cell_size_north, 
                              step=self.cell_size_north)
         
         #padding cells on south side
