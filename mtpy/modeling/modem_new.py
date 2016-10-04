@@ -1620,10 +1620,10 @@ class Model(object):
         self.get_station_locations()
         
         #find the edges of the grid
-        west = self.station_locations['rel_east'].min()-self.cell_size_east/2
-        east = self.station_locations['rel_east'].max()+self.cell_size_east/2
-        south = self.station_locations['rel_north'].min()-self.cell_size_north/2
-        north = self.station_locations['rel_north'].max()+self.cell_size_north/2
+        west = self.station_locations['rel_east'].min()-(1.5*self.cell_size_east)
+        east = self.station_locations['rel_east'].max()+(1.5*self.cell_size_east)
+        south = self.station_locations['rel_north'].min()-(1.5*self.cell_size_north)
+        north = self.station_locations['rel_north'].max()+(1.5*self.cell_size_north)
         west = np.round(west, -2)
         east= np.round(east, -2)
         south= np.round(south, -2)

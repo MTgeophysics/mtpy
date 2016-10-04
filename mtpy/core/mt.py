@@ -325,8 +325,9 @@ class MT(object):
         """
         
         self._Tipper = t_object
-        self._Tipper._compute_amp_phase()
-        self._Tipper._compute_mag_direction()
+        if self._Tipper is not None:
+            self._Tipper._compute_amp_phase()
+            self._Tipper._compute_mag_direction()
         
     #==========================================================================
     # get functions                         
@@ -681,12 +682,15 @@ class MT(object):
                 
         # if there is not tipper than skip
         if self.Tipper.tipper is None:
-            return new_Z, None
+            return new_Z, new_Tipper
             
         # interpolate the Tipper    
         for jj in range(2):
             # get indicies of non-zero components
             nz_index = np.nonzero(self.Tipper.tipper[:, 0, jj])
+            
+            if len(nz_index[0]) == 0:
+                continue
             
             # get non-zero components
             t_real = self.Tipper.tipper[nz_index, 0, jj].real
