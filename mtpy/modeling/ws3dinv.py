@@ -341,50 +341,27 @@ class WSData(object):
                 print '    {0:.6g} (s)'.format(ff)
                 
                 self.data[ss]['z_data'][jj, :] = interp_z.z[kk, :, :]*zconv
-                # get errors
-                if self.z_err == 'data':
-                    self.data[ss]['z_data_err'][jj, :] = interp_z.z_err[kk, :, :]*zconv
-                else:
-                    self.data[ss]['z_data_err'][jj, :] = interp_z.z[kk]*self.z_err*zconv 
+                self.data[ss]['z_data_err'][jj, :] = interp_z.z_err[kk, :, :]*zconv
 
-                # if an error floor is set.
-                if self.z_err_floor is not None:
-                    per_err = self.data[ss]['z_data_err'][jj, :]/\
-                              self.data[ss]['z_data'][jj, :]
-                    per_err[np.where(per_err < self.z_err_floor)] = \
-                                                self.z_err_floor
-                    self.data[ss]['z_data_err'][jj, : ] = \
-                        self.data[ss]['z_data'][jj, :]*per_err
-                            
-                self.data[ss]['z_err_map'][jj] = np.reshape(self.z_err_map,
-                                                            (2,2))
-#            for ff, f1 in enumerate(self.period_list):
-#                for kk,f2 in enumerate(z1.period):
-#                    if f2 >= (1-self.ptol)*f1 and f2 <= (1+self.ptol)*f1:
-#                        self.data[ss]['z_data'][ff, :] = \
-#                                                   zconv*z1.Z.z[kk]
-#                        #get errors 
-#                        if self.z_err == 'data':
-#                            self.data[ss]['z_data_err'][ff, :] = \
-#                                                            zconv*z1.Z.z_err[kk]
-#                        else:
-#                            self.data[ss]['z_data_err'][ff, :] = \
-#                                                    zconv*z1.Z.z[kk]*self.z_err
-#                        # if an error floor is set.
-#                        if self.z_err_floor is not None:
-#                            per_err = self.data[ss]['z_data_err'][ff, :]/\
-#                                      self.data[ss]['z_data'][ff, :]
-#                            per_err[np.where(per_err < self.z_err_floor)] = \
-#                                                        self.z_err_floor
-#                            self.data[ss]['z_data_err'][ff, : ] = \
-#                                self.data[ss]['z_data'][ff, :] * per_err
-#                                    
-#                        self.data[ss]['z_err_map'][ff] = \
-#                                    np.reshape(self.z_err_map, (2,2))
-#                        
-#                        print '   Matched {0:.6g} to {1:.6g}'.format(f1, f2)
-#                        break
-        
+
+    def comput_errors(self):
+        """
+        compute the errors from the given attributes
+        """
+    
+        for d_arr in self.data:
+            if self.z_err == 'data':
+                pass
+            elif self.z_err_floor is None and type(self.z_err) is float:
+                d_arr['z_data_err'][:] = d_arr['z_data'][:]*self.z_err
+            elif self.z_err_floor is not None:
+                ef_idx = np.where(d_arr['z_data_err'] < self.z_err_floor)
+                d_arr['z_data_err'][ef_idx] = d_arr['z_data'][ef_idx]*self.z_err_floor 
+
+                        
+            d_arr['z_err_map'] = np.reshape(len(self.period_list)*self.z_err_map,
+                                           (len(self.period_list), 2, 2))
+    
     def write_data_file(self, **kwargs):
         """
         Writes a data file based on the attribute data
@@ -407,6 +384,9 @@ class WSData(object):
         """
         if self.data is None:
             self.build_data()
+        
+        # compute errors, this helps when rewriting a data file
+        self.comput_errors()
             
         for key in ['data_fn', 'save_path', 'data_basename']:
             try: 

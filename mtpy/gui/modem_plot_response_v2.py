@@ -1044,8 +1044,8 @@ class PlotSettings(object):
         self.e_capsize =  kwargs.pop('e_capsize', 5)
 
         #color mode
-        self.cted = kwargs.pop('cted', (0, 0, 1))
-        self.ctmd = kwargs.pop('ctmd', (1, 0, 0))
+        self.cted = kwargs.pop('cted', (0, 0, .75))
+        self.ctmd = kwargs.pop('ctmd', (.75, 0, 0))
         self.mted = kwargs.pop('mted', 's')
         self.mtmd = kwargs.pop('mtmd', 'o')
         

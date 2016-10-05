@@ -657,6 +657,8 @@ class MT(object):
                 # get the indicies of non-zero components
                 nz_index = np.nonzero(self.Z.z[:, ii, jj])
                 
+                if len(nz_index[0]) == 0:
+                    continue
                 # get the non-zero components
                 z_real = self.Z.z[nz_index, ii, jj].real
                 z_imag = self.Z.z[nz_index, ii, jj].imag
