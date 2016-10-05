@@ -932,6 +932,9 @@ class Data(object):
         
         #reset the header string to be informational
         self._set_header_string()
+        
+        # number of periods - subtract periods with all zero components
+        nper = len(np.where(np.mean(np.mean(np.mean(np.abs(self.data_array['z']),axis=0),axis=1),axis=1)>0)[0])
 
         dlines = []        
         for inv_mode in self.inv_mode_dict[self.inv_mode]:
@@ -948,7 +951,7 @@ class Data(object):
             dlines.append('> 0\n') #oriention, need to add at some point
             dlines.append('> {0: >10.6f} {1:>10.6f}\n'.format(
                           self.center_position[0], self.center_position[1]))
-            dlines.append('> {0} {1}\n'.format(self.data_array['z'].shape[1],
+            dlines.append('> {0} {1}\n'.format(nper,
                                                self.data_array['z'].shape[0]))
                                                
             for ss in range(self.data_array['z'].shape[0]):
@@ -1039,7 +1042,7 @@ class Data(object):
 
                             else: 
                                 abs_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj].real 
-                                if c_key.find('z') >= 0 and self.units == 'ohm':
+                                if ((c_key.find('z') >= 0) and (self.units == 'ohm')):
                                     abs_err /= 796.
                                     
                             abs_err = '{0:> 14.6e}'.format(abs(abs_err))
@@ -1047,6 +1050,8 @@ class Data(object):
                             dline = ''.join([per, sta, lat, lon, nor, eas, ele, 
                                              com, rea, ima, abs_err, '\n'])
                             dlines.append(dline)
+        
+        
         
         dfid = file(self.data_fn, 'w')
         dfid.writelines(dlines)
@@ -5656,6 +5661,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
         self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':2})
         self._read_ellipse_dict()
         
+        self.ellipse_size = kwargs.pop('ellipse_size',self._ellipse_dict['size'])
+        
         self.subplot_right = .99
         self.subplot_left = .085
         self.subplot_top = .92
@@ -5868,10 +5875,12 @@ class PlotPTMaps(mtplottools.MTEllipse):
             
             #plot model below the phase tensors
             if self.model_fn is not None:
+                gridzcentre = np.mean([self.model_obj.grid_z[1:],self.model_obj.grid_z[:-1]],axis=0)
                 approx_depth, d_index = ws.estimate_skin_depth(self.model_obj.res_model.copy(),
-                                                            self.model_obj.grid_z.copy()/self.dscale, 
+                                                            gridzcentre/self.dscale, 
                                                             per, 
                                                             dscale=self.dscale)  
+
                 #need to add an extra row and column to east and north to make sure 
                 #all is plotted see pcolor for details.
                 plot_east = np.append(self.model_obj.grid_east, 
@@ -5883,9 +5892,13 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 
                 #make a mesh grid for plotting
                 #the 'ij' makes sure the resulting grid is in east, north
-                self.mesh_east, self.mesh_north = np.meshgrid(plot_east, 
-                                                              plot_north,
-                                                              indexing='ij')
+                try:
+                    self.mesh_east, self.mesh_north = np.meshgrid(plot_east, 
+                                                                  plot_north,
+                                                                  indexing='ij')
+                except TypeError:
+                    self.mesh_east, self.mesh_north = [arr.T for arr in np.meshgrid(plot_east, 
+                                                                  plot_north)]
                 
                 for ax in ax_list:
                     plot_res = np.log10(self.model_obj.res_model[:, :, d_index].T)
