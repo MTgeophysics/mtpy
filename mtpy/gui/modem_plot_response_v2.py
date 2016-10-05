@@ -256,12 +256,15 @@ class PlotResponses(QtGui.QWidget):
         self.modem_data = None
         self.modem_resp = None
         
+        self._modem_data_copy = None
+        
         self._plot_z = False
         self.plot_settings = PlotSettings()
         
-        self._ax = 0
-        self._ax2 = 4
+        self._ax = None
+        self._ax2 = None
         self._key = 'z'
+        self._ax_index = 0
         self.ax_list = None
         
         self.setup_ui()
@@ -285,6 +288,11 @@ class PlotResponses(QtGui.QWidget):
         # create new modem data object
         self.modem_data = modem.Data()
         self.modem_data.read_data_file(self._data_fn)
+        
+        # make a back up copy that will be unchanged
+        # that way we can revert back
+        self._modem_data_copy = modem.Data()
+        self._modem_data_copy.read_data_file(self._data_fn)
         
         self.dirpath = os.path.dirname(self._data_fn)
         
@@ -342,6 +350,11 @@ class PlotResponses(QtGui.QWidget):
         self.save_edits_button.setText("Save Edits")
         self.save_edits_button.setStyleSheet("background-color: #42f489")
         self.save_edits_button.pressed.connect(self.save_edits)
+        
+        self.apply_edits_button = QtGui.QPushButton()
+        self.apply_edits_button.setText('Apply Edits')
+        self.apply_edits_button.setStyleSheet("background-color: #c6dcff")
+        self.apply_edits_button.pressed.connect(self.apply_edits)
 
         # this is the Canvas Widget that displays the `figure`
         # it takes the `figure` instance as a parameter to __init__
@@ -369,6 +382,7 @@ class PlotResponses(QtGui.QWidget):
         
         left_layout = QtGui.QVBoxLayout()
         left_layout.addWidget(self.list_widget)
+        left_layout.addWidget(self.apply_edits_button)
         left_layout.addWidget(self.save_edits_button)
         
         # set the layout the main window
@@ -397,6 +411,9 @@ class PlotResponses(QtGui.QWidget):
                                         fn_basename=os.path.basename(save_fn),
                                         compute_error=False,
                                         fill=False)
+        
+    def apply_edits(self):
+        self.plot()
         
     def plot(self):
         """
@@ -696,15 +713,11 @@ class PlotResponses(QtGui.QWidget):
                     for jj in range(2):
                         scaling[:, ii, jj] = 1./np.sqrt(resp_z_obj.freq)
                 r_plot_res = abs(resp_z_obj.z.real*scaling)
-                r_plot_res_err = abs(resp_z_obj.z_err*scaling)
                 r_plot_phase = abs(resp_z_obj.z.imag*scaling)
-                r_plot_phase_err = abs(resp_z_obj.z_err*scaling)
                 
             elif self.plot_z == False:
                 r_plot_res = resp_z_obj.resistivity
-                r_plot_res_err = resp_z_obj.resistivity_err
                 r_plot_phase = resp_z_obj.phase
-                r_plot_phase_err = resp_z_obj.phase_err
 
             rms_xx = resp_z_err[:, 0, 0].std()
             rms_xy = resp_z_err[:, 0, 1].std()
@@ -905,6 +918,9 @@ class PlotResponses(QtGui.QWidget):
                           marker='x', 
                           ms=self.plot_settings.ms*2,
                           mew=4)
+                          
+            self._ax.figure.canvas.draw()
+            self._ax2.figure.canvas.draw()
         
         # Increase error bars
         if event.mouseevent.button == 3:
