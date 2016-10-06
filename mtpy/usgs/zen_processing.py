@@ -1151,7 +1151,7 @@ class Z3D_to_edi(object):
         r_plot = self.plot_responses()
         
         et = time.time()
-        print '--> Processing took {0:02}:{1:02}'.format((et-st)//60, (et-st)%60)
+        print '--> Processing took {0:02.0f}:{1:02.0f} minutes'.format((et-st)//60, (et-st)%60)
         
         return r_plot, comb_edi_fn
         
