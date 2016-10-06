@@ -27,6 +27,7 @@ from matplotlib.figure import Figure
 import mtpy.imaging.mtplottools as mtplottools
 import matplotlib.gridspec as gridspec
 import mtpy.modeling.ws3dinv as ws
+import mtpy.core.z as mtz
 
 #==============================================================================
 class WSPlotResponse(QtGui.QMainWindow):
@@ -180,8 +181,14 @@ class WSPlotResponse(QtGui.QMainWindow):
         fn = str(fn_dialog.getOpenFileName(caption='Choose WS3DINV data file',
                                        filter='(*.dat);; (*.data)'))
                                        
+        sfn = str(fn_dialog.getOpenFileName(caption='Choose WS3DINV station file',
+                                       filter='*.txt'))
+        
+        self.plot_response.station_fn = sfn                               
         self.plot_response.data_fn = fn
         self.dir_path = os.path.dirname(fn)
+        
+        
                                        
         
     def save_edits(self):
@@ -252,6 +259,7 @@ class PlotResponses(QtGui.QWidget):
         super(PlotResponses, self).__init__()
         self._data_fn = data_fn
         self._resp_fn = resp_fn
+        self.station_fn = None
         
         self.ws_data = None
         self.ws_resp = None
@@ -286,18 +294,18 @@ class PlotResponses(QtGui.QWidget):
         self._data_fn = data_fn
         
         # create new modem data object
-        self.ws_data = modem.Data()
-        self.ws_data.read_data_file(self._data_fn)
+        self.ws_data = ws.WSData()
+        self.ws_data.read_data_file(self._data_fn, station_fn=self.station_fn)
         
         # make a back up copy that will be unchanged
         # that way we can revert back
-        self._modem_data_copy = modem.Data()
-        self._modem_data_copy.read_data_file(self._data_fn)
+        self._ws_data_copy = ws.WSData()
+        self._ws_data_copy.read_data_file(self._data_fn)
         
         self.dirpath = os.path.dirname(self._data_fn)
         
         # fill list of stations
-        station_list = sorted(self.ws_data.mt_dict.keys())
+        station_list = sorted(self.ws_data.data['station'])
         self.list_widget.clear()
         for station in station_list:
             self.list_widget.addItem(station)
@@ -316,9 +324,10 @@ class PlotResponses(QtGui.QWidget):
     @resp_fn.setter
     def resp_fn(self, resp_fn):
         self._resp_fn = resp_fn
-        self.ws_resp = modem.Data()
+        self.ws_resp = ws.WSResponse()
 
-        self.ws_resp.read_data_file(self._resp_fn)
+        self.ws_resp.read_resp_file(resp_fn=self._resp_fn,
+                                    station_fn=self.station_fn)
         self.plot() 
         
     @property
@@ -422,9 +431,13 @@ class PlotResponses(QtGui.QWidget):
 
         if self.station is None:
             return
-            
-        z_obj = self.ws_data.mt_dict[self.station].Z
-        t_obj = self.ws_data.mt_dict[self.station].Tipper
+        
+        s_index = np.where(self.ws_data.data['station'] == self.station)[0][0]
+        
+        z_obj = mtz.Z(self.ws_data.data[s_index]['z_data'],
+                      self.ws_data.data[s_index]['z_data_err']*\
+                        self.ws_data.data[s_index]['z_err_map'],
+                      1./self.ws_data.period_list)
         period = self.ws_data.period_list
         
         # need to make sure that resistivity and phase is computed
@@ -462,34 +475,26 @@ class PlotResponses(QtGui.QWidget):
             plot_res_err = abs(z_obj.z_err*scaling)
             plot_phase = abs(z_obj.z.imag*scaling)
             plot_phase_err = abs(z_obj.z_err*scaling)
-            h_ratio = [1, 1, .3]
+            h_ratio = [1, 1]
             
         elif self.plot_z == False:
             plot_res = z_obj.resistivity
             plot_res_err = z_obj.resistivity_err
             plot_phase = z_obj.phase
             plot_phase_err = z_obj.phase_err
-            h_ratio = [1.5, 1, .3]
+            h_ratio = [2, 1]
         
         #find locations where points have been masked
         nzxx = np.nonzero(z_obj.z[:, 0, 0])[0]
         nzxy = np.nonzero(z_obj.z[:, 0, 1])[0]
         nzyx = np.nonzero(z_obj.z[:, 1, 0])[0]
         nzyy = np.nonzero(z_obj.z[:, 1, 1])[0]
-        ntx = np.nonzero(t_obj.tipper[:, 0, 0])[0]
-        nty = np.nonzero(t_obj.tipper[:, 0, 1])[0]
         
-
         self.figure.clf()
         self.figure.suptitle(str(self.station), fontdict=fontdict)
         
         #set the grid of subplots
-        if np.all(t_obj.tipper == 0.0) == True:
-            self.plot_tipper = False
-        else:
-            self.plot_tipper = True
-            
-        gs = gridspec.GridSpec(3, 4, height_ratios=h_ratio)
+        gs = gridspec.GridSpec(2, 4, height_ratios=h_ratio)
         gs.update(wspace=self.plot_settings.subplot_wspace,
                    left=self.plot_settings.subplot_left,
                    top=self.plot_settings.subplot_top,
@@ -506,15 +511,9 @@ class PlotResponses(QtGui.QWidget):
         axpxy = self.figure.add_subplot(gs[1, 1], sharex=axrxx)
         axpyx = self.figure.add_subplot(gs[1, 2], sharex=axrxx)
         axpyy = self.figure.add_subplot(gs[1, 3], sharex=axrxx)
-        
-        axtxr = self.figure.add_subplot(gs[2, 0], sharex=axrxx)
-        axtxi = self.figure.add_subplot(gs[2, 1], sharex=axrxx)
-        axtyr = self.figure.add_subplot(gs[2, 2], sharex=axrxx)
-        axtyi = self.figure.add_subplot(gs[2, 3], sharex=axrxx)
-        
+          
         self.ax_list = [axrxx, axrxy, axryx, axryy,
-                        axpxx, axpxy, axpyx, axpyy,
-                        axtxr, axtxi, axtyr, axtyi]
+                        axpxx, axpxy, axpyx, axpyy]
         
 
         # plot data response
@@ -559,51 +558,16 @@ class PlotResponses(QtGui.QWidget):
                                          plot_phase[nzyy, 1, 1], 
                                          plot_phase_err[nzyy, 1, 1],
                                          **kw_yy)
-                                      
-        #plot tipper
-        if self.plot_tipper == True:
-            ertx = mtplottools.plot_errorbar(axtxr, 
-                                             period[ntx],
-                                             t_obj.tipper[ntx, 0, 0].real,
-                                             t_obj.tipper_err[ntx, 0, 0],
-                                             **kw_xx)
-            erty = mtplottools.plot_errorbar(axtyr, 
-                                             period[nty],
-                                             t_obj.tipper[nty, 0, 1].real,
-                                             t_obj.tipper_err[nty, 0, 0],
-                                             **kw_yy)
                                      
-            eptx = mtplottools.plot_errorbar(axtxi, 
-                                             period[ntx],
-                                             t_obj.tipper[ntx, 0, 0].imag,
-                                             t_obj.tipper_err[ntx, 0, 1],
-                                             **kw_xx)
-            epty = mtplottools.plot_errorbar(axtyi, 
-                                             period[nty],
-                                             t_obj.tipper[nty, 0, 1].imag,
-                                             t_obj.tipper_err[nty, 0, 1],
-                                             **kw_yy)
         
         #----------------------------------------------
-        # get error bar list for editing later        
-        if self.plot_tipper == False:                    
-            self._err_list = [[erxx[1][0],erxx[1][1],erxx[2][0]],
-                              [erxy[1][0],erxy[1][1],erxy[2][0]],
-                              [eryx[1][0],eryx[1][1],eryx[2][0]],
-                              [eryy[1][0],eryy[1][1],eryy[2][0]]]
-            line_list = [[erxx[0]], [erxy[0]], [eryx[0]], [eryy[0]]]
+        # get error bar list for editing later                          
+        self._err_list = [[erxx[1][0],erxx[1][1],erxx[2][0]],
+                          [erxy[1][0],erxy[1][1],erxy[2][0]],
+                          [eryx[1][0],eryx[1][1],eryx[2][0]],
+                          [eryy[1][0],eryy[1][1],eryy[2][0]]]
+        line_list = [[erxx[0]], [erxy[0]], [eryx[0]], [eryy[0]]]
 
-        else:                    
-            line_list = [[erxx[0]], [erxy[0]], 
-                         [eryx[0]], [eryy[0]],
-                         [ertx[0]], [erty[0]]]
-                                 
-            self._err_list = [[erxx[1][0],erxx[1][1],erxx[2][0]],
-                              [erxy[1][0],erxy[1][1],erxy[2][0]],
-                              [eryx[1][0],eryx[1][1],eryx[2][0]],
-                              [eryy[1][0],eryy[1][1],eryy[2][0]],
-                              [ertx[1][0],ertx[1][1],ertx[2][0]],
-                              [erty[1][0],erty[1][1],erty[2][0]]]
         
         #------------------------------------------
         # make things look nice        
@@ -614,21 +578,7 @@ class PlotResponses(QtGui.QWidget):
             ax.set_title(label[0],fontdict={'size':self.plot_settings.fs+2, 
                                           'weight':'bold'}) 
                                           
-        # set legends for tipper components
-        # fake a line
-        l1 = plt.Line2D([0], [0], linewidth=0, color='w', linestyle='None', 
-                        marker='.')
-        t_label_list = ['Re{$T_x$}', 'Im{$T_x$}', 'Re{$T_y$}', 'Im{$T_y$}']
-        label_list += [['$T_{x}$'], ['$T_{y}$']]
-        for ax, label in zip(self.ax_list[-4:], t_label_list):
-            ax.legend([l1], [label], loc='upper left',
-                      markerscale=.01,
-                      borderaxespad=.05,
-                      labelspacing=.01,
-                      handletextpad=.05,
-                      borderpad=.05,
-                      prop={'size':max([self.plot_settings.fs, 5])})
-        
+
         #--> set limits if input
         if self.plot_settings.res_xx_limits is not None:
             axrxx.set_ylim(self.plot_settings.res_xx_limits)    
@@ -652,7 +602,7 @@ class PlotResponses(QtGui.QWidget):
         for aa, ax in enumerate(self.ax_list):
             ax.tick_params(axis='y', pad=self.plot_settings.ylabel_pad)
             ylabels = ax.get_yticks().tolist()
-            if aa < 8:
+            if aa < 4:
                 ylabels[-1] = ''
                 ylabels[0] = ''
                 ax.set_yticklabels(ylabels)
@@ -681,15 +631,6 @@ class PlotResponses(QtGui.QWidget):
                 elif self.plot_z == True:
                     ax.set_ylabel('Im[Z (mV/km nT)]',
                                   fontdict=fontdict)
-            elif aa == 8:
-                ax.set_ylabel('Tipper',
-                              fontdict=fontdict)
-                    
-            if aa > 7:
-                if self.plot_settings.tipper_limits is not None:
-                    ax.set_ylim(self.plot_settings.tipper_limits)
-                else:
-                    pass
 
             ax.set_xscale('log')
             ax.set_xlim(xmin=10**(np.floor(np.log10(period[0])))*1.01,
@@ -699,12 +640,14 @@ class PlotResponses(QtGui.QWidget):
         ##----------------------------------------------
         #plot model response
         if self.ws_resp is not None:
-            resp_z_obj = self.ws_resp.mt_dict[self.station].Z
+            s_index = np.where(self.ws_resp.resp['station'] == self.station)[0][0]
+        
+            resp_z_obj = mtz.Z(self.ws_resp.resp[s_index]['z_resp'],
+                          None,
+                          1./self.ws_resp.period_list)
+                      
             resp_z_err = np.nan_to_num((z_obj.z-resp_z_obj.z)/z_obj.z_err)
             resp_z_obj._compute_res_phase()
-            
-            resp_t_obj = self.ws_resp.mt_dict[self.station].Tipper
-            resp_t_err = np.nan_to_num((t_obj.tipper-resp_t_obj.tipper)/t_obj.tipper_err)
             
             #convert to apparent resistivity and phase
             if self.plot_z == True:
@@ -784,67 +727,21 @@ class PlotResponses(QtGui.QWidget):
                                              None,
                                              **kw_yy)
                                           
-            #plot tipper
-            if self.plot_tipper == True:
-                rertx = mtplottools.plot_errorbar(axtxr, 
-                                                 period[ntx],
-                                                 resp_t_obj.tipper[ntx, 0, 0].real,
-                                                 None,
-                                                 **kw_xx)
-                rerty = mtplottools.plot_errorbar(axtyr, 
-                                                 period[nty],
-                                                 resp_t_obj.tipper[nty, 0, 1].real,
-                                                 None,
-                                                 **kw_yy)
-                                         
-                reptx = mtplottools.plot_errorbar(axtxi, 
-                                                 period[ntx],
-                                                 resp_t_obj.tipper[ntx, 0, 0].imag,
-                                                 None,
-                                                 **kw_xx)
-                repty = mtplottools.plot_errorbar(axtyi, 
-                                                 period[nty],
-                                                 resp_t_obj.tipper[nty, 0, 1].imag,
-                                                 None,
-                                                 **kw_yy)
-                             
-            if self.plot_tipper == False:
-                line_list[0] += [rerxx[0]]
-                line_list[1] += [rerxy[0]]
-                line_list[2] += [reryx[0]]
-                line_list[3] += [reryy[0]]
-                label_list[0] += ['$Z^m_{xx}$ '+
-                                   'rms={0:.2f}'.format(rms_xx)]
-                label_list[1] += ['$Z^m_{xy}$ '+
-                               'rms={0:.2f}'.format(rms_xy)]
-                label_list[2] += ['$Z^m_{yx}$ '+
-                               'rms={0:.2f}'.format(rms_yx)]
-                label_list[3] += ['$Z^m_{yy}$ '+
-                               'rms={0:.2f}'.format(rms_yy)]
-            else:
-                line_list[0] += [rerxx[0]]
-                line_list[1] += [rerxy[0]]
-                line_list[2] += [reryx[0]]
-                line_list[3] += [reryy[0]]
-                line_list[4] += [rertx[0]]
-                line_list[5] += [rerty[0]]
-                label_list[0] += ['$Z^m_{xx}$ '+
-                                   'rms={0:.2f}'.format(rms_xx)]
-                label_list[1] += ['$Z^m_{xy}$ '+
-                               'rms={0:.2f}'.format(rms_xy)]
-                label_list[2] += ['$Z^m_{yx}$ '+
-                               'rms={0:.2f}'.format(rms_yx)]
-                label_list[3] += ['$Z^m_{yy}$ '+
-                               'rms={0:.2f}'.format(rms_yy)]
-                label_list[4] += ['$T^m_{x}$ '+
-                                'rms={0:.2f}'.format(resp_t_err[:, 0, 0].std())]
-                label_list[5] += ['$T^m_{y}$'+
-                                'rms={0:.2f}'.format(resp_t_err[:, 0, 1].std())]
+            # add labels to legends
+            line_list[0] += [rerxx[0]]
+            line_list[1] += [rerxy[0]]
+            line_list[2] += [reryx[0]]
+            line_list[3] += [reryy[0]]
+            label_list[0] += ['$Z^m_{xx}$ '+
+                               'rms={0:.2f}'.format(rms_xx)]
+            label_list[1] += ['$Z^m_{xy}$ '+
+                           'rms={0:.2f}'.format(rms_xy)]
+            label_list[2] += ['$Z^m_{yx}$ '+
+                           'rms={0:.2f}'.format(rms_yx)]
+            label_list[3] += ['$Z^m_{yy}$ '+
+                           'rms={0:.2f}'.format(rms_yy)]
             
-            legend_ax_list = self.ax_list[0:4]
-            if self.plot_tipper == True:
-                legend_ax_list += [self.ax_list[-4], self.ax_list[-2]]
-                
+            legend_ax_list = self.ax_list[0:4] 
             for aa, ax in enumerate(legend_ax_list):
                 ax.legend(line_list[aa],
                           label_list[aa],
@@ -869,44 +766,25 @@ class PlotResponses(QtGui.QWidget):
         
         # get the indicies where the data point has been edited
         p_index = np.where(self.ws_data.period_list==data_period)[0][0]
-        s_index = np.where(self.ws_data.data_array['station']==self.station)[0][0]
-
-        if self._key == 'tip':
-            data_value_2 = self.ws_data.mt_dict[self.station].Tipper.tipper[p_index,
-                                self._comp_index_x, self._comp_index_y]
-            if self._ax_index%2 == 0:
+        s_index = np.where(self.ws_data.data['station']==self.station)[0][0]
+        
+        data_value_2 = self.ws_data.data['z_data'][p_index,
+                                    self._comp_index_x, self._comp_index_y]
+        if self.plot_z == True:               
+            if self._ax_index % 2 == 0:
                 data_value_2 = data_value_2.imag
             else:
                 data_value_2 = data_value_2.real
-                
-        elif self._key == 'z':
-            if self.plot_z == True:
-                data_value_2 = self.ws_data.mt_dict[self.station].Z.z[p_index,
-                                self._comp_index_x, self._comp_index_y]
-                                
-                if self._ax_index % 2 == 0:
-                    data_value_2 = data_value_2.imag
-                else:
-                    data_value_2 = data_value_2.real
-            elif self.plot_z == False and self._ax_index < 4:
-                data_value_2 = self.ws_data.mt_dict[self.station].Z.phase[p_index,
-                                self._comp_index_x, self._comp_index_y]
-            elif self.plot_z == False and self._ax_index >= 4:
-                data_value_2 = self.ws_data.mt_dict[self.station].Z.resistivity[p_index,
-                                self._comp_index_x, self._comp_index_y]
+        elif self.plot_z == False and self._ax_index < 4:
+            data_value_2 = np.arctan2(data_value_2.imag, data_value_2.real)
+        elif self.plot_z == False and self._ax_index >= 4:
+            data_value_2 = (data_period/0.2)*(abs(data_value_2)**2)
                         
         if event.mouseevent.button == 1:
             # mask the point in the data mt_dict
 
-            self.ws_data.data_array[s_index][self._key][p_index, 
+            self.ws_data.data[s_index]['z_data'][p_index, 
                         self._comp_index_x, self._comp_index_y] = 0+0j
-            
-            if self._key == 'tip':
-                self.ws_data.mt_dict[self.station].Tipper.tipper[p_index, 
-                            self._comp_index_x, self._comp_index_y] = 0+0j
-            elif self._key == 'z':
-                self.ws_data.mt_dict[self.station].Z.z[p_index, 
-                            self._comp_index_x, self._comp_index_y] = 0+0j
             
             # plot the points as masked
             self._ax.plot(data_period, data_value, color=(0, 0, 0),
@@ -918,9 +796,8 @@ class PlotResponses(QtGui.QWidget):
                           marker='x', 
                           ms=self.plot_settings.ms*2,
                           mew=4)
-                          
-            self._ax.figure.canvas.draw()
             self._ax2.figure.canvas.draw()
+
         
         # Increase error bars
         if event.mouseevent.button == 3:
@@ -928,30 +805,11 @@ class PlotResponses(QtGui.QWidget):
             ax_index = self._ax_index%len(self._err_list)
             
             #put the new error into the error array
-            if len(self.ax_list) == 8:
-                err = self.ws_data.mt_dict[self.station].Z.z_err[p_index, 
-                        self._comp_index_x, self._comp_index_y]
-                err = err+abs(err)*self.z_err_increase
-                self.ws_data.data_array[s_index]['z_err'][p_index, 
-                            self._comp_index_x, self._comp_index_y] = err
-                self.ws_data.mt_dict[self.station].Z.z_err[p_index, 
+            err = self.ws_data.data['z_data_err'][s_index][p_index, 
+                    self._comp_index_x, self._comp_index_y]
+            err = err+abs(err)*self.z_err_increase
+            self.ws_data.data['z_err'][s_index][p_index, 
                         self._comp_index_x, self._comp_index_y] = err
-            elif len(self.ax_list) == 12:
-                if self._ax_index == 4 or self._ax_index == 5 or \
-                   self._ax_index == 10 or self._ax_index == 11:
-                    err = self.ws_data.mt_dict[self.station].Tipper.tipper_err[p_index, 
-                                self._comp_index_x, self._comp_index_y] 
-                    self.ws_data.data_array[s_index]['tip_err'][p_index, 
-                                self._comp_index_x, self._comp_index_y] += abs(err)*self.t_err_increase
-                    self.ws_data.mt_dict[self.station].Tipper.tipper_err[p_index, 
-                                self._comp_index_x, self._comp_index_y] += abs(err)*self.t_err_increase
-                else:
-                    err = self.ws_data.mt_dict[self.station].Z.z_err[p_index, 
-                        self._comp_index_x, self._comp_index_y] 
-                    self.ws_data.data_array[s_index]['z_err'][p_index, 
-                        self._comp_index_x, self._comp_index_y] += abs(err)*self.z_err_increase
-                    self.ws_data.mt_dict[self.station].Z.z_err[p_index, 
-                        self._comp_index_x, self._comp_index_y] += abs(err)*self.z_err_increase
             
             # make error bar array
             eb = self._err_list[ax_index][2].get_paths()[p_index].vertices
@@ -996,11 +854,7 @@ class PlotResponses(QtGui.QWidget):
                          4:(0, 0),
                          5:(0, 1),
                          6:(1, 0),
-                         7:(1, 1),
-                         8:(0, 0),
-                         9:(0, 0),
-                         10:(0, 1),
-                         11:(0, 1)}
+                         7:(1, 1)}
         
         ax_pairs = {0:4,
                     1:5,
@@ -1009,11 +863,7 @@ class PlotResponses(QtGui.QWidget):
                     4:0,
                     5:1,
                     6:2,
-                    7:3,
-                    8:9,
-                    9:8,
-                    10:11,
-                    11:10}
+                    7:3}
         # make the axis an attribute
         self._ax = event.inaxes
         
@@ -1023,11 +873,6 @@ class PlotResponses(QtGui.QWidget):
                 self._comp_index_x, self._comp_index_y = ax_index_dict[ax_index]
                 self._ax_index = ax_index
                 self._ax2 = self.ax_list[ax_pairs[ax_index]]
-                if ax_index < 8:
-                    self._key = 'z'
-                    
-                else:
-                    self._key = 'tip'
 
 
 #==============================================================================
@@ -1091,7 +936,7 @@ class PlotSettings(object):
 #==============================================================================
 def main():
     app = QtGui.QApplication(sys.argv)
-    ui = ModEMPlotResponse()
+    ui = WSPlotResponse()
     ui.show()
     sys.exit(app.exec_())
     

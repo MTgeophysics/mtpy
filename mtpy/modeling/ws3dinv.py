@@ -2668,7 +2668,7 @@ class WSResponse(object):
     ====================== ====================================================
     """
     
-    def __init__(self, resp_fn, station_fn=None, wl_station_fn=None):
+    def __init__(self, resp_fn=None, station_fn=None, wl_station_fn=None):
         self.resp_fn = resp_fn
         self.station_fn = station_fn
         self.wl_sites_fn = wl_station_fn
@@ -2686,7 +2686,7 @@ class WSResponse(object):
         self.units = 'mv'
         self._zconv = 796.
         
-        if os.path.isfile(self.resp_fn) == True:
+        if self.resp_fn is not None:
             self.read_resp_file()
         
         
@@ -2720,6 +2720,9 @@ class WSResponse(object):
             self.wl_sites_fn = wl_sites_fn
         if station_fn is not None:
             self.station_fn = station_fn
+            
+        if not os.path.isfile(self.resp_fn):
+            raise WSInputError('Cannot find {0}, check path'.format(self.resp_fn))
         
         dfid = file(self.resp_fn, 'r')
         dlines = dfid.readlines()
