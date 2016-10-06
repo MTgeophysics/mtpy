@@ -46,8 +46,8 @@ class Ui_MainWindow(object):
         self.e_capsize =  5
 
         #color mode
-        self.cted = (0, 0, 1)
-        self.ctmd = (1, 0, 0)
+        self.cted = (0, 0, .75)
+        self.ctmd = (.75, 0, 0)
         self.mted = 's'
         self.mtmd = 'o'
         
@@ -91,7 +91,7 @@ class Ui_MainWindow(object):
         
         self.plot_component = 4
         self.plot_tipper = True
-        self.plot_z = True
+        self.plot_z = False
         self.ylabel_pad = 1.25
         self.station = None
         

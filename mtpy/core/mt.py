@@ -325,8 +325,9 @@ class MT(object):
         """
         
         self._Tipper = t_object
-        self._Tipper._compute_amp_phase()
-        self._Tipper._compute_mag_direction()
+        if self._Tipper is not None:
+            self._Tipper._compute_amp_phase()
+            self._Tipper._compute_mag_direction()
         
     #==========================================================================
     # get functions                         
@@ -652,36 +653,71 @@ class MT(object):
         # interpolate the impedance tensor
         for ii in range(2):
             for jj in range(2):
-                z_func_real = spi.interp1d(self.Z.freq, self.Z.z[:, ii, jj].real,
-                                           kind='slinear')
-                z_func_imag = spi.interp1d(self.Z.freq, self.Z.z[:, ii, jj].imag,
-                                           kind='slinear')
-                new_Z.z[:, ii, jj] = z_func_real(new_freq_array)+\
-                                     1j*z_func_imag(new_freq_array)
+                # need to look out for zeros in the impedance
+                # get the indicies of non-zero components
+                nz_index = np.nonzero(self.Z.z[:, ii, jj])
                 
-                z_func_err = spi.interp1d(self.Z.freq, self.Z.z_err[:, ii, jj],
-                                           kind='slinear')
-                new_Z.z_err[:, ii, jj] = z_func_err(new_freq_array)
+                if len(nz_index[0]) == 0:
+                    continue
+                # get the non-zero components
+                z_real = self.Z.z[nz_index, ii, jj].real
+                z_imag = self.Z.z[nz_index, ii, jj].imag
+                z_err = self.Z.z_err[nz_index, ii, jj]
+
+                # get the frequencies of non-zero components                
+                f = self.Z.freq[nz_index]
+                
+                # get frequencies to interpolate on to, making sure the
+                # bounds are with in non-zero components
+                new_nz_index = np.where((new_freq_array >= f.min()) & 
+                                        (new_freq_array <= f.max()))
+                new_f = new_freq_array[new_nz_index]
+                
+                # create a function that does 1d interpolation
+                z_func_real = spi.interp1d(f, z_real, kind='slinear')
+                z_func_imag = spi.interp1d(f, z_imag, kind='slinear')
+                z_func_err = spi.interp1d(f, z_err, kind='slinear')
+                
+                # interpolate onto new frequency range
+                new_Z.z[new_nz_index, ii, jj] = z_func_real(new_f)+1j*z_func_imag(new_f)
+                new_Z.z_err[new_nz_index, ii, jj] = z_func_err(new_f)
                 
         # if there is not tipper than skip
         if self.Tipper.tipper is None:
-            return new_Z, None
+            return new_Z, new_Tipper
             
         # interpolate the Tipper    
         for jj in range(2):
-            t_func_real = spi.interp1d(self.Z.freq, 
-                                       self.Tipper.tipper[:, 0, jj].real,
-                                       kind='slinear')
-            t_func_imag = spi.interp1d(self.Z.freq, 
-                                       self.Tipper.tipper[:, 0, jj].imag,
-                                       kind='slinear')
-            new_Tipper.tipper[:, 0, jj] = t_func_real(new_freq_array)+\
-                                          1j*t_func_imag(new_freq_array)
+            # get indicies of non-zero components
+            nz_index = np.nonzero(self.Tipper.tipper[:, 0, jj])
             
-            t_func_err = spi.interp1d(self.Z.freq, 
-                                      self.Tipper.tipper_err[:, 0, jj],
-                                       kind='slinear')
-            new_Tipper.tipper_err[:, 0, jj] = t_func_err(new_freq_array)
+            if len(nz_index[0]) == 0:
+                continue
+            
+            # get non-zero components
+            t_real = self.Tipper.tipper[nz_index, 0, jj].real
+            t_imag = self.Tipper.tipper[nz_index, 0, jj].imag
+            t_err = self.Tipper.tipper_err[nz_index, 0, jj]
+            
+            # get frequencies for non-zero components
+            f = self.Tipper.freq[nz_index]
+            
+            # create interpolation functions
+            t_func_real = spi.interp1d(f, t_real, kind='slinear')
+            t_func_imag = spi.interp1d(f, t_imag, kind='slinear')
+            t_func_err = spi.interp1d(f, t_err, kind='slinear')
+
+            # get new frequency to interpolate over, making sure bounds are
+            # for non-zero components
+            new_nz_index = np.where((new_freq_array >= f.min()) & 
+                                    (new_freq_array <= f.max()))
+            new_f = new_freq_array[new_nz_index] 
+                                                 
+            # interpolate onto new frequency range
+            new_Tipper.tipper[new_nz_index, 0, jj] = t_func_real(new_f)+\
+                                                  1j*t_func_imag(new_f)
+
+            new_Tipper.tipper_err[new_nz_index, 0, jj] = t_func_err(new_f)
         
         return new_Z, new_Tipper
         
