@@ -9,6 +9,7 @@ ModEM
 # by Paul Soeffky 2013
 # revised by LK 2014
 # revised by JP 2014
+# edited by AK 2016
 
 """
 
@@ -1683,12 +1684,25 @@ class Model(object):
         padding = np.round(cell_size_east*pad_root_east**np.arange(start=.5,
                            stop=3, step=3./pad_east))+west 
                            
-        ..note:: If the survey steps across multiple UTM zones, then a 
+        ..note:: There are two options for projection method. If pyproj is
+                 installed, you can use the method that uses pyproj. In this
+                 case, specify the epsg number as an attribute to the model 
+                 object or when setting it up. The epsg can generally be found 
+                 through a google search. If epsg is specified then **all**
+                 sites are projected to that epsg. It is up to the user to
+                 make sure all sites are in the bounds of projection.
+                 **note** epsg 3112 (Geoscience Australia Lambert) covers all 
+                 of Australia but may cause signficiant rotation at some 
+                 locations.
+            
+                ***If pyproj is not used:***
+                If the survey steps across multiple UTM zones, then a 
                  distance will be added to the stations to place them in 
                  the correct location.  This distance is 
-                 _utm_grid_size_north and _utm_grid_size_east.  You should 
+                 _utm_grid_size_north and _utm_grid_size_east. You should 
                  these parameters to place the locations in the proper spot
                  as grid distances and overlaps change over the globe.
+                
         
         """
         
