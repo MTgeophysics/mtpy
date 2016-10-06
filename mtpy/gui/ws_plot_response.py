@@ -807,8 +807,8 @@ class PlotResponses(QtGui.QWidget):
             #put the new error into the error array
             err = self.ws_data.data['z_data_err'][s_index][p_index, 
                     self._comp_index_x, self._comp_index_y]
-            err = err+abs(err)*self.z_err_increase
-            self.ws_data.data['z_err'][s_index][p_index, 
+            err = err+abs(err)*self.plot_settings.z_err_increase
+            self.ws_data.data['z_data_err'][s_index][p_index, 
                         self._comp_index_x, self._comp_index_y] = err
             
             # make error bar array
