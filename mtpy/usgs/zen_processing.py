@@ -960,7 +960,8 @@ class Z3D_to_edi(object):
         
     
         
-    def write_script_files(self, fn_birrp_dict, save_path=None):
+    def write_script_files(self, fn_birrp_dict, save_path=None,
+                           birrp_params_dict={}):
         """
         write a script file from a generic processing dictionary
         """
@@ -988,7 +989,7 @@ class Z3D_to_edi(object):
                 pro_obj.ilev = 1
                 pro_obj.tbw = 3
                 pro_obj.nar = 9
-                pro_obj.c2threshb = .45
+                pro_obj.c2threshb = .35
                 pro_obj.c2threshe = .45
                 pro_obj.c2threshe1 = .45
                 pro_obj.nf1 = 4
@@ -996,6 +997,9 @@ class Z3D_to_edi(object):
                 pro_obj.nsctinc = 2
                 pro_obj.nfsect = 2
                 pro_obj.ainlin = .0001
+            for b_key in birrp_params_dict.keys():
+                setattr(pro_obj, b_key, birrp_params_dict[b_key])
+            
             pro_dict = pro_obj.get_processing_dict(fn_birrp_arr, 
                                                    hx=self.survey_config.hx,
                                                    hy=self.survey_config.hy,
@@ -1106,7 +1110,8 @@ class Z3D_to_edi(object):
                      notch_dict={}, sr_dict={4096:(1000., 4),
                                              1024:(3.99, 1.),
                                              256:(3.99, .126), 
-                                             16:(.125, .0001)}):
+                                             16:(.125, .0001)},
+                     birrp_param_dict={}):
         """
         from the input station directory, convert files to ascii, run through
         BIRRP, convert to .edi files and plot
@@ -1130,7 +1135,8 @@ class Z3D_to_edi(object):
                                                        max_blocks=max_blocks)
             
         # write script files for birrp
-        sfn_list = self.write_script_files(schedule_dict)
+        sfn_list = self.write_script_files(schedule_dict,
+                                           birrp_params_dict=birrp_param_dict)
         
         # run birrp
         self.run_birrp(sfn_list)
@@ -1145,7 +1151,7 @@ class Z3D_to_edi(object):
         r_plot = self.plot_responses()
         
         et = time.time()
-        print 'took {0} seconds'.format(et-st)
+        print '--> Processing took {0:02}:{1:02}'.format((et-st)//60, (et-st)%60)
         
         return r_plot, comb_edi_fn
         

@@ -1325,10 +1325,11 @@ class JFile(object):
             # set the dictionary key to that value
             if 'z' in d_line.lower():
                 d_key = d_line.strip().split()[0].lower()
-            
             # if we are at the number of periods line, skip it
-            elif len(d_line.strip().split()) == 1:
+            elif len(d_line.strip().split()) == 1 and 'r' not in d_line.lower():
                 continue
+            elif 'r' in d_line.lower():
+                break
             # get the numbers into the correct dictionary with a key as period and
             # for now we will leave the numbers as a list, which we will parse later
             else:
