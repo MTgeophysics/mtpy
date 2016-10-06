@@ -642,10 +642,13 @@ class Z3D_to_edi(object):
         #-------------------------------          
         if rr_station_dir is not None:
             self.rr_station_dir = rr_station_dir
-        
-            rr_fn_dict = self.get_z3d_fn_blocks(self.station_dir,
+            
+        if self.rr_station_dir is not None:
+            print 'Tranforming remote reference Z3D to mtpy format'
+            rr_fn_dict = self.get_z3d_fn_blocks(self.rr_station_dir,
                                                 df_list=df_list,
-                                                max_blocks=max_blocks)
+                                                max_blocks=max_blocks,
+                                                remote=True)
             
             num_files = 0
             for df_key in rr_fn_dict.keys(): 
@@ -665,11 +668,11 @@ class Z3D_to_edi(object):
                                          ('start_dt', '|S22'), 
                                          ('comp','|S2'),
                                          ('fn','|S100')])
-            fn_lines = []
+
             jj = 0  # index for fn_array            
             for df_key in df_list: 
-                for date_key in fn_dict[df_key].keys():
-                    for fn in fn_dict[df_key][date_key]:
+                for date_key in rr_fn_dict[df_key].keys():
+                    for fn in rr_fn_dict[df_key][date_key]:
                         zd = zen.Zen3D(fn)
                         zd.read_all_info()
                     
