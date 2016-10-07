@@ -355,6 +355,8 @@ class PlotResponses(QtGui.QWidget):
         self.apply_edits_button.setText('Apply Edits')
         self.apply_edits_button.setStyleSheet("background-color: #c6dcff")
         self.apply_edits_button.pressed.connect(self.apply_edits)
+        
+#        self.undo_edit_button = QtGui.QPushButton()
 
         # this is the Canvas Widget that displays the `figure`
         # it takes the `figure` instance as a parameter to __init__
@@ -931,7 +933,7 @@ class PlotResponses(QtGui.QWidget):
             if len(self.ax_list) == 8:
                 err = self.modem_data.mt_dict[self.station].Z.z_err[p_index, 
                         self._comp_index_x, self._comp_index_y]
-                err = err+abs(err)*self.z_err_increase
+                err = err+abs(err)*self.plot_properties.z_err_increase
                 self.modem_data.data_array[s_index]['z_err'][p_index, 
                             self._comp_index_x, self._comp_index_y] = err
                 self.modem_data.mt_dict[self.station].Z.z_err[p_index, 
@@ -942,16 +944,16 @@ class PlotResponses(QtGui.QWidget):
                     err = self.modem_data.mt_dict[self.station].Tipper.tipper_err[p_index, 
                                 self._comp_index_x, self._comp_index_y] 
                     self.modem_data.data_array[s_index]['tip_err'][p_index, 
-                                self._comp_index_x, self._comp_index_y] += abs(err)*self.t_err_increase
+                                self._comp_index_x, self._comp_index_y] += abs(err)*self.plot_properties.t_err_increase
                     self.modem_data.mt_dict[self.station].Tipper.tipper_err[p_index, 
-                                self._comp_index_x, self._comp_index_y] += abs(err)*self.t_err_increase
+                                self._comp_index_x, self._comp_index_y] += abs(err)*self.plot_properties.t_err_increase
                 else:
                     err = self.modem_data.mt_dict[self.station].Z.z_err[p_index, 
                         self._comp_index_x, self._comp_index_y] 
                     self.modem_data.data_array[s_index]['z_err'][p_index, 
-                        self._comp_index_x, self._comp_index_y] += abs(err)*self.z_err_increase
+                        self._comp_index_x, self._comp_index_y] += abs(err)*self.plot_properties.z_err_increase
                     self.modem_data.mt_dict[self.station].Z.z_err[p_index, 
-                        self._comp_index_x, self._comp_index_y] += abs(err)*self.z_err_increase
+                        self._comp_index_x, self._comp_index_y] += abs(err)*self.plot_properties.z_err_increase
             
             # make error bar array
             eb = self._err_list[ax_index][2].get_paths()[p_index].vertices
