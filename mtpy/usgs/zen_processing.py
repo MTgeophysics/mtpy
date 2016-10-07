@@ -1106,7 +1106,7 @@ class Z3D_to_edi(object):
                                                          
         return resp_plot
  
-    def process_data(self, df_list=None, max_blocks=2, num_comp=5,
+    def process_data(self, df_list=None, max_blocks=2,
                      notch_dict={}, sr_dict={4096:(1000., 4),
                                              1024:(3.99, 1.),
                                              256:(3.99, .126), 
@@ -1118,7 +1118,6 @@ class Z3D_to_edi(object):
         """
         
         st = time.time()
-        self.num_comp = num_comp
         
         if df_list is not None:
             if type(df_list) is float or type(df_list) is int or\
@@ -1215,8 +1214,10 @@ class Z3D_to_edi(object):
         new_z = mtedi.MTz.Z(data_arr['z'],
                             data_arr['z_err'],
                             data_arr['freq'])
-                            
-        if np.all(data_arr['tipper'] != 0.0) == True:
+        
+        # check for all zeros in tipper, meaning there is only 
+        # one unique value                    
+        if np.unique(data_arr['tipper']).size > 1:
             new_t = mtedi.MTz.Tipper(data_arr['tipper'], 
                                      data_arr['tipper_err'],
                                      data_arr['freq'])
