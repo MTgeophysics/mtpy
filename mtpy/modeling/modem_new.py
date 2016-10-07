@@ -1514,6 +1514,9 @@ class Model(object):
         #number of vertical layers
         self.n_layers = kwargs.pop('n_layers', 30)
         
+        # number of air layers
+        self.n_airlayers = kwargs.pop('n_airlayers',0)
+        
         #strike angle to rotate grid to
         self.mesh_rotation_angle = kwargs.pop('mesh_rotation_angle', 0)
         
@@ -1709,10 +1712,10 @@ class Model(object):
 #        self.get_station_locations()
         
         #find the edges of the grid
-        west = self.station_locations['rel_east'].min()-self.cell_size_east/2
-        east = self.station_locations['rel_east'].max()+self.cell_size_east/2
-        south = self.station_locations['rel_north'].min()-self.cell_size_north/2
-        north = self.station_locations['rel_north'].max()+self.cell_size_north/2
+        west = self.station_locations['rel_east'].min()-self.cell_size_east*3/2.
+        east = self.station_locations['rel_east'].max()+self.cell_size_east*3/2.
+        south = self.station_locations['rel_north'].min()-self.cell_size_north*3/2.
+        north = self.station_locations['rel_north'].max()+self.cell_size_north*3/2.
         west = np.round(west, -2)
         east= np.round(east, -2)
         south= np.round(south, -2)
@@ -1723,9 +1726,9 @@ class Model(object):
         #cells within station area
         east_gridr = np.arange(start=west, stop=east+self.cell_size_east,
                                step=self.cell_size_east)
-        
+        east_gridr -= np.mean(east_gridr)
         #padding cells in the east-west direction
-        for ii in range(1, self.pad_east+1):
+        for ii in range(1,self.pad_east+1):
             east_0 = float(east_gridr[-1])
             west_0 = float(east_gridr[0])
             add_size = np.round(self.cell_size_east*self.pad_stretch_h*ii, -2)
@@ -1752,7 +1755,7 @@ class Model(object):
         #N-S cells with in station area
         north_gridr = np.arange(start=south, stop=north+self.cell_size_north, 
                                 step=self.cell_size_north)
-        
+        north_gridr -= np.mean(north_gridr)
         #padding cells in the east-west direction
         for ii in range(1, self.pad_north+1):
             south_0 = float(north_gridr[0]) 
@@ -1777,85 +1780,50 @@ class Model(object):
             
         #--> make depth grid
         log_z = np.logspace(np.log10(self.z1_layer), 
-                            np.log10(self.z_target_depth-np.logspace(np.log10(self.z1_layer), 
-                            np.log10(self.z_target_depth), 
-                            num=self.n_layers)[-2]), 
-                            num=self.n_layers-self.pad_z)
+                            np.log10(self.z_target_depth),
+                            num=self.n_layers-self.pad_z-self.n_airlayers)
         z_nodes = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in 
                            log_z])
-        #padding cells in the east-west direction
+        #padding cells in the vertical direction
         for ii in range(1, self.pad_z+1):
             z_0 = np.float(z_nodes[-2])
             pad_d = np.round(z_0*self.pad_stretch_v*ii, -2)
             z_nodes = np.append(z_nodes, pad_d)                  
         
+        # add air layers
+        
+        
         #make an array of absolute values
-        z_grid = np.array([z_nodes[:ii+1].sum() for ii in range(z_nodes.shape[0])])
+        z_grid = np.array([z_nodes[:ii].sum() for ii in range(z_nodes.shape[0])])
         
         #---Need to make an array of the individual cell dimensions for
         #   modem
-        east_nodes = east_gridr.copy()    
-        nx = east_gridr.shape[0]
-        east_nodes[:nx/2] = np.array([abs(east_gridr[ii]-east_gridr[ii+1]) 
-                                          for ii in range(int(nx/2))])
-        east_nodes[nx/2:] = np.array([abs(east_gridr[ii]-east_gridr[ii+1]) 
-                                          for ii in range(int(nx/2)-1, nx-1)])
-    
-        north_nodes = north_gridr.copy()
-        ny = north_gridr.shape[0]
-        north_nodes[:ny/2] = np.array([abs(north_gridr[ii]-north_gridr[ii+1]) 
-                                       for ii in range(int(ny/2))])
-        north_nodes[ny/2:] = np.array([abs(north_gridr[ii]-north_gridr[ii+1]) 
-                                       for ii in range(int(ny/2)-1, ny-1)])
-                                
-        #--put the grids into coordinates relative to the center of the grid
-        east_grid = east_nodes.copy()
-        east_grid[:int(nx/2)] = -np.array([east_nodes[ii:int(nx/2)].sum() 
-                                           for ii in range(int(nx/2))])
-        east_grid[int(nx/2):] = np.array([east_nodes[int(nx/2):ii+1].sum() 
-                                         for ii in range(int(nx/2), nx)])-\
-                                         east_nodes[int(nx/2)]
-                                
-        north_grid = north_nodes.copy()
-        north_grid[:int(ny/2)] = -np.array([north_nodes[ii:int(ny/2)].sum() 
-                                            for ii in range(int(ny/2))])
-        north_grid[int(ny/2):] = np.array([north_nodes[int(ny/2):ii+1].sum() 
-                                            for ii in range(int(ny/2),ny)])-\
-                                            north_nodes[int(ny/2)]
-        
-        
+        east_nodes = east_gridr[1:]-east_gridr[:-1]
+        north_nodes = north_gridr[1:]-north_gridr[:-1]
+
         
         #compute grid center
         center_east = -east_nodes.__abs__().sum()/2
         center_north = -north_nodes.__abs__().sum()/2
         center_z = 0
-        
-        
-#        center_east +=  center_east%self.cell_size_east
-#        center_north += center_north%self.cell_size_north
         self.grid_center = np.array([center_north, center_east, center_z])
         
         #make nodes attributes
         self.nodes_east = east_nodes
         self.nodes_north = north_nodes
         self.nodes_z = z_nodes        
-        self.grid_east = east_grid
-        self.grid_north = north_grid
+        self.grid_east = east_gridr
+        self.grid_north = north_gridr
         self.grid_z = z_grid
 
-        # temporary fix to amend grid locations based on nodes
-        # need to go back and fix this so it does it right the first time
-        self.grid_east = np.array([np.sum(self.nodes_east[:i]) for i in range(len(self.nodes_east)+1)] + self.grid_center[1])
-        self.grid_north = np.array([np.sum(self.nodes_north[:i]) for i in range(len(self.nodes_north)+1)] + self.grid_center[0])
-        self.grid_z = np.array([np.sum(self.nodes_z[:i]) for i in range(len(self.nodes_z)+1)] + self.grid_center[2])
 
             
         #--> print out useful information                    
         print '-'*15
         print '   Number of stations = {0}'.format(len(self.station_locations))
         print '   Dimensions: '
-        print '      e-w = {0}'.format(east_grid.shape[0])
-        print '      n-s = {0}'.format(north_grid.shape[0])
+        print '      e-w = {0}'.format(east_gridr.shape[0])
+        print '      n-s = {0}'.format(north_gridr.shape[0])
         print '       z  = {0} (without 7 air layers)'.format(z_grid.shape[0])
         print '   Extensions: '
         print '      e-w = {0:.1f} (m)'.format(east_nodes.__abs__().sum())
@@ -1881,6 +1849,7 @@ class Model(object):
             print ' >>> modem_model.make_mesh()'
             print ''
             print '-'*56
+
 
     def plot_mesh(self, east_limits=None, north_limits=None, z_limits=None,
                   **kwargs):
