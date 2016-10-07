@@ -45,6 +45,15 @@ except ImportError:
            '    python setup.py build -compiler=cygwin')
 
 
+epsg_dict = {28350:['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',50],
+             28351:['+proj=utm +zone=51 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',51],
+             28352:['+proj=utm +zone=52 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',52],
+             28353:['+proj=utm +zone=53 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',53],
+             28354:['+proj=utm +zone=54 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',54],
+             28355:['+proj=utm +zone=55 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',55],
+             28356:['+proj=utm +zone=56 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',56],
+             3112:['+proj=lcc +lat_1=-18 +lat_2=-36 +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',0],
+             4326:['+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs',0]}
 
                 
 
@@ -501,18 +510,7 @@ class Data(object):
     
     def project_sites_pyproj(self):   
         import pyproj
-    
-            
-        epsg_dict = {28350:['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',50],
-                     28351:['+proj=utm +zone=51 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',51],
-                     28352:['+proj=utm +zone=52 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',52],
-                     28353:['+proj=utm +zone=53 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',53],
-                     28354:['+proj=utm +zone=54 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',54],
-                     28355:['+proj=utm +zone=55 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',55],
-                     28356:['+proj=utm +zone=56 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',56],
-                     3112:['+proj=lcc +lat_1=-18 +lat_2=-36 +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',0],
-                     4326:['+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs',0]}
-    
+
         
         if self.epsg not in epsg_dict.keys():
             self.epsg = None
@@ -525,7 +523,7 @@ class Data(object):
         
         for c_arr in self.data_array:
             if c_arr['lat'] != 0.0 and c_arr['lon'] != 0.0:
-                c_arr['zone'] = epsg_dict[self.epsg][0]
+                c_arr['zone'] = epsg_dict[self.epsg][1]
                 c_arr['east'], c_arr['north'] = \
                     pyproj.transform(p1,p2,
                                      c_arr['lon'],c_arr['lat'])
@@ -1534,6 +1532,9 @@ class Model(object):
         self.grid_north = None
         self.grid_z = None
         
+        # dictionary to contain any surfaces (e.g. topography)
+        self.surfaces = {}
+        
         #size of a utm grid
         self._utm_grid_size_north = 888960.0
         self._utm_grid_size_east = 640000.0
@@ -1784,14 +1785,17 @@ class Model(object):
                             num=self.n_layers-self.pad_z-self.n_airlayers)
         z_nodes = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in 
                            log_z])
+        # index of top of padding
+        itp = len(z_nodes) - 1
+                           
         #padding cells in the vertical direction
         for ii in range(1, self.pad_z+1):
-            z_0 = np.float(z_nodes[-2])
+            z_0 = np.float(z_nodes[itp])
             pad_d = np.round(z_0*self.pad_stretch_v*ii, -2)
             z_nodes = np.append(z_nodes, pad_d)                  
         
         # add air layers
-        
+        z_nodes = np.hstack([[self.z1_layer]*self.n_airlayers,z_nodes])
         
         #make an array of absolute values
         z_grid = np.array([z_nodes[:ii].sum() for ii in range(z_nodes.shape[0])])
@@ -1850,6 +1854,81 @@ class Model(object):
             print ''
             print '-'*56
 
+
+    def project_surface(self,surfacefile=None,surface=None,surfacename=None,
+                        surface_epsg=4326,method='nearest'):
+        """
+        add topography to model grid.
+        choose to provide a surface file or surface tuple. If both are provided then
+        surface tuple takes priority.
+        
+        surface file format is:
+            
+        ncols         3601
+        nrows         3601
+        xllcorner     -119.00013888889 (latitude of lower left)
+        yllcorner     36.999861111111  (latitude of lower left)
+        cellsize      0.00027777777777778
+        NODATA_value  -9999
+        elevation data W --> E
+        N
+        |
+        V
+        S             
+        
+        Alternatively, provide a tuple with:
+        (lon,lat,elevation)
+        where elevation is a 2D array (shape (ny,nx)) containing elevation
+        points (order S -> N, W -> E)
+        and lon, lat are either 1D arrays containing list of longitudes and
+        latitudes (in the case of a regular grid) or 2D arrays with same shape
+        as elevation array containing longitude and latitude of each point.
+
+        other inputs:
+        surface_epsg = epsg number of input surface, default is 4326 for lat/lon(wgs84)
+        method = interpolation method. Default is 'nearest', if model grid is 
+        dense compared to surface points then choose 'linear' or 'cubic'
+
+        """
+        
+        if surface is None:
+            surface = read_surface_ascii(surfacefile)
+        lon,lat,elev = surface
+            
+        if len(lon.shape) == 1:
+            lon,lat = np.meshgrid(lon,lat)
+        
+        try:
+            import pyproj
+            p1,p2 = [pyproj.Proj(text) for text in [epsg_dict[surface_epsg],epsg_dict[self.epsg]]]
+            xs,ys = pyproj.transform(p1,p2,lon,lat)
+        except KeyError:
+            print "epsg not in dictionary, please add epsg and Proj4 text to epsg_dict at beginning of modem_new module"
+            return
+        
+        # get centre position of model grid in real world coordinates
+        x0,y0 = [np.median(self.station_locations[dd]-self.station_locations['rel_'+dd]) for dd in ['east','north']]
+        
+        # centre points of model grid in real world coordinates
+        xg,yg = [np.mean([arr[1:],arr[:-1]],axis=0) for arr in [self.grid_east+x0,self.grid_north+y0]]
+        
+        # elevation in model grid
+        # first, get lat,lon points of surface grid
+        points = np.vstack([arr.flatten() for arr in np.meshgrid(xs,ys)]).T
+        # corresponding surface elevation points
+        values = surface.flatten()
+        # xi, the model grid points to interpolate to
+        xi = np.vstack([arr.flatten() for arr in np.meshgrid(xg,yg)]).T
+        elev_mg = spi.griddata(points,values,xi,method=method)
+        
+        # get a name for surface
+        if surfacename is None:
+            if surfacefile is not None:
+                surfacename = os.path.basename(surfacefile)
+            else:
+                surfacename = 'surface1'
+        
+        
 
     def plot_mesh(self, east_limits=None, north_limits=None, z_limits=None,
                   **kwargs):
@@ -2185,6 +2264,7 @@ class Model(object):
         ifid.close()
         
         print 'Wrote file to: {0}'.format(self.model_fn)
+        
         
     def read_model_file(self, model_fn=None):
         """
@@ -2786,9 +2866,55 @@ class Covariance(object):
 #==============================================================================
 # Add in elevation to the model
 #==============================================================================
+       
+       
+
+def read_surface_ascii(ascii_fn):
+    """
+    read in surface which is ascii format ()
+    unlike original function, returns list of lat, long and elevation (no projections)
+    
+    The ascii format is assumed to be:
+    ncols         3601
+    nrows         3601
+    xllcorner     -119.00013888889 (latitude of lower left)
+    yllcorner     36.999861111111  (latitude of lower left)
+    cellsize      0.00027777777777778
+    NODATA_value  -9999
+    elevation data W --> E
+    N
+    |
+    V
+    S    
+    """
+    dfid = file(ascii_fn, 'r')
+    d_dict = {}
+    for ii in range(6):
+        dline = dfid.readline()
+        dline = dline.strip().split()
+        key = dline[0].strip().lower()
+        value = float(dline[1].strip())
+        d_dict[key] = value
+    dfid.close()
+    
+    x0 = d_dict['xllcorner']
+    y0 = d_dict['yllcorner']
+    nx = int(d_dict['ncols'])
+    ny = int(d_dict['nrows'])
+    cs = d_dict['cellsize']    
+        
+    elevation = np.loadtxt(ascii_fn,skiprows=6)[::-1]
+    
+    # create lat and lon arrays from the dem fle
+    lon = np.arange(x0, x0+cs*(nx), cs)
+    lat = np.arange(y0, y0+cs*(ny), cs)
+    
+    return lon,lat,elevation
+    
+    
         
 #--> read in ascii dem file
-def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
+def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0, epsg=None):
     """
     read in dem which is ascii format
     
@@ -2813,7 +2939,7 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
         key = dline[0].strip().lower()
         value = float(dline[1].strip())
         d_dict[key] = value
-        
+    
     x0 = d_dict['xllcorner']
     y0 = d_dict['yllcorner']
     nx = int(d_dict['ncols'])
@@ -2831,15 +2957,14 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
         else:
             break
 
-    dfid.close()
-
     # create lat and lon arrays from the dem fle
     lon = np.arange(x0, x0+cs*(nx), cs)
     lat = np.arange(y0, y0+cs*(ny), cs)
-    
+
     # calculate the lower left and uper right corners of the grid in meters
     ll_en = utm2ll.LLtoUTM(23, lat[0], lon[0])
     ur_en = utm2ll.LLtoUTM(23, lat[-1], lon[-1])
+
     
     # estimate cell sizes for each dem measurement
     d_east = abs(ll_en[1]-ur_en[1])/nx
@@ -2857,9 +2982,14 @@ def read_dem_ascii(ascii_fn, cell_size=500, model_center=(0, 0), rot_90=0):
     #resample the data accordingly
     new_east = east[np.arange(0, east.shape[0], num_cells)]
     new_north = north[np.arange(0, north.shape[0], num_cells)]
-    new_x, new_y = np.meshgrid(np.arange(0, east.shape[0], num_cells),
-                               np.arange(0, north.shape[0], num_cells),
-                               indexing='ij') 
+    
+    try:
+        new_x, new_y = np.meshgrid(np.arange(0, east.shape[0], num_cells),
+                                   np.arange(0, north.shape[0], num_cells),
+                                   indexing='ij')
+    except TypeError:
+        new_x, new_y = [arr.T for arr in np.meshgrid(np.arange(0, east.shape[0], num_cells),
+                                                     np.arange(0, north.shape[0], num_cells))]
     elevation = elevation[new_x, new_y]
     
     # estimate the shift of the DEM to relative model coordinates
@@ -3002,7 +3132,7 @@ def make_elevation_model(interp_elev, model_nodes_z, elevation_cell=30,
 	
     # need to set sea level to 0 elevation
     elev_min = max([0, interp_elev[pad:-pad, pad:-pad].min()])
-    
+
     # scale the interpolated elevations to fit within elev_max, elev_min
     interp_elev[np.where(interp_elev > elev_max)] = elev_max
     #interp_elev[np.where(interp_elev < elev_min)] = elev_min
@@ -3105,19 +3235,21 @@ def add_topography_to_model(dem_ascii_fn, model_fn, model_center=(0,0),
                       
     """
      ### 1.) read in the dem and center it onto the resistivity model 
-    e_east, e_north, elevation = read_dem_ascii(dem_ascii_fn, cell_size=500, 
+    e_east, e_north, elevation = read_dem_ascii(dem_ascii_fn, cell_size=cell_size, 
                                             model_center=model_center, 
                                             rot_90=3)
+    plt.figure()
+    plt.pcolormesh(e_east,e_north,elevation)
     m_obj = Model()
     m_obj.read_model_file(model_fn)
     ### 2.) interpolate the elevation model onto the model grid
     m_elev = interpolate_elevation(e_east, e_north, elevation, 
                                    m_obj.grid_east, m_obj.grid_north, pad=3)
-    
     ### 3.) make a resistivity model that incoorporates topography
     mod_elev, elev_nodes_z = make_elevation_model(m_elev, m_obj.nodes_z, 
                                                   elevation_cell=elev_cell) 
-    
+    plt.figure()
+#    plt.pcolormesh(m_obj.grid_east, m_obj.grid_north,m_elev)
     ### 4.) write new model file  
     m_obj.nodes_z = elev_nodes_z
     m_obj.res_model = mod_elev
