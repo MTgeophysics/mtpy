@@ -355,6 +355,8 @@ class PlotResponses(QtGui.QWidget):
         self.apply_edits_button.setText('Apply Edits')
         self.apply_edits_button.setStyleSheet("background-color: #c6dcff")
         self.apply_edits_button.pressed.connect(self.apply_edits)
+        
+#        self.undo_edit_button = QtGui.QPushButton()
 
         # this is the Canvas Widget that displays the `figure`
         # it takes the `figure` instance as a parameter to __init__

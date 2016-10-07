@@ -466,6 +466,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         
         self.tscale = kwargs.pop('tscale', 'period')
         self.fig_size = kwargs.pop('fig_size', [8, 8])
+        self.tickstrfmt = kwargs.pop('tickstrfmt', '%.2f')
         
         self.font_size = kwargs.pop('font_size', 7)
         
@@ -660,13 +661,6 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         #--> set the bounds on the segmented colormap
         if cmap == 'mt_seg_bl2wh2rd':
             bounds = np.arange(ckmin, ckmax+ckstep, ckstep) 
-            
-        #set tick parameters depending on the mapscale
-        if self.mapscale == 'deg':
-            self.tickstrfmt = '%.3f'
-            
-        elif self.mapscale == 'm' or self.mapscale == 'km':
-            self.tickstrfmt = '%.0f'
         
         #make some empty arrays
         elliplist=[]
