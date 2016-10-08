@@ -676,7 +676,7 @@ class Zen3D(object):
         self._block_len = 2**16
         self.zen_schedule = None
         # the number in the cac files is for volts, we want mV
-        self._counts_to_mv_conversion = 9.5367431640625e-10*1e3
+        self._counts_to_mv_conversion = 9.5367431640625e-10#*1e3
         self.units = 'counts'
         self.df = None
         
@@ -1270,9 +1270,9 @@ class Zen3D(object):
         time_series = self.convert_counts()
         # calibrate electric channels should be in mV/km
         if self.metadata.ch_cmp.lower() == 'ex':
-            time_series = time_series/(ex/1e3)
+            time_series = time_series/(1e3/ex)
         elif self.metadata.ch_cmp.lower() == 'ey':
-            time_series = time_series/(ex/1e3)
+            time_series = time_series/(1e3/ey)
             
         print 'Using scales EX = {0} and EY = {1}'.format(ex, ey)
 
