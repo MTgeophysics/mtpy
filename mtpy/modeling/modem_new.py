@@ -1514,6 +1514,8 @@ class Model(object):
         
         # number of air layers
         self.n_airlayers = kwargs.pop('n_airlayers',0)
+        # sea level in grid_z coordinates. Auto adjusts when topography read in
+        self.sea_level = 0.
         
         #strike angle to rotate grid to
         self.mesh_rotation_angle = kwargs.pop('mesh_rotation_angle', 0)
@@ -1794,18 +1796,21 @@ class Model(object):
             pad_d = np.round(z_0*self.pad_stretch_v*ii, -2)
             z_nodes = np.append(z_nodes, pad_d)                  
         
-        # add air layers
+        # add air layers and define ground surface level.
+        # initial layer thickness is same as z1_layer
         z_nodes = np.hstack([[self.z1_layer]*self.n_airlayers,z_nodes])
         
         #make an array of absolute values
-        z_grid = np.array([z_nodes[:ii].sum() for ii in range(z_nodes.shape[0])])
+        z_grid = np.array([z_nodes[:ii].sum() for ii in range(z_nodes.shape[0]+1)])
+        
+        # z_grid point at zero level
+        self.sea_level = z_grid[self.n_airlayers]
         
         #---Need to make an array of the individual cell dimensions for
         #   modem
         east_nodes = east_gridr[1:]-east_gridr[:-1]
         north_nodes = north_gridr[1:]-north_gridr[:-1]
 
-        
         #compute grid center
         center_east = -east_nodes.__abs__().sum()/2
         center_north = -north_nodes.__abs__().sum()/2
@@ -1855,18 +1860,81 @@ class Model(object):
             print '-'*56
 
 
+    
+    def add_topography(self,topographyfile,interp_method='nearest',
+                       air_resistivity=1e17,sea_resistivity=0.3):
+        """
+        """
+        # first, get surface data
+        self.project_surface(surfacefile=topographyfile,
+                             surfacename='topography',
+                             method=interp_method)
+                             
+            
+
+        try:
+            # cell size is topomax/n_airlayers, rounded to nearest 1 s.f.
+            cs = np.amax(self.surface_dict['topography'])/float(self.n_airlayers)
+            cs = np.ceil(cs/10.**int(np.log10(cs)))*10.**int(np.log10(cs))
+            
+            # add air layers
+            new_airlayers = np.linspace(0,self.n_airlayers,self.n_airlayers+1)*cs
+            add_z = new_airlayers[-1] - self.grid_z[self.n_airlayers]
+            self.grid_z[self.n_airlayers+1:] += add_z
+            self.grid_z[:self.n_airlayers+1] = new_airlayers
+            
+            # adjust the nodes
+            self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
+            
+            # adjust sea level
+            self.sea_level = self.grid_z[self.n_airlayers]
+                
+            # assign topography
+            self.assign_resistivity_from_surfacedata('topography',air_resistivity,where='above')
+        except:
+            print "Cannot add topography, no air layers provided. Proceeding to add bathymetry"
+            
+        
+        # assign sea water
+        # first make a mask array, this array can be passed through to covariance
+        self.seawater_mask = np.zeros_like(self.res_model)
+        
+        # assign model areas below sea level but above topography, as seawater
+        # get grid centres
+        gcz = np.mean([self.grid_z[:-1],self.grid_z[1:]],axis=0)
+        
+        # convert topography to local grid coordinates
+        topo = self.sea_level - self.surface_dict['topography']
+        # assign values
+        for j in range(len(self.res_model)):
+            for i in range(len(self.res_model[j])):
+                ii = np.where((gcz <= topo[j,i])&(gcz > self.sea_level))
+#                print ii
+                if len(ii) > 0:
+                    self.seawater_mask[j,i,ii[0]] = 1.        
+                    self.res_model[j,i,ii[0]] = sea_resistivity
+        
+
     def project_surface(self,surfacefile=None,surface=None,surfacename=None,
                         surface_epsg=4326,method='nearest'):
         """
-        add topography to model grid.
-        choose to provide a surface file or surface tuple. If both are provided then
-        surface tuple takes priority.
+        project a surface to the model grid and add resulting elevation data 
+        to a dictionary called surface_dict.
         
+        **returns**
+        nothing returned, but surface data are added to surface_dict under
+        the key given by surfacename.
+        
+        **inputs**
+        choose to provide either surface_file (path to file) or surface (tuple). 
+        If both are provided then surface tuple takes priority.
+        
+        surface elevations are positive up, and relative to sea level.
         surface file format is:
             
         ncols         3601
         nrows         3601
-        xllcorner     -119.00013888889 (latitude of lower left)
+        xllcorner     -119.00013888889 (longitude of lower left)
         yllcorner     36.999861111111  (latitude of lower left)
         cellsize      0.00027777777777778
         NODATA_value  -9999
@@ -1885,23 +1953,31 @@ class Model(object):
         as elevation array containing longitude and latitude of each point.
 
         other inputs:
+        surfacename = name of surface for putting into dictionary
         surface_epsg = epsg number of input surface, default is 4326 for lat/lon(wgs84)
         method = interpolation method. Default is 'nearest', if model grid is 
         dense compared to surface points then choose 'linear' or 'cubic'
 
         """
+        # initialise a dictionary to contain the surfaces
+        if not hasattr(self,'surface_dict'):
+            self.surface_dict = {}
         
+        # read the surface data in from ascii if surface not provided
         if surface is None:
             surface = read_surface_ascii(surfacefile)
         lon,lat,elev = surface
             
+        # if lat/lon provided as a 1D list, convert to a 2d grid of points
         if len(lon.shape) == 1:
             lon,lat = np.meshgrid(lon,lat)
         
         try:
             import pyproj
-            p1,p2 = [pyproj.Proj(text) for text in [epsg_dict[surface_epsg],epsg_dict[self.epsg]]]
+            p1,p2 = [pyproj.Proj(text) for text in [epsg_dict[surface_epsg][0],epsg_dict[self.epsg][0]]]
             xs,ys = pyproj.transform(p1,p2,lon,lat)
+        except ImportError:
+            print "pyproj not installed and other methods for projecting points not implemented yet. Please install pyproj"
         except KeyError:
             print "epsg not in dictionary, please add epsg and Proj4 text to epsg_dict at beginning of modem_new module"
             return
@@ -1914,20 +1990,57 @@ class Model(object):
         
         # elevation in model grid
         # first, get lat,lon points of surface grid
-        points = np.vstack([arr.flatten() for arr in np.meshgrid(xs,ys)]).T
+        points = np.vstack([arr.flatten() for arr in [xs,ys]]).T
         # corresponding surface elevation points
-        values = surface.flatten()
+        values = elev.flatten()
         # xi, the model grid points to interpolate to
         xi = np.vstack([arr.flatten() for arr in np.meshgrid(xg,yg)]).T
-        elev_mg = spi.griddata(points,values,xi,method=method)
+        # elevation on the centre of the grid nodes
+        elev_mg = spi.griddata(points,values,xi,method=method).reshape(len(yg),len(xg))
         
         # get a name for surface
         if surfacename is None:
             if surfacefile is not None:
                 surfacename = os.path.basename(surfacefile)
             else:
-                surfacename = 'surface1'
+                ii = 1
+                surfacename = 'surface%01i'%ii
+                while surfacename in self.surface_dict.keys():
+                    ii += 1
+                    surfacename = 'surface%01i'%ii
+            
+        # add surface to a dictionary of surface elevation data
+        self.surface_dict[surfacename] = elev_mg
+            
         
+    def assign_resistivity_from_surfacedata(self,surfacename,resistivity_value,where='above'):
+        """
+        assign resistivity value to all points above or below a surface
+        requires the surface_dict attribute to exist and contain data for
+        surface key (can get this information from ascii file using 
+        project_surface)
+        
+        **inputs**
+        surfacename = name of surface (must correspond to key in surface_dict)
+        resistivity_value = value to assign
+        where = 'above' or 'below' - assign resistivity above or below the 
+                surface
+        """
+                
+        gcz = np.mean([self.grid_z[:-1],self.grid_z[1:]],axis=0)
+        
+        # convert to positive down, relative to the top of the grid
+        surfacedata = self.sea_level - self.surface_dict[surfacename]
+        
+        # assign resistivity value
+        for j in range(len(self.res_model)):
+            for i in range(len(self.res_model[j])):
+                if where == 'above':
+                    ii = np.where(gcz <= surfacedata[j,i])[0]
+                else:
+                    ii = np.where(gcz > surfacedata[j,i])
+                self.res_model[j,i,ii] = resistivity_value
+                
         
 
     def plot_mesh(self, east_limits=None, north_limits=None, z_limits=None,
@@ -2197,10 +2310,10 @@ class Model(object):
                                           
             if self.res_model is None:
                 res_model[:, :, :] = 100.0
-                self.res_model = res_model
             else:
                 res_model[:, :, :] = self.res_model
-                self.res_model = res_model
+                
+            self.res_model = res_model
         
 
         #--> write file
@@ -2889,25 +3002,33 @@ def read_surface_ascii(ascii_fn):
     """
     dfid = file(ascii_fn, 'r')
     d_dict = {}
+    skiprows=0
     for ii in range(6):
         dline = dfid.readline()
         dline = dline.strip().split()
         key = dline[0].strip().lower()
         value = float(dline[1].strip())
         d_dict[key] = value
+        # check if key is an integer
+        try:
+            int(key)
+        except:
+            skiprows += 1
     dfid.close()
     
     x0 = d_dict['xllcorner']
     y0 = d_dict['yllcorner']
     nx = int(d_dict['ncols'])
     ny = int(d_dict['nrows'])
-    cs = d_dict['cellsize']    
+    cs = d_dict['cellsize']
         
-    elevation = np.loadtxt(ascii_fn,skiprows=6)[::-1]
+    elevation = np.loadtxt(ascii_fn,skiprows=skiprows)[::-1]
     
     # create lat and lon arrays from the dem fle
     lon = np.arange(x0, x0+cs*(nx), cs)
     lat = np.arange(y0, y0+cs*(ny), cs)
+    lon = np.linspace(x0, x0+cs*(nx-1), nx)
+    lat = np.linspace(y0, y0+cs*(ny-1), ny)
     
     return lon,lat,elevation
     
