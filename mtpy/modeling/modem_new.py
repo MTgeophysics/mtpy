@@ -1373,28 +1373,8 @@ class Model(object):
         
     All dimensions are in meters.
     
-    :Example 1 --> create mesh first then data file: ::
     
-        >>> import mtpy.modeling.modem as modem
-        >>> import os
-        >>> #1) make a list of all .edi files that will be inverted for 
-        >>> edi_path = r"/home/EDI_Files"
-        >>> edi_list = [os.path.join(edi_path, edi) 
-                        for edi in os.listdir(edi_path) 
-        >>> ...         if edi.find('.edi') > 0]
-        >>> #2) make a grid from the stations themselves with 200m cell spacing
-        >>> mmesh = modem.Model(edi_list=edi_list, cell_size_east=200, 
-        >>> ...                cell_size_north=200)
-        >>> mmesh.make_mesh()
-        >>> # check to see if the mesh is what you think it should be
-        >>> msmesh.plot_mesh()
-        >>> # all is good write the mesh file
-        >>> msmesh.write_model_file(save_path=r"/home/modem/Inv1")
-        >>> # create data file
-        >>> md = modem.Data(edi_list, station_locations=mmesh.station_locations)
-        >>> md.write_data_file(save_path=r"/home/modem/Inv1")
-    
-    :Example 2 --> create data file first then model file: ::
+    :Example 1 --> create data file first then model file: ::
     
         >>> import mtpy.modeling.modem as modem
         >>> import os
@@ -1407,16 +1387,15 @@ class Model(object):
         >>> md = modem.Data(edi_list)
         >>> md.write_data_file(save_path=r"/home/modem/Inv1")
         >>> #3) make a grid from the stations themselves with 200m cell spacing
-        >>> mmesh = modem.Model(edi_list=edi_list, cell_size_east=200, 
-                                cell_size_north=200, 
-                                station_locations=md.station_locations)
+        >>> mmesh = modem.Model(Data=md, cell_size_east=200, 
+                                cell_size_north=200)
         >>> mmesh.make_mesh()
         >>> # check to see if the mesh is what you think it should be
         >>> msmesh.plot_mesh()
         >>> # all is good write the mesh file
         >>> msmesh.write_model_file(save_path=r"/home/modem/Inv1")
         
-    :Example 3 --> Rotate Mesh: ::
+    :Example 2 --> Rotate Mesh: ::
     
         >>> mmesh.mesh_rotation_angle = 60
         >>> mmesh.make_mesh()
