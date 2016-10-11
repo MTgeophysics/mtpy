@@ -677,6 +677,7 @@ class Zen3D(object):
         self.zen_schedule = None
         # the number in the cac files is for volts, we want mV
         self._counts_to_mv_conversion = 9.5367431640625e-10#*1e3
+
         self.units = 'counts'
         self.df = None
         
