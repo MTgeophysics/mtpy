@@ -701,22 +701,34 @@ def write_script_file(processing_dict, save_path=None):
             #    time section
             for tt, tfile in enumerate(pdict['fn_list'][0]):
                 #write in calibration files if given
-                if tt == 2:
+                if nout == 3 and tt == 2:
+                    if hz_cal is not None:
+                        s_lines.append('-2')
+                        s_lines.append(hz_cal)
+                    else:
+                        s_lines.append(str(nfil))
+                elif nout == 3 and tt == 3:
                     if hx_cal is not None:
                         s_lines.append('-2')
                         s_lines.append(hx_cal)
                     else:
                         s_lines.append(str(nfil))
-                elif tt == 3:
+                elif nout == 3 and tt == 4:
                     if hy_cal is not None:
                         s_lines.append('-2')
                         s_lines.append(hy_cal)
                     else:
                         s_lines.append(str(nfil))
-                elif tt == 4:
-                    if hz_cal is not None:
+                elif nout == 2 and tt == 2:
+                    if hx_cal is not None:
                         s_lines.append('-2')
-                        s_lines.append(hz_cal)
+                        s_lines.append(hx_cal)
+                    else:
+                        s_lines.append(str(nfil))
+                elif nout == 2 and tt == 3:
+                    if hy_cal is not None:
+                        s_lines.append('-2')
+                        s_lines.append(hy_cal)
                     else:
                         s_lines.append(str(nfil))
                 else:
@@ -759,22 +771,34 @@ def write_script_file(processing_dict, save_path=None):
             #write filenames
             for tt, tfile in enumerate(pdict['fn_list'][0]):
                 #write in calibration files if given
-                if tt == 2:
+                if nout == 3 and tt == 2:
+                    if hz_cal is not None:
+                        s_lines.append('-2')
+                        s_lines.append(hz_cal)
+                    else:
+                        s_lines.append(str(nfil))
+                elif nout == 3 and tt == 3:
                     if hx_cal is not None:
                         s_lines.append('-2')
                         s_lines.append(hx_cal)
                     else:
                         s_lines.append(str(nfil))
-                elif tt == 3:
+                elif nout == 3 and tt == 4:
                     if hy_cal is not None:
                         s_lines.append('-2')
                         s_lines.append(hy_cal)
                     else:
                         s_lines.append(str(nfil))
-                elif tt == 4:
-                    if hz_cal is not None:
+                elif nout == 2 and tt == 2:
+                    if hx_cal is not None:
                         s_lines.append('-2')
-                        s_lines.append(hz_cal)
+                        s_lines.append(hx_cal)
+                    else:
+                        s_lines.append(str(nfil))
+                elif nout == 2 and tt == 3:
+                    if hy_cal is not None:
+                        s_lines.append('-2')
+                        s_lines.append(hy_cal)
                     else:
                         s_lines.append(str(nfil))
                 else:
@@ -826,22 +850,35 @@ def write_script_file(processing_dict, save_path=None):
             #--> write filenames for first block
             if nds==0:
                 for tt, tfile in enumerate(pdict['fn_list']):
-                    if tt == 2:
+                    #write in calibration files if given
+                    if nout == 3 and tt == 2:
+                        if hz_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hz_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif nout == 3 and tt == 3:
                         if hx_cal is not None:
                             s_lines.append('-2')
                             s_lines.append(hx_cal)
                         else:
                             s_lines.append(str(nfil))
-                    elif tt == 3:
+                    elif nout == 3 and tt == 4:
                         if hy_cal is not None:
                             s_lines.append('-2')
                             s_lines.append(hy_cal)
                         else:
                             s_lines.append(str(nfil))
-                    elif tt == 4:
-                        if hz_cal is not None:
+                    elif nout == 2 and tt == 2:
+                        if hx_cal is not None:
                             s_lines.append('-2')
-                            s_lines.append(hz_cal)
+                            s_lines.append(hx_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif nout == 2 and tt == 3:
+                        if hy_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hy_cal)
                         else:
                             s_lines.append(str(nfil))
                     else:
@@ -889,22 +926,35 @@ def write_script_file(processing_dict, save_path=None):
             #write filenames
             if nds==0:
                 for tt, tfile in enumerate(pdict['fn_list']):
-                    if tt == 2:
+                    #write in calibration files if given
+                    if nout == 3 and tt == 2:
+                        if hz_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hz_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif nout == 3 and tt == 3:
                         if hx_cal is not None:
                             s_lines.append('-2')
                             s_lines.append(hx_cal)
                         else:
                             s_lines.append(str(nfil))
-                    elif tt == 3:
+                    elif nout == 3 and tt == 4:
                         if hy_cal is not None:
                             s_lines.append('-2')
                             s_lines.append(hy_cal)
                         else:
                             s_lines.append(str(nfil))
-                    elif tt == 4:
-                        if hz_cal is not None:
+                    elif nout == 2 and tt == 2:
+                        if hx_cal is not None:
                             s_lines.append('-2')
-                            s_lines.append(hz_cal)
+                            s_lines.append(hx_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif nout == 2 and tt == 3:
+                        if hy_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hy_cal)
                         else:
                             s_lines.append(str(nfil))
                     else:
@@ -932,26 +982,39 @@ def write_script_file(processing_dict, save_path=None):
                     s_lines.append(wetim)
             else:
                 for tt, tfile in enumerate(pdict['fn_list'][0]):
-                    if tt == 2:
-                        if hx_cal is not None:
-                            s_lines.append('-2')
-                            s_lines.append(hx_cal)
-                        else:
-                            s_lines.append(str(nfil))
-                    elif tt == 3:
-                        if hy_cal is not None:
-                            s_lines.append('-2')
-                            s_lines.append(hy_cal)
-                        else:
-                            s_lines.append(str(nfil))
-                    elif tt == 4:
+                   #write in calibration files if given
+                    if nout == 3 and tt == 2:
                         if hz_cal is not None:
                             s_lines.append('-2')
                             s_lines.append(hz_cal)
                         else:
                             s_lines.append(str(nfil))
-                    else:
-                        s_lines.append(str(nfil))
+                    elif nout == 3 and tt == 3:
+                        if hx_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hx_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif nout == 3 and tt == 4:
+                        if hy_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hy_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif nout == 2 and tt == 2:
+                        if hx_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hx_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                    elif nout == 2 and tt == 3:
+                        if hy_cal is not None:
+                            s_lines.append('-2')
+                            s_lines.append(hy_cal)
+                        else:
+                            s_lines.append(str(nfil))
+                else:
+                    s_lines.append(str(nfil))
                     s_lines.append(tfile)
                     s_lines.append(dstim)
                     s_lines.append(wstim)
