@@ -305,8 +305,8 @@ class Data(object):
         
         
         self._station_locations = None
-        self.center_position = np.array([0.0, 0.0])
-        self.epsg = kwargs.pop('epsg',None)        
+        self.center_position = np.array([0.0, 0.0])    
+        self.epsg = kwargs.pop('epsg',None)
         
         self.data_array = None
         self.mt_dict = None
@@ -1491,6 +1491,7 @@ class Model(object):
     def __init__(self, **kwargs):#edi_list=None, 
         
 #        self.edi_list = edi_list
+        self.Data = kwargs.pop('Data',None)
         
         # size of cells within station area in meters
         self.cell_size_east = kwargs.pop('cell_size_east', 500)
@@ -1522,7 +1523,10 @@ class Model(object):
         
         #--> attributes to be calculated
         #station information
-        self.station_locations = kwargs.pop('station_locations', None)
+        if self.Data is not None:
+            self.station_locations = self.Data.station_locations
+        else:
+            self.station_locations = None
        
        #grid nodes
         self.nodes_east = None
@@ -1545,7 +1549,7 @@ class Model(object):
         self.epsg = kwargs.pop('epsg',None)
         
         #resistivity model
-        self.res_model = None
+        self.res_model = kwargs.pop('res_model',None)
         
         self.grid_center = None
         
@@ -1875,7 +1879,8 @@ class Model(object):
         try:
             # cell size is topomax/n_airlayers, rounded to nearest 1 s.f.
             cs = np.amax(self.surface_dict['topography'])/float(self.n_airlayers)
-            cs = np.ceil(cs/10.**int(np.log10(cs)))*10.**int(np.log10(cs))
+#            cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
+            cs = np.ceil(cs)
             
             # add air layers
             new_airlayers = np.linspace(0,self.n_airlayers,self.n_airlayers+1)*cs
@@ -1897,7 +1902,7 @@ class Model(object):
         
         # assign sea water
         # first make a mask array, this array can be passed through to covariance
-        self.seawater_mask = np.zeros_like(self.res_model)
+        self.covariance_mask = np.ones_like(self.res_model)
         
         # assign model areas below sea level but above topography, as seawater
         # get grid centres
@@ -1908,11 +1913,17 @@ class Model(object):
         # assign values
         for j in range(len(self.res_model)):
             for i in range(len(self.res_model[j])):
+                ii1 = np.where(gcz <= topo[j,i])
+                if len(ii1) > 0:
+                    self.covariance_mask[j,i,ii1[0]] = 0.
+                # assign sea water to covariance and model res arrays
                 ii = np.where((gcz <= topo[j,i])&(gcz > self.sea_level))
-#                print ii
                 if len(ii) > 0:
-                    self.seawater_mask[j,i,ii[0]] = 1.        
+                    self.covariance_mask[j,i,ii[0]] = 9.        
                     self.res_model[j,i,ii[0]] = sea_resistivity
+
+        self.covariance_mask = self.covariance_mask[::-1]       
+        self.project_stations_on_topography()
         
 
     def project_surface(self,surfacefile=None,surface=None,surfacename=None,
@@ -2040,7 +2051,38 @@ class Model(object):
                 else:
                     ii = np.where(gcz > surfacedata[j,i])
                 self.res_model[j,i,ii] = resistivity_value
-                
+
+    def project_stations_on_topography(self,air_resistivity=1e17):
+        
+        sx = self.station_locations['rel_east']
+        sy = self.station_locations['rel_north']
+        
+        # find index of station on grid
+        for sname in self.station_locations['station']:
+            ss = np.where(self.station_locations['station'] == sname)[0][0]
+            # relative locations of stations
+            sx,sy = self.station_locations['rel_east'][ss],self.station_locations['rel_north'][ss]
+            # indices of stations on model grid
+            sxi = np.where((sx <= self.grid_east[1:])&(sx > self.grid_east[:-1]))[0][0]
+            syi = np.where((sy <= self.grid_north[1:])&(sy > self.grid_north[:-1]))[0][0]
+            
+            # first check if the site is in the sea
+            if np.any(self.covariance_mask[syi,sxi]==9):
+                szi = np.amax(np.where(self.covariance_mask[syi,sxi]==9)[0])
+            # second, check if there are any air cells
+            elif np.any(self.res_model[syi,sxi] > 0.95*air_resistivity):
+                szi = np.amax(np.where((self.res_model[syi,sxi] > 0.95*air_resistivity))[0])
+            # otherwise place station at the top of the model
+            else:
+                szi = 0
+            # assign topography value
+            topoval = self.grid_z[szi]
+            self.station_locations['elev'][ss] = topoval
+            self.Data.data_array['elev'][ss] = topoval
+        self.Data.station_locations = self.station_locations
+        
+
+        self.Data.write_data_file(fill=False)        
         
 
     def plot_mesh(self, east_limits=None, north_limits=None, z_limits=None,
@@ -2471,6 +2513,12 @@ class Model(object):
                 count_z += 1
                 count_e = 0
                 line_index += 1
+            # 3D grid model files don't have a space at the end
+            # additional condition to account for this.
+            elif (len(iline) == 3)&(count_z == n_z - 1):
+                count_z += 1
+                count_e = 0
+                line_index += 1                
             #each line in the block is a line of N-->S values for an east value
             else:
                 north_line = np.array([float(nres) for nres in 
@@ -2933,13 +2981,13 @@ class Covariance(object):
         
         #--> smoothing in north direction        
         n_smooth_line = ''
-        for zz in range(self.grid_dimensions[0]):
+        for zz in range(self.grid_dimensions[2]):
             n_smooth_line += ' {0:<5.1f}'.format(self.smoothing_north)
         clines.append(n_smooth_line+'\n')
 
         #--> smoothing in east direction
         e_smooth_line = ''
-        for zz in range(self.grid_dimensions[1]):
+        for zz in range(self.grid_dimensions[2]):
             e_smooth_line += ' {0:<5.1f}'.format(self.smoothing_east)
         clines.append(e_smooth_line+'\n')
         
