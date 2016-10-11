@@ -1267,7 +1267,15 @@ class Zen3D(object):
             self.time_series_len = self.time_series.size
             self.df = self.df/dec
 
+        # apply notch filter if desired
+        if notch_dict is not None:
+            self.apply_adaptive_notch_filter(notch_dict)
+            print 'Filtered notches: '
+            for nfilt in self.filt_list:
+                if type(nfilt[0]) != str:
+                    print '{0}{1:.2f} Hz'.format(' '*4, nfilt[0])
         
+        # convert counts to mV and scale accordingly    
         time_series = self.convert_counts()
         # calibrate electric channels should be in mV/km
         if self.metadata.ch_cmp.lower() == 'ex':
@@ -1276,14 +1284,6 @@ class Zen3D(object):
             time_series = time_series/(1e3/ey)
             
         print 'Using scales EX = {0} and EY = {1}'.format(ex, ey)
-
-        # apply notch filter if desired
-        if notch_dict is not None:
-            self.apply_adaptive_notch_filter(notch_dict)
-            print 'Filtered notches: '
-            for nfilt in self.filt_list:
-                if type(nfilt[0]) != str:
-                    print '{0}{1:.2f} Hz'.format(' '*4, nfilt[0])
                                                    
         header_tuple = ('# {0}{1}'.format(save_station,
                                           self.metadata.rx_xyz0.split(':')[0]), 
