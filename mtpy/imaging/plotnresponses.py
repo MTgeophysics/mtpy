@@ -1627,14 +1627,19 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
             except KeyError:
                 pass
     
-            for ii,mt in enumerate(self.mt_list): 
+            for ii, mt in enumerate(self.mt_list): 
                 #get the reistivity and phase object
                 rp = mt.get_ResPhase()
                 
                 #set x-axis limits from short period to long period
-                if self.xlimits == None:
-                    self.xlimits = (10**(np.floor(np.log10(mt.period[0]))),
-                                    10**(np.ceil(np.log10((mt.period[-1])))))
+                if self.xlimits is None:
+                    self.xlimits = (10**(np.floor(np.log10(mt.period.min()))),
+                                    10**(np.ceil(np.log10(mt.period.max()))))
+                else:
+                    self.xlimits = (10**min([np.floor(np.log10(self.xlimits[0])),
+                                             np.floor(np.log10(mt.period.min()))]),
+                                    10**max([np.ceil(np.log10(self.xlimits[1])),
+                                             np.ceil(np.log10(mt.period.max()))]))
                 if self.phase_limits == None:
                     self.phase_limits = (0, 89.9)
                 
@@ -1836,8 +1841,16 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                     for aa in range(nt):
                         xlenr = txr[aa]*np.log10(mt.period[aa])
                         xleni = txi[aa]*np.log10(mt.period[aa])
-                         
-                            
+                        
+                        if self.tipper_limits is None:
+                            tmax = max([tyr.max(), tyi.max()])
+                            tmin = min([tyr.min(), tyi.min()])
+                            self.tipper_limits = (tmin-.1, tmax+.1)
+                        else:
+                            tmax = max([tyr.max(), tyi.max(), self.tipper_limits[1]-.1])+.1
+                            tmin = max([tyr.min(), tyi.min(), self.tipper_limits[0]+.1])-.1
+                            self.tipper_limits = (tmin, tmax)
+                              
                         #--> plot real arrows
                         if self._plot_tipper.find('r') > 0:
                             self.axt.arrow(np.log10(mt.period[aa]),
@@ -2233,7 +2246,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 self.axt.yaxis.set_minor_locator(MultipleLocator(.1))               
                 self.axt.set_xlabel('Period(s)', fontdict=fontdict)
                 self.axt.set_ylabel('Tipper', fontdict=fontdict)    
-                
+                self.axt.set_xlim(np.log10(self.xlimits[0]), 
+                                  np.log10(self.xlimits[1]))
                 tklabels = []
                 xticks = []
                 for tk in self.axt.get_xticks():
@@ -2245,16 +2259,7 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                 self.axt.set_xticks(xticks)
                 self.axt.set_xticklabels(tklabels, 
                                           fontdict={'size':self.font_size})
-                if self.tipper_limits is None:
-                    tmax = max([tyr.max(), tyi.max()])
-                    if tmax > 1:
-                        tmax = .899
-                                
-                    tmin = min([tyr.min(), tyi.min()])
-                    if tmin < -1:
-                        tmin = -.899
-                                
-                    self.tipper_limits = (tmin-.1, tmax+.1)
+
                 
                 self.axt.set_ylim(self.tipper_limits)
                 self.axt.grid(True, alpha=.25, 
@@ -2274,8 +2279,8 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                                 
                 #need to reset the xlimits caouse they get reset when calling
                 #set_ticks for some reason
-                self.axt.set_xlim(np.log10(self.xlimits[0]),
-                                   np.log10(self.xlimits[1]))
+                self.axt.set_xlim(np.log10(self.xlimits[0]), 
+                                  np.log10(self.xlimits[1]))
                                    
                 if pdict['tip'] != nrows-1:
                     plt.setp(self.axt.xaxis.get_ticklabels(), visible=False)
