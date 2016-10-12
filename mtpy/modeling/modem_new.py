@@ -1816,7 +1816,7 @@ class Model(object):
         print '   Dimensions: '
         print '      e-w = {0}'.format(east_gridr.shape[0])
         print '      n-s = {0}'.format(north_gridr.shape[0])
-        print '       z  = {0} (without 7 air layers)'.format(z_grid.shape[0])
+        print '       z  = {0} (including 7 air layers)'.format(z_grid.shape[0])
         print '   Extensions: '
         print '      e-w = {0:.1f} (m)'.format(east_nodes.__abs__().sum())
         print '      n-s = {0:.1f} (m)'.format(north_nodes.__abs__().sum())
@@ -1903,7 +1903,7 @@ class Model(object):
 
         self.covariance_mask = self.covariance_mask[::-1]       
         self.project_stations_on_topography()
-        
+    
 
     def project_surface(self,surfacefile=None,surface=None,surfacename=None,
                         surface_epsg=4326,method='nearest'):
@@ -2022,14 +2022,27 @@ class Model(object):
         # convert to positive down, relative to the top of the grid
         surfacedata = self.sea_level - self.surface_dict[surfacename]
         
+        # define topography, so that we don't overwrite cells above topography
+        # first check if topography exists
+        if 'topography' in self.surface_dict.keys():
+            # second, check topography isn't the surface we're trying to assign resistivity for
+            if surfacename == 'topography':
+                topo = np.zeros_like(surfacedata)
+            else:
+                topo = self.sea_level - self.surface_dict['topography']
+        # if no topography, assign zeros
+        else:
+            topo = self.sea_level + np.zeros_like(surfacedata)
+
         # assign resistivity value
         for j in range(len(self.res_model)):
             for i in range(len(self.res_model[j])):
                 if where == 'above':
-                    ii = np.where(gcz <= surfacedata[j,i])[0]
+                    ii = np.where((gcz <= surfacedata[j,i])&(gcz > topo[j,i]))[0]
                 else:
-                    ii = np.where(gcz > surfacedata[j,i])
+                    ii = np.where(gcz > surfacedata[j,i])[0]
                 self.res_model[j,i,ii] = resistivity_value
+
 
     def project_stations_on_topography(self,air_resistivity=1e17):
         
