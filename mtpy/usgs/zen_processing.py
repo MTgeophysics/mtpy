@@ -68,7 +68,8 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
         self.calibration_path = kwargs.pop('calibration_path', 
                                          r"d:\Peacock\MTData\Ant_calibrations")
         self.calibration_list = ['2254', '2264', '2274', '2284', '2294',
-                                '2304', '2314', '2324', '2334', '2344']
+                                '2304', '2314', '2324', '2334', '2344',
+                                '2844', '2854']
         self._max_nread = 16000000
                                 
  
