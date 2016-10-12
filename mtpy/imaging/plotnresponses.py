@@ -1845,10 +1845,18 @@ class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
                         if self.tipper_limits is None:
                             tmax = max([tyr.max(), tyi.max()])
                             tmin = min([tyr.min(), tyi.min()])
+                            if np.isnan(tmax) == True:
+                                tmax = 1.0
+                            if np.isnan(tmin) == True:
+                                tmin = -1.0
                             self.tipper_limits = (tmin-.1, tmax+.1)
                         else:
                             tmax = max([tyr.max(), tyi.max(), self.tipper_limits[1]-.1])+.1
-                            tmin = max([tyr.min(), tyi.min(), self.tipper_limits[0]+.1])-.1
+                            tmin = min([tyr.min(), tyi.min(), self.tipper_limits[0]+.1])-.1
+                            if np.isnan(tmax) == True:
+                                tmax = 1.0
+                            if np.isnan(tmin) == True:
+                                tmin = -1.0
                             self.tipper_limits = (tmin, tmax)
                               
                         #--> plot real arrows
