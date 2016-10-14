@@ -758,7 +758,8 @@ class Z3D_to_edi(object):
         return fn_arr[np.nonzero(fn_arr['npts'])], rr_fn_arr, fn_lines
         
     def get_schedules_fn_from_dir(self, station_ts_dir=None, rr_ts_dir=None,
-                                  df_list=[4096, 256, 16], max_blocks=4):
+                                  df_list=[4096, 256, 16], max_blocks=4,
+                                  use_blocks_dict={4096:'all', 256:'all', 16:'all'}):
         """
         get the birrp fn list from a directory of TS files
         """
@@ -851,12 +852,14 @@ class Z3D_to_edi(object):
         
         
         return self.get_schedules_fn(fn_arr, rr_fn_arr, df_list,
-                                     max_blocks=max_blocks)
+                                     max_blocks=max_blocks,
+                                     use_blocks_dict=use_blocks_dict)
 #        return (fn_arr, rr_fn_arr)
             
         
     def get_schedules_fn(self, fn_arr, rr_fn_arr=None, df_list=[4096, 256, 16],
-                         max_blocks=4):
+                         max_blocks=4, 
+                         use_blocks_dict={4096:'all', 256:'all', 16:'all'}):
         """
         seperate out the different schedule blocks and frequencies so the
         can be processed
@@ -866,7 +869,7 @@ class Z3D_to_edi(object):
             **schedule_fn_dict** : dictionary
                                    keys are sampling rates and values are
                                    lists of file names for each schedule
-                                   block up to 3 blocks
+                                   block up to max blocks
         """
         # get the sampling rates used
         s_keys = set(df_list)
@@ -878,7 +881,18 @@ class Z3D_to_edi(object):
         for df in s_keys:
             # find startind dates for sampling rate
             s_dates = sorted(list(set(fn_arr['start_dt'][np.where(fn_arr['df']==df)])))
-            for sdate in s_dates[0:max_blocks]:
+            use_blocks = use_blocks_dict[df]            
+            if use_blocks == 'all':
+                date_list = s_dates[0:max_blocks]
+            elif type(use_blocks) is list:
+                date_list = [s_dates[ii] for ii in use_blocks]
+                if len(date_list) > max_blocks:
+                    date_list = date_list[0:max_blocks]
+                
+            else:
+                raise ValueError('Do not understand use_blocks type {0}'.format(type(use_blocks)))
+                
+            for sdate in date_list:
                 s_fn_arr = fn_arr[np.where((fn_arr['start_dt']==sdate) &
                                             (fn_arr['df']==df))]
                 num_comp = len(s_fn_arr) 
@@ -1107,11 +1121,13 @@ class Z3D_to_edi(object):
                                                          
         return resp_plot
  
-    def process_data(self, df_list=None, max_blocks=2,
-                     notch_dict={}, sr_dict={4096:(1000., 4),
-                                             1024:(3.99, 1.),
-                                             256:(3.99, .126), 
-                                             16:(.125, .0001)},
+    def process_data(self, df_list=None, max_blocks=3,
+                     notch_dict={}, 
+                     sr_dict={4096:(1000., 4),
+                              1024:(3.99, 1.),
+                              256:(3.99, .126), 
+                              16:(.125, .0001)},
+                     use_blocks_dict={4096:'all', 256:'all', 16:'all'},
                      birrp_param_dict={}):
         """
         from the input station directory, convert files to ascii, run through
@@ -1132,7 +1148,8 @@ class Z3D_to_edi(object):
         
         # get all information from mtpy files
         schedule_dict = self.get_schedules_fn_from_dir(df_list=df_list,
-                                                       max_blocks=max_blocks)
+                                                       max_blocks=max_blocks,
+                                                       use_blocks_dict=use_blocks_dict)
             
         # write script files for birrp
         sfn_list = self.write_script_files(schedule_dict,

@@ -1278,14 +1278,16 @@ class Zen3D(object):
         # convert counts to mV and scale accordingly    
         time_series = self.convert_counts()
         # calibrate electric channels should be in mV/km
+        # I have no idea why this works but it does
         if self.metadata.ch_cmp.lower() == 'ex':
-            time_series = (time_series/(1e3/ex))*(np.sqrt(2*np.pi))
-#            time_series = time_series/((ex/100)*2*np.pi)
+#            time_series = (time_series/(ex/1e3))/#*(np.sqrt(2*np.pi))
+            time_series = time_series/((ex/100)*2*np.pi)
+            print 'Using scales EX = {0} m'.format(ey)
         elif self.metadata.ch_cmp.lower() == 'ey':
-            time_series = (time_series/(1e3/ey))*(np.sqrt(2*np.pi))
-#            time_series = time_series/((ex/100)*2*np.pi)
-            
-        print 'Using scales EX = {0} and EY = {1}'.format(ex, ey)
+#            time_series = (time_series/(ey/1e3))#*(np.sqrt(2*np.pi))
+            time_series = time_series/((ex/100)*2*np.pi)
+            print 'Using scales EY = {0} m'.format(ey)
+        
                                                    
         header_tuple = ('# {0}{1}'.format(save_station,
                                           self.metadata.rx_xyz0.split(':')[0]), 
