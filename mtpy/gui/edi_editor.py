@@ -545,8 +545,8 @@ class PlotWidget(QtGui.QWidget):
         self.meta_lat_edit.setText('{0:.6f}'.format(self.mt_obj.lat))
         
     def meta_edit_lon(self):
-        self.mt_obj.lon = float(str(self.meta_lat_edit.text()))
-        self.meta_lon_edit.setText('{0:.6f}'.format(self.mt_obj.lat))
+        self.mt_obj.lon = float(str(self.meta_lon_edit.text()))
+        self.meta_lon_edit.setText('{0:.6f}'.format(self.mt_obj.lon))
         
     def meta_edit_elev(self):
         self.mt_obj.elev = float(str(self.meta_elev_edit.text()))

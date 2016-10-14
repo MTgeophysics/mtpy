@@ -277,6 +277,70 @@ class MTEllipse(object):
                 self.ellipse_cmap = 'mt_bl2gr2rd'
                 
 #==============================================================================
+# Plot settings
+#==============================================================================
+class PlotSettings(object):
+    """
+    Hold all the plot settings that one might need
+    """               
+    
+    def __init__(self, **kwargs):
+        # figure properties:
+        self.fig_num = 1
+        self.fig_dpi = 150
+        self.fig_size = None
+        
+        self.font_size = 7
+        
+        # line styles:
+        self.xy_ls = None
+        self.yx_ls = None
+        self.det_ls = None 
+        self.skew_ls = None
+        self.strike_ls = None
+        
+        # marker styles:
+        self.xy_marker = 's'
+        self.yx_marker = 'o'
+        self.det_marker = 'v'
+        self.skew_marker = 'd'
+        self.strike_inv_marker = 'v'
+        self.strike_pt_marker = '^'
+        self.strike_tip_marker = '>'
+        
+        # marker color styles:
+        self.xy_marker = (0, 0, .75)
+        self.yx_marker = (.75, 0, 0)
+        self.det_marker = (0, .75, 0)        
+        self.skew_color = (.85, .35, 0)
+        self.strike_inv_color = (.2, .2, .7)
+        self.strike_pt_color = (.7, .2, .2)
+        self.strike_tip_color = (.2, .7, .2)
+        
+        # marker face color styles:
+        self.xy_mfc = (0, 0, .75)
+        self.yx_mfc = (.75, 0, 0)
+        self.det_mfc = (0, .75, 0) 
+        self.skew_mfc = (.85, .35, 0)
+        self.strike_inv_mfc = (.2, .2, .7)
+        self.strike_pt_mfc = (.7, .2, .2)
+        self.strike_tip_mfc = (.2, .7, .2)
+        
+        # plot limits
+        self.x_limits = None
+        self.res_limits = None
+        self.phase_limits = None
+        self.tipper_limits = None
+        self.strike_limits = None
+        self.skew_limits = None
+        self.pt_limits = None
+        
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+        
+        
+            
+#==============================================================================
 # object for computing resistivity and phase  
 #==============================================================================
 class ResPhase(object):
