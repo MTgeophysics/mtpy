@@ -1844,18 +1844,20 @@ class Model(object):
 
 
     
-    def add_topography(self,topographyfile,interp_method='nearest',
+    def add_topography(self,topographyfile=None,topographyarray=None,interp_method='nearest',
                        air_resistivity=1e17,sea_resistivity=0.3):
         """
         """
         # first, get surface data
-        self.project_surface(surfacefile=topographyfile,
-                             surfacename='topography',
-                             method=interp_method)
-                             
+        if topographyfile is not None:
+            self.project_surface(surfacefile=topographyfile,
+                                 surfacename='topography',
+                                 method=interp_method)
+        if topographyarray is not None:
+            self.surface_dict['topography'] = topographyarray
             
 
-        try:
+        if self.n_airlayers > 0:
             # cell size is topomax/n_airlayers, rounded to nearest 1 s.f.
             cs = np.amax(self.surface_dict['topography'])/float(self.n_airlayers)
 #            cs = np.ceil(0.1*cs/10.**int(np.log10(cs)))*10.**(int(np.log10(cs))+1)
@@ -1875,7 +1877,7 @@ class Model(object):
                 
             # assign topography
             self.assign_resistivity_from_surfacedata('topography',air_resistivity,where='above')
-        except:
+        else:
             print "Cannot add topography, no air layers provided. Proceeding to add bathymetry"
             
         
@@ -1892,11 +1894,12 @@ class Model(object):
         # assign values
         for j in range(len(self.res_model)):
             for i in range(len(self.res_model[j])):
+                # assign all sites above the topography to air
                 ii1 = np.where(gcz <= topo[j,i])
                 if len(ii1) > 0:
                     self.covariance_mask[j,i,ii1[0]] = 0.
                 # assign sea water to covariance and model res arrays
-                ii = np.where((gcz <= topo[j,i])&(gcz > self.sea_level))
+                ii = np.where(np.all([gcz > self.sea_level,gcz <= topo[j,i]],axis=0))
                 if len(ii) > 0:
                     self.covariance_mask[j,i,ii[0]] = 9.        
                     self.res_model[j,i,ii[0]] = sea_resistivity
@@ -2059,8 +2062,8 @@ class Model(object):
             syi = np.where((sy <= self.grid_north[1:])&(sy > self.grid_north[:-1]))[0][0]
             
             # first check if the site is in the sea
-            if np.any(self.covariance_mask[syi,sxi]==9):
-                szi = np.amax(np.where(self.covariance_mask[syi,sxi]==9)[0])
+            if np.any(self.covariance_mask[::-1][syi,sxi]==9):
+                szi = np.amax(np.where(self.covariance_mask[::-1][syi,sxi]==9)[0])
             # second, check if there are any air cells
             elif np.any(self.res_model[syi,sxi] > 0.95*air_resistivity):
                 szi = np.amax(np.where((self.res_model[syi,sxi] > 0.95*air_resistivity))[0])
@@ -2348,6 +2351,7 @@ class Model(object):
                 res_model[:, :, :] = self.res_model
                 
             self.res_model = res_model
+        self.covariance_mask = np.ones_like(self.res_model)
         
 
         #--> write file
@@ -6739,9 +6743,13 @@ class PlotDepthSlice(object):
             
             
         #make a mesh grid of north and east
-        self.mesh_east, self.mesh_north = np.meshgrid(self.grid_east, 
-                                                      self.grid_north,
-                                                      indexing='ij')
+        try:
+            self.mesh_east, self.mesh_north = np.meshgrid(self.grid_east, 
+                                                          self.grid_north,
+                                                          indexing='ij')
+        except:
+            self.mesh_east, self.mesh_north = [arr.T for arr in np.meshgrid(self.grid_east, 
+                                                          self.grid_north)]
         
         plt.rcParams['font.size'] = self.font_size
         
