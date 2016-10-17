@@ -2351,7 +2351,9 @@ class Model(object):
                 res_model[:, :, :] = self.res_model
                 
             self.res_model = res_model
-        self.covariance_mask = np.ones_like(self.res_model)
+            
+        if not hasattr(self,'covariance_mask'):
+            self.covariance_mask = np.ones_like(self.res_model)
         
 
         #--> write file
