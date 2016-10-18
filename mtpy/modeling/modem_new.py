@@ -532,7 +532,27 @@ class Data(object):
         
     def get_relative_station_locations(self):
         """
-        get station locations from edi files
+        get station locations from edi files and project to local coordinates
+        
+        ..note:: There are two options for projection method. If pyproj is
+                 installed, you can use the method that uses pyproj. In this
+                 case, specify the epsg number as an attribute to the model 
+                 object or when setting it up. The epsg can generally be found 
+                 through a google search. If epsg is specified then **all**
+                 sites are projected to that epsg. It is up to the user to
+                 make sure all sites are in the bounds of projection.
+                 **note** epsg 3112 (Geoscience Australia Lambert) covers all 
+                 of Australia but may cause signficiant rotation at some 
+                 locations.
+            
+                ***If pyproj is not used:***
+                If the survey steps across multiple UTM zones, then a 
+                 distance will be added to the stations to place them in 
+                 the correct location.  This distance is 
+                 _utm_grid_size_north and _utm_grid_size_east. You should 
+                 these parameters to place the locations in the proper spot
+                 as grid distances and overlaps change over the globe.        
+        
         """
         # get center position of the stations in lat and lon                   
         self.center_position[0] = self.data_array['lat'].mean()
@@ -798,7 +818,7 @@ class Data(object):
             interp_periods = self.period_list[np.where(
                                 (self.period_list >= 1./mt_obj.Z.freq.max()) & 
                                 (self.period_list <= 1./mt_obj.Z.freq.min()))]
-                                
+
             # if specified, apply a buffer so that interpolation doesn't stretch too far over periods
             if type(self.period_buffer) in [float,int]:
                 interp_periods_new = []
@@ -1525,7 +1545,7 @@ class Model(object):
         self._utm_grid_size_east = 640000.0
         self._utm_cross = False
         self._utm_ellipsoid = 23
-        self.epsg = kwargs.pop('epsg',None)
+#        self.epsg = kwargs.pop('epsg',None)
         
         #resistivity model
         self.res_model = kwargs.pop('res_model',None)
@@ -1673,24 +1693,7 @@ class Model(object):
         padding = np.round(cell_size_east*pad_root_east**np.arange(start=.5,
                            stop=3, step=3./pad_east))+west 
                            
-        ..note:: There are two options for projection method. If pyproj is
-                 installed, you can use the method that uses pyproj. In this
-                 case, specify the epsg number as an attribute to the model 
-                 object or when setting it up. The epsg can generally be found 
-                 through a google search. If epsg is specified then **all**
-                 sites are projected to that epsg. It is up to the user to
-                 make sure all sites are in the bounds of projection.
-                 **note** epsg 3112 (Geoscience Australia Lambert) covers all 
-                 of Australia but may cause signficiant rotation at some 
-                 locations.
-            
-                ***If pyproj is not used:***
-                If the survey steps across multiple UTM zones, then a 
-                 distance will be added to the stations to place them in 
-                 the correct location.  This distance is 
-                 _utm_grid_size_north and _utm_grid_size_east. You should 
-                 these parameters to place the locations in the proper spot
-                 as grid distances and overlaps change over the globe.
+
                 
         
         """
@@ -1967,7 +1970,7 @@ class Model(object):
         
         try:
             import pyproj
-            p1,p2 = [pyproj.Proj(text) for text in [epsg_dict[surface_epsg][0],epsg_dict[self.epsg][0]]]
+            p1,p2 = [pyproj.Proj(text) for text in [epsg_dict[surface_epsg][0],epsg_dict[self.Data.epsg][0]]]
             xs,ys = pyproj.transform(p1,p2,lon,lat)
         except ImportError:
             print "pyproj not installed and other methods for projecting points not implemented yet. Please install pyproj"
