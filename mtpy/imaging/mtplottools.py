@@ -2171,5 +2171,6 @@ def plot_errorbar(ax, x_array, y_array, y_error=None, x_error=None,
                                   lw=lw,
                                   elinewidth=lw,
                                   capsize=e_capsize,
-                                  capthick=e_capthick)
+#                                  capthick=e_capthick
+                                  )
     return errorbar_object

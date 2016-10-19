@@ -2069,7 +2069,7 @@ class Model(object):
                 szi = np.amax(np.where(self.covariance_mask[::-1][syi,sxi]==9)[0])
             # second, check if there are any air cells
             elif np.any(self.res_model[syi,sxi] > 0.95*air_resistivity):
-                szi = np.amax(np.where((self.res_model[syi,sxi] > 0.95*air_resistivity))[0])
+                szi = np.amin(np.where((self.res_model[syi,sxi] < 0.95*air_resistivity))[0])
             # otherwise place station at the top of the model
             else:
                 szi = 0

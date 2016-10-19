@@ -556,7 +556,7 @@ class MT(object):
         return new_z_obj
         
         
-    def interpolate(self, new_freq_array):
+    def interpolate(self, new_freq_array, bounds_error=True):
         """
         interpolate the impedance tensor onto different frequencies.
         
@@ -601,16 +601,17 @@ class MT(object):
             new_freq_array = np.array(new_freq_array)
 
         # check the bounds of the new frequency array
-        if self.Z.freq.min() > new_freq_array.min():
-            raise ValueError('New frequency minimum of {0:.5g}'.format(new_freq_array.min())+\
-                             ' is smaller than old frequency minimum of {0:.5g}'.format(self.Z.freq.min())+\
-                             '.  The new frequency range needs to be within the '+\
-                             'bounds of the old one.')
-        if self.Z.freq.max() < new_freq_array.max():
-            raise ValueError('New frequency maximum of {0:.5g}'.format(new_freq_array.max())+\
-                             'is smaller than old frequency maximum of {0:.5g}'.format(self.Z.freq.max())+\
-                             '.  The new frequency range needs to be within the '+\
-                             'bounds of the old one.')
+        if bounds_error:
+            if self.Z.freq.min() > new_freq_array.min():
+                raise ValueError('New frequency minimum of {0:.5g}'.format(new_freq_array.min())+\
+                                 ' is smaller than old frequency minimum of {0:.5g}'.format(self.Z.freq.min())+\
+                                 '.  The new frequency range needs to be within the '+\
+                                 'bounds of the old one.')
+            if self.Z.freq.max() < new_freq_array.max():
+                raise ValueError('New frequency maximum of {0:.5g}'.format(new_freq_array.max())+\
+                                 'is smaller than old frequency maximum of {0:.5g}'.format(self.Z.freq.max())+\
+                                 '.  The new frequency range needs to be within the '+\
+                                 'bounds of the old one.')
 
         # make a new Z object
         new_Z = MTz.Z(z_array=np.zeros((new_freq_array.shape[0], 2, 2), 

@@ -51,6 +51,7 @@ import scipy.interpolate as spi
 
 import mtpy.core.edi as MTedi
 import mtpy.core.mt as mt
+import mtpy.core.z as mtz
 import mtpy.modeling.winglinktools as MTwl
 import mtpy.utils.conversions as MTcv
 import mtpy.utils.filehandling as MTfh
@@ -2093,6 +2094,7 @@ class Data(Profile):
         self.fn_basename = kwargs.pop('fn_basename', 'OccamDataFile.dat')
         self.save_path = kwargs.pop('save_path', None)
         self.freq = kwargs.pop('freq', None)
+        self.interpolate_freq = kwargs.pop('interpolate_freq', None)
         self.model_mode = kwargs.pop('model_mode', '1')
         self.data = kwargs.pop('data', None)
         self.data_list = None
@@ -2299,6 +2301,9 @@ class Data(Profile):
                            number of frequencies to invert for
                            *default* is None and will use the data to find num
         """
+        if self.interpolate_freq:
+            if self.freq is not None:
+                return
 
         #get all frequencies from all edi files
         lo_all_freqs = []
@@ -2385,6 +2390,14 @@ class Data(Profile):
         #loop over mt object in edi_list and use a counter starting at 1 
         #because that is what occam starts at.
         for s_index, edi in enumerate(self.edi_list):
+            if self.interpolate_freq:
+                mto = mt.MT(z_object=edi.Z)
+                new_Z,new_Tipper = mto.interpolate(self.freq,bounds_error=False)
+                if new_Z is not None:
+                    edi.Z = mtz.Z(z_array=new_Z.z,zerr_array=new_Z.zerr,freq=self.freq)
+                if new_Tipper is not None:
+                    edi.Tipper = mtz.Tipper(tipper_array=new_Tipper.tipper,tippererr_array=new_Tipper.tippererr,freq=self.freq)            
+            
             rho = edi.Z.resistivity
             phi = edi.Z.phase
             rho_err = edi.Z.resistivity_err
@@ -4203,7 +4216,7 @@ class PlotModel(Model):
                         if one of the attributes has been changed
     save_figure         saves the matplotlib.figure instance to desired 
                         location and format
-    =================== ======================================================
+    =================== ====================================================
     
     :Example: 
     ---------------
