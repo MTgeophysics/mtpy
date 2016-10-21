@@ -216,15 +216,13 @@ class Data():
         """
         
         # read edi file to edi object
-        eo = mtedi.Edi()
-        eo.readfile(self.edipath)
-        self.edi_object = eo
+        self.edi_object = mtedi.Edi(self.edipath)
         
         # define z
-        zr = np.real(eo.Z.z)
+        zr = np.real(self.edi_object.Z.z)
         # sign of imaginary component needs to be reversed for the pek1d inversion code
-        zi = -np.imag(eo.Z.z)
-        ze = eo.Z.zerr
+        zi = -np.imag(self.edi_object.Z.z)
+        ze = self.edi_object.Z.z_err
         z = zr + 1j*zi
         
         # set errorfloors
@@ -266,7 +264,7 @@ class Data():
         self.header = header
         self.data = np.vstack(data_list).T
         self.z = zr + 1j*zi
-        self.zerr = ze
+        self.z_err = ze
 
 
     def write_datafile(self, wd = None):
@@ -321,7 +319,7 @@ class Data():
             zi = -np.vstack([data[:,i] for i in range(len(data[0])) if (i-3)%4 == 0])
             z = zr + 1j*zi
             self.z = z.T.reshape(len(z[0]),2,2)
-            self.zerr = ze.T.reshape(len(z[0]),2,2)
+            self.z_err = ze.T.reshape(len(z[0]),2,2)
 
             
             # make a frequency array that has the same shape as z
@@ -347,11 +345,11 @@ class Data():
                     for j in range(2):
                         phase[iz,i,j] = np.rad2deg(cmath.phase(self.z[iz,i,j]))
                         res[iz,i,j]= 0.2*np.abs(self.z[iz,i,j])**2/self.freq[iz]
-                        r_err, phi_err = MTcc.zerror2r_phi_error(
+                        r_err, phi_err = MTcc.z_error2r_phi_error(
                                                  np.real(self.z[iz,i,j]), 
-                                                 self.zerr[iz,i,j], 
+                                                 self.z_err[iz,i,j], 
                                                  np.imag(self.z[iz,i,j]), 
-                                                 self.zerr[iz,i,j])
+                                                 self.z_err[iz,i,j])
 
                         
 
@@ -386,16 +384,16 @@ class Data():
             self.read_datafile()
             
         new_z = np.zeros_like(self.z)
-        new_ze = np.zeros_like(self.zerr,dtype=float)
+        new_ze = np.zeros_like(self.z_err,dtype=float)
         
 #        for iz,zarray in enumerate(self.z):
-        new_z,new_ze = MTg.MTz.rotate_z(self.z,rotation_angle,zerr_array = self.zerr)
+        new_z,new_ze = MTg.MTz.rotate_z(self.z,rotation_angle,z_err_array = self.z_err)
             
         self.z = new_z
-        self.zerr = new_ze
+        self.z_err = new_ze
 
         self.resistivity, self.resistivity_err, self.phase, self.phase_err = \
-        pek1dc._compute_res_phase(self.z,self.zerr,self.freq)
+        pek1dc._compute_res_phase(self.z,self.z_err,self.freq)
 
 
         self.rotation_angle = rotation_angle
@@ -463,7 +461,7 @@ class Response():
             self.read_respfile()
             
         new_z = np.zeros_like(self.z)
-        zerr = np.zeros_like(self.z,dtype=float)
+        z_err = np.zeros_like(self.z,dtype=float)
         
         for iz,zarray in enumerate(self.z):
             new_z[iz],ze = MTg.MTz.rotate_z(zarray,rotation_angle)
@@ -475,7 +473,7 @@ class Response():
         self.phase = np.zeros_like(self.z,dtype=float)
         
         for iz in range(len(self.z)):
-            r,re,p,pe = pek1dc._compute_res_phase(self.z[iz],zerr[iz],self.freq)
+            r,re,p,pe = pek1dc._compute_res_phase(self.z[iz],z_err[iz],self.freq)
             self.resistivity[iz] = r
 #            self.resistivity_err[iz] = re
             self.phase[iz] = p
@@ -647,8 +645,8 @@ class Model():
 
     def _calculate_fit_vs_freq(self):
         
-        misfit_real = ((np.real(self.Resp.z[self.modelno-1])-np.real(self.Data.z))/self.Data.zerr)**2
-        misfit_imag = ((np.imag(self.Resp.z[self.modelno-1])-np.imag(self.Data.z))/self.Data.zerr)**2
+        misfit_real = ((np.real(self.Resp.z[self.modelno-1])-np.real(self.Data.z))/self.Data.z_err)**2
+        misfit_imag = ((np.imag(self.Resp.z[self.modelno-1])-np.imag(self.Data.z))/self.Data.z_err)**2
         
 
         self.Fit.misfit = misfit_real + 1j*misfit_imag
@@ -893,7 +891,7 @@ class Model_suite():
         self.median_misfit = np.median(model_misfits)
             
         
-def _compute_res_phase(z,zerr,freq):
+def _compute_res_phase(z,z_err,freq):
     """
     calculates *resistivity*, *phase*, *resistivity_err*, *phase_err*
     
@@ -901,8 +899,8 @@ def _compute_res_phase(z,zerr,freq):
 
     """ 
 
-    resistivity_err = np.zeros_like(zerr)
-    phase_err = np.zeros_like(zerr)
+    resistivity_err = np.zeros_like(z_err)
+    phase_err = np.zeros_like(z_err)
 
     resistivity = np.zeros_like(z, dtype='float')
     phase = np.zeros_like(z, dtype='float')
@@ -916,13 +914,13 @@ def _compute_res_phase(z,zerr,freq):
                 phase[idx_f,i,j] = math.degrees(cmath.phase(
                                                 z[idx_f,i,j]))
             
-                if zerr is not None:
+                if z_err is not None:
                     
-                    r_err, phi_err = MTcc.zerror2r_phi_error(
+                    r_err, phi_err = MTcc.z_error2r_phi_error(
                                              np.real(z[idx_f,i,j]), 
-                                             zerr[idx_f,i,j], 
+                                             z_err[idx_f,i,j], 
                                              np.imag(z[idx_f,i,j]), 
-                                             zerr[idx_f,i,j])
+                                             z_err[idx_f,i,j])
 
                     
 

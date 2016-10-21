@@ -32,7 +32,11 @@ MTpy is licensed under the GPL version 3
 The license agreement is contained in the repository and should be kept together with the code.
 
 
+<<<<<<< HEAD
 Copyright: Lars Krieger, Jared Peacock, Kent Inverarity, Alison Kirkby; Adelaide, 2013
+=======
+Copyright: Lars Krieger, Jared Peacock, Kent Inverarity, Alison Kirkby; Adelaide, 2015
+>>>>>>> beta
 
 
 

@@ -49,7 +49,7 @@ def generate_input_file(edifilename, outputdir=None):
 	freqs = eo.freq
 
 	z_array = eo.Z.z
-	zerr_array = eo.Z.zerr
+	z_err_array = eo.Z.z_err
 
 	if len(freqs) != len(z_array):
 		raise MTex.MTpyError_edi_file('ERROR in Edi file {0} - number of '\
@@ -63,7 +63,7 @@ def generate_input_file(edifilename, outputdir=None):
 
 	for idx in sorting:
 		z = z_array[idx]
-		zerr = zerr_array[idx]
+		z_err = z_err_array[idx]
 		f = freqs[idx]
 		outstring1 += '{0}\t'.format(f)
 		outstring2 += '{0}\t'.format(f)
@@ -76,11 +76,11 @@ def generate_input_file(edifilename, outputdir=None):
 					z_string = '{0}+{1}i'.format(np.real(z[i%2,(j+1)/2]),
 													 np.imag(z[i%2,(j+1)/2]))
 
-				zerr_string = '{0}'.format(zerr[i%2,(j+1)/2])
+				z_err_string = '{0}'.format(z_err[i%2,(j+1)/2])
 
 
 				outstring1 += '{0}\t'.format(z_string)
-				outstring2 += '{0}\t'.format(zerr_string)
+				outstring2 += '{0}\t'.format(z_err_string)
 
 		outstring1 = outstring1.rstrip() + '\n'
 		outstring2 = outstring2.rstrip() + '\n'

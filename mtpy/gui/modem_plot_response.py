@@ -66,6 +66,7 @@ class Ui_MainWindow(object):
         self.phase_xy_limits = None 
         self.phase_yx_limits = None 
         self.phase_yy_limits = None 
+        self.tipper_limits = None
  
         
         self.subplot_wspace = .25
@@ -82,6 +83,9 @@ class Ui_MainWindow(object):
         self.legend_label_spacing = 0.07
         self.legend_handle_text_pad = .2
         self.legend_border_pad = .15
+        
+        self.z_err_increase = .05
+        self.t_err_increase = .05
 
         self.fs = 11
         
@@ -97,7 +101,7 @@ class Ui_MainWindow(object):
         
     def setupUi(self, MainWindow):
         MainWindow.setWindowTitle("Plot ModEM MT Response")
-        MainWindow.resize(1920, 1080)
+        MainWindow.setWindowState(QtCore.Qt.WindowMaximized)
         
         #make a central widget that everything is tied to.
         self.central_widget = QtGui.QWidget(MainWindow)
@@ -318,7 +322,8 @@ class Ui_MainWindow(object):
         
         self.modem_data.write_data_file(save_path=os.path.dirname(save_fn),
                                         fn_basename=os.path.basename(save_fn),
-                                        compute_error=False)
+                                        compute_error=False,
+                                        fill=False)
         
     def get_station(self, widget_item):
         """
@@ -433,7 +438,7 @@ class Ui_MainWindow(object):
         self.figure.suptitle(str(self.station), fontdict=fontdict)
         
         #set the grid of subplots
-        if t_obj.tipper.all() == 0.0:
+        if np.all(t_obj.tipper == 0.0) == True:
             self.plot_tipper = False
         else:
             self.plot_tipper = True
@@ -538,67 +543,67 @@ class Ui_MainWindow(object):
             erxx = mtplottools.plot_errorbar(axrxx, 
                                       period[nzxx], 
                                       z_obj.z[nzxx,0,0].real, 
-                                      z_obj.zerr[nzxx,0,0].real,
+                                      z_obj.z_err[nzxx,0,0].real,
                                       **kw_xx)
             erxy = mtplottools.plot_errorbar(axrxy, 
                                       period[nzxy], 
                                       z_obj.z[nzxy,0,1].real, 
-                                      z_obj.zerr[nzxy,0,1].real,
+                                      z_obj.z_err[nzxy,0,1].real,
                                       **kw_xx)
             eryx = mtplottools.plot_errorbar(axryx, 
                                       period[nzyx], 
                                       z_obj.z[nzyx,1,0].real, 
-                                      z_obj.zerr[nzyx,1,0].real,
+                                      z_obj.z_err[nzyx,1,0].real,
                                       **kw_yy)
             eryy = mtplottools.plot_errorbar(axryy, 
                                       period[nzyy], 
                                       z_obj.z[nzyy,1,1].real, 
-                                      z_obj.zerr[nzyy,1,1].real,
+                                      z_obj.z_err[nzyy,1,1].real,
                                       **kw_yy)
             #plot phase                         
             epxx = mtplottools.plot_errorbar(axpxx, 
                                       period[nzxx], 
                                       z_obj.z[nzxx,0,0].imag, 
-                                      z_obj.zerr[nzxx,0,0].imag,
+                                      z_obj.z_err[nzxx,0,0].imag,
                                       **kw_xx)
             epxy = mtplottools.plot_errorbar(axpxy, 
                                       period[nzxy], 
                                       z_obj.z[nzxy,0,1].imag, 
-                                      z_obj.zerr[nzxy,0,1].imag,
+                                      z_obj.z_err[nzxy,0,1].imag,
                                       **kw_xx)
             epyx = mtplottools.plot_errorbar(axpyx, 
                                       period[nzyx], 
                                       z_obj.z[nzyx,1,0].imag, 
-                                      z_obj.zerr[nzyx,1,0].imag,
+                                      z_obj.z_err[nzyx,1,0].imag,
                                       **kw_yy)
             epyy = mtplottools.plot_errorbar(axpyy, 
                                       period[nzyy], 
                                       z_obj.z[nzyy,1,1].imag, 
-                                      z_obj.zerr[nzyy,1,1].imag,
+                                      z_obj.z_err[nzyy,1,1].imag,
                                       **kw_yy)
                                       
         #plot tipper
         if self.plot_tipper == True:
             ertx = mtplottools.plot_errorbar(axtxr, 
-                                     period,
+                                     period[ntx],
                                      t_obj.tipper[ntx, 0, 0].real,
-                                     t_obj.tippererr[ntx, 0, 0],
+                                     t_obj.tipper_err[ntx, 0, 0],
                                      **kw_xx)
             erty = mtplottools.plot_errorbar(axtyr, 
-                                     period,
+                                     period[nty],
                                      t_obj.tipper[nty, 0, 1].real,
-                                     t_obj.tippererr[nty, 0, 0],
+                                     t_obj.tipper_err[nty, 0, 0],
                                      **kw_yy)
                                      
             eptx = mtplottools.plot_errorbar(axtxi, 
-                                     period,
+                                     period[ntx],
                                      t_obj.tipper[ntx, 0, 0].imag,
-                                     t_obj.tippererr[ntx, 0, 1],
+                                     t_obj.tipper_err[ntx, 0, 1],
                                      **kw_xx)
             epty = mtplottools.plot_errorbar(axtyi, 
-                                     period,
+                                     period[nty],
                                      t_obj.tipper[nty, 0, 1].imag,
-                                     t_obj.tippererr[nty, 0, 1],
+                                     t_obj.tipper_err[nty, 0, 1],
                                      **kw_yy)
         if self.plot_tipper == False:                    
             line_list = [[erxx[0]], [erxy[0]], [eryx[0]], [eryy[0]]]
@@ -709,7 +714,10 @@ class Ui_MainWindow(object):
                        ax.set_ylabel('Im[Z (mV/km nT)]',
                                       fontdict=fontdict)
             if aa > 7:
-                ax.set_ylim(-1.1, 1.1)
+                if self.tipper_limits is not None:
+                    ax.set_ylim(self.tipper_limits)
+                else:
+                    ax.set_ylim(-1.1, 1.1)
 
             ax.set_xscale('log')
             ax.set_xlim(xmin=10**(np.floor(np.log10(period[0])))*1.01,
@@ -719,7 +727,7 @@ class Ui_MainWindow(object):
         #plot model response
         if self.modem_resp is not None:
             resp_z_obj = self.modem_resp.mt_dict[self.station].Z
-            resp_z_err = np.nan_to_num((z_obj.z-resp_z_obj.z)/z_obj.zerr)
+            resp_z_err = np.nan_to_num((z_obj.z-resp_z_obj.z)/z_obj.z_err)
 
             resp_t_obj = self.modem_resp.mt_dict[self.station].Tipper
             
@@ -818,20 +826,20 @@ class Ui_MainWindow(object):
                                           **kw_yy)
             if self.plot_tipper == True:
                 rertx = mtplottools.plot_errorbar(axtxr, 
-                             period,
+                             period[ntx],
                              resp_t_obj.tipper[ntx, 0, 0].real,
                              **kw_xx)
                 rerty = mtplottools.plot_errorbar(axtyr, 
-                             period,
+                             period[nty],
                              resp_t_obj.tipper[nty, 0, 1].real,
                              **kw_yy)
                                          
                 rertx = mtplottools.plot_errorbar(axtxi, 
-                             period,
+                             period[ntx],
                              resp_t_obj.tipper[ntx, 0, 0].imag,
                              **kw_xx)
                 rerty = mtplottools.plot_errorbar(axtyi, 
-                             period,
+                             period[nty],
                              resp_t_obj.tipper[nty, 0, 1].imag,
                              **kw_yy)
                              
@@ -893,18 +901,25 @@ class Ui_MainWindow(object):
         data_period = data_point.get_xdata()[event.ind]
         data_value = data_point.get_ydata()[event.ind]
         p_index = np.where(self.modem_data.period_list==data_period)[0][0]
-        
+        s_index = np.where(self.modem_data.data_array['station']==self.station)[0][0]
+
         if event.mouseevent.button == 1:
             # mask the point in the data mt_dict
             if len(self.ax_list) == 8:
+                self.modem_data.data_array[s_index]['z'][p_index, 
+                                self._comp_index_x, self._comp_index_y] = 0+0j
                 self.modem_data.mt_dict[self.station].Z.z[p_index, 
                                 self._comp_index_x, self._comp_index_y] = 0+0j
             elif len(self.ax_list) == 12:
                 if self._ax_index == 4 or self._ax_index == 5 or \
                    self._ax_index == 10 or self._ax_index == 11:
+                    self.modem_data.data_array[s_index]['tip'][p_index, 
+                                self._comp_index_x, self._comp_index_y] = 0+0j
                     self.modem_data.mt_dict[self.station].Tipper.tipper[p_index, 
                                 self._comp_index_x, self._comp_index_y] = 0+0j
                 else:
+                    self.modem_data.data_array[s_index]['z'][p_index, 
+                                self._comp_index_x, self._comp_index_y] = 0+0j
                     self.modem_data.mt_dict[self.station].Z.z[p_index, 
                                 self._comp_index_x, self._comp_index_y] = 0+0j
             # plot the point as masked
@@ -918,24 +933,29 @@ class Ui_MainWindow(object):
             
             #put the new error into the error array
             if len(self.ax_list) == 8:
-                err = self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
+                err = self.modem_data.mt_dict[self.station].Z.z_err[p_index, 
                         self._comp_index_x, self._comp_index_y]
-                err = err+abs(err)*.05
-                print err
-                self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
+                err = err+abs(err)*self.z_err_increase
+                self.modem_data.data_array[s_index]['z_err'][p_index, 
+                            self._comp_index_x, self._comp_index_y] = err
+                self.modem_data.mt_dict[self.station].Z.z_err[p_index, 
                         self._comp_index_x, self._comp_index_y] = err
             elif len(self.ax_list) == 12:
                 if self._ax_index == 4 or self._ax_index == 5 or \
                    self._ax_index == 10 or self._ax_index == 11:
-                    err = self.modem_data.mt_dict[self.station].Tipper.tippererr[p_index, 
+                    err = self.modem_data.mt_dict[self.station].Tipper.tipper_err[p_index, 
                                 self._comp_index_x, self._comp_index_y] 
-                    self.modem_data.mt_dict[self.station].Tipper.tippererr[p_index, 
-                                self._comp_index_x, self._comp_index_y] += abs(err)*.05
+                    self.modem_data.data_array[s_index]['tip_err'][p_index, 
+                                self._comp_index_x, self._comp_index_y] += abs(err)*self.t_err_increase
+                    self.modem_data.mt_dict[self.station].Tipper.tipper_err[p_index, 
+                                self._comp_index_x, self._comp_index_y] += abs(err)*self.t_err_increase
                 else:
-                    err = self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
+                    err = self.modem_data.mt_dict[self.station].Z.z_err[p_index, 
                         self._comp_index_x, self._comp_index_y] 
-                    self.modem_data.mt_dict[self.station].Z.zerr[p_index, 
-                        self._comp_index_x, self._comp_index_y] += abs(err)*.05
+                    self.modem_data.data_array[s_index]['z_err'][p_index, 
+                        self._comp_index_x, self._comp_index_y] += abs(err)*self.z_err_increase
+                    self.modem_data.mt_dict[self.station].Z.z_err[p_index, 
+                        self._comp_index_x, self._comp_index_y] += abs(err)*self.z_err_increase
             
             # make error bar array
             eb = self._err_list[ax_index][2].get_paths()[p_index].vertices
@@ -1038,7 +1058,9 @@ class PlotSettings(QtGui.QWidget):
         self.phase_xx_limits = kwargs.pop('phase_xx_limits', None)   
         self.phase_xy_limits = kwargs.pop('phase_xy_limits', None)   
         self.phase_yx_limits = kwargs.pop('phase_yx_limits', None)   
-        self.phase_yy_limits = kwargs.pop('phase_yy_limits', None)   
+        self.phase_yy_limits = kwargs.pop('phase_yy_limits', None) 
+        
+        self.tipper_limits = kwargs.pop('tipper_limits', None)
         
         self.subplot_wspace = kwargs.pop('subplot_wspace', .2)
         self.subplot_hspace = kwargs.pop('subplot_hspace', .0)
@@ -1046,6 +1068,9 @@ class PlotSettings(QtGui.QWidget):
         self.subplot_left = kwargs.pop('subplot_left', .08)
         self.subplot_top = kwargs.pop('subplot_top', .93)
         self.subplot_bottom = kwargs.pop('subplot_bottom', .08)
+        
+        self.z_err_increase = kwargs.pop('z_err_increase', 0.05)
+        self.t_err_increase = kwargs.pop('t_err_increase', 0.05)
         
         self.legend_loc = kwargs.pop('legend_loc', 'upper center')
         self.legend_pos = kwargs.pop('legend_pos', (.5, 1.11))
@@ -1059,337 +1084,381 @@ class PlotSettings(QtGui.QWidget):
 
     def initUI(self):
         #--> line properties
-        fs_label = QtGui.QLabel('Font Size')
-        fs_edit = QtGui.QLineEdit()
-        fs_edit.setText('{0:.1f}'.format(self.fs))
-        fs_edit.textChanged[str].connect(self.set_text_fs)
+        self.fs_label = QtGui.QLabel('Font Size')
+        self.fs_edit = QtGui.QLineEdit('{0:.1f}'.format(self.fs))
+        self.fs_edit.editingFinished.connect(self.set_text_fs)
         
-        lw_label = QtGui.QLabel('Line Width')
-        lw_edit = QtGui.QLineEdit()
-        lw_edit.setText('{0:.1f}'.format(self.lw))
-        lw_edit.textChanged[str].connect(self.set_text_lw)
+        self.lw_label = QtGui.QLabel('Line Width')
+        self.lw_edit = QtGui.QLineEdit('{0:.1f}'.format(self.lw))
+        self.lw_edit.editingFinished.connect(self.set_text_lw)
         
-        e_capthick_label = QtGui.QLabel('Error cap thickness')
-        e_capthick_edit = QtGui.QLineEdit()
-        e_capthick_edit.setText('{0:.1f}'.format(self.e_capthick))
-        e_capthick_edit.textChanged[str].connect(self.set_text_e_capthick)
+        self.e_capthick_label = QtGui.QLabel('Error cap thickness')
+        self.e_capthick_edit = QtGui.QLineEdit('{0:.1f}'.format(self.e_capthick))
+        self.e_capthick_edit.editingFinished.connect(self.set_text_e_capthick)
         
-        e_capsize_label = QtGui.QLabel('Error cap size')
-        e_capsize_edit = QtGui.QLineEdit()
-        e_capsize_edit.setText('{0:.1f}'.format(self.e_capsize))
-        e_capsize_edit.textChanged[str].connect(self.set_text_e_capsize)
+        self.e_capsize_label = QtGui.QLabel('Error cap size')
+        self.e_capsize_edit = QtGui.QLineEdit('{0:.1f}'.format(self.e_capsize))
+        self.e_capsize_edit.editingFinished.connect(self.set_text_e_capsize)
         
         grid_line = QtGui.QGridLayout()
-        grid_line.setSpacing(10)
         
-        grid_line.addWidget(fs_label, 1, 0)
-        grid_line.addWidget(fs_edit, 1, 1)
+        grid_line.addWidget(self.fs_label, 1, 0)
+        grid_line.addWidget(self.fs_edit, 1, 1)
         
-        grid_line.addWidget(lw_label, 1, 2)
-        grid_line.addWidget(lw_edit, 1, 3)
+        grid_line.addWidget(self.lw_label, 1, 2)
+        grid_line.addWidget(self.lw_edit, 1, 3)
         
-        grid_line.addWidget(e_capthick_label, 1, 4)
-        grid_line.addWidget(e_capthick_edit, 1, 5)
+        grid_line.addWidget(self.e_capthick_label, 1, 4)
+        grid_line.addWidget(self.e_capthick_edit, 1, 5)
         
-        grid_line.addWidget(e_capsize_label, 1, 6)
-        grid_line.addWidget(e_capsize_edit, 1, 7)
+        grid_line.addWidget(self.e_capsize_label, 1, 6)
+        grid_line.addWidget(self.e_capsize_edit, 1, 7)
         
         #--> marker properties
-        ms_label = QtGui.QLabel('Marker Size')
-        ms_edit = QtGui.QLineEdit()
-        ms_edit.setText('{0:.1f}'.format(self.ms))
-        ms_edit.textChanged[str].connect(self.set_text_ms)
+        self.ms_label = QtGui.QLabel('Marker Size')
+        self.ms_edit = QtGui.QLineEdit()
+        self.ms_edit.setText('{0:.1f}'.format(self.ms))
+        self.ms_edit.editingFinished.connect(self.set_text_ms)
         
-        dcxy_label = QtGui.QLabel('Data Color xy')
-        dcxy_edit = QtGui.QLineEdit()
-        dcxy_edit.setText('{0}'.format(self.cted))
-        dcxy_edit.textChanged[str].connect(self.set_text_cted)
+        self.mted_label = QtGui.QLabel("Marker x components (data)")
+        self.mted_combo = QtGui.QComboBox()
+        self.mted_combo.addItem(self.mted)
+        self.mted_combo.addItem('.')
+        self.mted_combo.addItem(',')
+        self.mted_combo.addItem('o')
+        self.mted_combo.addItem('v')
+        self.mted_combo.addItem('^')
+        self.mted_combo.addItem('<')
+        self.mted_combo.addItem('>')
+        self.mted_combo.addItem('s')
+        self.mted_combo.addItem('p')
+        self.mted_combo.addItem('*')
+        self.mted_combo.addItem('h')
+        self.mted_combo.addItem('H')
+        self.mted_combo.addItem('+')
+        self.mted_combo.addItem('x')
+        self.mted_combo.addItem('D')
+        self.mted_combo.addItem('d')
+        self.mted_combo.addItem('|')
+        self.mted_combo.addItem('_')
+        self.mted_combo.activated[str].connect(self.set_mted)
         
-        dcyx_label = QtGui.QLabel('Data Color yx')
-        dcyx_edit = QtGui.QLineEdit()
-        dcyx_edit.setText('{0}'.format(self.ctmd))
-        dcyx_edit.textChanged[str].connect(self.set_text_ctmd)
+        self.mtmd_label = QtGui.QLabel("Marker y components (data)")
+        self.mtmd_combo = QtGui.QComboBox()
+        self.mtmd_combo.addItem(self.mtmd)
+        self.mtmd_combo.addItem('.')
+        self.mtmd_combo.addItem(',')
+        self.mtmd_combo.addItem('o')
+        self.mtmd_combo.addItem('v')
+        self.mtmd_combo.addItem('^')
+        self.mtmd_combo.addItem('<')
+        self.mtmd_combo.addItem('>')
+        self.mtmd_combo.addItem('s')
+        self.mtmd_combo.addItem('p')
+        self.mtmd_combo.addItem('*')
+        self.mtmd_combo.addItem('h')
+        self.mtmd_combo.addItem('H')
+        self.mtmd_combo.addItem('+')
+        self.mtmd_combo.addItem('x')
+        self.mtmd_combo.addItem('D')
+        self.mtmd_combo.addItem('d')
+        self.mtmd_combo.addItem('|')
+        self.mtmd_combo.addItem('_')
+        self.mtmd_combo.activated[str].connect(self.set_mtmd)
         
-        dmxy_label = QtGui.QLabel('Data Marker xy')
-        dmxy_edit = QtGui.QLineEdit()
-        dmxy_edit.setText('{0}'.format(self.mted))
-        dmxy_edit.textChanged[str].connect(self.set_text_mted)
+        self.mtem_label = QtGui.QLabel("Marker x components (model)")
+        self.mtem_combo = QtGui.QComboBox()
+        self.mtem_combo.addItem(self.mtem)
+        self.mtem_combo.addItem('.')
+        self.mtem_combo.addItem(',')
+        self.mtem_combo.addItem('o')
+        self.mtem_combo.addItem('v')
+        self.mtem_combo.addItem('^')
+        self.mtem_combo.addItem('<')
+        self.mtem_combo.addItem('>')
+        self.mtem_combo.addItem('s')
+        self.mtem_combo.addItem('p')
+        self.mtem_combo.addItem('*')
+        self.mtem_combo.addItem('h')
+        self.mtem_combo.addItem('H')
+        self.mtem_combo.addItem('+')
+        self.mtem_combo.addItem('x')
+        self.mtem_combo.addItem('D')
+        self.mtem_combo.addItem('d')
+        self.mtem_combo.addItem('|')
+        self.mtem_combo.addItem('_')
+        self.mtem_combo.activated[str].connect(self.set_mtem)
         
-        dmyx_label = QtGui.QLabel('Data Marker yx')
-        dmyx_edit = QtGui.QLineEdit()
-        dmyx_edit.setText('{0}'.format(self.mtmd))
-        dmyx_edit.textChanged[str].connect(self.set_text_mtmd)
+        self.mtmm_label = QtGui.QLabel("Marker y components (model)")
+        self.mtmm_combo = QtGui.QComboBox()
+        self.mtmm_combo.addItem(self.mtmm)
+        self.mtmm_combo.addItem('.')
+        self.mtmm_combo.addItem(',')
+        self.mtmm_combo.addItem('o')
+        self.mtmm_combo.addItem('v')
+        self.mtmm_combo.addItem('^')
+        self.mtmm_combo.addItem('<')
+        self.mtmm_combo.addItem('>')
+        self.mtmm_combo.addItem('s')
+        self.mtmm_combo.addItem('p')
+        self.mtmm_combo.addItem('*')
+        self.mtmm_combo.addItem('h')
+        self.mtmm_combo.addItem('H')
+        self.mtmm_combo.addItem('+')
+        self.mtmm_combo.addItem('x')
+        self.mtmm_combo.addItem('D')
+        self.mtmm_combo.addItem('d')
+        self.mtmm_combo.addItem('|')
+        self.mtmm_combo.addItem('_')
+        self.mtmm_combo.activated[str].connect(self.set_mtmm)
         
-        mcxy_label = QtGui.QLabel('Model Color xy')
-        mcxy_edit = QtGui.QLineEdit()
-        mcxy_edit.setText('{0}'.format(self.ctem))
-        mcxy_edit.textChanged[str].connect(self.set_text_ctem)
+        self.cted_button = QtGui.QPushButton("Set Z_xi Color (data)")
+        self.cted_button.pressed.connect(self.set_cted)
         
-        mcyx_label = QtGui.QLabel('Model Color yx')
-        mcyx_edit = QtGui.QLineEdit()
-        mcyx_edit.setText('{0}'.format(self.ctmm))
-        mcyx_edit.textChanged[str].connect(self.set_text_ctmm)
+        self.ctmd_button = QtGui.QPushButton("Set Z_yi Color (data)")
+        self.ctmd_button.pressed.connect(self.set_ctmd)
         
-        mmxy_label = QtGui.QLabel('Model Marker xy')
-        mmxy_edit = QtGui.QLineEdit()
-        mmxy_edit.setText('{0}'.format(self.mtem))
-        mmxy_edit.textChanged[str].connect(self.set_text_mtem)
-    
-        mmyx_label = QtGui.QLabel('Model Marker yx')
-        mmyx_edit = QtGui.QLineEdit()
-        mmyx_edit.setText('{0}'.format(self.mtmm))
-        mmyx_edit.textChanged[str].connect(self.set_text_mtmm)
-
-        marker_label = QtGui.QLabel('Maker Properties:')
+        
+        self.ctem_button = QtGui.QPushButton("Set Z_xi Color (model)")
+        self.ctem_button.pressed.connect(self.set_ctem)
+        
+        self.ctmm_button = QtGui.QPushButton("Set Z_yi Color (model)")
+        self.ctmm_button.pressed.connect(self.set_ctmm)
+        
+        
+        marker_size_grid = QtGui.QGridLayout()
+        marker_size_grid.addWidget(self.ms_label, 0, 0)
+        marker_size_grid.addWidget(self.ms_edit, 0, 1)
         
         marker_grid = QtGui.QGridLayout()
-        marker_grid.setSpacing(10)
-                
-        marker_grid.addWidget(marker_label, 1, 0)
-        marker_grid.addWidget(ms_label, 1, 2)
-        marker_grid.addWidget(ms_edit, 1, 3)
         
-        marker_grid.addWidget(dcxy_label, 2, 0)
-        marker_grid.addWidget(dcxy_edit, 2, 1)
+        marker_grid.addWidget(self.mted_label, 0, 0)
+        marker_grid.addWidget(self.mted_combo, 0, 1)
         
-        marker_grid.addWidget(dcyx_label, 2, 2)
-        marker_grid.addWidget(dcyx_edit, 2, 3)
+        marker_grid.addWidget(self.mtmd_label, 0, 2)
+        marker_grid.addWidget(self.mtmd_combo, 0, 3)
         
-        marker_grid.addWidget(dmxy_label, 2, 4)
-        marker_grid.addWidget(dmxy_edit, 2, 5)
+        marker_grid.addWidget(self.mtem_label, 0, 4)
+        marker_grid.addWidget(self.mtem_combo, 0, 5)
         
-        marker_grid.addWidget(dmyx_label, 2, 6)
-        marker_grid.addWidget(dmyx_edit, 2, 7)
+        marker_grid.addWidget(self.mtmm_label, 0, 6)
+        marker_grid.addWidget(self.mtmm_combo, 0, 7)
         
-        marker_grid.addWidget(mcxy_label, 3, 0)
-        marker_grid.addWidget(mcxy_edit, 3, 1)
+        marker_grid.addWidget(self.cted_button, 1, 0, 2, 2)
+        marker_grid.addWidget(self.ctmd_button, 1, 2, 2, 2)
+        marker_grid.addWidget(self.ctem_button, 1, 4, 2, 2)
+        marker_grid.addWidget(self.ctmm_button, 1, 6, 2, 2)
         
-        marker_grid.addWidget(mcyx_label, 3, 2)
-        marker_grid.addWidget(mcyx_edit, 3, 3)
+        marker_layout = QtGui.QVBoxLayout()
+        marker_layout.addLayout(marker_size_grid)
+        marker_layout.addLayout(marker_grid)
         
-        marker_grid.addWidget(mmxy_label, 3, 4)
-        marker_grid.addWidget(mmxy_edit, 3, 5)
         
-        marker_grid.addWidget(mmyx_label, 3, 6)
-        marker_grid.addWidget(mmyx_edit, 3, 7)
+        #-> increase error by this percent
+        self.z_err_inc_label = QtGui.QLabel('Z error increase (%)')
+        self.z_err_inc_edit = QtGui.QLineEdit('{0:.2f}'.format(self.z_err_increase*100))
+        self.z_err_inc_edit.editingFinished.connect(self.set_z_err_inc)
+        
+        self.t_err_inc_label = QtGui.QLabel('Tipper error increase (%)')
+        self.t_err_inc_edit = QtGui.QLineEdit('{0:.2f}'.format(self.z_err_increase*100))
+        self.t_err_inc_edit.editingFinished.connect(self.set_z_err_inc)
+        
+        err_grid = QtGui.QGridLayout()
+        err_grid.addWidget(self.z_err_inc_label, 0, 0)
+        err_grid.addWidget(self.z_err_inc_edit, 0, 1)
+        err_grid.addWidget(self.t_err_inc_label, 0, 2)
+        err_grid.addWidget(self.t_err_inc_edit, 0, 3)
         
         #--> plot limits
-        ylimr_xx_label = QtGui.QLabel('Res_xx')
-        ylimr_xx_edit = QtGui.QLineEdit()
-        ylimr_xx_edit.setText('{0}'.format(self.res_xx_limits))
-        ylimr_xx_edit.textChanged[str].connect(self.set_text_res_xx) 
+        self.ylimr_xx_label = QtGui.QLabel('Res_xx')
+        self.ylimr_xx_edit = QtGui.QLineEdit()
+        self.ylimr_xx_edit.setText('{0}'.format(self.res_xx_limits))
+        self.ylimr_xx_edit.editingFinished.connect(self.set_text_res_xx) 
         
-        ylimr_xy_label = QtGui.QLabel('Res_xy')
-        ylimr_xy_edit = QtGui.QLineEdit()
-        ylimr_xy_edit.setText('{0}'.format(self.res_xy_limits))
-        ylimr_xy_edit.textChanged[str].connect(self.set_text_res_xy) 
+        self.ylimr_xy_label = QtGui.QLabel('Res_xy')
+        self.ylimr_xy_edit = QtGui.QLineEdit()
+        self.ylimr_xy_edit.setText('{0}'.format(self.res_xy_limits))
+        self.ylimr_xy_edit.editingFinished.connect(self.set_text_res_xy) 
         
-        ylimr_yx_label = QtGui.QLabel('Res_yx')
-        ylimr_yx_edit = QtGui.QLineEdit()
-        ylimr_yx_edit.setText('{0}'.format(self.res_yx_limits))
-        ylimr_yx_edit.textChanged[str].connect(self.set_text_res_yx) 
+        self.ylimr_yx_label = QtGui.QLabel('Res_yx')
+        self.ylimr_yx_edit = QtGui.QLineEdit()
+        self.ylimr_yx_edit.setText('{0}'.format(self.res_yx_limits))
+        self.ylimr_yx_edit.editingFinished.connect(self.set_text_res_yx) 
         
-        ylimr_yy_label = QtGui.QLabel('Res_yy')
-        ylimr_yy_edit = QtGui.QLineEdit()
-        ylimr_yy_edit.setText('{0}'.format(self.res_yy_limits))
-        ylimr_yy_edit.textChanged[str].connect(self.set_text_res_yy)  
+        self.ylimr_yy_label = QtGui.QLabel('Res_yy')
+        self.ylimr_yy_edit = QtGui.QLineEdit()
+        self.ylimr_yy_edit.setText('{0}'.format(self.res_yy_limits))
+        self.ylimr_yy_edit.editingFinished.connect(self.set_text_res_yy)  
         
-        ylimp_xx_label = QtGui.QLabel('phase_xx')
-        ylimp_xx_edit = QtGui.QLineEdit()
-        ylimp_xx_edit.setText('{0}'.format(self.phase_xx_limits))
-        ylimp_xx_edit.textChanged[str].connect(self.set_text_phase_xx) 
+        self.ylimp_xx_label = QtGui.QLabel('phase_xx')
+        self.ylimp_xx_edit = QtGui.QLineEdit()
+        self.ylimp_xx_edit.setText('{0}'.format(self.phase_xx_limits))
+        self.ylimp_xx_edit.editingFinished.connect(self.set_text_phase_xx) 
         
-        ylimp_xy_label = QtGui.QLabel('phase_xy')
-        ylimp_xy_edit = QtGui.QLineEdit()
-        ylimp_xy_edit.setText('{0}'.format(self.phase_xy_limits))
-        ylimp_xy_edit.textChanged[str].connect(self.set_text_phase_xy) 
+        self.ylimp_xy_label = QtGui.QLabel('phase_xy')
+        self.ylimp_xy_edit = QtGui.QLineEdit()
+        self.ylimp_xy_edit.setText('{0}'.format(self.phase_xy_limits))
+        self.ylimp_xy_edit.editingFinished.connect(self.set_text_phase_xy) 
         
-        ylimp_yx_label = QtGui.QLabel('phase_yx')
-        ylimp_yx_edit = QtGui.QLineEdit()
-        ylimp_yx_edit.setText('{0}'.format(self.phase_yx_limits))
-        ylimp_yx_edit.textChanged[str].connect(self.set_text_phase_yx) 
+        self.ylimp_yx_label = QtGui.QLabel('phase_yx')
+        self.ylimp_yx_edit = QtGui.QLineEdit()
+        self.ylimp_yx_edit.setText('{0}'.format(self.phase_yx_limits))
+        self.ylimp_yx_edit.editingFinished.connect(self.set_text_phase_yx) 
         
-        ylimp_yy_label = QtGui.QLabel('phase_yy')
-        ylimp_yy_edit = QtGui.QLineEdit()
-        ylimp_yy_edit.setText('{0}'.format(self.phase_yy_limits))
-        ylimp_yy_edit.textChanged[str].connect(self.set_text_phase_yy)        
+        self.ylimp_yy_label = QtGui.QLabel('phase_yy')
+        self.ylimp_yy_edit = QtGui.QLineEdit()
+        self.ylimp_yy_edit.setText('{0}'.format(self.phase_yy_limits))
+        self.ylimp_yy_edit.editingFinished.connect(self.set_text_phase_yy)  
+        
+        self.ytlim_label = QtGui.QLabel('tipper')
+        self.ytlim_edit = QtGui.QLineEdit()
+        self.ytlim_edit.setText('{0}'.format(self.tipper_limits))
+        self.ytlim_edit.editingFinished.connect(self.set_text_tipper_lim)        
         
         limits_grid = QtGui.QGridLayout()
-        limits_grid.setSpacing(10)
         
         limits_label = QtGui.QLabel('Plot Limits: (Res=Real, Phase=Imaginary)'
                                     ' --> input on a linear scale')
         
-        limits_grid.addWidget(limits_label, 1, 0, 1, 7)
+        limits_grid.addWidget(limits_label, 0, 0, 7, 1)
         
-        limits_grid.addWidget(ylimr_xx_label, 2, 0)
-        limits_grid.addWidget(ylimr_xx_edit, 2, 1)
-        limits_grid.addWidget(ylimr_xy_label, 2, 2)
-        limits_grid.addWidget(ylimr_xy_edit, 2, 3)
-        limits_grid.addWidget(ylimr_yx_label, 2, 4)
-        limits_grid.addWidget(ylimr_yx_edit, 2, 5)
-        limits_grid.addWidget(ylimr_yy_label, 2, 6)
-        limits_grid.addWidget(ylimr_yy_edit, 2, 7)
+        limits_grid.addWidget(self.ylimr_xx_label, 2, 0)
+        limits_grid.addWidget(self.ylimr_xx_edit, 2, 1)
+        limits_grid.addWidget(self.ylimr_xy_label, 2, 2)
+        limits_grid.addWidget(self.ylimr_xy_edit, 2, 3)
+        limits_grid.addWidget(self.ylimr_yx_label, 2, 4)
+        limits_grid.addWidget(self.ylimr_yx_edit, 2, 5)
+        limits_grid.addWidget(self.ylimr_yy_label, 2, 6)
+        limits_grid.addWidget(self.ylimr_yy_edit, 2, 7)
         
-        limits_grid.addWidget(ylimp_xx_label, 3, 0)
-        limits_grid.addWidget(ylimp_xx_edit, 3, 1)
-        limits_grid.addWidget(ylimp_xy_label, 3, 2)
-        limits_grid.addWidget(ylimp_xy_edit, 3, 3)
-        limits_grid.addWidget(ylimp_yx_label, 3, 4)
-        limits_grid.addWidget(ylimp_yx_edit, 3, 5)
-        limits_grid.addWidget(ylimp_yy_label, 3, 6)
-        limits_grid.addWidget(ylimp_yy_edit, 3, 7)
+        limits_grid.addWidget(self.ylimp_xx_label, 3, 0)
+        limits_grid.addWidget(self.ylimp_xx_edit, 3, 1)
+        limits_grid.addWidget(self.ylimp_xy_label, 3, 2)
+        limits_grid.addWidget(self.ylimp_xy_edit, 3, 3)
+        limits_grid.addWidget(self.ylimp_yx_label, 3, 4)
+        limits_grid.addWidget(self.ylimp_yx_edit, 3, 5)
+        limits_grid.addWidget(self.ylimp_yy_label, 3, 6)
+        limits_grid.addWidget(self.ylimp_yy_edit, 3, 7)
+        
+        limits_grid.addWidget(self.ytlim_label, 4, 0)
+        limits_grid.addWidget(self.ytlim_edit, 4, 1)
         
         #--> legend properties
-        legend_pos_label = QtGui.QLabel('Legend Position')
-        legend_pos_edit = QtGui.QLineEdit()
-        legend_pos_edit.setText('{0}'.format(self.legend_pos))
-        legend_pos_edit.textChanged[str].connect(self.set_text_legend_pos)
+        self.legend_pos_label = QtGui.QLabel('Legend Position')
+        self.legend_pos_edit = QtGui.QLineEdit()
+        self.legend_pos_edit.setText('{0}'.format(self.legend_pos))
+        self.legend_pos_edit.editingFinished.connect(self.set_text_legend_pos)
         
         legend_grid = QtGui.QGridLayout()
         legend_grid.setSpacing(10)
         
         legend_grid.addWidget(QtGui.QLabel('Legend Properties:'), 1, 0)
-        legend_grid.addWidget(legend_pos_label, 1, 2,)
-        legend_grid.addWidget(legend_pos_edit, 1, 3)
+        legend_grid.addWidget(self.legend_pos_label, 1, 2,)
+        legend_grid.addWidget(self.legend_pos_edit, 1, 3)
         
         update_button = QtGui.QPushButton('Update')
         update_button.clicked.connect(self.update_settings)        
         
         vbox = QtGui.QVBoxLayout()
         vbox.addLayout(grid_line)
-        vbox.addLayout(marker_grid)
+        vbox.addLayout(marker_layout)
+        vbox.addLayout(err_grid)
         vbox.addLayout(limits_grid)
         vbox.addLayout(legend_grid)
         vbox.addWidget(update_button)
         
         self.setLayout(vbox) 
         
-        self.setGeometry(300, 300, 350, 300)
-        self.resize(1350, 500)
+        #self.setGeometry(300, 300, 350, 300)
+        #self.resize(1350, 500)
         self.setWindowTitle('Plot Settings')    
         self.show()
-
-    def set_text_fs(self, text):
+        
+    def _test_float(self, text):
         try:
-            self.fs = float(text)
+            return_float = float(str(text))
         except ValueError:
-            print "Enter a float point number"
+            print 'Enter a floating point number'
+            return_float = 1.0
             
-    def set_text_e_capthick(self, text):
-        try:
-            self.e_capthick = float(text)
-        except ValueError:
-            print "Enter a float point number"
-            
-    def set_text_e_capsize(self, text):
-        try:
-            self.e_capsize = float(text)
-        except ValueError:
-            print "Enter a float point number"
+        return return_float
 
+    def set_text_fs(self):
+        self.fs = self._test_float(self.fs_edit.text())
+        self.fs_edit.setText('{0:.1f}'.format(self.fs))
+        
+    def set_text_e_capthick(self):
+        self.e_capthick_edit = self._test_float(self.e_capthick_edit.text())
+        self.e_capthick_edit.setText('{0:.1f}'.format(self.e_capthick))
+            
+    def set_text_e_capsize(self):
+        self.e_capsize_edit = self._test_float(self.e_capsize_edit.text())
+        self.e_capsize_edit.setText('{0:.1f}'.format(self.e_capsize))
     
-    def set_text_lw(self, text):
-        try:
-            self.lw = float(text)
-        except ValueError:
-            print "Enter a float point number"
+    def set_text_lw(self):
+        self.lw = self._test_float(self.lw_edit.text())
+        self.lw_edit.setText('{0:.2f}'.format(self.lw))
             
     def set_text_ms(self, text):
-        try:
-            self.ms = float(text)
-        except ValueError:
-            print "Enter a float point number"
+        self.ms = self._test_float(self.ms_edit.text())
+        self.ms_edit.setText('{0:.1f}'.format(self.ms))
+        
+    def set_mted(self, text):
+        self.mted = text
+        
+    def set_mtmd(self, text):
+        self.mtmd = text
+        
+    def set_mtem(self, text):
+        self.mtem = text
+        
+    def set_mtmm(self, text):
+        self.mtmm = text
+        
+    def convert_color_to_qt(self, color):
+        """
+        convert decimal tuple to QColor object
+        """
+        r = int(color[0]*255)
+        g = int(color[1]*255)
+        b = int(color[2]*255)
+        
+        return QtGui.QColor(r, g, b)      
+        
+    def set_cted(self):
+        initial_color = self.convert_color_to_qt(self.cted)
+        new_color = QtGui.QColorDialog.getColor(initial_color)
+        
+        r,g,b,a = new_color.getRgbF()
+        
+        self.cted = (r, g, b)
+        
+    def set_ctmd(self):
+        initial_color = self.convert_color_to_qt(self.ctmd)
+        new_color = QtGui.QColorDialog.getColor(initial_color)
+        
+        r,g,b,a = new_color.getRgbF()
+        
+        self.ctmd = (r, g, b)
+        
+    def set_ctem(self):
+        initial_color = self.convert_color_to_qt(self.ctem)
+        new_color = QtGui.QColorDialog.getColor(initial_color)
+        
+        r,g,b,a = new_color.getRgbF()
+        
+        self.ctem = (r, g, b)
+        
+    def set_ctmm(self):
+        initial_color = self.convert_color_to_qt(self.ctmm)
+        new_color = QtGui.QColorDialog.getColor(initial_color)
+        
+        r,g,b,a = new_color.getRgbF()
+        
+        self.ctmm = (r, g, b)
             
-    def set_text_cted(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 3:
-            print 'enter as (r, g, b)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 3:
-            self.cted = tuple(l_list)
-            
-    def set_text_ctmd(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 3:
-            print 'enter as (r, g, b)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 3:
-            self.ctmd = tuple(l_list)
-            
-    def set_text_mted(self, text):
-        try:
-            self.mted = str(text)
-        except ValueError:
-            print "Enter a string"
-            
-    def set_text_mtmd(self, text):
-        try:
-            self.mtmd = str(text)
-        except ValueError:
-            print "Enter a string"
-            
-    def set_text_ctem(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 3:
-            print 'enter as (r, g, b)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 3:
-            self.ctem = tuple(l_list)
-    
-    def set_text_ctmm(self, text):
-        if text =='None':
-            return
-        text = text.replace('(', '').replace(')', '')
-        t_list = text.split(',')
-        if len(t_list) != 3:
-            print 'enter as (r, g, b)'
-        l_list = []
-        for txt in t_list:
-            try: 
-                l_list.append(float(txt))
-            except ValueError:
-                pass
-        if len(l_list) == 3:
-            self.ctmm = tuple(l_list)
-            
-    def set_text_mtem(self, text):
-        try:
-            self.mtem = str(text)
-        except ValueError:
-            print "Enter a string"
-            
-    def set_text_mtmm(self, text):
-        try:
-            self.mtmm = str(text)
-        except ValueError:
-            print "Enter a string"
-            
-    def set_text_res_xx(self, text):
+    def set_text_res_xx(self):
+        text = self.ylimr_xx_edit.text()
         if text =='None':
             return
         text = text.replace('(', '').replace(')', '')
@@ -1406,6 +1475,7 @@ class PlotSettings(QtGui.QWidget):
             self.res_xx_limits = tuple(l_list)
             
     def set_text_res_xy(self, text):
+        text = self.ylimr_xy_edit.text()
         if text =='None':
             return
         text = text.replace('(', '').replace(')', '')
@@ -1422,6 +1492,7 @@ class PlotSettings(QtGui.QWidget):
             self.res_xy_limits = tuple(l_list)
             
     def set_text_res_yx(self, text):
+        text = self.ylimr_yx_edit.text()
         if text =='None':
             return
         text = text.replace('(', '').replace(')', '')
@@ -1438,6 +1509,7 @@ class PlotSettings(QtGui.QWidget):
             self.res_yx_limits = tuple(l_list)
             
     def set_text_res_yy(self, text):
+        text = self.ylimr_yy_edit.text()
         if text =='None':
             return
         text = text.replace('(', '').replace(')', '')
@@ -1454,6 +1526,7 @@ class PlotSettings(QtGui.QWidget):
             self.res_yy_limits = tuple(l_list)
             
     def set_text_phase_xx(self, text):
+        text = self.ylimp_xx_edit.text()
         if text =='None':
             return
         text = text.replace('(', '').replace(')', '')
@@ -1470,6 +1543,7 @@ class PlotSettings(QtGui.QWidget):
             self.phase_xx_limits = tuple(l_list)
             
     def set_text_phase_xy(self, text):
+        text = self.ylimp_xy_edit.text()
         if text =='None':
             return
         text = text.replace('(', '').replace(')', '')
@@ -1486,6 +1560,7 @@ class PlotSettings(QtGui.QWidget):
             self.phase_xy_limits = tuple(l_list)
             
     def set_text_phase_yx(self, text):
+        text = self.ylimp_yx_edit.text()
         if text =='None':
             return
         text = text.replace('(', '').replace(')', '')
@@ -1502,6 +1577,7 @@ class PlotSettings(QtGui.QWidget):
             self.phase_yx_limits = tuple(l_list)
             
     def set_text_phase_yy(self, text):
+        text = self.ylimp_yy_edit.text()
         if text =='None':
             return
         text = text.replace('(', '').replace(')', '')
@@ -1517,7 +1593,25 @@ class PlotSettings(QtGui.QWidget):
         if len(l_list) == 2:
             self.phase_yy_limits = tuple(l_list)
             
-    def set_text_legend_pos(self, text):
+    def set_text_tipper_lim(self, text):
+        text = self.ytlim_yy_edit.text()
+        if text =='None':
+            return
+        text = text.replace('(', '').replace(')', '')
+        t_list = text.split(',')
+        if len(t_list) != 2:
+            print 'enter as (min, max)'
+        l_list = []
+        for txt in t_list:
+            try: 
+                l_list.append(float(txt))
+            except ValueError:
+                pass
+        if len(l_list) == 2:
+            self.tipper_limits = tuple(l_list)
+            
+    def set_text_legend_pos(self):
+        text = self.legend_pos_edit.text()
         if text =='None':
             return
         text = text.replace('(', '').replace(')', '')
@@ -1532,6 +1626,17 @@ class PlotSettings(QtGui.QWidget):
                 pass
         if len(l_list) == 2:
             self.legend_pos = tuple(l_list)
+            
+    def set_z_err_inc(self):
+        err = float(str(self.z_err_inc_edit.text()))/100.
+        self.z_err_increase = err
+        self.z_err_inc_edit.setText('{0:.2f}'.format(err*100.))
+        
+    def set_t_err_inc(self):
+        err = float(str(self.t_err_inc_edit.text()))/100.
+        self.t_err_increase = err
+        self.t_err_inc_edit.setText('{0:.2f}'.format(err*100.))
+        
             
     def update_settings(self):
         self.settings_updated.emit()

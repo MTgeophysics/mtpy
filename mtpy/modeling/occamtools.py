@@ -2575,7 +2575,7 @@ class Occam2DData:
                        stationlst=None, title=None, thetar=0, resxyerr=10,
                        resyxerr=10, phasexyerr=5, phaseyxerr=5, ss=3*' ', 
                        string_fmt='%+2.6f', freqstep=1, plotyn='y', 
-                       lineori='ew', proj_strike='yes', tippererr=None,
+                       lineori='ew', proj_strike='yes', tipper_err=None,
                        ftol=.05):
         """
         Make a data file that Occam can read.  At the moment the inversion line
@@ -2670,7 +2670,7 @@ class Occam2DData:
                               'no' to project the line on the best fitting line
                                    through the stations.
             
-            **tippererr** : error for tipper in percent.  If this value is 
+            **tipper_err** : error for tipper in percent.  If this value is 
                             entered than the tipper will be included in the 
                             inversion, if the value is None than the tipper 
                             will not be included. 
@@ -2747,7 +2747,7 @@ class Occam2DData:
                     if freq[0]<freq[-1]:
                         freq = freq[::-1]
                         z = z1.Z.z[::-1,:,:]
-                        zvar = z1.Z.zerr[::-1,:,:]
+                        zvar = z1.Z.z_err[::-1,:,:]
                         if z1.Tipper.tipper is not None:
                             tip = z1.Tipper.tipper[::-1,:,:]
                             tipvar = z1.Tipper.tipper_err[::-1,:]
@@ -2756,7 +2756,7 @@ class Occam2DData:
                                '{0}'.format(station))
                     else:
                         z = z1.Z.z
-                        zvar = z1.Z.zerr
+                        zvar = z1.Z.z_err
                         if z1.Tipper.tipper is not None:
                             tip = z1.Tipper.tipper
                             tipvar = z1.Tipper.tipper_err
@@ -2996,7 +2996,7 @@ class Occam2DData:
                     lresxy=np.log10(resxy)
                     
                     #if include the tipper
-                    if tippererr!=None:
+                    if tipper_err!=None:
                         if tip[jj,0,0].real==0.0 or tip[jj,0,1]==0.0:
                             tipyn='n'
                         else:
@@ -3013,7 +3013,7 @@ class Occam2DData:
                                       np.cos(tipphii)
                                       
                             #error of tipper is a decimal percentage
-                            projtiperr=tippererr/100.
+                            projtiperr=tipper_err/100.
                             
                             tipyn='y'
                             
@@ -3028,7 +3028,7 @@ class Occam2DData:
                                         string_fmt % lresyx+ss+string_fmt % lresyxerr+'\n')
                         reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'6'+ss+
                                         string_fmt % phaseyx +ss+string_fmt % dphaseyxerr+'\n')
-                        if tippererr!=None and tipyn=='y':
+                        if tipper_err!=None and tipyn=='y':
                             reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'3'+ss+
                                         string_fmt % projtipr +ss+string_fmt % projtiperr+'\n')
                             reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'4'+ss+
@@ -3038,7 +3038,7 @@ class Occam2DData:
                                         string_fmt % lresyx +ss+string_fmt % lresyxerr+'\n')
                         reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'6'+ss+
                                         string_fmt % phaseyx +ss+string_fmt % dphaseyxerr+'\n')
-                        if tippererr!=None and tipyn=='y':
+                        if tipper_err!=None and tipyn=='y':
                             reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'3'+ss+
                                         string_fmt % projtipr +ss+string_fmt % projtiperr+'\n')
                             reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'4'+ss+
@@ -3048,7 +3048,7 @@ class Occam2DData:
                                         string_fmt % lresxy+ss+string_fmt % lresxyerr+'\n')
                         reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'2'+ss+
                                         string_fmt % phasexy+ss+string_fmt % dphasexyerr+'\n')
-                        if tippererr!=None and tipyn=='y':
+                        if tipper_err!=None and tipyn=='y':
                             reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'3'+ss+
                                         string_fmt % projtipr +ss+string_fmt % projtiperr+'\n')
                             reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'4'+ss+
@@ -3110,7 +3110,7 @@ class Occam2DData:
                                 lresxy=np.log10(resxy)
                                 
                                 #if include the tipper
-                                if tippererr!=None:
+                                if tipper_err!=None:
                                     if tip[jj,0].real==0.0 or tip[jj,1]==0.0:
                                         tipyn='n'
                                     else:
@@ -3125,7 +3125,7 @@ class Occam2DData:
                                                   np.cos(tipphii)
                                                   
                                         #error of tipper is a decimal percentage
-                                        projtiperr=tippererr/100.
+                                        projtiperr=tipper_err/100.
                                         
                                         tipyn='y'
                                         
@@ -3140,7 +3140,7 @@ class Occam2DData:
                                                     string_fmt % lresyx+ss+string_fmt % lresyxerr+'\n')
                                     reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'6'+ss+
                                                     string_fmt % phaseyx +ss+string_fmt % dphaseyxerr+'\n')
-                                    if tippererr!=None and tipyn=='y':
+                                    if tipper_err!=None and tipyn=='y':
                                         reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'3'+ss+
                                                     string_fmt % projtipr +ss+string_fmt % projtiperr+'\n')
                                         reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'4'+ss+
@@ -3150,7 +3150,7 @@ class Occam2DData:
                                                     string_fmt % lresyx +ss+string_fmt % lresyxerr+'\n')
                                     reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'6'+ss+
                                                     string_fmt % phaseyx +ss+string_fmt % dphaseyxerr+'\n')
-                                    if tippererr!=None and tipyn=='y':
+                                    if tipper_err!=None and tipyn=='y':
                                         reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'3'+ss+
                                                     string_fmt % projtipr +ss+string_fmt % projtiperr+'\n')
                                         reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'4'+ss+
@@ -3160,7 +3160,7 @@ class Occam2DData:
                                                     string_fmt % lresxy+ss+string_fmt % lresxyerr+'\n')
                                     reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'2'+ss+
                                                     string_fmt % phasexy+ss+string_fmt % dphasexyerr+'\n')
-                                    if tippererr!=None and tipyn=='y':
+                                    if tipper_err!=None and tipyn=='y':
                                         reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'3'+ss+
                                                     string_fmt % projtipr +ss+string_fmt % projtiperr+'\n')
                                         reslst.append(ss+str(kk+1)+ss+str(nn)+ss+'4'+ss+
@@ -3348,7 +3348,7 @@ class Occam2DData:
             
     def rewrite2DdataFile(self,edipath=None,thetar=0,resxyerr='prev',
                           resyxerr='prev',phasexyerr='prev',phaseyxerr='prev',
-                          tippererr=None,mmode='both',flst=None,
+                          tipper_err=None,mmode='both',flst=None,
                           removestation=None,savepath=None):
         """
         rewrite2DDataFile will rewrite an existing data file so you can 
@@ -3381,7 +3381,7 @@ class Occam2DData:
                              error for TM mode phase (percent) or 'data' 
                              for data or 'prev' to take errors from data file.
                         
-            **tippererr** : float 
+            **tipper_err** : float 
                             error for tipper (percent) input only if you want
                             to invert for the tipper or 'data' for data errors
                             or prev to take errors from data file.
@@ -3537,7 +3537,7 @@ class Occam2DData:
                         lresxy=np.log10(resxy)
                         
                         #if include the tipper
-                        if tippererr!=None:
+                        if tipper_err!=None:
                             if tip[nn,0]==0.0 or tip[nn,1]==0.0:
                                 tipyn='n'
                             else:
@@ -3554,7 +3554,7 @@ class Occam2DData:
                                           np.cos(tipphii)
                                           
                                 #error of tipper is a decimal percentage
-                                projtiperr=tippererr/100.
+                                projtiperr=tipper_err/100.
                                 
                                 tipyn='y'
                             
@@ -3573,7 +3573,7 @@ class Occam2DData:
                             if rpdict[station]['phaseyx'][0,jj-1]!=0.0:
                                 reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
                                             string_fmt % phaseyx+ss+string_fmt % dphaseyxerr+'\n')
-                            if tippererr!=None and tipyn=='y':
+                            if tipper_err!=None and tipyn=='y':
                                 if rpdict[station]['realtip'][0,jj-1]!=0.0:
                                     reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
                                                 string_fmt % projtipr+ss+string_fmt % projtiperr+
@@ -3589,7 +3589,7 @@ class Occam2DData:
                             if rpdict[station]['phaseyx'][0,jj-1]!=0.0:
                                 reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
                                             string_fmt % phaseyx+ss+string_fmt % dphaseyxerr+'\n')
-                            if tippererr!=None and tipyn=='y':
+                            if tipper_err!=None and tipyn=='y':
                                 if rpdict[station]['realtip'][0,jj-1]!=0.0:
                                     reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
                                                 string_fmt % projtipr+ss+string_fmt % projtiperr+
@@ -3605,7 +3605,7 @@ class Occam2DData:
                             if rpdict[station]['phasexy'][0,jj-1]!=0.0:
                                 reslst.append(ss+str(kk)+ss+str(jj)+ss+'2'+ss+
                                             string_fmt % phasexy+ss+string_fmt % dphasexyerr+'\n')
-                            if tippererr!=None and tipyn=='y':
+                            if tipper_err!=None and tipyn=='y':
                                 if rpdict[station]['realtip'][0,jj-1]!=0.0:
                                     reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
                                                 string_fmt % projtipr+ss+string_fmt % projtiperr+
@@ -3658,9 +3658,9 @@ class Occam2DData:
                         dphaseyxerr=np.repeat((phaseyxerr/100.)*57/2.,nr)
                     srp['phaseyx'][1,:]=dphaseyxerr
                 
-                if tippererr!=None:
+                if tipper_err!=None:
                     #error of tipper is a decimal percentage
-                    projtiperr=tippererr/100.
+                    projtiperr=tipper_err/100.
                     srp['realtip'][1,:]=np.repeat(projtiperr,nr)
                     srp['imagtip'][1,:]=np.repeat(projtiperr,nr)
                 
@@ -3683,7 +3683,7 @@ class Occam2DData:
                             reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
                                         string_fmt % srp['phaseyx'][0,jj-1]+ss+
                                         string_fmt % srp['phaseyx'][1,jj-1]+'\n')
-                        if tippererr!=None:
+                        if tipper_err!=None:
                             if srp['realtip'][0,jj-1]!=0.0:
                                 reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
                                         string_fmt % srp['realtip'][0,jj-1]+ss+
@@ -3701,7 +3701,7 @@ class Occam2DData:
                             reslst.append(ss+str(kk)+ss+str(jj)+ss+'6'+ss+
                                         string_fmt % srp['phaseyx'][0,jj-1]+ss+
                                         string_fmt % srp['phaseyx'][1,jj-1]+'\n')
-                        if tippererr!=None:
+                        if tipper_err!=None:
                             if srp['realtip'][0,jj-1]!=0.0:
                                 reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
                                         string_fmt % srp['realtip'][0,jj-1]+ss+
@@ -3719,7 +3719,7 @@ class Occam2DData:
                             reslst.append(ss+str(kk)+ss+str(jj)+ss+'2'+ss+
                                         string_fmt % srp['phasexy'][0,jj-1]+ss+
                                         string_fmt % srp['phasexy'][1,jj-1]+'\n')
-                        if tippererr!=None:
+                        if tipper_err!=None:
                             if srp['realtip'][0,jj-1]!=0.0:
                                 reslst.append(ss+str(kk)+ss+str(jj)+ss+'3'+ss+
                                         string_fmt % srp['realtip'][0,jj-1]+ss+

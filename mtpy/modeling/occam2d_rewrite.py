@@ -33,14 +33,8 @@ Functions:
 import numpy as np
 import scipy as sp
 from scipy.stats import mode
-import sys
 import os
 import os.path as op
-import subprocess
-import shutil
-import fnmatch
-import datetime
-from operator import itemgetter
 import time
 import matplotlib.colorbar as mcb
 from matplotlib.colors import Normalize
@@ -48,24 +42,11 @@ from matplotlib.ticker import MultipleLocator
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import scipy.interpolate as spi
-
-import mtpy.core.edi as MTedi
 import mtpy.core.mt as mt
 import mtpy.core.z as mtz
 import mtpy.modeling.winglinktools as MTwl
-import mtpy.utils.conversions as MTcv
-import mtpy.utils.filehandling as MTfh
-import mtpy.utils.configfile as MTcf
 import mtpy.analysis.geometry as MTgy
-import mtpy.utils.exceptions as MTex
-import scipy.interpolate as si
 from mtpy.imaging.mtplottools import plot_errorbar
-
-
-reload(MTcv)
-reload(MTcf)
-reload(MTedi)
-reload(MTex)
 
 #==============================================================================
 
@@ -1134,7 +1115,7 @@ class Profile():
             print '='*72
             print ('Rotated Z and Tipper to be perpendicular  with '
                    '{0:+.2f} profile angle'.format((self.profile_angle-90)%180)) 
-            print ('Profile angle is'
+            print ('Profile angle is '
                    '{0:+.2f} degrees E of N'.format(self.profile_angle))        
             print '='*72
         
@@ -2107,6 +2088,7 @@ class Data(Profile):
         self.freq_min = kwargs.pop('freq_min', None)
         self.freq_max = kwargs.pop('freq_max', None)
         self.freq_num = kwargs.pop('freq_num', None)
+        self.freq_tol = kwargs.pop('freq_tol', None)
 
         self.occam_format = 'OCCAM2MTDATA_1.0'
         self.title = 'MTpy-OccamDatafile'
@@ -2304,6 +2286,9 @@ class Data(Profile):
             if self.freq is not None:
                 return
 
+        if self.freq is not None:
+            return
+            
         #get all frequencies from all edi files
         lo_all_freqs = []
         for edi in self.edi_list:
@@ -2389,32 +2374,53 @@ class Data(Profile):
         #loop over mt object in edi_list and use a counter starting at 1 
         #because that is what occam starts at.
         for s_index, edi in enumerate(self.edi_list):
+
             if self.interpolate_freq:
-                mto = mt.MT(z_object=edi.Z)
-                new_Z,new_Tipper = mto.interpolate(self.freq,bounds_error=False)
-                if new_Z is not None:
-                    edi.Z = mtz.Z(z_array=new_Z.z,zerr_array=new_Z.zerr,freq=self.freq)
-                if new_Tipper is not None:
-                    edi.Tipper = mtz.Tipper(tipper_array=new_Tipper.tipper,tippererr_array=new_Tipper.tippererr,freq=self.freq)            
-            
-            rho = edi.Z.resistivity
-            phi = edi.Z.phase
-            rho_err = edi.Z.resistivity_err
-            station_freqs = edi.Z.freq
-            tipper = edi.Tipper.tipper
-            tipper_err = edi.Tipper.tippererr
+                station_freq = edi.Z.freq
+                interp_freq = self.freq[np.where((self.freq >= station_freq.min()) &
+                                               (self.freq <= station_freq.max()))]
+                # interpolate data onto given frequency list
+                z_interp, t_interp = edi.interpolate(interp_freq)
+                z_interp._compute_res_phase()
+                
+                rho = z_interp.resistivity
+                phi = z_interp.phase
+                rho_err = z_interp.resistivity_err
+                if t_interp is not None:
+                    tipper = t_interp.tipper
+                    tipper_err = t_interp.tipper_err
+                else:
+                    tipper = None
+                    tipper_err = None
+            else:
+                station_freq = edi.Z.freq
+                rho = edi.Z.resistivity
+                phi = edi.Z.phase
+                tipper = edi.Tipper.tipper
+                tipper_err = edi.Tipper.tipper_err
             
             self.data[s_index]['station'] = edi.station
             self.data[s_index]['offset'] = edi.offset
 
             for freq_num, frequency in enumerate(self.freq):
-                #skip, if the listed frequency is not available for the station
-                if not (frequency in station_freqs):
+                if self.freq_tol is not None:
+                    try:
+                        f_index = np.where((station_freq >= frequency*(1-self.freq_tol)) &
+                                           (station_freq <= frequency*(1+self.freq_tol)))[0][0] 
+                                           
+                    except IndexError:
+                        f_index = None
+                else:
+                    #skip, if the listed frequency is not available for the station
+                    if (frequency in interp_freq):
+                        #find the respective frequency index for the station     
+                        f_index = np.abs(interp_freq-frequency).argmin()
+                    else:
+                        f_index = None
+
+                if f_index == None:
                     continue
-
-                #find the respective frequency index for the station     
-                f_index = np.abs(station_freqs-frequency).argmin()
-
+                
                 #--> get te resistivity
                 self.data[s_index]['te_res'][0, freq_num] = rho[f_index, 0, 1]
                 #compute error                
@@ -2663,7 +2669,7 @@ class Data(Profile):
         data_lines.append('{0:<18}{1}\n'.format('FREQUENCIES:', 
                                                 self.freq.shape[0]))
         for ff in self.freq:
-            data_lines.append('   {0:.6f}\n'.format(ff))
+            data_lines.append('   {0:<10.6e}\n'.format(ff))
             
         #--> data
         data_lines.append('{0:<18}{1}\n'.format('DATA BLOCKS:', 

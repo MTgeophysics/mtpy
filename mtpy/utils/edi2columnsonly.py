@@ -54,7 +54,7 @@ def convert2columns(fn):
 		for j in range(2):
 			for k in range(2):
 				outstring += '\t{0:.4f}  {1:.4f}  {2:.4f}  '.format(float(np.real(e_object.Z.z[i,j,k])),
-					float(np.imag(e_object.Z.z[i,j,k])),e_object.Z.zerr[i,j,k])
+					float(np.imag(e_object.Z.z[i,j,k])),e_object.Z.z_err[i,j,k])
 		outstring += '\n'
 
 	with open(outfn,'w') as F:

@@ -307,14 +307,14 @@ class PlotStrike2D(object):
             #------------get strike from phase tensor strike angle---------------
             pt = mt.get_PhaseTensor()
             az = (90-pt.azimuth[0][index_2d])%360
-            azerr = pt.azimuth[1][index_2d]
+            az_err = pt.azimuth[1][index_2d]
             
             #need to add 90 because pt assumes 0 is north and 
             #negative because measures clockwise.
             
             #put an error max on the estimation of strike angle
             if self.pt_error_floor:
-                az[np.where(azerr>self.pt_error_floor)] = 0.0
+                az[np.where(az_err>self.pt_error_floor)] = 0.0
 
             
             #make a dictionary of strikes with keys as period

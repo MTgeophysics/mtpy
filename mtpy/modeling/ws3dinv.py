@@ -77,7 +77,6 @@ from matplotlib.colors import Normalize
 import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
 import mtpy.core.z as mtz
-import mtpy.core.edi as mtedi
 import mtpy.core.mt as mt
 import mtpy.imaging.mtplottools as mtplottools
 import matplotlib.widgets as widgets
@@ -87,8 +86,6 @@ import mtpy.modeling.winglink as wl
 import mtpy.utils.exceptions as mtex
 import mtpy.analysis.pt as mtpt
 import mtpy.imaging.mtcolors as mtcl
-
-import mtpy.utils.latlongutmconversion as ll2utm
 
 try:
     from evtk.hl import gridToVTK, pointsToVTK
@@ -344,7 +341,7 @@ class WSData(object):
                 self.data[ss]['z_data'][jj, :] = interp_z.z[kk, :, :]*zconv
                 # get errors
                 if self.z_err == 'data':
-                    self.data[ss]['z_data_err'][jj, :] = interp_z.zerr[kk, :, :]*zconv
+                    self.data[ss]['z_data_err'][jj, :] = interp_z.z_err[kk, :, :]*zconv
                 else:
                     self.data[ss]['z_data_err'][jj, :] = interp_z.z[kk]*self.z_err*zconv 
 
@@ -367,7 +364,7 @@ class WSData(object):
 #                        #get errors 
 #                        if self.z_err == 'data':
 #                            self.data[ss]['z_data_err'][ff, :] = \
-#                                                            zconv*z1.Z.zerr[kk]
+#                                                            zconv*z1.Z.z_err[kk]
 #                        else:
 #                            self.data[ss]['z_data_err'][ff, :] = \
 #                                                    zconv*z1.Z.z[kk]*self.z_err
@@ -1046,13 +1043,11 @@ class WSMesh(object):
                                                      ('elev', np.float)])
             #get station locations in meters
             for ii, edi in enumerate(self.edi_list):
-                zz = mtedi.Edi()
-                zz.readfile(edi)
-                zone, east, north = ll2utm.LLtoUTM(23, zz.lat, zz.lon)
-                self.station_locations[ii]['station'] = zz.station
-                self.station_locations[ii]['east'] = east
-                self.station_locations[ii]['north'] = north
-                self.station_locations[ii]['elev'] = zz.elev
+                mt_obj = mt.MT(edi)
+                self.station_locations[ii]['station'] = mt_obj.station
+                self.station_locations[ii]['east'] = mt_obj.east
+                self.station_locations[ii]['north'] = mt_obj.north
+                self.station_locations[ii]['elev'] = mt_obj.elev
              
             #remove the average distance to get coordinates in a relative space
             self.station_locations['east'] -= self.station_locations['east'].mean()
@@ -3092,7 +3087,7 @@ class PlotResponse(object):
                                                                 1.0+1.0j
             
             #convert to apparent resistivity and phase
-            z_object =  mtz.Z(z_array=data_z, zerr_array=data_z_err, 
+            z_object =  mtz.Z(z_array=data_z, z_err_array=data_z_err, 
                               freq=1./period)
                               
             rp = mtplottools.ResPhase(z_object)
@@ -3160,23 +3155,23 @@ class PlotResponse(object):
                         erxy = self.plot_errorbar(axrxy, 
                                                   period[nzxy], 
                                                   z_object.z[nzxy,0,1].real, 
-                                                  z_object.zerr[nzxy,0,1].real,
+                                                  z_object.z_err[nzxy,0,1].real,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axryx, 
                                                   period[nzyx], 
                                                   z_object.z[nzyx,1,0].real, 
-                                                  z_object.zerr[nzyx,1,0].real,
+                                                  z_object.z_err[nzyx,1,0].real,
                                                   self.ctmd, self.mtmd)
                         #plot phase                         
                         erxy = self.plot_errorbar(axpxy, 
                                                   period[nzxy], 
                                                   z_object.z[nzxy,0,1].imag, 
-                                                  z_object.zerr[nzxy,0,1].imag,
+                                                  z_object.z_err[nzxy,0,1].imag,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axpyx, 
                                                   period[nzyx], 
                                                   z_object.z[nzyx,1,0].imag, 
-                                                  z_object.zerr[nzyx,1,0].imag,
+                                                  z_object.z_err[nzyx,1,0].imag,
                                                   self.ctmd, self.mtmd)
                                               
                     ax_list = [axrxy, axryx, axpxy, axpyx]
@@ -3242,43 +3237,43 @@ class PlotResponse(object):
                         erxx = self.plot_errorbar(axrxx, 
                                                   period[nzxx], 
                                                   z_object.z[nzxx,0,0].real, 
-                                                  z_object.zerr[nzxx,0,0].real,
+                                                  z_object.z_err[nzxx,0,0].real,
                                                   self.cted, self.mted)
                         erxy = self.plot_errorbar(axrxy, 
                                                   period[nzxy], 
                                                   z_object.z[nzxy,0,1].real, 
-                                                  z_object.zerr[nzxy,0,1].real,
+                                                  z_object.z_err[nzxy,0,1].real,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axryx, 
                                                   period[nzyx], 
                                                   z_object.z[nzyx,1,0].real, 
-                                                  z_object.zerr[nzyx,1,0].real,
+                                                  z_object.z_err[nzyx,1,0].real,
                                                   self.ctmd, self.mtmd)
                         eryy = self.plot_errorbar(axryy, 
                                                   period[nzyy], 
                                                   z_object.z[nzyy,1,1].real, 
-                                                  z_object.zerr[nzyy,1,1].real,
+                                                  z_object.z_err[nzyy,1,1].real,
                                                   self.ctmd, self.mtmd)
                         #plot phase                         
                         erxx = self.plot_errorbar(axpxx, 
                                                   period[nzxx], 
                                                   z_object.z[nzxx,0,0].imag, 
-                                                  z_object.zerr[nzxx,0,0].imag,
+                                                  z_object.z_err[nzxx,0,0].imag,
                                                   self.cted, self.mted)
                         erxy = self.plot_errorbar(axpxy, 
                                                   period[nzxy], 
                                                   z_object.z[nzxy,0,1].imag, 
-                                                  z_object.zerr[nzxy,0,1].imag,
+                                                  z_object.z_err[nzxy,0,1].imag,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axpyx, 
                                                   period[nzyx], 
                                                   z_object.z[nzyx,1,0].imag, 
-                                                  z_object.zerr[nzyx,1,0].imag,
+                                                  z_object.z_err[nzyx,1,0].imag,
                                                   self.ctmd, self.mtmd)
                         eryy = self.plot_errorbar(axpyy, 
                                                   period[nzyy], 
                                                   z_object.z[nzyy,1,1].imag, 
-                                                  z_object.zerr[nzyy,1,1].imag,
+                                                  z_object.z_err[nzyy,1,1].imag,
                                                   self.ctmd, self.mtmd)
                                         
                     ax_list = [axrxx, axrxy, axryx, axryy, 
@@ -3384,23 +3379,23 @@ class PlotResponse(object):
                         erxy = self.plot_errorbar(axrxy, 
                                                   period[nzxy], 
                                                   z_object.z[nzxy,0,1].real, 
-                                                  z_object.zerr[nzxy,0,1].real,
+                                                  z_object.z_err[nzxy,0,1].real,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axrxy, 
                                                   period[nzxy], 
                                                   z_object.z[nzxy,1,0].real, 
-                                                  z_object.zerr[nzxy,1,0].real,
+                                                  z_object.z_err[nzxy,1,0].real,
                                                   self.ctmd, self.mtmd)
                         #plot phase                         
                         erxy = self.plot_errorbar(axpxy, 
                                                   period[nzxy], 
                                                   z_object.z[nzxy,0,1].imag, 
-                                                  z_object.zerr[nzxy,0,1].imag,
+                                                  z_object.z_err[nzxy,0,1].imag,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axpxy, 
                                                   period[nzyx], 
                                                   z_object.z[nzyx,1,0].imag, 
-                                                  z_object.zerr[nzyx,1,0].imag,
+                                                  z_object.z_err[nzyx,1,0].imag,
                                                   self.ctmd, self.mtmd)
                         
                     ax_list = [axrxy, axpxy]
@@ -3461,43 +3456,43 @@ class PlotResponse(object):
                         erxx = self.plot_errorbar(axrxx, 
                                                   period[nzxx], 
                                                   z_object.z[nzxx,0,0].real, 
-                                                  z_object.zerr[nzxx,0,0].real,
+                                                  z_object.z_err[nzxx,0,0].real,
                                                   self.cted, self.mted)
                         erxy = self.plot_errorbar(axrxy, 
                                                   period[nzxy], 
                                                   z_object.z[nzxy,0,1].real, 
-                                                  z_object.zerr[nzxy,0,1].real,
+                                                  z_object.z_err[nzxy,0,1].real,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axrxy, 
                                                   period[nzyx], 
                                                   z_object.z[nzyx,1,0].real, 
-                                                  z_object.zerr[nzyx,1,0].real,
+                                                  z_object.z_err[nzyx,1,0].real,
                                                   self.ctmd, self.mtmd)
                         eryy = self.plot_errorbar(axrxx, 
                                                   period[nzyy], 
                                                   z_object.z[nzyy,1,1].real, 
-                                                  z_object.zerr[nzyy,1,1].real,
+                                                  z_object.z_err[nzyy,1,1].real,
                                                   self.ctmd, self.mtmd)
                         #plot phase                         
                         erxx = self.plot_errorbar(axpxx, 
                                                   period[nzxx], 
                                                   z_object.z[nzxx,0,0].imag, 
-                                                  z_object.zerr[nzxx,0,0].imag,
+                                                  z_object.z_err[nzxx,0,0].imag,
                                                   self.cted, self.mted)
                         erxy = self.plot_errorbar(axpxy, 
                                                   period[nzxy], 
                                                   z_object.z[nzxy,0,1].imag, 
-                                                  z_object.zerr[nzxy,0,1].imag,
+                                                  z_object.z_err[nzxy,0,1].imag,
                                                   self.cted, self.mted)
                         eryx = self.plot_errorbar(axpxy, 
                                                   period[nzyx], 
                                                   z_object.z[nzyx,1,0].imag, 
-                                                  z_object.zerr[nzyx,1,0].imag,
+                                                  z_object.z_err[nzyx,1,0].imag,
                                                   self.ctmd, self.mtmd)
                         eryy = self.plot_errorbar(axpxx, 
                                                   period[nzyy], 
                                                   z_object.z[nzyy,1,1].imag, 
-                                                  z_object.zerr[nzyy,1,1].imag,
+                                                  z_object.z_err[nzyy,1,1].imag,
                                                   self.ctmd, self.mtmd)
                                               
                     ax_list = [axrxy, axrxx, axpxy, axpxx]
@@ -3572,7 +3567,7 @@ class PlotResponse(object):
                     resp_z = self.resp_object[rr].z_resp[jj]
                     resp_z_err = (data_z-resp_z)/(data_z_err)
                     resp_z_object =  mtz.Z(z_array=resp_z, 
-                                           zerr_array=resp_z_err, 
+                                           z_err_array=resp_z_err, 
                                            freq=1./period)
     
                     rrp = mtplottools.ResPhase(resp_z_object)
