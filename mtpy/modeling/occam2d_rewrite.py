@@ -1073,7 +1073,6 @@ class Profile():
         #profile_line = sp.polyfit(lo_easts, lo_norths, 1)
         if self.profile_angle is None:
             self.profile_angle = (90-(np.arctan(profile_line[0])*180/np.pi))%180
-            
         #rotate Z according to strike angle, 
 
         #if strike was explicitely given, use that value!
@@ -2315,14 +2314,14 @@ class Data(Profile):
         all_freqs = np.array(sorted(list(set(lo_all_freqs)), reverse=True))
 
         #--> get min and max values if none are given
-        if (self.freq_min is None) or (self.freq_min < all_freqs.min()) or\
-           (self.freq_min > all_freqs.max()):
+        if ((self.freq_min is None) or (self.freq_min < all_freqs.min()) or\
+           (self.freq_min > all_freqs.max())):
             self.freq_min = all_freqs.min()
             
-        if (self.freq_max is None) or (self.freq_max > all_freqs.max()) or\
-           (self.freq_max < all_freqs.max()):
+        if ((self.freq_max is None) or (self.freq_max > all_freqs.max()) or\
+           (self.freq_max < all_freqs.min())):
             self.freq_max = all_freqs.max()
-        
+            
         #--> get all frequencies within the given range
         self.freq = all_freqs[np.where((all_freqs >= self.freq_min) & 
                                        (all_freqs <= self.freq_max))]
