@@ -909,8 +909,11 @@ class Data(object):
 
                                 if abs_err == 0.0:
                                     abs_err = 1e3
-                                    print ('error at {0} is 0 for period {1}'.format(
-                                            sta, per)+'set to 1e3')
+                                    print('''error at {0} is 0 for period {1} \n
+                                            for {2}({3}, {4}) set to 1e3\n
+                                            data = {5:.4e}+j{6:.4e}'''.format(
+                                            sta, per, comp, z_ii, z_jj, zz.real, 
+                                            zz.imag))
                                     if self.units == 'ohm':
                                         abs_err /= 796.
 

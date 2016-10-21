@@ -215,8 +215,7 @@ class Edi(object):
         if os.path.isfile(self.edi_fn) is False:
             raise MTex.MTpyError_EDI('No edi file input, check edi_fn')
             
-        with open(self.edi_fn, 'r') as fid:
-            lines = fid.readlines()[self.Data_sect.line_num+2:]
+        lines = self._edi_lines[self.Data_sect.line_num:]
         
         if self.Data_sect.data_type == 'spectra':
             print 'Converting Spectra to Impedance and Tipper'
@@ -235,7 +234,8 @@ class Edi(object):
         data_dict = {}
         data_find = False
         for line in data_lines:
-            if line.find('>') >= 0 and line.find('!') == -1:
+            line = line.strip()
+            if '>' in line and '!' not in line:
                 line_list = line[1:].strip().split()
                 key = line_list[0].lower()
                 if key[0] == 'z' or key[0] == 't' or key == 'freq':
@@ -245,7 +245,7 @@ class Edi(object):
                     data_find = False
                 
         
-            elif data_find == True and line.find('>') == -1 and line.find('!') == -1:
+            elif data_find == True and '>' not in line and '!' not in line:
                 d_lines = line.strip().split()
                 for ii, dd in enumerate(d_lines):
                     # check for empty values and set them to 0, check for any
@@ -886,52 +886,36 @@ class Header(object):
              
         self.header_list = []
         head_find = False
-        count = 0
         
         # read in file line by line
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) == False:
                 print 'Could not find {0}, check path'.format(self.edi_fn)
             with open(self.edi_fn, 'r') as fid:
-                for line in fid:
-                    if line.find('>') == 0:
-                        count += 1
-                        if line.lower().find('head') > 0:
-                            head_find = True
-                        else:
-                            head_find = False
-                        if count == 2 and head_find == False:
-                            break
-                    elif count == 1 and line.find('>') != 0 and head_find == True:
-                        # skip any blank lines
-                        if len(line.strip()) > 2:
-                            line = line.strip().replace('"', '')
-                            h_list = line.split('=')
-                            if len(h_list) == 2:
-                                key = h_list[0].strip()
-                                value = h_list[1].strip()
-                                self.header_list.append('{0}={1}'.format(key, value))
-        
+                self.edi_lines = fid.readlines()
+
         # read in list line by line and then truncate
-        elif self.edi_lines is not None:
-            for ii, line in enumerate(self.edi_lines):
-                if line.find('>') == 0:
-                    count += 1
-                    if line.lower().find('head') > 0:
-                        head_find = True
-                    else:
-                        head_find = False
-                    if count == 2 and head_find == False:
-                        break
-                elif count == 1 and line.find('>') != 0 and head_find == True:
-                    # skip any blank lines
-                    if len(line.strip()) > 2:
-                        line = line.strip().replace('"', '')
-                        h_list = line.split('=')
-                        if len(h_list) == 2:
-                            key = h_list[0].strip()
-                            value = h_list[1].strip()
-                            self.header_list.append('{0}={1}'.format(key, value))
+        for ii, line in enumerate(self.edi_lines):
+            # check for header label
+            if '>' in line and 'head' in line.lower():
+                head_find = True   
+            # if the header line has been found then the next >
+            # should be the next section so stop
+            elif '>' in line:
+                if head_find is True:
+                    break
+                else:
+                    pass
+            # get the header information into a list
+            elif head_find == True:
+                # skip any blank lines
+                if len(line.strip()) > 2:
+                    line = line.strip().replace('"', '')
+                    h_list = line.split('=')
+                    if len(h_list) == 2:
+                        key = h_list[0].strip()
+                        value = h_list[1].strip()
+                        self.header_list.append('{0}={1}'.format(key, value))
     
     def read_header(self, header_list=None):
         """
@@ -1117,7 +1101,6 @@ class Information(object):
         info_find = False
         phoenix_file = False
         phoenix_list_02 = []
-        count = 0
         
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) is False:
@@ -1125,44 +1108,25 @@ class Information(object):
                 return
                 
             with open(self.edi_fn, 'r') as fid:
-                for line in fid:
-                    if line.find('>') == 0:
-                        count += 1
-                        if line.lower().find('info') > 0:
-                            info_find = True
-                        else:
-                            info_find = False
-                        if count > 2 and info_find == False:
-                            break
-                    elif count > 1 and line.find('>') != 0 and info_find == True:
-                        if line.lower().find('run information') >= 0:
-                            phoenix_file = True
-                        if phoenix_file == True and len(line) > 40:
-                            self.info_list.append(line[0:37].strip())
-                            phoenix_list_02.append(line[38:].strip())
-                        else:
-                            if len(line.strip()) > 1:
-                                self.info_list.append(line.strip())
-                                
-        elif self.edi_lines is not None:
-            for ii, line in enumerate(self.edi_lines):
-                if line.find('>') == 0:
-                    count += 1
-                    if line.lower().find('info') > 0:
-                        info_find = True
-                    else:
-                        info_find = False
-                    if count > 2 and info_find == False:
-                        break
-                elif count > 1 and line.find('>') != 0 and info_find == True:
-                    if line.lower().find('run information') >= 0:
-                        phoenix_file = True
-                    if phoenix_file == True and len(line) > 40:
-                        self.info_list.append(line[0:37].strip())
-                        phoenix_list_02.append(line[38:].strip())
-                    else:
-                        if len(line.strip()) > 1:
-                            self.info_list.append(line.strip())
+                self.edi_lines = fid.readlines()
+                      
+        for ii, line in enumerate(self.edi_lines):
+            if '>' in line and 'info' in line.lower():
+                info_find = True
+            elif '>' in line:
+                if info_find is True:
+                    break
+                else:
+                    pass
+            elif info_find == True:
+                if line.lower().find('run information') >= 0:
+                    phoenix_file = True
+                if phoenix_file == True and len(line) > 40:
+                    self.info_list.append(line[0:37].strip())
+                    phoenix_list_02.append(line[38:].strip())
+                else:
+                    if len(line.strip()) > 1:
+                        self.info_list.append(line.strip())
                         
         self.info_list += phoenix_list_02
         # validate the information list
@@ -1211,7 +1175,7 @@ class Information(object):
             # get rid of empty lines
             lt = str(line).strip()
             if len(lt) > 1:
-                if line.find('>') == 0:
+                if '>' in line:
                     pass
                 else:
                     new_info_list.append(line.strip())
@@ -1334,7 +1298,6 @@ class DefineMeasurement(object):
             
         self.measurement_list = []
         meas_find = False
-        count = 0
              
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) is False:
@@ -1342,62 +1305,32 @@ class DefineMeasurement(object):
                 return
             
             with open(self.edi_fn, 'r') as fid:
-                for line in fid:
-                    if line.find('>=') == 0:
-                        count += 1
-                        if line.lower().find('definemeas') > 0:
-                            meas_find = True
-                        else:
-                            meas_find = False
-                        if count == 2 and meas_find == False:
-                            break
-                    elif count == 1 and line.find('>') != 0 and meas_find == True:
-                        line = line.strip()
-                        if len(line) > 2:
-                            self.measurement_list.append(line.strip())
-                    
-                    # look for the >XMEAS parts
-                    elif count == 1 and line.find('>') == 0 and meas_find == True:
-                        if line.find('!') > 0:
-                            pass
-                        else:
-                            line_list = _validate_str_with_equals(line)
-                            m_dict = {}
-                            for ll in line_list:
-                                ll_list = ll.split('=')
-                                key = ll_list[0].lower()
-                                value = ll_list[1]
-                                m_dict[key] = value
-                            self.measurement_list.append(m_dict)
+                self.edi_lines = fid.readlines()
                         
-        elif self.edi_lines is not None:
-            for ii, line in enumerate(self.edi_lines):
-                if line.find('>=') == 0:
-                    count += 1
-                    if line.lower().find('definemeas') > 0:
-                        meas_find = True
-                    else:
-                        meas_find = False
-                    if count == 2 and meas_find == False:
-                        break
-                elif count == 1 and line.find('>') != 0 and meas_find == True:
-                    line = line.strip()
-                    if len(line) > 2:
-                        self.measurement_list.append(line.strip())
-                
-                # look for the >XMEAS parts
-                elif count == 1 and line.find('>') == 0 and meas_find == True:
-                    if line.find('!') > 0:
-                        pass
-                    else:
-                        line_list = _validate_str_with_equals(line)
-                        m_dict = {}
-                        for ll in line_list:
-                            ll_list = ll.split('=')
-                            key = ll_list[0].lower()
-                            value = ll_list[1]
-                            m_dict[key] = value
-                        self.measurement_list.append(m_dict)
+        for ii, line in enumerate(self.edi_lines):
+            if '>=' in line and 'definemeas' in line.lower():
+                meas_find = True
+            elif '>=' in line:
+                if meas_find is True:
+                    break
+            elif meas_find is True and '>' not in line:
+                line = line.strip()
+                if len(line) > 2:
+                    self.measurement_list.append(line.strip())
+            
+            # look for the >XMEAS parts
+            elif '>' in line and meas_find == True:
+                if line.find('!') > 0:
+                    pass
+                else:
+                    line_list = _validate_str_with_equals(line)
+                    m_dict = {}
+                    for ll in line_list:
+                        ll_list = ll.split('=')
+                        key = ll_list[0].lower()
+                        value = ll_list[1]
+                        m_dict[key] = value
+                    self.measurement_list.append(m_dict)
                         
     def read_define_measurement(self, measurement_list=None):
         """
@@ -1715,53 +1648,29 @@ class DataSection(object):
 
         self.data_sect_list = []
         data_sect_find = False
-        count = 0
         
         if self.edi_fn is not None:
+            if os.path.isfile(self.edi_fn) is False:
+                raise MTex.MTpyError_EDI('Could not find {0}. Check path'.format(self.edi_fn))
             with open(self.edi_fn) as fid:
-                if os.path.isfile(self.edi_fn) is False:
-                    raise MTex.MTpyError_EDI('Could not find {0}. Check path'.format(self.edi_fn))
-                
-                for ii, line in enumerate(fid):
-                    if line.find('>=') == 0:
-                        count += 1
-                        if line.lower().find('sect') > 0:
-                            data_sect_find = True
-                            self.line_num = ii
-                            if line.lower().find('spect') > 0:
-                                self.data_type = 'spectra'
-                            elif line.lower().find('mt') > 0:
-                                self.data_type = 'z'
-                        else:
-                            data_sect_find = False
-                        if count > 2 and data_sect_find == False:
-                            break
-                    elif count == 2 and line.find('>') != 0 and \
-                        data_sect_find == True:
-                        if len(line.strip()) > 2:
-                            self.data_sect_list.append(line.strip())
-                            
-        elif self.edi_lines is not None:
-            for ii, line in enumerate(self.edi_lines):
-                if line.find('>=') == 0:
-                    count += 1
-                    if line.lower().find('sect') > 0:
-                        data_sect_find = True
-                        self.line_num = ii
-                        if line.lower().find('spect') > 0:
-                            self.data_type = 'spectra'
-                        elif line.lower().find('mt') > 0:
-                            self.data_type = 'z'
-                    else:
-                        data_sect_find = False
-                    if count > 2 and data_sect_find == False:
-                        break
-                elif count == 2 and line.find('>') != 0 and \
-                    data_sect_find == True:
-                    if len(line.strip()) > 2:
-                        self.data_sect_list.append(line.strip())
+                self.edi_lines = fid.readlines()
 
-                        
+        for ii, line in enumerate(self.edi_lines):
+            if '>=' in line and 'sect' in line.lower():
+                data_sect_find = True
+                self.line_num = ii
+                if line.lower().find('spect') > 0:
+                    self.data_type = 'spectra'
+                elif line.lower().find('mt') > 0:
+                    self.data_type = 'z'
+            elif '>' in line and data_sect_find is True:
+                self.line_num = ii
+                break
+            
+            elif data_sect_find == True:
+                if len(line.strip()) > 2:
+                    self.data_sect_list.append(line.strip())
+                  
     def read_data_sect(self, data_sect_list=None):
         """
         read data section
@@ -1822,8 +1731,9 @@ def _validate_str_with_equals(input_string):
     Some software programs put spaces after the equals sign and that's not 
     cool.  So we make the string into a readable format
     """
+    input_string = input_string.strip()
     # remove the first >XXXXX 
-    if input_string.find('>') == 0:
+    if '>' in input_string:
         input_string = input_string[input_string.find(' '):]
         
     # check if there is a // at the end of the line
