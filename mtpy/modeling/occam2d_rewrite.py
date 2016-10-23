@@ -2390,19 +2390,28 @@ class Data(Profile):
         #because that is what occam starts at.
         for s_index, edi in enumerate(self.edi_list):
             if self.interpolate_freq:
-                mto = mt.MT(z_object=edi.Z)
-                new_Z,new_Tipper = mto.interpolate(self.freq,bounds_error=False)
-                if new_Z is not None:
-                    edi.Z = mtz.Z(z_array=new_Z.z,zerr_array=new_Z.zerr,freq=self.freq)
-                if new_Tipper is not None:
-                    edi.Tipper = mtz.Tipper(tipper_array=new_Tipper.tipper,tippererr_array=new_Tipper.tippererr,freq=self.freq)            
-            
-            rho = edi.Z.resistivity
-            phi = edi.Z.phase
-            rho_err = edi.Z.resistivity_err
-            station_freqs = edi.Z.freq
-            tipper = edi.Tipper.tipper
-            tipper_err = edi.Tipper.tippererr
+                station_freq = edi.Z.freq
+                interp_freq = self.freq[np.where((self.freq >= station_freq.min()) &
+                                               (self.freq <= station_freq.max()))]
+                # interpolate data onto given frequency list
+                z_interp, t_interp = edi.interpolate(interp_freq)
+                z_interp._compute_res_phase()
+                
+                rho = z_interp.resistivity
+                phi = z_interp.phase
+                rho_err = z_interp.resistivity_err
+                if t_interp is not None:
+                    tipper = t_interp.tipper
+                    tipper_err = t_interp.tipper_err
+                else:
+                    tipper = None
+                    tipper_err = None
+            else:
+                station_freqs = edi.Z.freq
+                rho = edi.Z.resistivity
+                phi = edi.Z.phase
+                tipper = edi.Tipper.tipper
+                tipper_err = edi.Tipper.tippererr
             
             self.data[s_index]['station'] = edi.station
             self.data[s_index]['offset'] = edi.offset
