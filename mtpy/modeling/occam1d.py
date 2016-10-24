@@ -231,17 +231,25 @@ class Data(object):
             rho_err = impz.resistivity_err
             phi = impz.phase
             phi_err = impz.phase_err
+            
+            # put tm mode phase in first quadrant as required by occam1d
+            if 'tm' in mode.lower():
+                phi += 180
 
             freq = impz.freq
             nf = len(freq)
             
             #get determinant resistivity and phase
             if 'det' in mode.lower():
-                zdet, zdet_err = np.abs(impz.det)
+                zdet, zdet_err = impz.det
                 zdet_err = np.abs(zdet_err)
                                    
-                rho = .2/freq*abs(zdet)
+                rho = .2/freq*np.abs(zdet)
+                # relative rho error **should** be equal to relative error in zdet
+                # (since determinant has same units as z**2)
+                rho_err = rho * (np.abs(zdet_err)/np.abs(zdet))
                 phi = np.rad2deg(np.arctan2((zdet**0.5).imag, (zdet**0.5).real))
+                phi_err = np.rad2deg(np.arctan(0.5*np.abs(zdet_err)/np.abs(zdet)))
 
 
 
@@ -359,6 +367,8 @@ class Data(object):
 
 #        data1 = np.abs(data1)
 #        data2 = np.abs(data2)
+        d1err_array = np.zeros(nf)
+        d2err_array = np.zeros(nf)
 
         for ii in range(nf):
             if 'te' in mode.lower():
@@ -434,10 +444,11 @@ class Data(object):
                     else:
                         if res_err == 'data':
                             if edi_file is not None:
-                                d1err, d2err = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real, 
-                                                                       zdet_err[ii],
-                                                                       zdet[ii].imag,
-                                                                       zdet_err[ii]) 
+                                d1err = data1_err[ii]
+#                                d1err, d2err = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real, 
+#                                                                       zdet_err[ii],
+#                                                                       zdet[ii].imag,
+#                                                                       zdet_err[ii]) 
                             else:
                                 d1err = rho_err[ii]
                         else:
@@ -445,10 +456,11 @@ class Data(object):
                             
                         if phase_err == 'data':
                             if edi_file is not None:
-                                d1err, d2err = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real, 
-                                                                       zdet_err[ii],
-                                                                       zdet[ii].imag,
-                                                                       zdet_err[ii])
+                                d2err = data2_err[ii]
+#                                d1err, d2err = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real, 
+#                                                                       zdet_err[ii],
+#                                                                       zdet[ii].imag,
+#                                                                       zdet_err[ii])
                             else:
                                 d2err = phi_err[ii]
                         else:
@@ -466,7 +478,10 @@ class Data(object):
                                     '{0:{1}}'.format(data2[ii]%180,self._string_fmt),
                                     '{0:{1}}\n'.format(d2err, self._string_fmt)]))
                         data_count += 1
-
+            d1err_array[ii] = d1err
+            d2err_array[ii] = d2err
+            
+            
         if 'z' in mode.lower():
             self.z, self.z_err = data1 + 1j*data2, data1_err
         else:
@@ -478,6 +493,8 @@ class Data(object):
                 self.phase_te = phi[:,0,1]
                 self.res_tm = rho[:,1,0]
                 self.phase_tm = phi[:,1,0]%180
+            self.res_err = d1err_array
+            self.phase_err = d2err_array
                 
         self.freq = freq
 
@@ -2506,7 +2523,6 @@ def generate_inputfiles(**input_parameters):
     for edifile in edilist:
         # read the edi file to get the station name
         eo = mtedi.Edi(op.join(edipath,edifile))
-        print input_parameters['rotation_angle'],input_parameters['working_directory'],input_parameters['rotation_angle_file']
         if input_parameters['rotation_angle'] == 'strike':
             spr = input_parameters['strike_period_range']
             fmax,fmin = [1./np.amin(spr),1./np.amax(spr)]

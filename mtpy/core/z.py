@@ -1037,6 +1037,8 @@ class Z(object):
         
         det_Z_err = None
         if self.zerr is not None:
+#            det_Z_err = np.abs(np.array([np.linalg.det(self.z[i] + self.zerr[i]) - \
+#                                  np.linalg.det(self.z[i]) for i in range(len(self.z))]))
             det_Z_err = np.zeros_like(det_Z)
             det_Z_err[:] = np.abs(self.z[:,1,1] * self.zerr[:,0,0]) +\
                            np.abs(self.z[:,0,0] * self.zerr[:,1,1]) +\
