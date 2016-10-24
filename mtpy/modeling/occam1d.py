@@ -231,6 +231,8 @@ class Data(object):
         elif self.mode == 'tmz':
             d1_str = 'RealZyx'
             d2_str = 'ImagZyx'
+        else:
+            raise IOError('Mode {0} is not supported.'.format(self.mode))
         
         # read in data as a tuple or .edi file
         if edi_file is None and rp_tuple is None:
@@ -252,21 +254,25 @@ class Data(object):
                 z_obj.rotate(thetar)
             
             #get resistivity and phase
-            rho = impz.resistivity
-            rho_err = impz.resistivity_err
-            phi = impz.phase
-            phi_err = impz.phase_err
+            rho = z_obj.resistivity
+            rho_err = z_obj.resistivity_err
+            phi = z_obj.phase
+            phi_err = z_obj.phase_err       
+            
+            # get z
+            z = z_obj.z
+            z_err = z_obj.z_err
             
             # put tm mode phase in first quadrant as required by occam1d
             if 'tm' in mode.lower():
                 phi += 180
 
-            freq = impz.freq
+            freq = z_obj.freq
             nf = len(freq)
             
             #get determinant resistivity and phase
             if 'det' in mode.lower():
-                zdet, zdet_err = impz.det
+                zdet, zdet_err = z_obj.det
                 zdet_err = np.abs(zdet_err)
                                    
                 rho = .2/freq*np.abs(zdet)
@@ -275,12 +281,18 @@ class Data(object):
                 rho_err = rho * (np.abs(zdet_err)/np.abs(zdet))
                 phi = np.rad2deg(np.arctan2((zdet**0.5).imag, (zdet**0.5).real))
                 phi_err = np.rad2deg(np.arctan(0.5*np.abs(zdet_err)/np.abs(zdet)))
+                z = zdet**0.5
+                z_err = 0.5*(zdet_err/zdet)*z
+                
 
-
-
+            if 'z' in self.mode:
+                data_1,data_2 = z.real,z.imag
+                data_1_err,data_2_err = z_err, z_err
             else:
-                raise IOError('Mode {0} is not supported.'.format(self.mode))
-                                            
+                data_1,data_2 = rho, phi
+                data_1_err,data_2_err = rho_err,phi_err
+            
+
         if rp_tuple is not None:
             if len(rp_tuple) != 5:
                 raise IOError('Be sure rp_array is correctly formated\n'
@@ -309,7 +321,7 @@ class Data(object):
                 data_2 = phi[:, 0, 1]
                 data_2_err = phi_err[:, 0, 1]
 
-        if remove_outofquadrant == True:
+        if remove_outofquadrant:
             freq, data_1, data_1_err, data_2, data_2_err = self._remove_outofquadrant_phase(
                                                            freq, 
                                                            data_1, 
@@ -321,6 +333,7 @@ class Data(object):
         # ---> get errors--------------------------------------    
         # set error floors
         if 'z' in self.mode:
+            
             if z_errorfloor > 0:
                 data_1_err = np.abs(data_1_err)
                 test = data_1_err/np.abs(data_1+1j*data_2) < z_errorfloor/100.
@@ -337,7 +350,7 @@ class Data(object):
                 data_1_err = data_1*res_err/100.
             if phase_err != 'data':
                 data_2_err = np.repeat(phase_err/100.*(180/np.pi), nf)
-            
+
         # --> write file    
         #make sure the savepath exists, if not create it
         if save_path is not None:
@@ -411,30 +424,30 @@ class Data(object):
                 
             if tetm:
                 if 'z' in mode.lower():
-                    d1err,d2err = data1_err[ii, i1, i2],data2_err[ii, i1, i2]
+                    d1err,d2err = data_1_err[ii, i1, i2],data_2_err[ii, i1, i2]
                 else:
                 
                     if res_err == 'data':
-                        d1err = data1_err[ii, i1, i2]
+                        d1err = data_1_err[ii, i1, i2]
                     else:
-                        d1err = data1[ii, i1, i2]*res_err/100.
+                        d1err = data_1[ii, i1, i2]*res_err/100.
                         
                     if phase_err == 'data':
-                        d2err = data2_err[ii, i1, i2]
+                        d2err = data_2_err[ii, i1, i2]
                     else:
                         d2err = phase_err/100*(180/np.pi)
 
 
                     
                 # write lines
-                if data1[ii, i1, i2] != 0.0:
-                    dlines.append(self._ss.join([dstring1+'Z'+pol, str(ii+1), '0', '1', 
-                                '{0:{1}}'.format(data1[ii, i1, i2], self._string_fmt),
+                if data_1[ii, i1, i2] != 0.0:
+                    dlines.append(self._ss.join([d1_str, str(ii+1), '0', '1', 
+                                '{0:{1}}'.format(data_1[ii, i1, i2], self._string_fmt),
                                 '{0:{1}}\n'.format(d1err, self._string_fmt)]))
                     data_count += 1
-                if data2[ii, i1, i2] != 0.0:
-                    dlines.append(self._ss.join([dstring2+'Z'+pol, str(ii+1), '0', '1', 
-                                '{0:{1}}'.format(data2[ii, i1, i2],self._string_fmt),
+                if data_2[ii, i1, i2] != 0.0:
+                    dlines.append(self._ss.join([d2_str, str(ii+1), '0', '1', 
+                                '{0:{1}}'.format(data_2[ii, i1, i2],self._string_fmt),
                                 '{0:{1}}\n'.format(d2err, self._string_fmt)]))
                     data_count += 1
                             
@@ -465,11 +478,11 @@ class Data(object):
                 if 'det' in mode.lower():
                     pol = 'xy'
                     if 'z' in mode.lower():
-                        d1err,d2err = data1_err[ii], data2_err[ii]
+                        d1err,d2err = data_1_err[ii], data_2_err[ii]
                     else:
                         if res_err == 'data':
                             if edi_file is not None:
-                                d1err = data1_err[ii]
+                                d1err = data_1_err[ii]
 #                                d1err, d2err = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real, 
 #                                                                       zdet_err[ii],
 #                                                                       zdet[ii].imag,
@@ -481,7 +494,7 @@ class Data(object):
                             
                         if phase_err == 'data':
                             if edi_file is not None:
-                                d2err = data2_err[ii]
+                                d2err = data_2_err[ii]
 #                                d1err, d2err = mtedi.MTcc.zerror2r_phi_error(zdet[ii].real, 
 #                                                                       zdet_err[ii],
 #                                                                       zdet[ii].imag,
@@ -494,13 +507,13 @@ class Data(object):
                         
                     # write lines
                     if rho[ii] != 0.0:    
-                        dlines.append(self._ss.join([dstring1+'Z'+pol, str(ii+1), '0', '1', 
-                                    '{0:{1}}'.format(data1[ii],self._string_fmt),
+                        dlines.append(self._ss.join([d1_str, str(ii+1), '0', '1', 
+                                    '{0:{1}}'.format(data_1[ii],self._string_fmt),
                                     '{0:{1}}\n'.format(d1err, self._string_fmt)]))
                         data_count += 1
                     if phi[ii] != 0.0:
-                        dlines.append(self._ss.join([dstring2+'Z'+pol, str(ii+1), '0', '1', 
-                                    '{0:{1}}'.format(data2[ii]%180,self._string_fmt),
+                        dlines.append(self._ss.join([d2_str, str(ii+1), '0', '1', 
+                                    '{0:{1}}'.format(data_2[ii]%180,self._string_fmt),
                                     '{0:{1}}\n'.format(d2err, self._string_fmt)]))
                         data_count += 1
             d1err_array[ii] = d1err
