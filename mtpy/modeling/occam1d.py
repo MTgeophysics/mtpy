@@ -2575,17 +2575,16 @@ def generate_inputfiles(**input_parameters):
     
     for edifile in edilist:
         # read the edi file to get the station name
-        eo = mtedi.Edi(op.join(edipath,edifile))
+        mto = mt.MT(op.join(edipath,edifile))
         if input_parameters['rotation_angle'] == 'strike':
             spr = input_parameters['strike_period_range']
             fmax,fmin = [1./np.amin(spr), 1./np.amax(spr)]
-            rotangle = (get_strike(eo,fmin,fmax,
+            rotangle = (get_strike(mto,fmin,fmax,
                                    strike_approx=input_parameters['strike_approx'])-90.)%180
         elif input_parameters['rotation_angle'] == 'file':
             with open(op.join(input_parameters['working_directory'], input_parameters['rotation_angle_file'])) as f:
                 line = f.readline().strip().split()
-                print line, eo.station
-                while string.upper(line[0]) != string.upper(eo.station):
+                while string.upper(line[0]) != string.upper(mto.station):
                     line = f.readline().strip().split()
                     if len(line) == 0:
                         line = ['','0.0']
@@ -2595,7 +2594,7 @@ def generate_inputfiles(**input_parameters):
             rotangle = input_parameters['rotation_angle']
         print "rotation angle",rotangle    
         # create a working directory to store the inversion files in
-        svpath = 'station'+eo.station
+        svpath = 'station'+mto.station
         wd = op.join(wkdir_master,svpath)
         if not os.path.exists(wd):
             os.mkdir(wd)
