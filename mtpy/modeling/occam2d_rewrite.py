@@ -2028,6 +2028,9 @@ class Data(Profile):
                           *default* is 10
     res_tm_err            percent error in resistivity for TM mode.
                           *default* is 10
+    error_type            'floor' or 'absolute' - option to set error as floor
+                          (i.e. maximum of the data error and a specified value)
+                          or a straight value
     save_path             directory to save files to
     station_list          list of station for inversion
     station_locations     station locations along profile line
@@ -2084,6 +2087,7 @@ class Data(Profile):
         self.phase_te_err = kwargs.pop('phase_te_err', 5)
         self.phase_tm_err = kwargs.pop('phase_tm_err', 5)
         self.tipper_err = kwargs.pop('tipper_err', 10)
+        self.error_type = 'floor'
         
         self.freq_min = kwargs.pop('freq_min', None)
         self.freq_max = kwargs.pop('freq_max', None)
@@ -2395,6 +2399,7 @@ class Data(Profile):
             else:
                 station_freq = edi.Z.freq
                 rho = edi.Z.resistivity
+                rho_err = edi.Z.resistivity_err
                 phi = edi.Z.phase
                 tipper = edi.Tipper.tipper
                 tipper_err = edi.Tipper.tipper_err
@@ -2412,9 +2417,9 @@ class Data(Profile):
                         f_index = None
                 else:
                     #skip, if the listed frequency is not available for the station
-                    if (frequency in interp_freq):
+                    if (frequency in station_freq):
                         #find the respective frequency index for the station     
-                        f_index = np.abs(interp_freq-frequency).argmin()
+                        f_index = np.abs(station_freq-frequency).argmin()
                     else:
                         f_index = None
 
@@ -2426,10 +2431,14 @@ class Data(Profile):
                 #compute error                
                 if rho[f_index, 0, 1] != 0.0:
                     #--> get error from data
-                    if self.res_te_err is None:
-                        self.data[s_index]['te_res'][1, freq_num] = \
-                            np.abs(rho_err[f_index, 0, 1]/rho[f_index, 0, 1])
-                    #--> set generic error floor
+                    if ((self.res_te_err is None) or (self.error_type == 'floor')):
+                        error_val = np.abs(rho_err[f_index, 0, 1]/rho[f_index, 0, 1])
+                        # set error floor if desired
+                        if self.error_type == 'floor':
+                            error_val = max(error_val,rho[f_index, 0, 1]*self.res_te_err/100.)
+                            
+                        self.data[s_index]['te_res'][1, freq_num] = error_val    
+                    #--> set generic error
                     else:
                         self.data[s_index]['te_res'][1, freq_num] = \
                                                         self.res_te_err/100.
@@ -2439,10 +2448,12 @@ class Data(Profile):
                 #compute error
                 if rho[f_index, 1, 0] != 0.0:
                     #--> get error from data
-                    if self.res_tm_err is None:
-                        self.data[s_index]['tm_res'][1, freq_num] = \
-                        np.abs(rho_err[f_index, 1, 0]/rho[f_index, 1, 0])
-                    #--> set generic error floor
+                    if ((self.res_tm_err is None) or (self.error_type == 'floor')):
+                        error_val = np.abs(rho_err[f_index, 1, 0]/rho[f_index, 1, 0])
+                        if self.error_type == 'floor':
+                            error_val = max(error_val,rho[f_index, 1, 0]*self.res_tm_err/100.)
+                        self.data[s_index]['tm_res'][1, freq_num] = error_val
+                    #--> set generic error
                     else:
                         self.data[s_index]['tm_res'][1, freq_num] = \
                             self.res_tm_err/100.
@@ -2456,10 +2467,11 @@ class Data(Profile):
                 #compute error
                 #if phi[f_index, 0, 1] != 0.0:
                 #--> get error from data
-                if self.phase_te_err is None:
-                    self.data[s_index]['te_phase'][1, freq_num] = \
-                    np.degrees(np.arcsin(.5*
-                               self.data[s_index]['te_res'][0, freq_num]))
+                if ((self.phase_te_err is None) or (self.error_type == 'floor')):
+                    error_val = np.degrees(np.arcsin(.5*rho_err[f_index, 0, 1]/rho[f_index, 0, 1]))
+                    if self.error_type == 'floor':
+                        error_val = max(error_val,(self.phase_te_err/100.)*57./2.)
+                    self.data[s_index]['te_phase'][1, freq_num] = error_val
                 #--> set generic error floor
                 else:
                     self.data[s_index]['te_phase'][1, freq_num] = \
@@ -2472,10 +2484,11 @@ class Data(Profile):
                 #compute error
                 #if phi[f_index, 1, 0] != 0.0:
                 #--> get error from data
-                if self.phase_tm_err is None:
-                    self.data[s_index]['tm_phase'][1, freq_num] = \
-                    np.degrees(np.arcsin(.5*
-                               self.data[s_index]['tm_res'][0, freq_num]))
+                if ((self.phase_tm_err is None) or (self.error_type == 'floor')):
+                    error_val = np.degrees(np.arcsin(.5*rho_err[f_index, 1, 0]/rho[f_index, 1, 0]))
+                    if self.error_type == 'floor':
+                        error_val = max(error_val,(self.phase_tm_err/100.)*57./2.)
+                    self.data[s_index]['tm_phase'][1, freq_num] = error_val
                 #--> set generic error floor
                 else:
                     self.data[s_index]['tm_phase'][1, freq_num] = \
@@ -2491,11 +2504,12 @@ class Data(Profile):
                                                     tipper[f_index, 0, 1].imag
                                                     
                     #get error
-                    if self.tipper_err is not None:
-                        self.data[s_index]['re_tip'][1, freq_num] = \
-                                                        self.tipper_err/100.
-                        self.data[s_index]['im_tip'][1, freq_num] = \
-                                                        self.tipper_err/100.
+                    if ((self.tipper_err is not None) or (self.error_type == 'floor')):
+                        error_val = self.tipper_err/100.
+                        if self.error_type == 'floor':
+                            error_val = max(error_val, tipper_err[f_index, 0, 1])
+                        self.data[s_index]['re_tip'][1, freq_num] = error_val
+                        self.data[s_index]['im_tip'][1, freq_num] = error_val
                     else:
                         self.data[s_index]['re_tip'][1, freq_num] = \
                            tipper[f_index, 0, 1].real/tipper_err[f_index, 0, 1]
