@@ -1624,6 +1624,22 @@ class Plot1DResponse(object):
         legend_label_list_te = []
         legend_marker_list_tm = []
         legend_label_list_tm = []
+
+        # create an error bar dictionary to contain line properties
+        errorbardict = dict(ls=self.ls,
+                            marker=self.mted,
+                            ms=self.ms,
+                            mfc=self.cted,
+                            mec=self.cted,
+                            color=self.cted,
+                            ecolor=self.cted,
+                            picker=2,
+                            lw=self.lw,
+                            elinewidth=self.lw,
+                            capsize=self.e_capsize,
+                            capthick=self.e_capthick)
+
+
         #--> plot data apparent resistivity and phase-------------------------
         if self.data_te_fn is not None:
             d1 = Data()
@@ -1634,21 +1650,17 @@ class Plot1DResponse(object):
             
             #--> TE mode Data 
             if len(rxy) > 0:
-                rte = self.axr.errorbar(1./d1.freq[rxy],
-                                        d1.res_te[0][rxy],
-                                        ls=self.ls,
-                                        marker=self.mted,
-                                        ms=self.ms,
-                                        mfc=self.cted,
-                                        mec=self.cted,
-                                        color=self.cted,
-                                        yerr=d1.res_te[1][rxy],
-                                        ecolor=self.cted,
-                                        picker=2,
-                                        lw=self.lw,
-                                        elinewidth=self.lw,
-                                        capsize=self.e_capsize,
-                                        capthick=self.e_capthick)
+                errorbardict['yerr'] = d1.res_te[1][rxy]
+                try:
+                    rte = self.axr.errorbar(1./d1.freq[rxy],
+                                            d1.res_te[0][rxy],
+                                            **errorbardict)
+                except TypeError:
+                    # it seems old versions of matplotlib don't have attribute capthick
+                    del errorbardict['capthick']
+                    rte = self.axr.errorbar(1./d1.freq[rxy],
+                                            d1.res_te[0][rxy],
+                                            **errorbardict)                    
                 legend_marker_list_te.append(rte[0])
                 legend_label_list_te.append('$Obs_{TE}$')
             else:
@@ -1659,21 +1671,17 @@ class Plot1DResponse(object):
             
             #--> TE mode data
             if len(pxy) > 0:
-                self.axp.errorbar(1./d1.freq[pxy],
-                                   d1.phase_te[0][pxy],
-                                   ls=self.ls,
-                                   marker=self.mted,
-                                   ms=self.ms,
-                                   mfc=self.cted,
-                                   mec=self.cted,
-                                   color=self.cted,
-                                   yerr=d1.phase_te[1][pxy],
-                                   ecolor=self.cted,
-                                   picker=1,
-                                   lw=self.lw,
-                                   elinewidth=self.lw,
-                                   capsize=self.e_capsize,
-                                   capthick=self.e_capthick)
+                errorbardict['yerr'] = d1.phase_te[1][pxy]
+                try:
+                    self.axp.errorbar(1./d1.freq[pxy],
+                                       d1.phase_te[0][pxy],
+                                       **errorbardict)
+                except TypeError:
+                    # it seems old versions of matplotlib don't have attribute capthick
+                    del errorbardict['capthick']
+                    self.axp.errorbar(1./d1.freq[pxy],
+                                       d1.phase_te[0][pxy],
+                                       **errorbardict)
             else:
                 pass
         #--> plot tm data------------------------------------------------------    
@@ -1682,24 +1690,19 @@ class Plot1DResponse(object):
             d1.read_data_file(self.data_tm_fn)
             
             ryx = np.where(d1.res_tm[0] != 0)[0]
-            
+            print "ryx",ryx
             #--> TM mode data
             if len(ryx) > 0:
-                rtm = self.axr.errorbar(1./d1.freq[ryx],
-                                        d1.res_tm[0][ryx] ,
-                                        ls=self.ls,
-                                        marker=self.mtmd,
-                                        ms=self.ms,
-                                        mfc=self.ctmd,
-                                        mec=self.ctmd,
-                                        color=self.ctmd,
-                                        yerr=d1.res_tm[1][ryx],
-                                        ecolor=self.ctmd,
-                                        picker=2,
-                                        lw=self.lw,
-                                        elinewidth=self.lw,
-                                        capsize=self.e_capsize,
-                                        capthick=self.e_capthick)
+                errorbardict['yerr'] = d1.res_tm[1][ryx]
+                try:
+                    rtm = self.axr.errorbar(1./d1.freq[ryx],
+                                            d1.res_tm[0][ryx] ,
+                                            **errorbardict)
+                except TypeError:
+                    del errorbardict['capthick']
+                    rtm = self.axr.errorbar(1./d1.freq[ryx],
+                                            d1.res_tm[0][ryx] ,
+                                            **errorbardict)
                 legend_marker_list_tm.append(rtm[0])
                 legend_label_list_tm.append('$Obs_{TM}$')
             else:
@@ -1711,21 +1714,16 @@ class Plot1DResponse(object):
             
             #--> TM mode data
             if len(pyx)>0:
-                self.axp.errorbar(1./d1.freq[pyx],
-                                   d1.phase_tm[0][pyx],
-                                   ls=self.ls,
-                                   marker=self.mtmd,
-                                   ms=self.ms,
-                                   mfc=self.ctmd,
-                                   mec=self.ctmd,
-                                   color=self.ctmd,
-                                   yerr=d1.phase_tm[1][pyx],
-                                   ecolor=self.ctmd,
-                                   picker=1,
-                                   lw=self.lw,
-                                   elinewidth=self.lw,
-                                   capsize=self.e_capsize,
-                                   capthick=self.e_capthick)
+                errorbardict['yerr'] = d1.phase_tm[1][pyx]
+                try:
+                    self.axp.errorbar(1./d1.freq[pyx],
+                                       d1.phase_tm[0][pyx],
+                                       **errorbardict)
+                except TypeError:
+                    del errorbardict['capthick']
+                    self.axp.errorbar(1./d1.freq[pyx],
+                                       d1.phase_tm[0][pyx],
+                                       **errorbardict)
             else:
                 pass
             
@@ -1749,21 +1747,16 @@ class Plot1DResponse(object):
 
             #--> TE mode Data 
             if len(rxy) > 0:
-                rte = self.axr.errorbar(1./d1.freq[rxy],
-                                        d1.res_te[2][rxy],
-                                        ls=self.ls,
-                                        marker=self.mtem,
-                                        ms=self.ms,
-                                        mfc=cxy,
-                                        mec=cxy,
-                                        color=cxy,
-                                        yerr=d1.res_te[3][rxy],
-                                        ecolor=cxy,
-                                        picker=2,
-                                        lw=self.lw,
-                                        elinewidth=self.lw,
-                                        capsize=self.e_capsize,
-                                        capthick=self.e_capthick)
+                errorbardict['yerr'] = d1.res_te[3][rxy]
+                try:
+                    rte = self.axr.errorbar(1./d1.freq[rxy],
+                                            d1.res_te[2][rxy],
+                                            **errorbardict)
+                except TypeError:
+                    del errorbardict['capthick']
+                    rte = self.axr.errorbar(1./d1.freq[rxy],
+                                            d1.res_te[2][rxy],
+                                            **errorbardict)
                 legend_marker_list_te.append(rte[0])
                 legend_label_list_te.append('$Mod_{TE}$'+itnum)
             else:
@@ -1776,21 +1769,16 @@ class Plot1DResponse(object):
 
             #--> TE mode phase 
             if len(pxy) > 0:
-                self.axp.errorbar(1./d1.freq[pxy],
-                                   d1.phase_te[2][pxy],
-                                   ls=self.ls,
-                                   marker=self.mtem,
-                                   ms=self.ms,
-                                   mfc=cxy,
-                                   mec=cxy,
-                                   color=cxy,
-                                   yerr=d1.phase_te[3][pxy],
-                                   ecolor=cxy,
-                                   picker=1,
-                                   lw=self.lw,
-                                   elinewidth=self.lw,
-                                   capsize=self.e_capsize,
-                                   capthick=self.e_capthick)
+                errorbardict['yerr'] = d1.phase_te[3][pxy]
+                try:
+                    self.axp.errorbar(1./d1.freq[pxy],
+                                       d1.phase_te[2][pxy],
+                                       **errorbardict)
+                except TypeError:
+                    del errorbardict['capthick']
+                    self.axp.errorbar(1./d1.freq[pxy],
+                                       d1.phase_te[2][pxy],
+                                       **errorbardict)
             else:
                 pass
         #---------------plot TM model response---------------------------------
@@ -1809,21 +1797,16 @@ class Plot1DResponse(object):
             ryx = np.where(d1.res_tm[2] != 0)[0]
             #--> TM mode model
             if len(ryx) > 0:
-                rtm = self.axr.errorbar(1./d1.freq[ryx],
-                                        d1.res_tm[2][ryx] ,
-                                        ls=self.ls,
-                                        marker=self.mtmm,
-                                        ms=self.ms,
-                                        mfc=cyx,
-                                        mec=cyx,
-                                        color=cyx,
-                                        yerr=d1.res_tm[3][ryx],
-                                        ecolor=cyx,
-                                        picker=2,
-                                        lw=self.lw,
-                                        elinewidth=self.lw,
-                                        capsize=self.e_capsize,
-                                        capthick=self.e_capthick)
+                errorbardict['yerr'] = d1.res_tm[3][ryx]
+                try:
+                    rtm = self.axr.errorbar(1./d1.freq[ryx],
+                                            d1.res_tm[2][ryx],
+                                            **errorbardict)
+                except TypeError:
+                    del errorbardict['capthick']
+                    rtm = self.axr.errorbar(1./d1.freq[ryx],
+                                            d1.res_tm[2][ryx],
+                                            **errorbardict)                    
                 legend_marker_list_tm.append(rtm[0])
                 legend_label_list_tm.append('$Mod_{TM}$'+itnum)
             else:
@@ -1833,21 +1816,17 @@ class Plot1DResponse(object):
             
             #--> TM mode model
             if len(pyx)>0:
-                self.axp.errorbar(1./d1.freq[pyx],
-                                   d1.phase_tm[0][pyx],
-                                   ls=self.ls,
-                                   marker=self.mtmm,
-                                   ms=self.ms,
-                                   mfc=cyx,
-                                   mec=cyx,
-                                   color=cyx,
-                                   yerr=d1.phase_tm[3][pyx],
-                                   ecolor=cyx,
-                                   picker=1,
-                                   lw=self.lw,
-                                   elinewidth=self.lw,
-                                   capsize=self.e_capsize,
-                                   capthick=self.e_capthick)
+                errorbardict['yerr'] = d1.phase_tm[3][pyx]
+                errorbardict['picker'] = 1
+                try:
+                    self.axp.errorbar(1./d1.freq[pyx],
+                                       d1.phase_tm[0][pyx],
+                                       **errorbardict)
+                except TypeError:
+                    del errorbardict['capthick']
+                    self.axp.errorbar(1./d1.freq[pyx],
+                                       d1.phase_tm[0][pyx],
+                                       **errorbardict)
             else:
                 pass
         
