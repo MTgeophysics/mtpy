@@ -1633,7 +1633,6 @@ class Plot1DResponse(object):
                             mec=self.cted,
                             color=self.cted,
                             ecolor=self.cted,
-                            picker=2,
                             lw=self.lw,
                             elinewidth=self.lw,
                             capsize=self.e_capsize,
@@ -1651,6 +1650,7 @@ class Plot1DResponse(object):
             #--> TE mode Data 
             if len(rxy) > 0:
                 errorbardict['yerr'] = d1.res_te[1][rxy]
+                errorbardict['picker'] = 2
                 try:
                     rte = self.axr.errorbar(1./d1.freq[rxy],
                                             d1.res_te[0][rxy],
@@ -1672,6 +1672,7 @@ class Plot1DResponse(object):
             #--> TE mode data
             if len(pxy) > 0:
                 errorbardict['yerr'] = d1.phase_te[1][pxy]
+                errorbardict['picker'] = 1
                 try:
                     self.axp.errorbar(1./d1.freq[pxy],
                                        d1.phase_te[0][pxy],
@@ -1690,10 +1691,11 @@ class Plot1DResponse(object):
             d1.read_data_file(self.data_tm_fn)
             
             ryx = np.where(d1.res_tm[0] != 0)[0]
-            print "ryx",ryx
+            
             #--> TM mode data
             if len(ryx) > 0:
                 errorbardict['yerr'] = d1.res_tm[1][ryx]
+                errorbardict['picker'] = 2
                 try:
                     rtm = self.axr.errorbar(1./d1.freq[ryx],
                                             d1.res_tm[0][ryx] ,
@@ -1715,6 +1717,7 @@ class Plot1DResponse(object):
             #--> TM mode data
             if len(pyx)>0:
                 errorbardict['yerr'] = d1.phase_tm[1][pyx]
+                errorbardict['picker'] = 1
                 try:
                     self.axp.errorbar(1./d1.freq[pyx],
                                        d1.phase_tm[0][pyx],
@@ -1748,6 +1751,7 @@ class Plot1DResponse(object):
             #--> TE mode Data 
             if len(rxy) > 0:
                 errorbardict['yerr'] = d1.res_te[3][rxy]
+                errorbardict['picker'] = 2
                 try:
                     rte = self.axr.errorbar(1./d1.freq[rxy],
                                             d1.res_te[2][rxy],
@@ -1770,6 +1774,7 @@ class Plot1DResponse(object):
             #--> TE mode phase 
             if len(pxy) > 0:
                 errorbardict['yerr'] = d1.phase_te[3][pxy]
+                errorbardict['picker'] = 1
                 try:
                     self.axp.errorbar(1./d1.freq[pxy],
                                        d1.phase_te[2][pxy],
