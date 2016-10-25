@@ -527,8 +527,16 @@ class Data(object):
                         data_count += 1
             d1err_array[ii] = d1err
             d2err_array[ii] = d2err
+        
+        #--> write file
+        dlines[num_data_line-1] = '# Data:{0}{1}\n'.format(self._ss, data_count)
+        
+        with open(self.data_fn, 'w') as dfid:   
+            dfid.writelines(dlines)
+
+        print 'Wrote Data File to : {0}'.format(self.data_fn)
             
-            
+        #--> set attributes    
         if 'z' in mode.lower():
             self.z = data_1 + 1j*data_2
             self.z_err = data_1_err
@@ -2612,9 +2620,11 @@ def generate_inputfiles(**input_parameters):
         # create the model file
         ocm = Model(n_layers=input_parameters['n_layers'],save_path=wd)
         ocm.write_model_file()
-        
+        print "modes",input_parameters['modes'] 
         for mode in input_parameters['modes']:
             # create a data file for each mode
+            print "creating a data file"
+            print wd
             ocd = Data()
             ocd._data_fn = 'Occam1d_DataFile_rot%03i'%rotangle
             ocd.write_data_file(
