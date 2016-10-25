@@ -661,9 +661,9 @@ class MT(object):
                 new_Z.z[:, ii, jj] = z_func_real(new_freq_array)+\
                                      1j*z_func_imag(new_freq_array)
 
-                z_func_err = spi.interp1d(self.Z.freq[ind], self.Z.zerr[ind][:, ii, jj],
+                z_func_err = spi.interp1d(self.Z.freq[ind], self.Z.z_err[ind][:, ii, jj],
                                            kind='slinear')
-                new_Z.zerr[:, ii, jj] = z_func_err(new_freq_array)
+                new_Z.z_err[:, ii, jj] = z_func_err(new_freq_array)
 
         # if there is not tipper than skip
         if self.Tipper.tipper is None:
@@ -681,9 +681,9 @@ class MT(object):
                                           1j*t_func_imag(new_freq_array)
             
             t_func_err = spi.interp1d(self.Z.freq[ind], 
-                                      self.Tipper.tippererr[ind][:, 0, jj],
+                                      self.Tipper.tipper_err[ind][:, 0, jj],
                                        kind='slinear')
-            new_Tipper.tippererr[:, 0, jj] = t_func_err(new_freq_array)
+            new_Tipper.tipper_err[:, 0, jj] = t_func_err(new_freq_array)
         
         return new_Z, new_Tipper
         

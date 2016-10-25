@@ -950,12 +950,9 @@ class Data(object):
         
         #reset the header string to be informational
         self._set_header_string()
-<<<<<<< HEAD
         
         # number of periods - subtract periods with all zero components
         nper = len(np.where(np.mean(np.mean(np.mean(np.abs(self.data_array['z']),axis=0),axis=1),axis=1)>0)[0])
-=======
->>>>>>> beta
 
         dlines = []        
         for inv_mode in self.inv_mode_dict[self.inv_mode]:
@@ -1063,11 +1060,8 @@ class Data(object):
 
                             else: 
                                 abs_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj].real 
-<<<<<<< HEAD
                                 if ((c_key.find('z') >= 0) and (self.units == 'ohm')):
-=======
-                                if c_key.find('z') >= 0 and self.units == 'ohm':
->>>>>>> beta
+
                                     abs_err /= 796.
                                     
                             abs_err = '{0:> 14.6e}'.format(abs(abs_err))
@@ -1313,11 +1307,7 @@ class Data(object):
                     z_err *= 796.
                     
                 data_dict[dd[1]].Z.z[p_index, ii, jj] = z_value
-<<<<<<< HEAD
-                data_dict[dd[1]].Z.zerr[p_index, ii, jj] = z_err
-=======
                 data_dict[dd[1]].Z.z_err[p_index, ii, jj] = z_err
->>>>>>> beta
             #fill in tipper with appropriate values
             elif dd[7].find('T') == 0:
                 if self.wave_sign_tipper == '+':
@@ -2565,22 +2555,12 @@ class Model(object):
             
         #put the grids into coordinates relative to the center of the grid
         self.grid_north = np.array([self.nodes_north[0:ii].sum() 
-<<<<<<< HEAD
                                    for ii in range(n_north+1)])
         self.grid_east = np.array([self.nodes_east[0:ii].sum() 
                                    for ii in range(n_east+1)])
                                 
         self.grid_z = np.array([self.nodes_z[:ii].sum() 
                                 for ii in range(n_z+1)])
-=======
-                                   for ii in range(n_north)])
-        self.grid_east = np.array([self.nodes_east[0:ii].sum() 
-                                   for ii in range(n_east)])
-                                
-        self.grid_z = np.array([self.nodes_z[:ii+1].sum() 
-                                for ii in range(n_z)])
->>>>>>> beta
-        
         # center the grids
         if self.grid_center is not None:
             self.grid_north += self.grid_center[0]
