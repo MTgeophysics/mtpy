@@ -291,6 +291,15 @@ class Data(object):
             else:
                 data_1,data_2 = rho, phi
                 data_1_err,data_2_err = rho_err,phi_err
+
+            if 'te' in mode.lower():
+                pol = 'xy'
+                data_1,data_2,data_1_err,data_2_err = [dat[:,0,1] for dat in [data_1,data_2,data_1_err,data_2_err]]
+            elif 'tm' in mode.lower():
+                pol = 'yx'
+                data_1,data_2,data_1_err,data_2_err = [dat[:,1,0] for dat in [data_1,data_2,data_1_err,data_2_err]]
+            
+            
             
 
         if rp_tuple is not None:
@@ -424,30 +433,30 @@ class Data(object):
                 
             if tetm:
                 if 'z' in mode.lower():
-                    d1err,d2err = data_1_err[ii, i1, i2],data_2_err[ii, i1, i2]
+                    d1err,d2err = data_1_err[ii],data_2_err[ii]
                 else:
                 
                     if res_err == 'data':
-                        d1err = data_1_err[ii, i1, i2]
+                        d1err = data_1_err[ii]
                     else:
-                        d1err = data_1[ii, i1, i2]*res_err/100.
+                        d1err = data_1[ii]*res_err/100.
                         
                     if phase_err == 'data':
-                        d2err = data_2_err[ii, i1, i2]
+                        d2err = data_2_err[ii]
                     else:
                         d2err = phase_err/100*(180/np.pi)
 
 
                     
                 # write lines
-                if data_1[ii, i1, i2] != 0.0:
+                if data_1[ii] != 0.0:
                     dlines.append(self._ss.join([d1_str, str(ii+1), '0', '1', 
-                                '{0:{1}}'.format(data_1[ii, i1, i2], self._string_fmt),
+                                '{0:{1}}'.format(data_1[ii], self._string_fmt),
                                 '{0:{1}}\n'.format(d1err, self._string_fmt)]))
                     data_count += 1
-                if data_2[ii, i1, i2] != 0.0:
+                if data_2[ii] != 0.0:
                     dlines.append(self._ss.join([d2_str, str(ii+1), '0', '1', 
-                                '{0:{1}}'.format(data_2[ii, i1, i2],self._string_fmt),
+                                '{0:{1}}'.format(data_2[ii],self._string_fmt),
                                 '{0:{1}}\n'.format(d2err, self._string_fmt)]))
                     data_count += 1
                             
