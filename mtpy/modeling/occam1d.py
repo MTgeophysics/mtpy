@@ -911,7 +911,7 @@ class Model(object):
         
         self.n_layers = kwargs.pop('n_layers', 100)
         self.bottom_layer = kwargs.pop('bottom_layer', 50000)
-        self.target_depth = kwargs.pop('target_layer', 10000)
+        self.target_depth = kwargs.pop('target_depth', 10000)
         self.pad_z = kwargs.pop('pad_z', 5)
         self.z1_layer = kwargs.pop('z1_layer', 10)
         self.air_layer_height = kwargs.pop('zir_layer_height', 10000)
@@ -2494,6 +2494,9 @@ def parse_arguments(arguments):
     parser.add_argument('-nl','--n_layers',
                         help='number of layers in the inversion',
                         type=int,default=80)
+    parser.add_argument('-td','--target_depth',
+                        help='target depth for the inversion',
+                        type=int,default=12)
     parser.add_argument('-s','--master_savepath',
                         help = 'master directory to save suite of runs into',
                         default = 'inversion_suite')
@@ -2602,7 +2605,9 @@ def generate_inputfiles(**input_parameters):
         rundirs[svpath] = []
             
         # create the model file
-        ocm = Model(n_layers=input_parameters['n_layers'],save_path=wd)
+        ocm = Model(n_layers=input_parameters['n_layers'],
+                    target_depth=input_parameters['target_depth'],
+                    save_path=wd)
         ocm.write_model_file()
         print "modes",input_parameters['modes'] 
         for mode in input_parameters['modes']:
