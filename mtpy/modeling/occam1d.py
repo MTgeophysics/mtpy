@@ -1630,7 +1630,7 @@ class Plot1DResponse(object):
                             marker=self.mted,
                             ms=self.ms,
                             mfc=self.cted,
-                            mec=self.ctem,
+                            mec=self.cted,
                             color=self.cted,
                             ecolor=self.cted,
                             lw=self.lw,
@@ -1651,6 +1651,9 @@ class Plot1DResponse(object):
             if len(rxy) > 0:
                 errorbardict['yerr'] = d1.res_te[1][rxy]
                 errorbardict['picker'] = 2
+                for ekey in ['mfc','mec','color','ecolor']:
+                    errorbardict[ekey] = self.cted
+                errorbardict['marker'] = self.mted
                 try:
                     rte = self.axr.errorbar(1./d1.freq[rxy],
                                             d1.res_te[0][rxy],
@@ -1673,6 +1676,9 @@ class Plot1DResponse(object):
             if len(pxy) > 0:
                 errorbardict['yerr'] = d1.phase_te[1][pxy]
                 errorbardict['picker'] = 1
+                for ekey in ['mfc','mec','color','ecolor']:
+                    errorbardict[ekey] = self.cted
+                errorbardict['marker'] = self.mted
                 try:
                     self.axp.errorbar(1./d1.freq[pxy],
                                        d1.phase_te[0][pxy],
@@ -1696,6 +1702,9 @@ class Plot1DResponse(object):
             if len(ryx) > 0:
                 errorbardict['yerr'] = d1.res_tm[1][ryx]
                 errorbardict['picker'] = 2
+                for ekey in ['mfc','mec','color','ecolor']:
+                    errorbardict[ekey] = self.ctmd
+                errorbardict['marker'] = self.mtmd
                 try:
                     rtm = self.axr.errorbar(1./d1.freq[ryx],
                                             d1.res_tm[0][ryx] ,
@@ -1718,6 +1727,9 @@ class Plot1DResponse(object):
             if len(pyx)>0:
                 errorbardict['yerr'] = d1.phase_tm[1][pyx]
                 errorbardict['picker'] = 1
+                for ekey in ['mfc','mec','color','ecolor']:
+                    errorbardict[ekey] = self.ctmd
+                errorbardict['marker'] = self.mtmd
                 try:
                     self.axp.errorbar(1./d1.freq[pyx],
                                        d1.phase_tm[0][pyx],
@@ -1752,6 +1764,9 @@ class Plot1DResponse(object):
             if len(rxy) > 0:
                 errorbardict['yerr'] = d1.res_te[3][rxy]
                 errorbardict['picker'] = 2
+                for ekey in ['mfc','mec','color','ecolor']:
+                    errorbardict[ekey] = self.ctem
+                errorbardict['marker'] = self.mtem
                 try:
                     rte = self.axr.errorbar(1./d1.freq[rxy],
                                             d1.res_te[2][rxy],
@@ -1775,6 +1790,9 @@ class Plot1DResponse(object):
             if len(pxy) > 0:
                 errorbardict['yerr'] = d1.phase_te[3][pxy]
                 errorbardict['picker'] = 1
+                for ekey in ['mfc','mec','color','ecolor']:
+                    errorbardict[ekey] = self.ctem
+                errorbardict['marker'] = self.mtem
                 try:
                     self.axp.errorbar(1./d1.freq[pxy],
                                        d1.phase_te[2][pxy],
@@ -1803,6 +1821,9 @@ class Plot1DResponse(object):
             #--> TM mode model
             if len(ryx) > 0:
                 errorbardict['yerr'] = d1.res_tm[3][ryx]
+                for ekey in ['mfc','mec','color','ecolor']:
+                    errorbardict[ekey] = self.ctmm
+                errorbardict['marker'] = self.mtmm
                 try:
                     rtm = self.axr.errorbar(1./d1.freq[ryx],
                                             d1.res_tm[2][ryx],
@@ -1823,6 +1844,9 @@ class Plot1DResponse(object):
             if len(pyx)>0:
                 errorbardict['yerr'] = d1.phase_tm[3][pyx]
                 errorbardict['picker'] = 1
+                for ekey in ['mfc','mec','color','ecolor']:
+                    errorbardict[ekey] = self.ctmm
+                errorbardict['marker'] = self.mtmm
                 try:
                     self.axp.errorbar(1./d1.freq[pyx],
                                        d1.phase_tm[0][pyx],
