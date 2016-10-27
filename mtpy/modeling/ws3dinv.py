@@ -344,7 +344,7 @@ class WSData(object):
                 self.data[ss]['z_data_err'][jj, :] = interp_z.z_err[kk, :, :]*zconv
 
 
-    def comput_errors(self):
+    def compute_errors(self):
         """
         compute the errors from the given attributes
         """
@@ -386,7 +386,7 @@ class WSData(object):
             self.build_data()
         
         # compute errors, this helps when rewriting a data file
-        self.comput_errors()
+        self.compute_errors()
             
         for key in ['data_fn', 'save_path', 'data_basename']:
             try: 
@@ -1030,7 +1030,32 @@ class WSMesh(object):
                 self.station_locations[ii]['east'] = mt_obj.east
                 self.station_locations[ii]['north'] = mt_obj.north
                 self.station_locations[ii]['elev'] = mt_obj.elev
+            
              
+
+            
+            #--> rotate grid if necessary
+            #to do this rotate the station locations because ModEM assumes the
+            #input mesh is a lateral grid.
+            #needs to be 90 - because North is assumed to be 0 but the rotation
+            #matrix assumes that E is 0.
+            if self.rotation_angle != 0:
+                cos_ang = np.cos(np.deg2rad(self.rotation_angle))
+                sin_ang = np.sin(np.deg2rad(self.rotation_angle))
+                rot_matrix = np.matrix(np.array([[cos_ang, sin_ang], 
+                                                 [-sin_ang, cos_ang]]))
+                                                 
+                coords = np.array([self.station_locations['east'],
+                                   self.station_locations['north']])
+                
+                #rotate the relative station locations
+                new_coords = np.array(np.dot(rot_matrix, coords))
+                
+                self.station_locations['east'][:] = new_coords[0, :]
+                self.station_locations['north'][:] = new_coords[1, :]
+                
+                print 'Rotated stations by {0:.1f} deg clockwise from N'.format(
+                                                        self.rotation_angle)
             #remove the average distance to get coordinates in a relative space
             self.station_locations['east'] -= self.station_locations['east'].mean()
             self.station_locations['north'] -= self.station_locations['north'].mean()
@@ -1044,7 +1069,7 @@ class WSMesh(object):
             #remove the average distance to get coordinates in a relative space
             self.station_locations['east'] -= east_center
             self.station_locations['north'] -= north_center
-        
+            
         #pickout the furtherst south and west locations 
         #and put that station as the bottom left corner of the main grid
         west = self.station_locations['east'].min()-(1.5*self.cell_size_east)

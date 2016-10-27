@@ -291,8 +291,8 @@ class MT(object):
         """
         
         self._rotation_angle = theta_r
-        self.Z.rotate(theta_r)
-        self.Tipper.rotate(theta_r)
+        self._Z.rotate(theta_r)
+        self._Tipper.rotate(theta_r)
         self.pt.rotate(theta_r)
         self.zinv.rotate(theta_r)
         

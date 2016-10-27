@@ -586,9 +586,12 @@ class Data(object):
         if self._rotation_angle == rotation_angle:
             return
   
-        new_rotation_angle = -self._rotation_angle+rotation_angle
+        print 'Changing rotation angle from {0:.1f} to {1:.1f}'.format(
+                                    self._rotation_angle, rotation_angle)
         
-        if new_rotation_angle == 0:
+        self._rotation_angle = -self._rotation_angle+rotation_angle
+        
+        if self.rotation_angle == 0:
             return
             
         print 'Changing rotation angle from {0:.1f} to {1:.1f}'.format(
@@ -603,8 +606,8 @@ class Data(object):
             
         for mt_key in sorted(self.mt_dict.keys()):
             mt_obj = self.mt_dict[mt_key]
-            mt_obj.Z.rotate(new_rotation_angle)
-            mt_obj.Tipper.rotate(new_rotation_angle)
+            mt_obj.Z.rotate(self._rotation_angle)
+            mt_obj.Tipper.rotate(self._rotation_angle)
             
         print 'Data rotated to align with {0:.1f} deg clockwise from N'.format(
                                                         self._rotation_angle)
