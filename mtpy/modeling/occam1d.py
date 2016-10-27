@@ -1630,7 +1630,7 @@ class Plot1DResponse(object):
                             marker=self.mted,
                             ms=self.ms,
                             mfc=self.cted,
-                            mec=self.cted,
+                            mec=self.ctem,
                             color=self.cted,
                             ecolor=self.cted,
                             lw=self.lw,
