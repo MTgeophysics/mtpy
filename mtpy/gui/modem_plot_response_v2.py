@@ -464,14 +464,14 @@ class PlotResponses(QtGui.QWidget):
             plot_res_err = abs(z_obj.z_err*scaling)
             plot_phase = abs(z_obj.z.imag*scaling)
             plot_phase_err = abs(z_obj.z_err*scaling)
-            h_ratio = [1, 1, .3]
+            h_ratio = [1, 1, .5]
             
         elif self.plot_z == False:
             plot_res = z_obj.resistivity
             plot_res_err = z_obj.resistivity_err
             plot_phase = z_obj.phase
             plot_phase_err = z_obj.phase_err
-            h_ratio = [1.5, 1, .3]
+            h_ratio = [1.5, 1, .5]
         
         #find locations where points have been masked
         nzxx = np.nonzero(z_obj.z[:, 0, 0])[0]
@@ -588,24 +588,47 @@ class PlotResponses(QtGui.QWidget):
         
         #----------------------------------------------
         # get error bar list for editing later        
-        if self.plot_tipper == False:                    
-            self._err_list = [[erxx[1][0],erxx[1][1],erxx[2][0]],
-                              [erxy[1][0],erxy[1][1],erxy[2][0]],
-                              [eryx[1][0],eryx[1][1],eryx[2][0]],
-                              [eryy[1][0],eryy[1][1],eryy[2][0]]]
-            line_list = [[erxx[0]], [erxy[0]], [eryx[0]], [eryy[0]]]
+        if self.plot_tipper == False: 
+            try:                   
+                self._err_list = [[erxx[1][0], erxx[1][1], erxx[2][0]],
+                                  [erxy[1][0], erxy[1][1], erxy[2][0]],
+                                  [eryx[1][0], eryx[1][1], eryx[2][0]],
+                                  [eryy[1][0], eryy[1][1], eryy[2][0]]]
+                line_list = [[erxx[0]], [erxy[0]], [eryx[0]], [eryy[0]]]
+            except IndexError:
+                print 'Found no Z components for {0}'.format(self.station)
+                line_list = [[None], [None], 
+                             [None], [None]]
+                                     
+                self._err_list = [[None, None, None],
+                                  [None, None, None],
+                                  [None, None, None],
+                                  [None, None, None]]
 
-        else:                    
-            line_list = [[erxx[0]], [erxy[0]], 
-                         [eryx[0]], [eryy[0]],
-                         [ertx[0]], [erty[0]]]
-                                 
-            self._err_list = [[erxx[1][0],erxx[1][1],erxx[2][0]],
-                              [erxy[1][0],erxy[1][1],erxy[2][0]],
-                              [eryx[1][0],eryx[1][1],eryx[2][0]],
-                              [eryy[1][0],eryy[1][1],eryy[2][0]],
-                              [ertx[1][0],ertx[1][1],ertx[2][0]],
-                              [erty[1][0],erty[1][1],erty[2][0]]]
+        else:
+            try:                    
+                line_list = [[erxx[0]], [erxy[0]], 
+                             [eryx[0]], [eryy[0]],
+                             [ertx[0]], [erty[0]]]
+                                     
+                self._err_list = [[erxx[1][0], erxx[1][1], erxx[2][0]],
+                                  [erxy[1][0], erxy[1][1], erxy[2][0]],
+                                  [eryx[1][0], eryx[1][1], eryx[2][0]],
+                                  [eryy[1][0], eryy[1][1], eryy[2][0]],
+                                  [ertx[1][0], ertx[1][1], ertx[2][0]],
+                                  [erty[1][0], erty[1][1], erty[2][0]]]
+            except IndexError:
+                print 'Found no Z components for {0}'.format(self.station)
+                line_list = [[None], [None], 
+                             [None], [None],
+                             [None], [None]]
+                                     
+                self._err_list = [[None, None, None],
+                                  [None, None, None],
+                                  [None, None, None],
+                                  [None, None, None],
+                                  [None, None, None],
+                                  [None, None, None]]
         
         #------------------------------------------
         # make things look nice        
