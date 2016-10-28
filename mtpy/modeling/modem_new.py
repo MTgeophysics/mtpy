@@ -751,6 +751,48 @@ class Data(object):
     station_locations = property(_get_station_locations, 
                                   _set_station_locations,
                                   doc="""location of stations""") 
+                                  
+#    def compute_inv_error(self, comp, data_value, data_error):
+#        """
+#        compute the error from the given parameters
+#        """
+#        #compute relative error
+#        if comp.find('t') == 0:
+#            if 'floor' in self.error_type:
+#                abs_err = max(self.error_tipper, 
+#                              data_error)
+#            else:
+#                abs_err = self.error_tipper
+#        elif comp.find('z') == 0:
+#            if self.error_type == 'floor':
+#                abs_err = max(data_error,
+#                              (self.error_floor/100.)*abs(data_value))
+#
+#            elif self.error_type == 'value':
+#                abs_err = abs(data_value)*self.error_value/100.
+#            
+#            elif self.error_type == 'egbert':
+#                d_zxy = self.data_array[ss]['z'][ff, 0, 1]
+#                d_zyx = self.data_array[ss]['z'][ff, 1, 0]
+#                abs_err = np.sqrt(abs(d_zxy*d_zyx))*\
+#                          self.error_egbert/100.
+#            elif self.error_type == 'floor_egbert':
+#                abs_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj]
+#                d_zxy = self.data_array[ss]['z'][ff, 0, 1]
+#                d_zyx = self.data_array[ss]['z'][ff, 1, 0]
+#                if abs_err < np.sqrt(abs(d_zxy*d_zyx))*self.error_egbert/100.:
+#                    abs_err = np.sqrt(abs(d_zxy*d_zyx))*self.error_egbert/100.
+#
+#
+#        if abs_err == 0.0:
+#            abs_err = 1e3
+#            print('''error at {0} is 0 for period {1} \n
+#                    for {2}({3}, {4}) set to 1e3\n
+#                    data = {5:.4e}+j{6:.4e}'''.format(
+#                    sta, per, comp, z_ii, z_jj, zz.real, 
+#                    zz.imag))
+#            if self.units == 'ohm':
+#                abs_err /= 796.
                 
     def write_data_file(self, save_path=None, fn_basename=None, 
                         rotation_angle=None, compute_error=True, fill=True):

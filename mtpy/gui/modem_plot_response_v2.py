@@ -16,6 +16,7 @@ JP 2016
 # standard imports
 import os
 import sys
+import copy
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -291,8 +292,7 @@ class PlotResponses(QtGui.QWidget):
         
         # make a back up copy that will be unchanged
         # that way we can revert back
-        self._modem_data_copy = modem.Data()
-        self._modem_data_copy.read_data_file(self._data_fn)
+        self._modem_data_copy = copy.deepcopy(self.modem_data)
         
         self.dirpath = os.path.dirname(self._data_fn)
         
@@ -572,13 +572,13 @@ class PlotResponses(QtGui.QWidget):
             erty = mtplottools.plot_errorbar(axtyr, 
                                              period[nty],
                                              t_obj.tipper[nty, 0, 1].real,
-                                             t_obj.tipper_err[nty, 0, 0],
+                                             t_obj.tipper_err[nty, 0, 1],
                                              **kw_yy)
                                      
             eptx = mtplottools.plot_errorbar(axtxi, 
                                              period[ntx],
                                              t_obj.tipper[ntx, 0, 0].imag,
-                                             t_obj.tipper_err[ntx, 0, 1],
+                                             t_obj.tipper_err[ntx, 0, 0],
                                              **kw_xx)
             epty = mtplottools.plot_errorbar(axtyi, 
                                              period[nty],
