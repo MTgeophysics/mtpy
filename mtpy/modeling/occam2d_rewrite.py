@@ -683,8 +683,8 @@ class Mesh():
         nx = self.x_nodes.shape[0]
         nz = self.z_nodes.shape[0]
         mesh_lines.append('MESH FILE Created by mtpy.modeling.occam2d\n')
-        mesh_lines.append("   {0}  {1}  {2}  {0}  {0}  {3}\n".format(0, nx,
-                          nz, 2))
+        mesh_lines.append("   {0}  {1}  {2}  {0}  {0}  {3}\n".format(0, nx + 1,
+                          nz + 1, 2))
 
         
         #--> write horizontal nodes
@@ -2396,6 +2396,9 @@ class Data(Profile):
                 else:
                     tipper = None
                     tipper_err = None
+                # update station freq, as we've now interpolated new z values for the station
+                station_freq = self.freq[np.where((self.freq >= station_freq.min()) &
+                                               (self.freq <= station_freq.max()))]
             else:
                 station_freq = edi.Z.freq
                 rho = edi.Z.resistivity
@@ -2521,7 +2524,7 @@ class Data(Profile):
         Get all the data needed to write a data file.
         
         """
-
+        
         self.data_list = []
         for ss, sdict in enumerate(self.data, 1):
             for ff in range(self.freq.shape[0]):

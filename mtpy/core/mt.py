@@ -664,7 +664,7 @@ class MT(object):
                 z_func_err = spi.interp1d(self.Z.freq[ind], self.Z.z_err[ind][:, ii, jj],
                                            kind='slinear')
                 new_Z.z_err[:, ii, jj] = z_func_err(new_freq_array)
-
+        
         # if there is not tipper than skip
         if self.Tipper.tipper is None:
             return new_Z, None
