@@ -14,6 +14,7 @@ import mtpy.modeling.modem_new as modem
 import mtpy.modeling.ws3dinv as ws
 import os
 import scipy.interpolate as interpolate
+import mtpy.utils.latlongutmconversion as utm2ll
 
 ogr.UseExceptions()
 
@@ -66,6 +67,11 @@ class ModEM_to_Raster(object):
         self.res_array = model_obj.res_model[self.pad_north:-self.pad_north,
                                              self.pad_east:-self.pad_east,
                                              :]
+        
+        if self.grid_center is not None:                                      
+            center_zone, center_east, center_north = utm2ll.LLtoUTM(23, 
+                                                                    self.grid_center[0],
+                                                                    self.grid_center[1]) 
                                              
     def interpolate_grid(self, pad_east=None, pad_north=None, cell_size=None):
         """
