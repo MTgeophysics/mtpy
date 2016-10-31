@@ -576,7 +576,7 @@ class MT(object):
         return new_z_obj
         
         
-    def interpolate(self, new_freq_array):
+    def interpolate(self, new_freq_array, interp_type='slinear'):
         """
         Interpolate the impedance tensor onto different frequencies
         
@@ -674,9 +674,9 @@ class MT(object):
                 new_f = new_freq_array[new_nz_index]
                 
                 # create a function that does 1d interpolation
-                z_func_real = spi.interp1d(f, z_real, kind='slinear')
-                z_func_imag = spi.interp1d(f, z_imag, kind='slinear')
-                z_func_err = spi.interp1d(f, z_err, kind='slinear')
+                z_func_real = spi.interp1d(f, z_real, kind=interp_type)
+                z_func_imag = spi.interp1d(f, z_imag, kind=interp_type)
+                z_func_err = spi.interp1d(f, z_err, kind=interp_type)
                 
                 # interpolate onto new frequency range
                 new_Z.z[new_nz_index, ii, jj] = z_func_real(new_f)+1j*z_func_imag(new_f)
@@ -703,9 +703,9 @@ class MT(object):
             f = self.Tipper.freq[nz_index]
             
             # create interpolation functions
-            t_func_real = spi.interp1d(f, t_real, kind='slinear')
-            t_func_imag = spi.interp1d(f, t_imag, kind='slinear')
-            t_func_err = spi.interp1d(f, t_err, kind='slinear')
+            t_func_real = spi.interp1d(f, t_real, kind=interp_type)
+            t_func_imag = spi.interp1d(f, t_imag, kind=interp_type)
+            t_func_err = spi.interp1d(f, t_err, kind=interp_type)
 
             # get new frequency to interpolate over, making sure bounds are
             # for non-zero components

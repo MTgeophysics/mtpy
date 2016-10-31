@@ -181,6 +181,7 @@ class PlotWidget(QtGui.QWidget):
         self.interp_period_min = .001
         self.interp_period_max = 1000.
         self.interp_period_num = 24
+        self.interp_type = 'slinear'
         self.num_freq = None
         self.static_shift_med_rad = 2000.
         self.static_shift_med_num_freq = 24
@@ -188,6 +189,13 @@ class PlotWidget(QtGui.QWidget):
                         'marker' : self.plot_properties.mask_marker,
                         'ms' : self.plot_properties.mask_ms,
                         'mew' : self.plot_properties.mask_mew}
+                        
+        self._interp_types = ['linear', 
+                              'nearest',
+                              'zero',
+                              'slinear',
+                              'quadratic',
+                              'cubic']
         
         self.setup_ui()
         
@@ -354,6 +362,12 @@ class PlotWidget(QtGui.QWidget):
         self.interp_num_edit = QtGui.QLineEdit("{0:.0f}".format(self.interp_period_num))
         self.interp_num_edit.editingFinished.connect(self.interp_set_num)
         
+        self.interp_type_label = QtGui.QLabel("Interp. Type")
+        self.interp_type_combo = QtGui.QComboBox()
+        self.interp_type_combo.addItems(self._interp_types)
+        self.interp_type_combo.setCurrentIndex(3)
+        self.interp_type_combo.currentIndexChanged.connect(self.interp_set_type)
+        
         ## tools label
         self.tools_label = QtGui.QLabel("Editing Tools")
         self.tools_label.setFont(header_font)
@@ -490,6 +504,8 @@ class PlotWidget(QtGui.QWidget):
 
         interp_num.addWidget(self.interp_num_label, 1, 0)
         interp_num.addWidget(self.interp_num_edit, 1, 1)
+        interp_num.addWidget(self.interp_type_label, 1, 2)
+        interp_num.addWidget(self.interp_type_combo, 1, 3)
         
         interp_layout = QtGui.QVBoxLayout()
         interp_layout.addLayout(interp_title)
@@ -747,6 +763,9 @@ class PlotWidget(QtGui.QWidget):
         self.interp_period_num = int(str(self.interp_num_edit.text()))
         self.interp_num_edit.setText('{0:.0f}'.format(self.interp_period_num))
         
+    def interp_set_type(self, selected_item):
+        self.interp_type = self._interp_types[selected_item]
+        
     def interp_apply(self):
         """
         interpolate data on to a new period list that is equally spaced in 
@@ -781,12 +800,14 @@ class PlotWidget(QtGui.QWidget):
                                  
         if self._edited_dist == True or self._edited_mask == True or \
            self._edited_rot == True or self._edited_ss == True:
-            new_z, new_tip = self.mt_obj.interpolate(interp_freq)
+            new_z, new_tip = self.mt_obj.interpolate(interp_freq, 
+                                                     interp_type=self.interp_type)
             self.mt_obj.Z = new_z
             self.mt_obj.Tipper = new_tip
             
         else:
-            new_z, new_tip = self._mt_obj.interpolate(interp_freq)
+            new_z, new_tip = self._mt_obj.interpolate(interp_freq,
+                                                      interp_type=self.interp_type)
             self.mt_obj.Z = new_z
             self.mt_obj.Tipper = new_tip
             
