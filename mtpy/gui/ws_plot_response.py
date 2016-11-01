@@ -182,7 +182,8 @@ class WSPlotResponse(QtGui.QMainWindow):
                                        filter='(*.dat);; (*.data)'))
                                        
         sfn = str(fn_dialog.getOpenFileName(caption='Choose WS3DINV station file',
-                                       filter='*.txt'))
+                                            filter='*.txt',
+                                            directory=os.path.dirname(fn)))
         
         self.plot_response.station_fn = sfn                               
         self.plot_response.data_fn = fn
