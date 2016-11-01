@@ -186,7 +186,7 @@ class Zinvariants:
             
             if ex == 0.0:
                 print 'Could not compute invariants for {0:5e} Hz'.format(
-                       self._Z.freq[ii])
+                       self.freq[ii])
                 self.inv1[ii] = np.nan
                 self.inv2[ii] = np.nan
                 self.inv3[ii] = np.nan
@@ -281,7 +281,7 @@ class Zinvariants:
         set the freq array, needs to be the same length at z
         """
         
-        self._Z.freq = freq
+        self.freq = freq
 
     def __str__(self):
         return "Computes the invariants of the impedance tensor according "+\
