@@ -67,12 +67,48 @@ class ModEM_to_Raster(object):
         self.res_array = model_obj.res_model[self.pad_north:-self.pad_north,
                                              self.pad_east:-self.pad_east,
                                              :]
+    
+    def get_model_lower_left_coord(self, model_fn=None, model_center=None,
+                                   pad_east=0, pad_north=0):
+        """
+        Find the models lower left hand corner in (lon, lat) decimal degrees
+        """
+        if model_fn is not None:
+            self.model_fn = model_fn
         
-        if self.grid_center is not None:                                      
+        if self.model_fn is None:
+            raise IOError('Need to input a ModEM model file name to read in')
+            
+        self.pad_east = pad_east
+        self.pad_north = pad_north
+            
+        model_obj = modem.Model()
+        model_obj.model_fn = self.model_fn
+        model_obj.read_model_file()
+        
+        if model_center:                                      
             center_zone, center_east, center_north = utm2ll.LLtoUTM(23, 
-                                                                    self.grid_center[0],
-                                                                    self.grid_center[1]) 
+                                                                    model_center[1],
+                                                                    model_center[0]) 
                                              
+                                             
+            lower_left_east = center_east+model_obj.grid_center[1]+\
+                                model_obj.nodes_east[0:pad_east].sum()-\
+                                model_obj.nodes_east[pad_east]/2
+            lower_left_north = center_north+model_obj.grid_center[1]+\
+                                model_obj.nodes_north[0:pad_north].sum()+\
+                                model_obj.nodes_north[pad_north]/2
+            
+            ll_lat, ll_lon = utm2ll.UTMtoLL(23, 
+                                            lower_left_north, 
+                                            lower_left_east,
+                                            center_zone)
+            
+            print 'Lower Left Coordinates should be ({0:.5f}, {1:.5f})'.format(ll_lon, ll_lat)
+            return (ll_lon, ll_lat)
+        else:
+            raise IOError('Need to input model center (lon, lat)')
+            
     def interpolate_grid(self, pad_east=None, pad_north=None, cell_size=None):
         """
         interpolate the irregular model grid onto a regular grid.
@@ -104,7 +140,9 @@ class ModEM_to_Raster(object):
             self.pad_north = np.where(model_obj.nodes_north[0:10] > 
                                     self.cell_size_north*1.1)[0][-1]
         
-            
+        print 'Pad north = {0}'.format(self.pad_north)    
+        print 'Pad east  = {0}'.format(self.pad_east) 
+        
         new_east = np.arange(model_obj.grid_east[self.pad_east],
                              model_obj.grid_east[-self.pad_east-1],
                              self.cell_size_east)
@@ -113,7 +151,7 @@ class ModEM_to_Raster(object):
                              self.cell_size_north)
             
         model_n, model_e = np.broadcast_arrays(model_obj.grid_north[:, None], 
-                                                      model_obj.grid_east[None, :])
+                                               model_obj.grid_east[None, :])
 
                                              
         new_res_arr = np.zeros((new_north.shape[0],
