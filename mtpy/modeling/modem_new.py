@@ -1106,9 +1106,9 @@ class Data(object):
                 metadata_list.append(dline[1:].strip())
                 if dline.lower().find('ohm') > 0:
                     self.units = 'ohm'
-                if dline.lower().find('mv') > 0:
+                elif dline.lower().find('mv') > 0:
                     self.units =' [mV/km]/[nT]'
-                if dline.lower().find('vertical') > 0:
+                elif dline.lower().find('vertical') > 0:
                     read_tipper = True
                     read_impedance = False
                 elif dline.lower().find('impedance') > 0:
@@ -1119,6 +1119,14 @@ class Data(object):
                         self.wave_sign_impedance = dline[dline.find('(')+1]
                     elif read_tipper is True:
                         self.wave_sign_tipper = dline[dline.find('(')+1]
+                elif len(dline[1:].strip().split()) == 2:
+                    value_list = [float(value) for value in 
+                                  dline[1:].strip().split()]
+                    if value_list[0]%1 == 0 and value_list[1]%1 == 0:
+                        n_periods = value_list[0]
+                        n_stations = value_list[1]
+                    else:
+                        self.center_position = np.array(value_list)
             else:
                 dline_list = dline.strip().split()
                 if len(dline_list) == 11:
