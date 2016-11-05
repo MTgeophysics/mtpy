@@ -218,6 +218,11 @@ def main():
     gridToVTK(VTKresist, X, Y, D, pointData = {'resistivity' : mtNS})
 
     f.close()
+    
+    print '  dimensions model = {0}'.format(mtNS.shape)
+    print '  dimensions north   {0}'.format(X.shape[0])
+    print '  dimensions east    {0}'.format(Y.shape[0])
+    print '  dimensions z       {0}'.format(D.shape[0])
 
     #fn2 = VTKresist+'.csv'
     #F = open(fn2,'w')

@@ -32,6 +32,7 @@ import mtpy.utils.exceptions as mtex
 import mtpy.analysis.pt as mtpt
 import mtpy.imaging.mtcolors as mtcl
 import scipy.interpolate as spi
+import scipy.stats as stats
 try:
     from evtk.hl import gridToVTK, pointsToVTK
 except ImportError:
@@ -1281,10 +1282,10 @@ class Data(object):
             vtk_fn = os.path.join(vtk_save_path, vtk_fn_basename)
             
         pointsToVTK(vtk_fn, 
-                 self.station_locations['rel_north'], 
-                 self.station_locations['rel_east'],
-                 -self.station_locations['elev'],
-                 pointData={'elevation':self.station_locations['elev']})
+                 self.station_locations['rel_north']/1000, 
+                 self.station_locations['rel_east']/1000,
+                 -self.station_locations['elev']/1000,
+                 data={'elevation':self.station_locations['elev']})
                  
         print 'Wrote file to {0}'.format(vtk_fn)
             
@@ -2310,6 +2311,13 @@ class Model(object):
             self.grid_east += self.grid_center[1]
             self.grid_z += self.grid_center[2]
             
+        self.cell_size_east = stats.mode(self.nodes_east)[0][0]
+        self.cell_size_north = stats.mode(self.nodes_north)[0][0]
+        
+        self.pad_east = np.where(self.nodes_east[0:int(self.nodes_east.size/2)]
+                                 != self.cell_size_east)[0][-1]
+        self.north_pad = np.where(self.nodes_north[0:int(self.nodes_north.size/2)]
+                                 != self.cell_size_north)[0][-1]
             
     def read_ws_model_file(self, ws_model_fn):
         """
@@ -2358,12 +2366,17 @@ class Model(object):
         vtk_north = np.append(self.grid_north, 1.5*self.grid_north[-1])
         vtk_z = np.append(self.grid_z, 1.5*self.grid_z[-1])
         gridToVTK(vtk_fn, 
-                 vtk_north, 
-                 vtk_east,
-                 vtk_z,
+                 self.grid_north/1000., 
+                 self.grid_east/1000.,
+                 self.grid_z/1000.,
                  pointData={'resistivity':self.res_model}) 
         
-        print 'Wrote file to {0}'.format(vtk_fn)
+        print '-'*50
+        print '  Wrote file to {0}'.format(vtk_fn)
+        print '  dimensions model = {0}'.format(self.res_model.shape)
+        print '  dimensions north {0}'.format(self.grid_north.shape[0])
+        print '  dimensions east  {0}'.format(self.grid_east.shape[0])
+        print '  dimensions z     {0}'.format(self.grid_z.shape[0])
             
 #==============================================================================
 # Control File for inversion
