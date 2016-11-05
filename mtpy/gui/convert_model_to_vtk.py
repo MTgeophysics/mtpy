@@ -79,6 +79,8 @@ class ConvertModel2VTK(QtGui.QWidget):
         self.model_type_combo.addItems(self._model_list)
         self.model_type_combo.currentIndexChanged.connect(self.set_model_type)
         
+        ## add in model center to put into geographic coordinates
+        
         self.output_box = QtGui.QTextEdit()        
         
         self.my_stream = MyStream()
@@ -183,11 +185,11 @@ class ConvertModel2VTK(QtGui.QWidget):
         elif self.model_type == 'WS':
             program = 'ws2vtk'
             
-#        subprocess.call([program, 
-#                         self.model_fn, 
-#                         self.resp_fn,
-#                         self.vtk_model_fn,
-#                         self.vtk_station_fn])
+            subprocess.call([program, 
+                             self.model_fn, 
+                             self.resp_fn,
+                             self.vtk_model_fn,
+                             self.vtk_station_fn])
         
     @QtCore.pyqtSlot(str)
     def normal_output(self, message):
