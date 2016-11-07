@@ -30,6 +30,16 @@ mu0 = 4e-7*math.pi
 
 #=================================================================
 
+def roundsf(number, sf):
+    """
+    round a number to a specified number of significant figures (sf)
+    """
+    # can't have < 1 s.f.
+    sf = max(sf,1.)
+    rounding = int(np.ceil(-np.log10(number) + sf - 1.))
+    
+    return np.round(number, rounding)
+
 
 def invertmatrix_incl_errors(inmatrix, inmatrix_err = None):
 
