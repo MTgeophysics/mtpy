@@ -281,11 +281,11 @@ class ModelWidget(QtGui.QWidget):
         
         ## plot the model
         plot_east = np.append(self.model_obj.grid_east,
-                              self.model_obj.grid_east[-1]*1.25)/self.scale
+                              self.model_obj.grid_east[-1]*1.2)/self.scale
         plot_north = np.append(self.model_obj.grid_north, 
-                               self.model_obj.grid_north[-1]*1.25)/self.scale
+                               self.model_obj.grid_north[-1]*1.2)/self.scale
         plot_z = np.append(self.model_obj.grid_z, 
-                               self.model_obj.grid_z[-1]*1.25)/self.scale
+                               self.model_obj.grid_z[-1]*1.2)/self.scale
                                
         self.plot_east_map, self.plot_north_map = np.meshgrid(plot_east, 
                                                               plot_north,
@@ -304,7 +304,10 @@ class ModelWidget(QtGui.QWidget):
                                np.log10(self.model_obj.res_model[:, :, self.map_index].T),
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
-                               vmax=self.res_limits[1])                        
+                               vmax=self.res_limits[1])
+        self.map_ax.set_xlabel('Easting {0}'.format(self.units))
+        self.map_ax.set_ylabel('Northing {0}'.format(self.units))
+        self.map_ax.axis('tight')
         self.map_canvas.draw()
         
         self.north_ax = self.north_figure.add_subplot(1, 1, 1, aspect='equal')
@@ -314,6 +317,11 @@ class ModelWidget(QtGui.QWidget):
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
+        self.north_ax.set_xlabel('Easting {0}'.format(self.units))
+        self.north_ax.set_ylabel('Depth {0}'.format(self.units))
+        z_lim = self.north_ax.get_ylim()
+        self.north_ax.set_ylim(z_lim[1], z_lim[0])
+        self.north_ax.axis('tight')
         self.north_canvas.draw()
                                
         self.east_ax = self.east_figure.add_subplot(1, 1, 1, aspect='equal')
@@ -323,7 +331,15 @@ class ModelWidget(QtGui.QWidget):
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
+                               
+        self.east_ax.set_xlabel('Northing {0}'.format(self.units))
+        self.east_ax.set_ylabel('Depth {0}'.format(self.units))
+        z_lim = self.east_ax.get_ylim()
+        self.east_ax.set_ylim(z_lim[1], z_lim[0])
+        self.east_ax.axis('tight')
         self.east_canvas.draw()
+        
+        
         
         
     def set_map_index(self):
@@ -332,7 +348,6 @@ class ModelWidget(QtGui.QWidget):
         self.map_depth_label.setText('Depth {0:>10.2f} {1}'.format(depth,
                                                                 self.units))
                                                                 
-        self.map_ax.cla()
         self.map_ax.pcolormesh(self.plot_east_map, 
                                self.plot_north_map,
                                np.log10(self.model_obj.res_model[:, :, self.map_index].T),
@@ -348,7 +363,6 @@ class ModelWidget(QtGui.QWidget):
         self.east_label.setText('Easting {0:>10.2f} {1}'.format(easting,
                                                                 self.units))
                                                                 
-        self.east_ax.cla()
         self.east_ax.pcolormesh(self.plot_north_z, 
                                self.plot_z_north,
                                np.log10(self.model_obj.res_model[:, self.east_index, :]),
@@ -363,7 +377,6 @@ class ModelWidget(QtGui.QWidget):
         self.north_label.setText('Northing {0:>10.2f} {1}'.format(northing,
                                                                 self.units))
                                                                 
-        self.north_ax.cla()
         self.north_ax.pcolormesh(self.plot_east_z, 
                                self.plot_z_east,
                                np.log10(self.model_obj.res_model[self.north_index, :, :]),
