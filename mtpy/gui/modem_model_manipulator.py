@@ -15,8 +15,9 @@ import sys
 from PyQt4 import QtCore, QtGui
 
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
+import numpy as np
 
 from mtpy.gui.my_stream import MyStream
 import mtpy.modeling.modem_new as modem
@@ -32,6 +33,8 @@ class ModEM_Model_Manipulator(QtGui.QMainWindow):
     def __init__(self):
         super(ModEM_Model_Manipulator, self).__init__()
         
+        self.model_widget = ModelWidget()
+        
         self.ui_setup()
         
     def ui_setup(self):
@@ -39,8 +42,7 @@ class ModEM_Model_Manipulator(QtGui.QMainWindow):
         self.setWindowTitle("Manipulate ModEM Model")
         self.setWindowState(QtCore.Qt.WindowMaximized)
         
-        self.model_plot_widget = ModelWidget()
-        self.central_widget = self.setCentralWidget(self.model_plot_widget)
+        self.central_widget = self.setCentralWidget(self.model_widget)
         
         #-------------- MENU BAR ---------------------------------
         # add a menu bar to the top of the window        
@@ -73,12 +75,7 @@ class ModEM_Model_Manipulator(QtGui.QMainWindow):
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM data file',
                                        filter='(*.dat);; (*.data)'))
                                        
-        self.mesh_widget.modem_data = modem.Data()
-        self.mesh_widget.modem_data.read_data_file(fn)
-        self.mesh_widget.modem_data_fn = fn
-        
-        self.mesh_widget.dir_path = os.path.dirname(fn)
-        
+        self.model_widget.data_fn = fn        
         
     def get_model_fn(self):
         """ 
@@ -89,10 +86,7 @@ class ModEM_Model_Manipulator(QtGui.QMainWindow):
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM model file',
                                        filter='*.rho'))
                                        
-        self.mesh_widget.model_obj = modem.Model()
-        self.mesh_widget.model_obj.read_model_file(fn)
-
-        self.mesh_widget.dir_path = os.path.dirname(fn)
+        self.model_widget.model_fn = fn
         
     def save_model_fn(self):
         """
@@ -106,7 +100,7 @@ class ModEM_Model_Manipulator(QtGui.QMainWindow):
                                     
         sv_path = os.path.dirname(save_fn)
         sv_basename = os.path.basename(save_fn)
-        self.mesh_widget.model_obj.write_model_file(save_path=sv_path,
+        self.model_widget.model_obj.write_model_file(save_path=sv_path,
                                                     model_fn_basename=sv_basename)
                                                     
 #==============================================================================
@@ -120,17 +114,32 @@ class ModelWidget(QtGui.QWidget):
     def __init__(self):
         super(ModelWidget, self).__init__()
         
-        self.model_obj = modem.Model()
-        self.data_obj = modem.Data()
-        self.cov_obj = modem.Covariance()
-
-        self.plot_map = ModelPlotWidget()
-        self.plot_north = ModelPlotWidget()
-        self.plot_east = ModelPlotWidget()
-        self.plot_3d = ModelPlotWidget()
+        self.model_obj = None
+        self.data_obj = None
+        self.cov_obj = None
+        
+        self._data_fn = None
+        self._model_fn = None
+        
+        self.map_index = 0
+        self.east_index = 0
+        self.north_index = 0 
+        
+        self.plot_east_map = None
+        self.plot_north_map = None
+        self.plot_east_z = None
+        self.plot_z_east = None
+        self.plot_north_z = None
+        self.plot_z_north = None
+        
+        self.units = 'km'
+        self.scale = 1000.
+        
+        self.cmap = 'jet_r'
+        self.res_limits = (0, 4)
 
         self.ui_setup()
-        
+ 
     def ui_setup(self):
 #        
 #        self.colorbar_widget = mcb.ColorbarBase(self.ax2,cmap=self.cmap,
@@ -147,48 +156,224 @@ class ModelWidget(QtGui.QWidget):
     
         self.map_figure = Figure()
         self.map_canvas = FigureCanvas(self.map_figure)
+        self.map_canvas.mpl_connect('pick_event', self.map_on_pick)
         self.map_canvas.setSizePolicy(QtGui.QSizePolicy.Expanding,
                                       QtGui.QSizePolicy.Expanding)
+        self.map_toolbar = NavigationToolbar(self.map_canvas, self)
                                       
-        self.map_input_label = QtGui.QLabel('Index Value')
-        self.map_input_edit = QtGui.QLineEdit()
+        self.map_depth_label = QtGui.QLabel('Depth {0:>10.2f} {1}'.format(0, 
+                                                                    self.units))
         self.map_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.map_slider.valueChanged.connect(self.set_map_index)
+        self.map_slider.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.map_slider.setMinimum(0)
+        self.map_slider.setMaximum(0)
+        self.map_slider.setTickInterval(1)
         
-        map_bottom_layout = QtGui.QGridLayout()
-        map_bottom_layout.addWidget(self.map_input_label, 1, 1, 1, 1)
-        map_bottom_layout.addWidget(self.map_input_edit, 1, 2, 1, 1)
-        map_bottom_layout.addWidget(self.map_slider, 1, 3, 1, 150)
-        map_layout = QtGui.QVBoxLayout()
-        map_layout.addWidget(self.map_canvas)
-        map_layout.addLayout(map_bottom_layout)
-        
-        
-        self.figure_east = Figure()
-        self.canvas_east = FigureCanvas(self.figure_east)
-        self.canvas_east.setSizePolicy(QtGui.QSizePolicy.Expanding,
+
+        self.east_figure= Figure()
+        self.east_canvas = FigureCanvas(self.east_figure)
+        self.east_canvas.setSizePolicy(QtGui.QSizePolicy.Expanding,
                                        QtGui.QSizePolicy.Expanding)
-        self.figure_north = Figure()
-        self.canvas_north = FigureCanvas(self.figure_north)
-        self.canvas_north.setSizePolicy(QtGui.QSizePolicy.Expanding,
+        self.east_toolbar = NavigationToolbar(self.east_canvas, self)
+                                       
+        self.east_label = QtGui.QLabel('Easting {0:>10.2f} {1}'.format(0, 
+                                                                   self.units))
+        self.east_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.east_slider.valueChanged.connect(self.set_east_index)
+        self.east_slider.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.east_slider.setMinimum(0)
+        self.east_slider.setMaximum(0)
+        self.east_slider.setTickInterval(1)
+        
+        self.north_figure = Figure()
+        self.north_canvas = FigureCanvas(self.north_figure)
+        self.north_canvas.setSizePolicy(QtGui.QSizePolicy.Expanding,
                                       QtGui.QSizePolicy.Expanding)
+        self.north_toolbar = NavigationToolbar(self.north_canvas, self)
+                                      
+        self.north_label = QtGui.QLabel('Northing {0:>10.2f} m'.format(0,
+                                                                    self.units))
+        self.north_slider = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.north_slider.valueChanged.connect(self.set_north_index)
+        self.north_slider.setTickPosition(QtGui.QSlider.TicksBelow)
+        self.north_slider.setMinimum(0)
+        self.north_slider.setMaximum(0)
+        self.north_slider.setTickInterval(1)
+        
+        
         self.figure_3d = Figure()
         self.canvas_3d = FigureCanvas(self.figure_3d)
         self.canvas_3d.setSizePolicy(QtGui.QSizePolicy.Expanding,
                                        QtGui.QSizePolicy.Expanding)
-                                       
+
+        ##------------------------------------------------
+        ## Layout
         
-#        self.plot_map = ModelPlotWidget()
-#        self.plot_east = ModelPlotWidget()
-#        self.plot_north = ModelPlotWidget()
-#        self.plot_3d = ModelPlotWidget()
+        map_bottom_layout = QtGui.QHBoxLayout()
+        map_bottom_layout.addWidget(self.map_depth_label)
+        map_bottom_layout.addWidget(self.map_slider)
+        map_layout = QtGui.QVBoxLayout()
+        map_layout.addWidget(self.map_toolbar)
+        map_layout.addWidget(self.map_canvas)
+        map_layout.addLayout(map_bottom_layout)
+        
+        east_bottom_layout = QtGui.QHBoxLayout()
+        east_bottom_layout.addWidget(self.east_label)
+        east_bottom_layout.addWidget(self.east_slider)
+        east_layout = QtGui.QVBoxLayout()
+        east_layout.addWidget(self.east_toolbar)
+        east_layout.addWidget(self.east_canvas)
+        east_layout.addLayout(east_bottom_layout)
+        
+        north_bottom_layout = QtGui.QHBoxLayout()
+        north_bottom_layout.addWidget(self.north_label)
+        north_bottom_layout.addWidget(self.north_slider)
+        north_layout = QtGui.QVBoxLayout()
+        north_layout.addWidget(self.north_toolbar)
+        north_layout.addWidget(self.north_canvas)
+        north_layout.addLayout(north_bottom_layout)
+        
         
         self.grid_layout = QtGui.QGridLayout()
         self.grid_layout.addLayout(map_layout, 1, 1)
-        self.grid_layout.addWidget(self.canvas_east, 1, 2)
-        self.grid_layout.addWidget(self.canvas_north, 2, 1)
+        self.grid_layout.addLayout(east_layout, 1, 2)
+        self.grid_layout.addLayout(north_layout, 2, 1)
         self.grid_layout.addWidget(self.canvas_3d, 2, 2)
         
         self.setLayout(self.grid_layout)
+      
+    @property
+    def data_fn(self):
+        self._data_fn
+    
+    @data_fn.getter
+    def data_fn(self):
+        return self._data_fn
+    @data_fn.setter
+    def data_fn(self, data_fn):
+        self._data_fn = data_fn
+        
+        self.data_obj = modem.Data()
+        self.data_obj.read_data_file(self._data_fn)
+        
+        
+    @property
+    def model_fn(self):
+        self._model_fn
+    
+    @model_fn.getter
+    def model_fn(self):
+        return self._model_fn
+        
+    @model_fn.setter
+    def model_fn(self, model_fn):
+        self._model_fn = model_fn
+        self.model_obj = modem.Model()
+        self.model_obj.read_model_file(self._model_fn)
+        
+        # set slider bar intervals
+        # need the minus 1 cause we are using the value of the slider as
+        # the index.
+        self.map_slider.setMaximum(self.model_obj.grid_z.size-1)
+        self.east_slider.setMaximum(self.model_obj.grid_north.size-1)
+        self.north_slider.setMaximum(self.model_obj.grid_east.size-1)
+        
+        ## plot the model
+        plot_east = np.append(self.model_obj.grid_east,
+                              self.model_obj.grid_east[-1]*1.25)/self.scale
+        plot_north = np.append(self.model_obj.grid_north, 
+                               self.model_obj.grid_north[-1]*1.25)/self.scale
+        plot_z = np.append(self.model_obj.grid_z, 
+                               self.model_obj.grid_z[-1]*1.25)/self.scale
+                               
+        self.plot_east_map, self.plot_north_map = np.meshgrid(plot_east, 
+                                                              plot_north,
+                                                              indexing='ij')
+        self.plot_east_z, self.plot_z_east = np.meshgrid(plot_east, 
+                                                         plot_z,
+                                                         indexing='ij')
+        self.plot_north_z, self.plot_z_north = np.meshgrid(plot_north, 
+                                                           plot_z,
+                                                           indexing='ij')
+                                                           
+                                                           
+        self.map_ax = self.map_figure.add_subplot(1, 1, 1, aspect='equal')
+        self.map_ax.pcolormesh(self.plot_east_map, 
+                               self.plot_north_map,
+                               np.log10(self.model_obj.res_model[:, :, self.map_index].T),
+                               cmap=self.cmap,
+                               vmin=self.res_limits[0],
+                               vmax=self.res_limits[1])                        
+        self.map_canvas.draw()
+        
+        self.north_ax = self.north_figure.add_subplot(1, 1, 1, aspect='equal')
+        self.north_ax.pcolormesh(self.plot_east_z, 
+                               self.plot_z_east,
+                               np.log10(self.model_obj.res_model[self.north_index, :, :]),
+                               cmap=self.cmap,
+                               vmin=self.res_limits[0],
+                               vmax=self.res_limits[1])
+        self.north_canvas.draw()
+                               
+        self.east_ax = self.east_figure.add_subplot(1, 1, 1, aspect='equal')
+        self.east_ax.pcolormesh(self.plot_north_z, 
+                               self.plot_z_north,
+                               np.log10(self.model_obj.res_model[:, self.east_index, :]),
+                               cmap=self.cmap,
+                               vmin=self.res_limits[0],
+                               vmax=self.res_limits[1])
+        self.east_canvas.draw()
+        
+        
+    def set_map_index(self):
+        self.map_index = int(self.map_slider.value())
+        depth = self.model_obj.grid_z[self.map_index]/self.scale
+        self.map_depth_label.setText('Depth {0:>10.2f} {1}'.format(depth,
+                                                                self.units))
+                                                                
+        self.map_ax.cla()
+        self.map_ax.pcolormesh(self.plot_east_map, 
+                               self.plot_north_map,
+                               np.log10(self.model_obj.res_model[:, :, self.map_index].T),
+                               cmap=self.cmap,
+                               vmin=self.res_limits[0],
+                               vmax=self.res_limits[1])
+        self.map_canvas.draw()
+                                        
+    def set_east_index(self):
+        self.east_index = int(self.east_slider.value())
+        easting = self.model_obj.grid_north[self.east_index]/self.scale
+
+        self.east_label.setText('Easting {0:>10.2f} {1}'.format(easting,
+                                                                self.units))
+                                                                
+        self.east_ax.cla()
+        self.east_ax.pcolormesh(self.plot_north_z, 
+                               self.plot_z_north,
+                               np.log10(self.model_obj.res_model[:, self.east_index, :]),
+                               cmap=self.cmap,
+                               vmin=self.res_limits[0],
+                               vmax=self.res_limits[1])
+        self.east_canvas.draw()
+        
+    def set_north_index(self):
+        self.north_index = int(self.north_slider.value())
+        northing = self.model_obj.grid_north[self.north_index]/self.scale
+        self.north_label.setText('Northing {0:>10.2f} {1}'.format(northing,
+                                                                self.units))
+                                                                
+        self.north_ax.cla()
+        self.north_ax.pcolormesh(self.plot_east_z, 
+                               self.plot_z_east,
+                               np.log10(self.model_obj.res_model[self.north_index, :, :]),
+                               cmap=self.cmap,
+                               vmin=self.res_limits[0],
+                               vmax=self.res_limits[1])
+        self.north_canvas.draw()
+        
+    def map_on_pick(self):
+        pass
     
 #==============================================================================
 #  generic plot widget
@@ -271,7 +456,6 @@ class ModelPlotWidget(QtGui.QWidget):
 #  DEFINE MAIN   
 #==============================================================================
 def main():
-    import sys
     app = QtGui.QApplication(sys.argv)
     ui = ModEM_Model_Manipulator()
     ui.show()

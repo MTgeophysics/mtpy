@@ -1287,7 +1287,8 @@ class Data(object):
                  -self.station_locations['elev']/1000,
                  data={'elevation':self.station_locations['elev']})
                  
-        print 'Wrote file to {0}'.format(vtk_fn)
+        print '--> Wrote station file to {0}'.format(vtk_fn)
+        print '-'*50
             
         
 #==============================================================================
@@ -2360,11 +2361,7 @@ class Model(object):
             vtk_fn = os.path.join(self.save_path, vtk_fn_basename)
         else:
             vtk_fn = os.path.join(vtk_save_path, vtk_fn_basename)
-            
-        # grids need to be n+1 
-        vtk_east = np.append(self.grid_east, 1.5*self.grid_east[-1])
-        vtk_north = np.append(self.grid_north, 1.5*self.grid_north[-1])
-        vtk_z = np.append(self.grid_z, 1.5*self.grid_z[-1])
+        
         gridToVTK(vtk_fn, 
                  self.grid_north/1000., 
                  self.grid_east/1000.,
@@ -2372,11 +2369,13 @@ class Model(object):
                  pointData={'resistivity':self.res_model}) 
         
         print '-'*50
-        print '  Wrote file to {0}'.format(vtk_fn)
-        print '  dimensions model = {0}'.format(self.res_model.shape)
-        print '  dimensions north {0}'.format(self.grid_north.shape[0])
-        print '  dimensions east  {0}'.format(self.grid_east.shape[0])
-        print '  dimensions z     {0}'.format(self.grid_z.shape[0])
+        print '--> Wrote model file to {0}\n'.format(vtk_fn)
+        print '='*26
+        print '  model dimensions = {0}'.format(self.res_model.shape)
+        print '     * north         {0}'.format(self.grid_north.shape[0])
+        print '     * east          {0}'.format(self.grid_east.shape[0])
+        print '     * depth         {0}'.format(self.grid_z.shape[0])
+        print '='*26
             
 #==============================================================================
 # Control File for inversion
