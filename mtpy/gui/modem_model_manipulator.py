@@ -146,6 +146,8 @@ class ModelWidget(QtGui.QWidget):
         self.ui_setup()
 
     def ui_setup(self):
+        
+        self.screen_size = QtGui.QDesktopWidget().screenGeometry()
 
         self.map_figure = Figure()
         self.map_canvas = FigureCanvas(self.map_figure)
@@ -201,9 +203,9 @@ class ModelWidget(QtGui.QWidget):
 
         self.cb_figure = Figure()
         self.cb_canvas = FigureCanvas(self.cb_figure)
-        self.cb_canvas.setMaximumWidth(80)
-        self.cb_canvas.setMinimumHeight(1500)
-        self.cb_ax = self.cb_figure.add_axes([0.45, 0.01, 1.0, 1.0])
+        self.cb_canvas.setMaximumWidth(int(self.screen_size.width()*.05))
+        self.cb_canvas.setMinimumHeight(int(self.screen_size.height()*.85))
+        self.cb_ax = self.cb_figure.add_axes([0.45, 0.005, 1.0, 1.0])
         self.cb_ax.pcolormesh(self.cb_x, self.cb_y, self.cb_bar,
                               vmin=self.res_limits[0],
                               vmax=self.res_limits[1],
@@ -287,6 +289,8 @@ class ModelWidget(QtGui.QWidget):
 
         self.data_obj = modem.Data()
         self.data_obj.read_data_file(self._data_fn)
+        
+        self.redraw_plots()
 
 
     @property
@@ -338,9 +342,8 @@ class ModelWidget(QtGui.QWidget):
                                vmax=self.res_limits[1])
         self.map_ax.set_xlabel('Easting {0}'.format(self.units))
         self.map_ax.set_ylabel('Northing {0}'.format(self.units))
-        self.map_ax.axis('tight')
-        #self.map_ax.set_aspect('equal', 'box-forced')
-        self.map_canvas.draw()
+        self.map_ax.set_aspect('equal', 'box-forced')
+        
 
         self.north_ax = self.north_figure.add_subplot(1, 1, 1, sharex=self.map_ax,
                                                       aspect='equal')
@@ -353,10 +356,9 @@ class ModelWidget(QtGui.QWidget):
         self.north_ax.set_xlabel('Easting {0}'.format(self.units))
         self.north_ax.set_ylabel('Depth {0}'.format(self.units))
         self.north_ax.set_aspect('equal', 'box-forced')
-        #self.north_ax.axis('tight')
         z_lim = self.north_ax.get_ylim()
         self.north_ax.set_ylim(z_lim[1], z_lim[0])
-        self.north_canvas.draw()
+        
 
         self.east_ax = self.east_figure.add_subplot(1, 1, 1,
                                                     aspect='equal',
@@ -372,8 +374,16 @@ class ModelWidget(QtGui.QWidget):
         self.east_ax.set_xlabel('Northing {0}'.format(self.units))
         self.east_ax.set_ylabel('Depth {0}'.format(self.units))
         self.east_ax.set_aspect('equal', 'box-forced')
-        #self.east_ax.axis('tight')
         
+        if self.data_fn is not None:
+            self.map_ax.scatter(self.data_obj.station_locations['rel_east'],
+                                self.data_obj.station_locations['rel_north'],
+                                marker='v',
+                                c='k',
+                                s=10)
+        
+        self.north_canvas.draw()
+        self.map_canvas.draw()
         self.east_canvas.draw()
 
         #make a rectangular selector
@@ -431,6 +441,12 @@ class ModelWidget(QtGui.QWidget):
                                cmap=self.cmap,
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
+        if self.data_fn is not None:
+            self.map_ax.scatter(self.data_obj.station_locations['rel_east'],
+                                self.data_obj.station_locations['rel_north'],
+                                marker='v',
+                                c='k',
+                                s=10)
         self.map_canvas.draw()
 
     def set_east_index(self):
@@ -549,6 +565,13 @@ class ModelWidget(QtGui.QWidget):
                        cmap=self.cmap,
                        vmin=self.res_limits[0],
                        vmax=self.res_limits[1])
+                       
+        if self.data_fn is not None:
+            self.map_ax.scatter(self.data_obj.station_locations['rel_east'],
+                                self.data_obj.station_locations['rel_north'],
+                                marker='v',
+                                c='k',
+                                s=10)
 
         self.east_ax.pcolormesh(self.plot_north_z,
                         self.plot_z_north,
