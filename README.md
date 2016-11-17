@@ -1,27 +1,7 @@
-MTpy
+MTpy: A Python toolbox for standard Magnetotulleric (MT) data processing
 ====
 
-A Python toolbox for standard MT data processing
-
-*For an updated version of MTpy with more features and 
-less clutter, but probably more buggy, checkout 
-the beta version.*
-
-Installation
-------------
-
-    $ python setup.py install
-
-If you have [setuptools](http://pypi.python.org/pypi/setuptools) installed, we
-suggest you use:
-
-    $ python setup.py develop
-
-Documentation
--------------
-
-See http://geophysics.github.com/mtpy
-
+This repository is forked from https://github.com/geophysics/mtpy/tree/ak, by Fei Zhang 2016-11-16.
 
 
 License
@@ -30,13 +10,6 @@ License
 MTpy is licensed under the GPL version 3
 
 The license agreement is contained in the repository and should be kept together with the code.
-
-
-<<<<<<< HEAD
-Copyright: Lars Krieger, Jared Peacock, Kent Inverarity, Alison Kirkby; Adelaide, 2013
-=======
-Copyright: Lars Krieger, Jared Peacock, Kent Inverarity, Alison Kirkby; Adelaide, 2015
->>>>>>> beta
 
 
 
