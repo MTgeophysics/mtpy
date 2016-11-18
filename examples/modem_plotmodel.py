@@ -11,7 +11,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-workdir = r'C:\Git\mtpydev\examples\data'
+workdir = r'C:\Git\mtpy\examples\data'
 modeldir = op.join(workdir,'ModEM_files')
 
 #ptmap= mtmn.PlotPTMaps(data_fn=op.join(modeldir,'ModEM_Data_noise10inv.dat'),
@@ -22,14 +22,15 @@ modeldir = op.join(workdir,'ModEM_files')
 #                )
 read_data = True
 iterfn = max([ff for ff in os.listdir(modeldir) if ff.endswith('.rho')])
+
 if read_data:
     doo = mtmn.Data()
     doo.read_data_file(op.join(modeldir,'ModEM_Data.dat'))
     moo = mtmn.Model(model_fn=op.join(modeldir,iterfn))
     moo.read_model_file()
 
-snoew = np.where(moo.grid_north<-1e5)[0][-1]
-snons = 24
+snoew = 10
+snons = 10
 snoz = np.where(moo.grid_z > 80000)[0][0]
 gcz = np.mean([moo.grid_z[:-1],moo.grid_z[1:]],axis=0)
 plotdir = 'ew'
@@ -37,12 +38,12 @@ plotdir = 'ew'
 if plotdir == 'ew':
     X,Y,res = moo.grid_east,moo.grid_z,np.log10(moo.res_model[snoew,:,:].T)
     xlim = (-25000,25000)
-    ylim = (1e5,0)
+    ylim = (1e4,0)
     sliceinfo = ''
 elif plotdir == 'ns':
     X,Y,resf,resi = moo.grid_north,moo.grid_z,np.log10(moo.res_model[:,snons,:].T)
     xlim = (-162500,162500)
-    ylim = (1e5,0)
+    ylim = (1e4,0)
     sliceinfo = ''
 elif plotdir == 'z':
     X,Y,resf,resi = moo.grid_east,moo.grid_north,np.log10(moo.res_model[:,:,snoz])

@@ -18,7 +18,7 @@ import numpy as np
 
 
 
-epath = r'C:\Git\mtpydev\examples\data\edi_files'
+epath = r'C:\Git\mtpy\examples\data\edi_files\georgina'
 
 svdir = r'V:\2008\09GA_GA1_Georgina\Reprocessing_2016\plots\station_plots'
 
@@ -30,5 +30,5 @@ dimensionality = np.zeros((len(elst),46))
 for efile in elst:
 #    eo = mtedi.Edi(filename=efile)
 	pr = mtpr.PlotResponse(fn=efile,plot_num=2,res_limits=(1,10000),phase_limits=(0,90))
-    plt.close()
+	plt.close()
 

@@ -15,16 +15,16 @@ import mtpy.imaging.plotptmaps as pptmaps
 
 
 # directory containing edis
-edipath = r'H:\MTpy\MtIsa\edi_6dec_WE profile'
+edipath = r'C:\Git\mtpy\examples\data\edi_files\georgina'
 
 # whether or not to save the figure to file
 save = True
 
 # full path to file to save to
-savepath = r'H:\MTpy\MtIsa\analysis'
+savepath = r'C:\Git\mtpy\examples\data\edi_files\georgina'
 
 # frequency to plot
-plot_freq = 0.005
+plot_freq = 0.1
 
 # gets edi file names as a list
 elst = [op.join(edipath,f) for f in os.listdir(edipath) if f.endswith('.edi')]
