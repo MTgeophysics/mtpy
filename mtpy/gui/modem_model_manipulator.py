@@ -209,14 +209,20 @@ class ModelWidget(QtGui.QWidget):
         self.cb_ax.pcolormesh(self.cb_x, self.cb_y, self.cb_bar,
                               vmin=self.res_limits[0],
                               vmax=self.res_limits[1],
-                              cmap=self.cmap)
+                              cmap=self.cmap,
+                              picker=5)
         self.cb_ax.set_yticks(np.arange(self.res_limits[0], self.res_limits[1]))
         self.cb_ax.set_yticklabels(['10$^{0}$'.format(ii) for ii in
                                     np.arange(self.res_limits[0], self.res_limits[1])])
 
-        self.cb_ax.plot([0, 1], [np.log10(self.res_value),
-                                 np.log10(self.res_value)],
-                        lw=3, color='k')
+        self.res_line, = self.cb_ax.plot([0, 1], 
+                                         [np.log10(self.res_value),
+                                         np.log10(self.res_value)],
+                                         lw=3, 
+                                         color='k',
+                                         picker=5)
+        self.cb_canvas.mpl_connect('button_press_event', self.on_res_pick)
+#        self.cb_canvas.mpl_connect('pick_event', self.on_res_pick)
         self.cb_ax.set_xticks([0, 1])
         self.cb_ax.set_xticklabels(['', ''])
         self.cb_ax.axis('tight')
@@ -289,7 +295,6 @@ class ModelWidget(QtGui.QWidget):
 
         self.data_obj = modem.Data()
         self.data_obj.read_data_file(self._data_fn)
-        
         self.redraw_plots()
 
 
@@ -313,6 +318,9 @@ class ModelWidget(QtGui.QWidget):
         self.map_slider.setMaximum(self.model_obj.grid_z.size-1)
         self.east_slider.setMaximum(self.model_obj.grid_north.size-1)
         self.north_slider.setMaximum(self.model_obj.grid_east.size-1)
+        
+        self.east_label.setText('{0:.2f}'.format(self.model_obj.grid_east[0]))
+        self.north_label.setText('{0:.2f}'.format(self.model_obj.grid_north[0]))
 
         ## plot the model
         plot_east = np.append(self.model_obj.grid_east,
@@ -376,8 +384,8 @@ class ModelWidget(QtGui.QWidget):
         self.east_ax.set_aspect('equal', 'box-forced')
         
         if self.data_fn is not None:
-            self.map_ax.scatter(self.data_obj.station_locations['rel_east'],
-                                self.data_obj.station_locations['rel_north'],
+            self.map_ax.scatter(self.data_obj.station_locations['rel_east']/self.scale,
+                                self.data_obj.station_locations['rel_north']/self.scale,
                                 marker='v',
                                 c='k',
                                 s=10)
@@ -408,26 +416,28 @@ class ModelWidget(QtGui.QWidget):
         self.cb_x, self.cb_y = np.meshgrid(np.array([0, 1]), res, indexing='ij')
         self.cb_bar = np.zeros((2, 256))
         self.cb_bar[:, :] = res
-
+        
+    def on_res_pick(self, event):
+        try:
+            y_data = 10**event.ydata
+            y_data = np.log10(np.round(y_data, -int(np.floor(np.log10(y_data)))))
+            
+            self.res_line.set_xdata([0, 1])
+            self.res_line.set_ydata([y_data, y_data])
+            self.cb_canvas.draw()
+            self.res_value = 10**y_data
+    
+            self.cb_line_edit.setText('{0:.2f}'.format(self.res_value))
+            
+        except TypeError:
+            return
+        
     def set_res_value(self):
         self.res_value = float(self.cb_line_edit.text())
-        self.cb_line_edit.setText('{0:.2f}'.format(self.res_value))
-
-        self.cb_ax.cla()
-        self.cb_ax.pcolormesh(self.cb_x, self.cb_y, self.cb_bar,
-                              vmin=self.res_limits[0],
-                              vmax=self.res_limits[1],
-                              cmap=self.cmap)
-        self.cb_ax.set_yticks(np.arange(self.res_limits[0], self.res_limits[1]))
-        self.cb_ax.set_yticklabels(['10$^{0}$'.format(ii) for ii in
-                                    np.arange(self.res_limits[0], self.res_limits[1])])
-        
-        self.cb_ax.plot([0, 1], [np.log10(self.res_value), np.log10(self.res_value)],
-                        lw=3, color='k')
-        self.cb_ax.set_xticks([0, 1])
-        self.cb_ax.set_xticklabels(['', ''])
-        self.cb_ax.axis('tight')
+        self.res_line.set_ydata([np.log10(self.res_value), 
+                                 np.log10(self.res_value)])
         self.cb_canvas.draw()
+        self.cb_line_edit.setText('{0:.2f}'.format(self.res_value))
         
     def set_map_index(self):
         self.map_index = int(self.map_slider.value())
@@ -442,8 +452,8 @@ class ModelWidget(QtGui.QWidget):
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
         if self.data_fn is not None:
-            self.map_ax.scatter(self.data_obj.station_locations['rel_east'],
-                                self.data_obj.station_locations['rel_north'],
+            self.map_ax.scatter(self.data_obj.station_locations['rel_east']/self.scale,
+                                self.data_obj.station_locations['rel_north']/self.scale,
                                 marker='v',
                                 c='k',
                                 s=10)
@@ -567,8 +577,8 @@ class ModelWidget(QtGui.QWidget):
                        vmax=self.res_limits[1])
                        
         if self.data_fn is not None:
-            self.map_ax.scatter(self.data_obj.station_locations['rel_east'],
-                                self.data_obj.station_locations['rel_north'],
+            self.map_ax.scatter(self.data_obj.station_locations['rel_east']/self.scale,
+                                self.data_obj.station_locations['rel_north']/self.scale,
                                 marker='v',
                                 c='k',
                                 s=10)
