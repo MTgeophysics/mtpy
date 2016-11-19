@@ -44,7 +44,9 @@ if setuptools is False:
     # recursively scan your source tree looking for any directory with an
     # __init__.py file"
 
-setup_kwargs['packages'] = ['mtpy',
+setup_kwargs['packages'] = [
+                            'hello4tests',  'tests', 
+                            'mtpy',
                             'mtpy.core',
                             'mtpy.imaging',
                             'mtpy.utils',
@@ -54,7 +56,7 @@ setup_kwargs['packages'] = ['mtpy',
                             'mtpy.test',
                             'mtpy.uofa',
                             'mtpy.usgs',
-					'mtpy.gui']
+                            'mtpy.gui']
      
 setup_kwargs['install_requires'] = ['numpy>=1.8.1',
                                     'scipy>=0.14.0',
