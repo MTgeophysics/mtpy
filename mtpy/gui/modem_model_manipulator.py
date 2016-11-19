@@ -137,6 +137,9 @@ class ModelWidget(QtGui.QWidget):
         self.units = 'km'
         self.scale = 1000.
         self.res_value = 100
+        
+        self.npad = 10
+        self.avg_pad = 12
 
         self.cmap = 'jet_r'
         self.res_limits = (0, 4)
@@ -148,6 +151,17 @@ class ModelWidget(QtGui.QWidget):
     def ui_setup(self):
         
         self.screen_size = QtGui.QDesktopWidget().screenGeometry()
+        
+        self.fill_outside_avg_pad_label = QtGui.QLabel('Avg Cells Max')
+        self.fill_outside_avg_pad_edit = QtGui.QLineEdit('{0:.0f}'.format(self.avg_pad))
+        self.fill_outside_avg_pad_edit.editingFinished.connect(self.set_avg_pad)
+        
+        self.fill_outside_npad_label = QtGui.QLabel('Num Cells to Pad')
+        self.fill_outside_npad_edit = QtGui.QLineEdit('{0:.0f}'.format(self.npad))
+        self.fill_outside_npad_edit.editingFinished.connect(self.set_npad)
+        
+        self.fill_outside_button = QtGui.QPushButton('Filter Outside Area')
+        self.fill_outside_button.pressed.connect(self.fill_outside_area)
 
         self.map_figure = Figure()
         self.map_canvas = FigureCanvas(self.map_figure)
@@ -237,6 +251,13 @@ class ModelWidget(QtGui.QWidget):
         
         ##------------------------------------------------
         ## Layout
+        
+        button_layout = QtGui.QHBoxLayout()
+        button_layout.addWidget(self.fill_outside_npad_label)
+        button_layout.addWidget(self.fill_outside_npad_edit)
+        button_layout.addWidget(self.fill_outside_avg_pad_label)
+        button_layout.addWidget(self.fill_outside_avg_pad_edit)
+        button_layout.addWidget(self.fill_outside_button)
 
         map_bottom_layout = QtGui.QHBoxLayout()
         map_bottom_layout.addWidget(self.map_depth_label)
