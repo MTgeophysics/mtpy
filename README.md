@@ -1,6 +1,9 @@
 MTpy: A Python toolbox for standard Magnetotelluric (MT) data processing analysis and visualization
 ====
-
+.. |Build Status| image:: https://travis-ci.org/GeoscienceAustralia/mtpy.svg?branch=develop
+   :target: https://travis-ci.org/GeoscienceAustralia/mtpy
+   
+   
 This repository is forked from https://github.com/geophysics/mtpy/tree/ak on 2016-11-16.
 
 
