@@ -51,17 +51,9 @@ Developer setup
 
 
 
-.. |Build Status| image:: https://travis-ci.org/GeoscienceAustralia/mtpy.svg?branch=develop
-   :target: https://travis-ci.org/GeoscienceAustralia/mtpy
-.. |Coverage Status| image:: https://coveralls.io/repos/feizhang2/pyscripts/badge.svg?branch=develop&service=github
-   :target: https://coveralls.io/github/feizhang2/pyscripts?branch=develop
-.. |Documentation Status| image:: https://readthedocs.org/projects/pyscripts/badge/?version=develop
-   :target: http://pyscripts.readthedocs.org/en/develop/
-
-
 
 License
--------
+===============
 
 MTpy is licensed under the GPL version 3
 
@@ -70,7 +62,7 @@ The license agreement is contained in the repository and should be kept together
 
 
 Conventions
------------
+===============
 
 1. MTpy uses E- and B-fields (although the sensors may be confusingly named as H-sensors in EDI files)
 2. [E] = microvolts/meter (muV/m)
@@ -89,4 +81,11 @@ Conventions
 
 
 
+
+.. |Build Status| image:: https://travis-ci.org/GeoscienceAustralia/mtpy.svg?branch=develop
+   :target: https://travis-ci.org/GeoscienceAustralia/mtpy
+.. |Coverage Status| image:: https://coveralls.io/repos/feizhang2/pyscripts/badge.svg?branch=develop&service=github
+   :target: https://coveralls.io/github/feizhang2/pyscripts?branch=develop
+.. |Documentation Status| image:: https://readthedocs.org/projects/pyscripts/badge/?version=develop
+   :target: http://pyscripts.readthedocs.org/en/develop/
 
