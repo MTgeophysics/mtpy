@@ -82,10 +82,10 @@ Conventions
 
 
 
-.. |Build Status| image:: https://travis-ci.org/GeoscienceAustralia/mtpy.svg?branch=develop
-   :target: https://travis-ci.org/GeoscienceAustralia/mtpy
-.. |Coverage Status| image:: https://coveralls.io/repos/feizhang2/pyscripts/badge.svg?branch=develop&service=github
-   :target: https://coveralls.io/github/feizhang2/pyscripts?branch=develop
-.. |Documentation Status| image:: https://readthedocs.org/projects/pyscripts/badge/?version=develop
-   :target: http://pyscripts.readthedocs.org/en/develop/
+.. |Build Status| image:: https://travis-ci.org/GeoscienceAustralia/mtpy2.svg?branch=develop
+   :target: https://travis-ci.org/GeoscienceAustralia/mtpy2
+.. |Coverage Status| image:: https://coveralls.io/repos/GeoscienceAustralia/mtpy2/badge.svg?branch=develop&service=github
+   :target: https://coveralls.io/github/GeoscienceAustralia/mtpy2?branch=develop
+.. |Documentation Status| image:: https://readthedocs.org/projects/mtpy2/badge/?version=develop
+   :target: http://mtpy2.readthedocs.org/en/develop/
 
