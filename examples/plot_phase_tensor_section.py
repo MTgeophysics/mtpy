@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 
 # path to edis
 epath = r'C:\Git\mtpy\examples\data\edi_files\georgina'
+epath = r'/Softlab/Githubz/mtpy2/examples/data/edi_files/georgina'
 
 
 elst=[op.join(epath,edi) for edi in os.listdir(epath) if edi.endswith('.edi')]

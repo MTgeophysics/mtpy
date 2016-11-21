@@ -15,13 +15,15 @@ import mtpy.imaging.plotptmaps as pptmaps
 
 
 # directory containing edis
-edipath = r'C:\Git\mtpy\examples\data\edi_files\georgina'
+#edipath = r'C:\Git\mtpy\examples\data\edi_files\georgina'
+edipath = r'/Softlab/Githubz/mtpy2/examples/data/edi_files/georgina'
 
 # whether or not to save the figure to file
 save = True
 
 # full path to file to save to
-savepath = r'C:\Git\mtpy\examples\data\edi_files\georgina'
+#savepath = r'C:\Git\mtpy\examples\data\edi_files\georgina'
+savepath = r'/tmp/georgina'
 
 # frequency to plot
 plot_freq = 0.1
