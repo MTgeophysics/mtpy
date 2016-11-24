@@ -125,4 +125,4 @@ target/
 .python-version
 
 # jupyther notebooks
-*/.ipynb_checkpoints/
+.ipynb_checkpoints
