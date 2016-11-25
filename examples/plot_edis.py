@@ -16,6 +16,10 @@ import mtpy.imaging.plotresponse as mtpr
 def main(edi_path):
     """ plot edi files from the input directory edi_dir
     """
+    
+    #plt.style.use('dark_background')
+    plt.style.use('seaborn-deep')
+    plt.style.use('classic')
 
     elst = glob.glob(os.path.join(edi_path, "*.edi"))
 

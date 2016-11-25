@@ -23,7 +23,7 @@ def main(edi_path, save_path=None):
     elst = glob.glob(os.path.join(edi_path, "*.edi"))
 
     # frequency to plot
-    plot_freq = 0.1
+    plot_freq = 9.4
 
     # parameters describing ellipses
     ellipse_dict = {'size': 0.02, 'colorby': 'phimin', 'range': (0, 90, 1), 'cmap': 'mt_bl2gr2rd'}

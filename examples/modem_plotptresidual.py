@@ -8,7 +8,7 @@ Created on Tue Oct 04 13:13:29 2016
 import mtpy.modeling.modem_new as mtmn
 import os.path as op
 
-workdir = r'C:\Git\mtpy2\examples\data\ModEM_files'
+workdir = r'E:\Github\mtpy2\examples\data\ModEM_files'
 modeldir = op.join(workdir,'VicSynthetic05')
 
 ptmap= mtmn.PlotPTMaps(data_fn=op.join(modeldir,'ModEM_Data_noise10inv.dat'),
