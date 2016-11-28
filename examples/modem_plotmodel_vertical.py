@@ -12,10 +12,15 @@ import numpy as np
 
 
 # INPUTS #
-workdir = r'V:\Geology\conductivity_modelling'
+#Alison workdir = r'V:\Geology\conductivity_modelling'
+
 workdir = r'E:\Githubz\mtpy2\examples\data\ModEM_files'
+workdir = r'/Softlab/Githubz/mtpy2/examples/data/ModEM_files'
+workdir = r'/g/data/ha3/fxz547/Githubz/mtpy2/examples/data/ModEM_files'
 
 modeldir = op.join(workdir,'VicSynthetic07')
+
+
 # plot orientation ('ns' (north-south),'ew' (east-west) or 'z' (horizontal slice))
 plotdir = 'ew'
 # slice location, in local grid coordinates (if it is a z slice, this is slice depth)

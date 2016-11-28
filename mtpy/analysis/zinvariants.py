@@ -85,7 +85,8 @@ class Zinvariants:
         
         #--> read in z_object
         if z_object is not None:
-            if z_object.freq==None:
+            #if z_object.freq==None:
+            if z_object.freq is None:
                 raise AttributeError('z_object needs to have attrtibute'+\
                                      'freq filled')
             
@@ -220,6 +221,9 @@ class Zinvariants:
                 
                 inv7 = (d41-d23)/q
                 
+                if abs(inv7)>1.0:
+                    print("debug value inv7=", inv7)
+
                 strikeang = .5*np.arctan2(d12-d34,d13+d24)*(180/np.pi)
                 strikeangerr = abs(.5*np.arcsin(inv7))*(180/np.pi)
                 
