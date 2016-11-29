@@ -2,7 +2,8 @@
 """
 Created on Tue Oct 04 13:13:29 2016
 
-@author: u64125
+@author:    u64125
+@author:    Fei.zhang@ga.gov.au
 """
 
 import os.path as op
@@ -33,7 +34,7 @@ def main(data_dir, plot_type='PTMap', di=20, periodin=0):
     plot_type = plot_type
     di = di
 
-    # plot phase tensor map with residuals
+    # plot phase tensor map with residuals:
     if plot_type == 'PTMap':
         ptmObj = PlotPTMaps(data_fn=op.join(wd, 'ModEM_Data_noise10inv.dat'),
                          resp_fn=op.join(wd, 'Modular_MPI_NLCG_019.dat'))
@@ -41,11 +42,16 @@ def main(data_dir, plot_type='PTMap', di=20, periodin=0):
         # this will save an empty figureL plt.savefig(op.join(wd,'ptmaps.png'),dpi=300,ellipse_size=40)
 
     # plot map of RMS values
+    # python examples/modem_plotmodel2.py examples/data/ModEM_files/VicSynthetic07 RMSMap
     if plot_type == 'RMSMap':
-        PlotRMSMaps(residual_fn=op.join(wd, 'Modular_MPI_NLCG_019.res'),
-                    xminorticks=50000, yminorticks=50000, depth_index=di, save_plots='y')
+        resfile=op.join(wd, 'Modular_MPI_NLCG_019.res')
+        prmsObj = PlotRMSMaps(residual_fn=resfile,xminorticks=50000, yminorticks=50000)
+                   # ,depth_index=di, save_plots='y') # these are not in func args
+
+        prmsObj.plot_loop(fig_format="png" )    #plot all periods and save figure
 
     # plot responses at a station
+    #FZ: mistmatch ? plot_type=['VIC029']
     if plot_type == 'Response':
         PlotResponse(data_fn=op.join(wd, 'ModEM_Data_noise10inv.dat'), plot_type=['VIC029'], save_plots='y')
 

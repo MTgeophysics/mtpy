@@ -112,7 +112,7 @@ class PlotRMSMaps(object):
         self.residual = None
         self.save_path = kwargs.pop('save_path', os.path.dirname(self.residual_fn))
 
-        self.period_index = kwargs.pop('period_index', 0)
+        self.period_index = kwargs.pop('period_index', 0) #where is depth_index?
 
         self.subplot_left = kwargs.pop('subplot_left', .1)
         self.subplot_right = kwargs.pop('subplot_right', .9)
@@ -348,6 +348,9 @@ class PlotRMSMaps(object):
         self.read_residual_fn()
 
         for f_index in range(self.residual.period_list.shape[0]):
+            #FZ:
+            print(self.residual.period_list)
+            print(f_index)
             self.period_index = f_index
             self.plot()
             self.save_figure(fig_format=fig_format)

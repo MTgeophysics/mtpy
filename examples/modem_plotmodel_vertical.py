@@ -16,7 +16,7 @@ import numpy as np
 
 workdir = r'E:\Githubz\mtpy2\examples\data\ModEM_files'
 workdir = r'/Softlab/Githubz/mtpy2/examples/data/ModEM_files'
-workdir = r'/g/data/ha3/fxz547/Githubz/mtpy2/examples/data/ModEM_files'
+#workdir = r'/g/data/ha3/fxz547/Githubz/mtpy2/examples/data/ModEM_files'
 
 modeldir = op.join(workdir,'VicSynthetic07')
 
