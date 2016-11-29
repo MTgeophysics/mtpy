@@ -332,7 +332,7 @@ class Data(object):
                               '2':['Full_Impedance'],
                               '3':['Off_Diagonal_Impedance', 
                                    'Full_Vertical_Components'],
-                              '4':['Off_Diagonal_Impedance'],
+                              '4/g/data/ha3/fxz547/Githubz/mtpy2/examples/data/ModEM_files/VicSynthetic07/Modular_MPI_NLCG_019.rho':['Off_Diagonal_Impedance'],
                               '5':['Full_Vertical_Components'],
                               '6':['Full_Interstation_TF'],
                               '7':['Off_Diagonal_Rho_Phase']}
@@ -4111,7 +4111,7 @@ class ModelManipulator(Model):
 #==============================================================================
 # plot response       
 #==============================================================================
-class PlotResponse(object):
+class moved_PlotResponse(object):
     """
     plot data and response 
     
@@ -5774,7 +5774,7 @@ class PlotResponse(object):
 #==============================================================================
 # plot phase tensors
 #==============================================================================
-class PlotPTMaps(mtplottools.MTEllipse):
+class moved_PlotPTMaps(mtplottools.MTEllipse):
     """
     Plot phase tensor maps including residual pt if response file is input.
     
@@ -6142,7 +6142,12 @@ class PlotPTMaps(mtplottools.MTEllipse):
             self.ns_limits = (north_min/self.dscale, north_max/self.dscale)
 
         #-------------plot phase tensors------------------------------------                    
-        for ff, per in enumerate(self.plot_period_list):
+        #for ff, per in enumerate(self.plot_period_list):
+        for ff, per in enumerate(self.plot_period_list[:1]):
+            #FZ
+            print(ff,per)
+            print(self.plot_period_list)
+
             data_ii = self.period_dict[per]
             
             print 'Plotting Period: {0:.5g}'.format(per)
@@ -6506,7 +6511,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
 #==============================================================================
 # plot depth slices
 #==============================================================================
-class PlotDepthSlice(object):
+class moved_PlotDepthSlice(object):
     """
     Plots depth slices of resistivity model
     
@@ -7595,7 +7600,7 @@ class PlotSlices(object):
 #==============================================================================
 # plot rms maps
 #==============================================================================
-class Plot_RMS_Maps(object):
+class moved_Plot_RMS_Maps(object):
     """
     plots the RMS as (data-model)/(error) in map view for all components
     of the data file.  Gets this infomration from the .res file output
