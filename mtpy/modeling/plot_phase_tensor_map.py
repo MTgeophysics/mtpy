@@ -228,7 +228,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
         self.pt_resp_arr = None
         self.pt_resid_arr = None
 
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        #FZ: do not call plot in the constructor! it's not pythonic
+        self.plot_yn = kwargs.pop('plot_yn', 'n')
         if self.plot_yn == 'y':
             self.plot()
 
@@ -347,14 +348,19 @@ class PlotPTMaps(mtplottools.MTEllipse):
             self.pt_resp_arr = model_pt_arr
             self.pt_resid_arr = res_pt_arr
 
-    def plot(self):
-        """
-        plot phase tensor maps for data and or response, each figure is of a
+    def plot(self, period=0):
+        """ Plot phase tensor maps for data and or response, each figure is of a
         different period.  If response is input a third column is added which is
         the residual phase tensor showing where the model is not fitting the data
         well.  The data is plotted in km.
 
+        Args:
+            period: the period index to plot, default=0
+
+        Returns:
+
         """
+
         # --> read in data first
         if self.data_obj is None:
             self._read_files()
@@ -399,8 +405,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
             self.ns_limits = (north_min / self.dscale, north_max / self.dscale)
 
         # -------------plot phase tensors------------------------------------
+        # FZ: changed below to plot a given period index
         # for ff, per in enumerate(self.plot_period_list):
-        for ff, per in enumerate(self.plot_period_list[:1]):
+        for ff, per in enumerate(self.plot_period_list[period:period+1]):
             # FZ
             print(ff, per)
             print(self.plot_period_list)
