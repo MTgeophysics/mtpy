@@ -1979,7 +1979,7 @@ class ZongeMTAvg():
         self.Tipper.tipper = np.nan_to_num(self.Tipper.tipper)
         self.Tipper.tipper_err = np.nan_to_num(self.Tipper.tipper_err)
         
-    def write_edi(self, avg_dirpath, station, survey_dict=None, 
+    def write_edi(self, avg_fn, station, survey_dict=None, 
                   survey_cfg_file=None,  mtft_cfg_file=None, 
                   mtedit_cfg_file=r"c:\MinGW32-xy\Peacock\zen\bin\mtedit.cfg", 
                   save_path=None, rrstation=None, 
@@ -1989,11 +1989,8 @@ class ZongeMTAvg():
         
         Arguments:
         ----------
-            **fnx** : string (full path to electric north file)
-                      file for Zxx, Zxy
-                      
-            **fny** : string (full path to electric east file)
-                      file for Zyx, Zyy
+            **avg_fn** : string
+                         full path to avg file name
             
             **survey_dict** : dictionary
                               dictionary containing the survey parameters
@@ -2025,34 +2022,21 @@ class ZongeMTAvg():
         """
         
         if save_path is None:
-            save_dir = os.path.dirname(avg_dirpath)
+            save_dir = os.path.dirname(avg_fn)
             save_path = os.path.join(save_dir, station+'.edi')
         
         #create an mtedi instance
         self.edi = mtedi.Edi()
         self.edi.Z = self.Z
         self.edi.Tipper = self.Tipper
-        
-        
-        #read in ex file
-        fnx = os.path.join(avg_dirpath, 
-                           self.avg_dict['ex'],
-                           self.avg_dict['ex']+avg_ext)
-        print fnx
-        if os.path.isfile(fnx) == True:
-            self.read_avg_file(fnx)
-            self.edi.Z = self.Z
-            self.edi.Tipper = self.Tipper
 
-        
-        #read in ey file
-        fny = os.path.join(avg_dirpath, 
-                           self.avg_dict['ey'],
-                           self.avg_dict['ey']+avg_ext)
-        if os.path.isfile(fny) == True:
-            self.read_avg_file(fny)
+        #read in avg file
+        if os.path.isfile(avg_fn) == True:
+            self.read_avg_file(avg_fn)
             self.edi.Z = self.Z
             self.edi.Tipper = self.Tipper
+        else:
+            raise NameError('Could not find {0}'.format(avg_fn))
         
         #read in survey file
         if survey_cfg_file is not None:
@@ -2094,7 +2078,7 @@ class ZongeMTAvg():
         #read in mtft24.cfg file
         if mtft_cfg_file is None:
             try:
-                mtft_cfg_file = os.path.join(avg_dirpath, 'mtft24.cfg')
+                mtft_cfg_file = os.path.join(save_dir, 'mtft24.cfg')
                 zmtft = ZongeMTFT()
                 zmtft.read_cfg(mtft_cfg_file)
                 mtft_dict = zmtft.meta_dict
@@ -2115,86 +2099,77 @@ class ZongeMTAvg():
             
         #----------------HEAD BLOCK------------------
         #from survey dict get information
-        head_dict = {}
 
         #--> data id
         try:
-            head_dict['dataid'] = survey_dict['station']
+            self.edi.Header.dataid = survey_dict['station']
         except KeyError:
-            head_dict['dataid'] = station
+            self.edi.Header.dataid = station
             
         #--> acquired by
-        head_dict['acqby'] = survey_dict.pop('network','')
+        self.edi.Header.acqby = survey_dict.pop('network','USGS')
         
         #--> file by
-        head_dict['fileby'] = survey_dict.pop('network','')
+        self.edi.Header.fileby = survey_dict.pop('network','MTpy')
         
         #--> acquired date
-        head_dict['acqdate'] = survey_dict.pop('date', 
+        self.edi.Header.acqdate = survey_dict.pop('date', 
                                     time.strftime('%Y-%m-%d',time.localtime()))
         
         #--> prospect
-        head_dict['loc'] = survey_dict.pop('location', '')
+        self.edi.Header.loc = survey_dict.pop('location', 'Earth')
         
         #--> latitude
-        head_dict['lat'] = MTft._assert_position_format('lat',
-                                        survey_dict.pop('latitude',0.0))
+        self.edi.Header.lat = survey_dict.pop('latitude',0.0)
         
         #--> longitude
-        head_dict['long'] = MTft._assert_position_format('lon',
-                                         survey_dict.pop('longitude',0.0))
+        self.edi.Header.lon = survey_dict.pop('longitude',0.0)
         
         #--> elevation
-        head_dict['elev'] = survey_dict.pop('elevation', 0)
-        
-        #--> set header dict as attribute of edi
-        self.edi.head = head_dict
+        self.edi.Header.elev = survey_dict.pop('elevation', 0)
        
-       #-----------------INFO BLOCK---------------------------
-        info_dict = {}
-        info_dict['max lines'] = 1000
+        #-----------------INFO BLOCK---------------------------
+        self.edi.Info.info_list = []
+        self.edi.Info.info_list.append('MAX LINES: 999')
         
         #--> put the rest of the survey parameters in the info block
-        for skey in survey_dict.keys():
-            info_dict[skey] = survey_dict[skey]
+        for skey in sorted(survey_dict.keys()):
+            self.edi.Info.info_list.append('{0}: {1}'.format(skey, 
+                                                           survey_dict[skey]))
         
         #--> put parameters about how fourier coefficients were found
-        if mtft_dict:
-            for mkey in mtft_dict.keys():
+        if mtft_dict is not None:
+            for mkey in sorted(mtft_dict.keys()):
                 if mkey == 'setup_lst' or \
                    mkey.lower() == 'mtft.tsplot.chnrange':
                     pass
                 else:
-                    info_dict[mkey] = mtft_dict[mkey]
+                    self.edi.Info.info_list.append('{0}: {1}'.format(mkey,
+                                                           mtft_dict[mkey]))
         
         #--> put parameters about how transfer function was found
-        if mtedit_dict:
+        if mtedit_dict is not None:
             for mkey in mtedit_dict.keys():
-                info_dict[mkey] = mtedit_dict[mkey]
+                self.edi.Info.info_list.append('{0}: {1}'.format(mkey,
+                                                           mtedit_dict[mkey]))
         
-        #--> set info dict as attribute of edi
-        self.edi.info_dict = info_dict
-                
         #----------------DEFINE MEASUREMENT BLOCK------------------
-        definemeas_dict = {}
-        
-        definemeas_dict['maxchan'] = 5
-        definemeas_dict['maxrun'] = 999
-        definemeas_dict['maxmeas'] = 99999
+        self.edi.Define_measurement.maxchan = 5
+        self.edi.Define_measurement.maxrun = 999
+        self.edi.Define_measurement.maxmeas = 99999
+
         try:
-            definemeas_dict['units'] = mtedit_dict['unit.length']
+            self.edi.Define_measurement.units = mtedit_dict['unit.length']
         except (TypeError, KeyError):
-            definemeas_dict['units'] = 'm'
-        definemeas_dict['reftypy'] = 'cartesian'
-        definemeas_dict['reflat'] = head_dict['lat']
-        definemeas_dict['reflon'] = head_dict['long']
-        definemeas_dict['refelev'] = head_dict['elev']
-        
-        #--> set definemeas as attribure of edi
-        self.edi.definemeas = definemeas_dict
+            self.edi.Define_measurement.units = 'm'
+            
+        self.edi.Define_measurement.reftype = 'cartesian'
+        self.edi.Define_measurement.reflat = self.edi.Header.lat
+        self.edi.Define_measurement.reflon = self.edi.Header.lon
+        self.edi.Define_measurement.refelev = self.edi.Header.elev
+
         
         #------------------HMEAS_EMEAS BLOCK--------------------------
-        hemeas_lst = []
         if mtft_dict:
             chn_lst = mtft_dict['setup_lst'][0]['Chn.Cmp'].split(',')
             chn_id = mtft_dict['setup_lst'][0]['Chn.ID'].split(',')
@@ -2208,6 +2183,7 @@ class ZongeMTAvg():
         chn_id_dict = dict([(comp.lower(), (comp.lower(), cid, clen)) 
                             for comp, cid, clen in zip(chn_lst, chn_id, 
                                                        chn_len_lst)])
+                                                       
         
         #--> hx component                
         try:
@@ -2215,21 +2191,20 @@ class ZongeMTAvg():
         except KeyError:
             hxazm = 0
         try:
-            hemeas_lst.append(['HMEAS', 
-                               'ID={0}'.format(chn_id_dict['hx'][1]), 
-                               'CHTYPE={0}'.format(chn_id_dict['hx'][0].upper()), 
-                               'X=0', 
-                               'Y=0', 
-                               'AZM={0}'.format(hxazm),
-                               ''])
+            hdict = {'id': chn_id_dict['hx'][1], 
+                     'chtype': '{0}'.format(chn_id_dict['hx'][0].upper()), 
+                     'x':0, 
+                     'y':0, 
+                     'azm':hxazm,
+                     'acqchan':'{0}'.format(chn_id_dict['hx'][0].upper())}
         except KeyError:
-            hemeas_lst.append(['HMEAS', 
-                               'ID={0}'.format(1), 
-                               'CHTYPE={0}'.format('HX'), 
-                               'X=0', 
-                               'Y=0', 
-                               'AZM={0}'.format(hxazm),
-                               ''])
+            hdict = {'id': 1, 
+                     'chtype': '{0}'.format('hx'), 
+                     'x':0, 
+                     'y':0, 
+                     'azm':hxazm,
+                     'acqchan':'hx'}
+        self.edi.Define_measurement.meas_hx = mtedi.HMeasurement(**hdict)
             
         #--> hy component
         try:
@@ -2237,56 +2212,72 @@ class ZongeMTAvg():
         except KeyError:
             hyazm = 90
         try:
-            hemeas_lst.append(['HMEAS', 
-                               'ID={0}'.format(chn_id_dict['hy'][1]), 
-                               'CHTYPE={0}'.format(chn_id_dict['hy'][0].upper()), 
-                               'X=0', 
-                               'Y=0', 
-                               'AZM={0}'.format(hxazm),
-                               ''])
+            hdict = {'id': chn_id_dict['hy'][1], 
+                     'chtype': '{0}'.format(chn_id_dict['hy'][0].upper()), 
+                     'x':0, 
+                     'y':0, 
+                     'azm':hyazm,
+                     'acqchan':'{0}'.format(chn_id_dict['hy'][0].upper())}
+
         except KeyError:
-            hemeas_lst.append(['HMEAS', 
-                               'ID={0}'.format(1), 
-                               'CHTYPE={0}'.format('HY'), 
-                               'X=0', 
-                               'Y=0', 
-                               'AZM={0}'.format(hxazm),
-                               ''])
+            hdict = {'id': 2, 
+                     'chtype': 'hy', 
+                     'x':0, 
+                     'y':0, 
+                     'azm':hyazm,
+                     'acqchan':'hy'}
+        self.edi.Define_measurement.meas_hy = mtedi.HMeasurement(**hdict)
+        
+        #--> hz component
+        try:
+            hdict = {'id': chn_id_dict['hz'][1], 
+                     'chtype': '{0}'.format(chn_id_dict['hz'][0].upper()), 
+                     'x':0, 
+                     'y':0, 
+                     'azm':0,
+                     'acqchan':'{0}'.format(chn_id_dict['hz'][0].upper())}
+
+        except KeyError:
+            hdict = {'id': 3, 
+                     'chtype': 'hz', 
+                     'x':0, 
+                     'y':0, 
+                     'azm':0}
+        self.edi.Define_measurement.meas_hz = mtedi.HMeasurement(**hdict)
+        
         #--> ex component
         try:
-            hemeas_lst.append(['EMEAS', 
-                               'ID={0}'.format(chn_id_dict['ex'][1]), 
-                               'CHTYPE={0}'.format(chn_id_dict['ex'][0].upper()), 
-                               'X=0', 
-                               'Y=0', 
-                               'X2={0}'.format(chn_id_dict['ex'][2]),
-                               'Y2=0'])
+            edict = {'id':chn_id_dict['ex'][1], 
+                     'chtype':'{0}'.format(chn_id_dict['ex'][0].upper()), 
+                     'x':0, 
+                     'y':0, 
+                     'x2':chn_id_dict['ex'][2],
+                     'y2':0}
         except KeyError:
-            hemeas_lst.append(['EMEAS', 
-                               'ID={0}'.format(1), 
-                               'CHTYPE={0}'.format('EX'), 
-                               'X=0', 
-                               'Y=0', 
-                               'X2={0}'.format(100),
-                               'Y2=0'])
+            edict = {'id':4, 
+                     'chtype':'ex', 
+                     'x':0, 
+                     'Y':0, 
+                     'x2':100,
+                     'y2':0}
+        self.edi.Define_measurement.meas_ex = mtedi.EMeasurement(**edict)
                            
         #--> ey component
         try:
-            hemeas_lst.append(['EMEAS', 
-                               'ID={0}'.format(chn_id_dict['ey'][1]), 
-                               'CHTYPE={0}'.format(chn_id_dict['ey'][0].upper()), 
-                               'X=0', 
-                               'Y=0', 
-                               'X2=0',
-                               'Y2={0}'.format(chn_id_dict['ey'][2])])
+            edict = {'id':chn_id_dict['ey'][1], 
+                     'chtype':'{0}'.format(chn_id_dict['ey'][0].upper()), 
+                     'x':0, 
+                     'y':0, 
+                     'x2':0,
+                     'y2':chn_id_dict['ey'][2]}
         except KeyError:
-            hemeas_lst.append(['EMEAS', 
-                               'ID={0}'.format(1), 
-                               'CHTYPE={0}'.format('EY'), 
-                               'X=0', 
-                               'Y=0', 
-                               'X2=0',
-                               'Y2={0}'.format(100)])
+            edict = {'id':5, 
+                     'chtype':'ey', 
+                     'x':0, 
+                     'Y':0, 
+                     'x2':0,
+                     'y2':100}
+        self.edi.Define_measurement.meas_ey = mtedi.EMeasurement(**edict)
                            
         #--> remote reference 
         if rrsurvey_dict:
@@ -2301,36 +2292,29 @@ class ZongeMTAvg():
             hyazm = 90
                 
         #--> rhx component
-        hemeas_lst.append(['HMEAS', 
-                           'ID={0}'.format(hxid), 
-                           'CHTYPE={0}'.format('rhx'.upper()), 
-                           'X=0', 
-                           'Y=0', 
-                           'AZM={0}'.format(hxazm),
-                           ''])
+        hdict = {'id': hxid, 
+                 'chtype': 'rhx', 
+                 'x':0, 
+                 'y':0, 
+                 'azm':hxazm,
+                 'acqchan':'rhx'}
+        self.edi.Define_measurement.meas_rhx = mtedi.HMeasurement(**hdict)
+
         #--> rhy component
-        hemeas_lst.append(['HMEAS', 
-                           'ID={0}'.format(hyid), 
-                           'CHTYPE={0}'.format('rhy'.upper()), 
-                           'X=0', 
-                           'Y=0', 
-                           'AZM={0}'.format(hyazm),
-                           ''])
-        hmstring_lst = []
-        for hm in hemeas_lst:
-            hmstring_lst.append(' '.join(hm))
-        #--> set hemeas as attribute of edi
-        self.edi.hmeas_emeas = hmstring_lst
+        hdict = {'id': hyid, 
+                 'chtype': 'rhy', 
+                 'x':0, 
+                 'y':0, 
+                 'azm':hyazm,
+                 'acqchan':'rhy'}
+        self.edi.Define_measurement.meas_rhy = mtedi.HMeasurement(**hdict)
         
         #----------------------MTSECT-----------------------------------------
-        mtsect_dict = {}
-        mtsect_dict['sectid'] = station
-        mtsect_dict['nfreq'] = len(self.Z.freq)
+        self.edi.Data_sect.nfreq = len(self.Z.freq)
+        self.edi.Data_sect.sectid = station        
+        self.edi.Data_sect.nchan = len(chn_lst)
         for chn, chnid in zip(chn_lst, chn_id):
-            mtsect_dict[chn] = chnid
-        
-        #--> set mtsect as attribure of edi
-        self.edi.mtsect = mtsect_dict
+            setattr(self.edi.Data_sect, chn, chnid)
         
         #----------------------ZROT BLOCK--------------------------------------
         self.edi.zrot = np.zeros(len(self.edi.Z.z))
@@ -2340,7 +2324,7 @@ class ZongeMTAvg():
         
             
         #============ WRITE EDI FILE ==========================================
-        edi_fn = self.edi.writefile(save_path)
+        edi_fn = self.edi.write_edi_file(new_edi_fn=save_path)
         
         print 'Wrote .edi file to {0}'.format(edi_fn)
         
