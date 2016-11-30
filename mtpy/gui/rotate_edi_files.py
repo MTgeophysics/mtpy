@@ -59,6 +59,7 @@ class Rotate_EDI_Files(QtGui.QWidget):
         self.rotate_button.pressed.connect(self.rotate_edi_files)
         
         self.output_box = QtGui.QTextEdit()
+        self.output_box.setMinimumWidth(700)
         
         self.my_stream = MyStream()
         self.my_stream.message.connect(self.normal_output)
@@ -126,6 +127,7 @@ class Rotate_EDI_Files(QtGui.QWidget):
             os.mkdir(self.save_dir)
             
     def set_edi_list(self):
+        self.edi_list_box.clear()
         self.edi_list = [edi[:-4] 
                          for edi in os.listdir(self.cwd)
                          if edi.endswith('.edi')]
@@ -134,9 +136,16 @@ class Rotate_EDI_Files(QtGui.QWidget):
     def set_rotation_angle(self):
         self.rotation_angle = float(str(self.rotation_edit.text()))
         self.rotation_edit.setText('{0:.2f}'.format(self.rotation_angle))
+        self.save_dir = self.make_save_path()
+        self.save_dir_edit.setText(self.save_dir)
 
     def rotate_edi_files(self):
+        if not os.path.exists(self.save_dir):
+            os.mkdir(self.save_dir)
+            print 'Made directory {0}'.format(self.save_dir)
+            
         for edi in self.edi_list:
+            print '='*40
             edi_fn = os.path.join(self.cwd, '{0}.edi'.format(edi))
             mt_obj = mt.MT(fn=edi_fn)
             mt_obj.rotation_angle = self.rotation_angle
