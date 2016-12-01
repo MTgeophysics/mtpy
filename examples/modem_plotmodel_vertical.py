@@ -16,7 +16,7 @@ import mtpy.modeling.modem_new as mtmn
 # define a workdir for your environ  
 workdir = r'V:\Geology\conductivity_modelling'
 workdir = r'E:\Githubz\mtpy2\examples\data\ModEM_files'
-# workdir = r'/Softlab/Githubz/mtpy2/examples/data/ModEM_files'
+workdir = r'/Softlab/Githubz/mtpy2/examples/data/ModEM_files'
 # workdir = r'/g/data/ha3/fxz547/Githubz/mtpy2/examples/data/ModEM_files'
 
 modeldir = op.join(workdir, 'VicSynthetic07')
@@ -101,3 +101,5 @@ if plotdir == 'z':
     plt.gca().set_aspect('equal')
 plt.clim(*clim)
 plt.colorbar()
+
+plt.show()
