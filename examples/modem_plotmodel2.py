@@ -35,11 +35,14 @@ def main(data_dir, plot_type='PTMap', di=20, periodin=0):
     di = di
 
     # plot phase tensor map with residuals:
+    # this will NOT work, an empty figure. plt.savefig(op.join(wd,'ptmaps.png'),dpi=300,ellipse_size=40)
     if plot_type == 'PTMap':
         ptmObj = PlotPTMaps(data_fn=op.join(wd, 'ModEM_Data_noise10inv.dat'),
                          resp_fn=op.join(wd, 'Modular_MPI_NLCG_019.dat'))
-        ptmObj.plot(period=periodin)
-        # this will save an empty figureL plt.savefig(op.join(wd,'ptmaps.png'),dpi=300,ellipse_size=40)
+
+        outfn=op.join(wd,'ptmaps.png')
+        ptmObj.plot(period=periodin, save2file=outfn)
+
 
     # plot map of RMS values
     # python examples/modem_plotmodel2.py examples/data/ModEM_files/VicSynthetic07 RMSMap
@@ -51,11 +54,12 @@ def main(data_dir, plot_type='PTMap', di=20, periodin=0):
         prmsObj.plot_loop(fig_format="png" )    #plot all periods and save figure
 
     # plot responses at a station
-    #FZ: mistmatch ? plot_type=['VIC029']
+    #FZ: how to determine this param plot_type=['VIC029']
+    #Change for consistency to the save_plots='y'  instead of the implemented: plt.savefig(op.join(wd,'response.png'),dpi=300)
     if plot_type == 'Response':
-        PlotResponse(data_fn=op.join(wd, 'ModEM_Data_noise10inv.dat'), plot_type=['VIC029'], save_plots='y')
-
-        # use the save_plots='y'  instead of this one: plt.savefig(op.join(wd,'response.png'),dpi=300)
+        outfn=op.join(wd,'response.png')
+        pltObj = PlotResponse(data_fn=op.join(wd, 'ModEM_Data_noise10inv.dat'), plot_type=['VIC099']) #, save_plots='y')
+        pltObj.plot(outfn)
 
     # plot depth slice
     if plot_type == 'DepthSlice':
@@ -63,7 +67,10 @@ def main(data_dir, plot_type='PTMap', di=20, periodin=0):
         modrho = op.join(wd, 'Modular_MPI_NLCG_019.rho')
         print(modrho)
 
-        PlotDepthSlice(model_fn=modrho, xminorticks=50000, yminorticks=50000, depth_index=di, save_plots='y')
+        #pltObj= PlotDepthSlice(model_fn=modrho, xminorticks=100000, yminorticks=100000, depth_index=di, save_plots='y')
+        pltObj = PlotDepthSlice(model_fn=modrho, save_plots='y', depth_index=20)
+
+        pltObj.plot()
 
     return
 

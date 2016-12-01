@@ -176,12 +176,16 @@ class PlotResponse(object):
 
         self.fig_list = []
 
-        if self.plot_yn == 'y':
-            self.plot()
+        # this __init__ is a constructor which creates an object pObj, call pObj.plot() method will do
+        # if self.plot_yn == 'y':
+        #     self.plot()
 
-    def plot(self):
+        return
+
+
+    def plot(self, save2file=None):
         """
-        plot
+        plot show figure and optionally save to a file named save2file
         """
 
         self.data_object = Data()
@@ -1565,6 +1569,11 @@ class PlotResponse(object):
         ##--> BE SURE TO SHOW THE PLOT
         plt.show()
 
+        if save2file is not None:
+            fig.savefig(save2file, dpi=self.fig_dpi, bbox_inches='tight')
+            #self.save_figure(save2file)
+        return plt
+
     def redraw_plot(self):
         """
         redraw plot if parameters were changed
@@ -1585,7 +1594,7 @@ class PlotResponse(object):
             plt.close(fig)
         self.plot()
 
-    def save_figure(self, save_fn, file_format='pdf', orientation='portrait',
+    def save_figure(self, save_fn, file_format='png', orientation='portrait',
                     fig_dpi=None, close_fig='y'):
         """
         save_plot will save the figure to save_fn.
@@ -1649,12 +1658,13 @@ class PlotResponse(object):
         if close_fig == 'y':
             plt.clf()
             plt.close(fig)
-
         else:
             pass
 
         self.fig_fn = save_fn
         print 'Saved figure to: ' + self.fig_fn
+
+        return self.fig_fn
 
     def update_plot(self):
         """

@@ -156,8 +156,8 @@ class PlotDepthSlice(object):
         self.title = kwargs.pop('title', 'on')
         self.fig_list = []
 
-        self.xminorticks = kwargs.pop('xminorticks', 1000)
-        self.yminorticks = kwargs.pop('yminorticks', 1000)
+        self.xminorticks = kwargs.pop('xminorticks', 10000)
+        self.yminorticks = kwargs.pop('yminorticks', 10000)
 
         self.climits = kwargs.pop('climits', (0, 4))
         self.cmap = kwargs.pop('cmap', 'jet_r')
@@ -165,7 +165,7 @@ class PlotDepthSlice(object):
 
         self.cb_shrink = kwargs.pop('cb_shrink', .8)
         self.cb_pad = kwargs.pop('cb_pad', .01)
-        self.cb_orientation = kwargs.pop('cb_orientation', 'horizontal')
+        self.cb_orientation = kwargs.pop('cb_orientation', 'horizontal') #'vertical')
         self.cb_location = kwargs.pop('cb_location', None)
 
         self.subplot_right = .99
@@ -189,7 +189,7 @@ class PlotDepthSlice(object):
         self.station_north = None
         self.station_names = None
 
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
+        self.plot_yn = kwargs.pop('plot_yn', 'n')
         if self.plot_yn == 'y':
             self.plot()
 
@@ -238,6 +238,7 @@ class PlotDepthSlice(object):
                        6: '$10^{6}$', 7: '$10^{7}$', 8: '$10^{8}$'}
 
         # create an list of depth slices to plot
+        print self.grid_z  #FZ:
         if self.depth_index == None:
             zrange = range(self.grid_z.shape[0])
         elif type(self.depth_index) is int:
@@ -245,6 +246,8 @@ class PlotDepthSlice(object):
         elif type(self.depth_index) is list or \
                         type(self.depth_index) is np.ndarray:
             zrange = self.depth_index
+
+        print (zrange)
 
         # set the limits of the plot
         if self.ew_limits == None:
@@ -336,55 +339,74 @@ class PlotDepthSlice(object):
                          lw=.25,
                          color='k')
 
-            # plot the colorbar
-            if self.cb_location is None:
-                if self.cb_orientation == 'horizontal':
-                    self.cb_location = (ax1.axes.figbox.bounds[3] - .225,
-                                        ax1.axes.figbox.bounds[1] + .05, .3, .025)
+            #FZ: fix miss-placed colorbar
+            from mpl_toolkits.axes_grid1 import make_axes_locatable
+            ax = plt.gca()
 
-                elif self.cb_orientation == 'vertical':
-                    self.cb_location = ((ax1.axes.figbox.bounds[2] - .15,
-                                         ax1.axes.figbox.bounds[3] - .21, .025, .3))
+            # create an axes on the right side of ax. The width of cax will be 5%
+            # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="5%", pad=0.05)
 
-            ax2 = fig.add_axes(self.cb_location)
+            mycb= plt.colorbar(mesh_plot, cax=cax, label='Resistivity ($\Omega \cdot$m)')
+            #cax.set_label('Resistivity ($\Omega \cdot$m)') #,fontdict={'size': self.font_size + 1})
 
-            cb = mcb.ColorbarBase(ax2,
-                                  cmap=self.cmap,
-                                  norm=Normalize(vmin=self.climits[0],
-                                                 vmax=self.climits[1]),
-                                  orientation=self.cb_orientation)
-
-            if self.cb_orientation == 'horizontal':
-                cb.ax.xaxis.set_label_position('top')
-                cb.ax.xaxis.set_label_coords(.5, 1.3)
-
-
-            elif self.cb_orientation == 'vertical':
-                cb.ax.yaxis.set_label_position('right')
-                cb.ax.yaxis.set_label_coords(1.25, .5)
-                cb.ax.yaxis.tick_left()
-                cb.ax.tick_params(axis='y', direction='in')
-
-            cb.set_label('Resistivity ($\Omega \cdot$m)',
-                         fontdict={'size': self.font_size + 1})
-            cb.set_ticks(np.arange(self.climits[0], self.climits[1] + 1))
-            cb.set_ticklabels([cblabeldict[cc]
-                               for cc in np.arange(self.climits[0],
-                                                   self.climits[1] + 1)])
-
+            # # plot the colorbar - Original
+            # if self.cb_location is None:
+            #     if self.cb_orientation == 'horizontal':
+            #         self.cb_location = (ax1.axes.figbox.bounds[3] - .225,
+            #                             ax1.axes.figbox.bounds[1] + .05, .3, .025)
+            #
+            #     elif self.cb_orientation == 'vertical':
+            #         self.cb_location = ((ax1.axes.figbox.bounds[2] - .15,
+            #                              ax1.axes.figbox.bounds[3] - .21, .025, .3))
+            #
+            # ax2 = fig.add_axes(self.cb_location)
+            #
+            # cb = mcb.ColorbarBase(ax2,
+            #                       cmap=self.cmap,
+            #                       norm=Normalize(vmin=self.climits[0],
+            #                                      vmax=self.climits[1]),
+            #                       orientation=self.cb_orientation)
+            #
+            # if self.cb_orientation == 'horizontal':
+            #     cb.ax.xaxis.set_label_position('top')
+            #     cb.ax.xaxis.set_label_coords(.5, 1.3)
+            #
+            #
+            # elif self.cb_orientation == 'vertical':
+            #     cb.ax.yaxis.set_label_position('right')
+            #     cb.ax.yaxis.set_label_coords(1.25, .5)
+            #     cb.ax.yaxis.tick_left()
+            #     cb.ax.tick_params(axis='y', direction='in')
+            #
+            # cb.set_label('Resistivity ($\Omega \cdot$m)',
+            #              fontdict={'size': self.font_size + 1})
+            # cb.set_ticks(np.arange(self.climits[0], self.climits[1] + 1))
+            # cb.set_ticklabels([cblabeldict[cc]
+            #                    for cc in np.arange(self.climits[0],
+            #                                        self.climits[1] + 1)])
+            # plot the colorbar - Original-End
+###FZ:  fig_list not work?
             self.fig_list.append(fig)
+
+            # Figure Objects
+            print(self.fig_list)
 
             # --> save plots to a common folder
             if self.save_plots == 'y':
-
-                fig.savefig(os.path.join(self.save_path,
-                                         "Depth_{}_{:.4f}.png".format(ii, self.grid_z[ii])),
-                            dpi=self.fig_dpi, bbox_inches='tight')
-                fig.clear()
-                plt.close()
-
+                out_file_name= "Depth_{}_{:.4f}.png".format(ii, self.grid_z[ii])
+                path2outfile=os.path.join(self.save_path, out_file_name)
+                fig.savefig(path2outfile, dpi=self.fig_dpi, bbox_inches='tight')
             else:
                 pass
+
+# when runs interactively, plt show a figure
+            plt.show()
+            fig.clear()
+            plt.close()
+
+            return
 
     def redraw_plot(self):
         """

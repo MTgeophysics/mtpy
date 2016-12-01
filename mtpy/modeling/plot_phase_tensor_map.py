@@ -348,7 +348,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
             self.pt_resp_arr = model_pt_arr
             self.pt_resid_arr = res_pt_arr
 
-    def plot(self, period=0):
+    def plot(self, period=0, save2file=None):
         """ Plot phase tensor maps for data and or response, each figure is of a
         different period.  If response is input a third column is added which is
         the residual phase tensor showing where the model is not fitting the data
@@ -360,6 +360,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
         Returns:
 
         """
+
+        print("The input parameter period is", period)
 
         # --> read in data first
         if self.data_obj is None:
@@ -405,6 +407,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
             self.ns_limits = (north_min / self.dscale, north_max / self.dscale)
 
         # -------------plot phase tensors------------------------------------
+        if period > len(self.plot_period_list)-1:
+            print("Error: the period exceeds the max value:", len(self.plot_period_list)-1)
+
         # FZ: changed below to plot a given period index
         # for ff, per in enumerate(self.plot_period_list):
         for ff, per in enumerate(self.plot_period_list[period:period+1]):
@@ -674,8 +679,13 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     cb.set_ticks(cb_ticks)
                     cb.set_ticklabels([mtplottools.labeldict[ctk] for ctk in cb_ticks])
 
+            if save2file is not None:
+                fig.savefig(save2file, dpi=self.fig_dpi, bbox_inches='tight')
+
             plt.show()
             self.fig_list.append(fig)
+
+            return fig
 
     def redraw_plot(self):
         """
