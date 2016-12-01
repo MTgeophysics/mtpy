@@ -183,7 +183,7 @@ class Edi(object):
                 raise MTex.MTpyError_EDI("Could not find {0}, check path".format(self.edi_fn))
             
             with open(self.edi_fn, 'r') as fid:
-                self._edi_lines = fid.readlines()
+                self._edi_lines = _validate_edi_lines(fid.readlines())
 
         self.Header = Header(edi_lines=self._edi_lines)
         self.Info = Information(edi_lines=self._edi_lines)
@@ -892,13 +892,14 @@ class Header(object):
             if os.path.isfile(self.edi_fn) == False:
                 print 'Could not find {0}, check path'.format(self.edi_fn)
             with open(self.edi_fn, 'r') as fid:
-                self.edi_lines = fid.readlines()
-
+                self.edi_lines = _validate_edi_lines(fid.readlines())
+            
+                
         # read in list line by line and then truncate
         for ii, line in enumerate(self.edi_lines):
             # check for header label
             if '>' in line and 'head' in line.lower():
-                head_find = True   
+                head_find = True
             # if the header line has been found then the next >
             # should be the next section so stop
             elif '>' in line:
@@ -1108,7 +1109,7 @@ class Information(object):
                 return
                 
             with open(self.edi_fn, 'r') as fid:
-                self.edi_lines = fid.readlines()
+                self.edi_lines = _validate_edi_lines(fid.readlines())
                       
         for ii, line in enumerate(self.edi_lines):
             if '>' in line and 'info' in line.lower():
@@ -1305,7 +1306,7 @@ class DefineMeasurement(object):
                 return
             
             with open(self.edi_fn, 'r') as fid:
-                self.edi_lines = fid.readlines()
+                self.edi_lines = _validate_edi_lines(fid.readlines())
                         
         for ii, line in enumerate(self.edi_lines):
             if '>=' in line and 'definemeas' in line.lower():
@@ -1505,7 +1506,7 @@ class HMeasurement(object):
         self._kw_list = ['id', 'chtype', 'x', 'y', 'azm', 'acqchan']
         self._fmt_list = ['<4.4g','<3', '<4.1f', '<4.1f', '<4.1f', '<4']
         for key in self._kw_list:
-            setattr(self, key, None)
+            setattr(self, key, 0.0)
         
         for key in kwargs.keys():
             try:
@@ -1556,7 +1557,7 @@ class EMeasurement(object):
         self._fmt_list = ['<4.4g', '<3', '<4.1f', '<4.1f', '<4.1f', '<4.1f',
                           '<4']
         for key in self._kw_list:
-            setattr(self, key, None)
+            setattr(self, key, 0.0)
         
         for key in kwargs.keys():
             try:
@@ -1653,7 +1654,7 @@ class DataSection(object):
             if os.path.isfile(self.edi_fn) is False:
                 raise MTex.MTpyError_EDI('Could not find {0}. Check path'.format(self.edi_fn))
             with open(self.edi_fn) as fid:
-                self.edi_lines = fid.readlines()
+                self.edi_lines = _validate_edi_lines(fid.readlines())
 
         for ii, line in enumerate(self.edi_lines):
             if '>=' in line and 'sect' in line.lower():
@@ -1759,4 +1760,18 @@ def _validate_str_with_equals(input_string):
                 range(0, len(str_list), 2)]
     
     return line_list
+    
+def _validate_edi_lines(edi_lines):
+    """
+    check for carriage returns or hard returns
+    """
+    
+    if len(edi_lines) == 1:
+        edi_lines = edi_lines[0].replace('\r', '\n').split('\n')
+        if len(edi_lines) > 1:
+            return edi_lines
+        else:
+            raise ValueError('*** EDI format not correct check file ***')
+    else:
+        return edi_lines
     

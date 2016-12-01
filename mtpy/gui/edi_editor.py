@@ -592,11 +592,11 @@ class PlotWidget(QtGui.QWidget):
         
     def static_shift_set_x(self):
         self.static_shift_x = float(str(self.static_shift_x_edit.text()))
-        self.static_shift_x_edit.setText('{0:.3f}'.format(self.static_shift_x))
+        self.static_shift_x_edit.setText('{0:.5g}'.format(self.static_shift_x))
         
     def static_shift_set_y(self):
         self.static_shift_y = float(str(self.static_shift_y_edit.text()))
-        self.static_shift_y_edit.setText('{0:.3f}'.format(self.static_shift_y))
+        self.static_shift_y_edit.setText('{0:.5g}'.format(self.static_shift_y))
      
     def static_shift_apply(self):
         """
@@ -616,7 +616,7 @@ class PlotWidget(QtGui.QWidget):
             print "\n    - Static shift applied to edited data:"
         
         # print the static shift applied
-        print "        x = {0:.4f}, y = {1:.4f}".format(self.static_shift_x,
+        print "        x = {0:<8.5g}, y = {1:<8.5g}".format(self.static_shift_x,
                                                         self.static_shift_y)          
         self._edited_ss = True
                                                 
@@ -640,8 +640,8 @@ class PlotWidget(QtGui.QWidget):
         self.static_shift_x = ss_x
         self.static_shift_y = ss_y
         
-        self.static_shift_x_edit.setText('{0:.2f}'.format(ss_x))
-        self.static_shift_y_edit.setText('{0:.2f}'.format(ss_y))
+        self.static_shift_x_edit.setText('{0:.5g}'.format(ss_x))
+        self.static_shift_y_edit.setText('{0:.5g}'.format(ss_y))
         
     def remove_distortion_set_num_freq(self):
         """
@@ -673,9 +673,9 @@ class PlotWidget(QtGui.QWidget):
         self.mt_obj.Z = new_z_object
 
         print '       Distortion matrix:'
-        print '          | {0:+.3f}  {1:+.3f} |'.format(distortion[0, 0],
+        print '          | {0:+8.5g}  {1:+8.5g} |'.format(distortion[0, 0],
                                                         distortion[0, 1])
-        print '          | {0:+.3f}  {1:+.3f} |'.format(distortion[1, 0],
+        print '          | {0:+8.5g}  {1:+8.5g} |'.format(distortion[1, 0],
                                                         distortion[1, 1]) 
         
         self.redraw_plot()
