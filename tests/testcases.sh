@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# env set up --- please modify accordingly
+# env setup --- please modify accordingly
 
 export MTPYPATH=/Softlab/Githubz/mtpy2
 export PYTHONPATH=/Softlab/Githubz/mtpy2:$PYTHONPATH
@@ -14,7 +14,6 @@ python -V
 cd $MTPYPATH
 
 echo "-----------Test running Alison's scripts---------"
-
 echo "-----------in mtpy2 develop branch---------"
 
 python examples/modem_plotptresidual.py
@@ -27,9 +26,6 @@ python examples/plot_phase_tensor_map.py examples/data/edi_files/georgina
 
 python examples/plot_phase_tensor_section.py examples/data/edi_files
 python examples/plot_phase_tensor_section.py examples/data/edi_files/georgina
-
-echo "Finished running the script $0"
-
 
 
 ####################################
@@ -51,7 +47,9 @@ echo "Finished running the script $0"
 # save to a png file for each period.
 # python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07 RMSMap
 
-
+# fix github issue #12: plt show in commandline run.
 # python examples/modem_plotmodel_vertical.py
 
+
+echo "Finished running the script $0"
 

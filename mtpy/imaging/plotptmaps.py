@@ -164,7 +164,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                    angle in degrees to rotate the data clockwise positive.
                    *Default* is 0
 
-        **figsize** : tuple or list (x, y) in inches
+        **fig_size** : tuple or list (x, y) in inches
                       dimensions of the figure box in inches, this is a default
                       unit of matplotlib.  You can use this so make the plot
                       fit the figure box to minimize spaces from the plot axes
@@ -215,7 +215,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                       
                       *'n' to not plot on creating an instance           
                        
-        **fignum** : int
+        **fig_num** : int
                      figure number.  *Default* is 1
                      
         **title** : string
@@ -342,8 +342,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         -ellipse_size         scaling factor to make ellipses visible
         
         -fig                  matplotlib.figure instance for the figure 
-        -fignum               number of figure being plotted
-        -figsize              size of figure in inches
+        -fig_num               number of figure being plotted
+        -fig_size              size of figure in inches
         -font_size            font size of axes tick label, axes labels will be
                               font_size + 2
                               
@@ -465,7 +465,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         self.fig_dpi = kwargs.pop('fig_dpi', 300)
         
         self.tscale = kwargs.pop('tscale', 'period')
-        self.fig_size = kwargs.pop('fig_size', [8, 8])
+        self.fig_size = kwargs.pop('fig_size', [5, 8])
         
         self.font_size = kwargs.pop('font_size', 7)
         
@@ -611,13 +611,21 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         """                               
         
         #set position properties for the plot
+        # plt.rcParams['font.size']=self.font_size
+        # plt.rcParams['figure.subplot.left']=.1
+        # plt.rcParams['figure.subplot.right']=.98
+        # plt.rcParams['figure.subplot.bottom']=.1
+        # plt.rcParams['figure.subplot.top']=.93
+        # plt.rcParams['figure.subplot.wspace']=.55
+        # plt.rcParams['figure.subplot.hspace']=.70
+        #FZ: tweaks to make plot positioned better
         plt.rcParams['font.size']=self.font_size
         plt.rcParams['figure.subplot.left']=.1
-        plt.rcParams['figure.subplot.right']=.98
-        plt.rcParams['figure.subplot.bottom']=.1
-        plt.rcParams['figure.subplot.top']=.93
-        plt.rcParams['figure.subplot.wspace']=.55
-        plt.rcParams['figure.subplot.hspace']=.70        
+        plt.rcParams['figure.subplot.right']=.90
+        plt.rcParams['figure.subplot.bottom']=.2
+        plt.rcParams['figure.subplot.top']=.90
+        plt.rcParams['figure.subplot.wspace']=.70
+        plt.rcParams['figure.subplot.hspace']=.70
         
         #make figure instanc
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
@@ -627,7 +635,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         
         #make an axes instance
         self.ax = self.fig.add_subplot(1, 1, 1, aspect='equal')
-        
+
+        plt.locator_params(axis='x', nbins=3)  # control number of ticks in axis (nbins ticks)
+        plt.xticks( rotation='vertical')  # FZ: control tick rotation=30 not that good
         
         #--> plot the background image if desired-----------------------
         try:
@@ -908,10 +918,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         #--> set axes properties depending on map scale------------------------
         if self.mapscale == 'deg':    
             self.ax.set_xlabel('longitude',
-                               fontsize=self.font_size+2,
+                               fontsize=self.font_size, #+2,
                                fontweight='bold')
             self.ax.set_ylabel('latitude',
-                               fontsize=self.font_size+2,
+                               fontsize=self.font_size, #+2,
                                fontweight='bold')
             
         elif self.mapscale == 'm':
@@ -1032,13 +1042,21 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         self.ax.grid(alpha=.25)
         
         #==> make a colorbar with appropriate colors
-        if self.cb_position == None:
+        if self.cb_position is None:
             self.ax2, kw = mcb.make_axes(self.ax,
                                          orientation=self.cb_orientation,
-                                         shrink=.35)
+                                         shrink=.50)
+            # FZ: try to fix colorbar h-position
+            # from mpl_toolkits.axes_grid1 import make_axes_locatable
+            #
+            # # create an axes on the right side of ax. The width of cax will be 5%
+            # # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+            # divider = make_axes_locatable(self.ax)
+            # self.ax2 = divider.append_axes("right", size="5%", pad=0.05)
+
         else:
             self.ax2 = self.fig.add_axes(self.cb_position)
-        
+
         if cmap == 'mt_seg_bl2wh2rd':
             #make a color list
             self.clist = [(cc, cc ,1) 
@@ -1102,7 +1120,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         plt.setp(self.ref_ax.xaxis.get_ticklabels(), visible=False)
         plt.setp(self.ref_ax.yaxis.get_ticklabels(), visible=False)
         self.ref_ax.set_title(r'$\Phi$ = 1')
-            
+
         plt.show()
     
         

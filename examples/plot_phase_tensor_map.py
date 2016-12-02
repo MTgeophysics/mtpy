@@ -23,7 +23,8 @@ def main(edi_path, save_path=None):
     elst = glob.glob(os.path.join(edi_path, "*.edi"))
 
     # frequency to plot
-    plot_freq = 9.4
+    #plot_freq = 9.4
+    plot_freq = 20.0
 
     # parameters describing ellipses
     ellipse_dict = {'size': 0.02, 'colorby': 'phimin', 'range': (0, 90, 1), 'cmap': 'mt_bl2gr2rd'}
@@ -50,7 +51,8 @@ def main(edi_path, save_path=None):
                                     plot_tipper='yr',
                                     arrow_dict=arrow_dict,
                                     ellipse_dict=ellipse_dict,
-                                    figsize=(8, 4))
+                                    fig_size=(4, 4),
+                                    mapscale='deg')  #deg or km
 
     if save_path is not None:
         plt.savefig(save_path, dpi=300)
@@ -61,7 +63,7 @@ def main(edi_path, save_path=None):
 #
 # How to Run:
 # export PYTHONPATH=/path2/mtpy2
-# python examples/plot_phase_tensor_map.py /g/data/ha3/fxz547/mtpy2/examples/data/edi_files/georgina /tmp/mtpy_map
+# python examples/plot_phase_tensor_map.py ./examples/data/edi_files/georgina /tmp/mtpy_map
 #
 if __name__ == '__main__':
 

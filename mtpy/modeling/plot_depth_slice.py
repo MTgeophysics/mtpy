@@ -349,6 +349,8 @@ class PlotDepthSlice(object):
             cax = divider.append_axes("right", size="5%", pad=0.05)
 
             mycb= plt.colorbar(mesh_plot, cax=cax, label='Resistivity ($\Omega \cdot$m)')
+
+            #below orginal not good
             #cax.set_label('Resistivity ($\Omega \cdot$m)') #,fontdict={'size': self.font_size + 1})
 
             # # plot the colorbar - Original

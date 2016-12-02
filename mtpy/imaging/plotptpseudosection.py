@@ -359,7 +359,7 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
             self.cb_position = None
             
         #set the stretching in each direction
-        stretch = kwargs.pop('stretch', (50, 25))
+        stretch = kwargs.pop('stretch', (200, 25))
         if type(stretch) == float or type(stretch) == int:
             self.xstretch = stretch
             self.ystretch = stretch
@@ -449,17 +449,19 @@ class PlotPhaseTensorPseudoSection(mtpl.MTEllipse, mtpl.MTArrows):
         """
             
         plt.rcParams['font.size'] = self.font_size
-        plt.rcParams['figure.subplot.left'] = .08
-        plt.rcParams['figure.subplot.right'] = .98
-        plt.rcParams['figure.subplot.bottom'] = .1
-        plt.rcParams['figure.subplot.top'] = .96
-        plt.rcParams['figure.subplot.wspace'] = .55
+        plt.rcParams['figure.subplot.left'] = .10
+        plt.rcParams['figure.subplot.right'] = .90
+        plt.rcParams['figure.subplot.bottom'] = .2
+        plt.rcParams['figure.subplot.top'] = 0.9
+        plt.rcParams['figure.subplot.wspace'] = .70
         plt.rcParams['figure.subplot.hspace'] = .70
         
         #create a plot instance
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
         self.ax = self.fig.add_subplot(1, 1, 1, aspect='equal')
-        
+
+        plt.xticks(rotation='vertical')  # FZ: control tick rotation=30 not that good
+
         #create empty lists to put things into
         self.stationlist = []
         self.offsetlist = []
