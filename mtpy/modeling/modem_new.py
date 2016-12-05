@@ -528,8 +528,20 @@ class Data(object):
                     pyproj.transform(p1,p2,
                                      c_arr['lon'],c_arr['lat'])
             
+            
+    def project_xy(self,x,y):
+        try:
+            import pyproj
+        except ImportError:
+            print "please install pyproj to use update_data_center option"
+            return
+        if self.epsg is not None:
+            p1 = pyproj.Proj(epsg_dict[self.epsg][0])
+            p2 = pyproj.Proj(epsg_dict[4326][0])
         
-        
+            self.center_position = np.array(pyproj.transform(p1,p2,x,y))        
+
+			
     def get_relative_station_locations(self):
         """
         get station locations from edi files and project to local coordinates
@@ -554,9 +566,9 @@ class Data(object):
                  as grid distances and overlaps change over the globe.        
         
         """
-        # get center position of the stations in lat and lon                   
-        self.center_position[0] = self.data_array['lat'].mean()
-        self.center_position[1] = self.data_array['lon'].mean()
+#        # get center position of the stations in lat and lon                   
+#        self.center_position = 0.5*np.array([self.data_array['lon'].min() + self.data_array['lon'].max(),
+#                                                self.data_array['lat'].min() + self.data_array['lat'].max()])
         
         # try to use pyproj if desired, if not then have to use inbuilt
         # projection module but may give bad results if crossing more than one zone
@@ -584,12 +596,15 @@ class Data(object):
         if not use_pyproj:
             self.project_sites()
             
+        # center of the grid in east/north coordinates
+        self.center_position_EN = 0.5*np.array([self.data_array['east'].min() + self.data_array['east'].max(),
+                                                self.data_array['north'].min() + self.data_array['north'].max()])
+        # try to update center_position by projecting center xy
+        self.project_xy(*self.center_position_EN)
 
         #remove the average distance to get coordinates in a relative space
-        self.data_array['rel_east'] = self.data_array['east']-\
-                                             self.data_array['east'].mean()
-        self.data_array['rel_north'] = self.data_array['north']-\
-                                              self.data_array['north'].mean()
+        self.data_array['rel_east'] = self.data_array['east']-self.center_position_EN[0]
+        self.data_array['rel_north'] = self.data_array['north']-self.center_position_EN[1]
 
         
         #--> rotate grid if necessary
@@ -615,15 +630,6 @@ class Data(object):
             print 'Rotated stations by {0:.1f} deg clockwise from N'.format(
                                                     self.rotation_angle)
      
-        #translate the stations so they are relative to 0,0
-        east_center = (self.data_array['rel_east'].max()-
-                        np.abs(self.data_array['rel_east'].min()))/2
-        north_center = (self.data_array['rel_north'].max()-
-                        np.abs(self.data_array['rel_north'].min()))/2
-        
-        #remove the average distance to get coordinates in a relative space
-        self.data_array['rel_east'] -= east_center
-        self.data_array['rel_north'] -= north_center
         
     def get_period_list(self):
         """
@@ -1166,10 +1172,17 @@ class Data(object):
         #-->write file
         self.write_data_file()
         
-    def read_data_file(self, data_fn=None):
+    def read_data_file(self, data_fn=None, center_utm = None):
         """
         read ModEM data file
         
+       inputs:
+        data_fn = full path to data file name
+        center_utm = option to provide real world coordinates of the center of
+                     the grid for putting the data and model back into
+                     utm/grid coordinates, format [east_0, north_0, z_0]
+                     
+
         Fills attributes: 
             * data_array
             * period_list
@@ -1348,7 +1361,20 @@ class Data(object):
             
             self.data_array[ii]['tip'][:] = mt_obj.Tipper.tipper
             self.data_array[ii]['tip_err'][:] = mt_obj.Tipper.tipper_err
-            
+
+		# option to provide real world coordinates in eastings/northings
+        # (ModEM data file contains real world center in lat/lon but projection
+        # is not provided so utm is assumed, causing errors when points cross
+        # utm zones. And lat/lon cut off to 3 d.p. causing errors in smaller areas)
+        if center_utm is not None:
+            self.data_array['east'] = self.data_array['rel_east'] + center_utm[0]
+            self.data_array['north'] = self.data_array['rel_north'] + center_utm[1]
+ 
+
+
+
+
+ 
     def write_vtk_station_file(self, vtk_save_path=None, 
                                vtk_fn_basename='ModEM_stations'):
         """
@@ -1672,7 +1698,7 @@ class Model(object):
 #        self.station_locations['rel_north'] -= north_center
 
 
-    def make_mesh(self):
+    def make_mesh(self, update_data_center=False):
         """ 
         create finite element mesh according to parameters set.
         
@@ -1699,23 +1725,26 @@ class Model(object):
         
         """
         
-#        self.get_station_locations()
-        
         #find the edges of the grid
         west = self.station_locations['rel_east'].min()-self.cell_size_east*3/2.
         east = self.station_locations['rel_east'].max()+self.cell_size_east*3/2.
         south = self.station_locations['rel_north'].min()-self.cell_size_north*3/2.
         north = self.station_locations['rel_north'].max()+self.cell_size_north*3/2.
-        west = np.round(west, -2)
-        east= np.round(east, -2)
-        south= np.round(south, -2)
-        north = np.round(north, -2)
+        westr = np.round(west, -2)
+        eastr= np.round(east, -2)
+        southr= np.round(south, -2)
+        northr = np.round(north, -2)
 
+        # adjust center position (centre may be moved by rounding)
+        self.Data.center_position_EN[0] += (westr + eastr - west - east)/2.
+        self.Data.center_position_EN[1] += (southr + northr - south - north)/2.		
+		
         #-------make a grid around the stations from the parameters above------
         #--> make grid in east-west direction
         #cells within station area
-        east_gridr = np.arange(start=west, stop=east+self.cell_size_east,
+        east_gridr = np.arange(start=westr, stop=eastr+self.cell_size_east,
                                step=self.cell_size_east)
+		self.Data.center_position_EN[0] -= np.mean(east_gridr)
         east_gridr -= np.mean(east_gridr)
         #padding cells in the east-west direction
         for ii in range(1,self.pad_east+1):
@@ -1743,8 +1772,9 @@ class Model(object):
         
         #--> make grid in north-south direction 
         #N-S cells with in station area
-        north_gridr = np.arange(start=south, stop=north+self.cell_size_north, 
+        north_gridr = np.arange(start=southr, stop=northr+self.cell_size_north, 
                                 step=self.cell_size_north)
+		self.Data.center_position_EN[1] -= np.mean(north_gridr)
         north_gridr -= np.mean(north_gridr)
         #padding cells in the east-west direction
         for ii in range(1, self.pad_north+1):
@@ -1799,10 +1829,11 @@ class Model(object):
         north_nodes = north_gridr[1:]-north_gridr[:-1]
 
         #compute grid center
-        center_east = -east_nodes.__abs__().sum()/2
-        center_north = -north_nodes.__abs__().sum()/2
+#        center_east = -east_nodes.__abs__().sum()/2
+#        center_north = -north_nodes.__abs__().sum()/2
         center_z = 0
-        self.grid_center = np.array([center_north, center_east, center_z])
+        self.grid_center = np.array([self.Data.center_position_EN[0], 
+                                     self.Data.center_position_EN[1], center_z])
         
         #make nodes attributes
         self.nodes_east = east_nodes
@@ -1812,6 +1843,12 @@ class Model(object):
         self.grid_north = north_gridr
         self.grid_z = z_grid
 
+        # if desired, update the data center position (need to first project 
+        # east/north back to lat/lon) and rewrite to file
+        if update_data_center:
+            self.Data.project_xy(self.Data.center_position_EN[0],
+                                 self.Data.center_position_EN[1])
+            self.Data.write_data_file(compute_error=False,fill=False)
 
             
         #--> print out useful information                    
