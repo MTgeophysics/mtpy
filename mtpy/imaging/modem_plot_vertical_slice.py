@@ -17,7 +17,7 @@ from mtpy.modeling.modem_new import Data
 
 class ModemPlotVerticalSlice():
     
-    def __init__(self,filedat, filerho, plot_orient='ew'):
+    def __init__(self,filedat, filerho, plot_orient='ew', **kwargs):
         """Constructor
         :param filedat: path2file.dat
         :param filerho: path2file.rho
@@ -38,6 +38,10 @@ class ModemPlotVerticalSlice():
         self.zlim = (1e5, -5e3)
         # colour limits
         self.clim = [0.3, 3.7]
+
+        self.fig_size = kwargs.pop('fig_size', [16, 12])
+        self.font_size = kwargs.pop('font_size', 10)
+        self.map_scale='km'
         
         # read in the model data
         self._read_data()
@@ -66,7 +70,9 @@ class ModemPlotVerticalSlice():
         """ create a plot based on the input data and parameters       
         :return: 
         """
-        
+
+        fdict = {'size': self.font_size + 2, 'weight': 'bold'}
+
         # get grid centres
         gcz = np.mean([self.modObj.grid_z[:-1], self.modObj.grid_z[1:]], axis=0)
         gceast, gcnorth = [np.mean([arr[:-1], arr[1:]], axis=0) for arr in [self.modObj.grid_east, self.modObj.grid_north]]
@@ -85,7 +91,7 @@ class ModemPlotVerticalSlice():
         # get data for plotting
         if self.plot_orientation == 'ew':
             X, Y, res = self.modObj.grid_east, self.modObj.grid_z, np.log10(self.modObj.res_model[sno, :, :].T)
-            ss = np.where(np.abs( self.datObj.station_locations['rel_north'] - np.median(gcnorth)) < self.stationdist)[0]
+            ss = np.where(np.abs(self.datObj.station_locations['rel_north'] - np.median(gcnorth)) < self.stationdist)[0]
         
             sX, sY = self.datObj.station_locations['rel_east'][ss], self.datObj.station_locations['elev'][ss]
             xlim = (self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
@@ -105,25 +111,40 @@ class ModemPlotVerticalSlice():
             sX, sY = self.datObj.station_locations['rel_east'], self.datObj.station_locations['rel_north']
             xlim = (self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
             ylim = (self.modObj.grid_north[self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
-            title = 'Depth slice at {}km'.format(gcz[sno])
+            title = 'Horizontal Slice at Depth {}km'.format(gcz[sno])
         
         # make the plot
-        plt.figure()
-        plt.pcolormesh(X, Y, res, cmap='bwr_r')
+        plt.figure(figsize=self.fig_size)
+        mesh_plot=plt.pcolormesh(X, Y, res, cmap='bwr_r')
         plt.xlim(*xlim)
         plt.ylim(*ylim)
         
         # plot station locations
-        plt.plot(sX, sY, 'kv')
+        plt.plot(sX, sY, 'o')  #station marker:'kv'
         
         # set title
         plt.title(title)
         
         if self.plot_orientation == 'z':
             plt.gca().set_aspect('equal')
+
         plt.clim(*self.clim)
-        plt.colorbar()
-        
+        #plt.colorbar()
+
+        # FZ: fix miss-placed colorbar
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
+        ax = plt.gca()
+
+        # create an axes on the right side of ax. The width of cax will be 5%
+        # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+
+        mycb = plt.colorbar(mesh_plot, cax=cax, label='Resistivity ($\Omega \cdot$m)')
+
+        ax.set_ylabel('Northing (' + self.map_scale + ')', fontdict=fdict)
+        ax.set_xlabel('Easting (' + self.map_scale + ')', fontdict=fdict)
+
         plt.show()
 
 #########################################################################
