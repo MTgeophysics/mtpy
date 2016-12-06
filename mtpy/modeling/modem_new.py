@@ -541,7 +541,7 @@ class Data(object):
         
             self.center_position = np.array(pyproj.transform(p1,p2,x,y))        
 
-			
+
     def get_relative_station_locations(self):
         """
         get station locations from edi files and project to local coordinates
@@ -1362,7 +1362,7 @@ class Data(object):
             self.data_array[ii]['tip'][:] = mt_obj.Tipper.tipper
             self.data_array[ii]['tip_err'][:] = mt_obj.Tipper.tipper_err
 
-		# option to provide real world coordinates in eastings/northings
+        # option to provide real world coordinates in eastings/northings
         # (ModEM data file contains real world center in lat/lon but projection
         # is not provided so utm is assumed, causing errors when points cross
         # utm zones. And lat/lon cut off to 3 d.p. causing errors in smaller areas)
@@ -1738,13 +1738,13 @@ class Model(object):
         # adjust center position (centre may be moved by rounding)
         self.Data.center_position_EN[0] += (westr + eastr - west - east)/2.
         self.Data.center_position_EN[1] += (southr + northr - south - north)/2.		
-		
+
         #-------make a grid around the stations from the parameters above------
         #--> make grid in east-west direction
         #cells within station area
         east_gridr = np.arange(start=westr, stop=eastr+self.cell_size_east,
                                step=self.cell_size_east)
-		self.Data.center_position_EN[0] -= np.mean(east_gridr)
+        self.Data.center_position_EN[0] -= np.mean(east_gridr)
         east_gridr -= np.mean(east_gridr)
         #padding cells in the east-west direction
         for ii in range(1,self.pad_east+1):
@@ -1774,7 +1774,7 @@ class Model(object):
         #N-S cells with in station area
         north_gridr = np.arange(start=southr, stop=northr+self.cell_size_north, 
                                 step=self.cell_size_north)
-		self.Data.center_position_EN[1] -= np.mean(north_gridr)
+        self.Data.center_position_EN[1] -= np.mean(north_gridr)
         north_gridr -= np.mean(north_gridr)
         #padding cells in the east-west direction
         for ii in range(1, self.pad_north+1):
@@ -3336,7 +3336,7 @@ def make_elevation_model(interp_elev, model_nodes_z, elevation_cell=30,
 
     # calculate the max elevation within survey area
     elev_max = interp_elev[pad:-pad, pad:-pad].max()
-	
+
     # need to set sea level to 0 elevation
     elev_min = max([0, interp_elev[pad:-pad, pad:-pad].min()])
 
