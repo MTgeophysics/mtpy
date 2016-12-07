@@ -10,9 +10,7 @@ import numpy as np
 from matplotlib.ticker import FormatStrFormatter
 
 import mtpy.imaging.mtplottools as mtplottools
-
 from mtpy.modeling.modem_new import Data
-
 
 try:
     from evtk.hl import gridToVTK, pointsToVTK
@@ -181,7 +179,6 @@ class PlotResponse(object):
         #     self.plot()
 
         return
-
 
     def plot(self, save2file=None):
         """
@@ -1571,7 +1568,7 @@ class PlotResponse(object):
 
         if save2file is not None:
             fig.savefig(save2file, dpi=self.fig_dpi, bbox_inches='tight')
-            #self.save_figure(save2file)
+            # self.save_figure(save2file)
         return plt
 
     def redraw_plot(self):

@@ -3,12 +3,14 @@
 # ==============================================================================
 
 import os
-from mtpy.modeling.modem_new import Data
+
 import matplotlib.colorbar as mcb
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+
+from mtpy.modeling.modem_new import Data
 
 try:
     from evtk.hl import gridToVTK, pointsToVTK
@@ -112,7 +114,7 @@ class PlotRMSMaps(object):
         self.residual = None
         self.save_path = kwargs.pop('save_path', os.path.dirname(self.residual_fn))
 
-        self.period_index = kwargs.pop('period_index', 0) #where is depth_index?
+        self.period_index = kwargs.pop('period_index', 0)  # where is depth_index?
 
         self.subplot_left = kwargs.pop('subplot_left', .1)
         self.subplot_right = kwargs.pop('subplot_right', .9)
@@ -348,7 +350,7 @@ class PlotRMSMaps(object):
         self.read_residual_fn()
 
         for f_index in range(self.residual.period_list.shape[0]):
-            #FZ:
+            # FZ:
             print(self.residual.period_list)
             print(f_index)
             self.period_index = f_index

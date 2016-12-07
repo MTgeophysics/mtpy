@@ -4,15 +4,14 @@
 
 import os
 
-import matplotlib.colorbar as mcb
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import Normalize
 from matplotlib.ticker import MultipleLocator
+
+import mtpy.utils.exceptions as mtex
 from mtpy.modeling.modem_new import Data
 from mtpy.modeling.modem_new import Model
 
-import mtpy.utils.exceptions as mtex
 try:
     from evtk.hl import gridToVTK, pointsToVTK
 except ImportError:
@@ -165,7 +164,7 @@ class PlotDepthSlice(object):
 
         self.cb_shrink = kwargs.pop('cb_shrink', .8)
         self.cb_pad = kwargs.pop('cb_pad', .01)
-        self.cb_orientation = kwargs.pop('cb_orientation', 'horizontal') #'vertical')
+        self.cb_orientation = kwargs.pop('cb_orientation', 'horizontal')  # 'vertical')
         self.cb_location = kwargs.pop('cb_location', None)
 
         self.subplot_right = .99
@@ -238,7 +237,7 @@ class PlotDepthSlice(object):
                        6: '$10^{6}$', 7: '$10^{7}$', 8: '$10^{8}$'}
 
         # create an list of depth slices to plot
-        print self.grid_z  #FZ:
+        print self.grid_z  # FZ:
         if self.depth_index == None:
             zrange = range(self.grid_z.shape[0])
         elif type(self.depth_index) is int:
@@ -339,7 +338,7 @@ class PlotDepthSlice(object):
                          lw=.25,
                          color='k')
 
-            #FZ: fix miss-placed colorbar
+            # FZ: fix miss-placed colorbar
             from mpl_toolkits.axes_grid1 import make_axes_locatable
             ax = plt.gca()
 
@@ -348,10 +347,10 @@ class PlotDepthSlice(object):
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right", size="5%", pad=0.05)
 
-            mycb= plt.colorbar(mesh_plot, cax=cax, label='Resistivity ($\Omega \cdot$m)')
+            mycb = plt.colorbar(mesh_plot, cax=cax, label='Resistivity ($\Omega \cdot$m)')
 
-            #below orginal not good
-            #cax.set_label('Resistivity ($\Omega \cdot$m)') #,fontdict={'size': self.font_size + 1})
+            # below orginal not good
+            # cax.set_label('Resistivity ($\Omega \cdot$m)') #,fontdict={'size': self.font_size + 1})
 
             # # plot the colorbar - Original
             # if self.cb_location is None:
@@ -389,7 +388,7 @@ class PlotDepthSlice(object):
             #                    for cc in np.arange(self.climits[0],
             #                                        self.climits[1] + 1)])
             # plot the colorbar - Original-End
-###FZ:  fig_list not work?
+            ###FZ:  fig_list not work?
             self.fig_list.append(fig)
 
             # Figure Objects
@@ -397,13 +396,13 @@ class PlotDepthSlice(object):
 
             # --> save plots to a common folder
             if self.save_plots == 'y':
-                out_file_name= "Depth_{}_{:.4f}.png".format(ii, self.grid_z[ii])
-                path2outfile=os.path.join(self.save_path, out_file_name)
+                out_file_name = "Depth_{}_{:.4f}.png".format(ii, self.grid_z[ii])
+                path2outfile = os.path.join(self.save_path, out_file_name)
                 fig.savefig(path2outfile, dpi=self.fig_dpi, bbox_inches='tight')
             else:
                 pass
 
-# when runs interactively, plt show a figure
+            # when runs interactively, plt show a figure
             plt.show()
             fig.clear()
             plt.close()
@@ -457,4 +456,3 @@ class PlotDepthSlice(object):
         """
 
         return ("Plots depth slices of model from WS3DINV")
-

@@ -44,10 +44,19 @@ class ModemPlotVerticalSlice():
         self.clim = kwargs.pop('clim', [0.3, 3.7])
         self.fig_size = kwargs.pop('fig_size', [16, 12])
         self.font_size = kwargs.pop('font_size', 16)
-        self.map_scale = 'M'
-        self.dscale = 1
+
+        self.map_scale = kwargs.pop('map_scale', 'km')
+        # make map scale
+        if self.map_scale == 'km':
+            self.dscale = 1000.
+        elif self.map_scale == 'm':
+            self.dscale = 1.
+        else:
+            print("Unknown map scale:", self.map_scale)
+
         self.xminorticks = kwargs.pop('xminorticks', 10000)
         self.yminorticks = kwargs.pop('yminorticks', 10000)
+
 
         # read in the model data
         self._read_data()
@@ -103,7 +112,7 @@ class ModemPlotVerticalSlice():
             sX, sY = self.datObj.station_locations['rel_east'][ss], self.datObj.station_locations['elev'][ss]
             xlim = (self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
             ylim = self.zlim
-            title = 'East-west slice at {}M north'.format(gcnorth[sno])
+            title = 'East-west slice at {} meters north'.format(gcnorth[sno])
         elif self.plot_orientation == 'ns':
             X, Y, res = self.modObj.grid_north, self.modObj.grid_z, np.log10(self.modObj.res_model[:, sno, :].T)
             # indices for selecting stations close to profile
@@ -112,19 +121,22 @@ class ModemPlotVerticalSlice():
             sX, sY = self.datObj.station_locations['rel_north'][ss], self.datObj.station_locations['elev'][ss]
             xlim = (self.modObj.grid_north[self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
             ylim = self.zlim
-            title = 'North-south slice at {}M east'.format(gceast[sno])
+            title = 'North-south slice at {} meters east'.format(gceast[sno])
         elif self.plot_orientation == 'z':
             X, Y, res = self.modObj.grid_east, self.modObj.grid_north, np.log10(self.modObj.res_model[:, :, sno])
             sX, sY = self.datObj.station_locations['rel_east'], self.datObj.station_locations['rel_north']
             xlim = (self.modObj.grid_east[self.modObj.pad_east], self.modObj.grid_east[-self.modObj.pad_east - 1])
             ylim = (self.modObj.grid_north[self.modObj.pad_north], self.modObj.grid_north[-self.modObj.pad_north - 1])
-            title = 'Horizontal Slice at Depth {}M'.format(gcz[sno])
+            title = 'Horizontal Slice at Depth {} meters'.format(gcz[sno])
 
         # make the plot
         plt.figure(figsize=self.fig_size)
         plt.rcParams['font.size'] = self.font_size
-
         mesh_plot = plt.pcolormesh(X, Y, res, cmap='bwr_r')
+
+        xlim2=(xlim[0]/self.dscale,xlim[1]/self.dscale)
+        ylim2=(ylim[0]/self.dscale,ylim[1]/self.dscale)
+
         plt.xlim(*xlim)
         plt.ylim(*ylim)
 
@@ -143,17 +155,23 @@ class ModemPlotVerticalSlice():
         # FZ: fix miss-placed colorbar
 
         ax = plt.gca()
-        ax.xaxis.set_minor_locator(MultipleLocator(self.xminorticks / self.dscale))
-        ax.yaxis.set_minor_locator(MultipleLocator(self.yminorticks / self.dscale))
-        ax.tick_params(width=2, length=6)
+        ax.xaxis.set_minor_locator(MultipleLocator(self.xminorticks )) #/self.dscale
+        ax.yaxis.set_minor_locator(MultipleLocator(self.yminorticks )) #/self.dscale
+        ax.tick_params(axis='both', which='minor', width=2, length=5)
+        ax.tick_params(axis='both', which='major', width=3, length=15, labelsize=20)
+        # ax.tick_params(axis='both', which='major', labelsize=20)
+        # ax.tick_params(axis='both', which='minor', labelsize=20)
 
-        ax.tick_params(axis='both', which='major', labelsize=20)
-        ax.tick_params(axis='both', which='minor', labelsize=10)
+        # http://stackoverflow.com/questions/10171618/changing-plot-scale-by-a-factor-in-matplotlib
+        xticks = ax.get_xticks()/self.dscale
+        ax.set_xticklabels(xticks)
+        yticks = ax.get_yticks() / self.dscale
+        ax.set_yticklabels(yticks)
 
         # create an axes on the right side of ax. The width of cax will be 5%
         # of ax and the padding between cax and ax will be fixed at 0.05 inch.
         divider = make_axes_locatable(ax)
-        cax = divider.append_axes("right", size="2%", pad=0.2)  # pad = separation from figure to colorbar
+        cax = divider.append_axes("right", size="5%", pad=0.2)  # pad = separation from figure to colorbar
 
         mycb = plt.colorbar(mesh_plot, cax=cax, label='Resistivity ($\Omega \cdot$m)')
 
@@ -215,7 +233,7 @@ if __name__ == "__main__":
         plot_or = sys.argv[3]
 
     # construct plot object
-    myObj = ModemPlotVerticalSlice(datf, rhof)
+    myObj = ModemPlotVerticalSlice(datf, rhof ) #,map_scale='m')
 
     #  plot 3-slices
     myObj.set_plot_orientation('ew')

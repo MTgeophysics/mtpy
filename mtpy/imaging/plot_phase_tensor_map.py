@@ -7,8 +7,7 @@ by Fei.Zhang@ga.gov.au 2016
 
 """
 import os
-from mtpy.modeling.modem_new import Model
-from mtpy.modeling.modem_new import Data
+
 import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
@@ -21,6 +20,8 @@ import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtplottools
 import mtpy.modeling.ws3dinv as ws
 import mtpy.utils.exceptions as mtex
+from mtpy.modeling.modem_new import Data
+from mtpy.modeling.modem_new import Model
 
 try:
     from evtk.hl import gridToVTK, pointsToVTK
@@ -228,7 +229,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
         self.pt_resp_arr = None
         self.pt_resid_arr = None
 
-        #FZ: do not call plot in the constructor! it's not pythonic
+        # FZ: do not call plot in the constructor! it's not pythonic
         self.plot_yn = kwargs.pop('plot_yn', 'n')
         if self.plot_yn == 'y':
             self.plot()
@@ -407,12 +408,12 @@ class PlotPTMaps(mtplottools.MTEllipse):
             self.ns_limits = (north_min / self.dscale, north_max / self.dscale)
 
         # -------------plot phase tensors------------------------------------
-        if period > len(self.plot_period_list)-1:
-            print("Error: the period exceeds the max value:", len(self.plot_period_list)-1)
+        if period > len(self.plot_period_list) - 1:
+            print("Error: the period exceeds the max value:", len(self.plot_period_list) - 1)
 
         # FZ: changed below to plot a given period index
         # for ff, per in enumerate(self.plot_period_list):
-        for ff, per in enumerate(self.plot_period_list[period:period+1]):
+        for ff, per in enumerate(self.plot_period_list[period:period + 1]):
             # FZ
             print(ff, per)
             print(self.plot_period_list)
