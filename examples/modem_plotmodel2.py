@@ -8,15 +8,10 @@ Created on Tue Oct 04 13:13:29 2016
 
 import os.path as op
 
-# refactored import mtpy.modeling.modem_new as mtmn
-
-from mtpy.modeling.plot_phase_tensor_map import PlotPTMaps
-
-from mtpy.modeling.plot_rms_map import PlotRMSMaps
-
-from mtpy.modeling.plot_response import PlotResponse
-
-from mtpy.modeling.plot_depth_slice import PlotDepthSlice
+from mtpy.imaging.plot_depth_slice import PlotDepthSlice
+from mtpy.imaging.plot_phase_tensor_map import PlotPTMaps
+from mtpy.imaging.plot_response import PlotResponse
+from mtpy.imaging.plot_rms_map import PlotRMSMaps
 
 
 # plot depth slice

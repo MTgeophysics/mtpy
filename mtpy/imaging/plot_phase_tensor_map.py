@@ -7,8 +7,8 @@ by Fei.Zhang@ga.gov.au 2016
 
 """
 import os
-from modem_new import Model
-from modem_new import Data
+from mtpy.modeling.modem_new import Model
+from mtpy.modeling.modem_new import Data
 import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
