@@ -1744,7 +1744,10 @@ class Model(object):
         #cells within station area
         east_gridr = np.arange(start=westr, stop=eastr+self.cell_size_east,
                                step=self.cell_size_east)
-        self.Data.center_position_EN[0] -= np.mean(east_gridr)
+       
+        if self.Data.rotation_angle == 0:
+            self.Data.center_position_EN[0] -= np.mean(east_gridr)
+            self.station_locations['rel_east'] -= np.mean(east_gridr)
         east_gridr -= np.mean(east_gridr)
         #padding cells in the east-west direction
         for ii in range(1,self.pad_east+1):
@@ -1774,7 +1777,9 @@ class Model(object):
         #N-S cells with in station area
         north_gridr = np.arange(start=southr, stop=northr+self.cell_size_north, 
                                 step=self.cell_size_north)
-        self.Data.center_position_EN[1] -= np.mean(north_gridr)
+        if self.Data.rotation_angle == 0:
+            self.Data.center_position_EN[1] -= np.mean(north_gridr)
+            self.station_locations['rel_north'] -= np.mean(north_gridr)
         north_gridr -= np.mean(north_gridr)
         #padding cells in the east-west direction
         for ii in range(1, self.pad_north+1):
@@ -1829,11 +1834,10 @@ class Model(object):
         north_nodes = north_gridr[1:]-north_gridr[:-1]
 
         #compute grid center
-#        center_east = -east_nodes.__abs__().sum()/2
-#        center_north = -north_nodes.__abs__().sum()/2
+        center_east = -east_nodes.__abs__().sum()/2
+        center_north = -north_nodes.__abs__().sum()/2
         center_z = 0
-        self.grid_center = np.array([self.Data.center_position_EN[0], 
-                                     self.Data.center_position_EN[1], center_z])
+        self.grid_center = np.array([center_north,center_east, center_z])
         
         #make nodes attributes
         self.nodes_east = east_nodes
@@ -3019,13 +3023,13 @@ class Covariance(object):
         
         #--> smoothing in north direction        
         n_smooth_line = ''
-        for zz in range(self.grid_dimensions[0]):
+        for zz in range(self.grid_dimensions[2]):
             n_smooth_line += ' {0:<5.1f}'.format(self.smoothing_north)
         clines.append(n_smooth_line+'\n')
 
         #--> smoothing in east direction
         e_smooth_line = ''
-        for zz in range(self.grid_dimensions[1]):
+        for zz in range(self.grid_dimensions[2]):
             e_smooth_line += ' {0:<5.1f}'.format(self.smoothing_east)
         clines.append(e_smooth_line+'\n')
         
