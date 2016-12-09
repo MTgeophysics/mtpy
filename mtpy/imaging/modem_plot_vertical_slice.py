@@ -44,6 +44,7 @@ class ModemPlotVerticalSlice():
         self.clim = kwargs.pop('clim', [0.3, 3.7])
         self.fig_size = kwargs.pop('fig_size', [16, 12])
         self.font_size = kwargs.pop('font_size', 16)
+        self.border_linewidth = 3
 
         self.map_scale = kwargs.pop('map_scale', 'km')
         # make map scale
@@ -153,12 +154,13 @@ class ModemPlotVerticalSlice():
         # plt.colorbar()
 
         # FZ: fix miss-placed colorbar
-
         ax = plt.gca()
         ax.xaxis.set_minor_locator(MultipleLocator(self.xminorticks )) #/self.dscale
         ax.yaxis.set_minor_locator(MultipleLocator(self.yminorticks )) #/self.dscale
         ax.tick_params(axis='both', which='minor', width=2, length=5)
         ax.tick_params(axis='both', which='major', width=3, length=15, labelsize=20)
+        for axis in ['top','bottom','left','right']:
+            ax.spines[axis].set_linewidth(self.border_linewidth)
         # ax.tick_params(axis='both', which='major', labelsize=20)
         # ax.tick_params(axis='both', which='minor', labelsize=20)
 
@@ -174,6 +176,7 @@ class ModemPlotVerticalSlice():
         cax = divider.append_axes("right", size="5%", pad=0.2)  # pad = separation from figure to colorbar
 
         mycb = plt.colorbar(mesh_plot, cax=cax, label='Resistivity ($\Omega \cdot$m)')
+        mycb.outline.set_linewidth(self.border_linewidth)
 
         if self.plot_orientation == 'z':
             ax.set_ylabel('Northing (' + self.map_scale + ')', fontdict=fdict)
@@ -202,8 +205,8 @@ class ModemPlotVerticalSlice():
 if __name__ == "__main__":
     # INPUTS #
     # define a workdir for your environ
-    workdir = r'V:\Geology\conductivity_modelling'
-    workdir = r'E:\Githubz\mtpy2\examples\data\ModEM_files'
+    workdir = r'V:\Geology\conductivity_modelling\EarlyRuns'
+#    workdir = r'E:\Githubz\mtpy2\examples\data\ModEM_files'
     # workdir = r'/Softlab/Githubz/mtpy2/examples/data/ModEM_files'
     # workdir = r'/g/data/ha3/fxz547/Githubz/mtpy2/examples/data/ModEM_files'
 
