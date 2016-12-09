@@ -74,7 +74,7 @@ def main(data_dir, plot_type='PTMap', di=20, periodin=0):
 #########################################################################
 # plot_type=[ PTMap RMSMap Response DepthSlice ]
 # How2Run:
-# python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07 PTMap
+# python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07 PTMap pindex
 # python examples/modem_plotmodel2.py ./examples/data/ModEM_files/VicSynthetic07 RMSMap Response DepthSlice
 # ---------------------------------------
 if __name__ == '__main__':
@@ -82,14 +82,23 @@ if __name__ == '__main__':
     import sys
 
     if len(sys.argv) <= 2:
-        print("USAGE example: python %s examples/data/ModEM_files/VicSynthetic07 <plot_type>" % (sys.argv[0]))
+        print("USAGE example:")
+        print("python %s examples/data/ModEM_files/VicSynthetic07 [PTMap|RMSMap|Response|DepthSlice]" % (sys.argv[0]))
     elif len(sys.argv) == 3:
         data_dir = sys.argv[1]
         plot_type = sys.argv[2]
+
+        if(plot_type not in ['PTMap','RMSMap', 'Response', 'DepthSlice']):
+            print("Input Parameter plot type must be in:", ['PTMap','RMSMap', 'Response', 'DepthSlice'])
+
         main(data_dir, plot_type=plot_type)
     else:
         data_dir = sys.argv[1]
         plot_type = sys.argv[2]
         period_index =int(sys.argv[3])
+
+        if (plot_type not in ['PTMap', 'RMSMap', 'Response', 'DepthSlice']):
+            print("Input Parameter plot type must be in:", ['PTMap', 'RMSMap', 'Response', 'DepthSlice'])
+
         main(data_dir, plot_type=plot_type, periodin=period_index)
 

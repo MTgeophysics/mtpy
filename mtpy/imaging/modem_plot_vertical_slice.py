@@ -196,9 +196,9 @@ class ModemPlotVerticalSlice():
 # Usage Guide:
 #   export PYTHONPATH="E:/Githubz/mtpy2"
 #   export PATH="/c/Anaconda2":$PATH
-#   python  mtpy/imaging/modem_plot_vertical_slice.py
-# OR
-#   python mtpy/imaging/modem_plot_vertical_slice.py path2modeldir
+#   python  mtpy/imaging/modem_plot_vertical_slice.py  # assume harded-coded input data path is correct
+# OR preferred
+#   python mtpy/imaging/modem_plot_vertical_slice.py examples/data/ModEM_files/VicSynthetic07/
 # OR
 #   python mtpy/imaging/modem_plot_vertical_slice.py  path2datfile path2rhofile plot_orient
 # -----------------------------------------------------------------------
