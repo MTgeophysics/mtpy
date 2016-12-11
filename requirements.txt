@@ -7,3 +7,4 @@ pylint>=1.1.0
 six>=1.9.0
 tox>=1.6.0
 unittest2>=0.5.1
+pytest>=2.7.0

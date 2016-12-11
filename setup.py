@@ -53,7 +53,7 @@ setup_kwargs['packages'] = [
                             'mtpy.modeling',
                             'mtpy.processing',
                             'mtpy.analysis',
-                            'mtpy.test',
+                            #'mtpy.test',
                             'mtpy.uofa',
                             'mtpy.usgs',
                             'mtpy.gui']
@@ -64,8 +64,8 @@ setup_kwargs['packages'] = [
 
 	
 
-setup(name="mtpy", 
+setup(name="mtpy",
 	version='1.0.dev',
-	description=("Collection of python tools for standard MT data processing."),
+	description=("Python toolkit for standard MT data processing."),
 	license="GNU GENERAL PUBLIC LICENSE v3",
 	**setup_kwargs)
