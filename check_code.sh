@@ -5,10 +5,10 @@
 #set -x
 
 #pep8 tests mtpy tests examples --max-line-length 120
-pep8 tests hello4tests  --max-line-length 120
+pep8 tests  exp  --max-line-length 120
 
 echo "pylint .... "
-pylint -j 2 --reports no hello4tests 
+pylint -j 2 --reports=no tests 
 
 echo "pylint ....end "
 
