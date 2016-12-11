@@ -45,7 +45,7 @@ if setuptools is False:
     # __init__.py file"
 
 setup_kwargs['packages'] = [
-                            'hello4tests',  'tests', 
+                            'tests',  'tests',
                             'mtpy',
                             'mtpy.core',
                             'mtpy.imaging',

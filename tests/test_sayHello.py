@@ -1,5 +1,6 @@
 from unittest import TestCase
-from hello4tests import say_hello
+
+from exp.tests import say_hello
 
 __author__ = 'fzhang'
 

@@ -4,7 +4,7 @@
 #set -eu
 #set -x
 
-#pep8 tests mtpy hello4tests examples --max-line-length 120
+#pep8 tests mtpy tests examples --max-line-length 120
 pep8 tests hello4tests  --max-line-length 120
 
 echo "pylint .... "
