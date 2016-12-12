@@ -188,7 +188,7 @@ class ModemPlotVerticalSlice():
             ax.set_ylabel('Depth (' + self.map_scale + ')', fontdict=fdict)
             ax.set_xlabel('Northing (' + self.map_scale + ')', fontdict=fdict)
 
-        plt.show()
+        # plt.show()
 
 
 #########################################################################
@@ -247,3 +247,5 @@ if __name__ == "__main__":
 
     myObj.set_plot_orientation('z')
     myObj.make_plot()
+
+    plt.show()
