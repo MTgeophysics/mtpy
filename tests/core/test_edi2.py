@@ -2,8 +2,8 @@ from mtpy.core.edi import Edi
 
 def test_read_write():
 
-    path2edi = '/g/data/ha3/fxz547/Githubz/mtpy2/tests/data/AMT/15125A_spe.edi'
-    path2edi='/g/data/ha3/fxz547/Githubz/mtpy2/tests/data/AMT/15125A_imp2.edi'
+    #path2edi = 'tests/data/AMT/15125A_spe.edi'
+    path2edi='tests/data/AMT/15125A_imp.edi'
 
     edi_obj = Edi(edi_fn=path2edi)
     # change the latitude
