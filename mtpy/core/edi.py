@@ -22,15 +22,18 @@ import mtpy.utils.format as MTft
 import mtpy.utils.exceptions as MTex
 import mtpy.utils.filehandling as MTfh
 import mtpy.core.z as MTz
+
 try:
-    import scipy.stats.distributions as ssd 
+    import scipy.stats.distributions as ssd
+
     ssd_test = True
 except ImportError:
     print 'Need scipy.stats.distributions to compute spectra errors'
     print 'Could not find scipy.stats.distributions, check distribution'
     ssd_test = False
 
-tab = ' '*4
+tab = ' ' * 4
+
 
 class Edi(object):
     """
@@ -38,18 +41,18 @@ class Edi(object):
     on Winglink and Phoenix output .edi's, which are meant to follow the 
     archaic EDI format put forward by SEG. Can read impedance, Tipper and/or
     spectra data.  
-    
+
     The Edi class contains a class for each major section of the .edi file.
-    
+
     Arguments
     ---------------
-        
+
         **edi_fn** : string
                      full path to .edi file to be read in. 
                      *default* is None. If an .edi file is input, it is 
                      automatically read in and attributes of Edi are filled
-       
-    
+
+
     Methods
     ---------------
     ===================== =====================================================
@@ -68,14 +71,14 @@ class Edi(object):
     _read_spectra         Reads in spectra data and converts it to impedance 
                           and Tipper data.                     
     ===================== =====================================================
-    
+
     Attributes
     ---------------
-        
+
     ===================== ========================================== ==========
     Attributes            Description                                default
     ===================== ========================================== ==========    
-    Data_sect             DataSection class, contains basin 
+    Data_sect             DataSection class, contains basic
                           information on the data collected and in
                           whether the data is in impedance or 
                           spectra.
@@ -99,11 +102,11 @@ class Edi(object):
     _t_labels             labels for tipper blocks                 
     _z_labels             labels for impedance blocks
     ===================== ========================================== ========== 
-    
+
     Examples
     ---------------------
     :Change Latitude: ::
-        
+
         >>> import mtpy.core.edi as mtedi
         >>> edi_obj = mtedi.Edi(edi_fn=r"/home/mt/mt01.edi")
         >>> # change the latitude
@@ -112,7 +115,7 @@ class Edi(object):
     """
 
     def __init__(self, edi_fn=None):
-        
+
         self.edi_fn = edi_fn
         self._edi_lines = None
         self.Header = Header()
@@ -121,23 +124,23 @@ class Edi(object):
         self.Data_sect = DataSection()
         self.Z = MTz.Z()
         self.Tipper = MTz.Tipper()
-        
+
         self._z_labels = [['zxxr', 'zxxi', 'zxx.var'],
                           ['zxyr', 'zxyi', 'zxy.var'],
                           ['zyxr', 'zyxi', 'zyx.var'],
                           ['zyyr', 'zyyi', 'zyy.var']]
-                         
+
         self._t_labels = [['txr.exp', 'txi.exp', 'txvar.exp'],
                           ['tyr.exp', 'tyi.exp', 'tyvar.exp']]
-                          
+
         self._data_header_str = '!****{0}****!\n'
-                          
+
         self._num_format = ' 15.6e'
         self._block_len = 6
-        
+
         if self.edi_fn is not None:
             self.read_edi_file()
-            
+
     def read_edi_file(self, edi_fn=None):
         """
         Read in an edi file and fill attributes of each section's classes. 
@@ -148,40 +151,41 @@ class Edi(object):
             * Data_sect
             * Z
             * Tipper
-            
+
             .. note:: Automatically detects if data is in spectra format.  All
                   data read in is converted to impedance and Tipper.
-        
+
         Arguments
         -------------
-        
+
             **edi_fn** : string
                          full path to .edi file to be read in
                          *default* is None
-                         
-        
-                  
+
+
+
         Examples
         -------------
-        
+
         :Read edi: ::
-        
+
             >>> import mtpy.core.Edi as mtedi
             >>> edi_obj = mtedi.Edi()
             >>> edi_obj.read_edi_file(edi_fn=r"/home/mt/mt01.edi")
-                         
+
         """
-        
+
         if edi_fn is not None:
             self.edi_fn = edi_fn
-   
+
         if self.edi_fn is None:
             raise MTex.MTpyError_EDI("No edi file input, check edi_fn")
-        
+
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) is False:
-                raise MTex.MTpyError_EDI("Could not find {0}, check path".format(self.edi_fn))
-            
+                raise MTex.MTpyError_EDI(
+                    "Could not find {0}, check path".format(self.edi_fn))
+
             with open(self.edi_fn, 'r') as fid:
                 self._edi_lines = fid.readlines()
 
@@ -189,9 +193,9 @@ class Edi(object):
         self.Info = Information(edi_lines=self._edi_lines)
         self.Define_measurement = DefineMeasurement(edi_lines=self._edi_lines)
         self.Data_sect = DataSection(edi_lines=self._edi_lines)
-        
+
         self._read_data()
-        
+
         if self.Header.lat is None:
             self.Header.lat = self.Define_measurement.reflat
             print 'Got latitude from reflat for {0}'.format(self.Header.dataid)
@@ -201,31 +205,31 @@ class Edi(object):
         if self.Header.elev is None:
             self.Header.elev = self.Define_measurement.refelev
             print 'Got elevation from refelev for {0}'.format(self.Header.dataid)
-        
+
         print "Read in edi file for station {0}".format(self.Header.dataid)
-        
+
     def _read_data(self):
         """
         read either impedance or spectra data depending on what the type is
         in the data section.
         """
-        
+
         if self.edi_fn is None:
             raise MTex.MTpyError_EDI('No edi file input, check edi_fn')
         if os.path.isfile(self.edi_fn) is False:
             raise MTex.MTpyError_EDI('No edi file input, check edi_fn')
-            
+
         lines = self._edi_lines[self.Data_sect.line_num:]
-        
+
         if self.Data_sect.data_type == 'spectra':
             print 'Converting Spectra to Impedance and Tipper'
             print 'Check to make sure input channel list is correct if'
             print ' the data looks incorrect.'
             self._read_spectra(lines)
-        
+
         elif self.Data_sect.data_type == 'z':
             self._read_mt(lines)
-            
+
     def _read_mt(self, data_lines):
         """
         read in impedance and tipper data if its there
@@ -243,8 +247,7 @@ class Edi(object):
                     data_dict[key] = []
                 else:
                     data_find = False
-                
-        
+
             elif data_find == True and '>' not in line and '!' not in line:
                 d_lines = line.strip().split()
                 for ii, dd in enumerate(d_lines):
@@ -258,28 +261,27 @@ class Edi(object):
                     except ValueError:
                         d_lines[ii] = 0.0
                 data_dict[key] += d_lines
-        
-        ## fill useful arrays
+
+        # fill useful arrays
         freq_arr = np.array(data_dict['freq'], dtype=np.float)
         z_arr = np.zeros((freq_arr.size, 2, 2), dtype=np.complex)
         z_err_arr = np.zeros((freq_arr.size, 2, 2), dtype=np.float)
-        
-        ## fill impedance tensor
-        z_arr[:, 0, 0] = np.array(data_dict['zxxr'])+\
-                             np.array(data_dict['zxxi'])*1j
-        z_arr[:, 0, 1] = np.array(data_dict['zxyr'])+\
-                            np.array(data_dict['zxyi'])*1j
-        z_arr[:, 1, 0] = np.array(data_dict['zyxr'])+\
-                            np.array(data_dict['zyxi'])*1j
-        z_arr[:, 1, 1] = np.array(data_dict['zyyr'])+\
-                            np.array(data_dict['zyyi'])*1j
-        
+
+        # fill impedance tensor
+        z_arr[:, 0, 0] = np.array(data_dict['zxxr']) + \
+            np.array(data_dict['zxxi']) * 1j
+        z_arr[:, 0, 1] = np.array(data_dict['zxyr']) + \
+            np.array(data_dict['zxyi']) * 1j
+        z_arr[:, 1, 0] = np.array(data_dict['zyxr']) + \
+            np.array(data_dict['zyxi']) * 1j
+        z_arr[:, 1, 1] = np.array(data_dict['zyyr']) + \
+            np.array(data_dict['zyyi']) * 1j
+
         z_err_arr[:, 0, 0] = np.array(data_dict['zxx.var'])
         z_err_arr[:, 0, 1] = np.array(data_dict['zxy.var'])
         z_err_arr[:, 1, 0] = np.array(data_dict['zyx.var'])
         z_err_arr[:, 1, 1] = np.array(data_dict['zyy.var'])
-        
-        
+
         # check for order of frequency, we want high to low
         if freq_arr[0] < freq_arr[1]:
             print 'Ordered arrays to be arranged from high to low frequency'
@@ -287,25 +289,24 @@ class Edi(object):
             z_arr = z_arr[::-1]
             z_err_arr = z_err_arr[::-1]
             flip = True
-            
+
         # set the attributes as private variables to avoid redundant estimation
         # of res and phase
         self.Z._freq = freq_arr
         self.Z._z = z_arr
         self.Z._z_err = z_err_arr
-        
+
         try:
             self.Z.rotation_angle = np.array(data_dict['zrot'])
         except KeyError:
             self.Z.rotation_angle = np.zeros_like(freq_arr)
-        
+
         # compute resistivity and phase
         self.Z._compute_res_phase()
 
-        
-        ## fill tipper data if there it exists
-        tipper_arr = np.zeros((freq_arr.size, 1, 2), dtype=np.complex) 
-        tipper_err_arr = np.zeros((freq_arr.size, 1, 2), dtype=np.float) 
+        # fill tipper data if there it exists
+        tipper_arr = np.zeros((freq_arr.size, 1, 2), dtype=np.complex)
+        tipper_err_arr = np.zeros((freq_arr.size, 1, 2), dtype=np.float)
 
         try:
             self.Tipper.rotation_angle = np.array(data_dict['trot'])
@@ -316,36 +317,33 @@ class Edi(object):
                 self.Tipper.rotation_angle = np.zeros_like(freq_arr)
 
         if 'txr.exp' in data_dict.keys():
-            tipper_arr[:, 0, 0] = np.array(data_dict['txr.exp'])+\
-                                            np.array(data_dict['txi.exp'])*1j
-            tipper_arr[:, 0, 1] = np.array(data_dict['tyr.exp'])+\
-                                            np.array(data_dict['tyi.exp'])*1j
-            
-            tipper_err_arr[:, 0, 0] = np.array(data_dict['txvar.exp'])    
+            tipper_arr[:, 0, 0] = np.array(data_dict['txr.exp']) + \
+                np.array(data_dict['txi.exp']) * 1j
+            tipper_arr[:, 0, 1] = np.array(data_dict['tyr.exp']) + \
+                np.array(data_dict['tyi.exp']) * 1j
+
+            tipper_err_arr[:, 0, 0] = np.array(data_dict['txvar.exp'])
             tipper_err_arr[:, 0, 1] = np.array(data_dict['tyvar.exp'])
-            
+
             if flip == True:
                 tipper_arr = tipper_arr[::-1]
                 tipper_err_arr = tipper_err_arr[::-1]
-                
 
-
-              
         else:
             print 'Could not find any Tipper data.'
-            
+
         self.Tipper._freq = freq_arr
         self.Tipper._tipper = tipper_arr
         self.Tipper._tipper_err = tipper_err_arr
         self.Tipper._compute_amp_phase()
         self.Tipper._compute_mag_direction()
-        
-    def _read_spectra(self, data_lines, 
+
+    def _read_spectra(self, data_lines,
                       comp_list=['hx', 'hy', 'hz', 'ex', 'ey', 'rhx', 'rhy']):
         """
         read in spectra data
         """
-                    
+
         data_dict = {}
         avgt_dict = {}
         data_find = False
@@ -353,40 +351,40 @@ class Edi(object):
             if line.lower().find('>spectra') == 0 and line.find('!') == -1:
                 line_list = _validate_str_with_equals(line)
                 data_find = True
-                
+
                 # frequency will be the key
                 try:
                     key = float([ss.split('=')[1] for ss in line_list
-                                  if ss.lower().find('freq')==0][0])
+                                 if ss.lower().find('freq') == 0][0])
                     data_dict[key] = []
                     avgt = float([ss.split('=')[1] for ss in line_list
-                                  if ss.lower().find('avgt')==0][0])
+                                  if ss.lower().find('avgt') == 0][0])
                     avgt_dict[key] = avgt
                 except ValueError:
                     print 'did not find frequency key'
-        
+
             elif data_find == True and line.find('>') == -1 and \
-                line.find('!') == -1:
+                    line.find('!') == -1:
                 data_dict[key] += [float(ll) for ll in line.strip().split()]
-            
+
             elif line.find('>spectra') == -1:
                 data_find = False
-                
-        ## get an object that contains the indices for each component         
-        cc = index_locator(comp_list) 
-        
+
+        # get an object that contains the indices for each component
+        cc = index_locator(comp_list)
+
         freq_arr = np.array(sorted(data_dict.keys(), reverse=True))
-        
+
         z_arr = np.zeros((len(data_dict.keys()), 2, 2), dtype=np.complex)
         t_arr = np.zeros((len(data_dict.keys()), 1, 2), dtype=np.complex)
-        
+
         z_err_arr = np.zeros_like(z_arr, dtype=np.float)
         t_err_arr = np.zeros_like(t_arr, dtype=np.float)
-                
+
         for kk, key in enumerate(freq_arr):
-            spectra_arr = np.reshape(np.array(data_dict[key]), 
+            spectra_arr = np.reshape(np.array(data_dict[key]),
                                      (len(comp_list), len(comp_list)))
-                                     
+
             # compute cross powers
             s_arr = np.zeros_like(spectra_arr, dtype=np.complex)
             for ii in range(s_arr.shape[0]):
@@ -395,351 +393,364 @@ class Edi(object):
                         s_arr[ii, jj] = (spectra_arr[ii, jj])
                     else:
                         # minus sign for complex conjugation
-                        # original spectra data are of form <A,B*>, but we need 
+                        # original spectra data are of form <A,B*>, but we need
                         # the order <B,A*>...
-                        # this is achieved by complex conjugation of the original entries
+                        # this is achieved by complex conjugation of the
+                        # original entries
                         s_arr[ii, jj] = np.complex(spectra_arr[jj, ii],
                                                    -spectra_arr[ii, jj])
                         # keep complex conjugated entries in the lower
                         # triangular matrix:
                         s_arr[jj, ii] = np.complex(spectra_arr[jj, ii],
                                                    spectra_arr[ii, jj])
-                                                   
+
             # use formulas from Bahr/Simpson to convert the Spectra into Z
             # the entries of S are sorted like
             # <X,X*>  <X,Y*>  <X,Z*>  <X,En*>  <X,Ee*>  <X,Rx*>  <X,Ry*>
-            #         <Y,Y*>  <Y,Z*>  <Y,En*>  <Y,Ee*>  <Y,Rx*>  <Y,Ry*> 
+            #         <Y,Y*>  <Y,Z*>  <Y,En*>  <Y,Ee*>  <Y,Rx*>  <Y,Ry*>
             # .....
-        
-            z_arr[kk, 0, 0] = s_arr[cc.ex, cc.rhx]*s_arr[cc.hy, cc.rhy]-\
-                                    s_arr[cc.ex, cc.rhy]*s_arr[cc.hy, cc.rhx] 
-            z_arr[kk, 0, 1] = s_arr[cc.ex, cc.rhy]*s_arr[cc.hx, cc.rhx]-\
-                                    s_arr[cc.ex, cc.rhx]*s_arr[cc.hx, cc.rhy] 
-            z_arr[kk, 1, 0] = s_arr[cc.ey, cc.rhx]*s_arr[cc.hy, cc.rhy]-\
-                                    s_arr[cc.ey, cc.rhy]*s_arr[cc.hy, cc.rhx] 
-            z_arr[kk, 1, 1] = s_arr[cc.ey, cc.rhy]*s_arr[cc.hx, cc.rhx]-\
-                                    s_arr[cc.ey, cc.rhx]*s_arr[cc.hx, cc.rhy]
-        
-            z_arr[kk] /= (s_arr[cc.hx, cc.rhx]*s_arr[cc.hy, cc.rhy]-\
-                                    s_arr[cc.hx, cc.rhy]*s_arr[cc.hy, cc.rhx])
-            
+
+            z_arr[kk, 0, 0] = s_arr[cc.ex, cc.rhx] * s_arr[cc.hy, cc.rhy] - \
+                s_arr[cc.ex, cc.rhy] * s_arr[cc.hy, cc.rhx]
+            z_arr[kk, 0, 1] = s_arr[cc.ex, cc.rhy] * s_arr[cc.hx, cc.rhx] - \
+                s_arr[cc.ex, cc.rhx] * s_arr[cc.hx, cc.rhy]
+            z_arr[kk, 1, 0] = s_arr[cc.ey, cc.rhx] * s_arr[cc.hy, cc.rhy] - \
+                s_arr[cc.ey, cc.rhy] * s_arr[cc.hy, cc.rhx]
+            z_arr[kk, 1, 1] = s_arr[cc.ey, cc.rhy] * s_arr[cc.hx, cc.rhx] - \
+                s_arr[cc.ey, cc.rhx] * s_arr[cc.hx, cc.rhy]
+
+            z_arr[kk] /= (s_arr[cc.hx, cc.rhx] * s_arr[cc.hy, cc.rhy] -
+                          s_arr[cc.hx, cc.rhy] * s_arr[cc.hy, cc.rhx])
+
             # compute error only if scipy package exists
             if ssd_test is True:
                 # 68% Quantil of the Fisher distribution:
-                z_det = np.real(s_arr[cc.hx, cc.hx]*s_arr[cc.hy, cc.hy]-\
-                                    np.abs(s_arr[cc.hx, cc.hy]**2))
-            
-                sigma_quantil = ssd.f.ppf(0.68, 4, avgt_dict[key]-4)
-                
-                ## 1) Ex
-                a =  s_arr[cc.ex, cc.hx]*s_arr[cc.hy, cc.hy]-\
-                            s_arr[cc.ex, cc.hy]*s_arr[cc.hy, cc.hx]  
-                b =  s_arr[cc.ex, cc.hy]*s_arr[cc.hx, cc.hx]- \
-                            s_arr[cc.ex, cc.hx]*s_arr[cc.hx, cc.hy]
+                z_det = np.real(s_arr[cc.hx, cc.hx] * s_arr[cc.hy, cc.hy] -
+                                np.abs(s_arr[cc.hx, cc.hy] ** 2))
+
+                sigma_quantil = ssd.f.ppf(0.68, 4, avgt_dict[key] - 4)
+
+                # 1) Ex
+                a = s_arr[cc.ex, cc.hx] * s_arr[cc.hy, cc.hy] - \
+                    s_arr[cc.ex, cc.hy] * s_arr[cc.hy, cc.hx]
+                b = s_arr[cc.ex, cc.hy] * s_arr[cc.hx, cc.hx] - \
+                    s_arr[cc.ex, cc.hx] * s_arr[cc.hx, cc.hy]
                 a /= z_det
-                b /= z_det  
-            
-                psi_squared = np.real(1./s_arr[cc.ex, cc.ex].real*\
-                                (a*s_arr[cc.hx, cc.ex]+b*s_arr[cc.hy, cc.ex]))
-                epsilon_squared = 1.-psi_squared
-            
-                scaling = sigma_quantil*4/(avgt_dict[key]-4.)*\
-                            epsilon_squared/z_det*s_arr[cc.ex, cc.ex].real
-                z_err_arr[kk, 0, 0] = np.sqrt(scaling*s_arr[cc.hy, cc.hy].real)
-                z_err_arr[kk, 0, 1] = np.sqrt(scaling*s_arr[cc.hx, cc.hx].real)
-            
-                ## 2) EY
-                a =  s_arr[cc.ey, cc.hx]*s_arr[cc.hy, cc.hy]-\
-                s_arr[cc.ey, cc.hy]*s_arr[cc.hy, cc.hx]  
-                b =  s_arr[cc.ey, cc.hy]*s_arr[cc.hx, cc.hx]- \
-                            s_arr[cc.ey, cc.hx]*s_arr[cc.hx, cc.hy]
+                b /= z_det
+
+                psi_squared = np.real(1. / s_arr[cc.ex, cc.ex].real *
+                                      (a * s_arr[cc.hx, cc.ex] + b * s_arr[cc.hy, cc.ex]))
+                epsilon_squared = 1. - psi_squared
+
+                scaling = sigma_quantil * 4 / (avgt_dict[key] - 4.) * \
+                    epsilon_squared / z_det * s_arr[cc.ex, cc.ex].real
+                z_err_arr[kk, 0, 0] = np.sqrt(
+                    scaling * s_arr[cc.hy, cc.hy].real)
+                z_err_arr[kk, 0, 1] = np.sqrt(
+                    scaling * s_arr[cc.hx, cc.hx].real)
+
+                # 2) EY
+                a = s_arr[cc.ey, cc.hx] * s_arr[cc.hy, cc.hy] - \
+                    s_arr[cc.ey, cc.hy] * s_arr[cc.hy, cc.hx]
+                b = s_arr[cc.ey, cc.hy] * s_arr[cc.hx, cc.hx] - \
+                    s_arr[cc.ey, cc.hx] * s_arr[cc.hx, cc.hy]
                 a /= z_det
-                b /= z_det  
-            
-                psi_squared = np.real(1./np.real(s_arr[cc.ey, cc.ey])*\
-                                (a*s_arr[cc.hx, cc.ey]+b*s_arr[cc.hy, cc.ey]))
-                epsilon_squared = 1.-psi_squared
-            
-                scaling = sigma_quantil*4/(avgt_dict[key]-4.)*\
-                            epsilon_squared/z_det*s_arr[cc.ey, cc.ey].real
-                z_err_arr[kk, 1, 0] = np.sqrt(scaling*s_arr[cc.hy, cc.hy].real)
-                z_err_arr[kk, 1, 1] = np.sqrt(scaling*s_arr[cc.hx, cc.hx].real)
-            
-            #if HZ information is present:
+                b /= z_det
+
+                psi_squared = np.real(1. / np.real(s_arr[cc.ey, cc.ey]) *
+                                      (a * s_arr[cc.hx, cc.ey] + b * s_arr[cc.hy, cc.ey]))
+                epsilon_squared = 1. - psi_squared
+
+                scaling = sigma_quantil * 4 / (avgt_dict[key] - 4.) * \
+                    epsilon_squared / z_det * s_arr[cc.ey, cc.ey].real
+                z_err_arr[kk, 1, 0] = np.sqrt(
+                    scaling * s_arr[cc.hy, cc.hy].real)
+                z_err_arr[kk, 1, 1] = np.sqrt(
+                    scaling * s_arr[cc.hx, cc.hx].real)
+
+            # if HZ information is present:
             if len(comp_list) > 5:
-                t_arr[kk, 0, 0] = s_arr[cc.hz, cc.rhx]*s_arr[cc.hy, cc.rhy]-\
-                                    s_arr[cc.hz, cc.rhy]*s_arr[cc.hy, cc.rhx] 
-                t_arr[kk, 0, 1] = s_arr[cc.hz, cc.rhy]*s_arr[cc.hx, cc.rhx]-\
-                                    s_arr[cc.hz, cc.rhx]*s_arr[cc.hx, cc.rhy] 
-        
-                t_arr[kk] /= (s_arr[cc.hx, cc.rhx]*s_arr[cc.hy, cc.rhy]-\
-                                    s_arr[cc.hx, cc.rhy]*s_arr[cc.hy, cc.rhx])
-                
+                t_arr[kk, 0, 0] = s_arr[cc.hz, cc.rhx] * s_arr[cc.hy, cc.rhy] - \
+                    s_arr[cc.hz, cc.rhy] * s_arr[cc.hy, cc.rhx]
+                t_arr[kk, 0, 1] = s_arr[cc.hz, cc.rhy] * s_arr[cc.hx, cc.rhx] - \
+                    s_arr[cc.hz, cc.rhx] * s_arr[cc.hx, cc.rhy]
+
+                t_arr[kk] /= (s_arr[cc.hx, cc.rhx] * s_arr[cc.hy, cc.rhy] -
+                              s_arr[cc.hx, cc.rhy] * s_arr[cc.hy, cc.rhx])
+
                 if ssd_test is True:
-                    a =  s_arr[cc.hz, cc.hx]*s_arr[cc.hy, cc.hy]-\
-                            s_arr[cc.hz, cc.hy]*s_arr[cc.hy, cc.hx]  
-                    b =  s_arr[cc.hz, cc.hy]*s_arr[cc.hx, cc.hx]- \
-                                s_arr[cc.hz, cc.hx]*s_arr[cc.hx, cc.hy]
+                    a = s_arr[cc.hz, cc.hx] * s_arr[cc.hy, cc.hy] - \
+                        s_arr[cc.hz, cc.hy] * s_arr[cc.hy, cc.hx]
+                    b = s_arr[cc.hz, cc.hy] * s_arr[cc.hx, cc.hx] - \
+                        s_arr[cc.hz, cc.hx] * s_arr[cc.hx, cc.hy]
                     a /= z_det
-                    b /= z_det  
-                
-                    psi_squared = np.real(1./s_arr[cc.hz, cc.hz].real*\
-                                 (a*s_arr[cc.hx, cc.hz]+b*s_arr[cc.hy, cc.hz]))
-                    epsilon_squared = 1.-psi_squared
-                
-                    scaling = sigma_quantil*4/(avgt_dict[key]-4.)*\
-                                epsilon_squared/z_det*s_arr[cc.hz, cc.hz].real
-                    t_err_arr[kk, 0, 0] = np.sqrt(scaling*s_arr[cc.hy, cc.hy].real)
-                    t_err_arr[kk, 0, 1] = np.sqrt(scaling*s_arr[cc.hx, cc.hx].real)
-                    
-        
+                    b /= z_det
+
+                    psi_squared = np.real(1. / s_arr[cc.hz, cc.hz].real *
+                                          (a * s_arr[cc.hx, cc.hz] + b * s_arr[cc.hy, cc.hz]))
+                    epsilon_squared = 1. - psi_squared
+
+                    scaling = sigma_quantil * 4 / (avgt_dict[key] - 4.) * \
+                        epsilon_squared / z_det * s_arr[cc.hz, cc.hz].real
+                    t_err_arr[kk, 0, 0] = np.sqrt(
+                        scaling * s_arr[cc.hy, cc.hy].real)
+                    t_err_arr[kk, 0, 1] = np.sqrt(
+                        scaling * s_arr[cc.hx, cc.hx].real)
+
         # check for nans
         z_err_arr = np.nan_to_num(z_err_arr)
         t_err_arr = np.nan_to_num(t_err_arr)
-        
-        z_err_arr[np.where(z_err_arr==0.0)] = 1.0
-        t_err_arr[np.where(t_err_arr==0.0)] = 1.0
-        
+
+        z_err_arr[np.where(z_err_arr == 0.0)] = 1.0
+        t_err_arr[np.where(t_err_arr == 0.0)] = 1.0
+
         # be sure to fill attributes
         self.Z.z = z_arr
         self.Z.z_err = z_err_arr
         self.Z.freq = freq_arr
         self.Z.rotation_angle = np.zeros_like(freq_arr)
         self.Z._compute_res_phase()
-        
+
         self.Tipper.tipper = t_arr
         self.Tipper.tipper_err = t_err_arr
-        self.Tipper.freq = freq_arr 
+        self.Tipper.freq = freq_arr
         self.Tipper.rotation_angle = np.zeros_like(freq_arr)
         self.Tipper._compute_amp_phase()
         self.Tipper._compute_mag_direction()
-        
+
     def write_edi_file(self, new_edi_fn=None):
         """
         Write a new edi file from either an existing .edi file or from data
         input by the user into the attributes of Edi.
-        
+
         Arguments
         -----------
-        
+
             **new_edi_fn** : string
                              full path to new edi file.
                              *default* is None, which will write to the same
                              file as the input .edi with as:
                              r"/home/mt/mt01_1.edi"
-                             
+
         Examples
         -----------
-        
+
         :Write EDI file: ::
-            
+
             >>> import mtpy.core.edi as mtedi
             >>> edi_obj = mtedi.Edi(edi_fn=r"/home/mt/mt01/edi")
             >>> edi_obj.Header.dataid = 'mt01_rr'
             >>> edi_obj.write_edi_file() 
         """
-        
+
         if new_edi_fn is None:
             if self.edi_fn is not None:
                 new_edi_fn = self.edi_fn
             else:
-                new_edi_fn = os.path.join(os.getcwd(), 
+                new_edi_fn = os.path.join(os.getcwd(),
                                           '{0}.edi'.format(self.Header.dataid))
         new_edi_fn = MTfh.make_unique_filename(new_edi_fn)
-            
+
         if self.Header.dataid is None:
             self.read_edi_file()
-            
+
         # write lines
         header_lines = self.Header.write_header()
         info_lines = self.Info.write_info()
         define_lines = self.Define_measurement.write_define_measurement()
         dsect_lines = self.Data_sect.write_data_sect()
-        
+
         # write out frequencies
         freq_lines = [self._data_header_str.format('frequencies'.upper())]
         freq_lines += self._write_data_block(self.Z.freq, 'freq')
-        
+
         # write out rotation angles
-        zrot_lines = [self._data_header_str.format('impedance rotation angles'.upper())]
+        zrot_lines = [self._data_header_str.format(
+            'impedance rotation angles'.upper())]
         zrot_lines += self._write_data_block(self.Z.rotation_angle, 'zrot')
-        
+
         # write out data only impedance and tipper
         z_data_lines = [self._data_header_str.format('impedances'.upper())]
         for ii in range(2):
             for jj in range(2):
-                z_lines_real = self._write_data_block(self.Z.z[:, ii, jj].real, 
-                                                      self._z_labels[2*ii+jj][0])
-                z_lines_imag = self._write_data_block(self.Z.z[:, ii, jj].imag, 
-                                                      self._z_labels[2*ii+jj][1])
-                z_lines_var = self._write_data_block(self.Z.z_err[:, ii, jj], 
-                                                     self._z_labels[2*ii+jj][2])
-                                           
+                z_lines_real = self._write_data_block(self.Z.z[:, ii, jj].real,
+                                                      self._z_labels[2 * ii + jj][0])
+                z_lines_imag = self._write_data_block(self.Z.z[:, ii, jj].imag,
+                                                      self._z_labels[2 * ii + jj][1])
+                z_lines_var = self._write_data_block(self.Z.z_err[:, ii, jj],
+                                                     self._z_labels[2 * ii + jj][2])
+
                 z_data_lines += z_lines_real
                 z_data_lines += z_lines_imag
                 z_data_lines += z_lines_var
-                
+
         if self.Tipper.tipper is not None and np.all(self.Tipper.tipper == 0) == True:
             trot_lines = ['']
             t_data_lines = ['']
         else:
             try:
                 # write out rotation angles
-                trot_lines = [self._data_header_str.format('tipper rotation angles'.upper())]
+                trot_lines = [self._data_header_str.format(
+                    'tipper rotation angles'.upper())]
                 if type(self.Tipper.rotation_angle) is float:
-                    trot = np.repeat(self.Tipper.rotation_angle, self.Tipper.freq.size)
+                    trot = np.repeat(self.Tipper.rotation_angle,
+                                     self.Tipper.freq.size)
                 else:
                     trot = self.Tipper.rotation_angle
                 trot_lines += self._write_data_block(np.array(trot), 'trot')
-                        
-                # write out tipper lines       
-                t_data_lines = [self._data_header_str.format('tipper'.upper())]        
+
+                # write out tipper lines
+                t_data_lines = [self._data_header_str.format('tipper'.upper())]
                 for jj in range(2):
-                    t_lines_real = self._write_data_block(self.Tipper.tipper[:, 0, jj].real, 
+                    t_lines_real = self._write_data_block(self.Tipper.tipper[:, 0, jj].real,
                                                           self._t_labels[jj][0])
-                    t_lines_imag = self._write_data_block(self.Tipper.tipper[:, 0, jj].imag, 
+                    t_lines_imag = self._write_data_block(self.Tipper.tipper[:, 0, jj].imag,
                                                           self._t_labels[jj][1])
-                    t_lines_var = self._write_data_block(self.Tipper.tipper_err[:, 0, jj], 
+                    t_lines_var = self._write_data_block(self.Tipper.tipper_err[:, 0, jj],
                                                          self._t_labels[jj][2])
-                                               
+
                     t_data_lines += t_lines_real
                     t_data_lines += t_lines_imag
                     t_data_lines += t_lines_var
             except AttributeError:
                 trot_lines = ['']
                 t_data_lines = ['']
-            
-        edi_lines = header_lines+\
-                    info_lines+\
-                    define_lines+\
-                    dsect_lines+\
-                    freq_lines+\
-                    zrot_lines+\
-                    z_data_lines+\
-                    trot_lines+\
-                    t_data_lines+['>END']
-                    
+
+        edi_lines = header_lines + \
+            info_lines + \
+            define_lines + \
+            dsect_lines + \
+            freq_lines + \
+            zrot_lines + \
+            z_data_lines + \
+            trot_lines + \
+            t_data_lines + ['>END']
+
         with open(new_edi_fn, 'w') as fid:
             fid.write(''.join(edi_lines))
 
-        print 'Wrote {0}'.format(new_edi_fn)            
+        print 'Wrote {0}'.format(new_edi_fn)
         return new_edi_fn
-        
+
     def _write_data_block(self, data_comp_arr, data_key):
         """
         write a data block 
-        
+
         return a list of strings
         """
         if data_key.lower().find('z') >= 0 and \
-            data_key.lower() not in ['zrot', 'trot']:
-            block_lines = ['>{0} ROT=ZROT // {1:.0f}\n'.format(data_key.upper(), 
-                          data_comp_arr.size)]        
+                data_key.lower() not in ['zrot', 'trot']:
+            block_lines = ['>{0} ROT=ZROT // {1:.0f}\n'.format(data_key.upper(),
+                                                               data_comp_arr.size)]
         elif data_key.lower().find('t') >= 0 and \
-            data_key.lower() not in ['zrot', 'trot']:
-            block_lines = ['>{0} ROT=TROT // {1:.0f}\n'.format(data_key.upper(), 
-                          data_comp_arr.size)]
+                data_key.lower() not in ['zrot', 'trot']:
+            block_lines = ['>{0} ROT=TROT // {1:.0f}\n'.format(data_key.upper(),
+                                                               data_comp_arr.size)]
         elif data_key.lower() == 'freq':
-            block_lines = ['>{0} // {1:.0f}\n'.format(data_key.upper(), 
-                          data_comp_arr.size)]
-                          
+            block_lines = ['>{0} // {1:.0f}\n'.format(data_key.upper(),
+                                                      data_comp_arr.size)]
+
         elif data_key.lower() in ['zrot', 'trot']:
-             block_lines = ['>{0} // {1:.0f}\n'.format(data_key.upper(), 
-                          data_comp_arr.size)]
-                          
+            block_lines = ['>{0} // {1:.0f}\n'.format(data_key.upper(),
+                                                      data_comp_arr.size)]
+
         else:
-            raise MTex.MTpyError_EDI('Cannot write block for {0}'.format(data_key))
-        
+            raise MTex.MTpyError_EDI(
+                'Cannot write block for {0}'.format(data_key))
+
         for d_index, d_comp in enumerate(data_comp_arr, 1):
             if d_comp == 0.0 and data_key.lower() not in ['zrot', 'trot']:
                 d_comp = float(self.Header.empty)
-            # write the string in the specified format    
+            # write the string in the specified format
             num_str = '{0:{1}}'.format(d_comp, self._num_format)
-            
+
             # check to see if a new line is needed
-            if d_index%self._block_len == 0:
+            if d_index % self._block_len == 0:
                 num_str += '\n'
             # at the end of the block add a return
             if d_index == data_comp_arr.size:
                 num_str += '\n'
-    
+
             block_lines.append(num_str)
-            
+
         return block_lines
-    
-    #----------------------------------------------------------------------- 
-    # set a few important properties  
-    # --> Latitude    
+
+    # -----------------------------------------------------------------------
+    # set a few important properties
+    # --> Latitude
     def _get_lat(self):
-         """ 
-         get latitude
-         """
-         
-         return self.Header.lat
-                        
+        """
+        get latitude
+        """
+
+        return self.Header.lat
+
     def _set_lat(self, input_lat):
         """
         set latitude and make sure it is converted to a float
         """
-        
+
         self.Header.lat = MTft._assert_position_format('lat', input_lat)
         print 'Converted input latitude to decimal degrees: {0: .6f}'.format(
-                                                               self.Header.lat)
-        
-    lat = property(fget=_get_lat, fset=_set_lat, 
+            self.Header.lat)
+
+    lat = property(fget=_get_lat, fset=_set_lat,
                    doc='Latitude in decimal degrees')
-    
-    # --> Longitude               
+
+    # --> Longitude
     def _get_lon(self):
-         return self.Header.lon
-                        
+        return self.Header.lon
+
     def _set_lon(self, input_lon):
         self.Header.lon = MTft._assert_position_format('lon', input_lon)
         print 'Converted input longitude to decimal degrees: {0: .6f}'.format(
-                                                               self.Header.lon)
-        
-    lon = property(fget=_get_lon, fset=_set_lon, 
+            self.Header.lon)
+
+    lon = property(fget=_get_lon, fset=_set_lon,
                    doc='Longitude in decimal degrees')
-                   
-    # --> Elevation               
+
+    # --> Elevation
     def _get_elev(self):
-         return self.Header.elev
-                        
+        return self.Header.elev
+
     def _set_elev(self, input_elev):
         self.Header.elev = MTft._assert_position_format('elev', input_elev)
-        
-    elev = property(fget=_get_elev, fset=_set_elev, 
-                   doc='Elevation in meters')
-                   
+
+    elev = property(fget=_get_elev, fset=_set_elev,
+                    doc='Elevation in meters')
+
     # --> station
     def _get_station(self):
         return self.Header.dataid
-        
+
     def _set_station(self, new_station):
         if type(new_station) is not str:
             new_station = '{0}'.format(new_station)
         self.Header.dataid = new_station
         self.Data_sect.sectid = new_station
-    
-    station = property(fget=_get_station, fset=_set_station, 
+
+    station = property(fget=_get_station, fset=_set_station,
                        doc="station name")
-                       
-#==============================================================================
+
+
+# ==============================================================================
 # Index finder
-#==============================================================================
+# ==============================================================================
 class index_locator(object):
+
     def __init__(self, component_list):
         for ii, comp in enumerate(component_list):
             setattr(self, comp, ii)
 
-#==============================================================================
-#  Header object        
-#==============================================================================
+
+# ==============================================================================
+#  Header object
+# ==============================================================================
 class Header(object):
     """
     Header class contains all the information in the header section of the .edi
     file. A typical header block looks like::
-        
+
         >HEAD
 
             ACQBY=None
@@ -754,15 +765,15 @@ class Header(object):
             LON=139:47:50
             PROGDATE=2002-04-22
             PROGVERS=WINGLINK EDI 1.0.22
-    
+
     Arguments
     -------------
-    
+
         **edi_fn** : string
                      full path to .edi file to be read in. 
                      *default* is None. If an .edi file is input, it is 
                      automatically read in and attributes of Header are filled
-                     
+
     Attributes
     -------------
 
@@ -793,7 +804,7 @@ class Header(object):
     _header_keys   list of metadata input into .edi        [2]_ 
                    header block.                                    no
     ============== ======================================= ======== ===========
-    
+
     .. rubric:: footnotes
     .. [1] Internally everything is converted to decimal degrees.  Output is
           written as HH:MM:SS.ss so Winglink can read them in. 
@@ -811,10 +822,10 @@ class Header(object):
                * empty
                * progdate
                * progvers
-          
+
     Methods
     -------------
-    
+
     ====================== ====================================================
     Methods                Description
     ====================== ====================================================
@@ -822,18 +833,18 @@ class Header(object):
     read_header            read in header information from header_lines
     write_header           write header lines, returns a list of lines to write
     ====================== ====================================================
-          
+
 
     Examples
     --------------    
-    
+
     :Read Header: ::
-    
+
         >>> import mtpy.core.edi as mtedi
         >>> header_obj = mtedi.Header(edi_fn=r"/home/mt/mt01.edi")
-        
+
     """
-    
+
     def __init__(self, edi_fn=None, **kwargs):
         self.edi_fn = edi_fn
         self.edi_lines = None
@@ -843,7 +854,7 @@ class Header(object):
         self.acqdate = None
         self.units = None
         self.filedate = datetime.datetime.utcnow().strftime(
-                                                    '%Y/%m/%d %H:%M:%S UTC')       
+            '%Y/%m/%d %H:%M:%S UTC')
         self.loc = None
         self.lat = None
         self.lon = None
@@ -852,10 +863,10 @@ class Header(object):
         self.progvers = None
         self.progdate = None
         self.phoenix_edi = False
-        
+
         self.header_list = None
-        
-        self._header_keys = ['acqby', 
+
+        self._header_keys = ['acqby',
                              'acqdate',
                              'dataid',
                              'elev',
@@ -867,26 +878,26 @@ class Header(object):
                              'empty',
                              'progdate',
                              'progvers']
-        
+
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-            
+
         if self.edi_fn is not None or self.edi_lines is not None:
             self.read_header()
-            
+
     def get_header_list(self):
         """
         Get the header information from the .edi file in the form of a list,
         where each item is a line in the header section.
         """
-       
+
         if self.edi_fn == None and self.edi_lines == None:
             print 'No edi file to read.'
             return
-             
+
         self.header_list = []
         head_find = False
-        
+
         # read in file line by line
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) == False:
@@ -898,8 +909,8 @@ class Header(object):
         for ii, line in enumerate(self.edi_lines):
             # check for header label
             if '>' in line and 'head' in line.lower():
-                head_find = True   
-            # if the header line has been found then the next >
+                head_find = True
+                # if the header line has been found then the next >
             # should be the next section so stop
             elif '>' in line:
                 if head_find is True:
@@ -916,55 +927,55 @@ class Header(object):
                         key = h_list[0].strip()
                         value = h_list[1].strip()
                         self.header_list.append('{0}={1}'.format(key, value))
-    
+
     def read_header(self, header_list=None):
         """
         read a header information from either edi file or a list of lines
         containing header information.
-        
+
         Arguments
         -----------
-        
+
             **header_list** : list
                               should be read from an .edi file or input as
                               ['key_01=value_01', 'key_02=value_02']
-                              
+
         Examples
         ----------
-        
+
         :Input header_list: ::
-        
+
             >>> h_list = ['lat=36.7898', 'lon=120.73532', 'elev=120.0', ...
             >>>           'dataid=mt01']
             >>> import mtpy.core.edi as mtedi
             >>> header = mtedi.Header()
             >>> header.read_header(h_list)
-            
+
         """
 
         if header_list is not None:
             self.header_list = self._validate_header_list(header_list)
-            
+
         if self.header_list is None and self.edi_fn is None and \
-           self.edi_lines is None:
+                self.edi_lines is None:
             print 'Nothing to read. header_list and edi_fn are None'
-            
+
         elif self.edi_fn is not None or self.edi_lines is not None:
             self.get_header_list()
-        
+
         for h_line in self.header_list:
             h_list = h_line.split('=')
             key = h_list[0].lower()
             value = h_list[1]
-            
+
             if key in 'latitude':
                 key = 'lat'
                 value = MTft._assert_position_format(key, value)
-            
+
             elif key in 'longitude':
                 key = 'lon'
                 value = MTft._assert_position_format(key, value)
-                
+
             elif key in 'elevation':
                 key = 'elev'
                 try:
@@ -972,7 +983,7 @@ class Header(object):
                 except ValueError:
                     value = 0.0
                     print 'No elevation data'
-                    
+
             elif key in ['country', 'state', 'loc', 'location', 'prospect']:
                 key = 'loc'
                 try:
@@ -984,27 +995,27 @@ class Header(object):
             elif key in ['progvers']:
                 if value.lower().find('mt-editor') != -1:
                     self.phoenix_edi = True
-                    
+
             elif key in ['fileby']:
                 if value == '':
                     value = 'mtpy'
-                
+
             setattr(self, key, value)
-            
+
     def write_header(self, header_list=None):
         """
         Write header information to a list of lines.
-        
+
         Arguments
         -------------
-        
+
             **header_list** : list
                               should be read from an .edi file or input as
                               ['key_01=value_01', 'key_02=value_02']
-            
+
         Returns
         ---------------
-            
+
             **header_lines** : list
                                list of lines containing header information
                                will be of the form
@@ -1017,10 +1028,10 @@ class Header(object):
 
         if header_list is not None:
             self.read_header(header_list)
-            
+
         if self.header_list is None and self.edi_fn is not None:
             self.get_header_list()
-            
+
         header_lines = ['>HEAD\n\n']
         for key in sorted(self._header_keys):
             value = getattr(self, key)
@@ -1029,32 +1040,32 @@ class Header(object):
                     value = 'mtpy'
             elif key in ['lat', 'lon']:
                 value = MTft.convert_dms_tuple2string(
-                                        MTft.convert_degrees2dms_tuple(value))
+                    MTft.convert_degrees2dms_tuple(value))
             if key in ['elev']:
                 try:
                     value = '{0:.3f}'.format(value)
                 except ValueError:
                     value = '0.000'
-                    
+
             if key in ['filedate']:
                 value = datetime.datetime.utcnow().strftime(
-                                                    '%Y/%m/%d %H:%M:%S UTC')
-                                                    
+                    '%Y/%m/%d %H:%M:%S UTC')
+
             header_lines.append('{0}{1}={2}\n'.format(tab, key.upper(), value))
         header_lines.append('\n')
         return header_lines
-        
+
     def _validate_header_list(self, header_list):
         """
         make sure the input header list is valid
-        
+
         returns a validated header list
         """
-        
+
         if header_list is None:
             print 'No header information to read'
             return None
-            
+
         new_header_list = []
         for h_line in header_list:
             h_line = h_line.strip().replace('"', '')
@@ -1064,52 +1075,53 @@ class Header(object):
                     key = h_list[0].strip().lower()
                     value = h_list[1].strip()
                     new_header_list.append('{0}={1}'.format(key, value))
-        
+
         return new_header_list
-        
-#==============================================================================
+
+
+# ==============================================================================
 # Info object
-#==============================================================================
+# ==============================================================================
 class Information(object):
     """
     Contain, read, and write info section of .edi file
-    
+
     not much to really do here, but just keep it in the same format that it is
     read in as, except if it is in phoenix format then split the two paragraphs
     up so they are sequential.
-    
+
     """
-    
+
     def __init__(self, edi_fn=None, edi_lines=None):
         self.edi_fn = edi_fn
         self.edi_lines = edi_lines
         self.info_list = None
-        
+
         if self.edi_fn is not None or self.edi_lines is not None:
             self.read_info()
-            
+
     def get_info_list(self):
         """
         get a list of lines from the info section
         """
-        
+
         if self.edi_fn is None and self.edi_lines is None:
-            print 'no edi file input, check edi_fn attribute'            
+            print 'no edi file input, check edi_fn attribute'
             return
-            
+
         self.info_list = []
         info_find = False
         phoenix_file = False
         phoenix_list_02 = []
-        
+
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) is False:
                 print 'Could not find {0}, check path'.format(self.edi_fn)
                 return
-                
+
             with open(self.edi_fn, 'r') as fid:
                 self.edi_lines = fid.readlines()
-                      
+
         for ii, line in enumerate(self.edi_lines):
             if '>' in line and 'info' in line.lower():
                 info_find = True
@@ -1127,49 +1139,47 @@ class Information(object):
                 else:
                     if len(line.strip()) > 1:
                         self.info_list.append(line.strip())
-                        
+
         self.info_list += phoenix_list_02
         # validate the information list
         self.info_list = self._validate_info_list(self.info_list)
-        
+
     def read_info(self, info_list=None):
         """
         read information section of the .edi file
         """
-        
+
         if info_list is not None:
             self.info_list = self._validate_info_list(info_list)
-            
+
         elif self.edi_fn is not None or self.edi_lines is not None:
             self.get_info_list()
-            
+
         if self.info_list is None:
             print "Could not read information"
             return
-            
+
     def write_info(self, info_list=None):
         """
         write out information
         """
-        
+
         if info_list is not None:
             self.info_list = self._validate_info_list(info_list)
-        
-            
+
         info_lines = ['>INFO\n\n']
         for line in self.info_list:
             info_lines.append('{0}{1}\n'.format(tab, line))
-        
+
         return info_lines
-            
-         
+
     def _validate_info_list(self, info_list):
         """
         check to make sure the info list input is valid, really just checking
         for Phoenix format where they put two columns in the file and remove 
         any blank lines and the >info line
         """
-        
+
         new_info_list = []
         for line in info_list:
             # get rid of empty lines
@@ -1179,13 +1189,13 @@ class Information(object):
                     pass
                 else:
                     new_info_list.append(line.strip())
-                    
+
         return new_info_list
-        
-            
-#==============================================================================
-#  Define measurement class       
-#==============================================================================
+
+
+# ==============================================================================
+#  Define measurement class
+# ==============================================================================
 class DefineMeasurement(object):
     """
     DefineMeasurement class holds information about the measurement.  This 
@@ -1195,9 +1205,9 @@ class DefineMeasurement(object):
     important if you did any forward modeling with Winglink cause it only gives
     the station location in this section.  The other parts are how each channel
     was collected.  An example define measurement section looks like::
-    
+
         >=DEFINEMEAS
-        
+
             MAXCHAN=7
             MAXRUN=999
             MAXMEAS=9999
@@ -1206,7 +1216,7 @@ class DefineMeasurement(object):
             REFLAT=-30:12:49.4693
             REFLONG=139:47:50.87
             REFELEV=0
-            
+
         >HMEAS ID=1001.001 CHTYPE=HX X=0.0 Y=0.0 Z=0.0 AZM=0.0 
         >HMEAS ID=1002.001 CHTYPE=HY X=0.0 Y=0.0 Z=0.0 AZM=90.0 
         >HMEAS ID=1003.001 CHTYPE=HZ X=0.0 Y=0.0 Z=0.0 AZM=0.0 
@@ -1214,16 +1224,16 @@ class DefineMeasurement(object):
         >EMEAS ID=1005.001 CHTYPE=EY X=0.0 Y=0.0 Z=0.0 X2=0.0 Y2=0.0 
         >HMEAS ID=1006.001 CHTYPE=HX X=0.0 Y=0.0 Z=0.0 AZM=0.0 
         >HMEAS ID=1007.001 CHTYPE=HY X=0.0 Y=0.0 Z=0.0 AZM=90.0 
-    
+
     Arguments
     -------------
-    
+
         **edi_fn** : string
                      full path to .edi file to read in.
-                     
+
     Attributes
     -------------
-    
+
     ================= ==================================== ======== ===========
     Attributes        Description                          Default  In .edi     
     ================= ==================================== ======== ===========
@@ -1242,7 +1252,7 @@ class DefineMeasurement(object):
     _define_meas_keys Keys to include in define_measurment [3]_     no
                       section.          
     ================= ==================================== ======== ===========                
-    
+
     .. rubric:: footnotes
     .. [1] Each channel with have its own define measurement and depending on
            whether it is an E or H channel the metadata will be different.  
@@ -1261,12 +1271,12 @@ class DefineMeasurement(object):
                * units
 
     """
-    
+
     def __init__(self, edi_fn=None, edi_lines=None):
         self.edi_fn = edi_fn
         self.edi_lines = edi_lines
         self.measurement_list = None
-        
+
         self.maxchan = None
         self.maxmeas = 7
         self.maxrun = 999
@@ -1275,7 +1285,7 @@ class DefineMeasurement(object):
         self.reflon = None
         self.reftype = 'cartesian'
         self.units = 'm'
-        
+
         self._define_meas_keys = ['maxchan',
                                   'maxrun',
                                   'maxmeas',
@@ -1284,29 +1294,29 @@ class DefineMeasurement(object):
                                   'refelev',
                                   'reftype',
                                   'units']
-                                  
+
         if self.edi_fn is not None or self.edi_lines is not None:
             self.read_define_measurement()
-        
+
     def get_measurement_lists(self):
         """
         get measurement list including measurement setup
         """
         if self.edi_fn is None and self.edi_lines is None:
             print 'No edi file input, check edi_fn attribute'
-            return 
-            
+            return
+
         self.measurement_list = []
         meas_find = False
-             
+
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) is False:
                 print 'Could not find {0}, check path'.format(self.edi_fn)
                 return
-            
+
             with open(self.edi_fn, 'r') as fid:
                 self.edi_lines = fid.readlines()
-                        
+
         for ii, line in enumerate(self.edi_lines):
             if '>=' in line and 'definemeas' in line.lower():
                 meas_find = True
@@ -1317,7 +1327,7 @@ class DefineMeasurement(object):
                 line = line.strip()
                 if len(line) > 2:
                     self.measurement_list.append(line.strip())
-            
+
             # look for the >XMEAS parts
             elif '>' in line and meas_find == True:
                 if line.find('!') > 0:
@@ -1331,11 +1341,11 @@ class DefineMeasurement(object):
                         value = ll_list[1]
                         m_dict[key] = value
                     self.measurement_list.append(m_dict)
-                        
+
     def read_define_measurement(self, measurement_list=None):
         """
         read the define measurment section of the edi file
-        
+
         should be a list with lines for:
             - maxchan 
             - maxmeas
@@ -1352,19 +1362,19 @@ class DefineMeasurement(object):
                 - y
                 - axm
                 -acqchn
-        
+
         """
-        
+
         if measurement_list is not None:
             self.measurement_list = measurement_list
-            
+
         elif self.edi_fn is not None or self.edi_lines is not None:
             self.get_measurement_lists()
-            
+
         if self.measurement_list is None:
             print 'Nothing to read, check edi_fn or measurement_list attributes'
             return
-   
+
         for line in self.measurement_list:
             if type(line) is str:
                 line_list = line.split('=')
@@ -1398,7 +1408,7 @@ class DefineMeasurement(object):
                     except ValueError:
                         value = 0
                 setattr(self, key, value)
-        
+
             elif type(line) is dict:
                 key = 'meas_{0}'.format(line['chtype'].lower())
                 if key[4:].find('h') >= 0:
@@ -1406,32 +1416,32 @@ class DefineMeasurement(object):
                 elif key[4:].find('e') >= 0:
                     value = EMeasurement(**line)
                 setattr(self, key, value)
-                
+
     def write_define_measurement(self, measurement_list=None):
         """
         write the define measurement block as a list of strings
         """
-        
+
         if measurement_list is not None:
             self.read_define_measurement(measurement_list=measurement_list)
-            
+
         measurement_lines = ['\n>=DEFINEMEAS\n\n']
         for key in self._define_meas_keys:
             value = getattr(self, key)
             if key == 'reflat' or key == 'reflon':
                 value = MTft.convert_dms_tuple2string(
-                                        MTft.convert_degrees2dms_tuple(value))
+                    MTft.convert_degrees2dms_tuple(value))
             elif key == 'refelev':
                 value = '{0:.3f}'.format(value)
-            
+
             measurement_lines.append('{0}{1}={2}\n'.format(tab,
                                                            key.upper(),
                                                            value))
         measurement_lines.append('\n')
-                                                           
-        ## need to write the >XMEAS type, but sort by channel number
+
+        # need to write the >XMEAS type, but sort by channel number
         m_key_list = [(kk, self.__dict__[kk].id) for kk in self.__dict__.keys()
-                      if kk.find('meas_')==0]
+                      if kk.find('meas_') == 0]
         if len(m_key_list) == 0:
             print 'No XMEAS information.'
         else:
@@ -1442,10 +1452,10 @@ class DefineMeasurement(object):
                 if m_obj.chtype.lower().find('h') >= 0:
                     head = 'hmeas'
                 elif m_obj.chtype.lower().find('e') >= 0:
-                    head = 'emeas'                
+                    head = 'emeas'
                 else:
                     head = None
-                
+
                 m_list = ['>{0}'.format(head.upper())]
                 for mkey, mfmt in zip(m_obj._kw_list, m_obj._fmt_list):
                     m_list.append(' {0}={1:{2}}'.format(mkey.upper(),
@@ -1453,31 +1463,33 @@ class DefineMeasurement(object):
                                                         mfmt))
                 m_list.append('\n')
                 measurement_lines.append(''.join(m_list))
-        
+
         return measurement_lines
-        
+
     def get_measurement_dict(self):
         """
         get a dictionary for the xmeas parts
         """
-        meas_dict = {}        
+        meas_dict = {}
         for key in self.__dict__.keys():
             if key.find('meas_') == 0:
                 meas_attr = getattr(self, key)
                 meas_key = meas_attr.chtype
-                meas_dict[meas_key] =meas_attr
-            
+                meas_dict[meas_key] = meas_attr
+
         return meas_dict
-#==============================================================================
+
+
+# ==============================================================================
 # magnetic measurements
-#==============================================================================
+# ==============================================================================
 class HMeasurement(object):
     """
     HMeasurement contains metadata for a magnetic field measurement
-    
+
     Attributes
     ------------
-    
+
     ====================== ====================================================
     Attributes             Description
     ====================== ====================================================
@@ -1488,41 +1500,42 @@ class HMeasurement(object):
     azm                    angle of sensor relative to north = 0
     acqchan                name of the channel acquired usually same as chtype
     ====================== ====================================================
-    
+
     Example
     ------------
-    
+
     :Fill Metadata: ::
-    
+
         >>> import mtpy.core.edi as mtedi
         >>> h_dict = {'id': '1', 'chtype':'hx', 'x':0, 'y':0, 'azm':0}
         >>> h_dict['acqchn'] = 'hx'
         >>> hmeas = mtedi.HMeasurement(**h_dict)
     """
-    
+
     def __init__(self, **kwargs):
-        
+
         self._kw_list = ['id', 'chtype', 'x', 'y', 'azm', 'acqchan']
-        self._fmt_list = ['<4.4g','<3', '<4.1f', '<4.1f', '<4.1f', '<4']
+        self._fmt_list = ['<4.4g', '<3', '<4.1f', '<4.1f', '<4.1f', '<4']
         for key in self._kw_list:
             setattr(self, key, None)
-        
+
         for key in kwargs.keys():
             try:
                 setattr(self, key, float(kwargs[key]))
             except ValueError:
                 setattr(self, key, kwargs[key])
 
-#==============================================================================
-# electric measurements            
-#==============================================================================
+
+# ==============================================================================
+# electric measurements
+# ==============================================================================
 class EMeasurement(object):
     """
     EMeasurement contains metadata for an electric field measurement
-    
+
     Attributes
     ------------
-    
+
     ====================== ====================================================
     Attributes             Description
     ====================== ====================================================
@@ -1538,43 +1551,43 @@ class EMeasurement(object):
                            other electrode of the dipole
     acqchan                name of the channel acquired usually same as chtype
     ====================== ====================================================
-    
+
     Example
     ------------
-    
+
     :Fill Metadata: ::
-    
+
         >>> import mtpy.core.edi as mtedi
         >>> e_dict = {'id': '1', 'chtype':'ex', 'x':0, 'y':0, 'x2':50, 'y2':50}
         >>> e_dict['acqchn'] = 'ex'
         >>> emeas = mtedi.EMeasurement(**e_dict)
     """
-    
+
     def __init__(self, **kwargs):
-        
+
         self._kw_list = ['id', 'chtype', 'x', 'y', 'x2', 'y2', 'acqchan']
         self._fmt_list = ['<4.4g', '<3', '<4.1f', '<4.1f', '<4.1f', '<4.1f',
                           '<4']
         for key in self._kw_list:
             setattr(self, key, None)
-        
+
         for key in kwargs.keys():
             try:
                 setattr(self, key, float(kwargs[key]))
             except ValueError:
                 setattr(self, key, kwargs[key])
-        
-        
-#==============================================================================
-# data section        
-#==============================================================================
+
+
+# ==============================================================================
+# data section
+# ==============================================================================
 class DataSection(object):
     """
     DataSection contains the small metadata block that describes which channel
     is which.  A typical block looks like::
-        
+
         >=MTSECT
-        
+
             ex=1004.001
             ey=1005.001
             hx=1001.001
@@ -1584,15 +1597,15 @@ class DataSection(object):
             sectid=par28ew
             nchan=None
             maxblks=None
-            
+
     Arguments
     -------------
         **edi_fn** : string
                      full path to .edi file to read in.
-                     
+
     Attributes
     -------------
-    
+
     ================= ==================================== ======== ===========
     Attributes        Description                          Default  In .edi     
     ================= ==================================== ======== ===========
@@ -1608,50 +1621,51 @@ class DataSection(object):
     nchan             number of channels                   None     yes
     _kw_list          list of key words to put in metadata [1]_     no 
     ================= ==================================== ======== ===========
-        
+
     .. rubric:: Footnotes
     .. [1] Changes these values to change what is written to edi file    
     """
+
     def __init__(self, edi_fn=None, edi_lines=None):
         self.edi_fn = edi_fn
         self.edi_lines = edi_lines
-        
+
         self.data_type = 'z'
         self.line_num = 0
         self.data_sect_list = None
-        
+
         self._kw_list = ['nfreq',
                          'sectid',
                          'nchan',
                          'maxblks',
-                         'ex', 
+                         'ex',
                          'ey',
                          'hx',
                          'hy',
                          'hz']
-                         
+
         for key in self._kw_list:
             setattr(self, key, None)
-            
+
         if self.edi_fn is not None or self.edi_lines is not None:
             self.read_data_sect()
-        
-        
+
     def get_data_sect(self):
         """
         read in the data of the file, will detect if reading spectra or 
         impedance.
         """
-        
+
         if self.edi_fn is None and self.edi_lines is None:
             raise MTex.MTpyError_EDI('No edi file to read. Check edi_fn')
 
         self.data_sect_list = []
         data_sect_find = False
-        
+
         if self.edi_fn is not None:
             if os.path.isfile(self.edi_fn) is False:
-                raise MTex.MTpyError_EDI('Could not find {0}. Check path'.format(self.edi_fn))
+                raise MTex.MTpyError_EDI(
+                    'Could not find {0}. Check path'.format(self.edi_fn))
             with open(self.edi_fn) as fid:
                 self.edi_lines = fid.readlines()
 
@@ -1666,22 +1680,22 @@ class DataSection(object):
             elif '>' in line and data_sect_find is True:
                 self.line_num = ii
                 break
-            
+
             elif data_sect_find == True:
                 if len(line.strip()) > 2:
                     self.data_sect_list.append(line.strip())
-                  
+
     def read_data_sect(self, data_sect_list=None):
         """
         read data section
         """
-        
+
         if data_sect_list is not None:
             self.data_sect_list = data_sect_list
-            
+
         elif self.edi_fn is not None or self.edi_lines is not None:
             self.get_data_sect()
-            
+
         for d_line in self.data_sect_list:
             d_list = d_line.split('=')
             if len(d_list) > 1:
@@ -1690,41 +1704,42 @@ class DataSection(object):
                     value = int(d_list[1].strip())
                 except ValueError:
                     value = d_list[1].strip().replace('"', '')
-            
+
                 setattr(self, key, value)
-                
+
     def write_data_sect(self, data_sect_list=None):
         """
         write a data section
         """
-        
+
         if data_sect_list is not None:
             self.read_data_sect(data_sect_list)
-            
+
         self.data_type = 'z'
         print 'Writing out data a impedances'
-            
+
         data_sect_lines = ['\n>=mtsect\n'.upper()]
-        
+
         for key in self._kw_list[0:4]:
-            data_sect_lines.append('{0}{1}={2}\n'.format(tab, 
-                                                         key.upper(), 
+            data_sect_lines.append('{0}{1}={2}\n'.format(tab,
+                                                         key.upper(),
                                                          getattr(self, key)))
-        
+
         # need to sort the list so it is descending order by channel number
-        ch_list = [(key.upper(), getattr(self, key)) 
-                    for key in self._kw_list[4:]]
+        ch_list = [(key.upper(), getattr(self, key))
+                   for key in self._kw_list[4:]]
         ch_list = sorted(ch_list, key=lambda x: x[1])
 
         for ch in ch_list:
-            data_sect_lines.append('{0}{1}={2}\n'.format(tab, 
-                                                         ch[0], 
+            data_sect_lines.append('{0}{1}={2}\n'.format(tab,
+                                                         ch[0],
                                                          ch[1]))
-        
+
         data_sect_lines.append('\n')
-        
+
         return data_sect_lines
-      
+
+
 def _validate_str_with_equals(input_string):
     """
     make sure an input string is of the format {0}={1} {2}={3} {4}={5} ...
@@ -1732,31 +1747,30 @@ def _validate_str_with_equals(input_string):
     cool.  So we make the string into a readable format
     """
     input_string = input_string.strip()
-    # remove the first >XXXXX 
+    # remove the first >XXXXX
     if '>' in input_string:
         input_string = input_string[input_string.find(' '):]
-        
+
     # check if there is a // at the end of the line
     if input_string.find('//') > 0:
         input_string = input_string[0:input_string.find('//')]
-        
+
     # split the line by =
     l_list = input_string.strip().split('=')
-    
-    # split the remaining strings    
+
+    # split the remaining strings
     str_list = []
     for line in l_list:
         s_list = line.strip().split()
         for l_str in s_list:
             str_list.append(l_str.strip())
-    
-    # probably not a good return        
-    if len(str_list)%2 != 0:
+
+    # probably not a good return
+    if len(str_list) % 2 != 0:
         print 'The number of entries in {0} is not even'.format(str_list)
         return str_list
-    
-    line_list = ['{0}={1}'.format(str_list[ii], str_list[ii+1]) for ii in 
-                range(0, len(str_list), 2)]
-    
+
+    line_list = ['{0}={1}'.format(str_list[ii], str_list[ii + 1]) for ii in
+                 range(0, len(str_list), 2)]
+
     return line_list
-    
