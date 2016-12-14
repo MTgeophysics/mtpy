@@ -50,6 +50,7 @@ python examples/plot_phase_tensor_section.py examples/data/edi_files/georgina
 # fix github issue #12: plt show in commandline run.
 # python examples/modem_plotmodel_vertical.py
 
+python mtpy/imaging/modem_plot_vertical_slice.py examples/data/ModEM_files/VicSynthetic07/
 
 echo "Finished running the script $0"
 

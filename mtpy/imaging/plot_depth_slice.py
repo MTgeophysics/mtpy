@@ -9,7 +9,7 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 
 import mtpy.utils.exceptions as mtex
-from mtpy.modeling.modem_new import Data
+from mtpy.modeling.modem.datamodel import Data
 from mtpy.modeling.modem_new import Model
 
 try:

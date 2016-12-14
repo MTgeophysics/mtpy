@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
-from mtpy.modeling.modem_new import Data
+from mtpy.modeling.modem.datamodel import Data
 
 try:
     from pyevtk.hl import gridToVTK, pointsToVTK
