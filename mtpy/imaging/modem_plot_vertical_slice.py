@@ -17,8 +17,8 @@ from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 #from mtpy.modeling.modem_new import Data
-from mtpy.modeling.modem.datamodel import Data
-from mtpy.modeling.modem_new import Model
+from mtpy.modeling.modem import Data
+from mtpy.modeling.modem import Model
 
 
 class ModemPlotVerticalSlice():

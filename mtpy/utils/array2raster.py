@@ -10,7 +10,7 @@ except ImportError:
     raise ImportError('Did not find GDAL, be sure it is installed correctly and '
           'all the paths are correct')
 import numpy as np
-import mtpy.modeling.modem_new as modem
+import mtpy.modeling.modem as modem
 import mtpy.modeling.ws3dinv as ws
 import os
 import scipy.interpolate as interpolate

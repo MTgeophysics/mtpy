@@ -5,7 +5,7 @@ Created on Tue Oct 04 13:13:29 2016
 @author: u64125
 """
 
-import mtpy.modeling.modem_new as mtmn
+import mtpy.modeling.modem as mtmn
 import os.path as op
 import os
 import matplotlib.pyplot as plt
@@ -68,4 +68,3 @@ if plotdir == 'z':
                  doo.station_locations['station'][ss],fontsize=8)
 #plt.clim(0.3,3.7)
 plt.colorbar()
-    

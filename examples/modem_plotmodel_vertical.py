@@ -10,7 +10,7 @@ import os.path as op
 import matplotlib.pyplot as plt
 import numpy as np
 
-import mtpy.modeling.modem_new as mtmn
+import mtpy.modeling.modem as mtmn
 
 # INPUTS #
 # define a workdir for your environ  

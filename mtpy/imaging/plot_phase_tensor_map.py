@@ -2,7 +2,7 @@
 """
 ModEM: Generate data file for ModEM
 
-Refactored from modem_new.py
+Refactored from modem.py
 by Fei.Zhang@ga.gov.au 2016
 
 """
@@ -20,8 +20,8 @@ import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtplottools
 import mtpy.modeling.ws3dinv as ws
 import mtpy.utils.exceptions as mtex
-from mtpy.modeling.modem.datamodel import Data
-from mtpy.modeling.modem_new import Model
+from mtpy.modeling.modem import Data
+from mtpy.modeling.modem import Model
 
 try:
     from pyevtk.hl import gridToVTK, pointsToVTK

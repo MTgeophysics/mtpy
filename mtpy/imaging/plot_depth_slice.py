@@ -9,8 +9,8 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 
 import mtpy.utils.exceptions as mtex
-from mtpy.modeling.modem.datamodel import Data
-from mtpy.modeling.modem_new import Model
+from mtpy.modeling.modem import Data
+from mtpy.modeling.modem import Model
 
 try:
     from pyevtk.hl import gridToVTK, pointsToVTK
