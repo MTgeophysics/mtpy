@@ -2,8 +2,10 @@
 
 # env setup --- please modify accordingly
 
-export MTPYPATH=/Softlab/Githubz/mtpy2
-export PYTHONPATH=/Softlab/Githubz/mtpy2:$PYTHONPATH
+# export MTPYPATH=/Softlab/Githubz/mtpy2
+# export PYTHONPATH=/Softlab/Githubz/mtpy2:$PYTHONPATH
+# OR cd /e/Githubz/mtpy2 (develop)
+# export PYTHONPATH=.
 #windows git-bash: export  PYTHONPATH=/e/Githubz/mtpy2
 
 
@@ -23,6 +25,8 @@ python examples/plot_edis.py examples/data/edi_files/georgina
 
 python examples/plot_phase_tensor_map.py examples/data/edi_files
 python examples/plot_phase_tensor_map.py examples/data/edi_files/georgina
+python examples/plot_phase_tensor_map.py ./examples/data/edi_files/georgina ./localdir/abc.png
+
 
 python examples/plot_phase_tensor_section.py examples/data/edi_files
 python examples/plot_phase_tensor_section.py examples/data/edi_files/georgina

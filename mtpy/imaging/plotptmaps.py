@@ -573,8 +573,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
 
         #--> plot if desired ------------------------
         self.plot_yn = kwargs.pop('plot_yn', 'y')
+        self.save_fn=kwargs.pop('save_fn', "/c/tmp")
         if self.plot_yn == 'y':
             self.plot()
+            self.save_figure(self.save_fn, file_format='png')
             
     #---need to rotate data on setting rotz
     def _set_rot_z(self, rot_z):
@@ -1173,8 +1175,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         
         if fig_dpi == None:
             fig_dpi = self.fig_dpi
-            
-        if os.path.isdir(save_fn) == False:
+
+        #FZ: TODO: the following logic is wrong, need to be fixed
+        if not os.path.isdir(save_fn):  #FZ: assume save-fn is a file= "path2/afile.fmt"
             file_format = save_fn[-3:]
             self.fig.savefig(save_fn, dpi=fig_dpi, format=file_format,
                              orientation=orientation,  bbox_inches='tight')

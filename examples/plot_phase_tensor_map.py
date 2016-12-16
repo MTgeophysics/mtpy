@@ -24,7 +24,7 @@ def main(edi_path, save_path=None):
 
     # frequency to plot
     #plot_freq = 9.4
-    plot_freq = 20.0
+    plot_freq = 80.0  # check the freq range in your input edi files
 
     # parameters describing ellipses
     ellipse_dict = {'size': 0.02, 'colorby': 'phimin', 'range': (0, 90, 1), 'cmap': 'mt_bl2gr2rd'}
@@ -52,19 +52,22 @@ def main(edi_path, save_path=None):
                                     arrow_dict=arrow_dict,
                                     ellipse_dict=ellipse_dict,
                                     fig_size=(4, 4),
-                                    mapscale='deg')  #deg or km
+                                    mapscale='deg',  #deg or km
+                                    save_fn=save_path)
 
-    if save_path is not None:
-        plt.savefig(save_path, dpi=300)
+    # if save_path is not None:
+    #     plt.savefig(save_path, dpi=300)
 
     return
 
-#########################################################
-#
+###################################################################################################
 # How to Run:
+# cd /path2/mtpy2
 # export PYTHONPATH=/path2/mtpy2
-# python examples/plot_phase_tensor_map.py ./examples/data/edi_files/georgina /tmp/mtpy_map
-#
+# python examples/plot_phase_tensor_map.py ./examples/data/edi_files/georgina ./localdir/mtpy_map
+# python examples/plot_phase_tensor_map.py ./examples/data/edi_files ./localdir/mtpy_map
+# python examples/plot_phase_tensor_map.py tests/data/edifiles/ ./localdir/mtpy_map
+###################################################################################################
 if __name__ == '__main__':
 
     edi_path = sys.argv[1]

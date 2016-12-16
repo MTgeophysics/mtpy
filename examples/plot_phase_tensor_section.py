@@ -39,11 +39,14 @@ def main(edi_path):
     return
 
 
-#########################################################
+###################################################################################################
 # How to Run:
+# cd /path2/mtpy2
 # export PYTHONPATH=/path2/mtpy2   # the full path to your repo dir: mtpy2
-# python examples/plot_phase_tensor_section.py /g/data/ha3/fxz547/mtpy2/examples/data/edi_files/georgin
-#########################################################
+# python examples/plot_phase_tensor_section.py ./examples/data/edi_files/georgina
+# python examples/plot_phase_tensor_section.py ./examples/data/edi_files
+# python examples/plot_phase_tensor_section.py ./tests/data/edifiles
+##################################################################################################
 if __name__ == '__main__':
     edi_path = sys.argv[1]
     main(edi_path)
