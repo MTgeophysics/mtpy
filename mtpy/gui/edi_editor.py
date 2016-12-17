@@ -12,7 +12,7 @@ Created on Mon Mar 28 15:04:27 2016
 from PyQt4 import QtCore, QtGui
 import mtpy.core.mt as mt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 import mtpy.imaging.mtplottools as mtplt
 import matplotlib.pyplot as plt
