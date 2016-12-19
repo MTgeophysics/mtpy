@@ -576,7 +576,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         self.save_fn=kwargs.pop('save_fn', "/c/tmp")
         if self.plot_yn == 'y':
             self.plot()
-            self.save_figure(self.save_fn, file_format='png')
+            #self.save_figure(self.save_fn, file_format='png')
             
     #---need to rotate data on setting rotz
     def _set_rot_z(self, rot_z):
@@ -711,12 +711,16 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 #if map scale is in meters easting and northing
                 elif self.mapscale == 'm':
                     zone, east, north = utm2ll.LLtoUTM(23, mt.lat, mt.lon)
+                    zone1 = zone  #FZ: added to fix assignment error
                     
+                    print ("ii= ", ii)
+
                     #set the first point read in as a refernce other points                    
                     if ii == 0:
                         zone1 = zone
                         plotx = east-refpoint[0]
                         ploty = north-refpoint[1]
+                        print ("FZ debug:",zone1)
                         
                     #read in all the other point
                     else:
@@ -743,10 +747,13 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 #if mapscale is in km easting and northing
                 elif self.mapscale == 'km':
                     zone,east,north = utm2ll.LLtoUTM(23, mt.lat, mt.lon)
+                    #zone1 = None  #FZ: added to fix assignment error
+
                     if ii == 0:
                         zone1 = zone
                         plotx = (east-refpoint[0])/1000.
                         ploty = (north-refpoint[1])/1000.
+                        print ("FZ debug:",zone1)
                     
                     else:
                         if zone1!=zone:

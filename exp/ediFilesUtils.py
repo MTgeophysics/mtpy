@@ -73,7 +73,7 @@ class EDIimporter:
             # Find the location
             latD, longD, elevM = _findLatLong(EDIlines)
             print(latD, longD, elevM )
-            
+
             # Transfrom coordinates
             transCoord = self._transfromPoints(longD, latD)
             # Extract the name of the file (station)
