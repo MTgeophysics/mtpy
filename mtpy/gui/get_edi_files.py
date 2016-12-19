@@ -3,6 +3,8 @@
 Created on Sun Nov 02 14:31:02 2014
 
 @author: jrpeacock
+
+this module is used by mtpy/gui/modem_mesh_builder.py
 """
 
 from PyQt4 import QtGui
@@ -24,8 +26,8 @@ def main():
     window = Get_EDI_Files()
     sys.exit(app.exec_())
 
-#if __name__ == '__main__':
-#
+# if __name__ == '__main__':
+
 #    import sys
 #    app = QtGui.QApplication(sys.argv)
 #    window = Get_EDI_Files()
