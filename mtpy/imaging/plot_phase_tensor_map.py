@@ -292,14 +292,17 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                                 ('skew', np.float),
                                                 ('azimuth', np.float),
                                                 ('east', np.float),
-                                                ('north', np.float)])
+                                                ('north', np.float),
+                                                ('station','S10')])
         if self.resp_fn is not None:
             model_pt_arr = np.zeros((nf, ns), dtype=[('phimin', np.float),
                                                      ('phimax', np.float),
                                                      ('skew', np.float),
                                                      ('azimuth', np.float),
                                                      ('east', np.float),
-                                                     ('north', np.float)])
+                                                     ('north', np.float),
+                                                     ('station','S10')])
+])
 
             res_pt_arr = np.zeros((nf, ns), dtype=[('phimin', np.float),
                                                    ('phimax', np.float),
@@ -307,7 +310,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                                    ('azimuth', np.float),
                                                    ('east', np.float),
                                                    ('north', np.float),
-                                                   ('geometric_mean', np.float)])
+                                                   ('geometric_mean', np.float),
+                                                    ('station','S10')])
 
         for ii, key in enumerate(self.data_obj.mt_dict.keys()):
             east = self.data_obj.mt_dict[key].grid_east / self.dscale
@@ -319,6 +323,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
             data_pt_arr[:, ii]['phimax'] = dpt.phimax[0]
             data_pt_arr[:, ii]['azimuth'] = dpt.azimuth[0]
             data_pt_arr[:, ii]['skew'] = dpt.beta[0]
+            data_pt_arr[:, ii]['station'] = self.data_obj.mt_dict[key].station
             if self.resp_fn is not None:
                 mpt = self.resp_obj.mt_dict[key].pt
                 try:
@@ -331,6 +336,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     res_pt_arr[:, ii]['phimax'] = rpt.phimax[0]
                     res_pt_arr[:, ii]['azimuth'] = rpt.azimuth[0]
                     res_pt_arr[:, ii]['skew'] = rpt.beta[0]
+                    res_pt_arr[:, ii]['station'] = self.data_obj.mt_dict[key].station
                     res_pt_arr[:, ii]['geometric_mean'] = np.sqrt(abs(rpt.phimin[0] * \
                                                                       rpt.phimax[0]))
                 except mtex.MTpyError_PT:
@@ -342,6 +348,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 model_pt_arr[:, ii]['phimax'] = mpt.phimax[0]
                 model_pt_arr[:, ii]['azimuth'] = mpt.azimuth[0]
                 model_pt_arr[:, ii]['skew'] = mpt.beta[0]
+                model_pt_arr[:, ii]['station'] = self.data_obj.mt_dict[key].station
 
         # make these attributes
         self.pt_data_arr = data_pt_arr
