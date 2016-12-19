@@ -5,6 +5,9 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import  NavigationToolbar2QT as NavigationToolbar
 #NavigationToolbar2QTAgg 
 import matplotlib.pyplot as plt
+import matplotlib
+
+matplotlib.use('Qt5Agg')
 
 import random
 

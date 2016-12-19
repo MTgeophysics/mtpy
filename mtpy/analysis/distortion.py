@@ -394,9 +394,8 @@ def remove_distortion(z_array=None, z_object=None, num_freq=None, g='det'):
     dis, dis_err = find_distortion(z_obj, num_freq=num_freq, g=g)
 
     try:
-        distortion_tensor, zd, zd_err = z_obj.no_distortion(dis, 
-                                                distortion_err_tensor=dis_err)
-                                                
+        #distortion_tensor, zd, zd_err = z_obj.no_distortion(dis, distortion_err_tensor=dis_err)
+        distortion_tensor, zd, zd_err = z_obj.remove_distortion(dis, distortion_err_tensor=dis_err)
         zd_err = np.nan_to_num(zd_err)
         zd_err[np.where(zd_err == 0.0)] = 1.0
         distortion_z_obj = z_obj
