@@ -7,6 +7,7 @@ by Fei.Zhang@ga.gov.au 2016
 
 """
 import os
+import os.path as op
 
 import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
@@ -292,14 +293,16 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                                 ('skew', np.float),
                                                 ('azimuth', np.float),
                                                 ('east', np.float),
-                                                ('north', np.float)])
+                                                ('north', np.float),
+                                                ('station','S10')])
         if self.resp_fn is not None:
             model_pt_arr = np.zeros((nf, ns), dtype=[('phimin', np.float),
                                                      ('phimax', np.float),
                                                      ('skew', np.float),
                                                      ('azimuth', np.float),
                                                      ('east', np.float),
-                                                     ('north', np.float)])
+                                                     ('north', np.float),
+                                                     ('station','S10')])
 
             res_pt_arr = np.zeros((nf, ns), dtype=[('phimin', np.float),
                                                    ('phimax', np.float),
@@ -307,7 +310,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                                    ('azimuth', np.float),
                                                    ('east', np.float),
                                                    ('north', np.float),
-                                                   ('geometric_mean', np.float)])
+                                                   ('geometric_mean', np.float),
+                                                    ('station','S10')])
 
         for ii, key in enumerate(self.data_obj.mt_dict.keys()):
             east = self.data_obj.mt_dict[key].grid_east / self.dscale
@@ -319,6 +323,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
             data_pt_arr[:, ii]['phimax'] = dpt.phimax[0]
             data_pt_arr[:, ii]['azimuth'] = dpt.azimuth[0]
             data_pt_arr[:, ii]['skew'] = dpt.beta[0]
+            data_pt_arr[:, ii]['station'] = self.data_obj.mt_dict[key].station
             if self.resp_fn is not None:
                 mpt = self.resp_obj.mt_dict[key].pt
                 try:
@@ -331,6 +336,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     res_pt_arr[:, ii]['phimax'] = rpt.phimax[0]
                     res_pt_arr[:, ii]['azimuth'] = rpt.azimuth[0]
                     res_pt_arr[:, ii]['skew'] = rpt.beta[0]
+                    res_pt_arr[:, ii]['station'] = self.data_obj.mt_dict[key].station
                     res_pt_arr[:, ii]['geometric_mean'] = np.sqrt(abs(rpt.phimin[0] * \
                                                                       rpt.phimax[0]))
                 except mtex.MTpyError_PT:
@@ -342,6 +348,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 model_pt_arr[:, ii]['phimax'] = mpt.phimax[0]
                 model_pt_arr[:, ii]['azimuth'] = mpt.azimuth[0]
                 model_pt_arr[:, ii]['skew'] = mpt.beta[0]
+                model_pt_arr[:, ii]['station'] = self.data_obj.mt_dict[key].station
 
         # make these attributes
         self.pt_data_arr = data_pt_arr
@@ -707,6 +714,119 @@ class PlotPTMaps(mtplottools.MTEllipse):
         for fig in self.fig_list:
             plt.close(fig)
         self.plot()
+
+        
+    def _get_pt_data_list(self,attribute):
+
+        headerlist = ['period','station','east','north','azimuth','phimin','phimax','skew']
+        data = getattr(self,attribute).T.copy()
+        indices = np.argsort(data['station'][:,0])
+
+        data = data[indices].T
+        dtype = []
+        for val in headerlist:
+            if val == 'station':
+                dtype.append((val,'S10'))
+            else:
+                dtype.append((val,np.float))
+                
+        data_to_write = np.zeros(np.product(data.shape),dtype=dtype)
+        data_to_write['period'] = np.vstack([self.plot_period_list]*data.shape[1]).T.flatten()
+        
+        for val in headerlist[1:]:
+            if val in ['east','north']:
+                data[val] *= self.dscale
+            data_to_write[val] = data[val].flatten()
+        
+        return data_to_write,headerlist
+    
+    
+    
+    def write_pt_data_to_text(self,savepath='.'):
+        
+        if self.pt_data_arr is None:
+            self._read_files()
+
+        for att in ['pt_data_arr','pt_resp_arr','pt_resid_arr']:
+            if hasattr(self,att):
+                data_to_write,headerlist = self._get_pt_data_list(att)
+                header = ' '.join(headerlist)
+                
+                filename = op.join(savepath,att[:-4]+'.txt')
+                    
+                np.savetxt(filename,data_to_write,header=header,
+                           fmt=['%.4e','%s','%.2f','%.2f','%.2f','%.2f','%.2f','%.3f'])
+                           
+                           
+    def write_pt_data_to_gmt(self,period,epsg,savepath='.',center_utm=None):
+        """
+        write data to plot phase tensor ellipses in gmt.
+        saves a gmt script and text file containing ellipse data
+        
+        provide:
+        period to plot (seconds)
+        epsg for the projection the model was projected to 
+        (google "epsg your_projection_name" and you will find it)
+       
+        """
+        
+        attribute = 'pt_data_arr'
+        
+        # get text data list
+        data, headerlist = self._get_pt_data_list(attribute)
+
+        # extract relevant columns in correct order
+        periodlist = data['period']
+        columns = [2,3,7,4,5,6]
+        columns = ['east','north','skew','azimuth','phimin','phimax']
+        gmtdata = np.vstack([data[i] for i in columns]).T
+        
+        # make a filename based on period
+        if period >= 1.:
+            suffix = '%1i'%round(period)
+        else:
+            nzeros = np.abs(np.int(np.floor(np.log10(period))))
+            fmt = '%0'+str(nzeros+1)+'i'
+            suffix = fmt%(period*10**nzeros)
+        filename = 'ellipse_' + attribute[3:-4] + '.' + suffix    
+        
+        # extract relevant period
+        unique_periods = np.unique(periodlist)
+        closest_period = unique_periods[np.abs(unique_periods-period) == \
+                                        np.amin(np.abs(unique_periods-period))]
+        # indices to select all occurrances of relevant period (to nearest 10^-8 s)
+        pind = np.where(np.abs(closest_period-periodlist) < 1e-8)[0]
+        
+        # select relevant periods
+        periodlist, gmtdata = periodlist[pind], gmtdata[pind]
+        
+        # if centre utm not provided, try and get it from the data object
+        # in this case need to project from lat/long (wgs84) to epsg provided
+        if center_utm is None:
+            if hasattr(self.data_obj,'center_position'):
+                center_utm = self.data_obj.project_xy(self.data_obj.center_position[0],self.data_obj.center_position[1],
+                                                      epsg_from=4326, epsg_to=epsg)
+            else:
+                print "Cannot project, please provide center position of data in real world coordinates"
+                return
+        print self.data_obj.center_position
+        print center_utm
+        gmtdata[:,0] += center_utm[0]
+        gmtdata[:,1] += center_utm[1]
+        print gmtdata[0]
+        
+        # now that x y coordinates are in utm, project to lon/lat
+        self.data_obj.epsg = epsg
+        gmtdata[:,0], gmtdata[:,1] = self.data_obj.project_xy(gmtdata[:,0], gmtdata[:,1])
+        print gmtdata[0]        
+        
+        # write to text file in correct format
+        fmt = ['%+11.6f']*2 + ['%+10.4f']*4
+        np.savetxt(op.join(savepath,filename),gmtdata,fmt)
+        
+        # write gmt script
+        
+    
 
     def save_figure(self, save_path=None, fig_dpi=None, file_format='pdf',
                     orientation='landscape', close_fig='y'):
