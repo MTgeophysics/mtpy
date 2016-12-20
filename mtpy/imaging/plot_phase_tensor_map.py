@@ -758,7 +758,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
                            fmt=['%.4e','%s','%.2f','%.2f','%.2f','%.2f','%.2f','%.3f'])
                            
                            
-    def write_pt_data_to_gmt(self,period=None,epsg=None,savepath='.',center_utm=None):
+    def write_pt_data_to_gmt(self,period=None,epsg=None,savepath='.',center_utm=None,
+                             colorby='phimin'):
         """
         write data to plot phase tensor ellipses in gmt.
         saves a gmt script and text file containing ellipse data
@@ -782,7 +783,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
         # extract relevant columns in correct order
         periodlist = data['period']
         columns = [2,3,7,4,5,6]
-        columns = ['east','north','phimin','azimuth','phimax','phimin']
+        columns = ['east','north',colorby,'azimuth','phimax','phimin']
         gmtdata = np.vstack([data[i] for i in columns]).T
         
         # make a filename based on period
@@ -836,7 +837,43 @@ class PlotPTMaps(mtplottools.MTEllipse):
         np.savetxt(op.join(savepath,filename),gmtdata,fmt)
         
         # write gmt script
+        xmin,xmax = gmtdata[:,0].min(), gmtdata[:,0].max()
+        ymin,ymax = gmtdata[:,1].min(), gmtdata[:,1].max()
         
+        pad = min(ymax-ymin,xmax-xmin)/10.
+        tr = -int(np.log10(20.*(xmax - xmin)))
+        tickspacing = int(np.round(20.*(xmax - xmin),tr))
+        scalebarlat = int(round(ymax+ymin)/2.)
+        
+        gmtlines = [line + '\n' for line in ['w={}'.format(xmin-pad),
+                    'e={}'.format(xmax+pad),
+                    's={}'.format(ymin-pad),
+                    'n={}'.format(ymax+pad),
+                    r"wesn=$w/$s/$e/$n'r'",
+                    '',
+                    '# define output file and remove it if it exists',
+                    'PS={}.ps'.format(filename.replace('.','')),
+                    'rm $PS',
+                    '',
+                    '# set gmt parameters',
+                    'gmtset FORMAT_GEO_MAP ddd:mm:ss',
+                    'gmtset FONT_ANNOT_PRIMARY 9p,Helvetica,black',
+                    'gmtset MAP_FRAME_TYPE fancy',
+                    '',
+                    '# make colour palette',
+                    'makecpt -Cpolar -T10/60/10 -Z > {}.cpt'.format(colorby),
+                    '',
+                    '# draw coastline',
+                    'pscoast -R$wesn -JM18c -W0.5p -Ba1f1/a1f1WSen -Gwhite -Slightgrey -Lfx14c/1c/{}/{}+u -Df -P -K >> $PS'.format(scalebarlat,tickspacing),
+                    '',
+                    '# draw ellipses',
+                    'psxy {} -R -J -P -Se -C{}.cpt -W0.01p -O >> $PS'.format(filename,colorby),
+                    '',
+                    '# save to png',
+                    'ps2raster -Tg -A -E400 $PS']]
+        
+        with open(op.join(savepath,'gmtscript.gmt'),'wb') as scriptfile:
+            scriptfile.writelines(gmtlines)        
     
 
     def save_figure(self, save_path=None, fig_dpi=None, file_format='pdf',
