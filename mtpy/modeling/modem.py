@@ -524,17 +524,24 @@ class Data(object):
                     pyproj.transform(p1, p2,
                                      c_arr['lon'], c_arr['lat'])
 
-    def project_xy(self, x, y):
+    def project_xy(self, x, y, epsg_from = None, epsg_to = 4326):
+        """
+        project some xy points
+        """
+        if epsg_from is None:
+            epsg_from = self.epsg
+            
+        
         try:
             import pyproj
         except ImportError:
             print "please install pyproj to use update_data_center option"
             return
-        if self.epsg is not None:
-            p1 = pyproj.Proj(epsg_dict[self.epsg][0])
-            p2 = pyproj.Proj(epsg_dict[4326][0])
+        if epsg_from is not None:
+            p1 = pyproj.Proj(epsg_dict[epsg_from][0])
+            p2 = pyproj.Proj(epsg_dict[epsg_to][0])
 
-            self.center_position = np.array(pyproj.transform(p1, p2, x, y))
+        return np.array(pyproj.transform(p1, p2, x, y))
 
     def get_relative_station_locations(self):
         """
@@ -591,8 +598,9 @@ class Data(object):
         # center of the grid in east/north coordinates
         self.center_position_EN = 0.5 * np.array([self.data_array['east'].min() + self.data_array['east'].max(),
                                                   self.data_array['north'].min() + self.data_array['north'].max()])
+
         # try to update center_position by projecting center xy
-        self.project_xy(*self.center_position_EN)
+        self.center_position = self.project_xy(*self.center_position_EN)
 
         # remove the average distance to get coordinates in a relative space
         self.data_array['rel_east'] = self.data_array['east'] - self.center_position_EN[0]
@@ -1194,7 +1202,10 @@ class Data(object):
         station_list = []
         read_impedance = False
         read_tipper = False
+        linecount = 0
+        print "reading data lines"
         for dline in dlines:
+            linecount += 1
             if dline.find('#') == 0:
                 header_list.append(dline.strip())
             elif dline.find('>') == 0:
@@ -1209,6 +1220,10 @@ class Data(object):
                 elif dline.lower().find('impedance') > 0:
                     read_impedance = True
                     read_tipper = False
+                if linecount == 7:
+                    print "getting center position",dline
+                    self.center_position = [float(val) for val in dline.strip().replace('>','').split()]
+                    print self.center_position
                 if dline.find('exp') > 0:
                     if read_impedance is True:
                         self.wave_sign_impedance = dline[dline.find('(') + 1]
@@ -2024,8 +2039,8 @@ class Model(object):
         # if desired, update the data center position (need to first project 
         # east/north back to lat/lon) and rewrite to file
         if update_data_center:
-            self.Data.project_xy(self.Data.center_position_EN[0],
-                                 self.Data.center_position_EN[1])
+            self.Data.center_position = self.Data.project_xy(self.Data.center_position_EN[0],
+                                                             self.Data.center_position_EN[1])
             self.Data.write_data_file(compute_error=False, fill=False)
 
         # --> print out useful information

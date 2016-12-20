@@ -737,10 +737,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
             if val in ['east','north']:
                 data[val] *= self.dscale
             data_to_write[val] = data[val].flatten()
-            
-        header = ' '.join(headerlist)
         
-        return data_to_write,header
+        return data_to_write,headerlist
     
     
     
@@ -751,12 +749,84 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
         for att in ['pt_data_arr','pt_resp_arr','pt_resid_arr']:
             if hasattr(self,att):
-                data_to_write,header = self._get_pt_data_list(att)
+                data_to_write,headerlist = self._get_pt_data_list(att)
+                header = ' '.join(headerlist)
+                
                 filename = op.join(savepath,att[:-4]+'.txt')
                     
                 np.savetxt(filename,data_to_write,header=header,
                            fmt=['%.4e','%s','%.2f','%.2f','%.2f','%.2f','%.2f','%.3f'])
                            
+                           
+    def write_pt_data_to_gmt(self,period,epsg,savepath='.',center_utm=None):
+        """
+        write data to plot phase tensor ellipses in gmt.
+        saves a gmt script and text file containing ellipse data
+        
+        provide:
+        period to plot (seconds)
+        epsg for the projection the model was projected to 
+        (google "epsg your_projection_name" and you will find it)
+       
+        """
+        
+        attribute = 'pt_data_arr'
+        
+        # get text data list
+        data, headerlist = self._get_pt_data_list(attribute)
+
+        # extract relevant columns in correct order
+        periodlist = data['period']
+        columns = [2,3,7,4,5,6]
+        columns = ['east','north','skew','azimuth','phimin','phimax']
+        gmtdata = np.vstack([data[i] for i in columns]).T
+        
+        # make a filename based on period
+        if period >= 1.:
+            suffix = '%1i'%round(period)
+        else:
+            nzeros = np.abs(np.int(np.floor(np.log10(period))))
+            fmt = '%0'+str(nzeros+1)+'i'
+            suffix = fmt%(period*10**nzeros)
+        filename = 'ellipse_' + attribute[3:-4] + '.' + suffix    
+        
+        # extract relevant period
+        unique_periods = np.unique(periodlist)
+        closest_period = unique_periods[np.abs(unique_periods-period) == \
+                                        np.amin(np.abs(unique_periods-period))]
+        # indices to select all occurrances of relevant period (to nearest 10^-8 s)
+        pind = np.where(np.abs(closest_period-periodlist) < 1e-8)[0]
+        
+        # select relevant periods
+        periodlist, gmtdata = periodlist[pind], gmtdata[pind]
+        
+        # if centre utm not provided, try and get it from the data object
+        # in this case need to project from lat/long (wgs84) to epsg provided
+        if center_utm is None:
+            if hasattr(self.data_obj,'center_position'):
+                center_utm = self.data_obj.project_xy(self.data_obj.center_position[0],self.data_obj.center_position[1],
+                                                      epsg_from=4326, epsg_to=epsg)
+            else:
+                print "Cannot project, please provide center position of data in real world coordinates"
+                return
+        print self.data_obj.center_position
+        print center_utm
+        gmtdata[:,0] += center_utm[0]
+        gmtdata[:,1] += center_utm[1]
+        print gmtdata[0]
+        
+        # now that x y coordinates are in utm, project to lon/lat
+        self.data_obj.epsg = epsg
+        gmtdata[:,0], gmtdata[:,1] = self.data_obj.project_xy(gmtdata[:,0], gmtdata[:,1])
+        print gmtdata[0]        
+        
+        # write to text file in correct format
+        fmt = ['%+11.6f']*2 + ['%+10.4f']*4
+        np.savetxt(op.join(savepath,filename),gmtdata,fmt)
+        
+        # write gmt script
+        
+    
 
     def save_figure(self, save_path=None, fig_dpi=None, file_format='pdf',
                     orientation='landscape', close_fig='y'):
