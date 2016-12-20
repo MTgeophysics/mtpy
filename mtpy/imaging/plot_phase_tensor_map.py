@@ -7,6 +7,7 @@ by Fei.Zhang@ga.gov.au 2016
 
 """
 import os
+import os.path as op
 
 import matplotlib.colorbar as mcb
 import matplotlib.gridspec as gridspec
@@ -302,7 +303,6 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                                      ('east', np.float),
                                                      ('north', np.float),
                                                      ('station','S10')])
-])
 
             res_pt_arr = np.zeros((nf, ns), dtype=[('phimin', np.float),
                                                    ('phimax', np.float),
@@ -714,6 +714,39 @@ class PlotPTMaps(mtplottools.MTEllipse):
         for fig in self.fig_list:
             plt.close(fig)
         self.plot()
+        
+
+    def write_pt_data_to_text(self,savepath='.'):
+        
+        if self.pt_data_arr is None:
+            self._read_files()
+
+        for att in ['pt_data_arr','pt_resp_arr','pt_resid_arr']:
+            if hasattr(self,att):
+                filename = op.join(savepath,att[:-4]+'.txt')
+                headerlist = ['period','station','east','north','azimuth','phimin','phimax','skew']
+                data = getattr(self,att).T.copy()
+                indices = np.argsort(data['station'][:,0])
+
+                data = data[indices].T
+                dtype = []
+                for val in headerlist:
+                    if val == 'station':
+                        dtype.append((val,'S10'))
+                    else:
+                        dtype.append((val,np.float))
+                        
+                data_to_write = np.zeros(np.product(data.shape),dtype=dtype)
+                data_to_write['period'] = np.vstack([self.plot_period_list]*data.shape[1]).T.flatten()
+                
+                for val in headerlist[1:]:
+                    if val in ['east','north']:
+                        data[val] *= self.dscale
+                    data_to_write[val] = data[val].flatten()
+                    
+                np.savetxt(filename,data_to_write,header=' '.join(headerlist),
+                           fmt=['%.4e','%s','%.2f','%.2f','%.2f','%.2f','%.2f','%.3f'])
+                           
 
     def save_figure(self, save_path=None, fig_dpi=None, file_format='pdf',
                     orientation='landscape', close_fig='y'):
