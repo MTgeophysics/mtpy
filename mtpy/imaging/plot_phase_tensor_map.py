@@ -758,7 +758,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                            fmt=['%.4e','%s','%.2f','%.2f','%.2f','%.2f','%.2f','%.3f'])
                            
                            
-    def write_pt_data_to_gmt(self,period,epsg,savepath='.',center_utm=None):
+    def write_pt_data_to_gmt(self,period=None,epsg=None,savepath='.',center_utm=None):
         """
         write data to plot phase tensor ellipses in gmt.
         saves a gmt script and text file containing ellipse data
@@ -770,6 +770,10 @@ class PlotPTMaps(mtplottools.MTEllipse):
        
         """
         
+        if epsg is None:
+            print "Cannot write gmt input, need epsg to project the model"
+            return
+        
         attribute = 'pt_data_arr'
         
         # get text data list
@@ -778,7 +782,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
         # extract relevant columns in correct order
         periodlist = data['period']
         columns = [2,3,7,4,5,6]
-        columns = ['east','north','skew','azimuth','phimin','phimax']
+        columns = ['east','north','phimin','azimuth','phimax','phimin']
         gmtdata = np.vstack([data[i] for i in columns]).T
         
         # make a filename based on period
@@ -788,14 +792,19 @@ class PlotPTMaps(mtplottools.MTEllipse):
             nzeros = np.abs(np.int(np.floor(np.log10(period))))
             fmt = '%0'+str(nzeros+1)+'i'
             suffix = fmt%(period*10**nzeros)
+        
         filename = 'ellipse_' + attribute[3:-4] + '.' + suffix    
         
-        # extract relevant period
-        unique_periods = np.unique(periodlist)
-        closest_period = unique_periods[np.abs(unique_periods-period) == \
-                                        np.amin(np.abs(unique_periods-period))]
-        # indices to select all occurrances of relevant period (to nearest 10^-8 s)
-        pind = np.where(np.abs(closest_period-periodlist) < 1e-8)[0]
+        if period is not None:
+            # extract relevant period
+            unique_periods = np.unique(periodlist)
+            closest_period = unique_periods[np.abs(unique_periods-period) == \
+                                            np.amin(np.abs(unique_periods-period))]
+            # indices to select all occurrances of relevant period (to nearest 10^-8 s)
+            pind = np.where(np.abs(closest_period-periodlist) < 1e-8)[0]
+        else:
+            # take the first period
+            pind = 0
         
         # select relevant periods
         periodlist, gmtdata = periodlist[pind], gmtdata[pind]
@@ -809,19 +818,21 @@ class PlotPTMaps(mtplottools.MTEllipse):
             else:
                 print "Cannot project, please provide center position of data in real world coordinates"
                 return
-        print self.data_obj.center_position
-        print center_utm
+
         gmtdata[:,0] += center_utm[0]
         gmtdata[:,1] += center_utm[1]
-        print gmtdata[0]
         
         # now that x y coordinates are in utm, project to lon/lat
         self.data_obj.epsg = epsg
         gmtdata[:,0], gmtdata[:,1] = self.data_obj.project_xy(gmtdata[:,0], gmtdata[:,1])
-        print gmtdata[0]        
-        
+        # normalise by maximum value of phimax
+        norm = np.amax(gmtdata[:,4])
+        gmtdata[:,5] /= norm
+        gmtdata[:,4] /= norm
+        gmtdata[:,3] = 90. - gmtdata[:,3]
+
         # write to text file in correct format
-        fmt = ['%+11.6f']*2 + ['%+10.4f']*4
+        fmt = ['%+11.6f','%+10.6f'] + ['%+9.4f']*2 +['%8.4f']*2
         np.savetxt(op.join(savepath,filename),gmtdata,fmt)
         
         # write gmt script
