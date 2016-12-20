@@ -24,10 +24,10 @@ def main(edi_path, save_path=None):
 
     # frequency to plot
     #plot_freq = 9.4
-    plot_freq = 80.0  # check the freq range in your input edi files
+    plot_freq = 100.0  # check the freq range in your input edi files
 
     # parameters describing ellipses
-    ellipse_dict = {'size': 0.02, 'colorby': 'phimin', 'range': (0, 90, 1), 'cmap': 'mt_bl2gr2rd'}
+    ellipse_dict = {'size': 0.01, 'colorby': 'phimin', 'range': (0, 90, 1), 'cmap': 'mt_bl2gr2rd'}
 
     # parameters describing the induction vector arrows
     arrow_dict = {'size': 0.2,
@@ -50,10 +50,12 @@ def main(edi_path, save_path=None):
                                     xpad=0.02,
                                     plot_tipper='yr',
                                     arrow_dict=arrow_dict,
-                                    ellipse_dict=ellipse_dict,
+                                    #ellipse_dict=ellipse_dict,
                                     fig_size=(4, 4),
                                     mapscale='deg',  #deg or km
                                     save_fn=save_path)
+
+    m.redraw_plot()
 
     # if save_path is not None:
     #     plt.savefig(save_path, dpi=300)

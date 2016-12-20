@@ -412,7 +412,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         #--> set the ellipse properties -------------------
         #set default size to 2
         if self.mapscale == 'deg': 
-            self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':.05})
+            self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':.01})
             self._arrow_dict = kwargs.pop('arrow_dict', 
                                           {'size':.05,
                                            'head_length':.005,
@@ -960,6 +960,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         #--> set tick label format
         self.ax.xaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
         self.ax.yaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
+        self.ax.set_xticklabels(np.round(self.plot_xarr, decimals=2),
+                                rotation=45)
         
         #--> set title in period or freq
         if self.tscale == 'period':
@@ -1054,7 +1056,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         if self.cb_position is None:
             self.ax2, kw = mcb.make_axes(self.ax,
                                          orientation=self.cb_orientation,
-                                         shrink=.50)
+                                         shrink=.35)
             # FZ: try to fix colorbar h-position
             # from mpl_toolkits.axes_grid1 import make_axes_locatable
             #
