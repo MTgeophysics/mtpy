@@ -1,4 +1,4 @@
-MTpy: A Python toolbox for standard Magnetotelluric (MT) data processing analysis and visualization
+MTpy: A Python toolbox fo Magnetotelluric (MT) data processing, analysis and visualization
 ==================================
 
 |Build Status| |Coverage Status| |Documentation Status|
@@ -8,7 +8,6 @@ Overview
 
 This repository is forked from https://github.com/geophysics/mtpy/tree/ak on 2016-11-16.
 
-CI/CD Tests
 
 Documentation
 =============
@@ -30,24 +29,19 @@ Developer setup
 
 1. Clone:
 
-   -  ``git clone git_url``
+   -  ``git clone https://github.com/GeoscienceAustralia/mtpy2.git``
 
-2. Install the native libraries 
-
-3. Install Python dependencies:
+2. Install Python dependencies:
 
    ``python setup.py develop``
 
-4. Run unit tests + PyLint
+3. Run unit tests + PyLint
 
    ``./check-code.sh``
 
    (this script approximates what is run by Travis. You can
    alternatively run ``py.test`` yourself)
 
-5. **(or)** Run all tests, including integration tests.
-
-``./check-code.sh integration_tests``
 
 
 
@@ -74,7 +68,7 @@ Conventions
 8. EDI files contain data from one station only
 9. Coordinates are handled in decimal degrees (converted when reading)
 10. Time stamps refer to UTC
-11. Internal coordinates: X = North, Y = East
+11. Internal coordinates: X = North-South, Y = East-West
 12. Rotations are interpreted clockwise (mathematically negative)
 13. 0 degrees azimuth = North
 
