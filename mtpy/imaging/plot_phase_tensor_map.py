@@ -759,7 +759,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                            
                            
     def write_pt_data_to_gmt(self,period=None,epsg=None,savepath='.',center_utm=None,
-                             colorby='phimin'):
+                             colorby='phimin',attribute='data'):
         """
         write data to plot phase tensor ellipses in gmt.
         saves a gmt script and text file containing ellipse data
@@ -768,6 +768,11 @@ class PlotPTMaps(mtplottools.MTEllipse):
         period to plot (seconds)
         epsg for the projection the model was projected to 
         (google "epsg your_projection_name" and you will find it)
+        centre_utm - utm coordinates for centre position of model, if not 
+                     provided, script will try and extract it from data file
+        colorby - what to colour the ellipses by, 'phimin', 'phimax', or 'skew'
+        attribute - attribute to plot 'data', 'resp', or 'resid' for data,
+                    response or residuals
        
         """
         
@@ -775,7 +780,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
             print "Cannot write gmt input, need epsg to project the model"
             return
         
-        attribute = 'pt_data_arr'
+        attribute = 'pt_{}_arr'.format(attribute)
         
         # get text data list
         data, headerlist = self._get_pt_data_list(attribute)
@@ -844,6 +849,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
         tr = -int(np.log10(20.*(xmax - xmin)))
         tickspacing = int(np.round(20.*(xmax - xmin),tr))
         scalebarlat = int(round(ymax+ymin)/2.)
+        cr = int(np.ceil(-np.log10(np.amax(gmtdata[:,2]))))
+        clim = np.round([gmtdata[:,2].min(),gmtdata[:,2].max()],cr).astype(int)
         
         gmtlines = [line + '\n' for line in ['w={}'.format(xmin-pad),
                     'e={}'.format(xmax+pad),
@@ -861,7 +868,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     'gmtset MAP_FRAME_TYPE fancy',
                     '',
                     '# make colour palette',
-                    'makecpt -Cpolar -T10/60/10 -Z > {}.cpt'.format(colorby),
+                    'makecpt -Cpolar -T{}/{} -Z > {}.cpt'.format(clim[0],clim[1],colorby),
                     '',
                     '# draw coastline',
                     'pscoast -R$wesn -JM18c -W0.5p -Ba1f1/a1f1WSen -Gwhite -Slightgrey -Lfx14c/1c/{}/{}+u -Df -P -K >> $PS'.format(scalebarlat,tickspacing),
