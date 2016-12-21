@@ -419,8 +419,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                                            'head_width':.005,
                                            'lw':.75})
         
-            self.xpad = kwargs.pop('xpad',.05)
-            self.ypad = kwargs.pop('xpad',.05)
+            self.xpad = kwargs.pop('xpad',.02)
+            self.ypad = kwargs.pop('xpad',.02)
         elif self.mapscale == 'm':
             self._ellipse_dict = kwargs.pop('ellipse_dict', {'size':500})
             self._arrow_dict = kwargs.pop('arrow_dict', 
@@ -613,21 +613,21 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         """                               
         
         #set position properties for the plot
-        # plt.rcParams['font.size']=self.font_size
-        # plt.rcParams['figure.subplot.left']=.1
-        # plt.rcParams['figure.subplot.right']=.98
-        # plt.rcParams['figure.subplot.bottom']=.1
-        # plt.rcParams['figure.subplot.top']=.93
-        # plt.rcParams['figure.subplot.wspace']=.55
-        # plt.rcParams['figure.subplot.hspace']=.70
-        #FZ: tweaks to make plot positioned better
         plt.rcParams['font.size']=self.font_size
         plt.rcParams['figure.subplot.left']=.1
-        plt.rcParams['figure.subplot.right']=.90
-        plt.rcParams['figure.subplot.bottom']=.2
-        plt.rcParams['figure.subplot.top']=.90
-        plt.rcParams['figure.subplot.wspace']=.70
+        plt.rcParams['figure.subplot.right']=.98
+        plt.rcParams['figure.subplot.bottom']=.1
+        plt.rcParams['figure.subplot.top']=.93
+        plt.rcParams['figure.subplot.wspace']=.55
         plt.rcParams['figure.subplot.hspace']=.70
+        #FZ: tweaks to make plot positioned better
+        # plt.rcParams['font.size']=self.font_size
+        # plt.rcParams['figure.subplot.left']=.1
+        # plt.rcParams['figure.subplot.right']=.90
+        # plt.rcParams['figure.subplot.bottom']=.2
+        # plt.rcParams['figure.subplot.top']=.90
+        # plt.rcParams['figure.subplot.wspace']=.70
+        # plt.rcParams['figure.subplot.hspace']=.70
         
         #make figure instanc
         self.fig = plt.figure(self.fig_num, self.fig_size, dpi=self.fig_dpi)
@@ -638,9 +638,9 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         #make an axes instance
         self.ax = self.fig.add_subplot(1, 1, 1, aspect='equal')
 
-        plt.locator_params(axis='x', nbins=3)  # control number of ticks in axis (nbins ticks)
+        # plt.locator_params(axis='x', nbins=3)  # control number of ticks in axis (nbins ticks)
         plt.xticks( rotation='vertical')  # FZ: control tick rotation=30 not that good
-        
+        #
         #--> plot the background image if desired-----------------------
         try:
             im = plt.imread(self.image_file)
@@ -675,7 +675,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             
         #set tick parameters depending on the mapscale
         if self.mapscale == 'deg':
-            self.tickstrfmt = '%.3f'
+            self.tickstrfmt = '%.2f'
             
         elif self.mapscale == 'm' or self.mapscale == 'km':
             self.tickstrfmt = '%.0f'
@@ -926,10 +926,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         
         #--> set axes properties depending on map scale------------------------
         if self.mapscale == 'deg':    
-            self.ax.set_xlabel('longitude',
+            self.ax.set_xlabel('Longitude',
                                fontsize=self.font_size, #+2,
                                fontweight='bold')
-            self.ax.set_ylabel('latitude',
+            self.ax.set_ylabel('Latitude',
                                fontsize=self.font_size, #+2,
                                fontweight='bold')
             
@@ -960,8 +960,7 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
         #--> set tick label format
         self.ax.xaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
         self.ax.yaxis.set_major_formatter(FormatStrFormatter(self.tickstrfmt))
-        self.ax.set_xticklabels(np.round(self.plot_xarr, decimals=2),
-                                rotation=45)
+        #self.ax.set_xticklabels(np.round(self.plot_xarr, decimals=2),rotation=45)
         
         #--> set title in period or freq
         if self.tscale == 'period':
@@ -1008,10 +1007,10 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             elif self.arrow_legend_position == 'upper right':
                 pax = parrx[1]-axpad
                 pay = parry[1]-aypad
-                ptx = self.arrow_size
-                pty = 0
+                # ptx = self.arrow_size
+                # pty = 0
                 txa = parrx[1]-axpad+self.arrow_size/2.
-                txy = pay+txtpad
+                # txy = pay+txtpad
                 
             elif self.arrow_legend_position == 'lower left':
                 pax = parrx[0]+axpad
@@ -1029,8 +1028,13 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                 txa = parrx[0]+axpad+self.arrow_size/2.
                 txy = pay+txtpad
             else:
-                raise NameError('arrowlegend not supported.')
-                
+                pass #raise NameError('arrowlegend not supported.')
+
+            #FZ: Sudpip?
+            ptx = self.arrow_size
+            pty = 0
+            txy = pay + txtpad
+
             self.ax.arrow(pax,
                           pay,
                           ptx,
@@ -1041,13 +1045,14 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
                           length_includes_head=False,
                           head_width=self.arrow_head_width,
                           head_length=self.arrow_head_length)
-            
-            self.ax.text(txa,
-                         txy,
-                         '|T|=1',
-                         horizontalalignment='center',
-                         verticalalignment='baseline',
-                         fontdict={'size':self.font_size,'weight':'bold'})
+
+            #FZ: what is this '|T|=1'? and the horizontal line?
+            # self.ax.text(txa,
+            #              txy,
+            #              '|T|=1',
+            #              horizontalalignment='center',
+            #              verticalalignment='baseline',
+            #              fontdict={'size':self.font_size,'weight':'bold'})
         
         #make a grid with gray lines
         self.ax.grid(alpha=.25)
@@ -1113,7 +1118,8 @@ class PlotPhaseTensorMaps(mtpl.MTArrows, mtpl.MTEllipse):
             self.cb.ax.yaxis.tick_left()
             self.cb.ax.tick_params(axis='y', direction='in')
             
-        #--> add reference ellipse
+        #--> add reference ellipse:  (legend of ellipse size=1)
+        #FZ: remove the following section if no show of Phi
         ref_ellip = patches.Ellipse((0, .0),
                                        width=es,
                                        height=es,
