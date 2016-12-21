@@ -27,13 +27,23 @@ System
 Developer setup
 ===============
 
-1. Clone:
+1. Obtain the package by clone or zip download from https://github.com/GeoscienceAustralia/mtpy2:
 
    -  ``git clone https://github.com/GeoscienceAustralia/mtpy2.git``
 
 2. Install Python dependencies:
+   
+    ``cd mtpy2``
+   
+    ``pip install --user -v -e .`` (user's own home ..local/lib/python2.7/site-packages/mtpy.egg-link)
+   
+   OR ``pip install -v -e .``  
+   
+   OR ``python setup.py develop``
+   
+   To verify the install : ``pip list | grep mtpy``
 
-   ``python setup.py develop``
+   To uninstall the package: ``pip uninstall -v mtpy``
 
 3. Run unit tests + PyLint
 
@@ -41,6 +51,11 @@ Developer setup
 
    (this script approximates what is run by Travis. You can
    alternatively run ``py.test`` yourself)
+   
+  4. Run further functional tests 
+
+   See examples: ``tests/testcases.sh``
+
 
 
 
