@@ -294,6 +294,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                                 ('azimuth', np.float),
                                                 ('east', np.float),
                                                 ('north', np.float),
+                                                ('lon', np.float),
+                                                ('lat', np.float),
                                                 ('station','S10')])
         if self.resp_fn is not None:
             model_pt_arr = np.zeros((nf, ns), dtype=[('phimin', np.float),
@@ -302,6 +304,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                                      ('azimuth', np.float),
                                                      ('east', np.float),
                                                      ('north', np.float),
+                                                     ('lon', np.float),
+                                                     ('lat', np.float),
                                                      ('station','S10')])
 
             res_pt_arr = np.zeros((nf, ns), dtype=[('phimin', np.float),
@@ -310,15 +314,21 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                                    ('azimuth', np.float),
                                                    ('east', np.float),
                                                    ('north', np.float),
+                                                   ('lon', np.float),
+                                                   ('lat', np.float),
                                                    ('geometric_mean', np.float),
                                                     ('station','S10')])
 
         for ii, key in enumerate(self.data_obj.mt_dict.keys()):
             east = self.data_obj.mt_dict[key].grid_east / self.dscale
             north = self.data_obj.mt_dict[key].grid_north / self.dscale
+            lon = self.data_obj.mt_dict[key].lon
+            lat = self.data_obj.mt_dict[key].lat
             dpt = self.data_obj.mt_dict[key].pt
             data_pt_arr[:, ii]['east'] = east
             data_pt_arr[:, ii]['north'] = north
+            data_pt_arr[:, ii]['lon'] = lon
+            data_pt_arr[:, ii]['lat'] = lat
             data_pt_arr[:, ii]['phimin'] = dpt.phimin[0]
             data_pt_arr[:, ii]['phimax'] = dpt.phimax[0]
             data_pt_arr[:, ii]['azimuth'] = dpt.azimuth[0]
@@ -332,6 +342,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     rpt = rpt.residual_pt
                     res_pt_arr[:, ii]['east'] = east
                     res_pt_arr[:, ii]['north'] = north
+                    res_pt_arr[:, ii]['lon'] = lon
+                    res_pt_arr[:, ii]['lat'] = lat
                     res_pt_arr[:, ii]['phimin'] = rpt.phimin[0]
                     res_pt_arr[:, ii]['phimax'] = rpt.phimax[0]
                     res_pt_arr[:, ii]['azimuth'] = rpt.azimuth[0]
@@ -344,6 +356,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
 
                 model_pt_arr[:, ii]['east'] = east
                 model_pt_arr[:, ii]['north'] = north
+                model_pt_arr[:, ii]['lon'] = lon
+                model_pt_arr[:, ii]['lat'] = lat
                 model_pt_arr[:, ii]['phimin'] = mpt.phimin[0]
                 model_pt_arr[:, ii]['phimax'] = mpt.phimax[0]
                 model_pt_arr[:, ii]['azimuth'] = mpt.azimuth[0]
@@ -716,9 +730,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
         self.plot()
 
         
-    def _get_pt_data_list(self,attribute):
+    def _get_pt_data_list(self,attribute,xykeys=['east','north']):
 
-        headerlist = ['period','station','east','north','azimuth','phimin','phimax','skew']
+        headerlist = ['period','station'] + xykeys + ['azimuth','phimin','phimax','skew']
         data = getattr(self,attribute).T.copy()
         indices = np.argsort(data['station'][:,0])
 
@@ -759,7 +773,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                            
                            
     def write_pt_data_to_gmt(self,period=None,epsg=None,savepath='.',center_utm=None,
-                             colorby='phimin',attribute='data'):
+                             colorby='phimin',attribute='data',clim=None):
         """
         write data to plot phase tensor ellipses in gmt.
         saves a gmt script and text file containing ellipse data
@@ -776,19 +790,31 @@ class PlotPTMaps(mtplottools.MTEllipse):
        
         """
         
-        if epsg is None:
-            print "Cannot write gmt input, need epsg to project the model"
-            return
+        att = 'pt_{}_arr'.format(attribute)
+
+        # if centre utm not provided, get station locations from the data object
+        project = False
+        xykeys = ['lon','lat']
         
-        attribute = 'pt_{}_arr'.format(attribute)
-        
+        if epsg is not None:
+            if center_utm is not None:
+                project = True
+            else:
+                if hasattr(self.data_obj,'center_position'):
+                    if np.all(np.array(self.data_obj.center_position) > 0):
+                        project = True
+                        center_utm = self.data_obj.project_xy(self.data_obj.center_position[0],self.data_obj.center_position[1],
+                                                              epsg_from=4326, epsg_to=epsg)
+        if project:
+            xykeys = ['east','north']
+
         # get text data list
-        data, headerlist = self._get_pt_data_list(attribute)
+        data, headerlist = self._get_pt_data_list(att,xykeys=xykeys)
 
         # extract relevant columns in correct order
         periodlist = data['period']
-        columns = [2,3,7,4,5,6]
-        columns = ['east','north',colorby,'azimuth','phimax','phimin']
+
+        columns = xykeys + [colorby,'azimuth','phimax','phimin']
         gmtdata = np.vstack([data[i] for i in columns]).T
         
         # make a filename based on period
@@ -799,7 +825,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
             fmt = '%0'+str(nzeros+1)+'i'
             suffix = fmt%(period*10**nzeros)
         
-        filename = 'ellipse_' + attribute[3:-4] + '.' + suffix    
+        filename = 'ellipse_' + attribute + '.' + suffix    
         
         if period is not None:
             # extract relevant period
@@ -815,27 +841,22 @@ class PlotPTMaps(mtplottools.MTEllipse):
         # select relevant periods
         periodlist, gmtdata = periodlist[pind], gmtdata[pind]
         
-        # if centre utm not provided, try and get it from the data object
-        # in this case need to project from lat/long (wgs84) to epsg provided
-        if center_utm is None:
-            if hasattr(self.data_obj,'center_position'):
-                center_utm = self.data_obj.project_xy(self.data_obj.center_position[0],self.data_obj.center_position[1],
-                                                      epsg_from=4326, epsg_to=epsg)
-            else:
-                print "Cannot project, please provide center position of data in real world coordinates"
-                return
 
-        gmtdata[:,0] += center_utm[0]
-        gmtdata[:,1] += center_utm[1]
-        
-        # now that x y coordinates are in utm, project to lon/lat
-        self.data_obj.epsg = epsg
-        gmtdata[:,0], gmtdata[:,1] = self.data_obj.project_xy(gmtdata[:,0], gmtdata[:,1])
+        if project:
+            gmtdata[:,0] += center_utm[0]
+            gmtdata[:,1] += center_utm[1]
+            
+            # now that x y coordinates are in utm, project to lon/lat
+            self.data_obj.epsg = epsg
+            gmtdata[:,0], gmtdata[:,1] = self.data_obj.project_xy(gmtdata[:,0], gmtdata[:,1])
+            
+            
         # normalise by maximum value of phimax
         norm = np.amax(gmtdata[:,4])
         gmtdata[:,5] /= norm
         gmtdata[:,4] /= norm
-        gmtdata[:,3] = 90. - gmtdata[:,3]
+        if attribute != 'resid':
+            gmtdata[:,3] = 90. - gmtdata[:,3]
 
         # write to text file in correct format
         fmt = ['%+11.6f','%+10.6f'] + ['%+9.4f']*2 +['%8.4f']*2
@@ -849,8 +870,9 @@ class PlotPTMaps(mtplottools.MTEllipse):
         tr = -int(np.log10(20.*(xmax - xmin)))
         tickspacing = int(np.round(20.*(xmax - xmin),tr))
         scalebarlat = int(round(ymax+ymin)/2.)
-        cr = int(np.ceil(-np.log10(np.amax(gmtdata[:,2]))))
-        clim = np.round([gmtdata[:,2].min(),gmtdata[:,2].max()],cr).astype(int)
+        if clim is None:
+            cr = int(np.ceil(-np.log10(np.amax(gmtdata[:,2]))))
+            clim = np.round([gmtdata[:,2].min(),gmtdata[:,2].max()],cr).astype(int)
         
         gmtlines = [line + '\n' for line in ['w={}'.format(xmin-pad),
                     'e={}'.format(xmax+pad),
@@ -879,7 +901,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     '# save to png',
                     'ps2raster -Tg -A -E400 $PS']]
         
-        with open(op.join(savepath,'gmtscript.gmt'),'wb') as scriptfile:
+        with open(op.join(savepath,'gmtscript_{}.gmt'.format(attribute)),'wb') as scriptfile:
             scriptfile.writelines(gmtlines)        
     
 
