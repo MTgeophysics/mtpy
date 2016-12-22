@@ -16,7 +16,6 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-#from mtpy.modeling.modem_new import Data
 from mtpy.modeling.modem import Data
 from mtpy.modeling.modem import Model
 
@@ -58,7 +57,6 @@ class ModemPlotVerticalSlice():
 
         self.xminorticks = kwargs.pop('xminorticks', 10000)
         self.yminorticks = kwargs.pop('yminorticks', 10000)
-
 
         # read in the model data
         self._read_data()
@@ -136,8 +134,8 @@ class ModemPlotVerticalSlice():
         plt.rcParams['font.size'] = self.font_size
         mesh_plot = plt.pcolormesh(X, Y, res, cmap='bwr_r')
 
-        xlim2=(xlim[0]/self.dscale,xlim[1]/self.dscale)
-        ylim2=(ylim[0]/self.dscale,ylim[1]/self.dscale)
+        xlim2 = (xlim[0] / self.dscale, xlim[1] / self.dscale)
+        ylim2 = (ylim[0] / self.dscale, ylim[1] / self.dscale)
 
         plt.xlim(*xlim)
         plt.ylim(*ylim)
@@ -156,17 +154,17 @@ class ModemPlotVerticalSlice():
 
         # FZ: fix miss-placed colorbar
         ax = plt.gca()
-        ax.xaxis.set_minor_locator(MultipleLocator(self.xminorticks )) #/self.dscale
-        ax.yaxis.set_minor_locator(MultipleLocator(self.yminorticks )) #/self.dscale
+        ax.xaxis.set_minor_locator(MultipleLocator(self.xminorticks))  # /self.dscale
+        ax.yaxis.set_minor_locator(MultipleLocator(self.yminorticks))  # /self.dscale
         ax.tick_params(axis='both', which='minor', width=2, length=5)
         ax.tick_params(axis='both', which='major', width=3, length=15, labelsize=20)
-        for axis in ['top','bottom','left','right']:
+        for axis in ['top', 'bottom', 'left', 'right']:
             ax.spines[axis].set_linewidth(self.border_linewidth)
         # ax.tick_params(axis='both', which='major', labelsize=20)
         # ax.tick_params(axis='both', which='minor', labelsize=20)
 
         # http://stackoverflow.com/questions/10171618/changing-plot-scale-by-a-factor-in-matplotlib
-        xticks = ax.get_xticks()/self.dscale
+        xticks = ax.get_xticks() / self.dscale
         ax.set_xticklabels(xticks)
         yticks = ax.get_yticks() / self.dscale
         ax.set_yticklabels(yticks)
@@ -189,7 +187,7 @@ class ModemPlotVerticalSlice():
             ax.set_ylabel('Depth (' + self.map_scale + ')', fontdict=fdict)
             ax.set_xlabel('Northing (' + self.map_scale + ')', fontdict=fdict)
 
-        # plt.show()
+            # plt.show()
 
 
 #########################################################################
@@ -207,7 +205,7 @@ if __name__ == "__main__":
     # INPUTS #
     # define a workdir for your environ
     workdir = r'V:\Geology\conductivity_modelling\EarlyRuns'
-#    workdir = r'E:\Githubz\mtpy2\examples\data\ModEM_files'
+    #    workdir = r'E:\Githubz\mtpy2\examples\data\ModEM_files'
     # workdir = r'/Softlab/Githubz/mtpy2/examples/data/ModEM_files'
     # workdir = r'/g/data/ha3/fxz547/Githubz/mtpy2/examples/data/ModEM_files'
 
@@ -237,7 +235,7 @@ if __name__ == "__main__":
         plot_or = sys.argv[3]
 
     # construct plot object
-    myObj = ModemPlotVerticalSlice(datf, rhof ) #,map_scale='m')
+    myObj = ModemPlotVerticalSlice(datf, rhof)  # ,map_scale='m')
 
     #  plot 3-slices
     myObj.set_plot_orientation('ew')

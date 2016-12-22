@@ -6,11 +6,12 @@ Created on Fri Nov 22 07:29:58 2013
 
 plots phase tensor ellipses as a map for a given frequency
 """
-import sys
-import os
 import glob
-import matplotlib.pyplot as plt
+import os
+import sys
+
 import mtpy.imaging.plotptmaps as pptmaps
+
 
 def main(edi_path, save_path=None):
     """Plot Phase Tensor Map
@@ -23,7 +24,7 @@ def main(edi_path, save_path=None):
     elst = glob.glob(os.path.join(edi_path, "*.edi"))
 
     # frequency to plot
-    #plot_freq = 9.4
+    # plot_freq = 9.4
     plot_freq = 10.0  # check the freq range in your input edi files: 10 for georgina tests/data/edifiles
 
     # parameters describing ellipses, differ for different map scales: deg, m, km
@@ -45,22 +46,23 @@ def main(edi_path, save_path=None):
 
     m = pptmaps.PlotPhaseTensorMaps(fn_list=elst,
                                     plot_freq=plot_freq,
-                                    #arrow_legend_dict=arrow_legend_dict,
+                                    # arrow_legend_dict=arrow_legend_dict,
                                     ftol=0.2,
-                                    #xpad=0.02,  # change according to mapscale
+                                    # xpad=0.02,  # change according to mapscale
                                     plot_tipper='yri',
                                     arrow_dict=arrow_dict,
-                                    #ellipse_dict=ellipse_dict,
+                                    # ellipse_dict=ellipse_dict,
                                     fig_size=(4, 4),
-                                    mapscale='deg',  #deg or m, or km
+                                    mapscale='deg',  # deg or m, or km
                                     save_fn=save_path)
 
-    #m.redraw_plot()
+    # m.redraw_plot()
 
     # if save_path is not None:
     #     plt.savefig(save_path, dpi=300)
 
     return
+
 
 ###################################################################################################
 # How to Run:
