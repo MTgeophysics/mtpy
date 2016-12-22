@@ -24,7 +24,7 @@ System
 -  Software
 -  Python 2.7+ or Python 3.5+
 
-Developer setup
+Develop Setup
 ===============
 
 1. Obtain the package by clone or zip download from https://github.com/GeoscienceAustralia/mtpy2:
@@ -41,7 +41,7 @@ Developer setup
    
    OR `` export  PYTHONPATH=/your_path2/mtpy2:$PYTHONPATH `` (each session)
    
-   OR ``python setup.py develop``
+   OR ``python setup.py develop --user``
    
    To verify the install : ``pip list | grep mtpy``
 
@@ -51,8 +51,7 @@ Developer setup
 
    ``./check-code.sh``
 
-   (this script approximates what is run by Travis. You can
-   alternatively run ``py.test`` yourself)
+   (this script is run by Travis. You can alternatively run ``py.test`` at commandline)
    
   4. Run further functional tests 
 
