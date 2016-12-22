@@ -31,13 +31,15 @@ Developer setup
 
    -  ``git clone https://github.com/GeoscienceAustralia/mtpy2.git``
 
-2. Install Python dependencies:
+2. Install Python dependencies. And
    
     ``cd mtpy2``
    
-    ``pip install --user -v -e .`` (user's own home ..local/lib/python2.7/site-packages/mtpy.egg-link)
+    ``pip install -v --user -e .`` (user's own home ..local/lib/python2.7/site-packages/mtpy.egg-link)
    
-   OR ``pip install -v -e .``  
+   OR ``pip install -v -e .``  (into python lib's dir site-packages, write-permission required)
+   
+   OR `` export  PYTHONPATH=/your_path2/mtpy2:$PYTHONPATH `` (each session)
    
    OR ``python setup.py develop``
    
