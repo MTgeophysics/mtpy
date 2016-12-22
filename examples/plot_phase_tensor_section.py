@@ -6,11 +6,12 @@ Created on Wed Sep 18 15:35:39 2013
 
 plots phase tensor ellipses as a pseudo section (distance along profile vs period)
 """
-import sys
-import os
 import glob
+import os
+import sys
 
 import mtpy.imaging.plotptpseudosection as ptp
+
 
 def main(edi_path):
     """Plot Phase Tensor Pseudo Section
