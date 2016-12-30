@@ -17,8 +17,10 @@ more documentation
 improve code quality:
     pylint scores
     pep8 mtpy --max-line-length 120 ; echo $?   should pass
+    other QA/QC tools
+
 integarte with readthedocs, github.io
 
 
-
-pypi modules
+LowPri
+pypi module.
