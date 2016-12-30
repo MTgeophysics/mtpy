@@ -14,9 +14,9 @@ import matplotlib.pyplot as plt
 import mtpy.imaging.plotresponse as mtpr
 from mtpy.utils.mtpylog import MtPyLog
 
+# get a logger object for this module, using the utility class MtPyLog to config the logger
 logger = MtPyLog().get_mtpy_logger(__name__)
-#logger = MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__)
-
+#logger = MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) # specific
 
 def main(edi_path):
     """ plot edi files from the input directory edi_dir
