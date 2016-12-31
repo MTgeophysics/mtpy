@@ -10,17 +10,20 @@ refactor phase tensor psudosection
 min-max depth
 
 add more unit testing
-integratecoverage service
+integrate with coverage service
 
 integrate logging
-more documentation
+
+
 improve code quality:
     pylint scores
     pep8 mtpy --max-line-length 120 ; echo $?   should pass
     other QA/QC tools
 
+
+more documentation doc string
 integarte with readthedocs, github.io
 
 
-LowPri
+Low Priiority
 pypi module.
