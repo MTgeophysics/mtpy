@@ -1,6 +1,6 @@
 matplotlib==1.5.3
 scipy==0.18.1
-numpy==1.11.1
+# travis fail numpy==1.11.1
 QtPy==1.1.2
 PyYAML>=3.11
 Sphinx>=1.2.2
