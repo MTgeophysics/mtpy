@@ -39,7 +39,7 @@ class ModEM_Model_Manipulator(QtGui.QMainWindow):
 
         self.model_widget = ModelWidget()
         
-        self.working_dir = None
+        self.working_dir = os.getcwd()
 
         self.ui_setup()
 
