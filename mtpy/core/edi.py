@@ -752,7 +752,6 @@ class Header(object):
             LAT=-30:12:49
             LOC=None
             LON=139:47:50
-            ORIENTATION=geomagnetic E0N
             PROGDATE=2002-04-22
             PROGVERS=WINGLINK EDI 1.0.22
     

@@ -109,6 +109,8 @@ class EDI_Editor_Window(QtGui.QMainWindow):
         self.plot_widget.dir_path = os.path.dirname(fn)
                                            
         self.plot_widget.mt_obj = mt.MT(fn)
+        if self.plot_widget.mt_obj.elev is None:
+            self.plot_widget.mt_obj.elev = 0.0
         self.plot_widget._mt_obj = copy.deepcopy(self.plot_widget.mt_obj)
         self.plot_widget.fill_metadata()
         self.plot_widget.reset_parameters()
