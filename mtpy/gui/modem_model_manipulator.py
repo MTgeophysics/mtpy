@@ -25,9 +25,11 @@ import matplotlib.widgets as widgets
 from matplotlib.figure import Figure
 
 import numpy as np
+import scipy.signal as sps
 
 from mtpy.gui.my_stream import MyStream
 import mtpy.modeling.modem_new as modem
+import mtpy.imaging.mtcolors as mtcolors
 
 #==============================================================================
 # Main Window
@@ -41,6 +43,8 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
         super(ModEM_Model_Manipulator, self).__init__()
 
         self.model_widget = ModelWidget()
+        
+        self.working_dir = os.getcwd()
 
         self.ui_setup()
 
@@ -80,9 +84,11 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
 
         fn_dialog = QtWidgets.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM data file',
-                                       filter='(*.dat);; (*.data)'))
+                                       filter='(*.dat);; (*.data)',
+                                        directory=self.working_dir))
 
         self.model_widget.data_fn = fn
+        self.working_dir = os.path.dirname(fn)
 
     def get_model_fn(self):
         """
@@ -91,9 +97,11 @@ class ModEM_Model_Manipulator(QtWidgets.QMainWindow):
 
         fn_dialog = QtWidgets.QFileDialog()
         fn = str(fn_dialog.getOpenFileName(caption='Choose ModEM model file',
-                                       filter='*.rho'))
+                                       filter='*.rho',
+                                        directory=self.working_dir))
 
         self.model_widget.model_fn = fn
+        self.working_dir = os.path.dirname(fn)
 
     def save_model_fn(self):
         """
@@ -145,9 +153,10 @@ class ModelWidget(QtWidgets.QWidget):
         
         self.npad = 10
         self.avg_pad = 12
+        self.smooth_len = 9
 
-        self.cmap = 'jet_r'
-        self.res_limits = (0, 4)
+        self.cmap = mtcolors.mt_rdylbu
+        self.res_limits = [0, 4]
 
         self.make_cb()
         
@@ -166,7 +175,15 @@ class ModelWidget(QtWidgets.QWidget):
         self.fill_outside_npad_edit.editingFinished.connect(self.set_npad)
         
         self.fill_outside_button = QtWidgets.QPushButton('Filter Outside Area')
+        self.fill_outside_button = QtGui.QPushButton('Apply Fill Outside Grid')
         self.fill_outside_button.pressed.connect(self.fill_outside_area)
+        
+        self.smooth_len_label = QtGui.QLabel('Smoothing Length')
+        self.smooth_len_edit = QtGui.QLineEdit()
+        self.smooth_len_edit.setText('{0:.0f}'.format(self.smooth_len))
+        self.smooth_len_edit.editingFinished.connect(self.set_smooth_len)
+        self.smooth_button = QtGui.QPushButton('Apply Smoothing')
+        self.smooth_button.pressed.connect(self.apply_smoothing)
 
         self.map_figure = Figure()
         self.map_canvas = FigureCanvas(self.map_figure)
@@ -214,16 +231,22 @@ class ModelWidget(QtWidgets.QWidget):
         self.north_slider.setMaximum(0)
         self.north_slider.setTickInterval(1)
 
-
         self.figure_3d = Figure()
         self.canvas_3d = FigureCanvas(self.figure_3d)
         self.canvas_3d.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
                                        QtWidgets.QSizePolicy.Expanding)
 
+        self.loc_figure = Figure()
+        self.loc_canvas = FigureCanvas(self.loc_figure)
+        self.loc_canvas.setSizePolicy(QtGui.QSizePolicy.Expanding,
+                                       QtGui.QSizePolicy.Expanding)
+        self.loc_toolbar = NavigationToolbar(self.loc_canvas, self)
+
+
         self.cb_figure = Figure()
         self.cb_canvas = FigureCanvas(self.cb_figure)
         self.cb_canvas.setMaximumWidth(int(self.screen_size.width()*.05))
-        self.cb_canvas.setMinimumHeight(int(self.screen_size.height()*.85))
+        self.cb_canvas.setMinimumHeight(int(self.screen_size.height()*.80))
         self.cb_ax = self.cb_figure.add_axes([0.45, 0.005, 1.0, 1.0])
         self.cb_ax.pcolormesh(self.cb_x, self.cb_y, self.cb_bar,
                               vmin=self.res_limits[0],
@@ -254,15 +277,36 @@ class ModelWidget(QtWidgets.QWidget):
 
         self.cb_label = QtWidgets.QLabel('Ohm-m')
         
+        self.res_mm_label = QtGui.QLabel('log10(Res) min, max')
+        self.res_min_edit = QtGui.QLineEdit()
+        self.res_min_edit.setMaximumWidth(80)
+        self.res_min_edit.setText('{0:.1f}'.format(self.res_limits[0]))
+        self.res_min_edit.editingFinished.connect(self.set_res_min)
+        
+        self.res_max_edit = QtGui.QLineEdit()
+        self.res_max_edit.setMaximumWidth(80)
+        self.res_max_edit.setText('{0:.1f}'.format(self.res_limits[1]))
+        self.res_max_edit.editingFinished.connect(self.set_res_max)
+        
         ##------------------------------------------------
         ## Layout
         
-        button_layout = QtWidgets.QHBoxLayout()
-        button_layout.addWidget(self.fill_outside_npad_label)
-        button_layout.addWidget(self.fill_outside_npad_edit)
-        button_layout.addWidget(self.fill_outside_avg_pad_label)
-        button_layout.addWidget(self.fill_outside_avg_pad_edit)
-        button_layout.addWidget(self.fill_outside_button)
+
+        fill_layout = QtGui.QHBoxLayout()
+        fill_layout.addWidget(self.fill_outside_npad_label)
+        fill_layout.addWidget(self.fill_outside_npad_edit)
+        fill_layout.addWidget(self.fill_outside_avg_pad_label)
+        fill_layout.addWidget(self.fill_outside_avg_pad_edit)
+        fill_layout.addWidget(self.fill_outside_button)
+        
+        smooth_layout = QtGui.QHBoxLayout()
+        smooth_layout.addWidget(self.smooth_len_label)
+        smooth_layout.addWidget(self.smooth_len_edit)
+        smooth_layout.addWidget(self.smooth_button)
+        
+        button_layout = QtGui.QHBoxLayout()
+        button_layout.addLayout(fill_layout)
+        button_layout.addLayout(smooth_layout)
 
         map_bottom_layout = QtWidgets.QHBoxLayout()
         map_bottom_layout.addWidget(self.map_depth_label)
@@ -287,24 +331,36 @@ class ModelWidget(QtWidgets.QWidget):
         north_layout.addWidget(self.north_toolbar)
         north_layout.addWidget(self.north_canvas)
         north_layout.addLayout(north_bottom_layout)
+        
+        loc_layout = QtGui.QVBoxLayout()
+        loc_layout.addWidget(self.loc_toolbar)
+        loc_layout.addWidget(self.loc_canvas)
 
 
         grid_layout = QtWidgets.QGridLayout()
         grid_layout.addLayout(map_layout, 1, 1)
         grid_layout.addLayout(east_layout, 1, 2)
         grid_layout.addLayout(north_layout, 2, 1)
-        grid_layout.addWidget(self.canvas_3d, 2, 2)
-
-        cb_edit = QtWidgets.QVBoxLayout()
+        grid_layout.addLayout(loc_layout, 2, 2)
+        
+        right_layout = QtGui.QVBoxLayout()
+        right_layout.addLayout(button_layout)
+        right_layout.addLayout(grid_layout)
+        
+        cb_edit = QtGui.QVBoxLayout()
+        cb_edit.addWidget(self.res_mm_label)
+        cb_edit.addWidget(self.res_min_edit)
+        cb_edit.addWidget(self.res_max_edit)
         cb_edit.addWidget(self.cb_label)
         cb_edit.addWidget(self.cb_line_edit)
-        cb_layout = QtWidgets.QVBoxLayout()
+        
+        cb_layout = QtGui.QVBoxLayout()
         cb_layout.addWidget(self.cb_canvas)
         cb_layout.addLayout(cb_edit)
 
         final_layout = QtWidgets.QHBoxLayout()
         final_layout.addLayout(cb_layout)
-        final_layout.addLayout(grid_layout)
+        final_layout.addLayout(right_layout)
 
         self.setLayout(final_layout)
 
@@ -409,16 +465,72 @@ class ModelWidget(QtWidgets.QWidget):
         self.east_ax.set_ylabel('Depth {0}'.format(self.units))
         self.east_ax.set_aspect('equal', 'box-forced')
         
+        ##--> plot location map
+        self.loc_ax = self.loc_figure.add_subplot(1, 1, 1,
+                                                  aspect='equal',
+                                                  sharex=self.map_ax,
+                                                  sharey=self.map_ax)
+        east_line_xlist = []
+        east_line_ylist = []            
+        for xx in self.model_obj.grid_east:
+            east_line_xlist.extend([xx/self.scale, xx/self.scale])
+            east_line_xlist.append(None)
+            east_line_ylist.extend([self.model_obj.grid_north.min()/self.scale, 
+                                    self.model_obj.grid_north.max()/self.scale])
+            east_line_ylist.append(None)
+        self.loc_ax.plot(east_line_xlist,
+                         east_line_ylist,
+                         lw=.25,
+                         color='k')
+
+        north_line_xlist = []
+        north_line_ylist = [] 
+        for yy in self.model_obj.grid_north:
+            north_line_xlist.extend([self.model_obj.grid_east.min()/self.scale,
+                                     self.model_obj.grid_east.max()/self.scale])
+            north_line_xlist.append(None)
+            north_line_ylist.extend([yy/self.scale, yy/self.scale])
+            north_line_ylist.append(None)
+        self.loc_ax.plot(north_line_xlist,
+                         north_line_ylist,
+                         lw=.25,
+                         color='k')
+                         
+        self.loc_east, = self.loc_ax.plot([self.model_obj.grid_east.min()/self.scale,
+                                           self.model_obj.grid_east.min()/self.scale],
+                                          [self.model_obj.grid_north.min()/self.scale,
+                                           self.model_obj.grid_north.max()/self.scale],
+                                          lw=2,
+                                          color=(0, .6, 0)) 
+        self.loc_north, = self.loc_ax.plot([self.model_obj.grid_east.min()/self.scale,
+                                           self.model_obj.grid_east.max()/self.scale],
+                                          [self.model_obj.grid_north.min()/self.scale,
+                                           self.model_obj.grid_north.min()/self.scale],
+                                          lw=2,
+                                          color=(.5, 0, .5)) 
+                                          
+        self.loc_ax.set_ylabel('Northing (km)')
+        self.loc_ax.set_xlabel('Easting (km)')
+        self.loc_ax.set_aspect('equal', 'box-forced')
+        
+        
         if self.data_fn is not None:
             self.map_ax.scatter(self.data_obj.station_locations['rel_east']/self.scale,
                                 self.data_obj.station_locations['rel_north']/self.scale,
                                 marker='v',
                                 c='k',
                                 s=10)
-        
+            self.loc_ax.scatter(self.data_obj.station_locations['rel_east']/self.scale,
+                                self.data_obj.station_locations['rel_north']/self.scale,
+                                marker='v',
+                                c='k',
+                                s=10)
+                                
+
         self.north_canvas.draw()
         self.map_canvas.draw()
         self.east_canvas.draw()
+        self.loc_canvas.draw()
 
         #make a rectangular selector
         self.map_selector = widgets.RectangleSelector(self.map_ax,
@@ -465,6 +577,39 @@ class ModelWidget(QtWidgets.QWidget):
         self.cb_canvas.draw()
         self.cb_line_edit.setText('{0:.2f}'.format(self.res_value))
         
+    def set_res_min(self):
+        self.res_limits[0] = float(self.res_min_edit.text())
+        self.res_min_edit.setText('{0:.1f}'.format(self.res_limits[0]))
+        self.redraw_cb()
+        
+    def set_res_max(self):
+        self.res_limits[1] = float(self.res_max_edit.text())
+        self.res_max_edit.setText('{0:.1f}'.format(self.res_limits[1]))
+        self.redraw_cb()
+
+    def redraw_cb(self):
+        self.make_cb()
+        self.cb_ax.cla()
+        self.cb_ax.pcolormesh(self.cb_x, self.cb_y, self.cb_bar,
+                      vmin=self.res_limits[0],
+                      vmax=self.res_limits[1],
+                      cmap=self.cmap,
+                      picker=5)
+        self.cb_ax.set_yticks(np.arange(self.res_limits[0], self.res_limits[1]))
+        self.cb_ax.set_yticklabels(['10$^{'+'{0:.0f}'.format(ii)+'}$' for ii in
+                                    np.arange(self.res_limits[0], self.res_limits[1])])
+                                    
+        self.res_line, = self.cb_ax.plot([0, 1], 
+                                 [np.log10(self.res_value),
+                                 np.log10(self.res_value)],
+                                 lw=3, 
+                                 color='k',
+                                 picker=5)
+        self.cb_ax.set_xticks([0, 1])
+        self.cb_ax.set_xticklabels(['', ''])
+        self.cb_ax.axis('tight')
+        self.cb_canvas.draw()
+        
     def set_map_index(self):
         self.map_index = int(self.map_slider.value())
         depth = self.model_obj.grid_z[self.map_index]/self.scale
@@ -499,6 +644,10 @@ class ModelWidget(QtWidgets.QWidget):
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
         self.east_canvas.draw()
+        
+        self.loc_east.set_xdata([easting, easting])
+        self.loc_canvas.draw()
+        
 
     def set_north_index(self):
         self.north_index = int(self.north_slider.value())
@@ -513,6 +662,9 @@ class ModelWidget(QtWidgets.QWidget):
                                vmin=self.res_limits[0],
                                vmax=self.res_limits[1])
         self.north_canvas.draw()
+        
+        self.loc_north.set_ydata([northing, northing])
+        self.loc_canvas.draw()
 
     def map_on_pick(self, eclick, erelease):
         """
@@ -608,6 +760,11 @@ class ModelWidget(QtWidgets.QWidget):
                                 marker='v',
                                 c='k',
                                 s=10)
+            self.loc_ax.scatter(self.data_obj.station_locations['rel_east']/self.scale,
+                                self.data_obj.station_locations['rel_north']/self.scale,
+                                marker='v',
+                                c='k',
+                                s=10)
 
         self.east_ax.pcolormesh(self.plot_north_z,
                         self.plot_z_north,
@@ -626,7 +783,59 @@ class ModelWidget(QtWidgets.QWidget):
         self.north_canvas.draw()
         self.east_canvas.draw()
         self.map_canvas.draw()
+        
+    def set_npad(self):
+        self.npad = int(str(self.fill_outside_npad_edit.text()))
+        self.fill_outside_npad_edit.setText('{0:.0f}'.format(self.npad))
+        
+    def set_avg_pad(self):
+        self.avg_pad = int(str(self.fill_outside_avg_pad_edit.text()))
+        self.fill_outside_avg_pad_edit.setText('{0:.0f}'.format(self.avg_pad))
+        
+    def fill_outside_area(self):
+        x_range = np.append(np.arange(self.avg_pad), np.arange(-self.avg_pad, 0, 1))
+        y_range = np.append(np.arange(self.avg_pad), np.arange(-self.avg_pad, 0, 1))
+        
+        x_index, y_index = np.meshgrid(x_range, y_range)
+        res = self.model_obj.res_model.copy()
+        for zz in range(self.model_obj.res_model.shape[2]):
+            avg_res_value = np.mean([np.median(res[x_index, y_index, zz]),
+                                     np.median(res[self.avg_pad:-self.avg_pad, 0:self.avg_pad, zz]),
+                                     np.median(res[self.avg_pad:-self.avg_pad, -self.avg_pad:, zz]),
+                                     np.median(res[0:self.avg_pad, self.avg_pad:-self.avg_pad, zz]),
+                                     np.median(res[-self.avg_pad:, self.avg_pad:-self.avg_pad, zz])])
+                                    
+            res[x_index, y_index, zz] = avg_res_value
+            res[self.npad:-self.npad, 0:self.npad, zz] = avg_res_value
+            res[self.npad:-self.npad, -self.npad:, zz] = avg_res_value
+            res[0:self.npad, self.npad:-self.npad, zz] = avg_res_value
+            res[-self.npad:, self.npad:-self.npad, zz] = avg_res_value
+            print 'avg res for {0:>8.2f} m = {1:>8.2f}'.format(self.model_obj.grid_z[zz],
+                                                               avg_res_value)
+        
+        self.model_obj.res_model = res
+        self.redraw_plots()
 
+    def set_smooth_len(self):
+        self.smooth_len = int(str(self.smooth_len_edit.text()))
+        if self.smooth_len%2 != 1:
+            self.smooth_len += 1
+        self.smooth_len_edit.setText('{0:.0f}'.format(self.smooth_len))
+        
+    def apply_smoothing(self):
+        gx, gy = np.mgrid[-self.smooth_len:self.smooth_len+1, 
+                          -self.smooth_len:self.smooth_len+1]
+                      
+        gauss = np.exp(-(gx**2/float(self.smooth_len)+gy**2/float(self.smooth_len)))
+        gauss /= gauss.sum()
+        
+        res = np.log10(self.model_obj.res_model.copy())
+        for zz in range(self.model_obj.res_model.shape[2]):
+            res[:, :, zz] = sps.convolve(res[:, :, zz], gauss, mode='same')
+            
+        self.model_obj.res_model = 10**res
+        self.redraw_plots()
+        
 #==============================================================================
 #  DEFINE MAIN
 #==============================================================================

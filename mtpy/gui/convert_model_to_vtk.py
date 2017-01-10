@@ -16,7 +16,6 @@ import sys
 import subprocess
 
 # 3rd party packages
-import numpy as np
 from PyQt4 import QtCore, QtGui
 from mtpy.gui.my_stream import MyStream
 import mtpy.modeling.modem_new as modem

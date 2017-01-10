@@ -5691,12 +5691,12 @@ class PlotPTMaps(mtplottools.MTEllipse):
             if type(self.plot_period_list) is list:
                 #check if entries are index values or actual periods
                 if type(self.plot_period_list[0]) is int:
-                    self.plot_period_list = [self.period_list[ii]
+                    self.plot_period_list = [self.data_obj.period_list[ii]
                                              for ii in self.plot_period_list]
                 else:
                     pass
             elif type(self.plot_period_list) is int:
-                self.plot_period_list = self.period_list[self.plot_period_list]
+                self.plot_period_list = self.data_obj.period_list[self.plot_period_list]
             elif type(self.plot_period_list) is float:
                 self.plot_period_list = [self.plot_period_list]
                 

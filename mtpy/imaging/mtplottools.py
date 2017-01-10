@@ -842,7 +842,7 @@ class MTplot(object):
         
         #--> read in the edi file if its given
         if self._fn is not None:
-            if self._fn[-3:] == 'edi':
+            if self._fn.lower().endswith('.edi'):
                 self._read_edi()
             else:
                 not_fn = self._fn[os.path.basename(self._fn).find['.']:]

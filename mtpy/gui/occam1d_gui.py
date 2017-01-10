@@ -13,7 +13,7 @@ JP 2015
 from PyQt4 import QtCore, QtGui
 import mtpy.modeling.occam1d as occam1d
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from matplotlib.ticker import MultipleLocator
 import matplotlib.gridspec as gridspec

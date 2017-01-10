@@ -1130,8 +1130,75 @@ class Z3D_to_edi(object):
                      use_blocks_dict={4096:'all', 256:'all', 16:'all'},
                      birrp_param_dict={}):
         """
-        from the input station directory, convert files to ascii, run through
-        BIRRP, convert to .edi files and plot
+        process_data is a convinience function that will process Z3D files
+        and output an .edi file.  The workflow is to convert Z3D files to 
+        MTpy ascii format, apply a notch filter if desired, decimate if
+        desired.  Do the same for a remote reference if specified.  Make a 
+        BIRRP script file for each sampling rate, process data, take outputs 
+        and write an edi file and plot resutl.  The whole process will take 
+        a few minutes so be patient.  
+        
+        Arguments
+        ---------------
+        
+            **df_list** : list of sampling rates
+                          list of sampling rates (int) to process, options are
+                          - 4096
+                          - 1024
+                          - 256
+                          - 16
+                          
+            **max_blocks** : int
+                            maximum number of blocks to process, this cannot
+                            exceed the number of blocks that BIRRP was 
+                            compiled with.  *default* is 3
+                            
+            **notch_dict** : dict(sampling_rate: notches to filter)
+                            dictionary of notches to filter for each sampling
+                            rate.  Keys are sampling rates (int) and values
+                            are dictionary of notches to filter
+                            ex. {4096:{60, 120, 180}} to filter out 60 Hz noise
+                            *default* is {} which filters out 60 Hz noise and
+                            harmonics.
+                            
+            **sr_dict** : dict(sampling_rate: (max_freq, max_freq))
+                          dictionary of min and max frequencies to use for 
+                          each sampling rate when making an .edi file.  The 
+                          defaults usually work well, but check the plot
+                          to see if there is a better frequency range for
+                          each sampling rate.  
+                          *default* is 
+                              {4096:(1000., 4),
+                              1024:(3.99, 1.),
+                              256:(3.99, .126), 
+                              16:(.125, .0001)}
+                              
+            **use_blocks_dict** : dict(sampling_rate: list of blocks to use)
+                                  dictionary with sampling rate as keys and 
+                                  list of which blocks to use as values
+                                  ex. {4096: [0, 2]} to skip the second block
+                                  use value 'all' to use all blocks
+                                  *default* is 
+                                      {4096:'all', 256:'all', 16:'all'}
+                                      
+            **birrp_param_dict** : dict(birrp_param: value)
+                                   dictionary of birrp parameters where the 
+                                   key is the birrp parameter and value is
+                                   what you want that parameter to be.  See
+                                   mtpy.processing.birrp.write_script_file
+                                   or the BIRRP manual for details on birrp 
+                                   parameters
+                                   ex. {'nar':5}
+                                   *default* is {}
+
+        Returns
+        -------------
+
+            **plot_obj** : plot_response object
+
+            **comb_edi_fn** : string
+                              full path to combined edi file                          
+            
         """
         
         st = time.time()

@@ -1006,8 +1006,8 @@ class PlotResponses(QtGui.QWidget):
             self._err_list[ax_index][1].set_data(ncap_u)
             self._err_list[ax_index][2].get_paths()[p_index].vertices = eb
                                        
-        # need to redraw the figure
-        self._ax.figure.canvas.draw()
+            # need to redraw the figure
+            self._ax.figure.canvas.draw()
                           
     def in_axes(self, event):
         """

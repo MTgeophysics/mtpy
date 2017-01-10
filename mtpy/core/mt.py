@@ -275,7 +275,7 @@ class MT(object):
         """
         
         self._fn = filename
-        if self._fn[-3:] == 'edi':
+        if self._fn.lower().endswith('.edi'):
             self._read_edi_file()
         else:
             not_fn = self._fn[os.path.basename(self._fn).find['.']:]
