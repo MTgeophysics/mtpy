@@ -5,7 +5,13 @@ Created on Fri Sep 02 12:33:27 2016
 @author: jpeacock
 """
 
-from PyQt4 import QtCore
+try:
+    from PyQt4 import QtCore
+except ImportError:
+    try:
+        from PyQt5 import QtCore
+    except ImportError:
+        raise ImportError('Cannot find PyQt4 or PyQt5')
 
 
 class MyStream(QtCore.QObject):
