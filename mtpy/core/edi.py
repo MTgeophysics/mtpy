@@ -1423,7 +1423,7 @@ class DefineMeasurement(object):
                 value = MTft.convert_dms_tuple2string(
                                         MTft.convert_degrees2dms_tuple(value))
             elif key == 'refelev':
-                value = '{0:.3f}'.format(value)
+                value = '{0:.3f}'.format(MTft._assert_position_format('elev', value))
             
             measurement_lines.append('{0}{1}={2}\n'.format(tab,
                                                            key.upper(),
