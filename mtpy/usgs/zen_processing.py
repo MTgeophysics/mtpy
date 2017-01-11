@@ -71,6 +71,9 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
                                 '2304', '2314', '2324', '2334', '2344',
                                 '2844', '2854']
         self._max_nread = 16000000
+        
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
                                 
  
         
@@ -976,7 +979,7 @@ class Z3D_to_edi(object):
     
         
     def write_script_files(self, fn_birrp_dict, save_path=None,
-                           birrp_params_dict={}):
+                           birrp_params_dict={}, **kwargs):
         """
         write a script file from a generic processing dictionary
         """
@@ -1018,7 +1021,8 @@ class Z3D_to_edi(object):
             pro_dict = pro_obj.get_processing_dict(fn_birrp_arr, 
                                                    hx=self.survey_config.hx,
                                                    hy=self.survey_config.hy,
-                                                   hz=self.survey_config.hz)
+                                                   hz=self.survey_config.hz,
+                                                   **kwargs)
             
             #write script file using mtpy.processing.birrp    
             script_fn, birrp_dict = birrp.write_script_file(pro_dict,
@@ -1128,7 +1132,8 @@ class Z3D_to_edi(object):
                               256:(3.99, .126), 
                               16:(.125, .0001)},
                      use_blocks_dict={4096:'all', 256:'all', 16:'all'},
-                     birrp_param_dict={}):
+                     birrp_param_dict={},
+                     **kwargs):
         """
         process_data is a convinience function that will process Z3D files
         and output an .edi file.  The workflow is to convert Z3D files to 
@@ -1220,7 +1225,8 @@ class Z3D_to_edi(object):
             
         # write script files for birrp
         sfn_list = self.write_script_files(schedule_dict,
-                                           birrp_params_dict=birrp_param_dict)
+                                           birrp_params_dict=birrp_param_dict,
+                                           **kwargs)
         
         # run birrp
         self.run_birrp(sfn_list)
