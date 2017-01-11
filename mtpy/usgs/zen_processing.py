@@ -93,14 +93,17 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
                     break
         return calibration_dict
         
-    def get_processing_dict(self, fn_birrp_list, hx=2284, hy=2284, hz=2284):
+    def get_processing_dict(self, fn_birrp_list, hx=2284, hy=2284, hz=2284,
+                            **kwargs):
         """
         from fn_birrp_arr make a processing dictionary to input into writing
         a birrp script file
         
         fn_birrp_list = fn_birrp_arr[df]
         """
-        
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+            
         self.fn_list = []
         self.rrfn_list = []
         # need to sort the fn list so that the files are in the correct
@@ -243,7 +246,7 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
             self.hy_cal = cal_dict[str(hy)]
             self.rrhy_cal = cal_dict[str(hy)]
         except KeyError:
-            print 'Did not find HX calibration for {0}'.format(hy)
+            print 'Did not find HY calibration for {0}'.format(hy)
             self.hy_cal = cal_dict['2284'] 
             self.rrhy_cal = cal_dict['2284'] 
             print 'Setting calibration coil number to 2284 as default.'            
@@ -251,7 +254,7 @@ class BIRRP_processing(birrp.BIRRP_Parameters):
         try:
             self.hz_cal = cal_dict[str(hz)]
         except KeyError:
-            print 'Did not find HX calibration for {0}'.format(hz)
+            print 'Did not find HZ calibration for {0}'.format(hz)
             self.hz_cal = cal_dict['2284'] 
             print 'Setting calibration coil number to 2284 as default.'
             
