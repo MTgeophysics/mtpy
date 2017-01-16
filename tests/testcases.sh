@@ -25,8 +25,8 @@ python examples/plot_edis.py examples/data/edi_files/georgina
 
 # phase tensor map
 python examples/plot_phase_tensor_map.py tests/data/edifiles/
-python examples/plot_phase_tensor_map.py examples/data/edi_files/georgina
 
+python examples/plot_phase_tensor_map.py examples/data/edi_files/georgina
 # python examples/plot_phase_tensor_map.py examples/data/edi_files
 # python examples/plot_phase_tensor_map.py ./examples/data/edi_files/georgina ./localdir/abc.png
 
