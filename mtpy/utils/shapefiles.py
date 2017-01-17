@@ -772,11 +772,11 @@ class TipperShapeFile(object):
         >>> edilist = [os.path.join(edipath, edi) \
                       for edi in os.listdir(edipath)\
                       if edi.find('.edi')>0]
-        >>> tps = TipperShapeFile(edilist, save_path=r"/home/gis")
-        >>> tps.arrow_head_height = .005
-        >>> tps.arrow_lw = .0001
-        >>> tps.arrow_size = .05
-        >>> tps.write_shape_files()
+        >>> tipshp = TipperShapeFile(edilist, save_path=r"/home/gis")
+        >>> tipshp.arrow_head_height = .005
+        >>> tipshp.arrow_lw = .0001
+        >>> tipshp.arrow_size = .05
+        >>> tipshp.write_shape_files()
         
     """
 
@@ -1373,39 +1373,64 @@ def transform_ll_to_utm(lon, lat, reference_ellipsoid='WGS84'):
     # returns easting, northing, altitude  
     return utm_coordinate_system, utm_point
 
-# ==============================================================================
-# test
-# ==============================================================================
-##edipath = r"c:\Users\jrpeacock\Documents\Mendenhall\MonoBasin\EDI_Files\GeographicNorth"
-##edilst = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
-##          if edi.find('.edi') > 0]
-##edilst.remove(os.path.join(edipath, 'mb035.edi'))
-##
-##pts = PTShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
-##pts.projection = 'NAD27'
-##pts.ellipse_size = 1200
-##pts.write_shape_files()
-#
-#
-##tps = TipperShapeFile(edilst, save_path=r"c:\Users\jrpeacock")
-##tps.projection = 'NAD27'
-##tps.arrow_lw = 30
-##tps.arrow_head_height = 100
-##tps.arrow_head_width = 70
-##tps.write_real_shape_files()
-##tps.write_imag_shape_files()
-#    
-# mfn = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\Modular_NLCG_110.dat"
-# sv_path = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\GIS_Tip_Response"
-##sv_path = r"c:\Users\jrpeacock\Google Drive\Mono_Basin\Models\GIS_PT_Response"
-##pts = PTShapeFile(save_path=sv_path)
-##pts.projection = 'NAD27'
-##pts.ellipse_size = 1200
-##pts.write_pt_shape_files_modem(mfn)
-#
-# tps = TipperShapeFile(save_path=sv_path)
-# tps.projection = 'NAD27'
-# tps.arrow_lw = 30
-# tps.arrow_head_height = 100
-# tps.arrow_head_width = 70
-# tps.write_tip_shape_files_modem(mfn)
+
+def modem_to_shapefiles(mfndat, save_dir):
+    """
+    create shape file representaiotn for ModEM model
+    :param mfndat: \path2\Modular_NLCG_110.dat
+    :param save_dir: \path2\outshp
+    :return:
+    """
+
+    pts = PTShapeFile(save_path=save_dir)
+    pts.projection = 'NAD27'
+    pts.ellipse_size = 1200
+    pts.write_data_pt_shape_files_modem(mfndat)
+
+    tipshp = TipperShapeFile(save_path=save_dir)
+    tipshp.projection = 'NAD27'
+    tipshp.arrow_lw = 30
+    tipshp.arrow_head_height = 100
+    tipshp.arrow_head_width = 70
+    tipshp.write_tip_shape_files_modem(mfndat)
+
+    return
+
+def test_edi2shp():
+
+    edipath = r"E:/Githubz/mtpy2/tests/data/edifiles"
+
+    edilst = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
+             if edi.find('.edi') > 0]
+    # edilst.remove(os.path.join(edipath, 'mb035.edi'))
+
+    pts = PTShapeFile(edilst, save_path=r"E:\phasetensor_shape_files")
+    #pts.projection = 'NAD27'  # default projection is WGS84
+
+    pts.ellipse_size = 1200
+    pts.write_shape_files()
+
+
+    tipshp = TipperShapeFile(edilst, save_path=r"E:\tipper_shape_files")
+
+    #tipshp.projection = 'NAD27'
+    tipshp.arrow_lw = 30
+    tipshp.arrow_head_height = 100
+    tipshp.arrow_head_width = 70
+    tipshp.write_real_shape_files()
+    tipshp.write_imag_shape_files()
+
+    return
+
+# ===================================================
+#  main test
+# ----------------------------------------------------
+if __name__ == "__main__":
+
+    #test_edi2shp()
+
+# modem:
+    mfn = r"E:/Githubz/mtpy2/examples/data/ModEM_files/VicSynthetic07/Modular_MPI_NLCG_016.dat"
+    save_path = r"E:\modem_shape_files"
+    modem_to_shapefiles(mfn, save_path)
+
