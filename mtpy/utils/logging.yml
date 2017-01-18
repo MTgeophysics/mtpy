@@ -15,7 +15,7 @@ handlers:
         class: logging.handlers.RotatingFileHandler
         level: DEBUG
         formatter: simple
-        filename: /tmp/info.log
+        filename: C:\temp\info.log
         maxBytes: 1000000 # 1MB
         backupCount: 2
         encoding: utf8
@@ -24,7 +24,7 @@ handlers:
         class: logging.handlers.RotatingFileHandler
         level: ERROR
         formatter: simple
-        filename: /tmp/errors.log
+        filename: C:\temp\errors.log
         maxBytes: 1000000 # 1MB
         backupCount: 2
         encoding: utf8
