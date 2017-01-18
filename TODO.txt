@@ -2,28 +2,24 @@ TODO List
 
 FZ 2016-12-23
 
-
-shapefile export
+shapefiles export
 refactor core packages
 refactor phase tesnsor map
 refactor phase tensor psudosection
+tipper
 min-max depth
 
-add more unit testing
-integrate with coverage service
-
+more unit-testing
 integrate logging
-
-
+integrate with coverage services
 improve code quality:
     pylint scores
     pep8 mtpy --max-line-length 120 ; echo $?   should pass
     other QA/QC tools
 
-
 more documentation doc string
 integarte with readthedocs, github.io
 
-
-Low Priiority
+#######################################
+Wishlist (Low Pri)
 pypi module.
