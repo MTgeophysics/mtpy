@@ -1396,22 +1396,23 @@ def modem_to_shapefiles(mfndat, save_dir):
 
     return
 
-def test_edi2shp():
+def test_edi2shp(edi_dir, save_dir):
 
-    edipath = r"E:/Githubz/mtpy2/tests/data/edifiles"
+    #edipath = r"E:/Githubz/mtpy2/tests/data/edifiles"
+    edipath=edi_dir
 
     edilst = [os.path.join(edipath, edi) for edi in os.listdir(edipath)
              if edi.find('.edi') > 0]
     # edilst.remove(os.path.join(edipath, 'mb035.edi'))
 
-    pts = PTShapeFile(edilst, save_path=r"E:\phasetensor_shape_files")
+    pts = PTShapeFile(edilst, save_path=save_dir)
     #pts.projection = 'NAD27'  # default projection is WGS84
 
     pts.ellipse_size = 1200
     pts.write_shape_files()
 
 
-    tipshp = TipperShapeFile(edilst, save_path=r"E:\tipper_shape_files")
+    tipshp = TipperShapeFile(edilst, save_path=save_dir)
 
     #tipshp.projection = 'NAD27'
     tipshp.arrow_lw = 30
@@ -1424,13 +1425,18 @@ def test_edi2shp():
 
 # ===================================================
 #  main test
+# python shapefiles.py E:/Githubz/mtpy2/tests/data/edifiles E:\MT_shape_files
 # ----------------------------------------------------
 if __name__ == "__main__":
+    import sys
+    if len(sys.argv)<3:
+        print("USAGE: %s input_edifile_dir output_shape_file_dir" % sys.argv[0])
+        sys.exit(1)
+    else:
+        test_edi2shp(sys.argv[1],sys.argv[2])
 
-    #test_edi2shp()
-
-# modem:
-    mfn = r"E:/Githubz/mtpy2/examples/data/ModEM_files/VicSynthetic07/Modular_MPI_NLCG_016.dat"
-    save_path = r"E:\modem_shape_files"
-    modem_to_shapefiles(mfn, save_path)
+# modem: provide dat filr and save_path below:
+#     mfn = r"E:/Githubz/mtpy2/examples/data/ModEM_files/VicSynthetic07/Modular_MPI_NLCG_016.dat"
+#     save_path = r"E:\MT_modem_shape_files"
+#     modem_to_shapefiles(mfn, save_path)
 
