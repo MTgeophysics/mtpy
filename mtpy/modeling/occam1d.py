@@ -956,7 +956,7 @@ class Model(object):
             print "bottom layer not deep enough for target depth, set to {} m".format(self.bottom_layer)
         
         if self.z1_layer is None:
-            self.z1_layer = mtcc.roundsf(self.target_depth/1000.)
+            self.z1_layer = mtcc.roundsf(self.target_depth/1000.,0)
         elif self.target_depth/self.z1_layer < z1_threshold:
             self.z1_layer = self.target_depth/z1_threshold
             print "z1 layer not deep enough for target depth, set to {} m".format(self.z1_layer)
