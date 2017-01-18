@@ -17,7 +17,7 @@ improve code quality:
     pep8 mtpy --max-line-length 120 ; echo $?   should pass
     other QA/QC tools
 
-more documentation doc string
+more documentation docstring
 integarte with readthedocs, github.io
 
 #######################################
