@@ -254,7 +254,7 @@ class PlotDepthSlice(object):
                 xlimits = (np.floor(self.station_east.min()),
                            np.ceil(self.station_east.max()))
             else:
-                xlimits = (self.grid_east[5], self.grid_east[-5])
+                xlimits = (self.grid_east[5], self.grid_east[-6])
         else:
             xlimits = self.ew_limits
 
@@ -263,7 +263,7 @@ class PlotDepthSlice(object):
                 ylimits = (np.floor(self.station_north.min()),
                            np.ceil(self.station_north.max()))
             else:
-                ylimits = (self.grid_north[5], self.grid_north[-5])
+                ylimits = (self.grid_north[5], self.grid_north[-6])
         else:
             ylimits = self.ns_limits
 
@@ -404,8 +404,8 @@ class PlotDepthSlice(object):
 
             # when runs interactively, plt show a figure
             plt.show()
-            fig.clear()
-            plt.close()
+#            fig.clear()
+#            plt.close()
 
             return
 
