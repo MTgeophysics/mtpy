@@ -2,23 +2,27 @@ TODO List
 
 FZ 2016-12-23
 
-shapefiles export
-refactor core packages
-refactor phase tesnsor map
-refactor phase tensor psudosection
+shapefiles export   - Done
+refactor core packages  - In progress
+refactor phase tensor map    - In progress
+refactor phase tensor psudosection    - In progress
 tipper
 min-max depth
 
-more unit-testing
-integrate logging
+more unit-testing   - In progress
+Use the python logging facility  - In progress
+
+Sphinx doc build, more complete docstring    - In progress
+
+integrate with readthedocs, github.io
 integrate with coverage services
+
 improve code quality:
-    pylint scores
+    pylint scores since beginning of Nov 2016: [-5.26, -4.91, -3.42, ...]
     pep8 mtpy --max-line-length 120 ; echo $?   should pass
     other QA/QC tools
 
-more documentation docstring
-integarte with readthedocs, github.io
+
 
 #######################################
 Wishlist (Low Pri)
