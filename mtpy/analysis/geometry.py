@@ -11,25 +11,25 @@ dimensionality, strike directions, alphas/skews/...
     * 2d - 3d : skew < threshold (to be given as argument)
     * strike: frequency - depending angle (incl. 90degree ambiguity)
 
-@UofA, 2013
-(LK)
+@UofA, 2013(LK)
 
 Edited by JP, 2016
 
 """
 
-#=================================================================
+# =================================================================
 import numpy as np
 
-import mtpy.core.z as MTz 
-import mtpy.analysis.pt as MTpt 
+import mtpy.analysis.pt as MTpt
+import mtpy.core.z as MTz
 import mtpy.utils.exceptions as MTex
 
-#=================================================================
 
-def dimensionality(z_array = None, z_object = None, pt_array= None, 
-                    pt_object = None, skew_threshold = 5, 
-                    eccentricity_threshold = 0.1):
+# =================================================================
+
+def dimensionality(z_array=None, z_object=None, pt_array=None,
+                   pt_object=None, skew_threshold=5,
+                   eccentricity_threshold=0.1):
     """
     Esitmate dimensionality of an impedance tensor, frequency by frequency.
 
@@ -86,31 +86,30 @@ def dimensionality(z_array = None, z_object = None, pt_array= None,
     """
 
     lo_dimensionality = []
-    
+
     if z_array is not None:
-        pt_obj = MTpt.PhaseTensor(z_array = z_array)
+        pt_obj = MTpt.PhaseTensor(z_array=z_array)
     elif z_object is not None:
         if not isinstance(z_object, MTz.Z):
-            raise MTex.MTpyError_Z('Input argument is not an instance of the Z class')        
-        pt_obj = MTpt.PhaseTensor(z_object = z_object)
+            raise MTex.MTpyError_Z('Input argument is not an instance of the Z class')
+        pt_obj = MTpt.PhaseTensor(z_object=z_object)
     elif pt_array is not None:
-        pt_obj = MTpt.PhaseTensor(pt_array= pt_array)
+        pt_obj = MTpt.PhaseTensor(pt_array=pt_array)
     elif pt_object is not None:
         if not isinstance(pt_object, MTpt.PhaseTensor):
             raise MTex.MTpyError_PT('Input argument is not an instance of the PhaseTensor class')
         pt_obj = pt_object
-    
 
     # use criteria from Bibby et al. 2005 for determining the dimensionality 
     # for each frequency of the pt/z array:
     for idx_f in range(len(pt_obj.pt)):
-        #1. determine skew value...
+        # 1. determine skew value...
         skew = pt_obj.beta[0][idx_f]
-            #compare with threshold for 3D
+        # compare with threshold for 3D
         if skew > skew_threshold:
             lo_dimensionality.append(3)
         else:
-            #2.check for eccentricity:
+            # 2.check for eccentricity:
             ecc = pt_obj._pi1()[0][idx_f] / pt_obj._pi2()[0][idx_f]
             if ecc > eccentricity_threshold:
                 lo_dimensionality.append(2)
@@ -120,11 +119,9 @@ def dimensionality(z_array = None, z_object = None, pt_array= None,
     return np.array(lo_dimensionality)
 
 
-
-def strike_angle(z_array = None, z_object = None, pt_array= None, 
-                    pt_object = None, skew_threshold = 5, 
-                    eccentricity_threshold = 0.1):
-                        
+def strike_angle(z_array=None, z_object=None, pt_array=None,
+                 pt_object=None, skew_threshold=5,
+                 eccentricity_threshold=0.1):
     """
     Estimate strike angle from 2D parts of the impedance tensor given the 
     skew and eccentricity thresholds
@@ -178,22 +175,22 @@ def strike_angle(z_array = None, z_object = None, pt_array= None,
     """
 
     if z_array is not None:
-        pt_obj = MTpt.PhaseTensor(z_array = z_array)
+        pt_obj = MTpt.PhaseTensor(z_array=z_array)
     elif z_object is not None:
         if not isinstance(z_object, MTz.Z):
             raise MTex.MTpyError_Z('Input argument is not an instance of the Z class')
-        pt_obj = MTpt.PhaseTensor(z_object = z_object)
+        pt_obj = MTpt.PhaseTensor(z_object=z_object)
 
     elif pt_array is not None:
-        pt_obj = MTpt.PhaseTensor(pt_array= pt_array)
+        pt_obj = MTpt.PhaseTensor(pt_array=pt_array)
     elif pt_object is not None:
         if not isinstance(pt_object, MTpt.PhaseTensor):
             raise MTex.MTpyError_PT('Input argument is not an instance of the PhaseTensor class')
         pt_obj = pt_object
 
-    lo_dims =  dimensionality(pt_object = pt_obj, 
-                              skew_threshold=skew_threshold, 
-                              eccentricity_threshold=eccentricity_threshold )
+    lo_dims = dimensionality(pt_object=pt_obj,
+                             skew_threshold=skew_threshold,
+                             eccentricity_threshold=eccentricity_threshold)
 
     lo_strikes = []
 
@@ -205,21 +202,18 @@ def strike_angle(z_array = None, z_object = None, pt_array= None,
         a = pt_obj.alpha[0][idx]
         b = pt_obj.beta[0][idx]
 
-        strike1 = (a - b)%90
-        if 0 < strike1 < 45 :
+        strike1 = (a - b) % 90
+        if 0 < strike1 < 45:
             strike2 = strike1 + 90
         else:
             strike2 = strike1 - 90
-        
-        s1 = min(strike1,strike2)
-        s2 = max(strike1,strike2)
 
-        lo_strikes.append(( s1,s2) )
-        
-        
+        s1 = min(strike1, strike2)
+        s2 = max(strike1, strike2)
+
+        lo_strikes.append((s1, s2))
 
     return np.array(lo_strikes)
-
 
 
 def eccentricity(z_array=None, z_object=None, pt_array=None, pt_object=None):
@@ -265,15 +259,14 @@ def eccentricity(z_array=None, z_object=None, pt_array=None, pt_object=None):
             >>> ec, ec_err= geometry.eccentricity(z_object=z_obj)
     """
 
-
     if z_array is not None:
-        pt_obj = MTpt.PhaseTensor(z_array = z_array)
+        pt_obj = MTpt.PhaseTensor(z_array=z_array)
     elif z_object is not None:
         if not isinstance(z_object, MTz.Z):
             raise MTex.MTpyError_Z('Input argument is not an instance of the Z class')
-        pt_obj = MTpt.PhaseTensor(z_object = z_object)
+        pt_obj = MTpt.PhaseTensor(z_object=z_object)
     elif pt_array is not None:
-        pt_obj = MTpt.PhaseTensor(pt_array= pt_array)
+        pt_obj = MTpt.PhaseTensor(pt_array=pt_array)
     elif pt_object is not None:
         if not isinstance(pt_object, MTpt.PhaseTensor):
             raise MTex.MTpyError_PT('Input argument is not an instance of the PhaseTensor class')
@@ -284,16 +277,15 @@ def eccentricity(z_array=None, z_object=None, pt_array=None, pt_object=None):
 
     if not isinstance(pt_obj, MTpt.PhaseTensor):
         raise MTex.MTpyError_PT('Input argument is not an instance of the PhaseTensor class')
-   
 
     for idx_f in range(len(pt_obj.pt)):
-        lo_ecc.append( pt_obj._pi1()[0][idx_f] / pt_obj._pi2()[0][idx_f] )
+        lo_ecc.append(pt_obj._pi1()[0][idx_f] / pt_obj._pi2()[0][idx_f])
 
         ecc_err = None
         if (pt_obj._pi1()[1] is not None) and (pt_obj._pi2()[1] is not None):
-            ecc_err = np.sqrt( (pt_obj._pi1()[1][idx_f] /pt_obj._pi1()[0][idx_f] )**2 + (pt_obj._pi2()[1][idx_f] /pt_obj._pi2()[0][idx_f])**2)  
-
+            ecc_err = np.sqrt((pt_obj._pi1()[1][idx_f] / pt_obj._pi1()[0][idx_f]) ** 2 + (
+            pt_obj._pi2()[1][idx_f] / pt_obj._pi2()[0][idx_f]) ** 2)
 
         lo_eccerr.append(ecc_err)
 
-    return np.array(lo_ecc), np.array(lo_eccerr) 
+    return np.array(lo_ecc), np.array(lo_eccerr)
