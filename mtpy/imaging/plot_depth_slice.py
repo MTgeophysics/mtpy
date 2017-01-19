@@ -404,8 +404,8 @@ class PlotDepthSlice(object):
 
             # when runs interactively, plt show a figure
             plt.show()
-            fig.clear()
-            plt.close()
+#            fig.clear()
+#            plt.close()
 
             return
 
