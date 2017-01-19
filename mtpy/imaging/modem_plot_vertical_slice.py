@@ -221,8 +221,15 @@ if __name__ == "__main__":
     if (len(sys.argv) == 2):  # A model dir provided
         modeldir = sys.argv[1]
         datf = op.join(modeldir, 'ModEM_Data.dat')
-        rhofiles = glob.glob(op.join(modeldir, "*.rho"))
-        rhof = sorted(rhofiles)[-1]  # the file with highest numbers in the last 3 numbers before *.rho
+        rhofiles = glob.glob(op.join(modeldir, '*.rho'))
+
+        print(rhofiles)
+
+        if len(rhofiles) < 1:
+            print ("No rho files found in the dir %s", modeldir)
+            sys.exit(1)
+        else:
+            rhof = sorted(rhofiles)[-1]  # the file with highest numbers in the last 3 numbers before *.rho
 
         print("Effective Files Used in Plot: ", datf, rhof)
 

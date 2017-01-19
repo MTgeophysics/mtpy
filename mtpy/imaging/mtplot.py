@@ -85,121 +85,127 @@ section and strike angle.
 
 :Version: 0.0.1 of 2013
 
-
 """
-#==============================================================================
-
+# ==============================================================================
 import mtpy.imaging.plotnresponses as plotnresponses
 import mtpy.imaging.plotpseudosection as plotrpps
 import mtpy.imaging.plotpt as plotpt
-import mtpy.imaging.plotptpseudosection as plotptps
 import mtpy.imaging.plotptmaps as plotptmaps
-import mtpy.imaging.plotresponse as plotresponse
-import mtpy.imaging.plotstrike as plotstrike
-import mtpy.imaging.plotstations as plotstations
+import mtpy.imaging.plotptpseudosection as plotptps
 import mtpy.imaging.plotresidualptmaps as plotresidualptmaps
 import mtpy.imaging.plotresidualptps as plotresidualptps
+import mtpy.imaging.plotresponse as plotresponse
+import mtpy.imaging.plotstations as plotstations
+import mtpy.imaging.plotstrike as plotstrike
+
 reload(plotpt)
 reload(plotptmaps)
 
-#==============================================================================
+# ==============================================================================
 
-
-def plot_mt_response(**kwargs):                    
+def plot_mt_response(**kwargs):
     """
     plots the MT response for a single station.  
     
     """
-    
+
     return plotresponse.PlotResponse(**kwargs)
+
 
 def plot_multiple_mt_responses(**kwargs):
     """
     plot multiple MT responses    
     
     """
-    
+
     return plotnresponses.PlotMultipleResponses(**kwargs)
 
-def plot_pt(**kwargs):           
+
+def plot_pt(**kwargs):
     """
     plots the phase tensor ellipses along with the strike, minimum phase,
     maximum phase, skew and ellipticity.    
     
     """
-              
+
     return plotpt.PlotPhaseTensor(**kwargs)
+
 
 def plot_pt_pseudosection(**kwargs):
     """
     plots the phase tensor ellipses as a pseudo section.
     
     """
-              
+
     return plotptps.PlotPhaseTensorPseudoSection(**kwargs)
 
+
 def plot_pt_map(**kwargs):
-                    
     """
     plots a map of phase tensor ellipses for a given frequency.
     
     """
-    
-    return plotptmaps.PlotPhaseTensorMaps(**kwargs) 
+
+    return plotptmaps.PlotPhaseTensorMaps(**kwargs)
+
 
 def plot_strike(**kwargs):
     """
     plots the strike angle.    
     
     """
-                           
+
     return plotstrike.PlotStrike(**kwargs)
+
 
 def plot_resphase_pseudosection(**kwargs):
     """
     plots resistivity and phase as a pseudo section    
     
     """
-    
+
     return plotrpps.PlotResPhasePseudoSection(**kwargs)
-    
+
+
 def plot_station_locations(**kwargs):
     """
     Plot station locations in map view.
     
     """
-    
+
     return plotstations.PlotStations(**kwargs)
-    
+
+
 def plot_residual_pt_maps(fn_list1, fn_list2, **kwargs):
     """
     plot residual pt between two measurements in map view
     
     """
-    
+
     return plotresidualptmaps.PlotResidualPTMaps(fn_list1, fn_list2, **kwargs)
-    
+
+
 def plot_residual_pt_ps(fn_list1, fn_list2, **kwargs):
     """
     plot residual ps between two measurements as a pseudo section
     
     """
-    
-    return plotresidualptps.PlotResidualPTps(fn_list1, fn_list2, **kwargs)
-    
 
-#reset the doc strings of these helper functions to that of the class
-#there is probably a more elegant way to do this, but for now, this
-#works
+    return plotresidualptps.PlotResidualPTps(fn_list1, fn_list2, **kwargs)
+
+
+# reset the doc strings of these helper functions to that of the class
+# there is probably a more elegant way to do this, but for now, this
+# works
 plot_mt_response.__doc__ = plotresponse.PlotResponse.__doc__
 plot_multiple_mt_responses.__doc__ = \
-                                plotnresponses.PlotMultipleResponses.__doc__
+    plotnresponses.PlotMultipleResponses.__doc__
 plot_pt.__doc__ = plotpt.PlotPhaseTensor.__doc__
 plot_pt_pseudosection.__doc__ = plotptps.PlotPhaseTensorPseudoSection.__doc__
 plot_pt_map.__doc__ = plotptmaps.PlotPhaseTensorMaps.__doc__
 plot_strike.__doc__ = plotstrike.PlotStrike.__doc__
 plot_resphase_pseudosection.__doc__ = \
-                                    plotrpps.PlotResPhasePseudoSection.__doc__
+    plotrpps.PlotResPhasePseudoSection.__doc__
 plot_station_locations.__doc__ = plotstations.PlotStations.__doc__
 plot_residual_pt_maps.__doc__ = plotresidualptmaps.PlotResidualPTMaps.__doc__
 plot_residual_pt_ps.__doc__ = plotresidualptps.PlotResidualPTps.__doc__

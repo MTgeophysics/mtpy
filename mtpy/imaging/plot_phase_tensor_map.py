@@ -296,7 +296,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                                 ('north', np.float),
                                                 ('lon', np.float),
                                                 ('lat', np.float),
-                                                ('station','S10')])
+                                                ('station', 'S10')])
         if self.resp_fn is not None:
             model_pt_arr = np.zeros((nf, ns), dtype=[('phimin', np.float),
                                                      ('phimax', np.float),
@@ -306,7 +306,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                                      ('north', np.float),
                                                      ('lon', np.float),
                                                      ('lat', np.float),
-                                                     ('station','S10')])
+                                                     ('station', 'S10')])
 
             res_pt_arr = np.zeros((nf, ns), dtype=[('phimin', np.float),
                                                    ('phimax', np.float),
@@ -317,7 +317,7 @@ class PlotPTMaps(mtplottools.MTEllipse):
                                                    ('lon', np.float),
                                                    ('lat', np.float),
                                                    ('geometric_mean', np.float),
-                                                    ('station','S10')])
+                                                   ('station', 'S10')])
 
         for ii, key in enumerate(self.data_obj.mt_dict.keys()):
             east = self.data_obj.mt_dict[key].grid_east / self.dscale
@@ -729,51 +729,47 @@ class PlotPTMaps(mtplottools.MTEllipse):
             plt.close(fig)
         self.plot()
 
-        
-    def _get_pt_data_list(self,attribute,xykeys=['east','north']):
+    def _get_pt_data_list(self, attribute, xykeys=['east', 'north']):
 
-        headerlist = ['period','station'] + xykeys + ['azimuth','phimin','phimax','skew']
-        data = getattr(self,attribute).T.copy()
-        indices = np.argsort(data['station'][:,0])
+        headerlist = ['period', 'station'] + xykeys + ['azimuth', 'phimin', 'phimax', 'skew']
+        data = getattr(self, attribute).T.copy()
+        indices = np.argsort(data['station'][:, 0])
 
         data = data[indices].T
         dtype = []
         for val in headerlist:
             if val == 'station':
-                dtype.append((val,'S10'))
+                dtype.append((val, 'S10'))
             else:
-                dtype.append((val,np.float))
-                
-        data_to_write = np.zeros(np.product(data.shape),dtype=dtype)
-        data_to_write['period'] = np.vstack([self.plot_period_list]*data.shape[1]).T.flatten()
-        
+                dtype.append((val, np.float))
+
+        data_to_write = np.zeros(np.product(data.shape), dtype=dtype)
+        data_to_write['period'] = np.vstack([self.plot_period_list] * data.shape[1]).T.flatten()
+
         for val in headerlist[1:]:
-            if val in ['east','north']:
+            if val in ['east', 'north']:
                 data[val] *= self.dscale
             data_to_write[val] = data[val].flatten()
-        
-        return data_to_write,headerlist
-    
-    
-    
-    def write_pt_data_to_text(self,savepath='.'):
-        
+
+        return data_to_write, headerlist
+
+    def write_pt_data_to_text(self, savepath='.'):
+
         if self.pt_data_arr is None:
             self._read_files()
 
-        for att in ['pt_data_arr','pt_resp_arr','pt_resid_arr']:
-            if hasattr(self,att):
-                data_to_write,headerlist = self._get_pt_data_list(att)
+        for att in ['pt_data_arr', 'pt_resp_arr', 'pt_resid_arr']:
+            if hasattr(self, att):
+                data_to_write, headerlist = self._get_pt_data_list(att)
                 header = ' '.join(headerlist)
-                
-                filename = op.join(savepath,att[:-4]+'.txt')
-                    
-                np.savetxt(filename,data_to_write,header=header,
-                           fmt=['%.4e','%s','%.2f','%.2f','%.2f','%.2f','%.2f','%.3f'])
-                           
-                           
-    def write_pt_data_to_gmt(self,period=None,epsg=None,savepath='.',center_utm=None,
-                             colorby='phimin',attribute='data',clim=None):
+
+                filename = op.join(savepath, att[:-4] + '.txt')
+
+                np.savetxt(filename, data_to_write, header=header,
+                           fmt=['%.4e', '%s', '%.2f', '%.2f', '%.2f', '%.2f', '%.2f', '%.3f'])
+
+    def write_pt_data_to_gmt(self, period=None, epsg=None, savepath='.', center_utm=None,
+                             colorby='phimin', attribute='data', clim=None):
         """
         write data to plot phase tensor ellipses in gmt.
         saves a gmt script and text file containing ellipse data
@@ -789,121 +785,121 @@ class PlotPTMaps(mtplottools.MTEllipse):
                     response or residuals
        
         """
-        
+
         att = 'pt_{}_arr'.format(attribute)
 
         # if centre utm not provided, get station locations from the data object
         project = False
-        xykeys = ['lon','lat']
-        
+        xykeys = ['lon', 'lat']
+
         if epsg is not None:
             if center_utm is not None:
                 project = True
             else:
-                if hasattr(self.data_obj,'center_position'):
+                if hasattr(self.data_obj, 'center_position'):
                     if np.all(np.array(self.data_obj.center_position) > 0):
                         project = True
-                        center_utm = self.data_obj.project_xy(self.data_obj.center_position[0],self.data_obj.center_position[1],
+                        center_utm = self.data_obj.project_xy(self.data_obj.center_position[0],
+                                                              self.data_obj.center_position[1],
                                                               epsg_from=4326, epsg_to=epsg)
         if project:
-            xykeys = ['east','north']
+            xykeys = ['east', 'north']
 
         # get text data list
-        data, headerlist = self._get_pt_data_list(att,xykeys=xykeys)
+        data, headerlist = self._get_pt_data_list(att, xykeys=xykeys)
 
         # extract relevant columns in correct order
         periodlist = data['period']
 
-        columns = xykeys + [colorby,'azimuth','phimax','phimin']
+        columns = xykeys + [colorby, 'azimuth', 'phimax', 'phimin']
         gmtdata = np.vstack([data[i] for i in columns]).T
-        
+
         # make a filename based on period
         if period >= 1.:
-            suffix = '%1i'%round(period)
+            suffix = '%1i' % round(period)
         else:
             nzeros = np.abs(np.int(np.floor(np.log10(period))))
-            fmt = '%0'+str(nzeros+1)+'i'
-            suffix = fmt%(period*10**nzeros)
-        
-        filename = 'ellipse_' + attribute + '.' + suffix    
-        
+            fmt = '%0' + str(nzeros + 1) + 'i'
+            suffix = fmt % (period * 10 ** nzeros)
+
+        filename = 'ellipse_' + attribute + '.' + suffix
+
         if period is not None:
             # extract relevant period
             unique_periods = np.unique(periodlist)
-            closest_period = unique_periods[np.abs(unique_periods-period) == \
-                                            np.amin(np.abs(unique_periods-period))]
+            closest_period = unique_periods[np.abs(unique_periods - period) == \
+                                            np.amin(np.abs(unique_periods - period))]
             # indices to select all occurrances of relevant period (to nearest 10^-8 s)
-            pind = np.where(np.abs(closest_period-periodlist) < 1e-8)[0]
+            pind = np.where(np.abs(closest_period - periodlist) < 1e-8)[0]
         else:
             # take the first period
             pind = 0
-        
+
         # select relevant periods
         periodlist, gmtdata = periodlist[pind], gmtdata[pind]
-        
 
         if project:
-            gmtdata[:,0] += center_utm[0]
-            gmtdata[:,1] += center_utm[1]
-            
+            gmtdata[:, 0] += center_utm[0]
+            gmtdata[:, 1] += center_utm[1]
+
             # now that x y coordinates are in utm, project to lon/lat
             self.data_obj.epsg = epsg
-            gmtdata[:,0], gmtdata[:,1] = self.data_obj.project_xy(gmtdata[:,0], gmtdata[:,1])
-            
-            
+            gmtdata[:, 0], gmtdata[:, 1] = self.data_obj.project_xy(gmtdata[:, 0], gmtdata[:, 1])
+
         # normalise by maximum value of phimax
-        norm = np.amax(gmtdata[:,4])
-        gmtdata[:,5] /= norm
-        gmtdata[:,4] /= norm
+        norm = np.amax(gmtdata[:, 4])
+        gmtdata[:, 5] /= norm
+        gmtdata[:, 4] /= norm
         if attribute != 'resid':
-            gmtdata[:,3] = 90. - gmtdata[:,3]
+            gmtdata[:, 3] = 90. - gmtdata[:, 3]
 
         # write to text file in correct format
-        fmt = ['%+11.6f','%+10.6f'] + ['%+9.4f']*2 +['%8.4f']*2
-        np.savetxt(op.join(savepath,filename),gmtdata,fmt)
-        
+        fmt = ['%+11.6f', '%+10.6f'] + ['%+9.4f'] * 2 + ['%8.4f'] * 2
+        np.savetxt(op.join(savepath, filename), gmtdata, fmt)
+
         # write gmt script
-        xmin,xmax = gmtdata[:,0].min(), gmtdata[:,0].max()
-        ymin,ymax = gmtdata[:,1].min(), gmtdata[:,1].max()
-        
-        pad = min(ymax-ymin,xmax-xmin)/10.
-        tr = -int(np.log10(20.*(xmax - xmin)))
-        tickspacing = int(np.round(20.*(xmax - xmin),tr))
-        scalebarlat = int(round(ymax+ymin)/2.)
+        xmin, xmax = gmtdata[:, 0].min(), gmtdata[:, 0].max()
+        ymin, ymax = gmtdata[:, 1].min(), gmtdata[:, 1].max()
+
+        pad = min(ymax - ymin, xmax - xmin) / 10.
+        tr = -int(np.log10(20. * (xmax - xmin)))
+        tickspacing = int(np.round(20. * (xmax - xmin), tr))
+        scalebarlat = int(round(ymax + ymin) / 2.)
         if clim is None:
-            cr = int(np.ceil(-np.log10(np.amax(gmtdata[:,2]))))
-            clim = np.round([gmtdata[:,2].min(),gmtdata[:,2].max()],cr).astype(int)
-        
-        gmtlines = [line + '\n' for line in ['w={}'.format(xmin-pad),
-                    'e={}'.format(xmax+pad),
-                    's={}'.format(ymin-pad),
-                    'n={}'.format(ymax+pad),
-                    r"wesn=$w/$s/$e/$n'r'",
-                    '',
-                    '# define output file and remove it if it exists',
-                    'PS={}.ps'.format(filename.replace('.','')),
-                    'rm $PS',
-                    '',
-                    '# set gmt parameters',
-                    'gmtset FORMAT_GEO_MAP ddd:mm:ss',
-                    'gmtset FONT_ANNOT_PRIMARY 9p,Helvetica,black',
-                    'gmtset MAP_FRAME_TYPE fancy',
-                    '',
-                    '# make colour palette',
-                    'makecpt -Cpolar -T{}/{} -Z > {}.cpt'.format(clim[0],clim[1],colorby),
-                    '',
-                    '# draw coastline',
-                    'pscoast -R$wesn -JM18c -W0.5p -Ba1f1/a1f1WSen -Gwhite -Slightgrey -Lfx14c/1c/{}/{}+u -Df -P -K >> $PS'.format(scalebarlat,tickspacing),
-                    '',
-                    '# draw ellipses',
-                    'psxy {} -R -J -P -Se -C{}.cpt -W0.01p -O >> $PS'.format(filename,colorby),
-                    '',
-                    '# save to png',
-                    'ps2raster -Tg -A -E400 $PS']]
-        
-        with open(op.join(savepath,'gmtscript_{}.gmt'.format(attribute)),'wb') as scriptfile:
-            scriptfile.writelines(gmtlines)        
-    
+            cr = int(np.ceil(-np.log10(np.amax(gmtdata[:, 2]))))
+            clim = np.round([gmtdata[:, 2].min(), gmtdata[:, 2].max()], cr).astype(int)
+
+        gmtlines = [line + '\n' for line in ['w={}'.format(xmin - pad),
+                                             'e={}'.format(xmax + pad),
+                                             's={}'.format(ymin - pad),
+                                             'n={}'.format(ymax + pad),
+                                             r"wesn=$w/$s/$e/$n'r'",
+                                             '',
+                                             '# define output file and remove it if it exists',
+                                             'PS={}.ps'.format(filename.replace('.', '')),
+                                             'rm $PS',
+                                             '',
+                                             '# set gmt parameters',
+                                             'gmtset FORMAT_GEO_MAP ddd:mm:ss',
+                                             'gmtset FONT_ANNOT_PRIMARY 9p,Helvetica,black',
+                                             'gmtset MAP_FRAME_TYPE fancy',
+                                             '',
+                                             '# make colour palette',
+                                             'makecpt -Cpolar -T{}/{} -Z > {}.cpt'.format(clim[0], clim[1], colorby),
+                                             '',
+                                             '# draw coastline',
+                                             'pscoast -R$wesn -JM18c -W0.5p -Ba1f1/a1f1WSen -Gwhite -Slightgrey -Lfx14c/1c/{}/{}+u -Df -P -K >> $PS'.format(
+                                                 scalebarlat, tickspacing),
+                                             '',
+                                             '# draw ellipses',
+                                             'psxy {} -R -J -P -Se -C{}.cpt -W0.01p -O >> $PS'.format(filename,
+                                                                                                      colorby),
+                                             '',
+                                             '# save to png',
+                                             'ps2raster -Tg -A -E400 $PS']]
+
+        with open(op.join(savepath, 'gmtscript_{}.gmt'.format(attribute)), 'wb') as scriptfile:
+            scriptfile.writelines(gmtlines)
 
     def save_figure(self, save_path=None, fig_dpi=None, file_format='pdf',
                     orientation='landscape', close_fig='y'):
