@@ -40,7 +40,8 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
 
     N = len(data)
     if N < 1:
-        raise MTex.MTpyError_ts_data('Error - Length of TS to correct is zero!')
+        raise MTex.MTpyError_ts_data(
+            'Error - Length of TS to correct is zero!')
 
     # use double sided cosine taper function
     window = MTfi.tukey(N, 0.2)
@@ -53,12 +54,15 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
     else:
         next2power = int(np.log2(N)) + 1
 
-    # zero pad data for significantly faster fft - NO, Numpy does not do that automatically
+    # zero pad data for significantly faster fft - NO, Numpy does not do that
+    # automatically
     padded_data = np.zeros((2 ** next2power))
     padded_data[:len(tapered_data)] = tapered_data
 
-    # bandpass data for excluding all frequencies that are not covered by the known instrument response
-    bp_data = padded_data  # butter_bandpass_filter(padded_data, freqmin, freqmax, samplingrate)
+    # bandpass data for excluding all frequencies that are not covered by the
+    # known instrument response
+    # butter_bandpass_filter(padded_data, freqmin, freqmax, samplingrate)
+    bp_data = padded_data
 
     # get the spectrum of the data
     data_spectrum = np.fft.rfft(bp_data)
@@ -79,7 +83,8 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
         freq = data_freqs[i]
         spec = data_spectrum[i]
 
-        # this is effectively a boxcar window - maybe to be replaced by proper windowing function ?
+        # this is effectively a boxcar window - maybe to be replaced by proper
+        # windowing function ?
         if not (freqmin <= np.abs(freq) <= freqmax):
             print 'no instrument response in this frequency range - spectrum set to zero here: ', freq
             corrected_spectrum[i] = 0  # spec
@@ -100,7 +105,8 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
         elif closest_lower == 0:
             factor = data_spectrum[0]
         else:
-            # in case the closest frequency value is not lower but higher, take the freq value below as lower bound for the interval:
+            # in case the closest frequency value is not lower but higher, take
+            # the freq value below as lower bound for the interval:
             if instr_freqs[closest_lower] > freq:
                 closest_lower -= 1
 
@@ -115,7 +121,8 @@ def correct_for_instrument_response(data, samplingrate, responsedata):
             factor = weight * instrfactor2 + (1 - weight) * instrfactor1
             # lo_freqs.append([freq,instrfreq1,instrfreq2,weight,instrfactor1,instrfactor2,factor])
 
-        # finally correct the data for the instrument influence by dividing the complex data spectral value by the instrument response value:
+        # finally correct the data for the instrument influence by dividing the
+        # complex data spectral value by the instrument response value:
         corrected_spectrum[i] = spec / factor
         # lo_mags.append([np.abs(spec),np.abs(corrected_spectrum[i]), factor ])
     # invert into time domain
