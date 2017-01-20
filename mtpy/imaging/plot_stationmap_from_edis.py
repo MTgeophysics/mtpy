@@ -1,98 +1,27 @@
 #!/usr/bin/env python
 
-# I know, it's not nice, but I am lazy:
+"""
+use mpl_toolkits.basemap to create a map showing MT station location
+
+"""
+
 import fnmatch
-
 import os
-import os.path as op
 import sys
+import numpy as np
 
-from numpy import *
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 
+from mpl_toolkits.basemap import Basemap
+# If use anaconda python, you can install basemap packages
+#     conda install basemap
+#     conda install -c conda-forge basemap-data-hires
 
-def main():
-    if len(sys.argv) < 2:
-        print """\n\tusage: \n
-            python plot_stationmap_from_edis.py <edi folder> [optional_arguments] 
-
-        list of optional arguments:
-
-            - <symbolsize (int,24)> 
-            - <mapstretchfactor (float,1.)> 
-            - <labelsize (int,14)> 
-            - <showlabel (bool,True)> 
-
-
-        Output:
-
-        2 files containing a geographical map (Mercator) with all station 
-        locations, which could be extracted from the EDI files in the folder 
-        provided:
-
-        station_locations_map.png/svg
-        
-        (no overwriting of existing files with these names)
-
-
-        """
-        return
-
-    edifolder = sys.argv[1]
-    edilist = []
-    try:
-        # if not op.isdir(edifolder):
-        #     raise
-        print edifolder
-        edifiles = os.listdir(edifolder)
-        print edifiles
-        edilist = fnmatch.filter(os.listdir(edifolder), '*.[Ee][Dd][Ii]')
-        edilist = [op.abspath(op.join(edifolder, i)) for i in edilist]
-        if len(edilist) == 0:
-            raise
-    except:
-        print 'No EDI files in folder {0}'.format(edifolder)
-        return
-
-    try:
-        symbolsize = int(float(sys.argv[2]))
-    except:
-        print 'cannot read symbolsize value - using default'
-        symbolsize = 24
-
-    try:
-        mapstretchfactor = float(sys.argv[3])
-    except:
-        print 'cannot read mapstretchfactor value - using default'
-        mapstretchfactor = 1
-
-    try:
-        labelsize = int(float(sys.argv[4]))
-    except:
-        print 'cannot read labelsize value - using default'
-        labelsize = 14
-
-    try:
-        showlabel = sys.argv[5]
-        if not bool(showlabel):
-            raise
-    except:
-        print 'cannot read showlabel value - using default (=True)'
-        showlabel = True
-
-    f1, f2 = makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel)
-
-    print 'wrote map files\n\t {0}\n and\n\t {1}\n'.format(f1, f2)
-
+import mtpy.core.edi as EDI
+import mtpy.utils.filehandling as MTfh
 
 def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
-    # import of modules here due to warnings from Matplotlib packages
-    # these warnings distract the 'usage' information
-    from mpl_toolkits.basemap import Basemap  #conda install basemap
-    import matplotlib.pyplot as plt
-    import matplotlib as mpl
-    import mtpy.core.edi as EDI
-    import mtpy.utils.filehandling as MTfh
-
     lats = []
     lons = []
     names = []
@@ -103,9 +32,9 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
         lats.append(e.lat)
         lons.append(e.lon)
         names.append(e.Header.dataid.lower())
-        #names.append(e.head['dataid'].lower())
+        # names.append(e.head['dataid'].lower())
 
-    coords = zeros((len(edilist), 2))
+    coords = np.zeros((len(edilist), 2))
     coords[:, 0] = lats
     coords[:, 1] = lons
 
@@ -113,7 +42,7 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
     lonrange = max(lons) - min(lons)
 
     # center point for projection:
-    c = [mean(lats), mean(lons)]
+    c = [np.mean(lats), np.mean(lons)]
 
     # -----------------------
     # Matplotlib options
@@ -165,7 +94,7 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
     lats.append(total_latmin)
     lats.append(total_latmax)
 
-    xgrid, ygrid = m(*meshgrid(lons, lats))
+    xgrid, ygrid = m(*np.meshgrid(lons, lats))
     xdiff = xgrid.max() - xgrid.min()
     ydiff = ygrid.max() - ygrid.min()
 
@@ -177,12 +106,12 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
     m.drawmapboundary(fill_color='aqua', ax=ax)
 
     m.drawparallels(
-        [round(i, 3) for i in linspace(total_latmin, total_latmax, latnum + 1, False)][1:],
+        [round(i, 3) for i in np.linspace(total_latmin, total_latmax, latnum + 1, False)][1:],
         labels=[1, 0, 0, 0],
         fmt='%.1f'
     )
     m.drawmeridians(
-        [round(i, 3) for i in linspace(total_lonmin, total_lonmax, lonnum + 1, False)][1:],
+        [round(i, 3) for i in np.linspace(total_lonmin, total_lonmax, lonnum + 1, False)][1:],
         labels=[0, 0, 0, 1],
         fmt='%.1f'
     )
@@ -191,7 +120,7 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
 
     m.drawmapscale(total_lonmax - 0.15 * total_lonrange, total_latmax - 0.2 * total_latrange,
                    c[1], c[0],
-                   2 * 10 ** (int(log10(largest_extent / 1000.)) - 1),
+                   2 * 10 ** (int(np.log10(largest_extent / 1000.)) - 1),
                    barstyle='simple',
                    labelstyle='simple', fontsize=12,
                    fontcolor='k', fillcolor1='r', fillcolor2='g',
@@ -215,8 +144,84 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
     plt.savefig(f1, format='png', dpi=200)
     plt.savefig(f2, format='svg', transparent=True)
 
-    return op.abspath(f1), op.abspath(f2)
+    return os.path.abspath(f1), os.path.abspath(f2)
+
+#################################################################################
+def main():
+    if len(sys.argv) < 2:
+        print """\n\tusage: \n
+            python plot_stationmap_from_edis.py <edi folder> [optional_arguments]
+
+        list of optional arguments:
+
+            - <symbolsize (int,24)>
+            - <mapstretchfactor (float,1.)>
+            - <labelsize (int,14)>
+            - <showlabel (bool,True)>
 
 
+        Output:
+
+        2 files containing a geographical map (Mercator) with all station
+        locations, which could be extracted from the EDI files in the folder
+        provided:
+
+        station_locations_map.png/svg
+
+        (no overwriting of existing files with these names)
+
+
+        """
+        return
+
+    edifolder = sys.argv[1]
+    edilist = []
+    try:
+        # if not op.isdir(edifolder):
+        #     raise
+        print edifolder
+        edifiles = os.listdir(edifolder)
+        print edifiles
+        edilist = fnmatch.filter(os.listdir(edifolder), '*.[Ee][Dd][Ii]')
+        edilist = [os.path.abspath(os.path.join(edifolder, i)) for i in edilist]
+        if len(edilist) == 0:
+            raise
+    except:
+        print 'No EDI files in folder {0}'.format(edifolder)
+        return
+
+    try:
+        symbolsize = int(float(sys.argv[2]))
+    except:
+        print 'cannot read symbolsize value - using default'
+        symbolsize = 24
+
+    try:
+        mapstretchfactor = float(sys.argv[3])
+    except:
+        print 'cannot read mapstretchfactor value - using default'
+        mapstretchfactor = 1
+
+    try:
+        labelsize = int(float(sys.argv[4]))
+    except:
+        print 'cannot read labelsize value - using default'
+        labelsize = 14
+
+    try:
+        showlabel = sys.argv[5]
+        if not bool(showlabel):
+            raise
+    except:
+        print 'cannot read showlabel value - using default (=True)'
+        showlabel = True
+
+    f1, f2 = makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel)
+
+    print 'wrote map files\n\t {0}\n and\n\t {1}\n'.format(f1, f2)
+
+##########################################################################################
+# Usage example:  python mtpy/imaging/plot_stationmap_from_edis.py examples/data/edi_files
+#---------------------------------------------------------------------------------
 if __name__ == '__main__':
     main()
