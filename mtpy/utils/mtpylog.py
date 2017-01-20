@@ -13,7 +13,7 @@ import logging
 import logging.config
 import inspect
 
-logging.getLogger().setLevel(logging.DEBUG) # DEBUG is good for debug and development
+logging.getLogger().setLevel(logging.DEBUG)     # DEBUG is good for debug and development
 
 class MtPyLog():
     # def __init__(self, path2configfile=None):
@@ -36,7 +36,7 @@ class MtPyLog():
             logging.info("module file: %s", this_module_file_path)
 
             yaml_path = os.path.join(os.path.dirname(this_module_file_path), path2configfile)
-            logging.info('Effective yaml configuration file %s',yaml_path)
+            logging.info('Effective yaml configuration file %s', yaml_path)
 
             if os.path.exists(yaml_path):
                 with open(yaml_path, 'rt') as f:
@@ -78,7 +78,6 @@ def test_none_configfile():
     # logger = myobj.get_mtpy_logger('simpleExample2') # not configured, use the root's
     logger = myobj.get_mtpy_logger(__name__)  # __main__  # = root config
     # logger = myobj.get_mtpy_logger()  # root
-
 
     print(logger, id(logger), logger.level, logger.handlers)
 
@@ -200,7 +199,7 @@ if __name__ == "__main__":
     logger.error('error message')
     logger.critical('critical message')
 
-    ### now what happen to logging default?  logging has been configured
+    # now what happen to logging default?  logging has been configured
     logging.debug("End: how about the old logging format?")
     logging.warn("End: how about the old logging format?")
     logging.info("End: how about the old logging format?")

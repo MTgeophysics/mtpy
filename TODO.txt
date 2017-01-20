@@ -18,7 +18,8 @@ integrate with readthedocs, github.io
 integrate with coverage services
 
 improve code quality:
-    pylint scores since beginning of Nov 2016: [-5.26, -4.91, -3.42, ...]
+    pylint scores since beginning of Nov 2016 (pylint  --rcfile=pylintrc mtpy)
+    [-5.26, -4.91, -3.42, ...]
     pep8 mtpy --max-line-length 120 ; echo $?   should pass
     other QA/QC tools
 
