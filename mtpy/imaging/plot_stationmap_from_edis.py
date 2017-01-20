@@ -2,6 +2,8 @@
 
 # I know, it's not nice, but I am lazy:
 import fnmatch
+
+import os
 import os.path as op
 import sys
 
@@ -38,8 +40,11 @@ def main():
     edifolder = sys.argv[1]
     edilist = []
     try:
-        if not op.isdir(edifolder):
-            raise
+        # if not op.isdir(edifolder):
+        #     raise
+        print edifolder
+        edifiles = os.listdir(edifolder)
+        print edifiles
         edilist = fnmatch.filter(os.listdir(edifolder), '*.[Ee][Dd][Ii]')
         edilist = [op.abspath(op.join(edifolder, i)) for i in edilist]
         if len(edilist) == 0:
@@ -82,7 +87,7 @@ def main():
 def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
     # import of modules here due to warnings from Matplotlib packages
     # these warnings distract the 'usage' information
-    from mpl_toolkits.basemap import Basemap
+    from mpl_toolkits.basemap import Basemap  #conda install basemap
     import matplotlib.pyplot as plt
     import matplotlib as mpl
     import mtpy.core.edi as EDI
@@ -94,10 +99,11 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
 
     for i in edilist:
         e = EDI.Edi()
-        e.readfile(i)
+        e.read_edi_file(i)
         lats.append(e.lat)
         lons.append(e.lon)
-        names.append(e.head['dataid'].lower())
+        names.append(e.Header.dataid.lower())
+        #names.append(e.head['dataid'].lower())
 
     coords = zeros((len(edilist), 2))
     coords[:, 0] = lats
