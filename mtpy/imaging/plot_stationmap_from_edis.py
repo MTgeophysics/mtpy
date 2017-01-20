@@ -151,8 +151,8 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
 
     plt.title('locations of {0} MT stations'.format(len(names)))
 
-    f1 = 'station_locations_map.png'
-    f2 = 'station_locations_map.svg'
+    f1 = 'tmp/station_locations_map.png'
+    f2 = 'tmp/station_locations_map.svg'
 
     f1 = MTfh.make_unique_filename(f1)
     f2 = MTfh.make_unique_filename(f2)

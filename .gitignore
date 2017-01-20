@@ -57,6 +57,8 @@ logs
 zprivate
 scratch*
 localdir
+tmp
+temp
 nohup*
 
 *.log
