@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
 """
-use mpl_toolkits.basemap to create a map showing MT station location
+use mpl_toolkits.basemap to create a map to show MT station location
 
 """
 
 import fnmatch
 import os
 import sys
+import inspect
 import numpy as np
 
 import matplotlib as mpl
@@ -21,7 +22,18 @@ from mpl_toolkits.basemap import Basemap
 import mtpy.core.edi as EDI
 import mtpy.utils.filehandling as MTfh
 
+from mtpy.utils.mtpylog import MtPyLog
+# get a logger object for this module, using the utility class MtPyLog to config the logger
+logger = MtPyLog().get_mtpy_logger(__name__)
+
+
 def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
+
+    this_fun_name = inspect.getframeinfo(inspect.currentframe())[2]
+    logger.debug("starting %s", this_fun_name)
+    logger.debug("mapstretchfactor, symbolsize, labelsize, showlabel")
+    logger.debug("%s %s %s %s", mapstretchfactor, symbolsize, labelsize, showlabel)
+
     lats = []
     lons = []
     names = []
@@ -73,12 +85,16 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
     lonlat_stretch = total_lonrange / total_latrange
     if int(lonlat_stretch) > 2:
         # significantly more long than lat
-        factor = int(int(lonlat_stretch) / 2.)
+        #could be 0 factor = int(int(lonlat_stretch) / 2.)
+        factor = lonlat_stretch/2.
+        logger.debug("factor=%s", factor)
         latnum = int(maximumlabels / factor) + 1
         lonnum = maximumlabels
     elif int(lonlat_stretch) < 0.5:
         # significantly more long than lat
-        factor = int(int(1. / lonlat_stretch) / 2.)
+        #factor = int(int(1. / lonlat_stretch) / 2.)
+        factor = (1./ lonlat_stretch) / 2.
+        logger.debug("factor=%s", factor)
         lonnum = int(maximumlabels / factor) + 1
         latnum = maximumlabels
 
@@ -131,7 +147,7 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
         plt.plot(x, y, 'v', ms=symbolsize, color='k', label=name)
         if showlabel is True:
             plt.text(x, y, name, fontsize=labelsize, ha='center', va='bottom', color='k',
-                     backgroundcolor='r')  # , labelfontsize=5)
+                     backgroundcolor='grey')  # , labelfontsize=5)
 
     plt.title('locations of {0} MT stations'.format(len(names)))
 
@@ -144,12 +160,14 @@ def makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel):
     plt.savefig(f1, format='png', dpi=200)
     plt.savefig(f2, format='svg', transparent=True)
 
+    plt.show()
+
     return os.path.abspath(f1), os.path.abspath(f2)
 
 #################################################################################
 def main():
     if len(sys.argv) < 2:
-        print """\n\tusage: \n
+        logger.debug( """\n\tusage: \n
             python plot_stationmap_from_edis.py <edi folder> [optional_arguments]
 
         list of optional arguments:
@@ -171,7 +189,7 @@ def main():
         (no overwriting of existing files with these names)
 
 
-        """
+        """)
         return
 
     edifolder = sys.argv[1]
@@ -179,49 +197,48 @@ def main():
     try:
         # if not op.isdir(edifolder):
         #     raise
-        print edifolder
+        logger.debug( edifolder)
         edifiles = os.listdir(edifolder)
-        print edifiles
+        logger.debug( edifiles )
         edilist = fnmatch.filter(os.listdir(edifolder), '*.[Ee][Dd][Ii]')
         edilist = [os.path.abspath(os.path.join(edifolder, i)) for i in edilist]
         if len(edilist) == 0:
             raise
     except:
-        print 'No EDI files in folder {0}'.format(edifolder)
+        logger.debug( 'No EDI files in folder %s',  edifolder)
         return
 
     try:
         symbolsize = int(float(sys.argv[2]))
     except:
-        print 'cannot read symbolsize value - using default'
+        logger.debug( 'cannot read symbolsize value - using default')
         symbolsize = 24
 
     try:
         mapstretchfactor = float(sys.argv[3])
     except:
-        print 'cannot read mapstretchfactor value - using default'
+        logger.debug( 'cannot read mapstretchfactor value - using default')
         mapstretchfactor = 1
 
     try:
         labelsize = int(float(sys.argv[4]))
     except:
-        print 'cannot read labelsize value - using default'
+        logger.debug( 'cannot read labelsize value - using default')
         labelsize = 14
 
-    try:
-        showlabel = sys.argv[5]
-        if not bool(showlabel):
-            raise
-    except:
-        print 'cannot read showlabel value - using default (=True)'
+    showlabel = sys.argv[5]
+    if showlabel.lower() == 'true':
         showlabel = True
+    else:
+        showlabel=False
 
     f1, f2 = makemap(edilist, mapstretchfactor, symbolsize, labelsize, showlabel)
 
-    print 'wrote map files\n\t {0}\n and\n\t {1}\n'.format(f1, f2)
+    logger.info('wrote map files\n\t %s \n and\n\t %s\n', f1,f2)
 
 ##########################################################################################
-# Usage example:  python mtpy/imaging/plot_stationmap_from_edis.py examples/data/edi_files
+# Usage example:
+# python mtpy/imaging/plot_stationmap_from_edis.py tests/data/edifiles/ 12 2.0 12 true
 #---------------------------------------------------------------------------------
 if __name__ == '__main__':
     main()

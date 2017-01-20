@@ -31,10 +31,15 @@ handlers:
 
 loggers:
     my_module:
-        level: ERROR
+        level: DEBUG
+        handlers: [console]
+        propagate: no
+
+    __main__:
+        level: DEBUG
         handlers: [console]
         propagate: no
 
 root:
-    level: WARN 
+    level: WARN
     handlers: [console, info_file_handler, error_file_handler]
