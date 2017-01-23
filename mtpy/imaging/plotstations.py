@@ -555,7 +555,3 @@ class PlotStations(object):
 
     def __str__(self):
         return "Plot station locations"              
-                             
-                        
-        
-        

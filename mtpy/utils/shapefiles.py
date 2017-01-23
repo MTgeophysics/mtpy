@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Create shape files for phase tensor ellipses.
+https://pcjericks.github.io/py-gdalogr-cookbook/vector_layers.html#create-a-new-shapefile-and-add-data
 
 Created on Sun Apr 13 12:32:16 2014
 
@@ -197,6 +198,7 @@ class PTShapeFile(object):
     def write_shape_files(self, ):
         """
         write shape file from given attributes
+        https://pcjericks.github.io/py-gdalogr-cookbook/vector_layers.html#create-a-new-shapefile-and-add-data
         """
 
         self._get_pt_array()
@@ -1418,6 +1420,7 @@ def test_edi2shp(edi_dir, save_dir):
     tipshp.arrow_lw = 30
     tipshp.arrow_head_height = 100
     tipshp.arrow_head_width = 70
+
     tipshp.write_real_shape_files()
     tipshp.write_imag_shape_files()
 
