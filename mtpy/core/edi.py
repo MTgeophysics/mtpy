@@ -33,7 +33,7 @@ except ImportError:
     print 'Could not find scipy.stats.distributions, check distribution'
     ssd_test = False
 
-tab = ' ' * 4
+tab = " " * 4
 
 # get a logger object for this module, using the utility class MtPyLog to config the logger
 logger = MtPyLog().get_mtpy_logger(__name__)

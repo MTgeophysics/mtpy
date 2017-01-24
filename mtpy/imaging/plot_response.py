@@ -1,6 +1,6 @@
 """
 # ==============================================================================
-Plots data vs model response computed by an Inversion Mothod
+Plots data vs model response computed by an Inversion Method
 # ==============================================================================
 """
 

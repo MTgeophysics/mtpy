@@ -685,7 +685,7 @@ class MT(object):
 
     def plot_mt_response(self, **kwargs):
         """ 
-        Returns a mtpy.imaging.plotresponse.PlotResponse object
+        Returns a mtpy.imaging.plot_mt_response.PlotMTResponse object
 
         Examples
         ------------

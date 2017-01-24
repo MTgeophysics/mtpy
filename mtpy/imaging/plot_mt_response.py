@@ -5,8 +5,6 @@ plot_mt_response
 ============
 
 Plots Resistivity and phase for the different modes of the MT response with an .edi file as input.
-(Other formats that will be supported are the impedance tensor and errors with an array of periods
-and .j format.)
 
 CreatedOn:  Thu May 30 16:54:08 2013
 CreatedBy:  jpeacock-pr
