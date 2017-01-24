@@ -34,7 +34,7 @@ import mtpy.utils.configfile as mtcf
 import matplotlib.pyplot as plt
 import mtpy.imaging.plotspectrogram as plotspectrogram
 import mtpy.imaging.plotnresponses as plotnresponses
-import mtpy.imaging.plotresponse as plotresponse
+import mtpy.imaging.plot_mt_response as plotresponse
 from cStringIO import StringIO
 import sys
 import mtpy.processing.filter as mtfilt
@@ -5024,8 +5024,8 @@ class Z3D_to_edi(object):
         elif type(self.edi_fn) is str:
             if os.path.getsize(self.edi_fn) < 3000:
                 raise ValueError('No good .edi files where produced')
-            resp_plot = plotresponse.PlotResponse(fn=self.edi_fn,
-                                                  plot_tipper='yri')
+            resp_plot = plotresponse.PlotMTResponse(fn=self.edi_fn,
+                                                    plot_tipper='yri')
                                                          
         return resp_plot
  

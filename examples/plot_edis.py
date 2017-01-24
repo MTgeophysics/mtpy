@@ -14,7 +14,7 @@ import os
 import sys
 import glob
 import matplotlib.pyplot as plt
-import mtpy.imaging.plotresponse as mtpr
+import mtpy.imaging.plot_mt_response as mtpr
 from mtpy.utils.mtpylog import MtPyLog
 
 # get a logger object for this module, using the utility class MtPyLog to config the logger
@@ -54,7 +54,7 @@ def plot_edi_file(edi_file):
 
     logger.info("Plotting the edi file %s", edi_file)
 
-    pr = mtpr.PlotResponse(fn=edi_file, plot_num=2, res_limits=(1, 10000), phase_limits=(0, 90))
+    pr = mtpr.PlotMTResponse(fn=edi_file, plot_num=2, res_limits=(1, 10000), phase_limits=(0, 90))
 
     return pr
 

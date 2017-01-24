@@ -94,7 +94,7 @@ import mtpy.imaging.plotptmaps as plotptmaps
 import mtpy.imaging.plotptpseudosection as plotptps
 import mtpy.imaging.plotresidualptmaps as plotresidualptmaps
 import mtpy.imaging.plotresidualptps as plotresidualptps
-import mtpy.imaging.plotresponse as plotresponse
+import mtpy.imaging.plot_mt_response as plotresponse
 import mtpy.imaging.plotstations as plotstations
 import mtpy.imaging.plotstrike as plotstrike
 
@@ -109,7 +109,7 @@ def plot_mt_response(**kwargs):
     
     """
 
-    return plotresponse.PlotResponse(**kwargs)
+    return plotresponse.PlotMTResponse(**kwargs)
 
 
 def plot_multiple_mt_responses(**kwargs):
@@ -197,7 +197,7 @@ def plot_residual_pt_ps(fn_list1, fn_list2, **kwargs):
 # reset the doc strings of these helper functions to that of the class
 # there is probably a more elegant way to do this, but for now, this
 # works
-plot_mt_response.__doc__ = plotresponse.PlotResponse.__doc__
+plot_mt_response.__doc__ = plotresponse.PlotMTResponse.__doc__
 plot_multiple_mt_responses.__doc__ = \
     plotnresponses.PlotMultipleResponses.__doc__
 plot_pt.__doc__ = plotpt.PlotPhaseTensor.__doc__

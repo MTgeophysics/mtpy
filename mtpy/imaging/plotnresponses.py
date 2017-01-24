@@ -17,7 +17,7 @@ from matplotlib.ticker import MultipleLocator
 
 import mtpy.imaging.mtcolors as mtcl
 import mtpy.imaging.mtplottools as mtpl
-from mtpy.imaging.plotresponse import PlotResponse as plotresponse
+from mtpy.imaging.plot_mt_response import PlotMTResponse as plotresponse
 
 reload(mtpl)
 
@@ -27,7 +27,7 @@ reload(mtpl)
 class PlotMultipleResponses(mtpl.MTArrows, mtpl.MTEllipse):
     """
     plots multiple MT responses simultaneously either in single plots or in 
-    one plot of subfigures or in a single plot with subfigures for each 
+    one plot of sub-figures or in a single plot with subfigures for each
     component.
     
     expecting only one type of input --> can be:

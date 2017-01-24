@@ -20,7 +20,7 @@ import time
 import os
 import shutil
 import mtpy.core.z as mtz
-import mtpy.imaging.plotresponse as plotresponse
+import mtpy.imaging.plot_mt_response as plotresponse
 import mtpy.utils.format as MTft
 import mtpy.utils.configfile as mtcf
 import mtpy.core.edi as mtedi
@@ -2363,10 +2363,10 @@ class ZongeMTAvg():
         
         self.read_avg_file(avg_fn)
         
-        plot_resp = plotresponse.PlotResponse(z_object=self.Z,
-                                              tipper_object=self.Tipper, 
-                                              plot_tipper='yri',
-                                              **kwargs)
+        plot_resp = plotresponse.PlotMTResponse(z_object=self.Z,
+                                                tipper_object=self.Tipper,
+                                                plot_tipper='yri',
+                                                **kwargs)
         
         return plot_resp
         

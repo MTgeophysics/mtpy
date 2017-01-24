@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 """
 ============
-plotresponse
+plot_mt_response
 ============
 
-Plots the resistivity and phase for different modes and components
+Plots Resistivity and phase for the different modes of the MT response with an .edi file as input.
+(Other formats that will be supported are the impedance tensor and errors with an array of periods
+and .j format.)
 
-Created on Thu May 30 16:54:08 2013
+CreatedOn:  Thu May 30 16:54:08 2013
+CreatedBy:  jpeacock-pr
 
-@author: jpeacock-pr
 """
 #==============================================================================
 
@@ -31,7 +33,7 @@ reload(mtpl)
 #==============================================================================
 #  Plot apparent resistivity and phase
 #==============================================================================
-class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
+class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
     """
     Plots Resistivity and phase for the different modes of the MT response.  At
     the moment is supports the input of an .edi file. Other formats that will
@@ -59,7 +61,7 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
     subplots such as strike, skew and phase tensor ellipses.
     
     To manipulate the plot you can change any of the attributes listed below
-    and call redraw_plot().  If you know more aout matplotlib and want to 
+    and call redraw_plot().  If you know more about matplotlib and want to
     change axes parameters, that can be done by changing the parameters in the
     axes attributes and then call update_plot(), note the plot must be open.
     
@@ -187,11 +189,11 @@ class PlotResponse(mtpl.MTArrows, mtpl.MTEllipse):
                         
         :Example: ::
             
-            >>> import mtpy.imaging.mtplot as mtplot
+            >>> import mtpy.imaging.plot_mt_response as mtplot
             >>> edifile = r"/home/MT01/MT01.edi"
-            >>> rp1 = mtplot.PlotResPhase(fn=edifile, plot_num=2)
+            >>> rp1 = mtplot.PlotMTResponse(fn=edifile, plot_num=2)
             >>> # plots all 4 components
-            >>> rp1 = mtplot.PlotResPhase(fn=edifile, plot_tipper='yr')
+            >>> rp1 = mtplot.PlotMTResponse(fn=edifile, plot_tipper='yr')
             >>> # plots the real part of the tipper
             
     Attributes:

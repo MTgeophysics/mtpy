@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+Plot Responses from Inversion Model Results
+
 Created on Tue Oct 04 13:13:29 2016
 
 @author:    u64125

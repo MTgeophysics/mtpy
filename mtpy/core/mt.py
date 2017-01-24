@@ -23,7 +23,7 @@ import mtpy.analysis.zinvariants as MTinv
 import mtpy.analysis.distortion as MTdistortion
 import os
 import numpy as np
-import mtpy.imaging.plotresponse as plotresponse
+import mtpy.imaging.plot_mt_response as plotresponse
 
 try:
     import scipy
@@ -117,7 +117,7 @@ class MT(object):
     :Plot MT response: ::
 
         >>> # plot all components of mt response and phase tensor
-        >>> plot_obj = mt_obj.plot_mt_response(plot_num=2, plot_pt='y')        
+        >>> plot_obj = mt_obj.plot_mt_response(plot_num=2, plot_pt='y')
         >>> # plot the tipper as well
         >>> plot_obj.plot_tipper = 'yri'
         >>> plot_obj.redraw_plot()
@@ -698,6 +698,6 @@ class MT(object):
 
         """
 
-        plot_obj = plotresponse.PlotResponse(fn=self.fn, **kwargs)
+        plot_obj = plotresponse.PlotMTResponse(fn=self.fn, **kwargs)
 
         return plot_obj
