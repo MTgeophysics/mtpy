@@ -5026,6 +5026,7 @@ class Z3D_to_edi(object):
                 raise ValueError('No good .edi files where produced')
             resp_plot = plotresponse.PlotMTResponse(fn=self.edi_fn,
                                                     plot_tipper='yri')
+            resp_plot.plot()
                                                          
         return resp_plot
  

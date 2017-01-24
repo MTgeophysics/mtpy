@@ -54,6 +54,7 @@ def plot_edi_file(edi_file):
     logger.info("Plotting the edi file %s", edi_file)
 
     pr = mtpr.PlotMTResponse(fn=edi_file, plot_num=2, res_limits=(1, 10000), phase_limits=(0, 90))
+    pr.plot()
 
     return pr
 

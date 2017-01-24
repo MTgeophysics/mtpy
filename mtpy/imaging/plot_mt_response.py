@@ -192,9 +192,11 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
             >>> import mtpy.imaging.plot_mt_response as mtplot
             >>> edifile = r"/home/MT01/MT01.edi"
             >>> rp1 = mtplot.PlotMTResponse(fn=edifile, plot_num=2)
+            >>> rp1.plot()
             >>> # plots all 4 components
             >>> rp1 = mtplot.PlotMTResponse(fn=edifile, plot_tipper='yr')
             >>> # plots the real part of the tipper
+            >>> rp1.plot()
             
     Attributes:
     -----------
@@ -495,8 +497,9 @@ class PlotMTResponse(mtpl.MTArrows, mtpl.MTEllipse):
         self.strike_tip_marker = kwargs.pop('strike_tip_marker', '>')
         self.strike_tip_color = kwargs.pop('strike_tip_color', (.2, .7, .2))
 
-        self.plot_yn = kwargs.pop('plot_yn', 'y')
-        #plot on initializing
+        self.plot_yn = kwargs.pop('plot_yn', 'n')
+
+        #plot on initializing is not a good practice. It's better to call the plot method separately.
         if self.plot_yn == 'y':
             self.plot()
 

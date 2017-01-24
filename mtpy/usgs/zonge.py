@@ -2367,6 +2367,7 @@ class ZongeMTAvg():
                                                 tipper_object=self.Tipper,
                                                 plot_tipper='yri',
                                                 **kwargs)
+        plot_resp.plot()
         
         return plot_resp
         

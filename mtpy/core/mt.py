@@ -699,5 +699,6 @@ class MT(object):
         """
 
         plot_obj = plotresponse.PlotMTResponse(fn=self.fn, **kwargs)
+        plot_obj.plot()
 
         return plot_obj

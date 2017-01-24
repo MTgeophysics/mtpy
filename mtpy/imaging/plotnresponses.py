@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu May 30 17:02:39 2013
+plots multiple MT responses simultaneously
 
+Created on Thu May 30 17:02:39 2013
 @author: jpeacock-pr
 """
 
