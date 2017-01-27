@@ -764,7 +764,8 @@ class PlotPTMaps(mtplottools.MTEllipse):
                 header = ' '.join(headerlist)
 
                 filename = op.join(savepath, att[:-4] + '.txt')
-
+                if att == 'pt_resid_arr':
+                    data_to_write['azimuth'] = 90.-data_to_write['azimuth']
                 np.savetxt(filename, data_to_write, header=header,
                            fmt=['%.4e', '%s', '%.2f', '%.2f', '%.2f', '%.2f', '%.2f', '%.3f'])
 

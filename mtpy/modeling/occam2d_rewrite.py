@@ -780,12 +780,15 @@ class Mesh():
         for mline in mlines[line_count:]:
             mline = mline.strip().split()
             for m_value in mline:
+                print m_value,h_index
                 self.x_nodes[h_index] = float(m_value)
                 h_index += 1
-                
+                if h_index == nh - 1:
+                    break                
+            if h_index == nh - 1:
+                break   
             line_count += 1
-            if h_index == nh:
-                break
+
  
         #--> fill vertical nodes
         for mline in mlines[line_count:]:
@@ -793,9 +796,13 @@ class Mesh():
             for m_value in mline:
                 self.z_nodes[v_index] = float(m_value)
                 v_index += 1
-            line_count += 1
-            if v_index == nv:
+                if v_index == nv - 1:
+                    break    
+            if v_index == nv - 1:
                 break    
+
+            line_count += 1
+
 
         #--> fill model values
         for ll, mline in enumerate(mlines[line_count+1:], line_count):
