@@ -215,6 +215,36 @@ def UTMtoLL(ReferenceEllipsoid, northing, easting, zone):
     Long = LongOrigin + Long * _rad2deg
     return (Lat, Long)
 
+epsg_dict = {28350:['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',50],
+             28351:['+proj=utm +zone=51 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',51],
+             28352:['+proj=utm +zone=52 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',52],
+             28353:['+proj=utm +zone=53 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',53],
+             28354:['+proj=utm +zone=54 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',54],
+             28355:['+proj=utm +zone=55 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',55],
+             28356:['+proj=utm +zone=56 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',56],
+             3112:['+proj=lcc +lat_1=-18 +lat_2=-36 +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',0],
+             4326:['+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs',0]}
+
+
+def project(x,y,epsg_from,epsg_to):
+    """
+    project some xy points using the pyproj modules
+    """
+
+    try:
+        import pyproj
+    except ImportError:
+        print "please install pyproj"
+        return
+    if epsg_from is not None:
+        try:
+            p1 = pyproj.Proj(epsg_dict[epsg_from][0])
+            p2 = pyproj.Proj(epsg_dict[epsg_to][0])
+        except KeyError:
+            print "Surface or data epsg either not in dictionary or None, please add epsg and Proj4 text to epsg_dict at beginning of modem_new module"
+            return 
+            
+    return pyproj.transform(p1,p2,x,y)
 
 
 if __name__ == '__main__':
