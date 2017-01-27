@@ -2974,6 +2974,58 @@ class Model(object):
         self.grid_z += centre[2]
 
 
+    def write_xyres(self,location_type='EN',origin=[0,0],model_epsg=None,
+                    savepath=None,outfile_basename='DepthSlice'):
+        """
+        write files containing depth slice data (x, y, res for each depth)
+        
+        origin = x,y coordinate of zero point of ModEM_grid, or name of file
+                 containing this info (full path or relative to model files)
+        savepath = path to save to, default is the model object save path
+        location_type = 'EN' or 'LL' xy points saved as eastings/northings or 
+                        longitude/latitude, if 'LL' need to also provide model_epsg
+        model_epsg = epsg number that was used to project the model
+        outfile_basename = string for basename for saving the depth slices.
+        
+        """
+        if savepath is None:
+            savepath = self.save_path
+            
+        # make a directory to save the files
+        savepath = op.join(savepath,'DepthSlices')
+        if not op.exists(savepath):
+            os.mkdir(savepath)
+        
+        # try getting centre location info from file
+        if type(origin) == str:
+            try:
+                origin = np.loadtxt(origin)
+            except:
+                print "Please provide origin as a list, array or tuple or as a valid filename containing this info"
+                origin = [0,0]
+        
+        # reshape the data
+        x,y,z = [np.mean([arr[1:], arr[:-1]],axis=0) for arr in \
+                [self.grid_east + origin[0], self.grid_north + origin[1], self.grid_z]]
+        x,y = [arr.flatten() for arr in np.meshgrid(x,y)]
+        
+        # set format for saving data
+        fmt = ['%.1f','%.1f','%.3e']
+        
+        # convert to lat/long if needed
+        if location_type == 'LL':
+            if np.any(origin) == 0:
+                print "Warning, origin coordinates provided as zero, output lat/long are likely to be incorrect"
+            x,y = utm2ll.project(x,y,model_epsg,4326)
+            # update format to accommodate lat/lon
+            fmt[:2] = ['%.6f','%.6f']
+        
+        for k in range(len(z)):
+            fname = op.join(savepath,outfile_basename+'_%1im.xyz'%z[k])
+            data = np.vstack([x,y,self.res_model[:,:,k].flatten()]).T
+            np.savetxt(fname,data,fmt=fmt)
+
+
 # ==============================================================================
 # Control File for inversion
 # ==============================================================================
