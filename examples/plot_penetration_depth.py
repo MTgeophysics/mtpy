@@ -10,8 +10,10 @@ Date:   2017-01-23
 import glob
 import os
 import sys
+import numpy as np
 
 import matplotlib.pyplot as plt
+import mtpy.core.mt as mt
 
 import mtpy.imaging.plot_mt_response as mtpr
 from mtpy.utils.mtpylog import MtPyLog
@@ -38,7 +40,7 @@ def plot_edi_dir(edi_path):
     return
 
 
-def plot_edi_file(edi_file):
+def plot_edi_file(edifile):
     """
     Plot the input edi_file
     Args:
@@ -51,12 +53,56 @@ def plot_edi_file(edi_file):
     plt.style.use('seaborn-deep')
     plt.style.use('classic')
 
-    logger.info("Plotting the edi file %s", edi_file)
+    logger.info("Plotting the edi file %s", edifile)
 
-    pr = mtpr.PlotMTResponse(fn=edi_file, plot_num=2, res_limits=(1, 10000), phase_limits=(0, 90))
-    pr.plot()
+    mt_obj = mt.MT(edifile)
+    zeta = mt_obj.Z     # the attribute Z represent the impedance tensor 2X2 matrix
+    freqs = zeta.freq   # frequencies
 
-    return pr
+    P_scale_meter = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
+
+    print(P_scale_meter)
+
+    # The periods array
+
+    periods = 1.0 / freqs
+
+    # One of the 4-components: XY
+    penetration_depth = P_scale_meter * np.sqrt(zeta.resistivity[:, 0, 1] * periods)
+
+    plt.semilogx(periods, -penetration_depth, '-*')
+    # plt.semilogx(periods, -penetration_depth2, '-o')
+
+    # plt.title("XY Penetration Depth in Meters")
+    # plt.xlabel("Period (seconds)")
+    # plt.ylabel("Depth Meters")
+
+    plt.grid(True)
+
+    penetration_depth = P_scale_meter * np.sqrt(zeta.resistivity[:, 1, 0] * periods)
+
+    plt.semilogx(periods, -penetration_depth, '-o')
+
+    # plt.title("YX Penetration Depth in Meters")
+    # plt.ylabel("Depth Meters")
+
+    plt.grid(True)
+
+    # determinant
+    det2 = np.abs(zeta.det[0])
+    det_penetration_depth = P_scale_meter * np.sqrt(0.2 * periods * det2 * periods)
+
+    plt.semilogx(periods, -det_penetration_depth, '-^')
+
+    plt.title("Penetration Depth in Meters for %s"% edifile)
+
+    plt.xlabel("Log Period (seconds)")
+
+    plt.ylabel("Depth(meters)")
+
+    plt.show()
+
+    return
 
 
 ###############################################################################
