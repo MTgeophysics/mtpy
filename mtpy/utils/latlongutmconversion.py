@@ -225,7 +225,7 @@ epsg_dict = {28350:['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0
              3112:['+proj=lcc +lat_1=-18 +lat_2=-36 +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',0],
              4326:['+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs',0]}
 
-
+##############################################
 def project(x,y,epsg_from,epsg_to):
     """
     project some xy points using the pyproj modules
@@ -246,11 +246,49 @@ def project(x,y,epsg_from,epsg_to):
             
     return pyproj.transform(p1,p2,x,y)
 
+def utm_wgs84_conv(lat, lon):
 
+    import utm  # pip install utm
+    tup=utm.from_latlon(lat, lon)
+
+    # (new_lat,new_lon) = utm.to_latlon(tup[0],tup[1], tup[2],tup[3])
+    # print (new_lat,new_lon)  # should be same as the input param
+
+    return tup
+
+
+# ======================================================================
 if __name__ == '__main__':
-    #?????????????????????????????????
-    (z, e, n) = LLtoUTM(23, 45.00, -75.00)
+
+    lat=-34.3
+    lon=140.2
+    nref=23
+
+    (z, e, n) = LLtoUTM(nref, lat, lon)
     print z, e, n
-    (lat, lon) = UTMtoLL(23, n, e, z)
+
+    (new_lat, new_lon) = UTMtoLL(23, n, e, z)
     print lat, lon
+
+# checking
+    if (abs(lat-new_lat)>1.0*e-10):
+        print "Warning: lat and new_lat should be nearly equal!"
+
+    if (abs(lon-new_lon)>1.0*e-10):
+        print "Warning: lon and new_lon should be nearly equal!"
+
+# Compare with the pyproj function:
+    pyproj_res = project(lon,lat,4326,28354)
+
+    print ("Result from the pyproj function: ", pyproj_res)
+
+    new_utm= utm_wgs84_conv(lat, lon)
+    print ("Result from the utm function: ", new_utm)
+
+
+    # from pyproj import Proj
+    #
+    # myProj = Proj(proj='utm', zone=32, ellps='WGS84')
+    #
+    # myProj.to_latlong()
 
