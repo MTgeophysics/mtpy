@@ -322,6 +322,7 @@ class Mesh():
         #round the layers to be whole numbers
         zpadding = np.array([zz-zz%10**np.floor(np.log10(zz)) for zz in 
                                log_zpad])
+        zpadding.sort()
                                
         #create the vertical nodes
         self.z_nodes = np.append(ztarget, zpadding)
@@ -784,10 +785,10 @@ class Mesh():
                 self.x_nodes[h_index] = float(m_value)
                 h_index += 1
                 if h_index == nh - 1:
-                    break                
-            if h_index == nh - 1:
-                break   
+                    break     
             line_count += 1
+            if h_index == nh - 1:
+                break     
 
  
         #--> fill vertical nodes
@@ -798,6 +799,7 @@ class Mesh():
                 v_index += 1
                 if v_index == nv - 1:
                     break    
+            line_count += 1
             if v_index == nv - 1:
                 break    
 
@@ -811,7 +813,7 @@ class Mesh():
                 break
             else:
                 mlist = list(mline)
-                if len(mlist) != nh:
+                if len(mlist) != nh - 1:
                     print '--- Line {0} in {1}'.format(ll, self.mesh_fn) 
                     print 'Check mesh file too many columns'
                     print 'Should be {0}, has {1}'.format(nh,len(mlist))
@@ -824,17 +826,17 @@ class Mesh():
         #sometimes it seems that the number of nodes is not the same as the
         #header would suggest so need to remove the zeros
         self.x_nodes = self.x_nodes[np.nonzero(self.x_nodes)]
-        if self.x_nodes.shape[0] != nh:
+        if self.x_nodes.shape[0] != nh - 1:
             new_nh = self.x_nodes.shape[0]
-            print 'The header number {0} should read {1}'.format(nh, new_nh)
+            print 'The header number {0} should read {1}'.format(nh - 1, new_nh)
             self.mesh_values.resize(new_nh, nv, 4)
         else:
             new_nh = nh
             
         self.z_nodes = self.z_nodes[np.nonzero(self.z_nodes)]
-        if self.z_nodes.shape[0] != nv:
+        if self.z_nodes.shape[0] != nv - 1:
             new_nv = self.z_nodes.shape[0]
-            print 'The header number {0} should read {1}'.format(nv, new_nv)
+            print 'The header number {0} should read {1}'.format(nv - 1, new_nv)
             self.mesh_values.resize(new_nh, nv, 4)
 
         #make x_grid and z_grid
@@ -1491,7 +1493,7 @@ class Regularization(Mesh):
         
         #At the top of the mesh model blocks will be 2 combined mesh blocks
         #Note that the padding cells are combined into one model block
-        station_col = [2]*((self.x_nodes.shape[0]-2*self.num_x_pad_cells)/2)
+        station_col = [2]*((self.x_nodes.shape[0]-2*self.num_x_pad_cells + 1)/2)
         model_cols = [self.num_x_pad_cells]+station_col+[self.num_x_pad_cells]
         station_widths = [self.x_nodes[ii]+self.x_nodes[ii+1] for ii in 
                        range(self.num_x_pad_cells, 
@@ -1501,9 +1503,10 @@ class Regularization(Mesh):
         model_widths = [pad_width]+station_widths+[pad_width]
         num_cols = len(model_cols)
         
-        model_thickness = np.append(self.z_nodes[0:self.z_nodes.shape[0]-
+        model_thickness = np.hstack([self.z_nodes[:2].sum(),
+                                     self.z_nodes[2:self.z_nodes.shape[0]-
                                                         self.num_z_pad_cells], 
-                                    self.z_nodes[-self.num_z_pad_cells:].sum())
+                                    self.z_nodes[-self.num_z_pad_cells:].sum()])
         
         self.num_param = 0
         #--> now need to calulate model blocks to the bottom of the model
@@ -2442,7 +2445,9 @@ class Data(Profile):
                 if rho[f_index, 0, 1] != 0.0:
                     #--> get error from data
                     if ((self.res_te_err is None) or (self.error_type == 'floor')):
-                        error_val = np.abs(rho_err[f_index, 0, 1]/rho[f_index, 0, 1])
+                        error_val = np.abs(rho_err[f_index, 0, 1])
+                        if error_val > rho[f_index, 0, 1]:
+                            error_val = rho[f_index, 0, 1]                        
                         # set error floor if desired
                         if self.error_type == 'floor':
                             error_val = max(error_val,rho[f_index, 0, 1]*self.res_te_err/100.)
@@ -2451,7 +2456,7 @@ class Data(Profile):
                     #--> set generic error
                     else:
                         self.data[s_index]['te_res'][1, freq_num] = \
-                                                        self.res_te_err/100.
+                                self.res_te*self.res_te_err/100.
                             
                 #--> get tm resistivity
                 self.data[s_index]['tm_res'][0, freq_num] =  rho[f_index, 1, 0]
@@ -2459,26 +2464,31 @@ class Data(Profile):
                 if rho[f_index, 1, 0] != 0.0:
                     #--> get error from data
                     if ((self.res_tm_err is None) or (self.error_type == 'floor')):
-                        error_val = np.abs(rho_err[f_index, 1, 0]/rho[f_index, 1, 0])
+                        error_val = np.abs(rho_err[f_index, 1, 0])
+                        if error_val > rho[f_index, 1, 0]:
+                            error_val = rho[f_index, 1, 0]
                         if self.error_type == 'floor':
                             error_val = max(error_val,rho[f_index, 1, 0]*self.res_tm_err/100.)
                         self.data[s_index]['tm_res'][1, freq_num] = error_val
                     #--> set generic error
                     else:
                         self.data[s_index]['tm_res'][1, freq_num] = \
-                            self.res_tm_err/100.
+                            self.res_tm*self.res_tm_err/100.
                             
                 #--> get te phase
-                phase_te = phi[f_index, 0, 1]
-                #be sure the phase is in the first quadrant
-                if phase_te > 180:
-                    phase_te -= 180
-                self.data[s_index]['te_phase'][0, freq_num] =  phase_te
+                #be sure the phase is positive and in the first quadrant
+                phase_te = phi[f_index, 0, 1]%180
+                    
+                if ((phase_te < 0) or (phase_te > 90)):
+                    phase_te = 0
+                    self.data[s_index]['te_res'][0, freq_num] = 0
+                    
+                    
                 #compute error
                 #if phi[f_index, 0, 1] != 0.0:
                 #--> get error from data
                 if ((self.phase_te_err is None) or (self.error_type == 'floor')):
-                    error_val = np.degrees(np.arcsin(.5*rho_err[f_index, 0, 1]/rho[f_index, 0, 1]))
+                    error_val = np.degrees(np.arcsin(min(.5*rho_err[f_index, 0, 1]/rho[f_index, 0, 1],1.)))
                     if self.error_type == 'floor':
                         error_val = max(error_val,(self.phase_te_err/100.)*57./2.)
                     self.data[s_index]['te_phase'][1, freq_num] = error_val
@@ -2487,15 +2497,18 @@ class Data(Profile):
                     self.data[s_index]['te_phase'][1, freq_num] = \
                         (self.phase_te_err/100.)*57./2.
                             
-                #--> get tm phase and be sure its in the first quadrant
+                #--> get tm phase and be sure it's positive and in the first quadrant
                 phase_tm = phi[f_index, 1, 0]%180
-                
-                self.data[s_index]['tm_phase'][0, freq_num] =  phase_tm
+        
+                if ((phase_tm < 0) or (phase_tm > 90)):
+                    phase_tm = 0
+                    self.data[s_index]['tm_res'][0, freq_num] = 0
+                    
                 #compute error
                 #if phi[f_index, 1, 0] != 0.0:
                 #--> get error from data
                 if ((self.phase_tm_err is None) or (self.error_type == 'floor')):
-                    error_val = np.degrees(np.arcsin(.5*rho_err[f_index, 1, 0]/rho[f_index, 1, 0]))
+                    error_val = np.degrees(np.arcsin(min(.5*rho_err[f_index, 1, 0]/rho[f_index, 1, 0],1.)))
                     if self.error_type == 'floor':
                         error_val = max(error_val,(self.phase_tm_err/100.)*57./2.)
                     self.data[s_index]['tm_phase'][1, freq_num] = error_val
@@ -2540,7 +2553,7 @@ class Data(Profile):
                     if mmode == 1:
                         if sdict['te_res'][0, ff] != 0.0:
                             dvalue = np.log10(sdict['te_res'][0, ff])
-                            derror = sdict['te_res'][1, ff]/np.log(10)
+                            derror = (sdict['te_res'][1, ff]/sdict['te_res'][0, ff])/np.log(10.)
                             dstr = '{0:.4f}'.format(dvalue)
                             derrstr = '{0:.4f}'.format(derror)
                             line = self._data_string.format(ss, ff+1, mmode, 
@@ -2573,7 +2586,7 @@ class Data(Profile):
                     if mmode == 5:
                         if sdict['tm_res'][0, ff] != 0.0:
                             dvalue = np.log10(sdict['tm_res'][0, ff])
-                            derror = sdict['tm_res'][1, ff]/np.log(10)
+                            (sdict['tm_res'][1, ff]/sdict['tm_res'][0, ff])/np.log(10)
                             dstr = '{0:.4f}'.format(dvalue)
                             derrstr = '{0:.4f}'.format(derror)
                             line = self._data_string.format(ss, ff+1, mmode, 
@@ -3061,7 +3074,7 @@ class Model(Startup):
         """
     
         if iter_fn is not None:
-            self.iter_fn == iter_fn
+            self.iter_fn = iter_fn
        
         if self.iter_fn is None:
             raise OccamInputError('iter_fn is None, input iteration file')
