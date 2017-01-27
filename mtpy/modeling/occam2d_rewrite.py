@@ -2637,6 +2637,29 @@ class Data(Profile):
                                                             dstr, derrstr)
                             self.data_list.append(line)
                     
+
+    def mask_from_datafile(self, mask_datafn):
+        """
+        reads a separate data file and applies mask from this data file.
+        mask_datafn needs to have exactly the same frequencies, and station names 
+        must match exactly.
+        
+        """
+        ocdm = Data()
+        ocdm.read_data_file(mask_datafn)
+        # list of stations, in order, for the mask_datafn and the input data file
+        ocdm_stlist = [ocdm.data[i]['station'] for i in range(len(ocdm.data))]
+        ocd_stlist = [self.data[i]['station'] for i in range(len(self.data))]
+        
+        for i_ocd,stn in enumerate(ocd_stlist):
+            i_ocdm = ocdm_stlist.index(stn)
+            for dmode in ['te_res','tm_res','te_phase','tm_phase','im_tip','re_tip']:
+                
+                for i in range(len(self.freq)):
+                    if self.data[i_ocdm][dmode][0][i] == 0:
+                        self.data[i_ocd][dmode][0][i] = 0.
+        self.fn_basename = self.fn_basename[:-4]+'Masked'+self.fn_basename[-4:]
+        self.write_data_file()
                 
 
     def write_data_file(self, data_fn=None):
