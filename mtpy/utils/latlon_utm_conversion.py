@@ -2,7 +2,6 @@
 
 # Lat Long - UTM, UTM - Lat Long conversions
 
-
 from math import pi, sin, cos, tan, sqrt
 
 #LatLong- UTM conversion..h
@@ -53,9 +52,6 @@ _ellipsoid = [
 #Source
 #Defense Mapping Agency. 1987b. DMA Technical Report: Supplement to Department of Defense World Geodetic System
 #1984 Technical Report. Part I and II. Washington, DC: Defense Mapping Agency
-
-#def LLtoUTM(int ReferenceEllipsoid, const double Lat, const double Long, 
-#			 double &UTMNorthing, double &UTMEasting, char* UTMZone)
 
 def LLtoUTM(ReferenceEllipsoid, Lat, Long):
     """
@@ -215,6 +211,7 @@ def UTMtoLL(ReferenceEllipsoid, northing, easting, zone):
     Long = LongOrigin + Long * _rad2deg
     return (Lat, Long)
 
+# =============================================================================
 epsg_dict = {28350:['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',50],
              28351:['+proj=utm +zone=51 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',51],
              28352:['+proj=utm +zone=52 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',52],
@@ -247,48 +244,62 @@ def project(x,y,epsg_from,epsg_to):
     return pyproj.transform(p1,p2,x,y)
 
 def utm_wgs84_conv(lat, lon):
+    """
+    Bidirectional UTM-WGS84 converter https://github.com/Turbo87/utm/blob/master/utm/conversion.py
+    :param lat:
+    :param lon:
+    :return: tuple(e, n, zone, lett)
+    """
 
     import utm  # pip install utm
     tup=utm.from_latlon(lat, lon)
 
-    # (new_lat,new_lon) = utm.to_latlon(tup[0],tup[1], tup[2],tup[3])
+    (new_lat, new_lon) = utm.to_latlon(tup[0],tup[1], tup[2],tup[3])
     # print (new_lat,new_lon)  # should be same as the input param
+
+    # checking correctess
+    if (abs(lat - new_lat) > 1.0 * e - 10):
+        print "Warning: lat and new_lat should be equal!"
+
+    if (abs(lon - new_lon) > 1.0 * e - 10):
+        print "Warning: lon and new_lon should be equal!"
 
     return tup
 
 
 # ======================================================================
+# The implementation of this script appears more generic.
+# the thir party module utm is for WGS84 only.
+# Direct use of pyproj, requires to input EPGS codes for the numerous UTM zone.
+# ======================================================================
+
 if __name__ == '__main__':
 
-    lat=-34.3
-    lon=140.2
-    nref=23
+    nref=23  # 23, "WGS-84"
 
+    lat = -34.3
+    lon = 149.2
+
+    # convert lat lon into UTM (zone, easting, northing)
     (z, e, n) = LLtoUTM(nref, lat, lon)
-    print z, e, n
+    print (z, e, n)
 
-    (new_lat, new_lon) = UTMtoLL(23, n, e, z)
-    print lat, lon
+    # from the northing, easting and zone number compute (lat, lon)
+    (new_lat, new_lon) = UTMtoLL(nref, n, e, z)
+    print (lat, lon)
 
-# checking
+# checking correctess
     if (abs(lat-new_lat)>1.0*e-10):
-        print "Warning: lat and new_lat should be nearly equal!"
+        print "Warning: lat and new_lat should be equal!"
 
     if (abs(lon-new_lon)>1.0*e-10):
-        print "Warning: lon and new_lon should be nearly equal!"
+        print "Warning: lon and new_lon should be equal!"
 
-# Compare with the pyproj function:
-    pyproj_res = project(lon,lat,4326,28354)
+#  Use the third party package utm, which works for WGS84 only.
+    new_utm= utm_wgs84_conv(lat, lon)
+    print ("Result from the utm package: ", new_utm)
+
+# Compare with the pyproj function. This requires to know in priori the epsg code 28354 (for utm zone 54)
+    pyproj_res = project(lon, lat, 4326, 28355)
 
     print ("Result from the pyproj function: ", pyproj_res)
-
-    new_utm= utm_wgs84_conv(lat, lon)
-    print ("Result from the utm function: ", new_utm)
-
-
-    # from pyproj import Proj
-    #
-    # myProj = Proj(proj='utm', zone=32, ellps='WGS84')
-    #
-    # myProj.to_latlong()
-

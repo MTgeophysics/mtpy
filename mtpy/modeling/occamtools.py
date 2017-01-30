@@ -20,7 +20,7 @@ import matplotlib.gridspec as gridspec
 import mtpy.core.edi as mtedi
 import mtpy.modeling.winglinktools as wlt
 import matplotlib.pyplot as plt
-import mtpy.utils.latlongutmconversion as utm2ll
+import mtpy.utils.latlon_utm_conversion as utm2ll
 
 
 

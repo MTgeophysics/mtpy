@@ -1862,7 +1862,7 @@ def getStationInfo(stationinfofile,station,mapversion=23):
     station from the stationinfofile as a dictionary with key words in the 
     hdrinfo."""
 
-    import mtpy.utils.latlongutmconversion as utm2ll
+    import mtpy.utils.latlon_utm_conversion as utm2ll
 
     info=readStationInfo(stationinfofile)
     for ii in range(len(info)):
@@ -2069,7 +2069,7 @@ def removeStaticShift(edifile,stol=.2,dm=1000):
         newedifile = full path to new edifile
     """
 
-    import mtpy.utils.latlongutmconversion as utm2ll
+    import mtpy.utils.latlon_utm_conversion as utm2ll
 
     #get directory name where all edi files should be
     edipath=os.path.dirname(edifile)

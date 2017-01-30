@@ -23,18 +23,17 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import matplotlib.widgets as widgets
 import numpy as np
-from numpy.lib import recfunctions
 import scipy.interpolate as spi
 from matplotlib.colors import Normalize
+from numpy.lib import recfunctions
 
 import mtpy.core.mt as mt
 import mtpy.core.z as mtz
 import mtpy.imaging.mtplottools as mtplottools
 import mtpy.modeling.ws3dinv as ws
 import mtpy.utils.exceptions as mtex
-import mtpy.utils.latlongutmconversion as utm2ll
 import mtpy.utils.gocad as mtgocad
-
+import mtpy.utils.latlon_utm_conversion as utm2ll
 
 try:
     from evtk.hl import gridToVTK, pointsToVTK
@@ -506,7 +505,7 @@ class Data(object):
                     c_arr['east'] -= east_shift
 
     def project_sites_pyproj(self):
-        
+
         """
         project site locations from lat/long to eastings/northings (defined by
         epsg in data object). Uses pyproj so this needs to be installed before
@@ -514,32 +513,29 @@ class Data(object):
         
         
         """
-        
+
         if self.epsg not in epsg_dict.keys():
             self.epsg = None
-        
+
         if self.epsg is None:
             print "can't project, invalid (or no) epsg provided"
             return
-        
+
         for c_arr in self.data_array:
             if c_arr['lat'] != 0.0 and c_arr['lon'] != 0.0:
                 c_arr['zone'] = epsg_dict[self.epsg][1]
                 c_arr['east'], c_arr['north'] = \
                     utm2ll.project(c_arr['lon'], c_arr['lat'],
-                                   4326,self.epsg)
-                                   
-                                   
+                                   4326, self.epsg)
 
-    def project_xy(self, x, y, epsg_from = None, epsg_to = 4326):
+    def project_xy(self, x, y, epsg_from=None, epsg_to=4326):
         """
         project some xy points
         """
         if epsg_from is None:
             epsg_from = self.epsg
-            
-        return np.array(utm2ll.project(x,y,epsg_from,epsg_to))
-        
+
+        return np.array(utm2ll.project(x, y, epsg_from, epsg_to))
 
     def get_relative_station_locations(self):
         """
@@ -1208,8 +1204,8 @@ class Data(object):
                     read_impedance = True
                     read_tipper = False
                 if linecount == 7:
-                    print "getting center position",dline
-                    self.center_position = [float(val) for val in dline.strip().replace('>','').split()]
+                    print "getting center position", dline
+                    self.center_position = [float(val) for val in dline.strip().replace('>', '').split()]
                     print self.center_position
                 if dline.find('exp') > 0:
                     if read_impedance is True:
@@ -1384,8 +1380,6 @@ class Data(object):
         print 'Wrote file to {0}'.format(vtk_fn)
 
 
-
-
 class Residual():
     """
     class to contain residuals for each data point, and rms values for each
@@ -1461,18 +1455,17 @@ class Residual():
                            *default* is '+' as positive downwards. 
     ====================== ====================================================    
     
-    """      
+    """
 
     def __init__(self, **kwargs):
-        
-        self.workdir = kwargs.pop('workdir','.')
-        self.residual_fn = kwargs.pop('residual_fn',None)
-        
-        
+
+        self.workdir = kwargs.pop('workdir', '.')
+        self.residual_fn = kwargs.pop('residual_fn', None)
+
         return
-    
-    def read_residual_file(self,residual_fn=None):
-        
+
+    def read_residual_file(self, residual_fn=None):
+
         if residual_fn is not None:
             self.residual_fn = residual_fn
             resObj = Data()
@@ -1480,117 +1473,113 @@ class Residual():
         else:
             print "Cannot read residuals, please provide residual_fn"
             return
-        
+
         # pass relevant arguments through residual object
-        for att in ['center_position_EN','data_period_list',
-                    'wave_sign_impedance','wave_sign_tipper']:
-            if hasattr(resObj,att):
-                setattr(self,att,getattr(resObj,att))
-        
+        for att in ['center_position_EN', 'data_period_list',
+                    'wave_sign_impedance', 'wave_sign_tipper']:
+            if hasattr(resObj, att):
+                setattr(self, att, getattr(resObj, att))
+
         # define new data types for residual arrays by copying/modifying dtype from data object
         self.residual_array = resObj.data_array.copy()
-        
+
         # append some new fields to contain rms values
         self.rms_array = resObj.station_locations.copy()
-        for fieldname in ['rms','rms_z','rms_tip']:
+        for fieldname in ['rms', 'rms_z', 'rms_tip']:
             self.rms_array = recfunctions.append_fields(self.rms_array.copy(),
-                                                          fieldname,
-                                                          np.zeros(len(resObj.station_locations)),
-                                                          usemask=False)
-        
-        
-    def get_rms(self,residual_fn=None):
-        
+                                                        fieldname,
+                                                        np.zeros(len(resObj.station_locations)),
+                                                        usemask=False)
+
+    def get_rms(self, residual_fn=None):
+
         if self.residual_array is None:
             self._read_residual_fn()
         if self.residual_array is None:
             return
-            
-        rms_z_comp = np.zeros((len(self.rms_array),2,2))
-        rms_tip_comp = np.zeros((len(self.rms_array),2))
+
+        rms_z_comp = np.zeros((len(self.rms_array), 2, 2))
+        rms_tip_comp = np.zeros((len(self.rms_array), 2))
         rms_valuelist_all = np.zeros(0)
         rms_valuelist_z = np.zeros(0)
         rms_valuelist_tip = np.zeros(0)
-        
+
         for stname in self.rms_array['station']:
             rms_valuelist = []
-            sta_ind = np.where(self.rms_array['station']==stname)[0][0]
-            sta_indd = np.where(self.residual_array['station']==stname)[0][0]
+            sta_ind = np.where(self.rms_array['station'] == stname)[0][0]
+            sta_indd = np.where(self.residual_array['station'] == stname)[0][0]
             resvals = self.residual_array[sta_indd]
-            znorm,tipnorm = None,None
+            znorm, tipnorm = None, None
             if np.amax(np.abs(resvals['z'])) > 0:
-
                 # sum over absolute value of z
                 # need to divide by sqrt(2) to normalise (code applies same error to real and imag components)
-                znorm = np.abs(resvals['z'])/(np.real(resvals['z_err'])*2.**0.5)
-                znorm = znorm[np.all(np.isfinite(znorm),axis=(1,2))]
-                
+                znorm = np.abs(resvals['z']) / (np.real(resvals['z_err']) * 2. ** 0.5)
+                znorm = znorm[np.all(np.isfinite(znorm), axis=(1, 2))]
+
                 # append individual normalised errors to a master list for all stations
-                rms_valuelist_all = np.append(rms_valuelist_all,znorm.flatten())
-                rms_valuelist_z = np.append(rms_valuelist_z,znorm.flatten())
-                
+                rms_valuelist_all = np.append(rms_valuelist_all, znorm.flatten())
+                rms_valuelist_z = np.append(rms_valuelist_z, znorm.flatten())
+
                 # normalised error for separate components
-                rms_z_comp[sta_ind] = (((znorm**2.).sum(axis=0))/(znorm.shape[0]))**0.5
+                rms_z_comp[sta_ind] = (((znorm ** 2.).sum(axis=0)) / (znorm.shape[0])) ** 0.5
                 rms_valuelist.append(rms_z_comp[sta_ind])
-                
+
             if np.amax(np.abs(resvals['tip'])) > 0:
                 # sum over absolute value of tipper
                 # need to divide by sqrt(2) to normalise (code applies same error to real and imag components)
-                tipnorm = np.abs(resvals['tip'])/(np.real(resvals['tip_err'])*2.**0.5)
-                tipnorm = tipnorm[np.all(np.isfinite(tipnorm),axis=(1,2))]
-                
+                tipnorm = np.abs(resvals['tip']) / (np.real(resvals['tip_err']) * 2. ** 0.5)
+                tipnorm = tipnorm[np.all(np.isfinite(tipnorm), axis=(1, 2))]
+
                 # append individual normalised errors to a master list for all stations
-                rms_valuelist_all = np.append(rms_valuelist_all,tipnorm.flatten())
-                rms_valuelist_tip = np.append(rms_valuelist_tip,tipnorm.flatten())
-                
+                rms_valuelist_all = np.append(rms_valuelist_all, tipnorm.flatten())
+                rms_valuelist_tip = np.append(rms_valuelist_tip, tipnorm.flatten())
+
                 # normalised error for separate components
-                rms_tip_comp[sta_ind] = (((tipnorm**2.).sum(axis=0))/len(tipnorm))**0.5
+                rms_tip_comp[sta_ind] = (((tipnorm ** 2.).sum(axis=0)) / len(tipnorm)) ** 0.5
                 rms_valuelist.append(rms_tip_comp[sta_ind])
 
             rms_valuelist = np.vstack(rms_valuelist).flatten()
-            
-            rms_value = ((rms_valuelist**2.).sum()/rms_valuelist.size)**0.5
+
+            rms_value = ((rms_valuelist ** 2.).sum() / rms_valuelist.size) ** 0.5
 
             self.rms_array[sta_ind]['rms'] = rms_value
-            
+
             if znorm is not None:
-                self.rms_array[sta_ind]['rms_z'] = ((rms_z_comp[sta_ind]**2.).sum()/rms_z_comp[sta_ind].size)**0.5
+                self.rms_array[sta_ind]['rms_z'] = ((rms_z_comp[sta_ind] ** 2.).sum() / rms_z_comp[sta_ind].size) ** 0.5
             if tipnorm is not None:
-                self.rms_array[sta_ind]['rms_tip'] = ((rms_tip_comp[sta_ind]**2.).sum()/rms_z_comp[sta_ind].size)**0.5
-            
-        self.rms = np.mean(rms_valuelist_all**2.)**0.5
-        self.rms_z = np.mean(rms_valuelist_z**2.)**0.5
-        self.rms_tip = np.mean(rms_valuelist_tip**2.)**0.5
+                self.rms_array[sta_ind]['rms_tip'] = ((rms_tip_comp[sta_ind] ** 2.).sum() / rms_z_comp[
+                    sta_ind].size) ** 0.5
 
-
+        self.rms = np.mean(rms_valuelist_all ** 2.) ** 0.5
+        self.rms_z = np.mean(rms_valuelist_z ** 2.) ** 0.5
+        self.rms_tip = np.mean(rms_valuelist_tip ** 2.) ** 0.5
 
     def write_rms_to_file(self):
         """
         write rms station data to file
         """
-        
-        fn = op.join(self.workdir,'rms_values.dat')
-        
-        if not hasattr(self,'rms'):
+
+        fn = op.join(self.workdir, 'rms_values.dat')
+
+        if not hasattr(self, 'rms'):
             self.get_rms()
 
-        headerlist = ['station','lon','lat','rel_east','rel_north','rms','rms_z','rms_tip']
-        
+        headerlist = ['station', 'lon', 'lat', 'rel_east', 'rel_north', 'rms', 'rms_z', 'rms_tip']
+
         dtype = []
         for val in headerlist:
             if val == 'station':
-                dtype.append((val,'S10'))
+                dtype.append((val, 'S10'))
             else:
-                dtype.append((val,np.float))        
-        
-        savelist = np.zeros(len(self.rms_array),dtype=dtype)
+                dtype.append((val, np.float))
+
+        savelist = np.zeros(len(self.rms_array), dtype=dtype)
         for val in headerlist:
             savelist[val] = self.rms_array[val]
-        
-        header = ' '.join(headerlist)
-        
-        np.savetxt(fn,savelist,header=header,fmt=['%s','%.6f','%.6f','%.1f','%.1f','%.3f','%.3f','%.3f'])
 
+        header = ' '.join(headerlist)
+
+        np.savetxt(fn, savelist, header=header, fmt=['%s', '%.6f', '%.6f', '%.1f', '%.1f', '%.3f', '%.3f', '%.3f'])
 
 
 # ==============================================================================
@@ -1887,23 +1876,21 @@ class Model(object):
         """
         Reset all the defaults for input parameters prior to reading a model
         """
-       # size of cells within station area in meters
+        # size of cells within station area in meters
         self.cell_size_east = None
         self.cell_size_north = None
-        
-        
+
         self.z1_layer = None
         self.z_target_depth = None
         self.z_bottom = None
-        
-        #number of vertical layers
+
+        # number of vertical layers
         self.n_layers = None
-        
+
         # number of air layers
         self.n_airlayers = None
         # sea level in grid_z coordinates. Auto adjusts when topography read in
         self.sea_level = 0.
-
 
     def make_mesh(self, update_data_center=False):
         """ 
@@ -2011,7 +1998,7 @@ class Model(object):
         log_z = np.logspace(np.log10(self.z1_layer),
                             np.log10(self.z_target_depth),
                             num=self.n_layers - self.pad_z - self.n_airlayers + 1)
-#        log_z = log_z[1:] - log_z[:-1]
+        #        log_z = log_z[1:] - log_z[:-1]
         z_nodes = np.array([zz - zz % 10 ** np.floor(np.log10(zz)) for zz in
                             log_z])
         # index of top of padding
@@ -2211,8 +2198,8 @@ class Model(object):
         if len(x.shape) == 1:
             x, y = np.meshgrid(x, y)
 
-        epsg_from,epsg_to = surface_epsg,self.Data.epsg
-        xs,ys = utm2ll.project(x,y,epsg_from,epsg_to)
+        epsg_from, epsg_to = surface_epsg, self.Data.epsg
+        xs, ys = utm2ll.project(x, y, epsg_from, epsg_to)
 
         # get centre position of model grid in real world coordinates
         x0, y0 = [np.median(self.station_locations[dd] - self.station_locations['rel_' + dd]) for dd in
@@ -2315,8 +2302,6 @@ class Model(object):
         self.Data.station_locations = self.station_locations
 
         self.Data.write_data_file(fill=False)
-
-
 
     def plot_mesh(self, east_limits=None, north_limits=None, z_limits=None,
                   **kwargs):
@@ -2890,8 +2875,7 @@ class Model(object):
                               fn=fn, workdir=savepath)
         sgObj.write_sgrid_file()
 
-
-    def read_gocad_sgrid_file(self,sgrid_header_file,air_resistivity=1e39, sea_resistivity=0.3):
+    def read_gocad_sgrid_file(self, sgrid_header_file, air_resistivity=1e39, sea_resistivity=0.3):
         """
         read a gocad sgrid file and put this info into a ModEM file.
         Note: can only deal with grids oriented N-S or E-W at this stage,
@@ -2902,25 +2886,25 @@ class Model(object):
         sgObj = mtgocad.Sgrid()
         sgObj.read_sgrid_file(sgrid_header_file)
         self.sgObj = sgObj
-        
+
         # check if we have a data object and if we do, is there a centre position
         # if not then assume it is the centre of the grid
         calculate_centre = True
         if self.Data is not None:
-            if hasattr(self.Data,'center_position_EN'):
+            if hasattr(self.Data, 'center_position_EN'):
                 if self.Data.center_position_EN is not None:
                     centre = np.zeros(3)
                     centre[:2] = self.Data.center_position_EN
-                    calculate_centre = False    
+                    calculate_centre = False
 
-        # get resistivity model values
+                    # get resistivity model values
         self.res_model = sgObj.resistivity
-        
+
         # get nodes and grid locations
         grideast, gridnorth, gridz = [np.unique(sgObj.grid_xyz[i]) for i in range(3)]
         gridz = np.abs(gridz)
         gridz.sort()
-        if np.all(np.array([len(gridnorth),len(grideast),len(gridz)]) - 1 == np.array(self.res_model.shape)):
+        if np.all(np.array([len(gridnorth), len(grideast), len(gridz)]) - 1 == np.array(self.res_model.shape)):
             self.grid_east, self.grid_north, self.grid_z = grideast, gridnorth, gridz
         else:
             print "Cannot read sgrid, can't deal with non-orthogonal grids or grids not aligned N-S or E-W"
@@ -2932,32 +2916,31 @@ class Model(object):
         self.nodes_z = self.grid_z[1:] - self.grid_z[:-1]
 
         self.z1_layer = self.nodes_z[0]
-#        self.z_target_depth = None
+        #        self.z_target_depth = None
         self.z_bottom = self.nodes_z[-1]
-        
-        #number of vertical layers
+
+        # number of vertical layers
         self.n_layers = len(self.grid_z) - 1
-        
+
         # number of air layers
-        self.n_airlayers = sum(np.amax(self.res_model,axis=(0,1))>0.9*air_resistivity)
-        
+        self.n_airlayers = sum(np.amax(self.res_model, axis=(0, 1)) > 0.9 * air_resistivity)
+
         # sea level in grid_z coordinates, calculate and adjust centre
         self.sea_level = self.grid_z[self.n_airlayers]
-        
+
         # get relative grid locations
         if calculate_centre:
             print "Calculating center position"
             centre = np.zeros(3)
-            centre[0] = (self.grid_east.max() + self.grid_east.min())/2.
-            centre[1] = (self.grid_north.max() + self.grid_north.min())/2.
+            centre[0] = (self.grid_east.max() + self.grid_east.min()) / 2.
+            centre[1] = (self.grid_north.max() + self.grid_north.min()) / 2.
         centre[2] = self.grid_z[self.n_airlayers]
         self.grid_east -= centre[0]
         self.grid_north -= centre[1]
         self.grid_z += centre[2]
 
-
-    def write_xyres(self,location_type='EN',origin=[0,0],model_epsg=None,
-                    savepath=None,outfile_basename='DepthSlice'):
+    def write_xyres(self, location_type='EN', origin=[0, 0], model_epsg=None,
+                    savepath=None, outfile_basename='DepthSlice'):
         """
         write files containing depth slice data (x, y, res for each depth)
         
@@ -2972,40 +2955,40 @@ class Model(object):
         """
         if savepath is None:
             savepath = self.save_path
-            
+
         # make a directory to save the files
-        savepath = op.join(savepath,'DepthSlices')
+        savepath = op.join(savepath, 'DepthSlices')
         if not op.exists(savepath):
             os.mkdir(savepath)
-        
+
         # try getting centre location info from file
         if type(origin) == str:
             try:
                 origin = np.loadtxt(origin)
             except:
                 print "Please provide origin as a list, array or tuple or as a valid filename containing this info"
-                origin = [0,0]
-        
+                origin = [0, 0]
+
         # reshape the data
-        x,y,z = [np.mean([arr[1:], arr[:-1]],axis=0) for arr in \
-                [self.grid_east + origin[0], self.grid_north + origin[1], self.grid_z]]
-        x,y = [arr.flatten() for arr in np.meshgrid(x,y)]
-        
+        x, y, z = [np.mean([arr[1:], arr[:-1]], axis=0) for arr in \
+                   [self.grid_east + origin[0], self.grid_north + origin[1], self.grid_z]]
+        x, y = [arr.flatten() for arr in np.meshgrid(x, y)]
+
         # set format for saving data
-        fmt = ['%.1f','%.1f','%.3e']
-        
+        fmt = ['%.1f', '%.1f', '%.3e']
+
         # convert to lat/long if needed
         if location_type == 'LL':
             if np.any(origin) == 0:
                 print "Warning, origin coordinates provided as zero, output lat/long are likely to be incorrect"
-            x,y = utm2ll.project(x,y,model_epsg,4326)
+            x, y = utm2ll.project(x, y, model_epsg, 4326)
             # update format to accommodate lat/lon
-            fmt[:2] = ['%.6f','%.6f']
-        
+            fmt[:2] = ['%.6f', '%.6f']
+
         for k in range(len(z)):
-            fname = op.join(savepath,outfile_basename+'_%1im.xyz'%z[k])
-            data = np.vstack([x,y,self.res_model[:,:,k].flatten()]).T
-            np.savetxt(fname,data,fmt=fmt)
+            fname = op.join(savepath, outfile_basename + '_%1im.xyz' % z[k])
+            data = np.vstack([x, y, self.res_model[:, :, k].flatten()]).T
+            np.savetxt(fname, data, fmt=fmt)
 
 
 # ==============================================================================
@@ -5097,7 +5080,6 @@ class PlotSlices(object):
 
         plt.close(self.fig)
         self.plot()
-                           
 
     def save_figure(self, save_fn=None, fig_dpi=None, file_format='pdf',
                     orientation='landscape', close_fig='y'):
