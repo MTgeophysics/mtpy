@@ -12,7 +12,12 @@ import os
 import sys
 import numpy as np
 
+import matplotlib as mpl
+mpl.rcParams['lines.linewidth'] = 2
+mpl.rcParams['lines.color'] = 'r'
+
 import matplotlib.pyplot as plt
+
 import mtpy.core.mt as mt
 
 import mtpy.imaging.plot_mt_response as mtpr
@@ -40,18 +45,19 @@ def plot_edi_dir(edi_path):
     return
 
 
-def plot_edi_file(edifile):
+def plot_edi_file(edifile, rholist=['zxy','zyx','det'], savefile=None):
     """
     Plot the input edi_file
     Args:
         edi_file: path2edifile
-
+        rholist: a list of the rho to be used.
+        savefile: path2savefig, not save if None
     Returns:
     """
-
     # plt.style.use('dark_background')
-    plt.style.use('seaborn-deep')
-    plt.style.use('classic')
+    # plt.style.use('seaborn-deep')
+    # plt.style.use('classic')
+    plt.grid(True)
 
     logger.info("Plotting the edi file %s", edifile)
 
@@ -59,50 +65,57 @@ def plot_edi_file(edifile):
     zeta = mt_obj.Z     # the attribute Z represent the impedance tensor 2X2 matrix
     freqs = zeta.freq   # frequencies
 
-    P_scale_meter = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
+    scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
 
-    print(P_scale_meter)
+    logger.debug("scale parameter= %s",scale_param)
 
     # The periods array
 
     periods = 1.0 / freqs
 
-    # One of the 4-components: XY
-    penetration_depth = P_scale_meter * np.sqrt(zeta.resistivity[:, 0, 1] * periods)
+    legendh=[]
 
-    plt.semilogx(periods, -penetration_depth, '-*')
-    # plt.semilogx(periods, -penetration_depth2, '-o')
+    if 'zxy' in rholist:
+        # One of the 4-components: XY
+        penetration_depth = scale_param * np.sqrt(zeta.resistivity[:, 0, 1] * periods)
 
-    # plt.title("XY Penetration Depth in Meters")
-    # plt.xlabel("Period (seconds)")
-    # plt.ylabel("Depth Meters")
+        pen_zxy, = plt.semilogx(periods, -penetration_depth, '-*',label='Zxy')
 
-    plt.grid(True)
+        legendh.append(pen_zxy)
 
-    penetration_depth = P_scale_meter * np.sqrt(zeta.resistivity[:, 1, 0] * periods)
+        # plt.title("XY Penetration Depth in Meters")
+        # plt.xlabel("Period (seconds)")
+        # plt.ylabel("Depth Meters")
 
-    plt.semilogx(periods, -penetration_depth, '-o')
+    if 'zyx' in rholist:
+        penetration_depth = scale_param * np.sqrt(zeta.resistivity[:, 1, 0] * periods)
 
-    # plt.title("YX Penetration Depth in Meters")
-    # plt.ylabel("Depth Meters")
+        pen_zyx, = plt.semilogx(periods, -penetration_depth, '-o', label='Zyx')
+        legendh.append(pen_zyx)
 
-    plt.grid(True)
+    if 'det' in rholist:
+        # determinant
+        det2 = np.abs(zeta.det[0])
+        det_penetration_depth = scale_param * np.sqrt(0.2 * periods * det2 * periods)
 
-    # determinant
-    det2 = np.abs(zeta.det[0])
-    det_penetration_depth = P_scale_meter * np.sqrt(0.2 * periods * det2 * periods)
+        pen_det, = plt.semilogx(periods, -det_penetration_depth, '-^', label='Determinant')
+        legendh.append(pen_det)
 
-    plt.semilogx(periods, -det_penetration_depth, '-^')
 
-    plt.title("Penetration Depth in Meters for %s"% edifile)
+    plt.legend(handles=legendh, bbox_to_anchor=(0.1,0.5), loc=3, ncol=1, borderaxespad=0.)
 
-    plt.xlabel("Log Period (seconds)")
+    plt.title("Penetration Depth for file %s"% edifile)
 
-    plt.ylabel("Depth(meters)")
+    plt.xlabel("Log Period (seconds)",fontsize=16)
+
+    plt.ylabel("Penetration Depth (meters)",fontsize=16)
+
+    if savefile is not None:
+        plt.savefig(savefile, dpi=800)
 
     plt.show()
 
-    return
+    return savefile
 
 
 ###############################################################################
@@ -121,8 +134,9 @@ if __name__ == '__main__':
         edi_path = sys.argv[1]
 
         if os.path.isfile(edi_path):
-            plot_edi_file(edi_path)
+            plot_edi_file(edi_path , savefile='C:/temp/pen_depth.jpg')
+            # rholist can be any of ['zxy','zyx','det']
         elif os.path.isdir(edi_path):
-            plot_edi_dir(edi_path)
+            plot_edi_dir(edi_path , savefile='C:/temp/pen_depth.jpg')
         else:
             logger.error("Usage %s %s", sys.argv[0], "path2edi")
