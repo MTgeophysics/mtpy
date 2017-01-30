@@ -28,7 +28,7 @@ logger = MtPyLog().get_mtpy_logger(__name__)
 
 # logger = MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) # specific
 
-def plot_edi_dir(edi_path):
+def plot_edi_dir(edi_path,rholist=['zxy','zyx','det']):
     """ plot edi files from the input directory edi_path
     """
 
@@ -40,7 +40,7 @@ def plot_edi_dir(edi_path):
         # for efile in edi_files[:2]:
         logger.debug("plotting %s", efile)
         # eo = mtedi.Edi(filename=efile)
-        plot_edi_file(efile)
+        plot_edi_file(efile,rholist=rholist)
 
     return
 
@@ -137,6 +137,6 @@ if __name__ == '__main__':
             plot_edi_file(edi_path , savefile='C:/temp/pen_depth.jpg')
             # rholist can be any of ['zxy','zyx','det']
         elif os.path.isdir(edi_path):
-            plot_edi_dir(edi_path , savefile='C:/temp/pen_depth.jpg')
+            plot_edi_dir(edi_path, rholist=['det'] )
         else:
             logger.error("Usage %s %s", sys.argv[0], "path2edi")
