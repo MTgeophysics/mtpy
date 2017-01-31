@@ -79,7 +79,9 @@ def plot_edi_file(edifile, rholist=['zxy','zyx','det'], savefile=None):
         # One of the 4-components: XY
         penetration_depth = scale_param * np.sqrt(zeta.resistivity[:, 0, 1] * periods)
 
-        pen_zxy, = plt.semilogx(periods, -penetration_depth, '-*',label='Zxy')
+        #pen_zxy, = plt.semilogx(periods, -penetration_depth, '-*',label='Zxy')
+        pen_zxy, = plt.semilogx(periods, -penetration_depth, color='#000000', marker='*', label='Zxy')
+        #See http://matplotlib.org/1.3.1/examples/pylab_examples/line_styles.html
 
         legendh.append(pen_zxy)
 
@@ -90,7 +92,7 @@ def plot_edi_file(edifile, rholist=['zxy','zyx','det'], savefile=None):
     if 'zyx' in rholist:
         penetration_depth = scale_param * np.sqrt(zeta.resistivity[:, 1, 0] * periods)
 
-        pen_zyx, = plt.semilogx(periods, -penetration_depth, '-o', label='Zyx')
+        pen_zyx, = plt.semilogx(periods, -penetration_depth, color='g', marker='o', label='Zyx')
         legendh.append(pen_zyx)
 
     if 'det' in rholist:
@@ -98,7 +100,8 @@ def plot_edi_file(edifile, rholist=['zxy','zyx','det'], savefile=None):
         det2 = np.abs(zeta.det[0])
         det_penetration_depth = scale_param * np.sqrt(0.2 * periods * det2 * periods)
 
-        pen_det, = plt.semilogx(periods, -det_penetration_depth, '-^', label='Determinant')
+        #pen_det, = plt.semilogx(periods, -det_penetration_depth, '-^', label='Determinant')
+        pen_det, = plt.semilogx(periods, -det_penetration_depth, color='b', marker='^', label='Determinant')
         legendh.append(pen_det)
 
 
@@ -118,6 +121,66 @@ def plot_edi_file(edifile, rholist=['zxy','zyx','det'], savefile=None):
     return savefile
 
 
+def plot_multi_station_pen_depth(per_index, edifiles):
+    """
+    plot the pen depth of multiple edi files (stations), at the given frequency defined by per_index=0,1,2...
+    :param edifiles:
+    :param per_index:
+    :return:
+    """
+
+    if os.path.isdir(edifiles):
+        edi_dir = edifiles # "E:/Githubz/mtpy2/tests/data/edifiles/"
+        edifiles = glob.glob(os.path.join(edi_dir, '*.edi'))
+        logger.debug(edifiles)
+    else:
+        # assume edifiles is [a list of files]
+        pass
+
+    # per_index=0,1,2,....
+    periods = []
+
+    app_resis = []
+
+    stations = []
+
+    for afile in edifiles:
+        mt_obj = mt.MT(afile)
+
+        # the attribute Z
+        zeta = mt_obj.Z
+
+        if per_index >= len(zeta.freq):
+            raise Exception("Index out_of_range Error: period index must be less than number of periods in zeta.freq")
+
+        per = 1.0 / zeta.freq[per_index]
+        periods.append(per)
+        app_resis.append(-zeta.resistivity[per_index, 0, 1])
+        stations.append(mt_obj.station)
+
+    #plt.plot(app_resis, color='b', marker='o')
+
+    index = np.arange(len(app_resis))
+
+    plt.bar(index, app_resis, color='#000000')
+
+    # plt.xaxis.tick_top()
+    # plt.set_xlabel('X LABEL')
+    # plt.xaxis.set_label_position('top')
+
+    plt.xlabel('Penetration Depth Across Stations, for MT period= %s Seconds' % periods[0], fontsize=16)
+    plt.ylabel('Penetration Depth (m)', fontsize=16)
+    # plt.title('Penetration Depth profile for T=??')
+    bar_width = 0.4
+    plt.xticks(index + bar_width / 2, stations, rotation='horizontal', fontsize=16)
+    plt.legend()
+
+    # plt.tight_layout()
+    plt.gca().xaxis.tick_top()
+    plt.show()
+
+    return (stations, app_resis, periods)
+
 ###############################################################################
 # plot one-by-one edi files in a given dirpath
 # How to Run:
@@ -135,8 +198,10 @@ if __name__ == '__main__':
 
         if os.path.isfile(edi_path):
             plot_edi_file(edi_path , savefile='C:/temp/pen_depth.jpg')
-            # rholist can be any of ['zxy','zyx','det']
+            # rholist can be any of ['zxy','zyx','det'], default all of them
         elif os.path.isdir(edi_path):
-            plot_edi_dir(edi_path, rholist=['det'] )
+            #plot_edi_dir(edi_path )
+            #plot_edi_dir(edi_path, rholist=['det'] )
+            plot_multi_station_pen_depth(40, edi_path)
         else:
             logger.error("Usage %s %s", sys.argv[0], "path2edi")
