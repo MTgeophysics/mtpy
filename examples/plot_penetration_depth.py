@@ -134,8 +134,10 @@ def plot_multi_station_pen_depth(per_index, edifiles):
         edifiles = glob.glob(os.path.join(edi_dir, '*.edi'))
         logger.debug(edifiles)
     else:
-        # assume edifiles is [a list of files]
+        # Assume edifiles is [a list of files]
         pass
+
+    scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
 
     # per_index=0,1,2,....
     periods = []
@@ -151,11 +153,13 @@ def plot_multi_station_pen_depth(per_index, edifiles):
         zeta = mt_obj.Z
 
         if per_index >= len(zeta.freq):
-            raise Exception("Index out_of_range Error: period index must be less than number of periods in zeta.freq")
+            raise Exception("Error: input period index must be less than number of freqs in zeta.freq=%s",len(zeta.freq))
 
         per = 1.0 / zeta.freq[per_index]
         periods.append(per)
-        app_resis.append(-zeta.resistivity[per_index, 0, 1])
+        penetration_depth = -scale_param * np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
+
+        app_resis.append(penetration_depth)
         stations.append(mt_obj.station)
 
     #plt.plot(app_resis, color='b', marker='o')
@@ -168,7 +172,7 @@ def plot_multi_station_pen_depth(per_index, edifiles):
     # plt.set_xlabel('X LABEL')
     # plt.xaxis.set_label_position('top')
 
-    plt.xlabel('Penetration Depth Across Stations, for MT period= %s Seconds' % periods[0], fontsize=16)
+    plt.xlabel('Penetration Depth Across Stations, for MT period= %6.3f Seconds' % periods[0], fontsize=16)
     plt.ylabel('Penetration Depth (m)', fontsize=16)
     # plt.title('Penetration Depth profile for T=??')
     bar_width = 0.4
@@ -179,6 +183,7 @@ def plot_multi_station_pen_depth(per_index, edifiles):
     plt.gca().xaxis.tick_top()
     plt.show()
 
+    #Check that the periods are the same value for all stations
     return (stations, app_resis, periods)
 
 ###############################################################################
@@ -202,6 +207,6 @@ if __name__ == '__main__':
         elif os.path.isdir(edi_path):
             #plot_edi_dir(edi_path )
             #plot_edi_dir(edi_path, rholist=['det'] )
-            plot_multi_station_pen_depth(40, edi_path)
+            plot_multi_station_pen_depth(42, edi_path)
         else:
             logger.error("Usage %s %s", sys.argv[0], "path2edi")
