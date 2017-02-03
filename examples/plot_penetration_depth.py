@@ -221,8 +221,7 @@ def plot_3Dbar_depth(per_index, edifiles):
         zeta = mt_obj.Z
 
         if per_index >= len(zeta.freq):
-            raise Exception("Index out_of_range Error: period index must be less than number of periods in zeta.freq")
-
+            raise Exception("Error: input period index must be less than the number of freqs in zeta.freq=%s", len(zeta.freq))
         per = 1.0 / zeta.freq[per_index]
         periods.append(per)
 
@@ -265,6 +264,7 @@ def plot_3Dbar_depth(per_index, edifiles):
         xpos.append(get_index(pair[0], pair[1],LL_lat, LL_lon, pixelsize)[0])
         ypos.append(get_index(pair[0], pair[1], LL_lat, LL_lon, pixelsize)[1])
         dz.append(np.abs(pen_depth[iter]))
+        #dz.append(-np.abs(pen_depth[iter]))
 
     num_elements = len(xpos)
     zpos = np.zeros(num_elements)  # zpos = [0,0,0,0,0,0,0,0,0,0]
@@ -283,9 +283,10 @@ def plot_3Dbar_depth(per_index, edifiles):
 
     #ax1
 
-    plt.title('Penetration Depth Across Stations, for MT period= %6.3f Seconds' % periods[0], fontsize=16)
+    plt.title('Penetration Depth (m) Across Stations. MT period= %6.3f Seconds' % periods[0], fontsize=16)
     plt.xlabel('Latitude (deg-grid)', fontsize=16)
     plt.ylabel('Longitude (deg-grid)', fontsize=16)
+    #plt.zlabel('Penetration Depth (m)')
     # bar_width = 0.4
     # plt.xticks(index + bar_width / 2, stations, rotation='horizontal', fontsize=16)
     # plt.legend()
@@ -334,6 +335,6 @@ if __name__ == '__main__':
             #plot_edi_dir(edi_path )
             #plot_edi_dir(edi_path, rholist=['det'] )
             #plot_multi_station_pen_depth(10, edi_path)
-            plot_3Dbar_depth(40,edi_path)
+            plot_3Dbar_depth(30,edi_path)
         else:
             logger.error("Usage %s %s", sys.argv[0], "path2edi")
