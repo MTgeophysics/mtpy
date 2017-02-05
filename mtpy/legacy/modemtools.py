@@ -14,7 +14,7 @@ import re
 
 import mtpy.core.mttools as mtt
 import mtpy.modeling.winglinktools as wlt
-import mtpy.utils.latlongutmconversion as ll2utm
+import mtpy.utils.latlon_utm_conversion as ll2utm
 reload(wlt)
 
 def winglinkmesh2modelfile(WLoutputfile, modelfilename= 'ModEM_initmodel', res_value=100):

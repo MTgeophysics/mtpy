@@ -13,7 +13,7 @@ import mtpy.legacy.mttools as mt
 from matplotlib.ticker import MultipleLocator,FormatStrFormatter
 import mtpy.legacy.old_z as Z
 reload(Z)
-import mtpy.utils.latlongutmconversion as utm2ll
+import mtpy.utils.latlon_utm_conversion as utm2ll
 from matplotlib import colors
 from matplotlib import patches
 import matplotlib.colorbar as mcb
