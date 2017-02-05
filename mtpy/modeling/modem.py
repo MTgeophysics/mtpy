@@ -1056,6 +1056,10 @@ class Data(object):
         dfid.writelines(dlines)
         dfid.close()
 
+        # write epsg and center position to a file, if they exist
+        np.savetxt(op.join(self.save_path,'center_position.dat'),self.center_position_EN,fmt='%.1f')
+        np.savetxt(op.join(self.save_path,'epsg'),np.array([self.epsg]),fmt='%1i')
+
         print 'Wrote ModEM data file to {0}'.format(self.data_fn)
 
     def convert_ws3dinv_data_file(self, ws_data_fn, station_fn=None,
@@ -1892,7 +1896,7 @@ class Model(object):
         # sea level in grid_z coordinates. Auto adjusts when topography read in
         self.sea_level = 0.
 
-    def make_mesh(self, update_data_center=False):
+    def make_mesh(self, update_data_center=True):
         """ 
         create finite element mesh according to parameters set.
         
@@ -2042,8 +2046,11 @@ class Model(object):
         # if desired, update the data center position (need to first project 
         # east/north back to lat/lon) and rewrite to file
         if update_data_center:
-            self.Data.center_position = self.Data.project_xy(self.Data.center_position_EN[0],
-                                                             self.Data.center_position_EN[1])
+            try:
+                self.Data.center_position = self.Data.project_xy(self.Data.center_position_EN[0],
+                                                                 self.Data.center_position_EN[1])
+            except:
+                pass
             self.Data.write_data_file(compute_error=False, fill=False)
 
         # --> print out useful information
@@ -2939,8 +2946,10 @@ class Model(object):
         self.grid_north -= centre[1]
         self.grid_z += centre[2]
 
-    def write_xyres(self, location_type='EN', origin=[0, 0], model_epsg=None,
-                    savepath=None, outfile_basename='DepthSlice'):
+
+
+    def write_xyres(self,location_type='EN',origin=[0,0],model_epsg=None,depth_index='all',
+                    savepath=None,outfile_basename='DepthSlice',log_res=False):
         """
         write files containing depth slice data (x, y, res for each depth)
         
@@ -2951,44 +2960,58 @@ class Model(object):
                         longitude/latitude, if 'LL' need to also provide model_epsg
         model_epsg = epsg number that was used to project the model
         outfile_basename = string for basename for saving the depth slices.
+        log_res = True/False - option to save resistivity values as log10 
+                               instead of linear
         
         """
         if savepath is None:
             savepath = self.save_path
-
+            
         # make a directory to save the files
-        savepath = op.join(savepath, 'DepthSlices')
+        savepath = op.join(savepath,outfile_basename)
         if not op.exists(savepath):
             os.mkdir(savepath)
-
+        
         # try getting centre location info from file
         if type(origin) == str:
             try:
                 origin = np.loadtxt(origin)
             except:
                 print "Please provide origin as a list, array or tuple or as a valid filename containing this info"
-                origin = [0, 0]
-
+                origin = [0,0]
+        
         # reshape the data
-        x, y, z = [np.mean([arr[1:], arr[:-1]], axis=0) for arr in \
-                   [self.grid_east + origin[0], self.grid_north + origin[1], self.grid_z]]
-        x, y = [arr.flatten() for arr in np.meshgrid(x, y)]
-
+        x,y,z = [np.mean([arr[1:], arr[:-1]],axis=0) for arr in \
+                [self.grid_east + origin[0], self.grid_north + origin[1], self.grid_z]]
+        x,y = [arr.flatten() for arr in np.meshgrid(x,y)]
+        
         # set format for saving data
-        fmt = ['%.1f', '%.1f', '%.3e']
-
+        fmt = ['%.1f','%.1f','%.3e']
+        
         # convert to lat/long if needed
         if location_type == 'LL':
             if np.any(origin) == 0:
                 print "Warning, origin coordinates provided as zero, output lat/long are likely to be incorrect"
-            x, y = utm2ll.project(x, y, model_epsg, 4326)
+            x,y = utm2ll.project(x,y,model_epsg,4326)
             # update format to accommodate lat/lon
-            fmt[:2] = ['%.6f', '%.6f']
-
-        for k in range(len(z)):
-            fname = op.join(savepath, outfile_basename + '_%1im.xyz' % z[k])
-            data = np.vstack([x, y, self.res_model[:, :, k].flatten()]).T
-            np.savetxt(fname, data, fmt=fmt)
+            fmt[:2] = ['%.6f','%.6f']
+            
+        # make depth indices into a list
+        if depth_index == 'all':
+            depthindices = range(len(z))
+        elif np.iterable(depth_index):
+            depthindices = np.array(depth_index).astype(int)
+        else:
+            depthindices = [depth_index]
+        
+        for k in depthindices:
+            fname = op.join(savepath,outfile_basename+'_%1im.xyz'%z[k])
+            vals = self.res_model[:,:,k].flatten()
+            if log_res:
+                vals = np.log10(vals)
+                fmt[-1] = '%.3f'
+            data = np.vstack([x,y,vals]).T
+            np.savetxt(fname,data,fmt=fmt)
 
 
 # ==============================================================================
