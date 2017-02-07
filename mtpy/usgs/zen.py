@@ -38,6 +38,7 @@ from cStringIO import StringIO
 import sys
 import mtpy.processing.filter as mtfilt
 import mtpy.core.edi as mtedi
+import win32api
 
 try:
     import mtpy.utils.mseed as mtmseed
@@ -3887,7 +3888,8 @@ class ZenSchedule(object):
             if ss['date'] != self.sa_list[ii+1]['date']:
                 t1 += 24*3600                
             
-            t_diff = t1-t0
+            # subtract 10 seconds for transition between schedule items.
+            t_diff = t1-t0-10 
             zacq_list.append('$schline{0:.0f} = {1:.0f},{2:.0f},{3:.0f}\n'.format(
                                 ii+1, 
                                 t_diff,
@@ -5196,10 +5198,10 @@ def copy_from_sd(station, save_path=r"d:\Peacock\MTData",
                 file_size = os.stat(full_path_fn)[6]
                 if file_size >= 1600L and fn.find('.cfg') == -1:
                     zt = Zen3D(fn=full_path_fn)
-                    #zt.get_info()
-                    zt.read_header()
-                    zt.read_schedule()
-                    zt.read_metadata()
+                    zt.read_all_info()
+                    #zt.read_header()
+                    #zt.read_schedule()
+                    #zt.read_metadata()
                     schedule_date = '{0}'.format(zt.schedule.Date)
                     
                     if zt.metadata.rx_xyz0.find(station[2:]) >= 0:
