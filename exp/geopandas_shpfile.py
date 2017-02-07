@@ -13,6 +13,8 @@ mpl.rcParams['figure.figsize']=[30,10]
 import geopandas as gpd
 
 def plot_shapefile(shpfile):
+
+    print("processing file ", shpfile )
     shpf = gpd.GeoDataFrame.from_file(shpfile)
 
     print("columns and shape", shpf.columns, shpf.shape)
@@ -25,6 +27,7 @@ if __name__ == "__main__":
 
 
     if len(sys.argv)<2:
+        print("Usage: %s shapefile/dir"%sys.argv[0])
         sys.exit(1)
     elif os.path.isfile(sys.argv[1]):
         path2shp = sys.argv[1]
@@ -32,6 +35,7 @@ if __name__ == "__main__":
 
     elif os.path.isdir(sys.argv[1]):
         shpfiles= glob.glob(sys.argv[1]+"/PT*.shp")
+        print("There are %s shape files to show"% len(shpfiles))
         for afile in shpfiles:
             plot_shapefile(afile)
     else:
