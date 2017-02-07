@@ -600,11 +600,28 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         self.figure.clf()
                          
         if self.modem_resp_fn is not None:
+#            self.figure, axes = plt.subplots(1, 3, 
+#                                             sharex=True,
+#                                             sharey=True,
+#                                             subplot_kw={'adjustable':'box-forced',
+#                                                         'aspect':'equal'})
+#            axd = axes[0]
+#            axm = axes[1]
+#            axr = axes[2]
+#            self.mpl_widget = FigureCanvas(self.figure)
             axd = self.figure.add_subplot(gs[0, 0], aspect='equal')
-            axm = self.figure.add_subplot(gs[0, 1], aspect='equal')
-            axr = self.figure.add_subplot(gs[0, 2], aspect='equal')
+            axm = self.figure.add_subplot(gs[0, 1], 
+                                          aspect='equal',
+                                          sharex=axd, 
+                                          sharey=axd,
+                                          adjustable='datalim')
+            axr = self.figure.add_subplot(gs[0, 2], 
+                                          aspect='equal',
+                                          sharex=axd,
+                                          sharey=axd,
+                                          adjustable='datalim')
             ax_list = [axd, axm, axr]
-        
+#        
         else:
             axd = self.figure.add_subplot(gs[0, :], aspect='equal')
             ax_list = [axd]
@@ -874,6 +891,7 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
         # data
         axd.set_xlim(self.ew_limits)
         axd.set_ylim(self.ns_limits)
+
         axd.set_xlabel('Easting ({0})'.format(self.map_scale), 
                        fontdict=font_dict)
         axd.set_ylabel('Northing ({0})'.format(self.map_scale),
@@ -1034,7 +1052,8 @@ class Ui_MainWindow(mtplottools.MTArrows, mtplottools.MTEllipse):
                             s_arr['station'],
                             horizontalalignment='center',
                             verticalalignment='baseline',
-                            fontdict={'size':self.font_size}) 
+                            fontdict={'size':self.font_size},
+                            clip_on=True) 
                 
         # draw plot
         self.mpl_widget.draw()

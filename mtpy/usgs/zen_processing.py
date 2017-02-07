@@ -1436,8 +1436,8 @@ def get_remote_reference_schedule(survey_path, plot=True):
         
         fig.autofmt_xdate(rotation=60)
         ax.xaxis.set_major_formatter(mdates.DateFormatter(datetime_display))
-        ax.xaxis.set_major_locator(MultipleLocator((1)))
-        ax.xaxis.set_minor_locator(MultipleLocator((.25)))
+#        ax.xaxis.set_major_locator(MultipleLocator((1)))
+#        ax.xaxis.set_minor_locator(MultipleLocator((.25)))
         ax.xaxis.set_tick_params(width=2, size=5)
        
         ax.yaxis.set_major_locator(MultipleLocator(1))

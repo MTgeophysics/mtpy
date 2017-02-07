@@ -7,7 +7,7 @@ Created on Wed Jan 11 16:39:40 2017
 
 import os
 import mtpy.core.mt as mt
-import xml.etree.ElementTree as ET
+import xml.etree.cElementTree as ET
 import datetime
 from xml.dom import minidom
 
@@ -162,6 +162,42 @@ class XML_Config(object):
                                   'ConditionsOfUse':conditions_of_use,
                                   '_name':'Copyright'})
                                   
+        self.Site = Dummy(**{'Project':None,
+                             'Survey':None,
+                             'YearCollected':None,
+                             'Id':None,
+                             'Locatation':Dummy(**{'Latitude':None,
+                                                   'Longitude':None,
+                                                   'Elevation(units=meters)':None,
+                                                   'Declination(epoch=1995)':None}),
+                             'AcquiredBy':None,
+                             'Start':None,
+                             'End':None,
+                             'RunList':None})
+                             
+        self.FieldNotes = Dummy(**{'Instrument':Dummy(**{'Type':None,
+                                                         'Manufacturer':None,
+                                                         'Id':None,
+                                                         'Settings':None,
+                                                         '_name':'Instrument'}),
+                                    'Electrode':Dummy(**{'Type':None,
+                                                          'Manufacturer':None,
+                                                          'Id':None,
+                                                          '_name':'Electrode'}),
+                                    'Magnetotmeter':Dummy(**{'Type':None,
+                                                             'Manufacturer':None,
+                                                             'Id':None,
+                                                             '_name':'Magnetometer'}),
+                                    'DataQualityNotes':Dummy(**{'Rating':None,
+                                                                 'GoodFromPeriod':None,
+                                                                 'GoodToPeriod':None,
+                                                                 'Comments':None,
+                                                                 '_name':'DataQualityNotes'}),
+                                    'DataQualityWarnings':Dummy(**{'Flag':0,
+                                                                    'Comments':None,
+                                                                    '_name':'DataQualityWarnings'}),
+                                    '_name':'FieldNotes'})
+                                  
         self.ProcessingInfo = Dummy(**{'ProcessedBy':None,
                                        'ProcessingSoftware':Dummy(**{'Name':None,
                                                                      'LastMod':None,
@@ -184,32 +220,6 @@ class XML_Config(object):
                                         
         self.Datum = None
         self.Declination = None
-        
-        self.Instrument = Dummy(**{'Type':None,
-                                   'Manufacturer':None,
-                                   'Id':None,
-                                   'Settings':None,
-                                   '_name':'Instrument'})
-
-        self.Electrode = Dummy(**{'Type':None,
-                                  'Manufacturer':None,
-                                  'Id':None,
-                                  '_name':'Electrode'})
-
-        self.Magnetometer = Dummy(**{'Type':None,
-                                     'Manufacturer':None,
-                                     'Id':None,
-                                     '_name':'Magnetometer'})
-                                     
-        self.DataQualityNotes = Dummy(**{'Rating':None,
-                                         'GoodFromPeriod':None,
-                                         'GoodToPeriod':None,
-                                         'Comments':None,
-                                         '_name':'DataQualityNotes'})
-                                         
-        self.DataQualityWarnings = Dummy(**{'Flag':0,
-                                            'Comments':None,
-                                            '_name':'DataQualityWarnings'})
                                             
         self.StatisticalEstimates = estimates
         self.DataTypes = data_types
@@ -452,9 +462,6 @@ class EDI_to_XML(object):
         # Field Notes
         self.cfg_obj.FieldNotes = Dummy()
         self.cfg_obj.FieldNotes._name = 'FieldNotes(run=1)'
-        self.cfg_obj.FieldNotes.Instrument = self.cfg_obj.Instrument
-        self.cfg_obj.FieldNotes.Electrode = self.cfg_obj.Electrode
-        self.cfg_obj.FieldNotes.Magnetometer = self.cfg_obj.Magnetometer
         self.cfg_obj.FieldNotes.Magnetometer.HX = str(self.mt_obj.edi_object.Define_measurement.meas_hx.acqchan)
         self.cfg_obj.FieldNotes.Magnetometer.HY = str(self.mt_obj.edi_object.Define_measurement.meas_hy.acqchan)
         try:        
@@ -611,7 +618,8 @@ class EDI_to_XML(object):
         if self.xml_fn is None:
             self.xml_fn = '{0}.xml'.format(self.edi_fn[0:-4])
         
-        self.get_info()
+        if self.edi_fn is not None:
+            self.get_info()
 
         # make the top of the tree element        
         emtf = ET.Element('EM_TF')
@@ -628,6 +636,7 @@ class EDI_to_XML(object):
             # if its a class Dummy, then check for single values or another
             # class Dummy, probably a better way to code this with while loops
             elif isinstance(value, Dummy):
+                print Dummy.__dict__
                 print value._name
                 # make a new tree limb
                 new_element = self.make_element(emtf, value._name)
