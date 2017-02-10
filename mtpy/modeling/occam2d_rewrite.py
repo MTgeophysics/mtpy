@@ -34,6 +34,7 @@ import numpy as np
 import scipy as sp
 from scipy.stats import mode
 import os
+import sys
 import os.path as op
 import time
 import matplotlib.colorbar as mcb
@@ -861,7 +862,7 @@ class Profile():
     
     If _rotate_to_strike is True and geoelectric_strike is not given, 
     then it is calculated using the phase tensor.  First, 2D sections are
-    estimated from the impedance tensort hen the strike is esitmated from the
+    estimated from the impedance tensor then the strike is estimated from the
     phase tensor azimuth + skew.  This angle is then used to project the 
     stations perpendicular to the strike angle.
     
@@ -1163,6 +1164,7 @@ class Profile():
         self.edi_list = [self.edi_list[ii] for ii in index_sort]
         self.station_locations = np.array([self.station_locations[ii] 
                                            for ii in index_sort])
+
         if self.estimate_elevation == True:
             self.project_elevation()
          
@@ -6846,4 +6848,27 @@ class Mask(Data):
 
 class OccamInputError(Exception):
     pass
+
+# ======================================
+if __name__ =="__main__":
+
+    if len(sys.argv) < 2:
+        print ("\n please provide path to edi files\n USAGE:  %s path2edifiles" % sys.argv[0])
+        sys.exit(1)
+    else:
+        edi_dir = sys.argv[1]
+
+    stations = ['151{0:02}A'.format(s) for s in xrange(24, 31)]
+
+    print (stations)
+    #pr = Profile(edi_path=edi_dir, station_list=['16125A','16124A','16123A','16127A','16126A', '16122A'])
+    pr = Profile(edi_path=edi_dir, station_list=stations)
+
+    # pr.geoelectric_strike = 45
+
+    pr.generate_profile()
+
+    print (pr.profile_angle)
+
+    pr.plot_profile(station_id=[0, 4]) # set station labels to only be from 1st to 4th index of station name
 
