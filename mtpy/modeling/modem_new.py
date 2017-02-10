@@ -943,6 +943,7 @@ class Data(object):
                                     elif self.error_type == 'egbert':
                                         d_zxy = self.data_array[ss]['z'][ff, 0, 1]
                                         d_zyx = self.data_array[ss]['z'][ff, 1, 0]
+                                            
                                         abs_err = np.sqrt(abs(d_zxy*d_zyx))*\
                                                   self.error_egbert/100.
                                     elif self.error_type == 'floor_egbert':

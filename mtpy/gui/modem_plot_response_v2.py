@@ -210,7 +210,7 @@ class ModEMPlotResponse(QtGui.QMainWindow):
         self.plot_response.resp_fn = fn
         
     def show_settings(self):
-        self.settings_window = PlotSettings(None, **self.__dict__)
+        self.settings_window = PlotSettings(**self.__dict__)
         self.settings_window.show()
         self.settings_window.settings_updated.connect(self.update_settings)
         
@@ -593,7 +593,11 @@ class PlotResponses(QtGui.QWidget):
                 self._err_list = [[erxx[1][0], erxx[1][1], erxx[2][0]],
                                   [erxy[1][0], erxy[1][1], erxy[2][0]],
                                   [eryx[1][0], eryx[1][1], eryx[2][0]],
-                                  [eryy[1][0], eryy[1][1], eryy[2][0]]]
+                                  [eryy[1][0], eryy[1][1], eryy[2][0]], 
+                                  [epxx[1][0], epxx[1][1], epxx[2][0]],
+                                  [epxy[1][0], epxy[1][1], epxy[2][0]],
+                                  [epyx[1][0], epyx[1][1], epyx[2][0]],
+                                  [epyy[1][0], epyy[1][1], epyy[2][0]]]
                 line_list = [[erxx[0]], [erxy[0]], [eryx[0]], [eryy[0]]]
             except IndexError:
                 print 'Found no Z components for {0}'.format(self.station)
@@ -601,6 +605,10 @@ class PlotResponses(QtGui.QWidget):
                              [None], [None]]
                                      
                 self._err_list = [[None, None, None],
+                                  [None, None, None],
+                                  [None, None, None],
+                                  [None, None, None],
+                                  [None, None, None],
                                   [None, None, None],
                                   [None, None, None],
                                   [None, None, None]]
@@ -615,8 +623,14 @@ class PlotResponses(QtGui.QWidget):
                                   [erxy[1][0], erxy[1][1], erxy[2][0]],
                                   [eryx[1][0], eryx[1][1], eryx[2][0]],
                                   [eryy[1][0], eryy[1][1], eryy[2][0]],
+                                  [epxx[1][0], epxx[1][1], epxx[2][0]],
+                                  [epxy[1][0], epxy[1][1], epxy[2][0]],
+                                  [epyx[1][0], epyx[1][1], epyx[2][0]],
+                                  [epyy[1][0], epyy[1][1], epyy[2][0]],
                                   [ertx[1][0], ertx[1][1], ertx[2][0]],
-                                  [erty[1][0], erty[1][1], erty[2][0]]]
+                                  [eptx[1][0], eptx[1][1], eptx[2][0]],
+                                  [erty[1][0], erty[1][1], erty[2][0]],
+                                  [epty[1][0], epty[1][1], epty[2][0]]]
             except IndexError:
                 print 'Found no Z components for {0}'.format(self.station)
                 line_list = [[None], [None], 
@@ -624,6 +638,12 @@ class PlotResponses(QtGui.QWidget):
                              [None], [None]]
                                      
                 self._err_list = [[None, None, None],
+                                  [None, None, None],
+                                  [None, None, None],
+                                  [None, None, None],
+                                  [None, None, None],
+                                  [None, None, None],
+                                  [None, None, None],
                                   [None, None, None],
                                   [None, None, None],
                                   [None, None, None],
@@ -949,62 +969,61 @@ class PlotResponses(QtGui.QWidget):
         
         # Increase error bars
         if event.mouseevent.button == 3:
-            # make sure just checking the top plots            
-            ax_index = self._ax_index%len(self._err_list)
+            # make sure just checking the top plots 
             
             #put the new error into the error array
-            if len(self.ax_list) == 8:
+            if self._key == 'tip':
+                err = self.modem_data.mt_dict[self.station].Tipper.tipper_err[p_index, 
+                        self._comp_index_x, self._comp_index_y]
+                err = err+abs(err)*self.plot_settings.t_err_increase
+                self.modem_data.mt_dict[self.station].Tipper.tipper_err[p_index, 
+                        self._comp_index_x, self._comp_index_y] = err
+                
+                    
+            if self._key == 'z':
                 err = self.modem_data.mt_dict[self.station].Z.z_err[p_index, 
                         self._comp_index_x, self._comp_index_y]
-                err = err+abs(err)*self.plot_properties.z_err_increase
-                self.modem_data.data_array[s_index]['z_err'][p_index, 
-                            self._comp_index_x, self._comp_index_y] = err
+                err = err+abs(err)*self.plot_settings.z_err_increase
+
                 self.modem_data.mt_dict[self.station].Z.z_err[p_index, 
+                    self._comp_index_x, self._comp_index_y] = err
+                    
+            self.modem_data.data_array[s_index][self._key+'_err'][p_index, 
                         self._comp_index_x, self._comp_index_y] = err
-            elif len(self.ax_list) == 12:
-                if self._ax_index == 4 or self._ax_index == 5 or \
-                   self._ax_index == 10 or self._ax_index == 11:
-                    err = self.modem_data.mt_dict[self.station].Tipper.tipper_err[p_index, 
-                                self._comp_index_x, self._comp_index_y] 
-                    self.modem_data.data_array[s_index]['tip_err'][p_index, 
-                                self._comp_index_x, self._comp_index_y] += abs(err)*self.plot_properties.t_err_increase
-                    self.modem_data.mt_dict[self.station].Tipper.tipper_err[p_index, 
-                                self._comp_index_x, self._comp_index_y] += abs(err)*self.plot_properties.t_err_increase
-                else:
-                    err = self.modem_data.mt_dict[self.station].Z.z_err[p_index, 
-                        self._comp_index_x, self._comp_index_y] 
-                    self.modem_data.data_array[s_index]['z_err'][p_index, 
-                        self._comp_index_x, self._comp_index_y] += abs(err)*self.plot_properties.z_err_increase
-                    self.modem_data.mt_dict[self.station].Z.z_err[p_index, 
-                        self._comp_index_x, self._comp_index_y] += abs(err)*self.plot_properties.z_err_increase
-            
+
             # make error bar array
-            eb = self._err_list[ax_index][2].get_paths()[p_index].vertices
+            eb = self._err_list[self._ax_index][2].get_paths()[p_index].vertices
             
             # make ecap array
-            ecap_l = self._err_list[ax_index][0].get_data()[1][p_index]
-            ecap_u = self._err_list[ax_index][1].get_data()[1][p_index]
+            ecap_l = self._err_list[self._ax_index][0].get_data()[1][p_index]
+            ecap_u = self._err_list[self._ax_index][1].get_data()[1][p_index]
             
             # change apparent resistivity error
-            neb_u = eb[0,1]-.025*abs(eb[0,1])
-            neb_l = eb[1,1]+.025*abs(eb[1,1])
-            ecap_l = ecap_l-.025*abs(ecap_l)
-            ecap_u = ecap_u+.025*abs(ecap_u)
+            if self._key == 'tip':
+                neb_u = eb[0, 1]-self.plot_settings.t_err_increase*abs(eb[0,1])
+                neb_l = eb[1, 1]+self.plot_settings.t_err_increase*abs(eb[1,1])
+                ecap_l = ecap_l-self.plot_settings.t_err_increase*abs(ecap_l)
+                ecap_u = ecap_u+self.plot_settings.t_err_increase*abs(ecap_u)
+            elif self._key == 'z':
+                neb_u = eb[0, 1]-self.plot_settings.z_err_increase*abs(eb[0,1])
+                neb_l = eb[1, 1]+self.plot_settings.z_err_increase*abs(eb[1,1])
+                ecap_l = ecap_l-self.plot_settings.z_err_increase*abs(ecap_l)
+                ecap_u = ecap_u+self.plot_settings.z_err_increase*abs(ecap_u)
                 
             #set the new error bar values
             eb[0,1] = neb_u
             eb[1,1] = neb_l
             
             #reset the error bars and caps
-            ncap_l = self._err_list[ax_index][0].get_data()
-            ncap_u = self._err_list[ax_index][1].get_data()
+            ncap_l = self._err_list[self._ax_index][0].get_data()
+            ncap_u = self._err_list[self._ax_index][1].get_data()
             ncap_l[1][p_index] = ecap_l
             ncap_u[1][p_index] = ecap_u
             
             #set the values 
-            self._err_list[ax_index][0].set_data(ncap_l)
-            self._err_list[ax_index][1].set_data(ncap_u)
-            self._err_list[ax_index][2].get_paths()[p_index].vertices = eb
+            self._err_list[self._ax_index][0].set_data(ncap_l)
+            self._err_list[self._ax_index][1].set_data(ncap_u)
+            self._err_list[self._ax_index][2].get_paths()[p_index].vertices = eb
                                        
             # need to redraw the figure
             self._ax.figure.canvas.draw()
@@ -1099,8 +1118,8 @@ class PlotSettings(object):
         self.subplot_top = kwargs.pop('subplot_top', .93)
         self.subplot_bottom = kwargs.pop('subplot_bottom', .08)
         
-        self.z_err_increase = kwargs.pop('z_err_increase', 0.05)
-        self.t_err_increase = kwargs.pop('t_err_increase', 0.05)
+        self.z_err_increase = kwargs.pop('z_err_increase', 0.40)
+        self.t_err_increase = kwargs.pop('t_err_increase', 0.10)
         
         self.legend_loc = kwargs.pop('legend_loc', 'upper left')
         self.legend_pos = kwargs.pop('legend_pos', None)

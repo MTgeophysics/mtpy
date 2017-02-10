@@ -40,53 +40,53 @@ conditions_of_use = "All data and metadata for this survey are available free \
                      
 estimates = [Dummy(**{'_name':'Estimate(type=real)(name=VAR)',
                       'Description':'Variance',
-                       'ExternalURL':None,
+                       'ExternalUrl':None,
                        'Intention':'error estimate',
                        'Tag':'variance'}),
              Dummy(**{'_name':'Estimate(type=complex)(name=COV)',
                       'Description':'Full covariance between each two TF components',
-                      'ExternalURL':None,
+                      'ExternalUrl':None,
                       'Intention':'error estimate',
                       'Tag':'covariance'}),
              Dummy(**{'_name':'Estimate(type=complex)(name=INVSIGCOV)',
                        'Description':'Inverse Coheren Signal Power Matrix S',
-                       'ExternalURL':None,
+                       'ExternalUrl':None,
                        'Intention':'signal power estimate',
                        'Tag':'inverse_signal_covariance'}),
               Dummy(**{'_name':'Estimate(type=complex)(name=RESIDCOV)',
                        'Description':'Residual Covariance N',
-                       'ExternalURL':None,
+                       'ExternalUrl':None,
                        'Intention':'error estimate',
                        'Tag':'residual_covariance'}),
               Dummy(**{'_name':'Estimate(type=complex)(name=COH)',
                        'Description':'Coherence',
-                       'ExternalURL':None,
+                       'ExternalUrl':None,
                        'Intention':'signal coherence',
                        'Tag':'coherence'}),
               Dummy(**{'_name':'Estimate(type=complex)(name=PREDCOH)',
                        'Description':'Multiple Coherence',
-                       'ExternalURL':None,
+                       'ExternalUrl':None,
                        'Intention':'signal coherence',
                        'Tag':'multiple_coherence'}),
               Dummy(**{'_name':'Estimate(type=complex)(name=SIGAMP)',
                        'Description':'Signal Amplitude',
-                       'ExternalURL':None,
+                       'ExternalUrl':None,
                        'Intention':'signal power estimate',
                        'Tag':'signal_amplitude'}),
               Dummy(**{'_name':'Estimate(type=complex)(name=SIGNOISE)',
                        'Description':'Signal Noise',
-                       'ExternalURL':None,
+                       'ExternalUrl':None,
                        'Intention':'error estimate',
                        'Tag':'signal_noise'})]
                        
 data_types = [Dummy(**{'_name':'DataType(units=[mV/km]/[nT])(type=complex)(name=Z)(input=H)(output=E)',
                        'Description':'MT impedance',
-                       'ExternalURL':None,
+                       'ExternalUrl':None,
                        'Intention':'primary data type',
                        'Tag':'impedance'}),
               Dummy(**{'_name':'DataType(units=[])(type=complex)(name=T)(input=H)(output=H)',
                        'Description':'Tipper-Vertical Field Transfer Function',
-                       'ExternalURL':None,
+                       'ExternalUrl':None,
                        'Intention':'primary data type',
                        'Tag':'tipper'})]
 #==============================================================================
@@ -103,7 +103,7 @@ class XML_Config(object):
         
         # Initialize the default attributes and values
         self.Description = 'Magnetotelluric Transfer Functions'
-        self.ProductID = None
+        self.ProductId = None
         self.Project = None
         self.Survey = None
         self.Country = None
@@ -122,9 +122,9 @@ class XML_Config(object):
         self.TimeSeriesArchived = Dummy(**{'Value':0, 
                                            'URL':None,
                                            '_name':'TimeSeriesArchived'})
-        self.ExternalURL = Dummy(**{'Description':None,
-                                    'URL':None,
-                                    '_name':'ExternalURL'})
+        self.ExternalUrl = Dummy(**{'Description':None,
+                                    'Url':None,
+                                    '_name':'ExternalUrl'})
         self.PrimaryData = Dummy(**{'Filename':None,
                                     'GroupKey':0,
                                     'OrderKey':0,
@@ -217,6 +217,10 @@ class XML_Config(object):
                                                                                   'Elevation(units=meters)':None}),
                                                                }),
                                         '_name':'ProcessingInfo'})
+        self.InputChannels = Dummy(**{'_name':'InputChannels(ref=site)(units=m)'})
+        self.OutputChannels = Dummy(**{'_name':'OutputChannels(ref=site)(units=m)'})
+        self.Data = Dummy(**{'_name':'Data(count=0)'})
+        self.PeriodRange = Dummy(**{'_name':'PeriodRange(min=0)(max=0)'})
                                         
         self.Datum = None
         self.Declination = None
@@ -351,11 +355,11 @@ class EDI_to_XML(object):
         self.cfg_obj = XML_Config()
         
         self._order_list = ['Description',
-                            'ProductID',
+                            'ProductId',
                             'SubType',
                             'Notes',
                             'Tags',
-                            'ExternalURL',
+                            'ExternalUrl',
                             'TimeSeriesArchived',
                             'Image',
                             'Original',
@@ -626,6 +630,7 @@ class EDI_to_XML(object):
         
         # loop over the important information sections
         for element in self._order_list:
+            print element
             # get the information for the given element
             value = getattr(self.cfg_obj, element)
             
@@ -636,8 +641,7 @@ class EDI_to_XML(object):
             # if its a class Dummy, then check for single values or another
             # class Dummy, probably a better way to code this with while loops
             elif isinstance(value, Dummy):
-                print Dummy.__dict__
-                print value._name
+                print 'new_element: {0}'.format(value._name)
                 # make a new tree limb
                 new_element = self.make_element(emtf, value._name)
                 
