@@ -21,7 +21,7 @@ from mtpy.utils.mtpylog import MtPyLog
 logger = MtPyLog().get_mtpy_logger(__name__)
 #logger = MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) # specific
 
-def plot2Dprofile( edi_dir, period_index_list=None):
+def plot2Dprofile(edi_dir, period_index_list=None):
     #edi_dir = "/Softlab/Githubz/mtpy2/tests/data/edifiles/"
     # edi_dir="E:/Githubz/mtpy2/tests/data/edifiles/"
     # edi_dir=r"E:\Githubz\mtpy2\examples\data/edi2"
@@ -76,6 +76,13 @@ def plot2Dprofile( edi_dir, period_index_list=None):
 
     plt.show()
 
+
+def plot_3D_profile(edi_dir, period_index):
+
+    return "image"
+
+
+
 def get_penetration_depth(per_index, mt_obj_list):
 
     scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
@@ -108,12 +115,14 @@ def get_penetration_depth(per_index, mt_obj_list):
 
 # =============================================================================================
 # python examples/plot_penetration_depth_profiles.py tests/data/edifiles/ 0 1 10 20 30 40 50 59
+# python examples/plot_penetration_depth_profiles.py examples/data/edi2/ 0 1 10 20 30 40
 # =============================================================================================
 if __name__=="__main__":
 
     if len(sys.argv)<2:
         print("Usage: %s edi_dir"%sys.argv[0])
         print ("python examples/plot_penetration_depth_profiles.py tests/data/edifiles/ 0 1 10 20 30 40 50 59")
+
         sys.exit(1)
     elif os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]
