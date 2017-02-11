@@ -18,6 +18,9 @@ from mpl_toolkits.basemap import Basemap
 # If use anaconda python, you can install basemap packages
 #     conda install basemap
 #     conda install -c conda-forge basemap-data-hires
+#     OR 
+#     sudo pip install https://github.com/matplotlib/basemap/archive/master.zip
+
 
 import mtpy.core.edi as EDI
 import mtpy.utils.filehandling as MTfh
