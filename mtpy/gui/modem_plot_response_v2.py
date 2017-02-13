@@ -764,10 +764,10 @@ class PlotResponses(QtGui.QWidget):
                 r_plot_res = resp_z_obj.resistivity
                 r_plot_phase = resp_z_obj.phase
 
-            rms_xx = resp_z_err[:, 0, 0].std()
-            rms_xy = resp_z_err[:, 0, 1].std()
-            rms_yx = resp_z_err[:, 1, 0].std()
-            rms_yy = resp_z_err[:, 1, 1].std()
+            rms_xx = resp_z_err[nzxx, 0, 0].std()
+            rms_xy = resp_z_err[nzxy, 0, 1].std()
+            rms_yx = resp_z_err[nzyx, 1, 0].std()
+            rms_yy = resp_z_err[nzyy, 1, 1].std()
             
             #--> make key word dictionaries for plotting
             kw_xx = {'color':self.plot_settings.ctem,
@@ -882,9 +882,9 @@ class PlotResponses(QtGui.QWidget):
                 label_list[3] += ['$Z^m_{yy}$ '+
                                'rms={0:.2f}'.format(rms_yy)]
                 label_list[4] += ['$T^m_{x}$ '+
-                                'rms={0:.2f}'.format(resp_t_err[:, 0, 0].std())]
+                                'rms={0:.2f}'.format(resp_t_err[ntx, 0, 0].std())]
                 label_list[5] += ['$T^m_{y}$'+
-                                'rms={0:.2f}'.format(resp_t_err[:, 0, 1].std())]
+                                'rms={0:.2f}'.format(resp_t_err[nty, 0, 1].std())]
             
             legend_ax_list = self.ax_list[0:4]
             if self.plot_tipper == True:

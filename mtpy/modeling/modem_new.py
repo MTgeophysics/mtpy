@@ -950,8 +950,18 @@ class Data(object):
                                         abs_err = self.data_array[ss][c_key+'_err'][ff, z_ii, z_jj]
                                         d_zxy = self.data_array[ss]['z'][ff, 0, 1]
                                         d_zyx = self.data_array[ss]['z'][ff, 1, 0]
-                                        if abs_err < np.sqrt(abs(d_zxy*d_zyx))*self.error_egbert/100.:
+                                        
+                                        if abs(d_zxy) == 0.0:
+                                            d_zxy = 1E3
+                                            
+                                        if abs(d_zyx) == 0.0:
+                                            d_zyx = 1e3
+                                        
+                                        eg_err = np.sqrt(abs(d_zxy*d_zyx))*self.error_egbert/100.
+                                        if abs_err < eg_err:
                                             abs_err = np.sqrt(abs(d_zxy*d_zyx))*self.error_egbert/100.
+                                        else:
+                                            pass
 
 
                                 if abs_err == 0.0:

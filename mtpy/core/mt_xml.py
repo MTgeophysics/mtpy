@@ -21,6 +21,9 @@ cfg_fn = r"C:\Users\jpeacock\Documents\PyScripts\xml_cfg_test.cfg"
 
 class Dummy(object):
     def __init__(self, **kwargs):
+        self._name = None
+        self._attr = None
+        self._text = None
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -138,7 +141,7 @@ class XML_Config(object):
         self.Provenance = Dummy(**{'CreatTime':datetime.datetime.strftime(
                                                datetime.datetime.utcnow(), 
                                                dt_fmt),
-                                    'CreatingApplication':'MTpy.core.xml',
+                                    'CreatingApplication':'MTpy.core.mtxml',
                                     'Submitter':Dummy(**{'Name':None,
                                                          'Email':None,
                                                          'Org':None,
