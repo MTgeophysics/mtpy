@@ -85,7 +85,7 @@ class Zinvariants:
         
         #--> read in z_object
         if z_object is not None:
-            if z_object.freq==None:
+            if z_object.freq is None:
                 raise AttributeError('z_object needs to have attrtibute'+\
                                      'freq filled')
             
