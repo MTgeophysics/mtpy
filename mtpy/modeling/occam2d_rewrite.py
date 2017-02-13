@@ -6829,11 +6829,12 @@ if __name__ == "__main__":
     else:
         edi_dir = sys.argv[1]
 
-    stations = ['151{0:02}A'.format(s) for s in xrange(24, 31)]
+    #stations = ['151{0:02}A'.format(s) for s in xrange(24, 31)]
+    #print (stations)
+    #pr = Profile(edi_path=edi_dir, station_list=stations)
+    #OR pr = Profile(edi_path=edi_dir, station_list=['16125A','16124A','16123A','16127A','16126A', '16122A'])
 
-    print (stations)
-    # pr = Profile(edi_path=edi_dir, station_list=['16125A','16124A','16123A','16127A','16126A', '16122A'])
-    pr = Profile(edi_path=edi_dir, station_list=stations)
+    pr = Profile(edi_path=edi_dir)
 
     # pr.geoelectric_strike = 45
 
