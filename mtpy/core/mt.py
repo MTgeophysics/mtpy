@@ -159,46 +159,14 @@ class MT(object):
         self._north = kwargs.pop('north', None)
         self._rotation_angle = kwargs.pop('rotation_angle', 0)
         
-        #provide key words to fill values if an edi file does not exist
-        if 'z_object' in kwargs:
-            self._Z = kwargs['z_object']
-            
-        if 'z_array' in kwargs:
-            self._Z.z = kwargs['z_array']
-        
-        if 'z_err_array' in kwargs:
-            self._Z.z_err = kwargs['z_err_array']
-        
-        if 'freq' in kwargs:
-            self._Z.freq = kwargs['freq']
-            self._Tipper.freq = kwargs['freq']
-            
-        if 'tipper_object' in kwargs:
-            self._Tipper = kwargs['tipper_object']
-            
-        if 'tipper' in kwargs:
-            self._Tipper.tipper = kwargs['tipper']
-        
-        if 'tipper_err' in kwargs:
-            self._Tipper.tipper_err = kwargs['tipper_err']
-            
-        if 'resisitivity' in kwargs:
-            self._Z.resistivity = kwargs['resistivity']
-        
-        if 'resisitivity_err' in kwargs:
-            self._Z.resistivity_err = kwargs['resistivity_err']
-        
-        if 'phase' in kwargs:
-            self._Z.phase = kwargs['phase']
-            
-        if 'phase_err' in kwargs:
-            self._Z.phase = kwargs['phase_err']
-        
-        
         self.edi_object = MTedi.Edi()
         self.pt = None
         self.zinv = None
         self._utm_ellipsoid = 23
+        
+        #provide key words to fill values if an edi file does not exist
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
         
         #--> read in the file name given
         if self._fn is not None:
