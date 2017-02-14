@@ -20,10 +20,10 @@ cfg_fn = r"C:\Users\jpeacock\Documents\PyScripts\xml_cfg_test.cfg"
 
 
 class Dummy(object):
-    def __init__(self, **kwargs):
-        self._name = None
-        self._attr = None
-        self._text = None
+    def __init__(self, name, attr, text, **kwargs):
+        self._name = name
+        self._attr = attr
+        self._text = text
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -41,57 +41,79 @@ conditions_of_use = "All data and metadata for this survey are available free \
                      and metadata, as obtained from the author(s), are \
                      included for informational purposes only."
                      
-estimates = [Dummy(**{'_name':'Estimate(type=real)(name=VAR)',
-                      'Description':'Variance',
-                       'ExternalUrl':None,
-                       'Intention':'error estimate',
-                       'Tag':'variance'}),
-             Dummy(**{'_name':'Estimate(type=complex)(name=COV)',
-                      'Description':'Full covariance between each two TF components',
-                      'ExternalUrl':None,
-                      'Intention':'error estimate',
-                      'Tag':'covariance'}),
-             Dummy(**{'_name':'Estimate(type=complex)(name=INVSIGCOV)',
-                       'Description':'Inverse Coheren Signal Power Matrix S',
-                       'ExternalUrl':None,
-                       'Intention':'signal power estimate',
-                       'Tag':'inverse_signal_covariance'}),
-              Dummy(**{'_name':'Estimate(type=complex)(name=RESIDCOV)',
-                       'Description':'Residual Covariance N',
-                       'ExternalUrl':None,
-                       'Intention':'error estimate',
-                       'Tag':'residual_covariance'}),
-              Dummy(**{'_name':'Estimate(type=complex)(name=COH)',
-                       'Description':'Coherence',
-                       'ExternalUrl':None,
-                       'Intention':'signal coherence',
-                       'Tag':'coherence'}),
-              Dummy(**{'_name':'Estimate(type=complex)(name=PREDCOH)',
-                       'Description':'Multiple Coherence',
-                       'ExternalUrl':None,
-                       'Intention':'signal coherence',
-                       'Tag':'multiple_coherence'}),
-              Dummy(**{'_name':'Estimate(type=complex)(name=SIGAMP)',
-                       'Description':'Signal Amplitude',
-                       'ExternalUrl':None,
-                       'Intention':'signal power estimate',
-                       'Tag':'signal_amplitude'}),
-              Dummy(**{'_name':'Estimate(type=complex)(name=SIGNOISE)',
-                       'Description':'Signal Noise',
-                       'ExternalUrl':None,
-                       'Intention':'error estimate',
-                       'Tag':'signal_noise'})]
+estimates = [Dummy('Estimate', {'type':'real', 'name':'VAR'}, None,
+                   **{'Description':Dummy('Description', None, 'Variance'),
+                      'ExternalUrl':Dummy('ExternalUrl', None, None),
+                      'Intention':Dummy('Intention', None, 'Error Estimate'),
+                      'Tag':Dummy('Tag', None, 'Variance')}),
+            
+             Dummy('Estimate', {'type':'complex', 'name':'COV'}, None,  
+                   **{'Description':Dummy('Description', None, 
+                                          'Full covariance between each two TF components'),
+                      'ExternalUrl':Dummy('ExternalUrl', None, None),
+                      'Intention':Dummy('Intention', None, 'Error Estimate'),
+                      'Tag':Dummy('Tag', None, 'Covariance')}),
+             
+             Dummy('Estimate', {'type':'complex', 'name':'INVSIGCOV'}, None,  
+                   **{'Description':Dummy('Description', None, 
+                                          'Inverse Coherent Signal Power Matrix S'),
+                      'ExternalUrl':Dummy('ExternalUrl', None, None),
+                      'Intention':Dummy('Intention', None, 'Signal Power Estimate'),
+                      'Tag':Dummy('Tag', None, 'inverse_signal_covariance')}),
+             
+             Dummy('Estimate',{'type':'complex', 'name':'RESIDCOV'}, None,  
+                   **{'Description':Dummy('Description',None, 
+                                          'Residual Covariance N'),
+                      'ExternalUrl':Dummy('ExternalUrl', None, None),
+                      'Intention':Dummy('Intention', None, 'Error Estimate'),
+                      'Tag':Dummy('Tag', None, 'Coherence')}),
+             
+             Dummy('Estimate', {'type':'complex', 'name':'COH'}, None,  
+                   **{'Description':Dummy('Description', None, 'Coherence'),
+                      'ExternalUrl':Dummy('ExternalUrl', None, None),
+                      'Intention':Dummy('Intention', None, 'Signal Coherence'),
+                      'Tag':Dummy('Tag', None, 'Coherence')}),
+             
+             Dummy('Estimate', {'type':'complex', 'name':'PREDCOH'}, None,  
+                   **{'Description':Dummy('Description', None, 'Multiple Coherence'),
+                      'ExternalUrl':Dummy('ExternalUrl', None, None),
+                      'Intention':Dummy('Intention', None, 'Signal Coherence'),
+                      'Tag':Dummy('Tag', None, 'Multiple_Coherence')}),
+             
+             Dummy('Estimate', {'type':'complex', 'name':'SIGAMP'}, None,  
+                   **{'Description':Dummy('Description', None, 'Signal Amplitude'),
+                      'ExternalUrl':Dummy('ExternalUrl', None, None),
+                      'Intention':Dummy('Intention', None, 'Signal Power Estimates'),
+                      'Tag':Dummy('Tag', None, 'Signal_Amplitude')}),
+             
+             Dummy('Estimate', {'type':'complex', 'name':'SIGNOISE'}, None,  
+                   **{'Description':Dummy('Description', None, 'Signal Noise'),
+                      'ExternalUrl':Dummy('ExternalUrl', None, None),
+                      'Intention':Dummy('Intention', None, 'Error Estimates'),
+                      'Tag':Dummy('Tag', None, 'Signal_Noise')})]
                        
-data_types = [Dummy(**{'_name':'DataType(units=[mV/km]/[nT])(type=complex)(name=Z)(input=H)(output=E)',
-                       'Description':'MT impedance',
-                       'ExternalUrl':None,
-                       'Intention':'primary data type',
-                       'Tag':'impedance'}),
-              Dummy(**{'_name':'DataType(units=[])(type=complex)(name=T)(input=H)(output=H)',
-                       'Description':'Tipper-Vertical Field Transfer Function',
-                       'ExternalUrl':None,
-                       'Intention':'primary data type',
-                       'Tag':'tipper'})]
+data_types = [Dummy('DataType',
+                    {'units':'[mV/km]/[nT]', 
+                     'name':'Z', 
+                     'input':'H',
+                     'output':'E'},
+                     None, 
+                     **{'Description':Dummy('Description', None, 'MT impedance'),
+                       'ExternalUrl':Dummy('ExternalUrl', None, None),
+                       'Intention':Dummy('Intention', None, 'primary data type'),
+                       'Tag':Dummy('Tag', None, 'impedance')}),
+              
+              Dummy('DataType',
+                    {'units':'[]', 
+                     'name':'Z', 
+                     'input':'H',
+                     'output':'H'},
+                     None, 
+                     **{'Description':Dummy('Description', None, 
+                                            'Tipper-Vertical Field Transfer Function'),
+                       'ExternalUrl':Dummy('ExternalUrl', None, None),
+                       'Intention':Dummy('Intention', None, 'primary data type'),
+                       'Tag':Dummy('Tag', None, 'tipper')})]
 #==============================================================================
 # Useful Functions
 #==============================================================================                
@@ -102,128 +124,148 @@ class XML_Config(object):
     
     def __init__(self, **kwargs):
         self.cfg_fn = None
-        self.cfg_dict = None
         
         # Initialize the default attributes and values
-        self.Description = 'Magnetotelluric Transfer Functions'
-        self.ProductId = None
-        self.Project = None
-        self.Survey = None
-        self.Country = None
-        self.SubType = 'MT_TF'
-        self.Notes = None
-        self.Tags = 'impedance, tipper'
+        self.Description = Dummy('Description', 
+                                 None, 
+                                 'Magnetotelluric Transfer Functions')
+                                 
+        self.ProductId = Dummy('ProductID', None, None)
         
-        self.Image = Dummy(**{'PrimaryData':None,
-                              'Filename':None,
-                              '_name':'Image'})
+        self.Project = Dummy('Project', None, None)
+        
+        self.Survey = Dummy('Survey', None, None)
+        
+        self.Country = Dummy('Country', None, None)
+       
+        self.SubType = Dummy('SubType', None, 'MT_FT')
+       
+        self.Notes = Dummy('Notes', None, None)
+        
+        self.Tags = Dummy('Tags', None, 'impedance, tipper')
+        
+        
+        self.Image = Dummy('Image', None, None, 
+                           **{'PrimaryData':Dummy('PrimaryData', None, None),
+                              'Filename':Dummy('Filename', None, None)})
                               
-        self.Original = Dummy(**{'Attachment':None,
-                                 'Filename':None,
-                                 '_name':'Original'})
         
-        self.TimeSeriesArchived = Dummy(**{'Value':0, 
-                                           'URL':None,
-                                           '_name':'TimeSeriesArchived'})
-        self.ExternalUrl = Dummy(**{'Description':None,
-                                    'Url':None,
-                                    '_name':'ExternalUrl'})
-        self.PrimaryData = Dummy(**{'Filename':None,
-                                    'GroupKey':0,
-                                    'OrderKey':0,
-                                    '_name':'PrimaryData'})
+        self.Original = Dummy('Original', None, None,
+                              **{'Attachment':Dummy('Attachement', None, None),
+                                 'Filename':Dummy('Filename', None, None)})
+        
+       
+        self.TimeSeriesArchived = Dummy('TimeSeriesArchived', None, None, 
+                                        **{'Value':Dummy('Value', None, 0), 
+                                           'URL':Dummy('URL', None, None)})
+        
+        self.ExternalUrl = Dummy('ExternalUrl', None, None, 
+                                 **{'Description':Dummy('Description', None, None),
+                                    'Url':Dummy('Url', None, None)})
+        
+        self.PrimaryData = Dummy('PrimaryData', None, None, 
+                                 **{'Filename':Dummy('Filename', None, None),
+                                    'GroupKey':Dummy('GroupKey', None, 0),
+                                    'OrderKey':Dummy('OrderKey', None, 0)})
                                     
-        self.Attachment = Dummy(**{'Filename':None,
-                                   'Description':'Original file use to produce XML',
-                                   '_name':'Attachment'})
+        
+        self.Attachment = Dummy('Attachement', None, None, 
+                                **{'Filename':Dummy('Filename', None, None),
+                                   'Description':Dummy('Description', None, 
+                                                       'Original file use to produce XML')})
                                    
         
-        self.Provenance = Dummy(**{'CreatTime':datetime.datetime.strftime(
-                                               datetime.datetime.utcnow(), 
-                                               dt_fmt),
-                                    'CreatingApplication':'MTpy.core.mtxml',
-                                    'Submitter':Dummy(**{'Name':None,
-                                                         'Email':None,
-                                                         'Org':None,
-                                                         'OrgURL':None,
-                                                         '_name':'Submitter'}),
-                                    'Creator':Dummy(**{'Name':None,
-                                                       'Email':None,
-                                                       'Org':None,
-                                                       'OrgURL':None,
-                                                       '_name':'Creator'}),
-                                    '_name':'Provenance'})
+        self.Provenance = Dummy('Provenance', None, None,
+                                **{'CreatTime':Dummy('CreationTime', None, 
+                                                     datetime.datetime.strftime(
+                                                     datetime.datetime.utcnow(), 
+                                                     dt_fmt)),
+                                    'CreatingApplication':Dummy('CreatingApplication', 
+                                                                None, 
+                                                                'MTpy.core.mtxml'),
+                                    'Submitter':Dummy('Submitter', None, None,
+                                                      **{'Name':Dummy('Name', None, None),
+                                                         'Email':Dummy('Email', None, None),
+                                                         'Org':Dummy('Org', None, None),
+                                                         'OrgURL':Dummy('OrgURL', None, None)}),
+                                    'Creator':Dummy('Creator', None, None,
+                                                    **{'Name':Dummy('Name', None, None),
+                                                       'Email':Dummy('Email', None, None),
+                                                       'Org':Dummy('Org', None, None),
+                                                       'OrgURL':Dummy('OrgURL', None, None)})})
                                                        
-        self.Copyright = Dummy(**{'Citation':Dummy(**{'Title':None,
-                                                      'Authors':None,
-                                                      'Year':None,
-                                                      'Journal':None,
-                                                      'Volume':None,
-                                                      'DOI':None,
-                                                      '_name':'Citation'}),
-                                  'ReleaseStatus':'Closed',
-                                  'ConditionsOfUse':conditions_of_use,
-                                  '_name':'Copyright'})
-                                  
-        self.Site = Dummy(**{'Project':None,
-                             'Survey':None,
-                             'YearCollected':None,
-                             'Id':None,
-                             'Locatation':Dummy(**{'Latitude':None,
-                                                   'Longitude':None,
-                                                   'Elevation(units=meters)':None,
-                                                   'Declination(epoch=1995)':None}),
-                             'AcquiredBy':None,
-                             'Start':None,
-                             'End':None,
-                             'RunList':None})
+        self.Copyright = Dummy('Copyright', None, None,
+                               **{'Citation':Dummy('Citation', None, None,
+                                                   **{'Title':Dummy('Title', None, None),
+                                                      'Authors':Dummy('Authors', None, None),
+                                                      'Year':Dummy('Year', None, None),
+                                                      'Journal':Dummy('Journal', None, None),
+                                                      'Volume':Dummy('Volume', None, None),
+                                                      'DOI':Dummy('DOI', None, None)}),
+                                  'ReleaseStatus':Dummy('ReleaseStatus', None, 'Closed'),
+                                  'ConditionsOfUse':Dummy('CondictionsOfUse', None, conditions_of_use)}),
+
+        self.Site = Dummy('Site', None, None,
+                          **{'Project':Dummy('Project', None, None),
+                             'Survey':Dummy('Survey', None, None),
+                             'YearCollected':Dummy('YearCollected', None, None),
+                             'Id':Dummy('Id', None, None),
+                             'Locatation':Dummy('Location', None, None,
+                                                **{'Latitude':Dummy('Latitude', None, None),
+                                                   'Longitude':Dummy('Longitude', None, None),
+                                                   'Elevation':Dummy('Elevation', {'units':'meters'}, None),
+                                                   'Declination':Dummy('Declination', {'epoch':'1995'}, None)}),
+                             'AcquiredBy':Dummy('AcquiredBy', None, None),
+                             'Start':Dummy('Start', None, None),
+                             'End':Dummy('End', None, None),
+                             'RunList':Dummy('RunList', None, None)})
                              
-        self.FieldNotes = Dummy(**{'Instrument':Dummy(**{'Type':None,
-                                                         'Manufacturer':None,
-                                                         'Id':None,
-                                                         'Settings':None,
-                                                         '_name':'Instrument'}),
-                                    'Electrode':Dummy(**{'Type':None,
-                                                          'Manufacturer':None,
-                                                          'Id':None,
-                                                          '_name':'Electrode'}),
-                                    'Magnetotmeter':Dummy(**{'Type':None,
-                                                             'Manufacturer':None,
-                                                             'Id':None,
-                                                             '_name':'Magnetometer'}),
-                                    'DataQualityNotes':Dummy(**{'Rating':None,
-                                                                 'GoodFromPeriod':None,
-                                                                 'GoodToPeriod':None,
-                                                                 'Comments':None,
-                                                                 '_name':'DataQualityNotes'}),
-                                    'DataQualityWarnings':Dummy(**{'Flag':0,
-                                                                    'Comments':None,
-                                                                    '_name':'DataQualityWarnings'}),
-                                    '_name':'FieldNotes'})
+        self.FieldNotes = Dummy('FieldNotes', None, None,
+                                **{'Instrument':Dummy('Instrument', None, None,
+                                                      **{'Type':Dummy('Type', None, None),
+                                                         'Manufacturer':Dummy('Manufacturer', None, None),
+                                                         'Id':Dummy('Id', None, None),
+                                                         'Settings':Dummy('Settings', None, None)}),
+                                    'Electrode':Dummy('Electrode', None, None,
+                                                      **{'Type':Dummy('Type', None, None),
+                                                         'Manufacturer':Dummy('Manufacturer', None, None),
+                                                         'Id':Dummy('Id', None, None)}),
+                                    'Magnetometer':Dummy('Magnetometer', None, None,
+                                                        **{'Type':Dummy('Type', None, None),
+                                                         'Manufacturer':Dummy('Manufacturer', None, None),
+                                                         'Id':Dummy('Id', None, None)}),
+                                    'DataQualityNotes':Dummy('DataQualityNotes', None, None,
+                                                             **{'Rating':Dummy('Rating', None, None),
+                                                                 'GoodFromPeriod':Dummy('GoodFromPeriod', None, None),
+                                                                 'GoodToPeriod':Dummy('GoodToPeriod', None, None),
+                                                                 'Comments':Dummy('Comments', None, None)}),
+                                    'DataQualityWarnings':Dummy('DataQualityWarnings', None, None,
+                                                                **{'Flag':Dummy('Flag', None, 0),
+                                                                    'Comments':Dummy('Comments', None, None)})})
                                   
-        self.ProcessingInfo = Dummy(**{'ProcessedBy':None,
-                                       'ProcessingSoftware':Dummy(**{'Name':None,
-                                                                     'LastMod':None,
-                                                                     'Author':None,
-                                                                     '_name':'ProcessingSoftware'}),
-                                        'SignConvention':r'exp(+i\omega t)',
-                                        'RemoteRef(type=Robust Remote Processing)':None,
-                                        'RemoteInfo':Dummy(**{'_name':'RemoteInfo',
-                                                              'Project':None,
-                                                              'Survey':None,
-                                                              'ID':None,
-                                                              'Name':None,
-                                                              'YearCollected':None,
-                                                              'Location':Dummy(**{'_name':'Location(datum=WGS84)',
-                                                                                  'Latitude':None,
-                                                                                  'Longitude':None,
-                                                                                  'Elevation(units=meters)':None}),
-                                                               }),
-                                        '_name':'ProcessingInfo'})
-        self.InputChannels = Dummy(**{'_name':'InputChannels(ref=site)(units=m)'})
-        self.OutputChannels = Dummy(**{'_name':'OutputChannels(ref=site)(units=m)'})
-        self.Data = Dummy(**{'_name':'Data(count=0)'})
-        self.PeriodRange = Dummy(**{'_name':'PeriodRange(min=0)(max=0)'})
+        self.ProcessingInfo = Dummy('ProcessingInfo', None, None,
+                                    **{'ProcessedBy':Dummy('ProcessedBy', None, None),
+                                       'ProcessingSoftware':Dummy('ProcessingSoftware', None, None,
+                                                                  **{'Name':Dummy('Name', None, None),
+                                                                     'LastMod':Dummy('LastMod', None, None),
+                                                                     'Author':Dummy('Author', None, None)}),
+                                        'SignConvention':Dummy('SignConvention', None, r'exp(+i\omega t)'),
+                                        'RemoteRef':Dummy('RemoteRef', {'type':'Robust Remote Processing'}, None),
+                                        'RemoteInfo':Dummy('RemoteInfo', None, None, 
+                                                           **{'Project':Dummy('Project', None, None),
+                                                              'Survey':Dummy('Survey', None, None),
+                                                              'ID':Dummy('ID', None, None),
+                                                              'Name':Dummy('Name', None, None),
+                                                              'YearCollected':Dummy('YearCollected', None, None),
+                                                              'Location':Dummy('Location', {'datum':'WGS84'}, None,
+                                                                               **{'Latitude':Dummy('Latitude', None, None),
+                                                                                  'Longitude':Dummy('Longitude', None, None),
+                                                                                  'Elevation':Dummy('Elevation', {'units':'meters'}, None)})
+                                                               })})
+        self.InputChannels = Dummy('InputChannels', {'ref':'site', 'units':'m'}, None)
+        self.OutputChannels = Dummy('OutputChannels', {'ref':'site', 'units':'m'}, None)
+        self.Data = Dummy('Data', {'count':0}, None)
+        self.PeriodRange = Dummy('PeriodRange', {'min':0, 'max':0}, None)
                                         
         self.Datum = None
         self.Declination = None
@@ -244,8 +286,7 @@ class XML_Config(object):
             
         with open(self.cfg_fn, 'r') as fid:
             lines = fid.readlines()
-                        
-        self.cfg_dict = {}    
+  
         for line in lines:
             # skip comments
             if line[0] == '#':
@@ -282,51 +323,61 @@ class XML_Config(object):
             
         line_list = []
         
-        for attr_00 in sorted(self.__dict__.keys()):
-            attr_00_value = getattr(self, attr_00)
+        for attr_00_name in sorted(self.__dict__.keys()):
             
-            if attr_00 == 'Data':
+            if attr_00_name == 'Data':
                 continue
             
-            if type(attr_00_value) in [int, float, str]:
-                line_list.append(self._write_cfg_line(attr_00, 
-                                                      getattr(self, attr_00)))
-            elif isinstance(attr_00_value, Dummy):
-                for attr_01 in sorted(attr_00_value.__dict__.keys()):
-                    attr_01_value = getattr(attr_00_value, attr_01)
-                    if type(attr_01_value) in [float, int, str] or attr_01_value is None:
-                        line_list.append(self._write_cfg_line('{0}.{1}'.format(attr_00,
-                                                                               attr_01),
-                                                              attr_01_value))
-                    elif isinstance(attr_01_value, Dummy):
-                        for attr_02 in sorted(attr_01_value.__dict__.keys()):
-                            attr_02_value = getattr(attr_01_value, attr_02)
-                            if type(attr_02_value) in [float, int, str] or attr_02_value is None:
-                                line_list.append(self._write_cfg_line('{0}.{1}.{2}'.format(attr_00,
-                                                                                           attr_01,
-                                                                                           attr_02),
-                                                                      attr_02_value))
-                            elif isinstance(attr_02_value, Dummy):
-                                for attr_03 in sorted(attr_02_value.__dict__.keys()):
-                                    attr_03_value = getattr(attr_02_value, attr_03)
-                                    if type(attr_03_value) in [float, int, str] or attr_03_value is None:
-                                        line_list.append(self._write_cfg_line('{0}.{1}.{2}.{3}'.format(attr_00,
-                                                                                                       attr_01,   
-                                                                                                       attr_02,
-                                                                                                       attr_03),
-                                                                              attr_03_value))
-                                    elif isinstance(attr_03_value, Dummy):
-                                        for attr_04 in sorted(attr_03_value.__dict__.keys()):
-                                            print attr_04
-                                            attr_04_value = getattr(attr_03_value, attr_03)
-                                            if type(attr_03_value) in [float, int, str] or attr_04_value is None:
-                                                line_list.append(self._write_cfg_line('{0}.{1}.{2}.{3}.{4}'.format(attr_00,
-                                                                                                                   attr_01,   
-                                                                                                                   attr_02,
-                                                                                                                   attr_03,
-                                                                                                                   attr_04),
-                                                                                      attr_04_value))
-                line_list.append(' ')
+            attr_00 = getattr(self, attr_00_name)
+            
+            if isinstance(attr_00, Dummy):
+                attr_00_keys = [a_key for a_key in attr_00.__dict__.keys() 
+                                if a_key not in ['_name', '_text', '_attr']]
+            
+                if len(attr_00_keys) == 0:
+                    line_list.append(self._write_cfg_line(attr_00))
+            else:
+                print attr_00_name, type(attr_00)                     
+#            for attr_01 in attr_00_keys:
+#            if type(attr_00_value) in [int, float, str]:
+#                line_list.append(self._write_cfg_line(attr_00, 
+#                                                      getattr(self, attr_00)))
+#            elif isinstance(attr_00_value, Dummy):
+#                for attr_01 in sorted(attr_00_value.__dict__.keys()):
+#                    attr_01_value = getattr(attr_00_value, attr_01)
+#                    if type(attr_01_value) in [float, int, str] or attr_01_value is None:
+#                        line_list.append(self._write_cfg_line('{0}.{1}'.format(attr_00,
+#                                                                               attr_01),
+#                                                              attr_01_value))
+#                    elif isinstance(attr_01_value, Dummy):
+#                        for attr_02 in sorted(attr_01_value.__dict__.keys()):
+#                            attr_02_value = getattr(attr_01_value, attr_02)
+#                            if type(attr_02_value) in [float, int, str] or attr_02_value is None:
+#                                line_list.append(self._write_cfg_line('{0}.{1}.{2}'.format(attr_00,
+#                                                                                           attr_01,
+#                                                                                           attr_02),
+#                                                                      attr_02_value))
+#                            elif isinstance(attr_02_value, Dummy):
+#                                for attr_03 in sorted(attr_02_value.__dict__.keys()):
+#                                    attr_03_value = getattr(attr_02_value, attr_03)
+#                                    if type(attr_03_value) in [float, int, str] or attr_03_value is None:
+#                                        line_list.append(self._write_cfg_line('{0}.{1}.{2}.{3}'.format(attr_00,
+#                                                                                                       attr_01,   
+#                                                                                                       attr_02,
+#                                                                                                       attr_03),
+#                                                                              attr_03_value))
+#                                    elif isinstance(attr_03_value, Dummy):
+#                                        for attr_04 in sorted(attr_03_value.__dict__.keys()):
+#                                            print attr_04
+#                                            attr_04_value = getattr(attr_03_value, attr_03)
+#                                            if type(attr_03_value) in [float, int, str] or attr_04_value is None:
+#                                                line_list.append(self._write_cfg_line('{0}.{1}.{2}.{3}.{4}'.format(attr_00,
+#                                                                                                                   attr_01,   
+#                                                                                                                   attr_02,
+#                                                                                                                   attr_03,
+#                                                                                                                   attr_04),
+#                                                                                      attr_04_value))
+#                line_list.append(' ')
         with open(self.cfg_fn, 'w') as fid:
             fid.write('\n'.join(line_list))
             
@@ -334,8 +385,16 @@ class XML_Config(object):
         print '    Wrote xml configuration file to {0}'.format(self.cfg_fn)
         print '-'*50
 
-    def _write_cfg_line(self, key, value):
-        return '{0} = {1}'.format(key, value)
+    def _write_cfg_line(self, dummy_obj):
+        
+        if dummy_obj._attr is not None:
+            attr_line = ''.join(['({0}={1})'.format(a_key, dummy_obj._attr[a_key]) 
+                                 for a_key in dummy_obj._attr.keys()])
+        else:
+            attr_line = ''
+        return '{0}{1} = {2}'.format(dummy_obj._name, 
+                                     attr_line, 
+                                     dummy_obj._text)
 
 #==============================================================================
 #  EDI to XML
