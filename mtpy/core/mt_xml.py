@@ -28,18 +28,18 @@ class Dummy(object):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
-conditions_of_use = "All data and metadata for this survey are available free \
-                     of charge and may be copied freely, duplicated and further\
-                     distributed provided this data set is cited as the\
-                     reference. While the author(s) strive to provide data and \
-                     metadata of best possible quality, neither the author(s) \
-                     of this data set, not IRIS make any claims, promises, or \
-                     guarantees about the accuracy, completeness, or adequacy \
-                     of this information, and expressly disclaim liability for\
-                     errors and omissions in the contents of this file. \
-                     Guidelines about the quality or limitations of the data \
-                     and metadata, as obtained from the author(s), are \
-                     included for informational purposes only."
+conditions_of_use = """All data and metadata for this survey are available free
+                     of charge and may be copied freely, duplicated and further
+                     distributed provided this data set is cited as the
+                     reference. While the author(s) strive to provide data and 
+                     metadata of best possible quality, neither the author(s) 
+                     of this data set, not IRIS make any claims, promises, or 
+                     guarantees about the accuracy, completeness, or adequacy 
+                     of this information, and expressly disclaim liability for
+                     errors and omissions in the contents of this file. 
+                     Guidelines about the quality or limitations of the data 
+                     and metadata, as obtained from the author(s), are 
+                     included for informational purposes only."""
                      
 estimates = [Dummy('Estimate', {'type':'real', 'name':'VAR'}, None,
                    **{'Description':Dummy('Description', None, 'Variance'),
@@ -203,7 +203,7 @@ class XML_Config(object):
                                                       'Volume':Dummy('Volume', None, None),
                                                       'DOI':Dummy('DOI', None, None)}),
                                   'ReleaseStatus':Dummy('ReleaseStatus', None, 'Closed'),
-                                  'ConditionsOfUse':Dummy('CondictionsOfUse', None, conditions_of_use)}),
+                                  'ConditionsOfUse':Dummy('CondictionsOfUse', None, conditions_of_use)})
 
         self.Site = Dummy('Site', None, None,
                           **{'Project':Dummy('Project', None, None),
@@ -267,8 +267,8 @@ class XML_Config(object):
         self.Data = Dummy('Data', {'count':0}, None)
         self.PeriodRange = Dummy('PeriodRange', {'min':0, 'max':0}, None)
                                         
-        self.Datum = None
-        self.Declination = None
+        self.Datum = Dummy('Datum', None, 'WGS84')
+        self.Declination = Dummy('Declination', None, None)
                                             
         self.StatisticalEstimates = estimates
         self.DataTypes = data_types
@@ -321,9 +321,10 @@ class XML_Config(object):
         if cfg_fn is not None:
             self.cfg_fn = cfg_fn
             
-        line_list = []
+        line_list = ['# XML Configuration File MTpy']
         
         for attr_00_name in sorted(self.__dict__.keys()):
+
             
             if attr_00_name == 'Data':
                 continue
@@ -331,13 +332,43 @@ class XML_Config(object):
             attr_00 = getattr(self, attr_00_name)
             
             if isinstance(attr_00, Dummy):
-                attr_00_keys = [a_key for a_key in attr_00.__dict__.keys() 
-                                if a_key not in ['_name', '_text', '_attr']]
+                line_list.append(' ')
+                attr_00_keys = self._get_attr_keys(attr_00)
             
                 if len(attr_00_keys) == 0:
                     line_list.append(self._write_cfg_line(attr_00))
+                else:
+                    for attr_01_name in attr_00_keys:
+                        attr_01 = getattr(attr_00, attr_01_name)
+                        attr_01_keys = self._get_attr_keys(attr_01)
+                        
+                        if len(attr_01_keys) == 0:
+                            line_list.append(self._write_cfg_line(attr_01, attr_00))
+                        else:
+                            for attr_02_name in attr_01_keys:
+                                attr_02 = getattr(attr_01, attr_02_name)
+                                attr_02_keys = self._get_attr_keys(attr_02)
+                                    
+                                if len(attr_02_keys) == 0:
+                                    line_list.append(self._write_cfg_line(attr_02, 
+                                                                          [attr_00, attr_01]))
+                                else:
+                                    for attr_03_name in attr_02_keys:
+                                        attr_03 = getattr(attr_02,
+                                                          attr_03_name)
+                                        attr_03_keys = self._get_attr_keys(attr_03)
+                                        
+                                        if len(attr_03_keys) == 0:
+                                            line_list.append(self._write_cfg_line(attr_03, 
+                                                                                  [attr_00, attr_01, attr_02]))
+                                          
+                                        else:
+                                            for attr_04_name in attr_03_keys:
+                                                attr_04 = getattr(attr_03, attr_04_name)
+                                                line_list.append(self._write_cfg_line(attr_04,
+                                                                                      [attr_00, attr_01, attr_02, attr_03]))
             else:
-                print attr_00_name, type(attr_00)                     
+                print 'Not including: {0}'.format(attr_00_name)                     
 #            for attr_01 in attr_00_keys:
 #            if type(attr_00_value) in [int, float, str]:
 #                line_list.append(self._write_cfg_line(attr_00, 
@@ -385,16 +416,34 @@ class XML_Config(object):
         print '    Wrote xml configuration file to {0}'.format(self.cfg_fn)
         print '-'*50
 
-    def _write_cfg_line(self, dummy_obj):
+    def _write_cfg_line(self, dummy_obj, parent=None):
+        """
+        write a configuration file line in the format of:
+        parent.attribute = value
+        """        
+        
+        if parent is None:
+            parent_str = ''
+            
+        elif type(parent) is list:
+            parent_str = '.'.join([p._name for p in parent]+[''])
+            
+        elif isinstance(parent, Dummy):
+            parent_str = '{0}.'.format(parent._name)
         
         if dummy_obj._attr is not None:
-            attr_line = ''.join(['({0}={1})'.format(a_key, dummy_obj._attr[a_key]) 
+            attr_str = ''.join(['({0}={1})'.format(a_key, dummy_obj._attr[a_key]) 
                                  for a_key in dummy_obj._attr.keys()])
         else:
-            attr_line = ''
-        return '{0}{1} = {2}'.format(dummy_obj._name, 
-                                     attr_line, 
-                                     dummy_obj._text)
+            attr_str = ''
+        return '{0}{1}{2} = {3}'.format(parent_str,
+                                        dummy_obj._name, 
+                                        attr_str, 
+                                        dummy_obj._text)
+                                     
+    def _get_attr_keys(self, attribute):
+        return [a_key for a_key in sorted(attribute.__dict__.keys()) 
+                if a_key not in ['_name', '_text', '_attr']]
 
 #==============================================================================
 #  EDI to XML
