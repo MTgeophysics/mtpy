@@ -246,6 +246,10 @@ class PTShapeFile(object):
             field_normalized_skew = ogr.FieldDefn('n_skew', ogr.OFTReal)
             layer.CreateField(field_normalized_skew)
 
+            #FZ added azimuth
+            field_azimuth = ogr.FieldDefn('azimuth', ogr.OFTReal)
+            layer.CreateField(field_azimuth)
+
             poly_list = []
             phimax = self.pt_dict[plot_per]['phimax'].max()
             for pt_array in self.pt_dict[plot_per]:
@@ -295,6 +299,8 @@ class PTShapeFile(object):
                 new_feature.SetField("phi_max", pt_array['phimax'])
                 new_feature.SetField("skew", pt_array['skew'])
                 new_feature.SetField("n_skew", pt_array['n_skew'])
+
+                new_feature.SetField("azimuth", pt_array['azimuth'])  #FZ added
 
                 # add the new feature to the layer.
                 layer.SetFeature(new_feature)
@@ -1430,6 +1436,7 @@ def test_edi2shp(edi_dir, save_dir):
 #  main test
 # python shapefiles.py E:/Githubz/mtpy2/tests/data/edifiles E:\MT_shape_files
 # ----------------------------------------------------
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv)<3:

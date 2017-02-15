@@ -34,7 +34,8 @@ if __name__ == "__main__":
         plot_shapefile(path2shp)
 
     elif os.path.isdir(sys.argv[1]):
-        shpfiles= glob.glob(sys.argv[1]+"/PT*.shp")
+        #shpfiles= glob.glob(sys.argv[1]+"/PT*.shp")
+        shpfiles= glob.glob(sys.argv[1]+"/Tip*.shp")
         print("There are %s shape files to show"% len(shpfiles))
         for afile in shpfiles:
             plot_shapefile(afile)

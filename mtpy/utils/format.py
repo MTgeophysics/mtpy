@@ -32,6 +32,8 @@ def _assert_position_format(coordinate, value):
     The value is returned if no exception was raised 
 
     """
+    # logger.debug print(coordinate, value)
+
     if coordinate in ['ele','elev','elevation']:
 
         try:

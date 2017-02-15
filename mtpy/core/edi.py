@@ -179,6 +179,8 @@ class Edi(object):
 
         """
 
+        logger.info("Reading the edi file %s", self.edi_fn)
+
         if edi_fn is not None:
             self.edi_fn = edi_fn
 
