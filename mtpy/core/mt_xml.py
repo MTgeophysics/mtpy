@@ -15,10 +15,6 @@ dt_fmt = '%Y-%m-%dT%H:%M:%S'
 #==============================================================================
 # Inputs
 #==============================================================================
-edi_fn = r"c:\Users\jpeacock\Documents\Geothermal\Washington\MSHS\EDI_Files_birrp_mshs\Rotated_m18_deg\ms11.edi"
-cfg_fn = r"C:\Users\jpeacock\Documents\PyScripts\xml_cfg_test.cfg"
-
-
 class Dummy(object):
     def __init__(self, name, attr, text, **kwargs):
         self._name = name
@@ -156,7 +152,7 @@ class XML_Config(object):
                               
         
         self.Original = Dummy('Original', None, None,
-                              **{'Attachment':Dummy('Attachement', None, None),
+                              **{'Attachment':Dummy('Attachment', None, None),
                                  'Filename':Dummy('Filename', None, None)})
         
        
@@ -174,7 +170,7 @@ class XML_Config(object):
                                     'OrderKey':Dummy('OrderKey', None, 0)})
                                     
         
-        self.Attachment = Dummy('Attachement', None, None, 
+        self.Attachment = Dummy('Attachment', None, None, 
                                 **{'Filename':Dummy('Filename', None, None),
                                    'Description':Dummy('Description', None, 
                                                        'Original file use to produce XML')})
@@ -298,7 +294,7 @@ class XML_Config(object):
             ``# XML Configuration File MTpy
  
             Attachement.Description = Original file use to produce XML
-            Attachement.Filename = None
+            Attachment.Filename = None
              
             Copyright.Citation.Authors = None
             Copyright.Citation.DOI = None
@@ -369,7 +365,7 @@ class XML_Config(object):
         # loop over attribute names 
         for attr_00_name in sorted(self.__dict__.keys()):
             # skip the data attribute cause we don't need that now
-            if attr_00_name == 'Data':
+            if attr_00_name in ['Data', 'DataTypes', 'StatisticalEstimates']:
                 continue
             
             # get the given attribute
@@ -439,8 +435,8 @@ class XML_Config(object):
         attributes of self.
         """
         
-        # split the line by the =
-        line_list = line.strip().split('=')
+        # split the line by the last =
+        line_list = self._split_cfg_line(line)
         # split the keys by . to get the different attributes
         key_list = line_list[0].strip().split('.')
         value = line_list[1].strip()
@@ -470,6 +466,19 @@ class XML_Config(object):
         # set the value of the current Dummy object
         cfg_attr._value = value
 
+    def _split_cfg_line(self, line):
+        """
+        split a cfg line by the last =, otherwise you get strings that are
+        split in the wrong place.  For instance k.l(a=b) = None will be split
+        at ['k.l(a', 'b)', None] but we want [k.l(a=b), None]
+        """
+        
+        equal_find = -(line[::-1].find('='))
+        line_list = [line[0:equal_find-1],
+                     line[equal_find+1:]]
+                     
+        return line_list
+        
             
     def _read_cfg_key(self, key):
         """
@@ -480,7 +489,8 @@ class XML_Config(object):
         attr = {}
         if '(' and ')' in key:
             key_list = key.split('(')
-            for key_attr in key_list:
+            key = key_list[0]
+            for key_attr in key_list[1:]:
                 k_list = key_attr.replace(')', '').split('=')
                 attr[k_list[0].strip()] = k_list[1].strip()
                 
@@ -618,9 +628,9 @@ class EDI_to_XML(XML_Config):
 
        
         # processing information
-        self.ProcessingInfo.RemoteInfo.Project._value = self.Project       
-        self.ProcessingInfo.RemoteInfo.Survey._value = self.Survey
-        self.ProcessingInfo.RemoteInfo.YearCollected._value = self.Site.DateCollected
+        self.ProcessingInfo.RemoteInfo.Project._value = self.Project._value       
+        self.ProcessingInfo.RemoteInfo.Survey._value = self.Survey._value
+        self.ProcessingInfo.RemoteInfo.YearCollected._value = self.Site.DateCollected._value
         
        
         # Field Notes
@@ -637,45 +647,45 @@ class EDI_to_XML(XML_Config):
         
         # Input Channels
         attr_dict = {'name':'hx', 
-                     'z': 0,
-                     'y':self.edi_obj.Define_measurement.meas_hx.y,
-                     'x':self.edi_obj.Define_measurement.meas_hx.x,
-                     'orientation':self.edi_obj.Define_measurement.meas_hx.azm}
+                     'z': '{0:.1f}'.format(0),
+                     'y':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hx.y),
+                     'x':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hx.x),
+                     'orientation':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hx.azm)}
         self.InputChannels.Magnetic_HX = Dummy('Magnetic', attr_dict, None)
         
         attr_dict = {'name':'hy', 
-                     'z': 0,
-                     'y':self.edi_obj.Define_measurement.meas_hy.y,
-                     'x':self.edi_obj.Define_measurement.meas_hy.x,
-                     'orientation':self.edi_obj.Define_measurement.meas_hy.azm}
+                     'z': '{0:.1f}'.format(0),
+                     'y':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hy.y),
+                     'x':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hy.x),
+                     'orientation':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hy.azm)}
         self.InputChannels.Magnetic_HY = Dummy('Magnetic', attr_dict, None)
         
         # Output Channels
         try:
             attr_dict = {'name':'hz', 
-                         'z': 0,
-                         'y':self.edi_obj.Define_measurement.meas_hz.y,
-                         'x':self.edi_obj.Define_measurement.meas_hz.x,
-                         'orientation':self.edi_obj.Define_measurement.meas_hz.azm}
-            self.InputChannels.Magnetic_HZ = Dummy('Magnetic', attr_dict, None)
+                         'z': '{0:.1f}'.format(0),
+                         'y':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hz.y),
+                         'x':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hz.x),
+                         'orientation':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hz.azm)}
+            self.OutputChannels.Magnetic_HZ = Dummy('Magnetic', attr_dict, None)
         except AttributeError:
             print 'No HZ Information'
         
         attr_dict = {'name':'ex', 
-                     'z': 0,
-                     'y':self.edi_obj.Define_measurement.meas_ex.y,
-                     'x':self.edi_obj.Define_measurement.meas_ex.x,
-                     'x2':self.edi_obj.Define_measurement.meas_ex.y2,
-                     'y2':self.edi_obj.Define_measurement.meas_ex.x2}
-        self.InputChannels.Electric_EX = Dummy('Electric', attr_dict, None)
+                     'z': '{0:.1f}'.format(0),
+                     'y':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ex.y),
+                     'x':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ex.x),
+                     'x2':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ex.y2),
+                     'y2':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ex.x2)}
+        self.OutputChannels.Electric_EX = Dummy('Electric', attr_dict, None)
                                                        
         attr_dict = {'name':'ey', 
-                     'z': 0,
-                     'y':self.edi_obj.Define_measurement.meas_ey.y,
-                     'x':self.edi_obj.Define_measurement.meas_ey.x,
-                     'x2':self.edi_obj.Define_measurement.meas_ey.y2,
-                     'y2':self.edi_obj.Define_measurement.meas_ey.x2}
-        self.InputChannels.Electric_EY = Dummy('Electric', attr_dict, None)
+                     'z': '{0:.1f}'.format(0),
+                     'y':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ey.y),
+                     'x':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ey.x),
+                     'x2':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ey.y2),
+                     'y2':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ey.x2)}
+        self.OutputChannels.Electric_EY = Dummy('Electric', attr_dict, None)
    
         self.PeriodRange._attr = {'min':'{0:.5g}'.format(1./self.edi_obj.Z.freq.max()),
                                   'max':'{0:.5g}'.format(1./self.edi_obj.Z.freq.min())}
@@ -713,7 +723,23 @@ class EDI_to_XML(XML_Config):
         attr_dict['t'] = 'tipper'
         attr_dict['t.var'] = 'tipper_err'
 
-        nf = self.edi_obj.Z.freq.size        
+        nf = self.edi_obj.Z.freq.size 
+        
+        # determine whether to write tipper data or not
+        if self.edi_obj.Tipper.tipper is not None:
+            nz_tipper = mtedi.np.any(self.edi_obj.Tipper.tipper) == 0
+            if nz_tipper == True:
+                write_tipper = False
+            else:
+                write_tipper = True
+        else: 
+            write_tipper = False
+            
+        # set the estimates to write out
+        if write_tipper == True:
+            estimates = ['Z', 'Z.VAR',  'T', 'T.VAR']
+        else:
+            estimates = ['Z', 'Z.VAR']
 
         # make the data element
         self.Data = Dummy('Data', {'count':str(nf)}, None)  
@@ -725,45 +751,53 @@ class EDI_to_XML(XML_Config):
             # we are setting _name to have the necessary information so
             # we can name the attribute whatever we want.
             setattr(self.Data, f_name,
-                    Dummy('Period', {'value':'{0:.6g}'.format(1./freq)}, None))
-                   
+                    Dummy('Period', {'value':'{0:.6g}'.format(1./freq),
+                                     'units':'seconds'}, None))
+            d_attr = getattr(self.Data, f_name)      
             # Get information from data
-            for estimate in ['Z', 'Z.VAR', 'T', 'T.VAR']:
-                d_attr = getattr(self.Data, f_name)
-                setattr(d_attr, estimate, header_dict[estimate])
-                c_attr = getattr(getattr(self.Data, f_name), estimate)
-                if 'z' in estimate:
+            for estimate in estimates:
+                estimate_name = estimate.replace('.', '_')
+                setattr(d_attr, estimate_name, header_dict[estimate])
+                c_attr = getattr(d_attr, estimate_name)
+                if 'z' in estimate.lower():
+                    count = 0
                     for e_index in range(2):
                         for h_index in range(2):
                             c = comp_dict_z[(e_index, h_index)]
                             c_dict = {'name':c[0], 'input':c[1], 'output':c[2]}
                             
-                            if estimate == 'z':
+                            if estimate.lower() == 'z':
                                 z_value = self.edi_obj.Z.z[f_index, e_index, h_index]                            
                                 c_value = '{0:<+.8e} {1:<+.8e}'.format(z_value.real, 
                                                                          z_value.imag)
-                            elif estimate == 'z.var':
+                            elif estimate.lower() == 'z.var':
                                 z_value = self.edi_obj.Z.z_err[f_index, e_index, h_index]                            
                                 c_value = '{0:<+.8e}'.format(z_value)
-                                                                      
-                            setattr(c_attr, 'value_{0:02}'.format(e_index+h_index),
-                                    Dummy('value', c_dict, c_value))
-                if 't' in estimate and self.mt_obj.Tipper.tipper is not None:
+                            
+                            setattr(c_attr, 
+                                    'value_{0:02}'.format(count),
+                                    Dummy('value', c_dict, c_value)) 
+                            count += 1
+                            
+                if 't' in estimate.lower() and write_tipper == True:
+                    count = 0
                     for e_index in range(1):
                         for h_index in range(2):
                             c = comp_dict_t[(e_index, h_index)]
                             c_dict = {'name':c[0], 'input':c[1], 'output':c[2]}
                             
-                            if estimate == 't':
+                            if estimate.lower() == 't':
                                 z_value = self.edi_obj.Tipper.tipper[f_index, e_index, h_index]                            
                                 c_value = '{0:<+.8e} {1:<+.8e}'.format(z_value.real, 
                                                                          z_value.imag)
-                            elif estimate == 't.var':
+                            elif estimate.lower() == 't.var':
                                 z_value = self.edi_obj.Tipper.tipper_err[f_index, e_index, h_index]                            
                                 c_value = '{0:<+.8e}'.format(z_value)
                                                                       
-                            setattr(c_attr, 'value_{0:02}'.format(e_index+h_index),
-                                    Dummy('value', c_dict, c_value))            
+                            setattr(c_attr, 
+                                    'value_{0:02}'.format(count),
+                                    Dummy('value', c_dict, c_value)) 
+                            count += 1
         
         
     def write_element(self, parent_et, dummy_obj):
@@ -798,10 +832,7 @@ class EDI_to_XML(XML_Config):
         emtf = ET.Element('EM_TF')
         
         # loop over the important information sections
-        for element in self._order_list[0:12]:
-            print element
-            if element == 'PeriodRange':
-                break
+        for element in self._order_list:
             # get the information for the given element
             d_00_obj = getattr(self, element)
             
@@ -944,10 +975,10 @@ class EDI_to_XML(XML_Config):
 ##==============================================================================
 ## Do the dirty work
 ##==============================================================================
-test = EDI_to_XML()
-test.edi_fn = r"c:\Users\jpeacock\Documents\iMush\imush_edi_files_final\Interpolated\mshs86.edi"
-test.cfg_fn = r"c:\Users\jpeacock\Documents\Test.cfg"
-test.write_xml()
+#test = EDI_to_XML()
+#test.edi_fn = r"c:\Users\jpeacock\Documents\iMush\imush_edi_files_final\Interpolated\mshs86.edi"
+#test.cfg_fn = r"c:\Users\jpeacock\Documents\Test.cfg"
+#test.write_xml()
 #
 #test.cfg_obj.write_cfg_file(r"C:\Users\jpeacock\Documents\PyScripts\xml_cfg_test_out.cfg")
 
