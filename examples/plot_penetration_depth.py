@@ -333,8 +333,8 @@ if __name__ == '__main__':
             # rholist can be any of ['zxy','zyx','det'], default all of them
         elif os.path.isdir(edi_path):
             #plot_edi_dir(edi_path )
-            #plot_edi_dir(edi_path, rholist=['det'] )
-            #plot_multi_station_pen_depth(10, edi_path)
-            plot_3Dbar_depth(20,edi_path)
+            plot_edi_dir(edi_path, rholist=['det'] )
+#            plot_multi_station_pen_depth(10, edi_path)
+#            plot_3Dbar_depth(30,edi_path)
         else:
             logger.error("Usage %s %s", sys.argv[0], "path2edi")
