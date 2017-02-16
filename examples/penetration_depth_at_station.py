@@ -316,6 +316,59 @@ def get_index(lat, lon, LL_lat, LL_lon, pixelsize):
 
     return (int(index_x), int(index_y))
 
+
+def get_station_pendepths(edifile, rholist=['det']):
+    logger.info("the edi file %s", edifile)
+
+    mt_obj = mt.MT(edifile)
+    zeta = mt_obj.Z  # the attribute Z represent the impedance tensor 2X2 matrix
+    freqs = zeta.freq  # frequencies
+
+    scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
+
+    logger.debug("scale parameter= %s", scale_param)
+
+    # The periods array
+
+    periods = 1.0 / freqs
+
+    if 'zxy' in rholist:
+        # One of the 4-components: XY
+        penetration_depth = scale_param * np.sqrt(zeta.resistivity[:, 0, 1] * periods)
+
+    if 'zyx' in rholist:
+        penetration_depth = scale_param * np.sqrt(zeta.resistivity[:, 1, 0] * periods)
+
+    if 'det' in rholist:
+        # determinant
+        det2 = np.abs(zeta.det[0])
+        penetration_depth = scale_param * np.sqrt(0.2 * periods * det2 * periods)
+
+    latlong_d=(mt_obj.lat, mt_obj.lon, periods, penetration_depth)
+    return latlong_d
+
+
+def print_csv(edi_dir,zcomponent='det'):
+    """ Loop over all edi files, and create a csv file with columns:
+    lat, lon, pendepth0, pendepth1, ...
+    :param edi_dir: path_to_edifiles_dir
+    :param zcomponent: det | zxy  | zyx
+    :return:
+    """
+    edi_files = glob.glob(os.path.join(edi_dir, "*.edi"))
+
+    logger.debug(edi_files)
+
+    for afile in edi_files:
+        # for efile in edi_files[:2]:
+        logger.debug("processing %s", afile)
+        latlon_depths=get_station_pendepths(afile)
+        print latlon_depths
+
+
+    return
+
+
 ###############################################################################
 # plot one-by-one edi files in a given dirpath
 # How to Run:
@@ -336,8 +389,9 @@ if __name__ == '__main__':
             # rholist can be any of ['zxy','zyx','det'], default all of them
         elif os.path.isdir(edi_path):
             #plot_edi_dir(edi_path )
-            plot_edi_dir(edi_path, rholist=['det'] )
-#            plot_multi_station_pen_depth(10, edi_path)
-#            plot_3Dbar_depth(30,edi_path)
+            #plot_edi_dir(edi_path, rholist=['det'] )
+            # plot_multi_station_pen_depth(10, edi_path)
+            # plot_3Dbar_depth(30,edi_path)
+            print_csv(edi_path)
         else:
             logger.error("Usage %s %s", sys.argv[0], "path2edi")
