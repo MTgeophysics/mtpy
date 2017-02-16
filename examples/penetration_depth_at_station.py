@@ -1,7 +1,10 @@
 """
 Description:
-    Plot the Penetration Depth as a function of period (1/freq).
-    The purpose is to show a profile over a collection of MT ground stations.
+    For a given ground station (edi file), plot the Penetration Depth vs all the periods (1/freq).
+
+Usage:
+    python  examples/penetration_depth_at_station.py /path2/edi_files_dir/
+    python  examples/penetration_depth_at_station.py tests/data/edifiles/15125A.edi
 
 Author: fei.zhang@ga.gov.au
 Date:   2017-01-23
@@ -317,8 +320,8 @@ def get_index(lat, lon, LL_lat, LL_lon, pixelsize):
 # plot one-by-one edi files in a given dirpath
 # How to Run:
 #    export PYTHONPATH=/Softlab/Githubz/mtpy2:$PYTHONPATH
-#    python  examples/plot_penetration_depth.py data/edi_files/
-#    python  examples/plot_penetration_depth.py tests/data/edifiles/15125A.edi
+#    python  examples/penetration_depth_at_station.py data/edi_files/
+#    python  examples/penetration_depth_at_station.py tests/data/edifiles/15125A.edi
 
 if __name__ == '__main__':
 

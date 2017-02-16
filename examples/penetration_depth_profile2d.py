@@ -1,3 +1,16 @@
+"""
+Description:
+    For a list of MT_stations, generate a profile, plot the Penetration Depth vs the stations,
+    for a given period (1/freq).
+
+Usage:
+    python examples/penetration_depth_profile2d.py /path2/edi_files_dir/   period_list
+    python examples/penetration_depth_profile2d.py examples/data/edi2/ 0 1 10 20 30 40
+
+Author: fei.zhang@ga.gov.au
+Date:   2017-01-23
+"""
+
 import sys
 import os
 import glob
@@ -11,7 +24,7 @@ import matplotlib as mpl
 mpl.rcParams['lines.linewidth'] = 2
 # mpl.rcParams['lines.color'] = 'r'
 
-mpl.rcParams['figure.figsize']=[30,10]
+mpl.rcParams['figure.figsize']=[20,10]
 
 import mtpy.core.mt as mt
 import mtpy.modeling.occam2d_rewrite as occam2d_new
@@ -21,7 +34,7 @@ from mtpy.utils.mtpylog import MtPyLog
 logger = MtPyLog().get_mtpy_logger(__name__)
 #logger = MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) # specific
 
-def plot2Dprofile(edi_dir, period_index_list=None):
+def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det'): #use the Zcompotent=[det, zxy, zyx]
     #edi_dir = "/Softlab/Githubz/mtpy2/tests/data/edifiles/"
     # edi_dir="E:/Githubz/mtpy2/tests/data/edifiles/"
     # edi_dir=r"E:\Githubz\mtpy2\examples\data/edi2"
@@ -29,7 +42,7 @@ def plot2Dprofile(edi_dir, period_index_list=None):
     #1 get a list of edi files, which are suppose to be in a profile.
     edifiles = glob.glob(os.path.join(edi_dir, '*.edi'))
 
-    logger.debug("edi files: ", edifiles)
+    logger.debug("edi files: %s", edifiles)
 
     # stations = ['151{0:02}A'.format(s) for s in range(24, 31)]
     # pr = occam2d_new.Profile(edi_path=edi_dir, station_list=stations)
@@ -53,14 +66,14 @@ def plot2Dprofile(edi_dir, period_index_list=None):
 
         logger.debug("doing period index %s", period_index)
 
-        (stations, pen, periods)= get_penetration_depth(int(period_index), pr.edi_list)
+        (stations, pen, periods)= get_penetration_depth(int(period_index), pr.edi_list, whichrho=zcomponent)
 
-        line_label="Period=%s s"%periods[0]
+        line_label="Period=%s"%periods[0]
 
         plt.plot(pr.station_locations, pen, "--", marker='o', markersize="12", linewidth="2", label=line_label)
         plt.legend()
 
-    plt.ylabel('Penetration Depth (m)', fontsize=16)
+    plt.ylabel('Penetration Depth (Metres) Computed by %s'%zcomponent, fontsize=16)
     plt.yticks(fontsize=16)
 
     plt.xlabel('MT Penetration Depth Profile Over Stations.', fontsize=16)
@@ -77,13 +90,7 @@ def plot2Dprofile(edi_dir, period_index_list=None):
     plt.show()
 
 
-def plot_3D_profile(edi_dir, period_index):
-
-    return "image"
-
-
-
-def get_penetration_depth(per_index, mt_obj_list):
+def get_penetration_depth(per_index, mt_obj_list, whichrho='det'): #whichrho=[det, zxy, zyx]
 
     scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
 
@@ -106,7 +113,18 @@ def get_penetration_depth(per_index, mt_obj_list):
         per = 1.0 / zeta.freq[per_index]
         periods.append(per)
 
-        penetration_depth = - scale_param * np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
+        if whichrho=='zxy':
+            penetration_depth = - scale_param * np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
+        elif whichrho=='zyx':
+            penetration_depth = - scale_param * np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
+        elif whichrho =='det':
+            # determinant
+            det2 = np.abs(zeta.det[0][per_index])  # determinant value at the given period index
+            penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
+        else:
+            logger.critical("unsupported method to compute penetratoin depth: %s", whichrho)
+            sys.exit(100)
+
         pen_depth.append(penetration_depth)
 
         stations.append(mt_obj.station)
@@ -114,20 +132,19 @@ def get_penetration_depth(per_index, mt_obj_list):
     return(stations, pen_depth, periods)
 
 # =============================================================================================
-# python examples/plot_penetration_depth_profiles.py tests/data/edifiles/ 0 1 10 20 30 40 50 59
-# python examples/plot_penetration_depth_profiles.py examples/data/edi2/ 0 1 10 20 30 40
+# python examples/penetration_depth_profile2d.py tests/data/edifiles/ 0 1 10 20 30 40 50 59
+# python examples/penetration_depth_profile2d.py examples/data/edi2/ 0 1 10 20 30 40
 # =============================================================================================
 if __name__=="__main__":
 
     if len(sys.argv)<2:
         print("Usage: %s edi_dir"%sys.argv[0])
-        print ("python examples/plot_penetration_depth_profiles.py tests/data/edifiles/ 0 1 10 20 30 40 50 59")
-
+        print ("python examples/penetration_depth_profile2d.py tests/data/edifiles/ 0 1 10 20 30 40 50 59")
         sys.exit(1)
     elif os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]
         period_index_list=sys.argv[2:]
-        plot2Dprofile(edi_dir, period_index_list )
+        plot2Dprofile(edi_dir, period_index_list, zcomponent='det')
 
     else:
         print("Please provide an edi directory and period_index_list")
