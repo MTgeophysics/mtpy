@@ -13,17 +13,43 @@ from xml.dom import minidom
 
 dt_fmt = '%Y-%m-%dT%H:%M:%S'
 #==============================================================================
-# Inputs
+# Generic object to hold information
 #==============================================================================
-class Dummy(object):
-    def __init__(self, name, attr, text, **kwargs):
+class XML_element(object):
+    """
+    Basically an ET element.  The key components are
+        * 'name'  --> name of the element
+        * 'attr'  --> attribute information of the element
+        * 'value' --> value of the element
+        
+    Used the property function here to be sure that these 3 cannot be set 
+    through the common k.value = 10, just in case there are similar names in 
+    the xml file.  This seemed to be the safest to avoid those cases.
+    """
+    def __init__(self, name, attr, value, **kwargs):
         self._name = name
         self._attr = attr
-        self._value = text
+        self._value = value
         
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-
+            
+    def _get_value(self):
+        return self._value
+        
+    def _get_attr(self):
+        return self._attr
+        
+    def _get_name(self):
+        return self._name
+        
+    name = property(fget=_get_name)
+    attr = property(fget=_get_attr)
+    value = property(fget=_get_value)
+    
+#==============================================================================
+# General information
+#==============================================================================
 conditions_of_use = ''.join(['All data and metadata for this survey are ',
                              'available free of charge and may be copied ',
                              'freely, duplicated and further distributed ',
@@ -40,85 +66,106 @@ conditions_of_use = ''.join(['All data and metadata for this survey are ',
                              'metadata, as obtained from the author(s), are ',
                              'included for informational purposes only.'])
                      
-estimates = [Dummy('Estimate', {'type':'real', 'name':'VAR'}, None,
-                   **{'Description':Dummy('Description', None, 'Variance'),
-                      'ExternalUrl':Dummy('ExternalUrl', None, None),
-                      'Intention':Dummy('Intention', None, 'Error Estimate'),
-                      'Tag':Dummy('Tag', None, 'Variance')}),
+estimates = [XML_element('Estimate', {'type':'real', 'name':'VAR'}, None,
+                   **{'Description':XML_element('Description', None, 'Variance'),
+                      'ExternalUrl':XML_element('ExternalUrl', None, None),
+                      'Intention':XML_element('Intention', None, 'Error Estimate'),
+                      'Tag':XML_element('Tag', None, 'Variance')}),
             
-             Dummy('Estimate', {'type':'complex', 'name':'COV'}, None,  
-                   **{'Description':Dummy('Description', None, 
+             XML_element('Estimate', {'type':'complex', 'name':'COV'}, None,  
+                   **{'Description':XML_element('Description', None, 
                                           'Full covariance between each two TF components'),
-                      'ExternalUrl':Dummy('ExternalUrl', None, None),
-                      'Intention':Dummy('Intention', None, 'Error Estimate'),
-                      'Tag':Dummy('Tag', None, 'Covariance')}),
+                      'ExternalUrl':XML_element('ExternalUrl', None, None),
+                      'Intention':XML_element('Intention', None, 'Error Estimate'),
+                      'Tag':XML_element('Tag', None, 'Covariance')}),
              
-             Dummy('Estimate', {'type':'complex', 'name':'INVSIGCOV'}, None,  
-                   **{'Description':Dummy('Description', None, 
+             XML_element('Estimate', {'type':'complex', 'name':'INVSIGCOV'}, None,  
+                   **{'Description':XML_element('Description', None, 
                                           'Inverse Coherent Signal Power Matrix S'),
-                      'ExternalUrl':Dummy('ExternalUrl', None, None),
-                      'Intention':Dummy('Intention', None, 'Signal Power Estimate'),
-                      'Tag':Dummy('Tag', None, 'inverse_signal_covariance')}),
+                      'ExternalUrl':XML_element('ExternalUrl', None, None),
+                      'Intention':XML_element('Intention', None, 'Signal Power Estimate'),
+                      'Tag':XML_element('Tag', None, 'inverse_signal_covariance')}),
              
-             Dummy('Estimate',{'type':'complex', 'name':'RESIDCOV'}, None,  
-                   **{'Description':Dummy('Description',None, 
+             XML_element('Estimate',{'type':'complex', 'name':'RESIDCOV'}, None,  
+                   **{'Description':XML_element('Description',None, 
                                           'Residual Covariance N'),
-                      'ExternalUrl':Dummy('ExternalUrl', None, None),
-                      'Intention':Dummy('Intention', None, 'Error Estimate'),
-                      'Tag':Dummy('Tag', None, 'Coherence')}),
+                      'ExternalUrl':XML_element('ExternalUrl', None, None),
+                      'Intention':XML_element('Intention', None, 'Error Estimate'),
+                      'Tag':XML_element('Tag', None, 'Coherence')}),
              
-             Dummy('Estimate', {'type':'complex', 'name':'COH'}, None,  
-                   **{'Description':Dummy('Description', None, 'Coherence'),
-                      'ExternalUrl':Dummy('ExternalUrl', None, None),
-                      'Intention':Dummy('Intention', None, 'Signal Coherence'),
-                      'Tag':Dummy('Tag', None, 'Coherence')}),
+             XML_element('Estimate', {'type':'complex', 'name':'COH'}, None,  
+                   **{'Description':XML_element('Description', None, 'Coherence'),
+                      'ExternalUrl':XML_element('ExternalUrl', None, None),
+                      'Intention':XML_element('Intention', None, 'Signal Coherence'),
+                      'Tag':XML_element('Tag', None, 'Coherence')}),
              
-             Dummy('Estimate', {'type':'complex', 'name':'PREDCOH'}, None,  
-                   **{'Description':Dummy('Description', None, 'Multiple Coherence'),
-                      'ExternalUrl':Dummy('ExternalUrl', None, None),
-                      'Intention':Dummy('Intention', None, 'Signal Coherence'),
-                      'Tag':Dummy('Tag', None, 'Multiple_Coherence')}),
+             XML_element('Estimate', {'type':'complex', 'name':'PREDCOH'}, None,  
+                   **{'Description':XML_element('Description', None, 'Multiple Coherence'),
+                      'ExternalUrl':XML_element('ExternalUrl', None, None),
+                      'Intention':XML_element('Intention', None, 'Signal Coherence'),
+                      'Tag':XML_element('Tag', None, 'Multiple_Coherence')}),
              
-             Dummy('Estimate', {'type':'complex', 'name':'SIGAMP'}, None,  
-                   **{'Description':Dummy('Description', None, 'Signal Amplitude'),
-                      'ExternalUrl':Dummy('ExternalUrl', None, None),
-                      'Intention':Dummy('Intention', None, 'Signal Power Estimates'),
-                      'Tag':Dummy('Tag', None, 'Signal_Amplitude')}),
+             XML_element('Estimate', {'type':'complex', 'name':'SIGAMP'}, None,  
+                   **{'Description':XML_element('Description', None, 'Signal Amplitude'),
+                      'ExternalUrl':XML_element('ExternalUrl', None, None),
+                      'Intention':XML_element('Intention', None, 'Signal Power Estimates'),
+                      'Tag':XML_element('Tag', None, 'Signal_Amplitude')}),
              
-             Dummy('Estimate', {'type':'complex', 'name':'SIGNOISE'}, None,  
-                   **{'Description':Dummy('Description', None, 'Signal Noise'),
-                      'ExternalUrl':Dummy('ExternalUrl', None, None),
-                      'Intention':Dummy('Intention', None, 'Error Estimates'),
-                      'Tag':Dummy('Tag', None, 'Signal_Noise')})]
+             XML_element('Estimate', {'type':'complex', 'name':'SIGNOISE'}, None,  
+                   **{'Description':XML_element('Description', None, 'Signal Noise'),
+                      'ExternalUrl':XML_element('ExternalUrl', None, None),
+                      'Intention':XML_element('Intention', None, 'Error Estimates'),
+                      'Tag':XML_element('Tag', None, 'Signal_Noise')})]
                        
-data_types = [Dummy('DataType',
+data_types = [XML_element('DataType',
                     {'units':'[mV/km]/[nT]', 
                      'name':'Z', 
                      'input':'H',
                      'output':'E'},
                      None, 
-                     **{'Description':Dummy('Description', None, 'MT impedance'),
-                       'ExternalUrl':Dummy('ExternalUrl', None, None),
-                       'Intention':Dummy('Intention', None, 'primary data type'),
-                       'Tag':Dummy('Tag', None, 'impedance')}),
+                     **{'Description':XML_element('Description', None, 'MT impedance'),
+                       'ExternalUrl':XML_element('ExternalUrl', None, None),
+                       'Intention':XML_element('Intention', None, 'primary data type'),
+                       'Tag':XML_element('Tag', None, 'impedance')}),
               
-              Dummy('DataType',
+              XML_element('DataType',
                     {'units':'[]', 
-                     'name':'Z', 
+                     'name':'T', 
                      'input':'H',
                      'output':'H'},
                      None, 
-                     **{'Description':Dummy('Description', None, 
+                     **{'Description':XML_element('Description', None, 
                                             'Tipper-Vertical Field Transfer Function'),
-                       'ExternalUrl':Dummy('ExternalUrl', None, None),
-                       'Intention':Dummy('Intention', None, 'primary data type'),
-                       'Tag':Dummy('Tag', None, 'tipper')})]
+                       'ExternalUrl':XML_element('ExternalUrl', None, None),
+                       'Intention':XML_element('Intention', None, 'primary data type'),
+                       'Tag':XML_element('Tag', None, 'tipper')})]
 #==============================================================================
 # Useful Functions
 #==============================================================================                
 class XML_Config(object):
     """
     Class to deal with configuration files for xml.
+    
+    Includes all the important information for the station and how data was 
+    processed.  
+    
+    Key Information includes:
+        
+    ======================== ==================================================
+    Name                     Purpose
+    ======================== ==================================================
+    ProductID                Station name
+    ExternalUrl              External URL to link to data
+    Notes                    Any important information on station, 
+                             data collection.
+    TimeSeriesArchived       Information on Archiving time series including 
+                             URL.   
+    Image                    A location to an image of the station or
+                             the MT response.
+    ======================== ==================================================    
+    * ProductID --> station name
+        * ExternalUrl --> external url to link to data
+        * Notes --> any 
     
     
     """    
@@ -127,157 +174,157 @@ class XML_Config(object):
         self.cfg_fn = None
         
         # Initialize the default attributes and values
-        self.Description = Dummy('Description', 
+        self.Description = XML_element('Description', 
                                  None, 
                                  'Magnetotelluric Transfer Functions')
                                  
-        self.ProductId = Dummy('ProductID', None, None)
+        self.ProductId = XML_element('ProductID', None, None)
         
-        self.Project = Dummy('Project', None, None)
+        self.Project = XML_element('Project', None, None)
         
-        self.Survey = Dummy('Survey', None, None)
+        self.Survey = XML_element('Survey', None, None)
         
-        self.Country = Dummy('Country', None, None)
+        self.Country = XML_element('Country', None, None)
        
-        self.SubType = Dummy('SubType', None, 'MT_FT')
+        self.SubType = XML_element('SubType', None, 'MT_FT')
        
-        self.Notes = Dummy('Notes', None, None)
+        self.Notes = XML_element('Notes', None, None)
         
-        self.Tags = Dummy('Tags', None, 'impedance, tipper')
+        self.Tags = XML_element('Tags', None, 'impedance, tipper')
         
         
-        self.Image = Dummy('Image', None, None, 
-                           **{'PrimaryData':Dummy('PrimaryData', None, None),
-                              'Filename':Dummy('Filename', None, None)})
+        self.Image = XML_element('Image', None, None, 
+                           **{'PrimaryData':XML_element('PrimaryData', None, None),
+                              'Filename':XML_element('Filename', None, None)})
                               
         
-        self.Original = Dummy('Original', None, None,
-                              **{'Attachment':Dummy('Attachment', None, None),
-                                 'Filename':Dummy('Filename', None, None)})
+        self.Original = XML_element('Original', None, None,
+                              **{'Attachment':XML_element('Attachment', None, None),
+                                 'Filename':XML_element('Filename', None, None)})
         
        
-        self.TimeSeriesArchived = Dummy('TimeSeriesArchived', None, None, 
-                                        **{'Value':Dummy('Value', None, 0), 
-                                           'URL':Dummy('URL', None, None)})
+        self.TimeSeriesArchived = XML_element('TimeSeriesArchived', None, None, 
+                                        **{'Value':XML_element('Value', None, 0), 
+                                           'URL':XML_element('URL', None, None)})
         
-        self.ExternalUrl = Dummy('ExternalUrl', None, None, 
-                                 **{'Description':Dummy('Description', None, None),
-                                    'Url':Dummy('Url', None, None)})
+        self.ExternalUrl = XML_element('ExternalUrl', None, None, 
+                                 **{'Description':XML_element('Description', None, None),
+                                    'Url':XML_element('Url', None, None)})
         
-        self.PrimaryData = Dummy('PrimaryData', None, None, 
-                                 **{'Filename':Dummy('Filename', None, None),
-                                    'GroupKey':Dummy('GroupKey', None, 0),
-                                    'OrderKey':Dummy('OrderKey', None, 0)})
+        self.PrimaryData = XML_element('PrimaryData', None, None, 
+                                 **{'Filename':XML_element('Filename', None, None),
+                                    'GroupKey':XML_element('GroupKey', None, 0),
+                                    'OrderKey':XML_element('OrderKey', None, 0)})
                                     
         
-        self.Attachment = Dummy('Attachment', None, None, 
-                                **{'Filename':Dummy('Filename', None, None),
-                                   'Description':Dummy('Description', None, 
+        self.Attachment = XML_element('Attachment', None, None, 
+                                **{'Filename':XML_element('Filename', None, None),
+                                   'Description':XML_element('Description', None, 
                                                        'Original file use to produce XML')})
                                    
         
-        self.Provenance = Dummy('Provenance', None, None,
-                                **{'CreatTime':Dummy('CreationTime', None, 
+        self.Provenance = XML_element('Provenance', None, None,
+                                **{'CreatTime':XML_element('CreationTime', None, 
                                                      datetime.datetime.strftime(
                                                      datetime.datetime.utcnow(), 
                                                      dt_fmt)),
-                                    'CreatingApplication':Dummy('CreatingApplication', 
+                                    'CreatingApplication':XML_element('CreatingApplication', 
                                                                 None, 
                                                                 'MTpy.core.mtxml'),
-                                    'Submitter':Dummy('Submitter', None, None,
-                                                      **{'Name':Dummy('Name', None, None),
-                                                         'Email':Dummy('Email', None, None),
-                                                         'Org':Dummy('Org', None, None),
-                                                         'OrgURL':Dummy('OrgURL', None, None)}),
-                                    'Creator':Dummy('Creator', None, None,
-                                                    **{'Name':Dummy('Name', None, None),
-                                                       'Email':Dummy('Email', None, None),
-                                                       'Org':Dummy('Org', None, None),
-                                                       'OrgURL':Dummy('OrgURL', None, None)})})
+                                    'Submitter':XML_element('Submitter', None, None,
+                                                      **{'Name':XML_element('Name', None, None),
+                                                         'Email':XML_element('Email', None, None),
+                                                         'Org':XML_element('Org', None, None),
+                                                         'OrgURL':XML_element('OrgURL', None, None)}),
+                                    'Creator':XML_element('Creator', None, None,
+                                                    **{'Name':XML_element('Name', None, None),
+                                                       'Email':XML_element('Email', None, None),
+                                                       'Org':XML_element('Org', None, None),
+                                                       'OrgURL':XML_element('OrgURL', None, None)})})
                                                        
-        self.Copyright = Dummy('Copyright', None, None,
-                               **{'Citation':Dummy('Citation', None, None,
-                                                   **{'Title':Dummy('Title', None, None),
-                                                      'Authors':Dummy('Authors', None, None),
-                                                      'Year':Dummy('Year', None, None),
-                                                      'Journal':Dummy('Journal', None, None),
-                                                      'Volume':Dummy('Volume', None, None),
-                                                      'DOI':Dummy('DOI', None, None)}),
-                                  'ReleaseStatus':Dummy('ReleaseStatus', None, 'Closed'),
-                                  'ConditionsOfUse':Dummy('CondictionsOfUse', None, conditions_of_use)})
+        self.Copyright = XML_element('Copyright', None, None,
+                               **{'Citation':XML_element('Citation', None, None,
+                                                   **{'Title':XML_element('Title', None, None),
+                                                      'Authors':XML_element('Authors', None, None),
+                                                      'Year':XML_element('Year', None, None),
+                                                      'Journal':XML_element('Journal', None, None),
+                                                      'Volume':XML_element('Volume', None, None),
+                                                      'DOI':XML_element('DOI', None, None)}),
+                                  'ReleaseStatus':XML_element('ReleaseStatus', None, 'Closed'),
+                                  'ConditionsOfUse':XML_element('CondictionsOfUse', None, conditions_of_use)})
 
-        self.Site = Dummy('Site', None, None,
-                          **{'Project':Dummy('Project', None, None),
-                             'Survey':Dummy('Survey', None, None),
-                             'YearCollected':Dummy('YearCollected', None, None),
-                             'Id':Dummy('Id', None, None),
-                             'Location':Dummy('Location', None, None,
-                                              **{'Latitude':Dummy('Latitude', None, None),
-                                                 'Longitude':Dummy('Longitude', None, None),
-                                                 'Elevation':Dummy('Elevation', {'units':'meters'}, None),
-                                                 'Declination':Dummy('Declination', {'epoch':'1995'}, None)}),
-                             'AcquiredBy':Dummy('AcquiredBy', None, None),
-                             'Start':Dummy('Start', None, None),
-                             'End':Dummy('End', None, None),
-                             'RunList':Dummy('RunList', None, None)})
+        self.Site = XML_element('Site', None, None,
+                          **{'Project':XML_element('Project', None, None),
+                             'Survey':XML_element('Survey', None, None),
+                             'YearCollected':XML_element('YearCollected', None, None),
+                             'Id':XML_element('Id', None, None),
+                             'Location':XML_element('Location', None, None,
+                                              **{'Latitude':XML_element('Latitude', None, None),
+                                                 'Longitude':XML_element('Longitude', None, None),
+                                                 'Elevation':XML_element('Elevation', {'units':'meters'}, None),
+                                                 'Declination':XML_element('Declination', {'epoch':'1995'}, None)}),
+                             'AcquiredBy':XML_element('AcquiredBy', None, None),
+                             'Start':XML_element('Start', None, None),
+                             'End':XML_element('End', None, None),
+                             'RunList':XML_element('RunList', None, None)})
                              
-        self.FieldNotes = Dummy('FieldNotes', None, None,
-                                **{'Instrument':Dummy('Instrument', None, None,
-                                                      **{'Type':Dummy('Type', None, None),
-                                                         'Manufacturer':Dummy('Manufacturer', None, None),
-                                                         'Id':Dummy('Id', None, None),
-                                                         'Settings':Dummy('Settings', None, None)}),
-                                    'Electrode':Dummy('Electrode', None, None,
-                                                      **{'Type':Dummy('Type', None, None),
-                                                         'Manufacturer':Dummy('Manufacturer', None, None),
-                                                         'Id':Dummy('Id', None, None)}),
-                                    'Magnetometer':Dummy('Magnetometer', None, None,
-                                                        **{'Type':Dummy('Type', None, None),
-                                                         'Manufacturer':Dummy('Manufacturer', None, None),
-                                                         'Id':Dummy('Id', None, None)}),
-                                    'DataQualityNotes':Dummy('DataQualityNotes', None, None,
-                                                             **{'Rating':Dummy('Rating', None, None),
-                                                                 'GoodFromPeriod':Dummy('GoodFromPeriod', None, None),
-                                                                 'GoodToPeriod':Dummy('GoodToPeriod', None, None),
-                                                                 'Comments':Dummy('Comments', None, None)}),
-                                    'DataQualityWarnings':Dummy('DataQualityWarnings', None, None,
-                                                                **{'Flag':Dummy('Flag', None, 0),
-                                                                    'Comments':Dummy('Comments', None, None)})})
+        self.FieldNotes = XML_element('FieldNotes', None, None,
+                                **{'Instrument':XML_element('Instrument', None, None,
+                                                      **{'Type':XML_element('Type', None, None),
+                                                         'Manufacturer':XML_element('Manufacturer', None, None),
+                                                         'Id':XML_element('Id', None, None),
+                                                         'Settings':XML_element('Settings', None, None)}),
+                                    'Electrode':XML_element('Electrode', None, None,
+                                                      **{'Type':XML_element('Type', None, None),
+                                                         'Manufacturer':XML_element('Manufacturer', None, None),
+                                                         'Id':XML_element('Id', None, None)}),
+                                    'Magnetometer':XML_element('Magnetometer', None, None,
+                                                        **{'Type':XML_element('Type', None, None),
+                                                         'Manufacturer':XML_element('Manufacturer', None, None),
+                                                         'Id':XML_element('Id', None, None)}),
+                                    'DataQualityNotes':XML_element('DataQualityNotes', None, None,
+                                                             **{'Rating':XML_element('Rating', None, None),
+                                                                 'GoodFromPeriod':XML_element('GoodFromPeriod', None, None),
+                                                                 'GoodToPeriod':XML_element('GoodToPeriod', None, None),
+                                                                 'Comments':XML_element('Comments', None, None)}),
+                                    'DataQualityWarnings':XML_element('DataQualityWarnings', None, None,
+                                                                **{'Flag':XML_element('Flag', None, 0),
+                                                                    'Comments':XML_element('Comments', None, None)})})
                                   
-        self.ProcessingInfo = Dummy('ProcessingInfo', None, None,
-                                    **{'ProcessedBy':Dummy('ProcessedBy', None, None),
-                                       'ProcessingSoftware':Dummy('ProcessingSoftware', None, None,
-                                                                  **{'Name':Dummy('Name', None, None),
-                                                                     'LastMod':Dummy('LastMod', None, None),
-                                                                     'Author':Dummy('Author', None, None)}),
-                                        'SignConvention':Dummy('SignConvention', None, r'exp(+i\omega t)'),
-                                        'RemoteRef':Dummy('RemoteRef', {'type':'Robust Remote Processing'}, None),
-                                        'RemoteInfo':Dummy('RemoteInfo', None, None, 
-                                                           **{'Project':Dummy('Project', None, None),
-                                                              'Survey':Dummy('Survey', None, None),
-                                                              'ID':Dummy('ID', None, None),
-                                                              'Name':Dummy('Name', None, None),
-                                                              'YearCollected':Dummy('YearCollected', None, None),
-                                                              'Location':Dummy('Location', {'datum':'WGS84'}, None,
-                                                                               **{'Latitude':Dummy('Latitude', None, None),
-                                                                                  'Longitude':Dummy('Longitude', None, None),
-                                                                                  'Elevation':Dummy('Elevation', {'units':'meters'}, None)})
+        self.ProcessingInfo = XML_element('ProcessingInfo', None, None,
+                                    **{'ProcessedBy':XML_element('ProcessedBy', None, None),
+                                       'ProcessingSoftware':XML_element('ProcessingSoftware', None, None,
+                                                                  **{'Name':XML_element('Name', None, None),
+                                                                     'LastMod':XML_element('LastMod', None, None),
+                                                                     'Author':XML_element('Author', None, None)}),
+                                        'SignConvention':XML_element('SignConvention', None, r'exp(+i\omega t)'),
+                                        'RemoteRef':XML_element('RemoteRef', {'type':'Robust Remote Processing'}, None),
+                                        'RemoteInfo':XML_element('RemoteInfo', None, None, 
+                                                           **{'Project':XML_element('Project', None, None),
+                                                              'Survey':XML_element('Survey', None, None),
+                                                              'ID':XML_element('ID', None, None),
+                                                              'Name':XML_element('Name', None, None),
+                                                              'YearCollected':XML_element('YearCollected', None, None),
+                                                              'Location':XML_element('Location', {'datum':'WGS84'}, None,
+                                                                               **{'Latitude':XML_element('Latitude', None, None),
+                                                                                  'Longitude':XML_element('Longitude', None, None),
+                                                                                  'Elevation':XML_element('Elevation', {'units':'meters'}, None)})
                                                                })})
-        self.InputChannels = Dummy('InputChannels', {'ref':'site', 'units':'m'}, None)
-        self.OutputChannels = Dummy('OutputChannels', {'ref':'site', 'units':'m'}, None)
-        self.Data = Dummy('Data', {'count':0}, None)
-        self.PeriodRange = Dummy('PeriodRange', None, None)
+        self.InputChannels = XML_element('InputChannels', {'ref':'site', 'units':'m'}, None)
+        self.OutputChannels = XML_element('OutputChannels', {'ref':'site', 'units':'m'}, None)
+        self.Data = XML_element('Data', {'count':0}, None)
+        self.PeriodRange = XML_element('PeriodRange', None, None)
                                         
-        self.Datum = Dummy('Datum', None, 'WGS84')
-        self.Declination = Dummy('Declination', None, None)
+        self.Datum = XML_element('Datum', None, 'WGS84')
+        self.Declination = XML_element('Declination', None, None)
                  
-        self.StatisticalEstimates = Dummy('StatisticalEstimates', None, None)                           
+        self.StatisticalEstimates = XML_element('StatisticalEstimates', None, None)                           
         for ii, estimate in enumerate(estimates):
             setattr(self.StatisticalEstimates, 
                     'Estimate_{0:02}'.format(ii),
                     estimate)
         
-        self.DataTypes = Dummy('DataTypes', None, None)
+        self.DataTypes = XML_element('DataTypes', None, None)
         for ii, d_type in enumerate(data_types):
             setattr(self.DataTypes, 'DataType_{0:02}'.format(ii), d_type)
                                    
@@ -288,7 +335,7 @@ class XML_Config(object):
     def read_cfg_file(self, cfg_fn=None):
         """
         Read in a cfg file making all key = value pairs attribures of 
-        XML_Config.  Being sure all new attributes are Dummy objects.
+        XML_Config.  Being sure all new attributes are XML_element objects.
         
         The assumed structure of the xml.cfg file is similar to:
             ``# XML Configuration File MTpy
@@ -371,8 +418,8 @@ class XML_Config(object):
             # get the given attribute
             attr_00 = getattr(self, attr_00_name)
             
-            # make sure it is of Dummy instance
-            if isinstance(attr_00, Dummy):
+            # make sure it is of XML_element instance
+            if isinstance(attr_00, XML_element):
                 # be sure to add a new line for each parent attribute
                 line_list.append(' ')
                 # get the attributes associated with the parent
@@ -431,7 +478,7 @@ class XML_Config(object):
         read a configuration file line to make the appropriate attribute
         have the correct values and attributes.
         
-        porbably should think of a better name for Dummy objects that are
+        porbably should think of a better name for XML_element objects that are
         attributes of self.
         """
         
@@ -440,6 +487,8 @@ class XML_Config(object):
         # split the keys by . to get the different attributes
         key_list = line_list[0].strip().split('.')
         value = line_list[1].strip()
+        if value in ['none', 'None']:
+            value = None
         
         # loop over the keys to set them appropriately 
         for ii, key in enumerate(key_list):
@@ -449,8 +498,8 @@ class XML_Config(object):
             # if its the first key, see if its been made an attribute yet
             if ii == 0: 
                 if not hasattr(self, name):
-                    setattr(self, name, Dummy(name, None, None))
-                # for looping purposes we need to get the current Dummy object
+                    setattr(self, name, XML_element(name, None, None))
+                # for looping purposes we need to get the current XML_element object
                 cfg_attr = getattr(self, name)
                 # be sure to set any attributes, need to do this here because
                 # the test for hasattr will only make a new one if there
@@ -459,11 +508,11 @@ class XML_Config(object):
                 cfg_attr._attr = attr
             else:
                 if not hasattr(cfg_attr, name):
-                    setattr(cfg_attr, name, Dummy(name, None, None))
+                    setattr(cfg_attr, name, XML_element(name, None, None))
                 cfg_attr = getattr(cfg_attr, name) 
                 cfg_attr._attr = attr
         
-        # set the value of the current Dummy object
+        # set the value of the current XML_element object
         cfg_attr._value = value
 
     def _split_cfg_line(self, line):
@@ -497,7 +546,7 @@ class XML_Config(object):
         return key, attr
         
 
-    def _write_cfg_line(self, dummy_obj, parent=None):
+    def _write_cfg_line(self, XML_element_obj, parent=None):
         """
         write a configuration file line in the format of:
         parent.attribute = value
@@ -509,18 +558,18 @@ class XML_Config(object):
         elif type(parent) is list:
             parent_str = '.'.join([p._name for p in parent]+[''])
             
-        elif isinstance(parent, Dummy):
+        elif isinstance(parent, XML_element):
             parent_str = '{0}.'.format(parent._name)
         
-        if dummy_obj._attr is not None:
-            attr_str = ''.join(['({0}={1})'.format(a_key, dummy_obj._attr[a_key]) 
-                                 for a_key in dummy_obj._attr.keys()])
+        if XML_element_obj._attr is not None:
+            attr_str = ''.join(['({0}={1})'.format(a_key, XML_element_obj._attr[a_key]) 
+                                 for a_key in XML_element_obj._attr.keys()])
         else:
             attr_str = ''
         return '{0}{1}{2} = {3}'.format(parent_str,
-                                        dummy_obj._name, 
+                                        XML_element_obj._name, 
                                         attr_str, 
-                                        dummy_obj._value)
+                                        XML_element_obj._value)
                                      
     def _get_attr_keys(self, attribute):
         return [a_key for a_key in sorted(attribute.__dict__.keys()) 
@@ -529,7 +578,7 @@ class XML_Config(object):
 #==============================================================================
 #  EDI to XML
 #==============================================================================
-class EDI_to_XML(XML_Config):
+class MT_XML(XML_Config):
     """
     convert an EDI file to XML format
     
@@ -578,6 +627,7 @@ class EDI_to_XML(XML_Config):
             self.edi_fn = edi_fn
             
         self.edi_obj = mtedi.Edi(self.edi_fn)
+        self.get_edi_info()
         
     def read_cfg(self, cfg_fn=None):
         if cfg_fn is not None:
@@ -600,7 +650,7 @@ class EDI_to_XML(XML_Config):
         
 
     
-    def get_info(self, cfg_fn=None, edi_fn=None):
+    def get_edi_info(self, cfg_fn=None, edi_fn=None):
         """
         get information from config file and edi file
         """
@@ -610,12 +660,12 @@ class EDI_to_XML(XML_Config):
         if edi_fn is not None:
             self.edi_fn = edi_fn
             
-        self.read_edi()
-        self.read_cfg()
+        if self.cfg_fn is not None:
+            self.read_cfg_file()
         
         # --> extract information from EDI files
         # Site information
-        self.Site.DateCollected = Dummy('DateCollected', None, 
+        self.Site.DateCollected = XML_element('DateCollected', None, 
                                         self.edi_obj.Header.acqdate)
         self.Site.Id._value = self.edi_obj.station
         self.Site.AcquiredBy._value = self.edi_obj.Header.acqby
@@ -634,12 +684,12 @@ class EDI_to_XML(XML_Config):
         
        
         # Field Notes
-        self.FieldNotes.Magnetometer.HX = Dummy('HX', None, 
+        self.FieldNotes.Magnetometer.HX = XML_element('HX', None, 
                                                 str(self.edi_obj.Define_measurement.meas_hx.acqchan))
-        self.FieldNotes.Magnetometer.HY = Dummy('HY', None, 
+        self.FieldNotes.Magnetometer.HY = XML_element('HY', None, 
                                                 str(self.edi_obj.Define_measurement.meas_hy.acqchan))
         try:        
-            self.cfg_obj.FieldNotes.Magnetometer.HZ = Dummy('HZ', None,
+            self.cfg_obj.FieldNotes.Magnetometer.HZ = XML_element('HZ', None,
                                                             str(self.edi_obj.Define_measurement.meas_hz.acqchan))
         except AttributeError:
             pass
@@ -651,14 +701,14 @@ class EDI_to_XML(XML_Config):
                      'y':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hx.y),
                      'x':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hx.x),
                      'orientation':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hx.azm)}
-        self.InputChannels.Magnetic_HX = Dummy('Magnetic', attr_dict, None)
+        self.InputChannels.Magnetic_HX = XML_element('Magnetic', attr_dict, None)
         
         attr_dict = {'name':'hy', 
                      'z': '{0:.1f}'.format(0),
                      'y':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hy.y),
                      'x':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hy.x),
                      'orientation':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hy.azm)}
-        self.InputChannels.Magnetic_HY = Dummy('Magnetic', attr_dict, None)
+        self.InputChannels.Magnetic_HY = XML_element('Magnetic', attr_dict, None)
         
         # Output Channels
         try:
@@ -667,7 +717,7 @@ class EDI_to_XML(XML_Config):
                          'y':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hz.y),
                          'x':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hz.x),
                          'orientation':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_hz.azm)}
-            self.OutputChannels.Magnetic_HZ = Dummy('Magnetic', attr_dict, None)
+            self.OutputChannels.Magnetic_HZ = XML_element('Magnetic', attr_dict, None)
         except AttributeError:
             print 'No HZ Information'
         
@@ -677,7 +727,7 @@ class EDI_to_XML(XML_Config):
                      'x':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ex.x),
                      'x2':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ex.y2),
                      'y2':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ex.x2)}
-        self.OutputChannels.Electric_EX = Dummy('Electric', attr_dict, None)
+        self.OutputChannels.Electric_EX = XML_element('Electric', attr_dict, None)
                                                        
         attr_dict = {'name':'ey', 
                      'z': '{0:.1f}'.format(0),
@@ -685,10 +735,11 @@ class EDI_to_XML(XML_Config):
                      'x':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ey.x),
                      'x2':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ey.y2),
                      'y2':'{0:.1f}'.format(self.edi_obj.Define_measurement.meas_ey.x2)}
-        self.OutputChannels.Electric_EY = Dummy('Electric', attr_dict, None)
+        self.OutputChannels.Electric_EY = XML_element('Electric', attr_dict, None)
    
         self.PeriodRange._attr = {'min':'{0:.5g}'.format(1./self.edi_obj.Z.freq.max()),
-                                  'max':'{0:.5g}'.format(1./self.edi_obj.Z.freq.min())}
+                                  'max':'{0:.5g}'.format(1./self.edi_obj.Z.freq.min()),
+                                  'units':'seconds'}
 
         self.format_data()
         
@@ -706,15 +757,15 @@ class EDI_to_XML(XML_Config):
                        (0, 1):('Ty', 'Hy', 'Hz')}
                        
         header_dict = {}
-        header_dict['Z'] = Dummy('Z',{'units':'[mV/km]/[nT]', 
+        header_dict['Z'] = XML_element('Z',{'units':'[mV/km]/[nT]', 
                                       'type':'complex', 
                                       'size':'2 2'}, None)
-        header_dict['Z.VAR'] = Dummy('Z.VAR', {'type':'real', 'size':'2 2'},
+        header_dict['Z.VAR'] = XML_element('Z.VAR', {'type':'real', 'size':'2 2'},
                                      None)
-        header_dict['T'] = Dummy('T', {'units':'[]', 
+        header_dict['T'] = XML_element('T', {'units':'[]', 
                                        'type':'complex',
                                        'size':'1 2'}, None)
-        header_dict['T.VAR'] = Dummy('T.VAR', {'type':'real', 
+        header_dict['T.VAR'] = XML_element('T.VAR', {'type':'real', 
                                                'size':'1 2'}, None)
         
         attr_dict = {}
@@ -742,7 +793,7 @@ class EDI_to_XML(XML_Config):
             estimates = ['Z', 'Z.VAR']
 
         # make the data element
-        self.Data = Dummy('Data', {'count':str(nf)}, None)  
+        self.Data = XML_element('Data', {'count':str(nf)}, None)  
         
         # loop through each period and add appropriate information
         for f_index, freq in enumerate(self.edi_obj.Z.freq):
@@ -751,7 +802,7 @@ class EDI_to_XML(XML_Config):
             # we are setting _name to have the necessary information so
             # we can name the attribute whatever we want.
             setattr(self.Data, f_name,
-                    Dummy('Period', {'value':'{0:.6g}'.format(1./freq),
+                    XML_element('Period', {'value':'{0:.6g}'.format(1./freq),
                                      'units':'seconds'}, None))
             d_attr = getattr(self.Data, f_name)      
             # Get information from data
@@ -776,7 +827,7 @@ class EDI_to_XML(XML_Config):
                             
                             setattr(c_attr, 
                                     'value_{0:02}'.format(count),
-                                    Dummy('value', c_dict, c_value)) 
+                                    XML_element('value', c_dict, c_value)) 
                             count += 1
                             
                 if 't' in estimate.lower() and write_tipper == True:
@@ -796,22 +847,23 @@ class EDI_to_XML(XML_Config):
                                                                       
                             setattr(c_attr, 
                                     'value_{0:02}'.format(count),
-                                    Dummy('value', c_dict, c_value)) 
+                                    XML_element('value', c_dict, c_value)) 
                             count += 1
         
         
-    def write_element(self, parent_et, dummy_obj):
-#        try:
-        if dummy_obj._attr is None:
-            dummy_obj._attr = {}
-#        except AttributeError:
-#            raise ValueError(dummy_obj)
+    def write_element(self, parent_et, XML_element_obj):
+        """
+        make a new element 
+        """
+        if XML_element_obj._attr is None:
+            XML_element_obj._attr = {}
+
             
-        new_element = ET.SubElement(parent_et, dummy_obj._name, dummy_obj._attr)
-        new_element.text = dummy_obj._value
+        new_element = ET.SubElement(parent_et, XML_element_obj._name, XML_element_obj._attr)
+        new_element.text = XML_element_obj._value
         return new_element
        
-    def write_xml(self, edi_fn=None, xml_fn=None, cfg_fn=None):
+    def write_xml_from_edi(self, edi_fn=None, xml_fn=None, cfg_fn=None):
         """
         write xml from edi
         """
@@ -825,8 +877,13 @@ class EDI_to_XML(XML_Config):
         if self.xml_fn is None:
             self.xml_fn = '{0}.xml'.format(self.edi_fn[0:-4])
         
+        if self.cfg_fn is not None:
+            self.read_cfg_file()
+            
         if self.edi_fn is not None:
-            self.get_info()
+            self.read_edi()
+        else:
+            raise MT_XML_Error('Need to input an EDI file to convert')
 
         # make the top of the tree element        
         emtf = ET.Element('EM_TF')
@@ -882,107 +939,113 @@ class EDI_to_XML(XML_Config):
         
     def read_xml_file(self, xml_fn):
         """
-        read in an xml file
+        read in an xml file and set attributes appropriately.
+        
+        Arguments
+        --------------
+            **xml_fn** : string
+                         full path of xml file to read in
         """
-        pass
-#    def get_info_from_element(element):
-#        return_obj = mtxml.Dummy()
-#        return_obj._name = element.tag
-#        try:
-#            return_obj._text = element.text.strip()
-#        except AttributeError:
-#            return_obj._text = None
-#        return_obj._attr = element.attrib
-#        
-#        return return_obj
-#        
-#    def get_attr_name(parent, attr_name):
-#        if hasattr(parent, attr_name):
-#            for ii in range(1, 10):
-#                new_attr_name = '{0}_{1:02}'.format(attr_name, ii)
-#                if not hasattr(parent, new_attr_name):
-#                    break
-#    
-#        else:
-#            new_attr_name = attr_name
-#        
-#        return new_attr_name
-#    
-#    xml_fn = r"C:\Users\jpeacock\Documents\PyScripts\ORL09bc_J9.xml"
-#    
-#    e2xml = mtxml.EDI_to_XML()
-#    
-#    et_xml = ET.parse(xml_fn)
-#    
-#    
-#    def read_element(element):
-#        """
-#        read a given element and return something useful
-#        """
-#        
-#        
-#        
-#        child = get_info_from_element(element)
-#        
-#        children = element.getchildren()
-#        if len(children) > 0:
-#            for child_00 in children:
-#                attr_name = get_attr_name(child, child_00.tag)
-#                setattr(child, attr_name, get_info_from_element(child_00))
-#                
-#                children_01 = child_00.getchildren()
-#                if len(children_01) > 0:
-#                    parent_01 = getattr(child, attr_name)
-#                    for child_01 in children_01:
-#                        attr_01_name = get_attr_name(parent_01,
-#                                                     child_01.tag)
-#                                                     
-#                        setattr(parent_01, 
-#                                attr_01_name,
-#                                get_info_from_element(child_01))
-#                                
-#                        children_02 = child_01.getchildren()
-#                        if len(children_02) > 0:
-#                            parent_02 = getattr(parent_01, attr_01_name)
-#                            for child_02 in children_02:
-#                                attr_02_name = get_attr_name(parent_02, 
-#                                                             child_02.tag)
-#                                                             
-#                                setattr(parent_02,
-#                                        attr_02_name,
-#                                        get_info_from_element(child_02))
-#                                        
-#                                children_03 = child_02.getchildren()
-#                                if len(children_03) > 0:
-#                                    parent_03 = getattr(parent_02, attr_02_name)
-#                                    for child_03 in children_03:
-#                                        attr_03_name = get_attr_name(parent_03, 
-#                                                                     child_03.tag)
-#                                                                     
-#                                        setattr(parent_03,
-#                                                attr_03_name,
-#                                                get_info_from_element(child_03))
-#                        
-#        
-#        return child
-#    
-#    
-#    k = mtxml.Dummy()
-#    root = et_xml.getroot()
-#    for element_00 in root.getchildren():
-#        setattr(k, element_00.tag, read_element(element_00))
-#        
-##==============================================================================
-## Do the dirty work
-##==============================================================================
-#test = EDI_to_XML()
-#test.edi_fn = r"c:\Users\jpeacock\Documents\iMush\imush_edi_files_final\Interpolated\mshs86.edi"
-#test.cfg_fn = r"c:\Users\jpeacock\Documents\Test.cfg"
-#test.write_xml()
-#
-#test.cfg_obj.write_cfg_file(r"C:\Users\jpeacock\Documents\PyScripts\xml_cfg_test_out.cfg")
+        
+        self.xml_fn = xml_fn
+        
+        et_xml = ET.parse(xml_fn)
 
-
+        root = et_xml.getroot()
+        for element_00 in root.getchildren():
+            setattr(self, element_00.tag, self._read_element(element_00))
+            
+    def _get_info_from_element(self, element):
+        """
+        Get information from an element, including name, attr, value
+        
+        Arguments
+        ------------
+            **element** : ET.Element
+            
+        Returns
+        ---------
+            **XML_element** XML_element Object
+        """
+        
+        return_obj = XML_element(None, None, None)
+        return_obj._name = element.tag
+        try:
+            return_obj._value = element.text.strip()
+        except AttributeError:
+            return_obj._value = None
+        return_obj._attr = element.attrib
+        
+        return return_obj
+        
+    def _get_attr_name(self, parent, attr_name):
+        """
+        make attribute name, if one already exists, then add a number to it
+        
+        ex. attribute_01
+        """
+        if hasattr(parent, attr_name):
+            for ii in range(1, 10):
+                new_attr_name = '{0}_{1:02}'.format(attr_name, ii)
+                if not hasattr(parent, new_attr_name):
+                    break
     
+        else:
+            new_attr_name = attr_name
+        
+        return new_attr_name
+        
+    def _read_element(self, element):
+        """
+        read a given element and return something useful
+        """
 
-      
+        child = self._get_info_from_element(element)
+        
+        children = element.getchildren()
+        if len(children) > 0:
+            for child_00 in children:
+                attr_name = self._get_attr_name(child, child_00.tag)
+                setattr(child, attr_name, self._get_info_from_element(child_00))
+                
+                children_01 = child_00.getchildren()
+                if len(children_01) > 0:
+                    parent_01 = getattr(child, attr_name)
+                    for child_01 in children_01:
+                        attr_01_name = self._get_attr_name(parent_01,
+                                                     child_01.tag)
+                                                     
+                        setattr(parent_01, 
+                                attr_01_name,
+                                self._get_info_from_element(child_01))
+                                
+                        children_02 = child_01.getchildren()
+                        if len(children_02) > 0:
+                            parent_02 = getattr(parent_01, attr_01_name)
+                            for child_02 in children_02:
+                                attr_02_name = self._get_attr_name(parent_02, 
+                                                             child_02.tag)
+                                                             
+                                setattr(parent_02,
+                                        attr_02_name,
+                                        self._get_info_from_element(child_02))
+                                        
+                                children_03 = child_02.getchildren()
+                                if len(children_03) > 0:
+                                    parent_03 = getattr(parent_02, attr_02_name)
+                                    for child_03 in children_03:
+                                        attr_03_name = self._get_attr_name(parent_03, 
+                                                                     child_03.tag)
+                                                                     
+                                        setattr(parent_03,
+                                                attr_03_name,
+                                                self._get_info_from_element(child_03))
+                        
+        
+        return child 
+        
+#==============================================================================
+# exceptions
+#==============================================================================
+class MT_XML_Error(Exception):
+    pass
