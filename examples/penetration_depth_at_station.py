@@ -359,14 +359,29 @@ def print_csv(edi_dir,zcomponent='det'):
 
     logger.debug(edi_files)
 
+    PER_LIST0=None   # the first period list as a reference for checking other stations period
+    latlon_dep=[]  # CSV to be returned
     for afile in edi_files:
         # for efile in edi_files[:2]:
         logger.debug("processing %s", afile)
-        latlon_depths=get_station_pendepths(afile)
-        print latlon_depths
+        lat,lon, per, depths=get_station_pendepths(afile)
+        if PER_LIST0 is None:
+            PER_LIST0=per # initial value assignment
+        elif (per == PER_LIST0).all():  # same length and same values.
+            dstring = ','.join(['%.2f' % num for num in depths])
+            latlon_dep.append((lat,lon, dstring))
+        else:
+            logger.error("MT Periods Not Equal !! %s VS %s", per, PER_LIST0 )
+            raise Exception ("MTPy Exception: Periods Not Equal")
 
 
-    return
+    print (latlon_dep)
+    import csv
+    with open("E:/tmp/MT_pen_depth.csv", "wb") as f:
+        writer = csv.writer(f)
+        writer.writerows(latlon_dep)
+
+    return latlon_dep
 
 
 ###############################################################################
@@ -387,11 +402,11 @@ if __name__ == '__main__':
         if os.path.isfile(edi_path):
             plot_edi_file(edi_path , savefile='C:/temp/pen_depth.jpg')
             # rholist can be any of ['zxy','zyx','det'], default all of them
-        elif os.path.isdir(edi_path):
-            #plot_edi_dir(edi_path )
+        elif os.path.isdir(edi_path):  # choose a suitable function below at run
+            plot_edi_dir(edi_path )
             #plot_edi_dir(edi_path, rholist=['det'] )
-            # plot_multi_station_pen_depth(10, edi_path)
-            # plot_3Dbar_depth(30,edi_path)
-            print_csv(edi_path)
+            #plot_multi_station_pen_depth(10, edi_path)
+            #plot_3Dbar_depth(30,edi_path)
+            #print_csv(edi_path)
         else:
             logger.error("Usage %s %s", sys.argv[0], "path2edi")

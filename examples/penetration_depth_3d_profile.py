@@ -210,14 +210,14 @@ def get_penetration_depth(edi_file_list, per_index,  whichrho='det'): #whichrho=
 
 
 # =============================================================================================
-# python examples/penetration_depth_profile2d.py tests/data/edifiles/ 10
-# python examples/penetration_depth_profile2d.py examples/data/edi2/ 10
+# python examples/penetration_depth_3d_profile.py tests/data/edifiles/ 10
+# python examples/penetration_depth_3d_profile.py examples/data/edi2/ 10
 # =============================================================================================
 if __name__=="__main__":
 
     if len(sys.argv)<2:
         print("Usage: %s edi_dir"%sys.argv[0])
-        print ("python examples/penetration_depth_profile2d.py tests/data/edifiles/ 10 ")
+        print ("python examples/penetration_depth_3d_profile.py tests/data/edifiles/ 10 ")
         sys.exit(1)
     elif os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]
