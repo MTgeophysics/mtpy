@@ -61,7 +61,7 @@ def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det'): #use the Z
         raise Exception("Period index list is empty")
 
     #  set station labels to only be from 1st to 4th index of station name
-
+    plt.figure()
     for period_index in period_index_list:   #[0,10,20,30]:
 
         logger.debug("doing period index %s", period_index)
@@ -69,7 +69,7 @@ def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det'): #use the Z
         (stations, pen, periods)= get_penetration_depth(int(period_index), pr.edi_list, whichrho=zcomponent)
 
         line_label="Period=%s"%periods[0]
-
+        
         plt.plot(pr.station_locations, pen, "--", marker='o', markersize="12", linewidth="2", label=line_label)
         plt.legend()
 
