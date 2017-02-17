@@ -1101,7 +1101,7 @@ class Data(object):
         Example
         -----------
             :Convert ModEM data file to WS: ::
-                >>> import mtpy.modeling.modem_new as modem
+                >>> import mtpy.modeling.modem as modem
                 >>> md = modem.Data()
                 >>> md.convert_modem_to_ws(data_fn=r"/home/mt/modem/data.dat")
         """
@@ -5851,7 +5851,7 @@ class PlotSlices(object):
     
     :Example: ::
     
-        >>> import mtpy.modeling.modem_new as modem
+        >>> import mtpy.modeling.modem as modem
         >>> mfn = r"/home/modem/Inv1/Modular_NLCG_100.rho"
         >>> dfn = r"/home/modem/Inv1/ModEM_data.dat"       
         >>> pds = ws.PlotSlices(model_fn=mfn, data_fn=dfn)
@@ -6594,7 +6594,7 @@ class Plot_RMS_Maps(object):
     
     :Example: ::
     
-        >>> import mtpy.modeling.modem_new as modem
+        >>> import mtpy.modeling.modem as modem
         >>> rms_plot = Plot_RMS_Maps(r"/home/ModEM/Inv1/mb_NLCG_030.res")
         >>> # change some attributes
         >>> rms_plot.fig_size = [6, 4]
