@@ -38,11 +38,6 @@ try:
 except ImportError:
     print ('If you want to write a vtk file for 3d viewing, you need download '
            'and install evtk from https://bitbucket.org/pauloh/pyevtk')
-           
-    print ('Note: if you are using Windows you should build evtk first with'
-           'either MinGW or cygwin using the command: \n'
-           '    python setup.py build -compiler=mingw32  or \n'
-           '    python setup.py build -compiler=cygwin')
 
 #==============================================================================
 
@@ -1077,9 +1072,10 @@ class Data(object):
                 self.inv_mode = '1'
         
         #-->write file
-        self.write_data_file()u
+        self.write_data_file()
         
-    def convert_modem_to_ws(self, data_fn=None, ws_data_fn=None):
+    def convert_modem_to_ws(self, data_fn=None, ws_data_fn=None,
+                            error_map=[1, 1, 1, 1]):
         """
         convert a ModEM data file to WS format.
         
@@ -1090,7 +1086,10 @@ class Data(object):
                          
             **ws_data_fn** : string
                              full path to write ws format data file
-                             
+            
+            **error_map** : [zxx, zxy, zyx, zyy] floats
+                            error map that ws uses, weights for each component
+                            *default* is [1, 1, 1, 1] for equal weighting
         Returns
         ------------
             **ws_data_fn** : string
@@ -1126,22 +1125,28 @@ class Data(object):
         station_info.write_station_file()
         
         ws_data = ws.WSData()
-        z_shape = (self.data_period_list.size, 2, 2)
+        ws_data.period_list = self.period_list.copy()
+        ws_data.z_err_map = error_map
+        ws_data.z_err = 'data'
+        z_shape = (self.period_list.size, 2, 2)
         data_dtype = [('station', '|S10'),
                       ('east', np.float),
                       ('north', np.float),
                       ('z_data', (np.complex, z_shape)),
                       ('z_data_err', (np.complex, z_shape)),
                       ('z_err_map', (np.complex, z_shape))]
-        ws_data = np.zeros(self.data_array['station'].size, dtype=data_dtype)
-        ws_data['station'][:] = self.data_array['station']
-        ws_data['z_data'][:, :, :] = self.data_array['z']
-        ws_data['z_data_err'][:, :, :] = self.data_array['z_err']
-        ws_data['z_err_map'][:, :, :] = np.array([[1, 1], [1, 1]])
+        ws_data.data = np.zeros(self.data_array['station'].size, 
+                                dtype=data_dtype)
+        ws_data.data['station'][:] = self.data_array['station']
+        ws_data.data['east'] = self.data_array['rel_east']
+        ws_data.data['north'] = self.data_array['rel_north']
+        ws_data.data['z_data'][:, :, :] = self.data_array['z']
+        ws_data.data['z_data_err'][:, :, :] = self.data_array['z_err']*(1+1j)
+        ws_data.data['z_err_map'][:, :, :] = np.array([[1, 1], [1, 1]])
         
-        ws_data.write_data_file(data_fn=ws_data_fn)
+        ws_data.write_data_file(save_path=save_path, data_fn=ws_data_fn)
         
-        return ws_data_fn, station_info.station_fn
+        return ws_data.data_fn, station_info.station_fn
         
     def read_data_file(self, data_fn=None):
         """
