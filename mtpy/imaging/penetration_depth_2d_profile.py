@@ -1,11 +1,12 @@
 """
 Description:
-    For a list of MT_stations, generate a profile, plot the Penetration Depth vs the stations,
-    for a given period (1/freq).
+    With an input edi_file_folder and a list of period index,
+    generate a profile using occam2d module,
+    then plot the Penetration Depth profile at the given periods vs the stations locations.
 
 Usage:
-    python examples/penetration_depth_profile2d.py /path2/edi_files_dir/   period_list
-    python examples/penetration_depth_profile2d.py examples/data/edi2/ 0 1 10 20 30 40
+    python mtpy/imaging/penetration_depth_2d_profile.py /path2/edi_files_dir/   period_index_list
+    python mtpy/imaging/penetration_depth_2d_profile.py examples/data/edi2/ 0 1 10 20 30 40
 
 Author: fei.zhang@ga.gov.au
 Date:   2017-01-23
@@ -66,7 +67,7 @@ def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det'): #use the Z
 
         logger.debug("doing period index %s", period_index)
 
-        (stations, pen, periods)= get_penetration_depth(int(period_index), pr.edi_list, whichrho=zcomponent)
+        (stations, pen, periods)= get_penetration_depth(pr.edi_list, int(period_index), whichrho=zcomponent)
 
         line_label="Period=%s"%periods[0]
         
@@ -90,7 +91,14 @@ def plot2Dprofile(edi_dir, period_index_list=None, zcomponent='det'): #use the Z
     plt.show()
 
 
-def get_penetration_depth(per_index, mt_obj_list, whichrho='det'): #whichrho=[det, zxy, zyx]
+def get_penetration_depth(mt_obj_list, per_index, whichrho='det'): #whichrho=[det, zxy, zyx]
+    """
+    compute the penetration depth of mt_obj at the given period_index, and using whichrho option
+    :param per_index:
+    :param mt_obj_list:
+    :param whichrho:
+    :return:
+    """
 
     scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
 
@@ -131,20 +139,92 @@ def get_penetration_depth(per_index, mt_obj_list, whichrho='det'): #whichrho=[de
 
     return(stations, pen_depth, periods)
 
+
+def barplot_multi_station_penentration_depth(edifiles_dir, per_index=0, zcomponent='det'):
+    """
+    A simple bar chart plot of the penetration depth across multiple edi files (stations),
+    at the given (frequency) per_index. No profile-projection is done in this funciton.
+    :param edifiles_dir: a list of edi files, or a dir of edi
+    :param per_index: an integer smaller than the number of MT frequencies in the edi files.
+    :return:
+    """
+
+    if os.path.isdir(edifiles_dir):
+        edi_dir = edifiles_dir # "E:/Githubz/mtpy2/tests/data/edifiles/"
+        edifiles_dir = glob.glob(os.path.join(edi_dir, '*.edi'))
+        logger.debug(edifiles_dir)
+    else:
+        # Assume edifiles_dir is [a list of edi files]
+        pass
+
+    scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
+
+    # per_index=0,1,2,....
+    periods = []
+
+    depths = []
+
+    stations = []
+
+    mt_obj_list=[mt.MT(afile) for afile in edifiles_dir]
+
+    (stations, depths, periods) = get_penetration_depth(mt_obj_list, int(per_index), whichrho=zcomponent)
+
+        # the attribute Z
+        # zeta = mt_obj.Z
+        #
+        # if per_index >= len(zeta.freq):
+        #     raise Exception("Error: input period index must be less than number of freqs in zeta.freq=%s",len(zeta.freq))
+        #
+        # per = 1.0 / zeta.freq[per_index]
+        # periods.append(per)
+        # penetration_depth = -scale_param * np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
+        #
+        # depths.append(penetration_depth)
+        # stations.append(mt_obj.station)
+
+    #plt.plot(app_resis, color='b', marker='o')
+
+    index = np.arange(len(depths))
+
+    plt.bar(index, depths, color='#000000')
+
+    # plt.xaxis.tick_top()
+    # plt.set_xlabel('X LABEL')
+    # plt.xaxis.set_label_position('top')
+
+    plt.xlabel('Penetration Depth Across Stations, for MT period= %6.5f Seconds' % periods[0], fontsize=16)
+    plt.ylabel('Penetration Depth (m)', fontsize=16)
+    # plt.title('Penetration Depth profile for T=??')
+    bar_width = 0.4
+    plt.xticks(index + bar_width / 2, stations, rotation='horizontal', fontsize=14)
+    plt.legend()
+
+    # plt.tight_layout()
+    plt.gca().xaxis.tick_top()
+    plt.show()
+
+    #Check that the periods are the same value for all stations
+    return (stations, depths, periods)
+
 # =============================================================================================
-# python examples/penetration_depth_profile2d.py tests/data/edifiles/ 0 1 10 20 30 40 50 59
-# python examples/penetration_depth_profile2d.py examples/data/edi2/ 0 1 10 20 30 40
+# Example Usage:
+# python mtpy/imaging/penetration_depth_2d_profile.py examples/data/edi_files/ 1 10 20 30
+# python mtpy/imaging/penetration_depth_2d_profile.py tests/data/edifiles/ 0 1 10 20 30 40 50 59
+# python mtpy/imaging/penetration_depth_2d_profile.py examples/data/edi2/ 0 1 10 20 30 40
 # =============================================================================================
 if __name__=="__main__":
 
     if len(sys.argv)<2:
         print("Usage: %s edi_dir"%sys.argv[0])
-        print ("python examples/penetration_depth_profile2d.py tests/data/edifiles/ 0 1 10 20 30 40 50 59")
+        print ("python examples/penetration_depth_2d_profile.py tests/data/edifiles/ 0 1 10 20 30 40 50 59")
         sys.exit(1)
     elif os.path.isdir(sys.argv[1]):
-        edi_dir = sys.argv[1]
-        period_index_list=sys.argv[2:]
-        plot2Dprofile(edi_dir, period_index_list, zcomponent='det')
+        edi_dir = sys.argv[1] # the first argument is path2_edi_dir
+        period_index_list=sys.argv[2:] # the second,.... will be period index list
 
+        plot2Dprofile(edi_dir, period_index_list, zcomponent='det') # the rho zcomponent can be det, zxy zyx
+        perindex = int(sys.argv[2])
+        #barplot_multi_station_penentration_depth(edi_dir, per_index=perindex) #, zcomponent='zxy')
     else:
         print("Please provide an edi directory and period_index_list")
