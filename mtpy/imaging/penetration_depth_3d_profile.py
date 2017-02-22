@@ -93,11 +93,10 @@ def plot_3d_profile(edi_dir, period_index, zcomponent='det'): #use the Zcompoten
 
     plt.show()
 
-
-# ================================== griddata interpolation
-
+# griddata interpolation
     print(zdep.shape[0], zdep.shape[1])
-    grid_x, grid_y = np.mgrid[0:95:96j, 0:83:84j]  # how to param this mesh construction ?
+    #grid_x, grid_y = np.mgrid[0:95:96j, 0:83:84j]  # this syntax with complex step 96j has different meaning
+    grid_x, grid_y = np.mgrid[0:zdep.shape[0]:1, 0:zdep.shape[1]:1]  #this is more straight forward.
 
     # print (grid_x, grid_y)
     points = np.zeros((len(latlons), 2))
@@ -145,7 +144,6 @@ def get_bounding_box(latlons):
     print(minlon, maxlon)
 
     return ((minlon, maxlon), (minlat, maxlat))
-
 
 
 def get_index(lat, lon, minlat, minlon, pixelsize, offset=1):
@@ -335,9 +333,14 @@ def get_index(lat, lon, LL_lat, LL_lon, pixelsize):
 
     return (int(index_x), int(index_y))
 
-
-def get_station_pendepths(edifile, rholist=['det']):
-    logger.info("the edi file %s", edifile)
+# ======================
+def get_penetration_depths_from_edi_file(edifile, rholist=['det']):
+    """Compute the penetration depths of an edi file
+    :param edifile: input edifile
+    :param rholist: flag the method to compute penetration depth: det zxy zyx
+    :return: a tuple:(station_lat, statoin_lon, periods_list, pendepth_list)
+    """
+    logger.debug("processing the edi file %s", edifile)
 
     mt_obj = mt.MT(edifile)
     zeta = mt_obj.Z  # the attribute Z represent the impedance tensor 2X2 matrix
@@ -345,10 +348,9 @@ def get_station_pendepths(edifile, rholist=['det']):
 
     scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
 
-    logger.debug("scale parameter= %s", scale_param)
+    logger.debug("the scale parameter= %s", scale_param)
 
     # The periods array
-
     periods = 1.0 / freqs
 
     if 'zxy' in rholist:
@@ -367,13 +369,16 @@ def get_station_pendepths(edifile, rholist=['det']):
     return latlong_d
 
 
-def print_csv(edi_dir,zcomponent='det'):
+def create_csv_file(edi_dir, outputcsv=None, zcomponent='det'):
     """ Loop over all edi files, and create a csv file with columns:
     lat, lon, pendepth0, pendepth1, ...
     :param edi_dir: path_to_edifiles_dir
     :param zcomponent: det | zxy  | zyx
+    :param outputcsv: path2output.csv file
     :return:
     """
+    import csv
+
     edi_files = glob.glob(os.path.join(edi_dir, "*.edi"))
 
     logger.debug(edi_files)
@@ -383,25 +388,42 @@ def print_csv(edi_dir,zcomponent='det'):
     for afile in edi_files:
         # for efile in edi_files[:2]:
         logger.debug("processing %s", afile)
-        lat,lon, per, depths=get_station_pendepths(afile)
+        lat,lon, per, depths=get_penetration_depths_from_edi_file(afile)
         if PER_LIST0 is None:
             PER_LIST0=per # initial value assignment
+            depth_string = ','.join(['%.2f' % num for num in depths])
+            latlon_dep.append((lat, lon, depth_string))
+
         elif (per == PER_LIST0).all():  # same length and same values.
-            dstring = ','.join(['%.2f' % num for num in depths])
-            latlon_dep.append((lat,lon, dstring))
+            depth_string = ','.join(['%.2f' % num for num in depths])
+            latlon_dep.append((lat,lon, depth_string))
         else:
             logger.error("MT Periods Not Equal !! %s VS %s", per, PER_LIST0 )
             raise Exception ("MTPy Exception: Periods Not Equal")
 
 
-    print (latlon_dep)
-    import csv
-    with open("E:/tmp/MT_pen_depth.csv", "wb") as f:
+    #logger.debug(latlon_dep)
+
+    if outputcsv is None:
+        outputcsv= r"E:/tmp/MT_pen_depth.csv"
+
+    logger.info("Saving to csv file: %s", outputcsv)
+    with open(outputcsv, "wb") as f:
         writer = csv.writer(f)
         writer.writerows(latlon_dep)
 
     return latlon_dep
 
+def create_shapefile(edi_dir, outputfile=None, zcomponent='det'):
+    """
+    create a shapefile for station, penetration_depths
+    :param edi_dir:
+    :param outputfile:
+    :param zcomponent:
+    :return:
+    """
+
+    return outputfile
 
 # =============================================================================================
 # Usage examples:
@@ -419,6 +441,8 @@ if __name__=="__main__":
         edi_dir = sys.argv[1]
         period_index= int(sys.argv[2])
         plot_3d_profile(edi_dir, period_index, zcomponent='det')
+        create_csv_file(edi_dir, r"E:/tmp/my_mt_pendepth.csv")
     else:
         print("Please provide an edi directory and period_index_list")
+
 
