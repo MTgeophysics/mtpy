@@ -1,7 +1,8 @@
 """
 Description:
     For a batch of MT_stations,  plot the Penetration Depth vs the station_location,
-    for a given period (1/freq).
+    for a given period-index (1/freq)-
+    Note that the values of periods should be checked if equal across all stations.
 
 Usage:
     python mtpy/imaging/penetration_depth_3d_profile.py /path2/edi_files_dir/  period_index
@@ -158,9 +159,30 @@ def get_index(lat, lon, minlat, minlon, pixelsize, offset=1):
     return (ix + offset, iy + offset)
 
 
+def get_index2(lat, lon, LL_lat, LL_lon, pixelsize):
+    """ Mapping of lat lon to a grid
+    :param lat:
+    :param lon:
+    :param LL_lon:
+    :param LL_lat:
+    :param pixelsize:
+    :return:
+    """
+
+    index_x = (lon - LL_lon) / pixelsize
+    index_y = (lat - LL_lat) / pixelsize
+
+    return (int(index_x), int(index_y))
+
+
+
 def get_penetration_depth(edi_file_list, per_index,  whichrho='det'): #whichrho=[zxy, zyx, zdeterminant]
-    """ input period index and a list of edi files,
-    return tuple of lists (stations, periods, penetrationdepth, lat-lons-pairs)
+    """
+    compute the penetration depths of a list of edi files at given period/freq
+    :param edi_file_list:
+    :param per_index: the index of periods 0,1,....
+    :param whichrho:
+    :return: tuple of (stations, periods, penetrationdepth, lat-lons-pairs)
     """
 
     scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
@@ -173,14 +195,14 @@ def get_penetration_depth(edi_file_list, per_index,  whichrho='det'): #whichrho=
 
     for afile in edi_file_list:
         mt_obj = mt.MT(afile)
-
+        stations.append(mt_obj.station)
         latlons.append((mt_obj.lat, mt_obj.lon))
 
         # the attribute Z
         zeta = mt_obj.Z
 
         if per_index >= len(zeta.freq):
-            logger.debug("number of frequecies= %s", len(zeta.freq))
+            logger.debug("Number of frequecies (Max per_index)= %s", len(zeta.freq))
             raise Exception("Index out_of_range Error: period index must be less than number of periods in zeta.freq")
 
         per = 1.0 / zeta.freq[per_index]
@@ -195,27 +217,48 @@ def get_penetration_depth(edi_file_list, per_index,  whichrho='det'): #whichrho=
             det2 = np.abs(zeta.det[0][per_index])  # determinant value at the given period index
             penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
         else:
-            logger.critical("unsupported method to compute penetration depth: %s", whichrho)
+            logger.critical("un-supported method to compute penetration depth: %s", whichrho)
             sys.exit(100)
 
         pendep.append(penetration_depth)
 
-        stations.append(mt_obj.station)
+    check_period_values(periods)
 
-    # check_all_period_equal()
     return (stations, periods, pendep, latlons)
 
+def check_period_values(period_list):
+    """
+    check if all the values are equal in the input list
+    :param period_list: a list of period
+    :return: True/False
+    """
 
-def plot_3Dbar_depth(per_index, edifiles):
+    logger.debug(period_list)
+
+    p0= period_list[0] # first value as a ref
+    pcounter=0
+    for per in period_list:
+        if per !=p0:
+            logger.warn("Period Not Equal!! p0 VS per: %s VS %s", p0, per)
+            return False
+        else:
+            pcounter=pcounter+1
+
+    return True
+
+#########################################################
+def plot_bar3d_depth( edifiles, per_index):
     """
     plot 3D bar of penetration depths
     For a given freq/period index of a set of edifiles/dir, the station,periods, pendepth,(lat, lon) are extracted
     the geo-bounding box calculated, and the mapping from stations to grids is constructed and plotted.
 
-    :param per_index: period index number 0,1,2
     :param edifiles: an edi_dir or list of edi_files
+    :param per_index: period index number 0,1,2
+
     :return:
     """
+
     if os.path.isdir(edifiles):
         edi_dir = edifiles # "E:/Githubz/mtpy2/tests/data/edifiles/"
         edifiles = glob.glob(os.path.join(edi_dir, '*.edi'))
@@ -318,21 +361,6 @@ def plot_3Dbar_depth(per_index, edifiles):
     plt.show()
 
 
-def get_index(lat, lon, LL_lat, LL_lon, pixelsize):
-    """ Mapping of lat lon to a grid
-    :param lat:
-    :param lon:
-    :param LL_lon:
-    :param LL_lat:
-    :param pixelsize:
-    :return:
-    """
-
-    index_x = (lon - LL_lon) / pixelsize
-    index_y = (lat - LL_lat) / pixelsize
-
-    return (int(index_x), int(index_y))
-
 # ======================
 def get_penetration_depths_from_edi_file(edifile, rholist=['det']):
     """Compute the penetration depths of an edi file
@@ -394,12 +422,13 @@ def create_csv_file(edi_dir, outputcsv=None, zcomponent='det'):
             depth_string = ','.join(['%.2f' % num for num in depths])
             latlon_dep.append((lat, lon, depth_string))
 
-        elif (per == PER_LIST0).all():  # same length and same values.
+        elif len(per)== len(PER_LIST0) and (per == PER_LIST0).all():  # same length and same values.
             depth_string = ','.join(['%.2f' % num for num in depths])
             latlon_dep.append((lat,lon, depth_string))
         else:
             logger.error("MT Periods Not Equal !! %s VS %s", per, PER_LIST0 )
-            raise Exception ("MTPy Exception: Periods Not Equal")
+            #raise Exception ("MTPy Exception: Periods Not Equal")
+            # pass this edi, let's continue
 
 
     #logger.debug(latlon_dep)
@@ -423,6 +452,8 @@ def create_shapefile(edi_dir, outputfile=None, zcomponent='det'):
     :return:
     """
 
+    # TODO:
+
     return outputfile
 
 # =============================================================================================
@@ -440,8 +471,10 @@ if __name__=="__main__":
     elif os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]
         period_index= int(sys.argv[2])
-        plot_3d_profile(edi_dir, period_index, zcomponent='det')
-        create_csv_file(edi_dir, r"E:/tmp/my_mt_pendepth.csv")
+        plot_3d_profile(edi_dir, period_index, zcomponent='det')   # 2D image
+
+        #plot_bar3d_depth(edi_dir, period_index)
+        #create_csv_file(edi_dir, r"E:/tmp/my_mt_pendepth.csv")
     else:
         print("Please provide an edi directory and period_index_list")
 
