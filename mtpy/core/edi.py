@@ -1451,9 +1451,15 @@ class DefineMeasurement(object):
                 
                 m_list = ['>{0}'.format(head.upper())]
                 for mkey, mfmt in zip(m_obj._kw_list, m_obj._fmt_list):
-                    m_list.append(' {0}={1:{2}}'.format(mkey.upper(),
-                                                        getattr(m_obj, mkey),
-                                                        mfmt))
+                    try:
+                        m_list.append(' {0}={1:{2}}'.format(mkey.upper(),
+                                                            getattr(m_obj, mkey),
+                                                            mfmt))
+                    except ValueError:
+                        m_list.append(' {0}={1:{2}}'.format(mkey.upper(),
+                                                            0.0,
+                                                            mfmt))
+                        
                 m_list.append('\n')
                 measurement_lines.append(''.join(m_list))
         

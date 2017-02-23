@@ -586,7 +586,11 @@ class PlotWidget(QtGui.QWidget):
         self.meta_station_name_edit.setText(self.mt_obj.station)
         self.meta_lat_edit.setText('{0:.6f}'.format(self.mt_obj.lat))
         self.meta_lon_edit.setText('{0:.6f}'.format(self.mt_obj.lon))
-        self.meta_elev_edit.setText('{0:.6f}'.format(self.mt_obj.elev))
+        try:
+            self.meta_elev_edit.setText('{0:.6f}'.format(self.mt_obj.elev))
+        except ValueError:
+            self.mt_obj.elev = 0.0
+            self.meta_elev_edit.setText('{0:.6f}'.format(self.mt_obj.elev))
         self.meta_date_edit.setText('{0}'.format(self.mt_obj.edi_object.Header.filedate))
         self.meta_loc_edit.setText('{0}'.format(self.mt_obj.edi_object.Header.loc))
         self.meta_acq_edit.setText('{0}'.format(self.mt_obj.edi_object.Header.acqby))
@@ -2490,61 +2494,69 @@ class EDITextEditor(QtGui.QWidget):
         
         if hasattr(self.edi_obj.Define_measurement, 'meas_hx'):
             self.meas_h01_id_edit.setText('{0}'.format(self.edi_obj.Define_measurement.meas_hx.id))
-            self.meas_h01_azm_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_hx.azm))
-            self.meas_h01_x_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_hx.x))
-            self.meas_h01_y_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_hx.y))
+            self.meas_h01_azm_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_hx.azm)))
+            self.meas_h01_x_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_hx.x)))
+            self.meas_h01_y_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_hx.y)))
             self.meas_h01_ct_combo.setCurrentIndex(0)
             self.meas_h01_acqchn_combo.setCurrentIndex(0)
             
         if hasattr(self.edi_obj.Define_measurement, 'meas_hy'):
             self.meas_h02_id_edit.setText('{0}'.format(self.edi_obj.Define_measurement.meas_hy.id))
-            self.meas_h02_azm_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_hy.azm))
-            self.meas_h02_x_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_hy.x))
-            self.meas_h02_y_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_hy.y))
+            self.meas_h02_azm_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_hy.azm)))
+            self.meas_h02_x_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_hy.x)))
+            self.meas_h02_y_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_hy.y)))
             self.meas_h02_ct_combo.setCurrentIndex(1)
             self.meas_h02_acqchn_combo.setCurrentIndex(1)
             
         if hasattr(self.edi_obj.Define_measurement, 'meas_hz'):
             self.meas_h03_id_edit.setText('{0}'.format(self.edi_obj.Define_measurement.meas_hz.id))
-            self.meas_h03_azm_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_hz.azm))
-            self.meas_h03_x_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_hz.x))
-            self.meas_h03_y_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_hz.y))
+            self.meas_h03_azm_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_hz.azm)))
+            self.meas_h03_x_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_hz.x)))
+            self.meas_h03_y_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_hz.y)))
             self.meas_h03_ct_combo.setCurrentIndex(2)
             self.meas_h03_acqchn_combo.setCurrentIndex(2)
             
         if hasattr(self.edi_obj.Define_measurement, 'meas_rhx'):
             self.meas_hr1_id_edit.setText('{0}'.format(self.edi_obj.Define_measurement.meas_rhx.id))
-            self.meas_hr1_azm_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_rhx.azm))
-            self.meas_hr1_x_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_rhx.x))
-            self.meas_hr1_y_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_rhx.y))
+            self.meas_hr1_azm_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_rhx.azm)))
+            self.meas_hr1_x_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_rhx.x)))
+            self.meas_hr1_y_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_rhx.y)))
             self.meas_hr1_ct_combo.setCurrentIndex(3)
             self.meas_hr1_acqchn_combo.setCurrentIndex(3)
             
         if hasattr(self.edi_obj.Define_measurement, 'meas_rhy'):
             self.meas_hr2_id_edit.setText('{0}'.format(self.edi_obj.Define_measurement.meas_rhy.id))
-            self.meas_hr2_azm_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_rhy.azm))
-            self.meas_hr2_x_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_rhy.x))
-            self.meas_hr2_y_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_rhy.y))
+            self.meas_hr2_azm_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_rhy.azm)))
+            self.meas_hr2_x_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_rhy.x)))
+            self.meas_hr2_y_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_rhy.y)))
             self.meas_hr2_ct_combo.setCurrentIndex(4)
             self.meas_hr2_acqchn_combo.setCurrentIndex(4)
             
         if hasattr(self.edi_obj.Define_measurement, 'meas_ex'):
             self.meas_e01_id_edit.setText('{0}'.format(self.edi_obj.Define_measurement.meas_ex.id))
-            self.meas_e01_x_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_ex.x))
-            self.meas_e01_y_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_ex.y))
-            self.meas_e01_x2_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_ex.x2))
-            self.meas_e01_y2_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_ex.y2))
+            self.meas_e01_x_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_ex.x)))
+            self.meas_e01_y_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_ex.y)))
+            self.meas_e01_x2_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_ex.x2)))
+            self.meas_e01_y2_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_ex.y2)))
             self.meas_e01_ct_combo.setCurrentIndex(0)
             self.meas_e01_acqchn_combo.setCurrentIndex(0)
             
         if hasattr(self.edi_obj.Define_measurement, 'meas_ey'):
             self.meas_e02_id_edit.setText('{0}'.format(self.edi_obj.Define_measurement.meas_ey.id))
-            self.meas_e02_x_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_ey.x))
-            self.meas_e02_y_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_ey.y))
-            self.meas_e02_x2_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_ey.x2))
-            self.meas_e02_y2_edit.setText('{0:.2f}'.format(self.edi_obj.Define_measurement.meas_ey.y2))
+            self.meas_e02_x_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_ey.x)))
+            self.meas_e02_y_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_ey.y)))
+            self.meas_e02_x2_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_ey.x2)))
+            self.meas_e02_y2_edit.setText('{0:.2f}'.format(self._check_float(self.edi_obj.Define_measurement.meas_ey.y2)))
             self.meas_e02_ct_combo.setCurrentIndex(1)
             self.meas_e02_acqchn_combo.setCurrentIndex(1)
+            
+    def _check_float(self, value):
+        try:
+            return_num = float(value)
+        except ValueError:
+            return_num = 0.0
+            
+        return return_num
 
     def update_metadata(self):
         self.metadata_updated.emit()
