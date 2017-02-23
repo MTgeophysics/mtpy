@@ -74,7 +74,7 @@ def plot_latlon_depth_profile(edi_dir, period_index, zcomponent='det'): #use the
     minlon = bbox[0][0]
 
     # Pixel size in Degree:  0.001=100meters, 0.01=1KM 1deg=100KM
-    pixelsize = 0.002  # Degree 0.001=100meters, 0.01=1KM 1deg=100KM
+    pixelsize = 0.002  # Degree 0.002=200meters, 0.01=1KM 1deg=100KM
 
     nx = int(np.ceil(xgrids / pixelsize))
     ny = int(np.ceil(ygrids / pixelsize))
@@ -102,14 +102,12 @@ def plot_latlon_depth_profile(edi_dir, period_index, zcomponent='det'): #use the
         (xi, yi) = get_index(pair[0], pair[1], minlat, minlon, pixelsize)
         zdep[zdep.shape[0] - yi-1, xi] = np.abs(pendep[iter])
 
-    plt.imshow(zdep, interpolation='none')
-    #plt.imshow(zdep,  interpolation='spline36')
-    plt.colorbar()
+    plt.imshow(zdep, interpolation='none') #OR plt.imshow(zdep,  interpolation='spline36')
+    #plt.colorbar()
 
-    plt.show()
+    #plt.show() # without this show(), the 2 figure will be plotted in one canvas, overlay and compare
 
-    # a new figure
-    plt.figure(2)
+    #plt.figure(2)  # a new figure canvas
 
 # griddata interpolation of the zdep sample MT points.
     print(zdep.shape[0], zdep.shape[1])
@@ -123,9 +121,8 @@ def plot_latlon_depth_profile(edi_dir, period_index, zcomponent='det'): #use the
 
     for iter, pair in enumerate(latlons):
         #     print pair
-
         (i, j) = get_index(pair[0], pair[1], minlat, minlon, pixelsize)
-        points[iter, 0] = zdep.shape[0] - j
+        points[iter, 0] = zdep.shape[0] - j -1
         points[iter, 1] = i
         values[iter] = np.abs(pendep[iter])
 
@@ -139,24 +136,26 @@ def plot_latlon_depth_profile(edi_dir, period_index, zcomponent='det'): #use the
 
     # plt.imshow(grid_z)
     plt.imshow(grid_z, origin='upper')
+
+    # The stations
     plt.plot(points[:, 1], points[:, 0], 'kv', markersize=6) #the stations sample point 1-lon-j, 0-lat-i
 
-    # FZ: fix the axis ticks
     ax = plt.gca()
 
+    ftsize=14
     xticks=np.arange(0,zdep.shape[1],10)
     yticks=np.arange(0,zdep.shape[0],10)
 
-    xticks_label= ['%.3f'%(bbox[0][0] + pixelsize*xtick) for xtick in xticks]  # formatted float numbers
-    yticks_label= ['%.3f'%(bbox[1][0] - pixelsize*ytick) for ytick in yticks]
+    xticks_label= ['%.2f'%(bbox[0][0] + pixelsize*xtick) for xtick in xticks]  # formatted float numbers
+    yticks_label= ['%.2f'%(bbox[1][0] - pixelsize*ytick) for ytick in yticks]
 
-    plt.xticks(xticks, xticks_label, rotation='0', fontsize=14)
-    plt.yticks(yticks, yticks_label,rotation='horizontal', fontsize=14)
-    ax.set_ylabel('Latitude(degree)', fontsize=14)
-    ax.set_xlabel('Longitude(degree)',fontsize=14)
-
+    plt.xticks(xticks, xticks_label, rotation='0', fontsize=ftsize)
+    plt.yticks(yticks, yticks_label,rotation='horizontal', fontsize=ftsize)
+    ax.set_ylabel('Latitude(degree)', fontsize=ftsize)
+    ax.set_xlabel('Longitude(degree)',fontsize=ftsize)
+    ax.tick_params(axis='both', which='major', width=3, length=10, labelsize=ftsize)
     plt.title('Penetration Depth at the Period=%.6f (Cubic Interpolation)' % period_fmt)  # Cubic
-    plt.colorbar(label='Penetration Depth (meters)')#, fontsize=14)
+    plt.colorbar().set_label(label='Penetration Depth (Meters)',size=ftsize)#,weight='bold')
     plt.gcf().set_size_inches(6, 6)
 
     plt.show()
