@@ -205,7 +205,7 @@ if __name__ == "__main__":
     # INPUTS #
     # define a workdir for your environ
     workdir = r'V:\Geology\conductivity_modelling\EarlyRuns'
-    #    workdir = r'E:\Githubz\mtpy2\examples\data\ModEM_files'
+    workdir = r'E:\Githubz\mtpy2\examples\data\ModEM_files'
     # workdir = r'/Softlab/Githubz/mtpy2/examples/data/ModEM_files'
     # workdir = r'/g/data/ha3/fxz547/Githubz/mtpy2/examples/data/ModEM_files'
 

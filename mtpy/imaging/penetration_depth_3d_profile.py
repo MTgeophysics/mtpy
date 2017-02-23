@@ -27,6 +27,7 @@ mpl.rcParams['lines.linewidth'] = 2
 mpl.rcParams['figure.figsize']=[20,10]
 
 import mtpy.core.mt as mt
+import mtpy.utils.calculator
 
 from mtpy.utils.mtpylog import MtPyLog
 
@@ -34,7 +35,141 @@ from mtpy.utils.mtpylog import MtPyLog
 logger = MtPyLog().get_mtpy_logger(__name__)
 #logger = MtPyLog(path2configfile='logging.yml').get_mtpy_logger(__name__) # specific
 
-def plot_3d_profile(edi_dir, period_index, zcomponent='det'): #use the Zcompotent=[det, zxy, zyx]
+def plot_latlon_depth_profile(edi_dir, period_index, zcomponent='det'): #use the Zcompotent=[det, zxy, zyx]
+    """ MT penetration depth profile in lat-lon coordinates with pixelsize =0.002
+    :param edi_dir:
+    :param period_index:
+    :param zcomponent:
+    :return:
+    """
+
+    # edi_dir = "/Softlab/Githubz/mtpy2/tests/data/edifiles/"
+    # edi_dir="E:/Githubz/mtpy2/tests/data/edifiles/"
+    # edi_dir=r"E:\Githubz\mtpy2\examples\data/edi2"
+
+    #1 get a list of edi files, which are suppose to be in a profile.
+    edifiles = glob.glob(os.path.join(edi_dir, '*.edi'))
+
+    logger.debug("edi files: %s", edifiles)
+
+    (stations, periods, pendep, latlons) = get_penetration_depth(edifiles, period_index, whichrho=zcomponent)
+
+    if check_period_values(periods) is False:
+        logger.error("The period values are NOT equal - Please check: %s", periods)
+        raise Exception("Period values Not Equal across MT stations EDI files. Please check")
+    else:
+        Period0 = periods[0]
+
+    period_fmt= mtpy.utils.calculator.roundsf(Period0, 8)  # 8 signifiant digit
+    bbox=get_bounding_box(latlons)
+
+    logger.debug("Bounding Box %s", bbox)
+
+    xgrids = bbox[0][1] - bbox[0][0]
+    ygrids = bbox[1][1] - bbox[1][0]
+
+    logger.debug("xy grids %s %s", xgrids, ygrids)
+
+    minlat = bbox[1][0]
+    minlon = bbox[0][0]
+
+    # Pixel size in Degree:  0.001=100meters, 0.01=1KM 1deg=100KM
+    pixelsize = 0.002  # Degree 0.001=100meters, 0.01=1KM 1deg=100KM
+
+    nx = int(np.ceil(xgrids / pixelsize))
+    ny = int(np.ceil(ygrids / pixelsize))
+
+    print(nx, ny)
+
+    # make an image bigger than the (nx, ny)
+    pad = 4
+    nx2 = nx + pad
+    ny2 = ny + pad
+
+    # Z = 0.0* np.random.random((nx2,ny2))   # Test data
+    # Z=  np.ones((nx2,ny2))
+    zdep = np.zeros((ny2, nx2))
+    # Z[10, 10]=12
+    # Z[11, 20]=20
+    # Z[13, 15]=30
+
+    zdep[:, :] = np.nan  # initialize all pixel value as np.nan
+
+    logger.debug("zdep shape %s", zdep.shape)
+
+    for iter, pair in enumerate(latlons):
+        print pair
+        (xi, yi) = get_index(pair[0], pair[1], minlat, minlon, pixelsize)
+        zdep[zdep.shape[0] - yi-1, xi] = np.abs(pendep[iter])
+
+    plt.imshow(zdep, interpolation='none')
+    #plt.imshow(zdep,  interpolation='spline36')
+    plt.colorbar()
+
+    plt.show()
+
+    # a new figure
+    plt.figure(2)
+
+# griddata interpolation of the zdep sample MT points.
+    print(zdep.shape[0], zdep.shape[1])
+
+    #grid_x, grid_y = np.mgrid[0:95:96j, 0:83:84j]  # this syntax with complex step 96j has different meaning
+    grid_x, grid_y = np.mgrid[0:zdep.shape[0]:1, 0:zdep.shape[1]:1]  #this is more straight forward.
+
+    # print (grid_x, grid_y)
+    points = np.zeros((len(latlons), 2))
+    values = np.zeros(len(latlons))
+
+    for iter, pair in enumerate(latlons):
+        #     print pair
+
+        (i, j) = get_index(pair[0], pair[1], minlat, minlon, pixelsize)
+        points[iter, 0] = zdep.shape[0] - j
+        points[iter, 1] = i
+        values[iter] = np.abs(pendep[iter])
+
+    #grid_z0 = griddata(points, values, (grid_x, grid_y), method='nearest')
+    #grid_z1 = griddata(points, values, (grid_x, grid_y), method='linear')
+    grid_z = griddata(points, values, (grid_x, grid_y), method='cubic')
+
+    # set the axix limit to avoid over extended
+    plt.xlim(0, zdep.shape[1])      # horizontal axis 0-> the second index (i,j) of the matrix
+    plt.ylim(zdep.shape[0], 0)     # vertical axis origin at upper corner, not the lower corner.
+
+    # plt.imshow(grid_z)
+    plt.imshow(grid_z, origin='upper')
+    plt.plot(points[:, 1], points[:, 0], 'kv', markersize=6) #the stations sample point 1-lon-j, 0-lat-i
+
+    # FZ: fix the axis ticks
+    ax = plt.gca()
+
+    xticks=np.arange(0,zdep.shape[1],10)
+    yticks=np.arange(0,zdep.shape[0],10)
+
+    xticks_label= ['%.3f'%(bbox[0][0] + pixelsize*xtick) for xtick in xticks]  # formatted float numbers
+    yticks_label= ['%.3f'%(bbox[1][0] - pixelsize*ytick) for ytick in yticks]
+
+    plt.xticks(xticks, xticks_label, rotation='0', fontsize=14)
+    plt.yticks(yticks, yticks_label,rotation='horizontal', fontsize=14)
+    ax.set_ylabel('Latitude(degree)', fontsize=14)
+    ax.set_xlabel('Longitude(degree)',fontsize=14)
+
+    plt.title('Penetration Depth at the Period=%.6f (Cubic Interpolation)' % period_fmt)  # Cubic
+    plt.colorbar(label='Penetration Depth (meters)')#, fontsize=14)
+    plt.gcf().set_size_inches(6, 6)
+
+    plt.show()
+
+# version-1
+def plot_gridded_profile(edi_dir, period_index, zcomponent='det'): #use the Zcompotent=[det, zxy, zyx]
+    """
+    plot a  gridded profile of the pene depth projected into 2D matrix image
+    :param edi_dir:
+    :param period_index:
+    :param zcomponent:
+    :return:
+    """
     #edi_dir = "/Softlab/Githubz/mtpy2/tests/data/edifiles/"
     # edi_dir="E:/Githubz/mtpy2/tests/data/edifiles/"
     # edi_dir=r"E:\Githubz\mtpy2\examples\data/edi2"
@@ -122,7 +257,7 @@ def plot_3d_profile(edi_dir, period_index, zcomponent='det'): #use the Zcompoten
     plt.imshow(grid_z, origin='upper')
     plt.plot(points[:, 1], points[:, 0], 'kv', markersize=6) #stations
 
-    plt.title('Cubic Interpolation of Penetration Depth at the Period=%s' % periods[0])  # Cubic
+    plt.title('Cubic Interpolation of Penetration Depth at the Period=%6.5f' % periods[0])  # Cubic
     plt.colorbar()
     plt.gcf().set_size_inches(6, 6)
 
@@ -471,8 +606,8 @@ if __name__=="__main__":
     elif os.path.isdir(sys.argv[1]):
         edi_dir = sys.argv[1]
         period_index= int(sys.argv[2])
-        plot_3d_profile(edi_dir, period_index, zcomponent='det')   # 2D image
-
+        #plot_gridded_profile(edi_dir, period_index, zcomponent='det')   # 2D image
+        plot_latlon_depth_profile(edi_dir, period_index)
         #plot_bar3d_depth(edi_dir, period_index)
         #create_csv_file(edi_dir, r"E:/tmp/my_mt_pendepth.csv")
     else:
