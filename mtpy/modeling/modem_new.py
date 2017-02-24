@@ -49,12 +49,6 @@ try:
 except ImportError:
     print ('If you want to write a vtk file for 3d viewing, you need download '
            'and install evtk from https://bitbucket.org/pauloh/pyevtk')
-           
-    print ('Note: if you are using Windows you should build evtk first with'
-           'either MinGW or cygwin using the command: \n'
-           '    python setup.py build -compiler=mingw32  or \n'
-           '    python setup.py build -compiler=cygwin')
-
 
 epsg_dict = {28350:['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',50],
              28351:['+proj=utm +zone=51 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',51],
@@ -64,7 +58,8 @@ epsg_dict = {28350:['+proj=utm +zone=50 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0
              28355:['+proj=utm +zone=55 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',55],
              28356:['+proj=utm +zone=56 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',56],
              3112:['+proj=lcc +lat_1=-18 +lat_2=-36 +lat_0=0 +lon_0=134 +x_0=0 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',0],
-             4326:['+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs',0]}
+             4326:['+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs',0],
+             4204:['+proj=longlat +ellps=intl +no_defs', 0]}
 
                 
 

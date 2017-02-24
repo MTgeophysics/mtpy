@@ -27,7 +27,7 @@ from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as Navigatio
 from matplotlib.figure import Figure
 import mtpy.imaging.mtplottools as mtplottools
 import matplotlib.gridspec as gridspec
-import mtpy.modeling.modem_new as modem
+import mtpy.modeling.modem as modem
 
 #==============================================================================
 class ModEMPlotResponse(QtGui.QMainWindow):
