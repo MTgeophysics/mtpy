@@ -19,6 +19,8 @@ from scipy.interpolate import griddata
 
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from matplotlib.ticker import MultipleLocator
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 mpl.rcParams['lines.linewidth'] = 2
@@ -134,13 +136,18 @@ def plot_latlon_depth_profile(edi_dir, period_index, zcomponent='det'): #use the
     plt.xlim(0, zdep.shape[1])      # horizontal axis 0-> the second index (i,j) of the matrix
     plt.ylim(zdep.shape[0], 0)     # vertical axis origin at upper corner, not the lower corner.
 
+    # use reverse color map in imshow and the colorbar
+    my_cmap = mpl.cm.jet
+    my_cmap_r = reverse_colourmap(my_cmap)
+
     # plt.imshow(grid_z)
-    plt.imshow(grid_z, origin='upper')
+    imgplot=plt.imshow(grid_z, origin='upper',cmap=my_cmap_r)
 
     # The stations
     plt.plot(points[:, 1], points[:, 0], 'kv', markersize=6) #the stations sample point 1-lon-j, 0-lat-i
 
     ax = plt.gca()
+    plt.gcf().set_size_inches(6, 6)
 
     ftsize=14
     xticks=np.arange(0,zdep.shape[1],10)
@@ -154,11 +161,60 @@ def plot_latlon_depth_profile(edi_dir, period_index, zcomponent='det'): #use the
     ax.set_ylabel('Latitude(degree)', fontsize=ftsize)
     ax.set_xlabel('Longitude(degree)',fontsize=ftsize)
     ax.tick_params(axis='both', which='major', width=3, length=10, labelsize=ftsize)
-    plt.title('Penetration Depth at the Period=%.6f (Cubic Interpolation)' % period_fmt)  # Cubic
-    plt.colorbar().set_label(label='Penetration Depth (Meters)',size=ftsize)#,weight='bold')
-    plt.gcf().set_size_inches(6, 6)
+    plt.title('Penetration Depth at the Period=%.6f (Cubic Interpolation)\n' % period_fmt)  # Cubic
+
+
+    # method-1. this is the simplest colorbar, but cannot take cmap_r
+    #plt.colorbar(cmap=my_cmap_r).set_label(label='Penetration Depth (Meters)', size=ftsize)  # ,weight='bold')
+
+    # method-2 A more controlled colorbar:
+    # create an axes on the right side of ax. The width of cax will be 5%
+    # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.2)  # pad = separation from figure to colorbar
+    mycb = plt.colorbar(imgplot,  cax=cax)  # cmap=my_cmap_r, does not work!!
+    mycb.outline.set_linewidth(2)
+    mycb.set_label(label='Penetration Depth (Meters)', size=ftsize)
+    mycb.set_cmap(my_cmap_r)
 
     plt.show()
+
+def reverse_colourmap(cmap, name = 'my_cmap_r'):
+    """
+    In:
+    cmap, name
+    Out:
+    my_cmap_r
+
+    Explanation:
+    t[0] goes from 0 to 1
+    row i:   x  y0  y1 -> t[0] t[1] t[2]
+                   /
+                  /
+    row i+1: x  y0  y1 -> t[n] t[1] t[2]
+
+    so the inverse should do the same:
+    row i+1: x  y1  y0 -> 1-t[0] t[2] t[1]
+                   /
+                  /
+    row i:   x  y1  y0 -> 1-t[n] t[2] t[1]
+    """
+    reverse = []
+    k = []
+
+    for key in cmap._segmentdata:
+        k.append(key)
+        channel = cmap._segmentdata[key]
+        data = []
+
+        for t in channel:
+            data.append((1-t[0],t[2],t[1]))
+        reverse.append(sorted(data))
+
+    LinearL = dict(zip(k,reverse))
+    my_cmap_r = mpl.colors.LinearSegmentedColormap(name, LinearL)
+    return my_cmap_r
+
 
 # version-1
 def plot_gridded_profile(edi_dir, period_index, zcomponent='det'): #use the Zcompotent=[det, zxy, zyx]
@@ -342,14 +398,14 @@ def get_penetration_depth(edi_file_list, per_index,  whichrho='det'): #whichrho=
         per = 1.0 / zeta.freq[per_index]
         periods.append(per)
 
-        if whichrho == 'zxy':
+        if whichrho == 'det': # the 2X2 complex Z-matrix's determinant abs value
+            det2 = np.abs(zeta.det[0][per_index])  # determinant value at the given period index
+            penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
+        elif whichrho == 'zxy':
             penetration_depth = - scale_param * np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
         elif whichrho == 'zyx':
             penetration_depth = - scale_param * np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
-        elif whichrho == 'det':
-            # determinant
-            det2 = np.abs(zeta.det[0][per_index])  # determinant value at the given period index
-            penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
+
         else:
             logger.critical("un-supported method to compute penetration depth: %s", whichrho)
             sys.exit(100)
@@ -381,7 +437,7 @@ def check_period_values(period_list):
     return True
 
 #########################################################
-def plot_bar3d_depth( edifiles, per_index):
+def plot_bar3d_depth(edifiles, per_index, whichrho='det'):
     """
     plot 3D bar of penetration depths
     For a given freq/period index of a set of edifiles/dir, the station,periods, pendepth,(lat, lon) are extracted
@@ -422,7 +478,14 @@ def plot_bar3d_depth( edifiles, per_index):
         per = 1.0 / zeta.freq[per_index]
         periods.append(per)
 
-        penetration_depth = - scale_param * np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
+        if whichrho == 'det': # the 2X2 complex Z-matrix's determinant abs value
+            det2 = np.abs(zeta.det[0][per_index])  # determinant value at the given period index
+            penetration_depth = -scale_param * np.sqrt(0.2 * per * det2 * per)
+        elif whichrho == 'zxy':
+            penetration_depth = - scale_param * np.sqrt(zeta.resistivity[per_index, 0, 1] * per)
+        elif whichrho == 'zyx':
+            penetration_depth = - scale_param * np.sqrt(zeta.resistivity[per_index, 1, 0] * per)
+
         pen_depth.append(penetration_depth)
 
         stations.append(mt_obj.station)
@@ -436,7 +499,7 @@ def plot_bar3d_depth( edifiles, per_index):
     minlon = min(lons)
     maxlon = max(lons)
 
-    pixelsize = 0.001  # degree 0.001 = 100meters
+    pixelsize = 0.002  # degree 0.001 = 100meters
     offset = 3
     LL_lat = minlat - offset * pixelsize
     LL_lon = minlon - offset * pixelsize
@@ -480,9 +543,9 @@ def plot_bar3d_depth( edifiles, per_index):
 
     #ax1
 
-    plt.title('Penetration Depth (m) Across Stations. MT period= %6.3f Seconds' % periods[0], fontsize=16)
-    plt.xlabel('Latitude (deg-grid)', fontsize=16)
-    plt.ylabel('Longitude (deg-grid)', fontsize=16)
+    plt.title('Penetration Depth (Meter) Across Stations for period= %6.3f Seconds' % periods[0], fontsize=16)
+    plt.xlabel('Longitude(deg-grid)', fontsize=16)
+    plt.ylabel('Latitude(deg-grid)', fontsize=16)
     #plt.zlabel('Penetration Depth (m)')
     # bar_width = 0.4
     # plt.xticks(index + bar_width / 2, stations, rotation='horizontal', fontsize=16)
