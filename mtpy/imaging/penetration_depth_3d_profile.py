@@ -62,7 +62,11 @@ def plot_latlon_depth_profile(edi_dir, period_index, zcomponent='det'): #use the
     else:
         Period0 = periods[0]
 
-    period_fmt= mtpy.utils.calculator.roundsf(Period0, 8)  # 8 signifiant digit
+    if Period0<1.0:
+        period_fmt= str(mtpy.utils.calculator.roundsf(Period0, 4) ) # 4 signifiant digits means 4 nonzero number
+    else: #period>1s keep 2 decimal digits (after dot)
+        period_fmt='%.2f' % Period0
+
     bbox=get_bounding_box(latlons)
 
     logger.debug("Bounding Box %s", bbox)
@@ -84,7 +88,7 @@ def plot_latlon_depth_profile(edi_dir, period_index, zcomponent='det'): #use the
     print(nx, ny)
 
     # make an image bigger than the (nx, ny)
-    pad = 4
+    pad = 2  # this number creates a margin in the top and the right of the plot
     nx2 = nx + pad
     ny2 = ny + pad
 
@@ -93,7 +97,6 @@ def plot_latlon_depth_profile(edi_dir, period_index, zcomponent='det'): #use the
     zdep = np.zeros((ny2, nx2))
     # Z[10, 10]=12
     # Z[11, 20]=20
-    # Z[13, 15]=30
 
     zdep[:, :] = np.nan  # initialize all pixel value as np.nan
 
@@ -104,12 +107,11 @@ def plot_latlon_depth_profile(edi_dir, period_index, zcomponent='det'): #use the
         (xi, yi) = get_index(pair[0], pair[1], minlat, minlon, pixelsize)
         zdep[zdep.shape[0] - yi-1, xi] = np.abs(pendep[iter])
 
-    plt.imshow(zdep, interpolation='none') #OR plt.imshow(zdep,  interpolation='spline36')
+    #plt.imshow(zdep, interpolation='none') #OR plt.imshow(zdep,  interpolation='spline36')
     #plt.colorbar()
-
     #plt.show() # without this show(), the 2 figure will be plotted in one canvas, overlay and compare
 
-    #plt.figure(2)  # a new figure canvas
+    plt.figure()  # a new figure canvas
 
 # griddata interpolation of the zdep sample MT points.
     print(zdep.shape[0], zdep.shape[1])
@@ -161,7 +163,8 @@ def plot_latlon_depth_profile(edi_dir, period_index, zcomponent='det'): #use the
     ax.set_ylabel('Latitude(degree)', fontsize=ftsize)
     ax.set_xlabel('Longitude(degree)',fontsize=ftsize)
     ax.tick_params(axis='both', which='major', width=3, length=10, labelsize=ftsize)
-    plt.title('Penetration Depth at the Period=%.6f (Cubic Interpolation)\n' % period_fmt)  # Cubic
+    #plt.title('Penetration Depth at the Period=%.6f (Cubic Interpolation)\n' % period_fmt)  # Cubic
+    plt.title('Penetration Depth at the Period=%s \n' % period_fmt)  # Cubic
 
 
     # method-1. this is the simplest colorbar, but cannot take cmap_r
@@ -216,7 +219,7 @@ def reverse_colourmap(cmap, name = 'my_cmap_r'):
     return my_cmap_r
 
 
-# version-1
+# version-1 not mapped to lat-lon units
 def plot_gridded_profile(edi_dir, period_index, zcomponent='det'): #use the Zcompotent=[det, zxy, zyx]
     """
     plot a  gridded profile of the pene depth projected into 2D matrix image
@@ -258,7 +261,7 @@ def plot_gridded_profile(edi_dir, period_index, zcomponent='det'): #use the Zcom
     print(nx, ny)
 
     # make an image bigger than the (nx, ny)
-    pad = 4
+    pad = 2
     nx2 = nx + pad
     ny2 = ny + pad
 
@@ -376,6 +379,7 @@ def get_penetration_depth(edi_file_list, per_index,  whichrho='det'): #whichrho=
     """
 
     scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
+    logger.debug("The scaling parameter=%.6f"%scale_param )
 
     # per_index=0,1,2,....
     periods = []
@@ -458,6 +462,8 @@ def plot_bar3d_depth(edifiles, per_index, whichrho='det'):
         pass
 
     scale_param = np.sqrt(1.0 / (2.0 * np.pi * 4 * np.pi * 10 ** (-7)))
+
+    logger.debug("The scaling parameter=%.6f"%scale_param )
 
     # per_index=0,1,2,....
     periods = []
@@ -669,7 +675,7 @@ if __name__=="__main__":
         edi_dir = sys.argv[1]
         period_index= int(sys.argv[2])
         #plot_gridded_profile(edi_dir, period_index, zcomponent='det')   # 2D image
-        plot_latlon_depth_profile(edi_dir, period_index)
+        plot_latlon_depth_profile(edi_dir, period_index,zcomponent='det')
         #plot_bar3d_depth(edi_dir, period_index)
         #create_csv_file(edi_dir, r"E:/tmp/my_mt_pendepth.csv")
     else:
