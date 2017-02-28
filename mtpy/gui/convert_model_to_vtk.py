@@ -18,7 +18,7 @@ import subprocess
 # 3rd party packages
 from PyQt4 import QtCore, QtGui
 from mtpy.gui.my_stream import MyStream
-import mtpy.modeling.modem_new as modem
+import mtpy.modeling.modem as modem
 #==============================================================================
 class ConvertModel2VTK(QtGui.QWidget):
     """
