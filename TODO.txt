@@ -1,5 +1,67 @@
 TODO List
 
+Mtpy development from 17th Feb 2017 to end of financial year (Alison Kirby)
+
+High priority
+Penetration depth
+Finish this function and put into mtpy.imaging
+Shapefile export
+Finish this function to export phase tensor ellipses and induction vectors to shapefile. Work with Wenping to verify the following requirements are met:
+1.	Fix exporting so that shapefiles can cross multiple zones and still plot correctly
+2.	Add optional argument to allow plotting every second or third (or more) site
+3.	Add optional argument to allow plotting of one selected period/minimum/maximum period.
+ModEM plotting
+mtpy.imaging.plot_response – needs some fixing to improve plots to publication quality:
+1.	This function contains optional keyword arguments for what colour to show the te and tm model (ctem, ctmm) however they don’t work (i.e. changing them doesn’t change marker colour). Need to fix the code so that these arguments work
+2.	We’d like to be able to plot the model using solid lines (no marker) and the data using errorbars (no line), however the arguments that control these parameters (mtem, mtmm for the model and mted, mted for the data) don’t accommodate this. Need to update the code so we can use these options.
+3.	There is overlap in the axes for resistivity/phase or real/imaginary z. Either move the plots apart vertically, or change the tick labels so they don’t plot on top of each other.
+4.	Check with Jingming for any further things that need to be fixed.
+
+Refactor
+Go through each of the modules listed below individually, and do the following:
+1.	Validate that the code works
+2.	Find parts of the code that can be separated out into separate functions and separate them out. Tidy up the code if needed. Provide a list of separated functions for each module listed below, so that we are aware what has been changed.
+3.	Find any repeated functions. To determine which to keep, could test both and see that they give the same result, check with other MT group members to verify that the functions are duplicated, and/or look through the code to see how each works. Or simply list it and I’ll have a look when I get back. Provide a list of any duplicated functions that have been taken out.
+4.	Make note of any unit tests that need to be written. If possible, add the relevant test.
+5.	Remove any empty modules and make a list of modules that have been removed. For example, in mtpy.imaging, plotts.py, plotmodel1d.py, plotmodel2d.py, plotmodel3d.py all contain no code.
+6.	Re-validate that the code works.
+
+Please do this on the following modules (in this order):
+mtpy.core.edi
+mtpy.core.mt
+mtpy.core.z
+mtpy.analysis.pt
+mtpy.analysis.geometry
+mtpy.analysis.distortion
+mtpy.analysis.staticshift
+mtpy.analysis.niblettbostick
+mtpy.analysis.zinvariants
+mtpy.imaging (all functions) – duplication is a big issue here. For example, it would be nice to have only ONE function that plots each of: resistivity and phase vs period, and impedance tensor vs period, and tipper vs period, and use this function to plot data (from edi files) data + responses (from occam1d, occam2d, ModEM, etc).
+mtpy.modeling.modem
+mtpy.modeling.occam1d
+mtpy.modeling.occam2d_rewrite
+mtpy.modeling.pek1d
+mtpy.modeling.pek1dclasses
+Documentation
+Update documentation as you work through different modules
+
+
+Moderate priority
+Projections
+Add a function that finds the utm zone for a given latitude, longitude (single point or array of points) if it is not provided. But we still need to be able to ‘force’ the data into a selected zone for modelling purposes.
+Profile
+It would be useful to have a function (in utils?) that takes some x, y points and projects them onto a profile with an optional argument of profile_azimuth (angle east of north in degrees).
+Gocad
+Winglink xyz file => Gocad format (sgrid)
+Occam1d
+Plot stitched occam1d inversions along a profile (colour image – distance along profile vs depth)
+
+
+Low priority
+Data processing
+Create inputs and view outputs to BIRRP
+
+**************************************************
 FZ 2017-02
 
 shapefiles export  
