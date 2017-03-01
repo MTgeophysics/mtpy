@@ -1,8 +1,9 @@
-TODO List
-
+TODO List 2017-02
+#################################################################################
 Mtpy development from 17th Feb 2017 to end of financial year (Alison Kirby)
 
 High priority
+*************************
 Penetration depth
 Finish this function and put into mtpy.imaging
 Shapefile export
@@ -61,8 +62,8 @@ Low priority
 Data processing
 Create inputs and view outputs to BIRRP
 
-**************************************************
-FZ 2017-02
+######################################################################
+FZ 2017-01
 
 shapefiles export  
 refactor core packages  
