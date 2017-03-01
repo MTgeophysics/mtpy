@@ -195,7 +195,7 @@ class PTShapeFile(object):
                                                      ('skew', np.float),
                                                      ('n_skew', np.float)])
 
-    def write_shape_files(self, ):
+    def write_shape_files(self, every_site=1):
         """
         write shape file from given attributes
         https://pcjericks.github.io/py-gdalogr-cookbook/vector_layers.html#create-a-new-shapefile-and-add-data
@@ -252,61 +252,65 @@ class PTShapeFile(object):
 
             poly_list = []
             phimax = self.pt_dict[plot_per]['phimax'].max()
-            for pt_array in self.pt_dict[plot_per]:
 
-                # need to make an ellipse first using the parametric equation
-                azimuth = -np.deg2rad(pt_array['azimuth'])
-                width = self.ellipse_size * (pt_array['phimax'] / phimax)
-                height = self.ellipse_size * (pt_array['phimin'] / phimax)
-                x0 = pt_array['east']
-                y0 = pt_array['north']
+            for isite, pt_array in enumerate(self.pt_dict[plot_per]):
 
-                x = x0 + height * np.cos(self._theta) * np.cos(azimuth) - \
-                    width * np.sin(self._theta) * np.sin(azimuth)
-                y = y0 + height * np.cos(self._theta) * np.sin(azimuth) + \
-                    width * np.sin(self._theta) * np.cos(azimuth)
+                if isite%every_site == 0:
+                    # need to make an ellipse first using the parametric equation
+                    azimuth = -np.deg2rad(pt_array['azimuth'])
+                    width = self.ellipse_size * (pt_array['phimax'] / phimax)
+                    height = self.ellipse_size * (pt_array['phimin'] / phimax)
+                    x0 = pt_array['east']
+                    y0 = pt_array['north']
 
-                # 1) make a geometry shape of the ellipse
-                ellipse = ogr.Geometry(ogr.wkbLinearRing)
+                    x = x0 + height * np.cos(self._theta) * np.cos(azimuth) - \
+                        width * np.sin(self._theta) * np.sin(azimuth)
+                    y = y0 + height * np.cos(self._theta) * np.sin(azimuth) + \
+                        width * np.sin(self._theta) * np.cos(azimuth)
 
-                for ii, jj in zip(x, y):
-                    ellipse.AddPoint(np.round(ii, 6), np.round(jj, 6))
+                    # 1) make a geometry shape of the ellipse
+                    ellipse = ogr.Geometry(ogr.wkbLinearRing)
 
-                ellipse.CloseRings()
+                    for ii, jj in zip(x, y):
+                        ellipse.AddPoint(np.round(ii, 6), np.round(jj, 6))
 
-                # 2) make a polygon
-                poly = ogr.Geometry(ogr.wkbPolygon)
-                poly.AddGeometry(ellipse)
+                    ellipse.CloseRings()
 
-                poly_list.append(poly)
+                    # 2) make a polygon
+                    poly = ogr.Geometry(ogr.wkbPolygon)
+                    poly.AddGeometry(ellipse)
 
-                ##4) this part is confusing but we need to create a feature that has the
-                ##   same definition as the layer that we created.
-                # get the layer definition
-                feature_def = layer.GetLayerDefn()
+                    poly_list.append(poly)
 
-                # create a new feature
-                new_feature = ogr.Feature(feature_def)
-                # set the geometry of that feature to be the ellipse
-                new_feature.SetGeometry(poly)
-                # create the feature in the layer.
-                layer.CreateFeature(new_feature)
+                    ##4) this part is confusing but we need to create a feature that has the
+                    ##   same definition as the layer that we created.
+                    # get the layer definition
+                    feature_def = layer.GetLayerDefn()
 
-                #
-                ###5) create a field to color by
-                new_feature.SetField("Name", pt_array['station'])
-                new_feature.SetField("phi_min", pt_array['phimin'])
-                new_feature.SetField("phi_max", pt_array['phimax'])
-                new_feature.SetField("skew", pt_array['skew'])
-                new_feature.SetField("n_skew", pt_array['n_skew'])
+                    # create a new feature
+                    new_feature = ogr.Feature(feature_def)
+                    # set the geometry of that feature to be the ellipse
+                    new_feature.SetGeometry(poly)
+                    # create the feature in the layer.
+                    layer.CreateFeature(new_feature)
 
-                new_feature.SetField("azimuth", pt_array['azimuth'])  #FZ added
+                    #
+                    ###5) create a field to color by
+                    new_feature.SetField("Name", pt_array['station'])
+                    new_feature.SetField("phi_min", pt_array['phimin'])
+                    new_feature.SetField("phi_max", pt_array['phimax'])
+                    new_feature.SetField("skew", pt_array['skew'])
+                    new_feature.SetField("n_skew", pt_array['n_skew'])
 
-                # add the new feature to the layer.
-                layer.SetFeature(new_feature)
+                    new_feature.SetField("azimuth", pt_array['azimuth'])  # FZ added
 
-                # apparently need to destroy the feature
-                new_feature.Destroy()
+                    # add the new feature to the layer.
+                    layer.SetFeature(new_feature)
+
+                    # apparently need to destroy the feature
+                    new_feature.Destroy()
+                else:
+                    print("Skipping this site's phase tensor: ", isite)
 
             # Need to be sure that all the new info is saved to 
             data_source.SyncToDisk()
@@ -1404,7 +1408,15 @@ def modem_to_shapefiles(mfndat, save_dir):
 
     return
 
-def test_edi2shp(edi_dir, save_dir):
+def test_edi2shp(edi_dir, save_dir, ellipse_size=500, every_site=1):
+    """
+    generate shape file for a folder of edi files, and save the shape files a dir.
+    :param edi_dir:
+    :param save_dir:
+    :param ellipse_size: the size of ellipse: 100-5000, try them out to suit your needs
+    :param every_site: by default every MT station will be output, but user can sample down with 2, 3,..
+    :return:
+    """
 
     #edipath = r"E:/Githubz/mtpy2/tests/data/edifiles"
     edipath=edi_dir
@@ -1416,8 +1428,10 @@ def test_edi2shp(edi_dir, save_dir):
     pts = PTShapeFile(edilst, save_path=save_dir)
     #pts.projection = 'NAD27'  # default projection is WGS84
 
-    pts.ellipse_size = 1200
-    pts.write_shape_files()
+    #pts.ellipse_size = 1200 default 500
+    pts.ellipse_size=ellipse_size
+
+    pts.write_shape_files(every_site)
 
 
     tipshp = TipperShapeFile(edilst, save_path=save_dir)
@@ -1443,7 +1457,7 @@ if __name__ == "__main__":
         print("USAGE: %s input_edifile_dir output_shape_file_dir" % sys.argv[0])
         sys.exit(1)
     else:
-        test_edi2shp(sys.argv[1],sys.argv[2])
+        test_edi2shp(sys.argv[1],sys.argv[2], ellipse_size=3000,every_site=2)
 
 # modem: provide dat filr and save_path below:
 #     mfn = r"E:/Githubz/mtpy2/examples/data/ModEM_files/VicSynthetic07/Modular_MPI_NLCG_016.dat"
