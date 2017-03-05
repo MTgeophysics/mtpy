@@ -1,6 +1,6 @@
 """
 create shape files for MT datasets:
-Phase Tensor, Tipper Real/Imag, MT-site locations
+Phase Tensor, Tipper Real/Imag, MT-site locations,etc
 
 fei.zhang@ga.gov.au
 2017-03-06
