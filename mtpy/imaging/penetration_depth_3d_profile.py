@@ -137,7 +137,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
 
     #grid_z0 = griddata(points, values, (grid_x, grid_y), method='nearest')
     #grid_z1 = griddata(points, values, (grid_x, grid_y), method='linear')
-    grid_z = griddata(points, values, (grid_x, grid_y), method='cubic')
+    grid_z = griddata(points, values, (grid_x, grid_y), method='linear')  #cubic may cause negative interp values
 
     # set the axix limit to avoid over extended
     plt.xlim(0, zdep.shape[1])      # horizontal axis 0-> the second index (i,j) of the matrix
@@ -169,7 +169,7 @@ def plot_latlon_depth_profile(edi_dir, period, zcomponent='det'): #use the Zcomp
     ax.set_xlabel('Longitude(degree)',fontsize=ftsize)
     ax.tick_params(axis='both', which='major', width=3, length=10, labelsize=ftsize)
     #plt.title('Penetration Depth at the Period=%.6f (Cubic Interpolation)\n' % period_fmt)  # Cubic
-    plt.title('Penetration Depth at the Period=%s \n' % period_fmt)  # Cubic
+    plt.title('Penetration Depth at the Period=%s seconds \n' % period_fmt)  # Cubic
 
 
     # method-1. this is the simplest colorbar, but cannot take cmap_r
